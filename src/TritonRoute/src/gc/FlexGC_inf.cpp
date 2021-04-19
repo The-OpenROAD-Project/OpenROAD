@@ -68,85 +68,71 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
       break;
   }
 }
-void FlexGCWorker::Impl::check90RectMetSpcTblInf_queryBox(
-    const gtl::rectangle_data<frCoord>& rect,
-    frUInt4 spacing,
-    gtl::orientation_2d orient,
-    box_t& box)
-{
-  if (orient == gtl::HORIZONTAL)  // query north neighbors
-  {
-    bg::set<bg::min_corner, 0>(box, gtl::xl(rect));
-    bg::set<bg::min_corner, 1>(box, gtl::yh(rect));
-    bg::set<bg::max_corner, 0>(box, gtl::xh(rect));
-    bg::set<bg::max_corner, 1>(box, gtl::yh(rect) + spacing);
-  } else  // query easter neighbors
-  {
-    bg::set<bg::min_corner, 0>(box, gtl::xh(rect));
-    bg::set<bg::min_corner, 1>(box, gtl::yl(rect));
-    bg::set<bg::max_corner, 0>(box, gtl::xh(rect) + spacing);
-    bg::set<bg::max_corner, 1>(box, gtl::yh(rect));
-  }
-}
-void FlexGCWorker::Impl::check90RectMetSpcTblInf(
-    gcRect* rect,
-    gtl::rectangle_data<frCoord> intersection,
-    frUInt4 spacing,
-    gtl::orientation_2d required_orient)
-{
-  frLayerNum lNum = rect->getLayerNum();
-  box_t queryBox;
-  check90RectMetSpcTblInf_queryBox(
-      intersection, spacing, required_orient, queryBox);
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<gcRect*>> result;
-  workerRegionQuery.queryMaxRectangle(queryBox, lNum, result);
-  gtl::rectangle_data<frCoord> queryRect(queryBox.min_corner().x(),
-                                         queryBox.min_corner().y(),
-                                         queryBox.max_corner().x(),
-                                         queryBox.max_corner().y());
 
-  for (auto& [objBox, objPtr] : result) {
-    if (gtl::guess_orientation(*objPtr) != required_orient)
-      continue;
-    if (!gtl::intersects(*objPtr, queryRect, false))
-      continue;
-    if(rect->isFixed() && objPtr->isFixed())
-      continue;
-    gtl::rectangle_data<frCoord> secondIntersection(queryRect);
-    gtl::intersect(secondIntersection, *objPtr);
-    gtl::rectangle_data<frCoord> markerRect(intersection);
-    gtl::generalized_intersect(markerRect, secondIntersection);
-    auto marker = make_unique<frMarker>();
-    frBox box(gtl::xl(markerRect),
-              gtl::yl(markerRect),
-              gtl::xh(markerRect),
-              gtl::yh(markerRect));
-    marker->setBBox(box);
-    marker->setLayerNum(lNum);
-    marker->setConstraint(
-        design_->getTech()->getLayer(lNum)->getSpacingTableInfluence());
-    marker->addSrc(rect->getNet()->getOwner());
-    marker->addVictim(rect->getNet()->getOwner(),
-                      make_tuple(lNum,
-                                 frBox(gtl::xl(intersection),
-                                       gtl::yl(intersection),
-                                       gtl::xh(intersection),
-                                       gtl::yh(intersection)),
-                                 rect->isFixed()));
-    marker->addSrc(objPtr->getNet()->getOwner());
-    marker->addAggressor(objPtr->getNet()->getOwner(),
-                         make_tuple(lNum,
-                                    frBox(gtl::xl(secondIntersection),
-                                          gtl::yl(secondIntersection),
-                                          gtl::xh(secondIntersection),
-                                          gtl::yh(secondIntersection)),
-                                    objPtr->isFixed()));
-    if (addMarker(std::move(marker))) {
-      // true marker
+void FlexGCWorker::Impl::check90RectsMetSpcTblInf(
+    std::vector<gcRect*> rects,
+    gtl::rectangle_data<frCoord> queryRect,
+    frUInt4 spacing,
+    gtl::orientation_2d orient)
+{
+  frSquaredDistance spacingSq = spacing * (frSquaredDistance) spacing;
+  for (size_t i = 0; i < rects.size() - 1; i++) {
+    for (size_t j = i + 1; j < rects.size(); j++) {
+      frSquaredDistance distSquared
+          = gtl::euclidean_distance(*rects[i], *rects[j], orient);
+      distSquared *= distSquared;
+      if (distSquared < spacingSq) {
+        // Violation
+        if (rects[i]->isFixed() && rects[j]->isFixed())
+          continue;
+        auto lNum = rects[i]->getLayerNum();
+        gtl::rectangle_data<frCoord> rect1(queryRect);
+        gtl::rectangle_data<frCoord> rect2(queryRect);
+        gtl::intersect(rect1, *rects[i]);
+        gtl::intersect(rect2, *rects[j]);
+        gtl::rectangle_data<frCoord> markerRect(rect1);
+        gtl::generalized_intersect(markerRect, rect2);
+        auto marker = make_unique<frMarker>();
+        frBox box(gtl::xl(markerRect),
+                  gtl::yl(markerRect),
+                  gtl::xh(markerRect),
+                  gtl::yh(markerRect));
+        marker->setBBox(box);
+        marker->setLayerNum(lNum);
+        marker->setConstraint(
+            design_->getTech()->getLayer(lNum)->getSpacingTableInfluence());
+        marker->addSrc(rects[i]->getNet()->getOwner());
+        marker->addVictim(rects[i]->getNet()->getOwner(),
+                          make_tuple(lNum,
+                                     frBox(gtl::xl(rect1),
+                                           gtl::yl(rect1),
+                                           gtl::xh(rect1),
+                                           gtl::yh(rect1)),
+                                     rects[i]->isFixed()));
+        marker->addSrc(rects[j]->getNet()->getOwner());
+        marker->addAggressor(rects[j]->getNet()->getOwner(),
+                             make_tuple(lNum,
+                                        frBox(gtl::xl(rect2),
+                                              gtl::yl(rect2),
+                                              gtl::xh(rect2),
+                                              gtl::yh(rect2)),
+                                        rects[j]->isFixed()));
+        addMarker(std::move(marker));
+      } else
+        break;
     }
   }
 }
+bool compareVertical(gcRect* r1, gcRect* r2)
+{
+  return (gtl::yl(*r1) < gtl::yl(*r2));
+}
+
+bool compareHorizontal(gcRect* r1, gcRect* r2)
+{
+  return (gtl::xl(*r1) < gtl::xl(*r2));
+}
+
 void FlexGCWorker::Impl::checkRectMetSpcTblInf(
     gcRect* rect,
     frSpacingTableInfluenceConstraint* con)
@@ -178,16 +164,21 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
     workerRegionQuery.queryMaxRectangle(queryBox, lNum, result);
     if (result.size() < 2)
       continue;
+    vector<gcRect*> rects;
     for (auto& [objBox, objPtr] : result) {
       if (!gtl::intersects(*objPtr, queryRect, false))
         continue;
       if (gtl::guess_orientation(*objPtr) == dir)
         continue;  // not perpendicular
-      gtl::rectangle_data<frCoord> intersection(queryRect);
-      gtl::intersect(intersection, *objPtr);
-      check90RectMetSpcTblInf(
-          objPtr, intersection, spacing, dir.get_perpendicular());
+      rects.push_back(objPtr);
     }
+    if(rects.size() < 2)
+      continue;
+    if (dir == gtl::HORIZONTAL)
+      std::sort(rects.begin(), rects.end(), compareHorizontal);
+    else
+      std::sort(rects.begin(), rects.end(), compareVertical);
+    check90RectsMetSpcTblInf(rects, queryRect, spacing, dir);
   }
 }
 void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)

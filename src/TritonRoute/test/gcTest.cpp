@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
 }
 
 // Check for a spacing table influence violation.
-BOOST_AUTO_TEST_CASE(spacing_table_infl)
+BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
 {
   // Setup
   makeSpacingTableInfluenceConstraint(2, {10}, {{200, 100}});
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl)
              frBox(100, 150, 300, 200));
 }
 // Check for a spacing table influence violation.
-BOOST_AUTO_TEST_CASE(spacing_table_infl2)
+BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
 {
   // Setup
   makeSpacingTableInfluenceConstraint(2, {10}, {{200, 150}});
