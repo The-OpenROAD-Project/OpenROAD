@@ -506,12 +506,13 @@ bool compareConstraints(const Constraint &c1, const Constraint &c2)
   return c1.pin_list.size() > c2.pin_list.size();
 }
 
-int IOPlacer::assignConstrainedPinsToSections()
+void IOPlacer::assignConstrainedPinsToSections()
 {
   Netlist& netlist = netlist_io_pins_;
-  int pins_assigned = 0;
+  int pins_assigned = assignConstrainedGroupsToSections();
+
   for (Constraint &constraint : constraints_) {
-    std::vector<Section> sections = createSectionsPerConstraint(constraint);
+    std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
     PinList &pin_list = constraint.pin_list;
     const Direction &dir = constraint.direction;
 
@@ -520,19 +521,17 @@ int IOPlacer::assignConstrainedPinsToSections()
       idx = netlist.getIoPinIdx(bterm);
       IOPin& io_pin = netlist.getIoPin(idx);
 
-      if (assignPinToSection(io_pin, idx, sections)) {
+      if (assignPinToSection(io_pin, idx, sections_for_constraint)) {
         pins_assigned++;
       }
     }
 
-    for (Section &section : sections) {
+    for (Section &section : sections_for_constraint) {
       if (section.net.numIOPins() > 0) {
-        sections_.push_back(section);
+        sections_for_constraints_.push_back(section);
       }
     }
   }
-
-  return pins_assigned;
 }
 
 int IOPlacer::assignConstrainedGroupsToSections()
@@ -542,15 +541,15 @@ int IOPlacer::assignConstrainedGroupsToSections()
 
   for (std::vector<int>& io_group : net.getIOGroups()) {
     for (Constraint &constraint : constraints_) {
-      std::vector<Section> sections = createSectionsPerConstraint(constraint);
+      std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
       const PinList& pin_list = constraint.pin_list;
       IOPin& io_pin = net.getIoPin(io_group[0]);
 
       if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
-        total_pins_assigned += assignGroupToSection(io_group, sections);
-        for (Section &section : sections) {
+        total_pins_assigned += assignGroupToSection(io_group, sections_for_constraint);
+        for (Section &section : sections_for_constraint) {
           if (section.net.numIOPins() > 0) {
-            sections_.push_back(section);
+            sections_for_constraints_.push_back(section);
           }
         }
         break;
@@ -635,10 +634,12 @@ bool IOPlacer::assignPinsToSections()
 {
   Netlist& net = netlist_io_pins_;
   std::vector<Section>& sections = sections_;
+  
   createSections();
-  int total_pins_assigned = assignConstrainedGroupsToSections();
-  total_pins_assigned += assignGroupsToSections();
-  total_pins_assigned += assignConstrainedPinsToSections();
+  int sections_count = sections_.size();
+
+  int total_pins_assigned = assignGroupsToSections();
+
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
@@ -646,14 +647,17 @@ bool IOPlacer::assignPinsToSections()
     }
     idx++;
   }
-  
+
+  for (Section& sec : sections_for_constraints_) {
+    total_pins_assigned += sec.net.numIOPins();
+  }
+
   if (total_pins_assigned == net.numIOPins()) {
     logger_->report("Successfully assigned I/O pins");
     return true;
   } else {
     logger_->report("Unsuccessfully assigned I/O pins ({} out of {})", total_pins_assigned, net.numIOPins());
     return false;
-    std::exit(1);
   }
 }
 
@@ -969,6 +973,33 @@ void IOPlacer::addPinToList(odb::dbBTerm* pin, PinList* pin_group)
   pin_group->push_back(pin);
 }
 
+void IOPlacer::findPinAssignment(std::vector<Section>& sections)
+{
+  std::vector<HungarianMatching> hg_vec;
+  for (int idx = 0; idx < sections.size(); idx++) {
+    if (sections[idx].net.numIOPins() > 0) {
+      HungarianMatching hg(sections[idx], slots_, logger_);
+      hg_vec.push_back(hg);
+    }
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].findAssignmentForGroups();
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].getAssignmentForGroups(assignment_);
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].findAssignment();
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].getFinalAssignment(assignment_);
+  }
+}
+
 void IOPlacer::run(bool random_mode)
 {
   initParms();
@@ -976,7 +1007,6 @@ void IOPlacer::run(bool random_mode)
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
-  std::vector<HungarianMatching> hg_vec;
   int init_hpwl = 0;
   int total_hpwl = 0;
   int delta_hpwl = 0;
@@ -993,30 +1023,13 @@ void IOPlacer::run(bool random_mode)
     logger_->info(PPL, 3, "Random pin placement.");
     randomPlacement();
   } else {
+    assignConstrainedPinsToSections();
+
+    findPinAssignment(sections_for_constraints_);
+
     setupSections();
 
-    for (int idx = 0; idx < sections_.size(); idx++) {
-      if (sections_[idx].net.numIOPins() > 0) {
-        HungarianMatching hg(sections_[idx], slots_, logger_);
-        hg_vec.push_back(hg);
-      }
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].findAssignmentForGroups(constraints_);
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].getAssignmentForGroups(assignment_);
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].findAssignment(constraints_);
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].getFinalAssignment(assignment_);
-    }
+    findPinAssignment(sections_);
   }
 
   for (int i = 0; i < assignment_.size(); ++i) {

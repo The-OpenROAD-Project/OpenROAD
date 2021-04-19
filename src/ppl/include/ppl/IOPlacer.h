@@ -143,6 +143,7 @@ class IOPlacer
   Netlist netlist_io_pins_;
   std::vector<Slot> slots_;
   std::vector<Section> sections_;
+  std::vector<Section> sections_for_constraints_;
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
@@ -172,8 +173,9 @@ class IOPlacer
   int assignConstrainedGroupsToSections();
   int assignGroupToSection(const std::vector<int> &io_group,
                            std::vector<Section> &sections);
-  int assignConstrainedPinsToSections();
+  void assignConstrainedPinsToSections();
   int returnIONetsHPWL(Netlist&);
+  void findPinAssignment(std::vector<Section>& sections);
 
   void updateOrientation(IOPin&);
   void updatePinArea(IOPin&);
