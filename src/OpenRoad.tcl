@@ -140,82 +140,42 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
-# Units are from OpenSTA (ie Liberty file or set_cmd_units).
-sta::define_cmd_args "set_layer_rc" { [-layer layer] \
-					[-via via_layer] \
-					[-capacitance cap] \
-					[-resistance res] }
-proc set_layer_rc {args} {
-  sta::parse_key_args "set_layer_rc" args \
-    keys {-layer -via -capacitance -resistance}\
-    flags {}
+sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
 
-  if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    utl::error "ORD" 10 "Use -layer or -via but not both."
+proc assign_ndr { args } {
+  sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {-all_clocks}
+  if { ![info exists keys(-ndr)] } {
+    utl::error ORD 1009 "-name is missing"
   }
-
-  set tech [ord::get_db_tech]
-  if { [info exists keys(-layer)] } {
-    set layer_name $keys(-layer)
-    set layer [$tech findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error "ORD" 19 "layer $layer_name not found."
+  if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
+    utl::error ORD 1010 "Either -net or -all_clocks need to be defined"
+  }
+  set tech [[ord::get_db] getTech]
+  set block [[[ord::get_db] getChip] getBlock]
+  set ndrName $keys(-ndr)
+  set ndr [$tech findNonDefaultRule $ndrName]
+  if { $ndr == "NULL" } {
+    utl::error ORD 1011 "No NDR named ${ndrName} found"
+  }
+  if { [info exists keys(-net)] } {
+    set netName $keys(-net)
+    set net [$block findNet $netName]
+    if { $net == "NULL" } {
+      utl::error ORD 1012 "No net named ${netName} found"
     }
-
-    if { $layer == "NULL" } {
-      utl::error "ORD" 20 "layer not found."
-    }
-
-    if { [$layer getRoutingLevel] == 0 } {
-      utl::error "ORD" 18 "$layer_name is not a routing layer."
-    }
-
-    if { [info exists keys(-capacitance)] } {
-      # Zero the edge cap and just use the user given value
-      $layer setEdgeCapacitance 0
-      # Convert wire capacitance/wire_length to capacitance/area.
-      set wire_width [ord::dbu_to_microns [$layer getWidth]]
-      # F/m
-      set wire_cap [expr [sta::capacitance_ui_sta $keys(-capacitance)] \
-                      / [sta::distance_ui_sta 1.0]]
-      # Convert to pF/um.
-      set cap_per_square [expr $wire_cap * 1e+6 / $wire_width]
-      $layer setCapacitance $cap_per_square
-    }
-    
-    if { [info exists keys(-resistance)] } {
-      # Convert resistance/wire_length to resistance/square.
-      set wire_width [ord::dbu_to_microns [$layer getWidth]]
-      # ohm/m
-      set wire_res [expr [sta::resistance_ui_sta $keys(-resistance)] \
-                      / [sta::distance_ui_sta 1.0]]
-      # convert to ohms/square
-      set res_per_square [expr $wire_width * 1e-6 * $wire_res]
-      $layer setResistance $res_per_square
-    }
-    
-    if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-      utl::error "ORD" 12 "missing -capacitance or -resistance argument."
-    }
-  } elseif { [info exists keys(-via)] } {
-    set layer_name $keys(-via)
-    set layer [$tech findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error "ORD" 21 "via $layer_name not found."
-    }
-
-    if { [info exists keys(-capacitance)] } {
-      utl::warn "ORD" 22 "-capacitance not supported for vias."
-    }
-
-    if { [info exists keys(-resistance)] } {
-      set via_res [sta::resistance_ui_sta $keys(-resistance)]
-      $layer setResistance $via_res
-    } else {
-      utl::error "ORD" 17 "no -resistance specified for via."
-    }
+    $net setNonDefaultRule $ndr
   } else {
-    utl::error "ORD" 9 "missing -layer or -via argument."
+    foreach clk [sta::all_clocks] {
+      foreach src [$clk sources] {
+        set netName [get_full_name $src]
+        set net [$block findNet $netName]
+        if { $net == "NULL" } {
+          utl::warn ORD 1013 "No net named ${netName} found. Skipping"
+          continue
+        }
+        $net setNonDefaultRule $ndr
+      }
+    }
   }
 }
 

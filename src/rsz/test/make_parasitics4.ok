@@ -3,126 +3,59 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: reg6.def
-[INFO ODB-0128] Design: reg1
-[INFO ODB-0130]     Created 3 pins.
-[INFO ODB-0131]     Created 8 components and 39 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 16 connections.
-[INFO ODB-0133]     Created 10 nets and 20 connections.
-[INFO ODB-0134] Finished DEF file: reg6.def
-Startpoint: in1 (input port clocked by clk)
-Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
-Path Group: clk
-Path Type: min
-Corner: ss
+[INFO ODB-0222] Reading LEF file: pad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  pad.lef
+[INFO ODB-0127] Reading DEF file: make_parasitics4.def
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 3 components and 16 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 4 nets and 6 connections.
+[INFO ODB-0134] Finished DEF file: make_parasitics4.def
+Net in1
+ Pin capacitance: 2.20
+ Wire capacitance: 0.00
+ Total capacitance: 2.20
+ Number of drivers: 2
+ Number of loads: 1
+ Number of pins: 2
 
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ input external delay
-   0.00    0.00 ^ in1 (in)
-   0.02    0.02 ^ r1/D (DFF_X1)
-           0.02   data arrival time
+Driver pins
+ in1 input port (0, 0)
+ pad1/PAD bidirect (PAD) 2.20 (420, 1000)
 
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00   clock reconvergence pessimism
-           0.00 ^ r1/CK (DFF_X1)
-   0.02    0.02   library hold time
-           0.02   data required time
----------------------------------------------------------
-           0.02   data required time
-          -0.02   data arrival time
----------------------------------------------------------
-           0.00   slack (VIOLATED)
+Load pins
+ pad1/PAD bidirect (PAD) 2.20 (420, 1000)
+Net out1
+ Pin capacitance: 2.20
+ Wire capacitance: 0.00
+ Total capacitance: 2.20
+ Number of drivers: 1
+ Number of loads: 2
+ Number of pins: 2
 
+Driver pins
+ pad2/PAD bidirect (PAD) 2.20 (15, 1000)
 
-Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
-Path Group: clk
+Load pins
+ out1 output port (0, 0)
+ pad2/PAD bidirect (PAD) 2.20 (15, 1000)
+Startpoint: in1 (input port)
+Endpoint: out1 (output port)
+Path Group: (none)
 Path Type: max
-Corner: ss
 
   Delay    Time   Description
 ---------------------------------------------------------
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ r2/CK (DFF_X1)
-   0.42    0.42 ^ r2/Q (DFF_X1)
-   0.42    0.84 ^ u1/Z (BUF_X1)
-   0.42    1.25 ^ u2/ZN (AND2_X1)
-   0.02    1.27 ^ r3/D (DFF_X1)
-           1.27   data arrival time
-
-  10.00   10.00   clock clk (rise edge)
-   0.00   10.00   clock network delay (ideal)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ r3/CK (DFF_X1)
-  -0.12    9.88   library setup time
-           9.88   data required time
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.02    0.02 v pad1/Y (PAD)
+   0.25    0.28 v u1/Z (BUF_X1)
+   0.14    0.41 v pad2/PAD (PAD)
+   0.00    0.41 v out1 (out)
+           0.41   data arrival time
 ---------------------------------------------------------
-           9.88   data required time
-          -1.27   data arrival time
----------------------------------------------------------
-           8.61   slack (MET)
-
-
-Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
-Path Group: clk
-Path Type: max
-Corner: ss
-
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ r2/CK (DFF_X1)
-   0.42    0.42 ^ r2/Q (DFF_X1)
-   0.42    0.84 ^ u1/Z (BUF_X1)
-   0.42    1.25 ^ u2/ZN (AND2_X1)
-   0.02    1.27 ^ r3/D (DFF_X1)
-           1.27   data arrival time
-
-  10.00   10.00   clock clk (rise edge)
-   0.00   10.00   clock network delay (ideal)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ r3/CK (DFF_X1)
-  -0.12    9.88   library setup time
-           9.88   data required time
----------------------------------------------------------
-           9.88   data required time
-          -1.27   data arrival time
----------------------------------------------------------
-           8.61   slack (MET)
-
-
-Startpoint: in1 (input port clocked by clk)
-Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
-Path Group: clk
-Path Type: min
-Corner: ff
-
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ input external delay
-   0.00    0.00 ^ in1 (in)
-   0.02    0.02 ^ r1/D (DFF_X1)
-           0.02   data arrival time
-
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00   clock reconvergence pessimism
-           0.00 ^ r1/CK (DFF_X1)
-   0.01    0.01   library hold time
-           0.01   data required time
----------------------------------------------------------
-           0.01   data required time
-          -0.02   data arrival time
----------------------------------------------------------
-           0.01   slack (MET)
+(Path is unconstrained)
 
 

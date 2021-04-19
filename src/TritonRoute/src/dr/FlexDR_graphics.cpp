@@ -26,14 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexDR_graphics.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
+#include "FlexDR_graphics.h"
 #include "openroad/OpenRoad.hh"
 
 namespace fr {
@@ -68,6 +67,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
 {
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
+  dbuPerUU_ = odb_tech->getDbUnitsPerMicron();
 
   layer_map_.resize(odb_tech->getLayerCount(), -1);
 
@@ -106,7 +106,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
-    worker_->getRouteBox(box);
+    worker_->getExtBox(box);
     std::vector<drConnFig*> figs;
     rq.query(box, layerNum, figs);
     for (auto& fig : figs) {
@@ -234,18 +234,32 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw markers
+  frBox box;
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker :
-       worker_->getGCWorker()
-           ->getMarkers()) {  // getDesign()->getTopBlock()->getMarkers()
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
-      frBox box;
       marker->getBBox(box);
-      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
-      painter.drawLine({box.left(), box.bottom()}, {box.right(), box.top()});
-      painter.drawLine({box.left(), box.top()}, {box.right(), box.bottom()});
+      drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
+  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
+    if (marker->getLayerNum() == layerNum) {
+      marker->getBBox(box);
+      drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
+    }
+  }
+}
+
+void FlexDRGraphics::drawMarker(int xl,
+                                int yl,
+                                int xh,
+                                int yh,
+                                gui::Painter& painter)
+{
+  painter.drawRect({xl, yl, xh, yh});
+  painter.drawLine({xl, yl}, {xh, yh});
+  painter.drawLine({xl, yh}, {xh, yl});
 }
 
 void FlexDRGraphics::update()
@@ -374,6 +388,22 @@ void FlexDRGraphics::startNet(drNet* net)
 
   status("Start net: " + net->getFrNet()->getName() + " "
          + workerOrigin(worker_));
+  logger_->info(
+      DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
+  for (auto& pin : net->getPins()) {
+    logger_->info(DRT, 250, "  Pin {}", pin->getName());
+    for (auto& ap : pin->getAccessPatterns()) {
+      frPoint pt;
+      ap->getPoint(pt);
+      logger_->info(DRT,
+                    251,
+                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
+                    pt.x() / (double) dbuPerUU_,
+                    pt.y() / (double) dbuPerUU_,
+                    ap->getBeginLayerNum(),
+                    ap->getPinCost());
+    }
+  }
   net_ = net;
   last_pt_layer_ = -1;
 

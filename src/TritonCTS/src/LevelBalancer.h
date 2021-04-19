@@ -86,7 +86,7 @@ class LevelBalancer
 {
  public:
   LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger):
-                _root(root), _options(options), _logger(logger) { }
+                _root(root), _options(options), _logger(logger), levelBufCount_(0) { }
 
   void run();
   void addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*> cluster,
@@ -99,5 +99,6 @@ class LevelBalancer
   CtsOptions* _options;
   Logger* _logger;
   CellLevelMap cgcLevelMap_;
+  unsigned levelBufCount_;
 };
 }

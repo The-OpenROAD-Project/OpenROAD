@@ -91,6 +91,7 @@ class FlexDRGraphics : public gui::Renderer
   frLayerNum last_pt_layer_;
   gui::Gui* gui_;
   Logger* logger_;
+  int dbuPerUU_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
@@ -102,6 +103,8 @@ class FlexDRGraphics : public gui::Renderer
   static const char* drc_cost_visible_;
   static const char* marker_cost_visible_;
   static const char* shape_cost_visible_;
+  
+  void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };
 
 }  // namespace fr

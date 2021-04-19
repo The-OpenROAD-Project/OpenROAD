@@ -158,10 +158,11 @@ set_padding_inst(odb::dbInst *inst,
 }
 
 void
-filler_placement_cmd(StringSeq *fillers)
+filler_placement_cmd(const char* prefix, 
+                     StringSeq *fillers)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->fillerPlacement(fillers);
+  opendp->fillerPlacement(fillers, prefix);
 }
 
 void

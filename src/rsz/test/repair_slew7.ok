@@ -38,7 +38,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/ZN                                  10.46   15.05   -4.59 (VIOLATED)
+u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 1513um.
 [INFO RSZ-0034] Found 1 slew violations.
@@ -65,11 +65,11 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u1/ZN                                   0.50    0.24    0.26 (MET)
+u1/ZN                                   0.15    0.03    0.11 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/ZN                                  41.49   15.05   26.44 (MET)
+u1/ZN                                  41.50   15.05   26.45 (MET)
 

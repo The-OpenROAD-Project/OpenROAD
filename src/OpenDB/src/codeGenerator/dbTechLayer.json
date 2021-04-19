@@ -133,7 +133,8 @@
         "ABOVEDIEEDGE",
         "BELOWDIEEDGE",
         "DIFFUSION",
-        "TRIMPOLY"
+        "TRIMPOLY",
+        "MIMCAP"
       ],
       "public": true
     }

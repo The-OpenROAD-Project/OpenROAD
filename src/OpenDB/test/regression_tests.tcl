@@ -19,6 +19,7 @@ record_tests {
   check_routing_tracks
   polygon
   def_parser
+  ndr
 }
 
 record_pass_fail_tests {
