@@ -40,9 +40,9 @@ namespace fr {
 const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
 const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
 const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
-const char* FlexDRGraphics::drc_cost_visible_ = "DRC Cost";
+const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
-const char* FlexDRGraphics::shape_cost_visible_ = "Shape Cost";
+const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 
 static std::string workerOrigin(FlexDRWorker* worker)
 {
@@ -79,9 +79,9 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   }
 
   gui_->addCustomVisibilityControl(grid_graph_visible_);
-  gui_->addCustomVisibilityControl(drc_cost_visible_);
+  gui_->addCustomVisibilityControl(route_shape_cost_visible_);
   gui_->addCustomVisibilityControl(marker_cost_visible_);
-  gui_->addCustomVisibilityControl(shape_cost_visible_);
+  gui_->addCustomVisibilityControl(fixed_shape_cost_visible_);
   gui_->addCustomVisibilityControl(route_guides_visible_, true);
   gui_->addCustomVisibilityControl(routing_objs_visible_, true);
 
@@ -168,11 +168,11 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw graphs
-  const bool draw_drc = gui_->checkCustomVisibilityControl(drc_cost_visible_);
+  const bool draw_drc = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
   const bool draw_marker
       = gui_->checkCustomVisibilityControl(marker_cost_visible_);
   const bool draw_shape
-      = gui_->checkCustomVisibilityControl(shape_cost_visible_);
+      = gui_->checkCustomVisibilityControl(fixed_shape_cost_visible_);
   const bool draw_graph
       = gui_->checkCustomVisibilityControl(grid_graph_visible_);
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
@@ -209,22 +209,22 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         // Planar doesn't distinguish E vs N so just use one
         bool planar
-            = (draw_drc && grid_graph_->hasDRCCost(x, y, z, frDirEnum::E))
+            = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
               || (draw_marker
                   && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
               || (draw_shape
-                  && grid_graph_->hasShapeCost(x, y, z, frDirEnum::E));
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::E));
         if (planar) {
           painter.drawRect({grid_graph_->xCoord(x) - offset,
                             grid_graph_->yCoord(y) - offset,
                             grid_graph_->xCoord(x) + offset,
                             grid_graph_->yCoord(y) + offset});
         }
-        bool via = (draw_drc && grid_graph_->hasDRCCost(x, y, z, frDirEnum::U))
+        bool via = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
                    || (draw_marker
                        && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
                    || (draw_shape
-                       && grid_graph_->hasShapeCost(x, y, z, frDirEnum::U));
+                       && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);

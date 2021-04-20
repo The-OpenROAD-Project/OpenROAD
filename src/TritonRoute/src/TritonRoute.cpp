@@ -303,6 +303,9 @@ void TritonRoute::readParams(const string& fileName)
         } else if (field == "topRoutingLayer") {
           TOP_ROUTING_LAYER = atoi(value.c_str());
           ++readParamCnt;
+        } else if (field == "initRouteShapeCost") {
+          ROUTESHAPECOST = atoi(value.c_str());
+          ++readParamCnt;
         }
       }
     }

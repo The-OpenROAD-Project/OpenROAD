@@ -94,8 +94,8 @@ extern float TASHAPEBLOATWIDTH;
 extern fr::frUInt4 VIACOST;
 
 extern fr::frUInt4 GRIDCOST;
-extern fr::frUInt4 SHAPECOST;
-extern fr::frUInt4 DRCCOST;
+extern fr::frUInt4 FIXEDSHAPECOST;
+extern fr::frUInt4 ROUTESHAPECOST;
 extern fr::frUInt4 MARKERCOST;
 extern fr::frUInt4 MARKERBLOATWIDTH;
 extern fr::frUInt4 BLOCKCOST;
