@@ -436,7 +436,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &con
   for (int layer : layers) {
     std::vector<Slot>::iterator it =
       std::find_if(slots_.begin(), slots_.end(),
-       [&](Slot s) {
+       [&](const Slot& s) {
         int slot_xy =
           (edge == Edge::left || edge == Edge::right) ?
           s.pos.y() : s.pos.x();
@@ -450,7 +450,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &con
 
     it =
       std::find_if(slots_.begin() + constraint_begin, slots_.end(),
-       [&](Slot s) {
+       [&](const Slot& s) {
         int slot_xy =
           (edge == Edge::left || edge == Edge::right) ?
           s.pos.y() : s.pos.x();
