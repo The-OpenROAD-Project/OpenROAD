@@ -88,26 +88,6 @@ using odb::dbTechLayerType;
 using odb::dbGroup;
 using odb::dbRegion;
 
-
-class Track
-{
-public:
-  Track(string layer,
-	char dir,
-	double offset,
-	double pitch);
-  string layer() const { return layer_; }
-  char dir() const { return dir_; }
-  double offset() const { return offset_; }
-  double pitch() const { return pitch_; }
-
-protected:
-  string layer_;
-  char dir_; 			// X or Y
-  double offset_;		// meters
-  double pitch_;		// meters
-};
-
 class InitFloorplan
 {
 public:
@@ -119,7 +99,6 @@ public:
 		     double core_space_left,
 		     double core_space_right,
 		     const char *site_name,
-		     const char *tracks_file,
 		     dbDatabase *db,
 		     Logger *logger);
 
@@ -132,7 +111,6 @@ public:
 		     double core_ux,
 		     double core_uy,
 		     const char *site_name,
-		     const char *tracks_file,
 		     dbDatabase *db,
 		     Logger *logger );
 
@@ -149,8 +127,7 @@ protected:
 		     double core_ly,
 		     double core_ux,
 		     double core_uy,
-		     const char *site_name,
-		     const char *tracks_file);
+		     const char *site_name);
   double designArea();
   void makeRows(dbSite *site,
 		int core_lx,
@@ -158,23 +135,21 @@ protected:
 		int core_ux,
 		int core_uy);
   dbSite *findSite(const char *site_name);
-  Vector<Track> readTracks(const char *tracks_file);
   void makeTracks(const char *tracks_file,
 		  Rect &die_area);
   void autoPlacePins(dbTechLayer *pin_layer,
 		     Rect &core);
   int metersToMfgGrid(double dist) const;
   double dbuToMeters(int dist) const;
-
-  void updateVoltageDomain(int core_lx,
-                           int core_ly,
-                           int core_ux,
-                           int core_uy);
+  void updateVoltageDomain(dbSite *site,
+			   int core_lx,
+            		   int core_ly,
+            		   int core_ux,
+            		   int core_uy);
 
   dbDatabase *db_;
   dbBlock *block_;
   Logger *logger_;
-  Vector<Track> tracks_;
 };
 
 void
@@ -185,7 +160,6 @@ initFloorplan(double util,
 	      double core_space_left,
 	      double core_space_right,
 	      const char *site_name,
-	      const char *tracks_file,
 	      dbDatabase *db,
 	      Logger *logger)
 {
@@ -193,8 +167,7 @@ initFloorplan(double util,
   init_fp.initFloorplan(util, aspect_ratio,
                         core_space_bottom, core_space_top,
                         core_space_left, core_space_right,
-                        site_name, tracks_file,
-                        db, logger);
+                        site_name, db, logger);
 }
 
 void
@@ -207,15 +180,13 @@ initFloorplan(double die_lx,
 	      double core_ux,
 	      double core_uy,
 	      const char *site_name,
-	      const char *tracks_file,
 	      dbDatabase *db,
               Logger *logger)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
 			core_lx, core_ly, core_ux, core_uy,
-			site_name, tracks_file,
-			db, logger);
+			site_name, db, logger);
 }
 
 void
@@ -226,7 +197,6 @@ InitFloorplan::initFloorplan(double util,
 			     double core_space_left,
 			     double core_space_right,
 			     const char *site_name,
-			     const char *tracks_file,
 			     dbDatabase *db,
 			     Logger *logger)
 {
@@ -252,7 +222,7 @@ InitFloorplan::initFloorplan(double util,
       double die_uy = core_height + core_space_top + core_space_bottom;
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
-		    site_name, tracks_file);
+		    site_name);
     }
   }
 }
@@ -279,7 +249,6 @@ InitFloorplan::initFloorplan(double die_lx,
 			     double core_ux,
 			     double core_uy,
 			     const char *site_name,
-			     const char *tracks_file,
 			     dbDatabase *db,
 			     Logger *logger)
 {
@@ -291,7 +260,7 @@ InitFloorplan::initFloorplan(double die_lx,
     if (block_) {
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
-		    site_name, tracks_file);
+		    site_name);
 
     }
   }
@@ -306,8 +275,7 @@ InitFloorplan::initFloorplan(double die_lx,
 			     double core_ly,
 			     double core_ux,
 			     double core_uy,
-			     const char *site_name,
-			     const char *tracks_file)
+			     const char *site_name)
 {
   Rect die_area(metersToMfgGrid(die_lx),
                 metersToMfgGrid(die_ly),
@@ -333,14 +301,7 @@ InitFloorplan::initFloorplan(double die_lx,
       int cux = metersToMfgGrid(core_ux);
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
-      updateVoltageDomain(clx, cly, cux, cuy);
-
-      // Destroy existing tracks.
-      for (odb::dbTrackGrid *grid : block_->getTrackGrids())
-        dbTrackGrid::destroy(grid);
-
-      if (tracks_file && tracks_file[0])
-	makeTracks(tracks_file, die_area);
+      updateVoltageDomain(site, clx, cly, cux, cuy);
     }
     else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
@@ -350,99 +311,92 @@ InitFloorplan::initFloorplan(double die_lx,
 
 // this function is used to create regions ( split overlapped rows and create new ones )
 void
-InitFloorplan::updateVoltageDomain(int core_lx,
-                                   int core_ly,
-                                   int core_ux,
-                                   int core_uy)
+InitFloorplan::updateVoltageDomain(dbSite *site,
+				   int core_lx,
+				   int core_ly,
+				   int core_ux,
+				   int core_uy)
 {
-  // this is hardcoded for now as a margin between voltage domains
-  int MARGIN = 6;
-
+  // this is hardcoded for now as a margin between voltage domains, the default margin is: fp_gap_default * site_dy
+  static constexpr int fp_gap_default = 6;
+  uint site_dy = site->getHeight();
+  uint site_dx = site->getWidth();
+  
   // checks if a group is defined as a voltage domain, if so it creates a region 
-  for (dbGroup* domain : block_->getGroups()) {
-    if (domain->getType()==dbGroup::VOLTAGE_DOMAIN) {
-      dbRegion* domain_region = dbRegion::create(block_, domain->getName());
+  for (dbGroup *group: block_->getGroups()) {
+    if (group->getType() == dbGroup::VOLTAGE_DOMAIN) {
+      dbRegion *domain_region = dbRegion::create(block_, group->getName());
 
-      auto domain_name = string(domain->getName());
-      Rect domain_rect = domain->getBox();
-      int temp_domain_xMin = metersToMfgGrid(domain_rect.xMin() / 1e+6);
-      int temp_domain_yMin = metersToMfgGrid(domain_rect.yMin() / 1e+6);
-      int temp_domain_xMax = metersToMfgGrid(domain_rect.xMax() / 1e+6);
-      int temp_domain_yMax = metersToMfgGrid(domain_rect.yMax() / 1e+6);
-
-      dbSet<dbRow> rows = block_->getRows();
-      dbSet<dbRow>::iterator first_row = rows.begin();
-      dbSite *site = first_row->getSite();
-      int row_height_ = site->getHeight();
-      int site_width_ = site->getWidth();
-
-      int domain_yMin = temp_domain_yMin - temp_domain_yMin % row_height_;
-      int domain_yMax = temp_domain_yMax - temp_domain_yMax % row_height_;
-      int domain_xMin = temp_domain_xMin - temp_domain_xMin % site_width_;
-      int domain_xMax = temp_domain_xMax - temp_domain_xMax % site_width_;
-
+      string domain_name = string(group->getName());
+      Rect domain_rect = group->getBox();
+      int domain_xMin = domain_rect.xMin();
+      int domain_yMin = domain_rect.yMin();
+      int domain_xMax = domain_rect.xMax();
+      int domain_yMax = domain_rect.yMax();
       dbBox::create(domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
 
-      int row_old_count = 0;
-      for (dbRow* row_count : rows) {
-        row_old_count += 1;
-      }
+      dbSet<dbRow> rows = block_->getRows();
+      int total_row_count = 0;
+      for (dbRow *row: rows) total_row_count++;
+      
+      dbSet<dbRow>::iterator row_itr = rows.begin();
+      for (int row_processed = 0;
+           row_processed < total_row_count;
+           row_processed++) {          
 
-      int row_processed = 0;
-      for (dbRow *row_itr: rows) {
-        row_processed += 1;
-        if (row_processed > row_old_count) {
-          break;
-        }
+        dbRow *row = *row_itr;
+        Rect row_bbox;
+        row->getBBox(row_bbox);
+        int row_xMin = row_bbox.xMin();
+        int row_xMax = row_bbox.xMax();
+        int row_yMin = row_bbox.yMin();
+        int row_yMax = row_bbox.yMax();
 
-        Rect row_rect;
-        row_itr->getBBox(row_rect);
-        int row_xMin = row_rect.xMin();
-        int row_xMax = row_rect.xMax();
-        int row_yMin = row_rect.yMin();
-        int row_yMax = row_rect.yMax();
-
-        string row_name = row_itr->getName();
-        string row_number = row_name.substr(row_name.find("_") + 1);
+        string row_name = row->getName();
         // check if the rows overlapped with the area of a defined voltage domains + margin
-        if (row_yMax + MARGIN * row_height_ <= domain_yMin || row_yMin >= domain_yMax + MARGIN * row_height_) {
+        if (row_yMax + fp_gap_default * site_dy <= domain_yMin || 
+            row_yMin >= domain_yMax + fp_gap_default * site_dy) {
+          row_itr++;
           continue;
         } else {
-          dbOrientType orient = row_itr->getOrient();
-          dbRow::destroy(row_itr);
-
-          int row_1_xMax_sites = (domain_xMin - MARGIN * row_height_) / site_width_;
-          int row_1_xMax = row_1_xMax_sites * site_width_;
+          dbOrientType orient = row->getOrient();
+          row_itr = dbRow::destroy(row_itr);
+          
+          // lcr stands for left core row
+          int lcr_xMax = domain_xMin - fp_gap_default * site_dy;
           // in case there is at least one valid site width on the left, create left core rows 
-          if (row_1_xMax > core_lx + site_width_)
+          if (lcr_xMax > core_lx + site_dx)
           {
-	    // warning message since tap cells might not be inserted
-            if (row_1_xMax < core_lx + 10 * site_width_) {
-              logger_->warn(IFP, 11, "left core row has less than 10 sites");   
+            string lcr_name = row_name + "_1";
+	        // warning message since tap cells might not be inserted
+            if (lcr_xMax < core_lx + 10 * site_dx) {
+              logger_->warn(IFP, 11, "left core row: {} has less than 10 sites", lcr_name);   
             } 
-            string row_1_new_name = "ROW_" + row_number + "_1";
-            int row_1_sites = (row_1_xMax - core_lx) / site_width_;
-            dbRow::create(block_, row_1_new_name.c_str(), site, core_lx, row_yMin, orient, dbRowDir::HORIZONTAL, row_1_sites, site_width_);
+            int lcr_sites = (lcr_xMax - core_lx) / site_dx;
+            dbRow::create(block_, lcr_name.c_str(), site, core_lx, row_yMin, orient, 
+                  	  dbRowDir::HORIZONTAL, lcr_sites, site_dx);
           }
           
-          int row_2_xMin_sites = (domain_xMax + MARGIN * row_height_) / site_width_;
-          int row_2_xMin = row_2_xMin_sites * site_width_;
+          // rcr stands for right core row
+          int rcr_xMin = domain_xMax + fp_gap_default * site_dy;
           // in case there is at least one valid site width on the right, create right core rows 
-          if (row_2_xMin + site_width_ < core_ux)
+          if (rcr_xMin + site_dx < core_ux)
           {  
-            if (row_2_xMin + 10 * site_width_ > core_ux) {
-              logger_->warn(IFP, 12, "right core row has less than 10 sites"); 
+            string rcr_name = row_name + "_2";
+            if (rcr_xMin + 10 * site_dx > core_ux) {
+              logger_->warn(IFP, 12, "right core row: {} has less than 10 sites", rcr_name); 
             }   
-            string row_2_new_name = "ROW_" + row_number + "_2";
-            int row_2_sites = (core_ux - row_2_xMin) / site_width_;
-            dbRow::create(block_, row_2_new_name.c_str(), site, row_2_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, row_2_sites, site_width_);
+            int rcr_sites = (core_ux - rcr_xMin) / site_dx;
+            dbRow::create(block_, rcr_name.c_str(), site, rcr_xMin, row_yMin, orient, 
+                  	  dbRowDir::HORIZONTAL, rcr_sites, site_dx);
           }
 
-          int domain_row_sites = (domain_xMax - domain_xMin) / site_width_;
+          int domain_row_sites = (domain_xMax - domain_xMin) / site_dx;
           // create domain rows if current iterations are not in margin area
           if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
-            string domain_row_name = "ROW_" + domain_name + "_" + row_number;
-            dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, domain_row_sites, site_width_);
+            string domain_row_name = row_name + "_" + domain_name;
+            dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, 
+                  	  dbRowDir::HORIZONTAL, domain_row_sites, site_dx);
           }
         }
       }
@@ -486,101 +440,6 @@ InitFloorplan::findSite(const char *site_name)
       return site;
   }
   return nullptr;
-}
-
-////////////////////////////////////////////////////////////////
-
-void
-InitFloorplan::makeTracks(const char *tracks_file,
-			  Rect &die_area)
-{
-  Vector<Track> tracks = readTracks(tracks_file);
-  dbTech *tech = db_->getTech();
-  for (auto track : tracks) {
-    int pitch = metersToMfgGrid(track.pitch());
-    int offset = metersToMfgGrid(track.offset());
-    char dir = track.dir();
-    string layer_name = track.layer();
-    dbTechLayer *layer = tech->findLayer(layer_name.c_str());
-    if (layer) {
-      dbTrackGrid *grid = block_->findTrackGrid(layer);
-      if (grid == nullptr)
-	grid = dbTrackGrid::create(block_, layer);
-      int width;
-      int track_count;
-      switch (dir) {
-      case 'X':
-	width = die_area.dx();
-	track_count = (width - offset) / pitch + 1;
-	grid->addGridPatternX(die_area.xMin() + offset, track_count, pitch);
-	break;
-      case 'Y':
-	width = die_area.dy();
-	track_count = (width - offset) / pitch + 1;
-	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
-	break;
-      default:
-	logger_->critical(IFP, 3, "unknown track direction");
-      }
-    }
-  }
-}
-
-Vector<Track>
-InitFloorplan::readTracks(const char *tracks_file)
-{
-  Vector<Track> tracks;
-  std::ifstream tracks_stream(tracks_file);
-  if (tracks_stream.is_open()) {
-    int line_count = 1;
-    string line;
-    dbTech *tech = db_->getTech();
-    while (getline(tracks_stream, line)) {
-      StringVector tokens;
-      split(line, " \t", tokens);
-      if (tokens.size() == 4) {
-	string layer_name = tokens[0];
-	dbTechLayer *layer = tech->findLayer(layer_name.c_str());
-	if (layer) {
-	  string dir_str = tokens[1];
-	  char dir = 'X';
-	  if (stringEqual(dir_str.c_str(), "X"))
-	    dir = 'X';
-	  else if (stringEqual(dir_str.c_str(), "Y"))
-	    dir = 'Y';
-	  else
-	    logger_->error(IFP, 4, "track file line {} direction must be X or Y'.",
-                           line_count);
-	  // microns -> meters
-	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
-	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
-	  tracks.push_back(Track(layer_name, dir, offset, pitch));
-	}
-	else
-	  logger_->error(IFP, 5, "layer {} not found.", layer_name);
-      }
-      else
-	logger_->error(IFP, 6,
-                       "track file line {} does not match 'layer X|Y offset pitch'.",
-                       line_count);
-      line_count++;
-    }
-    tracks_stream.close();
-  }
-  else
-    logger_->error(IFP, 10, "Tracks file not readable.");
-  return tracks;
-}
-
-Track::Track(string layer,
-	     char dir,
-	     double offset,
-	     double pitch) :
-  layer_(layer),
-  dir_(dir),
-  offset_(offset),
-  pitch_(pitch)
-{
 }
 
 ////////////////////////////////////////////////////////////////

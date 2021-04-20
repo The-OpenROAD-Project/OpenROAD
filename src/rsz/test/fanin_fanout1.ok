@@ -1,0 +1,23 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: fanin_fanout1.def
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 9 components and 45 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 18 connections.
+[INFO ODB-0133]     Created 10 nets and 22 connections.
+[INFO ODB-0134] Finished DEF file: fanin_fanout1.def
+u1/A
+u1/Z
+u2/A1
+u2/A2
+u2/ZN
+u3/A
+u3/Z
+u4/A
+u4/Z
+u5/A
+u5/Z

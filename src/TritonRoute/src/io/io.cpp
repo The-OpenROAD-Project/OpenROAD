@@ -381,7 +381,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     ndr->getUseVias(vias);
     for (auto via : vias) {
       fnd->addVia(design->getTech()->getVia(via->getName()),
-                  via->getBottomLayer()->getNumber() - 1);
+                  via->getBottomLayer()->getNumber() / 2);
     }
     vector<odb::dbTechViaGenerateRule*> viaRules;
     ndr->getUseViaRules(viaRules);
@@ -1366,6 +1366,8 @@ void io::Parser::addDefaultCutLayer()
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 {
+  if(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
+    return;
   if (readLayerCnt == 0) {
     addDefaultMasterSliceLayer();
     addDefaultCutLayer();
@@ -1646,6 +1648,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 
 void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 {
+  if(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
+    return;
   if (readLayerCnt == 0)
     addDefaultMasterSliceLayer();
 

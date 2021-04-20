@@ -279,7 +279,7 @@ class FlexDR
                     int size,
                     int offset,
                     int mazeEndIter = 1,
-                    frUInt4 workerDRCCost = DRCCOST,
+                    frUInt4 workerDRCCost = ROUTESHAPECOST,
                     frUInt4 workerMarkerCost = MARKERCOST,
                     frUInt4 workerMarkerBloatWidth = 0,
                     frUInt4 workerMarkerBloatDepth = 0,
@@ -374,7 +374,7 @@ class FlexDRWorker
         skipRouting_(false),
         ripupMode_(1),
         fixMode_(0),
-        workerDRCCost_(DRCCOST),
+        workerDRCCost_(ROUTESHAPECOST),
         workerMarkerCost_(MARKERCOST),
         workerMarkerBloatWidth_(0),
         workerMarkerBloatDepth_(0),
@@ -748,10 +748,6 @@ class FlexDRWorker
   void initMazeCost_minCut_helper(drNet* net, bool isAddPathCost);
   void initMazeCost_guide_helper(drNet* net, bool isAdd);
   void initMazeCost_ap_helper(drNet* net, bool isAddPathCost);
-  void initMazeCost_ap_planar_helper(const FlexMazeIdx& mi,
-                                     const frDirEnum& dir,
-                                     frCoord bloatLen,
-                                     bool isAddPathCost);
   void initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
                                          const frDirEnum& dir,
                                          frCoord bloatLen,
@@ -800,6 +796,9 @@ class FlexDRWorker
                                int type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr);
+  void modCornerToCornerSpacing(const frBox& box,
+                               frMIdx z,
+                               int type);
   void modMinSpacingCostVia(const frBox& box,
                             frMIdx z,
                             int type,
@@ -807,6 +806,11 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+
+  void modCornerToCornerSpacing_helper(const frBox& box,
+                               frMIdx z,
+                               int type);
+
   void modMinSpacingCostVia_eol(const frBox& box,
                                 const frBox& tmpBx,
                                 int type,

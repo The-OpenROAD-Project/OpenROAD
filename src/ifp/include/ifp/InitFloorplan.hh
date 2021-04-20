@@ -63,7 +63,6 @@ initFloorplan(double die_lx,
 	      double core_ux,
 	      double core_uy,
 	      const char *site_name,
-	      const char *tracks_file,
 	      dbDatabase *db,
 	      Logger *logger);
 
@@ -75,7 +74,6 @@ initFloorplan(double util,
 	      double core_space_left,
 	      double core_space_right,
 	      const char *site_name,
-	      const char *tracks_file,
 	      dbDatabase *db,
 	      Logger *logger);
 

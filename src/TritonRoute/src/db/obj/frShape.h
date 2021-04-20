@@ -445,6 +445,8 @@ class frPathSeg : public frShape
   }
   frEndStyle getBeginStyle() const { return style_.getBeginStyle(); }
   frEndStyle getEndStyle() const { return style_.getEndStyle(); }
+  frUInt4 getEndExt() const { return style_.getEndExt(); }
+  frUInt4 getBeginExt() const { return style_.getBeginExt(); }
   bool isVertical() const { return begin_.x() == end_.x(); }
   frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }

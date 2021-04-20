@@ -471,9 +471,9 @@ void FlexGridGraph::getPrevGrid(frMIdx& gridX,
 
     if (isForbiddenVia2Via) {
       if (drWorker_ && drWorker_->getDRIter() >= 3) {
-        nextPathCost += ggMarkerCost_ * edgeLength;
+        nextPathCost = INT_MAX / 2;  //+= ggMarkerCost_ * edgeLength;
       } else {
-        nextPathCost += ggDRCCost_ * edgeLength;
+        nextPathCost = INT_MAX / 2;  //+= ggDRCCost_ * edgeLength;
       }
     }
   }
@@ -620,8 +620,8 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
   // get costs
   for (frMIdx x = startX; x <= endX; x++) {
     for (frMIdx y = startY; y <= endY; y++) {
-      cost += (hasShapeCost(x, y, gridZ, dir) ? SHAPECOST * el : 0);
-      cost += (hasDRCCost(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
+      cost += (hasFixedShapeCost(x, y, gridZ, dir) ? FIXEDSHAPECOST * el : 0);
+      cost += (hasRouteShapeCost(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
       cost += (hasMarkerCost(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
       cost += (isBlocked(x, y, gridZ, dir)
                    ? BLOCKCOST * layer->getMinWidth() * 20
@@ -657,8 +657,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
   endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
   startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
   endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-  cost += (hasShapeCost(gridX, gridY, gridZ, dir) ? SHAPECOST * el : 0);
-  cost += (hasDRCCost(gridX, gridY, gridZ, dir) ? ggDRCCost_ * el : 0);
+  cost += (hasFixedShapeCost(gridX, gridY, gridZ, dir) ? FIXEDSHAPECOST * el : 0);
+  cost += (hasRouteShapeCost(gridX, gridY, gridZ, dir) ? ggDRCCost_ * el : 0);
   cost += (hasMarkerCost(gridX, gridY, gridZ, dir) ? ggMarkerCost_ * el : 0);
   cost += (isBlocked(gridX, gridY, gridZ, dir)
                ? BLOCKCOST * layer->getMinWidth() * 20
@@ -692,8 +692,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
   // get costs
   for (frMIdx x = startX; x <= endX; x++) {
     for (frMIdx y = startY; y <= endY; y++) {
-      cost += (hasShapeCost(x, y, gridZ, dir) ? SHAPECOST * el : 0);
-      cost += (hasDRCCost(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
+      cost += (hasFixedShapeCost(x, y, gridZ, dir) ? FIXEDSHAPECOST * el : 0);
+      cost += (hasRouteShapeCost(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
       cost += (hasMarkerCost(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
     }
   }
@@ -707,9 +707,9 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
                                frLayer* layer) const
 {
   bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
-  bool drcCost = hasDRCCost(gridX, gridY, gridZ, dir);
+  bool drcCost = hasRouteShapeCost(gridX, gridY, gridZ, dir);
   bool markerCost = hasMarkerCost(gridX, gridY, gridZ, dir);
-  bool shapeCost = hasShapeCost(gridX, gridY, gridZ, dir);
+  bool shapeCost = hasFixedShapeCost(gridX, gridY, gridZ, dir);
   bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
   bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
   frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
@@ -719,7 +719,7 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
          + (gridCost ? GRIDCOST * edgeLength : 0)
          + (drcCost ? ggDRCCost_ * edgeLength : 0)
          + (markerCost ? ggMarkerCost_ * edgeLength : 0)
-         + (shapeCost ? SHAPECOST * edgeLength : 0)
+         + (shapeCost ? FIXEDSHAPECOST * edgeLength : 0)
          + (blockCost ? BLOCKCOST * layer->getMinWidth() * 20 : 0)
          + (!guideCost ? GUIDECOST * edgeLength : 0);
 }

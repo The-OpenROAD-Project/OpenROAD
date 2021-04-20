@@ -5,7 +5,7 @@ read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 
 read_def on_grid.def
 
-place_pins -hor_layer 4 -ver_layer 3
+place_pins -hor_layer met3 -ver_layer met2
 
 set def_file [make_result_file on_grid.def]
 

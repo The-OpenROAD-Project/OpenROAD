@@ -27,6 +27,9 @@
  */
 
 #include "global.h"
+#include "db/drObj/drFig.h"
+#include "db/drObj/drShape.h"
+#include "db/drObj/drVia.h"
 
 #include <iostream>
 
@@ -93,13 +96,13 @@ float TASHAPEBLOATWIDTH = 1.5;
 frUInt4 VIACOST = 4;
 // new cost used
 frUInt4 GRIDCOST = 2;
-frUInt4 SHAPECOST = 8;
-frUInt4 DRCCOST = 8;
+frUInt4 FIXEDSHAPECOST = 30;
+frUInt4 ROUTESHAPECOST = 8;
 frUInt4 MARKERCOST = 32;
 frUInt4 MARKERBLOATWIDTH = 1;
 frUInt4 BLOCKCOST = 32;
 frUInt4 GUIDECOST = 1;  // disabled change getNextPathCost to enable
-float MARKERDECAY = 0.8;
+float MARKERDECAY = 0.95;
 float SHAPEBLOATWIDTH = 3;
 int MISALIGNMENTCOST = 8;
 
@@ -260,6 +263,34 @@ ostream& operator<<(ostream& os, const frBox& box)
 {
   os << "( " << box.left() << " " << box.bottom() << " ) ( " << box.right()
      << " " << box.top() << " )";
+  return os;
+}
+
+ostream& operator<<(ostream& os, const drConnFig& fig)
+{
+    switch (fig.typeId()) {
+        case drcPathSeg: {
+            auto p = static_cast<const drPathSeg*>(&fig);
+            os << "drPathSeg: begin ("  << p->getBeginX() << " " << p->getBeginY() << " ) end ( " << p->getEndX()
+            << " " << p->getEndY() << " )";
+            break;
+        }
+        case drcVia: {
+            auto p = static_cast<const drVia*>(&fig);
+            os << "drVia: at "  << p->getOrigin() << "\nVIA DEF:\n" << *p->getViaDef();
+            break;
+        }
+        case drcPatchWire: {
+            auto p = static_cast<const drPatchWire*>(&fig);
+            frBox b;
+            p->getBBox(b);
+            os << "drPatchWire: " << b;
+            break;
+        }
+        default:
+            os << "UNKNOWN drConnFig, code " << fig.typeId();
+    }
+  
   return os;
 }
 
