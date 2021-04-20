@@ -161,6 +161,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
   _fastRoute->setAllowOverflow(_allowOverflow);
 
   odb::dbTech* tech = _db->getTech();
+  _block = _db->getChip()->getBlock();
   odb::dbTechLayer* minLayer = tech->findRoutingLayer(minRoutingLayer);
   odb::dbTechLayer* maxLayer = tech->findRoutingLayer(maxRoutingLayer);
   _logger->report("Min routing layer: {}", minLayer->getName());
@@ -174,9 +175,9 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
     }
   }
 
-  initCoreGrid(maxRoutingLayer);
   initRoutingLayers();
   initRoutingTracks(maxRoutingLayer);
+  initCoreGrid(maxRoutingLayer);
   setCapacities(minRoutingLayer, maxRoutingLayer);
   setSpacingsAndMinWidths();
   initNetlist();
@@ -344,7 +345,7 @@ void GlobalRouter::initCoreGrid(int maxRoutingLayer)
 {
   initGrid(maxRoutingLayer);
 
-  computeCapacities(maxRoutingLayer, _layerPitches);
+  computeCapacities(maxRoutingLayer);
   computeSpacingsAndMinWidth(maxRoutingLayer);
   initObstructions();
 
@@ -2149,8 +2150,6 @@ odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect)
 
 void GlobalRouter::initGrid(int maxLayer)
 {
-  _block = _db->getChip()->getBlock();
-
   odb::dbTech* tech = _db->getTech();
 
   odb::dbTechLayer* selectedLayer = tech->findRoutingLayer(selectedMetal);
@@ -2404,15 +2403,9 @@ void GlobalRouter::initRoutingTracks(
   }
 }
 
-void GlobalRouter::computeCapacities(int maxLayer,
-                                     const std::vector<float>& layerPitches)
+void GlobalRouter::computeCapacities(int maxLayer)
 {
-  int trackSpacing;
   int hCapacity, vCapacity;
-  int trackStepX, trackStepY;
-
-  int initTrackX, numTracksX;
-  int initTrackY, numTracksY;
 
   odb::dbTech* tech = _db->getTech();
 
@@ -2423,24 +2416,11 @@ void GlobalRouter::computeCapacities(int maxLayer,
 
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(l);
 
-    odb::dbTrackGrid* track = _block->findTrackGrid(techLayer);
-
-    if (track == nullptr) {
-      _logger->error(GRT, 88, "Track for layer {} not found.", techLayer->getName());
-    }
-
-    track->getGridPatternX(0, initTrackX, numTracksX, trackStepX);
-    track->getGridPatternY(0, initTrackY, numTracksY, trackStepY);
+    RoutingTracks routingTracks = getRoutingTracksByIndex(l);
+    int trackSpacing = routingTracks.getUsePitch();
 
     if (techLayer->getDirection().getValue()
         == odb::dbTechLayerDir::HORIZONTAL) {
-      trackSpacing = trackStepY;
-
-      if (layerPitches[l] != 0) {
-        int layerPitch = (int) (tech->getLefUnits() * layerPitches[l]);
-        trackSpacing = std::max(layerPitch, trackStepY);
-      }
-
       hCapacity = std::floor((float) _grid->getTileWidth() / trackSpacing);
 
       _grid->addHorizontalCapacity(hCapacity, l - 1);
@@ -2451,13 +2431,6 @@ void GlobalRouter::computeCapacities(int maxLayer,
                  hCapacity);
     } else if (techLayer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
-      trackSpacing = trackStepX;
-
-      if (layerPitches[l] != 0) {
-        int layerPitch = (int) (tech->getLefUnits() * layerPitches[l]);
-        trackSpacing = std::max(layerPitch, trackStepX);
-      }
-
       vCapacity = std::floor((float) _grid->getTileWidth() / trackSpacing);
 
       _grid->addHorizontalCapacity(0, l - 1);
