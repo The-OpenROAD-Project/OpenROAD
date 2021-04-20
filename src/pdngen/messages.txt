@@ -46,14 +46,16 @@ PDN 0045 PdnGen.tcl:1753           No pitch information found for $layer_name
 PDN 0046 PdnGen.tcl:4410           Non-rectangular channel area
 PDN 0047 PdnGen.tcl:4363           Channel ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) too narrow. Channel on layer $layer_name must be at least [expr (2.0 * $width + $channel_spacing) / $def_units] wide
 PDN 0048 PdnGen.tcl:2289           Need to define pwr_pads and gnd_pads in config file to use pad_offset option
-PDN 0049 PdnGen.cc:76              Global connections not set up
-PDN 0050 PdnGen.cc:107             Global connections not set up
+PDN 0049 PdnGen.cc:75              Global connections not set up
+PDN 0050 PdnGen.cc:106             Global connections not set up
 PDN 0051 PdnGen.tcl:4309           Infinite loop detected trying to round to grid
 PDN 0052 PdnGen.tcl:1694           Unable to get channel_spacing setting for layer $layer_name
 PDN 0053 PdnGen.i:86               Region not found: {}
 PDN 0054 PdnGen.i:116              Region not found: {}
 PDN 0055 PdnGen.tcl:3394           Cannot find pin $pin_name on inst [$inst getName]
 PDN 0056 PdnGen.tcl:3398           Cannot find master pin $pin_name for cell [[$inst getMaster] getName]
+PDN 0060 PdnGen.cc:136             Unable to add invalid net
+PDN 0061 PdnGen.cc:209             Unable to add invalid net
 PDN 0099 PdnGen.tcl:1601           Via $via_name specified in the grid specification does not exist in this technology
 PDN 0099 PdnGen.tcl:2349           No power/ground pads found on bottom edge
 PDN 0099 PdnGen.tcl:2352           No power/ground pads found on right edge

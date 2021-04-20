@@ -132,6 +132,11 @@ PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<netRe
 
 void
 PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet *net) {
+  if (net == nullptr) {
+    logger_->warn(PDN, 60, "Unable to add invalid net");
+    return;
+  }
+
   std::vector<dbInst*> insts;
   findInstsInArea(block, region, instPattern, insts);
 
@@ -200,6 +205,11 @@ PdnGen::addGlobalConnect(const char* instPattern, const char* pinPattern, dbNet 
 
 void
 PdnGen::addGlobalConnect(dbBox* region, const char* instPattern, const char* pinPattern, dbNet *net) {
+  if (net == nullptr) {
+    logger_->warn(PDN, 61, "Unable to add invalid net");
+    return;
+  }
+
   if (global_connect_ == nullptr) {
     global_connect_ = std::make_unique<regionNetRegexPairs>();
   }
