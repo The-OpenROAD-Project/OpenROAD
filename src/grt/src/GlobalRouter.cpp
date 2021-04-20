@@ -2264,7 +2264,7 @@ std::vector<std::pair<int, int>> getViaDims(std::map<int, odb::dbTechVia*> defau
   std::vector<odb::dbTechVia*> vias;
   if(defaultVias.find(level) != defaultVias.end())
     vias.push_back(defaultVias[level]);
-  if(level != 1 && defaultVias.find(level) != defaultVias.end())
+  if(level != 1 && defaultVias.find(level-1) != defaultVias.end())
     vias.push_back(defaultVias[level-1]);
   
   for(auto via : vias) {
@@ -2303,28 +2303,28 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int maxLayer, co
     if(dims.size() == 0) //no default via found
       continue;
     int layerWidth = layer->getWidth();
-    bool upVia = (dims.size() == 2);
+    bool downVia = (dims.size() == 2);
     int width1, prl1, width2, prl2;
     width1 = dims[0].first;
     prl1 = dims[0].second;
-    if(upVia)
+    if(downVia)
     {
       width2 = dims[1].first;
       prl2 = dims[1].first;
     }
-    int L2V_down = -1;
     int L2V_up = -1;
+    int L2V_down = -1;
     // Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL > SPACING
     if(layer->hasTwoWidthsSpacingRules())
     {
-      L2V_down = (layerWidth / 2) + (width1 / 2) + layer->findTwSpacing(layerWidth, width1, prl1);
-      if(upVia)
-        L2V_up = (layerWidth / 2) + (width2 / 2) + layer->findTwSpacing(layerWidth, width2, prl2);
+      L2V_up = (layerWidth / 2) + (width1 / 2) + layer->findTwSpacing(layerWidth, width1, prl1);
+      if(downVia)
+        L2V_down = (layerWidth / 2) + (width2 / 2) + layer->findTwSpacing(layerWidth, width2, prl2);
     }else if (layer->hasV55SpacingRules())
     {
-      L2V_down = (layerWidth / 2) + (width1 / 2) + layer->findV55Spacing(layerWidth, prl1);
-      if(upVia)
-        L2V_up = (layerWidth / 2) + (width2 / 2) + layer->findV55Spacing(layerWidth, prl2);
+      L2V_up = (layerWidth / 2) + (width1 / 2) + layer->findV55Spacing(layerWidth, prl1);
+      if(downVia)
+        L2V_down = (layerWidth / 2) + (width2 / 2) + layer->findV55Spacing(layerWidth, prl2);
     }else {
       odb::dbSet<odb::dbTechLayerSpacingRule> rules;
       layer->getV54SpacingRules(rules);
@@ -2335,12 +2335,12 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int maxLayer, co
       } else 
       {
         int minSpc = ((odb::dbTechLayerSpacingRule*) *rules.end())->getSpacing();
-        L2V_down = (layerWidth / 2) + (width1 / 2) + minSpc;
-        if(upVia)
-          L2V_up = (layerWidth / 2) + (width2 / 2) + minSpc;
+        L2V_up = (layerWidth / 2) + (width1 / 2) + minSpc;
+        if(downVia)
+          L2V_down = (layerWidth / 2) + (width2 / 2) + minSpc;
       }
     }
-    pitches[level] = {L2V_down, L2V_up};
+    pitches[level] = {L2V_up, L2V_down};
   }
   return pitches;
 }
@@ -2381,16 +2381,16 @@ void GlobalRouter::initRoutingTracks(
     if (techLayer->getDirection().getValue()
         == odb::dbTechLayerDir::HORIZONTAL) {
       trackPitch = trackStepY;
-      line2ViaPitchDown = l2vPitches[layer].first;
-      line2ViaPitchUp = l2vPitches[layer].second;
+      line2ViaPitchUp = l2vPitches[layer].first;
+      line2ViaPitchDown = l2vPitches[layer].second;
       location = initTrackY;
       numTracks = numTracksY;
       orientation = RoutingLayer::HORIZONTAL;
     } else if (techLayer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
       trackPitch = trackStepX;
-      line2ViaPitchDown = l2vPitches[layer].first;
-      line2ViaPitchUp = l2vPitches[layer].second;
+      line2ViaPitchUp = l2vPitches[layer].first;
+      line2ViaPitchDown = l2vPitches[layer].second;
       location = initTrackX;
       numTracks = numTracksX;
       orientation = RoutingLayer::VERTICAL;
