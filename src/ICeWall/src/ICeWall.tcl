@@ -1083,8 +1083,15 @@ namespace eval ICeWall {
       return [get_padcell_signal_name $padcell]
     }
     
-    if {$row % 2 == 1} {
-      return "VDD"
+    set rdl_routing_layer [get_footprint_rdl_layer_name]
+    if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
+      if {$row % 2 == 0} {
+        return "VDD"
+      }
+    } else {
+      if {$col % 2 == 0} {
+        return "VDD"
+      }
     }
     
     return "VSS"
