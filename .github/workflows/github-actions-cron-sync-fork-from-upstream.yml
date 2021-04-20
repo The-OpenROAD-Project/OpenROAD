@@ -22,5 +22,5 @@ jobs:
       - run: git switch master; git status
       - run: git remote add upstream https://github.com/The-OpenROAD-Project/OpenROAD.git
       - run: git fetch upstream master
-      - run: git merge upstream/master --allow-unrelated-histories
+      - run: git merge upstream/master
       - run: git push
