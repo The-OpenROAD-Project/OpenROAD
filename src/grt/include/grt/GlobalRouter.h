@@ -231,6 +231,7 @@ class GlobalRouter
   // main functions
   void initCoreGrid(int maxRoutingLayer);
   void initRoutingLayers();
+  std::vector<std::pair<int, int>> calcLayerPitches(int maxLayer, const std::vector<float>& layerPitches);
   void initRoutingTracks(int maxRoutingLayer);
   void setCapacities(int minRoutingLayer, int maxRoutingLayer);
   void setSpacingsAndMinWidths();

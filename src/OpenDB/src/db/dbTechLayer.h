@@ -87,6 +87,16 @@ struct dbTechLayerFlags
   uint spare_bits_ : 8;
 };
 // User Code Begin Structs
+struct SpacingTableTwRow
+{
+  SpacingTableTwRow(int in1, int in2) : width(in1), prl(in2) {}
+  int width;
+  int prl;
+  bool operator<(const SpacingTableTwRow& b) const
+  {
+    return width < b.width || prl < b.prl;
+  }
+};
 // User Code End Structs
 
 class _dbTechLayer : public _dbObject
@@ -158,6 +168,7 @@ class _dbTechLayer : public _dbObject
   dbMatrix<uint> _v55sp_spacing;
 
   dbVector<uint> _two_widths_sp_idx;
+  dbVector<SpacingTableTwRow> _two_widths_rows_cols;
   dbVector<int> _two_widths_sp_prl;
   dbMatrix<uint> _two_widths_sp_spacing;
 
@@ -176,6 +187,9 @@ class _dbTechLayer : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   // User Code Begin Methods
+  uint getV55RowIdx(const int& rowVal) const;
+  uint getV55ColIdx(const int& colVal) const;
+  uint getTwIdx(const SpacingTableTwRow& val) const;
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);

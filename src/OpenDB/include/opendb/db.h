@@ -6894,6 +6894,9 @@ class dbTechLayer : public dbObject
   bool isRectOnlyExceptNonCorePins() const;
 
   // User Code Begin dbTechLayer
+  int findV55Spacing(const int width, const int prl) const;
+
+  int findTwSpacing(const int width1, const int width2, const int prl) const;
 
   void setLef58Type(LEF58_TYPE type);
 

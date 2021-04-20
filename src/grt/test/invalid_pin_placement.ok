@@ -15,6 +15,7 @@ Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 910
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0017] Found 0 clock nets.
 [ERROR GRT-0093] Pin clk does not have layer assignment.
 GRT-0093

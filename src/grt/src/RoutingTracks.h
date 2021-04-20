@@ -50,7 +50,8 @@ class RoutingTracks
  private:
   int _layerIndex;
   int _trackPitch;
-  int _line2ViaPitch;
+  int _line2ViaPitchUp;
+  int _line2ViaPitchDown;
   int _location;
   int _numTracks;
   bool _orientation;
@@ -59,13 +60,15 @@ class RoutingTracks
   RoutingTracks() = default;
   RoutingTracks(const int layerIndex,
                 const int trackPitch,
-                const int line2ViaPitch,
+                const int line2ViaPitchUp,
+                const int line2ViaPitchDown,
                 const int location,
                 const int numTracks,
                 const bool orientation)
       : _layerIndex(layerIndex),
         _trackPitch(trackPitch),
-        _line2ViaPitch(line2ViaPitch),
+        _line2ViaPitchUp(line2ViaPitchUp),
+        _line2ViaPitchDown(line2ViaPitchDown),
         _location(location),
         _numTracks(numTracks),
         _orientation(orientation)
@@ -74,7 +77,17 @@ class RoutingTracks
 
   int getLayerIndex() const { return _layerIndex; }
   int getTrackPitch() const { return _trackPitch; }
-  int getLine2ViaPitch() const { return _line2ViaPitch; }
+  int getUsePitch() const {
+    if(_line2ViaPitchUp != -1)
+    {
+      if(_line2ViaPitchDown > _trackPitch && _line2ViaPitchUp > _trackPitch)
+        return std::max(_line2ViaPitchUp, _line2ViaPitchDown);
+    }else{
+      if(_line2ViaPitchDown > _trackPitch)
+        return _line2ViaPitchDown;
+    }
+    return _trackPitch;
+  }
   int getLocation() const { return _location; }
   int getNumTracks() const { return _numTracks; }
   bool getOrientation() const { return _orientation; }

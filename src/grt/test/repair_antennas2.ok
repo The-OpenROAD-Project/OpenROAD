@@ -18,6 +18,7 @@ Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 105790
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 25
@@ -93,6 +94,7 @@ Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 17100
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
 [INFO GRT-0018] Processing 13408 blockages on layer li1.
