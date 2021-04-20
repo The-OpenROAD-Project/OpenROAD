@@ -2207,52 +2207,6 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
   }
 }
 
-void FlexDRWorker::initMazeCost_ap_planar_helper(const FlexMazeIdx& mi,
-                                                 const frDirEnum& dir,
-                                                 frCoord bloatLen,
-                                                 bool isAddPathCost)
-{
-  frCoord prevLen = 0;
-  frCoord currLen = 0;
-  frMIdx x = mi.x();
-  frMIdx y = mi.y();
-  frMIdx z = mi.z();
-  while (1) {
-    if (currLen > bloatLen) {
-      break;
-    }
-    if (isAddPathCost) {
-      gridGraph_.addShapeCostPlanar(x, y, z);
-    } else {
-      gridGraph_.subShapeCostPlanar(x, y, z);
-    }
-    switch (dir) {
-      case frDirEnum::W:
-        --x;
-        currLen += gridGraph_.getEdgeLength(x, y, z, frDirEnum::W);
-        break;
-      case frDirEnum::E:
-        ++x;
-        currLen += gridGraph_.getEdgeLength(x, y, z, frDirEnum::E);
-        break;
-      case frDirEnum::S:
-        --y;
-        currLen += gridGraph_.getEdgeLength(x, y, z, frDirEnum::S);
-        break;
-      case frDirEnum::N:
-        ++y;
-        currLen += gridGraph_.getEdgeLength(x, y, z, frDirEnum::N);
-        break;
-      default:;
-    }
-    if (prevLen == currLen) {
-      break;
-    } else {
-      prevLen = currLen;
-    }
-  }
-}
-
 void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
 {
   FlexMazeIdx mi;
