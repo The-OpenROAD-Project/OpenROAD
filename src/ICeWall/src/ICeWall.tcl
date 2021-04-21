@@ -2598,25 +2598,25 @@ namespace eval ICeWall {
         if {[set padcell [get_padcell_at_row_col $row $col]] == ""} {continue}
         if {[is_padcell_unassigned $padcell]} {continue}
 
-        set side [get_side $row $col]
+        set side [get_padcell_side_name $padcell]
 
         switch $side {
-          "b" {
+          "bottom" {
             set orientation "R0"
             set tile_origin [list [expr $actual_tile_offset_x + ($col - 1) * $tile_width] [lindex $die_area 1]]
             set trace_func "path_trace_[expr $num_bumps_y - $row]"
           }
-          "r" {
+          "right" {
             set orientation "R90"
             set tile_origin [list [lindex $die_area 2] [expr $actual_tile_offset_y + ($num_bumps_y - $row) * $tile_width]]
             set trace_func "path_trace_[expr $num_bumps_x - $col]"
           }
-          "t" {
+          "top" {
             set orientation "R180"
             set tile_origin [list [expr $actual_tile_offset_x + $col * $tile_width] [lindex $die_area 3]]
             set trace_func "path_trace_[expr $row - 1]"
           }
-          "l" {
+          "left" {
             set orientation "R270"
             set tile_origin [list [lindex $die_area 0] [expr $actual_tile_offset_y + ($num_bumps_y - $row + 1) * $tile_width]]
             set trace_func "path_trace_[expr $col - 1]"

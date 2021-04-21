@@ -23,6 +23,7 @@ sig2 {type sig cell {origin {x 353.5 y 55}} bump {row 24 col 2}}
 sig3 {type sig cell {origin {x 301.5 y 55}} bump {row 23 col 2}}
 sig4 {type sig cell {origin {x 508.5 y 55}} bump {row 24 col 3}}
 sig5 {type sig cell {origin {x 456.5 y 55}} bump {row 23 col 3}}
+sig250  {type sig cell {origin {x 391.5 y 55}} bump {row 22 col 2}}
 sig6 {type sig cell {origin {x 560.5 y 55}} bump {row 22 col 3}}
 sig7 {type sig cell {origin {x 663.5 y 55}} bump {row 24 col 4}}
 sig8 {type sig cell {origin {x 611.5 y 55}} bump {row 23 col 4}}
@@ -267,7 +268,6 @@ sig246 {type sig cell {origin {x 55 y 804.5}} bump {row 20 col 3}}
 sig247 {type sig cell {origin {x 55 y 753.5}} bump {row 21 col 2}}
 sig248 {type sig cell {origin {x 55 y 701.5}} bump {row 21 col 1}}
 sig249 {type sig cell {origin {x 55 y 649.5}} bump {row 21 col 3}}
-sig250 {type sig cell {origin {x 55 y 598.5}} bump {row 22 col 2}}
 sig251 {type sig cell {origin {x 55 y 546.5}} bump {row 22 col 1}}
 sig252 {type sig cell {origin {x 55 y 391.5}} bump {row 23 col 1}}
   }
