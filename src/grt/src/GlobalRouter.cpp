@@ -3164,6 +3164,11 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(int maxRoutingLayer)
     for (int i = 1; i <= maxRoutingLayer; i++) {
       for (odb::dbTechVia* currVia : vias) {
         if (currVia->getBottomLayer()->getRoutingLevel() == i) {
+          debugPrint(_logger, utl::GRT, "l2v_pitch", 1,
+              "Via for layers {} and {}: {}",
+              currVia->getBottomLayer()->getName(),
+              currVia->getTopLayer()->getName(),
+              currVia->getName());
           defaultVias[i] = currVia;
           break;
         }
