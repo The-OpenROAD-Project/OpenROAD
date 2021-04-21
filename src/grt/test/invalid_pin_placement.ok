@@ -14,16 +14,16 @@ Max routing layer: metal10
 Global adjustment: 0%
 Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0088] Layer metal1  Track-Pitch = 0.14  line-2-Via Pitch: 0.17
-[INFO GRT-0088] Layer metal2  Track-Pitch = 0.19  line-2-Via Pitch: 0.19
-[INFO GRT-0088] Layer metal3  Track-Pitch = 0.14  line-2-Via Pitch: 0.175
-[INFO GRT-0088] Layer metal4  Track-Pitch = 0.28  line-2-Via Pitch: 0.28
-[INFO GRT-0088] Layer metal5  Track-Pitch = 0.28  line-2-Via Pitch: 0.28
-[INFO GRT-0088] Layer metal6  Track-Pitch = 0.28  line-2-Via Pitch: 0.28
-[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8  line-2-Via Pitch: 0.8
-[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8  line-2-Via Pitch: 0.8
-[INFO GRT-0088] Layer metal9  Track-Pitch = 1.600  line-2-Via Pitch: 1.600
-[INFO GRT-0088] Layer metal10 Track-Pitch = 1.600  line-2-Via Pitch: 1.600
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1700
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1900
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1750
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 910
 [INFO GRT-0017] Found 0 clock nets.

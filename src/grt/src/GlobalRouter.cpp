@@ -2445,7 +2445,7 @@ void GlobalRouter::initRoutingTracks(
     RoutingTracks routingTracks = RoutingTracks(
         layer, trackPitch, line2ViaPitchUp, line2ViaPitchDown, location, numTracks, orientation);
     allRoutingTracks.push_back(routingTracks);
-    _logger->info(GRT, 88, "Layer {:7s} Track-Pitch = {:.4}  line-2-Via Pitch: {:.4}",
+    _logger->info(GRT, 88, "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
                   techLayer->getName(),
                   static_cast<float>(dbuToMicrons(routingTracks.getTrackPitch())),
                   static_cast<float>(dbuToMicrons(routingTracks.getUsePitch())));
