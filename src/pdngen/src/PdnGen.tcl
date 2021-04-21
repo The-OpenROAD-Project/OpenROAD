@@ -2936,9 +2936,6 @@ proc export_opendb_power_pin {net_name signal_type} {
       }
 
     }
-    # debug "created $count pins on $net_name (layer:$lay)"
-    # Only promote metal on top layers to be pins
-    # break
   }
 }
 
