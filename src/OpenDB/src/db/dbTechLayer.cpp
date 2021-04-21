@@ -1436,11 +1436,11 @@ void dbTechLayer::initTwoWidths(uint num_widths)
   layer->_two_widths_sp_spacing.resize(num_widths, num_widths);
 }
 
-void dbTechLayer::addTwoWidthsIndexEntry(uint width, int parallel_run_length)
+void dbTechLayer::addTwoWidthsIndexEntry(uint width, int parallel_run_length, bool prlValid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_two_widths_sp_idx.push_back(width);
-  layer->_two_widths_sp_prl.push_back(parallel_run_length);
+  layer->_two_widths_sp_prl.push_back(prlValid ? parallel_run_length : -1);
   layer->_two_widths_rows_cols.push_back(SpacingTableTwRow(width, parallel_run_length));
 }
 
