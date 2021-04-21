@@ -2360,28 +2360,28 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
                  utl::GRT,
                  "l2v_pitch",
                  1,
-                 "routing level {} : layerWidth = {}",
+                 "routing level {} : layerWidth = {:.4f}",
                  layer->getName(),
-                 layerWidth);
+                 static_cast<float>(dbuToMicrons(layerWidth)));
       debugPrint(_logger,
                  utl::GRT,
                  "l2v_pitch",
                  1,
-                 "L2V_up : viaWidth = {} , prl = {} , minSpc = {} , L2V = {} ",
-                 widthUp,
-                 prlUp,
-                 minSpcUp,
-                 L2V_up);
+                 "L2V_up : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} , L2V = {:.4f} ",
+                 static_cast<float>(dbuToMicrons(widthUp)),
+                 static_cast<float>(dbuToMicrons(prlUp)),
+                 static_cast<float>(dbuToMicrons(minSpcUp)),
+                 static_cast<float>(dbuToMicrons(L2V_up)));
       debugPrint(
           _logger,
           utl::GRT,
           "l2v_pitch",
           1,
-          "L2V_down : viaWidth = {} , prl = {} , minSpc = {} , L2V = {} ",
-          widthDown,
-          prlDown,
-          minSpcDown,
-          L2V_down);
+          "L2V_down : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} , L2V = {:.4f} ",
+          static_cast<float>(dbuToMicrons(widthDown)),
+          static_cast<float>(dbuToMicrons(prlDown)),
+          static_cast<float>(dbuToMicrons(minSpcDown)),
+          static_cast<float>(dbuToMicrons(L2V_down)));
     }
     pitches[level] = {L2V_up, L2V_down};
   }
