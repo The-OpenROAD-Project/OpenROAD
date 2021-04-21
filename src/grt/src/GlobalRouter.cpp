@@ -1469,6 +1469,12 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
     lastLayer--;
   }
 
+  odb::dbTech* tech = _db->getTech();
+  odb::dbTechLayer* techLayer = tech->findRoutingLayer(lastLayer + 1);
+  if (techLayer->isRectOnly()) {
+    lastLayer++;
+  }
+
   for (int l = 1; l <= lastLayer; l++) {
     odb::Point pinPos = findFakePinPosition(pins[0], db_net);
     GSegment segment
@@ -1480,6 +1486,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
 void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
 {
   std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
+  odb::dbTech* tech = _db->getTech();
   for (Pin& pin : pins) {
     if (pin.getTopLayer() > 1) {
       // for each pin placed at upper layers, get all segments that
@@ -1543,13 +1550,24 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       }
 
       if (closestLayer > pin.getTopLayer()) {
+        odb::dbTechLayer* techLayer = tech->findRoutingLayer(closestLayer);
+        if (techLayer->isRectOnly()) {
+          closestLayer++;
+        }
+
         for (int l = closestLayer; l > pin.getTopLayer(); l--) {
           GSegment segment = GSegment(
               pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l - 1);
           route.push_back(segment);
         }
       } else if (closestLayer < pin.getTopLayer()) {
-        for (int l = closestLayer; l < pin.getTopLayer(); l++) {
+        odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer());
+        int extraLayer = 0;
+        if (techLayer->isRectOnly()) {
+          extraLayer = 1;
+        }
+
+        for (int l = closestLayer; l < pin.getTopLayer()+extraLayer; l++) {
           GSegment segment = GSegment(
               pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l + 1);
           route.push_back(segment);
