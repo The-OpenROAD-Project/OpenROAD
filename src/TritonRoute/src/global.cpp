@@ -53,6 +53,8 @@ int BATCHSIZETA = 8;
 int MTSAFEDIST = 2000;
 int DRCSAFEDIST = 500;
 int VERBOSE = 1;
+std::string BOTTOM_ROUTING_LAYER_NAME;
+std::string TOP_ROUTING_LAYER_NAME;
 int BOTTOM_ROUTING_LAYER = 2;
 int TOP_ROUTING_LAYER = std::numeric_limits<frLayerNum>::max();
 bool ALLOW_PIN_AS_FEEDTHROUGH = false;
