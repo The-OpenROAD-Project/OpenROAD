@@ -1488,12 +1488,11 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
   std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
   odb::dbTech* tech = _db->getTech();
   for (Pin& pin : pins) {
+    odb::Point pinPos = findFakePinPosition(pin, db_net);
     if (pin.getTopLayer() > 1) {
       // for each pin placed at upper layers, get all segments that
       // potentially covers it
       GRoute coverSegs;
-
-      odb::Point pinPos = findFakePinPosition(pin, db_net);
 
       int wireViaLayer = std::numeric_limits<int>::max();
       for (uint i = 0; i < route.size(); i++) {
@@ -1572,6 +1571,14 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
               pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l + 1);
           route.push_back(segment);
         }
+      }
+    } else {
+      odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer() + 1);
+      if (techLayer->isRectOnly()) {
+        GSegment segment = GSegment(
+            pinPos.x(), pinPos.y(), pin.getTopLayer() + 2,
+            pinPos.x(), pinPos.y(), pin.getTopLayer() + 2);
+        route.push_back(segment);
       }
     }
   }
