@@ -705,7 +705,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
-        int edgeCostForNet = (isClock) ? _clockCost : 1;
+        int edgeCostForNet = computeTrackConsumption(net);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
@@ -724,6 +724,34 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   _logger->info(GRT, 2, "Maximum degree: {}", maxDegree);
 
   _fastRoute->initEdges();
+}
+
+int GlobalRouter::computeTrackConsumption(const Net* net)
+{
+  int trackConsumption = 1;
+  odb::dbNet* db_net = net->getDbNet();
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr != nullptr) {
+    std::vector<odb::dbTechLayerRule*> layer_rules;
+    ndr->getLayerRules(layer_rules);
+
+    for (odb::dbTechLayerRule* layer_rule : layer_rules) {
+      int default_pitch;
+      for (RoutingTracks routingTracks : *_allRoutingTracks) {
+        if (routingTracks.getLayerIndex() == layer_rule->getLayer()->getRoutingLevel()) {
+          default_pitch = routingTracks.getTrackPitch();
+        }
+      }
+      
+      int ndr_spacing = layer_rule->getSpacing();
+      int ndr_width = layer_rule->getWidth();
+      int ndr_pitch = ndr_spacing + ndr_width;
+
+      trackConsumption = std::ceil((float)ndr_pitch/default_pitch);
+    }
+  }
+
+  return trackConsumption;
 }
 
 void GlobalRouter::computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer)

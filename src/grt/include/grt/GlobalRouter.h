@@ -245,6 +245,7 @@ class GlobalRouter
   void computeObstructionsAdjustments();
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
+  int computeTrackConsumption(const Net* net);
 
   // aux functions
   void findPins(Net* net);
