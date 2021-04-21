@@ -56,13 +56,13 @@ HungarianMatching::HungarianMatching(Section& section,
   logger_ = logger;
 }
 
-void HungarianMatching::findAssignment(const std::vector<Constraint>& constraints)
+void HungarianMatching::findAssignment()
 {
-  createMatrix(constraints);
+  createMatrix();
   hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
-void HungarianMatching::createMatrix(const std::vector<Constraint>& constraints)
+void HungarianMatching::createMatrix()
 {
   hungarian_matrix_.resize(non_blocked_slots_);
   int slot_index = 0;
@@ -76,7 +76,7 @@ void HungarianMatching::createMatrix(const std::vector<Constraint>& constraints)
     int idx = 0;
     for (IOPin& io_pin : netlist_.getIOPins()) {
       if (!io_pin.isInGroup()) {
-        int hpwl = netlist_.computeIONetHPWL(idx, newPos, edge_, constraints);
+        int hpwl = netlist_.computeIONetHPWL(idx, newPos);
         hungarian_matrix_[slot_index][pinIndex] = hpwl;
         pinIndex++;
       }
@@ -124,15 +124,15 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   }
 }
 
-void HungarianMatching::findAssignmentForGroups(const std::vector<Constraint>& constraints)
+void HungarianMatching::findAssignmentForGroups()
 {
-  createMatrixForGroups(constraints);
+  createMatrixForGroups();
 
   if (hungarian_matrix_.size() > 0)
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
-void HungarianMatching::createMatrixForGroups(const std::vector<Constraint>& constraints)
+void HungarianMatching::createMatrixForGroups()
 {
   for (std::vector<int>& io_group : netlist_.getIOGroups()) {
     group_size_ = std::max((int)io_group.size(), group_size_);
@@ -172,7 +172,7 @@ void HungarianMatching::createMatrixForGroups(const std::vector<Constraint>& con
         int group_hpwl = 0;
         int pin_count = 0;
         for (int io_idx : io_group) {
-          int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos, edge_, constraints);
+          int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos);
           if (pin_hpwl == hungarian_fail) {
             group_hpwl = hungarian_fail;
             break;
