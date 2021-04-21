@@ -2256,39 +2256,52 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
   }
 }
 
-std::vector<std::pair<int, int>> getViaDims(std::map<int, odb::dbTechVia*> defaultVias,
-                                            int level)
+void getViaDims(
+    std::map<int, odb::dbTechVia*> defaultVias,
+    int level,
+    int &widthUp,
+    int &prlUp,
+    int &widthDown,
+    int &prlDown)
 {
-  std::vector<std::pair<int, int>> result;
-  std::vector<odb::dbTechVia*> vias;
-  if(defaultVias.find(level) != defaultVias.end())
-    vias.push_back(defaultVias[level]);
-  if(level != 1 && defaultVias.find(level-1) != defaultVias.end())
-    vias.push_back(defaultVias[level-1]);
-  
-  for(auto via : vias) {
-    for(auto box : via->getBoxes()) {
-      if(box->getTechLayer()->getRoutingLevel() == level)
-      {
-        result.push_back({std::max(box->getWidth(), box->getLength()), std::min(box->getWidth(), box->getLength())});
+  widthUp = -1;
+  prlUp = -1;
+  widthDown = -1;
+  prlDown = -1;
+  if (defaultVias.find(level) != defaultVias.end())
+  {
+    for (auto box : defaultVias[level]->getBoxes()) {
+      if (box->getTechLayer()->getRoutingLevel() == level) {
+        widthUp = std::max(box->getWidth(), box->getLength());
+        prlUp = std::min(box->getWidth(), box->getLength());
         break;
       }
     }
   }
-  return result;
+  if (defaultVias.find(level - 1) != defaultVias.end())
+  {
+    for (auto box : defaultVias[level-1]->getBoxes()) {
+      if (box->getTechLayer()->getRoutingLevel() == level) {
+        widthDown = std::max(box->getWidth(), box->getLength());
+        prlDown = std::min(box->getWidth(), box->getLength());
+        break;
+      }
+    }
+  }
 }
 
-std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int maxLayer, const std::vector<float>& layerPitches)
+std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
+    int maxLayer,
+    const std::vector<float>& layerPitches)
 {
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxLayer);
   std::vector<std::pair<int, int>> pitches(layerPitches.size());
   odb::dbTech* tech = _db->getTech();
-  for(auto layer : tech->getLayers())
-  {
-    if(layer->getType() != odb::dbTechLayerType::ROUTING)
+  for (auto layer : tech->getLayers()) {
+    if (layer->getType() != odb::dbTechLayerType::ROUTING)
       continue;
     int level = layer->getRoutingLevel();
-    if(level > maxLayer && maxLayer > -1)
+    if (level > maxLayer && maxLayer > -1)
       break;
     if (layerPitches[level] != 0) {
       // pitch is defined by user, skip calculation
@@ -2298,51 +2311,83 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int maxLayer, co
     } else {
       pitches[level] = {-1, -1};
     }
-    auto dims = getViaDims(defaultVias, level);
-    if(dims.size() == 0) //no default via found
-      continue;
+    int widthUp, prlUp, widthDown, prlDown;
+    getViaDims(defaultVias, level, widthUp, prlUp, widthDown, prlDown);
+    bool upViaValid = widthUp != -1;
+    bool downViaValid = widthDown != -1;
+    if(!upViaValid && !downViaValid)
+      continue; //no default vias found
     int layerWidth = layer->getWidth();
-    bool downVia = (dims.size() == 2);
-    int width1, prl1, width2, prl2;
-    width1 = dims[0].first;
-    prl1 = dims[0].second;
-    if(downVia)
-    {
-      width2 = dims[1].first;
-      prl2 = dims[1].first;
-    }
     int L2V_up = -1;
     int L2V_down = -1;
-    // Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL > SPACING
-    if(layer->hasTwoWidthsSpacingRules())
-    {
-      L2V_up = (layerWidth / 2) + (width1 / 2) + layer->findTwSpacing(layerWidth, width1, prl1);
-      if(downVia)
-        L2V_down = (layerWidth / 2) + (width2 / 2) + layer->findTwSpacing(layerWidth, width2, prl2);
-    }else if (layer->hasV55SpacingRules())
-    {
-      L2V_up = (layerWidth / 2) + (width1 / 2) + layer->findV55Spacing(layerWidth, prl1);
-      if(downVia)
-        L2V_down = (layerWidth / 2) + (width2 / 2) + layer->findV55Spacing(layerWidth, prl2);
-    }else {
+    // Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
+    // SPACING
+    bool minSpcValid = false;
+    int minSpcUp = -1;
+    int minSpcDown = -1;
+    if (layer->hasTwoWidthsSpacingRules()) {
+      minSpcValid = true;
+      if (upViaValid)
+        minSpcUp = layer->findTwSpacing(layerWidth, widthUp, prlUp);
+      if (downViaValid)
+        minSpcDown = layer->findTwSpacing(layerWidth, widthDown, prlDown);
+    } else if (layer->hasV55SpacingRules()) {
+      minSpcValid = true;
+      if (upViaValid)
+        minSpcUp = layer->findV55Spacing(std::max(layerWidth, widthUp), prlUp);
+      if (downViaValid)
+        minSpcDown = layer->findV55Spacing(std::max(layerWidth, widthDown), prlDown);
+    } else {
       odb::dbSet<odb::dbTechLayerSpacingRule> rules;
       layer->getV54SpacingRules(rules);
-      if(rules.size() == 0)
-      {
-        L2V_down = -1;
-        L2V_up = -1;
-      } else 
-      {
-        int minSpc = ((odb::dbTechLayerSpacingRule*) *rules.end())->getSpacing();
-        L2V_up = (layerWidth / 2) + (width1 / 2) + minSpc;
-        if(downVia)
-          L2V_down = (layerWidth / 2) + (width2 / 2) + minSpc;
+      if (rules.size() > 0) {
+        minSpcValid = true;
+        int minSpc;
+        for(auto rule : rules)
+          minSpc = rule->getSpacing();
+        if(upViaValid)
+          minSpcUp = minSpc;
+        if(downViaValid)
+          minSpcDown = minSpc;
       }
+    }
+    if (minSpcValid) {
+      if(upViaValid)
+        L2V_up = (layerWidth / 2) + (widthUp / 2) + minSpcUp;
+      if (downViaValid)
+        L2V_down = (layerWidth / 2) + (widthDown / 2) + minSpcDown;
+      debugPrint(_logger,
+                 utl::GRT,
+                 "l2v_pitch",
+                 1,
+                 "routing level {} : layerWidth = {}",
+                 layer->getName(),
+                 layerWidth);
+      debugPrint(_logger,
+                 utl::GRT,
+                 "l2v_pitch",
+                 1,
+                 "L2V_up : viaWidth = {} , prl = {} , minSpc = {} , L2V = {} ",
+                 widthUp,
+                 prlUp,
+                 minSpcUp,
+                 L2V_up);
+      debugPrint(
+          _logger,
+          utl::GRT,
+          "l2v_pitch",
+          1,
+          "L2V_down : viaWidth = {} , prl = {} , minSpc = {} , L2V = {} ",
+          widthDown,
+          prlDown,
+          minSpcDown,
+          L2V_down);
     }
     pitches[level] = {L2V_up, L2V_down};
   }
   return pitches;
 }
+
 
 void GlobalRouter::initRoutingTracks(
     std::vector<RoutingTracks>& allRoutingTracks,

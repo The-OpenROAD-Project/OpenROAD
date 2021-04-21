@@ -78,15 +78,16 @@ class RoutingTracks
   int getLayerIndex() const { return _layerIndex; }
   int getTrackPitch() const { return _trackPitch; }
   int getUsePitch() const {
-    if(_line2ViaPitchDown != -1)
+    if(_line2ViaPitchDown != -1 && _line2ViaPitchUp != -1)
     {
       if(_line2ViaPitchDown > _trackPitch && _line2ViaPitchUp > _trackPitch)
         return std::max(_line2ViaPitchUp, _line2ViaPitchDown);
-    }else{
-      if(_line2ViaPitchUp > _trackPitch)
-        return _line2ViaPitchUp;
+      else
+        return _trackPitch;
+    } else 
+    {
+      return std::max(_trackPitch, std::max(_line2ViaPitchUp, _line2ViaPitchDown));
     }
-    return _trackPitch;
   }
   int getLocation() const { return _location; }
   int getNumTracks() const { return _numTracks; }
