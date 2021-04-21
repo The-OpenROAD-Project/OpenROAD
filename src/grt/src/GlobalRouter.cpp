@@ -94,7 +94,6 @@ void GlobalRouter::init()
   // Clock net routing variables
   _pdRev = 0;
   _alpha = 0.3;
-  _clockCost = 1;
 }
 
 void GlobalRouter::makeComponents()
@@ -736,12 +735,9 @@ int GlobalRouter::computeTrackConsumption(const Net* net)
     ndr->getLayerRules(layer_rules);
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
-      int default_pitch;
-      for (RoutingTracks routingTracks : *_allRoutingTracks) {
-        if (routingTracks.getLayerIndex() == layer_rule->getLayer()->getRoutingLevel()) {
-          default_pitch = routingTracks.getTrackPitch();
-        }
-      }
+      RoutingTracks routingTracks =
+        getRoutingTracksByIndex(layer_rule->getLayer()->getRoutingLevel());
+      int default_pitch = routingTracks.getTrackPitch();
       
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
@@ -1306,11 +1302,6 @@ void GlobalRouter::addAlphaForNet(char* netName, float alpha)
 {
   std::string name(netName);
   _netsAlpha[name] = alpha;
-}
-
-void GlobalRouter::setClockCost(int cost)
-{
-  _clockCost = cost;
 }
 
 void GlobalRouter::setVerbose(const int v)
