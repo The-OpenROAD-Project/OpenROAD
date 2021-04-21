@@ -15,9 +15,33 @@ Min routing layer: met1
 Max routing layer: met5
 Global adjustment: 0%
 Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[DEBUG GRT-0001] routing level li1 : layerWidth = 0.1700
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.1700 , prl = 0.1700 , minSpc = 0.1700 , L2V = 0.3400 
+[DEBUG GRT-0001] L2V_down : viaWidth = -0.0010 , prl = -0.0010 , minSpc = -0.0010 , L2V = -0.0010 
+[DEBUG GRT-0001] routing level met1 : layerWidth = 0.1400
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.3200 , prl = 0.2600 , minSpc = 0.1400 , L2V = 0.3700 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.2900 , prl = 0.2300 , minSpc = 0.1400 , L2V = 0.3550 
+[DEBUG GRT-0001] routing level met2 : layerWidth = 0.1400
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.3700 , prl = 0.2800 , minSpc = 0.1400 , L2V = 0.3950 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.3200 , prl = 0.2600 , minSpc = 0.1400 , L2V = 0.3700 
+[DEBUG GRT-0001] routing level met3 : layerWidth = 0.3000
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.3800 , prl = 0.3200 , minSpc = 0.3000 , L2V = 0.6400 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.3300 , prl = 0.3300 , minSpc = 0.3000 , L2V = 0.6150 
+[DEBUG GRT-0001] routing level met4 : layerWidth = 0.3000
+[DEBUG GRT-0001] L2V_up : viaWidth = 1.1800 , prl = 1.1800 , minSpc = 0.3000 , L2V = 1.0400 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.3300 , prl = 0.3300 , minSpc = 0.3000 , L2V = 0.6150 
+[DEBUG GRT-0001] routing level met5 : layerWidth = 1.6000
+[DEBUG GRT-0001] L2V_up : viaWidth = -0.0010 , prl = -0.0010 , minSpc = -0.0010 , L2V = -0.0010 
+[DEBUG GRT-0001] L2V_down : viaWidth = 1.4200 , prl = 1.4200 , minSpc = 1.6000 , L2V = 3.1100 
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.4600
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3700
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.4600
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6800
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 0.9200
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.4000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 349
-[WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0017] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
@@ -26,7 +50,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 977
-[INFO GRT-0157] Total Capacity: 277241
+[INFO GRT-0157] Total Capacity: 267301
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
@@ -59,9 +83,33 @@ Min routing layer: met1
 Max routing layer: met5
 Global adjustment: 0%
 Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[DEBUG GRT-0001] routing level li1 : layerWidth = 0.1700
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.1700 , prl = 0.1700 , minSpc = 0.1700 , L2V = 0.3400 
+[DEBUG GRT-0001] L2V_down : viaWidth = -0.0010 , prl = -0.0010 , minSpc = -0.0010 , L2V = -0.0010 
+[DEBUG GRT-0001] routing level met1 : layerWidth = 0.1400
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.3200 , prl = 0.2600 , minSpc = 0.1400 , L2V = 0.3700 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.2900 , prl = 0.2300 , minSpc = 0.1400 , L2V = 0.3550 
+[DEBUG GRT-0001] routing level met2 : layerWidth = 0.1400
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.3700 , prl = 0.2800 , minSpc = 0.1400 , L2V = 0.3950 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.3200 , prl = 0.2600 , minSpc = 0.1400 , L2V = 0.3700 
+[DEBUG GRT-0001] routing level met3 : layerWidth = 0.3000
+[DEBUG GRT-0001] L2V_up : viaWidth = 0.3800 , prl = 0.3200 , minSpc = 0.3000 , L2V = 0.6400 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.3300 , prl = 0.3300 , minSpc = 0.3000 , L2V = 0.6150 
+[DEBUG GRT-0001] routing level met4 : layerWidth = 0.3000
+[DEBUG GRT-0001] L2V_up : viaWidth = 1.1800 , prl = 1.1800 , minSpc = 0.3000 , L2V = 1.0400 
+[DEBUG GRT-0001] L2V_down : viaWidth = 0.3300 , prl = 0.3300 , minSpc = 0.3000 , L2V = 0.6150 
+[DEBUG GRT-0001] routing level met5 : layerWidth = 1.6000
+[DEBUG GRT-0001] L2V_up : viaWidth = -0.0010 , prl = -0.0010 , minSpc = -0.0010 , L2V = -0.0010 
+[DEBUG GRT-0001] L2V_down : viaWidth = 1.4200 , prl = 1.4200 , minSpc = 1.6000 , L2V = 3.1100 
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.4600
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3700
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.4600
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6800
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 0.9200
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.4000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 364
-[WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0017] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
@@ -70,7 +118,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 978
-[INFO GRT-0157] Total Capacity: 277239
+[INFO GRT-0157] Total Capacity: 267299
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
