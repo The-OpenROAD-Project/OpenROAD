@@ -37,7 +37,7 @@
 
 #include "rsz/SteinerTree.hh"
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "gui/gui.h"
 #include "utl/Logger.h"
 

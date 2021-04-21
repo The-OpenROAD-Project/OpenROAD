@@ -35,7 +35,7 @@
 
 %{
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
  
 %}

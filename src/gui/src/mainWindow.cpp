@@ -44,7 +44,7 @@
 
 #include "displayControls.h"
 #include "layoutViewer.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"

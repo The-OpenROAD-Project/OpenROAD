@@ -1,6 +1,6 @@
 %include "../../Exception.i"
 %{
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
 
 namespace ord {

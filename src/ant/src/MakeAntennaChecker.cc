@@ -29,19 +29,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "antennachecker/MakeAntennaChecker.hh"
+#include "ant/MakeAntennaChecker.hh"
 
-#include "antennachecker/AntennaChecker.hh"
-#include "openroad/OpenRoad.hh"
+#include "ant/AntennaChecker.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* antennachecker_tcl_inits[];
+extern const char* ant_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Antennachecker_Init(Tcl_Interp* interp);
+extern int Ant_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -60,8 +60,8 @@ void initAntennaChecker(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
 
-  Antennachecker_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::antennachecker_tcl_inits);
+  Ant_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::ant_tcl_inits);
   openroad->getAntennaChecker()->init(openroad->getDb(),
                                       openroad->getLogger());
 }

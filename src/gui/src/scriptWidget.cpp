@@ -42,7 +42,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 #include "utl/Logger.h"

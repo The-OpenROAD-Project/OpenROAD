@@ -60,7 +60,7 @@ target_link_libraries(FastRoute4.1
   PRIVATE
     utl
     pdrev
-    flute
+    sst
     opendb
     Boost::boost
 )

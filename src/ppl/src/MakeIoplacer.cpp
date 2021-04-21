@@ -36,7 +36,7 @@
 #include "Parameters.h"
 #include "ppl/IOPlacer.h"
 #include "ppl/MakeIoplacer.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {

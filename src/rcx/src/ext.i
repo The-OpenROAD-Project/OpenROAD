@@ -33,7 +33,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "OpenRCX/ext.h"
 
 namespace ord {

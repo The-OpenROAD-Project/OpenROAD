@@ -1,7 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, OpenRoad Project UCSD
+// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,29 +28,67 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////
 
-#include "OpenRCX/MakeOpenRCX.h"
+%{
 
-#include "OpenRCX/ext.h"
-#include "openroad/OpenRoad.hh"
+#include "ant/AntennaChecker.hh"
+#include "ord/OpenRoad.hh"
+
+ant::AntennaChecker *
+getAntennaChecker()
+{
+  return ord::OpenRoad::openRoad()->getAntennaChecker();
+}
 
 namespace ord {
-
-rcx::Ext* makeOpenRCX()
-{
-  return new rcx::Ext();
+// Defined in OpenRoad.i
+odb::dbDatabase *getDb();
 }
 
-void deleteOpenRCX(rcx::Ext* extractor)
+%}
+
+%inline %{
+
+namespace ant {
+
+void
+check_antennas(char* report_filename, bool simple_report)
 {
-  delete extractor;
+  getAntennaChecker()->check_antennas(report_filename, simple_report);
 }
 
-void initOpenRCX(OpenRoad* openroad)
+void
+check_max_length(const char *net_name,
+                 int layer)
 {
-  openroad->getOpenRCX()->init(
-      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
+  AntennaChecker *checker = getAntennaChecker();
+  checker->check_max_length(net_name, layer);
 }
 
-}  // namespace ord
+void
+load_antenna_rules()
+{
+  getAntennaChecker()->load_antenna_rules();
+}
+
+bool
+check_net_violation(char* net_name)
+{ 
+  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
+  if (net) {
+    auto vios = getAntennaChecker()->get_net_antenna_violations(net);
+    return !vios.empty();
+  }
+  else
+    return false;
+}
+
+void
+find_max_wire_length()
+{
+  getAntennaChecker()->find_max_wire_length();
+}
+
+}
+
+%} // inline
