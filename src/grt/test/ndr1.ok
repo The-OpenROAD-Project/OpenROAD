@@ -31,7 +31,7 @@ Grid origin: (0, 0)
 Routing clock nets...
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 99
+[INFO GRT-0156] Total Usage   : 66
 [INFO GRT-0157] Total Capacity: 12210
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
@@ -40,9 +40,9 @@ Routing clock nets...
 [INFO GRT-0162] V   Overflow  : 0
 [INFO GRT-0163] Final Overflow: 0
 
-[INFO GRT-0110] Final usage: 99
-[INFO GRT-0111] Final number of vias: 29
-[INFO GRT-0112] Final usage 3D: 186
+[INFO GRT-0110] Final usage: 66
+[INFO GRT-0111] Final number of vias: 27
+[INFO GRT-0112] Final usage 3D: 147
 [INFO GRT-0010] Routed clock nets: 2
 Min routing layer: met1
 Max routing layer: met5
@@ -61,18 +61,18 @@ Grid origin: (0, 0)
 [INFO GRT-0025] Reducing resources of layer met5 by 50%.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 303
-[INFO GRT-0157] Total Capacity: 24016
+[INFO GRT-0156] Total Usage   : 213
+[INFO GRT-0157] Total Capacity: 24049
 [INFO GRT-0158] Max H Overflow: 1
-[INFO GRT-0159] Max V Overflow: 1
+[INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 1
-[INFO GRT-0161] H   Overflow  : 3
-[INFO GRT-0162] V   Overflow  : 1
-[INFO GRT-0163] Final Overflow: 4
+[INFO GRT-0161] H   Overflow  : 2
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 2
 
-[INFO GRT-0110] Final usage: 303
-[INFO GRT-0111] Final number of vias: 122
-[INFO GRT-0112] Final usage 3D: 669
+[INFO GRT-0110] Final usage: 213
+[INFO GRT-0111] Final number of vias: 120
+[INFO GRT-0112] Final usage 3D: 573
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0018] Total wirelength: 1699 um
 [INFO GRT-0014] Num routed nets: 15
