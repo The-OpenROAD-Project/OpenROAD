@@ -34,7 +34,7 @@ Footprint library {
   }
 
   rdl {
-    layer_name metal10
+    layer_name metal9
     width 7.5
     spacing 10.0
   }

@@ -2060,7 +2060,9 @@ namespace eval ICeWall {
 
     set pin [odb::dbBPin_create $term]
     set layer [$tech findLayer [get_footprint_pad_pin_layer]]
-
+    if {$layer == "NULL"} {
+      utl::error PAD 99 "Layer [get_footprint_pad_pin_layer] not defined in tehcnology"
+    }
     set x [dict get $centre x]
     set y [dict get $centre y]
 
@@ -2322,11 +2324,11 @@ namespace eval ICeWall {
   proc get_library_rdl_layer_name {} {
     variable library
     
-    if {![dict exists $library rdl_layer_name]} {
+    if {![dict exists $library rdl layer_name]} {
       dict set library rdl_layer_name [lindex $pdngen::metal_layers end]
     }
     
-    return [dict get $library rdl_layer_name]
+    return [dict get $library rdl layer_name]
   }
   
   proc get_footprint_pads_per_pitch {} {
@@ -2715,6 +2717,7 @@ namespace eval ICeWall {
   proc add_power_ground_rdl_straps {} {
     variable num_bumps_x
     variable num_bumps_y
+    variable def_units
 
     set rdl_routing_layer [get_footprint_rdl_layer_name]
     set rdl_stripe_width [get_footprint_rdl_width]
@@ -2730,11 +2733,12 @@ namespace eval ICeWall {
     
     # Add stripes for bumps in the central core area
     if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
-      set point [get_bump_centre [expr $corner_size + 1] 1]
+      set point [get_bump_centre 1 [expr $corner_size + 1]]
       set minX [expr [dict get $point x] - $bump_pitch / 2]
-      set point [get_bump_centre [expr $num_bumps_x - $corner_size] 1]
+      set point [get_bump_centre 1 [expr $num_bumps_x - $corner_size]]
       set maxX [expr [dict get $point x] + $bump_pitch / 2]
 
+      # debug "minX: [expr 1.0 * $minX / $def_units], maxX: [expr 1.0 * $maxX / $def_units]"
       for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
         if {$row % 2 == 0} {
           set tag "POWER"
@@ -2755,11 +2759,13 @@ namespace eval ICeWall {
         }
       }
     } elseif {[pdngen::get_dir $rdl_routing_layer] == "ver"} {
-      set point [get_bump_centre 1 [expr $corner_size + 1]]
-      set minY [expr [dict get $point x] - $bump_pitch / 2]
-      set point [get_bump_centre 1 [expr $num_bumps_y - $corner_size]]
-      set maxY [expr [dict get $point x] + $bump_pitch / 2]
+      # Columns numbered top to bottom, so maxY is for corner_size +1
+      set point [get_bump_centre [expr $corner_size + 1] 1]
+      set maxY [expr [dict get $point y] + $bump_pitch / 2]
+      set point [get_bump_centre [expr $num_bumps_y - $corner_size] 1]
+      set minY [expr [dict get $point y] - $bump_pitch / 2]
 
+      # debug "minY: [expr 1.0 * $minY / $def_units], maxY: [expr 1.0 * $maxY / $def_units]"
       for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
         if {$col % 2 == 0} {
           set tag "POWER"
