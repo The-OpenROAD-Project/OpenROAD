@@ -2273,8 +2273,8 @@ void getViaDims(
   {
     for (auto box : defaultVias[level]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == level) {
-        widthUp = std::max(box->getWidth(), box->getLength());
-        prlUp = std::min(box->getWidth(), box->getLength());
+        widthUp = std::min(box->getWidth(), box->getLength());
+        prlUp = std::max(box->getWidth(), box->getLength());
         break;
       }
     }
@@ -2283,8 +2283,8 @@ void getViaDims(
   {
     for (auto box : defaultVias[level-1]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == level) {
-        widthDown = std::max(box->getWidth(), box->getLength());
-        prlDown = std::min(box->getWidth(), box->getLength());
+        widthDown = std::min(box->getWidth(), box->getLength());
+        prlDown = std::max(box->getWidth(), box->getLength());
         break;
       }
     }
