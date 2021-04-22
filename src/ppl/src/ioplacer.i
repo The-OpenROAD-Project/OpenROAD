@@ -146,6 +146,14 @@ void add_direction_constraint(Direction direction, Edge edge,
 }
 
 void
+add_top_layer_constraint(PinList *pin_list,
+                         int x1, int y1,
+                         int x2, int y2)
+{
+  getIOPlacer()->addTopLayerConstraint(pin_list, x1, y1, x2, y2);
+}
+
+void
 set_hor_length(float length)
 {
   getIOPlacer()->getParameters()->setHorizontalLength(length);
@@ -239,6 +247,13 @@ void
 set_min_distance(int minDist)
 {
   getIOPlacer()->getParameters()->setMinDistance(minDist);
+}
+
+void
+create_pin_shape_pattern(int layer, int x_step, int y_step,
+                         int x_ori, int y_ori, int width, int height)
+{
+  getIOPlacer()->addCustomPattern(layer, x_step, y_step, x_ori, y_ori, width, height);
 }
 
 void
