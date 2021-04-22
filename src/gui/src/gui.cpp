@@ -46,7 +46,7 @@
 #include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace gui {
 

@@ -57,7 +57,7 @@
 
 #include "opendb/db.h"
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 #include "gui/gui.h"

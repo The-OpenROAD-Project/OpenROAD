@@ -36,7 +36,7 @@
 
 %{
 #include "grt/GlobalRouter.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 
 namespace ord {

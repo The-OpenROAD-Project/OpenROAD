@@ -80,7 +80,7 @@ target_link_libraries(replace
     gui
     opendb
     OpenSTA
-    flute
+    sst
     rsz
     grt
 )

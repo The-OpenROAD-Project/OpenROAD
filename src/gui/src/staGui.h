@@ -127,7 +127,7 @@ struct TimingPathNode
   {
   }
 
-  std::string getNodeName() const;
+  std::string getNodeName(bool include_master = false) const;
   std::string getNetName() const;
 
   odb::dbObject* pin_;

@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 #include <iostream>
 #ifdef ENABLE_PYTHON3
@@ -60,8 +60,8 @@
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbNetwork.hh"
 
-#include "openroad/InitOpenRoad.hh"
-#include "flute3/flute.h"
+#include "ord/InitOpenRoad.hh"
+#include "sst/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"
 #include "ppl/MakeIoplacer.h"
@@ -77,7 +77,7 @@
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "psm/MakePDNSim.hh"
-#include "antennachecker/MakeAntennaChecker.hh"
+#include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 

@@ -104,7 +104,8 @@ class IOPin
         upper_bound_(upper_bound),
         location_type_(location_type),
         layer_(-1),
-        in_group(false)
+        in_group(false),
+        assigned_to_section_(false)
   {
   }
 
@@ -137,6 +138,8 @@ class IOPin
   int getLayer() const { return layer_; }
   bool isInGroup() const { return in_group; }
   void inGroup() { in_group = true; }
+  void assignToSection() { assigned_to_section_ = true; }
+  bool isAssignedToSection() { return assigned_to_section_; }
 
  private:
   odb::dbBTerm* bterm_;
@@ -148,6 +151,7 @@ class IOPin
   std::string location_type_;
   int layer_;
   bool in_group;
+  bool assigned_to_section_;
 };
 
 class Netlist
@@ -165,6 +169,7 @@ class Netlist
   int numIOGroups() { return io_groups_.size(); }
   std::vector<IOPin>& getIOPins() { return io_pins_; }
   IOPin& getIoPin(int idx) { return io_pins_[idx]; }
+  int getIoPinIdx(odb::dbBTerm* bterm) { return _db_pin_idx_map[bterm]; }
   void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int, odb::Point);
@@ -180,17 +185,6 @@ class Netlist
   std::vector<IOPin> io_pins_;
   std::vector<std::vector<int>> io_groups_;
   std::map<odb::dbBTerm*, int> _db_pin_idx_map;
-
-  bool checkSlotForPin(const IOPin& pin,
-                       Edge edge,
-                       const odb::Point& point,
-                       const std::vector<Constraint>& constraints) const;
-  bool checkSectionForPin(const IOPin& pin,
-                          const Section& section,
-                          const std::vector<Constraint>& constraints,
-                          const std::vector<Slot>& slots,
-                          int& available_slots) const;
-  bool checkInterval(Constraint constraint, Edge edge, int pos) const;
 };
 
 }  // namespace ppl

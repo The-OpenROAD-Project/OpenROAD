@@ -35,7 +35,7 @@
 
 %{
 #include "PartitionMgr.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include <algorithm>
 #include <iterator>
 #include <sstream>
