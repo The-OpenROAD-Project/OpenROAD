@@ -80,6 +80,7 @@
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
+#include "pdn/MakePdnGen.hh"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -134,6 +135,7 @@ OpenRoad::OpenRoad()
     replace_(nullptr),
     pdnsim_(nullptr), 
     partitionMgr_(nullptr),
+    pdngen_(nullptr),
     threads_(1)
 {
   db_ = dbDatabase::create();
@@ -157,6 +159,7 @@ OpenRoad::~OpenRoad()
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
+  deletePdnGen(pdngen_);
   stt::deleteLUT();
   delete logger_;
 }
@@ -215,6 +218,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
+  pdngen_ = makePdnGen();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -242,6 +246,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initPDNSim(this);
   initAntennaChecker(this);
   initPartitionMgr(this);
+  initPdnGen(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
