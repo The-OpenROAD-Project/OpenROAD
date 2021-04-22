@@ -621,7 +621,7 @@ PINS 35 ;
         + PLACED ( 145590 146637 ) N ;
 END PINS
 SPECIALNETS 3 ;
-    - VDD ( temp_analog_1.a_lc_0 VPWR ) ( temp_analog_1.a_lc_0 VPB ) ( temp_analog_1.a_header_6 VPWR ) ( temp_analog_1.a_header_5 VPWR ) ( temp_analog_1.a_header_4 VPWR ) ( temp_analog_1.a_header_3 VPWR ) ( temp_analog_1.a_header_2 VPWR )
+    - VDD ( temp_analog_1.a_lc_0 VPB ) ( temp_analog_1.a_lc_0 VPWR ) ( temp_analog_1.a_header_6 VPWR ) ( temp_analog_1.a_header_5 VPWR ) ( temp_analog_1.a_header_4 VPWR ) ( temp_analog_1.a_header_3 VPWR ) ( temp_analog_1.a_header_2 VPWR )
       ( temp_analog_1.a_header_1 VPWR ) ( temp_analog_1.a_header_0 VPWR ) ( _211_ VPWR ) ( _210_ VPWR ) ( _209_ VPWR ) ( _208_ VPWR ) ( _207_ VPWR ) ( _206_ VPWR )
       ( _205_ VPWR ) ( _204_ VPWR ) ( _203_ VPWR ) ( _202_ VPWR ) ( _201_ VPWR ) ( _200_ VPWR ) ( _199_ VPWR ) ( _198_ VPWR )
       ( _197_ VPWR ) ( _196_ VPWR ) ( _195_ VPWR ) ( _194_ VPWR ) ( _193_ VPWR ) ( _192_ VPWR ) ( _191_ VPWR ) ( _190_ VPWR )
@@ -988,11 +988,11 @@ SPECIALNETS 3 ;
       NEW met1 480 + SHAPE FOLLOWPIN ( 75900 27200 ) ( 151080 27200 )
       NEW met1 480 + SHAPE FOLLOWPIN ( 75900 21760 ) ( 151080 21760 )
       NEW met1 480 + SHAPE FOLLOWPIN ( 75900 16320 ) ( 151080 16320 ) ;
-    - VIN ( temp_analog_0.a_nand_0 VPWR ) ( temp_analog_0.a_inv_m3 VPWR ) ( temp_analog_0.a_inv_m2 VPWR ) ( temp_analog_0.a_inv_m1 VPWR ) ( temp_analog_0.a_inv_5 VPWR ) ( temp_analog_0.a_inv_4 VPWR ) ( temp_analog_0.a_inv_3 VPWR )
-      ( temp_analog_0.a_inv_2 VPWR ) ( temp_analog_0.a_inv_1 VPWR ) ( temp_analog_0.a_inv_0 VPWR ) ( PHY_99 VPWR ) ( PHY_98 VPWR ) ( PHY_97 VPWR ) ( PHY_96 VPWR ) ( PHY_95 VPWR )
-      ( PHY_94 VPWR ) ( PHY_93 VPWR ) ( PHY_92 VPWR ) ( PHY_91 VPWR ) ( PHY_90 VPWR ) ( PHY_89 VPWR ) ( PHY_88 VPWR ) ( PHY_87 VPWR )
-      ( PHY_86 VPWR ) ( PHY_85 VPWR ) ( PHY_84 VPWR ) ( PHY_238 VPWR ) ( PHY_237 VPWR ) ( PHY_236 VPWR ) ( PHY_235 VPWR ) ( PHY_234 VPWR )
-      ( PHY_103 VPWR ) ( PHY_102 VPWR ) ( PHY_101 VPWR ) ( PHY_100 VPWR ) + USE POWER
+    - VIN ( PHY_99 VPWR ) ( PHY_98 VPWR ) ( PHY_97 VPWR ) ( PHY_96 VPWR ) ( PHY_95 VPWR ) ( PHY_94 VPWR ) ( PHY_93 VPWR )
+      ( PHY_92 VPWR ) ( PHY_91 VPWR ) ( PHY_90 VPWR ) ( PHY_89 VPWR ) ( PHY_88 VPWR ) ( PHY_87 VPWR ) ( PHY_86 VPWR ) ( PHY_85 VPWR )
+      ( PHY_84 VPWR ) ( PHY_238 VPWR ) ( PHY_237 VPWR ) ( PHY_236 VPWR ) ( PHY_235 VPWR ) ( PHY_234 VPWR ) ( PHY_103 VPWR ) ( PHY_102 VPWR )
+      ( PHY_101 VPWR ) ( PHY_100 VPWR ) ( temp_analog_0.a_nand_0 VPWR ) ( temp_analog_0.a_inv_m3 VPWR ) ( temp_analog_0.a_inv_m2 VPWR ) ( temp_analog_0.a_inv_m1 VPWR ) ( temp_analog_0.a_inv_5 VPWR ) ( temp_analog_0.a_inv_4 VPWR )
+      ( temp_analog_0.a_inv_3 VPWR ) ( temp_analog_0.a_inv_2 VPWR ) ( temp_analog_0.a_inv_1 VPWR ) ( temp_analog_0.a_inv_0 VPWR ) + USE POWER
       + ROUTED met4 0 + SHAPE STRIPE ( 64300 64340 ) via4_5000x5000
       NEW met4 0 + SHAPE STRIPE ( 47150 64340 ) via4_1600x5000
       NEW met4 0 + SHAPE STRIPE ( 29080 64340 ) via4_5000x5000

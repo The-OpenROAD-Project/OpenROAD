@@ -21,7 +21,6 @@ set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/sta)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
-set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
 
 set(OPENROAD_SOURCE
@@ -80,7 +79,6 @@ swig_lib(NAME      openroad_swig
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    ${ICEWALL_HOME}/src/ICeWall.tcl
-                   ${PDNGEN_HOME}/src/PdnGen.tcl
                    ${OPENDB_HOME}/src/db/OpenDB.tcl
 )
 
@@ -137,6 +135,7 @@ add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
 add_subdirectory(pdrev)
+add_subdirectory(pdngen)
 
 ################################################################
 
@@ -184,6 +183,7 @@ target_link_libraries(openroad
   ant
   PartitionMgr
   utl
+  pdn
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
