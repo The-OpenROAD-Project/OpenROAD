@@ -737,13 +737,16 @@ int GlobalRouter::computeTrackConsumption(const Net* net)
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       RoutingTracks routingTracks =
         getRoutingTracksByIndex(layer_rule->getLayer()->getRoutingLevel());
+      int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routingTracks.getTrackPitch();
       
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = ndr_spacing + ndr_width;
+      int ndr_pitch = 2 * (std::ceil(ndr_width/2 + ndr_spacing + default_width/2 - default_pitch));
 
-      trackConsumption = std::ceil((float)ndr_pitch/default_pitch);
+      int consumption = std::ceil((float)ndr_pitch/default_pitch);
+
+      trackConsumption = std::max(trackConsumption, consumption);
     }
   }
 
