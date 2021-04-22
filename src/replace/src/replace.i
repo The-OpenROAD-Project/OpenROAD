@@ -1,5 +1,5 @@
 %{
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "replace/Replace.h"
 
 namespace ord {

@@ -31,7 +31,7 @@
 
 include("openroad")
 
-project(flute)
+project(flue)
 
 set(FLUTE_HOME ${PROJECT_SOURCE_DIR})
 
@@ -50,13 +50,13 @@ add_custom_command(OUTPUT ${POST9_CPP}
   DEPENDS ${POST9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
   )
 
-add_library(flute
+add_library(sst
   flute.cpp
   ${POWV9_CPP}
   ${POST9_CPP}
 )
 
-target_include_directories(flute
+target_include_directories(sst
   PUBLIC
     .
 )
