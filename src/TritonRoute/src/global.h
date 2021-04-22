@@ -35,6 +35,7 @@
 
 #include "db/obj/frBlock.h"
 #include "frDesign.h"
+#include "db/drObj/drFig.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -52,6 +53,8 @@ extern int BATCHSIZETA;
 extern int MTSAFEDIST;
 extern int DRCSAFEDIST;
 extern int VERBOSE;
+extern std::string BOTTOM_ROUTING_LAYER_NAME;
+extern std::string TOP_ROUTING_LAYER_NAME;
 extern int BOTTOM_ROUTING_LAYER;
 extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;
@@ -93,8 +96,8 @@ extern float TASHAPEBLOATWIDTH;
 extern fr::frUInt4 VIACOST;
 
 extern fr::frUInt4 GRIDCOST;
-extern fr::frUInt4 SHAPECOST;
-extern fr::frUInt4 DRCCOST;
+extern fr::frUInt4 FIXEDSHAPECOST;
+extern fr::frUInt4 ROUTESHAPECOST;
 extern fr::frUInt4 MARKERCOST;
 extern fr::frUInt4 MARKERBLOATWIDTH;
 extern fr::frUInt4 BLOCKCOST;
@@ -138,6 +141,7 @@ std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
 std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
+std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
 }  // namespace fr
 
 #endif

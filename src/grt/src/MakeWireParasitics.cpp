@@ -38,7 +38,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
-#include "openroad/OpenRoad.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
@@ -66,6 +65,9 @@ MakeWireParasitics::MakeWireParasitics(ord::OpenRoad* openroad, GlobalRouter* gr
   _analysisPoint = _corner->findParasiticAnalysisPt(_min_max);
 
   _network = openroad->getDbNetwork();
+  _sta_net = nullptr;
+  _parasitic = nullptr;
+  _node_id = 0;
 }
 
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
@@ -120,7 +122,8 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
     int wire_length_dbu
         = abs(route.initX - route.finalX) + abs(route.initY - route.finalY);
     sta::Units* units = _sta->units();
-    float res, cap;
+    float res = 0.0;
+    float cap = 0.0;
     if (wire_length_dbu == 0) {
       // via
       int lower_layer = min(route.initLayer, route.finalLayer);

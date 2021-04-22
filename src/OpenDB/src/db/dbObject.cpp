@@ -329,6 +329,7 @@ void dbObject::getDbName(char name[max_name_length]) const
       case dbTechLayerCutSpacingRuleObj:
       case dbTechLayerCutSpacingTableDefRuleObj:
       case dbTechLayerCutSpacingTableOrthRuleObj:
+      case dbTechLayerCutEnclosureRuleObj:
         *cptr++ = 'J';
         id = impl->getOID();
         break;

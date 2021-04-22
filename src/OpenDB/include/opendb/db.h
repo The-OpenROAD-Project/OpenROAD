@@ -6849,7 +6849,8 @@ class dbTechLayer : public dbObject
     ABOVEDIEEDGE,
     BELOWDIEEDGE,
     DIFFUSION,
-    TRIMPOLY
+    TRIMPOLY,
+    MIMCAP
   };
   // User Code Begin dbTechLayerEnums
   // User Code End dbTechLayerEnums

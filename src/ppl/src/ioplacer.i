@@ -36,7 +36,7 @@
 %{
 #include "ppl/IOPlacer.h"
 #include "Parameters.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

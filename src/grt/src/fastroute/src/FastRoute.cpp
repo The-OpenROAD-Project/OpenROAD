@@ -74,7 +74,7 @@ int vCapacity;
 int hCapacity;
 int MD;
 
-FastRouteCore::FastRouteCore(utl::Logger* log)
+FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
 {
   newnetID = 0;
   segcount = 0;
@@ -87,6 +87,7 @@ FastRouteCore::FastRouteCore(utl::Logger* log)
   invalidNets = 0;
   maxNetDegree = 0;
   logger = log;
+  db_ = db;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -144,13 +145,8 @@ void FastRouteCore::deleteComponents()
     delete[] gs;
   gs = nullptr;
 
-  if (treeOrderPV)
-    delete[] treeOrderPV;
-  treeOrderPV = nullptr;
-
-  if (treeOrderCong)
-    delete[] treeOrderCong;
-  treeOrderCong = nullptr;
+  treeOrderPV.clear();
+  treeOrderCong.clear();
 
   if (h_edges3D)
     delete[] h_edges3D;
@@ -217,13 +213,12 @@ void FastRouteCore::deleteComponents()
     delete[] ycor;
   if (dcor)
     delete[] dcor;
-  if (netEO)
-    delete[] netEO;
+
+  netEO.clear();
 
   xcor = nullptr;
   ycor = nullptr;
   dcor = nullptr;
-  netEO = nullptr;
 
   if (HV) {
     for (int i = 0; i < YRANGE; i++) {
@@ -843,7 +838,7 @@ void FastRouteCore::setEdgeUsage(long x1,
 
 void FastRouteCore::initAuxVar()
 {
-  treeOrderCong = NULL;
+  treeOrderCong.clear();
   stopDEC = FALSE;
 
   seglistCnt = new int[numValidNets];
@@ -917,9 +912,9 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
-void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
+void FastRouteCore::updateDbCongestion()
 {
-  auto block = db->getChip()->getBlock();
+  auto block = db_->getChip()->getBlock();
   auto db_gcell = odb::dbGCellGrid::create(block);
   if(db_gcell == nullptr)
   {
@@ -930,7 +925,7 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
   db_gcell->addGridPatternY(ycorner, yGrid + 1, hTile);
   for (int k = 0; k < numLayers; k++) {
-    auto layer = db->getTech()->findRoutingLayer(k+1);
+    auto layer = db_->getTech()->findRoutingLayer(k+1);
     if(layer == nullptr)
     {
       logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
@@ -968,7 +963,7 @@ NetRouteMap FastRouteCore::run()
   xcor = new int[maxPin];
   ycor = new int[maxPin];
   dcor = new int[maxPin];
-  netEO = new OrderNetEdge[maxPin];
+  netEO.reserve(maxPin);
 
   Bool input, WriteOut;
   input = WriteOut = 0;
@@ -1300,6 +1295,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
+    updateDbCongestion();
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
@@ -1373,13 +1369,10 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
 
-  delete[] netEO;
-  netEO = nullptr;
+  netEO.clear();
 
-  /* TODO:  <11-07-19, this function leads to a segfault, but as the OS
-   * frees all memory after the application end (next line) we can omit
-   * this function call for now.> */
-  /* freeAllMemory(); */
+  updateDbCongestion();
+
   return routes;
 }
 

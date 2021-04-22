@@ -39,6 +39,11 @@
 
 namespace ppl {
 
+Core::Core()
+{
+	database_unit_ = 0;
+}
+
 int Core::getPerimeter() const
 {
   int x = boundary_.xMax() - boundary_.xMin();

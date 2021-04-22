@@ -44,6 +44,8 @@
 
 namespace utl {
 
+int Logger::max_message_print = 1000;
+
 Logger::Logger(const char* log_filename, const char *metrics_filename)
   : debug_on_(false),
     first_metric_(true)

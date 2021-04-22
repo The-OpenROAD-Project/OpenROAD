@@ -91,6 +91,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
       SteinerPt drvr_pt = tree->drvrPt(network_);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
+      sta_->findRequireds();
       BufferedNetSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
                                           drvr_pt, 1);
       Required best_slack = -INF;
@@ -274,17 +275,21 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
   Point prev_loc = tree->location(prev);
   int wire_length_dbu = abs(k_loc.x() - prev_loc.x())
     + abs(k_loc.y() - prev_loc.y());
-  float wire_length = dbuToMeters(wire_length_dbu);
-  float wire_cap = wire_length * wire_cap_;
-  float wire_res = wire_length * wire_res_;
-  float wire_delay = wire_res * wire_cap;
+  double wire_length = dbuToMeters(wire_length_dbu);
   for (BufferedNet *p : Z) {
+    const PathRef &req_path = p->requiredPath();
+    const Corner *corner = req_path.isNull()
+      ? sta_->cmdCorner()
+      : req_path.dcalcAnalysisPt(sta_)->corner();
+    double wire_cap = wire_length * wireSignalCapacitance(corner);
+    double wire_res = wire_length * wireSignalResistance(corner);
+    double wire_delay = wire_res * wire_cap;
     BufferedNet *z = makeBufferedNet(BufferedNetType::wire,
                                      prev_loc,
                                      // account for wire load
                                      p->cap() + wire_cap,
                                      nullptr,
-                                     p->requiredPath(),
+                                     req_path,
                                      // account for wire delay
                                      p->requiredDelay() + wire_delay,
                                      nullptr,
@@ -548,9 +553,10 @@ Resizer::makeBufferedNetWire(SteinerTree *tree,
     Point to_loc = tree->location(to);
     int wire_length_dbu = abs(from_loc.x() - to_loc.x())
       + abs(from_loc.y() - to_loc.y());
-    float wire_length = dbuToMeters(wire_length_dbu);
-    float wire_cap = wire_length * wire_cap_;
-    float wire_res = wire_length * wire_res_;
+    const Corner *corner = end->ref()->requiredPath().dcalcAnalysisPt(sta_)->corner();
+    double wire_length = dbuToMeters(wire_length_dbu);
+    double wire_cap = wire_length * wireSignalCapacitance(corner);
+    double wire_res = wire_length * wireSignalResistance(corner);
 
     return new BufferedNet(BufferedNetType::wire,
                            from_loc,

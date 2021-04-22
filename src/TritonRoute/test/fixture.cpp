@@ -216,39 +216,70 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeLef58SpacingEndOfLineConstraint(frLayerNum layer_num,
-                                                  frCoord par_space,
-                                                  frCoord par_within,
-                                                  bool two_edges,
-                                                  frCoord min_max_length,
-                                                  bool max,
-                                                  bool two_sides)
+std::shared_ptr<frLef58SpacingEndOfLineConstraint>
+Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
+                                       frCoord space,
+                                       frCoord width,
+                                       frCoord within)
 {
   auto con = std::make_shared<frLef58SpacingEndOfLineConstraint>();
-  con->setEol(200, 200);
-  auto within = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
-  con->setWithinConstraint(within);
-  within->setEolWithin(50);
-  if (par_space != -1) {
-    if (par_within == -1) {
-      throw std::invalid_argument("Must give par_within with par_space");
-    }
-    auto parallelEdge = std::make_shared<
-        frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
-    within->setParallelEdgeConstraint(parallelEdge);
-    parallelEdge->setPar(par_space, par_within);
-    parallelEdge->setTwoEdges(two_edges);
-  }
-  if (min_max_length != -1) {
-    auto minMax = std::make_shared<
-        frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
-    within->setMaxMinLengthConstraint(minMax);
-    minMax->setLength(max, min_max_length, two_sides);
-  }
+  con->setEol(space, width);
+  auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+  con->setWithinConstraint(withinCon);
+  withinCon->setEolWithin(within);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58SpacingEndOfLineConstraint(con);
   tech->addConstraint(con);
+  return con;
+}
+
+std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
+Fixture::makeLef58SpacingEolParEdgeConstraint(
+    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    fr::frCoord par_space,
+    fr::frCoord par_within,
+    bool two_edges)
+{
+  auto parallelEdge
+      = std::make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+  con->getWithinConstraint()->setParallelEdgeConstraint(parallelEdge);
+  parallelEdge->setPar(par_space, par_within);
+  parallelEdge->setTwoEdges(two_edges);
+  return parallelEdge;
+}
+
+std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
+Fixture::makeLef58SpacingEolMinMaxLenConstraint(
+    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    fr::frCoord min_max_length,
+    bool max,
+    bool two_sides)
+{
+  auto minMax
+      = std::make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+  con->getWithinConstraint()->setMaxMinLengthConstraint(minMax);
+  minMax->setLength(max, min_max_length, two_sides);
+  return minMax;
+}
+
+std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
+Fixture::makeLef58SpacingEolCutEncloseConstraint(
+    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frCoord encloseDist,
+    frCoord cutToMetalSpacing,
+    bool above,
+    bool below,
+    bool allCuts)
+{
+  auto cutEnc
+      = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
+          encloseDist, cutToMetalSpacing);
+  con->getWithinConstraint()->setEncloseCutConstraint(cutEnc);
+  cutEnc->setAbove(above);
+  cutEnc->setBelow(below);
+  cutEnc->setAllCuts(allCuts);
+  return cutEnc;
 }
 
 frNet* Fixture::makeNet(const char* name)
@@ -258,6 +289,45 @@ frNet* Fixture::makeNet(const char* name)
   frNet* net = net_p.get();
   block->addNet(std::move(net_p));
   return net;
+}
+
+frViaDef* Fixture::makeViaDef(const char* name,
+                              frLayerNum layer_num,
+                              const frPoint& ll,
+                              const frPoint& ur)
+{
+  auto tech = design->getTech();
+  auto via_p = std::make_unique<frViaDef>(name);
+  for (frLayerNum l = layer_num - 1; l <= layer_num + 1; l++) {
+    unique_ptr<frRect> pinFig = make_unique<frRect>();
+    pinFig->setBBox(frBox(ll, ur));
+    pinFig->setLayerNum(l);
+    switch (l - layer_num) {
+      case -1:
+        via_p->addLayer1Fig(std::move(pinFig));
+        break;
+      case 0:
+        via_p->addCutFig(std::move(pinFig));
+        break;
+      case 1:
+        via_p->addLayer2Fig(std::move(pinFig));
+        break;
+    }
+  }
+
+  frViaDef* via = via_p.get();
+  tech->addVia(std::move(via_p));
+  return via;
+}
+
+frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const frPoint& origin)
+{
+  auto via_p = make_unique<frVia>(viaDef);
+  via_p->setOrigin(origin);
+  via_p->addToNet(net);
+  frVia* via = via_p.get();
+  net->addVia(std::move(via_p));
+  return via;
 }
 
 void Fixture::makePathseg(frNet* net,

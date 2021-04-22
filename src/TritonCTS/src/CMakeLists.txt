@@ -74,7 +74,7 @@ target_link_libraries(TritonCTS
     dbSta
     OpenSTA
     rsz
-    flute
+    sst
     pdrev
     utl
  )

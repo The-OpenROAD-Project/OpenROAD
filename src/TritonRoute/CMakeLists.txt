@@ -133,7 +133,7 @@ target_link_libraries(TritonRoute
   PUBLIC
     gui
     opendb
-    flute
+    sst
     OpenSTA
     utl
     Threads::Threads
@@ -149,8 +149,8 @@ target_link_libraries(TritonRoute
 target_compile_options(TritonRoute
   PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
-    $<$<CXX_COMPILER_ID:AppleClang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
-    $<$<CXX_COMPILER_ID:Clang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security -Wno-gnu-zero-variadic-macro-arguments>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security -Wno-gnu-zero-variadic-macro-arguments>
   )
 
 ############################################################

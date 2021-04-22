@@ -38,7 +38,7 @@
 #include "opendb/db.h"
 #include "opendb/dbBlockCallBackObj.h"
 #include "sta/Sta.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace gui {
 class Gui;

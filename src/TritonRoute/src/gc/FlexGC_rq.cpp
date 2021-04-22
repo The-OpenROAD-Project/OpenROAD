@@ -195,8 +195,6 @@ void FlexGCWorkerRegionQuery::init(int numLayers)
 
 void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   polygon_edges.clear();
   polygon_edges.resize(numLayers);
   max_rectangles.clear();
@@ -243,91 +241,8 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
     cntRTPolygonEdge += polygon_edges[i].size();
     cntRTMaxRectangle += max_rectangles[i].size();
   }
-  if (enableOutput) {
-    for (int i = 0; i < numLayers; i++) {
-      frPoint bp, ep;
-      double dbu = gcWorker->getDesign()->getTopBlock()->getDBUPerUU();
-      for (auto& [seg, ptr] : polygon_edges[i]) {
-        // ptr->getPoints(bp, ep);
-        cout << "polyEdge ";
-        if (ptr->isFixed()) {
-          cout << "FIXED";
-        } else {
-          cout << "ROUTE";
-        }
-        cout << " @(" << ptr->low().x() / dbu << ", " << ptr->low().y() / dbu
-             << ") (" << ptr->high().x() / dbu << ", " << ptr->high().y() / dbu
-             << ") " << gcWorker->getDesign()->getTech()->getLayer(i)->getName()
-             << " ";
-        auto owner = ptr->getNet()->getOwner();
-        if (owner == nullptr) {
-          cout << " FLOATING";
-        } else {
-          if (owner->typeId() == frcNet) {
-            cout << static_cast<frNet*>(owner)->getName();
-          } else if (owner->typeId() == frcInstTerm) {
-            cout << static_cast<frInstTerm*>(owner)->getInst()->getName() << "/"
-                 << static_cast<frInstTerm*>(owner)->getTerm()->getName();
-          } else if (owner->typeId() == frcTerm) {
-            cout << "PIN/" << static_cast<frTerm*>(owner)->getName();
-          } else if (owner->typeId() == frcInstBlockage) {
-            cout << static_cast<frInstBlockage*>(owner)->getInst()->getName()
-                 << "/OBS";
-          } else if (owner->typeId() == frcBlockage) {
-            cout << "PIN/OBS";
-          } else {
-            cout << "UNKNOWN";
-          }
-        }
-        cout << endl;
-      }
-    }
-  }
 
-  if (enableOutput) {
-    for (int i = 0; i < numLayers; i++) {
-      double dbu = gcWorker->getDesign()->getTopBlock()->getDBUPerUU();
-      for (auto& [box, ptr] : max_rectangles[i]) {
-        cout << "maxRect ";
-        if (ptr->isFixed()) {
-          cout << "FIXED";
-        } else {
-          cout << "ROUTE";
-        }
-        cout << " @(" << gtl::xl(*ptr) / dbu << ", " << gtl::yl(*ptr) / dbu
-             << ") (" << gtl::xh(*ptr) / dbu << ", " << gtl::yh(*ptr) / dbu
-             << ") " << gcWorker->getDesign()->getTech()->getLayer(i)->getName()
-             << " ";
-        auto owner = ptr->getNet()->getOwner();
-        if (owner == nullptr) {
-          cout << " FLOATING";
-        } else {
-          if (owner->typeId() == frcNet) {
-            cout << static_cast<frNet*>(owner)->getName();
-          } else if (owner->typeId() == frcInstTerm) {
-            cout << static_cast<frInstTerm*>(owner)->getInst()->getName() << "/"
-                 << static_cast<frInstTerm*>(owner)->getTerm()->getName();
-          } else if (owner->typeId() == frcTerm) {
-            cout << "PIN/" << static_cast<frTerm*>(owner)->getName();
-          } else if (owner->typeId() == frcInstBlockage) {
-            cout << static_cast<frInstBlockage*>(owner)->getInst()->getName()
-                 << "/OBS";
-          } else if (owner->typeId() == frcBlockage) {
-            cout << "PIN/OBS";
-          } else {
-            cout << "UNKNOWN";
-          }
-        }
-        cout << endl;
-      }
-    }
-  }
 
-  if (enableOutput) {
-    cout << "gc region query #poly_edges/max_rects/rt_poly_edges/rt_max_rect = "
-         << cntPolygonEdge << "/" << cntMaxRectangle << "/" << cntRTPolygonEdge
-         << "/" << cntRTMaxRectangle << endl;
-  }
 }
 
 void FlexGCWorkerRegionQuery::addToRegionQuery(gcNet* net)

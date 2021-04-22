@@ -59,11 +59,6 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
     map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
         refBlock2PinLayerRange)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout << endl << "initUniqueInstances_refBlock2PinLayerRange ..." << endl;
-  }
   int numLayers = design_->getTech()->getLayers().size();
   for (auto& uRefBlock : design_->getRefBlocks()) {
     auto refBlock = uRefBlock.get();
@@ -104,29 +99,17 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
     }
     maxLayerNum = std::min(maxLayerNum + 2, numLayers);
     refBlock2PinLayerRange[refBlock] = make_tuple(minLayerNum, maxLayerNum);
-    if (enableOutput) {
-      cout << "  " << refBlock->getName() << " PIN layer ("
-           << design_->getTech()->getLayer(minLayerNum)->getName() << ", "
-           << design_->getTech()->getLayer(maxLayerNum)->getName() << ")"
-           << endl;
-    }
   }
   // cout <<"  refBlock pin layer range done" <<endl;
 }
 
 bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
   frCoord high = low
                  + (frCoord) (tp->getTrackSpacing())
                        * ((frCoord) (tp->getNumTracks()) - 1);
-  if (enableOutput) {
-    double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    cout << "tp low@" << low / dbu << ", high@" << high / dbu << endl;
-  }
   if (isVerticalTrack) {
     return !(low > box.right() || high < box.left());
   } else {
@@ -141,11 +124,6 @@ void FlexPA::initUniqueInstance_main(
         refBlock2PinLayerRange,
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
-  if (enableOutput) {
-    cout << endl << "initUniqueInstances_main ..." << endl;
-  }
   map<frBlock*,
       map<frOrient, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
       frBlockObjectComp>
@@ -162,16 +140,6 @@ void FlexPA::initUniqueInstance_main(
     inst->getOrigin(origin);
     frBox boundaryBBox;
     inst->getBoundaryBBox(boundaryBBox);
-    if (enableOutput) {
-      double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-      // cout <<inst->getName() <<": ("
-      //      <<boundaryBBox.left()  <<", " <<boundaryBBox.bottom() <<") ("
-      //      <<boundaryBBox.right() <<", " <<boundaryBBox.top()    <<")"
-      //      <<endl;
-      cout << inst->getName() << ": (" << boundaryBBox.left() / dbu << ", "
-           << boundaryBBox.bottom() / dbu << ") (" << boundaryBBox.right() / dbu
-           << ", " << boundaryBBox.top() / dbu << ")" << endl;
-    }
     auto orient = inst->getOrient();
     auto& [minLayerNum, maxLayerNum]
         = refBlock2PinLayerRange.find(inst->getRefBlock())->second;
@@ -183,22 +151,8 @@ void FlexPA::initUniqueInstance_main(
           // vertical track
           if (tp->isHorizontal()) {
             offset.push_back(origin.x() % tp->getTrackSpacing());
-            // if (enableOutput) {
-            //   cout <<"inst/offset/layer " <<inst->getName() <<" "
-            //   <<origin.y() % tp->getTrackSpacing()
-            //        <<" "
-            //        <<design->getTech()->getLayer(tp->getLayerNum())->getName()
-            //        <<endl;
-            // }
           } else {
             offset.push_back(origin.y() % tp->getTrackSpacing());
-            // if (enableOutput) {
-            //   cout <<"inst/offset/layer " <<inst->getName() <<" "
-            //   <<origin.x() % tp->getTrackSpacing()
-            //        <<" "
-            //        <<design->getTech()->getLayer(tp->getLayerNum())->getName()
-            //        <<endl;
-            // }
           }
         } else {
           offset.push_back(tp->getTrackSpacing());
@@ -222,33 +176,17 @@ void FlexPA::initUniqueInstance_main(
     // }
   }
 
-  if (enableOutput) {
-    cout << endl << "summary: " << endl;
-  }
   cnt = 0;
   frString orientName;
   for (auto& [refBlock, orientMap] : refBlockOT2Insts) {
-    if (enableOutput) {
-      cout << "  " << refBlock->getName() << " (ORIENT/#diff patterns)" << endl;
-    }
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
-      if (enableOutput) {
-        orient.getName(orientName);
-        cout << "     (" << orientName << ", " << offsetMap.size() << ")";
-      }
       for (auto& [vec, inst] : offsetMap) {
         auto uniqueInst = *(inst.begin());
         uniqueInstances_.push_back(uniqueInst);
         for (auto i : inst) {
           inst2unique_[i] = uniqueInst;
         }
-        if (enableOutput) {
-          cout << " " << (*(inst.begin()))->getName();
-        }
-      }
-      if (enableOutput) {
-        cout << endl;
       }
     }
   }
@@ -293,8 +231,6 @@ void FlexPA::initUniqueInstance()
 
 void FlexPA::initPinAccess()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   for (auto& inst : uniqueInstances_) {
     for (auto& instTerm : inst->getInstTerms()) {
       for (auto& pin : instTerm->getTerm()->getPins()) {
@@ -314,18 +250,6 @@ void FlexPA::initPinAccess()
   }
   for (auto& [inst, uniqueInst] : inst2unique_) {
     inst->setPinAccessIdx(uniqueInst->getPinAccessIdx());
-  }
-  if (enableOutput) {
-    cout << "unique2paidx:" << endl;
-    for (auto& [inst, idx] : unique2paidx_) {
-      cout << inst->getName() << " " << idx << endl;
-    }
-  }
-  if (enableOutput) {
-    cout << "inst2paidx:" << endl;
-    for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-      cout << inst->getName() << " " << inst->getPinAccessIdx() << endl;
-    }
   }
 
   // IO terms
@@ -427,12 +351,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
 
 void FlexPA::initTrackCoords()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
 
-  if (enableOutput) {
-    cout << endl << endl;
-  }
 
   int numLayers = getDesign()->getTech()->getLayers().size();
   frCoord manuGrid = getDesign()->getTech()->getManufacturingGrid();
@@ -453,17 +372,6 @@ void FlexPA::initTrackCoords()
       }
     }
   }
-  if (enableOutput) {
-    cout << "full coords: " << endl;
-    int cnt = 0;
-    for (auto& m : trackCoords_) {
-      if (!m.empty()) {
-        cout << getDesign()->getTech()->getLayer(cnt)->getName() << ": "
-             << m.size() << endl;
-      }
-      cnt++;
-    }
-  }
 
   // half coords
   vector<vector<frCoord>> halfTrackCoords(numLayers);
@@ -481,17 +389,6 @@ void FlexPA::initTrackCoords()
     }
     for (auto halfCoord : halfTrackCoords[i]) {
       trackCoords_[i][halfCoord] = frAccessPointEnum::HalfGrid;
-    }
-  }
-  if (enableOutput) {
-    cout << "full+half coords: " << endl;
-    int cnt = 0;
-    for (auto& m : trackCoords_) {
-      if (!m.empty()) {
-        cout << getDesign()->getTech()->getLayer(cnt)->getName() << ": "
-             << m.size() << endl;
-      }
-      cnt++;
     }
   }
 }

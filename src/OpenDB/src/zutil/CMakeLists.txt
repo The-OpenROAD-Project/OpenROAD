@@ -4,7 +4,6 @@ add_library(zutil
     name.cpp
     mem.cpp
     parse.cpp
-    graph.cpp
     poly_decomp.cpp
 )
 

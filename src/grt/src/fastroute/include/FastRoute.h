@@ -55,7 +55,7 @@ namespace grt {
 class FastRouteCore
 {
  public:
-  FastRouteCore(utl::Logger* log);
+  FastRouteCore(odb::dbDatabase* db, utl::Logger* log);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -89,7 +89,7 @@ class FastRouteCore
                      bool isReduce = true);
   void initAuxVar();
   NetRouteMap run();
-  void updateDbCongestion(odb::dbDatabase* db);
+  void updateDbCongestion();
 
   int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
   int getEdgeCurrentResource(long x1,
@@ -123,6 +123,7 @@ class FastRouteCore
  private:
   NetRouteMap getRoutes();
   int maxNetDegree;
+  odb::dbDatabase* db_;
 };
 
 }  // namespace grt

@@ -44,7 +44,7 @@
 
 #include "displayControls.h"
 #include "layoutViewer.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
@@ -79,6 +79,7 @@ MainWindow::MainWindow(QWidget* parent)
   selection_browser_->hide();
 
   // Hook up all the signals/slots
+  connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
   connect(script_, SIGNAL(commandExecuted()), viewer_, SLOT(update()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
@@ -545,4 +546,8 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewer_->setLogger(logger);
 }
 
+void MainWindow::fit()
+{
+  fit_->trigger();
+}
 }  // namespace gui

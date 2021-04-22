@@ -41,7 +41,7 @@
 
 #include "db.h"
 #include "displayControls.h"
-#include "openroad/InitOpenRoad.hh"
+#include "ord/InitOpenRoad.hh"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 
@@ -143,19 +143,7 @@ DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(parent)),
       model_(new QStandardItemModel(0, 4, parent)),
-      tech_inited_(false),
-      fills_visible_(false),
-      tracks_visible_pref_(false),
-      tracks_visible_non_pref_(false),
-      rows_visible_(false),
-      nets_signal_visible_(true),
-      nets_special_visible_(true),
-      nets_power_visible_(true),
-      nets_ground_visible_(true),
-      nets_clock_visible_(true),
-      congestion_visible_(false),
-      pin_markers_visible_(true)
-
+      tech_inited_(false)
 {
   setObjectName("layers");  // for settings
   model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
@@ -167,78 +155,56 @@ DisplayControls::DisplayControls(QWidget* parent)
   header->setSectionResizeMode(Visible, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Selectable, QHeaderView::ResizeToContents);
 
-  layers_ = makeItem(
+  auto layers = makeItem(
+      layers_group_,
       "Layers",
       model_,
       Qt::Checked,
-      [this](bool visible) { toggleAllChildren(visible, layers_, Visible); },
+      [this](bool visible) {
+        toggleAllChildren(visible, layers_group_.name, Visible);
+      },
       [this](bool selectable) {
-        toggleAllChildren(selectable, layers_, Selectable);
+        toggleAllChildren(selectable, layers_group_.name, Selectable);
       });
-  view_->expand(layers_->index());
+  view_->expand(layers->index());
 
-  // nets patterns
-  nets_ = makeItem("Nets", model_, Qt::Checked, [this](bool visible) {
-    toggleAllChildren(visible, nets_, Visible);
-  });
+  // Nets group
+  auto nets_parent = makeItem(
+      nets_group_, "Nets", model_, Qt::Checked, [this](bool visible) {
+        toggleAllChildren(visible, nets_group_.name, Visible);
+      });
 
-  nets_signal_ = makeItem("Signal", nets_, Qt::Checked, [this](bool visible) {
-    nets_signal_visible_ = visible;
-  });
+  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked);
 
-  nets_special_ = makeItem("Special", nets_, Qt::Checked, [this](bool visible) {
-    nets_special_visible_ = visible;
-  });
+  makeItem(nets_.power, "Power", nets_parent, Qt::Checked);
 
-  nets_power_ = makeItem("Power", nets_, Qt::Checked, [this](bool visible) {
-    nets_power_visible_ = visible;
-  });
+  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked);
 
-  nets_ground_ = makeItem("Ground", nets_, Qt::Checked, [this](bool visible) {
-    nets_ground_visible_ = visible;
-  });
-
-  nets_clock_ = makeItem("Clock", nets_, Qt::Checked, [this](bool visible) {
-    nets_clock_visible_ = visible;
-  });
+  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked);
 
   // Rows
-  rows_ = makeItem("Rows", model_, Qt::Unchecked, [this](bool visible) {
-    rows_visible_ = visible;
-  });
+  makeItem(rows_, "Rows", model_, Qt::Unchecked);
 
   // Rows
-  congestion_map_
-      = makeItem("Congestion Map", model_, Qt::Unchecked, [this](bool visible) {
-          congestion_visible_ = visible;
-        });
-  pin_markers_
-      = makeItem("Pin Markers", model_, Qt::Checked, [this](bool visible) {
-          pin_markers_visible_ = visible;
-        });
+  makeItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
+  makeItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
 
-  // Track patterns
-  tracks_ = makeItem("Tracks", model_, Qt::Unchecked, [this](bool visible) {
-    toggleAllChildren(visible, tracks_, Visible);
-  });
+  // Track patterns group
+  auto tracks = makeItem(
+      tracks_group_, "Tracks", model_, Qt::Unchecked, [this](bool visible) {
+        toggleAllChildren(visible, tracks_group_.name, Visible);
+      });
 
-  tracks_pref_ = makeItem("Pref", tracks_, Qt::Unchecked, [this](bool visible) {
-    tracks_visible_pref_ = visible;
-  });
+  makeItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
+  makeItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
 
-  tracks_non_pref_
-      = makeItem("Non Pref", tracks_, Qt::Unchecked, [this](bool visible) {
-          tracks_visible_non_pref_ = visible;
-        });
+  // Misc group
+  auto misc = makeItem(
+      misc_group_, "Misc", model_, Qt::Unchecked, [this](bool visible) {
+        toggleAllChildren(visible, misc_group_.name, Visible);
+      });
 
-  // Track patterns
-  misc_ = makeItem("Misc", model_, Qt::Unchecked, [this](bool visible) {
-    toggleAllChildren(visible, misc_, Visible);
-  });
-
-  fills_ = makeItem("Fills", misc_, Qt::Unchecked, [this](bool visible) {
-    fills_visible_ = visible;
-  });
+  makeItem(misc_.fills, "Fills", misc, Qt::Unchecked);
 
   setWidget(view_);
   connect(model_,
@@ -265,46 +231,65 @@ DisplayControls::DisplayControls(QWidget* parent)
 
 void DisplayControls::readSettings(QSettings* settings)
 {
-  settings->beginGroup("display_controls");
-  nets_signal_visible_ = settings->value("nets_signal_visible").toBool();
-  nets_special_visible_ = settings->value("nets_special_visible").toBool();
-  nets_power_visible_ = settings->value("nets_power_visible").toBool();
-  nets_ground_visible_ = settings->value("nets_ground_visible").toBool();
-  nets_clock_visible_ = settings->value("nets_clock_visible").toBool();
-  settings->endGroup();
+  auto getChecked = [](QSettings* settings, const char* name) {
+    return settings->value(name).toBool() ? Qt::Checked : Qt::Unchecked;
+  };
 
-  // Update the widgets to match.  A touch ugly to use names
-  // and columns but sufficient.
-  const int num_rows = nets_->rowCount();
-  for (int row = 0; row < num_rows; ++row) {
-    QString name = nets_->child(row, 0)->text();
-    if (name == "Signal") {
-      nets_->child(row, 2)->setCheckState(nets_signal_visible_ ? Qt::Checked
-                                                               : Qt::Unchecked);
-    } else if (name == "Special") {
-      nets_->child(row, 2)->setCheckState(
-          nets_special_visible_ ? Qt::Checked : Qt::Unchecked);
-    } else if (name == "Power") {
-      nets_->child(row, 2)->setCheckState(nets_power_visible_ ? Qt::Checked
-                                                              : Qt::Unchecked);
-    } else if (name == "Ground") {
-      nets_->child(row, 2)->setCheckState(nets_ground_visible_ ? Qt::Checked
-                                                               : Qt::Unchecked);
-    } else if (name == "Clock") {
-      nets_->child(row, 2)->setCheckState(nets_clock_visible_ ? Qt::Checked
-                                                              : Qt::Unchecked);
-    }
-  }
+  settings->beginGroup("display_controls");
+
+  settings->beginGroup("nets");
+  nets_.signal.visible->setCheckState(getChecked(settings, "signal_visible"));
+  nets_.power.visible->setCheckState(getChecked(settings, "power_visible"));
+  nets_.ground.visible->setCheckState(getChecked(settings, "ground_visible"));
+  nets_.clock.visible->setCheckState(getChecked(settings, "clock_visible"));
+  settings->endGroup();  // nets
+
+  rows_.visible->setCheckState(getChecked(settings, "rows_visible"));
+  congestion_map_.visible->setCheckState(
+      getChecked(settings, "congestion_map_visible"));
+  pin_markers_.visible->setCheckState(
+      getChecked(settings, "pin_markers_visible"));
+
+  settings->beginGroup("tracks");
+  tracks_.pref.visible->setCheckState(getChecked(settings, "pref_visible"));
+  tracks_.non_pref.visible->setCheckState(
+      getChecked(settings, "non_pref_visible"));
+  settings->endGroup();  // tracks
+
+  settings->beginGroup("misc");
+  misc_.fills.visible->setCheckState(getChecked(settings, "fills_visible"));
+  settings->endGroup();  // misc
+
+  settings->endGroup();
 }
 
 void DisplayControls::writeSettings(QSettings* settings)
 {
+  auto asBool
+      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
+
   settings->beginGroup("display_controls");
-  settings->setValue("nets_signal_visible", nets_signal_visible_);
-  settings->setValue("nets_special_visible", nets_special_visible_);
-  settings->setValue("nets_power_visible", nets_power_visible_);
-  settings->setValue("nets_ground_visible", nets_ground_visible_);
-  settings->setValue("nets_clock_visible", nets_clock_visible_);
+
+  settings->beginGroup("nets");
+  settings->setValue("signal_visible", asBool(nets_.signal.visible));
+  settings->setValue("power_visible", asBool(nets_.power.visible));
+  settings->setValue("ground_visible", asBool(nets_.ground.visible));
+  settings->setValue("clock_visible", asBool(nets_.clock.visible));
+  settings->endGroup();  // nets
+
+  settings->setValue("rows_visible", asBool(rows_.visible));
+  settings->setValue("congestion_map_visible", asBool(congestion_map_.visible));
+  settings->setValue("pin_markers_visible", asBool(pin_markers_.visible));
+
+  settings->beginGroup("tracks");
+  settings->setValue("pref_visible", asBool(tracks_.pref.visible));
+  settings->setValue("non_pref_visible", asBool(tracks_.non_pref.visible));
+  settings->endGroup();  // tracks
+
+  settings->beginGroup("misc");
+  settings->setValue("fills_visible", asBool(misc_.fills.visible));
+  settings->endGroup();  // misc
+
   settings->endGroup();
 }
 
@@ -328,7 +313,9 @@ void DisplayControls::itemChanged(QStandardItem* item)
   }
   bool checked = item->checkState() == Qt::Checked;
   Callback callback = item->data().value<Callback>();
-  callback.action(checked);
+  if (callback.action) {
+    callback.action(checked);
+  }
   emit changed();
 }
 
@@ -387,14 +374,14 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
-      makeItem(
-          QString::fromStdString(layer->getName()),
-          layers_,
-          Qt::Checked,
-          [this, layer](bool visible) { layer_visible_[layer] = visible; },
-          [this, layer](bool select) { layer_selectable_[layer] = select; },
-          color(layer),
-          type == dbTechLayerType::CUT ? NULL : layer);
+      makeItem(layer_controls_[layer],
+               QString::fromStdString(layer->getName()),
+               layers_group_.name,
+               Qt::Checked,
+               std::function<void(bool)>(),
+               [this](bool selectable) {}, // non-null to create checkbox
+               color(layer),
+               type == dbTechLayerType::CUT ? NULL : layer);
     }
   }
 
@@ -405,6 +392,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
 template <typename T>
 QStandardItem* DisplayControls::makeItem(
+    ModelRow& row,
     const QString& text,
     T* parent,
     Qt::CheckState checked,
@@ -413,37 +401,37 @@ QStandardItem* DisplayControls::makeItem(
     const QColor& color,
     odb::dbTechLayer* tech_layer)
 {
-  QStandardItem* name_item = new QStandardItem(text);
-  name_item->setEditable(false);
+  row.name = new QStandardItem(text);
+  row.name->setEditable(false);
 
   QPixmap swatch(20, 20);
   swatch.fill(color);
-  QStandardItem* color_item = new QStandardItem(QIcon(swatch), "");
-  color_item->setEditable(false);
-  color_item->setCheckable(false);
+  row.swatch = new QStandardItem(QIcon(swatch), "");
+  row.swatch->setEditable(false);
+  row.swatch->setCheckable(false);
   if (tech_layer != nullptr) {
     QVariant tech_layer_data(
         QVariant::fromValue(static_cast<void*>(tech_layer)));
-    color_item->setData(tech_layer_data, Qt::UserRole);
+    row.swatch->setData(tech_layer_data, Qt::UserRole);
   }
 
-  QStandardItem* visibility_item = new QStandardItem("");
-  visibility_item->setCheckable(true);
-  visibility_item->setEditable(false);
-  visibility_item->setCheckState(checked);
-  visibility_item->setData(QVariant::fromValue(Callback({visibility_action})));
+  row.visible = new QStandardItem("");
+  row.visible->setCheckable(true);
+  row.visible->setEditable(false);
+  row.visible->setCheckState(checked);
+  row.visible->setData(QVariant::fromValue(Callback({visibility_action})));
 
   QStandardItem* select_item = nullptr;
   if (select_action) {
-    select_item = new QStandardItem("");
-    select_item->setCheckable(true);
-    select_item->setCheckState(checked);
-    select_item->setEditable(false);
-    select_item->setData(QVariant::fromValue(Callback({select_action})));
+    row.selectable = new QStandardItem("");
+    row.selectable->setCheckable(true);
+    row.selectable->setEditable(false);
+    row.selectable->setCheckState(checked);
+    row.selectable->setData(QVariant::fromValue(Callback({select_action})));
   }
 
-  parent->appendRow({name_item, color_item, visibility_item, select_item});
-  return name_item;
+  parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
+  return row.name;
 }
 
 QColor DisplayControls::color(const odb::dbTechLayer* layer)
@@ -458,9 +446,9 @@ Qt::BrushStyle DisplayControls::pattern(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 {
-  auto it = layer_visible_.find(layer);
-  if (it != layer_visible_.end()) {
-    return it->second;
+  auto it = layer_controls_.find(layer);
+  if (it != layer_controls_.end()) {
+    return it->second.visible->checkState() == Qt::Checked;
   }
   return false;
 }
@@ -469,13 +457,13 @@ bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
   switch (net->getSigType()) {
     case dbSigType::SIGNAL:
-      return nets_signal_visible_;
+      return nets_.signal.visible->checkState() == Qt::Checked;
     case dbSigType::POWER:
-      return nets_power_visible_;
+      return nets_.power.visible->checkState() == Qt::Checked;
     case dbSigType::GROUND:
-      return nets_ground_visible_;
+      return nets_.ground.visible->checkState() == Qt::Checked;
     case dbSigType::CLOCK:
-      return nets_clock_visible_;
+      return nets_.clock.visible->checkState() == Qt::Checked;
     default:
       return true;
   }
@@ -483,41 +471,41 @@ bool DisplayControls::isNetVisible(odb::dbNet* net)
 
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 {
-  auto it = layer_selectable_.find(layer);
-  if (it != layer_selectable_.end()) {
-    return it->second;
+  auto it = layer_controls_.find(layer);
+  if (it != layer_controls_.end()) {
+    return it->second.selectable->checkState() == Qt::Checked;
   }
   return false;
 }
 
 bool DisplayControls::areFillsVisible()
 {
-  return fills_visible_;
+  return misc_.fills.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::areRowsVisible()
 {
-  return rows_visible_;
+  return rows_.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::arePrefTracksVisible()
 {
-  return tracks_visible_pref_;
+  return tracks_.pref.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::areNonPrefTracksVisible()
 {
-  return tracks_visible_non_pref_;
+  return tracks_.non_pref.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::isCongestionVisible() const
 {
-  return congestion_visible_;
+  return congestion_map_.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::arePinMarkersVisible() const
 {
-  return pin_markers_visible_;
+  return pin_markers_.visible->checkState() == Qt::Checked;
 }
 
 void DisplayControls::addCustomVisibilityControl(const std::string& name,
@@ -525,15 +513,19 @@ void DisplayControls::addCustomVisibilityControl(const std::string& name,
 {
   auto q_name = QString::fromStdString(name);
   auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
-  auto item = makeItem(q_name, model_, checked, [this, name](bool visible) {
-    custom_visibility_[name] = visible;
-  });
-  custom_visibility_[name] = initially_visible;
+  auto item = makeItem(custom_controls_[name],
+                       q_name,
+                       model_,
+                       checked,
+                       [this, name](bool visible) {
+                         custom_controls_[name].visible->setCheckState(
+                             visible ? Qt::Checked : Qt::Unchecked);
+                       });
 }
 
 bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
 {
-  return custom_visibility_[name];
+  return custom_controls_[name].visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::showHorizontalCongestion() const
@@ -623,8 +615,6 @@ void DisplayControls::techInit()
     color.setAlpha(180);
     layer_color_[layer] = color;
     layer_pattern_[layer] = Qt::SolidPattern;  // Default pattern is fill solid
-    layer_visible_[layer] = true;
-    layer_selectable_[layer] = true;
   }
 
   tech_inited_ = true;

@@ -33,8 +33,6 @@ using namespace fr;
 
 void io::Parser::instAnalysis()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   if (VERBOSE > 0) {
     logger->info(DRT, 162, "libcell analysis ...");
   }
@@ -71,19 +69,13 @@ void io::Parser::instAnalysis()
             minLayerNum = min(minLayerNum, lNum);
             maxLayerNum = max(maxLayerNum, lNum);
           } else {
-            cout << "Error: instAnalysis unsupported pinFig" << endl;
+            logger->warn(DRT, 248, "instAnalysis unsupported pinFig");
           }
         }
       }
     }
     maxLayerNum = min(maxLayerNum + 2, numLayers);
     refBlockPinLayerRange[refBlock] = make_tuple(minLayerNum, maxLayerNum);
-    if (enableOutput) {
-      cout << "  " << refBlock->getName() << " PIN layer ("
-           << design->getTech()->getLayer(minLayerNum)->getName() << ", "
-           << design->getTech()->getLayer(maxLayerNum)->getName() << ")"
-           << endl;
-    }
   }
   // cout <<"  refBlock pin layer range done" <<endl;
 
@@ -136,27 +128,11 @@ void io::Parser::instAnalysis()
     }
   }
 
-  if (enableOutput) {
-    cout << endl << "summary: " << endl;
-  }
   cnt = 0;
   frString orientName;
   for (auto& [refBlock, orientMap] : trackOffsetMap) {
-    if (enableOutput) {
-      cout << "  " << refBlock->getName() << " (ORIENT/#diff patterns)";
-    }
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
-      if (enableOutput) {
-        orient.getName(orientName);
-        cout << " (" << orientName << ", " << offsetMap.size() << ")";
-        for (auto& [vec, inst] : offsetMap) {
-          cout << " " << (*inst.begin())->getName();
-        }
-      }
-    }
-    if (enableOutput) {
-      cout << endl;
     }
   }
   if (VERBOSE > 0) {

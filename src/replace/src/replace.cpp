@@ -40,6 +40,7 @@
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include "rsz/Resizer.hh"
+#include "plot.h"
 #include <iostream>
 
 namespace gpl {
@@ -437,6 +438,13 @@ Replace::setPadLeft(int pad) {
 void
 Replace::setPadRight(int pad) {
   padRight_ = pad;
+}
+
+void
+Replace::setPlottingPath(const char* path) {
+#ifdef ENABLE_CIMG_LIB
+  gpl::PlotEnv::setPlotPath(path);
+#endif
 }
 
 }

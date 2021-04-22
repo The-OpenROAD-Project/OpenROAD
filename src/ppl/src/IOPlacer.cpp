@@ -40,8 +40,9 @@
 #include <sstream>
 
 #include "opendb/db.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace ppl {
 
@@ -106,7 +107,7 @@ void IOPlacer::initParms()
   }
 }
 
-void IOPlacer::randomPlacement(const RandomMode mode)
+void IOPlacer::randomPlacement()
 {
   const double seed = parms_->getRandSeed();
 
@@ -137,73 +138,22 @@ void IOPlacer::randomPlacement(const RandomMode mode)
     sections_.push_back(s);
   }
 
-  std::mt19937 g(seed);
-  switch (mode) {
-    case RandomMode::full:
-      logger_->report("RandomMode Full");
+  std::mt19937 g;
+  g.seed(seed);
 
-      for (size_t i = 0; i < vSlots.size(); ++i) {
-        vSlots[i] = i;
-      }
+  for (size_t i = 0; i < vIOs.size(); ++i) {
+    vIOs[i] = i;
+  }
 
-      std::shuffle(vSlots.begin(), vSlots.end(), g);
+  utl::shuffle(vIOs.begin(), vIOs.end(), g);
 
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vSlots[0];
-        io_pin.setPos(valid_slots.at(b).pos);
-        io_pin.setLayer(valid_slots.at(b).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vSlots.erase(vSlots.begin());
-      }
-      break;
-    case RandomMode::even:
-      logger_->report("RandomMode Even");
-
-      for (size_t i = 0; i < vIOs.size(); ++i) {
-        vIOs[i] = i;
-      }
-
-      std::shuffle(vIOs.begin(), vIOs.end(), g);
-
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vIOs[0];
-        io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
-        io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vIOs.erase(vIOs.begin());
-      }
-      break;
-    case RandomMode::group:
-      logger_->report("RandomMode Group");
-      for (size_t i = mid1; i < mid1 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid2; i < mid2 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid3; i < mid3 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid4; i < mid4 + last_slots; i++) {
-        vIOs[idx++] = i;
-      }
-
-      std::shuffle(vIOs.begin(), vIOs.end(), g);
-
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vIOs[0];
-        io_pin.setPos(valid_slots.at(b).pos);
-        io_pin.setLayer(valid_slots.at(b).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vIOs.erase(vIOs.begin());
-      }
-      break;
-    default:
-      logger_->error(PPL, 39, "Random mode not found");
-      break;
+  for (IOPin& io_pin : netlist_.getIOPins()) {
+    int b = vIOs[0];
+    io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
+    io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
+    assignment_.push_back(io_pin);
+    sections_[0].net.addIONet(io_pin, instPins);
+    vIOs.erase(vIOs.begin());
   }
 }
 
@@ -443,6 +393,79 @@ void IOPlacer::defineSlots()
   findSlots(hor_layers_, Edge::left);
 }
 
+void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>& sections)
+{
+  int end_slot = 0;
+  while (end_slot < end) {
+    int blocked_slots = 0;
+    end_slot = begin + slots_per_section_ - 1;
+    if (end_slot > end) {
+      end_slot = end;
+    }
+    for (int i = begin; i <= end_slot; ++i) {
+      if (slots_[i].blocked) {
+        blocked_slots++;
+      }
+    }
+    int half_length_pt = begin + (end_slot - begin) / 2;
+    Section n_sec = {slots_.at(half_length_pt).pos};
+    n_sec.num_slots = end_slot - begin - blocked_slots + 1;
+    if (n_sec.num_slots < 0) {
+      logger_->error(PPL, 40, "Negative number of slots");
+    }
+    n_sec.begin_slot = begin;
+    n_sec.end_slot = end_slot;
+    n_sec.used_slots = 0;
+    n_sec.edge = edge;
+
+    sections.push_back(n_sec);
+    begin = ++end_slot;
+  }
+}
+
+std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &constraint)
+{
+  const Interval &interv = constraint.interval;
+  const Edge &edge = interv.edge;
+
+  const std::set<int>& layers =
+    (edge == Edge::left || edge == Edge::right) ?
+    hor_layers_ : ver_layers_;
+
+  std::vector<Section> sections;
+  for (int layer : layers) {
+    std::vector<Slot>::iterator it =
+      std::find_if(slots_.begin(), slots_.end(),
+       [&](const Slot& s) {
+        int slot_xy =
+          (edge == Edge::left || edge == Edge::right) ?
+          s.pos.y() : s.pos.x();
+        if (edge == Edge::bottom || edge == Edge::right)
+          return (s.edge == edge && s.layer == layer &&
+                  slot_xy >= interv.begin);
+        return (s.edge == edge && s.layer == layer &&
+                  slot_xy <= interv.end);
+       });
+    int constraint_begin = it - slots_.begin();
+
+    it =
+      std::find_if(slots_.begin() + constraint_begin, slots_.end(),
+       [&](const Slot& s) {
+        int slot_xy =
+          (edge == Edge::left || edge == Edge::right) ?
+          s.pos.y() : s.pos.x();
+        if (edge == Edge::bottom || edge == Edge::right)
+          return (slot_xy >= interv.end || s.edge != edge || s.layer != layer);
+        return (slot_xy <= interv.begin || s.edge != edge || s.layer != layer);
+       });
+    int constraint_end = it - slots_.begin()-1;
+
+    findSections(constraint_begin, constraint_end, edge, sections);
+  }
+
+  return sections;
+}
+
 void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
 {
   for (int layer : layers) {
@@ -460,32 +483,7 @@ void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
                                                  });
     int edge_end = it - slots_.begin() - 1;
 
-    int end_slot = 0;
-    while (end_slot < edge_end) {
-      int blocked_slots = 0;
-      end_slot = edge_begin + slots_per_section_ - 1;
-      if (end_slot > edge_end) {
-        end_slot = edge_end;
-      }
-      for (int i = edge_begin; i <= end_slot; ++i) {
-        if (slots_[i].blocked) {
-          blocked_slots++;
-        }
-      }
-      int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec = {slots_.at(half_length_pt).pos};
-      n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
-      if (n_sec.num_slots < 0) {
-        logger_->error(PPL, 40, "Negative number of slots");
-      }
-      n_sec.begin_slot = edge_begin;
-      n_sec.end_slot = end_slot;
-      n_sec.used_slots = 0;
-      n_sec.edge = edge;
-
-      sections_.push_back(n_sec);
-      edge_begin = ++end_slot;
-    }
+    findSections(edge_begin, edge_end, edge, sections_);
   }
 }
 
@@ -503,6 +501,65 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
+bool compareConstraints(const Constraint &c1, const Constraint &c2)
+{
+  return c1.pin_list.size() > c2.pin_list.size();
+}
+
+void IOPlacer::assignConstrainedPinsToSections()
+{
+  Netlist& netlist = netlist_io_pins_;
+  int pins_assigned = assignConstrainedGroupsToSections();
+
+  for (Constraint &constraint : constraints_) {
+    std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
+    PinList &pin_list = constraint.pin_list;
+    const Direction &dir = constraint.direction;
+
+    int idx;
+    for (odb::dbBTerm* bterm : pin_list) {
+      idx = netlist.getIoPinIdx(bterm);
+      IOPin& io_pin = netlist.getIoPin(idx);
+
+      if (assignPinToSection(io_pin, idx, sections_for_constraint)) {
+        pins_assigned++;
+      }
+    }
+
+    for (Section &section : sections_for_constraint) {
+      if (section.net.numIOPins() > 0) {
+        sections_for_constraints_.push_back(section);
+      }
+    }
+  }
+}
+
+int IOPlacer::assignConstrainedGroupsToSections()
+{
+  int total_pins_assigned = 0;
+  Netlist& net = netlist_io_pins_;
+
+  for (std::vector<int>& io_group : net.getIOGroups()) {
+    for (Constraint &constraint : constraints_) {
+      std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
+      const PinList& pin_list = constraint.pin_list;
+      IOPin& io_pin = net.getIoPin(io_group[0]);
+
+      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
+        total_pins_assigned += assignGroupToSection(io_group, sections_for_constraint);
+        for (Section &section : sections_for_constraint) {
+          if (section.net.numIOPins() > 0) {
+            sections_for_constraints_.push_back(section);
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  return total_pins_assigned;
+}
+
 int IOPlacer::assignGroupsToSections()
 {
   int total_pins_assigned = 0;
@@ -512,13 +569,28 @@ int IOPlacer::assignGroupsToSections()
   int total_groups_assigned = 0;
 
   for (std::vector<int>& io_group : net.getIOGroups()) {
-    int group_size = io_group.size();
-    bool group_assigned = false;
+    total_pins_assigned += assignGroupToSection(io_group, sections);
+    total_groups_assigned++;
+  }
+
+  return total_pins_assigned;
+}
+
+int IOPlacer::assignGroupToSection(const std::vector<int> &io_group,
+                                   std::vector<Section> &sections) {
+  Netlist& net = netlist_io_pins_;
+  int group_size = io_group.size();
+  bool group_assigned = false;
+  int total_pins_assigned = 0;
+
+  IOPin &io_pin = net.getIoPin(io_group[0]);
+
+  if (!io_pin.isAssignedToSection()) {
     std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
         int pin_hpwl = net.computeIONetHPWL(
-            pin_idx, sections[i], constraints_, slots_);
+            pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
@@ -527,12 +599,11 @@ int IOPlacer::assignGroupsToSections()
         }
       }
     }
-
     for (auto i : sortIndexes(dst)) {
       if (sections[i].used_slots+group_size < sections[i].num_slots) {
         std::vector<int> group;
         for (int pin_idx : io_group) {
-          IOPin io_pin = net.getIoPin(pin_idx);
+          IOPin &io_pin = net.getIoPin(pin_idx);
 
           std::vector<InstancePin> inst_pins_vector;
           net.getSinksOfIO(pin_idx, inst_pins_vector);
@@ -540,6 +611,7 @@ int IOPlacer::assignGroupsToSections()
           sections[i].net.addIONet(io_pin, inst_pins_vector);
           group.push_back(sections[i].net.numIOPins()-1);
           sections[i].used_slots++;
+          io_pin.assignToSection();
         }
         total_pins_assigned += group_size;
         sections[i].net.addIOGroup(group);
@@ -551,62 +623,72 @@ int IOPlacer::assignGroupsToSections()
         break;
     }
     if (!group_assigned) {
-      break;
-    } else {
-      total_groups_assigned++;
+      logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
     }
-  }
-
-  if (total_groups_assigned != net.numIOGroups()) {
-    logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
   }
 
   return total_pins_assigned;
 }
 
-bool IOPlacer::assignPinsSections()
+bool IOPlacer::assignPinsToSections()
 {
   Netlist& net = netlist_io_pins_;
   std::vector<Section>& sections = sections_;
+  
   createSections();
+  int sections_count = sections_.size();
+
   int total_pins_assigned = assignGroupsToSections();
+
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
-    if (!io_pin.isInGroup()) {
-      bool pin_assigned = false;
-      std::vector<int> dst(sections.size());
-      std::vector<InstancePin> inst_pins_vector;
-      for (int i = 0; i < sections.size(); i++) {
-        dst[i] = net.computeIONetHPWL(
-            idx, sections[i], constraints_, slots_);
-      }
-      net.getSinksOfIO(idx, inst_pins_vector);
-      for (auto i : sortIndexes(dst)) {
-        if (sections[i].used_slots < sections[i].num_slots) {
-          sections[i].net.addIONet(io_pin, inst_pins_vector);
-          sections[i].used_slots++;
-          pin_assigned = true;
-          total_pins_assigned++;
-          break;
-        }
-        // Try to add pin just to first
-        if (!force_pin_spread_)
-          break;
-      }
-      if (!pin_assigned) {
-        break;
-      }
+    if (assignPinToSection(io_pin, idx, sections)) {
+      total_pins_assigned++;
     }
     idx++;
   }
-  
+
+  for (Section& sec : sections_for_constraints_) {
+    total_pins_assigned += sec.net.numIOPins();
+  }
+
   if (total_pins_assigned == net.numIOPins()) {
     logger_->report("Successfully assigned I/O pins");
     return true;
   } else {
-    logger_->report("Unsuccessfully assigned I/O pins");
+    logger_->report("Unsuccessfully assigned I/O pins ({} out of {})", total_pins_assigned, net.numIOPins());
     return false;
   }
+}
+
+bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections)
+{
+  Netlist& net = netlist_io_pins_;
+  bool pin_assigned = false;
+
+  if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()) {
+    std::vector<int> dst(sections.size());
+    std::vector<InstancePin> inst_pins_vector;
+    for (int i = 0; i < sections.size(); i++) {
+      dst[i] = net.computeIONetHPWL(
+          idx, sections[i].pos);
+    }
+    net.getSinksOfIO(idx, inst_pins_vector);
+    for (auto i : sortIndexes(dst)) {
+      if (sections[i].used_slots < sections[i].num_slots) {
+        sections[i].net.addIONet(io_pin, inst_pins_vector);
+        sections[i].used_slots++;
+        pin_assigned = true;
+        io_pin.assignToSection();
+        break;
+      }
+      // Try to add pin just to first
+      if (!force_pin_spread_)
+        break;
+    }
+  }
+  
+  return pin_assigned;
 }
 
 void IOPlacer::printConfig()
@@ -631,7 +713,7 @@ void IOPlacer::setupSections()
     logger_->info(PPL, 10, "Tentative {} to setup sections", i++);
     printConfig();
 
-    all_assigned = assignPinsSections();
+    all_assigned = assignPinsToSections();
 
     slots_per_section_ *= (1 + slots_increase_factor_);
     if (sections_.size() > MAX_SECTIONS_RECOMMENDED) {
@@ -829,6 +911,28 @@ void IOPlacer::addDirectionConstraint(Direction direction,
   constraints_.push_back(constraint);
 }
 
+void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
+{
+  Netlist& netlist = netlist_io_pins_;
+  if (constraint.direction != Direction::invalid) {
+    for (const IOPin& io_pin : netlist.getIOPins()) {
+      if (io_pin.getDirection() == constraint.direction) {
+        constraint.pin_list.push_back(io_pin.getBTerm());
+      }
+    }
+  }
+}
+
+void IOPlacer::initConstraints()
+{
+  std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
+  Netlist& netlist = netlist_io_pins_;
+  int pins_assigned = 0;
+  for (Constraint &constraint : constraints_) {
+    getPinsFromDirectionConstraint(constraint);
+  }
+}
+
 Edge IOPlacer::getEdge(std::string edge)
 {
   if (edge == "top") {
@@ -869,6 +973,33 @@ void IOPlacer::addPinToList(odb::dbBTerm* pin, PinList* pin_group)
   pin_group->push_back(pin);
 }
 
+void IOPlacer::findPinAssignment(std::vector<Section>& sections)
+{
+  std::vector<HungarianMatching> hg_vec;
+  for (int idx = 0; idx < sections.size(); idx++) {
+    if (sections[idx].net.numIOPins() > 0) {
+      HungarianMatching hg(sections[idx], slots_, logger_);
+      hg_vec.push_back(hg);
+    }
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].findAssignmentForGroups();
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].getAssignmentForGroups(assignment_);
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].findAssignment();
+  }
+
+  for (int idx = 0; idx < hg_vec.size(); idx++) {
+    hg_vec[idx].getFinalAssignment(assignment_);
+  }
+}
+
 void IOPlacer::run(bool random_mode)
 {
   initParms();
@@ -876,7 +1007,6 @@ void IOPlacer::run(bool random_mode)
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
-  std::vector<HungarianMatching> hg_vec;
   int init_hpwl = 0;
   int total_hpwl = 0;
   int delta_hpwl = 0;
@@ -884,37 +1014,22 @@ void IOPlacer::run(bool random_mode)
   initIOLists();
   defineSlots();
 
+  initConstraints();
+
   if (report_hpwl_) {
     init_hpwl = returnIONetsHPWL(netlist_);
   }
   if (random_mode) {
-    logger_->report("Random pin placement");
-    randomPlacement(RandomMode::even);
+    logger_->info(PPL, 3, "Random pin placement.");
+    randomPlacement();
   } else {
+    assignConstrainedPinsToSections();
+
+    findPinAssignment(sections_for_constraints_);
+
     setupSections();
 
-    for (int idx = 0; idx < sections_.size(); idx++) {
-      if (sections_[idx].net.numIOPins() > 0) {
-        HungarianMatching hg(sections_[idx], slots_, logger_);
-        hg_vec.push_back(hg);
-      }
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].findAssignmentForGroups(constraints_);
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].getAssignmentForGroups(assignment_);
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].findAssignment(constraints_);
-    }
-
-    for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].getFinalAssignment(assignment_);
-    }
+    findPinAssignment(sections_);
   }
 
   for (int i = 0; i < assignment_.size(); ++i) {
@@ -1041,8 +1156,9 @@ void IOPlacer::initNetlist()
 
   for (odb::dbBTerm* b_term : bterms) {
     odb::dbNet* net = b_term->getNet();
-    if (!net) {
+    if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
+      continue;
     }
 
     Direction dir = Direction::inout;

@@ -46,7 +46,7 @@
 #include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace gui {
 
@@ -311,6 +311,16 @@ void Gui::zoomTo(const odb::Rect& rect_dbu)
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);
+}
+
+void Gui::load_design()
+{
+  main_window->postReadDb(main_window->getDb());
+}
+
+void Gui::fit()
+{
+  main_window->fit();
 }
 
 OpenDbDescriptor* OpenDbDescriptor::singleton_ = nullptr;

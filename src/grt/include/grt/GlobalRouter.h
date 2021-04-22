@@ -291,8 +291,8 @@ class GlobalRouter
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
   void initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
                          int maxLayer,
-                         std::vector<float> layerPitches);
-  void computeCapacities(int maxLayer, std::vector<float> layerPitches);
+                         const std::vector<float>& layerPitches);
+  void computeCapacities(int maxLayer, const std::vector<float>& layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist();
   void addNets(std::set<odb::dbNet*, cmpById>& db_nets);
@@ -305,7 +305,6 @@ class GlobalRouter
                               const std::vector<int>& layerExtensions);
   void findNetsObstructions(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
-  std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
@@ -376,5 +375,6 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route);
 
 }  // namespace grt

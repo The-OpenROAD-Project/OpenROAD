@@ -37,7 +37,7 @@
 
 #include "PartitionMgr.h"
 #include "opendb/db.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {

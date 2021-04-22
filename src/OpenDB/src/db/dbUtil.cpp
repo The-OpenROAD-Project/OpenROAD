@@ -34,7 +34,9 @@
 
 #include "db.h"
 #include "dbShape.h"
+#include "dbTechLayerRule.h"
 #include "dbWireCodec.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -958,11 +960,12 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
 
   if (nd_rule == NULL)
     return NULL;
-
-  printf("Create ND RULE %s for layer/width %d,%d\n",
-         rule_name,
-         routingLayer,
-         width);
+  rule->getImpl()->getLogger()->info(utl::ODB,
+                                     273,
+                                     "Create ND RULE {} for layer/width {},{}",
+                                     rule_name,
+                                     routingLayer,
+                                     width);
 
   int i;
   for (i = 1; i <= _tech->getRoutingLayerCount(); i++) {

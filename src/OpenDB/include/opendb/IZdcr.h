@@ -49,19 +49,6 @@ class IZdcr : public ZObject
   ZINTERFACE_ID(IZdcr);
 
   virtual uint getAppGuiCnt() = 0;
-  virtual void inspect() = 0;
-  virtual int inspect(const char* objectName,
-                      const char* selectType,
-                      const char* action,
-                      const char* chip,
-                      const char* bb,
-                      const char* layer,
-                      const char* hier,
-                      const char* type,
-                      FILE* outFP,
-                      bool noclip,
-                      bool write2list)
-      = 0;
 
   virtual void chip_get(const char* chip,
                         bool gridFlag,

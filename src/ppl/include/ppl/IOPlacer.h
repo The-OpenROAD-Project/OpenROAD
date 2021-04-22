@@ -67,15 +67,6 @@ using utl::Logger;
 // A list of pins that will be placed together in the die boundary
 typedef std::vector<odb::dbBTerm*> PinList;
 
-enum class RandomMode
-{
-  none,
-  full,
-  even,
-  group,
-  invalid
-};
-
 enum class Edge
 {
   top,
@@ -152,6 +143,7 @@ class IOPlacer
   Netlist netlist_io_pins_;
   std::vector<Slot> slots_;
   std::vector<Section> sections_;
+  std::vector<Section> sections_for_constraints_;
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
@@ -165,15 +157,25 @@ class IOPlacer
                           std::set<int> ver_layer_idx);
   void initIOLists();
   void initParms();
-  void randomPlacement(const RandomMode);
+  void randomPlacement();
   void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
+  void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
+  std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
+  void getPinsFromDirectionConstraint(Constraint &constraint);
+  void initConstraints();
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections();
-  bool assignPinsSections();
+  bool assignPinsToSections();
+  bool assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections);
   int assignGroupsToSections();
+  int assignConstrainedGroupsToSections();
+  int assignGroupToSection(const std::vector<int> &io_group,
+                           std::vector<Section> &sections);
+  void assignConstrainedPinsToSections();
   int returnIONetsHPWL(Netlist&);
+  void findPinAssignment(std::vector<Section>& sections);
 
   void updateOrientation(IOPin&);
   void updatePinArea(IOPin&);

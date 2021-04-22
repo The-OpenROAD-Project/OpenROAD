@@ -36,7 +36,7 @@
 #pragma once
 
 #include "CtsOptions.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 struct Tcl_Interp;
 

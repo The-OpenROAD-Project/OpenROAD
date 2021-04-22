@@ -37,25 +37,12 @@ include("openroad")
 
 option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
 
-if( USE_CIMG_LIB )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Dcimg_use_jpeg=1")
-  add_definitions(-DENABLE_CIMG_LIB=1)
-endif()
-
 # For Multithread
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Dcimg_use_jpeg=1 -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Eigen3 REQUIRED)
-
-# for cimg
-if( USE_CIMG_LIB )
-  find_package(X11 REQUIRED)
-  find_package(JPEG REQUIRED)
-  set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${X11_LIBRARIES} ${JPEG_LIBRARIES}")
-endif()
-
 
 swig_lib(NAME      replace
          NAMESPACE gpl
@@ -93,23 +80,30 @@ target_link_libraries(replace
     gui
     opendb
     OpenSTA
-    flute
+    sst
     rsz
     grt
 )
 
 # CIMG_USE case
 if( USE_CIMG_LIB )
-  target_link_libraries( replace
-    PRIVATE
-    ${X11_LIBRARIES} 
-    ${JPEG_LIBRARIES} 
-  )
-  target_include_directories( replace
-    PUBLIC
-    # For CImg
-    module/CImg
-    ${X11_INCLUDE_DIR}
-    ${JPEG_INCLUDE_DIR}
-  )
+  find_package(X11 REQUIRED)
+  find_package(JPEG REQUIRED)
+  if ( X11_FOUND AND JPEG_FOUND )
+    target_link_libraries( replace
+      PRIVATE
+        ${X11_LIBRARIES}
+        ${JPEG_LIBRARIES}
+    )
+    target_include_directories( replace
+      PUBLIC
+        ${X11_INCLUDE_DIR}
+        ${JPEG_INCLUDE_DIR}
+    )
+    target_compile_definitions( replace
+      PRIVATE
+        ENABLE_CIMG_LIB
+        cimg_use_jpeg=1
+    )
+  endif()
 endif()
