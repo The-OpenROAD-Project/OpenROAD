@@ -181,6 +181,13 @@ getPartitionMgr()
   return openroad->getPartitionMgr();
 }
 
+pdn::PdnGen*
+getPdnGen()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPdnGen();
+}
+
 } // namespace ord
 
 namespace sta {
