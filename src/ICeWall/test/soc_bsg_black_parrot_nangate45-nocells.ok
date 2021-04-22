@@ -14,7 +14,7 @@ PAD-0049
     (procedure "get_library_cell_orientation" line 7)
     invoked from within
 "get_library_cell_orientation [get_library_cell_by_type [get_padcell_type $padcell]] $side_name"
-    (procedure "get_padcell_orient" line 11)
+    (procedure "get_padcell_orient" line 16)
     invoked from within
 "get_padcell_orient $padcell"
     (procedure "get_scaled_origin" line 22)
