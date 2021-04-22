@@ -26,7 +26,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 977
-[INFO GRT-0157] Total Capacity: 277241
+[INFO GRT-0157] Total Capacity: 277312
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
@@ -70,7 +70,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 978
-[INFO GRT-0157] Total Capacity: 277239
+[INFO GRT-0157] Total Capacity: 277310
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
