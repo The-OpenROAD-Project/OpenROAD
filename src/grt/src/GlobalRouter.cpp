@@ -3170,6 +3170,8 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(int maxRoutingLayer)
               currVia->getTopLayer()->getName(),
               currVia->getName());
           defaultVias[i] = currVia;
+          _logger->info(GRT, 224, "Chose via {} as default.",
+                        currVia->getConstName());
           break;
         }
       }
