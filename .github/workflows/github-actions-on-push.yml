@@ -15,7 +15,7 @@ jobs:
       - name: Checkout security repository as a directory parallel to this repo
         env:
            GITHUBREPOTOKEN: ${{secrets.GITHUBREPOTOKEN}}
-        run: git clone https://${{ env.GITHUBREPOTOKEN }}@github.com/The-OpenROAD-Project-private/security.git
+        run: git clone https://github.com/The-OpenROAD-Project/security.git
       - name: List files in the repository after security clone
         run: |
           ls ${{ github.workspace }}
