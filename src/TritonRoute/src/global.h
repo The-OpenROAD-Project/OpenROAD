@@ -53,6 +53,8 @@ extern int BATCHSIZETA;
 extern int MTSAFEDIST;
 extern int DRCSAFEDIST;
 extern int VERBOSE;
+extern std::string BOTTOM_ROUTING_LAYER_NAME;
+extern std::string TOP_ROUTING_LAYER_NAME;
 extern int BOTTOM_ROUTING_LAYER;
 extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;

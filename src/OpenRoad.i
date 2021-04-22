@@ -44,9 +44,9 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
-#include "openroad/Version.hh"
+#include "ord/Version.hh"
 #include "utl/Logger.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
 //

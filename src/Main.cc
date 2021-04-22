@@ -62,9 +62,9 @@
 
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
-#include "openroad/Version.hh"
-#include "openroad/InitOpenRoad.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/Version.hh"
+#include "ord/InitOpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h" 
 #include "gui/gui.h"
 

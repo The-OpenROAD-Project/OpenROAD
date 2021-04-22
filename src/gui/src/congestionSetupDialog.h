@@ -43,7 +43,7 @@
 #include <vector>
 
 #include "db.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "ui_congestionSetup.h"
 
 namespace gui {

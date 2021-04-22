@@ -46,7 +46,7 @@
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 namespace ifp {

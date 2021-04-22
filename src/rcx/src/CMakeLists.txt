@@ -33,14 +33,14 @@
 
 include("openroad")
 
-swig_lib(NAME      OpenRCX
+swig_lib(NAME      rcx
          NAMESPACE rcx
          I_FILE    ext.i
          SCRIPTS   OpenRCX.tcl
 )
 
 
-target_sources(OpenRCX
+target_sources(rcx
   PRIVATE
     ext.cpp
     extBench.cpp
@@ -66,12 +66,12 @@ target_sources(OpenRCX
     MakeOpenRCX.cpp
 )
 
-target_include_directories(OpenRCX
+target_include_directories(rcx
   PUBLIC
     ../include
 )
 
-target_link_libraries(OpenRCX
+target_link_libraries(rcx
   PUBLIC
     opendb
     utl

@@ -37,7 +37,7 @@
 #include <tcl.h>
 
 #include "fin/Finale.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {

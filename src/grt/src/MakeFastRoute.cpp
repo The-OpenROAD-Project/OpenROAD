@@ -37,7 +37,7 @@
 
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
