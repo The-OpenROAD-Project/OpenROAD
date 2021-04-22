@@ -686,7 +686,8 @@ DTYPE flutes_wl_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
   float pnlty, dx, dy;
   float *score, *penalty;
   DTYPE xydiff;
-  DTYPE ll, minl, extral;
+  DTYPE ll, minl;
+  DTYPE extral = 0;
   DTYPE *x1, *x2, *y1, *y2;
   DTYPE *distx, *disty;
   int i, r, p, maxbp, nbp, bp, ub, lb, n1, n2, newacc;
@@ -904,8 +905,7 @@ DTYPE flutes_wl_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
           if (r == d - 1 || r == d - 2) {
             y1[n1] = y2[n2] = ys[r - 1];
             extral = ys[r] - ys[r - 1];
-          }
-          if (r == 0 || r == 1) {
+          } else if (r == 0 || r == 1) {
             y1[n1] = y2[n2] = ys[r + 1];
             extral = ys[r + 1] - ys[r];
           } else {
@@ -935,8 +935,7 @@ DTYPE flutes_wl_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
           if (r == d - 1 || r == d - 2) {
             x1[n1] = x2[n2] = xs[r - 1];
             extral = xs[r] - xs[r - 1];
-          }
-          if (r == 0 || r == 1) {
+          } else if (r == 0 || r == 1) {
             x1[n1] = x2[n2] = xs[r + 1];
             extral = xs[r + 1] - xs[r];
           } else {
@@ -1281,7 +1280,9 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
 {
   float *score, *penalty, pnlty, dx, dy;
   int ms, mins, maxs, minsi, maxsi;
-  int i, r, p, maxbp, bestbp, bp, nbp, ub, lb, n1, n2, nn1, nn2, newacc;
+  int i, r, p, maxbp, bestbp, bp, nbp, ub, lb, n1, n2, newacc;
+  int nn1 = 0;
+  int nn2 = 0;
   int *si, *s1, *s2, degree;
   Tree t, t1, t2, bestt1, bestt2;
   DTYPE ll, minl, coord1, coord2;
@@ -1647,7 +1648,11 @@ Tree dmergetree(Tree t1, Tree t2) {
 
 Tree hmergetree(Tree t1, Tree t2, int s[]) {
   int i, prev, curr, next, extra, offset1, offset2;
-  int p, ii, n1, n2, nn1, nn2;
+  int p, n1, n2;
+  int nn1 = 0;
+  int nn2 = 0;
+  int ii = 0;
+
   DTYPE coord1, coord2;
   Tree t;
 

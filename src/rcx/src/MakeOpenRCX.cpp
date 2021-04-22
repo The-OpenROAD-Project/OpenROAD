@@ -1,6 +1,7 @@
+////////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
+// Copyright (c) 2020, OpenRoad Project UCSD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,67 +29,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+////////////////////////////////////////////////////////////////////////////////
 
-%{
+#include "OpenRCX/MakeOpenRCX.h"
 
-#include "antennachecker/AntennaChecker.hh"
-#include "openroad/OpenRoad.hh"
-
-ant::AntennaChecker *
-getAntennaChecker()
-{
-  return ord::OpenRoad::openRoad()->getAntennaChecker();
-}
+#include "OpenRCX/ext.h"
+#include "ord/OpenRoad.hh"
 
 namespace ord {
-// Defined in OpenRoad.i
-odb::dbDatabase *getDb();
-}
 
-%}
-
-%inline %{
-
-namespace ant {
-
-void
-check_antennas(char* report_filename, bool simple_report)
+rcx::Ext* makeOpenRCX()
 {
-  getAntennaChecker()->check_antennas(report_filename, simple_report);
+  return new rcx::Ext();
 }
 
-void
-check_max_length(const char *net_name,
-                 int layer)
+void deleteOpenRCX(rcx::Ext* extractor)
 {
-  AntennaChecker *checker = getAntennaChecker();
-  checker->check_max_length(net_name, layer);
+  delete extractor;
 }
 
-void
-load_antenna_rules()
+void initOpenRCX(OpenRoad* openroad)
 {
-  getAntennaChecker()->load_antenna_rules();
+  openroad->getOpenRCX()->init(
+      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
 }
 
-bool
-check_net_violation(char* net_name)
-{ 
-  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
-  if (net) {
-    auto vios = getAntennaChecker()->get_net_antenna_violations(net);
-    return !vios.empty();
-  }
-  else
-    return false;
-}
-
-void
-find_max_wire_length()
-{
-  getAntennaChecker()->find_max_wire_length();
-}
-
-}
-
-%} // inline
+}  // namespace ord

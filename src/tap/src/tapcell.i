@@ -36,7 +36,7 @@
 %{
 
 #include "tap/tapcell.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 tap::Tapcell *
 getTapcell()

@@ -78,8 +78,8 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(
-  ${OPENROAD_HOME}/include/openroad/Version.hh.cmake
-  ${OPENROAD_HOME}/include/openroad/Version.hh
+  ${OPENROAD_HOME}/include/ord/Version.hh.cmake
+  ${OPENROAD_HOME}/include/ord/Version.hh
   )
 
 ################################################################

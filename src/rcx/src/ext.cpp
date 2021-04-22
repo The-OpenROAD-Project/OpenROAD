@@ -38,7 +38,7 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* OpenRCX_tcl_inits[];
+extern const char*rcx_tcl_inits[];
 }  // namespace sta
 
 namespace rcx {
@@ -47,7 +47,7 @@ using utl::Logger;
 using utl::RCX;
 
 extern "C" {
-extern int Openrcx_Init(Tcl_Interp* interp);
+extern int Rcx_Init(Tcl_Interp* interp);
 }
 
 Ext::Ext() : odb::ZInterface()
@@ -82,8 +82,8 @@ void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 
   // Define swig TCL commands.
-  Openrcx_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::OpenRCX_tcl_inits);
+  Rcx_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::rcx_tcl_inits);
 }
 
 void Ext::setLogger(Logger* logger)
