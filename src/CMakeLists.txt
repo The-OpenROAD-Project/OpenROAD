@@ -120,7 +120,7 @@ add_subdirectory(OpenDB)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(flute3)
+add_subdirectory(sst)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
@@ -129,10 +129,10 @@ add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(OpenRCX)
+add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
-add_subdirectory(antenna_checker)
+add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
@@ -168,12 +168,12 @@ target_link_libraries(openroad
   fin
   rsz
   ppl
-  flute
+  sst
   dbSta
   OpenSTA
   opendb
   opendbtcl
-  OpenRCX
+  rcx
   TritonCTS
   grt
   tap
@@ -181,7 +181,7 @@ target_link_libraries(openroad
   TritonRoute
   mpl
   psm
-  antennachecker
+  ant
   PartitionMgr
   utl
   ${TCL_LIBRARY}
@@ -261,7 +261,7 @@ install(TARGETS openroad DESTINATION bin)
 
 add_custom_target(openroad_tags etags -o TAGS
   ${OPENROAD_SOURCE}
-  ${OPENROAD_HOME}/include/openroad/*.hh
+  ${OPENROAD_HOME}/include/ord/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.hh
   ${DBSTA_HOME}/include/db_sta/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.cc

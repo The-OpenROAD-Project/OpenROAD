@@ -33,7 +33,7 @@
 
 %{
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "mpl/MacroPlacer.h"
 
 namespace ord {

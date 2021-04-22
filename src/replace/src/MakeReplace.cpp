@@ -33,7 +33,7 @@
 
 #include <tcl.h>
 #include "sta/StaMain.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "replace/MakeReplace.h"
 #include "replace/Replace.h"
 

@@ -36,7 +36,7 @@
 #include "tritoncts/MakeTritoncts.h"
 #include "tritoncts/TritonCTS.h"
 #include "db.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 #include "CtsOptions.h"
 

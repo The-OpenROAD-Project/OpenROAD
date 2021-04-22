@@ -1,0 +1,23 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: simple01.def
+[INFO ODB-0128] Design: single_cell
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO ODB-0134] Finished DEF file: simple01.def
+Placement Analysis
+---------------------------------
+total displacement          3.3 u
+average displacement        3.3 u
+max displacement            3.3 u
+original HPWL               2.3 u
+legalized HPWL              9.1 u
+delta HPWL                  299 %
+
+[INFO DPL-0001] Placed 6 filler instances.
+No differences found.

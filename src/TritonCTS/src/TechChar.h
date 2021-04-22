@@ -37,7 +37,7 @@
 
 #include "CtsOptions.h"
 #include "db_sta/dbNetwork.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/Corner.hh"
 
 #include <algorithm>

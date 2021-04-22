@@ -1366,6 +1366,8 @@ void io::Parser::addDefaultCutLayer()
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 {
+  if(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
+    return;
   if (readLayerCnt == 0) {
     addDefaultMasterSliceLayer();
     addDefaultCutLayer();
@@ -1663,6 +1665,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 
 void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 {
+  if(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
+    return;
   if (readLayerCnt == 0)
     addDefaultMasterSliceLayer();
 

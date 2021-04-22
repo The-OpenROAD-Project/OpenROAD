@@ -149,43 +149,6 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
   return (x + y);
 }
 
-int Netlist::computeIONetHPWL(int idx,
-                              const Section& section,
-                              const std::vector<Constraint>& constraints,
-                              const std::vector<Slot>& slots)
-{
-  int hpwl;
-
-  const Point& section_center = section.pos;
-  Edge edge = section.edge;
-
-  int available_slots = 1;
-  if (checkSectionForPin(io_pins_[idx], section, constraints, slots, available_slots)) {
-    // divide by available slots to give preference for sections with more available
-    hpwl = computeIONetHPWL(idx, section_center)/available_slots;
-  } else {
-    hpwl = std::numeric_limits<int>::max();
-  }
-
-  return hpwl;
-}
-
-int Netlist::computeIONetHPWL(int idx,
-                              Point slot_pos,
-                              Edge edge,
-                              const std::vector<Constraint>& constraints)
-{
-  int hpwl;
-
-  if (checkSlotForPin(io_pins_[idx], edge, slot_pos, constraints)) {
-    hpwl = computeIONetHPWL(idx, slot_pos);
-  } else {
-    hpwl = std::numeric_limits<int>::max();
-  }
-
-  return hpwl;
-}
-
 int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
 {
   int net_start = net_pointer_[idx];
@@ -200,83 +163,6 @@ int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
   }
 
   return total_distance;
-}
-
-bool Netlist::checkSlotForPin(const IOPin& pin,
-                              Edge edge,
-                              const odb::Point& point,
-                              const std::vector<Constraint>& constraints) const
-{
-  bool valid_slot = true;
-  int pos
-        = (edge == Edge::top || edge == Edge::bottom) ? point.x() : point.y();
-
-  for (Constraint constraint : constraints) {
-    const PinList &pin_list = constraint.pin_list;
-    if (pin.getDirection() == constraint.direction) {
-      valid_slot = checkInterval(constraint, edge, pos);
-    } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
-               != pin_list.end()) {
-      valid_slot = checkInterval(constraint, edge, pos);
-    }
-  }
-
-  return valid_slot;
-}
-
-bool Netlist::checkSectionForPin(const IOPin& pin,
-                                 const Section& section,
-                                 const std::vector<Constraint>& constraints,
-                                 const std::vector<Slot>& slots,
-                                 int& available_slots) const
-{
-  bool valid_slot = true;
-
-  Edge edge = section.edge;
-
-  const int section_begin = (edge == Edge::top || edge == Edge::bottom) ? 
-                      slots[section.begin_slot].pos.x() : slots[section.begin_slot].pos.y();
-  
-  const int section_end = (edge == Edge::top || edge == Edge::bottom) ? 
-                      slots[section.end_slot].pos.x() : slots[section.end_slot].pos.y();
-
-  const int section_min = (section_begin < section_end) ? section_begin : section_end;
-  const int section_max = (section_begin > section_end) ? section_begin : section_end;
-
-  const int spacing = (section.num_slots > 0) ? (section_max - section_min)/(section.num_slots) : 1;
-
-  for (Constraint constraint : constraints) {
-    const int constraint_begin = constraint.interval.getBegin();
-    const int constraint_end = constraint.interval.getEnd();
-
-    const PinList &pin_list = constraint.pin_list;
-
-    if (pin.getDirection() == constraint.direction) {
-      valid_slot = (section_min <= constraint_end &&
-                    constraint_begin <= section_max &&
-                    constraint.interval.getEdge() == edge);
-      available_slots = std::max(0,
-                                (std::min(section_max, constraint_end) -
-                                 std::max(section_min, constraint_begin) + 1))/spacing;
-    } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
-               != pin_list.end()) {
-      valid_slot = (section_min <= constraint_end &&
-                    constraint_begin <= section_max &&
-                    constraint.interval.getEdge() == edge);
-      available_slots = std::max(0,
-                                (std::min(section_max, constraint_end) -
-                                 std::max(section_min, constraint_begin) + 1))/spacing;
-    }
-  }
-
-  return valid_slot;
-}
-
-bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) const
-{
-  return (constraint.interval.getEdge() == edge
-          && pos >= constraint.interval.getBegin()
-          && pos <= constraint.interval.getEnd());
 }
 
 void Netlist::clear()

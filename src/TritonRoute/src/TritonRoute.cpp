@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "triton_route/TritonRoute.h"
-
 #include <fstream>
 #include <iostream>
 
@@ -43,6 +41,7 @@
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "ta/FlexTA.h"
+#include "triton_route/TritonRoute.h"
 
 using namespace std;
 using namespace fr;
@@ -142,6 +141,32 @@ void TritonRoute::init()
 
   io::Parser parser(getDesign(), logger_);
   parser.readDb(db_);
+
+  if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer
+        = getDesign()->getTech()->getLayer(BOTTOM_ROUTING_LAYER_NAME);
+    if (layer) {
+      BOTTOM_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    251,
+                    "bottomRoutingLayer {} not found",
+                    BOTTOM_ROUTING_LAYER_NAME);
+    }
+  }
+
+  if (!TOP_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = getDesign()->getTech()->getLayer(TOP_ROUTING_LAYER_NAME);
+    if (layer) {
+      TOP_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    252,
+                    "bottomRoutingLayer {} not found",
+                    TOP_ROUTING_LAYER_NAME);
+    }
+  }
+
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {
@@ -298,10 +323,13 @@ void TritonRoute::readParams(const string& fileName)
           OR_K = atof(value.c_str());
           ++readParamCnt;
         } else if (field == "bottomRoutingLayer") {
-          BOTTOM_ROUTING_LAYER = atoi(value.c_str());
+          BOTTOM_ROUTING_LAYER_NAME = value;
           ++readParamCnt;
         } else if (field == "topRoutingLayer") {
-          TOP_ROUTING_LAYER = atoi(value.c_str());
+          TOP_ROUTING_LAYER_NAME = value;
+          ++readParamCnt;
+        } else if (field == "initRouteShapeCost") {
+          ROUTESHAPECOST = atoi(value.c_str());
           ++readParamCnt;
         }
       }

@@ -134,7 +134,7 @@ target_link_libraries(TritonRoute
   PUBLIC
     gui
     opendb
-    flute
+    sst
     OpenSTA
     utl
     Threads::Threads
