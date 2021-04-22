@@ -35,7 +35,7 @@
 
 #include <tcl.h>
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "pdn/MakePdnGen.hh"
 #include "pdn/PdnGen.hh"
 

@@ -35,7 +35,7 @@
 
 #include "pdn/PdnGen.hh"
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 #include <set>
