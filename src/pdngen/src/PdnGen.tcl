@@ -2692,107 +2692,71 @@ proc export_opendb_vias {} {
   # debug "end"
 }
 
+proc get_global_connect_list_default {voltage_domain is_region} {
+  variable block
+  variable voltage_domains
+  
+  foreach net_type "primary_power primary_ground" {
+    set net_name [dict get $voltage_domains $voltage_domain $net_type]
+    set net [$block findNet $net_name]
+    foreach term [get_valid_mterms $net_name] {
+      if {$is_region} {
+        pdn::add_global_connect $block $voltage_domain ".*" $term $net
+      } else {
+        pdn::add_global_connect ".*" $term $net
+      }
+    }
+  }
+}
+
+proc get_global_connect_list {net_name} {
+  variable design_data
+  variable global_connections
+  variable voltage_domains
+  
+  set connect_patterns {}
+  foreach pattern [dict get $global_connections $net_name] {
+    lappend connect_patterns $pattern
+  }
+  
+  return $connect_patterns
+}
+
 proc export_opendb_global_connection {} {
   variable block
   variable design_data
   variable global_connections
+  variable voltage_domains
   
-  # Build index of power nets
-  set pwr_net_info [dict create]
+  ## Do global connect statements first
+  get_global_connect_list_default [dict get $design_data core_domain] false
   foreach net_type "power_nets ground_nets" {
     foreach net_name [dict get $design_data $net_type] {
-      dict lappend pwr_net_info nets $net_name
-      dict set pwr_net_info net $net_name inst [$block findNet $net_name]
-      dict set pwr_net_info net $net_name validmterms [get_valid_mterms $net_name]
-      if {[dict exists $global_connections $net_name]} {
-        dict set pwr_net_info net $net_name pattern [dict get $global_connections $net_name]
-      } else {
-        dict set pwr_net_info net $net_name pattern {}
+      set net [$block findNet $net_name]
+      foreach pattern [get_global_connect_list $net_name] {
+        pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
       }
     }
   }
   
-  # Build index of masters with candidate pin connections
-  set masters_info [dict create]
-  foreach lib [[ord::get_db] getLibs] {
-    foreach master [$lib getMasters] {
-      foreach mterm [$master getMTerms] {
-        set mterm_type [$mterm getSigType]
-        set mterm_name [$mterm getName]
-        set mterm_dict [dict create]
-        dict set mterm_dict inst $mterm
-        dict set mterm_dict pattern {}
-        dict set mterm_dict validmterm 0
-        foreach net_name [dict get $pwr_net_info nets] {
-          # If the terminal is found in the valid_mterms list, set flag
-          foreach validm [dict get $pwr_net_info net $net_name validmterms] {
-            if {[regexp $validm $mterm_name]} {
-              dict set mterm_dict validmterm 1
-            }
-          }
-          # Prefilter patterns, so we only need to check instance names later
-          foreach pattern [dict get $pwr_net_info net $net_name pattern] {
-            if {[regexp [dict get $pattern pin_name] $mterm_name]} {
-              dict lappend mterm_dict pattern "[dict get $pattern inst_name] [dict get $pwr_net_info net $net_name inst]"
-            }
-          }
-        }
-        if {[llength [dict get $mterm_dict pattern]] > 0} {
-          dict set masters_info $master $mterm_name $mterm_dict
+  ## Do regions second
+  set core_domain_name [dict get $design_data core_domain]
+  foreach voltage_domain [dict keys $voltage_domains] {
+    if {$voltage_domain != $core_domain_name} {
+      get_global_connect_list_default $voltage_domain true
+      
+      foreach {net_type netname} [dict get $voltage_domains $voltage_domain] {
+        set net [$block findNet $net_name]
+        
+        # loop over all patterns
+        foreach pattern [get_global_connect_list $net_name] {
+          pdn::add_global_connect $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net
         }
       }
     }
   }
   
-  foreach inst [$block getInsts] {
-    set inst_name [$inst getName]
-    set master [$inst getMaster]
-    if {[dict exists $masters_info $master]} {
-      set master_info [dict get $masters_info $master]
-      foreach mterm [dict keys $master_info] {
-        set mterm_inst [dict get $master_info $mterm inst]
-        set connect_via_pattern 0
-        # Check if instance name is part of pattern and connect
-        foreach pattern_net [dict get $master_info $mterm pattern] {
-          lassign $pattern_net pattern net
-          if {[regexp $pattern $inst_name]} {
-            odb::dbITerm_connect $inst $net $mterm_inst
-            set connect_via_pattern 1
-            break
-          }
-        }
-        if {!$connect_via_pattern && [dict get $master_info $mterm validmterm]} {
-          # no pattern matched and is a valid mterm, so we need to figure out the connectivity
-          #PHY cells like ENDCAPS, WELLTAPS have uncertain pwr/gnd connections when there are voltage domains.
-          #This is to detect where the PHY cells are placed, the pwr/gnd pins are connected automatically
-          set box [$inst getBBox]
-          set inst_llx [$box xMin]
-          set inst_lly [$box yMin]
-          set inst_urx [$box xMax]
-          set inst_ury [$box yMax]
-          set domain_name [get_voltage_domain $inst_llx $inst_lly $inst_urx $inst_ury]
-          set net_name "NULL"
-          if {[$mterm_inst getSigType] == "POWER"} {
-            set net_name [get_domain_power $domain_name]
-          } elseif {[$mterm_inst getSigType] == "GROUND"} {
-            set net_name [get_domain_ground $domain_name]
-          }
-          if {$net_name != "NULL"} {
-            odb::dbITerm_connect $inst [dict get $pwr_net_info net $net_name inst] $mterm_inst
-          }
-        }
-      }
-    }
-  }
-  
-  # Loop over power nets and set all iterms connected as special
-  foreach net_name [dict get $pwr_net_info nets] {
-    set net [$block findNet $net_name]
-    
-    foreach iterm [$net getITerms] {
-      $iterm setSpecial
-    }
-  }
+  pdn::global_connect $block
 }
 
 proc export_opendb_specialnet {net_name signal_type} {
