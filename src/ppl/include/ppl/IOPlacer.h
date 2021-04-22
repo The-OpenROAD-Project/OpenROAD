@@ -93,10 +93,17 @@ struct Constraint
   PinList pin_list;
   Direction direction;
   Interval interval;
+  odb::Rect box;
   Constraint() = default;
   Constraint(PinList pins, Direction dir, Interval interv)
       : pin_list(pins), direction(dir), interval(interv)
   {
+    box = odb::Rect(-1, -1, -1, -1);
+  }
+  Constraint(PinList pins, Direction dir, odb::Rect b)
+      : pin_list(pins), direction(dir), box(b)
+  {
+    interval = Interval(Edge::invalid, -1, -1);
   }
 };
 
@@ -116,12 +123,17 @@ class IOPlacer
                               Edge edge,
                               int begin,
                               int end);
+  void addTopLayerConstraint(PinList* pins,
+                             int x1, int y1,
+                             int x2, int y2);
   void addHorLayer(int layer) { hor_layers_.insert(layer); }
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
   void addPinGroup(PinList* group);
   void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
+  void addCustomPattern(int layer, int x_step, int y_step,
+                        int x_ori, int y_ori, int width, int height);
 
  private:
   Netlist netlist_;
@@ -158,10 +170,11 @@ class IOPlacer
   void initIOLists();
   void initParms();
   void randomPlacement();
-  void findSlots(const std::set<int>& layers, Edge edge);
-  void defineSlots();
+  void findSlots(const std::set<int>& layers, Edge edge, bool top_layer);
+  void defineSlots(bool top_layer);
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
+  std::vector<Section> createSectionsForTopLayer(odb::Rect);
   void getPinsFromDirectionConstraint(Constraint &constraint);
   void initConstraints();
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);

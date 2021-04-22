@@ -86,6 +86,8 @@ class Core
   std::vector<int> getMinWidthY() const { return min_width_y_; }
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
+  void addPattern(int layer, int x_step, int y_step,
+                  int x_ori, int y_ori, int width, int height);
 
  private:
   Rect boundary_;

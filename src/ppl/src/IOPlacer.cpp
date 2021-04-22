@@ -256,7 +256,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
   }
 }
 
-void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
+void IOPlacer::findSlots(const std::set<int>& layers, Edge edge, bool top_layer)
 {
   const int default_min_dist = 2;
   Point lb = core_.getBoundary().ll();
@@ -348,7 +348,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   }
 }
 
-void IOPlacer::defineSlots()
+void IOPlacer::defineSlots(bool top_layer)
 {
   Point lb = core_.getBoundary().ll();
   Point ub = core_.getBoundary().ur();
@@ -384,13 +384,13 @@ void IOPlacer::defineSlots()
   // is k_end
   //     ^^^^^^^^ position of tracks(slots)
 
-  findSlots(ver_layers_, Edge::bottom);
+  findSlots(ver_layers_, Edge::bottom, top_layer);
 
-  findSlots(hor_layers_, Edge::right);
+  findSlots(hor_layers_, Edge::right, top_layer);
 
-  findSlots(ver_layers_, Edge::top);
+  findSlots(ver_layers_, Edge::top, top_layer);
 
-  findSlots(hor_layers_, Edge::left);
+  findSlots(hor_layers_, Edge::left, top_layer);
 }
 
 void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>& sections)
@@ -428,40 +428,51 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &con
   const Interval &interv = constraint.interval;
   const Edge &edge = interv.edge;
 
-  const std::set<int>& layers =
-    (edge == Edge::left || edge == Edge::right) ?
-    hor_layers_ : ver_layers_;
-
   std::vector<Section> sections;
-  for (int layer : layers) {
-    std::vector<Slot>::iterator it =
-      std::find_if(slots_.begin(), slots_.end(),
-       [&](const Slot& s) {
-        int slot_xy =
-          (edge == Edge::left || edge == Edge::right) ?
-          s.pos.y() : s.pos.x();
-        if (edge == Edge::bottom || edge == Edge::right)
+  if (edge != Edge::invalid) {
+    const std::set<int>& layers =
+      (edge == Edge::left || edge == Edge::right) ?
+      hor_layers_ : ver_layers_;
+
+    for (int layer : layers) {
+      std::vector<Slot>::iterator it =
+        std::find_if(slots_.begin(), slots_.end(),
+         [&](const Slot& s) {
+          int slot_xy =
+            (edge == Edge::left || edge == Edge::right) ?
+            s.pos.y() : s.pos.x();
+          if (edge == Edge::bottom || edge == Edge::right)
+            return (s.edge == edge && s.layer == layer &&
+                    slot_xy >= interv.begin);
           return (s.edge == edge && s.layer == layer &&
-                  slot_xy >= interv.begin);
-        return (s.edge == edge && s.layer == layer &&
-                  slot_xy <= interv.end);
-       });
-    int constraint_begin = it - slots_.begin();
+                    slot_xy <= interv.end);
+         });
+      int constraint_begin = it - slots_.begin();
 
-    it =
-      std::find_if(slots_.begin() + constraint_begin, slots_.end(),
-       [&](const Slot& s) {
-        int slot_xy =
-          (edge == Edge::left || edge == Edge::right) ?
-          s.pos.y() : s.pos.x();
-        if (edge == Edge::bottom || edge == Edge::right)
-          return (slot_xy >= interv.end || s.edge != edge || s.layer != layer);
-        return (slot_xy <= interv.begin || s.edge != edge || s.layer != layer);
-       });
-    int constraint_end = it - slots_.begin()-1;
+      it =
+        std::find_if(slots_.begin() + constraint_begin, slots_.end(),
+         [&](const Slot& s) {
+          int slot_xy =
+            (edge == Edge::left || edge == Edge::right) ?
+            s.pos.y() : s.pos.x();
+          if (edge == Edge::bottom || edge == Edge::right)
+            return (slot_xy >= interv.end || s.edge != edge || s.layer != layer);
+          return (slot_xy <= interv.begin || s.edge != edge || s.layer != layer);
+         });
+      int constraint_end = it - slots_.begin()-1;
 
-    findSections(constraint_begin, constraint_end, edge, sections);
+      findSections(constraint_begin, constraint_end, edge, sections);
+    }
+  } else {
+    sections = sections_;
   }
+
+  return sections;
+}
+
+std::vector<Section> IOPlacer::createSectionsForTopLayer(odb::Rect)
+{
+  std::vector<Section> sections;
 
   return sections;
 }
@@ -489,9 +500,6 @@ void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
 
 void IOPlacer::createSections()
 {
-  Point lb = core_.getBoundary().ll();
-  Point ub = core_.getBoundary().ur();
-
   sections_.clear();
 
   // sections only have slots at the same edge of the die boundary
@@ -911,6 +919,15 @@ void IOPlacer::addDirectionConstraint(Direction direction,
   constraints_.push_back(constraint);
 }
 
+void IOPlacer::addTopLayerConstraint(PinList* pins,
+                                     int x1, int y1,
+                                     int x2, int y2)
+{
+  odb::Rect box = odb::Rect(x1,y1, x2, y2);
+  Constraint constraint(*pins, Direction::invalid, box);
+  constraints_.push_back(constraint);
+}
+
 void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
 {
   Netlist& netlist = netlist_io_pins_;
@@ -1012,7 +1029,7 @@ void IOPlacer::run(bool random_mode)
   int delta_hpwl = 0;
 
   initIOLists();
-  defineSlots();
+  defineSlots(false);
 
   initConstraints();
 
@@ -1144,6 +1161,12 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs,
                min_widths_x,
                min_widths_y,
                database_unit);
+}
+
+void IOPlacer::addCustomPattern(int layer, int x_step, int y_step,
+                                int x_ori, int y_ori, int width, int height)
+{
+  core_.addPattern(layer, x_step, y_step, x_ori, y_ori, width, height);
 }
 
 void IOPlacer::initNetlist()
