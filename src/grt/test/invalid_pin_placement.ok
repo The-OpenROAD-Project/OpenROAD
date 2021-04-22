@@ -13,9 +13,19 @@ Min routing layer: metal1
 Max routing layer: metal10
 Global adjustment: 0%
 Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1900
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 910
-[WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0017] Found 0 clock nets.
 [ERROR GRT-0093] Pin clk does not have layer assignment.
 GRT-0093

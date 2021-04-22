@@ -293,7 +293,7 @@ class GlobalRouter
   void initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
                          int maxLayer,
                          const std::vector<float>& layerPitches);
-  void computeCapacities(int maxLayer, const std::vector<float>& layerPitches);
+  void computeCapacities(int maxLayer);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist();
   void addNets(std::set<odb::dbNet*, cmpById>& db_nets);
