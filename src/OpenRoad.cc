@@ -451,13 +451,15 @@ void OpenRoad::pythonCommand(const char* py_command)
 
 void
 OpenRoad::setThreadCount(int threads, bool printInfo) {
+  int max_threads = std::thread::hardware_concurrency();
+  if (max_threads == 0) {
+    logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
+    max_threads = 1;
+  }
   if (threads <= 0) { // max requested
-    threads = std::thread::hardware_concurrency();
-
-    if (threads == 0) {
-      logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
-      threads = 1;
-    }
+    threads = max_threads;
+  } else if (threads > max_threads) {
+    threads = max_threads;
   }
   threads_ = threads;
 
@@ -470,8 +472,12 @@ OpenRoad::setThreadCount(int threads, bool printInfo) {
 
 void
 OpenRoad::setThreadCount(const char* threads, bool printInfo) {
-  int max_threads = -1; // -1 is max cores
-  if (strcmp(threads, "max") != 0) {
+  int max_threads = threads_; // default, make no changes
+
+  if (strcmp(threads, "max") == 0) {
+    max_threads = -1; // -1 is max cores
+  }
+  else {
     try {
       max_threads = std::stoi(threads);
     } catch (const std::invalid_argument&) {
