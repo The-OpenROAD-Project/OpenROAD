@@ -1200,6 +1200,13 @@ dbNetwork::mergedInto(Net *)
   return nullptr;
 }
 
+bool
+dbNetwork::isSpecial(Net *net)
+{
+  dbNet *db_net = staToDb(net);
+  return db_net->isSpecial();
+}
+
 ////////////////////////////////////////////////////////////////
 
 dbInst *

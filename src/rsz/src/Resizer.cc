@@ -434,7 +434,7 @@ Resizer::bufferInputs()
     if (network_->direction(pin)->isInput()
         && !sta_->isClock(pin)
         && hasPins(net)
-        && !isSpecial(net))
+        && !db_network_->isSpecial(net))
       bufferInput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
@@ -512,7 +512,7 @@ Resizer::bufferOutputs()
     if (network_->direction(pin)->isOutput()
         && net
         && hasPins(net)
-        && !isSpecial(net))
+        && !db_network_->isSpecial(net))
       bufferOutput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
@@ -619,7 +619,7 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
         && !isFuncOneZero(drvr_pin)
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       repairNet(net, drvr, true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
@@ -1264,7 +1264,7 @@ Resizer::resizeToTargetSlew()
         // Hands off the clock nets.
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       if (resizeToTargetSlew(drvr_pin))
         resize_count_++;
       if (overMaxArea()) {
@@ -1485,7 +1485,7 @@ Resizer::findResizeSlacks1()
     if (net
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
       nets.push_back(net);
     }
@@ -2435,7 +2435,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < slack_margin
         // Hands off special nets.
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       debugPrint(logger_, RSZ, "repair_hold", 2, "driver {}",
                  vertex->name(sdc_network_));
       // Only add delay to loads with hold violations.
@@ -3296,13 +3296,6 @@ Resizer::isFuncOneZero(const Pin *drvr_pin)
                     || func->op() == FuncExpr::op_one);
   }
   return false;
-}
-
-bool
-Resizer::isSpecial(Net *net)
-{
-  dbNet *db_net = db_network_->staToDb(net);
-  return db_net->isSpecial();
 }
 
 ////////////////////////////////////////////////////////////////

@@ -477,7 +477,6 @@ protected:
   void findLoads(Pin *drvr_pin,
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
-  bool isSpecial(Net *net);
   bool hasPins(Net *net);
   Point tieLocation(Pin *load,
                     int separation);
