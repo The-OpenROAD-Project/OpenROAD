@@ -124,6 +124,17 @@ Tcl_ChannelType ScriptWidget::stdout_channel_type_ = {
     nullptr                      /* truncateProc */
 };
 
+int ScriptWidget::tclExitHandler(ClientData instance_data,
+                                 Tcl_Interp *interp,
+                                 int argc,
+                                 const char **argv) {
+  ScriptWidget* widget = (ScriptWidget*) instance_data;
+  // announces exit to Qt
+  emit widget->tclExiting();
+  // does not matter from here on, since GUI is getting ready exit
+  return TCL_OK;
+}
+
 void ScriptWidget::setupTcl()
 {
   interp_ = Tcl_CreateInterp();
@@ -136,6 +147,9 @@ void ScriptWidget::setupTcl()
     Tcl_RegisterChannel(interp_, stdout_channel);  // per man page: some tcl bug
     Tcl_SetStdChannel(stdout_channel, TCL_STDOUT);
   }
+
+  // Overwrite exit to allow Qt to handle exit
+  Tcl_CreateCommand(interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
 
   // Ensures no newlines are present in stdout stream when using logger, but normal behavior in file writing
   Tcl_Eval(interp_, "rename puts ::tcl::openroad::puts");
