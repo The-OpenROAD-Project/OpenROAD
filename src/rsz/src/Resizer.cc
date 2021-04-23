@@ -433,6 +433,7 @@ Resizer::bufferInputs()
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
         && !sta_->isClock(pin)
+        && hasPins(net)
         && !isSpecial(net))
       bufferInput(pin, buffer_lowest_drive_);
   }
@@ -443,6 +444,15 @@ Resizer::bufferInputs()
   }
 }
    
+bool
+Resizer::hasPins(Net *net)
+{
+  NetPinIterator *pin_iter = db_network_->pinIterator(net);
+  bool has_pins = pin_iter->hasNext();
+  delete pin_iter;
+  return has_pins;
+}
+
 void
 Resizer::bufferInput(Pin *top_pin,
                      LibertyCell *buffer_cell)
@@ -501,6 +511,7 @@ Resizer::bufferOutputs()
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isOutput()
         && net
+        && hasPins(net)
         && !isSpecial(net))
       bufferOutput(pin, buffer_lowest_drive_);
   }
