@@ -99,6 +99,7 @@ using sta::DcalcAnalysisPt;
 using sta::ParasiticAnalysisPt;
 using sta::GateTimingModel;
 using sta::Pvt;
+using sta::Parasitics;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
@@ -418,7 +419,8 @@ protected:
                                Pin *drvr_pin,
                                Pin *load_pin,
                                double wire_length, // meters
-                               const Corner *corner);
+                               const Corner *corner,
+                               Parasitics *parasitics);
   string makeUniqueNetName();
   Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
