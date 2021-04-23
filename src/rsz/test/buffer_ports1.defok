@@ -14,7 +14,7 @@ COMPONENTS 8 ;
     - u1 BUF_X1 ;
     - u2 AND2_X1 ;
 END COMPONENTS
-PINS 6 ;
+PINS 8 ;
     - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
@@ -35,6 +35,14 @@ PINS 6 ;
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
         + FIXED ( 333 1000 ) N ;
+    - nc1 + NET nc1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 0 0 ) N ;
+    - nc2 + NET nc2 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 0 0 ) N ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
@@ -44,12 +52,14 @@ SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER ;
     - VSS ( * VSS ) + USE GROUND ;
 END SPECIALNETS
-NETS 13 ;
+NETS 15 ;
     - clk1 ( PIN clk1 ) ( r1 CK ) + USE SIGNAL ;
     - clk2 ( PIN clk2 ) ( r2 CK ) + USE SIGNAL ;
     - clk3 ( PIN clk3 ) ( r3 CK ) + USE SIGNAL ;
     - in1 ( PIN in1 ) ( input1 A ) + USE SIGNAL ;
     - in2 ( PIN in2 ) ( input2 A ) + USE SIGNAL ;
+    - nc1 ( PIN nc1 ) + USE SIGNAL ;
+    - nc2 ( PIN nc2 ) + USE SIGNAL ;
     - net1 ( input1 Z ) ( r1 D ) + USE SIGNAL ;
     - net2 ( input2 Z ) ( r2 D ) + USE SIGNAL ;
     - net3 ( output3 A ) ( r3 Q ) + USE SIGNAL ;
