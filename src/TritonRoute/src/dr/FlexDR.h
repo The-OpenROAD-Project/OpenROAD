@@ -839,6 +839,17 @@ class FlexDRWorker
                          int type,
                          frConstraint* con,
                          bool isSkipVia = false);
+  // SpacingTableInf
+  void modInfSpacingRulesCost(const frBox& box,
+                                          frMIdx z,
+                                          int type,
+                                          bool isSkipVia = false);
+  void modInfSpacingRuleWideBox(const frBox& box,
+                                            frMIdx z,
+                                            int type,
+                                            bool vertical,
+                                            int spc,
+                                            bool isSkipVia = false);
   // cutSpc
   void modCutSpacingCost(const frBox& box,
                          frMIdx z,
