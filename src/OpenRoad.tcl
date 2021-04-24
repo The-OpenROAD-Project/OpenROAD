@@ -150,10 +150,9 @@ proc assign_ndr { args } {
   if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
     utl::error ORD 1010 "Either -net or -all_clocks need to be defined"
   }
-  set tech [[ord::get_db] getTech]
   set block [[[ord::get_db] getChip] getBlock]
   set ndrName $keys(-ndr)
-  set ndr [$tech findNonDefaultRule $ndrName]
+  set ndr [$block findNonDefaultRule $ndrName]
   if { $ndr == "NULL" } {
     utl::error ORD 1011 "No NDR named ${ndrName} found"
   }
