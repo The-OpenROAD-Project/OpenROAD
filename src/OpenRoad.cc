@@ -36,6 +36,7 @@
 #include "ord/OpenRoad.hh"
 
 #include <iostream>
+#include <thread>
 #ifdef ENABLE_PYTHON3
   #define PY_SSIZE_T_CLEAN
   #include "Python.h"
@@ -79,6 +80,7 @@
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
+#include "pdn/MakePdnGen.hh"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -111,6 +113,8 @@ using sta::evalTclInit;
 using sta::dbSta;
 using sta::Resizer;
 
+using utl::ORD;
+
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
     logger_(nullptr),
@@ -130,7 +134,9 @@ OpenRoad::OpenRoad()
     antenna_checker_(nullptr),
     replace_(nullptr),
     pdnsim_(nullptr), 
-    partitionMgr_(nullptr) 
+    partitionMgr_(nullptr),
+    pdngen_(nullptr),
+    threads_(1)
 {
   db_ = dbDatabase::create();
 }
@@ -153,6 +159,7 @@ OpenRoad::~OpenRoad()
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
+  deletePdnGen(pdngen_);
   stt::deleteLUT();
   delete logger_;
 }
@@ -211,6 +218,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
+  pdngen_ = makePdnGen();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -238,6 +246,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initPDNSim(this);
   initAntennaChecker(this);
   initPartitionMgr(this);
+  initPdnGen(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
@@ -444,6 +453,50 @@ void OpenRoad::pythonCommand(const char* py_command)
   PyRun_SimpleString(py_command);
 }
 #endif
+
+void
+OpenRoad::setThreadCount(int threads, bool printInfo) {
+  int max_threads = std::thread::hardware_concurrency();
+  if (max_threads == 0) {
+    logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
+    max_threads = 1;
+  }
+  if (threads <= 0) { // max requested
+    threads = max_threads;
+  } else if (threads > max_threads) {
+    threads = max_threads;
+  }
+  threads_ = threads;
+
+  if (printInfo)
+    logger_->info(ORD, 30, "Using {} thread(s)", threads_);
+
+  // place limits on tools with threads
+  sta_->setThreadCount(threads_);
+}
+
+void
+OpenRoad::setThreadCount(const char* threads, bool printInfo) {
+  int max_threads = threads_; // default, make no changes
+
+  if (strcmp(threads, "max") == 0) {
+    max_threads = -1; // -1 is max cores
+  }
+  else {
+    try {
+      max_threads = std::stoi(threads);
+    } catch (const std::invalid_argument&) {
+      logger_->warn(ORD, 32, "Invalid thread number specification: {}", threads);
+    }
+  }
+
+  setThreadCount(max_threads, printInfo);
+}
+
+int
+OpenRoad::getThreadCount() {
+  return threads_;
+}
 
 ////////////////////////////////////////////////////////////////
 

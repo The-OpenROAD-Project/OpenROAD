@@ -192,6 +192,14 @@ proc python {args} {
   ord::python_cmd $args
 }
 
+proc set_thread_count { count } {
+  ord::set_thread_count $count
+}
+
+proc thread_count { } {
+  return [ord::thread_count]
+}
+
 ################################################################
 
 namespace eval ord {

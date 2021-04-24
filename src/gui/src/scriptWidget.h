@@ -74,6 +74,9 @@ class ScriptWidget : public QDockWidget
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
   void commandExecuted();
+  // tcl exit has been initiated, want the gui to handle
+  // shutdown
+  void tclExiting();
 
  private slots:
   // Triggered when the user hits return in the line edit
@@ -91,6 +94,10 @@ class ScriptWidget : public QDockWidget
                            const char* buf,
                            int toWrite,
                            int* errorCodePtr);
+  static int tclExitHandler(ClientData instance_data,
+                            Tcl_Interp *interp,
+                            int argc,
+                            const char **argv);
 
   QTextEdit* output_;
   QLineEdit* input_;
