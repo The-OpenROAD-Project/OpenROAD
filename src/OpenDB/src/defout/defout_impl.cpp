@@ -552,8 +552,7 @@ void defout_impl::writeLayerRule(dbTechLayerRule* rule)
 
   fprintf(_out, "      + LAYER %s", name.c_str());
 
-  if (rule->getWidth())
-    fprintf(_out, " WIDTH %d", defdist(rule->getWidth()));
+  fprintf(_out, " WIDTH %d", defdist(rule->getWidth()));
 
   if (rule->getSpacing())
     fprintf(_out, " SPACING %d", defdist(rule->getSpacing()));
