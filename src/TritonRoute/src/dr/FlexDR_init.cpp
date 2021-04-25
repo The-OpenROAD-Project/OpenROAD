@@ -357,7 +357,6 @@ void FlexDRWorker::initNetObjs(
       }
     }
   }
-
 }
 // inits nets based on the pins
 void FlexDRWorker::initNets_initDR(
@@ -1511,7 +1510,6 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
       pinIdx++;
     }
 
-
     if (dPin->getAccessPatterns().empty()) {
       initNet_termGenAp_new(dPin.get());
       if (dPin->getAccessPatterns().empty()) {
@@ -2420,279 +2418,9 @@ void FlexDRWorker::initMazeCost_ap()
   }
 }
 
-void FlexDRWorker::initMazeCost_marker_fixMode_0(const frMarker& marker)
-{
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<drConnFig*>> results;
-  frBox mBox, bloatBox;
-  FlexMazeIdx mIdx1, mIdx2;
-  int xDim, yDim, zDim;
-  gridGraph_.getDim(xDim, yDim, zDim);
-
-  results.clear();
-  marker.getBBox(mBox);
-  if (!getDrcBox().overlaps(mBox)) {
-    return;
-  }
-  auto lNum = marker.getLayerNum();
-  frCoord bloatDist;
-  if (getDesign()->getTech()->getLayer(lNum)->getType()
-      == frLayerTypeEnum::CUT) {
-    bloatDist = getDesign()->getTech()->getLayer(lNum - 1)->getWidth()
-                * workerMarkerBloatWidth_;
-  } else {
-    bloatDist = getDesign()->getTech()->getLayer(lNum)->getWidth()
-                * workerMarkerBloatWidth_;
-  }
-  mBox.bloat(bloatDist, bloatBox);
-  workerRegionQuery.query(bloatBox, lNum, results);
-  for (auto& [objBox, connFig] : results) {
-    // for pathseg-related marker, bloat marker by half width and add marker
-    // cost planar
-    if (connFig->typeId() == drcPathSeg) {
-      // cout <<"@@pathseg" <<endl;
-      //  update marker dist
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy);
-
-      connFig->getNet()->setRipup();
-      // new
-      gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
-      auto obj = static_cast<drPathSeg*>(connFig);
-      FlexMazeIdx psMIdx1, psMIdx2;
-      obj->getMazeIdx(psMIdx1, psMIdx2);
-      bool isH = (psMIdx1.y() == psMIdx2.y());
-      if (isH) {
-        for (int i = max(0, max(psMIdx1.x(), mIdx1.x() - 1));
-             i <= min(xDim - 1, (psMIdx2.x(), mIdx2.x() + 1));
-             i++) {
-          gridGraph_.addMarkerCostPlanar(i, psMIdx1.y(), psMIdx1.z());
-          planarHistoryMarkers_.insert(
-              FlexMazeIdx(i, psMIdx1.y(), psMIdx1.z()));
-        }
-      } else {
-        for (int i = max(0, max(psMIdx1.y(), mIdx1.y() - 1));
-             i <= min(yDim - 1, min(psMIdx2.y(), mIdx2.y() + 1));
-             i++) {
-          gridGraph_.addMarkerCostPlanar(psMIdx1.x(), i, psMIdx1.z());
-          planarHistoryMarkers_.insert(
-              FlexMazeIdx(psMIdx1.x(), i, psMIdx1.z()));
-        }
-      }
-
-      // for via-related marker, add marker cost via
-    } else if (connFig->typeId() == drcVia) {
-      // cout <<"@@via" <<endl;
-      if (getDesign()->getTech()->getLayer(lNum)->getType()
-              == frLayerTypeEnum::ROUTING
-          && marker.getConstraint()->typeId()
-                 == frConstraintTypeEnum::frcShortConstraint) {
-        continue;
-      }
-      // update marker dist
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy);
-
-      auto obj = static_cast<drVia*>(connFig);
-      obj->getMazeIdx(mIdx1, mIdx2);
-      connFig->getNet()->setRipup();
-      gridGraph_.addMarkerCostVia(mIdx1.x(), mIdx1.y(), mIdx1.z());
-      viaHistoryMarkers_.insert(mIdx1);
-    } else if (connFig->typeId() == drcPatchWire) {
-      // TODO: could add marker // for now we think the other part in the
-      // violation would not be patchWire
-      auto obj = static_cast<drPatchWire*>(connFig);
-      // update marker dist
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy);
-
-      frPoint bp;
-      obj->getOrigin(bp);
-      if (getExtBox().contains(bp)) {
-        gridGraph_.getMazeIdx(mIdx1, bp, lNum);
-        connFig->getNet()->setRipup();
-        gridGraph_.addMarkerCostPlanar(mIdx1.x(), mIdx1.y(), mIdx1.z());
-        planarHistoryMarkers_.insert(
-            FlexMazeIdx(mIdx1.x(), mIdx1.y(), mIdx1.z()));
-      }
-    } else {
-      cout << "Error: unsupported dr type" << endl;
-    }
-  }
-}
-
-void FlexDRWorker::initMazeCost_marker_fixMode_1(const frMarker& marker,
-                                                 bool keepViaNet)
-{
-
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<drConnFig*>> results;
-  frBox mBox, bloatBox;
-  FlexMazeIdx mIdx1, mIdx2;
-  int xDim, yDim, zDim;
-  gridGraph_.getDim(xDim, yDim, zDim);
-
-  marker.getBBox(mBox);
-  auto lNum = marker.getLayerNum();
-  //  skip if marker outside of routebox, ignore drcbox here because we would
-  //  like to push wire
-  if (!getRouteBox().overlaps(mBox)) {
-    return;
-  }
-  // skip if marker not metal layer
-  if (!(getDesign()->getTech()->getLayer(lNum)->getType()
-        == frLayerTypeEnum::ROUTING)) {
-    return;
-  }
-  // skip if marker is unknown type
-  if (!(marker.getConstraint()->typeId()
-            == frConstraintTypeEnum::frcShortConstraint
-        || marker.getConstraint()->typeId()
-               == frConstraintTypeEnum::frcSpacingConstraint
-        || marker.getConstraint()->typeId()
-               == frConstraintTypeEnum::frcSpacingEndOfLineConstraint
-        || marker.getConstraint()->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint
-        || marker.getConstraint()->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint)) {
-    return;
-  }
-  // skip if not fat via
-  bool hasFatVia = false;
-  results.clear();
-  workerRegionQuery.query(mBox, lNum, results);
-  bool bloatXp = false;  // bloat to x+ dir
-  bool bloatXn = false;  // bloat to x- dir
-  bool bloatYp = false;  // bloat to y+ dir
-  bool bloatYn = false;  // bloat to y- dir
-  int numVias = 0;
-  frCoord defaultWidth = getDesign()->getTech()->getLayer(lNum)->getWidth();
-  frCoord viaWidth = 0;
-  bool isLayerH = (getDesign()->getTech()->getLayer(lNum)->getDir()
-                   == frcHorzPrefRoutingDir);
-  drNet* viaNet = nullptr;
-  for (auto& [objBox, connFig] : results) {
-    if (connFig->typeId() == drcVia) {
-      // cout <<"@@via" <<endl;
-      viaNet = connFig->getNet();
-      if (marker.hasDir()) {  // spacing violation
-        if (marker.isH() && isLayerH) {
-          if (objBox.top() == mBox.bottom()) {
-            bloatYp = true;
-          }
-          if (objBox.bottom() == mBox.top()) {
-            bloatYn = true;
-          }
-          if (objBox.top() - objBox.bottom() > defaultWidth) {
-            hasFatVia = true;
-            viaWidth = objBox.top() - objBox.bottom();
-          }
-        } else if ((!marker.isH()) && (!isLayerH)) {
-          if (objBox.right() == mBox.left()) {
-            bloatXp = true;
-          }
-          if (objBox.left() == mBox.right()) {
-            bloatXn = true;
-          }
-          if (objBox.right() - objBox.left() > defaultWidth) {
-            hasFatVia = true;
-            viaWidth = objBox.right() - objBox.left();
-          }
-        }
-      } else {  // short violation
-        bloatXp = true;
-        bloatXn = true;
-        bloatYp = true;
-        bloatYn = true;
-        if (isLayerH) {
-          if (objBox.top() - objBox.bottom() > defaultWidth) {
-            hasFatVia = true;
-            viaWidth = objBox.top() - objBox.bottom();
-          }
-        } else {
-          if (objBox.right() - objBox.left() > defaultWidth) {
-            hasFatVia = true;
-            viaWidth = objBox.right() - objBox.left();
-          }
-        }
-      }
-      numVias++;
-    }
-  }
-  // skip if no via or more than one via
-  if (numVias != 1) {
-    return;
-  }
-  // skip if no fat via
-  if (!hasFatVia) {
-    return;
-  }
-
-  // calc bloat box
-  frCoord bloatDist;
-  bloatDist = getDesign()->getTech()->getLayer(lNum)->getWidth() * viaWidth;
-  mBox.bloat(bloatDist, bloatBox);
-  bloatBox.set(bloatXn ? bloatBox.left() : mBox.left(),
-               bloatYn ? bloatBox.bottom() : mBox.bottom(),
-               bloatXp ? bloatBox.right() : mBox.right(),
-               bloatYp ? bloatBox.top() : mBox.top());
-
-
-  // get all objs
-  results.clear();
-  workerRegionQuery.query(bloatBox, lNum, results);
-  for (auto& [objBox, connFig] : results) {
-    // do not add marker cost for ps, rely on DRCCOST
-    if (connFig->typeId() == drcPathSeg) {
-      // cout <<"@@pathseg" <<endl;
-      auto currNet = connFig->getNet();
-      // update marker dist
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy);
-      if (viaNet != currNet) {
-        currNet->setRipup();
-      }
-      // add marker cost via
-    } else if (connFig->typeId() == drcVia) {
-      if (!keepViaNet) {
-        connFig->getNet()->updateMarkerDist(-1);
-        auto obj = static_cast<drVia*>(connFig);
-        obj->getMazeIdx(mIdx1, mIdx2);
-        connFig->getNet()->setRipup();
-      }
-    } else if (connFig->typeId() == drcPatchWire) {
-      // TODO: could add marker // for now we think the other part in the
-      // violation would not be patchWire
-    } else {
-      cout << "Error: unsupported dr type" << endl;
-    }
-  }
-}
-
 void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
     const frMarker& marker)
 {
-
   auto& workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<drConnFig*>> results;
   frBox mBox, bloatBox;
@@ -2872,318 +2600,10 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
   }
 }
 
-bool FlexDRWorker::initMazeCost_marker_fixMode_3_addHistoryCost1(
-    const frMarker& marker)
-{
-
-  frBox mBox, bloatBox;
-  FlexMazeIdx mIdx1, mIdx2;
-
-  marker.getBBox(mBox);
-  auto lNum = marker.getLayerNum();
-  auto topLNum = getDesign()->getTech()->getTopLayerNum();
-  frCoord width;
-  frMIdx zIdx;
-  if (getDesign()->getTech()->getLayer(lNum)->getType()
-      == frLayerTypeEnum::CUT) {
-    width = getDesign()->getTech()->getLayer(lNum - 1)->getWidth();
-    zIdx = gridGraph_.getMazeZIdx(lNum - 1);
-  } else {
-    width = getDesign()->getTech()->getLayer(lNum)->getWidth();
-    zIdx = gridGraph_.getMazeZIdx(lNum);
-  }
-  mBox.bloat(width * workerMarkerBloatWidth_, bloatBox);
-  gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
-
-  frMIdx minZIdx = max(0, int(zIdx - workerMarkerBloatDepth_ / 2));
-  frMIdx maxZIdx;
-  if (getDesign()->getTech()->getLayer(topLNum)->getType()
-      == frLayerTypeEnum::CUT) {
-    maxZIdx = gridGraph_.getMazeZIdx(topLNum - 1);
-  } else {
-    maxZIdx = gridGraph_.getMazeZIdx(topLNum);
-  }
-  maxZIdx = min(int(maxZIdx), int(zIdx + workerMarkerBloatDepth_ / 2));
-
-  for (int k = minZIdx; k <= maxZIdx; k++) {
-    for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
-      for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
-        gridGraph_.addMarkerCostPlanar(i, j, k);
-        gridGraph_.addMarkerCost(
-            i, j, k, frDirEnum::U);  // always block upper via in case stack via
-      }
-    }
-  }
-  return true;
-}
-
-// return fixable
-bool FlexDRWorker::initMazeCost_marker_fixMode_3_addHistoryCost(
-    const frMarker& marker)
-{
-
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<drConnFig*>> results;
-  frBox mBox, bloatBox;
-  FlexMazeIdx mIdx1, mIdx2;
-
-  marker.getBBox(mBox);
-  auto lNum = marker.getLayerNum();
-
-  workerRegionQuery.query(mBox, lNum, results);
-  frPoint bp, ep;
-  frCoord width;
-  frSegStyle segStyle;
-  FlexMazeIdx objMIdx1, objMIdx2;
-  bool fixable = false;
-  for (auto& [objBox, connFig] : results) {
-    if (connFig->typeId() == drcPathSeg) {
-      auto obj = static_cast<drPathSeg*>(connFig);
-      // skip if unfixable obj
-      obj->getPoints(bp, ep);
-      if (!(getRouteBox().contains(bp) && getRouteBox().contains(ep))) {
-        continue;
-      }
-      fixable = true;
-      // add history cost
-      // get points to mark up, markup up to "width" grid points to the left and
-      // right of pathseg
-      obj->getStyle(segStyle);
-      width = segStyle.getWidth();
-      mBox.bloat(width, bloatBox);
-      gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
-
-      obj->getMazeIdx(objMIdx1, objMIdx2);
-      bool isH = (objMIdx1.y() == objMIdx2.y());
-      // temporarily bloat marker at most 4X width to find neighboring grid
-      // point block at least two width grid points to ensure no matter where
-      // the startpoint is
-      for (int i = 0; i < 5; i++) {
-        if (i == 4) {
-          cout << "Warning: marker bloat 4x width but could not find two grids "
-                  "to add marker cost"
-               << endl;
-          cout << "  marker -- src: ";
-          for (auto src : marker.getSrcs()) {
-            if (src) {
-              switch (src->typeId()) {
-                case frcNet:
-                  cout << (static_cast<frNet*>(src))->getName() << " ";
-                  break;
-                case frcInstTerm: {
-                  frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-                  cout << instTerm->getInst()->getName() << "/"
-                       << instTerm->getTerm()->getName() << " ";
-                  break;
-                }
-                case frcTerm: {
-                  frTerm* term = (static_cast<frTerm*>(src));
-                  cout << "PIN/" << term->getName() << " ";
-                  break;
-                }
-                case frcInstBlockage: {
-                  frInstBlockage* instBlockage
-                      = (static_cast<frInstBlockage*>(src));
-                  cout << instBlockage->getInst()->getName() << "/OBS"
-                       << " ";
-                  break;
-                }
-                case frcBlockage: {
-                  cout << "PIN/OBS"
-                       << " ";
-                  break;
-                }
-                default:;
-              }
-            }
-            cout << "\n";
-            // get violation bbox
-            frBox bbox;
-            marker.getBBox(bbox);
-            double dbu = design_->getTech()->getDBUPerUU();
-            cout << "    bbox = ( " << bbox.left() / dbu << ", "
-                 << bbox.bottom() / dbu << " ) - ( " << bbox.right() / dbu
-                 << ", " << bbox.top() / dbu << " ) on Layer ";
-            if (getTech()->getLayer(marker.getLayerNum())->getType()
-                    == frLayerTypeEnum::CUT
-                && marker.getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
-              cout << getTech()->getLayer(marker.getLayerNum() - 1)->getName()
-                   << "\n";
-            } else {
-              cout << getTech()->getLayer(marker.getLayerNum())->getName()
-                   << "\n";
-            }
-          }
-        }
-        if (isH
-            && max(objMIdx1.x(), mIdx1.x()) >= min(objMIdx2.x(), mIdx2.x())) {
-          bloatBox.bloat(width, bloatBox);
-          // cout <<"i=" <<i <<" " <<width <<", " <<bloatBox <<endl;
-        } else if ((!isH)
-                   && max(objMIdx1.y(), mIdx1.y())
-                          >= min(objMIdx2.y(), mIdx2.y())) {
-          bloatBox.bloat(width, bloatBox);
-          // cout <<bloatBox <<endl;
-        } else {
-          break;
-        }
-        gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
-      }
-      if (isH) {
-        for (int i = max(objMIdx1.x(), mIdx1.x());
-             i <= min(objMIdx2.x(), mIdx2.x());
-             i++) {
-          gridGraph_.addMarkerCostPlanar(i, objMIdx1.y(), objMIdx1.z());
-          planarHistoryMarkers_.insert(
-              FlexMazeIdx(i, objMIdx1.y(), objMIdx1.z()));
-        }
-      } else {
-        for (int i = max(objMIdx1.y(), mIdx1.y());
-             i <= min(objMIdx2.y(), mIdx2.y());
-             i++) {
-          gridGraph_.addMarkerCostPlanar(objMIdx1.x(), i, objMIdx1.z());
-          planarHistoryMarkers_.insert(
-              FlexMazeIdx(objMIdx1.x(), i, objMIdx1.z()));
-        }
-      }
-    } else if (connFig->typeId() == drcVia) {
-      auto obj = static_cast<drVia*>(connFig);
-      obj->getOrigin(bp);
-      // skip if unfixable obj
-      if (!getRouteBox().contains(bp)) {
-        continue;
-      }
-      fixable = true;
-      // add history cost
-      obj->getMazeIdx(objMIdx1, objMIdx2);
-      gridGraph_.addMarkerCostVia(objMIdx1.x(), objMIdx1.y(), objMIdx1.z());
-      viaHistoryMarkers_.insert(objMIdx1);
-    } else if (connFig->typeId() == drcPatchWire) {
-      auto obj = static_cast<drPatchWire*>(connFig);
-      obj->getOrigin(bp);
-      // skip if unfixable obj
-      if (!getRouteBox().contains(bp)) {
-        continue;
-      }
-      fixable = true;
-      // add history cost
-      gridGraph_.getMazeIdx(objMIdx1, bp, lNum);
-      gridGraph_.addMarkerCostPlanar(objMIdx1.x(), objMIdx1.y(), objMIdx1.z());
-      gridGraph_.addMarkerCost(
-          objMIdx1.x(),
-          objMIdx1.y(),
-          objMIdx1.z(),
-          frDirEnum::U);  // always block upper via in case stack via
-      gridGraph_.addMarkerCost(
-          objMIdx1.x(),
-          objMIdx1.y(),
-          objMIdx1.z(),
-          frDirEnum::D);  // always block upper via in case stack via
-      planarHistoryMarkers_.insert(objMIdx1);
-    }
-  }
-  return fixable;
-}
-
-void FlexDRWorker::initMazeCost_marker_fixMode_3_ripupNets(
-    const frMarker& marker)
-{
-
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<drConnFig*>> results;
-  frBox mBox, bloatBox;
-  FlexMazeIdx mIdx1, mIdx2;
-  frPoint bp, ep;
-
-  marker.getBBox(mBox);
-  auto lNum = marker.getLayerNum();
-
-  // ripup all nets within bloatbox
-  frCoord bloatDist = 0;
-  mBox.bloat(bloatDist, bloatBox);
-
-  auto currLNum = lNum;
-  results.clear();
-  workerRegionQuery.query(bloatBox, currLNum, results);
-  for (auto& [objBox, connFig] : results) {
-    bool isEnter = false;
-    if (getFixMode() == 3) {
-      isEnter = true;
-    }
-    if (!isEnter) {
-      continue;
-    }
-    // for pathseg-related marker, bloat marker by half width and add marker
-    // cost planar
-    if (connFig->typeId() == drcPathSeg) {
-      // cout <<"@@pathseg" <<endl;
-      auto obj = static_cast<drPathSeg*>(connFig);
-      obj->getPoints(bp, ep);
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      auto dz = abs(bloatDist * (lNum - currLNum));
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy + dz * dz);
-      connFig->getNet()->setRipup();
-      // for via-related marker, add marker cost via
-    } else if (connFig->typeId() == drcVia) {
-      // cout <<"@@via" <<endl;
-      //  update marker dist
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      auto dz = abs(bloatDist * (lNum - currLNum));
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy + dz * dz);
-
-      connFig->getNet()->setRipup();
-    } else if (connFig->typeId() == drcPatchWire) {
-      // update marker dist
-      auto dx = max(
-          max(objBox.left(), mBox.left()) - min(objBox.right(), mBox.right()),
-          0);
-      auto dy = max(
-          max(objBox.bottom(), mBox.bottom()) - min(objBox.top(), mBox.top()),
-          0);
-      auto dz = abs(bloatDist * (lNum - currLNum));
-      connFig->getNet()->updateMarkerDist(dx * dx + dy * dy + dz * dz);
-
-      connFig->getNet()->setRipup();
-    } else {
-      cout << "Error: unsupported dr type" << endl;
-    }
-  }
-  // }
-}
-
 // TODO: modify behavior for bloat width != 0
 void FlexDRWorker::initMazeCost_marker_route_queue(const frMarker& marker)
 {
-  if (workerMarkerBloatWidth_) {
-    initMazeCost_marker_route_queue_addHistoryCost(marker);
-  } else {
-    initMazeCost_marker_route_queue_addHistoryCost(marker);
-  }
-}
-
-void FlexDRWorker::initMazeCost_marker_fixMode_3(const frMarker& marker)
-{
-  bool fixable = false;
-  if (workerMarkerBloatWidth_) {
-    fixable = initMazeCost_marker_fixMode_3_addHistoryCost1(marker);
-  } else {
-    fixable = initMazeCost_marker_fixMode_3_addHistoryCost(marker);
-  }
-  // skip non-fixable markers
-  if (!fixable) {
-    return;
-  }
-  initMazeCost_marker_fixMode_3_ripupNets(marker);
+  initMazeCost_marker_route_queue_addHistoryCost(marker);
 }
 
 void FlexDRWorker::route_queue_resetRipup()
@@ -3217,32 +2637,17 @@ void FlexDRWorker::route_queue_markerCostDecay()
 void FlexDRWorker::route_queue_addMarkerCost(
     const vector<unique_ptr<frMarker>>& markers)
 {
-  if (getFixMode() < 9) {
-    // if (true) {
-    for (auto& uMarker : markers) {
-      auto& marker = *(uMarker.get());
-      initMazeCost_marker_fixMode_3(marker);
-    }
-  } else {
-    for (auto& uMarker : markers) {
-      auto& marker = *(uMarker.get());
-      initMazeCost_marker_route_queue(marker);
-    }
+  for (auto& uMarker : markers) {
+    auto& marker = *(uMarker.get());
+    initMazeCost_marker_route_queue(marker);
   }
 }
 
 // init from member markers
 void FlexDRWorker::route_queue_addMarkerCost()
 {
-  if (getFixMode() < 9) {
-    // if (true) {
-    for (auto& marker : markers_) {
-      initMazeCost_marker_fixMode_3(marker);
-    }
-  } else {
-    for (auto& marker : markers_) {
-      initMazeCost_marker_route_queue(marker);
-    }
+  for (auto& marker : markers_) {
+    initMazeCost_marker_route_queue(marker);
   }
 }
 
@@ -3313,7 +2718,6 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& checks,
     vector<RouteQueueEntry>& routes)
 {
-
   vector<frBlockObject*> uniqueVictimOwners;     // to maintain order
   vector<frBlockObject*> uniqueAggressorOwners;  // to maintain order
 
@@ -3516,7 +2920,6 @@ void FlexDRWorker::route_queue_update_queue(
 void FlexDRWorker::initMazeCost_marker()
 {
   //  decay all existing mi
-  //  old
   for (auto it = planarHistoryMarkers_.begin();
        it != planarHistoryMarkers_.end();) {
     auto currIt = it;
@@ -3532,46 +2935,6 @@ void FlexDRWorker::initMazeCost_marker()
     ++it;
     if (gridGraph_.decayMarkerCostVia(mi.x(), mi.y(), mi.z(), MARKERDECAY)) {
       viaHistoryMarkers_.erase(currIt);
-    }
-  }
-  // new
-  // for (int i = 0; i < 3; i++) {
-  //  frDirEnum dir = frDirEnum::UNKNOWN;
-  //  switch(i) {
-  //    case 0: dir = frDirEnum::E; break;
-  //    case 1: dir = frDirEnum::N; break;
-  //    case 2: dir = frDirEnum::U; break;
-  //    default: ;
-  //  }
-  //  for (auto it = historyMarkers[i].begin(); it != historyMarkers[i].end();)
-  //  {
-  //    auto currIt = it;
-  //    auto &mi = *currIt;
-  //    ++it;
-  //    if (gridGraph_.decayMarkerCost(mi.x(), mi.y(), mi.z(), dir,
-  //    MARKERDECAY)) {
-  //      historyMarkers[i].erase(currIt);
-  //    }
-  //  }
-  //}
-  // add new marker mi
-  for (auto& marker : markers_) {
-    switch (getFixMode()) {
-      case 0:
-        initMazeCost_marker_fixMode_0(marker);
-        break;
-      case 1:
-        initMazeCost_marker_fixMode_1(marker, true);
-        break;
-      case 2:
-        initMazeCost_marker_fixMode_1(marker, false);
-        break;
-      case 3:
-      case 4:
-      case 5:
-        initMazeCost_marker_fixMode_3(marker);
-        break;
-      default:;
     }
   }
 }
@@ -4063,7 +3426,7 @@ void FlexDRWorker::initMarkers()
   getRegionQuery()->queryMarker(getDrcBox(),
                                 result);  // get all markers within drc box
   for (auto mptr : result) {
-    // check recheck， if true， then markers.clear(), set drWorker bit to check
+    // check recheck  if true  then markers.clear(), set drWorker bit to check
     // drc at start
     if (mptr->getConstraint()->typeId()
         != frConstraintTypeEnum::frcRecheckConstraint) {
@@ -4090,8 +3453,7 @@ void FlexDRWorker::init()
   //
   // using namespace std::chrono;
   initMarkers();
-  if (isEnableDRC() && getDRIter() && getInitNumMarkers() == 0
-      && !needRecheck_) {
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
     skipRouting_ = true;
   }
   if (skipRouting_) {
