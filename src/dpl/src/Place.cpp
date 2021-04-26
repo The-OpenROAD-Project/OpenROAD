@@ -69,7 +69,7 @@ Opendp::detailedPlacement()
 {
   initGrid();
   // Paint fixed cells.
-  assignFixedCells();
+  setFixedGridCells();
   // group mapping & x_axis dummycell insertion
   groupInitPixels2();
   // y axis dummycell insertion
