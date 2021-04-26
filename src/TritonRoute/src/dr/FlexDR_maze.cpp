@@ -1324,7 +1324,7 @@ void FlexDRWorker::modInfSpacingRuleWideBox(const frBox& box,
                                             frMIdx z,
                                             int type,
                                             bool vertical,
-                                            int spc,
+                                            frCoord spc,
                                             bool isSkipVia)
 {
   auto lNum = gridGraph_.getLayerNum(z);
@@ -1335,48 +1335,162 @@ void FlexDRWorker::modInfSpacingRuleWideBox(const frBox& box,
     frBox res = connFig.first;
     if (!box.overlaps(res, false) && !box.contains(res))
       continue;
+    if (vertical && res.width() < res.top() - res.bottom())
+      continue;
+    if (!vertical && res.width() < res.right() - res.left())
+      continue;
     frBox intersection = box.intersection(res);
     if (vertical) {
       frBox northBox(intersection.left(),
                      intersection.top(),
                      intersection.right(),
                      std::min(intersection.top() + spc, box.top()));
-      modEolSpacingCost_helper(northBox, z, type, 0);
-      if(!isSkipVia)
-      {
-        modEolSpacingCost_helper(northBox, z, type, 1);
-        modEolSpacingCost_helper(northBox, z, type, 2);
+      if (northBox.area() > 0) {
+        modEolSpacingCost_helper(northBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(northBox, z, type, 1);
+          modEolSpacingCost_helper(northBox, z, type, 2);
+        }
       }
       frBox southBox(intersection.left(),
                      std::max(intersection.bottom() - spc, box.bottom()),
                      intersection.right(),
                      intersection.bottom());
-      modEolSpacingCost_helper(southBox, z, type, 0);
-      if(!isSkipVia)
-      {
-        modEolSpacingCost_helper(southBox, z, type, 1);
-        modEolSpacingCost_helper(southBox, z, type, 2);
+      if (southBox.area() > 0) {
+        modEolSpacingCost_helper(southBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(southBox, z, type, 1);
+          modEolSpacingCost_helper(southBox, z, type, 2);
+        }
       }
     } else {
       frBox eastBox(intersection.right(),
                     intersection.bottom(),
-                    std::min(intersection.right() + spc + spc, box.right()),
+                    std::min(intersection.right() + spc , box.right()),
                     intersection.top());
-      modEolSpacingCost_helper(eastBox, z, type, 0);
-      if(!isSkipVia)
-      {
-        modEolSpacingCost_helper(eastBox, z, type, 1);
-        modEolSpacingCost_helper(eastBox, z, type, 2);
+      if (eastBox.area() > 0) {
+        modEolSpacingCost_helper(eastBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(eastBox, z, type, 1);
+          modEolSpacingCost_helper(eastBox, z, type, 2);
+        }
       }
       frBox westBox(std::max(intersection.left() - spc, box.left()),
                     intersection.bottom(),
                     intersection.left(),
                     intersection.top());
-      modEolSpacingCost_helper(westBox, z, type, 0);
-      if(!isSkipVia)
-      {
-        modEolSpacingCost_helper(westBox, z, type, 1);
-        modEolSpacingCost_helper(westBox, z, type, 2);
+      if (westBox.area() > 0) {
+        modEolSpacingCost_helper(westBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(westBox, z, type, 1);
+          modEolSpacingCost_helper(westBox, z, type, 2);
+        }
+      }
+    }
+  }
+}
+
+void FlexDRWorker::modInfSpacingRuleOrthBox(const frBox& fig,
+                                            const frBox& testBox,
+                                            frDirEnum dir,
+                                            frMIdx z,
+                                            int type,
+                                            bool isSkipVia)
+{
+  auto layer = getDesign()->getTech()->getLayer(gridGraph_.getLayerNum(z));
+  auto lNum = gridGraph_.getLayerNum(z);
+  auto con = layer->getSpacingTableInfluence();
+  auto& workerRegionQuery = getWorkerRegionQuery();
+  std::vector<rq_box_value_t<fr::drConnFig*>> results;
+  workerRegionQuery.query(testBox, lNum, results);
+  bool vertical = (dir == frDirEnum::N) || (dir == frDirEnum::S);
+  for (auto& [res, connFig] : results) {
+    if (!testBox.overlaps(res, false) && !testBox.contains(res))
+      continue;
+    int width = res.width();
+    if (vertical && width < res.top() - res.bottom())
+      continue;
+    if (!vertical && width < res.right() - res.left())
+      continue;
+    if (width < con->getLookupTbl().getMin())
+      continue;
+    int dist = con->find(width).first;
+    int spc = con->find(width).second;
+
+    gtl::rectangle_data<frCoord> rect1(
+        fig.left(), fig.bottom(), fig.right(), fig.top());
+    gtl::rectangle_data<frCoord> rect2(
+        res.left(), res.bottom(), res.right(), res.top());
+    if (gtl::euclidean_distance(
+            rect1, rect2, vertical ? gtl::VERTICAL : gtl::HORIZONTAL)
+        >= dist)
+      continue;
+    switch (dir) {
+      case frDirEnum::N:
+        gtl::bloat(rect2, gtl::SOUTH, dist);
+        break;
+      case frDirEnum::S:
+        gtl::bloat(rect2, gtl::NORTH, dist);
+        break;
+      case frDirEnum::E:
+        gtl::bloat(rect2, gtl::WEST, dist);
+        break;
+      default:
+        gtl::bloat(rect2, gtl::EAST, dist);
+        break;
+    }
+    gtl::rectangle_data<frCoord> markerRect(rect2);
+    gtl::intersect(markerRect, rect1);
+
+    frBox intersection(gtl::xl(markerRect),
+                       gtl::yl(markerRect),
+                       gtl::xh(markerRect),
+                       gtl::yh(markerRect));
+    if (!vertical) {
+      frBox northBox(intersection.left(),
+                     intersection.top(),
+                     intersection.right(),
+                     std::min(intersection.top() + spc, gtl::yh(rect2)));
+      if (northBox.area() > 0) {
+        modEolSpacingCost_helper(northBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(northBox, z, type, 1);
+          modEolSpacingCost_helper(northBox, z, type, 2);
+        }
+      }
+      frBox southBox(intersection.left(),
+                     std::max(intersection.bottom() - spc, gtl::yl(rect2)),
+                     intersection.right(),
+                     intersection.bottom());
+      if (southBox.area() > 0) {
+        modEolSpacingCost_helper(southBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(southBox, z, type, 1);
+          modEolSpacingCost_helper(southBox, z, type, 2);
+        }
+      }
+    } else {
+      frBox eastBox(intersection.right(),
+                    intersection.bottom(),
+                    std::min(intersection.right() + spc , gtl::xh(rect2)),
+                    intersection.top());
+      if (eastBox.area() > 0) {
+        modEolSpacingCost_helper(eastBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(eastBox, z, type, 1);
+          modEolSpacingCost_helper(eastBox, z, type, 2);
+        }
+      }
+      frBox westBox(std::max(intersection.left() - spc, gtl::xl(rect2)),
+                    intersection.bottom(),
+                    intersection.left(),
+                    intersection.top());
+      if (westBox.area() > 0) {
+        modEolSpacingCost_helper(westBox, z, type, 0);
+        if (!isSkipVia) {
+          modEolSpacingCost_helper(westBox, z, type, 1);
+          modEolSpacingCost_helper(westBox, z, type, 2);
+        }
       }
     }
   }
@@ -1392,11 +1506,11 @@ void FlexDRWorker::modInfSpacingRulesCost(const frBox& box,
     return;
   auto con = layer->getSpacingTableInfluence();
   // check if this is the wide wire
-  uint width = box.width();
-  if (width > con->getLookupTbl().getMin()) {
-    auto distspc = con->getLookupTbl().find(width);
-    uint dist = distspc.first;
-    uint spc = distspc.second;
+  frCoord width = box.width();
+  if (std::abs(width) > con->getLookupTbl().getMin()) {
+    auto distspc = con->getLookupTbl().find(std::abs(width));
+    frCoord dist = distspc.first;
+    frCoord spc = distspc.second;
     if (box.right() - box.left() == width) {
       // vertical segment
       frBox eastBox(box.right(), box.bottom(), box.right() + dist, box.top());
@@ -1414,6 +1528,23 @@ void FlexDRWorker::modInfSpacingRulesCost(const frBox& box,
     }
   }
   // check if this is near a wide wire
+  frCoord length = box.length();
+  if (width == length)
+    return;  // undefined direction
+  frCoord dist = con->getLookupTbl().findMax().first;
+  if (box.right() - box.left() == width) {
+    // vertical segment
+    frBox northBox(box.left(), box.top(), box.right(), box.top() + dist);
+    modInfSpacingRuleOrthBox(box, northBox, frDirEnum::N, z, type, isSkipVia);
+    frBox southBox(box.left(), box.bottom() - dist, box.right(), box.bottom());
+    modInfSpacingRuleOrthBox(box, southBox, frDirEnum::S, z, type, isSkipVia);
+  } else {
+    // horizontal segment
+    frBox eastBox(box.right(), box.bottom(), box.right() + dist, box.top());
+    modInfSpacingRuleOrthBox(box, eastBox, frDirEnum::E, z, type, isSkipVia);
+    frBox westBox(box.left() - dist, box.bottom(), box.left(), box.top());
+    modInfSpacingRuleOrthBox(box, westBox, frDirEnum::W, z, type, isSkipVia);
+  }
 }
 // forbid via if it would trigger violation
 void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,

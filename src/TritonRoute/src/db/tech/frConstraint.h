@@ -999,22 +999,22 @@ class frSpacingTableInfluenceConstraint : public frConstraint
 {
  public:
   frSpacingTableInfluenceConstraint(
-      const fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>>& in)
+      const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
       : tbl(in)
   {
   }
   // getter
-  const fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>>& getLookupTbl()
+  const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& getLookupTbl()
       const
   {
     return tbl;
   }
-  std::pair<frUInt4, frUInt4> find(frUInt4 width) const
+  std::pair<frCoord, frCoord> find(frCoord width) const
   {
     return tbl.find(width);
   }
   // setter
-  void setLookupTbl(const fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>>& in)
+  void setLookupTbl(const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
   {
     tbl = in;
   }
@@ -1029,7 +1029,7 @@ class frSpacingTableInfluenceConstraint : public frConstraint
   }
 
  private:
-  fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>> tbl;
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl;
 };
 
 // EOL spacing

@@ -1554,8 +1554,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
   if(!layer->getV55InfluenceEntries().empty())
   {
-    frCollection<frUInt4> widthTbl;
-    frCollection<std::pair<frUInt4, frUInt4>> valTbl;
+    frCollection<frCoord> widthTbl;
+    frCollection<std::pair<frCoord, frCoord>> valTbl;
     for(auto entry : layer->getV55InfluenceEntries())
     {
       frUInt4 width, within, spacing;
@@ -1563,7 +1563,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       widthTbl.push_back(width);
       valTbl.push_back({within, spacing});
     }
-    fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>> tbl("WIDTH", widthTbl, valTbl);
+    fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl("WIDTH", widthTbl, valTbl);
      unique_ptr<frConstraint> uCon
         = make_unique<frSpacingTableInfluenceConstraint>(tbl);
     auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());

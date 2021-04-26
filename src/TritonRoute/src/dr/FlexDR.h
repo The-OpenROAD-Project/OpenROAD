@@ -796,9 +796,7 @@ class FlexDRWorker
                                int type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr);
-  void modCornerToCornerSpacing(const frBox& box,
-                               frMIdx z,
-                               int type);
+  void modCornerToCornerSpacing(const frBox& box, frMIdx z, int type);
   void modMinSpacingCostVia(const frBox& box,
                             frMIdx z,
                             int type,
@@ -807,9 +805,7 @@ class FlexDRWorker
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
 
-  void modCornerToCornerSpacing_helper(const frBox& box,
-                               frMIdx z,
-                               int type);
+  void modCornerToCornerSpacing_helper(const frBox& box, frMIdx z, int type);
 
   void modMinSpacingCostVia_eol(const frBox& box,
                                 const frBox& tmpBx,
@@ -841,15 +837,21 @@ class FlexDRWorker
                          bool isSkipVia = false);
   // SpacingTableInf
   void modInfSpacingRulesCost(const frBox& box,
-                                          frMIdx z,
-                                          int type,
-                                          bool isSkipVia = false);
+                              frMIdx z,
+                              int type,
+                              bool isSkipVia = false);
   void modInfSpacingRuleWideBox(const frBox& box,
-                                            frMIdx z,
-                                            int type,
-                                            bool vertical,
-                                            int spc,
-                                            bool isSkipVia = false);
+                                frMIdx z,
+                                int type,
+                                bool vertical,
+                                frCoord spc,
+                                bool isSkipVia = false);
+  void modInfSpacingRuleOrthBox(const frBox& fig,
+                                const frBox& box,
+                                frDirEnum dir,
+                                frMIdx z,
+                                int type,
+                                bool isSkipVia = false);
   // cutSpc
   void modCutSpacingCost(const frBox& box,
                          frMIdx z,
