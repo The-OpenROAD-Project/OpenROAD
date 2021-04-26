@@ -79,12 +79,11 @@ void FlexGCWorker::Impl::check90RectsMetSpcTblInf(
   for (size_t i = 0; i < rects.size() - 1; i++) {
     for (size_t j = i + 1; j < rects.size(); j++) {
       frSquaredDistance distSquared
-          = gtl::euclidean_distance(*rects[i], *rects[j], orient);
-      distSquared *= distSquared;
+          = gtl::square_euclidean_distance(*rects[i], *rects[j]);
       if (distSquared < spacingSq) {
         // Violation
         if(distSquared == 0)
-          continue;
+          continue;//shorts are already checked in checkMetalSpacing_main
         if (rects[i]->isFixed() && rects[j]->isFixed())
           continue;
         auto lNum = rects[i]->getLayerNum();
