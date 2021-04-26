@@ -53,6 +53,7 @@ void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   parms_ = std::make_unique<Parameters>();
+  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1);
 }
 
 void IOPlacer::clear()
@@ -1186,7 +1187,7 @@ void IOPlacer::findSlotsForTopLayer()
   int ub_x = ub.x();
   int ub_y = ub.y();
 
-  if (top_layer_slots_.empty()) {
+  if (top_layer_slots_.empty() && top_grid_.width > 0) {
     for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
       for (int y = top_grid_.y_ori; y < ub_y; y += top_grid_.y_step) {
         top_layer_slots_.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
