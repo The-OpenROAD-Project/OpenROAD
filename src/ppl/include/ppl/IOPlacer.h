@@ -107,6 +107,22 @@ struct Constraint
   }
 };
 
+struct TopLayerGrid
+{
+  int layer;
+  int x_step;
+  int y_step;
+  int x_ori;
+  int y_ori;
+  int width;
+  int height;
+  std::vector<Slot> slots;
+  std::vector<Section> sections;
+  TopLayerGrid() = default;
+  TopLayerGrid(int l, int x_s, int y_s, int x_o, int y_o, int w, int h)
+    : layer(l), x_step(x_s), y_step(y_s), x_ori(x_o), y_ori(y_o), width(w), height(h) {}
+};
+
 class IOPlacer
 {
  public:
@@ -132,7 +148,7 @@ class IOPlacer
   Direction getDirection(std::string direction);
   void addPinGroup(PinList* group);
   void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
-  void addCustomPattern(int layer, int x_step, int y_step,
+  void addTopLayerPinPattern(int layer, int x_step, int y_step,
                         int x_ori, int y_ori, int width, int height);
 
  private:
@@ -159,22 +175,25 @@ class IOPlacer
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
+  TopLayerGrid top_grid_;
 
   // db variables
   odb::dbDatabase* db_;
   odb::dbTech* tech_;
   odb::dbBlock* block_;
 
+  void createTopLayerPinPattern();
   void initNetlistAndCore(std::set<int> hor_layer_idx,
                           std::set<int> ver_layer_idx);
   void initIOLists();
   void initParms();
   void randomPlacement();
-  void findSlots(const std::set<int>& layers, Edge edge, bool top_layer);
-  void defineSlots(bool top_layer);
+  void findSlots(const std::set<int>& layers, Edge edge);
+  void findSlotsForTopLayer();
+  std::vector<Section> findSectionsForTopLayer();
+  void defineSlots();
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
-  std::vector<Section> createSectionsForTopLayer(odb::Rect);
   void getPinsFromDirectionConstraint(Constraint &constraint);
   void initConstraints();
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);

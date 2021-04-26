@@ -253,7 +253,7 @@ void
 create_pin_shape_pattern(int layer, int x_step, int y_step,
                          int x_ori, int y_ori, int width, int height)
 {
-  getIOPlacer()->addCustomPattern(layer, x_step, y_step, x_ori, y_ori, width, height);
+  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, x_ori, y_ori, width, height);
 }
 
 void
