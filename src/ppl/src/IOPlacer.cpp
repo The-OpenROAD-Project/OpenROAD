@@ -391,6 +391,8 @@ void IOPlacer::defineSlots()
   findSlots(ver_layers_, Edge::top);
 
   findSlots(hor_layers_, Edge::left);
+
+  findSlotsForTopLayer();
 }
 
 void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>& sections)
@@ -996,7 +998,7 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   for (int idx = 0; idx < sections.size(); idx++) {
     if (sections[idx].net.numIOPins() > 0) {
       if (sections[idx].edge == Edge::invalid) {
-        HungarianMatching hg(sections[idx], top_grid_.slots, logger_);
+        HungarianMatching hg(sections[idx], top_layer_slots_, logger_);
         hg_vec.push_back(hg);
       } else {
         HungarianMatching hg(sections[idx], slots_, logger_);
@@ -1184,10 +1186,10 @@ void IOPlacer::findSlotsForTopLayer()
   int ub_x = ub.x();
   int ub_y = ub.y();
 
-  if (top_grid_.slots.empty()) {
+  if (top_layer_slots_.empty()) {
     for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
       for (int y = top_grid_.y_ori; y < ub_y; y += top_grid_.y_step) {
-        top_grid_.slots.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
+        top_layer_slots_.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
       }
     }
   }
@@ -1195,8 +1197,6 @@ void IOPlacer::findSlotsForTopLayer()
 
 std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 {
-  findSlotsForTopLayer();
-
   const Point& lb = core_.getBoundary().ll();
   const Point& ub = core_.getBoundary().ur();
 
@@ -1207,7 +1207,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
   std::vector<Section> sections;
   for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
-    std::vector<Slot>& slots = top_grid_.slots;
+    std::vector<Slot>& slots = top_layer_slots_;
     std::vector<Slot>::iterator it = std::find_if(slots.begin(), slots.end(),
                                                    [&](Slot s) {
                                                       return (s.pos.x() >= x &&

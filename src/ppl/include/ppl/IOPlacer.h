@@ -116,7 +116,6 @@ struct TopLayerGrid
   int y_ori;
   int width;
   int height;
-  std::vector<Slot> slots;
   TopLayerGrid() = default;
   TopLayerGrid(int l, int x_s, int y_s, int x_o, int y_o, int w, int h)
     : layer(l), x_step(x_s), y_step(y_s), x_ori(x_o), y_ori(y_o), width(w), height(h) {}
@@ -169,6 +168,7 @@ class IOPlacer
   std::unique_ptr<Parameters> parms_;
   Netlist netlist_io_pins_;
   std::vector<Slot> slots_;
+  std::vector<Slot> top_layer_slots_;
   std::vector<Section> sections_;
   std::vector<Section> sections_for_constraints_;
   std::vector<IOPin> zero_sink_ios_;
