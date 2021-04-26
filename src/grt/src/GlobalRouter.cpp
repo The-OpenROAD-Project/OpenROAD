@@ -94,7 +94,6 @@ void GlobalRouter::init()
   // Clock net routing variables
   _pdRev = 0;
   _alpha = 0.3;
-  _clockCost = 1;
 }
 
 void GlobalRouter::makeComponents()
@@ -705,7 +704,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
-        int edgeCostForNet = (isClock) ? _clockCost : 1;
+        int edgeCostForNet = computeTrackConsumption(net);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
@@ -724,6 +723,34 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   _logger->info(GRT, 2, "Maximum degree: {}", maxDegree);
 
   _fastRoute->initEdges();
+}
+
+int GlobalRouter::computeTrackConsumption(const Net* net)
+{
+  int trackConsumption = 1;
+  odb::dbNet* db_net = net->getDbNet();
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr != nullptr) {
+    std::vector<odb::dbTechLayerRule*> layer_rules;
+    ndr->getLayerRules(layer_rules);
+
+    for (odb::dbTechLayerRule* layer_rule : layer_rules) {
+      RoutingTracks routingTracks =
+        getRoutingTracksByIndex(layer_rule->getLayer()->getRoutingLevel());
+      int default_width = layer_rule->getLayer()->getWidth();
+      int default_pitch = routingTracks.getTrackPitch();
+      
+      int ndr_spacing = layer_rule->getSpacing();
+      int ndr_width = layer_rule->getWidth();
+      int ndr_pitch = 2 * (std::ceil(ndr_width/2 + ndr_spacing + default_width/2 - default_pitch));
+
+      int consumption = std::ceil((float)ndr_pitch/default_pitch);
+
+      trackConsumption = std::max(trackConsumption, consumption);
+    }
+  }
+
+  return trackConsumption;
 }
 
 void GlobalRouter::computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer)
@@ -1278,11 +1305,6 @@ void GlobalRouter::addAlphaForNet(char* netName, float alpha)
 {
   std::string name(netName);
   _netsAlpha[name] = alpha;
-}
-
-void GlobalRouter::setClockCost(int cost)
-{
-  _clockCost = cost;
 }
 
 void GlobalRouter::setVerbose(const int v)
