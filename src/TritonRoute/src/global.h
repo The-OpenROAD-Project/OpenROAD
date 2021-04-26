@@ -58,7 +58,6 @@ extern std::string TOP_ROUTING_LAYER_NAME;
 extern int BOTTOM_ROUTING_LAYER;
 extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;
-extern bool USENONPREFTRACKS;
 extern bool USEMINSPACING_OBS;
 extern bool RESERVE_VIA_ACCESS;
 extern bool ENABLE_BOUNDARY_MAR_FIX;
