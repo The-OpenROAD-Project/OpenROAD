@@ -29,4 +29,5 @@ record_tests {
   group_pins_warn1
   top_layer1
   top_layer2
+  top_layer3
 }
