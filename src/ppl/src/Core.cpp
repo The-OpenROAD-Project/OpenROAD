@@ -52,17 +52,4 @@ int Core::getPerimeter() const
   return (x + y) * 2;
 }
 
-void Core::addPattern(int layer, int x_step, int y_step,
-                      int x_ori, int y_ori, int width, int height)
-{
-	min_dst_pins_x_.push_back(x_step);
-	min_dst_pins_y_.push_back(y_step);
-	init_tracks_x_.push_back(x_ori);
-	init_tracks_y_.push_back(y_ori);
-	min_area_x_.push_back(width*height);
-	min_area_y_.push_back(width*height);
-	min_width_x_.push_back(width);
-	min_width_y_.push_back(width);
-}
-
 }  // namespace ppl
