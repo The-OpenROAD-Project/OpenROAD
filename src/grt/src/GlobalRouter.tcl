@@ -173,15 +173,13 @@ proc set_macro_extension { args } {
 }
 
 sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_topology_priority priority] \
-                                           [-clock_tracks_cost clock_tracks_cost]
+                                           [-clock_topology_priority priority]
 }
 
 proc set_clock_routing { args } {
   sta::parse_key_args "global_route" args \
     keys { -clock_pdrev_fanout \
-           -clock_topology_priority \
-           -clock_tracks_cost
+           -clock_topology_priority
          }
 
   if { [info exists keys(-clock_topology_priority) ] } {
@@ -193,13 +191,6 @@ proc set_clock_routing { args } {
     # aware of skew in the topology construction (see PDRev paper
     # for more reference)
     grt::set_alpha 0.3
-  }
-
-  if { [info exists keys(-clock_tracks_cost)] } {
-    set clock_tracks_cost $keys(-clock_tracks_cost)
-    grt::set_clock_cost $clock_tracks_cost
-  } else {
-    grt::set_clock_cost 1
   }
 
   if { [info exists keys(-clock_pdrev_fanout)] } {

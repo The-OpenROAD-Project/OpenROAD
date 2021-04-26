@@ -151,11 +151,6 @@ set_clock_layer_range(int minLayer, int maxLayer)
   getFastRoute()->setMaxLayerForClock(maxLayer);
 }
 
-void set_clock_cost(int cost)
-{
-  getFastRoute()->setClockCost(cost);
-}
-
 void
 set_macro_extension(int macroExtension)
 {
