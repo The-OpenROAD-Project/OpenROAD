@@ -25,7 +25,7 @@ assign_ndr -ndr NDR -net clknet_2_1__leaf_clk
 assign_ndr -ndr NDR -net clknet_2_2__leaf_clk
 assign_ndr -ndr NDR -net clknet_2_3__leaf_clk
 
-set guide_file [make_result_file ndr1.guide]
+set guide_file [make_result_file ndr_1w_3s.guide]
 
 set_global_routing_layer_adjustment met1 0.8
 set_global_routing_layer_adjustment met2 0.7
@@ -37,4 +37,4 @@ global_route
 
 write_guides $guide_file
 
-diff_file ndr1.guideok $guide_file
+diff_file ndr_1w_3s.guideok $guide_file
