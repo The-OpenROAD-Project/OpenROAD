@@ -128,8 +128,9 @@ proc create_ndr { args } {
     utl::error ODB 1004 "-name is missing"
   }
   set name $keys(-name)
+  set block [[[ord::get_db] getChip] getBlock]
   set tech [[ord::get_db] getTech]
-  set ndr [odb::dbTechNonDefaultRule_create $tech $name]
+  set ndr [odb::dbTechNonDefaultRule_create $block $name]
   if { $ndr == "NULL" } {
     utl::error ODB 1005 "NonDefaultRule ${name} already exists"
   }

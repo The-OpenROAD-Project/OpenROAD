@@ -150,10 +150,9 @@ proc assign_ndr { args } {
   if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
     utl::error ORD 1010 "Either -net or -all_clocks need to be defined"
   }
-  set tech [[ord::get_db] getTech]
   set block [[[ord::get_db] getChip] getBlock]
   set ndrName $keys(-ndr)
-  set ndr [$tech findNonDefaultRule $ndrName]
+  set ndr [$block findNonDefaultRule $ndrName]
   if { $ndr == "NULL" } {
     utl::error ORD 1011 "No NDR named ${ndrName} found"
   }
@@ -190,6 +189,14 @@ proc set_debug_level {args} {
 sta::define_cmd_args "python" { args }
 proc python {args} {
   ord::python_cmd $args
+}
+
+proc set_thread_count { count } {
+  ord::set_thread_count $count
+}
+
+proc thread_count { } {
+  return [ord::thread_count]
 }
 
 ################################################################
