@@ -196,6 +196,10 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
+  void setThreadCount(int threads, bool printInfo = true);
+  void setThreadCount(const char* threads, bool printInfo = true);
+  int getThreadCount();
+
 #ifdef ENABLE_PYTHON3
   void pythonCommand(const char* py_command);
 #endif
@@ -248,6 +252,8 @@ private:
   pdn::PdnGen *pdngen_;
 
   std::set<Observer *> observers_;
+
+  int threads_;
 };
 
 // Return the bounding box of the db rows.
