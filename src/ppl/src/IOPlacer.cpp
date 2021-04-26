@@ -1184,9 +1184,11 @@ void IOPlacer::findSlotsForTopLayer()
   int ub_x = ub.x();
   int ub_y = ub.y();
 
-  for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
-    for (int y = top_grid_.y_ori; y < ub_y; y += top_grid_.y_step) {
-      top_grid_.slots.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
+  if (top_grid_.slots.empty()) {
+    for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
+      for (int y = top_grid_.y_ori; y < ub_y; y += top_grid_.y_step) {
+        top_grid_.slots.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
+      }
     }
   }
 }
@@ -1195,6 +1197,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer()
 {
   findSlotsForTopLayer();
   int ub_x = core_.getBoundary().ur().x();
+  std::vector<Section> sections;
   for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
     std::vector<Slot>& slots = top_grid_.slots;
     std::vector<Slot>::iterator it = std::find_if(slots.begin(), slots.end(),
@@ -1230,12 +1233,12 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer()
       n_sec.used_slots = 0;
       n_sec.edge = Edge::invalid;
 
-      top_grid_.sections.push_back(n_sec);
+      sections.push_back(n_sec);
       edge_begin = ++end_slot;
     }
   }
 
-  return top_grid_.sections;
+  return sections;
 }
 
 void IOPlacer::initNetlist()

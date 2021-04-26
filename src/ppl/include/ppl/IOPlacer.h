@@ -117,7 +117,6 @@ struct TopLayerGrid
   int width;
   int height;
   std::vector<Slot> slots;
-  std::vector<Section> sections;
   TopLayerGrid() = default;
   TopLayerGrid(int l, int x_s, int y_s, int x_o, int y_o, int w, int h)
     : layer(l), x_step(x_s), y_step(y_s), x_ori(x_o), y_ori(y_o), width(w), height(h) {}
