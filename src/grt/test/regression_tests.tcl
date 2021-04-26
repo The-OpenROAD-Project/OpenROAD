@@ -6,7 +6,8 @@ record_tests {
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
-  ndr1
+  ndr_1w_3s
+  ndr_2w_3s
   no_tracks
   region_adjustment
   repair_antennas1
