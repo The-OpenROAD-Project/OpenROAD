@@ -56,7 +56,7 @@ void FlexGR::main(odb::dbDatabase* db)
   // gen topology + pattern route for 2D connectivty
   initGR();
   // populate region query for 2D
-  getRegionQuery()->initGRObj(getTech()->getLayers().size());
+  getRegionQuery()->initGRObj();
 
   getRegionQuery()->printGRObj();
 
@@ -113,7 +113,7 @@ void FlexGR::main(odb::dbDatabase* db)
   layerAssign();
 
   // populate region query for 3D
-  getRegionQuery()->initGRObj(getTech()->getLayers().size());
+  getRegionQuery()->initGRObj();
 
   // reportCong3D();
 

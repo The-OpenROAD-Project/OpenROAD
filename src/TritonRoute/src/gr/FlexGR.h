@@ -241,11 +241,11 @@ class FlexGRWorkerRegionQuery
            std::vector<std::vector<rq_box_value_t<grConnFig*>>>& allShapes);
   void remove(grConnFig* connFig);
   void query(const frBox& box,
-             frLayerNum layerNum,
-             std::vector<grConnFig*>& result);
+             const frLayerNum layerNum,
+             std::vector<grConnFig*>& result) const;
   void query(const frBox& box,
-             frLayerNum layerNum,
-             std::vector<rq_box_value_t<grConnFig*>>& result);
+             const frLayerNum layerNum,
+             std::vector<rq_box_value_t<grConnFig*>>& result) const;
   void init(bool includeExt = false);
   void cleanup()
   {

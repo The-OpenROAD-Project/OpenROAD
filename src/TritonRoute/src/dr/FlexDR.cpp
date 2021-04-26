@@ -1326,8 +1326,7 @@ void FlexDR::init()
     logger_->info(DRT, 187, "start routing data preparation");
   }
   initGCell2BoundaryPin();
-  getRegionQuery()->initDRObj(
-      getTech()->getLayers().size());  // first init in postProcess
+  getRegionQuery()->initDRObj();  // first init in postProcess
 
   init_halfViaEncArea();
   init_via2viaMinLen();
