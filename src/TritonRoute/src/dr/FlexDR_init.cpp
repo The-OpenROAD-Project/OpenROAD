@@ -2673,12 +2673,6 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
 
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
-    // if (routeBox.left() == 462000 && routeBox.bottom() == 81100) {
-    //   cout << "@@@ debug nets:\n";
-    //   for (auto &net: ripupNets) {
-    //     cout << net->getFrNet()->getName() << "\n";
-    //   }
-    // }
     for (auto& net : ripupNets) {
       routes.push_back({net, 0, true});
       // reserve via because all nets are ripupped
@@ -2915,28 +2909,6 @@ void FlexDRWorker::route_queue_update_queue(
   }
 
   route_queue_update_queue(checks, routes, rerouteQueue);
-}
-
-void FlexDRWorker::initMazeCost_marker()
-{
-  //  decay all existing mi
-  for (auto it = planarHistoryMarkers_.begin();
-       it != planarHistoryMarkers_.end();) {
-    auto currIt = it;
-    auto& mi = *currIt;
-    ++it;
-    if (gridGraph_.decayMarkerCostPlanar(mi.x(), mi.y(), mi.z(), MARKERDECAY)) {
-      planarHistoryMarkers_.erase(currIt);
-    }
-  }
-  for (auto it = viaHistoryMarkers_.begin(); it != viaHistoryMarkers_.end();) {
-    auto currIt = it;
-    auto& mi = *currIt;
-    ++it;
-    if (gridGraph_.decayMarkerCostVia(mi.x(), mi.y(), mi.z(), MARKERDECAY)) {
-      viaHistoryMarkers_.erase(currIt);
-    }
-  }
 }
 
 void FlexDRWorker::initMazeCost_guide_helper(drNet* net, bool isAdd)

@@ -696,7 +696,6 @@ class FlexDRWorker
                           bool isAddPathCost,
                           bool isSkipVia = false);
   void initMazeCost_ap();  // disable maze edge
-  void initMazeCost_marker();
   void initMazeCost_marker_route_queue(const frMarker& marker);
   void initMazeCost_marker_route_queue_addHistoryCost(const frMarker& marker);
 
@@ -813,11 +812,8 @@ class FlexDRWorker
   void modBlockedPlanar(const frBox& box, frMIdx z, bool setBlock);
   void modBlockedVia(const frBox& box, frMIdx z, bool setBlock);
 
-  bool mazeIterInit(int mazeIter, std::vector<drNet*>& rerouteNets);
   bool mazeIterInit_sortRerouteNets(int mazeIter,
                                     std::vector<drNet*>& rerouteNets);
-  bool mazeIterInit_searchRepair(int mazeIter,
-                                 std::vector<drNet*>& rerouteNets);
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);

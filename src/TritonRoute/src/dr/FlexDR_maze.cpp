@@ -1772,56 +1772,6 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
   return true;
 }
 
-// temporary settings to test search and repair
-bool FlexDRWorker::mazeIterInit_searchRepair(int mazeIter,
-                                             vector<drNet*>& rerouteNets)
-{
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  int cnt = 0;
-  if (mazeIter == 0) {
-    if (getRipupMode() == 0) {
-      for (auto& net : nets_) {
-        if (net->isRipup()) {
-          rerouteNets.push_back(net.get());
-        }
-      }
-    } else if (getRipupMode() == 1) {
-      for (auto& net : nets_) {
-        rerouteNets.push_back(net.get());
-      }
-    }
-  }
-  auto sol = mazeIterInit_sortRerouteNets(mazeIter, rerouteNets);
-  if (sol) {
-    for (auto& net : rerouteNets) {
-      net->setModified(true);
-      if (net->getFrNet()) {
-        net->getFrNet()->setModified(true);
-      }
-      net->setNumMarkers(0);
-      for (auto& uConnFig : net->getRouteConnFigs()) {
-        subPathCost(uConnFig.get());
-        workerRegionQuery.remove(uConnFig.get());  // worker region query
-        cnt++;
-      }
-      // add via access cost when net is not routed
-      if (RESERVE_VIA_ACCESS) {
-        initMazeCost_via_helper(net, true);
-      }
-      net->clear();
-    }
-  }
-  // cout <<"sr sub " <<cnt <<" connfig costs" <<endl;
-  return sol;
-}
-
-bool FlexDRWorker::mazeIterInit(int mazeIter, vector<drNet*>& rerouteNets)
-{
-  initMazeCost_marker();  // add marker cost, set net ripup
-  return mazeIterInit_searchRepair(mazeIter, rerouteNets);  // add to
-                                                            // rerouteNets
-}
-
 void FlexDRWorker::mazeNetInit(drNet* net)
 {
   gridGraph_.resetStatus();
