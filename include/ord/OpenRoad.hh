@@ -116,6 +116,10 @@ namespace par {
 class PartitionMgr;
 }
 
+namespace pdn {
+class PdnGen;
+}
+
 namespace utl {
 class Logger;
 }
@@ -157,6 +161,8 @@ public:
   par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
+  pdn::PdnGen *getPdnGen() { return pdngen_; }
+
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -189,6 +195,10 @@ public:
 
   void readDb(const char *filename);
   void writeDb(const char *filename);
+
+  void setThreadCount(int threads, bool printInfo = true);
+  void setThreadCount(const char* threads, bool printInfo = true);
+  int getThreadCount();
 
 #ifdef ENABLE_PYTHON3
   void pythonCommand(const char* py_command);
@@ -239,8 +249,11 @@ private:
   gpl::Replace *replace_;
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
+  pdn::PdnGen *pdngen_;
 
   std::set<Observer *> observers_;
+
+  int threads_;
 };
 
 // Return the bounding box of the db rows.

@@ -58,7 +58,8 @@ Opendp::fillerPlacement(const StringSeq *filler_master_names, const char* prefix
   findFillerMasters(filler_master_names);
   gap_fillers_.clear();
   filler_count_ = 0;
-  makeCellGrid();
+  initGrid();
+  setGridCells();
 
   for (int row = 0; row < row_count_; row++)
     placeRowFillers(row, prefix);
@@ -87,22 +88,12 @@ Opendp::findFillerMasters(const StringSeq *filler_master_names)
 }
 
 void
-Opendp::makeCellGrid()
+Opendp::setGridCells()
 {
-  initGrid();
   for (Cell &cell : cells_) {
-    int x_ll = gridX(&cell);
-    int y_ll = gridY(&cell);
-    int x_ur = gridEndX(&cell);
-    int y_ur = gridEndY(&cell);
-
-    for (int y = y_ll; y < y_ur; y++) {
-      for (int x = x_ll; x < x_ur; x++) {
-        Pixel *pixel = gridPixel(x, y);
-        if (pixel)
-          pixel->cell = &cell;
-      }
-    }
+    if (!setObstructionGridCells(cell))
+      setGridCell(cell, gridX(&cell), gridEndX(&cell),
+                  gridY(&cell), gridEndY(&cell));
   }
 }
 
