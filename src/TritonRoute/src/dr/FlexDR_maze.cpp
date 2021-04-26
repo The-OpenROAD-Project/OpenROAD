@@ -1501,6 +1501,7 @@ void FlexDRWorker::modInfSpacingRulesCost(const frBox& box,
                                           int type,
                                           bool isSkipVia)
 {
+  return;
   auto layer = getDesign()->getTech()->getLayer(gridGraph_.getLayerNum(z));
   if (!layer->hasSpacingTableInfluence())
     return;

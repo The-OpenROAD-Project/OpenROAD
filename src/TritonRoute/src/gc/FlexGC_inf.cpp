@@ -72,7 +72,7 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
 void FlexGCWorker::Impl::check90RectsMetSpcTblInf(
     std::vector<gcRect*> rects,
     gtl::rectangle_data<frCoord> queryRect,
-    frUInt4 spacing,
+    frCoord spacing,
     gtl::orientation_2d orient)
 {
   frSquaredDistance spacingSq = spacing * (frSquaredDistance) spacing;
@@ -83,6 +83,8 @@ void FlexGCWorker::Impl::check90RectsMetSpcTblInf(
       distSquared *= distSquared;
       if (distSquared < spacingSq) {
         // Violation
+        if(distSquared == 0)
+          continue;
         if (rects[i]->isFixed() && rects[j]->isFixed())
           continue;
         auto lNum = rects[i]->getLayerNum();
@@ -137,12 +139,12 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
     gcRect* rect,
     frSpacingTableInfluenceConstraint* con)
 {
-  frUInt4 width = rect->width();
+  frCoord width = rect->width();
   frLayerNum lNum = rect->getLayerNum();
   if (width < con->getLookupTbl().getMin())
     return;
-  auto val = con->getLookupTbl().find(width);
-  frUInt4 within, spacing;
+  auto val = con->find(width);
+  frCoord within, spacing;
   within = val.first;
   spacing = val.second;
   auto dir = gtl::guess_orientation(*rect);

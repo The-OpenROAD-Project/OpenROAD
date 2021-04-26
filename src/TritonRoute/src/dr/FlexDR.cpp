@@ -2019,6 +2019,9 @@ void FlexDR::reportDRC()
         } else if (con->typeId()
                    == frConstraintTypeEnum::frcLef58MinStepConstraint) {
           drcRpt << "MinStp";
+        } else if (con->typeId()
+                   == frConstraintTypeEnum::frcSpacingTableInfluenceConstraint) {
+          drcRpt << "MetSpcInf";
         } else {
           drcRpt << "unknown";
         }

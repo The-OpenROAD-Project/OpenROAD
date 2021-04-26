@@ -383,7 +383,7 @@ class FlexGCWorker::Impl
   void checkRectMetSpcTblInf(gcRect*, frSpacingTableInfluenceConstraint*);
   void check90RectsMetSpcTblInf(std::vector<gcRect*> rects,
                                 gtl::rectangle_data<frCoord> queryRect,
-                                frUInt4 spacing,
+                                frCoord spacing,
                                 gtl::orientation_2d orient);
   void checkRectMetSpcTblInf_queryBox(const gtl::rectangle_data<frCoord>& rect,
                                       frCoord dist,
