@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexDR.h"
-
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
@@ -36,6 +34,7 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 
@@ -62,6 +61,7 @@ void FlexDR::setDebug(frDebugSettings* settings)
 
 int FlexDRWorker::main()
 {
+  ProfileTask profile("DR:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
@@ -78,48 +78,7 @@ int FlexDRWorker::main()
 
   init();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  route();
-  high_resolution_clock::time_point t2 = high_resolution_clock::now();
-  end();
-  high_resolution_clock::time_point t3 = high_resolution_clock::now();
-
-  duration<double> time_span0 = duration_cast<duration<double>>(t1 - t0);
-  duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
-  duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
-
-  if (VERBOSE > 1) {
-    stringstream ss;
-    ss << "time (INIT/ROUTE/POST) " << time_span0.count() << " "
-       << time_span1.count() << " " << time_span2.count() << " " << endl;
-    cout << ss.str() << flush;
-  }
-  return 0;
-}
-
-int FlexDRWorker::main_mt()
-{
-  ProfileTask profile("DR:main_mt");
-  using namespace std::chrono;
-  high_resolution_clock::time_point t0 = high_resolution_clock::now();
-  if (VERBOSE > 1) {
-    frBox scaledBox;
-    stringstream ss;
-    ss << endl
-       << "start DR worker (BOX) "
-       << "( " << routeBox_.left() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.bottom() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << routeBox_.right() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.top() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
-    cout << ss.str() << flush;
-  }
-
-  init();
-  high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  if (getFixMode() != 9) {
-    route();
-  } else {
-    route_queue();
-  }
+  route_queue();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
@@ -160,7 +119,6 @@ void FlexDR::initFromTA()
       }
     }
   }
-
 }
 
 void FlexDR::initGCell2BoundaryPin()
@@ -1433,8 +1391,6 @@ void FlexDR::initDR(int size, bool enableDRC)
   int prev_perc = 0;
   bool isExceed = false;
 
-  int numQuickMarkers = 0;
-
   vector<unique_ptr<FlexDRWorker>> uworkers;
   int batchStepX, batchStepY;
 
@@ -1471,10 +1427,9 @@ void FlexDR::initDR(int size, bool enableDRC)
       auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
       worker->setDRIter(0, bp);
       // set boundary pin
-      worker->setEnableDRC(enableDRC);
       worker->setFollowGuide(false);
       // worker->setFollowGuide(true);
-      worker->setCost(ROUTESHAPECOST, 0, 0, 0);
+      worker->setCost(ROUTESHAPECOST, 0);
       // int workerIdx = xIdx * batchSizeY + yIdx;
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       // workers[batchIdx][workerIdx] = worker;
@@ -1498,7 +1453,7 @@ void FlexDR::initDR(int size, bool enableDRC)
 // multi thread
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int) workersInBatch.size(); i++) {
-        workersInBatch[i]->main_mt();
+        workersInBatch[i]->main();
 #pragma omp critical
         {
           cnt++;
@@ -1510,14 +1465,9 @@ void FlexDR::initDR(int size, bool enableDRC)
               prev_perc += 10;
               // if (true) {
               if (isExceed) {
-                if (enableDRC) {
-                  cout << "    completing " << prev_perc << "% with "
-                       << getDesign()->getTopBlock()->getNumMarkers()
-                       << " violations" << endl;
-                } else {
-                  cout << "    completing " << prev_perc << "% with "
-                       << numQuickMarkers << " quick violations" << endl;
-                }
+                cout << "    completing " << prev_perc << "% with "
+                     << getDesign()->getTopBlock()->getNumMarkers()
+                     << " violations" << endl;
                 cout << "    " << t << endl << flush;
               }
             }
@@ -1541,14 +1491,9 @@ void FlexDR::initDR(int size, bool enableDRC)
       prev_perc += 10;
       // if (true) {
       if (isExceed) {
-        if (enableDRC) {
-          cout << "    completing " << prev_perc << "% with "
-               << getDesign()->getTopBlock()->getNumMarkers() << " violations"
-               << endl;
-        } else {
-          cout << "    completing " << prev_perc << "% with " << numQuickMarkers
-               << " quick violations" << endl;
-        }
+        cout << "    completing " << prev_perc << "% with "
+             << getDesign()->getTopBlock()->getNumMarkers() << " violations"
+             << endl;
         cout << "    " << t << endl << flush;
       }
     }
@@ -1557,15 +1502,10 @@ void FlexDR::initDR(int size, bool enableDRC)
   removeGCell2BoundaryPin();
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
-    if (enableDRC) {
-      logger_->info(DRT,
-                    196,
-                    "  number of violations = {}",
-                    getDesign()->getTopBlock()->getNumMarkers());
-    } else {
-      logger_->info(
-          DRT, 197, "  number of quick violations = {}", numQuickMarkers);
-    }
+    logger_->info(DRT,
+                  196,
+                  "  number of violations = {}",
+                  getDesign()->getTopBlock()->getNumMarkers());
     t.print(logger_);
     cout << flush;
   }
@@ -1583,12 +1523,8 @@ void FlexDR::searchRepair(int iter,
                           int mazeEndIter,
                           frUInt4 workerDRCCost,
                           frUInt4 workerMarkerCost,
-                          frUInt4 workerMarkerBloatWidth,
-                          frUInt4 workerMarkerBloatDepth,
-                          bool enableDRC,
                           int ripupMode,
-                          bool followGuide,
-                          int fixMode)
+                          bool followGuide)
 {
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
@@ -1641,7 +1577,6 @@ void FlexDR::searchRepair(int iter,
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  int numQuickMarkers = 0;
   int clipSize = size;
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
@@ -1689,16 +1624,11 @@ void FlexDR::searchRepair(int iter,
         auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
         worker->setDRIter(0, bp);
       }
-      worker->setEnableDRC(enableDRC);
       worker->setRipupMode(ripupMode);
       worker->setFollowGuide(followGuide);
-      worker->setFixMode(fixMode);
       // TODO: only pass to relevant workers
       worker->setGraphics(graphics_.get());
-      worker->setCost(workerDRCCost,
-                      workerMarkerCost,
-                      workerMarkerBloatWidth,
-                      workerMarkerBloatDepth);
+      worker->setCost(workerDRCCost, workerMarkerCost);
 
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
@@ -1724,7 +1654,7 @@ void FlexDR::searchRepair(int iter,
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->main_mt();
+          workersInBatch[i]->main();
 #pragma omp critical
           {
             cnt++;
@@ -1737,17 +1667,9 @@ void FlexDR::searchRepair(int iter,
                 prev_perc += 10;
                 // if (true) {
                 if (isExceed) {
-                  if (enableDRC) {
-                    logger_->report(
-                        "    completing {}% with {} violations",
-                        prev_perc,
-                        getDesign()->getTopBlock()->getNumMarkers());
-                  } else {
-                    logger_->report(
-                        "    completing {}% with {} quick violations",
-                        prev_perc,
-                        numQuickMarkers);
-                  }
+                  logger_->report("    completing {}% with {} violations",
+                                  prev_perc,
+                                  getDesign()->getTopBlock()->getNumMarkers());
                   logger_->report("    {}", t);
                 }
               }
@@ -1777,15 +1699,9 @@ void FlexDR::searchRepair(int iter,
       prev_perc += 10;
       // if (true) {
       if (isExceed) {
-        if (enableDRC) {
-          logger_->report("    completing {}% with {} violations",
-                          prev_perc,
-                          getDesign()->getTopBlock()->getNumMarkers());
-        } else {
-          logger_->report("    completing {}% with {} quick violations",
-                          prev_perc,
-                          numQuickMarkers);
-        }
+        logger_->report("    completing {}% with {} violations",
+                        prev_perc,
+                        getDesign()->getTopBlock()->getNumMarkers());
         logger_->report("    {}", t);
       }
     }
@@ -1793,15 +1709,10 @@ void FlexDR::searchRepair(int iter,
   checkConnectivity(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
-    if (enableDRC) {
-      logger_->info(DRT,
-                    199,
-                    "  number of violations = {}",
-                    getDesign()->getTopBlock()->getNumMarkers());
-    } else {
-      logger_->info(
-          DRT, 200, "  number of quick violations = {}", numQuickMarkers);
-    }
+    logger_->info(DRT,
+                  199,
+                  "  number of violations = {}",
+                  getDesign()->getTopBlock()->getNumMarkers());
     t.print(logger_);
     cout << flush;
   }
@@ -2115,318 +2026,70 @@ int FlexDR::main()
   // need three different offsets to resolve boundary corner issues
 
   int iterNum = 0;
-  searchRepair(iterNum++ /*  0 */,
-               7,
-               0,
-               3,
-               ROUTESHAPECOST,
-               0 /*MAARKERCOST*/,
-               0,
-               0,
-               true,
-               1,
-               true,
-               9);  // true search and repair
+  searchRepair(
+      iterNum++ /*  0 */, 7, 0, 3, ROUTESHAPECOST, 0 /*MAARKERCOST*/, 1, true);
   searchRepair(iterNum++ /*  1 */,
                7,
                -2,
                3,
                ROUTESHAPECOST,
                ROUTESHAPECOST /*MAARKERCOST*/,
-               0,
-               0,
-               true,
                1,
-               true,
-               9);  // true search and repair
+               true);
   searchRepair(iterNum++ /*  2 */,
                7,
                -5,
                3,
                ROUTESHAPECOST,
                ROUTESHAPECOST /*MAARKERCOST*/,
-               0,
-               0,
-               true,
                1,
-               true,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  3 */,
-               7,
-               0,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  4 */,
-               7,
-               -1,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  5 */,
-               7,
-               -2,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  6 */,
-               7,
-               -3,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  7 */,
-               7,
-               -4,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  8 */,
-               7,
-               -5,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /*  9 */,
-               7,
-               -6,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 10 */,
-               7,
-               0,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 11 */,
-               7,
-               -1,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 12 */,
-               7,
-               -2,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 13 */,
-               7,
-               -3,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 14 */,
-               7,
-               -4,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 15 */,
-               7,
-               -5,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 16 */,
-               7,
-               -6,
-               8,
-               ROUTESHAPECOST * 2,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 17 - ra'*/,
-               7,
-               -3,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               1,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 18 */,
-               7,
-               0,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 19 */,
-               7,
-               -1,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 20 */,
-               7,
-               -2,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 21 */,
-               7,
-               -3,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 22 */,
-               7,
-               -4,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 23 */,
-               7,
-               -5,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 24 */,
-               7,
-               -6,
-               8,
-               ROUTESHAPECOST * 4,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 25 - ra'*/,
-               5,
-               -2,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               1,
-               false,
-               9);  // true search and repair
+               true);
+  searchRepair(
+      iterNum++ /*  3 */, 7, 0, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /*  4 */, 7, -1, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /*  5 */, 7, -2, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /*  6 */, 7, -3, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /*  7 */, 7, -4, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /*  8 */, 7, -5, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /*  9 */, 7, -6, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 10 */, 7, 0, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 11 */, 7, -1, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 12 */, 7, -2, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 13 */, 7, -3, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 14 */, 7, -4, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 15 */, 7, -5, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 16 */, 7, -6, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 17 - ra'*/, 7, -3, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
+  searchRepair(
+      iterNum++ /* 18 */, 7, 0, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 19 */, 7, -1, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 20 */, 7, -2, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 21 */, 7, -3, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 22 */, 7, -4, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 23 */, 7, -5, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 24 */, 7, -6, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
+  searchRepair(
+      iterNum++ /* 25 - ra'*/, 5, -2, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
   searchRepair(iterNum++ /* 26 */,
                7,
                0,
@@ -2434,11 +2097,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 27 */,
                7,
                -1,
@@ -2446,11 +2105,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 28 */,
                7,
                -2,
@@ -2458,11 +2113,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 29 */,
                7,
                -3,
@@ -2470,11 +2121,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 30 */,
                7,
                -4,
@@ -2482,11 +2129,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 31 */,
                7,
                -5,
@@ -2494,11 +2137,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 32 */,
                7,
                -6,
@@ -2506,23 +2145,9 @@ int FlexDR::main()
                ROUTESHAPECOST * 8,
                MARKERCOST * 2,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 33 - ra'*/,
-               3,
-               -1,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               1,
-               false,
-               9);  // true search and repair
+               false);
+  searchRepair(
+      iterNum++ /* 33 - ra'*/, 3, -1, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
   searchRepair(iterNum++ /* 34 */,
                7,
                0,
@@ -2530,11 +2155,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 35 */,
                7,
                -1,
@@ -2542,11 +2163,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 36 */,
                7,
                -2,
@@ -2554,11 +2171,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 37 */,
                7,
                -3,
@@ -2566,11 +2179,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 38 */,
                7,
                -4,
@@ -2578,11 +2187,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 39 */,
                7,
                -5,
@@ -2590,11 +2195,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 40 */,
                7,
                -6,
@@ -2602,23 +2203,9 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 41 - ra'*/,
-               3,
-               -2,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               1,
-               false,
-               9);  // true search and repair
+               false);
+  searchRepair(
+      iterNum++ /* 41 - ra'*/, 3, -2, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
   searchRepair(iterNum++ /* 42 */,
                7,
                0,
@@ -2626,11 +2213,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 43 */,
                7,
                -1,
@@ -2638,11 +2221,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 44 */,
                7,
                -2,
@@ -2650,11 +2229,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 45 */,
                7,
                -3,
@@ -2662,11 +2237,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 46 */,
                7,
                -4,
@@ -2674,11 +2245,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 47 */,
                7,
                -5,
@@ -2686,11 +2253,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 48 */,
                7,
                -6,
@@ -2698,23 +2261,9 @@ int FlexDR::main()
                ROUTESHAPECOST * 16,
                MARKERCOST * 4,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 49 - ra'*/,
-               3,
-               -0,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               1,
-               false,
-               9);  // true search and repair
+               false);
+  searchRepair(
+      iterNum++ /* 49 - ra'*/, 3, -0, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
   searchRepair(iterNum++ /* 50 */,
                7,
                0,
@@ -2722,11 +2271,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 51 */,
                7,
                -1,
@@ -2734,11 +2279,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 52 */,
                7,
                -2,
@@ -2746,11 +2287,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 53 */,
                7,
                -3,
@@ -2758,11 +2295,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 54 */,
                7,
                -4,
@@ -2770,11 +2303,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 55 */,
                7,
                -5,
@@ -2782,11 +2311,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 56 */,
                7,
                -6,
@@ -2794,23 +2319,9 @@ int FlexDR::main()
                ROUTESHAPECOST * 32,
                MARKERCOST * 8,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
-  searchRepair(iterNum++ /* 57 - ra'*/,
-               3,
-               -1,
-               8,
-               ROUTESHAPECOST,
-               MARKERCOST,
-               0,
-               0,
-               true,
-               1,
-               false,
-               9);  // true search and repair
+               false);
+  searchRepair(
+      iterNum++ /* 57 - ra'*/, 3, -1, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
   searchRepair(iterNum++ /* 58 */,
                7,
                0,
@@ -2818,11 +2329,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 59 */,
                7,
                -1,
@@ -2830,11 +2337,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 60 */,
                7,
                -2,
@@ -2842,11 +2345,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 61 */,
                7,
                -3,
@@ -2854,11 +2353,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 56 */,
                7,
                -4,
@@ -2866,11 +2361,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 62 */,
                7,
                -5,
@@ -2878,11 +2369,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
   searchRepair(iterNum++ /* 63 */,
                7,
                -6,
@@ -2890,11 +2377,7 @@ int FlexDR::main()
                ROUTESHAPECOST * 64,
                MARKERCOST * 16,
                0,
-               0,
-               true,
-               0,
-               false,
-               9);  // true search and repair
+               false);
 
   if (DRC_RPT_FILE != string("")) {
     reportDRC();
