@@ -189,7 +189,7 @@ class IOPlacer
   void randomPlacement();
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
-  std::vector<Section> findSectionsForTopLayer();
+  std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
   void defineSlots();
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);

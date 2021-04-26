@@ -147,8 +147,17 @@ proc set_io_pin_constraint { args } {
       ppl::add_pins_to_constraint "set_io_pin_constraint" $names $edge_ $begin $end $edge
     }
   } elseif [regexp -all {(up):(.*)} $region - edge box] {
-    if [regexp -all {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} $box - llx lly urx ury] {
-    
+    if {$box == "*"} {
+      set die_area [$dbBlock getDieArea]
+      set llx [$die_area xMin]
+      set lly [$die_area yMin]
+      set urx [$die_area xMax]
+      set ury [$die_area yMax]
+    } elseif [regexp -all {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} $box - llx lly urx ury] {
+      set llx [ord::microns_to_dbu $llx]
+      set lly [ord::microns_to_dbu $lly]
+      set urx [ord::microns_to_dbu $urx]
+      set ury [ord::microns_to_dbu $ury]
     } else {
       utl::error PPL 59 "box at top layer must have 4 values (llx lly urx ury)."
     }

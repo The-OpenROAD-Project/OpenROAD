@@ -464,7 +464,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &con
       findSections(constraint_begin, constraint_end, edge, sections);
     }
   } else {
-    sections = findSectionsForTopLayer();
+    sections = findSectionsForTopLayer(constraint.box);
   }
 
   return sections;
@@ -1193,22 +1193,35 @@ void IOPlacer::findSlotsForTopLayer()
   }
 }
 
-std::vector<Section> IOPlacer::findSectionsForTopLayer()
+std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 {
   findSlotsForTopLayer();
-  int ub_x = core_.getBoundary().ur().x();
+
+  const Point& lb = core_.getBoundary().ll();
+  const Point& ub = core_.getBoundary().ur();
+
+  int lb_x = region.xMin();
+  int lb_y = region.yMin();
+  int ub_x = region.xMax();
+  int ub_y = region.yMax();
+
   std::vector<Section> sections;
   for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
     std::vector<Slot>& slots = top_grid_.slots;
     std::vector<Slot>::iterator it = std::find_if(slots.begin(), slots.end(),
                                                    [&](Slot s) {
-                                                      return s.pos.x() == x;
+                                                      return (s.pos.x() >= x &&
+                                                              s.pos.x() >= lb_x &&
+                                                              s.pos.y() >= lb_y);
                                                    });
     int edge_begin = it - slots.begin();
+    int edge_x = slots[edge_begin].pos.x();
 
     it = std::find_if(slots.begin()+edge_begin, slots.end(),
                                                  [&](Slot s) {
-                                                    return s.pos.x() != x;
+                                                    return s.pos.x() != edge_x ||
+                                                           s.pos.x() >= ub_x ||
+                                                           s.pos.y() >= ub_y;
                                                  });
     int edge_end = it - slots.begin() - 1;
 
