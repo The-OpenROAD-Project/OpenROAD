@@ -456,9 +456,16 @@ void extMain::getShapeRC(dbNet* net,
         _tmpCapTable[ii] = 0;
 #endif
         // _tmpCapTable[ii] += 2 * areaCap * len * width;
+        bool newResModel= true;
+        if (!newResModel) {
         double r = getResistance(level, width, len, ii);
         _tmpResTable[ii] = r;
         _tmpResTable[ii] = 0;
+        } else {
+
+          double r = getResistance(level, width, len, ii);
+          _tmpResTable[ii] = r;
+        }
       }
     }
   }

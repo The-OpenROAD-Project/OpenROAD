@@ -287,6 +287,8 @@ bool Ext::bench_wires(const BenchWiresOptions& bwo)
   opt._db_only = bwo.db_only;
   opt._gen_def_patterns = bwo.gen_def_patterns;
 
+  opt._res_patterns = bwo.resPatterns;
+
   if (opt._gen_def_patterns) {
     opt._diag = true;
     opt._overUnder = true;
