@@ -25,8 +25,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 using namespace std;
@@ -69,7 +67,7 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
   }
 }
 
-void FlexGCWorker::Impl::check90RectsMetSpcTblInf(
+void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
     std::vector<gcRect*> rects,
     gtl::rectangle_data<frCoord> queryRect,
     frCoord spacing,
@@ -82,8 +80,8 @@ void FlexGCWorker::Impl::check90RectsMetSpcTblInf(
           = gtl::square_euclidean_distance(*rects[i], *rects[j]);
       if (distSquared < spacingSq) {
         // Violation
-        if(distSquared == 0)
-          continue;//shorts are already checked in checkMetalSpacing_main
+        if (distSquared == 0)
+          continue;  // shorts are already checked in checkMetalSpacing_main
         if (rects[i]->isFixed() && rects[j]->isFixed())
           continue;
         auto lNum = rects[i]->getLayerNum();
@@ -140,7 +138,7 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
 {
   frCoord width = rect->width();
   frLayerNum lNum = rect->getLayerNum();
-  if (width < con->getLookupTbl().getMin())
+  if (width < con->getMinWidth())
     return;
   auto val = con->find(width);
   frCoord within, spacing;
@@ -170,16 +168,16 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
       if (!gtl::intersects(*objPtr, queryRect, false))
         continue;
       if (gtl::guess_orientation(*objPtr) == dir)
-        continue;  // not perpendicular
+        continue;  // not orthogonal
       rects.push_back(objPtr);
     }
-    if(rects.size() < 2)
+    if (rects.size() < 2)
       continue;
     if (dir == gtl::HORIZONTAL)
       std::sort(rects.begin(), rects.end(), compareHorizontal);
     else
       std::sort(rects.begin(), rects.end(), compareVertical);
-    check90RectsMetSpcTblInf(rects, queryRect, spacing, dir);
+    checkOrthRectsMetSpcTblInf(rects, queryRect, spacing, dir);
   }
 }
 void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)

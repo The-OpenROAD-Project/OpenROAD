@@ -216,14 +216,16 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
-frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(frLayerNum layer_num,
-                                      std::vector<frCoord> widthTbl,
-                                      std::vector<std::pair<frCoord, frCoord>> valTbl)
+frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
+    frLayerNum layer_num,
+    std::vector<frCoord> widthTbl,
+    std::vector<std::pair<frCoord, frCoord>> valTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl("WIDTH", widthTbl, valTbl);
-    unique_ptr<frConstraint> uCon
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
+      "WIDTH", widthTbl, valTbl);
+  unique_ptr<frConstraint> uCon
       = make_unique<frSpacingTableInfluenceConstraint>(tbl);
   auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
   tech->addUConstraint(std::move(uCon));

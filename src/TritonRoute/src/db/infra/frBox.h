@@ -163,15 +163,6 @@ class frBox
     }
     return std::max(xd, yd);
   }
-  frBox intersection(const frBox& r) const
-  {
-    frBox result;
-    result.set(std::max(left(), r.left()),
-               std::max(bottom(), r.bottom()),
-               std::min(right(), r.right()),
-               std::min(top(), r.top()));
-    return result;
-  }
   void transform(const frTransform& xform);
   bool overlaps(const frBox& boxIn, bool incEdges = true) const;
   void bloat(const frCoord distance, frBox& boxOut) const;

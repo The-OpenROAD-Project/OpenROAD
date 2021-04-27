@@ -1013,8 +1013,10 @@ class frSpacingTableInfluenceConstraint : public frConstraint
   {
     return tbl.find(width);
   }
+  frCoord getMinWidth() const { return tbl.getMinRow(); }
   // setter
-  void setLookupTbl(const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
+  void setLookupTbl(
+      const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
   {
     tbl = in;
   }
