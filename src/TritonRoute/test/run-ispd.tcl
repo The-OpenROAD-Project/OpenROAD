@@ -38,6 +38,7 @@ proc genFiles { run_dir ispd_year design drv } {
     puts  $tclFile "  exit 1"
     puts  $tclFile "} elseif { \$drv_count < $drv } {"
     puts  $tclFile "  puts \"NOTICE: Decrease in number of violations from $drv to \$drv_count\""
+    puts  $tclFile "  exit 2"
     puts  $tclFile "}"
     close $tclFile
 
