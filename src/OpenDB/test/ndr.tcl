@@ -6,7 +6,8 @@ read_def "data/ndr.def"
 set tech [$db getTech]
 set block [[$db getChip] getBlock]
 set clk [$block findNet clk]
-create_ndr -name NDR -spacing { metal1:metal5 0.4 } -width {metal2:metal6 0.5} -via { M2_M1_via }
+create_ndr -name NDR -spacing { metal1:metal5 *3 } -width {metal2:metal6 0.5} -via { M2_M1_via }
+create_ndr -name mult -spacing { *2 } -width {metal1:metal3 *3}
 assign_ndr -ndr NDR -net clk
 foreach ndr [$block getNonDefaultRules] {
   puts "[$ndr getName]:"
