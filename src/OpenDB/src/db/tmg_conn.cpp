@@ -1524,7 +1524,7 @@ void tmg_conn::connectTerm(int j, bool soft)
       addPointToTerm(pt, x);
       pt->_t_alt = pother;
     }
-    //  else if (softm {
+    //  else if (soft) {
     //   if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
     //     connectTermSoft(j,_csV[ii].rtlev,_csV[ii].rect,_csV[ii].k);
     // }
