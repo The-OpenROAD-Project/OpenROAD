@@ -537,7 +537,6 @@ RouteBaseVars::reset() {
   pinBlockageFactor = 0.05;
   inflationRatioCoef = 2.5;
   maxInflationRatio = 2.5;
-  blockagePorosity = 0;
   maxDensity = 0.90;
   ignoreEdgeRatio = 0.8;
   targetRC = 1.01;
@@ -698,7 +697,6 @@ RouteBase::inflationIterCnt() const {
 // tileSizeX_ tileSizeY_ 
 //
 // rbVars_' 
-// blockagePorosity_
 //
 // RouteBases' 
 // verticalCapacity_
@@ -720,9 +718,6 @@ RouteBase::updateRoute() {
   tg_->setLy(route.gridOriginY);
 
   tg_->setTileSize( route.tileWidth, route.tileHeight);
-
-  rbVars_.blockagePorosity
-    = route.blockPorosity;
 
   verticalCapacity_ = route.verticalEdgesCapacities;
   horizontalCapacity_ = route.horizontalEdgesCapacities;

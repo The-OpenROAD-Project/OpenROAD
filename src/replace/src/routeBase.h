@@ -316,7 +316,6 @@ public:
   float pinBlockageFactor;
   float inflationRatioCoef;
   float maxInflationRatio;
-  float blockagePorosity;
   float maxDensity;
   float ignoreEdgeRatio;
   float targetRC;
