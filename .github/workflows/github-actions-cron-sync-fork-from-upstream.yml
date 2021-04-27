@@ -11,9 +11,7 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
-      
       - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      
       - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       
       - name: Check out repository code
@@ -23,5 +21,7 @@ jobs:
       
       - name: Pull Upstream
         uses: The-OpenROAD-Project/actions/upstream_sync@main
-        
-        
+        with:
+          upstream-repo-url: The-OpenROAD-Project/OpenROAD
+          upstream-branch: master
+                
