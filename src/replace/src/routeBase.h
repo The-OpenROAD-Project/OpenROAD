@@ -100,7 +100,6 @@ class Tile {
     float inflationAreaDelta() const;
     float inflatedRatio() const;
 
-    bool isMacroIncluded() const;
     int pinCnt() const;
 
     // setter funcs
@@ -189,7 +188,6 @@ class Tile {
 
     float inflatedRatio_;
 
-    bool isMacroIncluded_;
 
     void reset();
 };

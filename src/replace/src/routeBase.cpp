@@ -70,8 +70,7 @@ Tile::Tile()
   inflationRatio_(1.0),
   inflationArea_(0),
   inflationAreaDelta_(0),
-  inflatedRatio_(0), 
-  isMacroIncluded_(false) {}
+  inflatedRatio_(0) {}
 
 Tile::Tile(int x, int y, int lx, int ly, int ux, int uy, int layers) 
 : Tile() {
@@ -105,7 +104,6 @@ Tile::reset() {
 
   inflationArea_ = inflationAreaDelta_ = 0;
   inflatedRatio_ = 0;
-  isMacroIncluded_ = false;
 
   blockage_.clear();
   capacity_.clear();
@@ -215,11 +213,6 @@ Tile::inflatedRatio() const {
   return inflatedRatio_;
 }
 
-bool
-Tile::isMacroIncluded() const {
-  return isMacroIncluded_;
-}
-
 int
 Tile::pinCnt() const {
   return pinCnt_;
@@ -321,10 +314,6 @@ Tile::setInflatedRatio(float ratio) {
 }
 
 
-void
-Tile::setMacroIncluded(bool mode) {
-  isMacroIncluded_ = mode;
-}
 
 void 
 Tile::setPinCnt(int cnt) {
@@ -834,11 +823,6 @@ RouteBase::updateSupplies() {
           static_cast<float>((minWireWidth_[layer] + minWireSpacing_[layer])) /
           rbVars_.edgeAdjustmentCoef * tg_->tileSizeX() );
 
-      // lower layer check
-      if( layer <= 4 && horizontalCapacity_[layer] > 0 &&
-          capacity < 0.01 ) {
-        lTile->setMacroIncluded(true);
-      }
     }
     else {
       // lower -> right edge
@@ -855,11 +839,6 @@ RouteBase::updateSupplies() {
           static_cast<float>((minWireWidth_[layer] + minWireSpacing_[layer])) /
           rbVars_.edgeAdjustmentCoef * tg_->tileSizeY() );
       
-      // lower layer check
-      if( layer <= 4 && verticalCapacity_[layer] > 0 &&
-          capacity < 0.01 ) {
-        lTile->setMacroIncluded(true);
-      }
     }
   } 
   
