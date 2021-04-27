@@ -474,16 +474,12 @@ proc add_pins_to_top_layer {cmd names llx lly urx ury} {
 proc parse_pin_names {cmd names} {
   set dbBlock [ord::get_db_block]
   set pin_list {}
-  if {$names == "*"} {
-    set pin_list [$dbBlock getBTerms]
-  } else {
-    foreach pin_name $names {
-      set db_bterm [$dbBlock findBTerm $pin_name]
-      if { $db_bterm != "NULL" } {
-        lappend pin_list $db_bterm
-      } else {
-        utl::warn PPL 44 "$cmd: Pin $pin_name not found"
-      }
+  foreach pin [get_ports $names] {
+    set db_bterm [$dbBlock findBTerm [get_property $pin name]]
+    if { $db_bterm != "NULL" } {
+      lappend pin_list $db_bterm
+    } else {
+      utl::warn PPL 44 "Pin $pin_name not found in constraint"
     }
   }
 

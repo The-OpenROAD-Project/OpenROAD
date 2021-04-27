@@ -10,6 +10,6 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
 [INFO PPL-0060] Restrict pins [qq] to region (70.0u, 50.0u)-(95.0u, 95.0u) at routing layer metal10.
-[WARNING PPL-0044] set_io_pin_constraint: Pin qq not found
+[WARNING STA-0337] port 'qq' not found.
 [ERROR PPL-0061] Pins for set_io_pin_constraint command were not found
 PPL-0061
