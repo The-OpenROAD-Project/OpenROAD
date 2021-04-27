@@ -71,10 +71,6 @@ proc tapcell { args } {
     set tapcell_master $keys(-tapcell_master)
   }
 
-  if { [info exists keys(-endcap_master)] } {
-    set endcap_master_name $keys(-endcap_master)
-  }
-
   if { [info exists keys(-endcap_cpp)] } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
   }
@@ -187,6 +183,7 @@ proc tapcell { args } {
   set halo_x [ord::microns_to_dbu $halo_x]
 
   if { [info exists keys(-endcap_master)] } {
+    set endcap_master_name $keys(-endcap_master)
     set endcap_master [$db findMaster $endcap_master_name]
     if { $endcap_master == "NULL" } {
       utl::error TAP 10 "Master $endcap_master_name not found."
