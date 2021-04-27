@@ -5809,8 +5809,7 @@ uint extMain::readExtRules(const char* name,
 
 void extMain::setLogger(Logger* logger)
 {
-  if (!logger_)
-    logger_ = logger;
+  logger_ = logger;
 }
 
 uint extRCModel::findBiggestDatarateIndex(double d)

@@ -763,12 +763,9 @@ uint extMain::getResCapTable(bool lefRC)
     uint sp = layer->getSpacing();  // nm
 
     _minDistTable[n] = sp;
-fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
     if (sp==0) {
       sp= layer->getPitch() - layer->getWidth();
           _minDistTable[n] = sp;
-
-fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
     }
     double resTable[20];
     bool newResModel= true;
