@@ -22,7 +22,7 @@ jobs:
           ref: master
       
       - name: Pull Upstream
-        uses: The-OpenROAD-Project/actions/upstream-sync@main
+        uses: The-OpenROAD-Project/actions/upstream_sync@main
         
         # main notes
         # don't use git merge but instead git reset unless merging a PR
