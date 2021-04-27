@@ -69,6 +69,13 @@ proc define_pin_shape_pattern { args } {
       set lly [ord::microns_to_dbu $lly]
       set urx [ord::microns_to_dbu $urx]
       set ury [ord::microns_to_dbu $ury]
+    } elseif {$region == "*"} {
+      set dbBlock [ord::get_db_block]
+      set die_area [$dbBlock getDieArea]
+      set llx [$die_area xMin]
+      set lly [$die_area yMin]
+      set urx [$die_area xMax]
+      set ury [$die_area yMax]
     } else {
       utl::error PPL 63 "-region is not a list of 4 values {llx lly urx ury}."
     }
@@ -93,12 +100,11 @@ proc define_pin_shape_pattern { args } {
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
                                               [-pin_names names] \
-                                              [-region region] \
-                                              [-names names]}
+                                              [-region region]}
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -pin_names -region -names}
+  keys {-direction -pin_names -region}
 
   if [info exists keys(-region)] {
     set region $keys(-region)
@@ -126,8 +132,7 @@ proc set_io_pin_constraint { args } {
       set end [ppl::get_edge_extreme "-region" 0 $edge]
     }
 
-    if {[info exists keys(-direction)] && [info exists keys(-pin_names)] && \
-        [info exists keys(-names)]} {
+    if {[info exists keys(-direction)] && [info exists keys(-pin_names)]} {
       utl::error PPL 16 "Both -direction and -pin_names constraints not allowed.."
     }
 
@@ -136,12 +141,6 @@ proc set_io_pin_constraint { args } {
       set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
       utl::info PPL 49 "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
       ppl::add_direction_constraint $dir $edge_ $begin $end
-    }
-
-    if [info exists keys(-names)] {
-      utl::warn PPL 44 "-names option is deprecated. Use -pin_names instead."
-      set names $keys(-names)
-      ppl::add_pins_to_constraint "set_io_pin_constraint" $names $edge_ $begin $end $edge
     }
 
     if [info exists keys(-pin_names)] {
@@ -458,36 +457,37 @@ proc parse_layer_name { layer_name } {
 }
 
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
-  set dbBlock [ord::get_db_block]
-  set pin_list {}
   utl::info PPL 48 "Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge."
-  foreach pin_name $names {
-    set db_bterm [$dbBlock findBTerm $pin_name]
-    if { $db_bterm != "NULL" } {
-      lappend pin_list $db_bterm
-    } else {
-      utl::warn PPL 47 "Pin $pin_name not found in constraint"
-    }
-  }
+  set pin_list [ppl::parse_pin_names $names]
   ppl::add_names_constraint $pin_list $edge $begin $end
 }
 
 proc add_pins_to_top_layer {cmd names llx lly urx ury} {
   set tech [ord::get_db_tech]
-  set dbBlock [ord::get_db_block]
-  set pin_list {}
   set top_layer [ppl::get_top_layer]
   set top_layer_name [[$tech findRoutingLayer $top_layer] getConstName]
   utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
-  foreach pin_name $names {
-    set db_bterm [$dbBlock findBTerm $pin_name]
-    if { $db_bterm != "NULL" } {
-      lappend pin_list $db_bterm
-    } else {
-      utl::warn PPL 61 "Pin $pin_name not found in constraint"
+  set pin_list [ppl::parse_pin_names $names]
+  ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury
+}
+
+proc parse_pin_names {names} {
+  set dbBlock [ord::get_db_block]
+  set pin_list {}
+  if {$names == "*"} {
+    set pin_list [$dbBlock getBTerms]
+  } else {
+    foreach pin_name $names {
+      set db_bterm [$dbBlock findBTerm $pin_name]
+      if { $db_bterm != "NULL" } {
+        lappend pin_list $db_bterm
+      } else {
+        utl::warn PPL 44 "Pin $pin_name not found in constraint"
+      }
     }
   }
-  ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury
+
+  return $pin_list
 }
 
 # ppl namespace end
