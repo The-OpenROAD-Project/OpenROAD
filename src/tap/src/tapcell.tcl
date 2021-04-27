@@ -186,9 +186,13 @@ proc tapcell { args } {
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
 
-  set endcap_master [$db findMaster $endcap_master_name]
-  if { $endcap_master == "NULL" } {
-    utl::error TAP 10 "Master $endcap_master_name not found."
+  if { [info exists keys(-endcap_master)] } {
+    set endcap_master [$db findMaster $endcap_master_name]
+    if { $endcap_master == "NULL" } {
+      utl::error TAP 10 "Master $endcap_master_name not found."
+    }
+  } else {
+    set endcap_master [$db findMaster $tapcell_master]
   }
 
   tap::clear $tap_prefix $endcap_prefix
@@ -202,7 +206,9 @@ proc tapcell { args } {
 
   set tap::phy_idx 0
   set tap::filled_sites []
-  tap::insert_endcaps $db $rows $endcap_master $cnrcap_masters $endcap_prefix
+  if { [info exists keys(-endcap_master)] } {
+    tap::insert_endcaps $db $rows $endcap_master $cnrcap_masters $endcap_prefix
+  }
 
   if {$add_boundary_cell} {
     set tap_nw_masters {}
