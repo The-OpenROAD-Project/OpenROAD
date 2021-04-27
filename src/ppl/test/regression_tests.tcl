@@ -31,4 +31,5 @@ record_tests {
   top_layer2
   top_layer3
   top_layer4
+  top_layer_error
 }

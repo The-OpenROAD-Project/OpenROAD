@@ -458,7 +458,7 @@ proc parse_layer_name { layer_name } {
 
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
   utl::info PPL 48 "Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge."
-  set pin_list [ppl::parse_pin_names $names]
+  set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_names_constraint $pin_list $edge $begin $end
 }
 
@@ -467,11 +467,11 @@ proc add_pins_to_top_layer {cmd names llx lly urx ury} {
   set top_layer [ppl::get_top_layer]
   set top_layer_name [[$tech findRoutingLayer $top_layer] getConstName]
   utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
-  set pin_list [ppl::parse_pin_names $names]
+  set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury
 }
 
-proc parse_pin_names {names} {
+proc parse_pin_names {cmd names} {
   set dbBlock [ord::get_db_block]
   set pin_list {}
   if {$names == "*"} {
@@ -482,9 +482,13 @@ proc parse_pin_names {names} {
       if { $db_bterm != "NULL" } {
         lappend pin_list $db_bterm
       } else {
-        utl::warn PPL 44 "Pin $pin_name not found in constraint"
+        utl::warn PPL 44 "$cmd: Pin $pin_name not found"
       }
     }
+  }
+
+  if {[llength $pin_list] == 0} {
+    utl::error PPL 61 "Pins for $cmd command were not found"
   }
 
   return $pin_list
