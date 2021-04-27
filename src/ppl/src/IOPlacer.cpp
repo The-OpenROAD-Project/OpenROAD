@@ -870,6 +870,15 @@ void IOPlacer::updatePinArea(IOPin& pin)
   } else {
     int width = top_grid_.width;
     int height = top_grid_.height;
+
+    if (width % mfg_grid != 0) {
+      width = mfg_grid*std::ceil((float)width/mfg_grid);
+    }
+
+    if (height % mfg_grid != 0) {
+      height = mfg_grid*std::ceil((float)height/mfg_grid);
+    }
+
     pin.setLowerBound(pin.getX() - width/2, pin.getY() - height/2);
     pin.setUpperBound(pin.getX() + width/2, pin.getY() + height/2);
   }
