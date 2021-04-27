@@ -15,7 +15,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: run security_scan_on_push
-        uses: tspyrou/actions/security_scan_on_push@main
+        uses: The-OpenROAD-Project/actions/security_scan_on_push@main
 
 
         
