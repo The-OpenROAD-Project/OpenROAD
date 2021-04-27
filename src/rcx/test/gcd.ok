@@ -25,7 +25,7 @@ Notice 0: Split top of 102 T shapes.
 [INFO RCX-0043] 2368 wires to be extracted
 [INFO RCX-0044] 50% completion -- 1197 wires have been extracted
 [INFO RCX-0044] 100% completion -- 2368 wires have been extracted
-[INFO RCX-0045] Extract 411 nets, 3632 rsegs, 3632 caps, 2159 ccs
+[INFO RCX-0045] Extract 411 nets, 3632 rsegs, 3632 caps, 2237 ccs
 [INFO RCX-0015] Finished extracting gcd.
 [INFO RCX-0016] Writing SPEF ...
 [INFO RCX-0047] 411 nets finished
