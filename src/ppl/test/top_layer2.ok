@@ -14,7 +14,7 @@
 [INFO ODB-0131]     Created 253 components and 1357 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 155 connections.
 [INFO ODB-0134] Finished DEF file: blocked_region.def
-[INFO PPL-0060] Restrict pins [clk resp_val req_val resp_rdy reset req_rdy] to region (170.0u, 200.0u)-(250.0u, 250.0u) at the top layer.
+[INFO PPL-0060] Restrict pins [clk resp_val req_val resp_rdy reset req_rdy] to region (170.0u, 200.0u)-(250.0u, 250.0u) at routing layer met5.
 Found 1 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.

@@ -471,9 +471,12 @@ proc add_pins_to_constraint {cmd names edge begin end edge_name} {
 }
 
 proc add_pins_to_top_layer {cmd names llx lly urx ury} {
+  set tech [ord::get_db_tech]
   set dbBlock [ord::get_db_block]
   set pin_list {}
-  utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at the top layer."
+  set top_layer [ppl::get_top_layer]
+  set top_layer_name [[$tech findRoutingLayer $top_layer] getConstName]
+  utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
   foreach pin_name $names {
     set db_bterm [$dbBlock findBTerm $pin_name]
     if { $db_bterm != "NULL" } {

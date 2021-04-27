@@ -148,6 +148,7 @@ class IOPlacer
   void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
   void addTopLayerPinPattern(int layer, int x_step, int y_step,
                         int x_ori, int y_ori, int width, int height);
+  int getTopLayer() { return top_grid_.layer; }
 
  private:
   Netlist netlist_;

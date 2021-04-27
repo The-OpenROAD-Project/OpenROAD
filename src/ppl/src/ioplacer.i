@@ -256,6 +256,12 @@ create_pin_shape_pattern(int layer, int x_step, int y_step,
   getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, x_ori, y_ori, width, height);
 }
 
+int
+get_top_layer()
+{
+  return getIOPlacer()->getTopLayer();
+}
+
 void
 clear()
 {
