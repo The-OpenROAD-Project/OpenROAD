@@ -314,7 +314,7 @@ void defout_impl::writeGCells(dbBlock* block)
     fprintf(_out,
             "GCELLGRID X %d DO %d STEP %d ;\n",
             defdist(orgX),
-            count - 1,
+            count,
             defdist(step));
   }
 
@@ -324,7 +324,7 @@ void defout_impl::writeGCells(dbBlock* block)
     fprintf(_out,
             "GCELLGRID Y %d DO %d STEP %d ;\n",
             defdist(orgY),
-            count - 1,
+            count,
             defdist(step));
   }
 }

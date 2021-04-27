@@ -288,24 +288,6 @@ void TritonRoute::readParams(const string& fileName)
         else if (field == "dbProcessNode") {
           DBPROCESSNODE = value;
           ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyPrefWireBottomLayerNum") {
-          ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyPrefWireTopLayerNum") {
-          ONGRIDONLY_WIRE_PREF_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyNonPrefWireBottomLayerNum") {
-          ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyNonPrefWireTopLayerNum") {
-          ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyViaBottomLayerNum") {
-          ONGRIDONLY_VIA_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyViaTopLayerNum") {
-          ONGRIDONLY_VIA_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
         } else if (field == "drouteViaInPinBottomLayerNum") {
           VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str());
           ++readParamCnt;
