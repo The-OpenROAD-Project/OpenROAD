@@ -132,6 +132,11 @@ int write_tech_lef(odb::dbTech* tech, const char* path)
   odb::lefout writer;
   return writer.writeTech(tech, path);
 }
+int write_macro_lef(odb::dbLib* lib, const char* path)
+{
+  odb::lefout writer;
+  return writer.writeLib(lib, path);
+}
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
 {
