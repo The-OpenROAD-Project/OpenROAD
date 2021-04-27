@@ -319,14 +319,14 @@ left edge from the beginning to the 50 microns.
 define_pin_shape_pattern {[-layer layer]
                            [-x_step x_step]
                            [-y_step y_step]
-                           [-origin {x y}]
+                           [-region {llx lly urx ury}]
                            [-size {width height}]
 ```
 
 The `define_pin_shape_pattern` command defines a pin placement grid at the specified layer.
 This grid has positions inside the die area, not only at the edges of the die boundary.
 The `-layer` option defines a single top most routing layer of the placement grid.
-The `-origin` option defines the (x, y) origin of the placement grid.
+The `-region` option defines the {llx, lly, urx, ury} region of the placement grid.
 The `-x_step` and `-y_step` options define the distance between each valid position on the grid.
 The `-size` option defines the width and height of the pins assigned to this grid. 
 

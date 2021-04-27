@@ -112,13 +112,17 @@ struct TopLayerGrid
   int layer;
   int x_step;
   int y_step;
-  int x_ori;
-  int y_ori;
+  int llx;
+  int lly;
+  int urx;
+  int ury;
   int width;
   int height;
   TopLayerGrid() = default;
-  TopLayerGrid(int l, int x_s, int y_s, int x_o, int y_o, int w, int h)
-    : layer(l), x_step(x_s), y_step(y_s), x_ori(x_o), y_ori(y_o), width(w), height(h) {}
+  TopLayerGrid(int l, int x_s, int y_s, int x_l, int y_l,
+               int x_u, int y_u, int w, int h)
+    : layer(l), x_step(x_s), y_step(y_s), llx(x_l), lly(y_l),
+      urx(x_u), ury(y_u), width(w), height(h) {}
 };
 
 class IOPlacer
@@ -147,7 +151,8 @@ class IOPlacer
   void addPinGroup(PinList* group);
   void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
   void addTopLayerPinPattern(int layer, int x_step, int y_step,
-                        int x_ori, int y_ori, int width, int height);
+                             int llx, int lly, int urx, int ury,
+                             int width, int height);
   int getTopLayer() { return top_grid_.layer; }
 
  private:

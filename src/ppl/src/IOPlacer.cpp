@@ -53,7 +53,7 @@ void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   parms_ = std::make_unique<Parameters>();
-  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1);
+  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1, -1, -1);
 }
 
 void IOPlacer::clear()
@@ -1172,24 +1172,17 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs,
 }
 
 void IOPlacer::addTopLayerPinPattern(int layer, int x_step, int y_step,
-                                int x_ori, int y_ori, int width, int height)
+                                     int llx, int lly, int urx, int ury,
+                                     int width, int height)
 {
-  top_grid_ = TopLayerGrid(layer, x_step, y_step, x_ori, y_ori, width, height);
+  top_grid_ = TopLayerGrid(layer, x_step, y_step, llx, lly, urx, ury, width, height);
 }
 
 void IOPlacer::findSlotsForTopLayer()
 {
-  const Point& lb = core_.getBoundary().ll();
-  const Point& ub = core_.getBoundary().ur();
-
-  int lb_x = lb.x();
-  int lb_y = lb.y();
-  int ub_x = ub.x();
-  int ub_y = ub.y();
-
   if (top_layer_slots_.empty() && top_grid_.width > 0) {
-    for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
-      for (int y = top_grid_.y_ori; y < ub_y; y += top_grid_.y_step) {
+    for (int x = top_grid_.llx; x < top_grid_.urx; x += top_grid_.x_step) {
+      for (int y = top_grid_.lly; y < top_grid_.ury; y += top_grid_.y_step) {
         top_layer_slots_.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
       }
     }
@@ -1207,7 +1200,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
   int ub_y = region.yMax();
 
   std::vector<Section> sections;
-  for (int x = top_grid_.x_ori; x < ub_x; x += top_grid_.x_step) {
+  for (int x = top_grid_.llx; x < top_grid_.urx; x += top_grid_.x_step) {
     std::vector<Slot>& slots = top_layer_slots_;
     std::vector<Slot>::iterator it = std::find_if(slots.begin(), slots.end(),
                                                    [&](Slot s) {

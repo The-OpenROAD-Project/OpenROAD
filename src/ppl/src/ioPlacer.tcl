@@ -37,12 +37,12 @@
 sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
                                                  [-x_step x_step] \
                                                  [-y_step y_step] \
-                                                 [-origin origin] \
+                                                 [-region region] \
                                                  [-size size]}
 
 proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
-  keys {-layer -x_step -y_step -origin -size}
+  keys {-layer -x_step -y_step -region -size}
 
   if [info exists keys(-layer)] {
     set layer_name $keys(-layer)
@@ -62,16 +62,18 @@ proc define_pin_shape_pattern { args } {
     utl::error PPL 54 "-x_step and -y_step are required."
   }
 
-  if [info exists keys(-origin)] {
-    set origin $keys(-origin)
-    if { [llength $origin] != 2 } {
-      utl::error PPL 58 "-origin is not a list of 2 values."
+  if [info exists keys(-region)] {
+    set region $keys(-region)
+    if [regexp -all {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} $region - llx lly urx ury] {
+      set llx [ord::microns_to_dbu $llx]
+      set lly [ord::microns_to_dbu $lly]
+      set urx [ord::microns_to_dbu $urx]
+      set ury [ord::microns_to_dbu $ury]
+    } else {
+      utl::error PPL 63 "-region is not a list of 4 values {llx lly urx ury}."
     }
-    lassign $origin x_ori y_ori
-    set x_ori [ord::microns_to_dbu $x_ori]
-    set y_ori [ord::microns_to_dbu $y_ori]
   } else {
-    utl::error PPL 55 "-origin is required."
+    utl::error PPL 55 "-region is required."
   }
 
   if [info exists keys(-size)] {
@@ -86,7 +88,7 @@ proc define_pin_shape_pattern { args } {
     utl::error PPL 57 "-size is required."
   }
 
-  ppl::create_pin_shape_pattern $layer_idx $x_step $y_step $x_ori $y_ori $width $height
+  ppl::create_pin_shape_pattern $layer_idx $x_step $y_step $llx $lly $urx $ury $width $height
 }
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \

@@ -251,9 +251,10 @@ set_min_distance(int minDist)
 
 void
 create_pin_shape_pattern(int layer, int x_step, int y_step,
-                         int x_ori, int y_ori, int width, int height)
+                         int llx, int lly, int urx, int ury,
+                         int width, int height)
 {
-  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, x_ori, y_ori, width, height);
+  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, llx, lly, urx, ury, width, height);
 }
 
 int
