@@ -132,8 +132,6 @@ class Tile {
     void setInflatedRatio(float ratio);
 
     void setPinCnt(int cnt);
-    void setMacroIncluded(bool mode);
-
 
     void updateUsages();
 
