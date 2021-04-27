@@ -36,7 +36,7 @@ struct FlexDRWorkerRegionQuery::Impl
 {
   FlexDRWorker* drWorker;
   std::vector<bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>>
-      shapes;  // only for drXXX in dr worker
+      shapes_;  // only for drXXX in dr worker
 
   static void add(
       drConnFig* connFig,
@@ -58,8 +58,8 @@ FlexDRWorker* FlexDRWorkerRegionQuery::getDRWorker() const
 
 void FlexDRWorkerRegionQuery::cleanup()
 {
-  impl_->shapes.clear();
-  impl_->shapes.shrink_to_fit();
+  impl_->shapes_.clear();
+  impl_->shapes_.shrink_to_fit();
 }
 
 frDesign* FlexDRWorkerRegionQuery::getDesign() const
@@ -74,7 +74,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
     obj->getBBox(frb);
-    impl_->shapes.at(obj->getLayerNum()).insert(make_pair(frb, obj));
+    impl_->shapes_.at(obj->getLayerNum()).insert(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     frTransform xform;
@@ -86,7 +86,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
         frb.transform(xform);
-        impl_->shapes.at(via->getViaDef()->getLayer1Num())
+        impl_->shapes_.at(via->getViaDef()->getLayer1Num())
             .insert(make_pair(frb, via));
       } else {
         cout << "Error: unsupported region query add" << endl;
@@ -97,7 +97,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
         frb.transform(xform);
-        impl_->shapes.at(via->getViaDef()->getLayer2Num())
+        impl_->shapes_.at(via->getViaDef()->getLayer2Num())
             .insert(make_pair(frb, via));
       } else {
         cout << "Error: unsupported region query add" << endl;
@@ -108,7 +108,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
         frb.transform(xform);
-        impl_->shapes.at(via->getViaDef()->getCutLayerNum())
+        impl_->shapes_.at(via->getViaDef()->getCutLayerNum())
             .insert(make_pair(frb, via));
       } else {
         cout << "Error: unsupported region query add" << endl;
@@ -180,7 +180,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
     obj->getBBox(frb);
-    impl_->shapes.at(obj->getLayerNum()).remove(make_pair(frb, obj));
+    impl_->shapes_.at(obj->getLayerNum()).remove(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     frTransform xform;
@@ -192,7 +192,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
         frb.transform(xform);
-        impl_->shapes.at(via->getViaDef()->getLayer1Num())
+        impl_->shapes_.at(via->getViaDef()->getLayer1Num())
             .remove(make_pair(frb, via));
       } else {
         cout << "Error: unsupported region query remove" << endl;
@@ -203,7 +203,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
         frb.transform(xform);
-        impl_->shapes.at(via->getViaDef()->getLayer2Num())
+        impl_->shapes_.at(via->getViaDef()->getLayer2Num())
             .remove(make_pair(frb, via));
       } else {
         cout << "Error: unsupported region query remove" << endl;
@@ -214,7 +214,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
         frb.transform(xform);
-        impl_->shapes.at(via->getViaDef()->getCutLayerNum())
+        impl_->shapes_.at(via->getViaDef()->getCutLayerNum())
             .remove(make_pair(frb, via));
       } else {
         cout << "Error: unsupported region query remove" << endl;
@@ -226,28 +226,30 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
 }
 
 void FlexDRWorkerRegionQuery::query(const frBox& box,
-                                    frLayerNum layerNum,
-                                    vector<drConnFig*>& result)
+                                    const frLayerNum layerNum,
+                                    vector<drConnFig*>& result) const
 {
   vector<rq_box_value_t<drConnFig*>> temp;
-  impl_->shapes.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
+  impl_->shapes_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
 }
 
-void FlexDRWorkerRegionQuery::query(const frBox& box,
-                                    frLayerNum layerNum,
-                                    vector<rq_box_value_t<drConnFig*>>& result)
+void FlexDRWorkerRegionQuery::query(
+    const frBox& box,
+    const frLayerNum layerNum,
+    vector<rq_box_value_t<drConnFig*>>& result) const
 {
-  impl_->shapes.at(layerNum).query(bgi::intersects(box), back_inserter(result));
+  impl_->shapes_.at(layerNum).query(bgi::intersects(box),
+                                    back_inserter(result));
 }
 
 void FlexDRWorkerRegionQuery::init()
 {
   int numLayers = getDesign()->getTech()->getLayers().size();
-  impl_->shapes.clear();
-  impl_->shapes.resize(numLayers);
+  impl_->shapes_.clear();
+  impl_->shapes_.resize(numLayers);
   vector<vector<rq_box_value_t<drConnFig*>>> allShapes(numLayers);
   for (auto& net : getDRWorker()->getNets()) {
     for (auto& connFig : net->getRouteConnFigs()) {
@@ -258,14 +260,10 @@ void FlexDRWorkerRegionQuery::init()
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    impl_->shapes.at(i) = boost::move(
+    impl_->shapes_.at(i) = boost::move(
         bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>(
             allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    // if (VERBOSE > 0) {
-    //   cout <<"  complete " <<design->getTech()->getLayer(i)->getName()
-    //   <<endl;
-    // }
   }
 }

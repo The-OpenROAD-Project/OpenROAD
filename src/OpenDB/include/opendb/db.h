@@ -6943,6 +6943,13 @@ class dbTechLayer : public dbObject
   int getSpacing(int width, int length = 0);
 
   ///
+  /// The number of masks for this layer (aka double/triple patterning).
+  /// Allowable values are in [1, 3].
+  ///
+  uint getNumMasks() const;
+  void setNumMasks(uint number);
+
+  ///
   /// Get the low end of the uppermost range for wide wire design rules.
   ///
   void getMaxWideDRCRange(int& owidth, int& olength);

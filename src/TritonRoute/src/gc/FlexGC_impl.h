@@ -49,23 +49,23 @@ class FlexGCWorkerRegionQuery
   void removePolygonEdge(gcSegment* connFig);
   void removeMaxRectangle(gcRect* connFig);
   void queryPolygonEdge(const box_t& box,
-                        frLayerNum layerNum,
-                        std::vector<std::pair<segment_t, gcSegment*>>& result);
+                        const frLayerNum layerNum,
+                        std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryPolygonEdge(const frBox& box,
-                        frLayerNum layerNum,
-                        std::vector<std::pair<segment_t, gcSegment*>>& result);
+                        const frLayerNum layerNum,
+                        std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryMaxRectangle(const box_t& box,
-                         frLayerNum layerNum,
-                         std::vector<rq_box_value_t<gcRect*>>& result);
+                         const frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect*>>& result) const;
   void querySpcRectangle(const box_t& box,
-                         frLayerNum layerNum,
-                         std::vector<rq_box_value_t<gcRect>>& result);
+                         const frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect>>& result) const;
   void queryMaxRectangle(const frBox& box,
-                         frLayerNum layerNum,
-                         std::vector<rq_box_value_t<gcRect*>>& result);
+                         const frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect*>>& result) const;
   void queryMaxRectangle(const gtl::rectangle_data<frCoord>& box,
-                         frLayerNum layerNum,
-                         std::vector<rq_box_value_t<gcRect*>>& result);
+                         const frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect*>>& result) const;
   void init(int numLayers);
   void addToRegionQuery(gcNet* net);
   void removeFromRegionQuery(gcNet* net);

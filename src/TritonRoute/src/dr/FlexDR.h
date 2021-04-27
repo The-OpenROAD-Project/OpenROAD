@@ -300,11 +300,11 @@ class FlexDRWorkerRegionQuery
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
   void query(const frBox& box,
-             frLayerNum layerNum,
-             std::vector<drConnFig*>& result);
+             const frLayerNum layerNum,
+             std::vector<drConnFig*>& result) const;
   void query(const frBox& box,
-             frLayerNum layerNum,
-             std::vector<rq_box_value_t<drConnFig*>>& result);
+             const frLayerNum layerNum,
+             std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
   void cleanup();
 

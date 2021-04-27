@@ -1399,6 +1399,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     tmpLayer->setDir(frcVertPrefRoutingDir);
 
   tmpLayer->setPitch(layer->getPitch());
+  tmpLayer->setNumMasks(layer->getNumMasks());
 
   // Add off grid rule for every layer
   auto recheckConstraint = make_unique<frRecheckConstraint>();

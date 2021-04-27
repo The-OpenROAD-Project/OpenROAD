@@ -374,9 +374,7 @@ void Fixture::makePathseg(frNet* net,
 
 void Fixture::initRegionQuery()
 {
-  int num_layers = design->getTech()->getLayers().size();
-
   frRegionQuery* query = design->getRegionQuery();
-  query->init(num_layers);
-  query->initDRObj(num_layers);
+  query->init();
+  query->initDRObj();
 }
