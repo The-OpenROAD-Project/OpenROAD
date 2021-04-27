@@ -24,10 +24,4 @@ jobs:
       - name: Pull Upstream
         uses: The-OpenROAD-Project/actions/upstream_sync@main
         
-        # main notes
-        # don't use git merge but instead git reset unless merging a PR
-        # don't use pygithub in action but use urllib3 instead directly with json python lib
-        # on push support branch specifier
-        # steal actions from others // fork them to my own org if worried about disappearing
-        # make security repo public
         
