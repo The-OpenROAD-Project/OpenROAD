@@ -1,0 +1,21 @@
+name: Scan Code with pre commit trigger
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: run security_scan_on_push
+        uses: tspyrou/actions/security_scan_on_push@main
+
+
+        
