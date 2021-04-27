@@ -29,10 +29,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "darr.h"
 #include "OpenRCX/extRCap.h"
 #include "OpenRCX/extSpef.h"
 #include "OpenRCX/exttree.h"
+#include "darr.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -763,15 +763,15 @@ uint extMain::getResCapTable(bool lefRC)
     uint sp = layer->getSpacing();  // nm
 
     _minDistTable[n] = sp;
-    if (sp==0) {
-      sp= layer->getPitch() - layer->getWidth();
-          _minDistTable[n] = sp;
+    if (sp == 0) {
+      sp = layer->getPitch() - layer->getWidth();
+      _minDistTable[n] = sp;
     }
     double resTable[20];
-    bool newResModel= true;
+    bool newResModel = true;
     if (newResModel) {
       for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
-        resTable[jj]= 0.0;
+        resTable[jj] = 0.0;
       }
       calcRes0(resTable, n, w, 1);
     }
@@ -805,7 +805,8 @@ uint extMain::getResCapTable(bool lefRC)
                    rc->getCoupling(),
                    rc->getFringe(),
                    res,
-                   r1, resTable[jj]);
+                   r1,
+                   resTable[jj]);
       }
 
       extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
@@ -814,10 +815,10 @@ uint extMain::getResCapTable(bool lefRC)
         if (newResModel) {
           _resistanceTable[jj][n] = resTable[jj];
         } else {
-        if (rc0 != NULL) {
-          double r1 = rc->getRes();
-          _resistanceTable[jj][n] = r1;
-        }
+          if (rc0 != NULL) {
+            double r1 = rc->getRes();
+            _resistanceTable[jj][n] = r1;
+          }
         }
       } else {
         debugPrint(logger_,

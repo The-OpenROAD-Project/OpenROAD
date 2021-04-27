@@ -33,8 +33,8 @@
 #include <dbWireCodec.h>
 #include <stdio.h>
 
-#include "db.h"
 #include "OpenRCX/extRCap.h"
+#include "db.h"
 #include "utl/Logger.h"
 
 namespace rcx {

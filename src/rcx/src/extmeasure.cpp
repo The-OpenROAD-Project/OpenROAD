@@ -31,8 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include <dbRtTree.h>
 
-#include "dbUtil.h"
 #include "OpenRCX/extRCap.h"
+#include "dbUtil.h"
 #include "utl/Logger.h"
 
 #ifdef HI_ACC_1
@@ -1691,7 +1691,7 @@ int extMeasure::calcDist(int* ll, int* ur)
   return 0;
 }
 SEQ* extMeasure::addSeq(int* ll, int* ur)
-                     
+
 {
   SEQ* s = _pixelTable->salloc();
   for (uint ii = 0; ii < 2; ii++) {
@@ -1715,8 +1715,8 @@ void extMeasure::addSeq(int* ll,
     s->_ur[ii] = ur[ii];
   }
   s->type = 0;
-  if (seqTable!=NULL)
-  seqTable->add(s);
+  if (seqTable != NULL)
+    seqTable->add(s);
 }
 void extMeasure::addSeq(Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
 {
@@ -3619,29 +3619,20 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
                            int srcCovered)
 {
   int res_lenOverSub = _len - ouCovered;  // 0228
-  res_lenOverSub = 0;  // 0315 -- new calc
-  bool SCALING_RES=false;
-
+  res_lenOverSub = 0;                     // 0315 -- new calc
+  bool SCALING_RES = false;
 
   int DIAG_SUB_DIVIDER = 1;
-  /*
-          if (ouCovered==0) {
-                          ouCovered = diagCovered/DIAG_SUB_DIVIDER;
-          }
-  */
 
-  // DF 1120 double SUB_MULT= 1.0;
   double SUB_MULT_CAP
       = 1.0;  // Open ended resitance should account by 1/4 -- 11/15
-  
-  // ----------------------------------------- DF Scaling - 022821
-  double SUB_MULT_RES= 1.0;
+
+  double SUB_MULT_RES = 1.0;
   if (SCALING_RES) {
-  double dist_track= 0.0;
-  SUB_MULT_RES = ScaleResbyTrack(true, dist_track);
-  res_lenOverSub = _len;
+    double dist_track = 0.0;
+    SUB_MULT_RES = ScaleResbyTrack(true, dist_track);
+    res_lenOverSub = _len;
   }
-  // ----------------------------------------- DF Scaling - 022821
   int lenOverSub = _len - ouCovered;
   if (lenOverSub < 0)
     lenOverSub = 0;
@@ -3667,10 +3658,11 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
     if (!_extMain->_lef_res && !rvia1) {
       if (res_lenOverSub > 0) {
         extDistRC* rc0 = _metRCTable.get(jj)->getOverFringeRC(this, 0);
-        extDistRC* rc_last = _metRCTable.get(jj)->getOverFringeRC_last(_met, _width);
+        extDistRC* rc_last
+            = _metRCTable.get(jj)->getOverFringeRC_last(_met, _width);
         double delta0 = rc0->_res - rc_last->_res;
         if (delta0 < 0)
-           delta0 = -delta0; 
+          delta0 = -delta0;
         if (delta0 < 0.000001)
           SUB_MULT_RES = 1.0;
         // if (lenOverSub>0) {
@@ -3682,35 +3674,44 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
     const char* msg = "OverSubRC (No Neighbor)";
     OverSubDebug(rc, lenOverSub, res_lenOverSub, res, cap, msg);
   }
-  // }
 }
-double extMeasure::ScaleResbyTrack(bool openEnded, double &dist_track)
+
+/**
+ * ScaleResbyTrack scales the original calculation by 
+ * a coefficient depending on how many track(s) away the
+ * nearest neighbors to the wire of interest.
+ *
+ * To scale the calculated resistance to be closer to 
+ * golden resistance from commercial tool.
+ *
+ * @return the scaling coefficient for the resistance.
+ * @currently not used
+ */
+double extMeasure::ScaleResbyTrack(bool openEnded, double& dist_track)
 {
-    dist_track= 0.0;
+  dist_track = 0.0;
 
-    bool SKIP_SCALING= false;
-    if (SKIP_SCALING)
-      return 1;
+  bool SKIP_SCALING = false;
+  if (SKIP_SCALING)
+    return 1;
 
-    // Dividers: 1, 1.2, 2, 3 respectively for tracks: 1, 2, >=3  --- assumption: extRules is 1/2 of total res
-    double SUB_MULT_RES= 1;
-    if (openEnded) {
-      SUB_MULT_RES= 0.4;
-      // SUB_MULT_RES= 2.0/(1+2);
-      //SUB_MULT_RES= 1.0;
-      return SUB_MULT_RES;
-    }
-    if (_extMain->_minDistTable[_met]>0 && !SKIP_SCALING) {
-        dist_track= _dist/_extMain->_minDistTable[_met];
-        if (dist_track>=3)
-           SUB_MULT_RES=  2.0/(1+4);
-        else if (dist_track>1 && dist_track<=2)
-           SUB_MULT_RES= 1;
-           //SUB_MULT_RES= 2.0/(1+1.2);
-        else if (dist_track>2 && dist_track<=4)
-           SUB_MULT_RES= 2.0/(1+3);
-    }
+  // Dividers: 1, 1.2, 2, 3 respectively for tracks: 1, 2, >=3  --- assumption:
+  // extRules is 1/2 of total res
+  double SUB_MULT_RES = 1;
+  if (openEnded) {
+    SUB_MULT_RES = 0.4;
     return SUB_MULT_RES;
+  }
+  if (_extMain->_minDistTable[_met] > 0 && !SKIP_SCALING) {
+    dist_track = _dist / _extMain->_minDistTable[_met];
+    if (dist_track >= 3)
+      SUB_MULT_RES = 2.0 / (1 + 4);
+    else if (dist_track > 1 && dist_track <= 2)
+      SUB_MULT_RES = 1;
+    else if (dist_track > 2 && dist_track <= 4)
+      SUB_MULT_RES = 2.0 / (1 + 3);
+  }
+  return SUB_MULT_RES;
 }
 
 void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
@@ -3720,12 +3721,10 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
                                 int srcCovered)
 {
   double SUB_MULT = 1.0;
-  // double SUB_MULT_RES = 1;
-  // ----------------------------------------- DF Scaling - 022821
-  double dist_track= 0.0;
+  double dist_track = 0.0;
   double SUB_MULT_RES = ScaleResbyTrack(false, dist_track);
   double res_lenOverSub = _len;
-   res_lenOverSub = 0;  // 0315 -- new calc
+  res_lenOverSub = 0;  // 0315 -- new calc
   // ----------------------------------------- DF Scaling - 022821
   int lenOverSub = _len - ouCovered;
 
@@ -3738,11 +3737,8 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   // extMain::getShapeProperty_rc(rseg2->getNet(), rseg2->getId())>0;
   bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
   bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
-/*
-  if (!(lenOverSub > 0)) {
-    return;
-  } */
-   if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
+  
+  if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
     return;
   }
   _underMet = 0;
@@ -3756,27 +3752,11 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
       delta = -delta;
 
     extDistRC* rc0 = rcModel->getOverFringeRC(this, 0);
-     double delta0 = rc0->_res - rc_last->_res;
+    double delta0 = rc0->_res - rc_last->_res;
     if (delta0 < 0)
       delta0 = -delta0;
 
-    //dbNet* net = dbNet::getNet(_block, _netId);
-    //const char *netName= net->getConstName();
-
     SUB_MULT_RES = 1.0;
-    /*
-    if (delta0 < 0.000001)
-      SUB_MULT_RES = 1.0;
-    else if (delta < 0.000001 && dist_track<=2.0 ) 
-      SUB_MULT_RES = 1.0;
-    else if (delta < 0.000001) 
-      SUB_MULT_RES = 0.5;
-      */
-    // else
-      // SUB_MULT_RES = 1.0;
-      
-   // else if (SUB_MULT_RES!=1.0)
-    //  SUB_MULT_RES = 0.7;
 
     if (rc == NULL)
       continue;
@@ -3817,12 +3797,11 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
 
 int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 {
-// fprintf(stdout, "------------------------------------------------------\n");
-bool DEBUG1=false;
+  bool DEBUG1 = false;
   if (DEBUG1) {
     segInfo("SRC", _netSrcId, _rsegSrcId);
     segInfo("DST", _netTgtId, _rsegTgtId);
-}
+  }
   // Copy from computeAndStoreRC_720
   bool SUBTRACT_DIAG = false;
   bool no_ou = true;
@@ -3843,8 +3822,6 @@ bool DEBUG1=false;
                "C"
                "\t[BEGIN-OUD] ----- OverUnder/Diagonal RC ----- BEGIN");
 
-  // if (_netId>0)
-  //	traceFlag= printTraceNet("\nBEGIN", true, NULL, 0, 0);
 
   uint modelCnt = _metRCTable.getCnt();
   int totLenCovered = 0;
@@ -3860,7 +3837,6 @@ bool DEBUG1=false;
     }
   }
   ouCovered_debug(totLenCovered);
-  // TODO totLenCovered += srcCovered;
 
   if (USE_DB_UBITS) {
     totLenCovered = _extMain->GetDBcoords2(totLenCovered);
@@ -3893,23 +3869,13 @@ bool DEBUG1=false;
     _underMet = 0;
 
     _no_debug = true;
-    // computeR(_len, deltaRes);
     _no_debug = false;
-
-    //_extMain->updateTotalRes(rseg1, rseg2, this, deltaRes, modelCnt);
 
     bool rvia1 = isVia(rseg1->getId());
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       bool ou = false;
-      _rc[jj]->_res = 0; // DF 022821 : Res non context based
-      /* DF 022821 : Res non context based
-      if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
-        ou = true;
-        if (!rvia1)
-          _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
-        else
-          _rc[jj]->_res = 0;
-      }*/
+      _rc[jj]->_res = 0;  // DF 022821 : Res non context based
+      
       if (_rc[jj]->_fringe > 0) {
         ou = true;
         double tot = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
@@ -4125,54 +4091,66 @@ void extMeasure::measureRC(int* options)
   DebugStart();
 
   int totCovered = computeAndStoreRC(rseg1, rseg2, prevCovered);
-  
+
   bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
-  if ( !rvia1 && rseg1 != NULL ) {
+  if (!rvia1 && rseg1 != NULL) {
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      _rc[jj]->_res= 0;
+      _rc[jj]->_res = 0;
     }
-    bool DEBUG1=_netId==604801;
+    bool DEBUG1 = _netId == 604801;
     if (IsDebugNet()) {
-      const char *netName= "";
-      if (_netId>0) {
+      const char* netName = "";
+      if (_netId > 0) {
         dbNet* net = dbNet::getNet(_block, _netId);
-        netName= net->getConstName();
+        netName = net->getConstName();
       }
-     fprintf(stdout, " ---------------------------------------------------------------------------------\n");
-      fprintf(stdout, "     %7d %7d %7d %7d    M%d  D%d  L%d   N%d N%d %s\n",
-                    _ll[0], _ur[0], _ll[1], _ur[1], _met, _dist, _len, _netSrcId, _netTgtId, netName);
-     fprintf(stdout, " ---------------------------------------------------------------------------------\n");
-
+      fprintf(stdout,
+              " ---------------------------------------------------------------"
+              "------------------\n");
+      fprintf(stdout,
+              "     %7d %7d %7d %7d    M%d  D%d  L%d   N%d N%d %s\n",
+              _ll[0],
+              _ur[0],
+              _ll[1],
+              _ur[1],
+              _met,
+              _dist,
+              _len,
+              _netSrcId,
+              _netTgtId,
+              netName);
+      fprintf(stdout,
+              " ---------------------------------------------------------------"
+              "------------------\n");
     }
-     uint track_num= options[18];
-     double deltaRes[10];
-     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-       deltaRes[jj] = 0.0;
-     }
-     // if (_dist>0)
-
-     SEQ *s= addSeq(_ll, _ur);
-     int len_covered= computeResDist(s, 1, 4, _met, NULL);
-     int len_down_not_coupled= _len-len_covered;
-
-     int maxDist= getMaxDist(_met, 0);
-     if (_dist>0 && len_down_not_coupled>0) {
-        calcRes(rseg1->getId(), len_down_not_coupled, 0, _dist, _met);
-        len_covered += len_down_not_coupled;
-     }
-     if (len_covered>0) {
-        calcRes0(deltaRes, _met, len_covered);
-     }
-     // calcRes(_rsegSrcId, len_down_not_coupled, _dist, 0, _met);
-  
+    uint track_num = options[18];
+    double deltaRes[10];
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      deltaRes[jj] = 0.0;
+    }
+    // if (_dist>0)
 
-      double  totR1 = _rc[jj]->_res;
-      if (totR1>0) {
-      totR1 -= deltaRes[jj];
-      double totalSegCap= 0;
-      if (totR1!=0.0)
-        totalSegCap= _extMain->updateRes(rseg1,totR1, jj);
+    SEQ* s = addSeq(_ll, _ur);
+    int len_covered = computeResDist(s, 1, 4, _met, NULL);
+    int len_down_not_coupled = _len - len_covered;
+
+    int maxDist = getMaxDist(_met, 0);
+    if (_dist > 0 && len_down_not_coupled > 0) {
+      calcRes(rseg1->getId(), len_down_not_coupled, 0, _dist, _met);
+      len_covered += len_down_not_coupled;
+    }
+    if (len_covered > 0) {
+      calcRes0(deltaRes, _met, len_covered);
+    }
+    // calcRes(_rsegSrcId, len_down_not_coupled, _dist, 0, _met);
+
+    for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      double totR1 = _rc[jj]->_res;
+      if (totR1 > 0) {
+        totR1 -= deltaRes[jj];
+        double totalSegCap = 0;
+        if (totR1 != 0.0)
+          totalSegCap = _extMain->updateRes(rseg1, totR1, jj);
       }
     }
   }
@@ -4451,7 +4429,7 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     if (tseq->_ur[lp] <= covered)
       continue;
 
-    if ( tseq->_ll[lp] >= sseq->_ur[lp]) {
+    if (tseq->_ll[lp] >= sseq->_ur[lp]) {
       rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];

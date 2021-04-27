@@ -32,12 +32,12 @@
 
 #include "OpenRCX/extSpef.h"
 
-#include "OpenRCX/extRCap.h"
 #include <dbExtControl.h>
 #include <math.h>
 
 #include <algorithm>
 
+#include "OpenRCX/extRCap.h"
 #include "parse.h"
 #include "utl/Logger.h"
 
@@ -508,8 +508,9 @@ bool extSpef::writeITerm(uint node)
       iterm->getAvgXY(&x1, &y1);
     ATH__fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
   }
-  ATH__fprintf(
-      _outFP, "*D %s\n", addEscChar(iterm->getMTerm()->getMaster()->getName().c_str()));
+  ATH__fprintf(_outFP,
+               "*D %s\n",
+               addEscChar(iterm->getMTerm()->getMaster()->getName().c_str()));
   return true;
 }
 bool extSpef::writeBTerm(uint node)
@@ -672,8 +673,9 @@ void extSpef::writeDnet(uint netId, double* totCap)
   if (_writeNameMap)
     ATH__fprintf(_outFP, "\n*D_NET *%d ", netId);
   else
-    ATH__fprintf(
-        _outFP, "\n*D_NET %s ", addEscChar(tinkerSpefName((char*) _d_net->getConstName())));
+    ATH__fprintf(_outFP,
+                 "\n*D_NET %s ",
+                 addEscChar(tinkerSpefName((char*) _d_net->getConstName())));
   writeRCvalue(totCap, _cap_unit);
   ATH__fprintf(_outFP, "\n");
 }
@@ -1583,21 +1585,21 @@ uint extSpef::getNetMapId(uint netId)
 
   return netId;
 }
-char* extSpef::addEscChar(const char* iname) {
+char* extSpef::addEscChar(const char* iname)
+{
   uint ii = 0;
   uint jj = 0;
   while (iname[ii] != '\0') {
-    if (std::ispunct(iname[ii]) && iname[ii] != '_'
-           && iname[ii] != '\\') {
+    if (std::ispunct(iname[ii]) && iname[ii] != '_' && iname[ii] != '\\') {
       // Check if there is an escape char before
       // the non-alphanumeric character
-      if (iname[ii-1] != '\\')
+      if (iname[ii - 1] != '\\')
         _mMapName[jj++] = '\\';
     }
 
     _mMapName[jj++] = iname[ii++];
   }
-  
+
   _mMapName[jj] = '\0';
   return _mMapName;
 }

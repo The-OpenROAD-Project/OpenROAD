@@ -29,11 +29,11 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "darr.h"
-#include "db.h"
 #include "OpenRCX/extRCap.h"
 #include "OpenRCX/extSpef.h"
 #include "OpenRCX/exttree.h"
+#include "darr.h"
+#include "db.h"
 
 namespace rcx {
 

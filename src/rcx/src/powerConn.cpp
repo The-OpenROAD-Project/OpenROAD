@@ -36,11 +36,11 @@
 
 #include <algorithm>
 
-#include "db.h"
-#include "dbSearch.h"
 #include "OpenRCX/extRCap.h"
 #include "OpenRCX/extSpef.h"
 #include "OpenRCX/exttree.h"
+#include "db.h"
+#include "dbSearch.h"
 #include "utl/Logger.h"
 
 namespace rcx {

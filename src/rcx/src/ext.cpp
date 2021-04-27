@@ -38,7 +38,7 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char*rcx_tcl_inits[];
+extern const char* rcx_tcl_inits[];
 }  // namespace sta
 
 namespace rcx {

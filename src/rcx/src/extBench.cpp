@@ -288,8 +288,8 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
 
       if (opt->_underMet == 0 && !opt->_gen_def_patterns)
         break;
-      
-      if (underMet==0 && opt->_res_patterns)
+
+      if (underMet == 0 && opt->_res_patterns)
         break;
     }
     opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
@@ -529,9 +529,9 @@ uint extMain::benchWires(extMainOptions* opt)
   if (opt->_gen_def_patterns) {
     m->linesOverBench(opt);
 
-    opt->_res_patterns= true;
+    opt->_res_patterns = true;
     m->linesOverBench(opt);
-    opt->_res_patterns= false;
+    opt->_res_patterns = false;
 
     m->linesOverUnderBench(opt);
     m->linesUnderBench(opt);

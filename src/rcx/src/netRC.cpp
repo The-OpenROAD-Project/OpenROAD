@@ -456,13 +456,12 @@ void extMain::getShapeRC(dbNet* net,
         _tmpCapTable[ii] = 0;
 #endif
         // _tmpCapTable[ii] += 2 * areaCap * len * width;
-        bool newResModel= true;
+        bool newResModel = true;
         if (!newResModel) {
-        double r = getResistance(level, width, len, ii);
-        _tmpResTable[ii] = r;
-        _tmpResTable[ii] = 0;
+          double r = getResistance(level, width, len, ii);
+          _tmpResTable[ii] = r;
+          _tmpResTable[ii] = 0;
         } else {
-
           double r = getResistance(level, width, len, ii);
           _tmpResTable[ii] = r;
         }
@@ -687,7 +686,7 @@ uint extMain::getCapNodeId(dbNet* net,
     uint id = bterm->getId();
     uint capId = _btermTable->geti(id);
     if (capId > 0) {
-      //(dbCapNode::getCapNode(_block, capId))->incrChildrenCnt();
+//(dbCapNode::getCapNode(_block, capId))->incrChildrenCnt();
 #ifdef DEBUG_NET_ID
       if (bterm->getNet()->getId() == DEBUG_NET_ID)
         fprintf(fp, "\tOLD B_TERM %d  capNode %d\n", id, capId);

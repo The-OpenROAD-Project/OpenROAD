@@ -31,8 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include <dbRtTree.h>
 
-#include "dbUtil.h"
 #include "OpenRCX/extRCap.h"
+#include "dbUtil.h"
 #include "utl/Logger.h"
 
 //#define DIAG_FIRST
@@ -386,8 +386,7 @@ bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 }
 bool extMeasure::DebugStart(bool allNets)
 {
-
-  if (!IsDebugNet()&&!allNets)
+  if (!IsDebugNet() && !allNets)
     return false;
   if (_dist < 0) {
     debugPrint(logger_,

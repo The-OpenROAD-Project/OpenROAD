@@ -98,7 +98,8 @@ static double lineSegment(double X, double x1, double x2, double y1, double y2)
 void extDistRC::interpolate(uint d, extDistRC* rc1, extDistRC* rc2)
 {
   _sep = d;
-  _coupling= lineSegment(d, rc1->_sep, rc2->_sep, rc1->_coupling, rc2->_coupling);
+  _coupling
+      = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_coupling, rc2->_coupling);
   _fringe = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_fringe, rc2->_fringe);
   _res = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_res, rc2->_res);
 }
@@ -125,7 +126,7 @@ void extDistRC::readRC(Ath__parser* parser, double dbFactor)
 }
 void extDistRC::readRC_res2(Ath__parser* parser, double dbFactor)
 {
-  _sep =      Ath__double2int(dbFactor * 1000 * parser->getDouble(1));
+  _sep = Ath__double2int(dbFactor * 1000 * parser->getDouble(1));
   _coupling = Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
   _fringe = parser->getDouble(2) / dbFactor;
   //	_area= a;
@@ -453,11 +454,11 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
   return cnt;
 }
 uint extDistRCTable::readRules_res2(Ath__parser* parser,
-                               AthPool<extDistRC>* rcPool,
-                               bool compute,
-                               bool bin,
-                               bool ignore,
-                               double dbFactor)
+                                    AthPool<extDistRC>* rcPool,
+                                    bool compute,
+                                    bool bin,
+                                    bool ignore,
+                                    double dbFactor)
 {
   parser->parseNextLine();
   uint cnt = parser->getInt(2);
@@ -471,9 +472,9 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
 
   Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
   //_computeTableR = new Ath__array1D<extDistRC*>[8];
-  int cnt1 =0;
-  int kk=0;
-  extDistRC* rc0= NULL;
+  int cnt1 = 0;
+  int kk = 0;
+  extDistRC* rc0 = NULL;
   while (parser->parseNextLine() > 0) {
     if (parser->isKeyword(0, "END"))
       break;
@@ -487,33 +488,33 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     //   continue;
     // }
     table->add(rc);
-    if (rc0!=NULL && rc0->_coupling!=rc->_coupling) {
+    if (rc0 != NULL && rc0->_coupling != rc->_coupling) {
       _measureTable = table0;
-      if (table0->getCnt()>1) {
+      if (table0->getCnt() > 1) {
         interpolate(4, -1, rcPool);
-        _computeTableR[kk]= _computeTable;
+        _computeTableR[kk] = _computeTable;
       }
-      _measureTableR[kk]= table0;
+      _measureTableR[kk] = table0;
       kk++;
-      
-      table0 = new Ath__array1D<extDistRC*>(cnt1);
-      cnt1=0;
 
-      _maxDist= rc0->_sep;
-    } 
-    if (rc0==NULL) { 
+      table0 = new Ath__array1D<extDistRC*>(cnt1);
+      cnt1 = 0;
+
+      _maxDist = rc0->_sep;
+    }
+    if (rc0 == NULL) {
       table0->add(rc);
-    } else if (cnt1==0) { 
+    } else if (cnt1 == 0) {
       table0->add(rc);
-    } else if (rc0->_res!=rc->_res) {
+    } else if (rc0->_res != rc->_res) {
       table0->add(rc);
     }
-    cnt1 ++;  
-    rc0= rc;
+    cnt1++;
+    rc0 = rc;
   }
-  _distCnt= kk+1;
-  _measureTableR[kk]= table0;
-  _measureTable= table;
+  _distCnt = kk + 1;
+  _measureTableR[kk] = table0;
+  _measureTable = table;
 
   return cnt;
 }
@@ -1203,7 +1204,7 @@ uint extDistWidthRCTable::writeRulesOver_res(FILE* fp, bool bin)
   writeWidthTable(fp, bin);
   uint widthCnt = _widthTable->getCnt();
 
-  for (uint ii = 0; ii < _met; ii++) {
+  for (uint ii = 0; ii < 1; ii++) {
     fprintf(fp, "\nMetal %d RESOVER %d\n", _met, ii);
 
     for (uint jj = 0; jj < widthCnt; jj++) {
@@ -1234,10 +1235,10 @@ uint extDistWidthRCTable::readRulesOver(Ath__parser* parser,
                                         uint widthCnt,
                                         bool bin,
                                         bool ignore,
-                                        const char *OVER,
+                                        const char* OVER,
                                         double dbFactor)
 {
-  bool res= strcmp(OVER, "RESOVER")==0;
+  bool res = strcmp(OVER, "RESOVER") == 0;
   uint cnt = 0;
   for (uint ii = 0; ii < _met; ii++) {
     uint met = 0;
@@ -1246,22 +1247,21 @@ uint extDistWidthRCTable::readRulesOver(Ath__parser* parser,
 
     parser->getInt(3);
 
-    
     for (uint jj = 0; jj < widthCnt; jj++) {
       if (res) {
         if (!ignore)
           cnt += _rcDistTable[ii][jj]->readRules_res2(
-                    parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
         else
           cnt += _rcDistTable[0][0]->readRules_res2(
-                    parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
       } else {
-      if (!ignore)
-        cnt += _rcDistTable[ii][jj]->readRules(
-            parser, _rcPoolPtr, true, bin, ignore, dbFactor);
-      else
-        cnt += _rcDistTable[0][0]->readRules(
-            parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+        if (!ignore)
+          cnt += _rcDistTable[ii][jj]->readRules(
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+        else
+          cnt += _rcDistTable[0][0]->readRules(
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
       }
     }
   }
@@ -3211,7 +3211,7 @@ double get_nm(extMeasure* m, double n)
   double a = 1000 * 1000.0 * n / m->_dbunit;
   return a;
 }
-int get_nm(int n, int units )
+int get_nm(int n, int units)
 {
   if (n == 0)
     return 0;
@@ -3244,8 +3244,8 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
   double r = m->_r;
   double w2 = m->_w2_m;
   double s2 = m->_s2_m;
-  
-  int n= get_nm(m, m->_s_m);
+
+  int n = get_nm(m, m->_s_m);
   sprintf(_wireDirName,
           "%s_%s_W%gW%g_S%gS%g",
           _patternName,
@@ -4027,9 +4027,9 @@ void extMetRCTable::addRCw(extMeasure* m)
   } else if (m->_over) {
     n = m->_underMet;
     if (m->_res) {
-        table = _resOver[m->_met];
+      table = _resOver[m->_met];
     } else {
-    table = _capOver[m->_met];
+      table = _capOver[m->_met];
     }
   } else if (m->_diag) {
     n = m->getUnderIndex();
@@ -4055,14 +4055,14 @@ void extRCModel::addRC(extMeasure* m)
   } else if (m->_over) {
     if (m->_res) {
       _modelTable[m->_rIndex]
-        ->_resOver[m->_met]
-        ->_rcDistTable[m->_underMet][m->_wIndex]
-        ->addMeasureRC(m->_tmpRC);
+          ->_resOver[m->_met]
+          ->_rcDistTable[m->_underMet][m->_wIndex]
+          ->addMeasureRC(m->_tmpRC);
     } else {
-    _modelTable[m->_rIndex]
-        ->_capOver[m->_met]
-        ->_rcDistTable[m->_underMet][m->_wIndex]
-        ->addMeasureRC(m->_tmpRC);
+      _modelTable[m->_rIndex]
+          ->_capOver[m->_met]
+          ->_rcDistTable[m->_underMet][m->_wIndex]
+          ->addMeasureRC(m->_tmpRC);
     }
   } else if (m->_diag) {
     uint n = getUnderIndex(m);
@@ -4110,7 +4110,7 @@ void extMetRCTable::mkWidthAndSpaceMappings()
 }
 void extRCModel::writeRules(char* name, bool binary)
 {
-  bool writeRes= true;
+  bool writeRes = true;
   //	FILE *fp= openFile("./", name, NULL, "w");
   FILE* fp = fopen(name, "w");
 
@@ -4133,20 +4133,19 @@ void extRCModel::writeRules(char* name, bool binary)
     fprintf(fp, "\nDensityModel %d\n", m);
 
     for (uint ii = 1; ii < _layerCnt; ii++) {
-
       if (writeRes) {
-      if (_modelTable[m]->_resOver[ii] != NULL)
-        cnt += _modelTable[m]->_resOver[ii]->writeRulesOver_res(fp, binary);
-      else if ((m > 0) && (_modelTable[0]->_resOver[ii] != NULL))
-        cnt += _modelTable[0]->_resOver[ii]->writeRulesOver_res(fp, binary);
-      else if (m == 0) {
-        logger_->info(
-            RCX,
-            218,
-            "Cannot write <OVER> Res rules for <DensityModel> {} and layer {}",
-            m,
-            ii);
-      }
+        if (_modelTable[m]->_resOver[ii] != NULL)
+          cnt += _modelTable[m]->_resOver[ii]->writeRulesOver_res(fp, binary);
+        else if ((m > 0) && (_modelTable[0]->_resOver[ii] != NULL))
+          cnt += _modelTable[0]->_resOver[ii]->writeRulesOver_res(fp, binary);
+        else if (m == 0) {
+          logger_->info(RCX,
+                        218,
+                        "Cannot write <OVER> Res rules for <DensityModel> {} "
+                        "and layer {}",
+                        m,
+                        ii);
+        }
       }
       if (_modelTable[m]->_capOver[ii] != NULL)
         cnt += _modelTable[m]->_capOver[ii]->writeRulesOver(fp, binary);
@@ -4160,7 +4159,7 @@ void extRCModel::writeRules(char* name, bool binary)
             m,
             ii);
       }
-      
+
       if (_modelTable[m]->_capUnder[ii] != NULL)
         cnt += _modelTable[m]->_capUnder[ii]->writeRulesUnder(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capUnder[ii] != NULL))
@@ -4339,20 +4338,22 @@ uint extRCModel::readRules(Ath__parser* parser,
     } else
       dummy->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
   } else if (over) {
-    if (strcmp(ouKey, "OVER")==0) {
-    if (!ignore) {
-      // Read RESOVER fisrt _modelTable[m]->allocOverTable(met, wTable, dbFactor);
-      _modelTable[m]->_capOver[met]->readRulesOver(
-          parser, widthCnt, bin, ignore, "OVER", dbFactor);
-    } else
-      dummy->readRulesOver(parser, widthCnt, bin, ignore, "OVER", dbFactor);
-    } else { // RESOVER
+    if (strcmp(ouKey, "OVER") == 0) {
       if (!ignore) {
-          _modelTable[m]->allocOverTable(met, wTable, dbFactor);
-          _modelTable[m]->_resOver[met]->readRulesOver(
-              parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
-        } else
-          dummy->readRulesOver(parser, widthCnt, bin, ignore, "RESOVER", dbFactor);     
+        // Read RESOVER fisrt _modelTable[m]->allocOverTable(met, wTable,
+        // dbFactor);
+        _modelTable[m]->_capOver[met]->readRulesOver(
+            parser, widthCnt, bin, ignore, "OVER", dbFactor);
+      } else
+        dummy->readRulesOver(parser, widthCnt, bin, ignore, "OVER", dbFactor);
+    } else {  // RESOVER
+      if (!ignore) {
+        _modelTable[m]->allocOverTable(met, wTable, dbFactor);
+        _modelTable[m]->_resOver[met]->readRulesOver(
+            parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
+      } else
+        dummy->readRulesOver(
+            parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
     }
   } else if (under) {
     if (!ignore) {
@@ -4517,22 +4518,22 @@ bool extRCModel::readRules(char* name,
         if (modelIndex)
           skipModel = true;
       }
-// skipModel= true;
-bool res_skipModel= false;
+      // skipModel= true;
+      bool res_skipModel = false;
 
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (!res_skipModel) {
-            cnt += readRules(&parser,
-                         modelIndex,
-                         ii,
-                         "RESOVER",
-                         "WIDTH",
-                         over,
-                         false,
-                         bin,
-                         false,
-                         res_skipModel,
-                         dbFactor);
+          cnt += readRules(&parser,
+                           modelIndex,
+                           ii,
+                           "RESOVER",
+                           "WIDTH",
+                           over,
+                           false,
+                           bin,
+                           false,
+                           res_skipModel,
+                           dbFactor);
         }
         cnt += readRules(&parser,
                          modelIndex,
