@@ -58,7 +58,6 @@ void definGCell::gcell(defDirection dir, int orig, int count, int step)
 {
   orig = dbdist(orig);
   step = dbdist(step);
-  count++;
 
   dbGCellGrid* grid = _block->getGCellGrid();
 
