@@ -30,4 +30,5 @@ record_tests {
   top_layer1
   top_layer2
   top_layer3
+  top_layer4
 }
