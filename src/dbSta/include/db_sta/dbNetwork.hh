@@ -186,6 +186,7 @@ public:
   virtual NetPinIterator *pinIterator(const Net *net) const;
   virtual NetTermIterator *termIterator(const Net *net) const;
   virtual Net *highestConnectedNet(Net *net) const;
+  bool isSpecial(Net *net);
 
   ////////////////////////////////////////////////////////////////
   // Edit functions

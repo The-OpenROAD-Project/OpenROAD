@@ -1,0 +1,395 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 200260 201600 ) ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal1 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal1 ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal3 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal4 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal4 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal5 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal5 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal6 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal6 ;
+TRACKS X 190 DO 126 STEP 1600 LAYER metal7 ;
+TRACKS Y 140 DO 126 STEP 1600 LAYER metal7 ;
+TRACKS X 190 DO 126 STEP 1600 LAYER metal8 ;
+TRACKS Y 140 DO 126 STEP 1600 LAYER metal8 ;
+TRACKS X 190 DO 63 STEP 3200 LAYER metal9 ;
+TRACKS Y 140 DO 63 STEP 3200 LAYER metal9 ;
+TRACKS X 190 DO 63 STEP 3200 LAYER metal10 ;
+TRACKS Y 140 DO 63 STEP 3200 LAYER metal10 ;
+COMPONENTS 88 ;
+    - _858_ DFF_X1 + PLACED ( 54340 106400 ) FS ;
+    - _859_ DFF_X1 + PLACED ( 55100 117600 ) FS ;
+    - _860_ DFF_X1 + PLACED ( 74100 112000 ) FS ;
+    - _861_ DFF_X1 + PLACED ( 148200 131600 ) N ;
+    - _862_ DFF_X1 + PLACED ( 84740 131600 ) N ;
+    - _863_ DFF_X1 + PLACED ( 100700 148400 ) N ;
+    - _864_ DFF_X1 + PLACED ( 128060 145600 ) FS ;
+    - _865_ DFF_X1 + PLACED ( 149720 75600 ) N ;
+    - _866_ DFF_X1 + PLACED ( 152000 117600 ) FS ;
+    - _867_ DFF_X1 + PLACED ( 132240 70000 ) N ;
+    - _868_ DFF_X1 + PLACED ( 130720 123200 ) FS ;
+    - _869_ DFF_X1 + PLACED ( 49780 92400 ) N ;
+    - _870_ DFF_X1 + PLACED ( 54720 72800 ) FS ;
+    - _871_ DFF_X1 + PLACED ( 58140 64400 ) N ;
+    - _872_ DFF_X1 + PLACED ( 119700 64400 ) N ;
+    - _873_ DFF_X1 + PLACED ( 114380 44800 ) FS ;
+    - _874_ DFF_X1 + PLACED ( 86640 30800 ) N ;
+    - _875_ DFF_X1 + PLACED ( 73340 36400 ) N ;
+    - _876_ DFF_X1 + PLACED ( 107160 89600 ) FS ;
+    - _877_ DFF_X1 + PLACED ( 135280 131600 ) N ;
+    - _878_ DFF_X1 + PLACED ( 85120 123200 ) FS ;
+    - _879_ DFF_X1 + PLACED ( 104120 142800 ) N ;
+    - _880_ DFF_X1 + PLACED ( 119700 137200 ) N ;
+    - _881_ DFF_X1 + PLACED ( 150100 84000 ) FS ;
+    - _882_ DFF_X1 + PLACED ( 154660 106400 ) FS ;
+    - _883_ DFF_X1 + PLACED ( 124260 84000 ) FS ;
+    - _884_ DFF_X1 + PLACED ( 134520 114800 ) N ;
+    - _885_ DFF_X1 + PLACED ( 62700 98000 ) N ;
+    - _886_ DFF_X1 + PLACED ( 50920 84000 ) FS ;
+    - _887_ DFF_X1 + PLACED ( 69920 58800 ) N ;
+    - _888_ DFF_X1 + PLACED ( 109060 70000 ) N ;
+    - _889_ DFF_X1 + PLACED ( 113620 53200 ) N ;
+    - _890_ DFF_X1 + PLACED ( 100700 30800 ) N ;
+    - _891_ DFF_X1 + PLACED ( 69540 50400 ) FS ;
+    - _892_ DFF_X1 + PLACED ( 103360 75600 ) N ;
+    - buffer1 BUF_X4 + PLACED ( 165300 176400 ) N ;
+    - buffer10 BUF_X4 + PLACED ( 170240 22400 ) FS ;
+    - buffer11 BUF_X4 + PLACED ( 175180 126000 ) N ;
+    - buffer12 BUF_X4 + PLACED ( 30400 22400 ) FS ;
+    - buffer13 BUF_X4 + PLACED ( 139840 176400 ) N ;
+    - buffer14 BUF_X4 + PLACED ( 66120 176400 ) N ;
+    - buffer15 BUF_X4 + PLACED ( 175180 81200 ) N ;
+    - buffer16 BUF_X4 + PLACED ( 155800 176400 ) N ;
+    - buffer17 BUF_X4 + PLACED ( 25460 176400 ) N ;
+    - buffer18 BUF_X4 + PLACED ( 43700 22400 ) FS ;
+    - buffer19 BUF_X4 + PLACED ( 147820 22400 ) FS ;
+    - buffer2 BUF_X4 + PLACED ( 35720 176400 ) N ;
+    - buffer20 BUF_X4 + PLACED ( 175180 170800 ) N ;
+    - buffer21 BUF_X4 + PLACED ( 104120 22400 ) FS ;
+    - buffer22 BUF_X4 + PLACED ( 125400 176400 ) N ;
+    - buffer23 BUF_X4 + PLACED ( 20520 72800 ) FS ;
+    - buffer24 BUF_X4 + PLACED ( 30400 176400 ) N ;
+    - buffer25 BUF_X4 + PLACED ( 175180 156800 ) FS ;
+    - buffer26 BUF_X4 + PLACED ( 20520 58800 ) N ;
+    - buffer27 BUF_X4 + PLACED ( 175180 28000 ) FS ;
+    - buffer28 BUF_X4 + PLACED ( 175180 112000 ) FS ;
+    - buffer29 BUF_X4 + PLACED ( 20520 173600 ) FS ;
+    - buffer3 BUF_X4 + PLACED ( 88540 22400 ) FS ;
+    - buffer30 BUF_X4 + PLACED ( 150860 176400 ) N ;
+    - buffer31 BUF_X4 + PLACED ( 74100 22400 ) FS ;
+    - buffer32 BUF_X4 + PLACED ( 175180 140000 ) FS ;
+    - buffer33 BUF_X4 + PLACED ( 170240 176400 ) N ;
+    - buffer34 BUF_X4 + PLACED ( 20520 103600 ) N ;
+    - buffer35 BUF_X4 + PLACED ( 20520 176400 ) N ;
+    - buffer36 BUF_X4 + PLACED ( 20520 22400 ) FS ;
+    - buffer37 BUF_X4 + PLACED ( 20520 25200 ) N ;
+    - buffer38 BUF_X4 + PLACED ( 133380 22400 ) FS ;
+    - buffer39 BUF_X4 + PLACED ( 175180 22400 ) FS ;
+    - buffer4 BUF_X4 + PLACED ( 20520 28000 ) FS ;
+    - buffer40 BUF_X4 + PLACED ( 175180 25200 ) N ;
+    - buffer41 BUF_X4 + PLACED ( 175180 67200 ) FS ;
+    - buffer42 BUF_X4 + PLACED ( 20520 89600 ) FS ;
+    - buffer43 BUF_X4 + PLACED ( 118560 22400 ) FS ;
+    - buffer44 BUF_X4 + PLACED ( 20520 117600 ) FS ;
+    - buffer45 BUF_X4 + PLACED ( 175180 176400 ) N ;
+    - buffer46 BUF_X4 + PLACED ( 20520 44800 ) FS ;
+    - buffer47 BUF_X4 + PLACED ( 175180 36400 ) N ;
+    - buffer48 BUF_X4 + PLACED ( 25460 22400 ) FS ;
+    - buffer49 BUF_X4 + PLACED ( 163400 22400 ) FS ;
+    - buffer5 BUF_X4 + PLACED ( 110960 176400 ) N ;
+    - buffer50 BUF_X4 + PLACED ( 20520 134400 ) FS ;
+    - buffer51 BUF_X4 + PLACED ( 20520 148400 ) N ;
+    - buffer52 BUF_X4 + PLACED ( 20520 162400 ) FS ;
+    - buffer53 BUF_X4 + PLACED ( 175180 53200 ) N ;
+    - buffer6 BUF_X4 + PLACED ( 59280 22400 ) FS ;
+    - buffer7 BUF_X4 + PLACED ( 51680 176400 ) N ;
+    - buffer8 BUF_X4 + PLACED ( 175180 95200 ) FS ;
+    - buffer9 BUF_X4 + PLACED ( 80560 176400 ) N ;
+END COMPONENTS
+PINS 54 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 57600 38400 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 134400 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 124800 172800 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 105600 19200 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 163200 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 144000 19200 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 48000 19200 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 28800 163200 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 153600 163200 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 86400 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 67200 172800 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 144000 172800 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 76800 19200 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 28800 28800 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 124800 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 9600 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 76800 172800 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 96000 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 48000 172800 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 57600 19200 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 115200 172800 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 38400 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 86400 19200 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 153600 172800 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 38400 172800 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 163200 172800 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 172800 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 115200 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 48000 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 57600 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 153600 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 28800 172800 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 76800 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 19200 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 144000 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 105600 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 163200 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 86400 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 67200 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 28800 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 19200 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 134400 19200 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 28800 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 144000 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 134400 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 163200 19200 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 28800 19200 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 38400 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 48000 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 172800 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 115200 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 124800 19200 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 19200 153600 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
+        + PLACED ( 172800 57600 ) N ;
+END PINS
+NETS 54 ;
+    - clk ( PIN clk ) ( _858_ CK ) ( _859_ CK ) ( _860_ CK ) ( _861_ CK ) ( _862_ CK ) ( _863_ CK )
+      ( _864_ CK ) ( _865_ CK ) ( _866_ CK ) ( _867_ CK ) ( _868_ CK ) ( _869_ CK ) ( _870_ CK ) ( _871_ CK )
+      ( _872_ CK ) ( _873_ CK ) ( _874_ CK ) ( _875_ CK ) ( _876_ CK ) ( _877_ CK ) ( _878_ CK ) ( _879_ CK )
+      ( _880_ CK ) ( _881_ CK ) ( _882_ CK ) ( _883_ CK ) ( _884_ CK ) ( _885_ CK ) ( _886_ CK ) ( _887_ CK )
+      ( _888_ CK ) ( _889_ CK ) ( _890_ CK ) ( _891_ CK ) ( _892_ CK ) + USE SIGNAL ;
+    - req_msg[0] ( PIN req_msg[0] ) ( buffer32 A ) + USE SIGNAL ;
+    - req_msg[10] ( PIN req_msg[10] ) ( buffer22 A ) + USE SIGNAL ;
+    - req_msg[11] ( PIN req_msg[11] ) ( buffer21 A ) + USE SIGNAL ;
+    - req_msg[12] ( PIN req_msg[12] ) ( buffer20 A ) + USE SIGNAL ;
+    - req_msg[13] ( PIN req_msg[13] ) ( buffer19 A ) + USE SIGNAL ;
+    - req_msg[14] ( PIN req_msg[14] ) ( buffer18 A ) + USE SIGNAL ;
+    - req_msg[15] ( PIN req_msg[15] ) ( buffer17 A ) + USE SIGNAL ;
+    - req_msg[16] ( PIN req_msg[16] ) ( buffer16 A ) + USE SIGNAL ;
+    - req_msg[17] ( PIN req_msg[17] ) ( buffer15 A ) + USE SIGNAL ;
+    - req_msg[18] ( PIN req_msg[18] ) ( buffer14 A ) + USE SIGNAL ;
+    - req_msg[19] ( PIN req_msg[19] ) ( buffer13 A ) + USE SIGNAL ;
+    - req_msg[1] ( PIN req_msg[1] ) ( buffer31 A ) + USE SIGNAL ;
+    - req_msg[20] ( PIN req_msg[20] ) ( buffer12 A ) + USE SIGNAL ;
+    - req_msg[21] ( PIN req_msg[21] ) ( buffer11 A ) + USE SIGNAL ;
+    - req_msg[22] ( PIN req_msg[22] ) ( buffer10 A ) + USE SIGNAL ;
+    - req_msg[23] ( PIN req_msg[23] ) ( buffer9 A ) + USE SIGNAL ;
+    - req_msg[24] ( PIN req_msg[24] ) ( buffer8 A ) + USE SIGNAL ;
+    - req_msg[25] ( PIN req_msg[25] ) ( buffer7 A ) + USE SIGNAL ;
+    - req_msg[26] ( PIN req_msg[26] ) ( buffer6 A ) + USE SIGNAL ;
+    - req_msg[27] ( PIN req_msg[27] ) ( buffer5 A ) + USE SIGNAL ;
+    - req_msg[28] ( PIN req_msg[28] ) ( buffer4 A ) + USE SIGNAL ;
+    - req_msg[29] ( PIN req_msg[29] ) ( buffer3 A ) + USE SIGNAL ;
+    - req_msg[2] ( PIN req_msg[2] ) ( buffer30 A ) + USE SIGNAL ;
+    - req_msg[30] ( PIN req_msg[30] ) ( buffer2 A ) + USE SIGNAL ;
+    - req_msg[31] ( PIN req_msg[31] ) ( buffer1 A ) + USE SIGNAL ;
+    - req_msg[3] ( PIN req_msg[3] ) ( buffer29 A ) + USE SIGNAL ;
+    - req_msg[4] ( PIN req_msg[4] ) ( buffer28 A ) + USE SIGNAL ;
+    - req_msg[5] ( PIN req_msg[5] ) ( buffer27 A ) + USE SIGNAL ;
+    - req_msg[6] ( PIN req_msg[6] ) ( buffer26 A ) + USE SIGNAL ;
+    - req_msg[7] ( PIN req_msg[7] ) ( buffer25 A ) + USE SIGNAL ;
+    - req_msg[8] ( PIN req_msg[8] ) ( buffer24 A ) + USE SIGNAL ;
+    - req_msg[9] ( PIN req_msg[9] ) ( buffer23 A ) + USE SIGNAL ;
+    - req_rdy ( PIN req_rdy ) ( buffer36 Z ) + USE SIGNAL ;
+    - req_val ( PIN req_val ) ( buffer33 A ) + USE SIGNAL ;
+    - reset ( PIN reset ) ( buffer34 A ) + USE SIGNAL ;
+    - resp_msg[0] ( PIN resp_msg[0] ) ( buffer52 Z ) + USE SIGNAL ;
+    - resp_msg[10] ( PIN resp_msg[10] ) ( buffer42 Z ) + USE SIGNAL ;
+    - resp_msg[11] ( PIN resp_msg[11] ) ( buffer41 Z ) + USE SIGNAL ;
+    - resp_msg[12] ( PIN resp_msg[12] ) ( buffer40 Z ) + USE SIGNAL ;
+    - resp_msg[13] ( PIN resp_msg[13] ) ( buffer39 Z ) + USE SIGNAL ;
+    - resp_msg[14] ( PIN resp_msg[14] ) ( buffer38 Z ) + USE SIGNAL ;
+    - resp_msg[15] ( PIN resp_msg[15] ) ( buffer37 Z ) + USE SIGNAL ;
+    - resp_msg[1] ( PIN resp_msg[1] ) ( buffer51 Z ) + USE SIGNAL ;
+    - resp_msg[2] ( PIN resp_msg[2] ) ( buffer50 Z ) + USE SIGNAL ;
+    - resp_msg[3] ( PIN resp_msg[3] ) ( buffer49 Z ) + USE SIGNAL ;
+    - resp_msg[4] ( PIN resp_msg[4] ) ( buffer48 Z ) + USE SIGNAL ;
+    - resp_msg[5] ( PIN resp_msg[5] ) ( buffer47 Z ) + USE SIGNAL ;
+    - resp_msg[6] ( PIN resp_msg[6] ) ( buffer46 Z ) + USE SIGNAL ;
+    - resp_msg[7] ( PIN resp_msg[7] ) ( buffer45 Z ) + USE SIGNAL ;
+    - resp_msg[8] ( PIN resp_msg[8] ) ( buffer44 Z ) + USE SIGNAL ;
+    - resp_msg[9] ( PIN resp_msg[9] ) ( buffer43 Z ) + USE SIGNAL ;
+    - resp_rdy ( PIN resp_rdy ) ( buffer35 A ) + USE SIGNAL ;
+    - resp_val ( PIN resp_val ) ( buffer53 Z ) + USE SIGNAL ;
+END NETS
+END DESIGN
