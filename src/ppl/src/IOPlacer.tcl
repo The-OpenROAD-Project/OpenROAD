@@ -183,19 +183,19 @@ proc place_pin { args } {
   if [info exists keys(-pin_name)] {
     set pin_name $keys(-pin_name)
   } else {
-    ord::error PPL 64 "-pin_name is required."
+    utl::error PPL 64 "-pin_name is required."
   }
 
   if [info exists keys(-layer)] {
     set layer $keys(-layer)
   } else {
-    ord::error PPL 65 "-layer is required."
+    utl::error PPL 65 "-layer is required."
   }
 
   if [info exists keys(-location)] {
     set location $keys(-location)
   } else {
-    ord::error PPL 66 "-location is required."
+    utl::error PPL 66 "-location is required."
   }
 
   if { [llength $location] != 2 } {
@@ -208,7 +208,7 @@ proc place_pin { args } {
   if [info exists keys(-pin_size)] {
     set pin_size $keys(-pin_size)
   } else {
-    ord::error PPL 67 "-pin_size is required."
+    utl::error PPL 67 "-pin_size is required."
   }
 
   if { [llength $pin_size] != 2 } {
