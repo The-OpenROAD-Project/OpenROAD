@@ -1297,10 +1297,7 @@ void IOPlacer::initNetlist()
   odb::dbSet<odb::dbBTerm> bterms = block_->getBTerms();
 
   for (odb::dbBTerm* b_term : bterms) {
-    if (b_term->getFirstPinPlacementStatus() ==
-        odb::dbPlacementStatus::FIRM ||
-        b_term->getFirstPinPlacementStatus() ==
-        odb::dbPlacementStatus::LOCKED) {
+    if (b_term->getFirstPinPlacementStatus().isFixed()) {
       continue;
     }
     odb::dbNet* net = b_term->getNet();
