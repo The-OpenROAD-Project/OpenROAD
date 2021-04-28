@@ -132,6 +132,7 @@ openroad
   -version           show version and exit
   -no_init           do not read .openroad init file
   -no_splash         do not show the license splash at startup
+  -threads count|max number of threads to use
   -exit              exit after reading cmd_file
   cmd_file           source cmd_file
 ```
@@ -816,15 +817,13 @@ Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
 set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_topology_priority priority] \
-                  [-clock_tracks_cost clock_tracks_cost]
+                  [-clock_topology_priority priority]
 ```
 The `set_clock_routing` command sets specific configurations for clock nets.
 Options description:
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
 - **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-- **clock_tracks_cost**: Set the routing tracks consumption by clock nets.
 
 ```
 set_pdrev_topology_priority netName alpha

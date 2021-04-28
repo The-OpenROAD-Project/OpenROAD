@@ -1,7 +1,8 @@
-################################################################################
+###############################################################################
+##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2020, OpenRoad Project UCSD
+## Copyright (c) 2019, University of California, San Diego.
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -29,52 +30,7 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-################################################################################
+##
+###############################################################################
 
-include("openroad")
-
-swig_lib(NAME      OpenRCX
-         NAMESPACE rcx
-         I_FILE    ext.i
-         SCRIPTS   OpenRCX.tcl
-)
-
-
-target_sources(OpenRCX
-  PRIVATE
-    ext.cpp
-    extBench.cpp
-    extBenchDB.cpp
-    extCC.cpp
-    extCoords.cpp
-    extFlow.cpp
-    extRCap.cpp
-    extRCmodel.cpp
-    extSpef.cpp
-    extSpefIn.cpp
-    ext_test_wire.cpp
-    extmain.cpp
-    extmeasure.cpp
-    extDebugPrint.cpp
-    extplanes.cpp
-    extstats.cpp
-    extprocess.cpp
-    exttree.cpp
-    hierSpef.cpp
-    netRC.cpp
-    powerConn.cpp
-    MakeOpenRCX.cpp
-)
-
-target_include_directories(OpenRCX
-  PUBLIC
-    ../include
-)
-
-target_link_libraries(OpenRCX
-  PUBLIC
-    opendb
-    utl
-  PRIVATE
-    OpenSTA
-)
+add_subdirectory(src)

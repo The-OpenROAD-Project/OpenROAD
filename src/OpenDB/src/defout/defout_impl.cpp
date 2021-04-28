@@ -314,7 +314,7 @@ void defout_impl::writeGCells(dbBlock* block)
     fprintf(_out,
             "GCELLGRID X %d DO %d STEP %d ;\n",
             defdist(orgX),
-            count - 1,
+            count,
             defdist(step));
   }
 
@@ -324,7 +324,7 @@ void defout_impl::writeGCells(dbBlock* block)
     fprintf(_out,
             "GCELLGRID Y %d DO %d STEP %d ;\n",
             defdist(orgY),
-            count - 1,
+            count,
             defdist(step));
   }
 }
@@ -552,8 +552,7 @@ void defout_impl::writeLayerRule(dbTechLayerRule* rule)
 
   fprintf(_out, "      + LAYER %s", name.c_str());
 
-  if (rule->getWidth())
-    fprintf(_out, " WIDTH %d", defdist(rule->getWidth()));
+  fprintf(_out, " WIDTH %d", defdist(rule->getWidth()));
 
   if (rule->getSpacing())
     fprintf(_out, " SPACING %d", defdist(rule->getSpacing()));

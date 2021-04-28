@@ -961,6 +961,9 @@ void lefin::layer(lefiLayer* layer)
   if (layer->hasMaxwidth())
     l->setMaxWidth(dbdist(layer->maxwidth()));
 
+  if (layer->hasMask())
+    l->setNumMasks(layer->mask());
+
   if (layer->hasMinstep()) {
     l->setMinStep(dbdist(layer->minstep(0)));
     if (layer->hasMinstepType(0)) {

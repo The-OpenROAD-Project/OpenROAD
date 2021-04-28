@@ -44,7 +44,7 @@
 #include <cstdlib>
 
 #include "utl/Logger.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 //#define ODP_DEBUG
 
@@ -69,7 +69,7 @@ Opendp::detailedPlacement()
 {
   initGrid();
   // Paint fixed cells.
-  assignFixedCells();
+  setFixedGridCells();
   // group mapping & x_axis dummycell insertion
   groupInitPixels2();
   // y axis dummycell insertion

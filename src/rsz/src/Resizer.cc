@@ -37,7 +37,7 @@
 
 #include "rsz/SteinerTree.hh"
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "gui/gui.h"
 #include "utl/Logger.h"
 
@@ -139,6 +139,8 @@ using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::stringPrint;
 using sta::Unit;
+using sta::ArcDelayCalc;
+using sta::Corners;
 
 extern "C" {
 extern int Rsz_Init(Tcl_Interp *interp);
@@ -431,7 +433,8 @@ Resizer::bufferInputs()
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
         && !sta_->isClock(pin)
-        && !isSpecial(net))
+        && hasPins(net)
+        && !db_network_->isSpecial(net))
       bufferInput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
@@ -441,6 +444,15 @@ Resizer::bufferInputs()
   }
 }
    
+bool
+Resizer::hasPins(Net *net)
+{
+  NetPinIterator *pin_iter = db_network_->pinIterator(net);
+  bool has_pins = pin_iter->hasNext();
+  delete pin_iter;
+  return has_pins;
+}
+
 void
 Resizer::bufferInput(Pin *top_pin,
                      LibertyCell *buffer_cell)
@@ -499,7 +511,8 @@ Resizer::bufferOutputs()
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isOutput()
         && net
-        && !isSpecial(net))
+        && hasPins(net)
+        && !db_network_->isSpecial(net))
       bufferOutput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
@@ -606,7 +619,7 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
         && !isFuncOneZero(drvr_pin)
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       repairNet(net, drvr, true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
@@ -1251,7 +1264,7 @@ Resizer::resizeToTargetSlew()
         // Hands off the clock nets.
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       if (resizeToTargetSlew(drvr_pin))
         resize_count_++;
       if (overMaxArea()) {
@@ -1472,7 +1485,7 @@ Resizer::findResizeSlacks1()
     if (net
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
       nets.push_back(net);
     }
@@ -2422,7 +2435,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < slack_margin
         // Hands off special nets.
-        && !isSpecial(net)) {
+        && !db_network_->isSpecial(net)) {
       debugPrint(logger_, RSZ, "repair_hold", 2, "driver {}",
                  vertex->name(sdc_network_));
       // Only add delay to loads with hold violations.
@@ -3087,8 +3100,13 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   // Make a (hierarchical) block to use as a scratchpad.
   dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
   dbSta *sta = makeBlockSta(openroad_, block);
+  Parasitics *parasitics = sta->parasitics();
+  Network *network = sta->network();
+  ArcDelayCalc *arc_delay_calc = sta->arcDelayCalc();
+  Corners *corners = sta->corners();
+  corners->copy(sta_->corners());
 
-  Instance *top_inst = network_->topInstance();
+  Instance *top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
   Net *net = sta->makeNet("wire", top_inst);
   LibertyCell *drvr_cell = drvr_port->libertyCell();
@@ -3097,22 +3115,22 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   Instance *load = sta->makeInstance("load", load_cell, top_inst);
   sta->connectPin(drvr, drvr_port, net);
   sta->connectPin(load, load_port, net);
-  Pin *drvr_pin = network_->findPin(drvr, drvr_port);
-  Pin *load_pin = network_->findPin(load, load_port);
+  Pin *drvr_pin = network->findPin(drvr, drvr_port);
+  Pin *load_pin = network->findPin(load, load_port);
 
   // Max rise/fall delays.
   delay = -INF;
   slew = -INF;
 
-  for (Corner *corner : *sta_->corners()) {
+  for (Corner *corner : *corners) {
     const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const Pvt *pvt = dcalc_ap->operatingConditions();
 
-    makeWireParasitic(net, drvr_pin, load_pin, wire_length, corner);
+    makeWireParasitic(net, drvr_pin, load_pin, wire_length, corner, parasitics);
     // Let delay calc reduce parasitic network as it sees fit.
-    Parasitic *drvr_parasitic = arc_delay_calc_->findParasitic(drvr_pin,
-                                                               RiseFall::rise(),
-                                                               dcalc_ap);
+    Parasitic *drvr_parasitic = arc_delay_calc->findParasitic(drvr_pin,
+                                                              RiseFall::rise(),
+                                                              dcalc_ap);
 
     LibertyCellTimingArcSetIterator set_iter(drvr_cell);
     while (set_iter.hasNext()) {
@@ -3126,20 +3144,20 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
           Slew drvr_slew;
-          arc_delay_calc_->gateDelay(drvr_cell, arc, in_slew, 0.0,
-                                     drvr_parasitic, 0.0, pvt, dcalc_ap,
-                                     gate_delay,
-                                     drvr_slew);
+          arc_delay_calc->gateDelay(drvr_cell, arc, in_slew, 0.0,
+                                    drvr_parasitic, 0.0, pvt, dcalc_ap,
+                                    gate_delay,
+                                    drvr_slew);
           ArcDelay wire_delay;
           Slew load_slew;
-          arc_delay_calc_->loadDelay(load_pin, wire_delay, load_slew);
+          arc_delay_calc->loadDelay(load_pin, wire_delay, load_slew);
           delay = max(delay, gate_delay + wire_delay);
           slew = max(slew, load_slew);
         }
       }
     }
-    arc_delay_calc_->finishDrvrPin();
-    parasitics_->deleteParasitics(net, dcalc_ap->parasiticAnalysisPt());
+    arc_delay_calc->finishDrvrPin();
+    parasitics->deleteParasitics(net, dcalc_ap->parasiticAnalysisPt());
   }
 
   // Cleanup the turds.
@@ -3155,19 +3173,20 @@ Resizer::makeWireParasitic(Net *net,
                            Pin *drvr_pin,
                            Pin *load_pin,
                            double wire_length, // meters
-                           const Corner *corner)
+                           const Corner *corner,
+                           Parasitics *parasitics)
 {
   const ParasiticAnalysisPt *parasitics_ap =
     corner->findParasiticAnalysisPt(max_);
-  Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
-                                                           parasitics_ap);
-  ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, drvr_pin);
-  ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, load_pin);
+  Parasitic *parasitic = parasitics->makeParasiticNetwork(net, false,
+                                                          parasitics_ap);
+  ParasiticNode *n1 = parasitics->ensureParasiticNode(parasitic, drvr_pin);
+  ParasiticNode *n2 = parasitics->ensureParasiticNode(parasitic, load_pin);
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
-  parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap);
-  parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap);
-  parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap);
+  parasitics->incrCap(n1, wire_cap / 2.0, parasitics_ap);
+  parasitics->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap);
+  parasitics->incrCap(n2, wire_cap / 2.0, parasitics_ap);
   return parasitic;
 }
 
@@ -3277,13 +3296,6 @@ Resizer::isFuncOneZero(const Pin *drvr_pin)
                     || func->op() == FuncExpr::op_one);
   }
   return false;
-}
-
-bool
-Resizer::isSpecial(Net *net)
-{
-  dbNet *db_net = db_network_->staToDb(net);
-  return db_net->isSpecial();
 }
 
 ////////////////////////////////////////////////////////////////

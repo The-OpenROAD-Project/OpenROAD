@@ -3,7 +3,7 @@
 #include "opendb/db.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

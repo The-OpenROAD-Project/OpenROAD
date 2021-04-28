@@ -57,12 +57,12 @@ proc diff_files { file1 file2 } {
 [WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
-total displacement       1535.6 u
-average displacement       12.7 u
-max displacement           91.9 u
+total displacement         47.3 u
+average displacement        0.4 u
+max displacement            0.7 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
-[INFO DPL-0001] Placed 12723 filler instances.
+[INFO DPL-0001] Placed 19647 filler instances.
 No differences found.

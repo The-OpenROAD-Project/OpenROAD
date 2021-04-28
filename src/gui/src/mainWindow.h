@@ -40,7 +40,7 @@
 
 #include "findDialog.h"
 #include "gui/gui.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 #include "timingDebugDialog.h"
 

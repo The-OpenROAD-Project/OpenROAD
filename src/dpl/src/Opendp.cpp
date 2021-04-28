@@ -45,7 +45,7 @@
 #include <map>
 
 #include "utl/Logger.h"
-#include "openroad/OpenRoad.hh"  // closestPtInRect
+#include "ord/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {
 
@@ -453,13 +453,13 @@ Opendp::isBlock(const Cell *cell)
 int
 Opendp::gridEndX() const
 {
-  return divCeil(core_.dx(), site_width_);
+  return gridEndX(core_.dx());
 }
 
 int
 Opendp::gridEndY() const
 {
-  return divCeil(core_.dy(), row_height_);
+  return gridEndY(core_.dy());
 }
 
 int
@@ -553,9 +553,21 @@ Opendp::gridX(int x) const
 }
 
 int
+Opendp::gridEndX(int x) const
+{
+  return divCeil(x, site_width_);
+}
+
+int
 Opendp::gridY(int y) const
 {
   return y / row_height_;
+}
+
+int
+Opendp::gridEndY(int y) const
+{
+  return divCeil(y, row_height_);
 }
 
 int

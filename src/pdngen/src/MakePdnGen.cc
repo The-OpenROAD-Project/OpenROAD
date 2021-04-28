@@ -1,7 +1,9 @@
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -28,67 +30,52 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-%{
+#include <tcl.h>
 
-#include "antennachecker/AntennaChecker.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
+#include "pdn/MakePdnGen.hh"
+#include "pdn/PdnGen.hh"
 
-ant::AntennaChecker *
-getAntennaChecker()
-{
-  return ord::OpenRoad::openRoad()->getAntennaChecker();
+namespace sta {
+
+extern const char *pdn_tcl_inits[];
+extern void evalTclInit(Tcl_Interp*, const char*[]);
+
 }
+
+namespace pdn {
+extern "C" {
+extern int Pdn_Init(Tcl_Interp *interp);
+}
+}
+
 
 namespace ord {
-// Defined in OpenRoad.i
-odb::dbDatabase *getDb();
-}
-
-%}
-
-%inline %{
-
-namespace ant {
 
 void
-check_antennas(char* report_filename, bool simple_report)
+initPdnGen(OpenRoad *openroad)
 {
-  getAntennaChecker()->check_antennas(report_filename, simple_report);
+  Tcl_Interp *interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  pdn::Pdn_Init(interp);
+  // Eval encoded sta TCL sources.
+  sta::evalTclInit(interp, sta::pdn_tcl_inits);
+
+  openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
 }
 
-void
-check_max_length(const char *net_name,
-                 int layer)
+pdn::PdnGen* makePdnGen()
 {
-  AntennaChecker *checker = getAntennaChecker();
-  checker->check_max_length(net_name, layer);
+  return new pdn::PdnGen();
 }
 
-void
-load_antenna_rules()
+
+void deletePdnGen(pdn::PdnGen* pdngen)
 {
-  getAntennaChecker()->load_antenna_rules();
+  delete pdngen;
 }
 
-bool
-check_net_violation(char* net_name)
-{ 
-  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
-  if (net) {
-    auto vios = getAntennaChecker()->get_net_antenna_violations(net);
-    return !vios.empty();
-  }
-  else
-    return false;
-}
-
-void
-find_max_wire_length()
-{
-  getAntennaChecker()->find_max_wire_length();
-}
-
-}
-
-%} // inline
+} // namespace ord

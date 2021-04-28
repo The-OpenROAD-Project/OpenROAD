@@ -44,9 +44,9 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
-#include "openroad/Version.hh"
+#include "ord/Version.hh"
 #include "utl/Logger.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
 //
@@ -179,6 +179,13 @@ getPartitionMgr()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getPartitionMgr();
+}
+
+pdn::PdnGen*
+getPdnGen()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPdnGen();
 }
 
 } // namespace ord
@@ -462,6 +469,27 @@ python_cmd(const char* py_command)
 #endif
 
 namespace ord {
+
+void
+set_thread_count(int threads)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->setThreadCount(threads);
+}
+
+void
+set_thread_count(const char* threads)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->setThreadCount(threads);
+}
+
+int
+thread_count()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getThreadCount();
+}
 
 void
 delete_all_memory()

@@ -33,7 +33,7 @@
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
 #include "FlexDR_graphics.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace fr {
 
