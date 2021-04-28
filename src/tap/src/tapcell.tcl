@@ -71,10 +71,6 @@ proc tapcell { args } {
     set tapcell_master $keys(-tapcell_master)
   }
 
-  if { [info exists keys(-endcap_master)] } {
-    set endcap_master_name $keys(-endcap_master)
-  }
-
   if { [info exists keys(-endcap_cpp)] } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
   }
@@ -186,9 +182,13 @@ proc tapcell { args } {
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
 
-  set endcap_master [$db findMaster $endcap_master_name]
-  if { $endcap_master == "NULL" } {
-    utl::error TAP 10 "Master $endcap_master_name not found."
+  set endcap_master "NULL"
+  if { [info exists keys(-endcap_master)] } {
+    set endcap_master_name $keys(-endcap_master)
+    set endcap_master [$db findMaster $endcap_master_name]
+    if { $endcap_master == "NULL" } {
+      utl::error TAP 10 "Master $endcap_master_name not found."
+    }
   }
 
   tap::clear $tap_prefix $endcap_prefix
@@ -202,7 +202,9 @@ proc tapcell { args } {
 
   set tap::phy_idx 0
   set tap::filled_sites []
-  tap::insert_endcaps $db $rows $endcap_master $cnrcap_masters $endcap_prefix
+  if { [info exists keys(-endcap_master)] } {
+    tap::insert_endcaps $db $rows $endcap_master $cnrcap_masters $endcap_prefix
+  }
 
   if {$add_boundary_cell} {
     set tap_nw_masters {}
@@ -274,8 +276,12 @@ proc cut_rows {db endcap_master blockages halo_x halo_y} {
   set rows_count [llength [$block getRows]]
   set block_count [llength $blockages]
 
-  set end_width [$endcap_master getWidth]
-  set min_row_width [expr 2*$end_width]
+  if {$endcap_master != "NULL"} {
+    set end_width [$endcap_master getWidth]
+    set min_row_width [expr 2*$end_width]
+  } else {
+    set min_row_width 0
+  }
 
   # Gather rows needing to be cut up front
   set blocked_rows []
