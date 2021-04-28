@@ -20,7 +20,7 @@ jobs:
           ref: master
       
       - name: Pull Upstream
-        uses: tspyrou/actions/upstream_sync@main
+        uses: The-OpenROAD-Project/actions/upstream_sync@main
         with:
           upstreamRepoUrl: https://github.com/The-OpenROAD-Project/OpenROAD.git
           upstreamBranch: master
