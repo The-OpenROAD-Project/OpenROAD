@@ -1095,6 +1095,8 @@ void IOPlacer::run(bool random_mode)
 
 void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height)
 {
+  tech_ = db_->getTech();
+  block_ = db_->getChip()->getBlock();
   const int mfg_grid = tech_->getManufacturingGrid();
   if (width % mfg_grid != 0) {
     width = mfg_grid*std::ceil((float)width/mfg_grid);
@@ -1109,16 +1111,25 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
   odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
 
   IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, odb::dbPlacementStatus::FIRM);
+  io_pin.setLayer(layer);
 
   commitIOPinToDB(io_pin);
+
+  logger_->info(PPL, 70, "Pin {} placed at ({}um, {}um)", bterm->getName(), x/tech_->getLefUnits(), y/tech_->getLefUnits());
 }
 
 // db functions
 void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx,
                                 std::set<int> ver_layer_idx)
 {
-  tech_ = db_->getTech();
-  block_ = db_->getChip()->getBlock();
+  if (tech_ == nullptr) {
+    tech_ = db_->getTech();
+  }
+
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  
   initCore(hor_layer_idx, ver_layer_idx);
   initNetlist();
 }
