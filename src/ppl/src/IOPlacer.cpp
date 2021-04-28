@@ -1108,7 +1108,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
   odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
   odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
 
-  IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, "FIRM");
+  IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, odb::dbPlacementStatus::FIRM);
 
   commitIOPinToDB(io_pin);
 }
@@ -1286,6 +1286,12 @@ void IOPlacer::initNetlist()
   odb::dbSet<odb::dbBTerm> bterms = block_->getBTerms();
 
   for (odb::dbBTerm* b_term : bterms) {
+    if (b_term->getFirstPinPlacementStatus() ==
+        odb::dbPlacementStatus::FIRM ||
+        b_term->getFirstPinPlacementStatus() ==
+        odb::dbPlacementStatus::LOCKED) {
+      continue;
+    }
     odb::dbNet* net = b_term->getNet();
     if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
@@ -1314,7 +1320,7 @@ void IOPlacer::initNetlist()
                  dir,
                  bounds,
                  bounds,
-                 "FIXED");
+                 odb::dbPlacementStatus::PLACED);
 
     std::vector<InstancePin> inst_pins;
     odb::dbSet<odb::dbITerm> iterms = net->getITerms();
@@ -1382,7 +1388,7 @@ void IOPlacer::commitIOPinToDB(const IOPin& pin)
   int y_max = upper_bound.y();
 
   odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
-  bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  bpin->setPlacementStatus(pin.getPlacementStatus());
 }
 
 }  // namespace ppl
