@@ -1093,6 +1093,26 @@ void IOPlacer::run(bool random_mode)
   clear();
 }
 
+void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height)
+{
+  const int mfg_grid = tech_->getManufacturingGrid();
+  if (width % mfg_grid != 0) {
+    width = mfg_grid*std::ceil((float)width/mfg_grid);
+  }
+
+  if (height % mfg_grid != 0) {
+    height = mfg_grid*std::ceil((float)height/mfg_grid);
+  }
+
+  odb::Point pos = odb::Point(x, y);
+  odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
+  odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
+
+  IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, "FIRM");
+
+  commitIOPinToDB(io_pin);
+}
+
 // db functions
 void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx,
                                 std::set<int> ver_layer_idx)
@@ -1329,35 +1349,40 @@ void IOPlacer::initNetlist()
 
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
-  for (IOPin& pin : assignment) {
-    odb::dbTechLayer* layer = tech_->findRoutingLayer(pin.getLayer());
-
-    odb::dbBTerm* bterm = block_->findBTerm(pin.getName().c_str());
-    odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
-    odb::dbSet<odb::dbBPin>::iterator bpin_iter;
-    std::vector<odb::dbBPin*> all_b_pins;
-    for (bpin_iter = bpins.begin(); bpin_iter != bpins.end(); ++bpin_iter) {
-      odb::dbBPin* cur_b_pin = *bpin_iter;
-      all_b_pins.push_back(cur_b_pin);
-    }
-
-    for (odb::dbBPin* bpin : all_b_pins) {
-      odb::dbBPin::destroy(bpin);
-    }
-
-    Point lower_bound = pin.getLowerBound();
-    Point upper_bound = pin.getUpperBound();
-
-    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-
-    int x_min = lower_bound.x();
-    int y_min = lower_bound.y();
-    int x_max = upper_bound.x();
-    int y_max = upper_bound.y();
-
-    odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
-    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  for (const IOPin& pin : assignment) {
+    commitIOPinToDB(pin);
   }
+}
+
+void IOPlacer::commitIOPinToDB(const IOPin& pin)
+{
+  odb::dbTechLayer* layer = tech_->findRoutingLayer(pin.getLayer());
+
+  odb::dbBTerm* bterm = block_->findBTerm(pin.getName().c_str());
+  odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
+  odb::dbSet<odb::dbBPin>::iterator bpin_iter;
+  std::vector<odb::dbBPin*> all_b_pins;
+  for (bpin_iter = bpins.begin(); bpin_iter != bpins.end(); ++bpin_iter) {
+    odb::dbBPin* cur_b_pin = *bpin_iter;
+    all_b_pins.push_back(cur_b_pin);
+  }
+
+  for (odb::dbBPin* bpin : all_b_pins) {
+    odb::dbBPin::destroy(bpin);
+  }
+
+  Point lower_bound = pin.getLowerBound();
+  Point upper_bound = pin.getUpperBound();
+
+  odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+
+  int x_min = lower_bound.x();
+  int y_min = lower_bound.y();
+  int x_max = upper_bound.x();
+  int y_max = upper_bound.y();
+
+  odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
+  bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 }  // namespace ppl
