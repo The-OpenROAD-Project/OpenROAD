@@ -133,7 +133,6 @@ void TritonRoute::init()
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     VIAINPIN_BOTTOMLAYERNUM = 2;
     VIAINPIN_TOPLAYERNUM = 2;
-    USENONPREFTRACKS = false;
     BOTTOM_ROUTING_LAYER = 4;
     TOP_ROUTING_LAYER = 18;
     ENABLE_VIA_GEN = false;
@@ -142,9 +141,9 @@ void TritonRoute::init()
   io::Parser parser(getDesign(), logger_);
   parser.readDb(db_);
 
+  auto tech = getDesign()->getTech();
   if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer
-        = getDesign()->getTech()->getLayer(BOTTOM_ROUTING_LAYER_NAME);
+    frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
     if (layer) {
       BOTTOM_ROUTING_LAYER = layer->getLayerNum();
     } else {
@@ -156,7 +155,7 @@ void TritonRoute::init()
   }
 
   if (!TOP_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = getDesign()->getTech()->getLayer(TOP_ROUTING_LAYER_NAME);
+    frLayer* layer = tech->getLayer(TOP_ROUTING_LAYER_NAME);
     if (layer) {
       TOP_ROUTING_LAYER = layer->getLayerNum();
     } else {
@@ -288,24 +287,6 @@ void TritonRoute::readParams(const string& fileName)
           VERBOSE = atoi(value.c_str());
         else if (field == "dbProcessNode") {
           DBPROCESSNODE = value;
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyPrefWireBottomLayerNum") {
-          ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyPrefWireTopLayerNum") {
-          ONGRIDONLY_WIRE_PREF_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyNonPrefWireBottomLayerNum") {
-          ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyNonPrefWireTopLayerNum") {
-          ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyViaBottomLayerNum") {
-          ONGRIDONLY_VIA_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyViaTopLayerNum") {
-          ONGRIDONLY_VIA_TOPLAYERNUM = atoi(value.c_str());
           ++readParamCnt;
         } else if (field == "drouteViaInPinBottomLayerNum") {
           VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str());

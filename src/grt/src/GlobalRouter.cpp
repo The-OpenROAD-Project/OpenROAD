@@ -94,7 +94,6 @@ void GlobalRouter::init()
   // Clock net routing variables
   _pdRev = 0;
   _alpha = 0.3;
-  _clockCost = 1;
 }
 
 void GlobalRouter::makeComponents()
@@ -705,7 +704,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
-        int edgeCostForNet = (isClock) ? _clockCost : 1;
+        int edgeCostForNet = computeTrackConsumption(net);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
@@ -724,6 +723,34 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   _logger->info(GRT, 2, "Maximum degree: {}", maxDegree);
 
   _fastRoute->initEdges();
+}
+
+int GlobalRouter::computeTrackConsumption(const Net* net)
+{
+  int trackConsumption = 1;
+  odb::dbNet* db_net = net->getDbNet();
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr != nullptr) {
+    std::vector<odb::dbTechLayerRule*> layer_rules;
+    ndr->getLayerRules(layer_rules);
+
+    for (odb::dbTechLayerRule* layer_rule : layer_rules) {
+      RoutingTracks routingTracks =
+        getRoutingTracksByIndex(layer_rule->getLayer()->getRoutingLevel());
+      int default_width = layer_rule->getLayer()->getWidth();
+      int default_pitch = routingTracks.getTrackPitch();
+      
+      int ndr_spacing = layer_rule->getSpacing();
+      int ndr_width = layer_rule->getWidth();
+      int ndr_pitch = 2 * (std::ceil(ndr_width/2 + ndr_spacing + default_width/2 - default_pitch));
+
+      int consumption = std::ceil((float)ndr_pitch/default_pitch);
+
+      trackConsumption = std::max(trackConsumption, consumption);
+    }
+  }
+
+  return trackConsumption;
 }
 
 void GlobalRouter::computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer)
@@ -1280,11 +1307,6 @@ void GlobalRouter::addAlphaForNet(char* netName, float alpha)
   _netsAlpha[name] = alpha;
 }
 
-void GlobalRouter::setClockCost(int cost)
-{
-  _clockCost = cost;
-}
-
 void GlobalRouter::setVerbose(const int v)
 {
   _verbose = v;
@@ -1469,6 +1491,12 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
     lastLayer--;
   }
 
+  odb::dbTech* tech = _db->getTech();
+  odb::dbTechLayer* techLayer = tech->findRoutingLayer(lastLayer + 1);
+  if (isUnidirectional(techLayer)) {
+    lastLayer++;
+  }
+
   for (int l = 1; l <= lastLayer; l++) {
     odb::Point pinPos = findFakePinPosition(pins[0], db_net);
     GSegment segment
@@ -1480,13 +1508,13 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
 void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
 {
   std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
+  odb::dbTech* tech = _db->getTech();
   for (Pin& pin : pins) {
+    odb::Point pinPos = findFakePinPosition(pin, db_net);
     if (pin.getTopLayer() > 1) {
       // for each pin placed at upper layers, get all segments that
       // potentially covers it
       GRoute coverSegs;
-
-      odb::Point pinPos = findFakePinPosition(pin, db_net);
 
       int wireViaLayer = std::numeric_limits<int>::max();
       for (uint i = 0; i < route.size(); i++) {
@@ -1543,20 +1571,44 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       }
 
       if (closestLayer > pin.getTopLayer()) {
+        odb::dbTechLayer* techLayer = tech->findRoutingLayer(closestLayer);
+        if (isUnidirectional(techLayer)) {
+          closestLayer++;
+        }
+
         for (int l = closestLayer; l > pin.getTopLayer(); l--) {
           GSegment segment = GSegment(
               pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l - 1);
           route.push_back(segment);
         }
       } else if (closestLayer < pin.getTopLayer()) {
-        for (int l = closestLayer; l < pin.getTopLayer(); l++) {
+        odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer());
+        int extraLayer = 0;
+        if (isUnidirectional(techLayer)) {
+          extraLayer = 1;
+        }
+
+        for (int l = closestLayer; l < pin.getTopLayer()+extraLayer; l++) {
           GSegment segment = GSegment(
               pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l + 1);
           route.push_back(segment);
         }
       }
+    } else {
+      odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer() + 1);
+      if (isUnidirectional(techLayer)) {
+        GSegment segment = GSegment(
+            pinPos.x(), pinPos.y(), pin.getTopLayer() + 2,
+            pinPos.x(), pinPos.y(), pin.getTopLayer() + 2);
+        route.push_back(segment);
+      }
     }
   }
+}
+
+bool GlobalRouter::isUnidirectional(odb::dbTechLayer* techLayer)
+{
+  return (techLayer->isRectOnly() || (techLayer->getNumMasks() > 1));
 }
 
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,

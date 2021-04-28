@@ -7,6 +7,7 @@ record_tests {
   dump_vias
   read_def
   dump_nets
+  lef_mask
   write_lef_and_def
   lef_data_access
   gcd_def_access
