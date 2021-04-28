@@ -72,22 +72,22 @@ class FlexTAWorkerRegionQuery
   void add(taPinFig* fig);
   void remove(taPinFig* fig);
   void query(const frBox& box,
-             frLayerNum layerNum,
-             std::set<taPin*, frBlockObjectComp>& result);
+             const frLayerNum layerNum,
+             std::set<taPin*, frBlockObjectComp>& result) const;
 
   void addCost(const frBox& box,
-               frLayerNum layerNum,
+               const frLayerNum layerNum,
                frBlockObject* obj,
                frConstraint* con);
   void removeCost(const frBox& box,
-                  frLayerNum layerNum,
+                  const frLayerNum layerNum,
                   frBlockObject* obj,
                   frConstraint* con);
   void queryCost(
       const frBox& box,
-      frLayerNum layerNum,
+      const frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
-          result);
+          result) const;
 
   void init();
 

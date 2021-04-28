@@ -513,7 +513,6 @@ void FlexDRWorker::cleanup()
     net->cleanup();
   }
   owner2nets_.clear();
-  owner2pins_.clear();
   gridGraph_.cleanup();
   markers_.clear();
   markers_.shrink_to_fit();
@@ -527,16 +526,14 @@ void FlexDRWorker::end()
   }
   // skip if current clip does not have input DRCs
   // ripupMode = 0 must have enableDRC = true in previous iteration
-  if (isEnableDRC() && getDRIter() && getInitNumMarkers() == 0
-      && !needRecheck_) {
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
     return;
     // do not write back if current clip is worse than input
-  } else if (isEnableDRC() && getRipupMode() == 0
-             && getBestNumMarkers() > getInitNumMarkers()) {
+  } else if (getRipupMode() == 0 && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
     return;
-  } else if (isEnableDRC() && getDRIter() && getRipupMode() == 1
+  } else if (getDRIter() && getRipupMode() == 1
              && getBestNumMarkers() > 5 * getInitNumMarkers()) {
     return;
   }
@@ -548,18 +545,7 @@ void FlexDRWorker::end()
   endRemoveNets(modNets, boundPts);
   endAddNets(boundPts);  // if two subnets have diff isModified() status, then
                          // should always write back
-  if (isEnableDRC()) {
-    endRemoveMarkers();
-    endAddMarkers();
-  }
+  endRemoveMarkers();
+  endAddMarkers();
   // release lock
-}
-
-int FlexDRWorker::getNumQuickMarkers()
-{
-  int totNum = 0;
-  for (auto& net : nets_) {
-    totNum += net->getNumMarkers();
-  }
-  return totNum;
 }

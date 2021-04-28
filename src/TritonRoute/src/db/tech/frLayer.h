@@ -52,6 +52,7 @@ class frLayer
         pitch(0),
         width(0),
         minWidth(0),
+        numMasks(1),
         defaultViaDef(nullptr),
         minSpc(nullptr),
         spacingSamenet(nullptr),
@@ -85,6 +86,7 @@ class frLayer
         pitch(0),
         width(0),
         minWidth(-1),
+        numMasks(1),
         defaultViaDef(nullptr),
         minSpc(nullptr),
         spacingSamenet(nullptr),
@@ -111,6 +113,7 @@ class frLayer
   {
   }
   // setters
+  void setNumMasks(frUInt4 numMasksIn) { numMasks = numMasksIn; }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
   void setName(const frString& nameIn) { name = nameIn; }
   void setPitch(frUInt4 in) { pitch = in; }
@@ -126,6 +129,7 @@ class frLayer
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
 
   // getters
+  frUInt4 getNumMasks() const { return numMasks; }
   frLayerNum getLayerNum() const { return layerNum; }
   void getName(frString& nameIn) const { nameIn = name; }
   frString getName() const { return name; }
@@ -133,6 +137,14 @@ class frLayer
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
   frPrefRoutingDir getDir() const { return dir; }
+  bool isUnidirectional() const
+  {
+    // We don't handle coloring so any double/triple patterned
+    // layer is treated as unidirectional.
+    // RectOnly could allow for a purely wrong-way rect but
+    // we ignore that rare case and treat it as unidirectional.
+    return getNumMasks() > 1 || getLef58RectOnlyConstraint();
+  }
   frSegStyle getDefaultSegStyle() const
   {
     frSegStyle style;
@@ -479,7 +491,7 @@ class frLayer
   {
     lef58RectOnlyConstraint = in;
   }
-  frLef58RectOnlyConstraint* getLef58RectOnlyConstraint()
+  frLef58RectOnlyConstraint* getLef58RectOnlyConstraint() const
   {
     return lef58RectOnlyConstraint;
   }
@@ -519,6 +531,7 @@ class frLayer
   frUInt4 pitch;
   frUInt4 width;
   frUInt4 minWidth;
+  frUInt4 numMasks;
   frPrefRoutingDir dir;
   frViaDef* defaultViaDef;
   std::set<frViaDef*> viaDefs;

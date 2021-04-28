@@ -132,6 +132,7 @@ openroad
   -version           show version and exit
   -no_init           do not read .openroad init file
   -no_splash         do not show the license splash at startup
+  -threads count|max number of threads to use
   -exit              exit after reading cmd_file
   cmd_file           source cmd_file
 ```
@@ -296,9 +297,9 @@ place_pins [-hor_layers h_layers]
            [-min_distance distance]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
-of pins placed in horizontal tracks. Can be a single layer or a list of layer indices.
+of pins placed in horizontal tracks. Can be a single layer or a list of layer names.
 - ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
-of pins placed in vertical tracks. Can be a single layer or a list of layer indices.
+of pins placed in vertical tracks. Can be a single layer or a list of layer names.
 - ``-random_seed``. Specify the seed for random operations.
 - ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
@@ -315,6 +316,22 @@ In the example, three intervals were excluded: the whole top edge, the right edg
 left edge from the beginning to the 50 microns.
 
 ```
+define_pin_shape_pattern {[-layer layer]
+                          [-x_step x_step]
+                          [-y_step y_step]
+                          [-region {llx lly urx ury}]
+                          [-size {width height}]
+```
+
+The `define_pin_shape_pattern` command defines a pin placement grid at the specified layer.
+This grid has positions inside the die area, not only at the edges of the die boundary.
+The `-layer` option defines a single top most routing layer of the placement grid.
+The `-region` option defines the {llx, lly, urx, ury} region of the placement grid.
+The `-x_step` and `-y_step` options define the distance between each valid position on the grid.
+The `-size` option defines the width and height of the pins assigned to this grid. The center of the
+pins are placed on the grid positions. Pins may have half of their shapes outside the defined region.
+
+```
 set_io_pin_constraint -direction direction -pin_names names -region edge:interval
 ```
 
@@ -322,6 +339,7 @@ The `set_io_pin_constraint` command sets region constraints for pins according t
 This command can be called multiple times with different constraints. Only one condition should be used for each
 command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
 The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+To restrict pins to the positions defined with `define_pin_shape_pattern`, use `-region up:{llx lly urx ury}` or `-region up:*`.
 
 #### Tapcell
 
@@ -816,15 +834,13 @@ Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
 set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_topology_priority priority] \
-                  [-clock_tracks_cost clock_tracks_cost]
+                  [-clock_topology_priority priority]
 ```
 The `set_clock_routing` command sets specific configurations for clock nets.
 Options description:
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
 - **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-- **clock_tracks_cost**: Set the routing tracks consumption by clock nets.
 
 ```
 set_pdrev_topology_priority netName alpha
