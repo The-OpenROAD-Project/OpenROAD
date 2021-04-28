@@ -308,6 +308,10 @@ DIST count 55 width 0.14
 1.48 0 1.48 0.00120566
 END DIST
 
+Metal 2 RESOVER 1
+DIST count 0 width 0.14
+END DIST
+
 Metal 2 OVER
 WIDTH Table 1 entries:  0.14
 
@@ -608,6 +612,14 @@ DIST count 55 width 0.14
 1.44 1.44 0 0.00122133
 1.44 1.92 0 0.00122133
 1.92 0 1.92 0.00122133
+END DIST
+
+Metal 3 RESOVER 1
+DIST count 0 width 0.14
+END DIST
+
+Metal 3 RESOVER 2
+DIST count 0 width 0.14
 END DIST
 
 Metal 3 OVER
@@ -927,6 +939,18 @@ DIST count 55 width 0.3
 2.96 0 2.96 0.000166283
 END DIST
 
+Metal 4 RESOVER 1
+DIST count 0 width 0.3
+END DIST
+
+Metal 4 RESOVER 2
+DIST count 0 width 0.3
+END DIST
+
+Metal 4 RESOVER 3
+DIST count 0 width 0.3
+END DIST
+
 Metal 4 OVER
 WIDTH Table 1 entries:  0.3
 
@@ -1227,6 +1251,22 @@ DIST count 55 width 0.3
 3.84 0 3.84 0.000168094
 END DIST
 
+Metal 5 RESOVER 1
+DIST count 0 width 0.3
+END DIST
+
+Metal 5 RESOVER 2
+DIST count 0 width 0.3
+END DIST
+
+Metal 5 RESOVER 3
+DIST count 0 width 0.3
+END DIST
+
+Metal 5 RESOVER 4
+DIST count 0 width 0.3
+END DIST
+
 Metal 5 OVER
 WIDTH Table 1 entries:  0.3
 
@@ -1476,6 +1516,26 @@ DIST count 55 width 1.6
 9.99 9.99 0 1.83563e-05
 9.99 13.32 0 1.83563e-05
 13.32 0 13.32 1.83563e-05
+END DIST
+
+Metal 6 RESOVER 1
+DIST count 0 width 1.6
+END DIST
+
+Metal 6 RESOVER 2
+DIST count 0 width 1.6
+END DIST
+
+Metal 6 RESOVER 3
+DIST count 0 width 1.6
+END DIST
+
+Metal 6 RESOVER 4
+DIST count 0 width 1.6
+END DIST
+
+Metal 6 RESOVER 5
+DIST count 0 width 1.6
 END DIST
 
 Metal 6 OVER

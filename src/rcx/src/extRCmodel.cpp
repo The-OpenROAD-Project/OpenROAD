@@ -1204,7 +1204,7 @@ uint extDistWidthRCTable::writeRulesOver_res(FILE* fp, bool bin)
   writeWidthTable(fp, bin);
   uint widthCnt = _widthTable->getCnt();
 
-  for (uint ii = 0; ii < 1; ii++) {
+  for (uint ii = 0; ii < _met; ii++) {
     fprintf(fp, "\nMetal %d RESOVER %d\n", _met, ii);
 
     for (uint jj = 0; jj < widthCnt; jj++) {
