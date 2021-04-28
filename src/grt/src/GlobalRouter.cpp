@@ -1493,7 +1493,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
 
   odb::dbTech* tech = _db->getTech();
   odb::dbTechLayer* techLayer = tech->findRoutingLayer(lastLayer + 1);
-  if (techLayer->isRectOnly()) {
+  if (isUnidirectional(techLayer)) {
     lastLayer++;
   }
 
@@ -1572,7 +1572,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
 
       if (closestLayer > pin.getTopLayer()) {
         odb::dbTechLayer* techLayer = tech->findRoutingLayer(closestLayer);
-        if (techLayer->isRectOnly()) {
+        if (isUnidirectional(techLayer)) {
           closestLayer++;
         }
 
@@ -1584,7 +1584,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       } else if (closestLayer < pin.getTopLayer()) {
         odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer());
         int extraLayer = 0;
-        if (techLayer->isRectOnly()) {
+        if (isUnidirectional(techLayer)) {
           extraLayer = 1;
         }
 
@@ -1596,7 +1596,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       }
     } else {
       odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer() + 1);
-      if (techLayer->isRectOnly()) {
+      if (isUnidirectional(techLayer)) {
         GSegment segment = GSegment(
             pinPos.x(), pinPos.y(), pin.getTopLayer() + 2,
             pinPos.x(), pinPos.y(), pin.getTopLayer() + 2);
@@ -1604,6 +1604,11 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       }
     }
   }
+}
+
+bool GlobalRouter::isUnidirectional(odb::dbTechLayer* techLayer)
+{
+  return (techLayer->isRectOnly() || (techLayer->getNumMasks() > 1));
 }
 
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
