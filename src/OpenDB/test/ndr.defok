@@ -1,0 +1,95 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN counter ;
+UNITS DISTANCE MICRONS 1000 ;
+NONDEFAULTRULES 3 ;
+    - dsp_rule
+      + LAYER metal1 WIDTH 10 SPACING 20
+    ;
+    - NDR
+      + LAYER metal1 WIDTH 0 SPACING 195
+      + LAYER metal2 WIDTH 500 SPACING 225
+      + LAYER metal3 WIDTH 500 SPACING 210
+      + LAYER metal4 WIDTH 500 SPACING 420
+      + LAYER metal5 WIDTH 500 SPACING 420
+      + LAYER metal6 WIDTH 500
+      + VIA M2_M1_via
+    ;
+    - mult
+      + LAYER metal1 WIDTH 195 SPACING 130
+      + LAYER metal2 WIDTH 210 SPACING 150
+      + LAYER metal3 WIDTH 210 SPACING 140
+      + LAYER metal4 WIDTH 0 SPACING 280
+      + LAYER metal5 WIDTH 0 SPACING 280
+      + LAYER metal6 WIDTH 0 SPACING 280
+      + LAYER metal7 WIDTH 0 SPACING 800
+      + LAYER metal8 WIDTH 0 SPACING 800
+      + LAYER metal9 WIDTH 0 SPACING 1600
+      + LAYER metal10 WIDTH 0 SPACING 1600
+    ;
+END NONDEFAULTRULES
+COMPONENTS 12 ;
+    - _d0_ DFFPOSX1 ;
+    - _d1_ DFFPOSX1 ;
+    - _d2_ DFFPOSX1 ;
+    - _d3_ DFFPOSX1 ;
+    - _d4_ DFFPOSX1 ;
+    - _d5_ DFFPOSX1 ;
+    - _d6_ DFFPOSX1 ;
+    - _d7_ DFFPOSX1 ;
+    - _d8_ DFFPOSX1 ;
+    - _g0_ NOR2X1 ;
+    - _g1_ NOR2X1 ;
+    - _g2_ NOR2X1 ;
+END COMPONENTS
+PINS 13 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
+    - inp0 + NET inp0 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( -25 -25 ) ( 25 25 )
+        + LAYER metal2 ( -10 -25 ) ( 10 50 )
+        + FIXED ( 10000 5025 ) N
+      + PORT
+        + LAYER metal1 ( -25 -25 ) ( 25 25 )
+        + LAYER metal2 ( -10 -25 ) ( 10 50 )
+        + FIXED ( 10000 5025 ) N ;
+    - inp1 + NET inp1 + DIRECTION INPUT + USE SIGNAL ;
+    - out[0] + NET out[0] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[1] + NET out[1] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[2] + NET out[2] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[3] + NET out[3] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[4] + NET out[4] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[5] + NET out[5] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[6] + NET out[6] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[7] + NET out[7] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[8] + NET out[8] + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+NETS 24 ;
+    - _w0_ ( _g0_ Y ) ( _d1_ D ) ( _d0_ D ) ( _d2_ D ) + USE SIGNAL ;
+    - _w1_ ( _d5_ D ) ( _g1_ Y ) ( _d3_ D ) ( _d4_ D ) + USE SIGNAL ;
+    - _w2_ ( _g2_ Y ) ( _d6_ D ) ( _d8_ D ) ( _d7_ D ) + USE SIGNAL ;
+    - _xout0 + USE SIGNAL ;
+    - _xout1 + USE SIGNAL ;
+    - _xout2 + USE SIGNAL ;
+    - _xout3 + USE SIGNAL ;
+    - _xout4 + USE SIGNAL ;
+    - _xout5 + USE SIGNAL ;
+    - _xout6 + USE SIGNAL ;
+    - _xout7 + USE SIGNAL ;
+    - _xout8 + USE SIGNAL ;
+    - clk ( PIN clk ) ( _d5_ CLK ) ( _d3_ CLK ) ( _d6_ CLK ) ( _d4_ CLK ) ( _d1_ CLK ) ( _d8_ CLK )
+      ( _d0_ CLK ) ( _d2_ CLK ) ( _d7_ CLK ) + USE SIGNAL + NONDEFAULTRULE NDR ;
+    - inp0 ( PIN inp0 ) ( _g2_ A ) ( _g1_ A ) ( _g0_ A ) + USE SIGNAL ;
+    - inp1 ( PIN inp1 ) ( _g2_ B ) ( _g0_ B ) ( _g1_ B ) + USE SIGNAL ;
+    - out[0] ( PIN out[0] ) ( _d0_ Q ) + USE SIGNAL ;
+    - out[1] ( PIN out[1] ) ( _d1_ Q ) + USE SIGNAL ;
+    - out[2] ( PIN out[2] ) ( _d2_ Q ) + USE SIGNAL ;
+    - out[3] ( PIN out[3] ) ( _d3_ Q ) + USE SIGNAL ;
+    - out[4] ( PIN out[4] ) ( _d4_ Q ) + USE SIGNAL ;
+    - out[5] ( PIN out[5] ) ( _d5_ Q ) + USE SIGNAL ;
+    - out[6] ( PIN out[6] ) ( _d6_ Q ) + USE SIGNAL ;
+    - out[7] ( PIN out[7] ) ( _d7_ Q ) + USE SIGNAL ;
+    - out[8] ( PIN out[8] ) ( _d8_ Q ) + USE SIGNAL ;
+END NETS
+END DESIGN

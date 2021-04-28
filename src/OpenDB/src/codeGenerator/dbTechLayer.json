@@ -3,6 +3,15 @@
   "type": "dbObject",
   "fields": [
     {
+      "name": "num_masks_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 2
+    },
+    {
       "name": "type_",
       "type": "dbTechLayerType::Value",
       "flags": [

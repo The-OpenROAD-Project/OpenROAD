@@ -58,9 +58,7 @@ std::string TOP_ROUTING_LAYER_NAME;
 int BOTTOM_ROUTING_LAYER = 2;
 int TOP_ROUTING_LAYER = std::numeric_limits<frLayerNum>::max();
 bool ALLOW_PIN_AS_FEEDTHROUGH = false;
-bool USENONPREFTRACKS = true;
 bool USEMINSPACING_OBS = true;
-bool RESERVE_VIA_ACCESS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
 
@@ -69,18 +67,6 @@ frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 int MINNUMACCESSPOINT_MACROCELLPIN = 3;
 int MINNUMACCESSPOINT_STDCELLPIN = 3;
 int ACCESS_PATTERN_END_ITERATION_NUM = 5;
-
-frLayerNum ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM
-    = std::numeric_limits<frLayerNum>::max();
-frLayerNum ONGRIDONLY_WIRE_PREF_TOPLAYERNUM
-    = std::numeric_limits<frLayerNum>::min();
-frLayerNum ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM
-    = std::numeric_limits<frLayerNum>::max();
-frLayerNum ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM
-    = std::numeric_limits<frLayerNum>::min();
-frLayerNum ONGRIDONLY_VIA_BOTTOMLAYERNUM
-    = std::numeric_limits<frLayerNum>::max();
-frLayerNum ONGRIDONLY_VIA_TOPLAYERNUM = std::numeric_limits<frLayerNum>::min();
 
 frLayerNum VIA_ACCESS_LAYERNUM = 2;
 

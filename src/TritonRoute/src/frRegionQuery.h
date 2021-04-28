@@ -53,7 +53,7 @@ class frRegionQuery
   template <typename T>
   using Objects = std::vector<rq_box_value_t<T*>>;
 
-  frRegionQuery(frDesign* designIn, Logger* logger);
+  frRegionQuery(frDesign* design, Logger* logger);
   ~frRegionQuery();
   // getters
   frDesign* getDesign() const;
@@ -67,37 +67,37 @@ class frRegionQuery
 
   // Queries
   void query(const frBox& box,
-             frLayerNum layerNum,
-             Objects<frBlockObject>& result);
+             const frLayerNum layerNum,
+             Objects<frBlockObject>& result) const;
   void queryGuide(const frBox& box,
-                  frLayerNum layerNum,
-                  Objects<frGuide>& result);
+                  const frLayerNum layerNum,
+                  Objects<frGuide>& result) const;
   void queryGuide(const frBox& box,
-                  frLayerNum layerNum,
-                  std::vector<frGuide*>& result);
-  void queryGuide(const frBox& box, std::vector<frGuide*>& result);
+                  const frLayerNum layerNum,
+                  std::vector<frGuide*>& result) const;
+  void queryGuide(const frBox& box, std::vector<frGuide*>& result) const;
   void queryOrigGuide(const frBox& box,
-                      frLayerNum layerNum,
-                      Objects<frNet>& result);
+                      const frLayerNum layerNum,
+                      Objects<frNet>& result) const;
   void queryRPin(const frBox& box,
-                 frLayerNum layerNum,
-                 Objects<frRPin>& result);
-  void queryGRPin(const frBox& box, std::vector<frBlockObject*>& result);
+                 const frLayerNum layerNum,
+                 Objects<frRPin>& result) const;
+  void queryGRPin(const frBox& box, std::vector<frBlockObject*>& result) const;
   void queryDRObj(const frBox& box,
-                  frLayerNum layerNum,
-                  Objects<frBlockObject>& result);
+                  const frLayerNum layerNum,
+                  Objects<frBlockObject>& result) const;
   void queryDRObj(const frBox& box,
-                  frLayerNum layerNum,
-                  std::vector<frBlockObject*>& result);
-  void queryDRObj(const frBox& box, std::vector<frBlockObject*>& result);
+                  const frLayerNum layerNum,
+                  std::vector<frBlockObject*>& result) const;
+  void queryDRObj(const frBox& box, std::vector<frBlockObject*>& result) const;
   void queryGRObj(const frBox& box,
-                  frLayerNum layerNum,
-                  Objects<grBlockObject>& result);
-  void queryGRObj(const frBox& box, std::vector<grBlockObject*>& result);
+                  const frLayerNum layerNum,
+                  Objects<grBlockObject>& result) const;
+  void queryGRObj(const frBox& box, std::vector<grBlockObject*>& result) const;
   void queryMarker(const frBox& box,
-                   frLayerNum layerNum,
-                   std::vector<frMarker*>& result);
-  void queryMarker(const frBox& box, std::vector<frMarker*>& result);
+                   const frLayerNum layerNum,
+                   std::vector<frMarker*>& result) const;
+  void queryMarker(const frBox& box, std::vector<frMarker*>& result) const;
 
   void clearGuides();
   void removeDRObj(frShape* in);
@@ -107,15 +107,14 @@ class frRegionQuery
   void removeMarker(frMarker* in);
 
   // init
-  void init(frLayerNum numLayers);
-  void initGuide(frLayerNum numLayers);
+  void init();
+  void initGuide();
   void initOrigGuide(
-      frLayerNum numLayers,
       std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides);
   void initGRPin(std::vector<std::pair<frBlockObject*, frPoint>>& in);
-  void initRPin(frLayerNum numLayers);
-  void initDRObj(frLayerNum numLayers);
-  void initGRObj(frLayerNum numLayers);
+  void initRPin();
+  void initDRObj();
+  void initGRObj();
 
   // utility
   void print();
