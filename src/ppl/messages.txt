@@ -10,35 +10,34 @@ PPL 0010 IOPlacer.cpp:717          Tentative {} to setup sections
 PPL 0011 IOPlacer.cpp:1087         HPWL before ioPlacer: {}
 PPL 0012 IOPlacer.cpp:1088         HPWL after  ioPlacer: {}
 PPL 0013 IOPlacer.cpp:1089         HPWL delta  ioPlacer: {}
-PPL 0014 IOPlacer.tcl:184          io_placer command is deprecated. Use place_pins instead.
-PPL 0015 IOPlacer.tcl:212          Macro [$inst getName] is not placed.
+PPL 0015 IOPlacer.tcl:265          Macro [$inst getName] is not placed.
 PPL 0016 IOPlacer.tcl:136          Both -direction and -pin_names constraints not allowed..
-PPL 0017 IOPlacer.tcl:230          -hor_layers is required.
-PPL 0018 IOPlacer.tcl:236          -ver_layers is required.
-PPL 0019 IOPlacer.tcl:262          Design without pins
-PPL 0021 IOPlacer.tcl:270          Horizontal routing tracks not found for layer $hor_layer_name.
-PPL 0023 IOPlacer.tcl:289          Vertical routing tracks not found for layer $ver_layer_name.
-PPL 0024 IOPlacer.tcl:307          Number of pins $bterms_cnt exceeds max possible $num_slots.
-PPL 0025 IOPlacer.tcl:334          -exclude: $interval is an invalid region
-PPL 0026 IOPlacer.tcl:337          -exclude: invalid syntax in $region. use (top|bottom|left|right):interval.
-PPL 0027 IOPlacer.tcl:368          $cmd: $edge is an invalid edge. use top, bottom, left or right.
-PPL 0028 IOPlacer.tcl:381          $cmd: Invalid pin direction.
-PPL 0029 IOPlacer.tcl:424          $cmd: Invalid edge
-PPL 0030 IOPlacer.tcl:432          $cmd: Invalid edge
-PPL 0031 IOPlacer.tcl:197          no technology found.
-PPL 0032 IOPlacer.tcl:202          no block found.
-PPL 0038 IOPlacer.cpp:1271         Pin {} without net
+PPL 0017 IOPlacer.tcl:283          -hor_layers is required.
+PPL 0018 IOPlacer.tcl:289          -ver_layers is required.
+PPL 0019 IOPlacer.tcl:315          Design without pins
+PPL 0021 IOPlacer.tcl:323          Horizontal routing tracks not found for layer $hor_layer_name.
+PPL 0023 IOPlacer.tcl:342          Vertical routing tracks not found for layer $ver_layer_name.
+PPL 0024 IOPlacer.tcl:360          Number of pins $bterms_cnt exceeds max possible $num_slots.
+PPL 0025 IOPlacer.tcl:387          -exclude: $interval is an invalid region
+PPL 0026 IOPlacer.tcl:390          -exclude: invalid syntax in $region. use (top|bottom|left|right):interval.
+PPL 0027 IOPlacer.tcl:421          $cmd: $edge is an invalid edge. use top, bottom, left or right.
+PPL 0028 IOPlacer.tcl:434          $cmd: Invalid pin direction.
+PPL 0029 IOPlacer.tcl:477          $cmd: Invalid edge
+PPL 0030 IOPlacer.tcl:485          $cmd: Invalid edge
+PPL 0031 IOPlacer.tcl:250          no technology found.
+PPL 0032 IOPlacer.tcl:255          no block found.
+PPL 0038 IOPlacer.cpp:1305         Pin {} without net
 PPL 0040 IOPlacer.cpp:417          Negative number of slots
-PPL 0041 IOPlacer.tcl:345          Pin group $group_idx: [$group]
+PPL 0041 IOPlacer.tcl:398          Pin group $group_idx: [$group]
 PPL 0042 IOPlacer.cpp:630          Unsuccessfully assigned I/O groups
-PPL 0043 IOPlacer.tcl:352          Pin $pin_name not found in group $group_idx
-PPL 0044 IOPlacer.tcl:485          $cmd: Pin $pin_name not found
-PPL 0045 IOPlacer.tcl:275          Layer $hor_layer_name preferred direction is not horizontal.
-PPL 0046 IOPlacer.tcl:294          Layer $ver_layer_name preferred direction is not vertical.
-PPL 0048 IOPlacer.tcl:460          Restrict pins [$names] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge.
+PPL 0043 IOPlacer.tcl:405          Pin $pin_name not found in group $group_idx
+PPL 0044 IOPlacer.tcl:535          Pin $pin_name not found for command $cmd
+PPL 0045 IOPlacer.tcl:328          Layer $hor_layer_name preferred direction is not horizontal.
+PPL 0046 IOPlacer.tcl:347          Layer $ver_layer_name preferred direction is not vertical.
+PPL 0048 IOPlacer.tcl:513          Restrict pins [$names] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge.
 PPL 0049 IOPlacer.tcl:142          Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge.
-PPL 0050 IOPlacer.tcl:447          no technology has been read.
-PPL 0051 IOPlacer.tcl:452          layer $layer_name not found.
+PPL 0050 IOPlacer.tcl:500          no technology has been read.
+PPL 0051 IOPlacer.tcl:505          layer $layer_name not found.
 PPL 0052 IOPlacer.tcl:52           Routing layer not found for name $layer_name.
 PPL 0053 IOPlacer.tcl:55           -layer is required.
 PPL 0054 IOPlacer.tcl:62           -x_step and -y_step are required.
@@ -46,6 +45,14 @@ PPL 0055 IOPlacer.tcl:83           -region is required.
 PPL 0056 IOPlacer.tcl:89           -size is not a list of 2 values.
 PPL 0057 IOPlacer.tcl:95           -size is required.
 PPL 0059 IOPlacer.tcl:163          box at top layer must have 4 values (llx lly urx ury).
-PPL 0060 IOPlacer.tcl:469          Restrict pins [$names] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name.
-PPL 0061 IOPlacer.tcl:491          Pins for $cmd command were not found
+PPL 0060 IOPlacer.tcl:522          Restrict pins [$names] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name.
+PPL 0061 IOPlacer.tcl:540          Pins for $cmd command were not found
 PPL 0063 IOPlacer.tcl:80           -region is not a list of 4 values {llx lly urx ury}.
+PPL 0064 IOPlacer.tcl:186          -pin_name is required.
+PPL 0065 IOPlacer.tcl:192          -layer is required.
+PPL 0066 IOPlacer.tcl:198          -location is required.
+PPL 0067 IOPlacer.tcl:211          -pin_size is required.
+PPL 0068 IOPlacer.tcl:202          -location is not a list of 2 values.
+PPL 0069 IOPlacer.tcl:215          -pin_size is not a list of 2 values.
+PPL 0070 IOPlacer.cpp:1118         Pin {} placed at ({}um, {}um)
+PPL 0071 IOPlacer.tcl:223          place_pin command should receive only one pin name.

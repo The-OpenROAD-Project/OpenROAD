@@ -1093,12 +1093,43 @@ void IOPlacer::run(bool random_mode)
   clear();
 }
 
+void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height)
+{
+  tech_ = db_->getTech();
+  block_ = db_->getChip()->getBlock();
+  const int mfg_grid = tech_->getManufacturingGrid();
+  if (width % mfg_grid != 0) {
+    width = mfg_grid*std::ceil((float)width/mfg_grid);
+  }
+
+  if (height % mfg_grid != 0) {
+    height = mfg_grid*std::ceil((float)height/mfg_grid);
+  }
+
+  odb::Point pos = odb::Point(x, y);
+  odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
+  odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
+
+  IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, odb::dbPlacementStatus::FIRM);
+  io_pin.setLayer(layer);
+
+  commitIOPinToDB(io_pin);
+
+  logger_->info(PPL, 70, "Pin {} placed at ({}um, {}um)", bterm->getName(), x/tech_->getLefUnits(), y/tech_->getLefUnits());
+}
+
 // db functions
 void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx,
                                 std::set<int> ver_layer_idx)
 {
-  tech_ = db_->getTech();
-  block_ = db_->getChip()->getBlock();
+  if (tech_ == nullptr) {
+    tech_ = db_->getTech();
+  }
+
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  
   initCore(hor_layer_idx, ver_layer_idx);
   initNetlist();
 }
@@ -1266,6 +1297,9 @@ void IOPlacer::initNetlist()
   odb::dbSet<odb::dbBTerm> bterms = block_->getBTerms();
 
   for (odb::dbBTerm* b_term : bterms) {
+    if (b_term->getFirstPinPlacementStatus().isFixed()) {
+      continue;
+    }
     odb::dbNet* net = b_term->getNet();
     if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
@@ -1294,7 +1328,7 @@ void IOPlacer::initNetlist()
                  dir,
                  bounds,
                  bounds,
-                 "FIXED");
+                 odb::dbPlacementStatus::PLACED);
 
     std::vector<InstancePin> inst_pins;
     odb::dbSet<odb::dbITerm> iterms = net->getITerms();
@@ -1329,35 +1363,40 @@ void IOPlacer::initNetlist()
 
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
-  for (IOPin& pin : assignment) {
-    odb::dbTechLayer* layer = tech_->findRoutingLayer(pin.getLayer());
-
-    odb::dbBTerm* bterm = block_->findBTerm(pin.getName().c_str());
-    odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
-    odb::dbSet<odb::dbBPin>::iterator bpin_iter;
-    std::vector<odb::dbBPin*> all_b_pins;
-    for (bpin_iter = bpins.begin(); bpin_iter != bpins.end(); ++bpin_iter) {
-      odb::dbBPin* cur_b_pin = *bpin_iter;
-      all_b_pins.push_back(cur_b_pin);
-    }
-
-    for (odb::dbBPin* bpin : all_b_pins) {
-      odb::dbBPin::destroy(bpin);
-    }
-
-    Point lower_bound = pin.getLowerBound();
-    Point upper_bound = pin.getUpperBound();
-
-    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-
-    int x_min = lower_bound.x();
-    int y_min = lower_bound.y();
-    int x_max = upper_bound.x();
-    int y_max = upper_bound.y();
-
-    odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
-    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  for (const IOPin& pin : assignment) {
+    commitIOPinToDB(pin);
   }
+}
+
+void IOPlacer::commitIOPinToDB(const IOPin& pin)
+{
+  odb::dbTechLayer* layer = tech_->findRoutingLayer(pin.getLayer());
+
+  odb::dbBTerm* bterm = block_->findBTerm(pin.getName().c_str());
+  odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
+  odb::dbSet<odb::dbBPin>::iterator bpin_iter;
+  std::vector<odb::dbBPin*> all_b_pins;
+  for (bpin_iter = bpins.begin(); bpin_iter != bpins.end(); ++bpin_iter) {
+    odb::dbBPin* cur_b_pin = *bpin_iter;
+    all_b_pins.push_back(cur_b_pin);
+  }
+
+  for (odb::dbBPin* bpin : all_b_pins) {
+    odb::dbBPin::destroy(bpin);
+  }
+
+  Point lower_bound = pin.getLowerBound();
+  Point upper_bound = pin.getUpperBound();
+
+  odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+
+  int x_min = lower_bound.x();
+  int y_min = lower_bound.y();
+  int x_max = upper_bound.x();
+  int y_max = upper_bound.y();
+
+  odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
+  bpin->setPlacementStatus(pin.getPlacementStatus());
 }
 
 }  // namespace ppl
