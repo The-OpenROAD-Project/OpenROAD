@@ -219,6 +219,10 @@ proc place_pin { args } {
   set height [ord::microns_to_dbu $height]
 
   set pin [ppl::parse_pin_names "place_pin" $pin_name]
+  if { [llength $pin] > 1 } {
+    utl::error PPL 71 "place_pin command should receive only one pin name."
+  }
+
   set layer_idx [ppl::parse_layer_name $layer]
 
   ppl::place_pin $pin $layer_idx $x $y $width $height
