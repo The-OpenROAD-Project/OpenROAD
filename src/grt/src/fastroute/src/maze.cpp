@@ -2002,13 +2002,9 @@ int getOverflow3D(void)
   total_usage = 0;
   cap = 0;
 
-  int* cap_per_layer;
-  int* usage_per_layer;
-  int* overflow_per_layer;
-
-  cap_per_layer = new int[numLayers];
-  usage_per_layer = new int[numLayers];
-  overflow_per_layer = new int[numLayers];
+  cap_per_layer.resize(numLayers);
+  usage_per_layer.resize(numLayers);
+  overflow_per_layer.resize(numLayers);
 
   for (k = 0; k < numLayers; k++) {
     cap_per_layer[k] = 0;
@@ -2052,56 +2048,6 @@ int getOverflow3D(void)
 
   max_overflow = std::max(max_H_overflow, max_V_overflow);
   totalOverflow = H_overflow + V_overflow;
-
-  logger->info(GRT, 146, "Final usage/overflow report:");
-
-  if (verbose > 0) {
-    logger->info(GRT, 147, "Usage per layer:");
-
-    for (int l = 0; l < numLayers; l++) {
-      logger->info(GRT, 148, "Layer {} usage: {}", (l+1), usage_per_layer[l]);
-    }
-
-    logger->info(GRT, 149, "Capacity per layer:");
-
-    for (int l = 0; l < numLayers; l++) {
-      logger->info(GRT, 150, "Layer {} capacity: {}", (l+1), cap_per_layer[l]);
-    }
-
-    logger->info(GRT, 151, "Usage percentage per layer:");
-
-    for (int l = 0; l < numLayers; l++) {
-      float use_percentage;
-      if (cap_per_layer[l] == 0) {
-        use_percentage = 0.0;
-      } else {
-        use_percentage
-            = (float) usage_per_layer[l] / (float) cap_per_layer[l];
-        use_percentage *= 100;
-      }
-      logger->info(GRT, 152, "Layer {} usage percentage: {:.2f}%", (l+1), use_percentage);
-    }
-
-    logger->info(GRT, 153, "Overflow per layer:");
-
-    for (int l = 0; l < numLayers; l++) {
-      logger->info(GRT, 154, "Layer {} overflow: {}", (l+1), overflow_per_layer[l]);
-    }
-  }
-
-  logger->info(GRT, 155, "Overflow Report:");
-  logger->info(GRT, 156, "Total Usage   : {}", total_usage);
-  logger->info(GRT, 157, "Total Capacity: {}", cap);
-  logger->info(GRT, 158, "Max H Overflow: {}", max_H_overflow);
-  logger->info(GRT, 159, "Max V Overflow: {}", max_V_overflow);
-  logger->info(GRT, 160, "Max Overflow  : {}", max_overflow);
-  logger->info(GRT, 161, "H   Overflow  : {}", H_overflow);
-  logger->info(GRT, 162, "V   Overflow  : {}", V_overflow);
-  logger->info(GRT, 163, "Final Overflow: {}\n", totalOverflow);
-
-  delete[] cap_per_layer;
-  delete[] usage_per_layer;
-  delete[] overflow_per_layer;
 
   return (total_usage);
 }
