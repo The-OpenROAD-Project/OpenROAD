@@ -281,12 +281,11 @@ private:
   int refine();
   bool cellFitsInCore(Cell *cell);
   void setFixedGridCells();
-  bool setObstructionGridCells(Cell &cell);
+  void visitCellPixels(Cell &cell,
+                       bool padded,
+                       const std::function <void (Pixel *pixel)>& visitor) const;
   void setGridCell(Cell &cell,
-                   int x_start,
-                   int x_end,
-                   int y_start,
-                   int y_end);
+                   Pixel *pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
