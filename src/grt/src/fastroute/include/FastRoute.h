@@ -119,6 +119,7 @@ class FastRouteCore
   void setOverflowIterations(int iterations);
   void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
+  std::vector<int> getOriginalResources();
   std::vector<int> getTotalCapacityPerLayer();
   std::vector<int> getTotalUsagePerLayer();
   std::vector<int> getTotalOverflowPerLayer();

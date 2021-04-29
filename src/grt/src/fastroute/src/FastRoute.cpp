@@ -1400,18 +1400,91 @@ void FastRouteCore::setAllowOverflow(bool allow)
   allowOverflow = allow;
 }
 
+std::vector<int> FastRouteCore::getOriginalResources()
+{
+  std::vector<int> original_resources;
+  original_resources.resize(numLayers);
+  for (int l = 0; l < numLayers; l++) {
+    original_resources[l] += (vCapacity3D[l]+hCapacity3D[l])*yGrid*xGrid;
+  }
+
+  return original_resources;
+}
+
 std::vector<int> FastRouteCore::getTotalCapacityPerLayer()
 {
+  std::vector<int> cap_per_layer;
+  cap_per_layer.resize(numLayers);
+
+  for (int l = 0; l < numLayers; l++) {
+    cap_per_layer[l] = 0;
+    for (int i = 0; i < yGrid; i++) {
+      for (int j = 0; j < xGrid - 1; j++) {
+        int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
+        cap_per_layer[l] += h_edges3D[grid].cap;
+      }
+    }
+    for (int i = 0; i < yGrid - 1; i++) {
+      for (int j = 0; j < xGrid; j++) {
+        int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
+        cap_per_layer[l] += v_edges3D[grid].cap;
+      }
+    }
+  }
+
   return cap_per_layer;
 }
 
 std::vector<int> FastRouteCore::getTotalUsagePerLayer()
 {
+  std::vector<int> usage_per_layer;
+  usage_per_layer.resize(numLayers);
+
+  for (int l = 0; l < numLayers; l++) {
+    usage_per_layer[l] = 0;
+    for (int i = 0; i < yGrid; i++) {
+      for (int j = 0; j < xGrid - 1; j++) {
+        int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
+        usage_per_layer[l] += h_edges3D[grid].usage;
+      }
+    }
+    for (int i = 0; i < yGrid - 1; i++) {
+      for (int j = 0; j < xGrid; j++) {
+        int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
+        usage_per_layer[l] += v_edges3D[grid].usage;
+      }
+    }
+  }
+
   return usage_per_layer;
 }
 
 std::vector<int> FastRouteCore::getTotalOverflowPerLayer()
 {
+  std::vector<int> overflow_per_layer;
+  overflow_per_layer.resize(numLayers);
+
+  for (int l = 0; l < numLayers; l++) {
+    overflow_per_layer[l] = 0;
+    for (int i = 0; i < yGrid; i++) {
+      for (int j = 0; j < xGrid - 1; j++) {
+        int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
+        int overflow = h_edges3D[grid].usage - h_edges3D[grid].cap;
+        if (overflow > 0) {
+          overflow_per_layer[l] += overflow;
+        }
+      }
+    }
+    for (int i = 0; i < yGrid - 1; i++) {
+      for (int j = 0; j < xGrid; j++) {
+        int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
+        int overflow = v_edges3D[grid].usage - v_edges3D[grid].cap;
+        if (overflow > 0) {
+          overflow_per_layer[l] += overflow;
+        }
+      }
+    }
+  }
   return overflow_per_layer;
 }
 

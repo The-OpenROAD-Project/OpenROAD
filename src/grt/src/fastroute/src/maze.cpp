@@ -2002,14 +2002,7 @@ int getOverflow3D(void)
   total_usage = 0;
   cap = 0;
 
-  cap_per_layer.resize(numLayers);
-  usage_per_layer.resize(numLayers);
-  overflow_per_layer.resize(numLayers);
-
   for (k = 0; k < numLayers; k++) {
-    cap_per_layer[k] = 0;
-    usage_per_layer[k] = 0;
-    overflow_per_layer[k] = 0;
     for (i = 0; i < yGrid; i++) {
       for (j = 0; j < xGrid - 1; j++) {
         grid = i * (xGrid - 1) + j + k * (xGrid - 1) * yGrid;
@@ -2017,11 +2010,7 @@ int getOverflow3D(void)
         overflow = h_edges3D[grid].usage - h_edges3D[grid].cap;
         cap += h_edges3D[grid].cap;
 
-        cap_per_layer[k] += h_edges3D[grid].cap;
-        usage_per_layer[k] += h_edges3D[grid].usage;
-
         if (overflow > 0) {
-          overflow_per_layer[k] += overflow;
           H_overflow += overflow;
           max_H_overflow = std::max(max_H_overflow, overflow);
         }
@@ -2034,11 +2023,7 @@ int getOverflow3D(void)
         overflow = v_edges3D[grid].usage - v_edges3D[grid].cap;
         cap += v_edges3D[grid].cap;
 
-        cap_per_layer[k] += v_edges3D[grid].cap;
-        usage_per_layer[k] += v_edges3D[grid].usage;
-
         if (overflow > 0) {
-          overflow_per_layer[k] += overflow;
           V_overflow += overflow;
           max_V_overflow = std::max(max_V_overflow, overflow);
         }
