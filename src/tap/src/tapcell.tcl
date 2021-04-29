@@ -572,7 +572,6 @@ proc insert_tapcells {db rows tapcell_master dist prefix} {
 
       if {$row_idx == 0 || $row_idx == [expr [llength $rows]-1] || $gaps_above_below} {
         set pitch $dist1
-        set offset $dist1
       } else {
         set pitch $dist2
       }
