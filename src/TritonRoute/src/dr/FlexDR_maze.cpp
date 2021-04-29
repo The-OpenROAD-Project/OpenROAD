@@ -1908,11 +1908,10 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         workerRegionQuery.remove(uConnFig.get());  // worker region query
       }
       // route_queue need to unreserve via access if all nets are ripupped
-      // (i.e., not routed) see route_queue_init_queue RESERVE_VIA_ACCESS this
+      // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
       // and via is reserved
-      if (RESERVE_VIA_ACCESS && net->getNumReroutes() == 0
-          && getRipupMode() == 1) {
+      if (net->getNumReroutes() == 0 && getRipupMode() == 1) {
         initMazeCost_via_helper(net, false);
       }
       net->clear();
