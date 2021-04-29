@@ -218,8 +218,6 @@ void GlobalRouter::globalRouteClocksSeparately()
   // routing result from clock nets
   NetRouteMap result = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
   _routes.insert(result.begin(), result.end());
-
-  computeWirelength();
 }
 
 void GlobalRouter::globalRoute()
@@ -232,7 +230,6 @@ void GlobalRouter::globalRoute()
   startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
 
   _routes = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
-  computeWirelength();
 }
 
 void GlobalRouter::run()
@@ -246,6 +243,9 @@ void GlobalRouter::run()
   } else {
     globalRoute();
   }
+
+  reportCongestion();
+  computeWirelength();
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
@@ -3161,6 +3161,46 @@ void GlobalRouter::reportLayerSettings(int minRoutingLayer, int maxRoutingLayer)
       _logger->info(GRT, 24, "Layer {} pitch: {}", layer->getName(), _layerPitches[l]);
     }
   }
+}
+
+void GlobalRouter::reportCongestion()
+{
+  odb::dbTech* tech = _db->getTech();
+  std::vector<int> resources = _fastRoute->getTotalCapacityPerLayer();
+  std::vector<int> demands = _fastRoute->getTotalUsagePerLayer();
+  std::vector<int> overflows = _fastRoute->getTotalOverflowPerLayer();
+
+  int total_resource = 0;
+  int total_demand = 0;
+  int total_overflow = 0;
+
+  _logger->report("");
+  _logger->info(GRT, 96, "Final congestion report:");
+  _logger->report("Layer         Resource        Demand        Usage (%)    Overflow");
+  _logger->report("-----------------------------------------------------------------");
+
+  for (int l = 0; l < resources.size(); l++) {
+    float usage_percentage;
+    if (resources[l] == 0) {
+      usage_percentage = 0.0;
+    } else {
+      usage_percentage
+          = (float) demands[l] / (float) resources[l];
+      usage_percentage *= 100;
+    }
+
+    total_resource += resources[l];
+    total_demand += demands[l];
+    total_overflow += overflows[l];
+
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
+    _logger->report("{:7s}      {:9}       {:7}        {:8.2f}%    {:8}",
+      layer->getName(), resources[l], demands[l], usage_percentage, overflows[l]);
+  }
+  float total_usage = (float)total_demand / (float)total_resource * 100;
+  _logger->report("-----------------------------------------------------------------");
+  _logger->report("Total        {:9}       {:7}        {:8.2f}%    {:8}\n",
+    total_resource, total_demand, total_usage, total_overflow);
 }
 
 void GlobalRouter::reportLayerWireLengths()
