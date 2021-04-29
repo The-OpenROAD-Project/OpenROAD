@@ -11,17 +11,17 @@
 [INFO ODB-0131]     Created 15 components and 68 component-terminals.
 [INFO ODB-0133]     Created 13 nets and 29 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold10.def
-Min routing layer: met1
-Max routing layer: met5
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 349
-[INFO GRT-0017] Found 8 clock nets.
+[INFO GRT-0019] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
-[INFO GRT-0018] Processing 483 blockages on layer li1.
-[INFO GRT-0019] Processing 86 blockages on layer met1.
+[INFO GRT-0017] Processing 483 blockages on layer li1.
+[INFO GRT-0017] Processing 86 blockages on layer met1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 977
@@ -54,17 +54,17 @@ original HPWL            6757.8 u
 legalized HPWL           6764.9 u
 delta HPWL                    0 %
 
-Min routing layer: met1
-Max routing layer: met5
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 364
-[INFO GRT-0017] Found 8 clock nets.
+[INFO GRT-0019] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
-[INFO GRT-0018] Processing 508 blockages on layer li1.
-[INFO GRT-0019] Processing 88 blockages on layer met1.
+[INFO GRT-0017] Processing 508 blockages on layer li1.
+[INFO GRT-0017] Processing 88 blockages on layer met1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 978

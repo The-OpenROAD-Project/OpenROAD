@@ -9,16 +9,16 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Min routing layer: metal1
-Max routing layer: metal10
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 2874
-[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0018] Processing 8469 blockages on layer metal1.
+[INFO GRT-0017] Processing 8469 blockages on layer metal1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 3332

@@ -9,16 +9,16 @@
 [INFO ODB-0131]     Created 7 components and 35 component-terminals.
 [INFO ODB-0133]     Created 10 nets and 18 connections.
 [INFO ODB-0134] Finished DEF file: region_adjustment.def
-Min routing layer: metal1
-Max routing layer: metal10
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 95
-[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0018] Processing 177 blockages on layer metal1.
+[INFO GRT-0017] Processing 177 blockages on layer metal1.
 Adjusting region on layer metal2
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:

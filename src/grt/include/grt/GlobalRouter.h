@@ -273,6 +273,7 @@ class GlobalRouter
   odb::Point getRectMiddle(const odb::Rect& rect);
   NetRouteMap findRouting(std::vector<Net*>& nets, int minRoutingLayer, int maxRoutingLayer);
   void print(GRoute& route);
+  void reportLayerSettings(int minRoutingLayer, int maxRoutingLayer);
 
   // check functions
   void checkPinPlacement();

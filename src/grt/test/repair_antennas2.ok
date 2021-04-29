@@ -12,22 +12,22 @@
 [INFO ODB-0132]     Created 2 special nets and 14334 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
 [INFO ODB-0134] Finished DEF file: repair_antennas2.def
-Min routing layer: met1
-Max routing layer: met5
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 105790
-[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 25
-[INFO GRT-0018] Processing 25185 blockages on layer li1.
-[INFO GRT-0019] Processing 27401 blockages on layer met1.
-[INFO GRT-0022] Processing 10 blockages on layer met4.
-[INFO GRT-0022] Reducing resources of layer met2 by 15%.
-[INFO GRT-0023] Reducing resources of layer met3 by 15%.
-[INFO GRT-0024] Reducing resources of layer met4 by 15%.
-[INFO GRT-0025] Reducing resources of layer met5 by 15%.
+[INFO GRT-0017] Processing 25185 blockages on layer li1.
+[INFO GRT-0017] Processing 27401 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
+[INFO GRT-0013] Reducing resources of layer met2 by 15%.
+[INFO GRT-0013] Reducing resources of layer met3 by 15%.
+[INFO GRT-0013] Reducing resources of layer met4 by 15%.
+[INFO GRT-0013] Reducing resources of layer met5 by 15%.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 2035
@@ -87,21 +87,21 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0012] #Antenna violations: 1
 [INFO GRT-0011] 5890 filler cells deleted.
 [INFO GRT-0015] 1 diodes inserted.
-Min routing layer: met1
-Max routing layer: met5
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 17100
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0018] Processing 13408 blockages on layer li1.
-[INFO GRT-0019] Processing 3845 blockages on layer met1.
-[INFO GRT-0022] Processing 10 blockages on layer met4.
-[INFO GRT-0022] Reducing resources of layer met2 by 15%.
-[INFO GRT-0023] Reducing resources of layer met3 by 15%.
-[INFO GRT-0024] Reducing resources of layer met4 by 15%.
-[INFO GRT-0025] Reducing resources of layer met5 by 15%.
+[INFO GRT-0017] Processing 13408 blockages on layer li1.
+[INFO GRT-0017] Processing 3845 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
+[INFO GRT-0013] Reducing resources of layer met2 by 15%.
+[INFO GRT-0013] Reducing resources of layer met3 by 15%.
+[INFO GRT-0013] Reducing resources of layer met4 by 15%.
+[INFO GRT-0013] Reducing resources of layer met5 by 15%.
 [INFO GRT-0009] Nets to reroute: 1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:

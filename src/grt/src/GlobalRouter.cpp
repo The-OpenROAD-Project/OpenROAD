@@ -159,19 +159,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
   _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
   _fastRoute->setAllowOverflow(_allowOverflow);
 
-  odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* minLayer = tech->findRoutingLayer(minRoutingLayer);
-  odb::dbTechLayer* maxLayer = tech->findRoutingLayer(maxRoutingLayer);
-  _logger->report("Min routing layer: {}", minLayer->getName());
-  _logger->report("Max routing layer: {}", maxLayer->getName());
-  _logger->report("Global adjustment: {}%", int(_adjustment * 100));
-  _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
-  for (int l = 1; l <= maxRoutingLayer; l++) {
-    if (_layerPitches[l] != 0) {
-      odb::dbTechLayer* layer = tech->findRoutingLayer(l);
-      _logger->report("Layer {} pitch: {}", layer->getName(), _layerPitches[l]);
-    }
-  }
+  reportLayerSettings(minRoutingLayer, maxRoutingLayer);
 
   initCoreGrid(maxRoutingLayer);
   initRoutingLayers();
@@ -1024,7 +1012,7 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
     techLayer = tech->findRoutingLayer(layer);
     float adjustment = _adjustments[layer];
     if (adjustment != 0) {
-      _logger->info(GRT, 13+maxRoutingLayer+layer, "Reducing resources of layer {} by {}%.", techLayer->getName(), int(adjustment * 100));
+      _logger->info(GRT, 13, "Reducing resources of layer {} by {}%.", techLayer->getName(), int(adjustment * 100));
       if (_hCapacities[layer - 1] != 0) {
         int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1]
                      * (1 - adjustment);
@@ -1161,7 +1149,7 @@ void GlobalRouter::computeObstructionsAdjustments()
       bool direction = routingLayer.getPreferredDirection();
 
       techLayer = tech->findRoutingLayer(layer);
-      _logger->info(GRT, 17+layer, "Processing {} blockages on layer {}.", layerObstructions.size(), techLayer->getName());
+      _logger->info(GRT, 17, "Processing {} blockages on layer {}.", layerObstructions.size(), techLayer->getName());
 
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
@@ -2554,7 +2542,7 @@ void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> clockNets = _sta->findClkNets();
 
-  _logger->info(GRT, 17, "Found {} clock nets.", clockNets.size());
+  _logger->info(GRT, 19, "Found {} clock nets.", clockNets.size());
 
   for (odb::dbNet* net : clockNets) {
     net->setSigType(odb::dbSigType::CLOCK);
@@ -3155,6 +3143,23 @@ void GlobalRouter::print(GRoute& route)
            segment.finalX,
            segment.finalY,
            segment.finalLayer);
+  }
+}
+
+void GlobalRouter::reportLayerSettings(int minRoutingLayer, int maxRoutingLayer)
+{
+  odb::dbTech* tech = _db->getTech();
+  odb::dbTechLayer* minLayer = tech->findRoutingLayer(minRoutingLayer);
+  odb::dbTechLayer* maxLayer = tech->findRoutingLayer(maxRoutingLayer);
+  _logger->info(GRT, 20, "Min routing layer: {}", minLayer->getName());
+  _logger->info(GRT, 21, "Max routing layer: {}", maxLayer->getName());
+  _logger->info(GRT, 22, "Global adjustment: {}%", int(_adjustment * 100));
+  _logger->info(GRT, 23, "Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
+  for (int l = 1; l <= maxRoutingLayer; l++) {
+    if (_layerPitches[l] != 0) {
+      odb::dbTechLayer* layer = tech->findRoutingLayer(l);
+      _logger->info(GRT, 24, "Layer {} pitch: {}", layer->getName(), _layerPitches[l]);
+    }
   }
 }
 
