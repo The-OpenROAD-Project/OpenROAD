@@ -1363,7 +1363,6 @@ NetRouteMap FastRouteCore::run()
 
   clock_t t5 = clock();
   maze_Time = (float) (t5 - t1) / CLOCKS_PER_SEC;
-  logger->info(GRT, 110, "Final usage: {}", finallength);
   logger->info(GRT, 111, "Final number of vias: {}", numVia);
   logger->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
 
@@ -1399,6 +1398,21 @@ void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
 void FastRouteCore::setAllowOverflow(bool allow)
 {
   allowOverflow = allow;
+}
+
+std::vector<int> FastRouteCore::getTotalCapacityPerLayer()
+{
+  return cap_per_layer;
+}
+
+std::vector<int> FastRouteCore::getTotalUsagePerLayer()
+{
+  return usage_per_layer;
+}
+
+std::vector<int> FastRouteCore::getTotalOverflowPerLayer()
+{
+  return overflow_per_layer;
 }
 
 ////////////////////////////////////////////////////////////////

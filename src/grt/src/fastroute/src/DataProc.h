@@ -63,6 +63,10 @@ extern int overflowIterations;
 extern int pdRevForHighFanout;
 extern bool allowOverflow;
 
+extern std::vector<int> cap_per_layer;
+extern std::vector<int> usage_per_layer;
+extern std::vector<int> overflow_per_layer;
+
 extern int enlarge, costheight, ripup_threshold;
 extern int MaxDegree;
 extern int *MinWidth, *MinSpacing, *ViaSpacing;

@@ -71,6 +71,10 @@ int overflowIterations;
 int pdRevForHighFanout;
 bool allowOverflow;
 
+std::vector<int> cap_per_layer;
+std::vector<int> usage_per_layer;
+std::vector<int> overflow_per_layer;
+
 Bool** HV;
 Bool** hyperV;
 Bool** hyperH;
