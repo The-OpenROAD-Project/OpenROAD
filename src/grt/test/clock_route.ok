@@ -29,18 +29,6 @@
 [INFO GRT-0013] Reducing resources of layer met4 by 50%.
 [INFO GRT-0013] Reducing resources of layer met5 by 50%.
 Routing clock nets...
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 33
-[INFO GRT-0157] Total Capacity: 12210
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
-
-[INFO GRT-0110] Final usage: 33
 [INFO GRT-0111] Final number of vias: 27
 [INFO GRT-0112] Final usage 3D: 114
 [INFO GRT-0010] Routed clock nets: 2
@@ -59,21 +47,22 @@ Routing clock nets...
 [INFO GRT-0013] Reducing resources of layer met3 by 50%.
 [INFO GRT-0013] Reducing resources of layer met4 by 50%.
 [INFO GRT-0013] Reducing resources of layer met5 by 50%.
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 120
-[INFO GRT-0157] Total Capacity: 24082
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
-
-[INFO GRT-0110] Final usage: 120
 [INFO GRT-0111] Final number of vias: 119
 [INFO GRT-0112] Final usage 3D: 477
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Overflow
+-----------------------------------------------------------------
+li1                  0             0            0.00%           0
+met1              5430            63            1.16%           0
+met2              6475            57            0.88%           0
+met3              6121             0            0.00%           0
+met4              4613             0            0.00%           0
+met5              1443             0            0.00%           0
+-----------------------------------------------------------------
+Total            24082           120            0.50%           0
+
 [INFO GRT-0018] Total wirelength: 1677 um
 [INFO GRT-0014] Num routed nets: 15
 No differences found.

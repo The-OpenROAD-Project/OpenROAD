@@ -19,20 +19,25 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
 [INFO GRT-0017] Processing 8469 blockages on layer metal1.
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 3333
-[INFO GRT-0157] Total Capacity: 117668
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
-
-[INFO GRT-0110] Final usage: 3333
 [INFO GRT-0111] Final number of vias: 2597
 [INFO GRT-0112] Final usage 3D: 11124
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Overflow
+-----------------------------------------------------------------
+metal1               0             0            0.00%           0
+metal2           24581          1653            6.72%           0
+metal3           33028          1680            5.09%           0
+metal4           15698             0            0.00%           0
+metal5           15410             0            0.00%           0
+metal6           15698             0            0.00%           0
+metal7            4370             0            0.00%           0
+metal8            4512             0            0.00%           0
+metal9            2162             0            0.00%           0
+metal10           2209             0            0.00%           0
+-----------------------------------------------------------------
+Total           117668          3333            2.83%           0
+
 [INFO GRT-0018] Total wirelength: 10292 um
 Net clk
  Pin capacitance: 29.975-33.238

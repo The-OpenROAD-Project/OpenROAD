@@ -20,20 +20,25 @@
 [INFO GRT-0002] Maximum degree: 3
 [INFO GRT-0017] Processing 177 blockages on layer metal1.
 Adjusting region on layer metal2
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 46
-[INFO GRT-0157] Total Capacity: 11765
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
-
-[INFO GRT-0110] Final usage: 46
 [INFO GRT-0111] Final number of vias: 44
 [INFO GRT-0112] Final usage 3D: 178
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Overflow
+-----------------------------------------------------------------
+metal1            2739            16            0.58%           0
+metal2            1343             4            0.30%           0
+metal3            2756            11            0.40%           0
+metal4            1287            15            1.17%           0
+metal5            1287             0            0.00%           0
+metal6            1287             0            0.00%           0
+metal7             364             0            0.00%           0
+metal8             364             0            0.00%           0
+metal9             169             0            0.00%           0
+metal10            169             0            0.00%           0
+-----------------------------------------------------------------
+Total            11765            46            0.39%           0
+
 [INFO GRT-0018] Total wirelength: 168 um
 [INFO GRT-0014] Num routed nets: 10
 No differences found.
