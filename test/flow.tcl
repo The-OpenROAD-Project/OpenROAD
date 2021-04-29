@@ -36,6 +36,7 @@ pdngen -verbose $pdn_cfg
 # Global placement
 
 # Used by resizer for timing driven placement.
+source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
@@ -164,6 +165,21 @@ if { ![info exists drv_count] } {
   fail "drv count not found."
 } elseif { $drv_count > $max_drv_count } {
   fail "max drv count exceeded $drv_count > $max_drv_count."
+}
+
+################################################################
+# Extraction
+
+# extract_parasitics seg faults on osx so it is disabled
+if { 0 && $rcx_rules != "" } {
+  define_process_corner -ext_model_index 0 X
+  extract_parasitics -ext_model_file $rcx_rules_file
+
+  set spef_file [make_result_file ${design}_${platform}.spef]
+  write_spef $spef_file
+  #file delete $design.totCap
+
+  read_spef $spef_file
 }
 
 puts "pass"
