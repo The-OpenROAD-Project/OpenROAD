@@ -32,7 +32,6 @@ You need root access to correctly install the dependencies with the script.
 
 ## Install dependencies
 
-
 Tools
   * cmake 3.14
   * gcc 8.3.0 or clang7
@@ -41,7 +40,7 @@ Tools
   * swig 4.0
 
 Libraries
-  * boost 1.68
+  * boost 1.68 (1.75 will not compile)
   * tcl 8.6
   * zlibc
   * eigen3
@@ -51,6 +50,8 @@ Libraries
   * cimg (optional for replace)
 
 
+For a limited number of configurations the following script can be used to install
+dependencies.
 ```
 ./etc/DependencyInstaller.sh -dev
 ```
@@ -314,6 +315,19 @@ The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 or a range of values. Example: `place_pins -hor_layers 2 -ver_layers 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
+
+```
+place_pin [-pin_name pin_name]
+          [-layer layer]
+          [-location {x y}]
+          [-pin_size {width height}]
+```
+
+The `place_pin` command places a specific pin in the specified location, with the specified size.
+The `-pin_name` option is the name of a pin of the design.
+The `-layer` defines the routing layer where the pin is placed.
+The `-location` defines the center of the pin.
+The `-pin_size` option defines the width and height of the pin.
 
 ```
 define_pin_shape_pattern {[-layer layer]

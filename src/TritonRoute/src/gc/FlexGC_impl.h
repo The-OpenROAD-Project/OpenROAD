@@ -48,12 +48,14 @@ class FlexGCWorkerRegionQuery
   void addSpcRectangle(gcRect* rect);
   void removePolygonEdge(gcSegment* connFig);
   void removeMaxRectangle(gcRect* connFig);
-  void queryPolygonEdge(const box_t& box,
-                        const frLayerNum layerNum,
-                        std::vector<std::pair<segment_t, gcSegment*>>& result) const;
-  void queryPolygonEdge(const frBox& box,
-                        const frLayerNum layerNum,
-                        std::vector<std::pair<segment_t, gcSegment*>>& result) const;
+  void queryPolygonEdge(
+      const box_t& box,
+      const frLayerNum layerNum,
+      std::vector<std::pair<segment_t, gcSegment*>>& result) const;
+  void queryPolygonEdge(
+      const frBox& box,
+      const frLayerNum layerNum,
+      std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryMaxRectangle(const box_t& box,
                          const frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect*>>& result) const;
@@ -378,6 +380,17 @@ class FlexGCWorker::Impl
   void checkMetalShape_lef58MinStep(gcPin* pin);
   void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin,
                                                  frLef58MinStepConstraint* con);
+  void checkMetalSpacingTableInfluence();
+  void checkPinMetSpcTblInf(gcPin*);
+  void checkRectMetSpcTblInf(gcRect*, frSpacingTableInfluenceConstraint*);
+  void checkOrthRectsMetSpcTblInf(const std::vector<gcRect*>& rects,
+                                  const gtl::rectangle_data<frCoord>& queryRect,
+                                  const frCoord spacing,
+                                  const gtl::orientation_2d orient);
+  void checkRectMetSpcTblInf_queryBox(const gtl::rectangle_data<frCoord>& rect,
+                                      const frCoord dist,
+                                      const frDirEnum dir,
+                                      box_t& box);
 
   // surgical fix
   void patchMetalShape();
