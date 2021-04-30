@@ -383,13 +383,13 @@ class FlexGCWorker::Impl
   void checkMetalSpacingTableInfluence();
   void checkPinMetSpcTblInf(gcPin*);
   void checkRectMetSpcTblInf(gcRect*, frSpacingTableInfluenceConstraint*);
-  void checkOrthRectsMetSpcTblInf(std::vector<gcRect*> rects,
-                                  gtl::rectangle_data<frCoord> queryRect,
-                                  frCoord spacing,
-                                  gtl::orientation_2d orient);
+  void checkOrthRectsMetSpcTblInf(const std::vector<gcRect*>& rects,
+                                  const gtl::rectangle_data<frCoord>& queryRect,
+                                  const frCoord spacing,
+                                  const gtl::orientation_2d orient);
   void checkRectMetSpcTblInf_queryBox(const gtl::rectangle_data<frCoord>& rect,
-                                      frCoord dist,
-                                      frDirEnum dir,
+                                      const frCoord dist,
+                                      const frDirEnum dir,
                                       box_t& box);
 
   // surgical fix

@@ -32,9 +32,9 @@ using namespace fr;
 
 void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
     const gtl::rectangle_data<frCoord>& rect,
-    frCoord dist,
-    frDirEnum dir,
-    box_t& box)  // east and north
+    const frCoord dist,
+    const frDirEnum dir,
+    box_t& box)
 {
   switch (dir) {
     case frDirEnum::N:
@@ -68,19 +68,27 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
 }
 
 void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
-    std::vector<gcRect*> rects,
-    gtl::rectangle_data<frCoord> queryRect,
-    frCoord spacing,
-    gtl::orientation_2d orient)
+    const std::vector<gcRect*>& rects,
+    const gtl::rectangle_data<frCoord>& queryRect,
+    const frCoord spacing,
+    const gtl::orientation_2d orient)
 {
   frSquaredDistance spacingSq = spacing * (frSquaredDistance) spacing;
+  /*
+  for each i_th wire, check the next sz-i wires for violation
+    if spacing is less than required, check violation
+    else, then spacing is larger than required.
+      Then no violation would be found for that wire and all the next
+      wires.(because rects is sorted) Then stop checking the i_th wire and move
+      on to i+1 wire.
+  */
   for (size_t i = 0; i < rects.size() - 1; i++) {
     for (size_t j = i + 1; j < rects.size(); j++) {
       frSquaredDistance distSquared
           = gtl::square_euclidean_distance(*rects[i], *rects[j]);
       if (distSquared < spacingSq) {
         // Violation
-        if (distSquared == 0)
+        if (distSquared == 0)  // short!
           continue;  // shorts are already checked in checkMetalSpacing_main
         if (rects[i]->isFixed() && rects[j]->isFixed())
           continue;
@@ -118,7 +126,8 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
                                         rects[j]->isFixed()));
         addMarker(std::move(marker));
       } else
-        break;
+        break;  // spacing is larger than required, no need to check other
+                // wires.
     }
   }
 }
@@ -147,9 +156,11 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
   auto dir = gtl::guess_orientation(*rect);
   box_t queryBox1, queryBox2;
   if (dir == gtl::HORIZONTAL) {
+    // wide wire is horizontal check above and below for orth wires
     checkRectMetSpcTblInf_queryBox(*rect, within, frDirEnum::N, queryBox1);
     checkRectMetSpcTblInf_queryBox(*rect, within, frDirEnum::S, queryBox2);
   } else {
+    // wide wire is vertical check left and right for orth wires
     checkRectMetSpcTblInf_queryBox(*rect, within, frDirEnum::E, queryBox1);
     checkRectMetSpcTblInf_queryBox(*rect, within, frDirEnum::W, queryBox2);
   }
@@ -166,17 +177,19 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
     vector<gcRect*> rects;
     for (auto& [objBox, objPtr] : result) {
       if (!gtl::intersects(*objPtr, queryRect, false))
-        continue;
+        continue;  // ignore if it only touches the query region
       if (gtl::guess_orientation(*objPtr) == dir)
-        continue;  // not orthogonal
+        continue;  // ignore if not orthogonal
       rects.push_back(objPtr);
     }
     if (rects.size() < 2)
-      continue;
+      continue;  // At least two orthogonal rectangle are required for checking
     if (dir == gtl::HORIZONTAL)
       std::sort(rects.begin(), rects.end(), compareHorizontal);
     else
       std::sort(rects.begin(), rects.end(), compareVertical);
+    // <rects> should be a sorted vector of all the wires found in the region
+    // It should be sorted in the orientation we are checking
     checkOrthRectsMetSpcTblInf(rects, queryRect, spacing, dir);
   }
 }
