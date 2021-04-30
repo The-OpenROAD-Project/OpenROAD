@@ -59,7 +59,7 @@ class Die;
 class Tile {
   public:
     Tile();
-    Tile(int x, int y, int lx, int ly, 
+    Tile(int x, int y, int lx, int ly,
         int ux, int uy, int layers);
     ~Tile();
 
@@ -84,42 +84,16 @@ class Tile {
     int usageVL(int layer) const;
     int usageVR(int layer) const;
 
-    float usageH() const;
-    float usageV() const;
-
-    float supplyHL() const;
-    float supplyHR() const;
-    float supplyVL() const;
-    float supplyVR() const;
-
-    float supplyH() const;
-    float supplyV() const;
-
     float inflationRatio() const;
     float inflationArea() const;
     float inflationAreaDelta() const;
     float inflatedRatio() const;
-
-    int pinCnt() const;
 
     // setter funcs
     void setBlockage(int layer, int blockage);
     void setCapacity(int layer, int capacity);
     void setCapacity(const std::vector<int>& capacity);
     void setRoute(int layer, int route);
-
-    void setUsageHL(int layer, int usage);
-    void setUsageHR(int layer, int usage);
-    void setUsageVL(int layer, int usage);
-    void setUsageVR(int layer, int usage);
-
-    void setSupplyH(float supply);
-    void setSupplyV(float supply);
-
-    void setSupplyHL(float supply);
-    void setSupplyHR(float supply);
-    void setSupplyVL(float supply);
-    void setSupplyVR(float supply);
 
     void setInflationRatioH(float val);
     void setInflationRatioV(float val);
@@ -130,10 +104,6 @@ class Tile {
 
     // accumulated Ratio as iteration goes on
     void setInflatedRatio(float ratio);
-
-    void setPinCnt(int cnt);
-
-    void updateUsages();
 
   private:
     // the followings will store
@@ -163,21 +133,6 @@ class Tile {
     int ux_;
     int uy_;
 
-    // pin counts
-    int pinCnt_;
-
-    float usageH_;
-    float usageV_;
-
-    float supplyH_;
-    float supplyV_;
-
-    // supply cals for four edges
-    float supplyHL_;
-    float supplyHR_;
-    float supplyVL_;
-    float supplyVR_;
-
     // to bloat cells in tile
     float inflationRatio_;
 
@@ -185,7 +140,6 @@ class Tile {
     float inflationAreaDelta_;
 
     float inflatedRatio_;
-
 
     void reset();
 };
@@ -284,49 +238,20 @@ TileGrid::tiles() const {
   return tiles_;
 }
 
-// For *.route EdgeCapacityAdjustment
-struct EdgeCapacityInfo {
-  int lx;
-  int ly;
-  int ll;
-  int ux;
-  int uy;
-  int ul;
-  int capacity;
-  EdgeCapacityInfo();
-  EdgeCapacityInfo(int lx, int ly, int ll,
-      int ux, int uy, int ul, int capacity);
-};
-
-// For *.est file communication
-struct RoutingTrack {
-  int lx, ly, ux, uy;
-  int layer;
-  GNet* gNet;
-  RoutingTrack();
-  RoutingTrack(int lx, int ly, int ux, int uy,
-      int layer, GNet* net);
-};
-
 class RouteBaseVars {
 public:
-  float gRoutePitchScale;
-  float edgeAdjustmentCoef;
-  float pinInflationCoef;
-  float pinBlockageFactor;
   float inflationRatioCoef;
   float maxInflationRatio;
   float maxDensity;
-  float ignoreEdgeRatio;
   float targetRC;
+  float ignoreEdgeRatio;
+  float minInflationRatio;
 
   // targetRC metric coefficients.
   float rcK1, rcK2, rcK3, rcK4;
 
   int maxBloatIter;
   int maxInflationIter;
-  int minPinBlockLayer;
-  int maxPinBlockLayer;
 
   RouteBaseVars();
   void reset();
@@ -346,7 +271,6 @@ class RouteBase {
     // update Route and Est info
     // from GlobalRouter
     void updateRoute();
-    void updateEst();
 
     void getGlobalRouterResult();
     void updateCongestionMap();
@@ -381,11 +305,6 @@ class RouteBase {
     std::vector<int> minWireWidth_;
     std::vector<int> minWireSpacing_;
 
-    std::vector<EdgeCapacityInfo> edgeCapacityStor_;
-
-    // from *.est file
-    std::vector<RoutingTrack> routingTracks_;
-
     // inflationList_ for dynamic Inflation Adjustment
     std::vector<std::pair<Tile*, float>> inflationList_;
 
@@ -397,8 +316,8 @@ class RouteBase {
 
     // if solutions are not improved at all,
     // needs to revert back to have the minimized RC values.
-    // minRcInflationSize_ will store 
-    // GCell's width and height 
+    // minRcInflationSize_ will store
+    // GCell's width and height
     float minRc_;
     float minRcTargetDensity_;
     int minRcViolatedCnt_;
@@ -409,9 +328,8 @@ class RouteBase {
     void resetRoutabilityResources();
 
     // init congestion maps based on given points
-    void updateSupplies();
+    void updateCapacity();
     void updateUsages();
-    void updatePinCount();
     void updateRoutes();
     void updateInflationRatio();
 
