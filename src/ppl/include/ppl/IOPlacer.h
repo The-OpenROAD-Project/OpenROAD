@@ -154,6 +154,7 @@ class IOPlacer
                              int llx, int lly, int urx, int ury,
                              int width, int height);
   int getTopLayer() { return top_grid_.layer; }
+  void placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height);
 
  private:
   Netlist netlist_;
@@ -226,6 +227,7 @@ class IOPlacer
   void populateIOPlacer(std::set<int> hor_layer_idx,
                         std::set<int> ver_layer_idx);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
+  void commitIOPinToDB(const IOPin& pin);
   void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
   void initNetlist();
   void initTracks();

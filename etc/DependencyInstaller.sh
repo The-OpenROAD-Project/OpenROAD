@@ -36,10 +36,9 @@ _installCommonDev() {
 
     # boost
     cd "${baseDir}"
-    boost_version_underscore=${boostVersion//./_}
-    wget https://dl.bintray.com/boostorg/release/${boostVersion}/source/boost_${boost_version_underscore}.tar.gz
-    tar -xf boost_${boost_version_underscore}.tar.gz
-    cd boost_${boost_version_underscore}
+    wget https://github.com/boostorg/boost/archive/refs/tags/boost-${boostVersion}.tar.gz -o boost-${boostVersion}
+    tar -xf boost-${boostVersion}.tar.gz
+    cd boost-${boostVersion}
     ./bootstrap.sh
     ./b2 install --with-iostreams --with-test -j $(nproc)
 
