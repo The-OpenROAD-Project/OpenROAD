@@ -2257,7 +2257,7 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
 }
 
 void getViaDims(
-    const std::map<int, odb::dbTechVia*>& defaultVias,
+    std::map<int, odb::dbTechVia*> defaultVias,
     int level,
     int &widthUp,
     int &prlUp,
@@ -2268,10 +2268,9 @@ void getViaDims(
   prlUp = -1;
   widthDown = -1;
   prlDown = -1;
-  auto it = defaultVias.find(level);
-  if (it != defaultVias.end())
+  if (defaultVias.find(level) != defaultVias.end())
   {
-    for (auto box : it->second->getBoxes()) {
+    for (auto box : defaultVias[level]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == level) {
         widthUp = std::min(box->getWidth(), box->getLength());
         prlUp = std::max(box->getWidth(), box->getLength());
@@ -2279,10 +2278,9 @@ void getViaDims(
       }
     }
   }
-  it = defaultVias.find(level - 1);
-  if (it != defaultVias.end())
+  if (defaultVias.find(level - 1) != defaultVias.end())
   {
-    for (auto box : it->second->getBoxes()) {
+    for (auto box : defaultVias[level-1]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == level) {
         widthDown = std::min(box->getWidth(), box->getLength());
         prlDown = std::max(box->getWidth(), box->getLength());
