@@ -995,6 +995,45 @@ class frSpacingSamenetConstraint : public frSpacingConstraint
   bool pgonly;
 };
 
+class frSpacingTableInfluenceConstraint : public frConstraint
+{
+ public:
+  frSpacingTableInfluenceConstraint(
+      const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
+      : tbl(in)
+  {
+  }
+  // getter
+  const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& getLookupTbl()
+      const
+  {
+    return tbl;
+  }
+  std::pair<frCoord, frCoord> find(frCoord width) const
+  {
+    return tbl.find(width);
+  }
+  frCoord getMinWidth() const { return tbl.getMinRow(); }
+  // setter
+  void setLookupTbl(
+      const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
+  {
+    tbl = in;
+  }
+
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcSpacingTableInfluenceConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("Spacing table influence");
+  }
+
+ private:
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl;
+};
+
 // EOL spacing
 class frSpacingEndOfLineConstraint : public frSpacingConstraint
 {

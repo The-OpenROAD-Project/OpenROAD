@@ -90,11 +90,9 @@ Opendp::findFillerMasters(const StringSeq *filler_master_names)
 void
 Opendp::setGridCells()
 {
-  for (Cell &cell : cells_) {
-    if (!setObstructionGridCells(cell))
-      setGridCell(cell, gridX(&cell), gridEndX(&cell),
-                  gridY(&cell), gridEndY(&cell));
-  }
+  for (Cell &cell : cells_)
+    visitCellPixels(cell, false,
+                    [&] (Pixel *pixel) { setGridCell(cell, pixel); } );
 }
 
 void

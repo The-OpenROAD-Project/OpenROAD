@@ -185,7 +185,8 @@ void io::Parser::initConstraintLayerIdx()
          layer->getInterLayerCutSpacingConstraintMap(false)) {
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
-        logger->warn(DRT, 235, "Second layer {} does not exist", secondLayerName);
+        logger->warn(
+            DRT, 235, "Second layer {} does not exist", secondLayerName);
         continue;
       }
       auto secondLayerNum
@@ -209,7 +210,8 @@ void io::Parser::initConstraintLayerIdx()
          layer->getInterLayerCutSpacingConstraintMap(true)) {
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
-        logger->warn(DRT, 237, "Second layer {} does not exist", secondLayerName);
+        logger->warn(
+            DRT, 237, "Second layer {} does not exist", secondLayerName);
         continue;
       }
       auto secondLayerNum
@@ -649,10 +651,9 @@ void io::Parser::postProcess()
 
   // init region query
   logger->info(DRT, 168, "Init region query ...");
-  design->getRegionQuery()->init(design->getTech()->getLayers().size());
+  design->getRegionQuery()->init();
   design->getRegionQuery()->print();
-  design->getRegionQuery()->initDRObj(
-      design->getTech()->getLayers().size());  // second init from FlexDR.cpp
+  design->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
 }
 
 void io::Parser::postProcessGuide()
@@ -663,8 +664,7 @@ void io::Parser::postProcessGuide()
   }
   buildGCellPatterns();
 
-  design->getRegionQuery()->initOrigGuide(design->getTech()->getLayers().size(),
-                                          tmpGuides);
+  design->getRegionQuery()->initOrigGuide(tmpGuides);
   int cnt = 0;
   // for (auto &[netName, rects]:tmpGuides) {
   //   if (design->getTopBlock()->name2net.find(netName) ==
@@ -698,14 +698,15 @@ void io::Parser::postProcessGuide()
   }
 
   logger->info(DRT, 178, "init guide query ...");
-  design->getRegionQuery()->initGuide(design->getTech()->getLayers().size());
+  design->getRegionQuery()->initGuide();
   design->getRegionQuery()->printGuide();
   logger->info(DRT, 179, "init gr pin query ...");
   design->getRegionQuery()->initGRPin(tmpGRPins);
 
   if (OUTGUIDE_FILE == string("")) {
     if (VERBOSE > 0) {
-      logger->warn(DRT, 245, "No output guide specified, skipped writing guide");
+      logger->warn(
+          DRT, 245, "No output guide specified, skipped writing guide");
     }
   } else {
     // if (VERBOSE > 0) {
@@ -788,7 +789,7 @@ void io::Parser::initRPin_rpin()
 
 void io::Parser::initRPin_rq()
 {
-  design->getRegionQuery()->initRPin(design->getTech()->getLayers().size());
+  design->getRegionQuery()->initRPin();
 }
 
 void io::Parser::buildGCellPatterns_helper(frCoord& GCELLGRIDX,

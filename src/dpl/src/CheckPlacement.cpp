@@ -193,32 +193,21 @@ Opendp::checkInRows(const Cell &cell) const
 // The rules apply to both FIXED or PLACED instances
 
 // Return the cell this cell overlaps.
-
 Cell *
 Opendp::checkOverlap(Cell &cell) const
 {
-  int x_ll = gridPaddedX(&cell);
-  int x_ur = gridPaddedEndX(&cell);
-  int y_ll = gridY(&cell);
-  int y_ur = gridEndY(&cell);
-
-  for (int y = y_ll; y < y_ur; y++) {
-    for (int x = x_ll; x < x_ur; x++) {
-      Pixel *pixel = gridPixel(x, y);
-      if (pixel) {
-        Cell *pixel_cell = pixel->cell;
-        if (pixel_cell) {
-          if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
-            return pixel_cell;
-          }
-        }
-        else {
-          pixel->cell = &cell;
-        }
-      }
-    }
-  }
-  return nullptr;
+  Cell *overlap_cell = nullptr;
+  visitCellPixels(cell, true,
+                  [&] (Pixel *pixel) {
+                    Cell *pixel_cell = pixel->cell;
+                    if (pixel_cell) {
+                      if (pixel_cell != &cell && overlap(&cell, pixel_cell))
+                        overlap_cell = pixel_cell;
+                    }
+                    else
+                      pixel->cell = &cell;
+                  } );
+  return overlap_cell;
 }
 
 bool

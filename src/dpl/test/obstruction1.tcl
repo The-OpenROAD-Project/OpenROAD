@@ -2,12 +2,14 @@
 source -echo "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
-read_lef pad09.lef
-read_def pad09.def
+read_lef obstruction1.lef
+read_def obstruction1.def
 
 detailed_placement
 filler_placement FILLCELL*
 
-set def_file [make_result_file pad09.def]
+check_placement
+
+set def_file [make_result_file obstruction1.def]
 write_def $def_file
-diff_file pad09.defok $def_file
+diff_file obstruction1.defok $def_file

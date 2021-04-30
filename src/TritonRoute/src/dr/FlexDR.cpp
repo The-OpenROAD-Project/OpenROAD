@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
@@ -34,7 +36,6 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 
@@ -1326,8 +1327,7 @@ void FlexDR::init()
     logger_->info(DRT, 187, "start routing data preparation");
   }
   initGCell2BoundaryPin();
-  getRegionQuery()->initDRObj(
-      getTech()->getLayers().size());  // first init in postProcess
+  getRegionQuery()->initDRObj();  // first init in postProcess
 
   init_halfViaEncArea();
   init_via2viaMinLen();
@@ -1930,6 +1930,10 @@ void FlexDR::reportDRC()
         } else if (con->typeId()
                    == frConstraintTypeEnum::frcLef58MinStepConstraint) {
           drcRpt << "MinStp";
+        } else if (con->typeId()
+                   == frConstraintTypeEnum::
+                       frcSpacingTableInfluenceConstraint) {
+          drcRpt << "MetSpcInf";
         } else {
           drcRpt << "unknown";
         }
@@ -2002,25 +2006,6 @@ int FlexDR::main()
   if (VERBOSE > 0) {
     logger_->info(DRT, 194, "start detail routing ...");
   }
-  // search and repair: iter, size, offset, mazeEndIter, workerDRCCost,
-  // workerMarkerCost,
-  //                    markerBloatWidth, markerBloatDepth, enableDRC,
-  //                    ripupMode, followGuide, fixMode, TEST
-  // fixMode:
-  //   0 - general fix
-  //   1 - fat via short, spc to wire fix (keep via net), no permutation,
-  //   increasing DRCCOST 2 - fat via short, spc to wire fix (ripup via net), no
-  //   permutation, increasing DRCCOST 3 - general fix, ripup everything (bloat)
-  //   4 - general fix, ripup left/bottom net (touching), currently DISABLED
-  //   5 - general fix, ripup right/top net (touching), currently DISABLED
-  //   6 - two-net viol
-  //   9 - search-and-repair queue
-  // assume only mazeEndIter > 1 if enableDRC and ripupMode == 0 (partial ripup)
-  // end();
-  // searchRepair(1,  7, -4,  1, DRCCOST, 0,          0, 0, true, 1, false, 0,
-  // true); // test mode
-
-  // need three different offsets to resolve boundary corner issues
 
   int iterNum = 0;
   searchRepair(
