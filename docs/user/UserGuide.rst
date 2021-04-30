@@ -540,7 +540,7 @@ Tapcell and endcap insertion.
            -add_boundary_cell
 
 You can find script examples for supported technologies
-``tapcell/etc/scripts``
+``tap/etc/scripts``
 
 Global Placement
 ~~~~~~~~~~~~~~~~

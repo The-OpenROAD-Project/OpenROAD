@@ -810,11 +810,14 @@ void LayoutViewer::drawBlock(QPainter* painter,
                          pixels_per_dbu_,
                          block->getDbUnitsPerMicron());
 
-  // Draw bounds
+  // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox = getBounds(block);
-  painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  Rect bbox;
+  block->getDieArea(bbox);
+  if (bbox.area() > 0) {
+    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
 
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
@@ -840,15 +843,19 @@ void LayoutViewer::drawBlock(QPainter* painter,
     // draw bbox
     painter->setPen(QPen(Qt::gray, 0));
     painter->setBrush(QBrush());
-    int master_w = master->getWidth();
-    int master_h = master->getHeight();
-    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
+    Rect master_box;
+    master->getPlacementBoundary(master_box);
+    painter->drawRect(master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
 
     // Draw an orientation tag in corner if useful in size
-    if (master->getHeight() >= 5 * pixel) {
+    int master_h = master->getHeight();
+    if (master_h >= 5 * pixel) {
+      qreal master_w = master->getWidth();
       qreal tag_size = 0.1 * master_h;
-      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
-                        QPointF(0.0, tag_size));
+      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
+      qreal tag_y = master_box.yMin() + tag_size;
+      painter->drawLine(QPointF(tag_x, master_box.yMin()),
+                        QPointF(master_box.xMin(), tag_y));
     }
     painter->setTransform(initial_xfm);
   }

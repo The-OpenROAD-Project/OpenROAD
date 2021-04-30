@@ -316,6 +316,19 @@ In the example, three intervals were excluded: the whole top edge, the right edg
 left edge from the beginning to the 50 microns.
 
 ```
+place_pin [-pin_name pin_name]
+          [-layer layer]
+          [-location {x y}]
+          [-pin_size {width height}]
+```
+
+The `place_pin` command places a specific pin in the specified location, with the specified size.
+The `-pin_name` option is the name of a pin of the design.
+The `-layer` defines the routing layer where the pin is placed.
+The `-location` defines the center of the pin.
+The `-pin_size` option defines the width and height of the pin.
+
+```
 define_pin_shape_pattern {[-layer layer]
                           [-x_step x_step]
                           [-y_step y_step]
