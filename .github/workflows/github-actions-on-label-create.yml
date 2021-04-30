@@ -10,5 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'The-OpenROAD-Project-private'
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
       - name: print info
         run: git remote -v
