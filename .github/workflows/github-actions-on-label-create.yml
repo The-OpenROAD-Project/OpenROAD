@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  label check and push:
+  label:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'The-OpenROAD-Project-private'
     steps:
