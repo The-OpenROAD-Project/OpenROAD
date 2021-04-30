@@ -32,7 +32,6 @@ You need root access to correctly install the dependencies with the script.
 
 ## Install dependencies
 
-
 Tools
   * cmake 3.14
   * gcc 8.3.0 or clang7
@@ -41,7 +40,7 @@ Tools
   * swig 4.0
 
 Libraries
-  * boost 1.68
+  * boost 1.68 (1.75 will not compile)
   * tcl 8.6
   * zlibc
   * eigen3
@@ -51,6 +50,8 @@ Libraries
   * cimg (optional for replace)
 
 
+For a limited number of configurations the following script can be used to install
+dependencies.
 ```
 ./etc/DependencyInstaller.sh -dev
 ```

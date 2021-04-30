@@ -1,22 +1,18 @@
-# repair_wire1 with fast/slow corners
-# in1--u1--u2--------u3-out1
-#             2000u
-if {1} {
-define_corners slow fast
-read_liberty -corner slow Nangate45/Nangate45_slow.lib
-read_liberty -corner fast Nangate45/Nangate45_fast.lib
-} else {
-read_liberty Nangate45/Nangate45_slow.lib
-}
+# repair_design log wire from input port
+# in1-----------u1--u2--out1
+#       1500u
+read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def repair_wire1.def
+read_def repair_wire7.def
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-# zero estimated parasitics to output port
-set_load 0 [get_net out1]
 
-repair_design
+report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
+report_long_wires 3
 
-report_check_types -max_slew -max_capacitance
+# wire length = 1500u -> 2 buffers required
+repair_design -max_wire_length 600
+
+report_long_wires 3
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
