@@ -23,11 +23,19 @@
 [INFO GRT-0002] Maximum degree: 5
 [INFO GRT-0017] Processing 5262 blockages on layer li1.
 [INFO GRT-0017] Processing 706 blockages on layer met1.
-[INFO GRT-0013] Reducing resources of layer met1 by 80%.
-[INFO GRT-0013] Reducing resources of layer met2 by 70%.
-[INFO GRT-0013] Reducing resources of layer met3 by 50%.
-[INFO GRT-0013] Reducing resources of layer met4 by 50%.
-[INFO GRT-0013] Reducing resources of layer met5 by 50%.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal          0             0          0.00%
+met2       Vertical            0             0          0.00%
+met3       Horizontal      12996          6142          52.74%
+met4       Vertical        10108          4625          54.24%
+met5       Horizontal       2888          1443          50.03%
+---------------------------------------------------------------
+
 Routing clock nets...
 [INFO GRT-0111] Final number of vias: 29
 [INFO GRT-0112] Final usage 3D: 186
@@ -42,11 +50,19 @@ Routing clock nets...
 [INFO GRT-0002] Maximum degree: 12
 [INFO GRT-0017] Processing 5262 blockages on layer li1.
 [INFO GRT-0017] Processing 706 blockages on layer met1.
-[INFO GRT-0013] Reducing resources of layer met1 by 80%.
-[INFO GRT-0013] Reducing resources of layer met2 by 70%.
-[INFO GRT-0013] Reducing resources of layer met3 by 50%.
-[INFO GRT-0013] Reducing resources of layer met4 by 50%.
-[INFO GRT-0013] Reducing resources of layer met5 by 50%.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      27436          5430          80.21%
+met2       Vertical        21660          6475          70.11%
+met3       Horizontal      12996          6079          53.22%
+met4       Vertical        10108          4589          54.60%
+met5       Horizontal       2888          1443          50.03%
+---------------------------------------------------------------
+
 [INFO GRT-0111] Final number of vias: 122
 [INFO GRT-0112] Final usage 3D: 669
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid

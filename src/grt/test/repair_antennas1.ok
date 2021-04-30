@@ -24,10 +24,19 @@
 [INFO GRT-0017] Processing 13509 blockages on layer li1.
 [INFO GRT-0017] Processing 3926 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
-[INFO GRT-0013] Reducing resources of layer met2 by 15%.
-[INFO GRT-0013] Reducing resources of layer met3 by 15%.
-[INFO GRT-0013] Reducing resources of layer met4 by 15%.
-[INFO GRT-0013] Reducing resources of layer met5 by 15%.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      31939         28047          12.19%
+met2       Vertical        25215         20120          20.21%
+met3       Horizontal      15129         11840          21.74%
+met4       Vertical        11767          8440          28.27%
+met5       Horizontal       3362          1680          50.03%
+---------------------------------------------------------------
+
 [INFO GRT-0111] Final number of vias: 2038
 [INFO GRT-0112] Final usage 3D: 9045
 
@@ -83,10 +92,6 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0017] Processing 13515 blockages on layer li1.
 [INFO GRT-0017] Processing 3934 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
-[INFO GRT-0013] Reducing resources of layer met2 by 15%.
-[INFO GRT-0013] Reducing resources of layer met3 by 15%.
-[INFO GRT-0013] Reducing resources of layer met4 by 15%.
-[INFO GRT-0013] Reducing resources of layer met5 by 15%.
 [INFO GRT-0009] Nets to reroute: 7.
 [INFO GRT-0111] Final number of vias: 67
 [INFO GRT-0112] Final usage 3D: 356

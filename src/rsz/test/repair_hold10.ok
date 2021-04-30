@@ -22,6 +22,19 @@
 [INFO GRT-0002] Maximum degree: 4
 [INFO GRT-0017] Processing 483 blockages on layer li1.
 [INFO GRT-0017] Processing 86 blockages on layer met1.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal     103680        102794          0.85%
+met2       Vertical        77760         77035          0.93%
+met3       Horizontal      51840         51333          0.98%
+met4       Vertical        36288         35997          0.80%
+met5       Horizontal      10368         10153          2.07%
+---------------------------------------------------------------
+
 [INFO GRT-0111] Final number of vias: 54
 [INFO GRT-0112] Final usage 3D: 1139
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
@@ -66,6 +79,19 @@ delta HPWL                    0 %
 [INFO GRT-0002] Maximum degree: 4
 [INFO GRT-0017] Processing 508 blockages on layer li1.
 [INFO GRT-0017] Processing 88 blockages on layer met1.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal     103680        102792          0.86%
+met2       Vertical        77760         77035          0.93%
+met3       Horizontal      51840         51333          0.98%
+met4       Vertical        36288         35997          0.80%
+met5       Horizontal      10368         10153          2.07%
+---------------------------------------------------------------
+
 [INFO GRT-0111] Final number of vias: 56
 [INFO GRT-0112] Final usage 3D: 1146
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
