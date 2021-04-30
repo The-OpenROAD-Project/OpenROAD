@@ -1411,81 +1411,48 @@ std::vector<int> FastRouteCore::getOriginalResources()
   return original_resources;
 }
 
-std::vector<int> FastRouteCore::getTotalCapacityPerLayer()
+void FastRouteCore::computeCongestionInformation()
 {
-  std::vector<int> cap_per_layer;
   cap_per_layer.resize(numLayers);
+  usage_per_layer.resize(numLayers);
+  overflow_per_layer.resize(numLayers);
+  max_h_overflow.resize(numLayers);
+  max_v_overflow.resize(numLayers);
 
   for (int l = 0; l < numLayers; l++) {
     cap_per_layer[l] = 0;
+    usage_per_layer[l] = 0;
+    overflow_per_layer[l] = 0;
+    max_h_overflow[l] = 0;
+    max_v_overflow[l] = 0;
+
     for (int i = 0; i < yGrid; i++) {
       for (int j = 0; j < xGrid - 1; j++) {
         int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
         cap_per_layer[l] += h_edges3D[grid].cap;
+        usage_per_layer[l] += h_edges3D[grid].usage;
+
+        int overflow = h_edges3D[grid].usage - h_edges3D[grid].cap;
+        if (overflow > 0) {
+          overflow_per_layer[l] += overflow;
+          max_h_overflow[l] = std::max(max_h_overflow[l], overflow);
+        }
       }
     }
     for (int i = 0; i < yGrid - 1; i++) {
       for (int j = 0; j < xGrid; j++) {
         int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
         cap_per_layer[l] += v_edges3D[grid].cap;
-      }
-    }
-  }
-
-  return cap_per_layer;
-}
-
-std::vector<int> FastRouteCore::getTotalUsagePerLayer()
-{
-  std::vector<int> usage_per_layer;
-  usage_per_layer.resize(numLayers);
-
-  for (int l = 0; l < numLayers; l++) {
-    usage_per_layer[l] = 0;
-    for (int i = 0; i < yGrid; i++) {
-      for (int j = 0; j < xGrid - 1; j++) {
-        int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
-        usage_per_layer[l] += h_edges3D[grid].usage;
-      }
-    }
-    for (int i = 0; i < yGrid - 1; i++) {
-      for (int j = 0; j < xGrid; j++) {
-        int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
         usage_per_layer[l] += v_edges3D[grid].usage;
-      }
-    }
-  }
 
-  return usage_per_layer;
-}
-
-std::vector<int> FastRouteCore::getTotalOverflowPerLayer()
-{
-  std::vector<int> overflow_per_layer;
-  overflow_per_layer.resize(numLayers);
-
-  for (int l = 0; l < numLayers; l++) {
-    overflow_per_layer[l] = 0;
-    for (int i = 0; i < yGrid; i++) {
-      for (int j = 0; j < xGrid - 1; j++) {
-        int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
-        int overflow = h_edges3D[grid].usage - h_edges3D[grid].cap;
-        if (overflow > 0) {
-          overflow_per_layer[l] += overflow;
-        }
-      }
-    }
-    for (int i = 0; i < yGrid - 1; i++) {
-      for (int j = 0; j < xGrid; j++) {
-        int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
         int overflow = v_edges3D[grid].usage - v_edges3D[grid].cap;
         if (overflow > 0) {
           overflow_per_layer[l] += overflow;
+          max_v_overflow[l] = std::max(max_v_overflow[l], overflow);
         }
       }
     }
   }
-  return overflow_per_layer;
 }
 
 ////////////////////////////////////////////////////////////////

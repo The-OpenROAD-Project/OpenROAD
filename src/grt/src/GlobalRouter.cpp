@@ -3169,6 +3169,7 @@ void GlobalRouter::reportLayerSettings(int minRoutingLayer, int maxRoutingLayer)
 
 void GlobalRouter::reportResources()
 {
+  _fastRoute->computeCongestionInformation();
   odb::dbTech* tech = _db->getTech();
   std::vector<int> original_resources = _fastRoute->getOriginalResources();
   std::vector<int> derated_resources = _fastRoute->getTotalCapacityPerLayer();
@@ -3198,19 +3199,24 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
+  _fastRoute->computeCongestionInformation();
   odb::dbTech* tech = _db->getTech();
-  std::vector<int> resources = _fastRoute->getTotalCapacityPerLayer();
-  std::vector<int> demands = _fastRoute->getTotalUsagePerLayer();
-  std::vector<int> overflows = _fastRoute->getTotalOverflowPerLayer();
+  const std::vector<int> &resources = _fastRoute->getTotalCapacityPerLayer();
+  const std::vector<int> &demands = _fastRoute->getTotalUsagePerLayer();
+  const std::vector<int> &overflows = _fastRoute->getTotalOverflowPerLayer();
+  const std::vector<int> &max_h_overflows = _fastRoute->getMaxHorizontalOverflows();
+  const std::vector<int> &max_v_overflows = _fastRoute->getMaxVerticalOverflows();
 
   int total_resource = 0;
   int total_demand = 0;
   int total_overflow = 0;
+  int total_h_overflow = 0;
+  int total_v_overflow = 0;
 
   _logger->report("");
   _logger->info(GRT, 96, "Final congestion report:");
-  _logger->report("Layer         Resource        Demand        Usage (%)    Overflow");
-  _logger->report("-----------------------------------------------------------------");
+  _logger->report("Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow");
+  _logger->report("---------------------------------------------------------------------------------------");
 
   for (int l = 0; l < resources.size(); l++) {
     float usage_percentage;
@@ -3225,15 +3231,18 @@ void GlobalRouter::reportCongestion()
     total_resource += resources[l];
     total_demand += demands[l];
     total_overflow += overflows[l];
+    total_h_overflow += max_h_overflows[l];
+    total_v_overflow += max_v_overflows[l];
 
     odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
-    _logger->report("{:7s}      {:9}       {:7}        {:8.2f}%    {:8}",
-      layer->getName(), resources[l], demands[l], usage_percentage, overflows[l]);
+    _logger->report("{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / {:2}",
+      layer->getName(), resources[l], demands[l], usage_percentage, max_h_overflows[l],
+      max_v_overflows[l], overflows[l]);
   }
   float total_usage = (float)total_demand / (float)total_resource * 100;
-  _logger->report("-----------------------------------------------------------------");
-  _logger->report("Total        {:9}       {:7}        {:8.2f}%    {:8}",
-    total_resource, total_demand, total_usage, total_overflow);
+  _logger->report("---------------------------------------------------------------------------------------");
+  _logger->report("Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / {:2}",
+    total_resource, total_demand, total_usage, total_h_overflow, total_v_overflow, total_overflow);
   _logger->report("");
 }
 
