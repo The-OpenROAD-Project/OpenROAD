@@ -274,6 +274,7 @@ class GlobalRouter
   NetRouteMap findRouting(std::vector<Net*>& nets, int minRoutingLayer, int maxRoutingLayer);
   void print(GRoute& route);
   void reportLayerSettings(int minRoutingLayer, int maxRoutingLayer);
+  void reportResources();
   void reportCongestion();
 
   // check functions

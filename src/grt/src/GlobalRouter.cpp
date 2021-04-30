@@ -201,6 +201,8 @@ void GlobalRouter::globalRouteClocksSeparately()
   // route clock nets
   std::vector<Net*> clockNets =
     startFastRoute(_minLayerForClock, _maxLayerForClock, NetType::Clock);
+  reportResources();
+
   _logger->report("Routing clock nets...");
   _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
   Capacities clk_capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
@@ -214,6 +216,8 @@ void GlobalRouter::globalRouteClocksSeparately()
   std::vector<Net*> signalNets =
     startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
   restoreCapacities(clk_capacities, _minLayerForClock, _maxLayerForClock);
+  reportResources();
+
   // Store results in a temporary map, allowing to keep previous
   // routing result from clock nets
   NetRouteMap result = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
@@ -228,6 +232,7 @@ void GlobalRouter::globalRoute()
 
   std::vector<Net*> nets =
   startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
+  reportResources();
 
   _routes = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
 }
@@ -1012,7 +1017,6 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
     techLayer = tech->findRoutingLayer(layer);
     float adjustment = _adjustments[layer];
     if (adjustment != 0) {
-      _logger->info(GRT, 13, "Reducing resources of layer {} by {}%.", techLayer->getName(), int(adjustment * 100));
       if (_hCapacities[layer - 1] != 0) {
         int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1]
                      * (1 - adjustment);
@@ -3163,6 +3167,35 @@ void GlobalRouter::reportLayerSettings(int minRoutingLayer, int maxRoutingLayer)
   }
 }
 
+void GlobalRouter::reportResources()
+{
+  odb::dbTech* tech = _db->getTech();
+  std::vector<int> original_resources = _fastRoute->getOriginalResources();
+  std::vector<int> derated_resources = _fastRoute->getTotalCapacityPerLayer();
+
+  _logger->report("");
+  _logger->info(GRT, 53, "Routing resources analysis:");
+  _logger->report("          Routing      Original      Derated      Resource");
+  _logger->report("Layer     Direction    Resources     Resources    Reduction (%)");
+  _logger->report("---------------------------------------------------------------");
+
+  for (int l = 0; l < original_resources.size(); l++) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
+    std::string routing_direction = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) ?
+      "Horizontal" : "Vertical";
+
+    float reduciton_percent = 0;
+    if (original_resources[l] > 0) {
+      reduciton_percent = (1.0 - ((float)derated_resources[l] / (float)original_resources[l]))*100;
+    }
+
+    _logger->report("{:7s}    {:10}   {:8}      {:8}          {:3.2f}%",
+      layer->getName(), routing_direction, original_resources[l], derated_resources[l], reduciton_percent);
+  }
+  _logger->report("---------------------------------------------------------------");
+  _logger->report("");
+}
+
 void GlobalRouter::reportCongestion()
 {
   odb::dbTech* tech = _db->getTech();
@@ -3199,8 +3232,9 @@ void GlobalRouter::reportCongestion()
   }
   float total_usage = (float)total_demand / (float)total_resource * 100;
   _logger->report("-----------------------------------------------------------------");
-  _logger->report("Total        {:9}       {:7}        {:8.2f}%    {:8}\n",
+  _logger->report("Total        {:9}       {:7}        {:8.2f}%    {:8}",
     total_resource, total_demand, total_usage, total_overflow);
+  _logger->report("");
 }
 
 void GlobalRouter::reportLayerWireLengths()
