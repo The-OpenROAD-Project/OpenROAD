@@ -1,7 +1,7 @@
 name: Labelled Ready to Sync Public
 on:
-  label:
-    types: [created]
+  pull_request:
+    types: [labeled, unlabeled]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
