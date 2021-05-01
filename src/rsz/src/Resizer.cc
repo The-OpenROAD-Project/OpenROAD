@@ -297,8 +297,12 @@ Resizer::removeBuffers()
     LibertyCell *lib_cell = db_network_->libertyCell(inst);
     if (lib_cell && lib_cell->isBuffer()) {
       Instance *buffer = db_network_->dbToSta(inst);
-      if (removeBuffer(buffer))
+      // Do not remove buffers connected to input/output ports
+      // because verilog netlists use the net name for the port.
+      if (!bufferConnectedToPorts(buffer)) {
+        removeBuffer(buffer);
         remove_count++;
+      }
     }
   }
   level_drvr_vertices_valid_ = false;
@@ -306,6 +310,21 @@ Resizer::removeBuffers()
 }
 
 bool
+Resizer::bufferConnectedToPorts(Instance *buffer)
+{
+  LibertyCell *lib_cell = network_->libertyCell(buffer);
+  LibertyPort *in_port, *out_port;
+  lib_cell->bufferPorts(in_port, out_port);
+  Pin *in_pin = db_network_->findPin(buffer, in_port);
+  Pin *out_pin = db_network_->findPin(buffer, out_port);
+  Net *in_net = db_network_->net(in_pin);
+  Net *out_net = db_network_->net(out_pin);
+  bool in_net_ports = hasPort(in_net);
+  bool out_net_ports = hasPort(out_net);
+  return in_net_ports || out_net_ports;
+}
+
+void
 Resizer::removeBuffer(Instance *buffer)
 {
   LibertyCell *lib_cell = network_->libertyCell(buffer);
@@ -315,48 +334,36 @@ Resizer::removeBuffer(Instance *buffer)
   Pin *out_pin = db_network_->findPin(buffer, out_port);
   Net *in_net = db_network_->net(in_pin);
   Net *out_net = db_network_->net(out_pin);
-  bool in_net_ports = hasInputPort(in_net);
-  bool out_net_ports = hasOutputPort(out_net);
-  if (in_net_ports && out_net_ports) {
-    // Verilog uses nets as ports, so the surviving net has to be
-    // the one connected the port.
-    logger_->warn(RSZ, 43, "Cannot remove buffers between net {} and {} because both nets have ports connected to them.",
-                  sdc_network_->pathName(in_net),
-                  sdc_network_->pathName(out_net));
-    return false;
+  bool out_net_ports = hasPort(out_net);
+  Net *survivor, *removed;
+  if (out_net_ports) {
+    survivor = out_net;
+    removed = in_net;
   }
   else {
-    Net *survivor, *removed;
-    if (out_net_ports) {
-      survivor = out_net;
-      removed = in_net;
-    }
-    else {
-      // default or out_net_ports
-      // Default to in_net surviving so drivers (cached in dbNetwork)
-      // do not change.
-      survivor = in_net;
-      removed = out_net;
-    }
-
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-    sta_->deleteInstance(buffer);
-
-    NetPinIterator *pin_iter = db_network_->pinIterator(removed);
-    while (pin_iter->hasNext()) {
-      Pin *pin = pin_iter->next();
-      Instance *pin_inst = db_network_->instance(pin);
-      if (pin_inst != buffer) {
-        Port *pin_port = db_network_->port(pin);
-        sta_->disconnectPin(pin);
-        sta_->connectPin(pin_inst, pin_port, survivor);
-      }
-    }
-    delete pin_iter;
-    sta_->deleteNet(removed);
-    return true;
+    // default or out_net_ports
+    // Default to in_net surviving so drivers (cached in dbNetwork)
+    // do not change.
+    survivor = in_net;
+    removed = out_net;
   }
+
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
+  sta_->deleteInstance(buffer);
+
+  NetPinIterator *pin_iter = db_network_->pinIterator(removed);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    Instance *pin_inst = db_network_->instance(pin);
+    if (pin_inst != buffer) {
+      Port *pin_port = db_network_->port(pin);
+      sta_->disconnectPin(pin);
+      sta_->connectPin(pin_inst, pin_port, survivor);
+    }
+  }
+  delete pin_iter;
+  sta_->deleteNet(removed);
 }
 
 void
@@ -1270,6 +1277,22 @@ Resizer::hasOutputPort(const Net *net)
     Pin *pin = pin_iter->next();
     if (network_->isTopLevelPort(pin)
         && network_->direction(pin)->isAnyOutput()) {
+      has_top_level_port = true;
+      break;
+    }
+  }
+  delete pin_iter;
+  return has_top_level_port;
+}
+
+bool
+Resizer::hasPort(const Net *net)
+{
+  bool has_top_level_port = false;
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (network_->isTopLevelPort(pin)) {
       has_top_level_port = true;
       break;
     }

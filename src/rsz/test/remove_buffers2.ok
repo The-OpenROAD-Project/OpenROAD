@@ -1,0 +1,45 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: remove_buffers2.def
+[INFO ODB-0128] Design: top
+[WARNING ODB-0100] error: netlist component-pin (i1, Z) is not defined
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 3 components and 12 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 4 nets and 5 connections.
+[INFO ODB-0134] Finished DEF file: remove_buffers2.def
+Startpoint: b1/A (internal pin)
+Endpoint: out1 (output port)
+Path Group: (none)
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 v b1/A (BUF_X2)
+   0.02    0.02 v b1/Z (BUF_X2)
+   0.00    0.02 v out1 (out)
+           0.02   data arrival time
+---------------------------------------------------------
+(Path is unconstrained)
+
+
+[INFO RSZ-0026] Removed 0 buffers.
+Startpoint: b1/A (internal pin)
+Endpoint: out1 (output port)
+Path Group: (none)
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 v b1/A (BUF_X2)
+   0.02    0.02 v b1/Z (BUF_X2)
+   0.00    0.02 v out1 (out)
+           0.02   data arrival time
+---------------------------------------------------------
+(Path is unconstrained)
+
+
+No differences found.
