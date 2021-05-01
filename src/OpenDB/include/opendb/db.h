@@ -6995,7 +6995,7 @@ class dbTechLayer : public dbObject
   uint getTwoWidthsSpacingTableEntry(uint row, uint col) const;
 
   void initTwoWidths(uint num_widths);
-  void addTwoWidthsIndexEntry(uint width, int parallel_run_length = -1, bool prlValid = false);
+  void addTwoWidthsIndexEntry(uint width, int parallel_run_length = -1);
   void addTwoWidthsSpacingTableEntry(uint inrow, uint incol, uint spacing);
   ///
   ///  create container for layer specific antenna rules

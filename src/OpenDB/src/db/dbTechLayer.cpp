@@ -839,10 +839,17 @@ uint _dbTechLayer::getV55ColIdx(const int& colVal) const
   auto pos = --(std::lower_bound(_v55sp_length_idx.begin(), _v55sp_length_idx.end(), colVal));
   return std::max(0, (int) std::distance(_v55sp_length_idx.begin(), pos));
 }
-uint _dbTechLayer::getTwIdx(const SpacingTableTwRow& val) const
+uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = --(std::lower_bound(_two_widths_rows_cols.begin(), _two_widths_rows_cols.end(), val));
-  return std::max(0, (int) std::distance(_two_widths_rows_cols.begin(), pos));
+  int sz = _two_widths_sp_idx.size();
+  for(int i = 0; i < sz ; i++)
+  {
+    if(width <= _two_widths_sp_idx[i])
+      return std::max(0, i-1);
+    if(_two_widths_sp_prl[i] != -1 && prl <= _two_widths_sp_prl[i])
+      return std::max(0, i-1);
+  }
+  return sz-1;
 }
 // User Code End PrivateMethods
 
@@ -1432,16 +1439,14 @@ void dbTechLayer::initTwoWidths(uint num_widths)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_two_widths_sp_idx.reserve(num_widths);
-  layer->_two_widths_rows_cols.reserve(num_widths);
   layer->_two_widths_sp_spacing.resize(num_widths, num_widths);
 }
 
-void dbTechLayer::addTwoWidthsIndexEntry(uint width, int parallel_run_length, bool prlValid)
+void dbTechLayer::addTwoWidthsIndexEntry(uint width, int parallel_run_length)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_two_widths_sp_idx.push_back(width);
-  layer->_two_widths_sp_prl.push_back(prlValid ? parallel_run_length : -1);
-  layer->_two_widths_rows_cols.push_back(SpacingTableTwRow(width, parallel_run_length));
+  layer->_two_widths_sp_prl.push_back(parallel_run_length);
 }
 
 void dbTechLayer::addTwoWidthsSpacingTableEntry(uint inrow,
@@ -1456,8 +1461,8 @@ int dbTechLayer::findTwSpacing(const int width1, const int width2, const int prl
   if(!hasTwoWidthsSpacingRules())
     return 0;
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  auto rowIdx = layer->getTwIdx(SpacingTableTwRow(width1, prl));
-  auto colIdx = layer->getTwIdx(SpacingTableTwRow(width2, prl));
+  auto rowIdx = layer->getTwIdx(width1, prl);
+  auto colIdx = layer->getTwIdx(width2, prl);
   return layer->_two_widths_sp_spacing(rowIdx, colIdx);
 }
 
