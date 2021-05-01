@@ -233,7 +233,6 @@ bool Ext::run_solver(const std::string& dir, int net, int shape)
 
 bool Ext::bench_wires(const BenchWiresOptions& bwo)
 {
-  _ext->setBlockFromChip();
   extMainOptions opt;
 
   opt._topDir = bwo.dir;
