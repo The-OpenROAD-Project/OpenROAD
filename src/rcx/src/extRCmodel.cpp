@@ -32,8 +32,8 @@
 
 #include <wire.h>
 
-#include "OpenRCX/extRCap.h"
-#include "OpenRCX/extprocess.h"
+#include "rcx/extRCap.h"
+#include "rcx/extprocess.h"
 
 #ifdef _WIN32
 #include "direct.h"
