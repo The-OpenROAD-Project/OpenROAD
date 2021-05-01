@@ -80,9 +80,9 @@ class Tile {
     int route(int layer) const;
 
     int usageHL(int layer) const;
-    int usageHR(int layer) const;
+    int usageHU(int layer) const;
     int usageVL(int layer) const;
-    int usageVR(int layer) const;
+    int usageVU(int layer) const;
 
     float inflationRatio() const;
     float inflationArea() const;
@@ -117,13 +117,18 @@ class Tile {
 
     // H : Horizontal
     // V : Vertical
-    // L : Left
-    // R : Right
+    //
+    // L : Lower
+    //    1. horizontal usage/cap -> vertical edge: down edge
+    //    2. vertical usage/cap -> horizontal edge: left edge
+    // R : Upper
+    //    1. horizontal usage/cap -> vertical edge: up edge
+    //    2. vertical usage/cap -> horizontal edge: right edge
     //
     std::vector<int> usageHL_;
-    std::vector<int> usageHR_;
+    std::vector<int> usageHU_;
     std::vector<int> usageVL_;
-    std::vector<int> usageVR_;
+    std::vector<int> usageVU_;
 
     int x_;
     int y_;
@@ -302,8 +307,6 @@ class RouteBase {
     // from *.route file
     std::vector<int> verticalCapacity_;
     std::vector<int> horizontalCapacity_;
-    std::vector<int> minWireWidth_;
-    std::vector<int> minWireSpacing_;
 
     // inflationList_ for dynamic Inflation Adjustment
     std::vector<std::pair<Tile*, float>> inflationList_;

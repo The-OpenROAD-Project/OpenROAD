@@ -81,9 +81,9 @@ Tile::Tile(int x, int y, int lx, int ly, int ux, int uy, int layers)
   route_.resize(layers, 0);
 
   usageHL_.resize(layers, 0);
-  usageHR_.resize(layers, 0);
+  usageHU_.resize(layers, 0);
   usageVL_.resize(layers, 0);
-  usageVR_.resize(layers, 0);
+  usageVU_.resize(layers, 0);
 }
 
 Tile::~Tile() {
@@ -103,14 +103,14 @@ Tile::reset() {
   route_.clear();
 
   usageHL_.clear();
-  usageHR_.clear();
+  usageHU_.clear();
   usageVL_.clear();
-  usageVR_.clear();
+  usageVU_.clear();
   
   usageHL_.shrink_to_fit();
-  usageHR_.shrink_to_fit();
+  usageHU_.shrink_to_fit();
   usageVL_.shrink_to_fit();
-  usageVR_.shrink_to_fit();
+  usageVU_.shrink_to_fit();
 }
 
 int
@@ -134,8 +134,8 @@ Tile::usageHL(int layer) const {
 }
 
 int
-Tile::usageHR(int layer) const {
-  return usageHR_[layer];
+Tile::usageHU(int layer) const {
+  return usageHU_[layer];
 }
 
 int
@@ -144,8 +144,8 @@ Tile::usageVL(int layer) const {
 }
 
 int 
-Tile::usageVR(int layer) const {
-  return usageVR_[layer];
+Tile::usageVU(int layer) const {
+  return usageVU_[layer];
 }
 
 float
@@ -449,14 +449,10 @@ RouteBase::resetRoutabilityResources() {
   tg_.reset();
   verticalCapacity_.clear();
   horizontalCapacity_.clear();
-  minWireWidth_.clear();
-  minWireSpacing_.clear();
   inflationList_.clear();
 
   verticalCapacity_.shrink_to_fit();
   horizontalCapacity_.shrink_to_fit();
-  minWireWidth_.shrink_to_fit();
-  minWireSpacing_.shrink_to_fit();
   inflationList_.shrink_to_fit();
 }
 
@@ -530,26 +526,68 @@ RouteBase::inflationIterCnt() const {
 // verticalCapacity_
 // horizontalCapacity_
 //
-// minWireWidth_
-// minWireSpacing_
-//
 void 
 RouteBase::updateRoute() {
+  
+
+  // Note that 
+  // verticalCap and horizontalCap has 100x larger scales.
+  // (agreement from FastRoute)
+
+  odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
+  std::vector<int> gridX, gridY;
+  gGrid->getGridX(gridX);
+  gGrid->getGridY(gridY);
+  
+  // Need to retrieve capacities
   using grt::GlobalRouter;
   GlobalRouter::ROUTE_ route = grouter_->getRoute();
-  
-  tg_->setTileCnt(route.gridCountX, route.gridCountY);
-  tg_->setNumRoutingLayers(route.numLayers);
-
-  tg_->setLx(route.gridOriginX);
-  tg_->setLy(route.gridOriginY);
-
-  tg_->setTileSize( route.tileWidth, route.tileHeight);
-
   verticalCapacity_ = route.verticalEdgesCapacities;
   horizontalCapacity_ = route.horizontalEdgesCapacities;
-  minWireWidth_ = route.minWireWidths;
-  minWireSpacing_ = route.minWireSpacings;
+  
+  
+  // retrieve routing Layer Count from odb
+  odb::dbTech* tech = db_->getTech();
+  int numLayers = tech->getRoutingLayerCount();
+  tg_->setNumRoutingLayers(numLayers);
+
+  // update grid tile info 
+  tg_->setLx(gridX[0]);
+  tg_->setLy(gridY[0]);
+  tg_->setTileSize(gridX[1] - gridX[0], gridY[1] - gridY[0]);
+  tg_->setTileCnt(gridX.size(), gridY.size());
+  
+  // for(auto& val: gridX) {
+  //   int idx = &val - &gridX[0];
+  //   std::cout << "gridX: " << idx << " " << val << std::endl; 
+  // }
+
+  // for(auto& val: gridY) {
+  //   int idx = &val - &gridY[0];
+  //   std::cout << "gridY: " << idx << " " << val << std::endl; 
+  // }
+
+  for(int i=1; i<=numLayers; i++) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(i);
+    std::cout << layer->getConstName() << std::endl;
+
+    for(auto& valX: gridX) {
+      int idxX = &valX - &gridX[0]; 
+      for(auto& valY: gridY) { 
+        int idxY = &valY - &gridY[0];
+
+        unsigned int capH = 0, capV = 0, capU = 0;
+        unsigned int useH = 0, useV = 0, useU = 0;
+        gGrid->getCapacity(layer, idxX, idxY, capH, capV, capU);
+        gGrid->getUsage(layer, idxX, idxY, useH, useV, useU);
+
+        std::cout << "xy: (" << idxX << ", " << idxY << ") - useH: " 
+          << useH << " capH: " << capH << " ratio: " << 1.0 * useH / capH << std::endl;
+        std::cout << "xy: (" << idxX << ", " << idxY << ") - useV: " 
+          << useV << " capV: " << capV << " ratio: " << 1.0 * useV / capV << std::endl;
+      }
+    }
+  }
 }
 
 void
@@ -573,7 +611,7 @@ RouteBase::updateCapacity() {
 }
 
 
-// update tiles' usageHR, usageHL, usageVR, usage VL
+// update tiles' usageHU, usageHL, usageVU, usage VL
 void
 RouteBase::updateUsages() {
 
@@ -617,12 +655,12 @@ RouteBase::updateUsages() {
   //   Tile* uTile = tg_->tiles()[uIdxY * tg_->tileCntX() + uIdxX];
   //   // horizontal
   //   if( isHorizontal ) {
-  //     lTile->setUsageHR( layer, lTile->usageHR(layer) + 1 );
+  //     lTile->setUsageHU( layer, lTile->usageHU(layer) + 1 );
   //     uTile->setUsageHL( layer, uTile->usageHL(layer) + 1 );
   //   }
   //   // vertical
   //   else {
-  //     lTile->setUsageVR( layer, lTile->usageVR(layer) + 1 );
+  //     lTile->setUsageVU( layer, lTile->usageVU(layer) + 1 );
   //     uTile->setUsageVL( layer, uTile->usageVL(layer) + 1 );
   //   }
 
