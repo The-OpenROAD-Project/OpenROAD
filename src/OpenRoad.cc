@@ -75,7 +75,7 @@
 #include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
-#include "OpenRCX/MakeOpenRCX.h"
+#include "rcx/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
