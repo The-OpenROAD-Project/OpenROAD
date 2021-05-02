@@ -58,6 +58,7 @@ std::string TOP_ROUTING_LAYER_NAME;
 int BOTTOM_ROUTING_LAYER = 2;
 int TOP_ROUTING_LAYER = std::numeric_limits<frLayerNum>::max();
 bool ALLOW_PIN_AS_FEEDTHROUGH = false;
+bool USENONPREFTRACKS = true;
 bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;

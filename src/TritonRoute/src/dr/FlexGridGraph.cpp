@@ -197,7 +197,7 @@ void FlexGridGraph::initEdges(
         }
         // get non pref track layer --> use upper layer pref dir track if
         // possible
-        if (!layer->isUnidirectional()) {
+        if (USENONPREFTRACKS && !layer->isUnidirectional()) {
           // add edge for non-preferred direction
           // vertical non-pref track
           if (dir == frcHorzPrefRoutingDir && xFound3) {
@@ -259,8 +259,8 @@ void FlexGridGraph::initTracks(
     frPrefRoutingDirEnum currPrefRouteDir = layer->getDir();
     for (auto& tp :
          getDesign()->getTopBlock()->getTrackPatterns(currLayerNum)) {
-      // allow wrongway if design rules allow
-      bool flag = (!layer->isUnidirectional())
+      // allow wrongway if global varialble and design rule allow
+      bool flag = (USENONPREFTRACKS && !layer->isUnidirectional())
                       ? (tp->isHorizontal()
                          && currPrefRouteDir == frcVertPrefRoutingDir)
                             || (!tp->isHorizontal()

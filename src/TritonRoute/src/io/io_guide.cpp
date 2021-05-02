@@ -39,6 +39,7 @@ void io::Parser::genGuides_merge(
     vector<frRect>& rects,
     vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
 {
+
   for (auto& rect : rects) {
     frBox box;
     rect.getBBox(box);
@@ -316,9 +317,9 @@ void io::Parser::genGuides_gCell2TermMap(
         bool condition3 = false;  // GR implies wrongway connection but
                                   // technology does not allow
         if ((layer->getDir() == frcVertPrefRoutingDir
-             && layer->isUnidirectional() && box.left() == gcellBox.left())
-            || (layer->getDir() == frcHorzPrefRoutingDir
-                && layer->isUnidirectional()
+             && (!USENONPREFTRACKS || layer->isUnidirectional())
+             && box.left() == gcellBox.left())
+            || (layer->getDir() == frcHorzPrefRoutingDir && (!USENONPREFTRACKS || layer->isUnidirectional())
                 && box.bottom() == gcellBox.bottom())) {
           condition3 = true;
         }
