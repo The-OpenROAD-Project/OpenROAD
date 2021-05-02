@@ -54,7 +54,6 @@ Ext::Ext() : odb::ZInterface()
 {
   _ext = new extMain(5);
   _tree = NULL;
-  _initWithChip = false;
   logger_ = nullptr;
 }
 
@@ -63,23 +62,11 @@ Ext::~Ext()
   delete _ext;
 }
 
-void Ext::dbUpdate()
-{
-  // extMain::setDB needs for the db to have its chip set.
-  // This doesn't happen when init is called at startup as
-  // the design isn't loaded yet.  So we do a check on every
-  // entry point into Ext.
-  if (!_initWithChip && _db->getChip()) {
-    _initWithChip = true;
-    _ext->setDB(_db);
-  }
-  _ext->setLogger(logger_);
-}
-
 void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
 {
   _db = db;
   logger_ = logger;
+  _ext->init(db, logger);
 
   // Define swig TCL commands.
   Rcx_Init(tcl_interp);
@@ -99,7 +86,6 @@ bool Ext::load_model(const std::string& name,
                      int setTyp,
                      int setMax)
 {
-  dbUpdate();
   if (lef_rc) {
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
@@ -130,7 +116,6 @@ bool Ext::load_model(const std::string& name,
 
 bool Ext::read_process(const std::string& name, const std::string& file)
 {
-  dbUpdate();
   _ext->readProcess(name.c_str(), file.c_str());
 
   return TCL_OK;
@@ -145,7 +130,6 @@ bool Ext::rules_gen(const std::string& name,
                     int pattern,
                     bool keep_file)
 {
-  dbUpdate();
   _ext->rulesGen(name.c_str(),
                  dir.c_str(),
                  file.c_str(),
@@ -168,7 +152,6 @@ bool Ext::metal_rules_gen(const std::string& name,
                           bool keep_file,
                           int metal)
 {
-  dbUpdate();
   _ext->metRulesGen(name.c_str(),
                     dir.c_str(),
                     file.c_str(),
@@ -188,7 +171,7 @@ bool Ext::write_rules(const std::string& name,
                       bool read_from_db,
                       bool read_from_solver)
 {
-  dbUpdate();
+  _ext->setBlockFromChip();
   _ext->writeRules(name.c_str(),
                    dir.c_str(),
                    file.c_str(),
@@ -200,7 +183,6 @@ bool Ext::write_rules(const std::string& name,
 
 bool Ext::get_ext_metal_count(int& metal_count)
 {
-  dbUpdate();
   extRCModel* m = _ext->getRCModel();
   metal_count = m->getLayerCnt();
   return TCL_OK;
@@ -213,7 +195,6 @@ bool Ext::bench_net(const std::string& dir,
                     bool run_solver,
                     int max_track_count)
 {
-  dbUpdate();
   extMainOptions opt;
 
   opt._write_to_solver = write_to_solver;
@@ -242,7 +223,6 @@ bool Ext::bench_net(const std::string& dir,
 
 bool Ext::run_solver(const std::string& dir, int net, int shape)
 {
-  dbUpdate();
   extMainOptions opt;
   opt._topDir = dir.c_str();
   uint netId = net;
@@ -253,12 +233,6 @@ bool Ext::run_solver(const std::string& dir, int net, int shape)
 
 bool Ext::bench_wires(const BenchWiresOptions& bwo)
 {
-  if (!_initWithChip && !_db->getChip()) {
-    _ext->setDB(_db);
-    _ext->setLogger(logger_);
-  } else
-    dbUpdate();
-
   extMainOptions opt;
 
   opt._topDir = bwo.dir;
@@ -353,8 +327,7 @@ bool Ext::bench_wires(const BenchWiresOptions& bwo)
 
 bool Ext::bench_verilog(const std::string& file)
 {
-  dbUpdate();
-
+  _ext->setBlockFromChip();
   char* filename = (char*) file.c_str();
   if (!filename || !filename[0]) {
     logger_->error(RCX, 147, "bench_verilog: file is not defined!");
@@ -370,13 +343,12 @@ bool Ext::bench_verilog(const std::string& file)
 
 bool Ext::clean(bool all_models, bool ext_only)
 {
-  dbUpdate();
   return TCL_OK;
 }
 
 bool Ext::define_process_corner(int ext_model_index, const std::string& name)
 {
-  dbUpdate();
+  _ext->setBlockFromChip();
   char* cornerName = _ext->addRCCorner(name.c_str(), ext_model_index);
 
   if (cornerName != NULL) {
@@ -393,7 +365,6 @@ bool Ext::define_derived_corner(const std::string& name,
                                 float cc_factor,
                                 float gndc_factor)
 {
-  dbUpdate();
   if (process_corner_name.empty()) {
     logger_->warn(RCX, 30, "The original process corner name is required");
     return TCL_ERROR;
@@ -414,14 +385,12 @@ bool Ext::define_derived_corner(const std::string& name,
 
 bool Ext::delete_corners()
 {
-  dbUpdate();
   _ext->deleteCorners();
   return TCL_OK;
 }
 
 bool Ext::get_corners(std::list<std::string>& corner_list)
 {
-  dbUpdate();
   _ext->getCorners(corner_list);
   return TCL_OK;
 }
@@ -432,7 +401,6 @@ bool Ext::read_qcap(const std::string& file_name,
                     bool no_qcap,
                     const std::string& design)
 {
-  dbUpdate();
   if (file_name.empty()) {
     logger_->warn(RCX, 32, "-file flag is required on the command!");
     return TCL_OK;
@@ -459,7 +427,6 @@ bool Ext::read_qcap(const std::string& file_name,
 
 bool Ext::get_ext_db_corner(int& index, const std::string& name)
 {
-  dbUpdate();
   index = _ext->getDbCornerIndex(name.c_str());
 
   if (index < 0)
@@ -470,7 +437,6 @@ bool Ext::get_ext_db_corner(int& index, const std::string& name)
 
 bool Ext::assembly(odb::dbBlock* block, odb::dbBlock* main_block)
 {
-  dbUpdate();
   if (main_block == NULL) {
     logger_->info(RCX,
                   149,
@@ -491,7 +457,6 @@ bool Ext::assembly(odb::dbBlock* block, odb::dbBlock* main_block)
 
 bool Ext::flatten(odb::dbBlock* block, bool spef)
 {
-  dbUpdate();
   if (block == NULL) {
     odb::error(0, "No block for flatten command");
   }
@@ -501,7 +466,7 @@ bool Ext::flatten(odb::dbBlock* block, bool spef)
 
 bool Ext::extract(ExtractOptions opts)
 {
-  dbUpdate();
+  _ext->setBlockFromChip();
   logger_->info(RCX,
                 8,
                 "extracting parasitics of {} ...",
@@ -669,7 +634,6 @@ bool Ext::extract(ExtractOptions opts)
       odb::dbBlock* blk = *itr;
       logger_->info(RCX, 12, "Extacting block {}...", blk->getConstName());
       extMain* ext = new extMain(5);
-      ext->setDB(_db);
 
       ext->setBlock(blk);
 
@@ -746,7 +710,6 @@ bool Ext::extract(ExtractOptions opts)
 
 bool Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)
 {
-  dbUpdate();
   _ext->adjustRC(res_factor, cc_factor, gndc_factor);
   return 0;
 }
@@ -756,7 +719,6 @@ bool Ext::init_incremental_spef(const std::string& origp,
                                 bool no_backslash,
                                 const std::string& exclude_cells)
 {
-  dbUpdate();
   _ext->initIncrementalSpef(
       origp.c_str(), newp.c_str(), exclude_cells.c_str(), no_backslash);
   return 0;
@@ -765,7 +727,6 @@ bool Ext::init_incremental_spef(const std::string& origp,
 bool Ext::export_sdb(odb::ZPtr<odb::ISdb>& net_sdb,
                      odb::ZPtr<odb::ISdb>& cc_sdb)
 {
-  dbUpdate();
   cc_sdb = _ext->getCcSdb();
   net_sdb = _ext->getNetSdb();
 
@@ -777,7 +738,7 @@ bool Ext::write_spef_nets(odb::dbObject* block,
                           bool parallel,
                           int corner)
 {
-  dbUpdate();
+  _ext->setBlockFromChip();
   _ext->write_spef_nets(flatten, parallel);
 
   return 0;
@@ -785,7 +746,7 @@ bool Ext::write_spef_nets(odb::dbObject* block,
 
 bool Ext::write_spef(const SpefOptions& opts)
 {
-  dbUpdate();
+  _ext->setBlockFromChip();
   if (opts.end) {
     _ext->writeSPEF(true);
     return 0;
@@ -834,15 +795,13 @@ bool Ext::write_spef(const SpefOptions& opts)
 
 bool Ext::independent_spef_corner()
 {
-  dbUpdate();
   _ext->setUniqueExttreeCorner();
   return 0;
 }
 
 bool Ext::read_spef(ReadSpefOpts& opt)
 {
-  dbUpdate();
-
+  _ext->setBlockFromChip();
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
   odb::ZPtr<odb::ISdb> netSdb = NULL;
@@ -904,7 +863,7 @@ bool Ext::read_spef(ReadSpefOpts& opt)
 
 bool Ext::diff_spef(const DiffOptions& opt)
 {
-  dbUpdate();
+  _ext->setBlockFromChip();
   std::string filename(opt.file);
   if (filename.empty()) {
     logger_->error(
@@ -971,7 +930,6 @@ bool Ext::calibrate(const std::string& spef_file,
                     float upper_limit,
                     float lower_limit)
 {
-  dbUpdate();
   if (spef_file.empty())
     logger_->error(
         RCX,
@@ -997,7 +955,6 @@ bool Ext::match(const std::string& spef_file,
                 int spef_corner,
                 bool m_map)
 {
-  dbUpdate();
   if (spef_file.empty()) {
     logger_->info(
         RCX,
@@ -1026,7 +983,6 @@ bool Ext::set_block(const std::string& block_name,
                     const std::string& inst_name,
                     odb::dbInst* inst)
 {
-  dbUpdate();
   if (!inst_name.empty()) {
     odb::dbChip* chip = _db->getChip();
     odb::dbInst* ii = chip->getBlock()->findInst(inst_name.c_str());
@@ -1057,7 +1013,7 @@ bool Ext::set_block(const std::string& block_name,
 
   delete _ext;
   _ext = new extMain(5);
-  _ext->setDB(_db);
+  _ext->init(_db, logger_);
 
   _ext->setBlock(block);
   return 0;
@@ -1070,7 +1026,6 @@ bool Ext::report_total_cap(const std::string& file,
                            const std::string& ref,
                            const std::string& read)
 {
-  dbUpdate();
   _ext->reportTotalCap(
       file.c_str(), cap_only, res_only, ccmult, ref.c_str(), read.c_str());
   /*
@@ -1090,7 +1045,6 @@ bool Ext::report_total_cc(const std::string& file,
                           const std::string& ref,
                           const std::string& read)
 {
-  dbUpdate();
   _ext->reportTotalCc(file.c_str(), ref.c_str(), read.c_str());
   return 0;
 }
@@ -1105,7 +1059,6 @@ bool Ext::dump(bool open_tree_file,
                int layer,
                const std::string& file)
 {
-  dbUpdate();
   logger_->info(RCX, 25, "Printing file {}", file.c_str());
 
   _ext->extDump((char*) file.c_str(),
@@ -1123,7 +1076,6 @@ bool Ext::dump(bool open_tree_file,
 
 bool Ext::count(bool signal_wire_seg, bool power_wire_seg)
 {
-  dbUpdate();
   _ext->extCount(signal_wire_seg, power_wire_seg);
 
   return 0;
@@ -1134,7 +1086,6 @@ bool Ext::rc_tree(float max_cap,
                   int net,
                   const std::string& print_tag)
 {
-  dbUpdate();
   int netId = net;
   char* printTag = (char*) print_tag.c_str();
 
@@ -1175,7 +1126,6 @@ bool Ext::net_stats(std::list<int>& net_ids,
                     const std::string& bbox,
                     const std::string& branch_len)
 {
-  dbUpdate();
   Ath__parser parser;
   extNetStats limits;
   limits.reset();

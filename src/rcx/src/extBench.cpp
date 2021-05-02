@@ -473,6 +473,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
 }
 uint extMain::benchWires(extMainOptions* opt)
 {
+  _tech = _db->getTech();
   if (opt->_db_only) {
     uint layerCnt = _tech->getRoutingLayerCount();
     extRCModel* m = new extRCModel(layerCnt, "processName", logger_);

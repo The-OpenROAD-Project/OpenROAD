@@ -5618,12 +5618,6 @@ uint extMain::readExtRules(const char* name,
   return 0;
 }
 
-void extMain::setLogger(Logger* logger)
-{
-  if (!logger_)
-    logger_ = logger;
-}
-
 uint extRCModel::findBiggestDatarateIndex(double d)
 {
   return _dataRateTable->findNextBiggestIndex(d, 1);
