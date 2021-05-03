@@ -523,9 +523,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
       net2->getOwner(),
       make_tuple(
           edge2->getLayerNum(), frBox(llx, lly, urx, ury), edge2->isFixed()));
-  if (addMarker(std::move(marker))) {
-    // true marker
-  }
+  addMarker(std::move(marker));
 }
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
