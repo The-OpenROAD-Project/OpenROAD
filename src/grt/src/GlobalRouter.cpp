@@ -2470,7 +2470,7 @@ void GlobalRouter::initRoutingTracks(
     _logger->info(GRT, 88, "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
                   techLayer->getName(),
                   static_cast<float>(dbuToMicrons(routingTracks.getTrackPitch())),
-                  static_cast<float>(dbuToMicrons(routingTracks.getUsePitch())));
+                  static_cast<float>(dbuToMicrons(routingTracks.getLine2ViaPitch())));
   }
 }
 
