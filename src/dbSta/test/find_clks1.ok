@@ -13,7 +13,5 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 6 nets and 10 connections.
 [INFO ODB-0134] Finished DEF file: find_clks1.def
-clk1
-clk2
-find_clk_nets: clk1
-find_clk_nets: clk2
+find_all_clk_nets: clk1
+find_all_clk_nets: clk2

@@ -44,34 +44,13 @@ highlight_path_cmd(PathRef *path)
   sta->highlight(path);
 }
 
-// For debugging because I can't get a dbNet vector thru swig.
-void
-report_all_clk_nets()
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets = sta->findClkNets();
-  for (dbNet *net : clk_nets)
-    printf("%s\n", net->getConstName());
-}
-
 std::vector<odb::dbNet*>
-find_clk_nets()
+find_all_clk_nets()
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   auto clks = sta->findClkNets();
   return std::vector<odb::dbNet*>(clks.begin(), clks.end());
-}
-
-void
-report_clk_nets(const Clock *clk)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets = sta->findClkNets(clk);
-  for (dbNet *net : clk_nets)
-    printf("%s\n", net->getConstName());
 }
 
 odb::dbInst *
