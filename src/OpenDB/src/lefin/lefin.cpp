@@ -963,6 +963,9 @@ void lefin::layer(lefiLayer* layer)
   if (layer->hasMaxwidth())
     l->setMaxWidth(dbdist(layer->maxwidth()));
 
+  if (layer->hasMask())
+    l->setNumMasks(layer->mask());
+
   if (layer->hasMinstep()) {
     l->setMinStep(dbdist(layer->minstep(0)));
     if (layer->hasMinstepType(0)) {
@@ -1117,16 +1120,6 @@ void lefin::macro(lefiMacro* macro)
 void lefin::macroEnd(const char* /* unused: macroName */)
 {
   if (_master) {
-    if (_master_modified) {
-      int x, y;
-      _master->getOrigin(x, y);
-
-      if (x != 0 || y != 0) {
-        dbTransform t(Point(x, y));
-        _master->transform(t);
-      }
-    }
-
     _master->setFrozen();
     _master = NULL;
     _master_cnt++;

@@ -551,7 +551,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
     gcRect* rect2,
     const gtl::rectangle_data<frCoord>& markerRect)
 {
-
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
@@ -682,7 +681,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                                                 gcRect* ptr2,
                                                 bool isNDR)
 {
-
   // NSMetal does not need self-intersection
   // Minimum width rule handles outsite this function
   if (ptr1 == ptr2) {
@@ -1061,7 +1059,6 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
 
 void FlexGCWorker::Impl::checkMetalCornerSpacing_main(gcCorner* corner)
 {
-
   auto layerNum = corner->getPrevEdge()->getLayerNum();
   frCoord maxSpcValX, maxSpcValY;
   checkMetalCornerSpacing_getMaxSpcVal(layerNum, maxSpcValX, maxSpcValY);
@@ -1241,7 +1238,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
 
 void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
 {
-
   if (ignoreMinArea_) {
     return;
   }
@@ -1315,7 +1311,6 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
     gcPin* pin,
     frLef58MinStepConstraint* con)
 {
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   auto net = poly->getNet();
@@ -1397,7 +1392,6 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
 // currently only support nobetweeneol
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
 {
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();
@@ -1413,7 +1407,6 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
 
 void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
 {
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   auto net = poly->getNet();
@@ -1514,7 +1507,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
 
 void FlexGCWorker::Impl::checkMetalShape_rectOnly(gcPin* pin)
 {
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   auto layerMinWidth
@@ -1675,7 +1667,6 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
 
 void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
 {
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   auto net = poly->getNet();
@@ -1818,7 +1809,6 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
     gcRect* rect2,
     const gtl::rectangle_data<frCoord>& markerRect)
 {
-
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
@@ -1988,7 +1978,6 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
     const gtl::rectangle_data<frCoord>& markerRect,
     frCutSpacingConstraint* con)
 {
-
   // no violation if fixed shapes
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
@@ -2228,7 +2217,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
     const gtl::rectangle_data<frCoord>& markerRect,
     frLef58CutSpacingConstraint* con)
 {
-
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
@@ -2380,7 +2368,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     const gtl::rectangle_data<frCoord>& markerRect,
     frLef58CutSpacingConstraint* con)
 {
-
   auto layerNum = rect1->getLayerNum();
   auto secondLayerNum = rect2->getLayerNum();
   auto net1 = rect1->getNet();
@@ -3055,5 +3042,7 @@ int FlexGCWorker::Impl::main()
   checkMetalEndOfLine();
   // check CShort, cutSpc
   checkCutSpacing();
+  // check SpacingTable Influence
+  checkMetalSpacingTableInfluence();
   return 0;
 }

@@ -280,8 +280,12 @@ private:
   int anneal();
   int refine();
   bool cellFitsInCore(Cell *cell);
-
-  void assignFixedCells();
+  void setFixedGridCells();
+  void visitCellPixels(Cell &cell,
+                       bool padded,
+                       const std::function <void (Pixel *pixel)>& visitor) const;
+  void setGridCell(Cell &cell,
+                   Pixel *pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
@@ -324,6 +328,8 @@ private:
   // Cell initial location wrt core origin.
   int gridX(int x) const;
   int gridY(int y) const;
+  int gridEndX(int x) const;
+  int gridEndY(int y) const;
   int gridEndX() const;
   int gridEndY() const;
   int gridPaddedWidth(const Cell *cell) const;
@@ -349,9 +355,9 @@ private:
   int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
   // Place fillers
+  void setGridCells();
   void findFillerMasters(const StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);
-  void makeCellGrid();
   void placeRowFillers(int row, const char* prefix);
   const char *gridInstName(int row,
                            int col);

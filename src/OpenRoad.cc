@@ -36,6 +36,7 @@
 #include "ord/OpenRoad.hh"
 
 #include <iostream>
+#include <thread>
 #ifdef ENABLE_PYTHON3
   #define PY_SSIZE_T_CLEAN
   #include "Python.h"
@@ -74,7 +75,7 @@
 #include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
-#include "OpenRCX/MakeOpenRCX.h"
+#include "rcx/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
@@ -112,6 +113,8 @@ using sta::evalTclInit;
 using sta::dbSta;
 using sta::Resizer;
 
+using utl::ORD;
+
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
     logger_(nullptr),
@@ -132,7 +135,8 @@ OpenRoad::OpenRoad()
     replace_(nullptr),
     pdnsim_(nullptr), 
     partitionMgr_(nullptr),
-    pdngen_(nullptr)
+    pdngen_(nullptr),
+    threads_(1)
 {
   db_ = dbDatabase::create();
 }
@@ -449,6 +453,50 @@ void OpenRoad::pythonCommand(const char* py_command)
   PyRun_SimpleString(py_command);
 }
 #endif
+
+void
+OpenRoad::setThreadCount(int threads, bool printInfo) {
+  int max_threads = std::thread::hardware_concurrency();
+  if (max_threads == 0) {
+    logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
+    max_threads = 1;
+  }
+  if (threads <= 0) { // max requested
+    threads = max_threads;
+  } else if (threads > max_threads) {
+    threads = max_threads;
+  }
+  threads_ = threads;
+
+  if (printInfo)
+    logger_->info(ORD, 30, "Using {} thread(s)", threads_);
+
+  // place limits on tools with threads
+  sta_->setThreadCount(threads_);
+}
+
+void
+OpenRoad::setThreadCount(const char* threads, bool printInfo) {
+  int max_threads = threads_; // default, make no changes
+
+  if (strcmp(threads, "max") == 0) {
+    max_threads = -1; // -1 is max cores
+  }
+  else {
+    try {
+      max_threads = std::stoi(threads);
+    } catch (const std::invalid_argument&) {
+      logger_->warn(ORD, 32, "Invalid thread number specification: {}", threads);
+    }
+  }
+
+  setThreadCount(max_threads, printInfo);
+}
+
+int
+OpenRoad::getThreadCount() {
+  return threads_;
+}
 
 ////////////////////////////////////////////////////////////////
 

@@ -60,7 +60,6 @@ extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;
 extern bool USENONPREFTRACKS;
 extern bool USEMINSPACING_OBS;
-extern bool RESERVE_VIA_ACCESS;
 extern bool ENABLE_BOUNDARY_MAR_FIX;
 extern bool ENABLE_VIA_GEN;
 // extern int TEST;
@@ -68,13 +67,6 @@ extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_TOPLAYERNUM;
-// uni-directional routing related
-extern fr::frLayerNum ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_WIRE_PREF_TOPLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_VIA_BOTTOMLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_VIA_TOPLAYERNUM;
 
 extern fr::frLayerNum VIA_ACCESS_LAYERNUM;
 

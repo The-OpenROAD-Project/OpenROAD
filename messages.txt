@@ -16,5 +16,8 @@ ORD 0017 OpenRoad.tcl:215          no -resistance specified for via.
 ORD 0018 OpenRoad.tcl:170          $layer_name is not a routing layer.
 ORD 0019 OpenRoad.tcl:162          layer $layer_name not found.
 ORD 0020 OpenRoad.tcl:166          layer not found.
-ORD 0021 OpenRoad.tcl:204          via $via_name not found.
+ORD 0021 OpenRoad.tcl:204          via $layer_name not found.
 ORD 0022 OpenRoad.tcl:208          -capacitance not supported for vias.
+ORD 0030 OpenRoad.cc:464           Using {} thread(s)
+ORD 0031 OpenRoad.cc:458           Unable to determine maximum number of threads
+ORD 0032 OpenRoad.cc:477           Invalid thread number specification: {}

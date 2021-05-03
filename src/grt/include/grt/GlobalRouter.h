@@ -207,7 +207,6 @@ class GlobalRouter
   double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
-  void setClockCost(int cost);
   void routeClockNets();
 
   // Highlight route in the gui.
@@ -246,6 +245,7 @@ class GlobalRouter
   void computeObstructionsAdjustments();
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
+  int computeTrackConsumption(const Net* net);
 
   // aux functions
   void findPins(Net* net);
@@ -358,7 +358,6 @@ class GlobalRouter
   std::map<std::string, float> _netsAlpha;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
-  int _clockCost;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;

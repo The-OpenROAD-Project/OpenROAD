@@ -1,12 +1,13 @@
 record_tests {
   clock_route
-  clock_tracks_cost
   est_rc1
   est_rc2
   gcd
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
+  ndr_1w_3s
+  ndr_2w_3s
   no_tracks
   region_adjustment
   repair_antennas1
