@@ -144,7 +144,6 @@ GlobalRouter::~GlobalRouter()
 std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type)
 {
   initAdjustments();
-  initPitches();
 
   if (maxRoutingLayer < _selectedMetal) {
     setSelectedMetal(maxRoutingLayer);
@@ -167,12 +166,6 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
   _logger->report("Max routing layer: {}", maxLayer->getName());
   _logger->report("Global adjustment: {}%", int(_adjustment * 100));
   _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
-  for (int l = 1; l <= maxRoutingLayer; l++) {
-    if (_layerPitches[l] != 0) {
-      odb::dbTechLayer* layer = tech->findRoutingLayer(l);
-      _logger->report("Layer {} pitch: {}", layer->getName(), _layerPitches[l]);
-    }
-  }
 
   initRoutingLayers();
   initRoutingTracks(maxRoutingLayer);
@@ -364,7 +357,7 @@ void GlobalRouter::initRoutingLayers()
 
 void GlobalRouter::initRoutingTracks(int maxRoutingLayer)
 {
-  initRoutingTracks(*_allRoutingTracks, maxRoutingLayer, _layerPitches);
+  initRoutingTracks(*_allRoutingTracks, maxRoutingLayer);
 }
 
 void GlobalRouter::setCapacities(int minRoutingLayer, int maxRoutingLayer)
@@ -1293,12 +1286,6 @@ void GlobalRouter::addRegionAdjustment(int minX,
       RegionAdjustment(minX, minY, maxX, maxY, layer, reductionPercentage));
 }
 
-void GlobalRouter::setLayerPitch(int layer, float pitch)
-{
-  initPitches();
-  _layerPitches[layer] = pitch;
-}
-
 void GlobalRouter::addAlphaForNet(char* netName, float alpha)
 {
   std::string name(netName);
@@ -2113,13 +2100,6 @@ void GlobalRouter::initAdjustments()
   }
 }
 
-void GlobalRouter::initPitches()
-{
-  if (_layerPitches.empty()) {
-    _layerPitches.resize(_db->getTech()->getRoutingLayerCount() + 1, 0);
-  }
-}
-
 int GlobalRouter::getNetCount() const
 {
   return _nets->size();
@@ -2313,11 +2293,10 @@ void getViaDims(
 }
 
 std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
-    int maxLayer,
-    const std::vector<float>& layerPitches)
+    int maxLayer)
 {
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxLayer);
-  std::vector<std::pair<int, int>> pitches(layerPitches.size());
+  std::vector<std::pair<int, int>> pitches(_db->getTech()->getRoutingLayerCount() + 1);
   odb::dbTech* tech = _db->getTech();
   for (auto layer : tech->getLayers()) {
     if (layer->getType() != odb::dbTechLayerType::ROUTING)
@@ -2325,14 +2304,8 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
     int level = layer->getRoutingLevel();
     if (level > maxLayer && maxLayer > -1)
       break;
-    if (layerPitches[level] != 0) {
-      // pitch is defined by user, skip calculation
-      int pitch = (int) (tech->getLefUnits() * layerPitches[level]);
-      pitches[level] = {pitch, pitch};
-      continue;
-    } else {
-      pitches[level] = {-1, -1};
-    }
+    pitches.push_back({-1, -1});
+
     int widthUp, prlUp, widthDown, prlDown;
     getViaDims(defaultVias, level, widthUp, prlUp, widthDown, prlDown);
     bool upViaValid = widthUp != -1;
@@ -2413,11 +2386,10 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
 
 void GlobalRouter::initRoutingTracks(
     std::vector<RoutingTracks>& allRoutingTracks,
-    int maxLayer,
-    const std::vector<float>& layerPitches)
+    int maxLayer)
 {
   odb::dbTech* tech = _db->getTech();
-  auto l2vPitches = calcLayerPitches(maxLayer, layerPitches);
+  auto l2vPitches = calcLayerPitches(maxLayer);
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     if (layer > maxLayer && maxLayer > -1) {
       break;
