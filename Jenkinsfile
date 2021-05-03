@@ -27,6 +27,7 @@ pipeline {
                       'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
                       'sky130hd aes':         { sh './test/regression aes_sky130hd' },
                       'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
+                      'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
                       'sky130hs aes':         { sh './test/regression aes_sky130hs' },
                       'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
                       'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
