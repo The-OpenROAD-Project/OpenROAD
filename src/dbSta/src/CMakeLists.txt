@@ -19,6 +19,9 @@ swig_lib(NAME          dbSta
          NAMESPACE     sta
          I_FILE        dbSta.i
          SWIG_INCLUDES ${OPENSTA_HOME}
+                       ${OPENDB_HOME}/src/swig/common
+                       ${OPENDB_HOME}/src/swig/tcl
+                       ${OPENDB_HOME}/include/opendb
          SCRIPTS       ${OPENSTA_HOME}/tcl/Graph.tcl
                         ${OPENSTA_HOME}/tcl/Liberty.tcl
                        ${OPENSTA_HOME}/tcl/Network.tcl
