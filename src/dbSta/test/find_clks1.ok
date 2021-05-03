@@ -15,5 +15,5 @@
 [INFO ODB-0134] Finished DEF file: find_clks1.def
 clk1
 clk2
-get_all_clk_nets: clk1
-get_all_clk_nets: clk2
+find_clk_nets: clk1
+find_clk_nets: clk2

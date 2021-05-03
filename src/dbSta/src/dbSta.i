@@ -56,7 +56,7 @@ report_all_clk_nets()
 }
 
 std::vector<odb::dbNet*>
-get_all_clk_nets()
+find_clk_nets()
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
