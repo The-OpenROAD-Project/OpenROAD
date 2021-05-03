@@ -14,8 +14,17 @@ Max routing layer: metal10
 Global adjustment: 0%
 Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
-[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1900
+[INFO GRT-0224] Chose via via1_4 as default.
+[INFO GRT-0224] Chose via via2_8 as default.
+[INFO GRT-0224] Chose via via3_2 as default.
+[INFO GRT-0224] Chose via via4_0 as default.
+[INFO GRT-0224] Chose via via5_0 as default.
+[INFO GRT-0224] Chose via via6_0 as default.
+[INFO GRT-0224] Chose via via7_0 as default.
+[INFO GRT-0224] Chose via via8_0 as default.
+[INFO GRT-0224] Chose via via9_0 as default.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
 [INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
