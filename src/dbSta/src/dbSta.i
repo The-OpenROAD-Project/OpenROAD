@@ -24,7 +24,7 @@ using sta::Instance;
 %include "parasitics/Parasitics.i"
 
 namespace std {
-  %template(NetVector) vector<dbNet*>;
+  %template(dbNetVector) vector<dbNet*>;
 }
 
 %inline %{
