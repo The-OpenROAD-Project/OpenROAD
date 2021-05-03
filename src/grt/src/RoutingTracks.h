@@ -77,9 +77,6 @@ class RoutingTracks
 
   int getLayerIndex() const { return _layerIndex; }
   int getTrackPitch() const { return _trackPitch; }
-  int getLine2ViaPitch() const {
-    return std::max(_line2ViaPitchUp, _line2ViaPitchDown);
-  }
   int getUsePitch() const {
     if(_line2ViaPitchDown != -1 && _line2ViaPitchUp != -1)
     {
