@@ -14,6 +14,7 @@ using sta::Instance;
 
 %}
 
+%import "opendb.i"
 %include "../../src/Exception.i"
 // OpenSTA swig files
 %include "tcl/StaTcl.i"
@@ -21,6 +22,10 @@ using sta::Instance;
 %include "sdf/Sdf.i"
 %include "dcalc/DelayCalc.i"
 %include "parasitics/Parasitics.i"
+
+namespace std {
+  %template(NetVector) vector<dbNet*>;
+}
 
 %inline %{
 
@@ -48,6 +53,15 @@ report_all_clk_nets()
   std::set<dbNet*> clk_nets = sta->findClkNets();
   for (dbNet *net : clk_nets)
     printf("%s\n", net->getConstName());
+}
+
+std::vector<odb::dbNet*>
+get_all_clk_nets()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  auto clks = sta->findClkNets();
+  return std::vector<odb::dbNet*>(clks.begin(), clks.end());
 }
 
 void
