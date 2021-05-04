@@ -6,6 +6,6 @@ read_def find_clks2.def
 create_clock -period 10 clk1
 create_clock -period 10 clk2
 create_clock -period 10 clk3
-sta::report_clk_nets [get_clock clk1]
-sta::report_clk_nets [get_clock clk2]
-sta::report_clk_nets [get_clock clk3]
+foreach clk [sta::find_all_clk_nets] {
+    puts [$clk getName]
+}

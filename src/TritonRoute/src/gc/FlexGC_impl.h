@@ -96,7 +96,7 @@ class FlexGCWorker::Impl
     owner2nets_[owner] = net;
     return net;
   }
-  bool addMarker(std::unique_ptr<frMarker> in);
+  void addMarker(std::unique_ptr<frMarker> in);
   void clearMarkers()
   {
     mapMarkers_.clear();
