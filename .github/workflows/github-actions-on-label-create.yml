@@ -27,9 +27,7 @@ jobs:
       - name: Prints name of pull request source branch
         run: echo ${{github.ref}}
       - name: current branch
-        run: |
-          array = ${{ github.event.pull_request.labels }}
-          echo "${array[*]}"
+        run: echo ${{ github.event.pull_request }}
           
 
         
