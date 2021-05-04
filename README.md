@@ -32,7 +32,6 @@ You need root access to correctly install the dependencies with the script.
 
 ## Install dependencies
 
-
 Tools
   * cmake 3.14
   * gcc 8.3.0 or clang7
@@ -41,7 +40,7 @@ Tools
   * swig 4.0
 
 Libraries
-  * boost 1.68
+  * boost 1.68 (1.75 will not compile)
   * tcl 8.6
   * zlibc
   * eigen3
@@ -51,6 +50,8 @@ Libraries
   * cimg (optional for replace)
 
 
+For a limited number of configurations the following script can be used to install
+dependencies.
 ```
 ./etc/DependencyInstaller.sh -dev
 ```
@@ -297,9 +298,9 @@ place_pins [-hor_layers h_layers]
            [-min_distance distance]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
-of pins placed in horizontal tracks. Can be a single layer or a list of layer indices.
+of pins placed in horizontal tracks. Can be a single layer or a list of layer names.
 - ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
-of pins placed in vertical tracks. Can be a single layer or a list of layer indices.
+of pins placed in vertical tracks. Can be a single layer or a list of layer names.
 - ``-random_seed``. Specify the seed for random operations.
 - ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
@@ -316,6 +317,35 @@ In the example, three intervals were excluded: the whole top edge, the right edg
 left edge from the beginning to the 50 microns.
 
 ```
+place_pin [-pin_name pin_name]
+          [-layer layer]
+          [-location {x y}]
+          [-pin_size {width height}]
+```
+
+The `place_pin` command places a specific pin in the specified location, with the specified size.
+The `-pin_name` option is the name of a pin of the design.
+The `-layer` defines the routing layer where the pin is placed.
+The `-location` defines the center of the pin.
+The `-pin_size` option defines the width and height of the pin.
+
+```
+define_pin_shape_pattern {[-layer layer]
+                          [-x_step x_step]
+                          [-y_step y_step]
+                          [-region {llx lly urx ury}]
+                          [-size {width height}]
+```
+
+The `define_pin_shape_pattern` command defines a pin placement grid at the specified layer.
+This grid has positions inside the die area, not only at the edges of the die boundary.
+The `-layer` option defines a single top most routing layer of the placement grid.
+The `-region` option defines the {llx, lly, urx, ury} region of the placement grid.
+The `-x_step` and `-y_step` options define the distance between each valid position on the grid.
+The `-size` option defines the width and height of the pins assigned to this grid. The center of the
+pins are placed on the grid positions. Pins may have half of their shapes outside the defined region.
+
+```
 set_io_pin_constraint -direction direction -pin_names names -region edge:interval
 ```
 
@@ -323,6 +353,7 @@ The `set_io_pin_constraint` command sets region constraints for pins according t
 This command can be called multiple times with different constraints. Only one condition should be used for each
 command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
 The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+To restrict pins to the positions defined with `define_pin_shape_pattern`, use `-region up:{llx lly urx ury}` or `-region up:*`.
 
 #### Tapcell
 

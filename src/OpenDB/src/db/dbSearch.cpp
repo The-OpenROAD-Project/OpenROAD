@@ -89,7 +89,6 @@ void dbBlockSearch::initMenuIds()
   _inst_bb_id = 5;
   _inst_pin_id = 6;
   _inst_obs_id = 7;
-  _inst_white_id = 8;
 
   _signalMenuId = 0;
 
@@ -2292,38 +2291,7 @@ dbRSeg* dbBlockSearch::getRSeg(dbNet* net, uint shapeId)
 
   return rseg;
 }
-void dbBlockSearch::writeRCvalue(double* val, const char* delim, uint cornerCnt)
-{
-  sprintf(_tmpBuf128, "%g", val[0]);
-  for (uint ii = 1; ii < cornerCnt; ii++)
-    sprintf(_tmpBuf128, "%s%g", delim, val[ii]);
-}
-void dbBlockSearch::writeRval(dbRSeg* rseg, const char* delim, uint cornerCnt)
-{
-  sprintf(_tmpBuf128, "%g", rseg->getResistance(0));
-  for (uint ii = 1; ii < cornerCnt; ii++)
-    sprintf(_tmpBuf128, "%s%g", delim, rseg->getResistance(ii));
-}
-bool dbBlockSearch::getRCmsg(dbNet* net, uint shapeId)
-{
-  dbRSeg* rseg = getRSeg(net, shapeId);
-  if (rseg == NULL)
-    return false;
 
-  uint cornerCnt = _block->getCornerCount();
-
-  writeRval(rseg, ":", cornerCnt);
-  int pos;
-  pos = sprintf(_tmpBuf256, "RC[%d]=%s Ohms ", rseg->getId(), _tmpBuf128);
-
-  double cVal[10];
-  rseg->getCapTable(cVal);
-  writeRCvalue(cVal, ":", cornerCnt);
-
-  sprintf(&_tmpBuf256[pos], "Ct=%s fF", _tmpBuf128);
-
-  return true;
-}
 bool dbBlockSearch::isSignalNet(dbNet* net)
 {
   dbSigType type = net->getSigType();

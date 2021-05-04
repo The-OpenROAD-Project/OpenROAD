@@ -69,7 +69,7 @@ FlexGCWorker::Impl::Impl(frDesign* designIn,
 {
 }
 
-bool FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
+void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 {
   frBox bbox;
   in->getBBox(bbox);
@@ -83,16 +83,15 @@ bool FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   }
   if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1]))
       != mapMarkers_.end()) {
-    return false;
+    return;
   }
   if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0]))
       != mapMarkers_.end()) {
-    return false;
+    return;
   }
   mapMarkers_[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])]
       = in.get();
   markers_.push_back(std::move(in));
-  return true;
 }
 
 void FlexGCWorker::addPAObj(frConnFig* obj, frBlockObject* owner)

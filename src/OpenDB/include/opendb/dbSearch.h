@@ -51,12 +51,9 @@ class dbBlockSearch
 {
  private:
   dbBlock* _block;
-  //	dbDatabase * _db;
   dbTech* _tech;
   uint _schema;
   uint _blockId;
-
-  // Ath__layoutTable *_layoutTable;
 
   ZPtr<ISdb> _signalNetSdb;
   ZPtr<ISdb> _netSdb;
@@ -72,51 +69,23 @@ class dbBlockSearch
   uint _block_pin_id;
   uint _block_obs_id;
   uint _block_track_id;
-  uint _block_bb_menu_self_id;
-  uint _block_pin_menu_self_id;
-  uint _block_pin_menu_pin1_id;
 
   uint _instMenuId;
 
   uint _inst_bb_id;
   uint _inst_pin_id;
   uint _inst_obs_id;
-  uint _inst_white_id;
-  uint _inst_bb_menu_self_id;
-  uint _inst_bb_menu_inst1_id;
-  uint _inst_bb_menu_inst2_id;
-  uint _inst_bb_menu_inst3_id;
-  uint _inst_bb_menu_inst4_id;
-
-  uint _inst_pin_menu_self_id;
-  uint _inst_pin_menu_net1_id;
-  uint _inst_pin_menu_net2_id;
 
   uint _signalMenuId;
 
   uint _signal_wire_id;
   uint _signal_via_id;
-  uint _signal_wire_menu_self_id;
-  uint _signal_wire_menu_net1_id;
-  uint _signal_wire_menu_net2_id;
-  uint _signal_wire_menu_net3_id;
-
-  uint _power_wire_menu_self_id;
-  uint _power_wire_menu_net1_id;
-  uint _power_wire_menu_net2_id;
-
   uint _powerMenuId;
 
   uint _power_wire_id;
   uint _power_via_id;
 
-  char _tmpBuf128[128];
-  char _tmpBuf256[256];
   bool _skipCutBoxes;
-
-  // Ath__gridTable *_grGcellSearch;
-  // Ath__gridTable *_grGpathSearch;
-  // Groute *_grObject;
 
  public:
   dbBlockSearch(dbBlock* blk, dbTech* tech);
@@ -265,26 +234,10 @@ class dbBlockSearch
                     int y2,
                     std::vector<dbInst*>& result);  // 8/25/05
 
-  void getInstBoxes(Ath__zui* zui, Ath__hierType hier, bool ignoreFlag = false);
-  void addBoxList(Ath__zui* zui, dbInst* inst, bool ignoreFlag = false);
-
-  dbNet* getDbNet(Ath__zui* zui);
   dbRSeg* getRSeg(dbNet* net, uint shapeId);
-  void writeRval(dbRSeg* rseg, const char* delim, uint cornerCnt);
-  void writeRCvalue(double* val, const char* delim, uint cornerCnt);
-  bool getRCmsg(dbNet* net, uint shapeId);
 
   uint getWiresClipped(dbNet* targetNet, uint halo, bool ignoreFlag);
 
-  void getSignalWires(Ath__zui* zui,
-                      Ath__hierType hier,
-                      bool ignoreFlag = false);
-  void addBoxList(Ath__zui* zui, dbNet* net, Ath__boxType boxType);
-  uint addInstBoxes(Ath__zui* zui, dbNet* net, bool ignoreZuiFlags);
-  void getPowerWires(Ath__zui* zui,
-                     Ath__hierType hier,
-                     bool ignoreFlag = false);
-  void getPowerWires(Ath__zui* zui, Ath__hierType hier, uint layer);
   uint getPowerWires(int x1,
                      int y1,
                      int x2,
@@ -292,16 +245,6 @@ class dbBlockSearch
                      int layer,
                      dbNet* targetNet,
                      std::vector<dbBox*>& viaTable);
-  uint getWireVias(Ath__zui* zui,
-                   bool ignoreFlag,
-                   Ath__hierType hier,
-                   Ath__boxType boxType,
-                   dbNet* targetNet = NULL,
-                   bool excludeFlag = false);
-  uint getWiresAndVias_all(Ath__zui* zui, dbNet* targetNet, bool ignoreFlag);
-
-  uint getTilePins(Ath__zui* zui);
-  uint getTileBuses(Ath__zui* zui);
 
   uint getQuadCnt(int modSize, int xy1, int xy2);
   uint makeQuadTable(uint rowCnt, uint colCnt, uint metH, uint metV);
@@ -314,60 +257,16 @@ class dbBlockSearch
   uint createTblocks();
   //	dbNet* getNetAndCoords(Ath__searchBox *bb, bool skipVia, bool signal,
   // uint wid);
-  void getSignalWireIds(Ath__zui* zui, bool ignoreLayers = false);
-  void getSearchWireIds(Ath__zui* zui, bool ignoreLayers = false);
-  void getSignalWires(Ath__zui* zui, Ath__hierType hier, dbNet* net);
-  void getSignalWiresMinusNet(Ath__zui* zui,
-                              Ath__hierType hier,
-                              dbNet* targetNet);
   uint getNetMaxBox(dbNet* net, Ath__searchBox* maxBB);
   void getWires(int x1, int y1, int x2, int y2);
-  void getInstShapes(Ath__zui* zui,
-                     Ath__hierType hier,
-                     bool vias,
-                     bool pins,
-                     bool obs);
 
   void addNetSBoxesOnSearch(dbNet* net, bool skipVias);
   void addNetShapesOnSearch(dbNet* net, bool skipVias);
   void makeGrouteSearchDb();
 
-  uint getItermShapes(Ath__zui* zui,
-                      dbInst* inst,
-                      Ath__hierType hier,
-                      bool viaFlag);
-  uint getInstObs(Ath__zui* zui,
-                  dbInst* inst,
-                  Ath__hierType hier,
-                  bool viaFlag);
-  uint addInstShapes(Ath__zui* zui,
-                     dbInst* inst,
-                     Ath__hierType hier,
-                     bool vias,
-                     bool pinFlag,
-                     bool obsFlag);
-  uint getBtermBoxes(Ath__zui* zui, Ath__hierType hier, bool ignoreFlag);
-  uint getBlockBox(Ath__zui* zui,
-                   Ath__hierType hier,
-                   uint level,
-                   uint dd,
-                   bool ignoreFlag);
 
   uint getViaLevel(dbShape* s);
   uint getViaLevel(dbSBox* s);
-  void getSignalWiresAndVias(Ath__zui* zui,
-                             Ath__hierType hier,
-                             bool ignoreFlag);
-  uint getNetConnectivity(Ath__zui* zui,
-                          dbNet* net,
-                          bool contextFlag,
-                          bool ignoreLayerFlags,
-                          bool ignoreZuiFlags,
-                          bool ignoreBB = false);
-  uint getItermShapes(Ath__zui* zui,
-                      dbITerm* iterm,
-                      Ath__hierType hier,
-                      bool viaFlag);
 
   uint getNetSBoxes(dbNet* net, bool skipVias);
 
@@ -379,31 +278,6 @@ class dbBlockSearch
                               Ath__searchBox* maxBox);
   void getWireIds(Ath__array1D<uint>* wireIdTable, Ath__array1D<uint>* idtable);
 
-  uint getNetContext(Ath__zui* zui, dbNet* net, bool ignoreLayerFlags);
-  uint addInstBoxes(Ath__zui* zui,
-                    dbInst* inst,
-                    bool instBoxes,
-                    bool termShapes,
-                    bool instObs);
-  uint getNetContext(Ath__zui* zui,
-                     dbNet* net,
-                     bool ignoreZuiFlags,
-                     bool ignoreLayerFlags);
-  uint getNetFromSearch(Ath__zui* zui,
-                        dbNet* net,
-                        bool ignoreZuiFlags,
-                        bool ignoreBB);
-  uint getConnectivityWires(Ath__zui* zui, dbInst* inst, bool ignoreZuiFlags);
-  void addInstConnList(Ath__zui* zui, dbInst* inst, bool ignoreZuiFlags);
-  dbInst* getDbInst(Ath__zui* zui);
-  dbBTerm* getDbBTerm(Ath__zui* zui);
-  void white(Ath__zui* zui, Ath__hierType hier, bool ignoreFlag);
-
-  uint addBtermBoxes(Ath__zui* zui, dbBTerm* bterm, Ath__hierType hier);
-  uint addBtermBoxes(Ath__zui* zui,
-                     dbSet<dbBTerm>& bterms,
-                     Ath__hierType hier,
-                     bool ignoreFlag);
   uint addBlockagesOnSearch(dbBlock* block);
   uint getBlockObs(bool ignoreFlag);
   uint getDbBoxId(uint wid, uint wireType);

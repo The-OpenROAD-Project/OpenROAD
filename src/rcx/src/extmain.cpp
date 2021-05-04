@@ -30,9 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "darr.h"
-#include "OpenRCX/extRCap.h"
-#include "OpenRCX/extSpef.h"
-#include "OpenRCX/exttree.h"
+#include "rcx/extRCap.h"
+#include "rcx/extSpef.h"
+#include "rcx/exttree.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -65,6 +65,14 @@ using odb::Rect;
 using odb::SEQ;
 using odb::ZPtr;
 
+void extMain::init(odb::dbDatabase* db, Logger* logger)
+{
+  _db = db;
+  _block = NULL;
+  _blockId = 0;
+  logger_ = logger;
+}
+
 void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext)
 {
   if (_ext == NULL)
@@ -88,7 +96,7 @@ void extMain::initExtractedCorners(dbBlock* block)
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   if (tmiExt->_processCornerTable)
     return;
@@ -101,7 +109,7 @@ int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName)
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   int idx = tmiExt->getDbCornerIndex(cornerName);
   return idx;
@@ -177,7 +185,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
     // tmiExt -> setDesign((char *)block->getConstName());
   }
   tmiExt->writeIncrementalSpef(
@@ -325,22 +333,6 @@ void extMain::writeIncrementalSpef(char* filename,
                             _incrNoBackSlash /*noBackSlash*/,
                             false /*flatten*/,
                             false /*parallel*/);
-}
-
-void writeSpef(dbBlock* block,
-               char* filename,
-               char* nets,
-               int corner,
-               char* coord)
-{
-  extMain* tmiExt = (extMain*) block->getExtmi();
-  if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
-  }
-  std::vector<dbNet*> tnets;
-  block->findSomeNet(nets, tnets);
-  tmiExt->writeSpef(filename, tnets, corner, coord);
 }
 
 void extMain::writeSpef(char* filename,
@@ -905,20 +897,16 @@ double extMain::getResistance(uint level, uint width, uint len, uint model)
           }
   */
 }
-void extMain::setDB(dbDatabase* db)
+void extMain::setBlockFromChip()
 {
-  _db = db;
-  _tech = db->getTech();
-  _block = NULL;
-  _blockId = 0;
-  if (db->getChip() != NULL) {
-    _block = db->getChip()->getBlock();
-    _blockId = _block->getId();
-    _prevControl = _block->getExtControl();
+  _tech = _db->getTech();
+  _block = _db->getChip()->getBlock();
+  _blockId = _block->getId();
+  _prevControl = _block->getExtControl();
 #ifndef _WIN32
-    _block->setExtmi(this);
+  _block->setExtmi(this);
 #endif
-  }
+
   _spef = NULL;
   _bufSpefCnt = 0;
   _origSpefFilePrefix = NULL;
@@ -926,6 +914,7 @@ void extMain::setDB(dbDatabase* db)
   _excludeCells = NULL;
   _extracted = false;
 }
+
 void extMain::setBlock(dbBlock* block)
 {
   _block = block;

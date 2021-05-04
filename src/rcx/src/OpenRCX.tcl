@@ -56,7 +56,7 @@ proc extract_parasitics { args } {
         -cc_model } \
       flags { -lef_res }
 
-  set ext_model_file ''
+  set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {
     set ext_model_file $keys(-ext_model_file)
   }
@@ -64,21 +64,25 @@ proc extract_parasitics { args } {
   set corner_cnt 1
   if { [info exists keys(-corner_cnt)] } {
     set corner_cnt $keys(-corner_cnt)
+    sta::check_positive_integer "-corner_cnt" $corner_cnt
   }
 
   set max_res 50.0
   if { [info exists keys(-max_res)] } {
     set max_res $keys(-max_res)
+    sta::check_positive_float "-max_res" $max_res
   }
 
   set coupling_threshold 0.1
   if { [info exists keys(-coupling_threshold)] } {
     set coupling_threshold $keys(-coupling_threshold)
+    sta::check_positive_float "-coupling_threshold" $coupling_threshold
   }
 
   set signal_table 3
   if { [info exists keys(-signal_table)] } {
     set signal_table $keys(-signal_table)
+    sta::check_positive_integer "-signal_table" $signal_table
   }
 
   set lef_res [info exists flags(-lef_res)]
@@ -92,6 +96,7 @@ proc extract_parasitics { args } {
   set depth 5
   if { [info exists keys(-context_depth)] } {
     set depth $keys(-context_depth)
+    sta::check_positive_integer "-context_depth" $depth
   }
 
   set debug_net_id "" 
@@ -144,16 +149,19 @@ proc adjust_rc { args } {
   set res_factor 1.0
   if { [info exists keys(-res_factor)] } {
     set res_factor $keys(-res_factor)
+    sta::check_positive_float "-res_factor" $res_factor
   }
 
   set cc_factor 1.0
   if { [info exists keys(-cc_factor)] } {
     set cc_factor $keys(-cc_factor)
+    sta::check_positive_float "-cc_factor" $cc_factor
   }
 
   set gndc_factor 1.0
   if { [info exists keys(-gndc_factor)] } {
     set gndc_factor $keys(-gndc_factor)
+    sta::check_positive_float "-gndc_factor" $gndc_factor
   }
 
    rcx::adjust_rc $res_factor $cc_factor $gndc_factor
@@ -202,6 +210,10 @@ proc bench_wires { args } {
       { -met_cnt -cnt -len -under_met
         -w_list -s_list } \
       flags { -diag -over -all -db_only }
+
+  if { ![ord::db_has_tech] } {
+    utl::error RCX 357 "No LEF technology has been read."
+  }
 
   set over [info exists flags(-over)]
   set all [info exists flags(-all)]

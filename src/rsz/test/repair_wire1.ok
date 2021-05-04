@@ -36,7 +36,7 @@ Path Type: max
 Driver    length delay
 u2/Z manhtn 1999.8 steiner 1999.8 0.37
 u3/Z manhtn 1.1 steiner 1.1 0.00
-u1/Z manhtn 0.4 steiner 0.4 0.00
+in1 manhtn 0.7 steiner 0.7 0.00
 [WARNING RSZ-0017] max wire length less than 853u increases wire delays.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
@@ -47,7 +47,7 @@ repeater1/Z manhtn 759.8 steiner 759.8 0.05
 repeater2/Z manhtn 759.3 steiner 759.3 0.05
 u2/Z manhtn 480.1 steiner 480.1 0.02
 u3/Z manhtn 1.1 steiner 1.1 0.00
-u1/Z manhtn 0.5 steiner 0.5 0.00
+in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
