@@ -52,7 +52,6 @@ class dbBlockSearch
  private:
   dbBlock* _block;
   dbTech* _tech;
-  uint _schema;
   uint _blockId;
 
   ZPtr<ISdb> _signalNetSdb;
