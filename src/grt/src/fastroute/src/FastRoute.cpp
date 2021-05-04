@@ -931,19 +931,28 @@ void FastRouteCore::updateDbCongestion()
       logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
       continue;
     }
+
     for (int y = 0; y < yGrid; y++) {
       for (int x = 0; x < xGrid - 1; x++) {
         int gridH = y * (xGrid - 1) + x + k * (xGrid - 1) * yGrid;
-        int gridV = y * xGrid + x + k * xGrid * (yGrid - 1);
 
         unsigned short capH = h_edges3D[gridH].cap;
         unsigned short usageH = h_edges3D[gridH].usage;
 
+        db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
+        db_gcell->setHorizontalUsage(layer, x, y, (uint) usageH);
+      }
+    }
+
+    for (int y = 0; y < yGrid - 1; y++) {
+      for (int x = 0; x < xGrid; x++) {
+        int gridV = y * xGrid + x + k * xGrid * (yGrid - 1);
+
         unsigned short capV = v_edges3D[gridV].cap;
         unsigned short usageV = v_edges3D[gridV].usage;
 
-        db_gcell->setCapacity(layer, x, y, (uint) capH, (uint) capV, 0);
-        db_gcell->setUsage(layer, x, y, (uint) usageH, (uint) usageV, 0);
+        db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
+        db_gcell->setVerticalUsage(layer, x, y, (uint) usageV);
       }
     }
   }
