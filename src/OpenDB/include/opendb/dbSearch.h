@@ -51,7 +51,6 @@ class dbBlockSearch
 {
  private:
   dbBlock* _block;
-  //	dbDatabase * _db;
   dbTech* _tech;
   uint _schema;
   uint _blockId;
@@ -70,51 +69,23 @@ class dbBlockSearch
   uint _block_pin_id;
   uint _block_obs_id;
   uint _block_track_id;
-  uint _block_bb_menu_self_id;
-  uint _block_pin_menu_self_id;
-  uint _block_pin_menu_pin1_id;
 
   uint _instMenuId;
 
   uint _inst_bb_id;
   uint _inst_pin_id;
   uint _inst_obs_id;
-  uint _inst_white_id;
-  uint _inst_bb_menu_self_id;
-  uint _inst_bb_menu_inst1_id;
-  uint _inst_bb_menu_inst2_id;
-  uint _inst_bb_menu_inst3_id;
-  uint _inst_bb_menu_inst4_id;
-
-  uint _inst_pin_menu_self_id;
-  uint _inst_pin_menu_net1_id;
-  uint _inst_pin_menu_net2_id;
 
   uint _signalMenuId;
 
   uint _signal_wire_id;
   uint _signal_via_id;
-  uint _signal_wire_menu_self_id;
-  uint _signal_wire_menu_net1_id;
-  uint _signal_wire_menu_net2_id;
-  uint _signal_wire_menu_net3_id;
-
-  uint _power_wire_menu_self_id;
-  uint _power_wire_menu_net1_id;
-  uint _power_wire_menu_net2_id;
-
   uint _powerMenuId;
 
   uint _power_wire_id;
   uint _power_via_id;
 
-  char _tmpBuf128[128];
-  char _tmpBuf256[256];
   bool _skipCutBoxes;
-
-  // Ath__gridTable *_grGcellSearch;
-  // Ath__gridTable *_grGpathSearch;
-  // Groute *_grObject;
 
  public:
   dbBlockSearch(dbBlock* blk, dbTech* tech);
@@ -264,9 +235,6 @@ class dbBlockSearch
                     std::vector<dbInst*>& result);  // 8/25/05
 
   dbRSeg* getRSeg(dbNet* net, uint shapeId);
-  void writeRval(dbRSeg* rseg, const char* delim, uint cornerCnt);
-  void writeRCvalue(double* val, const char* delim, uint cornerCnt);
-  bool getRCmsg(dbNet* net, uint shapeId);
 
   uint getWiresClipped(dbNet* targetNet, uint halo, bool ignoreFlag);
 
