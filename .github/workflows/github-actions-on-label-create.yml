@@ -13,7 +13,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
         with:
-            ref: master
+            ref: ${{github.event.pull_request.head.ref}}
             token: ${{ secrets.GITHUBPUBLICREPOTOKEN }}
       - name: add remote
         run: git remote add staging https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
