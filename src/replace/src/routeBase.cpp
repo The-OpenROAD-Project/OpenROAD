@@ -989,10 +989,11 @@ RouteBase::getRC() const {
       horAvg050RC += horEdgeCongArray[i];
     }
   }
-  horAvg005RC /= 1.0 * 0.005 * horArraySize;
-  horAvg010RC /= 1.0 * 0.010 * horArraySize;
-  horAvg020RC /= 1.0 * 0.020 * horArraySize;
-  horAvg050RC /= 1.0 * 0.050 * horArraySize;
+
+  horAvg005RC /= ceil(0.005 * horArraySize);
+  horAvg010RC /= ceil(0.010 * horArraySize);
+  horAvg020RC /= ceil(0.020 * horArraySize);
+  horAvg050RC /= ceil(0.050 * horArraySize);
 
   double verAvg005RC = 0;
   double verAvg010RC = 0;
@@ -1012,10 +1013,10 @@ RouteBase::getRC() const {
       verAvg050RC += verEdgeCongArray[i];
     }
   }
-  verAvg005RC /= 1.0 * 0.005 * verArraySize;
-  verAvg010RC /= 1.0 * 0.010 * verArraySize;
-  verAvg020RC /= 1.0 * 0.020 * verArraySize;
-  verAvg050RC /= 1.0 * 0.050 * verArraySize;
+  verAvg005RC /= ceil(0.005 * verArraySize);
+  verAvg010RC /= ceil(0.010 * verArraySize);
+  verAvg020RC /= ceil(0.020 * verArraySize);
+  verAvg050RC /= ceil(0.050 * verArraySize);
 
   log_->info(GPL, 66, "0.5%RC: {}", fmax(horAvg005RC, verAvg005RC));
   log_->info(GPL, 67, "1.0%RC: {}", fmax(horAvg010RC, verAvg010RC));
