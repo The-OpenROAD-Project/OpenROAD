@@ -24,8 +24,8 @@ jobs:
       - name: Status
         run: git status
       - name: Prints name of pull request base branch
-        run: echo ${github.base_ref}
+        run: echo ${{github.base_ref}}
       - name: Prints name of pull request source branch
-        run: echo ${github.ref}
+        run: echo ${{github.ref}}
 
         
