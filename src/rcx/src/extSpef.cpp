@@ -30,9 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "OpenRCX/extSpef.h"
+#include "rcx/extSpef.h"
 
-#include "OpenRCX/extRCap.h"
+#include "rcx/extRCap.h"
 #include <dbExtControl.h>
 #include <math.h>
 
@@ -437,13 +437,13 @@ void extSpef::writeITermNode(uint node)
               "*%d%s%s ",
               getInstMapId(inst->getId()),
               _delimiter,
-              addEscChar(iterm->getMTerm()->getName(inst, &ttname[0])));
+              addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     else
       sprintf(_msgBuf1,
               "%s%s%s ",
-              addEscChar(tinkerSpefName((char*) inst->getConstName())),
+              addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
               _delimiter,
-              addEscChar(iterm->getMTerm()->getName(inst, &ttname[0])));
+              addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap)
@@ -451,13 +451,13 @@ void extSpef::writeITermNode(uint node)
                    "*%d%s%s ",
                    getInstMapId(inst->getId()),
                    _delimiter,
-                   addEscChar(iterm->getMTerm()->getName(inst, &ttname[0])));
+                   addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     else
       ATH__fprintf(_outFP,
                    "%s%s%s ",
-                   addEscChar(tinkerSpefName((char*) inst->getConstName())),
+                   addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
                    _delimiter,
-                   addEscChar(iterm->getMTerm()->getName(inst, &ttname[0])));
+                   addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
   }
   /*
   odb::debug("HEXT",
@@ -509,7 +509,7 @@ bool extSpef::writeITerm(uint node)
     ATH__fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
   }
   ATH__fprintf(
-      _outFP, "*D %s\n", addEscChar(iterm->getMTerm()->getMaster()->getName().c_str()));
+               _outFP, "*D %s\n", addEscChar(iterm->getMTerm()->getMaster()->getName().c_str(), false));
   return true;
 }
 bool extSpef::writeBTerm(uint node)
@@ -519,13 +519,13 @@ bool extSpef::writeBTerm(uint node)
     if (_useIds)
       sprintf(_msgBuf1, "B%d ", bterm->getId());
     else
-      sprintf(_msgBuf1, "%s ", addEscChar(bterm->getName().c_str()));
+      sprintf(_msgBuf1, "%s ", addEscChar(bterm->getName().c_str(), false));
     strcat(_bufString, _msgBuf1);
   } else {
     if (_useIds)
       ATH__fprintf(_outFP, "B%d ", bterm->getId());
     else
-      ATH__fprintf(_outFP, "%s ", addEscChar(bterm->getName().c_str()));
+      ATH__fprintf(_outFP, "%s ", addEscChar(bterm->getName().c_str(), false));
   }
 
   return true;
@@ -540,7 +540,7 @@ bool extSpef::writeNode(uint netId, uint node)
     else
       sprintf(_msgBuf1,
               "%s%s%d ",
-              addEscChar(tinkerSpefName((char*) tnet->getConstName())),
+              addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
               _delimiter,
               node);
     strcat(_bufString, _msgBuf1);
@@ -550,7 +550,7 @@ bool extSpef::writeNode(uint netId, uint node)
     else
       ATH__fprintf(_outFP,
                    "%s%s%d ",
-                   addEscChar(tinkerSpefName((char*) tnet->getConstName())),
+                   addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
                    _delimiter,
                    node);
   }
@@ -628,7 +628,7 @@ uint extSpef::writePort(uint node)
   } else {
     ATH__fprintf(_outFP,
                  "*P %s %c",
-                 addEscChar(bterm->getName().c_str()),
+                 addEscChar(bterm->getName().c_str(), false),
                  bterm->getIoType().getString()[0]);
   }
   if (_writingNodeCoords != C_STARRC) {
@@ -673,7 +673,7 @@ void extSpef::writeDnet(uint netId, double* totCap)
     ATH__fprintf(_outFP, "\n*D_NET *%d ", netId);
   else
     ATH__fprintf(
-        _outFP, "\n*D_NET %s ", addEscChar(tinkerSpefName((char*) _d_net->getConstName())));
+                 _outFP, "\n*D_NET %s ", addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
   writeRCvalue(totCap, _cap_unit);
   ATH__fprintf(_outFP, "\n");
 }
@@ -1571,7 +1571,7 @@ uint extSpef::writeBlockPorts()
     } else {
       ATH__fprintf(_outFP,
                    "%s %c\n",
-                   addEscChar(bterm->getName().c_str()),
+                   addEscChar(bterm->getName().c_str(), false),
                    bterm->getIoType().getString()[0]);
     }
   }
@@ -1583,21 +1583,31 @@ uint extSpef::getNetMapId(uint netId)
 
   return netId;
 }
-char* extSpef::addEscChar(const char* iname) {
+// BTerm/ITerm/MTerm
+//   any non-alphanum, _ SHOULD be escaped
+//   bus brackets at the end of the name should NOT be escaped.
+// Instance names
+//   For block spef hierarchy dividers SHOULD be escaped.
+//   bus brackets SHOULD be escaped.
+// Net names
+//   For block spef hierarchy dividers SHOULD be escaped
+//   bus brackets should NOT be escaped.
+// -cherry 04/30/2021
+char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts) {
   uint ii = 0;
   uint jj = 0;
   while (iname[ii] != '\0') {
-    if (std::ispunct(iname[ii]) && iname[ii] != '_'
-           && iname[ii] != '\\') {
-      // Check if there is an escape char before
-      // the non-alphanumeric character
-      if (iname[ii-1] != '\\')
-        _mMapName[jj++] = '\\';
-    }
-
+    char ch = iname[ii];
+    if (!std::isalnum(ch)
+        && ch != '_'
+        && ch != '\\'
+        && (esc_bus_brkts || (ch != '[' && ch != ']'))
+        // Check if there is an escape char before
+        // the non-alphanumeric character
+        && (ii == 0 || iname[ii-1] != '\\'))
+      _mMapName[jj++] = '\\';
     _mMapName[jj++] = iname[ii++];
   }
-  
   _mMapName[jj] = '\0';
   return _mMapName;
 }
@@ -1683,7 +1693,7 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
     else {
       nname = (char*) net->getConstName();
       nname1 = tinkerSpefName(nname);
-      nname1 = addEscChar(nname1);
+      nname1 = addEscChar(nname1, false);
       ATH__fprintf(_outFP, "*%d %s\n", netMapId, nname1);
     }
 
@@ -1733,7 +1743,7 @@ uint extSpef::writeInstMap()
     else {
       nname = (char*) inst->getConstName();
       nname1 = tinkerSpefName(nname);
-      nname1 = addEscChar(nname1);
+      nname1 = addEscChar(nname1, true);
       ATH__fprintf(_outFP, "*%d %s\n", instMapId, nname1);
     }
 

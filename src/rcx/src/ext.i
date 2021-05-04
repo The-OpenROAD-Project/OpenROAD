@@ -34,7 +34,7 @@
 
 %{
 #include "ord/OpenRoad.hh"
-#include "OpenRCX/ext.h"
+#include "rcx/ext.h"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -131,15 +131,15 @@ diff_spef(const char* file,
 
 void
 bench_wires(bool db_only,
-          bool over,
-          bool diag,
-          bool all,
-          int met_cnt,
-          int cnt,
-          int len,
-          int under_met,
-          const char* w_list,
-          const char* s_list)
+            bool over,
+            bool diag,
+            bool all,
+            int met_cnt,
+            int cnt,
+            int len,
+            int under_met,
+            const char* w_list,
+            const char* s_list)
 {
   Ext* ext = getOpenRCX();
   Ext::BenchWiresOptions opts;

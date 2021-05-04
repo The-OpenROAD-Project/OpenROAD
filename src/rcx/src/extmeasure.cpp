@@ -32,7 +32,7 @@
 #include <dbRtTree.h>
 
 #include "dbUtil.h"
-#include "OpenRCX/extRCap.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 #ifdef HI_ACC_1

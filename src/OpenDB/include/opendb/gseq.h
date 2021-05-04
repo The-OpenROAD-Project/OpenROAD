@@ -120,16 +120,6 @@ class gs
   // colorize a slice
   int colorize(int slice, int rgb);
 
-  // call to get the output
-  int create_image(FILE* fp,
-                   char** out,
-                   int output,
-                   int encoding,
-                   int width,
-                   int height,
-                   int* ll,
-                   int* ur);
-
   // allocate (re-allocate) memory
   int alloc_mem(void);
 

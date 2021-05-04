@@ -1,0 +1,16 @@
+name: Labelled Ready to Sync Public
+on:
+  pull_request:
+    types: [labeled]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'The-OpenROAD-Project-private' && github.event.label.name == 'Ready To Sync Public'
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: print info
+        run: git remote -v

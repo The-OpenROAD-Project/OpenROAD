@@ -20,6 +20,7 @@ record_tests {
   resize_slack1
   resize_slack2
   remove_buffers1
+  remove_buffers2
   repair_clk_nets1
   repair_clk_inverters1
   repair_cap1
@@ -63,6 +64,7 @@ record_tests {
   repair_wire5
   repair_wire6
   repair_wire7
+  repair_wire8
   gcd_resize
 }
 

@@ -22,8 +22,11 @@ original HPWL              81.8 u
 legalized HPWL             84.7 u
 delta HPWL                    3 %
 
-[WARNING DPL-0005] Overlap check failed (1).
+[WARNING DPL-0005] Overlap check failed (4).
  _281_ overlaps _282_
+ _280_ overlaps _281_
+ _279_ overlaps _281_
+ _278_ overlaps _281_
 [WARNING DPL-0006] Site check failed (1).
  _281_
 [WARNING DPL-0007] Power line check failed (1).

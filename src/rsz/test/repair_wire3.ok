@@ -16,7 +16,7 @@
 Driver    length delay
 u2/Z manhtn 1999.8 steiner 1999.8 0.00
 u3/Z manhtn 1.1 steiner 1.1 0.00
-u1/Z manhtn 0.4 steiner 0.4 0.00
+in1 manhtn 0.7 steiner 0.7 0.00
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.

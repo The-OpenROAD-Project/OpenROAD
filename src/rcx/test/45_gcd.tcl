@@ -3,7 +3,7 @@ source helpers.tcl
 set test_nets ""
 
 read_lef Nangate45/Nangate45.lef
-
+read_liberty Nangate45/Nangate45_typ.lib
 read_def -order_wires 45_gcd.def
 
 # Load via resistance info

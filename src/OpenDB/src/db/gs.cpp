@@ -459,33 +459,6 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
   return 0;
 }
 
-// generate an RGB image based on the colors
-int gs::create_image(FILE* fp,
-                     char** src,
-                     int output,
-                     int encoding,
-                     int width,
-                     int height,
-                     int* ll,
-                     int* ur)
-{
-  init_headers(width, height);
-
-  int rc = 0;
-  // file-based output
-
-  if (output == GS_FILE) {
-    rc += write_ppm_file(fp, encoding, width, height, ll, ur);
-    fflush(fp);
-  }
-  // string-based output
-  else {
-    rc += write_ppm_string(src, encoding, width, height, ll, ur);
-  }
-
-  return rc;
-}
-
 int gs::check_slice(int sl)
 {
   if ((sl < 0) || (sl > nslices)) {

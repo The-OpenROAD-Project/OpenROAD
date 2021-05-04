@@ -33,8 +33,8 @@
 #include <math.h>
 #include <wire.h>
 
-#include "OpenRCX/extRCap.h"
-#include "OpenRCX/extSpef.h"
+#include "rcx/extRCap.h"
+#include "rcx/extSpef.h"
 #include "utl/Logger.h"
 
 namespace rcx {
