@@ -18,4 +18,6 @@ jobs:
       - name: add remote
         run: git remote add staging https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
       - name: print remotes
-        run: git remote -v
+        run: git remote -v ; echo ${GITHUB_REF#refs/heads/}
+      - name: Branch name
+        run: echo running on branch ${GITHUB_REF##*/}
