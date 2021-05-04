@@ -12,5 +12,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - name: print info
+        with:
+            ref: master
+            token: ${{ secrets.GITHUBPUBLICREPOTOKEN }}
+      - name: add remote
+        run: git remote add staging https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
+      - name: print remotes
         run: git remote -v
