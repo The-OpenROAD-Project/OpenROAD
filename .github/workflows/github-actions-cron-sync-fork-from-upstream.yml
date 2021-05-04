@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: master
+          token: ${{ secrets.GITHUBPUBLICREPOTOKEN }}
+
       
       - name: Pull Upstream
         uses: The-OpenROAD-Project/actions/upstream_sync@main
