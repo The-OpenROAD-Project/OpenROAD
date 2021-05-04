@@ -69,16 +69,6 @@ int Ath__box::getYhi(int bound)
   else
     return _yhi;
 }
-uint Ath__box::getLen()
-{
-  uint dx = getDX();
-  uint dy = getDY();
-  if (dx < dy) {  // verical
-    return dy;
-  } else {
-    return dx;
-  }
-}
 uint Ath__box::getDir()
 {
   uint dx = getDX();
@@ -98,71 +88,7 @@ uint Ath__box::getWidth(uint* dir)
     return dy;
   }
 }
-uint Ath__box::getStats(uint level,
-                        uint* dir,
-                        uint* minWidth,
-                        uint* maxWidth,
-                        uint minLen)
-{
-  for (Ath__box* e = this; e != NULL; e = e->_next) {
-    if (e->_layer != level)
-      continue;
 
-    if (e->getLen() < minLen)
-      continue;
-
-    uint d;
-    uint w = e->getWidth(&d);
-    if (*minWidth > w)
-      *minWidth = w;
-    if (*maxWidth < w)
-      *maxWidth = w;
-
-    dir[d]++;
-  }
-  return dir[0] + dir[1];
-}
-
-void Ath__box::writeCoordsDB(FILE* fp)
-{
-  fprintf(fp, "%d %d %d %d %u\n", _xlo, _ylo, _xhi, _yhi, _layer);
-}
-void Ath__box::readCoordsDB(FILE* fp)
-{
-  uint n;
-  fscanf(fp, "%d %d %d %d %u", &_xlo, &_ylo, &_xhi, &_yhi, &n);
-  _layer = n;
-}
-uint Ath__box::boxCnt()
-{
-  uint cnt = 0;
-  for (Ath__box* f = this; f != NULL; f = f->_next)
-    cnt++;
-  return cnt;
-}
-void Ath__box::writeListDB(FILE* fp)
-{
-  for (Ath__box* e = this; e != NULL; e = e->_next) {
-    e->writeCoordsDB(fp);
-  }
-}
-
-void Ath__box::deallocList()
-{
-  Ath__box* e = this;
-  while (e != NULL) {
-    Ath__box* f = e->_next;
-    delete e;
-    e = f;
-  }
-}
-void Ath__box::addExtra(uint dd)
-{
-  _xlo -= dd;
-  _ylo -= dd;
-  _xhi += dd;
-  _yhi += dd;
-}
 Ath__box::Ath__box(int x1, int y1, int x2, int y2, uint units)
 {
   set(x1, y1, x2, y2, units);
@@ -174,42 +100,11 @@ void Ath__box::set(int x1, int y1, int x2, int y2, uint units)
   _xhi = x2 * units;
   _yhi = y2 * units;
   _valid = 1;
-  _clip = 1;
   _id = 0;
-  _ownerId = 0;
-  _ownerType = 0;
-}
-uint Ath__box::getBoxType()
-{
-  return _type;
-}
-uint Ath__box::getOwnerType()
-{
-  return _ownerType;
 }
 uint Ath__box::getOwner()
 {
-  return _ownerId;
-}
-void Ath__box::setOwner(uint id)
-{
-  _ownerId = id;
-}
-int Ath__box::getMidY(int loBound, int hiBound)
-{
-  return (getYlo(loBound) + getYhi(hiBound)) / 2;
-}
-int Ath__box::getMidX(int loBound, int hiBound)
-{
-  return (getXlo(loBound) + getXhi(hiBound)) / 2;
-}
-int Ath__box::getMidY()
-{
-  return (_yhi + _ylo) / 2;
-}
-int Ath__box::getMidX()
-{
-  return (_xhi + _xlo) / 2;
+  return 0;
 }
 uint Ath__box::getDX()
 {
@@ -218,10 +113,6 @@ uint Ath__box::getDX()
 uint Ath__box::getDY()
 {
   return _yhi - _ylo;
-}
-void Ath__box::printDefXYlo(FILE* /* unused: fp */)
-{
-  // fprintf(fp, " ( %d %d ) ", _bb->_x/defUnits, _y/defUnits, orient);
 }
 uint Ath__box::getLength()
 {
@@ -232,62 +123,9 @@ uint Ath__box::getLength()
   else
     return dx;
 }
-void Ath__box::setIdentity(Ath__box* bb)
-{
-  _type = bb->_type;
-  _ownerType = bb->_ownerType;
-  _ownerId = bb->_ownerId;
-}
-void Ath__box::setIdentity(uint type, uint ownId, uint ownType)
-{
-  _type = type;
-  _ownerType = ownType;
-  _ownerId = ownId;
-}
 void Ath__box::invalidateBox()
 {
   _valid = 0;
-}
-void Ath__box::setClipFlag(bool flag)
-{
-  _clip = flag;
-}
-void Ath__box::resetMaxBox()
-{
-  set(ath__maxInt, ath__maxInt, -ath__maxInt, -ath__maxInt);
-}
-void Ath__box::pinBoxDef(FILE* fp,
-                         char* layerName,
-                         int x,
-                         int y,
-                         char* orient,
-                         int defUnits)
-{
-  fprintf(fp, " ( %d %d ) %s ", x / defUnits, y / defUnits, orient);
-
-  fprintf(fp,
-          " + LAYER %s ( %d %d ) ( %d %d ) ",
-          layerName,
-          _xlo / defUnits,
-          _ylo / defUnits,
-          _xhi / defUnits,
-          _yhi / defUnits);
-}
-void Ath__box::printPoints(FILE* fp, uint defUnits)
-{
-  fprintf(fp,
-          " ( %d %d ) ( %d %d ) ",
-          _xlo / defUnits,
-          _ylo / defUnits,
-          _xhi / defUnits,
-          _yhi / defUnits);
-}
-void Ath__box::setMaxBox(int x1, int y1, int x2, int y2)
-{
-  _xlo = ath__min(_xlo, x1);
-  _ylo = ath__min(_ylo, y1);
-  _xhi = ath__max(_xhi, x2);
-  _yhi = ath__max(_yhi, y2);
 }
 void Ath__box::set(Ath__box* bb)
 {
@@ -295,20 +133,6 @@ void Ath__box::set(Ath__box* bb)
   _ylo = bb->_ylo;
   _xhi = bb->_xhi;
   _yhi = bb->_yhi;
-}
-void Ath__box::getTransformed(Ath__box* bb,
-                              int origX,
-                              int origY,
-                              char* /* unused: orient */)
-{
-  _xlo = bb->_xlo + origX;
-  _ylo = bb->_ylo + origY;
-  _xhi = bb->_xhi + origX;
-  _yhi = bb->_yhi + origY;
-}
-void Ath__box::setMaxBox(Ath__box* bb)
-{
-  setMaxBox(bb->_xlo, bb->_ylo, bb->_xhi, bb->_yhi);
 }
 
 bool Ath__box::outside(int x1, int y1, int x2, int y2)
@@ -327,76 +151,6 @@ bool Ath__box::outside(int x1, int y1, int x2, int y2)
     return true;
 
   return false;
-}
-bool Ath__box::clip(int* x1, int* y1, int* x2, int* y2)
-{
-  if (_valid == 0)
-    return true;
-
-  if (outside(*x1, *y1, *x2, *y2))
-    return false;
-
-  int xx1, xx2, yy1, yy2;
-
-  int dx = *x2 - *x1;
-  int dy = *y2 - *y1;
-  if (dy > dx) {  // vertical
-    if (!Ath__intersect(_ylo, _yhi - _ylo, *y1, dy, &yy1, &yy2))
-      return false;
-
-    if (!Ath__intersect(_xlo, _xhi - _xlo, *x1, dx, &xx1, &xx2))
-      return false;
-  } else {
-    if (!Ath__intersect(_xlo, _xhi - _xlo, *x1, dx, &xx1, &xx2))
-      return false;
-
-    if (!Ath__intersect(_ylo, _yhi - _ylo, *y1, dy, &yy1, &yy2))
-      return false;
-  }
-  if (_clip) {
-    *y1 = yy1;
-    *y2 = yy2;
-
-    *x1 = xx1;
-    *x2 = xx2;
-  }
-  return true;
-}
-bool Ath__box::inside(int x1, int y1, int x2, int y2)
-{
-  if ((x1 >= _xlo) && (x2 <= _xhi) && (y1 >= _ylo) && (y2 <= _yhi))
-    return true;
-
-  return false;
-}
-void Ath__trans::set(int x, int y, char* orient)
-{
-  _origX = x;
-  _origY = y;
-  strcpy(_orient, orient);
-}
-void Ath__trans::transform(Ath__box* bb)
-{
-  if (strcmp(_orient, "N") == 0) {
-    bb->_xlo += _origX;
-    bb->_ylo += _origY;
-    bb->_xhi += _origX;
-    bb->_yhi += _origY;
-  }
-}
-int Ath__trans::getX(int x)
-{
-  if (strcmp(_orient, "N") == 0) {
-    return x += _origX;
-  }
-  return x;
-}
-int Ath__trans::getY(int y)
-{
-  if (strcmp(_orient, "N") == 0) {
-    return y += _origY;
-  }
-  return y;
 }
 
 void Ath__searchBox::set(int x1, int y1, int x2, int y2, uint l, int dir)
@@ -1789,24 +1543,6 @@ Ath__grid::Ath__grid(Ath__gridTable* gt,
   _placed = 0;
   _schema = 0;
 }
-Ath__grid::Ath__grid(AthPool<Ath__track>* trackPool,
-                     AthPool<Ath__wire>* wirePool,
-                     Ath__box* bb,
-                     Ath__layer* layer,
-                     uint markerCnt)
-{
-  _trackPoolPtr = trackPool;
-  _wirePoolPtr = wirePool;
-  _markerCnt = markerCnt;
-
-  _level = layer->_level;
-  _layer = layer->_num;
-
-  setBoundaries(layer->_direction, bb->_xlo, bb->_ylo, bb->_xhi, bb->_yhi);
-  makeTrackTable(layer->_width, layer->_pitch);
-  _placed = 0;
-  _schema = 0;
-}
 void Ath__grid::getBbox(Ath__searchBox* bb)
 {
   if (_dir == 0)  // vertical
@@ -1827,26 +1563,6 @@ void Ath__grid::getBbox(Ath__box* bb)
     bb->_xlo = _start;
     bb->_xhi = _end;
   }
-}
-
-uint Ath__grid::getBoundaries(Ath__zui* /* unused: zui */,
-                              uint /* unused: dd */,
-                              uint /* unused: layer */)
-{
-  Ath__box bb;
-  getBbox(&bb);
-
-  return 0;
-  // return zui->addBox(0,
-  //                    Ath_box__bbox,
-  //                    Ath_hier__tile,
-  //                    layer,
-  //                    bb._xlo + dd,
-  //                    bb._ylo + dd,
-  //                    bb._xhi - dd,
-  //                    bb._yhi - dd,
-  //                    0,
-  //                    0);
 }
 
 void Ath__grid::freeTracksAndTables()
@@ -1932,38 +1648,6 @@ void Ath__grid::setDefaultWireType(uint v)
 {
   _wireType = v;  // TODO-OPTIMIZE : can it be 32-bit?
 }
-void Ath__grid::makeZuiObjects(Ath__zui* /* unused: zui */)
-{
-  for (uint ii = 0; ii < _trackCnt; ii++) {
-    Ath__track* tr = _trackTable[ii];
-    if (tr == NULL)
-      continue;
-    if (_blockedTrackTable[ii] > 0)
-      continue;
-
-    // int ll[2];
-    // int ur[2];
-
-    // ll[_dir] = getTrackHeight(ii);
-
-    // uint width = tr->_width;
-    // ur[_dir]   = ll[_dir] + width;
-
-    for (uint k = 0; k < 4; k++) {
-      for (Ath__wire* w = tr->_marker[k]; w != NULL; w = w->_next) {
-        // int d = (_dir > 0) ? 0 : 1;
-
-        // ll[d] = _start + w->_xy * width;
-        // ur[d] = ll[d] + w->_len * width;
-
-        // zui->addBox(w->_box->getOwner(), Ath_type__bus, 0,0, w->_box->_layer,
-        /*zui->addBox(w->_id, Ath_box__bus, Ath_hier__tnet, w->_box->_layer,
-                ll[0], ll[1], ur[0], ur[1]);
-                */
-      }
-    }
-  }
-}
 uint Ath__grid::getBoxes(uint trackIndex, Ath__array1D<uint>* table)
 {
   Ath__track* tr = _trackTable[trackIndex];
@@ -1997,44 +1681,7 @@ void Ath__grid::getBoxes(Ath__array1D<uint>* table)
     //		}
   }
 }
-void Ath__grid::getBusObs(Ath__zui* /* unused: zui */)
-{
-  uint ii = 0;
-  while (ii < _trackCnt) {
-    uint kk = ii;
-    for (; (kk < _trackCnt)
-           && ((_trackTable[kk] == NULL) || (_blockedTrackTable[kk] > 0));
-         kk++)
-      ;
-    if (kk == _trackCnt)
-      break;
 
-    // uint startTrack = kk;
-
-    for (; (kk < _trackCnt)
-           && ((_trackTable[kk] != NULL) && (!(_blockedTrackTable[kk] > 0)));
-         kk++)
-      ;
-
-    // uint endTrack = kk;
-
-    // int ll[2];
-    // int ur[2];
-
-    // int notdir = (_dir > 0) ? 0 : 1;
-
-    // ll[_dir] = getTrackHeight(startTrack);
-    // ur[_dir] = getTrackHeight(endTrack) + _width;
-
-    // ll[notdir] = _start;
-    // ur[notdir] = _end;
-
-    fprintf(stdout, "Have to do getBusObs\n");
-    // zui->addBox(0, Ath_box__obs, 0,0, _level, ll[0], ll[1], ur[0], ur[1]);
-
-    ii = kk;
-  }
-}
 uint Ath__grid::blockTracks(dbBlock* block, Ath__array1D<uint>* idTable)
 {
   for (uint ii = 0; ii < idTable->getCnt(); ii++) {
@@ -2602,7 +2249,6 @@ uint Ath__grid::placeBox(Ath__box* box)
 
   uint markIndex1;
   Ath__wire* w = makeWire(ll, ur, box->getOwner(), &markIndex1);
-  //	Ath__wire *w= makeWire(box, box->getOwner(), &markIndex1);
 
   Ath__track* track = getTrackPtr(ll);
 
@@ -3299,349 +2945,6 @@ int Ath__grid::findEmptyTrack(int ll[2], int ur[2])
     return track1;
 
   return -1;
-}
-uint Ath__gridStack::getGridOutlines(Ath__zui* zui)
-{
-  uint dd = 1000;
-  uint cnt = 0;
-  for (uint ii = 0; ii < 2; ii++) {
-    cnt += _thruGridTable[ii]->getBoundaries(zui, dd, ii + 5);
-  }
-
-  for (uint jj = 0; jj < 4; jj++) {
-    if (_cornerGridTable[jj][0] != NULL)
-      cnt += _cornerGridTable[jj][0]->getBoundaries(zui, dd, jj + 1);
-    else if (_cornerGridTable[jj][1] != NULL)
-      cnt += _cornerGridTable[jj][1]->getBoundaries(zui, dd, jj + 1);
-  }
-  return cnt;
-}
-Ath__gridStack::Ath__gridStack(Ath__layer** met,
-                               Ath__layer** nextMet,
-                               uint* loFlag,
-                               uint* hiFlag,
-                               int* loLine,
-                               int* hiLine,
-                               int* ll,
-                               int* ur,
-                               AthPool<Ath__track>* trackPool,
-                               AthPool<Ath__wire>* wirePool)
-{
-  // 0= x,  1= y
-
-  for (uint ii = 0; ii < 2; ii++) {
-    _nextLevel[ii] = nextMet[ii]->_level;
-    Ath__box bb(ll[0], ll[1], ur[0], ur[1]);
-    _nextGridTable[ii] = new Ath__grid(trackPool, wirePool, &bb, nextMet[ii]);
-
-    _loDivide[ii] = loLine[ii];
-    _hiDivide[ii] = hiLine[ii];
-    _level[ii] = met[ii]->_level;
-
-    if (ii > 0) {
-      Ath__box box(ll[0], loLine[ii], ur[0], hiLine[ii]);
-      _thruGridTable[ii] = new Ath__grid(trackPool, wirePool, &box, met[ii]);
-    } else {
-      Ath__box box(loLine[ii], ll[1], hiLine[ii], ur[1]);
-      _thruGridTable[ii] = new Ath__grid(trackPool, wirePool, &box, met[ii]);
-    }
-  }
-
-  for (uint jj = 0; jj < 4; jj++) {
-    _cornerGridTable[jj][0] = NULL;
-    _cornerGridTable[jj][1] = NULL;
-  }
-  for (uint kk = 0; kk < 2; kk++) {
-    if (loFlag[0] > 0) {
-      if (loFlag[1] > 0) {
-        Ath__box box2(ll[0], ll[1], loLine[0], loLine[1]);
-        _cornerGridTable[2][kk]
-            = new Ath__grid(trackPool, wirePool, &box2, met[kk]);
-      }
-      if (hiFlag[1] > 0) {
-        Ath__box box1(ll[0], hiLine[1], loLine[0], ur[1]);
-        _cornerGridTable[1][kk]
-            = new Ath__grid(trackPool, wirePool, &box1, met[kk]);
-      }
-    }
-
-    if (hiFlag[0] > 0) {
-      if (loFlag[1] > 0) {
-        Ath__box box0(hiLine[0], ll[1], ur[0], loLine[1]);
-        _cornerGridTable[0][kk]
-            = new Ath__grid(trackPool, wirePool, &box0, met[kk]);
-      }
-      if (hiFlag[1] > 0) {
-        Ath__box box3(hiLine[0], hiLine[1], ur[0], ur[1]);
-        _cornerGridTable[3][kk]
-            = new Ath__grid(trackPool, wirePool, &box3, met[kk]);
-      }
-    }
-  }
-}
-Ath__gridStack::~Ath__gridStack()
-{
-  for (uint ii = 0; ii < 2; ii++) {
-    if (_thruGridTable[ii] != NULL)
-      delete _thruGridTable[ii];
-    if (_nextGridTable[ii] != NULL)
-      delete _nextGridTable[ii];
-    for (uint kk = 0; kk < 4; kk++)
-      if (_cornerGridTable[kk][ii] != NULL)
-        delete _cornerGridTable[kk][ii];
-  }
-}
-uint Ath__gridStack::blockTracks(Ath__box* box)
-{
-  uint cnt = 0;
-  for (uint ii = 0; ii < 2; ii++) {
-    cnt += _thruGridTable[ii]->blockTracks(box, 0);
-    for (uint kk = 0; kk < 4; kk++)
-      cnt += _cornerGridTable[kk][ii]->blockTracks(box, 0);
-  }
-  return cnt;
-}
-uint Ath__gridStack::blockTracks(AthArray<Ath__box*>* obsTable)
-{
-  uint cnt = 0;
-  for (uint jj = 0; jj < obsTable->getLast(); jj++) {
-    Ath__box* box = obsTable->get(jj);
-
-    for (uint ii = 0; ii < 2; ii++) {
-      cnt += _thruGridTable[ii]->blockTracks(box, 0);
-
-      for (uint kk = 0; kk < 4; kk++)
-        if (_cornerGridTable[kk][ii] != NULL)
-          cnt += _cornerGridTable[kk][ii]->blockTracks(box, 0);
-    }
-  }
-  return cnt;
-}
-/*
-uint Ath__gridStack::addWire(Ath__box *box, uint trackRange)
-{
-        fprintf(stdout, "TODO: addWire\n");
-        ///
-        uint level= box->_layer;
-        assert(level>0 && level<_levelCnt);
-
-        uint id= _layerGridTable[level]->addWire(box, trackRange);
-//
-        uint id= 0;
-        return id;
-}
-*/
-Ath__grid** Ath__gridStack::getCornerGrid(uint type,
-                                          uint space,
-                                          uint width,
-                                          uint layer0,
-                                          uint layer1)
-{
-  if ((_level[0] != layer0) && (_level[1] != layer1)) {
-    fprintf(stdout, "Mismatch between box layer and grid layer\n");
-    return 0;
-  }
-  Ath__grid** g = _cornerGridTable[type];
-  for (uint ii = 0; ii < 2; ii++) {
-    if ((width > 0) || (space > 0)) {
-      if (g[ii] != NULL) {
-        g[ii]->freeTracksAndTables();
-      }
-      g[ii]->makeTrackTable(width, 0, space);
-    }
-  }
-  return g;
-}
-bool Ath__gridStack::isPlacedCorner(uint type)
-{
-  Ath__grid** g = _cornerGridTable[type];
-
-  if (g == NULL)
-    return false;
-  if (g[0] == NULL || g[1] == NULL)
-    return false;
-  if (g[0]->isPlaced() || g[1]->isPlaced())
-    return true;
-
-  return false;
-}
-uint Ath__gridStack::placeCornerSorted(uint type,
-                                       Ath__box** boxArray,
-                                       Ath__box** boxArrayNext,
-                                       uint cnt,
-                                       uint space,
-                                       uint width)
-{
-  if (cnt <= 0)
-    return 0;
-
-  Ath__grid** g = getCornerGrid(
-      type, space, width, boxArrayNext[0]->_layer, boxArray[0]->_layer);
-
-  if (g[0]->isPlaced() || g[1]->isPlaced())
-    return 0;
-
-  // 0 is vertical, 1 is horizontal
-  // boxArray is horizontal
-
-  // uint fullTrack= 1;
-
-  uint track[2] = {0, 0};
-  // uint sortedOrder[2]= {1,0};
-
-  if (type % 2 == 0) {  // 0,2
-    track[1] = g[1]->getTrackCnt() - 1;
-
-    int y;
-    if (type == 0) {
-      for (int ii = cnt - 1; ii >= 0; ii--) {
-        track[1] = g[1]->addWireCut(0, track[1], boxArray[ii], 0, &y);
-        track[0] = g[0]->addWireExt(1, track[0], boxArrayNext[ii], 1, &y);
-      }
-    } else {
-      track[0] = g[0]->getTrackCnt() - 1;
-      for (int ii = cnt - 1; ii >= 0; ii--) {
-        track[1] = g[1]->addWireCut(1, track[1], boxArray[ii], 0, &y);
-        track[0] = g[0]->addWireExt(1, track[0], boxArrayNext[ii], 0, &y);
-      }
-    }
-  } else {  // TO_TEST
-  }
-  return 0;
-}
-void Ath__grid::makeTracks(uint space, uint width)
-{
-  if ((width > 0) || (space > 0)) {
-    freeTracksAndTables();
-    makeTrackTable(width, 0, space);
-  }
-}
-Ath__grid* Ath__gridStack::getThruGrid(uint dir)
-{
-  return _thruGridTable[dir];
-}
-Ath__grid* Ath__gridStack::getNextGrid(uint dir)
-{
-  return _nextGridTable[dir];
-}
-
-Ath__grid* Ath__gridStack::getThruGrid(uint dir,
-                                       uint layer,
-                                       uint space,
-                                       uint width)
-{
-  if (_level[dir] != layer) {
-    fprintf(stdout, "Mismatch between box layer and grid layer\n");
-    return 0;
-  }
-  Ath__grid* g = _thruGridTable[dir];
-  g->makeTracks(width, space);
-
-  return g;
-}
-Ath__grid* Ath__gridStack::getNextGrid(uint dir,
-                                       uint layer,
-                                       uint space,
-                                       uint width)
-{
-  if (_nextLevel[dir] != layer) {
-    fprintf(stdout, "Mismatch between box layer and grid layer\n");
-    return 0;
-  }
-  Ath__grid* g = _nextGridTable[dir];
-  g->makeTracks(width, space);
-
-  return g;
-}
-void Ath__grid::setPlaced()
-{
-  _placed = 1;
-}
-bool Ath__grid::isPlaced()
-{
-  return (_placed > 0) ? true : false;
-}
-bool Ath__gridStack::isThruPlaced(uint dir)
-{
-  return _thruGridTable[dir]->isPlaced();
-}
-void Ath__grid::placeAgainSortedThru(uint space,
-                                     uint width,
-                                     AthArray<Ath__box*>* obsTable)
-{
-  return;  // TODO
-  // get placed boxes
-  Ath__array1D<uint> boxTable(1024);
-  getBoxes(&boxTable);
-
-  makeTracks(width, space);
-
-  // add obstructions
-  uint obsCnt = 0;
-  for (uint jj = 0; jj < obsTable->getLast(); jj++) {
-    obsCnt += blockTracks(obsTable->get(jj), 0);
-  }
-  /* place boxes
-  uint track= 0;
-  for (uint ii= 0; ii<boxTable.getCnt(); ii++) {
-          int height;
-          // TODO track= addWire(track, boxTable.get(ii), 1, &height);
-  }
-*/
-}
-uint Ath__gridStack::placeSortedThru(uint dir,
-                                     Ath__box** boxArray,
-                                     uint cnt,
-                                     uint space,
-                                     uint width)
-{
-  if (cnt <= 0)
-    return 0;
-
-  Ath__grid* g = getThruGrid(dir, boxArray[0]->_layer, space, width);
-
-  uint sortedOrder = 1;
-
-  uint track = 0;
-  for (uint ii = 0; ii < cnt; ii++) {
-    int height;
-    track = g->addWire(track, boxArray[ii], sortedOrder, &height);
-  }
-  g->setPlaced();
-  return 0;
-}
-uint Ath__gridStack::placeSortedNext(uint dir,
-                                     Ath__box** boxArray,
-                                     int* heightArray,
-                                     uint cnt,
-                                     uint space,
-                                     uint width)
-{
-  if (cnt <= 0)
-    return 0;
-
-  Ath__grid* g = getNextGrid(dir, boxArray[0]->_layer, space, width);
-
-  uint track = 0;
-  for (uint ii = 0; ii < cnt; ii++) {
-    int height;
-    track = g->addWireNext(track, boxArray[ii], 1, &height);
-    heightArray[ii] = height;
-  }
-  return g->getWidth();
-}
-void Ath__gridStack::getBusObs(Ath__zui* zui)
-{
-  for (uint ii = 0; ii < 2; ii++) {
-    _thruGridTable[ii]->getBusObs(zui);
-  }
-  for (uint jj = 0; jj < 4; jj++) {
-    for (uint k = 0; k < 2; k++) {
-      if (_cornerGridTable[jj][k] == NULL)
-        continue;
-      _cornerGridTable[jj][k]->getBusObs(zui);
-    }
-  }
 }
 
 bool Ath__intersect(int X1, int DX, int x1, int dx, int* ix1, int* ix2)
@@ -4491,12 +3794,6 @@ uint Ath__gridTable::addBox(int x1,
                             uint id2,
                             uint wireType)
 {
-  // should not clip when adding wires
-  // if (_setMaxArea)
-  //{
-  //	if (! _maxSearchBox.clip(&x1, &y1, &x2, &y2))
-  //		return 0;
-  //}
   Ath__searchBox bb(x1, y1, x2, y2, level);
   bb.setOwnerId(id1, id2);
   bb.setType(wireType);
