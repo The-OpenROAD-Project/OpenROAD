@@ -1242,8 +1242,7 @@ void FlexDR::checkConnectivity(int iter)
                                           adjPrevIdx,
                                           nodeMap,
                                           nNetRouteObjs,
-                                          nNetObjs,
-                                          netDRObjs);
+                                          nNetObjs);
     }
 
     // sequential
