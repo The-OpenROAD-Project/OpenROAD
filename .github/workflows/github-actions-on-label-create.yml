@@ -30,7 +30,7 @@ jobs:
       - name: current label
         run: echo ${{github.event.label.name}}
       - name: pr info
-        run: echo ${{toJson(github.event.pull_request)}} 
+        run: echo ${{toJson(github.event.pull_request.head.ref)}} 
         #run: echo ${{ github.payload.pull_request.head.ref }}
         #${{ toJson(github) }}
           
