@@ -21,3 +21,6 @@ jobs:
         run: git remote -v ; echo ${GITHUB_REF#refs/heads/}
       - name: Branch name
         run: echo running on branch ${GITHUB_REF##*/}
+      - name: Status
+        run: git status
+        
