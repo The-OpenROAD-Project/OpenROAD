@@ -87,6 +87,16 @@ class FlexGCWorker::Impl
        Logger* logger,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
+  frLayerNum getMinLayerNum()  // inclusive
+  {
+    return std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
+                    minLayerNum_);
+  }
+  frLayerNum getMaxLayerNum()  // inclusive
+  {
+    return std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
+                    maxLayerNum_);
+  }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {
     auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());

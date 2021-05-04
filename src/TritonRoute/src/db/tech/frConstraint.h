@@ -1288,44 +1288,37 @@ struct frSpacingTableTwRowType
   frSpacingTableTwRowType(frCoord in1, frCoord in2) : width(in1), prl(in2) {}
   frCoord width;
   frCoord prl;
-  bool operator<(const frSpacingTableTwRowType& b) const
-  {
-    return width < b.width || prl < b.prl;
-  }
 };
 // new SPACINGTABLE Constraints
 class frSpacingTableTwConstraint : public frConstraint
 {
  public:
   // constructor
-  frSpacingTableTwConstraint(const fr2DLookupTbl<frSpacingTableTwRowType,
-                                                 frSpacingTableTwRowType,
-                                                 frCoord>& in)
-      : tbl(in)
+  frSpacingTableTwConstraint(
+      const frCollection<frSpacingTableTwRowType>& rowsIn,
+      const frCollection<frCollection<frCoord>>& spacingIn)
+      : rows(rowsIn), spacingTbl(spacingIn)
   {
   }
   // getter
-  const fr2DLookupTbl<frSpacingTableTwRowType,
-                      frSpacingTableTwRowType,
-                      frCoord>&
-  getLookupTbl() const
-  {
-    return tbl;
-  }
   frCoord find(frCoord width1, frCoord width2, frCoord prl) const
   {
-    return tbl.find(frSpacingTableTwRowType(width1, prl),
-                    frSpacingTableTwRowType(width2, prl));
+    if (rows.empty())
+      return 0;
+    auto rowIdx = getIdx(width1, prl);
+    auto colIdx = getIdx(width1, prl);
+    return spacingTbl[rowIdx][colIdx];
   }
-  frCoord findMin() const { return tbl.findMin(); }
-  frCoord findMax() const { return tbl.findMax(); }
+  frCoord findMin() const { return spacingTbl.front().front(); }
+  frCoord findMax() const { return spacingTbl.back().back(); }
   // setter
-  void setLookupTbl(const fr2DLookupTbl<frSpacingTableTwRowType,
-                                        frSpacingTableTwRowType,
-                                        frCoord>& in)
+  void setSpacingTable(const frCollection<frSpacingTableTwRowType>& rowsIn,
+                       const frCollection<frCollection<frCoord>>& spacingIn)
   {
-    tbl = in;
+    rows = rowsIn;
+    spacingTbl = spacingIn;
   }
+
   frConstraintTypeEnum typeId() const override
   {
     return frConstraintTypeEnum::frcSpacingTableTwConstraint;
@@ -1335,8 +1328,20 @@ class frSpacingTableTwConstraint : public frConstraint
     logger->report("Spacing table tw");
   }
 
- protected:
-  fr2DLookupTbl<frSpacingTableTwRowType, frSpacingTableTwRowType, frCoord> tbl;
+ private:
+  frCollection<frSpacingTableTwRowType> rows;
+  frCollection<frCollection<frCoord>> spacingTbl;
+  frUInt4 getIdx(frCoord width, frCoord prl) const
+  {
+    int sz = rows.size();
+    for (int i = 0; i < sz; i++) {
+      if (width <= rows[i].width)
+        return std::max(0, i - 1);
+      if (rows[i].prl != -1 && prl <= rows[i].prl)
+        return std::max(0, i - 1);
+    }
+    return sz - 1;
+  }
 };
 
 // original SPACINGTABLE Constraints
