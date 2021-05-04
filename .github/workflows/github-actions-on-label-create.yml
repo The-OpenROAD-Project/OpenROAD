@@ -18,21 +18,16 @@ jobs:
       - name: add remote
         run: git remote add staging https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
       - name: print remotes
-        run: git remote -v ; echo ${GITHUB_REF#refs/heads/}
-      - name: Branch name
-        run: echo running on branch ${GITHUB_REF##*/}
-      - name: Status
+        run: git remote -v
+      - name: git status
         run: git status
-      - name: Prints name of pull request base branch
-        run: echo ${{github.base_ref}}
-      - name: Prints name of pull request source branch
-        run: echo ${{github.ref}}
-      - name: current label
+      - name: Current label
         run: echo ${{github.event.label.name}}
       - name: pr info
         run: echo ${{toJson(github.event.pull_request.head.ref)}} 
-        #run: echo ${{ github.payload.pull_request.head.ref }}
-        #${{ toJson(github) }}
+      - name: push to staging
+        run: git push staging
+
           
 
         
