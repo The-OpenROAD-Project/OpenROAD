@@ -27,7 +27,7 @@ jobs:
       - name: Prints name of pull request source branch
         run: echo ${{github.ref}}
       - name: current branch
-        run: echo ${{ github.event.pull_request }}
+        run: echo ${{ github.payload.pull_request.head.ref }}
           
 
         
