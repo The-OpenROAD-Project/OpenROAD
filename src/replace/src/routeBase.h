@@ -276,9 +276,7 @@ class RouteBase {
     // update Route and Est info
     // from GlobalRouter
     void updateRoute();
-
     void getGlobalRouterResult();
-    void updateCongestionMap();
 
     // first: is Routability Need
     // second: reverting procedure need in NesterovPlace
@@ -329,12 +327,6 @@ class RouteBase {
     void init();
     void reset();
     void resetRoutabilityResources();
-
-    // init congestion maps based on given points
-    void updateCapacity();
-    void updateUsages();
-    void updateRoutes();
-    void updateInflationRatio();
 
     // update inflationIterCnt_, bloatIterCnt_ and numCall_
     void increaseCounter();
