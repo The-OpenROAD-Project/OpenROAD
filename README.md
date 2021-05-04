@@ -7,6 +7,8 @@ design from synthesized Verilog to routed layout.
 
 An outline of steps used to build a chip using OpenROAD are shown below.
 
+
+
 * Initialize floorplan - define the chip size and cell rows
 * Place pins (for designs without pads )
 * Place macro cells (RAMs, embedded macros)
