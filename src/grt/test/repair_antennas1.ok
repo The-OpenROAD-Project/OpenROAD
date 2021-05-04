@@ -26,7 +26,7 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3700
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.4800
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.7400
-[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 0.9600
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.3300
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 16951
@@ -43,7 +43,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 2931
-[INFO GRT-0157] Total Capacity: 70127
+[INFO GRT-0157] Total Capacity: 69855
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
@@ -102,7 +102,7 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3700
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.4800
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.7400
-[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 0.9600
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.3300
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 16963
@@ -119,7 +119,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 155
-[INFO GRT-0157] Total Capacity: 67374
+[INFO GRT-0157] Total Capacity: 67102
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0

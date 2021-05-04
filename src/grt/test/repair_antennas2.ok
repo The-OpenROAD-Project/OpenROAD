@@ -26,7 +26,7 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3700
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.4800
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.7400
-[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 0.9600
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.3300
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 105790
@@ -42,8 +42,8 @@ Grid origin: (0, 0)
 [INFO GRT-0025] Reducing resources of layer met5 by 15%.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 2035
-[INFO GRT-0157] Total Capacity: 55615
+[INFO GRT-0156] Total Usage   : 2036
+[INFO GRT-0157] Total Capacity: 55327
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
@@ -51,10 +51,10 @@ Grid origin: (0, 0)
 [INFO GRT-0162] V   Overflow  : 0
 [INFO GRT-0163] Final Overflow: 0
 
-[INFO GRT-0110] Final usage: 2035
+[INFO GRT-0110] Final usage: 2036
 [INFO GRT-0111] Final number of vias: 1831
-[INFO GRT-0112] Final usage 3D: 7528
-[INFO GRT-0018] Total wirelength: 22298 um
+[INFO GRT-0112] Final usage 3D: 7529
+[INFO GRT-0018] Total wirelength: 22327 um
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
 [INFO GRT-0224] Chose via M1M2_PR as default.
@@ -118,7 +118,7 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3700
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.4800
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.7400
-[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 0.9600
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.3300
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 17100
@@ -135,7 +135,7 @@ Grid origin: (0, 0)
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 21
-[INFO GRT-0157] Total Capacity: 53641
+[INFO GRT-0157] Total Capacity: 53352
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
