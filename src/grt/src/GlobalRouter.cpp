@@ -2348,9 +2348,9 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
     }
     if (minSpcValid) {
       if(upViaValid)
-        L2V_up = (layerWidth / 2) + (widthUp / 2) + minSpcUp;
+        L2V_up = (level != _maxRoutingLayer) ? (layerWidth / 2) + (widthUp / 2) + minSpcUp : -1;
       if (downViaValid)
-        L2V_down = (layerWidth / 2) + (widthDown / 2) + minSpcDown;
+        L2V_down = (level != _minRoutingLayer) ? (layerWidth / 2) + (widthDown / 2) + minSpcDown : -1;
       debugPrint(_logger,
                  utl::GRT,
                  "l2v_pitch",
