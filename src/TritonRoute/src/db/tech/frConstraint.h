@@ -1306,7 +1306,7 @@ class frSpacingTableTwConstraint : public frConstraint
     if (rows.empty())
       return 0;
     auto rowIdx = getIdx(width1, prl);
-    auto colIdx = getIdx(width1, prl);
+    auto colIdx = getIdx(width2, prl);
     return spacingTbl[rowIdx][colIdx];
   }
   frCoord findMin() const { return spacingTbl.front().front(); }
