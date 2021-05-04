@@ -385,14 +385,7 @@ class FlexGridGraph
       getPoint(pt, x, y);
       getPoint(pt1, x1, y1);
       if (box.contains(pt) && box.contains(pt1)) {
-        // initDR must not use top and rightmost track
-        if (initDR
-            && ((box.right() == pt.x() && box.right() == pt1.x())
-                || (box.top() == pt.y() && box.top() == pt1.y()))) {
-          sol = false;
-        } else {
           sol = true;
-        }
       } else {
         sol = false;
       }
