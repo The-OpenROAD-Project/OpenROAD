@@ -54,10 +54,6 @@ using utl::GPL;
 
 namespace gpl {
 
-static bool
-inflationListCompare(std::pair<Tile*, float> l, 
-    std::pair<Tile*, float> r);
-
 
 Tile::Tile()
 : x_(0), y_(0), 
@@ -449,11 +445,9 @@ RouteBase::resetRoutabilityResources() {
   tg_.reset();
   verticalCapacity_.clear();
   horizontalCapacity_.clear();
-  inflationList_.clear();
 
   verticalCapacity_.shrink_to_fit();
   horizontalCapacity_.shrink_to_fit();
-  inflationList_.shrink_to_fit();
 }
 
 void
@@ -605,7 +599,6 @@ RouteBase::updateRoute() {
 
   for(int i=1; i<=numLayers; i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
-    std::cout << "layer: " << layer->getConstName() << std::endl;
 
     bool isHorizontalLayer = (horizontalCapacity_[i-1] != 0);
     unsigned int originalCap = (isHorizontalLayer)? 
@@ -656,7 +649,6 @@ RouteBase::updateRoute() {
       }
 
       ratio = fmax(ratio, 0.0f);
-      std::cout << "current ratio: " << ratio << std::endl;
      
       // update inflation Ratio 
       if( ratio >= rbVars_.minInflationRatio ) {
@@ -768,6 +760,10 @@ RouteBase::routability() {
     int idxX = (gCell->dCx() - tg_->lx())/tg_->tileSizeX();
     int idxY = (gCell->dCy() - tg_->ly())/tg_->tileSizeY();
 
+    if( idxX >= tg_->tileCntX() || idxY >= tg_->tileCntY() ) {
+      std::cout << "TILE CNT EXCEED" << std::endl;
+    }
+
     Tile* tile = tg_->tiles()[idxY * tg_->tileCntX() + idxX];
 
     // Don't care when inflRatio <= 1
@@ -802,16 +798,6 @@ RouteBase::routability() {
 //        * static_cast<int64_t>(gCell->dy())
 //        * (tile->inflatedRatio() - 1.0)));
   }
-
-  // update inflationList_
-  for(auto& tile : tg_->tiles()) {
-    inflationList_.push_back(
-        make_pair(tile, tile->inflatedRatio()));
-  }
-
-  // sort by inflatedRatio
-  sort(inflationList_.begin(), inflationList_.end(), 
-      inflationListCompare);
 
   // target ratio
   float targetInflationDeltaAreaRatio  
@@ -952,7 +938,7 @@ RouteBase::getRC() const {
           verEdgeCongArray.push_back(ratio);
         }
 
-        if( ratio >= 1.0 ) {
+        if( ratio > 1.0 ) {
           overflowTileCnt2++;
         }
       }
@@ -1047,41 +1033,5 @@ RouteBase::increaseCounter() {
     bloatIterCnt_ ++;
   }
 }
-
-
-// compare based on the inflatedRatio
-static bool
-inflationListCompare(std::pair<Tile*, float> l, 
-   std::pair<Tile*, float> r) {
-
-  // inflatedRatio order
-  if ( l.second < r.second ) {
-    return true;
-  }
-  else if( l.second > r.second ) {
-    return false;
-  }
-
-  // x/y index sorts for deterministic
-  // when inflatedRatio is the same
-  //
-  // x sort
-  if( l.first->x() < r.first->x() ) {
-    return true;
-  }
-  else if( l.first->x() > r.first->x() ) { 
-    return false;
-  }
-
-  // y sort
-  if( l.first->y() < r.first->y() ) {
-    return true;
-  }
-  else if( l.first->y() > r.first->y() ) {
-    return false;
-  }
-  return true;
-}
-
 
 }

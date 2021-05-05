@@ -306,9 +306,6 @@ class RouteBase {
     std::vector<int> verticalCapacity_;
     std::vector<int> horizontalCapacity_;
 
-    // inflationList_ for dynamic Inflation Adjustment
-    std::vector<std::pair<Tile*, float>> inflationList_;
-
     int64_t inflatedAreaDelta_;
 
     int bloatIterCnt_;
