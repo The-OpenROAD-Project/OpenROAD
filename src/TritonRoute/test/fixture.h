@@ -129,6 +129,12 @@ class Fixture
       frLayerNum layer_num,
       std::vector<frCoord> widthTbl,
       std::vector<std::pair<frCoord, frCoord>> valTbl);
+
+  frSpacingTableTwConstraint* makeSpacingTableTwConstraint(
+      frLayerNum layer_num,
+      std::vector<frCoord> widthTbl,
+      std::vector<frCoord> prlTbl,
+      std::vector<std::vector<frCoord>> spacingTbl);
   void initRegionQuery();
 
   // Public data members are accessible from inside the test function
