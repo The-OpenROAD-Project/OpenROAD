@@ -169,7 +169,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     vIOs[i] = i;
   }
 
-  utl::shuffle(vIOs.begin(), vIOs.end(), g);
+  if (vIOs.size() > 1) {
+    utl::shuffle(vIOs.begin(), vIOs.end(), g);
+  }
 
   for (int pin_idx : pin_indices) {
     int b = vIOs[0];
