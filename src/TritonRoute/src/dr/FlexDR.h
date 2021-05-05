@@ -614,7 +614,7 @@ class FlexDRWorker
       std::map<frBlockObject*,
                std::set<std::pair<frPoint, frLayerNum>>,
                frBlockObjectComp>& pin2epMap,
-      bool isWire);
+      bool isPathSeg);
   void initNets_searchRepair_nodeMap(
       frNet* net,
       std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,

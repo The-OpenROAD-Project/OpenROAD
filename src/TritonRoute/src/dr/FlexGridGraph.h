@@ -384,11 +384,7 @@ class FlexGridGraph
       frPoint pt, pt1;
       getPoint(pt, x, y);
       getPoint(pt1, x1, y1);
-      if (box.contains(pt) && box.contains(pt1)) {
-          sol = true;
-      } else {
-        sol = false;
-      }
+      sol = box.contains(pt) && box.contains(pt1);
     } else {
       sol = false;
     }

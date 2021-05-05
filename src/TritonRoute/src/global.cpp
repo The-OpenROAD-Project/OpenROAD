@@ -299,6 +299,24 @@ ostream& operator<<(ostream& os, const frShape& fig)
       os << p;
       break;
     }
+    case frcPatchWire: {
+      auto p = static_cast<const frPatchWire*>(&fig);
+      frBox b;
+      p->getBBox(b);
+      os << "frPatchWire: " << b;
+      break;
+    }
+    case frcRect: {
+      auto p = static_cast<const frRect*>(&fig);
+      frBox b;
+      p->getBBox(b);
+      os << "frRect: " << b;
+      break;
+    }
+    case frcPolygon: {
+      os << "frPolygon";
+      break;
+    }
     default:
       os << "UNKNOWN frShape, code " << fig.typeId();
   }

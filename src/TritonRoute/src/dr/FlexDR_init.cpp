@@ -350,10 +350,8 @@ void FlexDRWorker::initNets_initDR(
       netTerms;
   vector<frBlockObject*> result;
   getRegionQuery()->queryGRPin(getRouteBox(), result);
-  frNet* net;
   for (auto obj : result) {
-    //    if (!accessPointsInBox(getRouteBox(), obj))
-    //        continue;
+    frNet* net;
     if (obj->typeId() == frcInstTerm) {
       net = static_cast<frInstTerm*>(obj)->getNet();
     } else if (obj->typeId() == frcTerm) {
@@ -401,7 +399,7 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
     frLayerNum lNum,
     map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
         pin2epMap,
-    bool isWire)
+    bool isPathSeg)
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
@@ -415,19 +413,17 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
                   bp.y() + half_min_width);
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
-    if (isWire && !bx.contains(bp))
+    if (isPathSeg && !bx.contains(bp))
       continue;
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
       if (instTerm->getNet() == net) {
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
-      } else {
       }
     } else if (rqObj->typeId() == frcTerm) {
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
-      } else {
       }
     }
   }
