@@ -147,6 +147,10 @@ void IOPlacer::randomPlacement()
 
 void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer)
 {
+  if (pin_indices.size() > slot_indices.size()) {
+    logger_->error(PPL, 72, "Number of pins ({}) exceed number of valid positions ({})", pin_indices.size(), slot_indices.size());
+  }
+
   const double seed = parms_->getRandSeed();
 
   int num_i_os = pin_indices.size();
