@@ -159,19 +159,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
   _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
   _fastRoute->setAllowOverflow(_allowOverflow);
 
-  odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* minLayer = tech->findRoutingLayer(minRoutingLayer);
-  odb::dbTechLayer* maxLayer = tech->findRoutingLayer(maxRoutingLayer);
-  _logger->report("Min routing layer: {}", minLayer->getName());
-  _logger->report("Max routing layer: {}", maxLayer->getName());
-  _logger->report("Global adjustment: {}%", int(_adjustment * 100));
-  _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
-  for (int l = 1; l <= maxRoutingLayer; l++) {
-    if (_layerPitches[l] != 0) {
-      odb::dbTechLayer* layer = tech->findRoutingLayer(l);
-      _logger->report("Layer {} pitch: {}", layer->getName(), _layerPitches[l]);
-    }
-  }
+  reportLayerSettings(minRoutingLayer, maxRoutingLayer);
 
   initCoreGrid(maxRoutingLayer);
   initRoutingLayers();
@@ -213,6 +201,8 @@ void GlobalRouter::globalRouteClocksSeparately()
   // route clock nets
   std::vector<Net*> clockNets =
     startFastRoute(_minLayerForClock, _maxLayerForClock, NetType::Clock);
+  reportResources();
+
   _logger->report("Routing clock nets...");
   _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
   Capacities clk_capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
@@ -226,12 +216,12 @@ void GlobalRouter::globalRouteClocksSeparately()
   std::vector<Net*> signalNets =
     startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
   restoreCapacities(clk_capacities, _minLayerForClock, _maxLayerForClock);
+  reportResources();
+
   // Store results in a temporary map, allowing to keep previous
   // routing result from clock nets
   NetRouteMap result = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
   _routes.insert(result.begin(), result.end());
-
-  computeWirelength();
 }
 
 void GlobalRouter::globalRoute()
@@ -242,9 +232,9 @@ void GlobalRouter::globalRoute()
 
   std::vector<Net*> nets =
   startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
+  reportResources();
 
   _routes = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
-  computeWirelength();
 }
 
 void GlobalRouter::run()
@@ -258,6 +248,9 @@ void GlobalRouter::run()
   } else {
     globalRoute();
   }
+
+  reportCongestion();
+  computeWirelength();
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
@@ -1024,7 +1017,6 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
     techLayer = tech->findRoutingLayer(layer);
     float adjustment = _adjustments[layer];
     if (adjustment != 0) {
-      _logger->info(GRT, 13+maxRoutingLayer+layer, "Reducing resources of layer {} by {}%.", techLayer->getName(), int(adjustment * 100));
       if (_hCapacities[layer - 1] != 0) {
         int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1]
                      * (1 - adjustment);
@@ -1161,7 +1153,7 @@ void GlobalRouter::computeObstructionsAdjustments()
       bool direction = routingLayer.getPreferredDirection();
 
       techLayer = tech->findRoutingLayer(layer);
-      _logger->info(GRT, 17+layer, "Processing {} blockages on layer {}.", layerObstructions.size(), techLayer->getName());
+      _logger->info(GRT, 17, "Processing {} blockages on layer {}.", layerObstructions.size(), techLayer->getName());
 
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
@@ -2524,7 +2516,7 @@ void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> clockNets = _sta->findClkNets();
 
-  _logger->info(GRT, 17, "Found {} clock nets.", clockNets.size());
+  _logger->info(GRT, 19, "Found {} clock nets.", clockNets.size());
 
   for (odb::dbNet* net : clockNets) {
     net->setSigType(odb::dbSigType::CLOCK);
@@ -3126,6 +3118,102 @@ void GlobalRouter::print(GRoute& route)
            segment.finalY,
            segment.finalLayer);
   }
+}
+
+void GlobalRouter::reportLayerSettings(int minRoutingLayer, int maxRoutingLayer)
+{
+  odb::dbTech* tech = _db->getTech();
+  odb::dbTechLayer* minLayer = tech->findRoutingLayer(minRoutingLayer);
+  odb::dbTechLayer* maxLayer = tech->findRoutingLayer(maxRoutingLayer);
+  _logger->info(GRT, 20, "Min routing layer: {}", minLayer->getName());
+  _logger->info(GRT, 21, "Max routing layer: {}", maxLayer->getName());
+  _logger->info(GRT, 22, "Global adjustment: {}%", int(_adjustment * 100));
+  _logger->info(GRT, 23, "Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
+  for (int l = 1; l <= maxRoutingLayer; l++) {
+    if (_layerPitches[l] != 0) {
+      odb::dbTechLayer* layer = tech->findRoutingLayer(l);
+      _logger->info(GRT, 24, "Layer {} pitch: {}", layer->getName(), _layerPitches[l]);
+    }
+  }
+}
+
+void GlobalRouter::reportResources()
+{
+  _fastRoute->computeCongestionInformation();
+  odb::dbTech* tech = _db->getTech();
+  std::vector<int> original_resources = _fastRoute->getOriginalResources();
+  std::vector<int> derated_resources = _fastRoute->getTotalCapacityPerLayer();
+
+  _logger->report("");
+  _logger->info(GRT, 53, "Routing resources analysis:");
+  _logger->report("          Routing      Original      Derated      Resource");
+  _logger->report("Layer     Direction    Resources     Resources    Reduction (%)");
+  _logger->report("---------------------------------------------------------------");
+
+  for (int l = 0; l < original_resources.size(); l++) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
+    std::string routing_direction = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) ?
+      "Horizontal" : "Vertical";
+
+    float reduciton_percent = 0;
+    if (original_resources[l] > 0) {
+      reduciton_percent = (1.0 - ((float)derated_resources[l] / (float)original_resources[l]))*100;
+    }
+
+    _logger->report("{:7s}    {:10}   {:8}      {:8}          {:3.2f}%",
+      layer->getName(), routing_direction, original_resources[l], derated_resources[l], reduciton_percent);
+  }
+  _logger->report("---------------------------------------------------------------");
+  _logger->report("");
+}
+
+void GlobalRouter::reportCongestion()
+{
+  _fastRoute->computeCongestionInformation();
+  odb::dbTech* tech = _db->getTech();
+  const std::vector<int> &resources = _fastRoute->getTotalCapacityPerLayer();
+  const std::vector<int> &demands = _fastRoute->getTotalUsagePerLayer();
+  const std::vector<int> &overflows = _fastRoute->getTotalOverflowPerLayer();
+  const std::vector<int> &max_h_overflows = _fastRoute->getMaxHorizontalOverflows();
+  const std::vector<int> &max_v_overflows = _fastRoute->getMaxVerticalOverflows();
+
+  int total_resource = 0;
+  int total_demand = 0;
+  int total_overflow = 0;
+  int total_h_overflow = 0;
+  int total_v_overflow = 0;
+
+  _logger->report("");
+  _logger->info(GRT, 96, "Final congestion report:");
+  _logger->report("Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow");
+  _logger->report("---------------------------------------------------------------------------------------");
+
+  for (int l = 0; l < resources.size(); l++) {
+    float usage_percentage;
+    if (resources[l] == 0) {
+      usage_percentage = 0.0;
+    } else {
+      usage_percentage
+          = (float) demands[l] / (float) resources[l];
+      usage_percentage *= 100;
+    }
+
+    total_resource += resources[l];
+    total_demand += demands[l];
+    total_overflow += overflows[l];
+    total_h_overflow += max_h_overflows[l];
+    total_v_overflow += max_v_overflows[l];
+
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
+    _logger->report("{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / {:2}",
+      layer->getName(), resources[l], demands[l], usage_percentage, max_h_overflows[l],
+      max_v_overflows[l], overflows[l]);
+  }
+  float total_usage = (float)total_demand / (float)total_resource * 100;
+  _logger->report("---------------------------------------------------------------------------------------");
+  _logger->report("Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / {:2}",
+    total_resource, total_demand, total_usage, total_h_overflow, total_v_overflow, total_overflow);
+  _logger->report("");
 }
 
 void GlobalRouter::reportLayerWireLengths()
