@@ -667,6 +667,7 @@ NesterovPlace::doNesterovPlace() {
         // reset the divergence detect conditions 
         minSumOverflow = 1e30;
         hpwlWithMinSumOverflow = 1e30; 
+        log_->report("[NesterovSolve] Revert back to snapshot coordi");
       }
     }
 

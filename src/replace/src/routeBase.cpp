@@ -472,7 +472,6 @@ RouteBase::getGlobalRouterResult() {
   grouter_->run();
 
   updateRoute();
-  log_->report("route parsing is done");
 }
 
 int64_t 
@@ -862,7 +861,6 @@ RouteBase::routability() {
 //  }
  
   // updateArea 
-  log_->report("UpdateArea");
   nb_->updateAreas();
 
   log_->info(GPL, 54, "NewTargetDensity: {}", nb_->targetDensity());
@@ -1032,6 +1030,9 @@ RouteBase::increaseCounter() {
     inflationIterCnt_ = 0;
     bloatIterCnt_ ++;
   }
+
+  log_->info(GPL, 75, "Routability numCall: {} inflationIterCnt: {} bloatIterCnt: {}",
+      numCall_, inflationIterCnt_, bloatIterCnt_);
 }
 
 }
