@@ -110,26 +110,46 @@ void IOPlacer::initParms()
 
 void IOPlacer::randomPlacement()
 {
-  const double seed = parms_->getRandSeed();
+  for (const Constraint &constraint : constraints_) {
+    std::vector<Section> sections = createSectionsPerConstraint(constraint);
+    int first_slot = sections.front().begin_slot;
+    int last_slot = sections.back().end_slot;
 
-  std::vector<Slot> valid_slots;
-  for (Slot& slot : slots_) {
-    if (!slot.blocked) {
-      valid_slots.push_back(slot);
+    std::vector<int> valid_slots;
+    for (int i = first_slot; i <= last_slot; i++) {
+      if (!slots_[i].blocked) {
+        valid_slots.push_back(i);
+      }
+    }
+
+    std::vector<int> pin_indices = findPinsForConstraint(constraint);
+
+    randomPlacement(pin_indices, valid_slots);
+  }
+
+  std::vector<int> valid_slots;
+  for (int i = 0; i < slots_.size(); i++) {
+    if (!slots_[i].blocked) {
+      valid_slots.push_back(i);
     }
   }
 
-  std::vector<IOPin> &pins = netlist_.getIOPins();
+  std::vector<int> pin_indices;
+  for (int i = 0; i < netlist_.numIOPins(); i++) {
+    if (!netlist_.getIoPin(i).isPlaced()) {
+      pin_indices.push_back(i);
+    }
+  }
 
-  randomPlacement(pins, valid_slots);
+  randomPlacement(pin_indices, valid_slots);
 }
 
-void IOPlacer::randomPlacement(std::vector<IOPin> &pins, const std::vector<Slot> &slots)
+void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices)
 {
   const double seed = parms_->getRandSeed();
 
-  int num_i_os = pins.size();
-  int num_slots = slots.size();
+  int num_i_os = pin_indices.size();
+  int num_slots = slot_indices.size();
   double shift = num_slots / double(num_i_os);
   int idx = 0;
   std::vector<int> vSlots(num_slots);
@@ -151,10 +171,15 @@ void IOPlacer::randomPlacement(std::vector<IOPin> &pins, const std::vector<Slot>
 
   utl::shuffle(vIOs.begin(), vIOs.end(), g);
 
-  for (IOPin& io_pin : netlist_.getIOPins()) {
+  for (int pin_idx : pin_indices) {
     int b = vIOs[0];
-    io_pin.setPos(slots.at(floor(b * shift)).pos);
-    io_pin.setLayer(slots.at(floor(b * shift)).layer);
+    int slot_idx = slot_indices[floor(b * shift)];
+    IOPin& io_pin = netlist_.getIoPin(pin_idx);
+    io_pin.setPos(slots_.at(slot_idx).pos);
+    io_pin.place();
+    slots_.at(slot_idx).used = true;
+    slots_.at(slot_idx).blocked = true;
+    io_pin.setLayer(slots_.at(slot_idx).layer);
     assignment_.push_back(io_pin);
     sections_[0].net.addIONet(io_pin, instPins);
     vIOs.erase(vIOs.begin());
@@ -953,6 +978,18 @@ void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
       }
     }
   }
+}
+
+std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint)
+{
+  std::vector<int> pin_indices;
+  const PinList &pin_list = constraint.pin_list;
+  for (odb::dbBTerm* bterm : pin_list) {
+    int idx = netlist_.getIoPinIdx(bterm);
+    pin_indices.push_back(idx);
+  }
+
+  return pin_indices;
 }
 
 void IOPlacer::initConstraints()
