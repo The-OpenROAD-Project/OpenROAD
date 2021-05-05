@@ -291,37 +291,6 @@ ostream& operator<<(ostream& os, const frPathSeg& p)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frShape& fig)
-{
-  switch (fig.typeId()) {
-    case frcPathSeg: {
-      auto p = static_cast<const frPathSeg*>(&fig);
-      os << p;
-      break;
-    }
-    case frcPatchWire: {
-      auto p = static_cast<const frPatchWire*>(&fig);
-      frBox b;
-      p->getBBox(b);
-      os << "frPatchWire: " << b;
-      break;
-    }
-    case frcRect: {
-      auto p = static_cast<const frRect*>(&fig);
-      frBox b;
-      p->getBBox(b);
-      os << "frRect: " << b;
-      break;
-    }
-    case frcPolygon: {
-      os << "frPolygon";
-      break;
-    }
-    default:
-      os << "UNKNOWN frShape, code " << fig.typeId();
-  }
-  return os;
-}
 
 ostream& operator<<(ostream& os, const frGuide& p)
 {
@@ -354,6 +323,17 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     case frcGuide: {
       auto p = static_cast<const frGuide*>(&fig);
       os << p;
+      break;
+    }
+    case frcRect: {
+      auto p = static_cast<const frRect*>(&fig);
+      frBox b;
+      p->getBBox(b);
+      os << "frRect: " << b;
+      break;
+    }
+    case frcPolygon: {
+      os << "frPolygon";
       break;
     }
     default:
