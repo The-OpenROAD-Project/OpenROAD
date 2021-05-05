@@ -447,9 +447,7 @@ void FlexDRGraphics::startIter(int iter)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    // If you specified a gcell then only one worker can process that
-    // gcell and we don't need to limit the threading.
-    if (MAX_THREADS > 1 && settings_->gcellX < 0) {
+    if (MAX_THREADS > 1) {
       logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
       MAX_THREADS = 1;
     }
