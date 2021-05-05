@@ -4,11 +4,11 @@
 [INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
 [INFO ODB-0127] Reading DEF file: generate_pattern.defok
 [INFO ODB-0128] Design: blk
-[INFO ODB-0130]     Created 138176 pins.
-[INFO ODB-0133]     Created 69088 nets and 0 connections.
+[INFO ODB-0130]     Created 141104 pins.
+[INFO ODB-0133]     Created 70552 nets and 0 connections.
 [INFO ODB-0134] Finished DEF file: generate_pattern.defok
 [INFO RCX-0001] Reading SPEF file: generate_pattern.spefok
 		Have read 1000000 lines
-[INFO RCX-0059] Have read 69088 D_NET nets, 69808 resistors, 138896 gnd caps 457640 coupling caps
-[INFO RCX-0006] DB created 69086 nets, 138896 rsegs, 138896 caps, 228820 ccs
+[INFO RCX-0463] Have read 70552 D_NET nets, 71760 resistors, 71804 gnd caps 459220 coupling caps
+[INFO RCX-0376] DB created 70550 nets, 142312 rsegs, 142312 caps, 229610 ccs
 No differences found.

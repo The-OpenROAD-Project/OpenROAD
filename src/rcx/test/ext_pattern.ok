@@ -4,28 +4,28 @@
 [INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
 [INFO ODB-0127] Reading DEF file: generate_pattern.defok
 [INFO ODB-0128] Design: blk
-[INFO ODB-0130]     Created 138176 pins.
-[INFO ODB-0133]     Created 69088 nets and 0 connections.
+[INFO ODB-0130]     Created 141104 pins.
+[INFO ODB-0133]     Created 70552 nets and 0 connections.
 [INFO ODB-0134] Finished DEF file: generate_pattern.defok
-[INFO RCX-0033] Defined process_corner X with ext_model_index 0
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0008] extracting parasitics of blk ...
-[INFO RCX-0035] Reading extraction model file ext_pattern.rules ...
-[INFO RCX-0036] Database dbFactor= 1.0  dbunit= 1000
-[INFO RCX-0037] RC segment generation blk (max_merge_res 0.0) ...
-[INFO RCX-0040] Final 69088 rc segments
-[INFO RCX-0041] Coupling Cap extraction blk ...
-[INFO RCX-0042] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
-[INFO RCX-0043] 69088 wires to be extracted
-[INFO RCX-0044] 28% completion -- 19907 wires have been extracted
-[INFO RCX-0044] 36% completion -- 25213 wires have been extracted
-[INFO RCX-0044] 76% completion -- 52512 wires have been extracted
-[INFO RCX-0044] 80% completion -- 55854 wires have been extracted
-[INFO RCX-0044] 87% completion -- 60360 wires have been extracted
-[INFO RCX-0044] 95% completion -- 66083 wires have been extracted
-[INFO RCX-0045] Extract 69086 nets, 138176 rsegs, 138176 caps, 67067 ccs
+[INFO RCX-0435] Reading extraction model file ext_pattern.rules ...
+[INFO RCX-0432] Database dbFactor= 1.0  dbunit= 1000
+[INFO RCX-0436] RC segment generation blk (max_merge_res 0.0) ...
+[INFO RCX-0040] Final 70552 rc segments
+[INFO RCX-0439] Coupling Cap extraction blk ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0043] 70552 wires to be extracted
+[INFO RCX-0442] 28% completion -- 20072 wires have been extracted
+[INFO RCX-0442] 36% completion -- 25945 wires have been extracted
+[INFO RCX-0442] 75% completion -- 53088 wires have been extracted
+[INFO RCX-0442] 81% completion -- 57308 wires have been extracted
+[INFO RCX-0442] 85% completion -- 60420 wires have been extracted
+[INFO RCX-0442] 95% completion -- 67547 wires have been extracted
+[INFO RCX-0045] Extract 70550 nets, 141104 rsegs, 141104 caps, 68533 ccs
 [INFO RCX-0015] Finished extracting blk.
 [INFO RCX-0016] Writing SPEF ...
-[INFO RCX-0047] 9 nets finished
+[INFO RCX-0443] 9 nets finished
 [INFO RCX-0017] Finished writing SPEF ...
 No differences found.

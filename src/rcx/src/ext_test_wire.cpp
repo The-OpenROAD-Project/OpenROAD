@@ -142,8 +142,6 @@ int extMain::db_test_wires(odb::dbDatabase* db)
     shape_id.push_back(sitr.getShapeId());
   }
 
-  logger_->info(RCX, 253, "------------------------------");
-
   std::vector<int>::iterator itr;
 
   for (itr = shape_id.begin(); itr != shape_id.end(); ++itr) {
@@ -152,8 +150,6 @@ int extMain::db_test_wires(odb::dbDatabase* db)
     wire->getShape(id, shape);
     print_shape(shape, 0, 0);
   }
-
-  logger_->info(RCX, 254, "\nRC PATHS ------------------------------");
 
   odb::dbWirePath path;
   odb::dbWirePathShape pshape;
