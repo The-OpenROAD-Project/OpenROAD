@@ -936,8 +936,9 @@ void FastRouteCore::updateDbCongestion()
       for (int x = 0; x < xGrid - 1; x++) {
         int gridH = y * (xGrid - 1) + x + k * (xGrid - 1) * yGrid;
 
-        unsigned short capH = h_edges3D[gridH].cap;
-        unsigned short usageH = h_edges3D[gridH].usage;
+        unsigned short capH = hCapacity3D[k];
+        unsigned short blockageH = (hCapacity3D[k] - h_edges3D[gridH].cap);
+        unsigned short usageH = h_edges3D[gridH].usage + blockageH;
 
         db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
         db_gcell->setHorizontalUsage(layer, x, y, (uint) usageH);
@@ -948,8 +949,9 @@ void FastRouteCore::updateDbCongestion()
       for (int x = 0; x < xGrid; x++) {
         int gridV = y * xGrid + x + k * xGrid * (yGrid - 1);
 
-        unsigned short capV = v_edges3D[gridV].cap;
-        unsigned short usageV = v_edges3D[gridV].usage;
+        unsigned short capV = vCapacity3D[k];
+        unsigned short blockageV = (vCapacity3D[k] - v_edges3D[gridV].cap);
+        unsigned short usageV = v_edges3D[gridV].usage + blockageV;
 
         db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
         db_gcell->setVerticalUsage(layer, x, y, (uint) usageV);
