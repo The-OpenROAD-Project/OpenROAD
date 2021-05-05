@@ -106,7 +106,8 @@ bool Ext::load_model(const std::string& name,
     logger_->info(
         RCX,
         151,
-        "Have to specify options:\n\t-lef_rc to read resistance and "
+        "Have to specify options:"
+        "\n\t-lef_rc to read resistance and "
         "capacitance values from LEF or \n\t-file to read high accuracy RC "
         "models");
   }
@@ -336,7 +337,7 @@ bool Ext::bench_verilog(const std::string& file)
   }
   FILE* fp = fopen(filename, "w");
   if (fp == NULL) {
-    logger_->error(RCX, 27, "Cannot open file {}", filename);
+    logger_->error(RCX, 378, "Can't open file {}", filename);
   }
   _ext->benchVerilog(fp);
 
@@ -478,7 +479,7 @@ bool Ext::extract(ExtractOptions opts)
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
     _ext->addExtModel();
-    logger_->info(RCX, 9, "Using LEF RC values to extract!");
+    logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
 
   bool extract_power_grid_only = opts.power_grid;
@@ -622,10 +623,10 @@ bool Ext::extract(ExtractOptions opts)
 
     // Extraction
 
-    logger_->info(RCX, 11, "List of extraction tile blocks:");
+    logger_->info(RCX, 6, "List of extraction tile blocks:");
     for (itr = children.begin(); itr != children.end(); ++itr) {
       odb::dbBlock* blk = *itr;
-      logger_->info(RCX, 11, "{} ", blk->getConstName());
+      logger_->info(RCX, 377, "{}", blk->getConstName());
     }
   } else if (extdbg == 501) {
     odb::dbSet<odb::dbBlock> children = topBlock->getChildren();
@@ -818,7 +819,7 @@ bool Ext::read_spef(ReadSpefOpts& opt)
   Ath__parser parser;
   char* filename = (char*) opt.file;
   if (!filename || !filename[0]) {
-    logger_->error(RCX, 2, "Please input SPEF file");
+    logger_->error(RCX, 2, "Filename is not defined!");
   }
   parser.mkWords(filename);
 
@@ -869,7 +870,7 @@ bool Ext::diff_spef(const DiffOptions& opt)
   std::string filename(opt.file);
   if (filename.empty()) {
     logger_->error(
-        RCX, 20, "Please type in name of the spef file to diff, using -file");
+        RCX, 380, "Filename is not defined to run diff_spef command!");
   }
   logger_->info(RCX, 19, "diffing spef {}", opt.file);
 
@@ -933,10 +934,10 @@ bool Ext::calibrate(const std::string& spef_file,
                     float lower_limit)
 {
   if (spef_file.empty())
-    logger_->error(
-        RCX,
-        20,
-        "please type in name of the spef file to calibrate, using -spef_file");
+    logger_->error(RCX,
+                   381,
+                   "Filename for calibration is not defined. Define the "
+                   "filename using -spef_file");
 
   logger_->info(RCX, 21, "calibrate on spef file  {}", spef_file.c_str());
   Ath__parser parser;
@@ -958,10 +959,10 @@ bool Ext::match(const std::string& spef_file,
                 bool m_map)
 {
   if (spef_file.empty()) {
-    logger_->info(
-        RCX,
-        20,
-        "please type in name of the spef file to match, using -spef_file\n");
+    logger_->info(RCX,
+                  20,
+                  "Filename for calibration is not defined. Define the "
+                  "filename using -spef_file");
   }
   logger_->info(RCX, 18, "match on spef file  {}", spef_file.c_str());
   Ath__parser parser;
@@ -1006,8 +1007,10 @@ bool Ext::set_block(const std::string& block_name,
     odb::dbChip* chip = _db->getChip();
     odb::dbBlock* child = chip->getBlock()->findChild(block_name.c_str());
     if (child == NULL) {
-      logger_->warn(
-          RCX, 23, "Cannot find block with master name {}", block_name.c_str());
+      logger_->warn(RCX,
+                    430,
+                    "Cannot find block with master name {}",
+                    block_name.c_str());
       return TCL_ERROR;
     }
     block = child;
@@ -1150,7 +1153,7 @@ bool Ext::net_stats(std::list<int>& net_ids,
   if (filename != NULL) {
     fp = fopen(filename, "w");
     if (fp == NULL) {
-      logger_->warn(RCX, 27, "Cannot open file {}", filename);
+      logger_->warn(RCX, 11, "Can't open file {}", filename);
       return TCL_OK;
     }
   }

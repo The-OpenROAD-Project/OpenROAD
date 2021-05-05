@@ -82,7 +82,7 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
   int prev_sep = 0;
   int prev_width = 0;
   int n = 0;
-  
+
   dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator itr;
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
@@ -208,7 +208,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
     m._s2_m = s2;
     m._s2_nm = Ath__double2int(m._s2_m * 1000);
 
-    // double wLen= (len + w->getDouble(0)) * 1.0;
     double wLen = GetDBcoords2(len) * 1.0;
     double totCC = net->getTotalCouplingCap();
     double totGnd = net->getTotalCapacitance();
@@ -216,8 +215,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
 
     double contextCoupling = getTotalCouplingCap(net, "cntxM", 0);
     if (contextCoupling > 0) {
-      // logger_->info(RCX, 62, "ContextCoupling -- Value: {}, Net name: {}",
-      // contextCoupling, netName);
       totGnd += contextCoupling;
       totCC -= contextCoupling;
     }
@@ -556,9 +553,9 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
   return cnt;
 }
 /**
- * writeBenchWires_DB_res routine generates the pattern 
- * geometries to capture the effect of spacing wiring 
- * neighbors on both sides of wire of interest on the 
+ * writeBenchWires_DB_res routine generates the pattern
+ * geometries to capture the effect of spacing wiring
+ * neighbors on both sides of wire of interest on the
  * per unit resistance in the calibration flow.
  *
  *
@@ -710,8 +707,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
   int x1 = bboxLL[0];
   int y1 = bboxLL[1];
 
-  // logger_->info(RCX, 0, "                                     %12d %12d", x1,
-  // y1);
   measure->clean2dBoxTable(measure->_met, false);
 
   double x_tmp[50];
@@ -1091,8 +1086,6 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
   int x1 = bboxLL[0];
   int y1 = bboxLL[1];
 
-  // logger_->info(RCX, 0, "M{} W={} sp={} s_nm={}  minSpace={}", measure->_met,
-  // diag_width, diag_space, measure->_s_nm, measure->_minSpace);
   measure->clean2dBoxTable(measure->_met, false);
 
   uint idCnt = 1;
@@ -1160,29 +1153,10 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
           _wireDirName, bboxLL, bboxUR, measure->_underMet);
       measure->createContextGrid(
           _wireDirName, bboxLL, bboxUR, measure->_overMet);
-      /*
-      int ll[2]= {bboxLL[0], bboxLL[1]};
-      int ur[2];
-      ur[!measure->_dir]= ll[!measure->_dir];
-      ur[measure->_dir]= bboxUR[measure->_dir];
-
-//	logger_->info(RCX, 0, "bbox {} {} {}  {} {}", _wireDirName, bboxLL[0],
-bboxLL[1], bboxUR[0], bboxUR[1]);
-//	logger_->info(RCX, 0, "ll-ul {} {} {}  {} {}", _wireDirName, ll[0],
-ll[1], ur[0], ur[1]);
-
-      int xcnt=1;
-      while (ur[!measure->_dir]<=bboxUR[!measure->_dir]) {
-              measure->createNetSingleWire_cntx(measure->_underMet,
-_wireDirName, xcnt++, !measure->_dir, ll, ur);
-      }
-      */
     } else {
       double pitchMult = 1.0;
 
       measure->clean2dBoxTable(measure->_underMet, true);
-      // measure->createContextNets(_wireDirName, bboxLL, bboxUR,
-      // measure->_underMet, pitchMult);
       measure->createContextObstruction(_wireDirName,
                                         bboxLL[0],
                                         bboxLL[1],
@@ -1191,8 +1165,6 @@ _wireDirName, xcnt++, !measure->_dir, ll, ur);
                                         pitchMult);
 
       measure->clean2dBoxTable(measure->_overMet, true);
-      // measure->createContextNets(_wireDirName, bboxLL, bboxUR,
-      // measure->_overMet, pitchMult);
       measure->createContextObstruction(_wireDirName,
                                         bboxLL[0],
                                         bboxLL[1],
@@ -1203,7 +1175,6 @@ _wireDirName, xcnt++, !measure->_dir, ll, ur);
   }
   measure->_ur[measure->_dir] += gap;
 
-  //	double mainNetStart= X[0];
   int main_xlo, main_ylo, main_xhi, main_yhi, low;
   measure->getBox(measure->_met, false, main_xlo, main_ylo, main_xhi, main_yhi);
   if (!measure->_dir)

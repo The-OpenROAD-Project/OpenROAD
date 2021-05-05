@@ -150,8 +150,6 @@ uint extMain::initPlanes(uint dir,
 }
 uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
 {
-  // logger_->info(RCX, 0, "Initializing Extraction search DB ... ");
-
   if (_geomSeq)
     delete _geomSeq;
   _geomSeq = new odb::gs();

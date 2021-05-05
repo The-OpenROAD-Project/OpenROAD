@@ -269,8 +269,7 @@ void extMain::writeIncrementalSpef(char* filename,
                filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(
-          RCX, 137, "Can't open file \"{}\" to write spef.", filename);
+      logger_->info(RCX, 58, "Can't open file \"{}\" to write spef.", filename);
     else
       cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                               _excludeCells,
@@ -295,7 +294,7 @@ void extMain::writeIncrementalSpef(char* filename,
   _block->replaceOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.1.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 59, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -316,7 +315,7 @@ void extMain::writeIncrementalSpef(char* filename,
   _block->restoreOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.2.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 61, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -358,7 +357,7 @@ void extMain::writeSpef(char* filename,
   }
   uint cnt;
   if (openSpefFile(filename, 1) > 0) {
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", filename);
+    logger_->info(RCX, 62, "Can't open file \"{}\" to write spef.", filename);
     return;
   } else
     cnt = _spef->writeBlock(coord /*nodeCoord*/,
@@ -1548,13 +1547,13 @@ void extMain::measureRC(int* options)
         logger_->info(RCX, 142, "  layer {}", ii + m._met);
         for (jj = 0; jj < _ccContextArray[ii + m._met]->getCnt(); jj++)
           logger_->info(RCX,
-                        143,
+                        476,
                         "    {}: {}",
                         jj,
                         _ccContextArray[ii + m._met]->get(jj));
       }
       for (ii = 1; ii <= _ccContextDepth && m._met - ii > 0; ii++) {
-        logger_->info(RCX, 142, "  layer {}", m._met - ii);
+        logger_->info(RCX, 65, "  layer {}", m._met - ii);
         for (jj = 0; jj < _ccContextArray[m._met - ii]->getCnt(); jj++)
           logger_->info(RCX,
                         143,

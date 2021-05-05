@@ -153,7 +153,7 @@ int extMeasure::readQcap(extMain* extMain,
   while (parser1.parseNextLine() > 0) {
     if (parser1.isKeyword(0, "layer")) {
       if (!layerSectionFlag) {
-        logger_->info(RCX, 63, "Reading layer section of file {}", filename);
+        logger_->info(RCX, 55, "Reading layer section of file {}", filename);
         layerSectionFlag = true;
       }
       char* layerName = parser1.get(1);
@@ -183,7 +183,7 @@ int extMeasure::readQcap(extMain* extMain,
       if (techLayer == NULL) {
         logger_->warn(
             RCX,
-            64,
+            370,
             "Layer {} in line number {} in file {} has not beed defined in "
             "LEF file, will skip all attached geometries",
             layerName,
@@ -201,7 +201,7 @@ int extMeasure::readQcap(extMain* extMain,
 
       logger_->info(
           RCX,
-          65,
+          368,
           "Read layer name {} with number {} that corresponds to routing "
           "level {}",
           layerName,
@@ -254,7 +254,7 @@ int extMeasure::readQcap(extMain* extMain,
           uint level = _idTable[layerNum];
           if (level == 0) {
             logger_->info(RCX,
-                          66,
+                          366,
                           "Skipping net {}, layer num {} not defined in LEF",
                           netName,
                           layerNum);
@@ -281,7 +281,7 @@ int extMeasure::readQcap(extMain* extMain,
             if ((net != NULL) && getFirstShape(net, s)) {
               if (debug) {
                 logger_->info(RCX,
-                              67,
+                              363,
                               "\t\tCreated net {} : {} {}   {} {}",
                               net->getConstName(),
                               s.xMin(),
@@ -353,7 +353,7 @@ int extMeasure::readQcap(extMain* extMain,
             totWireCnt += wireCnt + 1;
             if (netCnt % 1000 == 0)
               logger_->info(RCX,
-                            68,
+                            361,
                             "Have read {} nets and {} wires",
                             netCnt,
                             totWireCnt);
@@ -372,7 +372,7 @@ int extMeasure::readQcap(extMain* extMain,
     Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
 
-    logger_->info(RCX, 69, "Have read {} nets from file {}", netCnt, filename);
+    logger_->info(RCX, 51, "Have read {} nets from file {}", netCnt, filename);
   } else {
     logger_->warn(RCX, 70, "No nets were read from file {}", filename);
   }
@@ -395,7 +395,7 @@ int extMeasure::readQcap(extMain* extMain,
     gndCnt = readCapFile(capFile, ccCnt);
   }
   logger_->info(
-      RCX, 71, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
+      RCX, 360, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
 
   return netCnt;
 }
@@ -420,7 +420,7 @@ dbNet* extMeasure::createSingleWireNet(char* name,
   dbShape s;
   if ((net == NULL) || !getFirstShape(net, s)) {
     logger_->warn(RCX,
-                  72,
+                  462,
                   "\t\tCannot create wire: {} {}   {} {} for name {}",
                   s.xMin(),
                   s.yMin(),
@@ -431,7 +431,7 @@ dbNet* extMeasure::createSingleWireNet(char* name,
   }
   if (debug) {
     logger_->info(RCX,
-                  67,
+                  371,
                   "\t\tCreated net {} : {} {}   {} {}",
                   net->getConstName(),
                   s.xMin(),
@@ -518,7 +518,7 @@ int extMeasure::readQcap(extMain* extMain,
 
       if (layerNumWord == NULL) {
         logger_->warn(RCX,
-                      73,
+                      461,
                       "Cannot read layer number for layer name {} at line: {}",
                       layerName,
                       parser1.getLineNum());
@@ -540,7 +540,7 @@ int extMeasure::readQcap(extMain* extMain,
         if (techLayer == NULL) {
           logger_->warn(
               RCX,
-              64,
+              372,
               "Layer {} in line number {} in file {} has not beed defined in "
               "LEF file, will skip all attached geometries",
               layerName,
@@ -557,7 +557,7 @@ int extMeasure::readQcap(extMain* extMain,
         _idTable[layerNum] = techLayer->getRoutingLevel();
 
         logger_->info(RCX,
-                      65,
+                      367,
                       "Read layer name {} with number {} that corresponds to "
                       "routing level {}",
                       layerName,
@@ -626,7 +626,7 @@ int extMeasure::readQcap(extMain* extMain,
           uint level = _idTable[layerNum];
           if (level == 0) {
             logger_->info(RCX,
-                          66,
+                          365,
                           "Skipping net {}, layer num {} not defined in LEF",
                           netName,
                           layerNum);
@@ -732,7 +732,7 @@ if (net!=NULL) {
             totWireCnt += wireCnt + 1;
             if (netCnt % 1000 == 0)
               logger_->info(RCX,
-                            68,
+                            362,
                             "Have read {} nets and {} wires",
                             netCnt,
                             totWireCnt);
@@ -751,9 +751,9 @@ if (net!=NULL) {
     Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
 
-    logger_->info(RCX, 69, "Have read {} nets from file {}", netCnt, filename);
+    logger_->info(RCX, 53, "Have read {} nets from file {}", netCnt, filename);
   } else {
-    logger_->warn(RCX, 70, "No nets were read from file {}", filename);
+    logger_->warn(RCX, 56, "No nets were read from file {}", filename);
   }
   uint ccCnt = 0;
   int gndCnt = 0;
@@ -814,7 +814,7 @@ int extMeasure::readAB(extMain* extMain,
     if (techLayer == NULL) {
       logger_->warn(
           RCX,
-          64,
+          369,
           "Layer {} in line number {} in file {} has not beed defined "
           "in LEF file, will skip all attached geometries",
           layerName,
@@ -849,9 +849,9 @@ int extMeasure::readAB(extMain* extMain,
     Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
 
-    logger_->info(RCX, 69, "Have read {} nets from file {}", netCnt, filename);
+    logger_->info(RCX, 54, "Have read {} nets from file {}", netCnt, filename);
   } else {
-    logger_->warn(RCX, 70, "No nets were read from file {}", filename);
+    logger_->warn(RCX, 57, "No nets were read from file {}", filename);
   }
   uint ccCnt = 0;
   int gndCnt = 0;
@@ -872,7 +872,7 @@ int extMeasure::readAB(extMain* extMain,
     gndCnt = readCapFile(capFile, ccCnt);
   }
   logger_->info(
-      RCX, 71, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
+      RCX, 359, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
 
   return netCnt;
 }
@@ -894,7 +894,7 @@ dbRSeg* extMeasure::getRseg(const char* netname,
   dbRSeg* r = getFirstDbRseg(net->getId());
   if (r == NULL) {
     logger_->warn(RCX,
-                  75,
+                  460,
                   "Cannot find dbRseg for net {} from the {} table entry {}",
                   netname,
                   capMsg,
@@ -963,7 +963,7 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
       ccap->addCapacitance(cap);
 
       logger_->info(RCX,
-                    76,
+                    453,
                     "Created coupling Cap {} for nets {} and {}",
                     cap,
                     netname1,
@@ -1765,7 +1765,7 @@ uint extMeasure::getOverUnderIndex()  // TO_TEST
        u= %d o= %d\n", n, _met, _underMet, _overMet);
     */
     logger_->info(RCX,
-                  77,
+                  459,
                   "getOverUnderIndex: out of range n= {}   m={} u= {} o= {}",
                   n,
                   _met,
@@ -1937,8 +1937,11 @@ uint extMeasure::getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable)
     return len1;
   } else {
 #ifdef DEBUG_gs
-    logger_->info(
-        RCX, 78, "pixelTable gave len {}, bigger than expected {}", len1, _len);
+    logger_->info(RCX,
+                  454,
+                  "pixelTable gave len {}, bigger than expected {}",
+                  len1,
+                  _len);
 #endif
     return 0;
   }
@@ -1976,8 +1979,11 @@ uint extMeasure::getOverlapSeq(uint met,
     return len1;
   } else {
 #ifdef DEBUG_gs
-    logger_->info(
-        RCX, 78, "pixelTable gave len {}, bigger than expected {}", len1, _len);
+    logger_->info(RCX,
+                  455,
+                  "pixelTable gave len {}, bigger than expected {}",
+                  len1,
+                  _len);
 #endif
     return 0;
   }
@@ -2119,7 +2125,7 @@ uint extMeasure::computeOverUnder(int* ll,
     //		fprintf(stdout, "pixelTable gave len %d, bigger than expected
     //%d\n", ouLen, _len);
     logger_->info(RCX,
-                  78,
+                  456,
                   "pixelTable gave len {}, bigger than expected {}",
                   ouLen,
                   _len);
@@ -2165,7 +2171,7 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
       //			fprintf(stdout, "pixelTable gave len %d, bigger
       // than expected %d\n", len1, _len);
       logger_->info(RCX,
-                    78,
+                    457,
                     "pixelTable gave len {}, bigger than expected {}",
                     len1,
                     _len);
@@ -2193,7 +2199,7 @@ uint extMeasure::computeOverUnder(int xy1, int xy2, Ath__array1D<int>* resTable)
     //		fprintf(stdout, "pixelTable gave len %d, bigger than expected
     //%d\n", ouLen, _len);
     logger_->info(RCX,
-                  78,
+                  458,
                   "pixelTable gave len {}, bigger than expected {}",
                   ouLen,
                   _len);
@@ -3677,11 +3683,11 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
 }
 
 /**
- * ScaleResbyTrack scales the original calculation by 
+ * ScaleResbyTrack scales the original calculation by
  * a coefficient depending on how many track(s) away the
  * nearest neighbors to the wire of interest.
  *
- * To scale the calculated resistance to be closer to 
+ * To scale the calculated resistance to be closer to
  * golden resistance from commercial tool.
  *
  * @return the scaling coefficient for the resistance.
@@ -3737,7 +3743,7 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   // extMain::getShapeProperty_rc(rseg2->getNet(), rseg2->getId())>0;
   bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
   bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
-  
+
   if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
     return;
   }
@@ -3822,7 +3828,6 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
                "C"
                "\t[BEGIN-OUD] ----- OverUnder/Diagonal RC ----- BEGIN");
 
-
   uint modelCnt = _metRCTable.getCnt();
   int totLenCovered = 0;
   _lenOUtable->resetCnt();
@@ -3875,7 +3880,7 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       bool ou = false;
       _rc[jj]->_res = 0;  // DF 022821 : Res non context based
-      
+
       if (_rc[jj]->_fringe > 0) {
         ou = true;
         double tot = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);

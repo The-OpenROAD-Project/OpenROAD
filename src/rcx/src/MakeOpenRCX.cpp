@@ -33,8 +33,8 @@
 
 #include "rcx/MakeOpenRCX.h"
 
-#include "rcx/ext.h"
 #include "ord/OpenRoad.hh"
+#include "rcx/ext.h"
 
 namespace ord {
 
