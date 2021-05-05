@@ -1616,24 +1616,15 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       for (size_t j = 0; j < _tblVals[i].size(); j++)
         tblVals[i].push_back(_tblVals[i][j]);
 
-    frCoord defaultPrl = -abs(tblVals[0][0]);
-
-    frCollection<frSpacingTableTwRowType> rowVals, colVals;
-    frString rowName("WIDTH1PRL"), colName("WIDTH2PRL");
-
+    frCollection<frSpacingTableTwRowType> rowVals;
     for (uint j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
       frCoord width = layer->getTwoWidthsSpacingTableWidth(j);
-      frCoord prl = defaultPrl;
-
-      if (layer->getTwoWidthsSpacingTableHasPRL(j)) {
-        prl = layer->getTwoWidthsSpacingTablePRL(j);
-        defaultPrl = prl;
-      }
-      colVals.push_back(frSpacingTableTwRowType(width, prl));
+      frCoord prl = layer->getTwoWidthsSpacingTablePRL(j);
       rowVals.push_back(frSpacingTableTwRowType(width, prl));
     }
-    unique_ptr<frConstraint> uCon = make_unique<frSpacingTableTwConstraint>(
-        fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+
+    unique_ptr<frConstraint> uCon
+        = make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())

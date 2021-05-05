@@ -232,6 +232,27 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
   layer->setSpacingTableInfluence(rptr);
   return rptr;
 }
+
+frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
+    frLayerNum layer_num,
+    std::vector<frCoord> widthTbl,
+    std::vector<frCoord> prlTbl,
+    std::vector<std::vector<frCoord>> spacingTbl)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  frCollection<frSpacingTableTwRowType> rows;
+  for (size_t i = 0; i < widthTbl.size(); i++) {
+    rows.push_back(frSpacingTableTwRowType(widthTbl[i], prlTbl[i]));
+  }
+  unique_ptr<frConstraint> uCon
+      = make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
+  auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+  tech->addUConstraint(std::move(uCon));
+  layer->setMinSpacing(rptr);
+  return rptr;
+}
+
 std::shared_ptr<frLef58SpacingEndOfLineConstraint>
 Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                        frCoord space,
