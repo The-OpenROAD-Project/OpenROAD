@@ -618,10 +618,10 @@ RouteBase::updateRoute() {
           rbVars_.ignoreEdgeRatio, 
           originalCap);
 
-      // if vertical layer (i.e., horizontal edges)
+      // if horizontal layer (i.e., vertical edges)
       // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge 
       // (current 'ratio' points to RIGHT edges usage)
-      if( !isHorizontalLayer && tile->x() >= 1 ) {
+      if( isHorizontalLayer && tile->x() >= 1 ) {
         Tile* leftTile = tg_->tiles()
           [ tile->y() * tg_->tileCntX() + 
           tile->x()-1 ];
@@ -633,10 +633,10 @@ RouteBase::updateRoute() {
         ratio = fmax(leftRatio, ratio);
       }
 
-      // if horizontal layer (i.e., vertical edges)
+      // if vertical layer (i.e., horizontal edges)
       // should consider DOWN tile's UP edge == current 'tile's DOWN edge
       // (current 'ratio' points to UP edges usage)
-      if( isHorizontalLayer && tile->y() >= 1 ) {
+      if( !isHorizontalLayer && tile->y() >= 1 ) {
         Tile* downTile = tg_->tiles()
           [ (tile->y()-1) * tg_->tileCntX() + 
           tile->x()];
