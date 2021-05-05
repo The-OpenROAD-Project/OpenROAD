@@ -420,8 +420,12 @@ NesterovPlace::doNesterovPlace() {
 
   // snapshot info
   vector<FloatPoint> snapshotCoordi;
+  vector<FloatPoint> snapshotSLPCoordi;
+  vector<FloatPoint> snapshotSLPSumGrads;
   float snapshotA = 0;
   float snapshotDensityPenalty = 0;
+  float snapshotStepLength = 0;
+  float snapshotWlCoefX = 0, snapshotWlCoefY = 0;
 
   bool isDivergeTriedRevert = false;
 
@@ -611,11 +615,20 @@ NesterovPlace::doNesterovPlace() {
         rb_->revertGCellSizeToMinRc();
 
         // revert back the current density penality
+        curCoordi_ = snapshotCoordi;
+        curSLPCoordi_ = snapshotSLPCoordi;
+        curSLPSumGrads_ = snapshotSLPSumGrads;
         curA = snapshotA;
-        nb_->updateGCellDensityCenterLocation(snapshotCoordi);
-        init();
         densityPenalty_ 
           = snapshotDensityPenalty;
+        stepLength_ = snapshotStepLength;
+        wireLengthCoefX_ = snapshotWlCoefX;
+        wireLengthCoefY_ = snapshotWlCoefY;
+
+        nb_->updateGCellDensityCenterLocation(curCoordi_);
+        nb_->updateDensityForceBin();
+        nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+
         isDiverged_ = false;
         divergeCode_ = 0;
         divergeMsg_ = "";
@@ -635,8 +648,13 @@ NesterovPlace::doNesterovPlace() {
         && npVars_.routabilityDrivenMode 
         && 0.6 >= sumOverflow_ ) {
       snapshotCoordi = curCoordi_; 
-      snapshotDensityPenalty = densityPenalty_;
+      snapshotSLPCoordi = curSLPCoordi_;
+      snapshotSLPSumGrads = curSLPSumGrads_;
       snapshotA = curA;
+      snapshotDensityPenalty = densityPenalty_;
+      snapshotStepLength = stepLength_;
+      snapshotWlCoefX = wireLengthCoefX_;
+      snapshotWlCoefY = wireLengthCoefY_;
 
       isSnapshotSaved = true;
       log_->report("[NesterovSolve] Snapshot saved at iter = {}", i);
@@ -658,11 +676,19 @@ NesterovPlace::doNesterovPlace() {
         // cutFillerCoordinates();
 
         // revert back the current density penality
+        curCoordi_ = snapshotCoordi;
+        curSLPCoordi_ = snapshotSLPCoordi;
+        curSLPSumGrads_ = snapshotSLPSumGrads;
         curA = snapshotA;
-        nb_->updateGCellDensityCenterLocation(snapshotCoordi);
-        init();
         densityPenalty_ 
           = snapshotDensityPenalty;
+        stepLength_ = snapshotStepLength;
+        wireLengthCoefX_ = snapshotWlCoefX;
+        wireLengthCoefY_ = snapshotWlCoefY;
+
+        nb_->updateGCellDensityCenterLocation(curCoordi_);
+        nb_->updateDensityForceBin();
+        nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
   
         // reset the divergence detect conditions 
         minSumOverflow = 1e30;
