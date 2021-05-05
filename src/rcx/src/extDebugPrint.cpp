@@ -31,8 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include <dbRtTree.h>
 
-#include "OpenRCX/extRCap.h"
 #include "dbUtil.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 //#define DIAG_FIRST

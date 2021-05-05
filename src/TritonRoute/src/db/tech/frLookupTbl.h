@@ -94,6 +94,8 @@ class fr1DLookupTbl
   }
   valClass findMin() const { return vals.front(); }
   valClass findMax() const { return vals.back(); }
+  rowClass getMinRow() const { return rows.front(); }
+  rowClass getMaxRow() const { return rows.back(); }
 
  private:
   frUInt4 getRowIdx(const rowClass& rowVal) const

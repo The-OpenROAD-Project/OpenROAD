@@ -13,12 +13,12 @@ PINS 2 ;
     - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
 SPECIALNETS 2 ;
-    - VSS ( * VSS ) + USE GROUND ;
     - VDD ( * VDD ) + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
 END SPECIALNETS
 NETS 3 ;
     - in1 ( PIN in1 ) ( b1 A ) + USE SIGNAL ;
-    - out1 ( PIN out1 ) ( b4 Z ) + USE SIGNAL ;
     - n1 ( b4 A ) ( b1 Z ) + USE SIGNAL ;
+    - out1 ( PIN out1 ) ( b4 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

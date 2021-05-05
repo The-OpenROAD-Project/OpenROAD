@@ -355,13 +355,10 @@ class Ext
                  const std::string& branch_len);
 
  private:
-  void dbUpdate();
-
   odb::dbDatabase* _db;
   extMain* _ext;
   extRcTree* _tree;
   Logger* logger_;
-  bool _initWithChip;
 };  // namespace rcx
 
 }  // namespace rcx

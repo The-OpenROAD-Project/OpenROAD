@@ -449,7 +449,7 @@ class extSpef
 
   uint getNetMapId(uint netId);
   char* tinkerSpefName(char* iname);
-  char* addEscChar(const char* iname);
+  char* addEscChar(const char* iname, bool esc_bus_brkts);
 
   bool isITermMarked(uint node);
   void markITerm(uint node);

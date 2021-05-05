@@ -32,8 +32,8 @@
 
 #include <wire.h>
 
-#include "OpenRCX/extRCap.h"
-#include "OpenRCX/extprocess.h"
+#include "rcx/extRCap.h"
+#include "rcx/extprocess.h"
 
 #ifdef _WIN32
 #include "direct.h"
@@ -5806,11 +5806,6 @@ uint extMain::readExtRules(const char* name,
   //	m->setDataRateTable(1);
 
   return 0;
-}
-
-void extMain::setLogger(Logger* logger)
-{
-  logger_ = logger;
 }
 
 uint extRCModel::findBiggestDatarateIndex(double d)

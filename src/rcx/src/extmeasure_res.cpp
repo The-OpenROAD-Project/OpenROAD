@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include <dbRtTree.h>
 
-#include "OpenRCX/extRCap.h"
+#include "rcx/extRCap.h"
 #include "dbUtil.h"
 #include "utl/Logger.h"
 

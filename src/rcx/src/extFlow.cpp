@@ -35,8 +35,8 @@
 #include <map>
 #include <vector>
 
-#include "OpenRCX/extRCap.h"
 #include "dbUtil.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 //#define MAXINT 0x7FFFFFFF;

@@ -1971,7 +1971,7 @@ class extMain
  public:
   bool _lef_res;
 
-  void setLogger(Logger* logger);
+  void init(odb::dbDatabase* db, Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
                              const char* filterNet,
                              uint corner);
@@ -2288,7 +2288,7 @@ class extMain
                     int typ,
                     int max);
 
-  void setDB(odb::dbDatabase* db);
+  void setBlockFromChip();
   void setBlock(odb::dbBlock* block);
   odb::dbBlock* getBlock() { return _block; }
   odb::dbTech* getTech() { return _tech; }
@@ -2540,35 +2540,35 @@ class extMain
                             INCR_SPEF_TYPE type,
                             bool coupled_rc,
                             bool dual_incr_spef);
-  static void writeIncrementalSpef(Darr<odb::dbNet*>& buf_nets,
-                                   odb::dbBlock* block,
-                                   INCR_SPEF_TYPE type,
-                                   bool coupled_rc,
-                                   bool dual_incr_spef);
-  static void writeIncrementalSpef(Darr<odb::dbNet*>& buf_nets,
-                                   std::vector<odb::dbNet*>& ccHaloNets,
-                                   odb::dbBlock* block,
-                                   INCR_SPEF_TYPE type,
-                                   bool coupled_rc,
-                                   bool dual_incr_spef);
-  static void writeIncrementalSpef(std::vector<odb::dbNet*>& buf_nets,
-                                   odb::dbBlock* block,
-                                   INCR_SPEF_TYPE type,
-                                   bool coupled_rc,
-                                   bool dual_incr_spef);
-  static void writeIncrementalSpef(std::vector<odb::dbNet*>& buf_nets,
-                                   std::vector<odb::dbNet*>& ccHaloNets,
-                                   odb::dbBlock* block,
-                                   INCR_SPEF_TYPE type,
-                                   bool coupled_rc,
-                                   bool dual_incr_spef);
+  void writeIncrementalSpef(Darr<odb::dbNet*>& buf_nets,
+                            odb::dbBlock* block,
+                            INCR_SPEF_TYPE type,
+                            bool coupled_rc,
+                            bool dual_incr_spef);
+  void writeIncrementalSpef(Darr<odb::dbNet*>& buf_nets,
+                            std::vector<odb::dbNet*>& ccHaloNets,
+                            odb::dbBlock* block,
+                            INCR_SPEF_TYPE type,
+                            bool coupled_rc,
+                            bool dual_incr_spef);
+  void writeIncrementalSpef(std::vector<odb::dbNet*>& buf_nets,
+                            odb::dbBlock* block,
+                            INCR_SPEF_TYPE type,
+                            bool coupled_rc,
+                            bool dual_incr_spef);
+  void writeIncrementalSpef(std::vector<odb::dbNet*>& buf_nets,
+                            std::vector<odb::dbNet*>& ccHaloNets,
+                            odb::dbBlock* block,
+                            INCR_SPEF_TYPE type,
+                            bool coupled_rc,
+                            bool dual_incr_spef);
   void writeSpef(char* filename,
                  std::vector<odb::dbNet*>& tnets,
                  int corner,
                  char* coord);
-  static int getExtCornerIndex(odb::dbBlock* block, const char* cornerName);
+  int getExtCornerIndex(odb::dbBlock* block, const char* cornerName);
 
-  static void initExtractedCorners(odb::dbBlock* block);
+  void initExtractedCorners(odb::dbBlock* block);
 
   void addDummyCorners(uint cornerCnt);
   static void addDummyCorners(odb::dbBlock* block, uint cnt, Logger* logger);

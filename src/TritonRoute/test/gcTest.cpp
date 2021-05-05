@@ -412,6 +412,75 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
              frBox(50, 50, 150, 150));
 }
 
+// Check for a spacing table influence violation.
+BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
+{
+  // Setup
+  makeSpacingTableInfluenceConstraint(2, {10}, {{200, 100}});
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {50, 0}, {50, 200});
+  makePathseg(n1, 2, {0, 100}, {350, 100});
+  makePathseg(n1, 2, {0, 250}, {350, 250});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
+             frBox(100, 150, 300, 200));
+}
+// Check for a spacing table influence violation.
+BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
+{
+  // Setup
+  makeSpacingTableInfluenceConstraint(2, {10}, {{200, 150}});
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 500}, {500, 500});
+  makePathseg(n1, 2, {100, 0}, {100, 500});
+  makePathseg(n1, 2, {300, 0}, {300, 500});
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
+             frBox(150, 250, 250, 450));
+}
+
+// Check for a spacing table twowidths violation.
+BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
+{
+  // Setup
+  makeSpacingTableTwConstraint(2, {90, 190}, {-1, -1}, {{0, 50}, {50, 100}});
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
+  makePathseg(n1, 2, {0, 240}, {500, 240}, 200);
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcSpacingTableTwConstraint,
+             frBox(0, 100, 500, 140));
+}
+
 // Check for a basic end-of-line (EOL) spacing violation.
 BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {

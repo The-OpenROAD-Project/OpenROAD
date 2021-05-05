@@ -43,8 +43,6 @@
 #include "db.h"
 #include "geom.h"
 #include "gseq.h"
-#include "qtype.h"
-#include "tech.h"
 
 using namespace odb;
 
@@ -380,7 +378,6 @@ class Ath__track
 
   void dealloc(AthPool<Ath__wire>* pool);
 };
-class Ath__quadTable;
 class Ath__gridTable;
 
 class Ath__grid
@@ -436,11 +433,6 @@ class Ath__grid
   uint _lastFreeTrack;
 
  public:
-  Ath__grid(AthPool<Ath__track>* trackPool,
-            AthPool<Ath__wire>* _wirePool,
-            Ath__box* bb,
-            Ath__layer* layer,
-            uint markerCnt = 4);
   Ath__grid(Ath__gridTable* gt,
             AthPool<Ath__track>* trackPool,
             AthPool<Ath__wire>* wirePool,
@@ -488,7 +480,6 @@ class Ath__grid
   void getBbox(Ath__box* bb);
   void getBbox(Ath__searchBox* bb);
   uint setExtrusionMarker();
-  uint getBoundaries(Ath__zui* zui, uint dd, uint layer);
   uint addWire(Ath__box* box, int check);
   uint addWire(Ath__box* box);
 
@@ -506,7 +497,6 @@ class Ath__grid
   int findEmptyTrack(int ll[2], int ur[2]);
   uint getFirstTrack(uint divider);
   int getClosestTrackCoord(int xy);
-  void makeZuiObjects(Ath__zui* zui);
   uint addWire(uint initTrack, Ath__box* box, int sortedOrder, int* height);
   Ath__wire* getPoolWire();
   Ath__wire* makeWire(Ath__box* box,
@@ -516,7 +506,6 @@ class Ath__grid
                       uint fullTrack);
   Ath__wire* makeWire(Ath__box* box, uint id, uint* m1);
   Ath__wire* makeWire(int* ll, int* ur, uint id, uint* m1);
-  // Ath__wire *makeWire(int xy1, int xy2, uint id1, uint id2, uint type=0);
   Ath__wire* makeWire(uint dir,
                       int* ll,
                       int* ur,
@@ -583,7 +572,6 @@ class Ath__grid
                   int sortedOrder,
                   int* height);
 
-  void getBusObs(Ath__zui* zui);
   void getBoxes(Ath__array1D<uint>* table);
   uint getBoxes(uint ii, Ath__array1D<uint>* table);
 
@@ -609,7 +597,6 @@ class Ath__grid
                        Ath__array1D<uint>* idtable,
                        Ath__grid* g);
 
-  friend class Ath__quadTable;
   friend class Ath__gridTable;
 
   uint removeMarkedNetWires();
@@ -662,66 +649,7 @@ class Ath__grid
   int dealloc(int hiXY);
   void dealloc();
 };
-class Ath__gridStack  // DELETE after porting on new DB
-{
- private:
-  Ath__grid* _nextGridTable[2];
-  Ath__grid* _thruGridTable[2];
-  Ath__grid* _cornerGridTable[4][2];
-  int _loDivide[2];
-  int _hiDivide[2];
-  uint _level[2];
-  uint _nextLevel[2];
-  Rect _bb;
 
- public:
-  Ath__gridStack(Ath__layer** met,
-                 Ath__layer** nextMet,
-                 uint* loFlag,
-                 uint* hiFlag,
-                 int* loLine,
-                 int* hiLine,
-                 int* ll,
-                 int* ur,
-                 AthPool<Ath__track>* trackPool,
-                 AthPool<Ath__wire>* wirePool);
-  ~Ath__gridStack();
-  bool isThruPlaced(uint dir);
-  uint getGridOutlines(Ath__zui* zui);
-  uint blockTracks(AthArray<Ath__box*>* obsTable);
-  uint addWire(Ath__box* box, uint trackRange);
-
-  uint placeSortedThru(uint dir,
-                       Ath__box** boxArray,
-                       uint cnt,
-                       uint width,
-                       uint space);
-  uint blockTracks(Ath__box* boxList, uint dir);
-  uint blockTracks(Ath__box* box);
-  Ath__grid** getCornerGrid(uint type,
-                            uint space,
-                            uint width,
-                            uint layer0,
-                            uint layer2);
-  uint placeCornerSorted(uint type,
-                         Ath__box** boxArray,
-                         Ath__box** boxArrayNext,
-                         uint cnt,
-                         uint space,
-                         uint width);
-  Ath__grid* getThruGrid(uint dir, uint layer, uint space, uint width);
-  Ath__grid* getThruGrid(uint dir);
-  Ath__grid* getNextGrid(uint dir);
-  Ath__grid* getNextGrid(uint dir, uint layer, uint space, uint width);
-  uint placeSortedNext(uint dir,
-                       Ath__box** boxArray,
-                       int* heightArray,
-                       uint cnt,
-                       uint space,
-                       uint width);
-  void getBusObs(Ath__zui* zui);
-  bool isPlacedCorner(uint type);
-};
 class Ath__gridTile
 {
  private:
@@ -887,7 +815,6 @@ class Ath__gridTable
 
   uint getBoxes(Ath__box* bb, Ath__array1D<Ath__box*>* table);
   bool isOrdered(bool ascending);
-  uint search(Ath__zui* zui, uint row, uint col);
   uint search(Ath__searchBox* bb,
               uint row,
               uint col,
