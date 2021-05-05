@@ -124,7 +124,8 @@ void IOPlacer::randomPlacement()
 
     std::vector<int> pin_indices = findPinsForConstraint(constraint);
 
-    randomPlacement(pin_indices, valid_slots);
+    bool top_layer = constraint.interval.edge == Edge::invalid;
+    randomPlacement(pin_indices, valid_slots, top_layer);
   }
 
   std::vector<int> valid_slots;
@@ -141,10 +142,10 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(pin_indices, valid_slots);
+  randomPlacement(pin_indices, valid_slots, false);
 }
 
-void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices)
+void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer)
 {
   const double seed = parms_->getRandSeed();
 
@@ -173,15 +174,17 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     utl::shuffle(vIOs.begin(), vIOs.end(), g);
   }
 
+  std::vector<Slot> &slots = top_layer ? top_layer_slots_ : slots_;
+
   for (int pin_idx : pin_indices) {
     int b = vIOs[0];
     int slot_idx = slot_indices[floor(b * shift)];
     IOPin& io_pin = netlist_.getIoPin(pin_idx);
-    io_pin.setPos(slots_.at(slot_idx).pos);
+    io_pin.setPos(slots.at(slot_idx).pos);
     io_pin.place();
-    slots_.at(slot_idx).used = true;
-    slots_.at(slot_idx).blocked = true;
-    io_pin.setLayer(slots_.at(slot_idx).layer);
+    slots.at(slot_idx).used = true;
+    slots.at(slot_idx).blocked = true;
+    io_pin.setLayer(slots.at(slot_idx).layer);
     assignment_.push_back(io_pin);
     sections_[0].net.addIONet(io_pin, instPins);
     vIOs.erase(vIOs.begin());
