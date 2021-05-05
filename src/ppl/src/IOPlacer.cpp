@@ -119,16 +119,19 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  int num_i_os = netlist_.numIOPins();
-  int num_slots = valid_slots.size();
+  std::vector<IOPin> &pins = netlist_.getIOPins();
+
+  randomPlacement(pins, valid_slots);
+}
+
+void IOPlacer::randomPlacement(std::vector<IOPin> &pins, const std::vector<Slot> &slots)
+{
+  const double seed = parms_->getRandSeed();
+
+  int num_i_os = pins.size();
+  int num_slots = slots.size();
   double shift = num_slots / double(num_i_os);
-  int mid1 = num_slots * 1 / 8 - num_i_os / 8;
-  int mid2 = num_slots * 3 / 8 - num_i_os / 8;
-  int mid3 = num_slots * 5 / 8 - num_i_os / 8;
-  int mid4 = num_slots * 7 / 8 - num_i_os / 8;
   int idx = 0;
-  int slots_per_edge = num_i_os / 4;
-  int last_slots = (num_i_os - slots_per_edge * 3);
   std::vector<int> vSlots(num_slots);
   std::vector<int> vIOs(num_i_os);
 
@@ -150,8 +153,8 @@ void IOPlacer::randomPlacement()
 
   for (IOPin& io_pin : netlist_.getIOPins()) {
     int b = vIOs[0];
-    io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
-    io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
+    io_pin.setPos(slots.at(floor(b * shift)).pos);
+    io_pin.setLayer(slots.at(floor(b * shift)).layer);
     assignment_.push_back(io_pin);
     sections_[0].net.addIONet(io_pin, instPins);
     vIOs.erase(vIOs.begin());
