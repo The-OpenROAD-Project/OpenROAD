@@ -1147,6 +1147,7 @@ class FlexGridGraph
               const frPoint& centerPt);
 private:
     bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
+    bool isWorkerBorder(frMIdx v, bool isVert);
 };
 }  // namespace fr
 
