@@ -10,4 +10,16 @@ pipeline {
       }
     }
   }
+  post {
+    failure {
+      script {
+        emailext (
+            to:'$DEFAULT_RECIPIENTS',
+            replyTo: '$DEFAULT_REPLYTO',
+            subject: '$DEFAULT_SUBJECT',
+            body: '$DEFAULT_CONTENT',
+            );
+      }
+    }
+  }
 }
