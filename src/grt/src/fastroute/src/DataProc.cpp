@@ -49,7 +49,7 @@ namespace grt {
 // Global variables
 int XRANGE, YRANGE;
 int xGrid, yGrid, numGrids, numNets, invalidNets;
-int *vCapacity3D, *hCapacity3D;
+short *vCapacity3D, *hCapacity3D;
 float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
 int MaxDegree;
 int *MinWidth, *MinSpacing, *ViaSpacing;

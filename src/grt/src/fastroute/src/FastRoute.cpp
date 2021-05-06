@@ -393,8 +393,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     YRANGE = 1000;
   }
 
-  vCapacity3D = new int[numLayers];
-  hCapacity3D = new int[numLayers];
+  vCapacity3D = new short[numLayers];
+  hCapacity3D = new short[numLayers];
 
   for (int i = 0; i < numLayers; i++) {
     vCapacity3D[i] = 0;
@@ -465,13 +465,13 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   costTBtest = new float[XRANGE];   // Top and bottom boundary cost
 }
 
-void FastRouteCore::addVCapacity(int verticalCapacity, int layer)
+void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
 {
   vCapacity3D[layer - 1] = verticalCapacity;
   vCapacity += vCapacity3D[layer - 1];
 }
 
-void FastRouteCore::addHCapacity(int horizontalCapacity, int layer)
+void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
 {
   hCapacity3D[layer - 1] = horizontalCapacity;
   hCapacity += hCapacity3D[layer - 1];

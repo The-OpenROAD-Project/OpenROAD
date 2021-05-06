@@ -61,8 +61,8 @@ class FastRouteCore
   void deleteComponents();
   void clear();
   void setGridsAndLayers(int x, int y, int nLayers);
-  void addVCapacity(int verticalCapacity, int layer);
-  void addHCapacity(int horizontalCapacity, int layer);
+  void addVCapacity(short verticalCapacity, int layer);
+  void addHCapacity(short horizontalCapacity, int layer);
   void addMinWidth(int width, int layer);
   void addMinSpacing(int spacing, int layer);
   void addViaSpacing(int spacing, int layer);
