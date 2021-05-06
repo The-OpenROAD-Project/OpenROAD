@@ -2740,23 +2740,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   int detailRlog = 0;
   int ttttRemoveSdb = 1;
   int ttttRemoveGs = 1;
-  int ttttTrySpread = 0;
   int setBlockPtfile = 0;
   std::vector<dbNet*> inets;
-  if (ttttTrySpread) {
-    _printFile = fopen("spreadNeighbor.1", "w");
-    _block->setPtFile(_printFile);
-    uint snn = 100;
-    uint enn = 106;
-    char* sbbox = (char*) bbox;
-    for (uint nn = snn; nn < enn; nn++)
-      inets.push_back(dbNet::getNet(_block, nn));
-    int swCnt = netSdb->searchSpread(
-        (void*) this, ccFlag, inets, sbbox, v_printWireNeighbor);
-    fclose(_printFile);
-    _block->setPtFile(NULL);
-    return swCnt;
-  }
   if ((_prevControl->_ruleFileName == NULL)
       && (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
     logger_->warn(RCX,
