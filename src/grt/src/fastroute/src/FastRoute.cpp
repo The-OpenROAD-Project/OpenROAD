@@ -942,7 +942,6 @@ void FastRouteCore::updateDbCongestion()
 
         db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
         db_gcell->setHorizontalUsage(layer, x, y, (uint) usageH);
-        db_gcell->setHorizontalBlockage(layer, x, y, (uint) blockageH);
       }
     }
 
@@ -956,7 +955,6 @@ void FastRouteCore::updateDbCongestion()
 
         db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
         db_gcell->setVerticalUsage(layer, x, y, (uint) usageV);
-        db_gcell->setVerticalBlockage(layer, x, y, (uint) blockageV);
       }
     }
   }
