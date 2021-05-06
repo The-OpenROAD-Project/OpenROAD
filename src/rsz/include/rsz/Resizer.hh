@@ -216,6 +216,9 @@ public:
                      // Return values.
                      Delay &delay,
                      Slew &slew);
+  float bufferSelfDelay(LibertyCell *buffer_cell);
+  float bufferSelfDelay(LibertyCell *buffer_cell,
+                        const RiseFall *rf);
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length); // zero for none (meters)
   // repairDesign but restricted to clock network and
