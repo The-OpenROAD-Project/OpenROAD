@@ -312,7 +312,7 @@ random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
-or a range of values. Example: `place_pins -hor_layers 2 -ver_layers 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
+or a range of values. Example: `place_pins -hor_layers metal2 -ver_layers metal3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 
@@ -351,7 +351,7 @@ set_io_pin_constraint -direction direction -pin_names names -region edge:interva
 
 The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
-command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
+command call. The `-direction` argument is the pin direction (input, output, inout, or feedthru).
 The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 To restrict pins to the positions defined with `define_pin_shape_pattern`, use `-region up:{llx lly urx ury}` or `-region up:*`.
 
