@@ -8585,9 +8585,6 @@ class dbGCellGrid : public dbObject
     uint horizontal_usage = 0;
     uint vertical_usage = 0;
     uint up_usage = 0;
-    uint horizontal_blockage = 0;
-    uint vertical_blockage = 0;
-    uint up_blockage = 0;
     uint horizontal_capacity = 0;
     uint vertical_capacity = 0;
     uint up_capacity = 0;
@@ -8695,9 +8692,15 @@ class dbGCellGrid : public dbObject
 
   void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
 
-  void setHorizontalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
+  void setHorizontalBlockage(dbTechLayer* layer,
+                             uint x_idx,
+                             uint y_idx,
+                             uint blockage);
 
-  void setVerticalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
+  void setVerticalBlockage(dbTechLayer* layer,
+                           uint x_idx,
+                           uint y_idx,
+                           uint blockage);
 
   void setUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
 
