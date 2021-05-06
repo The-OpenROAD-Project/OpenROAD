@@ -185,7 +185,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     int slot_idx = slot_indices[floor(b * shift)];
     IOPin& io_pin = netlist_.getIoPin(pin_idx);
     io_pin.setPos(slots.at(slot_idx).pos);
-    io_pin.place();
+    io_pin.setPlaced();
     slots.at(slot_idx).used = true;
     slots.at(slot_idx).blocked = true;
     io_pin.setLayer(slots.at(slot_idx).layer);

@@ -138,9 +138,9 @@ class IOPin
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
   bool isPlaced() const { return is_placed_; }
-  void place() { is_placed_ = true; }
+  void setPlaced() { is_placed_ = true; }
   bool isInGroup() const { return in_group_; }
-  void inGroup() { in_group_ = true; }
+  void setInGroup() { in_group_ = true; }
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
 
