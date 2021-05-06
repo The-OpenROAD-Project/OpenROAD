@@ -8588,6 +8588,9 @@ class dbGCellGrid : public dbObject
     uint horizontal_capacity = 0;
     uint vertical_capacity = 0;
     uint up_capacity = 0;
+    uint horizontal_blockage = 0;
+    uint vertical_blockage = 0;
+    uint up_blockage = 0;
   };
   // User Code Begin dbGCellGridEnums
   // User Code End dbGCellGridEnums
