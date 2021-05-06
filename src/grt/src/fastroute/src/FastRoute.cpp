@@ -1294,15 +1294,6 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  if (totalOverflow > 0 && !allowOverflow) {
-    updateDbCongestion();
-    logger->error(GRT, 118, "Routing congestion too high.");
-  }
-
-  if (allowOverflow && totalOverflow > 0) {
-    logger->warn(GRT, 115, "Global routing finished with overflow.");
-  }
-
   if (minofl > 0) {
     logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
     copyBR();
@@ -1371,6 +1362,14 @@ NetRouteMap FastRouteCore::run()
   netEO.clear();
 
   updateDbCongestion();
+
+  if (totalOverflow > 0 && !allowOverflow) {
+    logger->error(GRT, 118, "Routing congestion too high.");
+  }
+
+  if (allowOverflow && totalOverflow > 0) {
+    logger->warn(GRT, 115, "Global routing finished with overflow.");
+  }
 
   return routes;
 }
