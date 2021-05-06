@@ -170,6 +170,8 @@ void Netlist::clear()
   inst_pins_.clear();
   net_pointer_.clear();
   io_pins_.clear();
+  io_groups_.clear();
+  _db_pin_idx_map.clear();
 }
 
 }  // namespace ppl
