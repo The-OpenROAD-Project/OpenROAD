@@ -33,78 +33,58 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+
 #include "ord/OpenRoad.hh"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
-using dpl::StringSeq;
+namespace dpl {
 
-StringSeq *
-tclListSeqString(Tcl_Obj *const source,
-                 Tcl_Interp *interp)
-{
-  int argc;
-  Tcl_Obj **argv;
+using std::vector;
 
-  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK) {
-    StringSeq *seq = new StringSeq;
-    for (int i = 0; i < argc; i++) {
-      int length;
-      const char *str = Tcl_GetStringFromObj(argv[i], &length);
-      seq->push_back(str);
-    }
-    return seq;
-  }
-  else
-    return nullptr;
-}
-
-// Failed attempt to pass in dbMaster set.
-#if 0
-// copied from opensta/tcl/StaTcl.i
+// Swig vector type in does not seem to work at all.
+// (see OpenDB/src/swig/common/polgon.i)
+// Copied from opensta/tcl/StaTcl.i
 template <class TYPE>
-std::set<TYPE> *
-tclListSet(Tcl_Obj *const source,
-           swig_type_info *swig_type,
-           Tcl_Interp *interp)
+vector<TYPE> *
+tclListSeq(Tcl_Obj *const source,
+	   swig_type_info *swig_type,
+	   Tcl_Interp *interp)
 {
   int argc;
   Tcl_Obj **argv;
 
   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
       && argc > 0) {
-    std::set<TYPE> *set = new std::set<TYPE>;
+    vector<TYPE> *seq = new vector<TYPE>;
     for (int i = 0; i < argc; i++) {
       void *obj;
       // Ignore returned TCL_ERROR because can't get swig_type_info.
       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
-      set->insert(reinterpret_cast<TYPE>(obj));
+      seq->push_back(reinterpret_cast<TYPE>(obj));
     }
-    return set;
+    return seq;
   }
   else
     return nullptr;
 }
   
-dpl::dbMasterSet *
-tclListSetdbMaster(Tcl_Obj *const source,
+dpl::dbMasterSeq *
+tclListSeqdbMaster(Tcl_Obj *const source,
                    Tcl_Interp *interp)
 {
-  return tclListSet<odb::dbMaster*>(source, SWIGTYPE_p_dbMaster, interp);
+  return tclListSeq<odb::dbMaster*>(source, SWIGTYPE_p_odb__dbMaster, interp);
 }
 
-%typemap(in) dbMasterSet * {
-  $1 = tclListSeqLibertyLibrary($input, interp);
 }
-#endif
 
 %}
 
-%typemap(in) StringSeq* {
-  $1 = tclListSeqString($input, interp);
-}
-
 %include "../../Exception.i"
+
+%typemap(in) dpl::dbMasterSeq * {
+  $1 = dpl::tclListSeqdbMaster($input, interp);
+}
 
 %inline %{
 
@@ -159,29 +139,10 @@ set_padding_inst(odb::dbInst *inst,
 }
 
 void
-filler_placement_cmd(const char* prefix, 
-                     StringSeq *fillers)
+filler_placement_cmd(dpl::dbMasterSeq *filler_masters,
+                     const char* prefix)
 {
-  ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
-  odb::dbDatabase *db = openroad->getDb();
-  dpl::Opendp *opendp = openroad->getOpendp();
-
-  vector<dbMaster*> filler_masters;
-  for (const string &master_name : *fillers) {
-    dbMaster *master = nullptr;
-    for (dbLib *lib : db->getLibs()) {
-      master = lib->findMaster(master_name.c_str());
-      if (master) {
-        break;
-      }
-    }
-    if (master)
-      filler_masters.push_back(master);
-    else
-      openroad->getLogger()->warn(utl::DPL, 31, "filler master {} not found.",
-                                  master_name);
-  }
-
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->fillerPlacement(filler_masters, prefix);
 }
 
