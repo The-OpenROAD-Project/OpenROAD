@@ -557,8 +557,16 @@ void IOPlacer::assignConstrainedPinsToSections()
 
   for (Constraint &constraint : constraints_) {
     std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
+    int slots_count = 0;
+    for (Section sec : sections_for_constraint) {
+      slots_count += sec.num_slots;
+    }
+
     PinList &pin_list = constraint.pin_list;
-    const Direction &dir = constraint.direction;
+    
+    if (pin_list.size() > slots_count) {
+      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint", pin_list.size(), slots_count);
+    }
 
     int idx;
     for (odb::dbBTerm* bterm : pin_list) {
