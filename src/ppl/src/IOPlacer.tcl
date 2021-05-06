@@ -167,6 +167,8 @@ proc set_io_pin_constraint { args } {
       set names $keys(-pin_names)
       ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
     }
+  } else {
+    utl::warning PPL 73 "constraint with region $region has an invalid edge."
   }
 }
 
