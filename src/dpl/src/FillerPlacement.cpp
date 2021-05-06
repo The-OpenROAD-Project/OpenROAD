@@ -50,12 +50,19 @@ using odb::dbMaster;
 using odb::dbPlacementStatus;
 
 void
-Opendp::fillerPlacement(const StringSeq *filler_master_names, const char* prefix)
+Opendp::fillerPlacement(const vector<dbMaster*> &filler_masters,
+                        const char* prefix)
 {
   if (cells_.empty())
     importDb();
 
-  findFillerMasters(filler_master_names);
+  filler_masters_ = filler_masters;
+  std::sort(filler_masters_.begin(),
+            filler_masters_.end(),
+            [](dbMaster *master1, dbMaster *master2) {
+              return master1->getWidth() > master2->getWidth();
+            });
+
   gap_fillers_.clear();
   filler_count_ = 0;
   initGrid();
@@ -65,26 +72,6 @@ Opendp::fillerPlacement(const StringSeq *filler_master_names, const char* prefix
     placeRowFillers(row, prefix);
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
-}
-
-void
-Opendp::findFillerMasters(const StringSeq *filler_master_names)
-{
-  filler_masters_.clear();
-  for (const string &master_name : *filler_master_names) {
-    for (dbLib *lib : db_->getLibs()) {
-      dbMaster *master = lib->findMaster(master_name.c_str());
-      if (master) {
-        filler_masters_.push_back(master);
-        break;
-      }
-    }
-  }
-  std::sort(filler_masters_.begin(),
-            filler_masters_.end(),
-            [](dbMaster *master1, dbMaster *master2) {
-              return master1->getWidth() > master2->getWidth();
-            });
 }
 
 void

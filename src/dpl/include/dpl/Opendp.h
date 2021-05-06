@@ -198,7 +198,8 @@ public:
   int padLeft(dbInst *inst) const;
   // Return true if illegal.
   bool checkPlacement(bool verbose);
-  void fillerPlacement(const StringSeq *filler_master_names, const char* prefix);
+  void fillerPlacement(const vector<dbMaster*> &filler_masters,
+                       const char* prefix);
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
   void findDisplacementStats();
@@ -356,9 +357,9 @@ private:
   int disp(const Cell *cell) const;
   // Place fillers
   void setGridCells();
-  void findFillerMasters(const StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);
-  void placeRowFillers(int row, const char* prefix);
+  void placeRowFillers(int row,
+                       const char* prefix);
   const char *gridInstName(int row,
                            int col);
 

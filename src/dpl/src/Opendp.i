@@ -35,6 +35,7 @@
 %{
 #include "ord/OpenRoad.hh"
 #include "dpl/Opendp.h"
+#include "utl/Logger.h"
 
 using dpl::StringSeq;
 
@@ -161,8 +162,27 @@ void
 filler_placement_cmd(const char* prefix, 
                      StringSeq *fillers)
 {
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->fillerPlacement(fillers, prefix);
+  ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
+  odb::dbDatabase *db = openroad->getDb();
+  dpl::Opendp *opendp = openroad->getOpendp();
+
+  vector<dbMaster*> filler_masters;
+  for (const string &master_name : *fillers) {
+    dbMaster *master = nullptr;
+    for (dbLib *lib : db->getLibs()) {
+      master = lib->findMaster(master_name.c_str());
+      if (master) {
+        break;
+      }
+    }
+    if (master)
+      filler_masters.push_back(master);
+    else
+      openroad->getLogger()->warn(utl::DPL, 31, "filler master {} not found.",
+                                  master_name);
+  }
+
+  opendp->fillerPlacement(filler_masters, prefix);
 }
 
 void
