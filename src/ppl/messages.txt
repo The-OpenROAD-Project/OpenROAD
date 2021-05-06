@@ -1,15 +1,15 @@
-PPL 0001 IOPlacer.cpp:700           * Num of slots          {}
-PPL 0002 IOPlacer.cpp:701           * Num of I/O            {}
-PPL 0003 IOPlacer.cpp:1057         Random pin placement.
-PPL 0004 IOPlacer.cpp:704           * Num of I/O w/o sink   {}
-PPL 0005 IOPlacer.cpp:705           * Slots Per Section     {}
-PPL 0006 IOPlacer.cpp:706           * Slots Increase Factor {:.1}
-PPL 0008 IOPlacer.cpp:707           * Usage Increase Factor {:.1}
-PPL 0009 IOPlacer.cpp:708           * Force Pin Spread      {}
-PPL 0010 IOPlacer.cpp:717          Tentative {} to setup sections
-PPL 0011 IOPlacer.cpp:1087         HPWL before ioPlacer: {}
-PPL 0012 IOPlacer.cpp:1088         HPWL after  ioPlacer: {}
-PPL 0013 IOPlacer.cpp:1089         HPWL delta  ioPlacer: {}
+PPL 0001 IOPlacer.cpp:733           * Num of slots          {}
+PPL 0002 IOPlacer.cpp:734           * Num of I/O            {}
+PPL 0003 IOPlacer.cpp:1102         Random pin placement.
+PPL 0004 IOPlacer.cpp:737           * Num of I/O w/o sink   {}
+PPL 0005 IOPlacer.cpp:738           * Slots Per Section     {}
+PPL 0006 IOPlacer.cpp:739           * Slots Increase Factor {:.1}
+PPL 0008 IOPlacer.cpp:740           * Usage Increase Factor {:.1}
+PPL 0009 IOPlacer.cpp:741           * Force Pin Spread      {}
+PPL 0010 IOPlacer.cpp:750          Tentative {} to setup sections
+PPL 0011 IOPlacer.cpp:1132         HPWL before ioPlacer: {}
+PPL 0012 IOPlacer.cpp:1133         HPWL after  ioPlacer: {}
+PPL 0013 IOPlacer.cpp:1134         HPWL delta  ioPlacer: {}
 PPL 0015 IOPlacer.tcl:265          Macro [$inst getName] is not placed.
 PPL 0016 IOPlacer.tcl:136          Both -direction and -pin_names constraints not allowed..
 PPL 0017 IOPlacer.tcl:283          -hor_layers is required.
@@ -26,10 +26,10 @@ PPL 0029 IOPlacer.tcl:477          $cmd: Invalid edge
 PPL 0030 IOPlacer.tcl:485          $cmd: Invalid edge
 PPL 0031 IOPlacer.tcl:250          no technology found.
 PPL 0032 IOPlacer.tcl:255          no block found.
-PPL 0038 IOPlacer.cpp:1305         Pin {} without net
-PPL 0040 IOPlacer.cpp:417          Negative number of slots
+PPL 0038 IOPlacer.cpp:1350         Pin {} without net
+PPL 0040 IOPlacer.cpp:450          Negative number of slots
 PPL 0041 IOPlacer.tcl:398          Pin group $group_idx: [$group]
-PPL 0042 IOPlacer.cpp:630          Unsuccessfully assigned I/O groups
+PPL 0042 IOPlacer.cpp:663          Unsuccessfully assigned I/O groups
 PPL 0043 IOPlacer.tcl:405          Pin $pin_name not found in group $group_idx
 PPL 0044 IOPlacer.tcl:535          Pin $pin_name not found for command $cmd
 PPL 0045 IOPlacer.tcl:328          Layer $hor_layer_name preferred direction is not horizontal.
@@ -54,5 +54,6 @@ PPL 0066 IOPlacer.tcl:198          -location is required.
 PPL 0067 IOPlacer.tcl:211          -pin_size is required.
 PPL 0068 IOPlacer.tcl:202          -location is not a list of 2 values.
 PPL 0069 IOPlacer.tcl:215          -pin_size is not a list of 2 values.
-PPL 0070 IOPlacer.cpp:1118         Pin {} placed at ({}um, {}um)
+PPL 0070 IOPlacer.cpp:1163         Pin {} placed at ({}um, {}um)
 PPL 0071 IOPlacer.tcl:223          place_pin command should receive only one pin name.
+PPL 0072 IOPlacer.cpp:151          Number of pins ({}) exceed number of valid positions ({})

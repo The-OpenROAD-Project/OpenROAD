@@ -12,10 +12,10 @@
 [INFO ODB-0132]     Created 2 special nets and 14334 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
 [INFO ODB-0134] Finished DEF file: repair_antennas2.def
-Min routing layer: met1
-Max routing layer: met5
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
 [INFO GRT-0224] Chose via M1M2_PR as default.
@@ -30,30 +30,40 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 105790
-[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 25
-[INFO GRT-0018] Processing 25185 blockages on layer li1.
-[INFO GRT-0019] Processing 27401 blockages on layer met1.
-[INFO GRT-0022] Processing 10 blockages on layer met4.
-[INFO GRT-0022] Reducing resources of layer met2 by 15%.
-[INFO GRT-0023] Reducing resources of layer met3 by 15%.
-[INFO GRT-0024] Reducing resources of layer met4 by 15%.
-[INFO GRT-0025] Reducing resources of layer met5 by 15%.
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 2036
-[INFO GRT-0157] Total Capacity: 55327
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
+[INFO GRT-0017] Processing 25185 blockages on layer li1.
+[INFO GRT-0017] Processing 27401 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
 
-[INFO GRT-0110] Final usage: 2036
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      27436         19170          30.13%
+met2       Vertical        21660         17390          19.71%
+met3       Horizontal      12996         10249          21.14%
+met4       Vertical         8664          7075          18.34%
+met5       Horizontal       2888          1443          50.03%
+---------------------------------------------------------------
+
 [INFO GRT-0111] Final number of vias: 1831
 [INFO GRT-0112] Final usage 3D: 7529
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1             19170          1180            6.16%             0 /  0 /  0
+met2             17390           856            4.92%             0 /  0 /  0
+met3             10249             0            0.00%             0 /  0 /  0
+met4              7075             0            0.00%             0 /  0 /  0
+met5              1443             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            55327          2036            3.68%             0 /  0 /  0
+
 [INFO GRT-0018] Total wirelength: 22327 um
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
@@ -104,10 +114,10 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0012] #Antenna violations: 1
 [INFO GRT-0011] 5890 filler cells deleted.
 [INFO GRT-0015] 1 diodes inserted.
-Min routing layer: met1
-Max routing layer: met5
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
 [INFO GRT-0224] Chose via M1M2_PR as default.
@@ -124,26 +134,10 @@ Grid origin: (0, 0)
 [INFO GRT-0004] Blockages: 17100
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0018] Processing 13408 blockages on layer li1.
-[INFO GRT-0019] Processing 3845 blockages on layer met1.
-[INFO GRT-0022] Processing 10 blockages on layer met4.
-[INFO GRT-0022] Reducing resources of layer met2 by 15%.
-[INFO GRT-0023] Reducing resources of layer met3 by 15%.
-[INFO GRT-0024] Reducing resources of layer met4 by 15%.
-[INFO GRT-0025] Reducing resources of layer met5 by 15%.
+[INFO GRT-0017] Processing 13408 blockages on layer li1.
+[INFO GRT-0017] Processing 3845 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
 [INFO GRT-0009] Nets to reroute: 1.
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 21
-[INFO GRT-0157] Total Capacity: 53352
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
-
-[INFO GRT-0110] Final usage: 21
 [INFO GRT-0111] Final number of vias: 4
 [INFO GRT-0112] Final usage 3D: 33
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid

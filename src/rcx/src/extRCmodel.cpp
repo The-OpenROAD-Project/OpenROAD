@@ -103,6 +103,10 @@ void extDistRC::interpolate(uint d, extDistRC* rc1, extDistRC* rc2)
   _fringe = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_fringe, rc2->_fringe);
   _res = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_res, rc2->_res);
 }
+double extDistRC::interpolate_res(uint d, extDistRC* rc2)
+{
+  return lineSegment(d, _coupling, rc2->_coupling, _res, rc2->_res);
+}
 void extDistRC::set(uint d, double cc, double fr, double a, double r)
 {
   _sep = d;
@@ -116,6 +120,14 @@ void extDistRC::readRC(Ath__parser* parser, double dbFactor)
 {
   _sep = Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
   _coupling = parser->getDouble(1) / dbFactor;
+  _fringe = parser->getDouble(2) / dbFactor;
+  //	_area= a;
+  _res = parser->getDouble(3) / dbFactor;
+}
+void extDistRC::readRC_res2(Ath__parser* parser, double dbFactor)
+{
+  _sep = Ath__double2int(dbFactor * 1000 * parser->getDouble(1));
+  _coupling = Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
   _fringe = parser->getDouble(2) / dbFactor;
   //	_area= a;
   _res = parser->getDouble(3) / dbFactor;
@@ -441,6 +453,71 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
   mkWidthAndSpaceMappings();
   return cnt;
 }
+uint extDistRCTable::readRules_res2(Ath__parser* parser,
+                                    AthPool<extDistRC>* rcPool,
+                                    bool compute,
+                                    bool bin,
+                                    bool ignore,
+                                    double dbFactor)
+{
+  parser->parseNextLine();
+  uint cnt = parser->getInt(2);
+  if (cnt < 32)
+    cnt = 32;
+  // _measureTable= NULL;
+
+  Ath__array1D<extDistRC*>* table = NULL;
+  if (!ignore)
+    table = new Ath__array1D<extDistRC*>(cnt);
+
+  Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
+  //_computeTableR = new Ath__array1D<extDistRC*>[8];
+  int cnt1 = 0;
+  int kk = 0;
+  extDistRC* rc0 = NULL;
+  while (parser->parseNextLine() > 0) {
+    if (parser->isKeyword(0, "END"))
+      break;
+
+    if (ignore)
+      continue;
+
+    extDistRC* rc = rcPool->alloc();
+    rc->readRC_res2(parser, dbFactor);
+    // if (rc0!=NULL && rc0->_res==rc->_res && rc0->_coupling==rc->_coupling) {
+    //   continue;
+    // }
+    table->add(rc);
+    if (rc0 != NULL && rc0->_coupling != rc->_coupling) {
+      _measureTable = table0;
+      if (table0->getCnt() > 1) {
+        interpolate(4, -1, rcPool);
+        _computeTableR[kk] = _computeTable;
+      }
+      _measureTableR[kk] = table0;
+      kk++;
+
+      table0 = new Ath__array1D<extDistRC*>(cnt1);
+      cnt1 = 0;
+
+      _maxDist = rc0->_sep;
+    }
+    if (rc0 == NULL) {
+      table0->add(rc);
+    } else if (cnt1 == 0) {
+      table0->add(rc);
+    } else if (rc0->_res != rc->_res) {
+      table0->add(rc);
+    }
+    cnt1++;
+    rc0 = rc;
+  }
+  _distCnt = kk + 1;
+  _measureTableR[kk] = table0;
+  _measureTable = table;
+
+  return cnt;
+}
 uint extDistRCTable::readRules(Ath__parser* parser,
                                AthPool<extDistRC>* rcPool,
                                bool compute,
@@ -513,7 +590,7 @@ void extDistRCTable::makeComputeTable(uint maxDist, uint distUnit)
 {
   _unit = distUnit;  // in nm
   uint n = maxDist / distUnit;
-  n = 16 * (n / 16 + 1);
+  n = distUnit * (n / distUnit + 1);
 
   _computeTable = new Ath__array1D<extDistRC*>(n + 1);
   // TODO
@@ -1119,6 +1196,24 @@ uint extDistWidthRCTable::writeRulesOver(FILE* fp, bool bin)
   }
   return cnt;
 }
+uint extDistWidthRCTable::writeRulesOver_res(FILE* fp, bool bin)
+{
+  uint cnt = 0;
+  fprintf(fp, "\nMetal %d RESOVER\n", _met);
+
+  writeWidthTable(fp, bin);
+  uint widthCnt = _widthTable->getCnt();
+
+  for (uint ii = 0; ii < _met; ii++) {
+    fprintf(fp, "\nMetal %d RESOVER %d\n", _met, ii);
+
+    for (uint jj = 0; jj < widthCnt; jj++) {
+      cnt += _rcDistTable[ii][jj]->writeRules(
+          fp, 0.001 * _widthTable->get(jj), false, bin);
+    }
+  }
+  return cnt;
+}
 uint extDistWidthRCTable::readMetalHeader(Ath__parser* parser,
                                           uint& met,
                                           const char* keyword,
@@ -1140,23 +1235,34 @@ uint extDistWidthRCTable::readRulesOver(Ath__parser* parser,
                                         uint widthCnt,
                                         bool bin,
                                         bool ignore,
+                                        const char* OVER,
                                         double dbFactor)
 {
+  bool res = strcmp(OVER, "RESOVER") == 0;
   uint cnt = 0;
   for (uint ii = 0; ii < _met; ii++) {
     uint met = 0;
-    if (readMetalHeader(parser, met, "OVER", bin, ignore) <= 0)
+    if (readMetalHeader(parser, met, OVER, bin, ignore) <= 0)
       return 0;
 
     parser->getInt(3);
 
     for (uint jj = 0; jj < widthCnt; jj++) {
-      if (!ignore)
-        cnt += _rcDistTable[ii][jj]->readRules(
-            parser, _rcPoolPtr, true, bin, ignore, dbFactor);
-      else
-        cnt += _rcDistTable[0][0]->readRules(
-            parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+      if (res) {
+        if (!ignore)
+          cnt += _rcDistTable[ii][jj]->readRules_res2(
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+        else
+          cnt += _rcDistTable[0][0]->readRules_res2(
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+      } else {
+        if (!ignore)
+          cnt += _rcDistTable[ii][jj]->readRules(
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+        else
+          cnt += _rcDistTable[0][0]->readRules(
+              parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+      }
     }
   }
   return cnt;
@@ -1294,9 +1400,6 @@ uint extDistWidthRCTable::readRulesOverUnder(Ath__parser* parser,
               parser, _rcPoolPtr, true, bin, ignore, dbFactor);
       }
       cnt += mcnt;
-      // logger_->info(RCX, 0,"OU metIndex={} met={}  mUnder={}  mOver={}
-      // layerCnt={} _metCnt={} widthCnt={} cnt={} ", metIndex, _met, mUnder,
-      // mOver, _layerCnt, _metCnt, widthCnt, mcnt);
     }
   }
   return cnt;
@@ -1410,11 +1513,13 @@ extMetRCTable::extMetRCTable(uint layerCnt,
   logger_ = logger;
   _layerCnt = layerCnt;
 
+  _resOver = new extDistWidthRCTable*[layerCnt];
   _capOver = new extDistWidthRCTable*[layerCnt];
   _capDiagUnder = new extDistWidthRCTable*[layerCnt];
   _capUnder = new extDistWidthRCTable*[layerCnt];
   _capOverUnder = new extDistWidthRCTable*[layerCnt];
   for (uint ii = 0; ii < layerCnt; ii++) {
+    _resOver[ii] = NULL;
     _capOver[ii] = NULL;
     _capDiagUnder[ii] = NULL;
     _capUnder[ii] = NULL;
@@ -1430,11 +1535,14 @@ extMetRCTable::~extMetRCTable()
       delete _capUnder[ii];
     if (_capDiagUnder[ii] != NULL)
       delete _capDiagUnder[ii];
+    if (_resOver[ii] != NULL)
+      delete _resOver[ii];
     if (_capOver[ii] != NULL)
       delete _capOver[ii];
     if (_capOverUnder[ii] != NULL)
       delete _capOverUnder[ii];
   }
+  delete[] _resOver;
   delete[] _capOver;
   delete[] _capDiagUnder;
   delete[] _capUnder;
@@ -1445,6 +1553,8 @@ void extMetRCTable::allocOverTable(uint met,
                                    double dbFactor)
 {
   _capOver[met] = new extDistWidthRCTable(
+      true, met, _layerCnt, met, wTable, _rcPoolPtr, dbFactor, logger_);
+  _resOver[met] = new extDistWidthRCTable(
       true, met, _layerCnt, met, wTable, _rcPoolPtr, dbFactor, logger_);
 }
 void extMetRCTable::allocDiagUnderTable(uint met,
@@ -1506,7 +1616,6 @@ void extMetRCTable::allocOverUnderTable(uint met,
   if (met < 2)
     return;
 
-  // uint n= getMetIndexOverUnder(met, met-1, _layerCnt-1, _layerCnt, logger_);
   uint n = getMaxMetIndexOverUnder(met, _layerCnt, logger_);
   _capOverUnder[met] = new extDistWidthRCTable(
       false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor, logger_);
@@ -1979,6 +2088,7 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
   logger_ = logger;
   _layerCnt = layerCnt;
   strcpy(_name, name);
+  _resOver = new extRCTable(true, layerCnt);
   _capOver = new extRCTable(true, layerCnt);
   _capUnder = new extRCTable(false, layerCnt);
   _capDiagUnder = new extRCTable(false, layerCnt);
@@ -2014,6 +2124,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
   logger = logger;
   _layerCnt = 0;
   strcpy(_name, name);
+  _resOver = NULL;
   _capOver = NULL;
   _capUnder = NULL;
   _capDiagUnder = NULL;
@@ -2049,6 +2160,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
 
 extRCModel::~extRCModel()
 {
+  delete _resOver;
   delete _capOver;
   delete _capUnder;
   delete _capDiagUnder;
@@ -2485,7 +2597,7 @@ FILE* extRCModel::openFile(const char* topDir,
   FILE* fp = fopen(filename, permissions);
   if (fp == NULL) {
     logger_->info(RCX,
-                  159,
+                  450,
                   "Cannot open file {} with permissions {}",
                   filename,
                   permissions);
@@ -2549,7 +2661,7 @@ uint extRCModel::getCapValues(uint lastNode,
   if (lastNode != m->_wireCnt) {
     //		return 0;
     logger_->warn(
-        RCX, 209, "Reads only {} nodes from {}", lastNode, _wireDirName);
+        RCX, 418, "Reads only {} nodes from {}", lastNode, _wireDirName);
   }
 
   fprintf(_capLogFP, "\n");
@@ -2624,7 +2736,7 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
     m->_capMatrix[n][0] = 0.0;
 
     logger_->info(RCX,
-                  210,
+                  417,
                   "FrCap for netId {} (nodeId= {})  {}",
                   m->_idTable[n],
                   n,
@@ -2643,7 +2755,7 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
       m->_capMatrix[n][k] = 0.0;
 
       logger_->info(RCX,
-                    211,
+                    416,
                     "\tccCap for netIds {}({}), {}({}) {}",
                     m->_idTable[n],
                     n,
@@ -2661,13 +2773,13 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
     rseg1->setCapacitance(frCap);
 
     logger_->info(RCX,
-                  212,
+                  414,
                   "\tfrCap from CC for netId {}({}) {}",
                   m->_idTable[n],
                   n,
                   ccFr);
     logger_->info(
-        RCX, 213, "\ttotFrCap for netId {}({}) {}", m->_idTable[n], n, frCap);
+        RCX, 411, "\ttotFrCap for netId {}({}) {}", m->_idTable[n], n, frCap);
   }
   m->printStats(_capLogFP);
   fprintf(_capLogFP, "\n\nEND\n\n");
@@ -2699,7 +2811,7 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     dbRSeg* rseg1 = m->getFirstDbRseg(m->_idTable[n]);
     rseg1->setCapacitance(frCap);
     logger_->info(RCX,
-                  213,
+                  412,
                   "\ttotFrCap for netId {}({}) {}",
                   m->_idTable[n],
                   n,
@@ -2716,7 +2828,7 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     m->_capMatrix[1][0] = 0.0;
 
     logger_->info(RCX,
-                  213,
+                  413,
                   "FrCap for netId {} (nodeId= {})  {}",
                   m->_idTable[n],
                   n,
@@ -2732,7 +2844,7 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     double cc1 = m->_capMatrix[1][n - 1];
     m->_capMatrix[1][n - 1] = 0.0;
     logger_->info(RCX,
-                  211,
+                  415,
                   "\tccCap for netIds {}({}), {}({}) {}",
                   m->_idTable[n],
                   n,
@@ -2765,8 +2877,6 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
                   m->_idTable[n],
                   n,
                   ccFr);
-    //                logger_->info(RCX, 0, "\ttotFrCap for netId {}({}) {}",
-    //                m->_idTable[n], n, frCap);
     logger_->info(RCX,
                   213,
                   "\ttotFrCap for netId {}({}) {}",
@@ -3095,6 +3205,13 @@ double get_nm(extMeasure* m, double n)
   double a = 1000 * 1000.0 * n / m->_dbunit;
   return a;
 }
+int get_nm(int n, int units)
+{
+  if (n == 0)
+    return 0;
+  int a = (1000 * n) / units;
+  return a;
+}
 void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
 {
   char overUnder[128];
@@ -3122,6 +3239,7 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
   double w2 = m->_w2_m;
   double s2 = m->_s2_m;
 
+  int n = get_nm(m, m->_s_m);
   sprintf(_wireDirName,
           "%s_%s_W%gW%g_S%gS%g",
           _patternName,
@@ -3130,6 +3248,14 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
           get_nm(m, m->_w2_m),
           get_nm(m, m->_s_m),
           get_nm(m, m->_s2_m));
+  sprintf(_wireDirName,
+          "%s_%s_W%gW%g_S%05dS%05d",
+          _patternName,
+          overUnder,
+          get_nm(m, m->_w_m),
+          get_nm(m, m->_w2_m),
+          get_nm(m->_s_nm, m->_dbunit),
+          get_nm(m->_s2_nm, m->_dbunit));
 
   if (wiresNameSuffix != NULL)
     sprintf(_wireFileName, "%s.%s", "wires", wiresNameSuffix);
@@ -3844,14 +3970,14 @@ void extRCModel::runSolver(const char* solverOption)
 
   //	sprintf(cmd, "cd %s ; ca raphael %s %s ; cd ../../../../../../ ",
   //_wireDirName, solverOption, _wireFileName);
-  logger_->info(RCX, 214, "{}", cmd);
+  logger_->info(RCX, 69, "{}", cmd);
 #endif
 #ifdef _WIN32
   if (_diagModel == 2)
     sprintf(cmd, "cd %s ; dir ; cd ../../../../../../../../ ", _wireDirName);
   else
     sprintf(cmd, "cd %s ; dir ; cd ../../../../../../ ", _wireDirName);
-  logger_->info(RCX, 214, "{}", cmd);
+  logger_->info(RCX, 73, "{}", cmd);
 #endif
   system(cmd);
 }
@@ -3894,7 +4020,11 @@ void extMetRCTable::addRCw(extMeasure* m)
     table = _capOverUnder[m->_met];
   } else if (m->_over) {
     n = m->_underMet;
-    table = _capOver[m->_met];
+    if (m->_res) {
+      table = _resOver[m->_met];
+    } else {
+      table = _capOver[m->_met];
+    }
   } else if (m->_diag) {
     n = m->getUnderIndex();
     if (m->_diagModel == 1) {  // TODO 0620 : diagModel=2
@@ -3917,10 +4047,17 @@ void extRCModel::addRC(extMeasure* m)
         ->_rcDistTable[n][m->_wIndex]
         ->addMeasureRC(m->_tmpRC);
   } else if (m->_over) {
-    _modelTable[m->_rIndex]
-        ->_capOver[m->_met]
-        ->_rcDistTable[m->_underMet][m->_wIndex]
-        ->addMeasureRC(m->_tmpRC);
+    if (m->_res) {
+      _modelTable[m->_rIndex]
+          ->_resOver[m->_met]
+          ->_rcDistTable[m->_underMet][m->_wIndex]
+          ->addMeasureRC(m->_tmpRC);
+    } else {
+      _modelTable[m->_rIndex]
+          ->_capOver[m->_met]
+          ->_rcDistTable[m->_underMet][m->_wIndex]
+          ->addMeasureRC(m->_tmpRC);
+    }
   } else if (m->_diag) {
     uint n = getUnderIndex(m);
     if (_diagModel == 2)
@@ -3947,7 +4084,12 @@ void extMetRCTable::mkWidthAndSpaceMappings()
     if (_capOver[ii] != NULL)
       _capOver[ii]->makeWSmapping();
     else
-      logger_->info(RCX, 215, "Can't find <OVER> rules for {}", ii);
+      logger_->info(RCX, 72, "Can't find <OVER> rules for {}", ii);
+
+    if (_resOver[ii] != NULL)
+      _resOver[ii]->makeWSmapping();
+    else
+      logger_->info(RCX, 358, "Can't find <RESOVER> Res rules for {}", ii);
 
     if (_capUnder[ii] != NULL)
       _capUnder[ii]->makeWSmapping();
@@ -3962,6 +4104,7 @@ void extMetRCTable::mkWidthAndSpaceMappings()
 }
 void extRCModel::writeRules(char* name, bool binary)
 {
+  bool writeRes = true;
   //	FILE *fp= openFile("./", name, NULL, "w");
   FILE* fp = fopen(name, "w");
 
@@ -3984,6 +4127,20 @@ void extRCModel::writeRules(char* name, bool binary)
     fprintf(fp, "\nDensityModel %d\n", m);
 
     for (uint ii = 1; ii < _layerCnt; ii++) {
+      if (writeRes) {
+        if (_modelTable[m]->_resOver[ii] != NULL)
+          cnt += _modelTable[m]->_resOver[ii]->writeRulesOver_res(fp, binary);
+        else if ((m > 0) && (_modelTable[0]->_resOver[ii] != NULL))
+          cnt += _modelTable[0]->_resOver[ii]->writeRulesOver_res(fp, binary);
+        else if (m == 0) {
+          logger_->info(RCX,
+                        410,
+                        "Cannot write <OVER> Res rules for <DensityModel> {} "
+                        "and layer {}",
+                        m,
+                        ii);
+        }
+      }
       if (_modelTable[m]->_capOver[ii] != NULL)
         cnt += _modelTable[m]->_capOver[ii]->writeRulesOver(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capOver[ii] != NULL))
@@ -4082,14 +4239,14 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
 {
   for (uint met = 1; met < _layerCnt; met++) {
     if (over && under && (met > 1) && (met < _layerCnt - 1)) {
-      // uint n= getMetIndexOverUnder(met, met-1, _layerCnt-1, layerCnt,
-      // logger_);
       uint n = getMaxMetIndexOverUnder(met, layerCnt, logger_);
       _capOverUnder[met] = new extDistWidthRCTable(
           false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr, logger_);
     }
     if (over) {
       _capOver[met] = new extDistWidthRCTable(
+          true, met, layerCnt, met, widthCnt, _rcPoolPtr, logger_);
+      _resOver[met] = new extDistWidthRCTable(
           true, met, layerCnt, met, widthCnt, _rcPoolPtr, logger_);
     }
     if (under) {
@@ -4173,13 +4330,23 @@ uint extRCModel::readRules(Ath__parser* parser,
     } else
       dummy->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
   } else if (over) {
-    if (!ignore) {
-      _modelTable[m]->allocOverTable(met, wTable, dbFactor);
-      _modelTable[m]->_capOver[met]->readRulesOver(
-          parser, widthCnt, bin, ignore, dbFactor);
-    } else
-      dummy->readRulesOver(parser, widthCnt, bin, ignore, dbFactor);
-
+    if (strcmp(ouKey, "OVER") == 0) {
+      if (!ignore) {
+        // Read RESOVER fisrt _modelTable[m]->allocOverTable(met, wTable,
+        // dbFactor);
+        _modelTable[m]->_capOver[met]->readRulesOver(
+            parser, widthCnt, bin, ignore, "OVER", dbFactor);
+      } else
+        dummy->readRulesOver(parser, widthCnt, bin, ignore, "OVER", dbFactor);
+    } else {  // RESOVER
+      if (!ignore) {
+        _modelTable[m]->allocOverTable(met, wTable, dbFactor);
+        _modelTable[m]->_resOver[met]->readRulesOver(
+            parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
+      } else
+        dummy->readRulesOver(
+            parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
+    }
   } else if (under) {
     if (!ignore) {
       _modelTable[m]->allocUnderTable(met, wTable, dbFactor);
@@ -4229,6 +4396,7 @@ bool extRCModel::readRules(char* name,
   uint cnt = 0;
   _ruleFileName = strdup(name);
   Ath__parser parser;
+  // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
   while (parser.parseNextLine() > 0) {
@@ -4342,8 +4510,23 @@ bool extRCModel::readRules(char* name,
         if (modelIndex)
           skipModel = true;
       }
+      // skipModel= true;
+      bool res_skipModel = false;
 
       for (uint ii = 1; ii < _layerCnt; ii++) {
+        if (!res_skipModel) {
+          cnt += readRules(&parser,
+                           modelIndex,
+                           ii,
+                           "RESOVER",
+                           "WIDTH",
+                           over,
+                           false,
+                           bin,
+                           false,
+                           res_skipModel,
+                           dbFactor);
+        }
         cnt += readRules(&parser,
                          modelIndex,
                          ii,
@@ -4355,7 +4538,6 @@ bool extRCModel::readRules(char* name,
                          false,
                          skipModel,
                          dbFactor);
-
         if (ii < _layerCnt - 1) {
           cnt += readRules(&parser,
                            modelIndex,
@@ -5358,7 +5540,7 @@ uint extRCModel::linesUnder(uint wireCnt,
   }
   if (metLevel < 0)
     logger_->info(
-        RCX, 230, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
+        RCX, 409, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
   closeCapLogFile();
   return cnt;
@@ -5393,7 +5575,7 @@ uint extRCModel::linesOverUnder(uint wireCnt,
         logger_->info(
             RCX,
             231,
-            "\nFinished {} measurements for pattern M{}_over_M{}_under_M{}",
+            "Finished {} measurements for pattern M{}_over_M{}_under_M{}",
             cnt1,
             met,
             underMet,
@@ -5448,7 +5630,7 @@ uint extMain::writeRules(const char* name,
                          bool readFiles)
 {
   if (readDb) {
-    GenExtRules(rulesFile);
+    GenExtRules(rulesFile, pattern);
     return 0;
   }
 

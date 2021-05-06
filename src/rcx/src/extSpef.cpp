@@ -32,13 +32,13 @@
 
 #include "rcx/extSpef.h"
 
-#include "rcx/extRCap.h"
 #include <dbExtControl.h>
 #include <math.h>
 
 #include <algorithm>
 
 #include "parse.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 //#ifdef _WIN32
@@ -447,17 +447,19 @@ void extSpef::writeITermNode(uint node)
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap)
-      ATH__fprintf(_outFP,
-                   "*%d%s%s ",
-                   getInstMapId(inst->getId()),
-                   _delimiter,
-                   addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
+      ATH__fprintf(
+          _outFP,
+          "*%d%s%s ",
+          getInstMapId(inst->getId()),
+          _delimiter,
+          addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     else
-      ATH__fprintf(_outFP,
-                   "%s%s%s ",
-                   addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
-                   _delimiter,
-                   addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
+      ATH__fprintf(
+          _outFP,
+          "%s%s%s ",
+          addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
+          _delimiter,
+          addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
   }
   /*
   odb::debug("HEXT",
@@ -509,7 +511,9 @@ bool extSpef::writeITerm(uint node)
     ATH__fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
   }
   ATH__fprintf(
-               _outFP, "*D %s\n", addEscChar(iterm->getMTerm()->getMaster()->getName().c_str(), false));
+      _outFP,
+      "*D %s\n",
+      addEscChar(iterm->getMTerm()->getMaster()->getName().c_str(), false));
   return true;
 }
 bool extSpef::writeBTerm(uint node)
@@ -548,11 +552,12 @@ bool extSpef::writeNode(uint netId, uint node)
     if (_writeNameMap)
       ATH__fprintf(_outFP, "*%d%s%d ", netId, _delimiter, node);
     else
-      ATH__fprintf(_outFP,
-                   "%s%s%d ",
-                   addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
-                   _delimiter,
-                   node);
+      ATH__fprintf(
+          _outFP,
+          "%s%s%d ",
+          addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
+          _delimiter,
+          node);
   }
   return true;
 }
@@ -673,7 +678,10 @@ void extSpef::writeDnet(uint netId, double* totCap)
     ATH__fprintf(_outFP, "\n*D_NET *%d ", netId);
   else
     ATH__fprintf(
-                 _outFP, "\n*D_NET %s ", addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
+        _outFP,
+        "\n*D_NET %s ",
+        addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
+
   writeRCvalue(totCap, _cap_unit);
   ATH__fprintf(_outFP, "\n");
 }
@@ -1593,21 +1601,21 @@ uint extSpef::getNetMapId(uint netId)
 //   For block spef hierarchy dividers SHOULD be escaped
 //   bus brackets should NOT be escaped.
 // -cherry 04/30/2021
-char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts) {
+char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts)
+{
   uint ii = 0;
   uint jj = 0;
   while (iname[ii] != '\0') {
     char ch = iname[ii];
-    if (!std::isalnum(ch)
-        && ch != '_'
-        && ch != '\\'
+    if (!std::isalnum(ch) && ch != '_' && ch != '\\'
         && (esc_bus_brkts || (ch != '[' && ch != ']'))
         // Check if there is an escape char before
         // the non-alphanumeric character
-        && (ii == 0 || iname[ii-1] != '\\'))
+        && (ii == 0 || iname[ii - 1] != '\\'))
       _mMapName[jj++] = '\\';
     _mMapName[jj++] = iname[ii++];
   }
+
   _mMapName[jj] = '\0';
   return _mMapName;
 }
@@ -1753,10 +1761,6 @@ uint extSpef::writeInstMap()
 }
 uint extSpef::stopWrite()
 {
-  // TODO	for (uint j=0;j<tnets.size();j++)
-  // TODO		tnets[j]->setMark(false);
-  // logger_->info(RCX, 0, "{} nets finished", cnt);
-
   closeOutFile();
   return 0;
 }
@@ -1834,7 +1838,7 @@ uint extSpef::writeBlock(char* nodeCoord,
     _writingNodeCoords = C_STARRC;
     _NsLayer = false;
   } else if (nodeCoord && nodeCoord[0] != '\0') {
-    logger_->warn(RCX, 178, "\" -N {} \" is unknown.", nodeCoord);
+    logger_->warn(RCX, 64, "\" -N {} \" is unknown.", nodeCoord);
     return 0;
   }
   if (!wConn && !wCap && !wOnlyCCcap && !wRes)
@@ -1978,13 +1982,13 @@ uint extSpef::writeBlock(char* nodeCoord,
     cnt += writeNet(net, 0.0, 0);
 
     if (cnt % repChunk == 0)
-      logger_->info(RCX, 47, "{} nets finished", cnt);
+      logger_->info(RCX, 42, "{} nets finished", cnt);
   }
   for (ii = 0; ii < (int) excmaster.size(); ii++)
     ((odb::dbMaster*) excmaster[ii])->setMark(0);
   for (j = 0; j < tnets.size(); j++)
     tnets[j]->setMark(false);
-  logger_->info(RCX, 47, "{} nets finished", cnt);
+  logger_->info(RCX, 443, "{} nets finished", cnt);
 
   closeOutFile();
 
@@ -2028,7 +2032,7 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel)
     cnt += writeNet(net, 0.0, 0);
 
     if (cnt % repChunk == 0)
-      logger_->info(RCX, 47, "{} nets finished", cnt);
+      logger_->info(RCX, 465, "{} nets finished", cnt);
   }
   /*
           for (ii = 0; ii < (int)excmaster.size(); ii++)

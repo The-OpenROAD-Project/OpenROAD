@@ -32,8 +32,8 @@
 
 #include <math.h>
 
-#include "rcx/extSpef.h"
 #include "parse.h"
+#include "rcx/extSpef.h"
 #include "wire.h"
 
 namespace rcx {

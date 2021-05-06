@@ -130,6 +130,7 @@ class Ext
     bool diag = false;
     bool over_under = false;
     bool gen_def_patterns = false;
+    bool resPatterns = false;
   };
 
   bool bench_wires(const BenchWiresOptions& bwo);

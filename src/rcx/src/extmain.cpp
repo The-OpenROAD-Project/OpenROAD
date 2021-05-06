@@ -29,6 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #include "darr.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
@@ -268,8 +269,7 @@ void extMain::writeIncrementalSpef(char* filename,
                filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(
-          RCX, 137, "Can't open file \"{}\" to write spef.", filename);
+      logger_->info(RCX, 58, "Can't open file \"{}\" to write spef.", filename);
     else
       cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                               _excludeCells,
@@ -294,7 +294,7 @@ void extMain::writeIncrementalSpef(char* filename,
   _block->replaceOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.1.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 59, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -315,7 +315,7 @@ void extMain::writeIncrementalSpef(char* filename,
   _block->restoreOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.2.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 61, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -357,7 +357,7 @@ void extMain::writeSpef(char* filename,
   }
   uint cnt;
   if (openSpefFile(filename, 1) > 0) {
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", filename);
+    logger_->info(RCX, 62, "Can't open file \"{}\" to write spef.", filename);
     return;
   } else
     cnt = _spef->writeBlock(coord /*nodeCoord*/,
@@ -752,6 +752,21 @@ uint extMain::getResCapTable(bool lefRC)
     m._width = w;
     m._met = n;
 
+    uint sp = layer->getSpacing();  // nm
+
+    _minDistTable[n] = sp;
+    if (sp == 0) {
+      sp = layer->getPitch() - layer->getWidth();
+      _minDistTable[n] = sp;
+    }
+    double resTable[20];
+    bool newResModel = true;
+    if (newResModel) {
+      for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+        resTable[jj] = 0.0;
+      }
+      calcRes0(resTable, n, w, 1);
+    }
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
       uint modelIndex = _modelMap.get(jj);
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
@@ -775,22 +790,27 @@ uint extMain::getResCapTable(bool lefRC)
                    "EXT_RES: "
                    "R "
                    "Layer= {} met= {}   w= {} cc= {:g} fr= {:g} res= {:g} "
-                   "model_res= {:g}",
+                   "model_res= {:g} new_model_res= {:g} ",
                    layer->getConstName(),
                    n,
                    w,
                    rc->getCoupling(),
                    rc->getFringe(),
                    res,
-                   r1);
+                   r1,
+                   resTable[jj]);
       }
 
       extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
 
       if (!_lef_res) {
-        if (rc0 != NULL) {
-          double r1 = rc->getRes();
-          _resistanceTable[jj][n] = r1;
+        if (newResModel) {
+          _resistanceTable[jj][n] = resTable[jj];
+        } else {
+          if (rc0 != NULL) {
+            double r1 = rc->getRes();
+            _resistanceTable[jj][n] = r1;
+          }
         }
       } else {
         debugPrint(logger_,
@@ -1527,13 +1547,13 @@ void extMain::measureRC(int* options)
         logger_->info(RCX, 142, "  layer {}", ii + m._met);
         for (jj = 0; jj < _ccContextArray[ii + m._met]->getCnt(); jj++)
           logger_->info(RCX,
-                        143,
+                        476,
                         "    {}: {}",
                         jj,
                         _ccContextArray[ii + m._met]->get(jj));
       }
       for (ii = 1; ii <= _ccContextDepth && m._met - ii > 0; ii++) {
-        logger_->info(RCX, 142, "  layer {}", m._met - ii);
+        logger_->info(RCX, 65, "  layer {}", m._met - ii);
         for (jj = 0; jj < _ccContextArray[m._met - ii]->getCnt(); jj++)
           logger_->info(RCX,
                         143,

@@ -104,48 +104,20 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   // Draw segs & vias
   if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
-    auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
-    worker_->getExtBox(box);
-    std::vector<drConnFig*> figs;
-    rq.query(box, layerNum, figs);
-    for (auto& fig : figs) {
-      switch (fig->typeId()) {
-        case drcPathSeg: {
-          auto seg = (drPathSeg*) fig;
-          if (seg->getLayerNum() == layerNum) {
-            seg->getBBox(box);
-            painter.drawRect(
-                {box.left(), box.bottom(), box.right(), box.top()});
-          }
-          break;
-        }
-        case drcVia: {
-          auto via = (drVia*) fig;
-          auto viadef = via->getViaDef();
-          if (viadef->getLayer1Num() == layerNum) {
-            via->getLayer1BBox(box);
-          } else if (viadef->getLayer2Num() == layerNum) {
-            via->getLayer2BBox(box);
-          } else {
-            continue;
-          }
-          painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
-          break;
-        }
-        case drcPatchWire: {
-          auto patch = (drPatchWire*) fig;
-          if (patch->getLayerNum() == layerNum) {
-            patch->getBBox(box);
-            painter.drawRect(
-                {box.left(), box.bottom(), box.right(), box.top()});
-          }
-          break;
-        }
-
-        default:
-          logger_->debug(
-              DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+    if (drawWholeDesign_) {
+      worker_->getDesign()->getTopBlock()->getBoundaryBBox(box);
+      fr::frRegionQuery::Objects<frBlockObject> figs;
+      worker_->getDesign()->getRegionQuery()->query(box, layerNum, figs);
+      for (auto& fig : figs) {
+        drawObj(fig.second, painter, layerNum);
+      }
+    } else {
+      worker_->getExtBox(box);
+      std::vector<drConnFig*> figs;
+      worker_->getWorkerRegionQuery().query(box, layerNum, figs);
+      for (auto& fig : figs) {
+        drawObj(fig, painter, layerNum);
       }
     }
   }
@@ -251,6 +223,47 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 }
 
+void FlexDRGraphics::drawObj(frBlockObject* fig,
+                             gui::Painter& painter,
+                             int layerNum)
+{
+  frBox box;
+  switch (fig->typeId()) {
+    case drcPathSeg: {
+      auto seg = (drPathSeg*) fig;
+      if (seg->getLayerNum() == layerNum) {
+        seg->getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
+      break;
+    }
+    case drcVia: {
+      auto via = (drVia*) fig;
+      auto viadef = via->getViaDef();
+      if (viadef->getLayer1Num() == layerNum) {
+        via->getLayer1BBox(box);
+      } else if (viadef->getLayer2Num() == layerNum) {
+        via->getLayer2BBox(box);
+      } else {
+        return;
+      }
+      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      break;
+    }
+    case drcPatchWire: {
+      auto patch = (drPatchWire*) fig;
+      if (patch->getLayerNum() == layerNum) {
+        patch->getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
+      break;
+    }
+
+    default:
+      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+  }
+}
+
 void FlexDRGraphics::drawMarker(int xl,
                                 int yl,
                                 int xh,
@@ -276,6 +289,15 @@ void FlexDRGraphics::pause(drNet* net)
     return;
   }
   gui_->pause();
+}
+
+void FlexDRGraphics::debugWholeDesign()
+{
+  if (!settings_->allowPause)
+    return;
+  drawWholeDesign_ = true;
+  gui_->pause();
+  update();
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
@@ -447,9 +469,7 @@ void FlexDRGraphics::startIter(int iter)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    // If you specified a gcell then only one worker can process that
-    // gcell and we don't need to limit the threading.
-    if (MAX_THREADS > 1 && settings_->gcellX < 0) {
+    if (MAX_THREADS > 1) {
       logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
       MAX_THREADS = 1;
     }

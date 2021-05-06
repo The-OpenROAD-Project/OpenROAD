@@ -9,10 +9,10 @@
 [INFO ODB-0131]     Created 35 components and 210 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 35 connections.
 [INFO ODB-0134] Finished DEF file: invalid_pin_placement.def
-Min routing layer: metal1
-Max routing layer: metal10
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via via1_4 as default.
 [INFO GRT-0224] Chose via via2_8 as default.
@@ -35,6 +35,6 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 910
-[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0019] Found 0 clock nets.
 [ERROR GRT-0093] Pin clk does not have layer assignment.
 GRT-0093

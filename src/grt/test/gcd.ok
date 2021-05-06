@@ -9,10 +9,10 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Min routing layer: metal1
-Max routing layer: metal10
-Global adjustment: 0%
-Grid origin: (0, 0)
+[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via via1_4 as default.
 [INFO GRT-0224] Chose via via2_8 as default.
@@ -35,24 +35,46 @@ Grid origin: (0, 0)
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 2874
-[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0018] Processing 8469 blockages on layer metal1.
-[INFO GRT-0146] Final usage/overflow report:
-[INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 3332
-[INFO GRT-0157] Total Capacity: 149734
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
+[INFO GRT-0017] Processing 8469 blockages on layer metal1.
 
-[INFO GRT-0110] Final usage: 3332
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal      33840         32066          5.24%
+metal2     Vertical        24816         24581          0.95%
+metal3     Horizontal      33840         33028          2.40%
+metal4     Vertical        15792         15698          0.60%
+metal5     Horizontal      15792         15410          2.42%
+metal6     Vertical        15792         15698          0.60%
+metal7     Horizontal       4512          4370          3.15%
+metal8     Vertical         4512          4512          0.00%
+metal9     Horizontal       2256          2162          4.17%
+metal10    Vertical         2256          2209          2.08%
+---------------------------------------------------------------
+
 [INFO GRT-0111] Final number of vias: 1228
 [INFO GRT-0112] Final usage 3D: 7016
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+metal1           32066          1729            5.39%             0 /  0 /  0
+metal2           24581          1603            6.52%             0 /  0 /  0
+metal3           33028             0            0.00%             0 /  0 /  0
+metal4           15698             0            0.00%             0 /  0 /  0
+metal5           15410             0            0.00%             0 /  0 /  0
+metal6           15698             0            0.00%             0 /  0 /  0
+metal7            4370             0            0.00%             0 /  0 /  0
+metal8            4512             0            0.00%             0 /  0 /  0
+metal9            2162             0            0.00%             0 /  0 /  0
+metal10           2209             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           149734          3332            2.23%             0 /  0 /  0
+
 [INFO GRT-0018] Total wirelength: 10266 um
 [INFO GRT-0014] Num routed nets: 563
 No differences found.
