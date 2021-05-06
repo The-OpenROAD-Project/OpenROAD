@@ -208,6 +208,7 @@ class extDistRC
   void debugRC(const char* debugWord, const char* from, int width, int level);
   void set(uint d, double cc, double fr, double a, double r);
   void readRC(Ath__parser* parser, double dbFactor = 1.0);
+  void readRC_res2(Ath__parser* parser, double dbFactor = 1.0);
   double getFringe();
   double getCoupling();
   double getDiag();
@@ -217,6 +218,7 @@ class extDistRC
   void writeRC(FILE* fp, bool bin);
   void writeRC();
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
+  double interpolate_res(uint d, extDistRC* rc2);
 
   friend class extDistRCTable;
   friend class extDistWidthRCTable;
@@ -231,6 +233,10 @@ class extDistRCTable
 
   Ath__array1D<extDistRC*>* _measureTable;
   Ath__array1D<extDistRC*>* _computeTable;
+  Ath__array1D<extDistRC*>* _measureTableR[16];
+  Ath__array1D<extDistRC*>* _computeTableR[16];  // OPTIMIZE
+  int _maxDist;
+  uint _distCnt;
   uint _unit;
 
   void makeCapTableOver();
@@ -245,6 +251,7 @@ class extDistRCTable
 
   extDistRC* getRC_99();
   void ScaleRes(double SUB_MULT_RES, Ath__array1D<extDistRC*>* table);
+  extDistRC* findRes(int dist1, int dist2, bool compute);
 
   uint addMeasureRC(extDistRC* rc);
   void makeComputeTable(uint maxDist, uint distUnit);
@@ -253,6 +260,9 @@ class extDistRCTable
   extDistRC* getComputeRC(double dist);
   extDistRC* getComputeRC(uint dist);
   extDistRC* getRC(uint s, bool compute);
+  extDistRC* getComputeRC_res(uint dist1, uint dist2);
+  extDistRC* findIndexed_res(uint dist1, uint dist2);
+  int getComputeRC_maxDist();
   uint writeRules(FILE* fp,
                   Ath__array1D<extDistRC*>* table,
                   double w,
@@ -276,6 +286,12 @@ class extDistRCTable
                  bool bin,
                  bool ignore,
                  double dbFactor = 1.0);
+  uint readRules_res2(Ath__parser* parser,
+                      AthPool<extDistRC>* rcPool,
+                      bool compute,
+                      bool bin,
+                      bool ignore,
+                      double dbFactor = 1.0);
   uint interpolate(uint distUnit, int maxDist, AthPool<extDistRC>* rcPool);
   uint mapInterpolate(extDistRC* rc1,
                       extDistRC* rc2,
@@ -291,6 +307,11 @@ class extDistRCTable
                       Ath__array1D<double>* rcTable,
                       bool compute);
 };
+extDistRC* findRes(Ath__array1D<extDistRC*>* sTable,
+                   int dist1,
+                   int dist2,
+                   bool compute);
+
 class extDistWidthRCTable
 {
  public:
@@ -373,6 +394,7 @@ class extDistWidthRCTable
   uint writeDiagDistTable(FILE* fp, uint met, bool bin);
   void writeDiagTablesCnt(FILE* fp, uint met, bool bin);
   uint writeRulesOver(FILE* fp, bool bin);
+  uint writeRulesOver_res(FILE* fp, bool bin);
   uint writeRulesUnder(FILE* fp, bool bin);
   uint writeRulesDiagUnder(FILE* fp, bool bin);
   uint writeRulesDiagUnder2(FILE* fp, bool bin);
@@ -382,6 +404,7 @@ class extDistWidthRCTable
                      uint widthCnt,
                      bool bin,
                      bool ignore,
+                     const char* OVER,
                      double dbFactor = 1.0);
   uint readRulesUnder(Ath__parser* parser,
                       uint widthCnt,
@@ -412,6 +435,7 @@ class extDistWidthRCTable
                        bool ignore);
 
   // extDistRC* getRC(uint mou, double w, double s);
+  extDistRC* getRes(uint mou, uint w, int dist1, int dist2);
   extDistRC* getRC(uint mou, uint w, uint s);
   extDistRC* getRC(uint mou, uint w, uint dw, uint ds, uint s);
   extDistRC* getFringeRC(uint mou, uint w, int index_dist = -1);
@@ -423,12 +447,14 @@ class extDistWidthRCTable
 
   extDistRC* getLastWidthFringeRC(uint mou);
   extDistRC* getRC_99(uint mou, uint w, uint dw, uint ds);
+  extDistRCTable* getRuleTable(uint mou, uint w);
 };
 class extMetRCTable
 {
  public:
   uint _layerCnt;
   char _name[128];
+  extDistWidthRCTable** _resOver;
   extDistWidthRCTable** _capOver;
   extDistWidthRCTable** _capUnder;
   extDistWidthRCTable** _capOverUnder;
@@ -521,6 +547,7 @@ class extRCModel
   bool _keepFile;
   uint _metLevel;
 
+  extRCTable* _resOver;
   extRCTable* _capOver;
   extRCTable* _capDiagUnder;
   extRCTable* _capUnder;
@@ -814,6 +841,8 @@ class extRCModel
   }
   uint benchDB_WS(extMainOptions* opt, extMeasure* measure);
   int writeBenchWires_DB(extMeasure* measure);
+  int writeBenchWires_DB_res(extMeasure* measure);
+
   int writeBenchWires_DB_diag(extMeasure* measure);
   extMetRCTable* initCapTables(uint layerCnt, uint widthCnt);
 
@@ -899,7 +928,7 @@ class extMeasure
                     const char* openDist);
   bool Debug_DiagValues(double res, double cap, const char* openDist);
   bool IsDebugNet();
-  bool DebugStart();
+  bool DebugStart(bool allNets = false);
   bool DebugDiagCoords(int met,
                        int targetMet,
                        int len1,
@@ -1043,6 +1072,7 @@ class extMeasure
               int* ur,
               Ath__array1D<odb::SEQ*>* seqTable,
               odb::gs* pixelTable = NULL);
+  odb::SEQ* addSeq(int* ll, int* ur);
   void copySeq(odb::SEQ* t,
                Ath__array1D<odb::SEQ*>* seqTable,
                odb::gs* pixelTable);
@@ -1061,6 +1091,8 @@ class extMeasure
   int computeAndStoreRC_720(odb::dbRSeg* rseg1,
                             odb::dbRSeg* rseg2,
                             int srcCovered);
+
+  double ScaleResbyTrack(bool openEnded, double& dist_track);
   void OverSubRC(odb::dbRSeg* rseg1,
                  odb::dbRSeg* rseg2,
                  int ouCovered,
@@ -1076,6 +1108,24 @@ class extMeasure
   void seq_release(Ath__array1D<odb::SEQ*>* table);
   void calcOU(uint len);
   void calcRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, uint totLenCovered);
+  int getMaxDist(int tgtMet, uint modelIndex);
+  void calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet);
+  void calcRes0(double* deltaRes,
+                uint tgtMet,
+                uint len,
+                int dist1 = 0,
+                int dist2 = 0);
+  uint computeRes(odb::SEQ* s,
+                  uint targetMet,
+                  uint dir,
+                  uint planeIndex,
+                  uint trackn,
+                  Ath__array1D<odb::SEQ*>* residueSeq);
+  int computeResDist(odb::SEQ* s,
+                     uint trackMin,
+                     uint trackMax,
+                     uint targetMet,
+                     Ath__array1D<odb::SEQ*>* diagTable);
   uint computeDiag(odb::SEQ* s,
                    uint targetMet,
                    uint dir,
@@ -1238,6 +1288,11 @@ class extMeasure
                     Ath__array1D<odb::SEQ*>* dgContext,
                     Ath__array1D<odb::SEQ*>* overlapSeq,
                     Ath__array1D<odb::SEQ*>* residueSeq);
+  void getDgOverlap_res(odb::SEQ* sseq,
+                        uint dir,
+                        Ath__array1D<odb::SEQ*>* dgContext,
+                        Ath__array1D<odb::SEQ*>* overlapSeq,
+                        Ath__array1D<odb::SEQ*>* residueSeq);
 
   void writeBoxRaphael3D(FILE* fp,
                          ext2dBox* bb,
@@ -1298,6 +1353,7 @@ class extMeasure
   bool _varFlag;
   bool _3dFlag;
   bool _over;
+  bool _res;
   bool _overUnder;
   bool _diag;
   bool _verticalDiag;
@@ -1589,6 +1645,8 @@ class extMainOptions
   bool _db_only;
   bool _gen_def_patterns;
 
+  bool _res_patterns;
+
   odb::dbTech* _tech;
   odb::dbBlock* _block;
 
@@ -1639,6 +1697,7 @@ class extMain
   double _resistanceTable[20][20];
   double _capacitanceTable[20][20];  // 20 layers by 20 rc models
   double _minWidthTable[20];
+  uint _minDistTable[20];
   double _tmpCapTable[20];
   double _tmpSumCapTable[20];
   double _tmpResTable[20];
@@ -1917,8 +1976,7 @@ class extMain
                              const char* filterNet,
                              uint corner);
 
-  uint
-  calcMinMaxRC();  // 620 DF: this is to be used for stats used in diff_spef
+  uint calcMinMaxRC();
   void resetMinMaxRC(uint ii, uint jj);
   uint getExtStats(odb::dbNet* net,
                    uint corner,
@@ -2194,6 +2252,12 @@ class extMain
 
   extRCModel* getRCmodel(uint n);
 
+  void calcRes0(double* deltaRes,
+                uint tgtMet,
+                uint width,
+                uint len,
+                int dist1 = 0,
+                int dist2 = 0);
   double getLefResistance(uint level, uint width, uint length, uint model);
   double getResistance(uint level, uint width, uint len, uint model);
   double getFringe(uint met, uint width, uint modelIndex, double& areaCap);
@@ -2465,7 +2529,7 @@ class extMain
                   bool readDb = false,
                   bool readFiles = false);
   uint benchWires(extMainOptions* options);
-  uint GenExtRules(const char* rulesFileName);
+  uint GenExtRules(const char* rulesFileName, int pattern);
   FILE* getPtFile() { return _ptFile; };
   static void destroyExtSdb(std::vector<odb::dbNet*>& nets, void* ext);
   void writeIncrementalSpef(char* filename,

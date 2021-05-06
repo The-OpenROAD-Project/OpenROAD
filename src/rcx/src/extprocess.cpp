@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "rcx/extprocess.h"
+
 #include "utl/Logger.h"
 
 namespace rcx {

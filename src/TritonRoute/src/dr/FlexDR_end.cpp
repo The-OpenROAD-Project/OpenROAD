@@ -65,11 +65,15 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // |                 |
     // |                 |
     // -------------------
-    bool condition1
-        = isInitDR() ? (begin.x() < routeBox.right())
-                     : (begin.x() <= routeBox.right());  // parallel to wire
+    if (isInitDR()
+        && (begin.x() == routeBox.left() || begin.x() == routeBox.right())) {
+      if (begin.y() < routeBox.bottom() || end.y() > routeBox.top()
+          || pathSeg->getBeginStyle() != frcTruncateEndStyle
+          || pathSeg->getEndStyle() != frcTruncateEndStyle)
+        return;
+    }
     bool condition2 = (begin.y() <= routeBox.top());     // orthogonal to wire
-    if (routeBox.left() <= begin.x() && condition1
+    if (routeBox.left() <= begin.x() && begin.x() <= routeBox.right()
         && !(begin.y() > routeBox.top() || end.y() < routeBox.bottom())) {
       // bottom seg to ext
       if (begin.y() < routeBox.bottom()) {
@@ -133,13 +137,17 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     }
     // horizontal seg
   } else if (begin.y() == end.y()) {
+    if (isInitDR()
+        && (begin.y() == routeBox.bottom() || begin.y() == routeBox.top())) {
+      if (begin.x() < routeBox.left() || end.x() > routeBox.right()
+          || pathSeg->getBeginStyle() != frcTruncateEndStyle
+          || pathSeg->getEndStyle() != frcTruncateEndStyle)
+        return;
+    }
     // if cross routeBBox
-    bool condition1 = isInitDR()
-                          ? (begin.y() < routeBox.top())
-                          : (begin.y() <= routeBox.top());  // parallel to wire
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.right()):*/ (
         begin.x() <= routeBox.right());  // orthogonal to wire
-    if (routeBox.bottom() <= begin.y() && condition1
+    if (routeBox.bottom() <= begin.y() && begin.y() <= routeBox.top()
         && !(begin.x() > routeBox.right() || end.x() < routeBox.left())) {
       // left seg to ext
       if (begin.x() < routeBox.left()) {
@@ -207,12 +215,14 @@ void FlexDRWorker::endRemoveNets_via(frVia* via)
   auto net = via->getNet();
   frPoint viaPoint;
   via->getOrigin(viaPoint);
-  bool condition1 = isInitDR() ? (viaPoint.x() < gridBBox.right()
-                                  && viaPoint.y() < gridBBox.top())
-                               : (viaPoint.x() <= gridBBox.right()
-                                  && viaPoint.y() <= gridBBox.top());
+  if (isInitDR()
+      && (viaPoint.x() == gridBBox.left() || viaPoint.x() == gridBBox.right()
+          || viaPoint.y() == gridBBox.bottom()
+          || viaPoint.y() == gridBBox.top())) {
+    return;
+  }
   if (viaPoint.x() >= gridBBox.left() && viaPoint.y() >= gridBBox.bottom()
-      && condition1) {
+      && viaPoint.x() <= gridBBox.right() && viaPoint.y() <= gridBBox.top()) {
     regionQuery->removeDRObj(via);  // delete rq
     net->removeVia(via);
   }
@@ -225,12 +235,13 @@ void FlexDRWorker::endRemoveNets_patchWire(frPatchWire* pwire)
   auto net = pwire->getNet();
   frPoint origin;
   pwire->getOrigin(origin);
-  bool condition1
-      = isInitDR()
-            ? (origin.x() < gridBBox.right() && origin.y() < gridBBox.top())
-            : (origin.x() <= gridBBox.right() && origin.y() <= gridBBox.top());
+  if (isInitDR()
+      && (origin.x() == gridBBox.left() || origin.x() == gridBBox.right()
+          || origin.y() == gridBBox.bottom() || origin.y() == gridBBox.top())) {
+    return;
+  }
   if (origin.x() >= gridBBox.left() && origin.y() >= gridBBox.bottom()
-      && condition1) {
+      && origin.x() <= gridBBox.right() && origin.y() <= gridBBox.top()) {
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
   }
@@ -354,14 +365,12 @@ void FlexDRWorker::endAddNets_merge(frNet* net,
         }
         frPoint bp, ep;
         ps->getPoints(bp, ep);
-        if (bp == pt || ep == pt) {
-          // vertical
-          if (bp.x() == ep.x()) {
-            vertPathSegs.push_back(ps);
-            // horizontal
-          } else {
-            horzPathSegs.push_back(ps);
-          }
+        // vertical
+        if (bp.x() == ep.x()) {
+          vertPathSegs.push_back(ps);
+          // horizontal
+        } else {
+          horzPathSegs.push_back(ps);
         }
       } else if (obj->typeId() == frcPatchWire) {
         auto pwire = static_cast<frPatchWire*>(obj);

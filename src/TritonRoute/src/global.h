@@ -134,6 +134,10 @@ std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
 std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frShape& fig);
+std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
+std::ostream& operator<<(std::ostream& os, const frGuide& p);
+// namespace fr
 }  // namespace fr
-
 #endif

@@ -1374,7 +1374,6 @@ NetRouteMap FastRouteCore::run()
 
   clock_t t5 = clock();
   maze_Time = (float) (t5 - t1) / CLOCKS_PER_SEC;
-  logger->info(GRT, 110, "Final usage: {}", finallength);
   logger->info(GRT, 111, "Final number of vias: {}", numVia);
   logger->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
 
@@ -1410,6 +1409,61 @@ void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
 void FastRouteCore::setAllowOverflow(bool allow)
 {
   allowOverflow = allow;
+}
+
+std::vector<int> FastRouteCore::getOriginalResources()
+{
+  std::vector<int> original_resources;
+  original_resources.resize(numLayers);
+  for (int l = 0; l < numLayers; l++) {
+    original_resources[l] += (vCapacity3D[l]+hCapacity3D[l])*yGrid*xGrid;
+  }
+
+  return original_resources;
+}
+
+void FastRouteCore::computeCongestionInformation()
+{
+  cap_per_layer.resize(numLayers);
+  usage_per_layer.resize(numLayers);
+  overflow_per_layer.resize(numLayers);
+  max_h_overflow.resize(numLayers);
+  max_v_overflow.resize(numLayers);
+
+  for (int l = 0; l < numLayers; l++) {
+    cap_per_layer[l] = 0;
+    usage_per_layer[l] = 0;
+    overflow_per_layer[l] = 0;
+    max_h_overflow[l] = 0;
+    max_v_overflow[l] = 0;
+
+    for (int i = 0; i < yGrid; i++) {
+      for (int j = 0; j < xGrid - 1; j++) {
+        int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
+        cap_per_layer[l] += h_edges3D[grid].cap;
+        usage_per_layer[l] += h_edges3D[grid].usage;
+
+        int overflow = h_edges3D[grid].usage - h_edges3D[grid].cap;
+        if (overflow > 0) {
+          overflow_per_layer[l] += overflow;
+          max_h_overflow[l] = std::max(max_h_overflow[l], overflow);
+        }
+      }
+    }
+    for (int i = 0; i < yGrid - 1; i++) {
+      for (int j = 0; j < xGrid; j++) {
+        int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
+        cap_per_layer[l] += v_edges3D[grid].cap;
+        usage_per_layer[l] += v_edges3D[grid].usage;
+
+        int overflow = v_edges3D[grid].usage - v_edges3D[grid].cap;
+        if (overflow > 0) {
+          overflow_per_layer[l] += overflow;
+          max_v_overflow[l] = std::max(max_v_overflow[l], overflow);
+        }
+      }
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////
