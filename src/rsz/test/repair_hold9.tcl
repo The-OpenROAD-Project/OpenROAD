@@ -1,7 +1,7 @@
 # repair_timing -hold -max_buffer_percent
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def gcd_placed.def
+read_def gcd_nangate45_placed.def
 create_clock [get_ports clk] -name core_clock -period 2
 
 set_wire_rc -layer metal3
