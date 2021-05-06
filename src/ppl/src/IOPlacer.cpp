@@ -60,9 +60,12 @@ void IOPlacer::clear()
 {
   hor_layers_.clear();
   ver_layers_.clear();
+  top_grid_ = TopLayerGrid();
   zero_sink_ios_.clear();
   sections_.clear();
+  sections_for_constraints_.clear();
   slots_.clear();
+  top_layer_slots_.clear();
   assignment_.clear();
   netlist_io_pins_.clear();
   excluded_intervals_.clear();
@@ -185,7 +188,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     int slot_idx = slot_indices[floor(b * shift)];
     IOPin& io_pin = netlist_.getIoPin(pin_idx);
     io_pin.setPos(slots.at(slot_idx).pos);
-    io_pin.place();
+    io_pin.setPlaced();
     slots.at(slot_idx).used = true;
     slots.at(slot_idx).blocked = true;
     io_pin.setLayer(slots.at(slot_idx).layer);
@@ -554,8 +557,16 @@ void IOPlacer::assignConstrainedPinsToSections()
 
   for (Constraint &constraint : constraints_) {
     std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
+    int slots_count = 0;
+    for (Section sec : sections_for_constraint) {
+      slots_count += sec.num_slots;
+    }
+
     PinList &pin_list = constraint.pin_list;
-    const Direction &dir = constraint.direction;
+    
+    if (pin_list.size() > slots_count) {
+      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint", pin_list.size(), slots_count);
+    }
 
     int idx;
     for (odb::dbBTerm* bterm : pin_list) {
