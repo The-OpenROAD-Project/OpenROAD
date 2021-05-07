@@ -35,13 +35,22 @@
 
 #include "HypergraphDecomposition.h"
 
+#include <set>
 
 namespace odb {
 class dbDatabase;
 class dbChip;
 class dbBlock;
 class dbNet;
+class dbInst;
 }  // namespace odb
+
+namespace sta {
+class Instance;
+class ConcreteNetwork;
+class ConcreteLibrary;
+class ConcretePort;
+}  // namespace sta
 
 namespace utl {
 class Logger;
@@ -267,6 +276,17 @@ class PartitionMgr
   void reportNetlistPartitions(unsigned partitionId);
   void readPartitioningFile(std::string filename);
   void reportGraph();
+
+  void writePartitioningToVerilog(const char* path, const char* portPrefix, const char* moduleSuffix);
+
+ private:
+  sta::Instance* buildPartitionedInstance(const char* name,
+                                          const char* portPrefix,
+                                          sta::ConcreteLibrary* lib,
+                                          sta::ConcreteNetwork* network,
+                                          sta::Instance* parent,
+                                          std::set<odb::dbInst*>* insts,
+                                          std::map<odb::dbNet*, sta::ConcretePort*>* portMap);
 };
 
 }  // namespace par

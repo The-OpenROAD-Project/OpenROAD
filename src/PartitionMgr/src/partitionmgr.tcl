@@ -343,6 +343,39 @@ proc write_partitioning_to_db { args } {
 }
 
 #--------------------------------------------------------------------
+# Write partition to verilog
+#--------------------------------------------------------------------
+
+sta::define_cmd_args "write_partitioning_to_verilog" { [-partitioning_id id] \
+  [-port_prefix prefix] [-module_suffix suffix] [file]
+}
+
+proc write_partitioning_to_verilog { args } {
+  sta::parse_key_args "write_partitioning_to_verilog" args \
+    keys { -partitioning_id -port_prefix -module_suffix } flags { }
+
+  sta::check_argc_eq1 "write_partitioning_to_verilog" $args
+  
+  if { ![info exists keys(-partitioning_id)] } {
+    utl::error PAR 45 "missing mandatory argument -partitioning_id"
+  } else {
+    set partition_id $keys(-partitioning_id)
+  }
+  
+  set port_prefix "partition_"
+  if { [info exists keys(-port_prefix)] } {
+    set port_prefix $keys(-port_prefix)
+  }
+  
+  set module_suffix "_partition"
+  if { [info exists keys(-module_suffix)] } {
+    set module_suffix $keys(-module_suffix)
+  }
+  
+  par::write_partitioning_to_verilog $partition_id $port_prefix $module_suffix $args
+}
+
+#--------------------------------------------------------------------
 # Cluster netlist command
 #--------------------------------------------------------------------
 
