@@ -23,6 +23,7 @@ record_tests {
   add_constraint3
   add_constraint4
   add_constraint5
+  add_constraint6
   group_pins1
   group_pins2
   group_pins3
