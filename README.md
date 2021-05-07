@@ -355,6 +355,12 @@ command call. The `-direction` argument is the pin direction (input, output, ino
 The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 To restrict pins to the positions defined with `define_pin_shape_pattern`, use `-region up:{llx lly urx ury}` or `-region up:*`.
 
+```
+clear_constraints
+```
+
+The `clear_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
+
 #### Tapcell
 
 Tapcell and endcap insertion.
