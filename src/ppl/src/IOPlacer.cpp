@@ -69,7 +69,6 @@ void IOPlacer::clear()
   assignment_.clear();
   netlist_io_pins_.clear();
   excluded_intervals_.clear();
-  constraints_.clear();
   netlist_.clear();
   pin_groups_.clear();
   *parms_ = Parameters();
@@ -545,11 +544,6 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
-bool compareConstraints(const Constraint &c1, const Constraint &c2)
-{
-  return c1.pin_list.size() > c2.pin_list.size();
-}
-
 void IOPlacer::assignConstrainedPinsToSections()
 {
   Netlist& netlist = netlist_io_pins_;
@@ -565,7 +559,7 @@ void IOPlacer::assignConstrainedPinsToSections()
     PinList &pin_list = constraint.pin_list;
     
     if (pin_list.size() > slots_count) {
-      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint", pin_list.size(), slots_count);
+      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_list.size(), slots_count);
     }
 
     int idx;
@@ -991,7 +985,8 @@ void IOPlacer::addTopLayerConstraint(PinList* pins,
 void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
 {
   Netlist& netlist = netlist_io_pins_;
-  if (constraint.direction != Direction::invalid) {
+  if (constraint.direction != Direction::invalid &&
+      constraint.pin_list.empty()) {
     for (const IOPin& io_pin : netlist.getIOPins()) {
       if (io_pin.getDirection() == constraint.direction) {
         constraint.pin_list.push_back(io_pin.getBTerm());
@@ -1014,7 +1009,7 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint)
 
 void IOPlacer::initConstraints()
 {
-  std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
+  std::reverse(constraints_.begin(), constraints_.end());
   Netlist& netlist = netlist_io_pins_;
   int pins_assigned = 0;
   for (Constraint &constraint : constraints_) {
