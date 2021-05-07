@@ -50,41 +50,27 @@ using odb::dbMaster;
 using odb::dbPlacementStatus;
 
 void
-Opendp::fillerPlacement(const StringSeq *filler_master_names, const char* prefix)
+Opendp::fillerPlacement(dbMasterSeq *filler_masters,
+                        const char* prefix)
 {
   if (cells_.empty())
     importDb();
 
-  findFillerMasters(filler_master_names);
+  std::sort(filler_masters->begin(),
+            filler_masters->end(),
+            [](dbMaster *master1, dbMaster *master2) {
+              return master1->getWidth() > master2->getWidth();
+            });
+
   gap_fillers_.clear();
   filler_count_ = 0;
   initGrid();
   setGridCells();
 
   for (int row = 0; row < row_count_; row++)
-    placeRowFillers(row, prefix);
+    placeRowFillers(row, prefix, filler_masters);
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
-}
-
-void
-Opendp::findFillerMasters(const StringSeq *filler_master_names)
-{
-  filler_masters_.clear();
-  for (const string &master_name : *filler_master_names) {
-    for (dbLib *lib : db_->getLibs()) {
-      dbMaster *master = lib->findMaster(master_name.c_str());
-      if (master) {
-        filler_masters_.push_back(master);
-        break;
-      }
-    }
-  }
-  std::sort(filler_masters_.begin(),
-            filler_masters_.end(),
-            [](dbMaster *master1, dbMaster *master2) {
-              return master1->getWidth() > master2->getWidth();
-            });
 }
 
 void
@@ -96,7 +82,9 @@ Opendp::setGridCells()
 }
 
 void
-Opendp::placeRowFillers(int row, const char* prefix)
+Opendp::placeRowFillers(int row,
+                        const char* prefix,
+                        dbMasterSeq *filler_masters)
 {
   dbOrientType orient = rowOrient(row);
   int j = 0;
@@ -112,7 +100,7 @@ Opendp::placeRowFillers(int row, const char* prefix)
       }
       int gap = k - j;
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
-      dbMasterSeq &fillers = gapFillers(gap);
+      dbMasterSeq &fillers = gapFillers(gap, filler_masters);
       if (fillers.empty()) {
         int x = core_.xMin() + j * site_width_;
         int y = core_.yMin() + row * row_height_;
@@ -164,7 +152,8 @@ Opendp::gridInstName(int row,
 
 // Return list of masters to fill gap (in site width units).
 dbMasterSeq &
-Opendp::gapFillers(int gap)
+Opendp::gapFillers(int gap,
+                   dbMasterSeq *filler_masters)
 {
   if (gap_fillers_.size() < gap + 1) {
     gap_fillers_.resize(gap + 1);
@@ -172,9 +161,9 @@ Opendp::gapFillers(int gap)
   dbMasterSeq &fillers = gap_fillers_[gap];
   if (fillers.empty()) {
     int width = 0;
-    dbMaster *smallest_filler = filler_masters_[filler_masters_.size() - 1];
+    dbMaster *smallest_filler = (*filler_masters)[filler_masters->size() - 1];
     bool have_filler1 = smallest_filler->getWidth() == site_width_;
-    for (dbMaster *filler_master : filler_masters_) {
+    for (dbMaster *filler_master : *filler_masters) {
       int filler_width = filler_master->getWidth() / site_width_;
       while ((width + filler_width) <= gap
              && (have_filler1
