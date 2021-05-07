@@ -35,6 +35,7 @@
 
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
+#include "opendb/wOrder.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -475,6 +476,13 @@ bool Ext::extract(ExtractOptions opts)
                 "extracting parasitics of {} ...",
                 _ext->getBlock()->getName().c_str());
 
+  // orderWires encodes the db wires in a connectivity graph that is
+  // required by rcx.
+  odb::orderWires(_ext->getBlock(),
+                  nullptr /* net_name_or_id*/,
+                  false /* force */,
+                  false /* verbose */,
+                  true /* quiet */);
   if (opts.lef_rc) {
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
@@ -565,10 +573,10 @@ bool Ext::extract(ExtractOptions opts)
     //_ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
   }
   /*
-  else if (tilingDegree==77) {
-          extdbg= 703;
-          _ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
-  }
+    else if (tilingDegree==77) {
+    extdbg= 703;
+    _ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
+    }
   */
   else if (tilingDegree == 8)
     extdbg = 803;
@@ -667,7 +675,7 @@ bool Ext::extract(ExtractOptions opts)
                                this)
           == 0) {
         logger_->warn(
-            RCX, 13, "Failed to Extract block {}...", blk->getConstName());
+                      RCX, 13, "Failed to Extract block {}...", blk->getConstName());
         return TCL_ERROR;
       }
     }
@@ -707,7 +715,7 @@ bool Ext::extract(ExtractOptions opts)
   //    fprintf(stdout, "Finished extracting %s.\n",
   //    _ext->getBlock()->getName().c_str());
   logger_->info(
-      RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
+                RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
   return 0;
 }
 

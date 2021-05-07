@@ -178,13 +178,13 @@ if { ![info exists drv_count] } {
 # Extraction
 
 # extract_parasitics seg faults on osx so it is disabled
-if { 0 && $rcx_rules != "" } {
+if { 0 && $rcx_rules_file != "" } {
   define_process_corner -ext_model_index 0 X
   extract_parasitics -ext_model_file $rcx_rules_file
 
   set spef_file [make_result_file ${design}_${platform}.spef]
   write_spef $spef_file
-  #file delete $design.totCap
+  file delete $design.totCap
 
   read_spef $spef_file
 }
