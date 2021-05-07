@@ -51,10 +51,10 @@ odb::dbDatabase *getDb();
 
 namespace ant {
 
-void
+int
 check_antennas(char* report_filename, bool simple_report)
 {
-  getAntennaChecker()->check_antennas(report_filename, simple_report);
+  return getAntennaChecker()->check_antennas(report_filename, simple_report);
 }
 
 void
