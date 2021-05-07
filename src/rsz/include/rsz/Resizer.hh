@@ -216,6 +216,9 @@ public:
                      // Return values.
                      Delay &delay,
                      Slew &slew);
+  float bufferSelfDelay(LibertyCell *buffer_cell);
+  float bufferSelfDelay(LibertyCell *buffer_cell,
+                        const RiseFall *rf);
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length); // zero for none (meters)
   // repairDesign but restricted to clock network and
@@ -624,7 +627,7 @@ protected:
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
-  static constexpr int rebuffer_max_fanout_ = 40;
+  static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
 
   friend class BufferedNet;

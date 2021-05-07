@@ -1,8 +1,8 @@
 # gcd full meal deal
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def gcd_placed.def
-read_sdc gcd.sdc
+read_def gcd_nangate45_placed.def
+read_sdc gcd_nangate45.sdc
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement

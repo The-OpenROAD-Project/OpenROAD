@@ -1659,7 +1659,7 @@ void AntennaChecker::check_antenna_cell()
           "ignored if not in the antenna-avoid flow\n");
 }
 
-void AntennaChecker::check_antennas(std::string path, bool simple_report)
+int AntennaChecker::check_antennas(std::string path, bool simple_report)
 {
   std::string bname = db_->getChip()->getBlock()->getName();
   std::vector<int> nets_info = GetAntennaRatio(path, simple_report);
@@ -1669,6 +1669,7 @@ void AntennaChecker::check_antennas(std::string path, bool simple_report)
                   nets_info[1],
                   nets_info[2]);
   }
+  return nets_info[1];
 }
 
 void AntennaChecker::find_wireroot_iterms(dbWireGraph::Node* node,

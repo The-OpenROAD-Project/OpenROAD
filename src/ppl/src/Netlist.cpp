@@ -65,7 +65,7 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
     if (pin_idx < 0) {
       return pin_cnt;
     }
-    io_pins_[pin_idx].inGroup();
+    io_pins_[pin_idx].setInGroup();
     pin_indices.push_back(pin_idx);
     pin_cnt++;
   }
@@ -170,6 +170,8 @@ void Netlist::clear()
   inst_pins_.clear();
   net_pointer_.clear();
   io_pins_.clear();
+  io_groups_.clear();
+  _db_pin_idx_map.clear();
 }
 
 }  // namespace ppl

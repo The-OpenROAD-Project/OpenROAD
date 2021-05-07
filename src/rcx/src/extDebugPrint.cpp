@@ -117,7 +117,10 @@ bool extMeasure::IsDebugNet()
   if (_no_debug)
     return false;
 
-  if (_netSrcId <= 0 || _netTgtId <= 0)
+  if (!(_extMain->_debug_net_id > 0))
+    return false;
+
+  if (_netSrcId <= 0 && _netTgtId <= 0)
     return false;
 
   if (_netSrcId == _extMain->_debug_net_id
@@ -381,9 +384,9 @@ bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 
   return true;
 }
-bool extMeasure::DebugStart()
+bool extMeasure::DebugStart(bool allNets)
 {
-  if (!IsDebugNet())
+  if (!IsDebugNet() && !allNets)
     return false;
   if (_dist < 0) {
     debugPrint(logger_,
@@ -409,7 +412,7 @@ bool extMeasure::DebugStart()
                GetDBcoords(_len));
   }
   // Added Jeff 1/13
-  uint debugTgtId = _netSrcId != _netId ? _netSrcId : _netTgtId;
+  uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
 
   dbNet* net = dbNet::getNet(_block, debugTgtId);
   debugPrint(logger_,

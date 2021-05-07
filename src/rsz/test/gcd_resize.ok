@@ -3,13 +3,13 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: gcd_placed.def
+[INFO ODB-0127] Reading DEF file: gcd_nangate45_placed.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 571 components and 2554 component-terminals.
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
-[INFO ODB-0134] Finished DEF file: gcd_placed.def
+[INFO ODB-0134] Finished DEF file: gcd_nangate45_placed.def
 worst slack 1.36
 [INFO RSZ-0027] Inserted 35 input buffers.
 [INFO RSZ-0028] Inserted 18 output buffers.
