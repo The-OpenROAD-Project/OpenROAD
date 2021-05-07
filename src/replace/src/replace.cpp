@@ -70,7 +70,7 @@ Replace::Replace()
   routabilityMaxDensity_(0.99),
   routabilityMaxBloatIter_(1),
   routabilityMaxInflationIter_(4),
-  routabilityTargetRcMetric_(1.01),
+  routabilityTargetRcMetric_(1.03),
   routabilityInflationRatioCoef_(2.5),
   routabilityMaxInflationRatio_(2.5),
   routabilityRcK1_(1.0),
@@ -130,7 +130,7 @@ void Replace::reset() {
   routabilityMaxDensity_ = 0.99;
   routabilityMaxBloatIter_ = 1;
   routabilityMaxInflationIter_ = 4;
-  routabilityTargetRcMetric_ = 1.01;
+  routabilityTargetRcMetric_ = 1.03;
   routabilityInflationRatioCoef_ = 2.5;
   routabilityMaxInflationRatio_ = 2.5;
 
