@@ -1003,7 +1003,7 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint, N
     if (!io_pin.isPlaced() && !io_pin.isAssignedToSection()) {
       pin_indices.push_back(idx);
     } else if (!io_pin.isInGroup()) {
-      logger_->warn(PPL, 75, "Pin {} is assigned to two constraints. Using the last defined constraint.", io_pin.getName());
+      logger_->warn(PPL, 75, "Pin {} is assigned to more than one constraints. Using last defined constraint.", io_pin.getName());
     }
   }
 
