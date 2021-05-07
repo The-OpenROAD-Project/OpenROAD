@@ -31,10 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "OpenRCX/MakeOpenRCX.h"
+#include "rcx/MakeOpenRCX.h"
 
-#include "OpenRCX/ext.h"
 #include "ord/OpenRoad.hh"
+#include "rcx/ext.h"
 
 namespace ord {
 

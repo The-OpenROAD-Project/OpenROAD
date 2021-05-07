@@ -130,6 +130,7 @@ class Ext
     bool diag = false;
     bool over_under = false;
     bool gen_def_patterns = false;
+    bool resPatterns = false;
   };
 
   bool bench_wires(const BenchWiresOptions& bwo);
@@ -354,13 +355,10 @@ class Ext
                  const std::string& branch_len);
 
  private:
-  void dbUpdate();
-
   odb::dbDatabase* _db;
   extMain* _ext;
   extRcTree* _tree;
   Logger* logger_;
-  bool _initWithChip;
 };  // namespace rcx
 
 }  // namespace rcx

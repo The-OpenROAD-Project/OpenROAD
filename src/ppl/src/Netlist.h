@@ -104,7 +104,8 @@ class IOPin
         upper_bound_(upper_bound),
         placement_status_(placement_status),
         layer_(-1),
-        in_group(false),
+        is_placed_(false),
+        in_group_(false),
         assigned_to_section_(false)
   {
   }
@@ -136,8 +137,10 @@ class IOPin
   odb::dbPlacementStatus getPlacementStatus() const { return placement_status_; };
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
-  bool isInGroup() const { return in_group; }
-  void inGroup() { in_group = true; }
+  bool isPlaced() const { return is_placed_; }
+  void setPlaced() { is_placed_ = true; }
+  bool isInGroup() const { return in_group_; }
+  void setInGroup() { in_group_ = true; }
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
 
@@ -150,7 +153,8 @@ class IOPin
   odb::Point upper_bound_;
   odb::dbPlacementStatus placement_status_;
   int layer_;
-  bool in_group;
+  bool is_placed_;
+  bool in_group_;
   bool assigned_to_section_;
 };
 

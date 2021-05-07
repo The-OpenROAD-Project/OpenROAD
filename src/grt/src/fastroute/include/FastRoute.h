@@ -61,8 +61,8 @@ class FastRouteCore
   void deleteComponents();
   void clear();
   void setGridsAndLayers(int x, int y, int nLayers);
-  void addVCapacity(int verticalCapacity, int layer);
-  void addHCapacity(int horizontalCapacity, int layer);
+  void addVCapacity(short verticalCapacity, int layer);
+  void addHCapacity(short horizontalCapacity, int layer);
   void addMinWidth(int width, int layer);
   void addMinSpacing(int spacing, int layer);
   void addViaSpacing(int spacing, int layer);
@@ -119,10 +119,22 @@ class FastRouteCore
   void setOverflowIterations(int iterations);
   void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
+  void computeCongestionInformation();
+  std::vector<int> getOriginalResources();
+  std::vector<int> getTotalCapacityPerLayer() { return cap_per_layer; }
+  std::vector<int> getTotalUsagePerLayer() { return usage_per_layer; }
+  std::vector<int> getTotalOverflowPerLayer() { return overflow_per_layer; }
+  std::vector<int> getMaxHorizontalOverflows() { return max_h_overflow; }
+  std::vector<int> getMaxVerticalOverflows() { return max_v_overflow; }
 
  private:
   NetRouteMap getRoutes();
   int maxNetDegree;
+  std::vector<int> cap_per_layer;
+  std::vector<int> usage_per_layer;
+  std::vector<int> overflow_per_layer;
+  std::vector<int> max_h_overflow;
+  std::vector<int> max_v_overflow;
   odb::dbDatabase* db_;
 };
 

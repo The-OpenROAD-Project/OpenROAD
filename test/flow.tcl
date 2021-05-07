@@ -117,6 +117,13 @@ set_routing_layers -signal $global_routing_layers \
 global_route -guide_file $route_guide \
   -overflow_iterations 100
 
+set antenna_report [make_result_file ${design}_${platform}_ant.log]
+set antenna_errors [check_antennas -simple_report -report_file $antenna_report]
+
+if { $antenna_errors > 0 } {
+  fail "found $antenna_errors antenna violations"
+}
+
 ################################################################
 # Final Report
 

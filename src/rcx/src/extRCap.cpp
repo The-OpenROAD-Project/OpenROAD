@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "OpenRCX/extRCap.h"
+#include "rcx/extRCap.h"
 
 #include <wire.h>
 
@@ -59,7 +59,7 @@ static int read_total_cap_file(const char* file,
   Ath__parser parser;
   parser.openFile((char*) file);
 
-  logger->info(RCX, 184, "Reading ref_file {} ... ... ", file);
+  logger->info(RCX, 67, "Reading ref_file {} ... ... ", file);
 
   while (parser.parseNextLine() > 0) {
     parser.printWords(stdout);
@@ -72,7 +72,7 @@ static int read_total_cap_file(const char* file,
       if (block != NULL) {
         dbNet* net = block->findNet(netName);
         if (net == NULL)
-          logger->warn(RCX, 185, "Can't find net {} in db", netName);
+          logger->warn(RCX, 66, "Can't find net {} in db", netName);
       }
     }
     double rtot = 0.0;
@@ -87,7 +87,7 @@ static int read_total_cap_file(const char* file,
 #else
   FILE* fp = fopen(file, "r");
   if (!fp) {
-    logger_->warn(RCX, 27, "Cannot open {}", file);
+    logger_->warn(RCX, 379, "Can't open {}", file);
     return 0;
   }
 
@@ -268,7 +268,7 @@ void extMain::reportTotalCap(const char* file,
   dbCapNode* node;
   if (rd_file && rd_file[0]) {
     if (!read_total_cap_file(rd_file, ctotV, rtotV, nn, _block)) {
-      logger_->warn(RCX, 27, "Cannot read {}", rd_file);
+      logger_->warn(RCX, 428, "Can't read {}", rd_file);
       return;
     }
   } else
@@ -309,7 +309,7 @@ void extMain::reportTotalCap(const char* file,
     for (j = 0; j < nn; j++)
       crefV[j] = rrefV[j] = 0.0;
     if (!read_total_cap_file(ref, crefV, rrefV, nn, _block)) {
-      logger_->warn(RCX, 27, "Cannot read {}", ref);
+      logger_->warn(RCX, 429, "Can't read {}", ref);
       free(crefV);
       crefV = NULL;
       free(rrefV);
@@ -421,7 +421,7 @@ void extMain::reportTotalCap(const char* file,
         max_abs_r);
 
     logger_->info(RCX,
-                  189,
+                  426,
                   "Comparing nets with c>={:.4f}, {} nets"
                   " worst percent ctot diff = {:.1f} %% for c>={:.4f}",
                   rel_cfloor,
@@ -433,7 +433,7 @@ void extMain::reportTotalCap(const char* file,
       net = dbNet::getNet(_block, j);
       logger_->info(
           RCX,
-          190,
+          423,
           "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
           net->getId(),
           net->getName().c_str(),
@@ -443,14 +443,14 @@ void extMain::reportTotalCap(const char* file,
           rrefV[j]);
     }
     logger_->info(RCX,
-                  191,
+                  422,
                   "\t{} nets have ctot diff >= {:.1f} %% for c>={:.4f}",
                   rel_cn,
                   100.0 * rel_cthresh,
                   rel_cfloor);
 
     logger_->info(RCX,
-                  189,
+                  427,
                   "Comparing nets with c>={:.4f}, {} nets"
                   " worst percent ctot diff = {:.1f} %% for c>={:.4f}",
                   rel_cfloor2,
@@ -463,7 +463,7 @@ void extMain::reportTotalCap(const char* file,
       net = dbNet::getNet(_block, j);
       logger_->info(
           RCX,
-          190,
+          424,
           "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
           net->getId(),
           net->getName().c_str(),
@@ -493,7 +493,7 @@ void extMain::reportTotalCap(const char* file,
         net = dbNet::getNet(_block, rctot->netid);
         logger_->info(
             RCX,
-            190,
+            425,
             "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
             net->getId(),
             net->getName().c_str(),
@@ -586,7 +586,7 @@ static bool read_total_cc_file(const char* file,
 {
   FILE* fp = fopen(file, "r");
   if (!fp) {
-    logger->warn(RCX, 27, "Cannot open {}", file);
+    logger->warn(RCX, 33, "Can't open {}", file);
     return false;
   }
   char line[256];
@@ -619,7 +619,7 @@ static bool read_ref_cc_file(const char* file,
 {
   FILE* fp = fopen(file, "r");
   if (!fp) {
-    logger->warn(RCX, 27, "Cannot open {}", file);
+    logger->warn(RCX, 34, "Can't open {}", file);
     return false;
   }
   int* indV = (int*) malloc((2 + netn) * sizeof(int));
@@ -691,7 +691,7 @@ void extMain::reportTotalCc(const char* file,
   x.ccdif = 0.0;
   if (rd_file) {
     if (!read_total_cc_file(rd_file, V, logger_) || V.n() < 1) {
-      logger_->warn(RCX, 27, "Cannot read {}", rd_file);
+      logger_->warn(RCX, 35, "Can't read {}", rd_file);
       return;
     }
   } else
@@ -744,7 +744,7 @@ void extMain::reportTotalCc(const char* file,
     }
   if (ref) {
     if (!read_ref_cc_file(ref, nets.size(), V, logger_)) {
-      logger_->warn(RCX, 27, "Cannot read {}", ref);
+      logger_->warn(RCX, 37, "Can't read {}", ref);
       return;
     }
   }
@@ -784,7 +784,7 @@ void extMain::reportTotalCc(const char* file,
                   nccdif,
                   abs_ccthresh);
     logger_->info(RCX,
-                  197,
+                  207,
                   "{} net pairs have absolute cctot diff > {} pF",
                   nccdif2,
                   abs_ccthresh2);
@@ -808,11 +808,11 @@ void extMain::reportTotalCc(const char* file,
       net0 = dbNet::getNet(_block, x.netid0);
       net1 = dbNet::getNet(_block, x.netid1);
       logger_->info(
-          RCX, 199, "Net0 {} {}", net0->getId(), net0->getConstName());
+          RCX, 420, "Net0 {} {}", net0->getId(), net0->getConstName());
       logger_->info(
-          RCX, 200, "Net1 {} {}", net1->getId(), net1->getConstName());
+          RCX, 419, "Net1 {} {}", net1->getId(), net1->getConstName());
       logger_->info(
-          RCX, 201, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref, x.ccdif);
+          RCX, 421, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref, x.ccdif);
     }
     if (fp) {
       fprintf(fp, "# netid0 netid1 cctot ccref ccdif\n");
@@ -861,12 +861,12 @@ void extMain::extDump(char* file,
   else if (!openTreeFile && !trackCnt)
     return;
   if (!file || !file[0]) {
-    logger_->warn(RCX, 203, "Please input extDump filename!");
+    logger_->warn(RCX, 203, "Filename is not defined (extDump)!");
     return;
   }
   FILE* fp = fopen(file, "w");
   if (!fp) {
-    logger_->warn(RCX, 27, "Cannot open file {}", file);
+    logger_->warn(RCX, 38, "Can't open file {}", file);
     return;
   }
   if (openTreeFile) {

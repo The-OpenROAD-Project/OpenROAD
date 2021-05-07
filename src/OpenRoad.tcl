@@ -164,16 +164,8 @@ proc assign_ndr { args } {
     }
     $net setNonDefaultRule $ndr
   } else {
-    foreach clk [sta::all_clocks] {
-      foreach src [$clk sources] {
-        set netName [get_full_name $src]
-        set net [$block findNet $netName]
-        if { $net == "NULL" } {
-          utl::warn ORD 1013 "No net named ${netName} found. Skipping"
-          continue
-        }
-        $net setNonDefaultRule $ndr
-      }
+    foreach net [sta::find_all_clk_nets] {
+      $net setNonDefaultRule $ndr
     }
   }
 }

@@ -45,5 +45,5 @@ proc check_antennas { args } {
   set simple_report [info exists flags(-simple_report)]
 
   ant::load_antenna_rules
-  ant::check_antennas $report_file $simple_report
+  return [ant::check_antennas $report_file $simple_report]
 }

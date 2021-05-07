@@ -14,6 +14,7 @@ using sta::Instance;
 
 %}
 
+%import "opendb.i"
 %include "../../src/Exception.i"
 // OpenSTA swig files
 %include "tcl/StaTcl.i"
@@ -21,6 +22,10 @@ using sta::Instance;
 %include "sdf/Sdf.i"
 %include "dcalc/DelayCalc.i"
 %include "parasitics/Parasitics.i"
+
+namespace std {
+  %template(dbNetVector) vector<dbNet*>;
+}
 
 %inline %{
 
@@ -39,25 +44,13 @@ highlight_path_cmd(PathRef *path)
   sta->highlight(path);
 }
 
-// For debugging because I can't get a dbNet vector thru swig.
-void
-report_all_clk_nets()
+std::vector<odb::dbNet*>
+find_all_clk_nets()
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets = sta->findClkNets();
-  for (dbNet *net : clk_nets)
-    printf("%s\n", net->getConstName());
-}
-
-void
-report_clk_nets(const Clock *clk)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets = sta->findClkNets(clk);
-  for (dbNet *net : clk_nets)
-    printf("%s\n", net->getConstName());
+  auto clks = sta->findClkNets();
+  return std::vector<odb::dbNet*>(clks.begin(), clks.end());
 }
 
 odb::dbInst *

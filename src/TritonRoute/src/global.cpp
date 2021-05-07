@@ -58,6 +58,7 @@ std::string TOP_ROUTING_LAYER_NAME;
 int BOTTOM_ROUTING_LAYER = 2;
 int TOP_ROUTING_LAYER = std::numeric_limits<frLayerNum>::max();
 bool ALLOW_PIN_AS_FEEDTHROUGH = false;
+bool USENONPREFTRACKS = true;
 bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
@@ -279,6 +280,65 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
             os << "UNKNOWN drConnFig, code " << fig.typeId();
     }
   
+  return os;
+}
+
+ostream& operator<<(ostream& os, const frPathSeg& p)
+{
+  os << "frPathSeg: begin (" << p.getBeginPoint().x() << " "
+     << p.getBeginPoint().y() << " ) end ( " << p.getEndPoint().x() << " "
+     << p.getEndPoint().y() << " )";
+  return os;
+}
+
+
+ostream& operator<<(ostream& os, const frGuide& p)
+{
+  os << "frGuide: begin " << p.getBeginPoint() << " end " << p.getEndPoint()
+     << " begin LayerNum " << p.getBeginLayerNum() << " end layerNum "
+     << p.getEndLayerNum();
+  return os;
+}
+
+ostream& operator<<(ostream& os, const frConnFig& fig)
+{
+  switch (fig.typeId()) {
+    case frcPathSeg: {
+      auto p = static_cast<const frPathSeg*>(&fig);
+      os << p;
+      break;
+    }
+    case frcVia: {
+      auto p = static_cast<const frVia*>(&fig);
+      os << "frVia: at " << p->getOrigin() << "\nVIA DEF:\n" << *p->getViaDef();
+      break;
+    }
+    case frcPatchWire: {
+      auto p = static_cast<const frPatchWire*>(&fig);
+      frBox b;
+      p->getBBox(b);
+      os << "frPatchWire: " << b;
+      break;
+    }
+    case frcGuide: {
+      auto p = static_cast<const frGuide*>(&fig);
+      os << p;
+      break;
+    }
+    case frcRect: {
+      auto p = static_cast<const frRect*>(&fig);
+      frBox b;
+      p->getBBox(b);
+      os << "frRect: " << b;
+      break;
+    }
+    case frcPolygon: {
+      os << "frPolygon";
+      break;
+    }
+    default:
+      os << "UNKNOWN frShape, code " << fig.typeId();
+  }
   return os;
 }
 

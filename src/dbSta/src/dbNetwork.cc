@@ -929,6 +929,7 @@ dbNetwork::makeCell(Library *library,
       }
     }
   }
+  delete lib_iter;
 }
 
 void

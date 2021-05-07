@@ -94,6 +94,16 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
   viaBox.shift(xCoords_[x], yCoords_[y]);
   return !dieBox.contains(viaBox);
 }
+
+bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
+{
+  if (isVert)
+    return xCoords_[v] == drWorker_->getRouteBox().left()
+           || xCoords_[v] == drWorker_->getRouteBox().right();
+  return yCoords_[v] == drWorker_->getRouteBox().bottom()
+         || yCoords_[v] == drWorker_->getRouteBox().top();
+}
+
 void FlexGridGraph::initEdges(
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
@@ -144,7 +154,8 @@ void FlexGridGraph::initEdges(
             if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                 || yIt->second != nullptr) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
-              if (yIt->second == nullptr || outOfDiePlanar) {
+              if (yIt->second == nullptr || outOfDiePlanar
+                  || isWorkerBorder(yIdx, false)) {
                 setGridCostE(xIdx, yIdx, zIdx);
               }
             }
@@ -172,7 +183,8 @@ void FlexGridGraph::initEdges(
             if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                 || xIt->second != nullptr) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
-              if (xIt->second == nullptr || outOfDiePlanar) {
+              if (xIt->second == nullptr || outOfDiePlanar
+                  || isWorkerBorder(xIdx, true)) {
                 setGridCostN(xIdx, yIdx, zIdx);
               }
             }
@@ -197,7 +209,7 @@ void FlexGridGraph::initEdges(
         }
         // get non pref track layer --> use upper layer pref dir track if
         // possible
-        if (!layer->isUnidirectional()) {
+        if (USENONPREFTRACKS && !layer->isUnidirectional()) {
           // add edge for non-preferred direction
           // vertical non-pref track
           if (dir == frcHorzPrefRoutingDir && xFound3) {
@@ -259,8 +271,8 @@ void FlexGridGraph::initTracks(
     frPrefRoutingDirEnum currPrefRouteDir = layer->getDir();
     for (auto& tp :
          getDesign()->getTopBlock()->getTrackPatterns(currLayerNum)) {
-      // allow wrongway if design rules allow
-      bool flag = (!layer->isUnidirectional())
+      // allow wrongway if global varialble and design rule allow
+      bool flag = (USENONPREFTRACKS && !layer->isUnidirectional())
                       ? (tp->isHorizontal()
                          && currPrefRouteDir == frcVertPrefRoutingDir)
                             || (!tp->isHorizontal()

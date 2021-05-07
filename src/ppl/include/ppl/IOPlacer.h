@@ -194,6 +194,7 @@ class IOPlacer
   void initIOLists();
   void initParms();
   void randomPlacement();
+  void randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
@@ -212,6 +213,7 @@ class IOPlacer
   int assignGroupToSection(const std::vector<int> &io_group,
                            std::vector<Section> &sections);
   void assignConstrainedPinsToSections();
+  std::vector<int> findPinsForConstraint(const Constraint &constraint);
   int returnIONetsHPWL(Netlist&);
   void findPinAssignment(std::vector<Section>& sections);
 

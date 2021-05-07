@@ -38,7 +38,6 @@ namespace odb {
 
 class dbBlock;
 class dbNet;
-class dbWire;
 
 void orderWires(dbBlock* b,
                 bool force,
@@ -53,13 +52,5 @@ void orderWires(dbBlock* b,
                 int cutLength = 0,
                 int maxLength = 0);
 void orderWires(dbNet* net, bool force, bool verbose = false);
-
-// for the tiler
-void orderWiresTableInit(dbBlock* block);
-void orderWiresTableAdd(dbNet* net, dbWire* wire);
-void orderWiresTableRun(dbNet* net = NULL, bool verbose = false);
-void orderWiresTableFree();
-
-void findDisconnects(dbBlock* block, bool verbose);
 
 }  // namespace odb

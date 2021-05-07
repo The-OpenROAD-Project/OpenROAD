@@ -246,7 +246,7 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
               coupleOptions[8] = topwire->_width;
               coupleOptions[9] = botwire->_base;
               coupleOptions[11] = targetHiTrack ? 1 : 0;
-
+              coupleOptions[18] = botwire->_track->getTrackNum();
               coupleAndCompute(coupleOptions, compPtr);
             }
           }
