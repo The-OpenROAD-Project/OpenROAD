@@ -75,32 +75,11 @@ class Tile {
     // only area is needed
     int64_t area() const;
 
-    int blockage(int layer) const;
-    int capacity(int layer) const;
-    int route(int layer) const;
-
-    int usageHL(int layer) const;
-    int usageHU(int layer) const;
-    int usageVL(int layer) const;
-    int usageVU(int layer) const;
-
     float inflationRatio() const;
-    float inflationArea() const;
-    float inflationAreaDelta() const;
     float inflatedRatio() const;
 
     // setter funcs
-    void setBlockage(int layer, int blockage);
-    void setCapacity(int layer, int capacity);
-    void setCapacity(const std::vector<int>& capacity);
-    void setRoute(int layer, int route);
-
-    void setInflationRatioH(float val);
-    void setInflationRatioV(float val);
     void setInflationRatio(float ratio);
-
-    void setInflationArea(float area);
-    void setInflationAreaDelta(float delta);
 
     // accumulated Ratio as iteration goes on
     void setInflatedRatio(float ratio);
@@ -109,26 +88,6 @@ class Tile {
     // the followings will store
     // blockage / capacity / route-ability
     // idx : metalLayer
-
-    // Note that the layerNum starts from 0 in this Tile class
-    std::vector<int> blockage_;
-    std::vector<int> capacity_;
-    std::vector<int> route_;
-
-    // H : Horizontal
-    // V : Vertical
-    //
-    // L : Lower
-    //    1. horizontal usage/cap -> vertical edge: down edge
-    //    2. vertical usage/cap -> horizontal edge: left edge
-    // R : Upper
-    //    1. horizontal usage/cap -> vertical edge: up edge
-    //    2. vertical usage/cap -> horizontal edge: right edge
-    //
-    std::vector<int> usageHL_;
-    std::vector<int> usageHU_;
-    std::vector<int> usageVL_;
-    std::vector<int> usageVU_;
 
     int x_;
     int y_;
@@ -140,10 +99,6 @@ class Tile {
 
     // to bloat cells in tile
     float inflationRatio_;
-
-    float inflationArea_;
-    float inflationAreaDelta_;
-
     float inflatedRatio_;
 
     void reset();
@@ -301,10 +256,6 @@ class RouteBase {
     utl::Logger* log_;
 
     std::unique_ptr<TileGrid> tg_;
-
-    // from *.route file
-    std::vector<int> verticalCapacity_;
-    std::vector<int> horizontalCapacity_;
 
     int64_t inflatedAreaDelta_;
 

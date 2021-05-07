@@ -59,8 +59,6 @@ Tile::Tile()
 : x_(0), y_(0), 
   lx_(0), ly_(0), ux_(0), uy_(0),
   inflationRatio_(1.0),
-  inflationArea_(0),
-  inflationAreaDelta_(0),
   inflatedRatio_(0) {}
 
 Tile::Tile(int x, int y, int lx, int ly, int ux, int uy, int layers) 
@@ -71,15 +69,6 @@ Tile::Tile(int x, int y, int lx, int ly, int ux, int uy, int layers)
   ly_ = ly;
   ux_ = ux; 
   uy_ = uy;
-
-  blockage_.resize(layers, 0);
-  capacity_.resize(layers, 0);
-  route_.resize(layers, 0);
-
-  usageHL_.resize(layers, 0);
-  usageHU_.resize(layers, 0);
-  usageVL_.resize(layers, 0);
-  usageVU_.resize(layers, 0);
 }
 
 Tile::~Tile() {
@@ -91,57 +80,7 @@ Tile::reset() {
   x_ = y_ = lx_ = ly_ = ux_ = uy_ = 0;
   inflationRatio_ = 1.0;
 
-  inflationArea_ = inflationAreaDelta_ = 0;
   inflatedRatio_ = 0;
-
-  blockage_.clear();
-  capacity_.clear();
-  route_.clear();
-
-  usageHL_.clear();
-  usageHU_.clear();
-  usageVL_.clear();
-  usageVU_.clear();
-  
-  usageHL_.shrink_to_fit();
-  usageHU_.shrink_to_fit();
-  usageVL_.shrink_to_fit();
-  usageVU_.shrink_to_fit();
-}
-
-int
-Tile::blockage(int layer) const {
-  return blockage_[layer];
-}
-
-int
-Tile::capacity(int layer) const {
-  return capacity_[layer];
-}
-
-int
-Tile::route(int layer) const {
-  return route_[layer];
-}
-
-int
-Tile::usageHL(int layer) const {
-  return usageHL_[layer];
-}
-
-int
-Tile::usageHU(int layer) const {
-  return usageHU_[layer];
-}
-
-int
-Tile::usageVL(int layer) const {
-  return usageVL_[layer];
-}
-
-int 
-Tile::usageVU(int layer) const {
-  return usageVU_[layer];
 }
 
 float
@@ -149,15 +88,6 @@ Tile::inflationRatio() const {
   return inflationRatio_;
 }
 
-float
-Tile::inflationArea() const {
-  return inflationArea_;
-}
-
-float
-Tile::inflationAreaDelta() const {
-  return inflationAreaDelta_;
-}
 
 float
 Tile::inflatedRatio() const {
@@ -165,39 +95,10 @@ Tile::inflatedRatio() const {
 }
 
 void
-Tile::setBlockage(int layer, int block) {
-  blockage_[layer] = block;
-}
-
-void
-Tile::setCapacity(int layer, int capacity) {
-  capacity_[layer] = capacity;
-}
-
-void
-Tile::setCapacity(const vector<int>& capacity) {
-  capacity_ = capacity; 
-}
-
-void
-Tile::setRoute(int layer, int route) {
-  route_[layer] = route;
-}
-
-void
 Tile::setInflationRatio(float val) {
   inflationRatio_ = val;
 }
 
-void
-Tile::setInflationArea(float area) {
-  inflationArea_ = area;
-}
-
-void
-Tile::setInflationAreaDelta(float delta) {
-  inflationAreaDelta_ = delta;
-}
 
 void
 Tile::setInflatedRatio(float ratio) {
@@ -443,11 +344,6 @@ RouteBase::resetRoutabilityResources() {
 
   grouter_->clear();
   tg_.reset();
-  verticalCapacity_.clear();
-  horizontalCapacity_.clear();
-
-  verticalCapacity_.shrink_to_fit();
-  horizontalCapacity_.shrink_to_fit();
 }
 
 void
@@ -498,42 +394,50 @@ static float
 getUsageCapacityRatio(Tile* tile, 
     odb::dbTechLayer* layer,
     odb::dbGCellGrid* gGrid, 
-    bool isHorizontal, 
-    float ignoreEdgeRatio,
-    unsigned int originalCap) {
+    float ignoreEdgeRatio) {
 
   unsigned int capH = 0, capV = 0, capU = 0;
   unsigned int useH = 0, useV = 0, useU = 0;
+  unsigned int blockH = 0, blockV = 0, blockU = 0;
   gGrid->getCapacity(layer, tile->x(), tile->y(),
      capH, capV, capU);
   gGrid->getUsage(layer, tile->x(), tile->y(), 
       useH, useV, useU); 
+  gGrid->getBlockage(layer, tile->x(), tile->y(),
+      blockH, blockV, blockU);
   
+  bool isHorizontal = (capH > 0);
+
+  // from the dbGCellGrid discussion in PR,
+  // 'usage' contains (blockage + wire consumption).
+  // where blockage is unavailable wires due to obstruction.
+  //
+  // 'capacity' contains (total capacity)
+  // (i.e., total number of wires in the current tile)
+  //
+  // RePlAce/RC metric need 'blockage' because
+  // if blockage ratio is larger than certain ratio,
+  // need to skip.
   unsigned int curCap = (isHorizontal)? 
     capH : capV;
   unsigned int curUse = (isHorizontal)?
     useH : useV;
-  
-  // calculate the capacity blocakge
-  int blockage = originalCap - curCap;
-
-  // this happen on rightmost / upmost tile
-  // e.g. exceed the given capacity on rightmost / upmost tile
-  if( blockage < 0 ) {
-    blockage = 0;
-  }
+  unsigned int blockage = (isHorizontal)?
+    blockH : blockV;
 
   // std::cout << "tile: " << tile->x() << " " << tile->y() 
-  //   << " originalCap: " << originalCap << std::endl;
-  // std::cout << "cap: " << curCap << " use: " << curUse 
+  //   << " originalCap: " << curCap << std::endl;
+  // std::cout << "cap: " << curCap << " use: " << curUse - blockage 
   //   << " block: " << blockage << std::endl;
  
   // ignore if blockage is too huge in current tile 
-  float blockageRatio = static_cast<float>(blockage) / originalCap;
+  float blockageRatio = static_cast<float>(blockage) / curCap;
   if( blockageRatio >= ignoreEdgeRatio) {
     return -1*FLT_MAX;
   }
-  return static_cast<float>(curUse + blockage) / originalCap; 
+
+  // return usage (used routing track + blockage) / total capacity
+  return static_cast<float>(curUse) / curCap; 
 }
 
 // fill 
@@ -543,29 +447,12 @@ getUsageCapacityRatio(Tile* tile,
 // tileCntX_ tileCntY_
 // tileSizeX_ tileSizeY_ 
 //
-// rbVars_' 
-//
-// RouteBases' 
-// verticalCapacity_
-// horizontalCapacity_
-//
 void 
 RouteBase::updateRoute() {
-
-  // Note that 
-  // verticalCap and horizontalCap has 100x larger scales.
-  // (agreement from FastRoute)
-
   odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
   std::vector<int> gridX, gridY;
   gGrid->getGridX(gridX);
   gGrid->getGridY(gridY);
-  
-  // Need to retrieve capacities
-  using grt::GlobalRouter;
-  GlobalRouter::ROUTE_ route = grouter_->getRoute();
-  verticalCapacity_ = route.verticalEdgesCapacities;
-  horizontalCapacity_ = route.horizontalEdgesCapacities;
   
   // retrieve routing Layer Count from odb
   odb::dbTech* tech = db_->getTech();
@@ -589,22 +476,10 @@ RouteBase::updateRoute() {
   //   std::cout << "gridY: " << idx << " " << val << std::endl; 
   // }
   
-  // for(auto& cap : horizontalCapacity_) {
-  //   std::cout << "H: " << &cap - &horizontalCapacity_[0] << " " << cap / 100 << std::endl;
-  // }
-  // for(auto& cap : verticalCapacity_) {
-  //   std::cout << "V: " << &cap - &verticalCapacity_[0] << " " << cap / 100 << std::endl;
-  // }
-
   for(int i=1; i<=numLayers; i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
-
-    bool isHorizontalLayer = (horizontalCapacity_[i-1] != 0);
-    unsigned int originalCap = (isHorizontalLayer)? 
-      horizontalCapacity_[i-1] : verticalCapacity_[i-1];
-
-    // custom scaling (hopefully deleted)
-    originalCap /= 100;
+    bool isHorizontalLayer = (layer->getDirection() 
+        == odb::dbTechLayerDir::HORIZONTAL);
 
     for(auto& tile : tg_->tiles()) {
       // Check left and down tile
@@ -613,9 +488,8 @@ RouteBase::updateRoute() {
 
       // first extract current tiles' usage
       float ratio = getUsageCapacityRatio(tile, 
-          layer, gGrid, isHorizontalLayer,
-          rbVars_.ignoreEdgeRatio, 
-          originalCap);
+          layer, gGrid,
+          rbVars_.ignoreEdgeRatio);
 
       // if horizontal layer (i.e., vertical edges)
       // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge 
@@ -626,9 +500,8 @@ RouteBase::updateRoute() {
           tile->x()-1 ];
         float leftRatio = 
           getUsageCapacityRatio(leftTile,
-              layer, gGrid, isHorizontalLayer,
-              rbVars_.ignoreEdgeRatio,
-              originalCap);
+              layer, gGrid,
+              rbVars_.ignoreEdgeRatio);
         ratio = fmax(leftRatio, ratio);
       }
 
@@ -641,9 +514,8 @@ RouteBase::updateRoute() {
           tile->x()];
         float downRatio = 
           getUsageCapacityRatio(downTile,
-              layer, gGrid, isHorizontalLayer,
-              rbVars_.ignoreEdgeRatio,
-              originalCap);
+              layer, gGrid,
+              rbVars_.ignoreEdgeRatio);
         ratio = fmax(downRatio, ratio);
       }
 
@@ -656,10 +528,10 @@ RouteBase::updateRoute() {
         tile->setInflationRatio(inflationRatio);
       }
 
-      unsigned int capH = 0, capV = 0, capU = 0;
-      unsigned int useH = 0, useV = 0, useU = 0;
-      gGrid->getCapacity(layer, tile->x(), tile->y(), capH, capV, capU);
-      gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV, useU);
+      // unsigned int capH = 0, capV = 0, capU = 0;
+      // unsigned int useH = 0, useV = 0, useU = 0;
+      // gGrid->getCapacity(layer, tile->x(), tile->y(), capH, capV, capU);
+      // gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV, useU);
 
       // std::cout << "layer: " << layer->getConstName() 
       //   << " xy: (" << tile->x() << ", " << tile->y() << ") - useH: " 
@@ -910,18 +782,13 @@ RouteBase::getRC() const {
   for(auto& tile : tg_->tiles()) {
     for(int i=1; i<=tg_->numRoutingLayers(); i++) {
       odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
-      bool isHorizontalLayer = (horizontalCapacity_[i-1] != 0);
-      unsigned int originalCap = (isHorizontalLayer)? 
-        horizontalCapacity_[i-1] : verticalCapacity_[i-1];
-
-      // custom scaling (hopefully deleted)
-      originalCap /= 100;
+      bool isHorizontalLayer = (layer->getDirection() 
+          == odb::dbTechLayerDir::HORIZONTAL);
 
       // extract the ratio in the same way as inflation ratio cals
       float ratio = getUsageCapacityRatio(tile, 
-          layer, gGrid, isHorizontalLayer,
-          rbVars_.ignoreEdgeRatio, 
-          originalCap);
+          layer, gGrid,
+          rbVars_.ignoreEdgeRatio);
 
       // escape the case when blockageRatio is too huge
       if ( ratio >= 0.0f ) {
