@@ -39,6 +39,7 @@
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 #include "plot.h"
@@ -54,11 +55,13 @@ getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
 static float
 getSecondNorm(const vector<FloatPoint>& a);
 
+static std::string
+getZeroFillStr(int iterNum);
+
 NesterovPlaceVars::NesterovPlaceVars()
 {
   reset();
 }
-
 
 void
 NesterovPlaceVars::reset() {
@@ -554,13 +557,13 @@ NesterovPlace::doNesterovPlace() {
       if (PlotEnv::isPlotEnabled()) {
         pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
             string("cell_") +
-            std::to_string (i+1));
+            getZeroFillStr(i+1));
         pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
             string("bin_") +
-            std::to_string(i+1));
+            getZeroFillStr(i+1));
         pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
             string("arrow_") +
-            std::to_string(i+1));
+            getZeroFillStr(i+1));
       }
 #endif
     }
@@ -879,6 +882,13 @@ getSecondNorm(const vector<FloatPoint>& a) {
     norm += coordi.x * coordi.x + coordi.y * coordi.y;
   }
   return sqrt( norm / (2.0*a.size()) ); 
+}
+
+static std::string
+getZeroFillStr(int iterNum) {
+  std::ostringstream str;
+  str << std::setw(4) << std::setfill('0') << iterNum;
+  return str.str();
 }
 
 }
