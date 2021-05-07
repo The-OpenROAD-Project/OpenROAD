@@ -1001,7 +1001,9 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint)
   const PinList &pin_list = constraint.pin_list;
   for (odb::dbBTerm* bterm : pin_list) {
     int idx = netlist_.getIoPinIdx(bterm);
-    pin_indices.push_back(idx);
+    if (!netlist_.getIoPin(idx).isPlaced()) {
+      pin_indices.push_back(idx);
+    }
   }
 
   return pin_indices;
