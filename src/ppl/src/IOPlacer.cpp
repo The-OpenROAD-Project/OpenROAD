@@ -124,7 +124,7 @@ void IOPlacer::randomPlacement()
       }
     }
 
-    std::vector<int> pin_indices = findPinsForConstraint(constraint);
+    std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist_);
 
     bool top_layer = constraint.interval.edge == Edge::invalid;
     randomPlacement(pin_indices, valid_slots, top_layer);
@@ -556,15 +556,13 @@ void IOPlacer::assignConstrainedPinsToSections()
       slots_count += sec.num_slots;
     }
 
-    PinList &pin_list = constraint.pin_list;
+    std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
     
-    if (pin_list.size() > slots_count) {
-      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_list.size(), slots_count);
+    if (pin_indices.size() > slots_count) {
+      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), slots_count);
     }
 
-    int idx;
-    for (odb::dbBTerm* bterm : pin_list) {
-      idx = netlist.getIoPinIdx(bterm);
+    for (int idx : pin_indices) {
       IOPin& io_pin = netlist.getIoPin(idx);
 
       if (assignPinToSection(io_pin, idx, sections_for_constraint)) {
@@ -995,14 +993,17 @@ void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
   }
 }
 
-std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint)
+std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint, Netlist& netlist)
 {
   std::vector<int> pin_indices;
   const PinList &pin_list = constraint.pin_list;
   for (odb::dbBTerm* bterm : pin_list) {
-    int idx = netlist_.getIoPinIdx(bterm);
-    if (!netlist_.getIoPin(idx).isPlaced()) {
+    int idx = netlist.getIoPinIdx(bterm);
+    IOPin& io_pin = netlist.getIoPin(idx);
+    if (!io_pin.isPlaced() && !io_pin.isAssignedToSection()) {
       pin_indices.push_back(idx);
+    } else if (!io_pin.isInGroup()) {
+      logger_->warn(PPL, 75, "Pin {} is assigned to two constraints. Using the last defined constraint.", io_pin.getName());
     }
   }
 
