@@ -4,6 +4,7 @@ on:
   schedule:
   - cron: "0/30 * * * *"
   workflow_dispatch:
+  repository_dispatch:
 
 jobs:
   Sync-Fork-From-Upstream:
