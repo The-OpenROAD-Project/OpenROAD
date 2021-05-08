@@ -84,4 +84,9 @@ check "layer spacing" {$layer getSpacing} [expr round(0.065 * $units)]
 check "layer resistance" {$layer getResistance} 0.38
 check "layer capacitance" {$layer getCapacitance} 0.0
 
+read_lef "data/macros.lef"
+set lib [$db findLib macros]
+set NOP [$lib findMaster NOP]
+lassign [$NOP getObstructions] box
+check "NOP designRuleWidth" {$box getDesignRuleWidth} [expr round(0.065 * $units)]
 exit_summary
