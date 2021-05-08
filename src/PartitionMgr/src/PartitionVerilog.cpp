@@ -337,9 +337,9 @@ PartitionMgr::buildPartitionedInstance(
   return inst;
 }
 
-void PartitionMgr::writePartitioningToVerilog(const char* path,
-                                              const char* portPrefix,
-                                              const char* moduleSuffix) {
+void PartitionMgr::writePartitionVerilog(const char* path,
+                                         const char* portPrefix,
+                                         const char* moduleSuffix) {
   dbBlock* block = getDbBlock();
   if (block == nullptr)
     return;

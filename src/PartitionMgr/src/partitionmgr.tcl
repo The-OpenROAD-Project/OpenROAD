@@ -346,15 +346,15 @@ proc write_partitioning_to_db { args } {
 # Write partition to verilog
 #--------------------------------------------------------------------
 
-sta::define_cmd_args "write_partitioning_to_verilog" { [-partitioning_id id] \
+sta::define_cmd_args "write_partition_verilog" { [-partitioning_id id] \
   [-port_prefix prefix] [-module_suffix suffix] [file]
 }
 
-proc write_partitioning_to_verilog { args } {
-  sta::parse_key_args "write_partitioning_to_verilog" args \
+proc write_partition_verilog { args } {
+  sta::parse_key_args "write_partition_verilog" args \
     keys { -partitioning_id -port_prefix -module_suffix } flags { }
 
-  sta::check_argc_eq1 "write_partitioning_to_verilog" $args
+  sta::check_argc_eq1 "write_partition_verilog" $args
   
   if { ![info exists keys(-partitioning_id)] } {
     utl::error PAR 45 "missing mandatory argument -partitioning_id"
@@ -372,7 +372,7 @@ proc write_partitioning_to_verilog { args } {
     set module_suffix $keys(-module_suffix)
   }
   
-  par::write_partitioning_to_verilog $partition_id $port_prefix $module_suffix $args
+  par::write_partition_verilog $partition_id $port_prefix $module_suffix $args
 }
 
 #--------------------------------------------------------------------

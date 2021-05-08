@@ -96,14 +96,11 @@ Argument description:
 - ``partitioning_id`` (Mandatory) is the partitioning solution id. These are the return values from the partition_netlist command.
 - ``dump_to_file`` is the file where the vertex assignment results will be saved. These consist of lines with a vertex name (e.g. an instance) and the partition it is part of.
 
-**write_partitioning_to_verilog**: Writes the partitioned network to a verilog file containing modules for each partition.
+**write_partition_verilog**: Writes the partitioned network to a verilog file containing modules for each partition.
 
-The following tcl snippet shows how to call write_partitioning_to_verilog.
+The following tcl snippet shows how to call write_partition_verilog.
 
 ```
-read_lef "mylef.lef"
-read_def "mydef.def"
-
 set id [partition_netlist   -tool chaco \
                             -num_partitions 4 \
                             -num_starts 5           ]
@@ -111,10 +108,10 @@ set id [partition_netlist   -tool chaco \
 evaluate_partitioning   -partition_ids $id \
                         -evaluation_function "hyperedges" \
 
-write_partitioning_to_verilog -partitioning_id $id \
-                             [-port_prefix prefix] \
-                             [-module_suffix suffix] \
-                             filename.v
+write_partition_verilog -partitioning_id $id \
+                        [-port_prefix prefix] \
+                        [-module_suffix suffix] \
+                        filename.v
 ```
 
 Argument description:

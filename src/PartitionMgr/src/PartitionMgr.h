@@ -277,7 +277,7 @@ class PartitionMgr
   void readPartitioningFile(std::string filename);
   void reportGraph();
 
-  void writePartitioningToVerilog(const char* path, const char* portPrefix, const char* moduleSuffix);
+  void writePartitionVerilog(const char* path, const char* portPrefix, const char* moduleSuffix);
 
  private:
   sta::Instance* buildPartitionedInstance(const char* name,
