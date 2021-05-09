@@ -2372,7 +2372,7 @@ uint extMain::couplingFlow(bool rlog,
                            uint trackStep,
                            uint ccFlag,
                            extMeasure* m,
-                           void (*coupleAndCompute)(int*, void*))
+                           CoupleAndCompute coupleAndCompute)
 {
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
   if (p != NULL) {
@@ -3513,7 +3513,7 @@ uint extMain::couplingWindowFlow(bool rlog,
                                  uint ccFlag,
                                  bool doExt,
                                  extMeasure* m,
-                                 void (*coupleAndCompute)(int*, void*))
+                                 CoupleAndCompute coupleAndCompute)
 {
   bool single_gs = false;
 
@@ -3782,7 +3782,7 @@ uint extMain::extractWindow(bool rlog,
                             Rect& extRect,
                             bool single_sdb,
                             extMeasure* m,
-                            void (*coupleAndCompute)(int*, void*),
+                            CoupleAndCompute coupleAndCompute,
                             int* sdbTable_ll,
                             int* sdbTable_ur,
                             uint* sdbBucketSize,
