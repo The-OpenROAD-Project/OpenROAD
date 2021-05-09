@@ -219,6 +219,19 @@ proc auto_place_pins { pin_layer } {
   }
 }
 
+
+sta::define_cmd_args "get_die_area" { }
+
+proc get_die_area { } {
+  return [ifp::get_block_area getDieArea]
+}
+
+sta::define_cmd_args "get_core_area" { }
+
+proc get_core_area { } {
+  return [ifp::get_block_area getCoreArea]
+}
+
 namespace eval ifp {
 
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
@@ -261,6 +274,16 @@ proc microns_to_mfg_grid { microns } {
   } else {
     return [ord::microns_to_dbu $microns]
   }  
+}
+
+proc get_block_area { accessor } {
+  set area {}
+  set rect [[ord::get_db_block] $accessor]
+  lappend area [ord::dbu_to_microns [$rect xMin]]
+  lappend area [ord::dbu_to_microns [$rect yMin]]
+  lappend area [ord::dbu_to_microns [$rect xMax]]
+  lappend area [ord::dbu_to_microns [$rect yMax]]
+  return $area
 }
 
 }

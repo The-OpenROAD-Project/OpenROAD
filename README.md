@@ -276,6 +276,13 @@ Place pins around core boundary.
 auto_place_pins pin_layer
 ```
 
+Get the die and core areas as a list "llx lly urx ury"
+
+```
+get_die_area
+get_core_area
+```
+
 #### Pin placement
 
 Place pins on the boundary of the die on the track grid to
