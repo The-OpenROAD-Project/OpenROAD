@@ -180,12 +180,12 @@ void FlexGCWorker::Impl::initDesign()
           frCoord dw = blk->getDesignRuleWidth() - box.width();
           if (dw > 0) {
             dw >>= 1;
-            if (box.width() == box.left() - box.right())
+            if (box.width() == box.right() - box.left())
               bbox.set(frBox(
-                  box.left() - dw, box.bottom(), box.right() + dw, box.top()));
-            else
+                  bbox.left() - dw, bbox.bottom(), bbox.right() + dw, bbox.top()));
+            if (box.width() == box.top() - box.bottom())
               bbox.set(frBox(
-                  box.left(), box.bottom() - dw, box.right(), box.top() + dw));
+                  bbox.left(), bbox.bottom() - dw, bbox.right(), bbox.top() + dw));
           }
         }
       }
