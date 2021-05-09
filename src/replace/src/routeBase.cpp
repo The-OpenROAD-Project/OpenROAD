@@ -405,8 +405,9 @@ getUsageCapacityRatio(Tile* tile,
       useH, useV, useU); 
   gGrid->getBlockage(layer, tile->x(), tile->y(),
       blockH, blockV, blockU);
-  
-  bool isHorizontal = (capH > 0);
+
+  bool isHorizontal = (layer->getDirection() 
+      == odb::dbTechLayerDir::HORIZONTAL);
 
   // from the dbGCellGrid discussion in PR,
   // 'usage' contains (blockage + wire consumption).
@@ -425,10 +426,16 @@ getUsageCapacityRatio(Tile* tile,
   unsigned int blockage = (isHorizontal)?
     blockH : blockV;
 
-  // std::cout << "tile: " << tile->x() << " " << tile->y() 
-  //   << " originalCap: " << curCap << std::endl;
-  // std::cout << "cap: " << curCap << " use: " << curUse - blockage 
-  //   << " block: " << blockage << std::endl;
+  // escape tile ratio cals when capacity = 0
+  if( curCap == 0 ) {
+    return -1*FLT_MAX;
+  }
+
+  //std::cout << layer->getConstName() 
+  //  << " dir: " << ((isHorizontal)? "H" : "V")
+  //  << " tile: " << tile->x() << " " << tile->y()
+  //  << " originalCap: " << curCap << " use: " << curUse - blockage 
+  //  << " block: " << blockage << " ratio: " << static_cast<float>(curUse) / curCap << std::endl;
  
   // ignore if blockage is too huge in current tile 
   float blockageRatio = static_cast<float>(blockage) / curCap;
