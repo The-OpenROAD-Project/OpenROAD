@@ -1456,7 +1456,7 @@ bool IsDebugNets(dbNet* srcNet, dbNet* tgtNet, uint debugNetId)
 
   return false;
 }
-void extMain::measureRC(int* options)
+void extMain::measureRC(CoupleOptions& options)
 {
   _totSegCnt++;
   int rsegId1 = options[1];  // dbRSeg id for SRC segment
@@ -1632,20 +1632,22 @@ void extMain::measureRC(int* options)
   }
   ccReportProgress();
 }
-void extCompute(int* options, void* computePtr)
+void extCompute(CoupleOptions& options, void* computePtr)
 {
   extMain* mmm = (extMain*) computePtr;
   mmm->measureRC(options);
 }
-void extCompute1(int* options, void* computePtr)
+extern CoupleOptions coupleOptionsNull;
+
+void extCompute1(CoupleOptions& options, void* computePtr)
 {
   extMeasure* mmm = (extMeasure*) computePtr;
-  if (options && options[0] < 0) {
+  if (options != coupleOptionsNull && options[0] < 0) {
     if (options[5] == 1)
       mmm->initTargetSeq();
     else
       mmm->getDgOverlap(options);
-  } else if (options)
+  } else if (options != coupleOptionsNull)
     mmm->measureRC(options);
   else
     mmm->printDgContext();

@@ -1665,8 +1665,8 @@ void v_printWireNeighbor(void* ip,
                          void* v_botNeighbor)
 {
 }
-void extCompute(int* inputTable, void* extModel);
-void extCompute1(int* inputTable, void* extModel);
+void extCompute(CoupleOptions& inputTable, void* extModel);
+void extCompute1(CoupleOptions& inputTable, void* extModel);
 
 uint extMain::readCmpStats(const char* name,
                            uint& tileSize,
