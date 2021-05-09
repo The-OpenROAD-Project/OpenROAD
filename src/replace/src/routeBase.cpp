@@ -273,7 +273,7 @@ RouteBaseVars::reset() {
   inflationRatioCoef = 2.5;
   maxInflationRatio = 2.5;
   maxDensity = 0.90;
-  targetRC = 1.03;
+  targetRC = 1.25;
   ignoreEdgeRatio = 0.8;
   minInflationRatio = 1.01;
   rcK1 = rcK2 = 1.0;

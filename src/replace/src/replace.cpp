@@ -70,7 +70,7 @@ Replace::Replace()
   routabilityMaxDensity_(0.99),
   routabilityMaxBloatIter_(1),
   routabilityMaxInflationIter_(4),
-  routabilityTargetRcMetric_(1.03),
+  routabilityTargetRcMetric_(1.25),
   routabilityInflationRatioCoef_(2.5),
   routabilityMaxInflationRatio_(2.5),
   routabilityRcK1_(1.0),
