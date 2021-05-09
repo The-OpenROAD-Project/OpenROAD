@@ -431,12 +431,6 @@ getUsageCapacityRatio(Tile* tile,
     return -1*FLT_MAX;
   }
 
-  //std::cout << layer->getConstName() 
-  //  << " dir: " << ((isHorizontal)? "H" : "V")
-  //  << " tile: " << tile->x() << " " << tile->y()
-  //  << " originalCap: " << curCap << " use: " << curUse - blockage 
-  //  << " block: " << blockage << " ratio: " << static_cast<float>(curUse) / curCap << std::endl;
- 
   // ignore if blockage is too huge in current tile 
   float blockageRatio = static_cast<float>(blockage) / curCap;
   if( blockageRatio >= ignoreEdgeRatio) {
@@ -472,16 +466,6 @@ RouteBase::updateRoute() {
   tg_->setTileSize(gridX[1] - gridX[0], gridY[1] - gridY[0]);
   tg_->setTileCnt(gridX.size(), gridY.size());
   tg_->initTiles();
-  
-  // for(auto& val: gridX) {
-  //   int idx = &val - &gridX[0];
-  //   std::cout << "gridX: " << idx << " " << val << std::endl; 
-  // }
-
-  // for(auto& val: gridY) {
-  //   int idx = &val - &gridY[0];
-  //   std::cout << "gridY: " << idx << " " << val << std::endl; 
-  // }
   
   for(int i=1; i<=numLayers; i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
@@ -534,23 +518,6 @@ RouteBase::updateRoute() {
         inflationRatio = fmin(inflationRatio, rbVars_.maxInflationRatio);
         tile->setInflationRatio(inflationRatio);
       }
-
-      // unsigned int capH = 0, capV = 0, capU = 0;
-      // unsigned int useH = 0, useV = 0, useU = 0;
-      // gGrid->getCapacity(layer, tile->x(), tile->y(), capH, capV, capU);
-      // gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV, useU);
-
-      // std::cout << "layer: " << layer->getConstName() 
-      //   << " xy: (" << tile->x() << ", " << tile->y() << ") - useH: " 
-      //   << useH << " capH: " << capH << " ratio: " << 1.0 * useH / capH << std::endl;
-      // std::cout << "layer: " << layer->getConstName() 
-      //   << " xy: (" << tile->x()<< ", " << tile->y() << ") - useV: " 
-      //   << useV << " capV: " << capV << " ratio: " << 1.0 * useV / capV << std::endl;
-
-      // if( !isnan(1.0 * useH / capH) &&
-      //     !isnan(1.0 * useV / capV) ) {
-      //   std::cout << "WRONG" << std::endl; 
-      // }
     }
   }
  
@@ -637,10 +604,6 @@ RouteBase::routability() {
 
     int idxX = (gCell->dCx() - tg_->lx())/tg_->tileSizeX();
     int idxY = (gCell->dCy() - tg_->ly())/tg_->tileSizeY();
-
-    if( idxX >= tg_->tileCntX() || idxY >= tg_->tileCntY() ) {
-      std::cout << "TILE CNT EXCEED" << std::endl;
-    }
 
     Tile* tile = tg_->tiles()[idxY * tg_->tileCntX() + idxX];
 
