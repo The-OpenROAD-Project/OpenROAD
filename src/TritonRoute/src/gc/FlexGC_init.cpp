@@ -172,7 +172,24 @@ void FlexGCWorker::Impl::initDesign()
       if (initDesign_skipObj(obj)) {
         continue;
       }
-      initObj(box, i, obj, true);
+      frBox bbox(box);
+      //check for DESIGNRULEWIDTH
+      if (obj->typeId() == frcInstBlockage) {
+        auto blk = static_cast<frInstBlockage*>(obj)->getBlockage();
+        if (blk->getDesignRuleWidth() > 0) {
+          frCoord dw = blk->getDesignRuleWidth() - box.width();
+          if (dw > 0) {
+            dw >>= 1;
+            if (box.width() == box.left() - box.right())
+              bbox.set(frBox(
+                  box.left() - dw, box.bottom(), box.right() + dw, box.top()));
+            else
+              bbox.set(frBox(
+                  box.left(), box.bottom() - dw, box.right(), box.top() + dw));
+          }
+        }
+      }
+      initObj(bbox, i, obj, true);
       cnt++;
     }
   }
