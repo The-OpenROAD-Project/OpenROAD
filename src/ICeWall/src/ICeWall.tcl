@@ -1,4 +1,6 @@
 namespace eval ICeWall {
+  variable footprint {}
+  variable library {}
   variable cells {}
   variable db
   variable default_orientation {bottom R0 right R90 top R180 left R270 ll R0 lr MY ur R180 ul MX}
@@ -38,10 +40,10 @@ namespace eval ICeWall {
     
   proc get_origin {centre width height orient} {
       if {![dict exists $centre x]} {
-        utl::error PAD 54 "Parameter centre $centre missing a value for x"
+        utl::error PAD 54 "Parameter centre \"$centre\" missing a value for x"
       }
       if {![dict exists $centre y]} {
-        utl::error PAD 55 "Parameter centre $centre missing a value for y"
+        utl::error PAD 55 "Parameter centre \"$centre\" missing a value for y"
       }
       switch -exact $orient {
         R0    {
@@ -76,7 +78,7 @@ namespace eval ICeWall {
           set x [expr [dict get $centre x] - ($height / 2)]
           set y [expr [dict get $centre y] - ($width / 2)]
         }
-        default {utl::error "PAD" 5 "Illegal orientation $orient specified"}
+        default {utl::error "PAD" 5 "Illegal orientation \"$orient\" specified"}
       }
 
       return [list x $x y $y]
@@ -84,10 +86,10 @@ namespace eval ICeWall {
 
   proc get_centre {centre width height orient} {
       if {![dict exists $centre x]} {
-        utl::error PAD 56 "Parameter centre $centre missing a value for x"
+        utl::error PAD 56 "Parameter centre \"$centre\" missing a value for x"
       }
       if {![dict exists $centre y]} {
-        utl::error PAD 57 "Parameter centre $centre missing a value for y"
+        utl::error PAD 57 "Parameter centre \"$centre\" missing a value for y"
       }
       switch -exact $orient {
         R0    {
@@ -122,7 +124,7 @@ namespace eval ICeWall {
           set x [expr [dict get $centre x] + ($height / 2)]
           set y [expr [dict get $centre y] + ($width / 2)]
         }
-        default {utl::error "PAD" 6 "Illegal orientation $orient specified"}
+        default {utl::error "PAD" 6 "Illegal orientation \"$orient\" specified"}
       }
 
       return [list x $x y $y]
@@ -2403,7 +2405,7 @@ namespace eval ICeWall {
     variable library
     
     if {![dict exists $library rdl layer_name]} {
-      dict set library rdl_layer_name [lindex $pdngen::metal_layers end]
+      dict set library rdl layer_name [lindex $pdngen::metal_layers end]
     }
     
     return [dict get $library rdl layer_name]
@@ -2411,7 +2413,9 @@ namespace eval ICeWall {
   
   proc get_footprint_pads_per_pitch {} {
     variable footprint 
-    
+    if {![dict exists $footprint pads_per_pitch]} {
+      utl::error PAD 79 "Fottprint does not have the pads_per_pitch attribute specified"
+    } 
     return [dict get $footprint pads_per_pitch]
   }
   
@@ -2996,6 +3000,9 @@ namespace eval ICeWall {
   proc corner_width {corner} {
     variable pad_ring
 
+    if {![dict exists $pad_ring $corner]} {
+      utl::error PAD 80 "Attribute $corner not specified in pad_ring ($pad_ring)"
+    }
     set inst [dict get $pad_ring $corner]
     return [[$inst getBBox] getDX]
   }
@@ -3003,6 +3010,9 @@ namespace eval ICeWall {
   proc corner_height {corner} {
     variable pad_ring
 
+    if {![dict exists $pad_ring $corner]} {
+      utl::error PAD 81 "Attribute $corner not specified in pad_ring ($pad_ring)"
+    }
     set inst [dict get $pad_ring $corner]
     return [[$inst getBBox] getDY]
   }
@@ -3068,6 +3078,15 @@ namespace eval ICeWall {
 
     if {[dict exists $footprint place]} {
       dict for {cell_name inst_info} [dict get $footprint place] {
+        if {![dict exists $inst_info name]} {
+          utl::error PAD 88 "Placement of cell $cell_name does not have a name attribute"
+        }
+        if {![dict exists $inst_info type]} {
+          utl::error PAD 89 "Placement of cell $cell_name does not have a type attribute"
+        }
+        if {![dict exists $inst_info cell orient]} {
+          utl::error PAD 90 "Placement of cell $cell_name does not have an orient attribute"
+        }
         # debug "cell_name $cell_name"
         set name [dict get $inst_info name]
         set type [dict get $inst_info type]
@@ -3125,6 +3144,13 @@ namespace eval ICeWall {
           set name [$inst getName]
         }
         set type [get_padcell_type $padcell]
+        if {![dict exists $library types $type]} {
+          utl::error PAD 82 "Type $type not specified in the set of library types"
+        }
+        set cell_ref [dict get $library types $type]
+        if {![dict exists $library cells $cell_ref]} {
+          utl::error PAD 83 "Cell $cell_ref of Type $type is not specified in the list of cells in the library"
+        }
 
         if {[set brk_idx [lsearch $breaker_types $type]] > -1} {
           set breaker [dict get $library types [lindex $breaker_types $brk_idx]]
@@ -3142,10 +3168,9 @@ namespace eval ICeWall {
               dict set segment $signal cur_index $cur_index
               set pad_segment($signal,$cur_index) {}
             } else {
-              set cell [dict get $library types $type]
               set pin_name $signal
-              if {[dict exists $library cells $cell connect $signal]} {
-                set pin_name [dict get $library cells $cell connect $signal]
+              if {[dict exists $library cells $cell_ref connect $signal]} {
+                set pin_name [dict get $library cells $cell_ref connect $signal]
               }
               # debug "Adding inst_name $name pin_name $pin_name"
               # Dont add breakers into netlist, as they are physical_only
@@ -3154,12 +3179,11 @@ namespace eval ICeWall {
           }
         } else {
           foreach signal [dict get $library connect_by_abutment] {
-            set cell [dict get $library types $type]
             if {$type == "fill"} {continue} 
             if {$type == "corner"} {continue} 
             set pin_name $signal
-            if {[dict exists $library cells $cell connect $signal]} {
-              set pin_name [dict get $library cells $cell connect $signal]
+            if {[dict exists $library cells $cell_ref connect $signal]} {
+              set pin_name [dict get $library cells $cell_ref connect $signal]
             }
             # debug "Adding inst_name $name pin_name $pin_name"
             lappend pad_segment($signal,[dict get $segment $signal cur_index]) [list inst_name $name pin_name $pin_name]
@@ -3274,8 +3298,14 @@ namespace eval ICeWall {
     foreach padcell [get_footprint_padcell_order] {
       # debug "padcell - $padcell"
       set type [get_padcell_type $padcell]
-      set library_element [dict get $library types $type]
-      set library_cell [dict get $library cells $library_element]
+      if {![dict exists $library types $type]} {
+        utl::error PAD 84 "Type $type not specified in the set of library types"
+      }
+      set cell_ref [dict get $library types $type]
+      if {![dict exists $library cells $cell_ref]} {
+        utl::error PAD 85 "Cell $cell_ref of Type $type is not specified in the list of cells in the library"
+      }
+      set library_cell [dict get $library cells $cell_ref]
 
       namespace eval "pad_inst_values::$padcell" {}
       if {$type == "sig"} {
@@ -3397,11 +3427,24 @@ namespace eval ICeWall {
     return [is_ground_net [get_padcell_assigned_name $padcell]]
   }
 
+  proc get_padcell_cell_ref {padcell} {
+    variable library
+
+    set type [get_padcell_type $padcell]
+    if {![dict exists $library types $type]} {
+      utl::error PAD 86 "Type $type not specified in the set of library types"
+    }
+    set cell_ref [dict get $library types $type]
+    if {![dict exists $library cells $cell_ref]} {
+      utl::error PAD 87 "Cell $cell_ref of Type $type is not specified in the list of cells in the library"
+    }
+    return $cell_ref
+  }
+
   proc is_padcell_physical_only {padcell} {
     variable library 
-    
-    set cell_ref [dict get $library types [get_padcell_type $padcell]]
-    
+
+    set cell_ref [get_padcell_cell_ref $padcell] 
     if {[dict exists $library cells $cell_ref physical_only]} {
       return [dict get $library cells $cell_ref physical_only]
     } 
@@ -3412,8 +3455,7 @@ namespace eval ICeWall {
   proc is_padcell_control {padcell} {
     variable library 
     
-    set cell_ref [dict get $library types [get_padcell_type $padcell]]
-    
+    set cell_ref [get_padcell_cell_ref $padcell] 
     if {[dict exists $library cells $cell_ref is_control]} {
       return [dict get $library cells $cell_ref is_control]
     } 
@@ -3496,6 +3538,10 @@ namespace eval ICeWall {
   proc get_footprint_offsets {} {
     variable footprint
 
+    if {![dict exists $footprint offsets]} {
+      dict set footprint offsets 0
+    }
+
     return [dict get $footprint offsets]    
   }
 
@@ -3507,7 +3553,7 @@ namespace eval ICeWall {
     variable edge_left_offset
     variable def_units
 
-    set args [dict get $footprint offsets]    
+    set args [get_footprint_offsets]
     
     if {[llength $args] == 1} {
       set edge_bottom_offset [expr round($args * $def_units)]
@@ -3567,7 +3613,6 @@ namespace eval ICeWall {
   }
 
   proc fill_box {xmin ymin xmax ymax side} {
-    variable cells
     variable idx
     variable edge_bottom_offset 
     variable edge_right_offset 
@@ -3654,7 +3699,20 @@ namespace eval ICeWall {
       dict incr idx $type
     }
   }
+
+  proc define {attribute args} {
+    variable footprint
+
+    dict set footprint $attribute $args
+  }
+
+  proc library {attribute args} {
+    variable library
+
+    dict set library $attribute $args
+  }
  
+  namespace export define
   namespace export set_footprint set_library
 
   namespace export get_die_area get_core_area 
