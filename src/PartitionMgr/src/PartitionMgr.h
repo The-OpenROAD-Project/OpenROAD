@@ -279,16 +279,16 @@ class PartitionMgr
   void readPartitioningFile(std::string filename);
   void reportGraph();
 
-  void writePartitionVerilog(const char* path, const char* portPrefix, const char* moduleSuffix);
+  void writePartitionVerilog(const char* path, const char* port_prefix, const char* module_suffix);
 
  private:
   sta::Instance* buildPartitionedInstance(const char* name,
-                                          const char* portPrefix,
+                                          const char* port_prefix,
                                           sta::ConcreteLibrary* lib,
                                           sta::ConcreteNetwork* network,
                                           sta::Instance* parent,
                                           std::set<odb::dbInst*>* insts,
-                                          std::map<odb::dbNet*, sta::ConcretePort*>* portMap);
+                                          std::map<odb::dbNet*, sta::ConcretePort*>* port_map);
 };
 
 }  // namespace par
