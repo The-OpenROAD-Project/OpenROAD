@@ -191,6 +191,14 @@ proc thread_count { } {
   return [ord::thread_count]
 }
 
+proc get_die_area { } {
+  return [ord::get_block_area getDieArea]
+}
+
+proc get_core_area { } {
+  return [ord::get_block_area getCoreArea]
+}
+
 ################################################################
 
 namespace eval ord {
@@ -217,6 +225,16 @@ namespace eval ord {
     }
     profile off profarray
     profrep profarray cpu $filename
+  }
+  
+  proc get_block_area { accessor } {
+    set area {}
+    set rect [[ord::get_db_block] $accessor]
+    lappend area [ord::dbu_to_microns [$rect xMin]]
+    lappend area [ord::dbu_to_microns [$rect yMin]]
+    lappend area [ord::dbu_to_microns [$rect xMax]]
+    lappend area [ord::dbu_to_microns [$rect yMax]]
+    return $area
   }
   
   # namespace ord
