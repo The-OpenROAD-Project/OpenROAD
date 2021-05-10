@@ -241,8 +241,6 @@ proc partition_netlist { args } {
 # Seeds
   if { [info exists keys(-random_seed)] } {
     par::set_random_seed $keys(-random_seed)
-  } else {
-    par::set_random_seed
   }
   if { [info exists keys(-seeds)] } {
     par::set_seeds $keys(-seeds)

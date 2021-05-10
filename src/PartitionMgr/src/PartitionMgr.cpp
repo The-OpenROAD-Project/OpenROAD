@@ -59,6 +59,7 @@ namespace par {
 void PartitionMgr::init(unsigned dbId, Logger* logger){
   _dbId = dbId;
   _logger = logger;
+  _options.setRandomSeed(42);
 }
 
 // Partition Netlist
