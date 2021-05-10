@@ -49,9 +49,9 @@ class dbInst;
 
 namespace sta {
 class Instance;
-class ConcreteNetwork;
-class ConcreteLibrary;
-class ConcretePort;
+class NetworkReader;
+class Library;
+class Port;
 }  // namespace sta
 
 namespace utl {
@@ -284,11 +284,11 @@ class PartitionMgr
  private:
   sta::Instance* buildPartitionedInstance(const char* name,
                                           const char* port_prefix,
-                                          sta::ConcreteLibrary* lib,
-                                          sta::ConcreteNetwork* network,
+                                          sta::Library* library,
+                                          sta::NetworkReader* network,
                                           sta::Instance* parent,
                                           std::set<odb::dbInst*>* insts,
-                                          std::map<odb::dbNet*, sta::ConcretePort*>* port_map);
+                                          std::map<odb::dbNet*, sta::Port*>* port_map);
 };
 
 }  // namespace par

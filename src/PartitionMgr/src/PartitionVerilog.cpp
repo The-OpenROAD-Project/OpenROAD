@@ -41,10 +41,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
-#include "sta/NetworkClass.hh"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/ConcreteLibrary.hh"
-#include "sta/VerilogWriter.hh"
+#include "sta/MakeConcreteNetwork.hh"
 #include "sta/VerilogWriter.hh"
 #include "sta/PortDirection.hh"
 #include "sta/ParseBus.hh"
@@ -58,20 +55,14 @@ namespace par {
 using utl::PAR;
 
 using sta::Network;
-using sta::ConcreteNetwork;
-using sta::ConcreteLibrary;
-using sta::writeVerilog;
-using sta::ConcreteCell;
-using sta::ConcretePort;
-using sta::ConcreteInstance;
+using sta::Library;
 using sta::Cell;
 using sta::Instance;
+using sta::ConcreteInstance;
 using sta::Net;
 using sta::Port;
-using sta::Pin;
 using sta::PortDirection;
-using sta::ConcretePin;
-using sta::ConcreteNet;
+using sta::writeVerilog;
 
 using sta::isBusName;
 using sta::parseBusName;
@@ -85,6 +76,9 @@ using odb::dbBTerm;
 using odb::dbITerm;
 using odb::dbNet;
 using odb::dbIoType;
+
+using sta::NetworkReader;
+using sta::dbSta;
 
 PortDirection*
 determinePortDirection(dbNet* net, std::set<dbInst*>* insts) {
@@ -153,21 +147,21 @@ Instance*
 PartitionMgr::buildPartitionedInstance(
     const char* name,
     const char* port_prefix,
-    sta::ConcreteLibrary* lib,
-    sta::ConcreteNetwork* network,
+    sta::Library* library,
+    sta::NetworkReader* network,
     sta::Instance* parent,
     std::set<dbInst*>* insts,
-    std::map<dbNet*, ConcretePort*>* port_map) {
+    std::map<dbNet*, Port*>* port_map) {
 
   // setup access
   dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
   dbBlock* block = getDbBlock();
 
   // make cell and instance
-  ConcreteCell* cell = lib->makeCell(name, false, "");
+  Cell* cell = network->makeCell(library, name, false, nullptr);
   std::string instname = name;
   instname += "_inst";
-  Instance* inst = network->makeInstance(reinterpret_cast<Cell*>(cell), instname.c_str(), parent);
+  Instance* inst = network->makeInstance(cell, instname.c_str(), parent);
 
   Instance* top_cell_inst = db_network->dbToSta(block->getParentInst());
 
@@ -192,13 +186,13 @@ PartitionMgr::buildPartitionedInstance(
     if (add_port) {
       std::string portname = bterm->getName();
 
-      ConcretePort* port = cell->makePort(portname.c_str());
+      Port* port = network->makePort(cell, portname.c_str());
       // copy exactly the parent port direction
-      port->setDirection(db_network->dbToSta(bterm->getSigType(), bterm->getIoType()));
+      network->setDirection(port, db_network->dbToSta(bterm->getSigType(), bterm->getIoType()));
       if (parent != nullptr) {
         PortDirection* sub_module_dir = determinePortDirection(bterm->getNet(), insts);
         if (sub_module_dir != nullptr)
-          port->setDirection(sub_module_dir);
+          network->setDirection(port, sub_module_dir);
       }
 
       if (port_map != nullptr)
@@ -230,8 +224,8 @@ PartitionMgr::buildPartitionedInstance(
             std::string port_name = port_prefix;
             port_name += db_net->getName();
 
-            ConcretePort* port = cell->makePort(port_name.c_str());
-            port->setDirection(port_dir);
+            Port* port = network->makePort(cell, port_name.c_str());
+            network->setDirection(port, port_dir);
 
             port_map->insert({db_net, port});
             net_map[db_net] = network->makeNet(port_name.c_str(), inst);
@@ -271,11 +265,11 @@ PartitionMgr::buildPartitionedInstance(
   if (parent != nullptr) {
     // loop over buses and to ensure all bit ports are created, only needed for partitioned modules
     char path_escape = network->pathEscape();
-    char left_bracket = lib->busBrktLeft();
-    char right_bracket = lib->busBrktRight();
-    std::map<std::string, std::vector<ConcretePort*>> port_buses;
+    char left_bracket = '['; // library->busBrktLeft();
+    char right_bracket = ']'; // library->busBrktRight();
+    std::map<std::string, std::vector<Port*>> port_buses;
     for (auto& [net, port] : *port_map) {
-      std::string portname = reinterpret_cast<ConcretePort*>(port)->name();
+      std::string portname = network->name(port);
 
       // check if bus and get name
       if (isBusName(portname.c_str(), left_bracket, right_bracket, path_escape)) {
@@ -286,7 +280,7 @@ PartitionMgr::buildPartitionedInstance(
         delete bus_name;
 
         if (port_buses.find(portname) == port_buses.end()) {
-          port_buses[portname] = std::vector<ConcretePort*>();
+          port_buses[portname] = std::vector<Port*>();
         }
         port_buses[portname].push_back(port);
       }
@@ -294,15 +288,15 @@ PartitionMgr::buildPartitionedInstance(
     for (auto& [bus, ports] : port_buses) {
       std::set<int> port_idx;
       std::set<PortDirection*> port_dirs;
-      for (ConcretePort* port : ports) {
+      for (Port* port : ports) {
         char* bus_name;
         int idx;
-        parseBusName(port->name(), left_bracket, right_bracket, path_escape, bus_name, idx);
+        parseBusName(network->name(port), left_bracket, right_bracket, path_escape, bus_name, idx);
         delete bus_name;
 
         port_idx.insert(idx);
 
-        port_dirs.insert(port->direction());
+        port_dirs.insert(network->direction(port));
       }
 
       // determine real direction of port
@@ -313,8 +307,8 @@ PartitionMgr::buildPartitionedInstance(
         overall_direction = PortDirection::bidirect();
 
       // set port direction to match
-      for (ConcretePort* port : ports)
-        port->setDirection(overall_direction);
+      for (Port* port : ports)
+        network->setDirection(port, overall_direction);
 
       // fill in missing ports in bus
       const auto [min_idx, max_idx] = std::minmax_element(port_idx.begin(), port_idx.end());
@@ -323,16 +317,16 @@ PartitionMgr::buildPartitionedInstance(
           // build missing port
           std::string portname = bus;
           portname += left_bracket + std::to_string(idx) + right_bracket;
-          ConcretePort* port = cell->makePort(portname.c_str());
-          port->setDirection(overall_direction);
+          Port* port = network->makePort(cell, portname.c_str());
+          network->setDirection(port, overall_direction);
         }
       }
     }
   }
 
-  network->groupBusPorts(reinterpret_cast<Cell*>(cell));
+  network->groupBusPorts(cell);
+  // required to ensure pins_ in instance is initialized.
   reinterpret_cast<ConcreteInstance*>(inst)->initPins();
-  network->makePins(inst);
 
   return inst;
 }
@@ -362,33 +356,33 @@ void PartitionMgr::writePartitionVerilog(const char* path,
     instance_map[partition].insert(inst);
   }
 
-  dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
+  dbSta* db_sta = ord::OpenRoad::openRoad()->getSta();
+  // get top module name
+  dbNetwork* db_network = db_sta->getDbNetwork();
   std::string top_name = db_network->name(db_network->topInstance());
 
   // create new network and library
-  ConcreteNetwork* network = new ConcreteNetwork();
-  ConcreteLibrary* part_lib = reinterpret_cast<ConcreteLibrary*>(network->makeLibrary("Partitions", ""));
+  NetworkReader* network = sta::makeConcreteNetwork();
+  Library* library = network->makeLibrary("Partitions", nullptr);
 
   // new top module
   Instance* top_inst = buildPartitionedInstance(top_name.c_str(),
                                                 "", // no changes to port
-                                                part_lib,
+                                                library,
                                                 network,
                                                 nullptr, // no parent
                                                 nullptr,
                                                 nullptr);
-  ConcreteInstance* ctop_inst = reinterpret_cast<ConcreteInstance*>(top_inst);
-  network->setTopInstance(top_inst);
 
   // build submodule partitions
   std::map<long, Instance*> sta_instance_map;
-  std::map<long, std::map<dbNet*, ConcretePort*>> sta_port_map;
+  std::map<long, std::map<dbNet*, Port*>> sta_port_map;
   for (auto& [partition, instances] : instance_map) {
     std::string cell_name = top_name + module_suffix + std::to_string(partition);
-    sta_port_map[partition] = std::map<dbNet*, ConcretePort*>();
+    sta_port_map[partition] = std::map<dbNet*, Port*>();
     sta_instance_map[partition] = buildPartitionedInstance(cell_name.c_str(),
                                                            port_prefix,
-                                                           part_lib,
+                                                           library,
                                                            network,
                                                            top_inst,
                                                            &instances,
@@ -397,28 +391,24 @@ void PartitionMgr::writePartitionVerilog(const char* path,
 
   // connect submodule partitions in new top module
   for (auto& [partition, instance] : sta_instance_map) {
-    ConcreteInstance* cinst = reinterpret_cast<ConcreteInstance*>(instance);
-    ConcreteCell* ccell = reinterpret_cast<ConcreteCell*>(cinst->cell());
-
-    for (auto& [portnet, cport] : sta_port_map[partition]) {
-      Port* port = reinterpret_cast<Port*>(cport);
+    for (auto& [portnet, port] : sta_port_map[partition]) {
 
       dbBTerm* bterm = block->findBTerm(portnet->getName().c_str());
       if (bterm != nullptr) { // global connection
-        Net* net = reinterpret_cast<Net*>(ctop_inst->findNet(portnet->getName().c_str()));
+        Net* net = network->findNet(top_inst, portnet->getName().c_str());
         network->connect(instance, port, net);
       }
       else { // partition connections
-        Net* net = reinterpret_cast<Net*>(ctop_inst->findNet(cport->name()));
+        Net* net = network->findNet(top_inst, network->name(port));
         if (net == nullptr)
-          net = network->makeNet(cport->name(), top_inst);
+          net = network->makeNet(network->name(port), top_inst);
 
         network->connect(instance, port, net);
       }
     }
   }
 
-  writeVerilog(path, false, false, {}, reinterpret_cast<Network*>(network));
+  writeVerilog(path, false, false, {}, network);
 
   delete network;
 }
