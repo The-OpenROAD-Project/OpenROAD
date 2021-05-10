@@ -33,9 +33,9 @@
 
 #include <errno.h>
 
+#include "opendb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
-#include "opendb/wOrder.h"
 
 namespace sta {
 // Tcl files encoded into strings.
