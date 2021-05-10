@@ -63,6 +63,127 @@ proc create_child_physical_clusters { args } {
     }
   }
 }
+proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
+  set layer [$tech findLayer $layerName]
+  if { $layer == "NULL" } {
+    utl::warn ODB 1000 "Layer ${layerName} not found, skipping NDR for this layer"
+    return
+  }
+  if { [$layer getType] != "ROUTING" } {
+    return
+  }
+  set rule [$ndr getLayerRule $layer]
+  if { $rule == "NULL" } {
+    set rule [odb::dbTechLayerRule_create $ndr $layer]
+  }
+  set input [string trim $input]
+  if { [string is double $input] } {
+    set value [ord::microns_to_dbu $input]
+  } elseif { [string first "*" $input] == 0 } {
+    if { $isSpacing } {
+      set value [expr [string trim $input "*"] * [$layer getSpacing]]
+    } else {
+      set value [expr [string trim $input "*"] * [$layer getWidth]]
+    }
+  } else {
+    utl::warn ODB 1009 "Invalid input in create_ndr cmd"
+    return
+  }
+  if { $isSpacing } {
+    $rule setSpacing $value
+  } else {
+    $rule setWidth $value
+  }
+}
+proc set_ndr_rules { tech ndr values isSpacing } {
+  if { [llength $values] == 1 } {
+    # Omitting layers
+    set value [lindex $values 0]
+    foreach layer [$tech getLayers] {
+      if { [$layer getType] != "ROUTING" } {
+        continue
+      }
+      set_ndr_layer_rule $tech $ndr [$layer getName] $value $isSpacing
+    }
+    return
+  }
+  for {set i 0} {$i < [llength $values]} {incr i 2} {
+    set layers [lindex $values $i]
+    set value [lindex $values [expr $i + 1]]
+    if { [string first ":" $layers] == -1 } {
+      set_ndr_layer_rule $tech $ndr $layers $value $isSpacing
+    } else {
+      lassign [split $layers ":" ] firstLayer lastLayer
+      set foundFirst 0
+      set foundLast 0
+      foreach layer [$tech getLayers] {
+        if { [$layer getType] != "ROUTING" } {
+          continue
+        }
+        if { $foundFirst == 0 } {
+          if { [$layer getName] == $firstLayer } {
+            set foundFirst 1
+          } else {
+            continue
+          }
+        }
+        set_ndr_layer_rule $tech $ndr [$layer getName] $value $isSpacing
+        if { [$layer getName] == $lastLayer } {
+          set foundLast 1
+          break
+        }
+      }
+      if { $foundFirst == 0 } {
+        utl::warn ODB 1001 "Layer ${firstLayer} not found"
+      }
+      if { $foundLast == 0 } {
+        utl::warn ODB 1002 "Layer ${lastLayer} not found"
+      }
+    }
+
+  }
+}
+
+sta::define_cmd_args "create_ndr" { -name name [-spacing val] [-width val] [-via val]}
+
+proc create_ndr { args } {
+  sta::parse_key_args "create_ndr" args keys {-name -spacing -width -via} flags {}
+  if { ![info exists keys(-name)] } {
+    utl::error ODB 1004 "-name is missing"
+  }
+  set name $keys(-name)
+  set block [[[ord::get_db] getChip] getBlock]
+  set tech [[ord::get_db] getTech]
+  set ndr [odb::dbTechNonDefaultRule_create $block $name]
+  if { $ndr == "NULL" } {
+    utl::error ODB 1005 "NonDefaultRule ${name} already exists"
+  }
+  if { [info exists keys(-spacing)] } {
+    set spacings $keys(-spacing)
+    if { [llength $spacings] != 1 && [expr [llength $spacings] % 2] == 1 } {
+      utl::error ODB 1006 "Spacing values \[$spacings\] are malformed"
+    }
+    set_ndr_rules $tech $ndr $spacings 1
+  }
+  if { [info exists keys(-width)] } {
+    set widths $keys(-width)
+    if { [llength $widths] != 1 &&  [expr [llength $widths] % 2] == 1 } {
+      utl::error ODB 1007 "Width values \[$widths\] are malformed"
+    }
+    set_ndr_rules $tech $ndr $widths 0
+  }
+  if { [info exists keys(-via)] } {
+    foreach viaName $keys(-via) {
+      set via [$tech findVia $viaName]
+      if { $via == "NULL" } {
+        utl::error ODB 1008 "Via ${viaName} not found, skipping NDR for this via"
+        continue
+      }
+      $ndr addUseVia $via
+    }
+  }
+
+}
 
 sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
 
@@ -385,7 +506,7 @@ proc report_group { group } {
 namespace eval ord {
 
 proc error { args } {
- utl::error ODB 0 [lindex $args 0]
+ ord::error ODB 0 [lindex $args 0]
 }
 
 }

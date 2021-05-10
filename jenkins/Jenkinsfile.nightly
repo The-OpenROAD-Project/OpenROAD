@@ -27,7 +27,8 @@ pipeline {
           post {
             always {
               sh "mv /home/jenkins/ispd/runs/*.tar.gz .";
-              archiveArtifacts "*.tar.gz";
+              sh "mv /home/jenkins/ispd/runs/*log .";
+              archiveArtifacts "*.tar.gz, *log";
             }
           }
         }
@@ -42,6 +43,18 @@ pipeline {
             }
           }
         }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        emailext (
+            to:'$DEFAULT_RECIPIENTS',
+            replyTo: '$DEFAULT_REPLYTO',
+            subject: '$DEFAULT_SUBJECT',
+            body: '$DEFAULT_CONTENT',
+            );
       }
     }
   }

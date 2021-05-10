@@ -317,9 +317,9 @@ void io::Parser::genGuides_gCell2TermMap(
         bool condition3 = false;  // GR implies wrongway connection but
                                   // technology does not allow
         if ((layer->getDir() == frcVertPrefRoutingDir
-             && (!USENONPREFTRACKS /*|| layer->getLef58RectOnlyConstraint()*/)
+             && (!USENONPREFTRACKS || layer->isUnidirectional())
              && box.left() == gcellBox.left())
-            || (layer->getDir() == frcHorzPrefRoutingDir && (!USENONPREFTRACKS /*|| layer->getLef58RectOnlyConstraint()*/)
+            || (layer->getDir() == frcHorzPrefRoutingDir && (!USENONPREFTRACKS || layer->isUnidirectional())
                 && box.bottom() == gcellBox.bottom())) {
           condition3 = true;
         }

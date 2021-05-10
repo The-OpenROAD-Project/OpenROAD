@@ -929,6 +929,7 @@ dbNetwork::makeCell(Library *library,
       }
     }
   }
+  delete lib_iter;
 }
 
 void
@@ -1085,7 +1086,7 @@ dbNetwork::connectPinAfter(Pin *pin)
 {
   if (isDriver(pin)) {
     Net *net = this->net(pin);
-    PinSet *drvrs = net_drvr_pin_map_[net];
+    PinSet *drvrs = net_drvr_pin_map_.findKey(net);
     if (drvrs)
       drvrs->insert(pin);
   }
@@ -1198,6 +1199,13 @@ dbNetwork::mergedInto(Net *)
 {
   logger_->critical(ORD, 1005, "unimplemented network function mergeInto");
   return nullptr;
+}
+
+bool
+dbNetwork::isSpecial(Net *net)
+{
+  dbNet *db_net = staToDb(net);
+  return db_net->isSpecial();
 }
 
 ////////////////////////////////////////////////////////////////

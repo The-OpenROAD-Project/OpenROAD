@@ -280,22 +280,22 @@ class FlexGridGraph
     }
     return sol;
   }
-  frUInt4 getShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  frUInt4 getFixedShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
       reverse(x, y, z, dir);
-      sol = nodes_[getIdx(x, y, z)].shapeCostPlanar;
+      sol = nodes_[getIdx(x, y, z)].fixedShapeCostPlanar;
     } else {
       correctU(x, y, z, dir);
       const Node& node = nodes_[getIdx(x, y, z)];
-      sol = isOverrideShapeCost(x, y, z, dir) ? 0 : node.shapeCostVia;
+      sol = isOverrideShapeCost(x, y, z, dir) ? 0 : node.fixedShapeCostVia;
     }
     return (sol);
   }
-  bool hasShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  bool hasFixedShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
-      return getShapeCost(x, y, z, dir);
+      return getFixedShapeCost(x, y, z, dir);
   }
   bool isOverrideShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
@@ -307,23 +307,23 @@ class FlexGridGraph
       return nodes_[idx].overrideShapeCostVia;
     }
   }
-  frUInt4 getDRCCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  frUInt4 getRouteShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
       reverse(x, y, z, dir);
       auto idx = getIdx(x, y, z);
-      sol = nodes_[idx].drcCostPlanar;
+      sol = nodes_[idx].routeShapeCostPlanar;
     } else {
       correctU(x, y, z, dir);
       auto idx = getIdx(x, y, z);
-      sol = nodes_[idx].drcCostVia;
+      sol = nodes_[idx].routeShapeCostVia;
     }
     return (sol);
   }
-  bool hasDRCCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  bool hasRouteShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
-      return getDRCCost(x, y, z, dir);
+      return getRouteShapeCost(x, y, z, dir);
   }
   frUInt4 getMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
@@ -384,18 +384,7 @@ class FlexGridGraph
       frPoint pt, pt1;
       getPoint(pt, x, y);
       getPoint(pt1, x1, y1);
-      if (box.contains(pt) && box.contains(pt1)) {
-        // initDR must not use top and rightmost track
-        if (initDR
-            && ((box.right() == pt.x() && box.right() == pt1.x())
-                || (box.top() == pt.y() && box.top() == pt1.y()))) {
-          sol = false;
-        } else {
-          sol = true;
-        }
-      } else {
-        sol = false;
-      }
+      sol = box.contains(pt) && box.contains(pt1);
     } else {
       sol = false;
     }
@@ -503,35 +492,35 @@ class FlexGridGraph
       }
     }
   }
-  void addDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z)
+  void addRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
   {
     auto& node = nodes_[getIdx(x, y, z)];
-    node.drcCostPlanar = addToByte(node.drcCostPlanar, 1);
+    node.routeShapeCostPlanar = addToByte(node.routeShapeCostPlanar, 1);
   }
-  void addDRCCostVia(frMIdx x, frMIdx y, frMIdx z)
+  void addRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
   {
     auto& node = nodes_[getIdx(x, y, z)];
-    node.drcCostVia = addToByte(node.drcCostVia, 1);
+    node.routeShapeCostVia = addToByte(node.routeShapeCostVia, 1);
   }
-  void subDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z)
+  void subRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
   {
     auto& node = nodes_[getIdx(x, y, z)];
-    node.drcCostPlanar = subFromByte(node.drcCostPlanar, 1);
+    node.routeShapeCostPlanar = subFromByte(node.routeShapeCostPlanar, 1);
   }
-  void subDRCCostVia(frMIdx x, frMIdx y, frMIdx z)
+  void subRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
   {
     auto& node = nodes_[getIdx(x, y, z)];
-    node.drcCostVia = subFromByte(node.drcCostVia, 1);
+    node.routeShapeCostVia = subFromByte(node.routeShapeCostVia, 1);
   }
-  void resetDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z)
+  void resetRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
   {
     auto idx = getIdx(x, y, z);
-    nodes_[idx].drcCostPlanar = 0;
+    nodes_[idx].routeShapeCostPlanar = 0;
   }
-  void resetDRCCostVia(frMIdx x, frMIdx y, frMIdx z)
+  void resetRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
   {
     auto idx = getIdx(x, y, z);
-    nodes_[idx].drcCostVia = 0;
+    nodes_[idx].routeShapeCostVia = 0;
   }
   void addMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z)
   {
@@ -627,32 +616,32 @@ class FlexGridGraph
     }
     return (currCost == 0);
   }
-  void addShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
+  void addFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.shapeCostPlanar = addToByte(node.shapeCostPlanar, 1);
+      node.fixedShapeCostPlanar = addToByte(node.fixedShapeCostPlanar, 1);
     }
   }
-  void addShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
+  void addFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.shapeCostVia = addToByte(node.shapeCostVia, 1);
+      node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
     }
   }
-  void subShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
+  void subFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.shapeCostPlanar = subFromByte(node.shapeCostPlanar, 1);
+      node.fixedShapeCostPlanar = subFromByte(node.fixedShapeCostPlanar, 1);
     }
   }
-  void subShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
+  void subFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.shapeCostVia = subFromByte(node.shapeCostVia, 1);
+      node.fixedShapeCostVia = subFromByte(node.fixedShapeCostVia, 1);
     }
   }
 
@@ -954,17 +943,17 @@ class FlexGridGraph
     frUInt4 unused4 : 1;
     frUInt4 unused5 : 1;
     // Byte 2
-    frUInt4 drcCostPlanar : 8;
+    frUInt4 routeShapeCostPlanar : 8;
     // Byte 3
-    frUInt4 drcCostVia : 8;
+    frUInt4 routeShapeCostVia : 8;
     // Byte4
     frUInt4 markerCostPlanar : 8;
     // Byte5
     frUInt4 markerCostVia : 8;
     // Byte6
-    frUInt4 shapeCostVia : 8;
+    frUInt4 fixedShapeCostVia : 8;
     // Byte7
-    frUInt4 shapeCostPlanar : 8;
+    frUInt4 fixedShapeCostPlanar : 8;
   };
   static_assert(sizeof(Node) == 8);
   frVector<Node> nodes_;
@@ -1154,6 +1143,7 @@ class FlexGridGraph
               const frPoint& centerPt);
 private:
     bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
+    bool isWorkerBorder(frMIdx v, bool isVert);
 };
 }  // namespace fr
 

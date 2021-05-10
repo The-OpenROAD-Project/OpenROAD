@@ -26,13 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexGridGraph.h"
-
 #include <fstream>
 #include <iostream>
 #include <map>
 
 #include "dr/FlexDR.h"
+#include "dr/FlexGridGraph.h"
 
 using namespace std;
 using namespace fr;
@@ -81,16 +80,30 @@ void FlexGridGraph::initGrids(
   } else {
     guides_.resize(xDim * yDim * zDim, 1);
   }
-
 }
 
-bool FlexGridGraph::outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox) {
-    frViaDef *via = design_->getTech()->getLayer(getLayerNum(z)+1)->getDefaultViaDef();
-    frBox viaBox(via->getLayer1ShapeBox());
-    viaBox.merge(via->getLayer2ShapeBox());
-    viaBox.shift(xCoords_[x], yCoords_[y]);
-    return !dieBox.contains(viaBox);
+bool FlexGridGraph::outOfDieVia(frMIdx x,
+                                frMIdx y,
+                                frMIdx z,
+                                const frBox& dieBox)
+{
+  frViaDef* via
+      = design_->getTech()->getLayer(getLayerNum(z) + 1)->getDefaultViaDef();
+  frBox viaBox(via->getLayer1ShapeBox());
+  viaBox.merge(via->getLayer2ShapeBox());
+  viaBox.shift(xCoords_[x], yCoords_[y]);
+  return !dieBox.contains(viaBox);
 }
+
+bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
+{
+  if (isVert)
+    return xCoords_[v] == drWorker_->getRouteBox().left()
+           || xCoords_[v] == drWorker_->getRouteBox().right();
+  return yCoords_[v] == drWorker_->getRouteBox().bottom()
+         || yCoords_[v] == drWorker_->getRouteBox().top();
+}
+
 void FlexGridGraph::initEdges(
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
@@ -104,8 +117,9 @@ void FlexGridGraph::initEdges(
   frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
   frBox dieBox;
   design_->getTopBlock()->getBoundaryBBox(dieBox);
-  for (auto& [layerNum, dir] : zMap) {
+  for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
+    const auto layer = getTech()->getLayer(layerNum);
     if (layerNum + 2 <= getTech()->getTopLayerNum()) {
       nonPrefLayerNum = layerNum + 2;
     } else if (layerNum - 2 >= getTech()->getBottomLayerNum()) {
@@ -113,6 +127,7 @@ void FlexGridGraph::initEdges(
     } else {
       nonPrefLayerNum = layerNum;
     }
+    const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
       auto yIt = ySubMap.find(layerNum);
@@ -136,27 +151,20 @@ void FlexGridGraph::initEdges(
         if (dir == frcHorzPrefRoutingDir && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if (getTech()
-                        ->getLayer(layerNum)
-                        ->getLef58RightWayOnGridOnlyConstraint()
-                    == nullptr
+            if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                 || yIt->second != nullptr) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
-              if (yIt->second == nullptr || outOfDiePlanar) {
+              if (yIt->second == nullptr || outOfDiePlanar
+                  || isWorkerBorder(yIdx, false)) {
                 setGridCostE(xIdx, yIdx, zIdx);
               }
             }
           }
           // via to upper layer
           if (xFound2) {
-            if ((getTech()
-                         ->getLayer(layerNum)
-                         ->getLef58RightWayOnGridOnlyConstraint()
-                     != nullptr
+            if ((layer->getLef58RightWayOnGridOnlyConstraint() != nullptr
                  && yIt->second == nullptr)
-                || (getTech()
-                            ->getLayer(nonPrefLayerNum)
-                            ->getLef58RightWayOnGridOnlyConstraint()
+                || (nonPrefLayer->getLef58RightWayOnGridOnlyConstraint()
                         != nullptr
                     && xIt2->second == nullptr)) {
               ;
@@ -172,27 +180,20 @@ void FlexGridGraph::initEdges(
         } else if (dir == frcVertPrefRoutingDir && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if (getTech()
-                        ->getLayer(layerNum)
-                        ->getLef58RightWayOnGridOnlyConstraint()
-                    == nullptr
+            if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                 || xIt->second != nullptr) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
-              if (xIt->second == nullptr || outOfDiePlanar) {
+              if (xIt->second == nullptr || outOfDiePlanar
+                  || isWorkerBorder(xIdx, true)) {
                 setGridCostN(xIdx, yIdx, zIdx);
               }
             }
           }
           // via to upper layer
           if (yFound2) {
-            if ((getTech()
-                         ->getLayer(layerNum)
-                         ->getLef58RightWayOnGridOnlyConstraint()
-                     != nullptr
+            if ((layer->getLef58RightWayOnGridOnlyConstraint() != nullptr
                  && xIt->second == nullptr)
-                || (getTech()
-                            ->getLayer(nonPrefLayerNum)
-                            ->getLef58RightWayOnGridOnlyConstraint()
+                || (nonPrefLayer->getLef58RightWayOnGridOnlyConstraint()
                         != nullptr
                     && yIt2->second == nullptr)) {
               ;
@@ -208,7 +209,7 @@ void FlexGridGraph::initEdges(
         }
         // get non pref track layer --> use upper layer pref dir track if
         // possible
-        if (USENONPREFTRACKS/* && currLayer->getLef58RectOnlyConstraint() == nullptr*/) {
+        if (USENONPREFTRACKS && !layer->isUnidirectional()) {
           // add edge for non-preferred direction
           // vertical non-pref track
           if (dir == frcHorzPrefRoutingDir && xFound3) {
@@ -242,7 +243,6 @@ void FlexGridGraph::init(const frBox& routeBBox,
                          bool initDR,
                          bool followGuide)
 {
-
   halfViaEncArea_ = getDRWorker()->getDR()->getHalfViaEncArea();
   via2viaMinLen_ = getDRWorker()->getDR()->getVia2ViaMinLen();
   via2turnMinLen_ = getDRWorker()->getDR()->getVia2TurnMinLen();
@@ -256,7 +256,7 @@ void FlexGridGraph::init(const frBox& routeBBox,
 }
 
 // initialization helpers
-// get all tracks inetersecting with the Maze bbox, left/bottom are inclusive
+// get all tracks intersecting with the Maze bbox, left/bottom are inclusive
 void FlexGridGraph::initTracks(
     map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
@@ -272,7 +272,7 @@ void FlexGridGraph::initTracks(
     for (auto& tp :
          getDesign()->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global varialble and design rule allow
-      bool flag = (USENONPREFTRACKS)
+      bool flag = (USENONPREFTRACKS && !layer->isUnidirectional())
                       ? (tp->isHorizontal()
                          && currPrefRouteDir == frcVertPrefRoutingDir)
                             || (!tp->isHorizontal()

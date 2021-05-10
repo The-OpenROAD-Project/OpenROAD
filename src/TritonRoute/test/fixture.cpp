@@ -216,6 +216,43 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
+frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
+    frLayerNum layer_num,
+    std::vector<frCoord> widthTbl,
+    std::vector<std::pair<frCoord, frCoord>> valTbl)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
+      "WIDTH", widthTbl, valTbl);
+  unique_ptr<frConstraint> uCon
+      = make_unique<frSpacingTableInfluenceConstraint>(tbl);
+  auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
+  tech->addUConstraint(std::move(uCon));
+  layer->setSpacingTableInfluence(rptr);
+  return rptr;
+}
+
+frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
+    frLayerNum layer_num,
+    std::vector<frCoord> widthTbl,
+    std::vector<frCoord> prlTbl,
+    std::vector<std::vector<frCoord>> spacingTbl)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  frCollection<frSpacingTableTwRowType> rows;
+  for (size_t i = 0; i < widthTbl.size(); i++) {
+    rows.push_back(frSpacingTableTwRowType(widthTbl[i], prlTbl[i]));
+  }
+  unique_ptr<frConstraint> uCon
+      = make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
+  auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+  tech->addUConstraint(std::move(uCon));
+  layer->setMinSpacing(rptr);
+  return rptr;
+}
+
 std::shared_ptr<frLef58SpacingEndOfLineConstraint>
 Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                        frCoord space,
@@ -360,9 +397,7 @@ void Fixture::makePathseg(frNet* net,
 
 void Fixture::initRegionQuery()
 {
-  int num_layers = design->getTech()->getLayers().size();
-
   frRegionQuery* query = design->getRegionQuery();
-  query->init(num_layers);
-  query->initDRObj(num_layers);
+  query->init();
+  query->initDRObj();
 }

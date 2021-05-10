@@ -33,16 +33,16 @@
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
 #include "FlexDR_graphics.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace fr {
 
 const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
 const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
 const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
-const char* FlexDRGraphics::drc_cost_visible_ = "DRC Cost";
+const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
-const char* FlexDRGraphics::shape_cost_visible_ = "Shape Cost";
+const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 
 static std::string workerOrigin(FlexDRWorker* worker)
 {
@@ -79,9 +79,9 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   }
 
   gui_->addCustomVisibilityControl(grid_graph_visible_);
-  gui_->addCustomVisibilityControl(drc_cost_visible_);
+  gui_->addCustomVisibilityControl(route_shape_cost_visible_);
   gui_->addCustomVisibilityControl(marker_cost_visible_);
-  gui_->addCustomVisibilityControl(shape_cost_visible_);
+  gui_->addCustomVisibilityControl(fixed_shape_cost_visible_);
   gui_->addCustomVisibilityControl(route_guides_visible_, true);
   gui_->addCustomVisibilityControl(routing_objs_visible_, true);
 
@@ -104,48 +104,20 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   // Draw segs & vias
   if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
-    auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
-    worker_->getExtBox(box);
-    std::vector<drConnFig*> figs;
-    rq.query(box, layerNum, figs);
-    for (auto& fig : figs) {
-      switch (fig->typeId()) {
-        case drcPathSeg: {
-          auto seg = (drPathSeg*) fig;
-          if (seg->getLayerNum() == layerNum) {
-            seg->getBBox(box);
-            painter.drawRect(
-                {box.left(), box.bottom(), box.right(), box.top()});
-          }
-          break;
-        }
-        case drcVia: {
-          auto via = (drVia*) fig;
-          auto viadef = via->getViaDef();
-          if (viadef->getLayer1Num() == layerNum) {
-            via->getLayer1BBox(box);
-          } else if (viadef->getLayer2Num() == layerNum) {
-            via->getLayer2BBox(box);
-          } else {
-            continue;
-          }
-          painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
-          break;
-        }
-        case drcPatchWire: {
-          auto patch = (drPatchWire*) fig;
-          if (patch->getLayerNum() == layerNum) {
-            patch->getBBox(box);
-            painter.drawRect(
-                {box.left(), box.bottom(), box.right(), box.top()});
-          }
-          break;
-        }
-
-        default:
-          logger_->debug(
-              DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+    if (drawWholeDesign_) {
+      worker_->getDesign()->getTopBlock()->getBoundaryBBox(box);
+      fr::frRegionQuery::Objects<frBlockObject> figs;
+      worker_->getDesign()->getRegionQuery()->query(box, layerNum, figs);
+      for (auto& fig : figs) {
+        drawObj(fig.second, painter, layerNum);
+      }
+    } else {
+      worker_->getExtBox(box);
+      std::vector<drConnFig*> figs;
+      worker_->getWorkerRegionQuery().query(box, layerNum, figs);
+      for (auto& fig : figs) {
+        drawObj(fig, painter, layerNum);
       }
     }
   }
@@ -168,11 +140,11 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw graphs
-  const bool draw_drc = gui_->checkCustomVisibilityControl(drc_cost_visible_);
+  const bool draw_drc = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
   const bool draw_marker
       = gui_->checkCustomVisibilityControl(marker_cost_visible_);
   const bool draw_shape
-      = gui_->checkCustomVisibilityControl(shape_cost_visible_);
+      = gui_->checkCustomVisibilityControl(fixed_shape_cost_visible_);
   const bool draw_graph
       = gui_->checkCustomVisibilityControl(grid_graph_visible_);
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
@@ -209,22 +181,22 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         // Planar doesn't distinguish E vs N so just use one
         bool planar
-            = (draw_drc && grid_graph_->hasDRCCost(x, y, z, frDirEnum::E))
+            = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
               || (draw_marker
                   && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
               || (draw_shape
-                  && grid_graph_->hasShapeCost(x, y, z, frDirEnum::E));
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::E));
         if (planar) {
           painter.drawRect({grid_graph_->xCoord(x) - offset,
                             grid_graph_->yCoord(y) - offset,
                             grid_graph_->xCoord(x) + offset,
                             grid_graph_->yCoord(y) + offset});
         }
-        bool via = (draw_drc && grid_graph_->hasDRCCost(x, y, z, frDirEnum::U))
+        bool via = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
                    || (draw_marker
                        && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
                    || (draw_shape
-                       && grid_graph_->hasShapeCost(x, y, z, frDirEnum::U));
+                       && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);
@@ -248,6 +220,47 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       marker->getBBox(box);
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
+  }
+}
+
+void FlexDRGraphics::drawObj(frBlockObject* fig,
+                             gui::Painter& painter,
+                             int layerNum)
+{
+  frBox box;
+  switch (fig->typeId()) {
+    case drcPathSeg: {
+      auto seg = (drPathSeg*) fig;
+      if (seg->getLayerNum() == layerNum) {
+        seg->getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
+      break;
+    }
+    case drcVia: {
+      auto via = (drVia*) fig;
+      auto viadef = via->getViaDef();
+      if (viadef->getLayer1Num() == layerNum) {
+        via->getLayer1BBox(box);
+      } else if (viadef->getLayer2Num() == layerNum) {
+        via->getLayer2BBox(box);
+      } else {
+        return;
+      }
+      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      break;
+    }
+    case drcPatchWire: {
+      auto patch = (drPatchWire*) fig;
+      if (patch->getLayerNum() == layerNum) {
+        patch->getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
+      break;
+    }
+
+    default:
+      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
   }
 }
 
@@ -276,6 +289,15 @@ void FlexDRGraphics::pause(drNet* net)
     return;
   }
   gui_->pause();
+}
+
+void FlexDRGraphics::debugWholeDesign()
+{
+  if (!settings_->allowPause)
+    return;
+  drawWholeDesign_ = true;
+  gui_->pause();
+  update();
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
@@ -447,9 +469,7 @@ void FlexDRGraphics::startIter(int iter)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    // If you specified a gcell then only one worker can process that
-    // gcell and we don't need to limit the threading.
-    if (MAX_THREADS > 1 && settings_->gcellX < 0) {
+    if (MAX_THREADS > 1) {
       logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
       MAX_THREADS = 1;
     }

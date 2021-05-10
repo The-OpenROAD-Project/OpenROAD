@@ -1,0 +1,33 @@
+[INFO ODB-0222] Reading LEF file: data/gscl45nm.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 14 technology vias
+[INFO ODB-0225]     Created 33 library cells
+[INFO ODB-0226] Finished LEF file:  data/gscl45nm.lef
+[INFO ODB-0127] Reading DEF file: data/ndr.def
+[INFO ODB-0128] Design: counter
+[INFO ODB-0130]     Created 12 pins.
+[INFO ODB-0131]     Created 12 components and 60 component-terminals.
+[INFO ODB-0133]     Created 24 nets and 45 connections.
+[INFO ODB-0134] Finished DEF file: data/ndr.def
+dsp_rule:
+layer metal1 spacing 40 width 20
+NDR:
+layer metal1 spacing 390 width 0
+layer metal2 spacing 450 width 1000
+layer metal3 spacing 420 width 1000
+layer metal4 spacing 840 width 1000
+layer metal5 spacing 840 width 1000
+layer metal6 spacing 0 width 1000
+mult:
+layer metal1 spacing 260 width 390
+layer metal2 spacing 300 width 420
+layer metal3 spacing 280 width 420
+layer metal4 spacing 560 width 0
+layer metal5 spacing 560 width 0
+layer metal6 spacing 560 width 0
+layer metal7 spacing 1600 width 0
+layer metal8 spacing 1600 width 0
+layer metal9 spacing 3200 width 0
+layer metal10 spacing 3200 width 0
+clk nondefault rule: NDR
+No differences found.

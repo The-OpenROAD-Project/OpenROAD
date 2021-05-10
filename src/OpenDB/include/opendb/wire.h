@@ -43,8 +43,7 @@
 #include "db.h"
 #include "geom.h"
 #include "gseq.h"
-#include "qtype.h"
-#include "tech.h"
+#include "rcx.h"
 
 using namespace odb;
 
@@ -55,55 +54,6 @@ enum Ath__overlapAdjust
   Z_endAdjust
 };
 
-class Ath__net;
-
-class Ath__path
-{
- private:
-  Ath__net* _net;
-
-  union
-  {
-    struct
-    {
-      uint _level : 5;
-      uint _trackNum : 12;
-      uint _qRow : 5;
-      uint _qCol : 5;
-    } _from;
-
-    uint _fromIterm;
-  };
-  union
-  {
-    struct
-    {
-      uint _level : 5;
-      uint _trackNum : 12;
-      uint _qRow : 5;
-      uint _qCol : 5;
-    } _to;
-
-    uint _toIterm;
-  };
-  uint _num;
-
- public:
-};
-
-class Ath__via
-{
- private:
-  uint _trackNum : 12;
-  uint _xy : 10;
-  uint _masterNum : 10;
-
-  uint _wire1 : 10;
-  uint _wire2 : 10;
-  uint _node : 12;  // TODO
-
- public:
-};
 
 class Ath__track;
 
@@ -142,9 +92,6 @@ class Ath__searchBox
   uint getOwnerId();
   uint getOtherId();
   uint getLength();
-  void printCoords(FILE* fp, char* msg);
-  void setMaxBox(Ath__searchBox* bb);
-  bool outside(int x1, int y1, int x2, int y2);
 };
 
 class Ath__wire
@@ -202,12 +149,9 @@ class Ath__wire
   int getXY() { return _xy; }
   void getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir);
 
-  // void makeZuiObject(Ath__zui *zui, Ath__boxType type, int layer);
-
   friend class Ath__track;
   friend class Ath__grid;
   friend class Ath__gridTable;
-  friend class dbBlockHandle;
 
   // Extraction
   void printOneWire(FILE* ptfile);
@@ -250,20 +194,19 @@ class Ath__track
   Ath__grid* _grid;
 
   uint _num : 20;
-  uint _markerModulo : 12;
 
-  // int _width:20; // to be removed
   int _width : 19;
   uint _lowest : 1;
-  uint _widthIndex : 4;  // 0 is std width
   uint _shift : 4;
   uint _centered : 1;
   uint _blocked : 1;
   uint _full : 1;
-  Ath__wire* _tmpHead;
   bool _ordered;
 
  public:
+  uint getTrackNum() { 
+    return _num;
+  };
   void set(Ath__grid* g,
            int x,
            int y,
@@ -330,11 +273,6 @@ class Ath__track
   void insertWire(Ath__wire* w, int mark1, int mark2);
   uint initTargetTracks(uint sourceTrack, uint trackDist, bool tohi);
   void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
-  uint searchSpread(uint srcTrack,
-                    void* ip,
-                    uint trackDist,
-                    uint met,
-                    void (*doSpread)(void*, uint, void*, void*, void*));
   void getTrackWires(std::vector<Ath__wire*>& ctxwire);
   void buildDgContext(Ath__array1D<odb::SEQ*>* dgContext,
                       Ath__wire**& allWire,
@@ -348,7 +286,7 @@ class Ath__track
                     ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     uint met,
-                    void (*coupleAndCompute)(int*, void*),
+                    rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
 
   uint findOverlap(Ath__wire* origWire,
@@ -359,7 +297,7 @@ class Ath__track
                    Ath__array1D<Ath__wire*>* ccTable,
                    ZInterface* context,
                    uint met,
-                   void (*coupleAndCompute)(int*, void*),
+                   rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr);
 
   void initTargetWire(int noPowerWire);
@@ -377,7 +315,6 @@ class Ath__track
 
   void dealloc(AthPool<Ath__wire>* pool);
 };
-class Ath__quadTable;
 class Ath__gridTable;
 
 class Ath__grid
@@ -386,15 +323,12 @@ class Ath__grid
   Ath__gridTable* _gridtable;
   Ath__track** _trackTable;
   uint* _blockedTrackTable;
-  uint _trackFilledCnt;
-  float _emptyTrackCnt;
-  uint _freeTrackCnt;
   uint _trackCnt;
   uint* _subTrackCnt;
   int _base;
   int _max;
 
-  int _start;  // laterraly
+  int _start;  // laterally
   int _end;
 
   int _lo[2];
@@ -411,21 +345,12 @@ class Ath__grid
   uint _searchHiTrack;
   uint _searchLowMarker;
   uint _searchHiMarker;
-  uint _placed : 1;
-
-  // void (*coupleAndCompute)(int *, void *), void *compPtr;
-  void* _coupleAndCompute;
-  void* _compPtr;
-
-  // AthArray<Ath__wire*> *_wireTable;
-  // AthArray<Ath__via*> *_viaTable;
 
   uint _widthTable[8];
   uint _shiftTable[8];
   AthPool<Ath__track>* _trackPoolPtr;
   AthPool<Ath__wire>* _wirePoolPtr;
 
-  uint _ignoreFlag;
   uint _schema;
   uint _wireType;
 
@@ -433,11 +358,6 @@ class Ath__grid
   uint _lastFreeTrack;
 
  public:
-  Ath__grid(AthPool<Ath__track>* trackPool,
-            AthPool<Ath__wire>* _wirePool,
-            Ath__box* bb,
-            Ath__layer* layer,
-            uint markerCnt = 4);
   Ath__grid(Ath__gridTable* gt,
             AthPool<Ath__track>* trackPool,
             AthPool<Ath__wire>* wirePool,
@@ -470,7 +390,6 @@ class Ath__grid
   void setSchema(uint v);
   bool isPlaced();
 
-  uint setFreeTracks();
   bool anyTrackAvailable();
 
   uint addWireList(Ath__box* box);
@@ -485,7 +404,6 @@ class Ath__grid
   void getBbox(Ath__box* bb);
   void getBbox(Ath__searchBox* bb);
   uint setExtrusionMarker();
-  uint getBoundaries(Ath__zui* zui, uint dd, uint layer);
   uint addWire(Ath__box* box, int check);
   uint addWire(Ath__box* box);
 
@@ -503,7 +421,6 @@ class Ath__grid
   int findEmptyTrack(int ll[2], int ur[2]);
   uint getFirstTrack(uint divider);
   int getClosestTrackCoord(int xy);
-  void makeZuiObjects(Ath__zui* zui);
   uint addWire(uint initTrack, Ath__box* box, int sortedOrder, int* height);
   Ath__wire* getPoolWire();
   Ath__wire* makeWire(Ath__box* box,
@@ -513,7 +430,6 @@ class Ath__grid
                       uint fullTrack);
   Ath__wire* makeWire(Ath__box* box, uint id, uint* m1);
   Ath__wire* makeWire(int* ll, int* ur, uint id, uint* m1);
-  // Ath__wire *makeWire(int xy1, int xy2, uint id1, uint id2, uint type=0);
   Ath__wire* makeWire(uint dir,
                       int* ll,
                       int* ur,
@@ -524,12 +440,7 @@ class Ath__grid
   Ath__wire* makeWire(Ath__wire* w, uint type = 0);
 
   void makeTrackTable(uint width, uint pitch, uint space = 0);
-  uint blockTracks(Ath__searchBox* box, bool ignoreLevel = true);
-  uint blockTracks(dbBlock* block, Ath__array1D<uint>* idTable);
-  uint blockTracks(Ath__box* box, uint ignoreLevel);
-  uint blockTracks(dbBlock* block, Ath__gridTable* wireSearch);
   float updateFreeTracks(float v);
-  void resetFreeTracks();
 
   void freeTracksAndTables();
   uint getAbsTrackNum(int xy);
@@ -545,68 +456,23 @@ class Ath__grid
   uint search(Ath__searchBox* bb,
               Ath__array1D<uint>* idtable,
               bool wireIdFlag = false);
-  uint searchAllMarkers(Ath__searchBox* bb,
-                        Ath__array1D<uint>* idtable,
-                        bool wireIdFlag = false);
 
-  uint addWireNext(uint initTrack, Ath__box* box, int sortedOrder, int* height);
-  // Ath__wire *getNewWire(Ath__box *box, int xy1, int xy2, uint *id);
-  Ath__wire* getNewWire(Ath__box* box, int* ll, int* ur, uint* id);
-  Ath__wire* makeWireCut(Ath__box* box,
-                         uint* id,
-                         uint* m1,
-                         uint* m2,
-                         uint cutFlag);
-  Ath__wire* makeWireExt(Ath__box* box,
-                         uint* id,
-                         uint* m1,
-                         uint* m2,
-                         uint extFlag,
-                         int height);
   uint placeWire(uint initTrack,
                  Ath__wire* w,
                  uint mark1,
                  uint mark2,
                  int sortedOrder,
                  int* height);
-  uint addWireCut(uint cutFlag,
-                  uint initTrack,
-                  Ath__box* box,
-                  int sortedOrder,
-                  int* height);
-  uint addWireExt(uint cutFlag,
-                  uint initTrack,
-                  Ath__box* box,
-                  int sortedOrder,
-                  int* height);
 
-  void getBusObs(Ath__zui* zui);
   void getBoxes(Ath__array1D<uint>* table);
   uint getBoxes(uint ii, Ath__array1D<uint>* table);
 
-  void placeAgainSortedThru(uint space,
-                            uint width,
-                            AthArray<Ath__box*>* obsTable);
   uint getDir();
   uint getLevel();
   Ath__wire* getWire_Linear(uint id);
-  void setIgnoreFlag(uint v);
 
-  int placeTileWire(uint wireType,
-                    uint id,
-                    Ath__searchBox* bb,
-                    int loMarker,
-                    int initTrack,
-                    bool skipResetSize);
   void getBuses(Ath__array1D<Ath__box*>* boxtable, uint width);
-  uint white(Ath__searchBox* bb, Ath__array1D<uint>* idtable, Ath__grid* g);
-  Ath__wire* makeWhite(uint dir,
-                       int* lo,
-                       int* hi,
-                       Ath__array1D<uint>* idtable,
-                       Ath__grid* g);
 
-  friend class Ath__quadTable;
   friend class Ath__gridTable;
 
   uint removeMarkedNetWires();
@@ -615,9 +481,6 @@ class Ath__grid
   uint searchHiMarker() { return _searchHiMarker; };
 
   // EXTRACTION
-  uint searchSpread(void* ip,
-                    uint spreadTrackDist,
-                    void (*doSpread)(void*, uint, void*, void*, void*));
   void buildDgContext(int gridn, int base);
   int getBandWires(int hiXY,
                    uint couplingDist,
@@ -628,7 +491,7 @@ class Ath__grid
                     uint couplingDist,
                     ZInterface* context,
                     Ath__array1D<uint>* ccTable,
-                    void (*coupleAndCompute)(int*, void*),
+                    rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   AthPool<Ath__wire>* getWirePoolPtr();
   uint placeWire(Ath__wire* w);
@@ -646,79 +509,20 @@ class Ath__grid
   void gridContextOn(int orig, int len, int base, int width);
 
   int initCouplingCapLoops(uint couplingDist,
-                           void (*coupleAndCompute)(int*, void*),
+                           rcx::CoupleAndCompute coupleAndCompute,
                            void* compPtr,
                            bool startSearchTrack = true,
                            int startXY = 0);
   int couplingCaps(int hiXY,
                    uint couplingDist,
                    uint& wireCnt,
-                   void (*coupleAndCompute)(int*, void*),
+                   rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    int* limitArray);
   int dealloc(int hiXY);
   void dealloc();
 };
-class Ath__gridStack  // DELETE after porting on new DB
-{
- private:
-  Ath__grid* _nextGridTable[2];
-  Ath__grid* _thruGridTable[2];
-  Ath__grid* _cornerGridTable[4][2];
-  int _loDivide[2];
-  int _hiDivide[2];
-  uint _level[2];
-  uint _nextLevel[2];
-  Rect _bb;
 
- public:
-  Ath__gridStack(Ath__layer** met,
-                 Ath__layer** nextMet,
-                 uint* loFlag,
-                 uint* hiFlag,
-                 int* loLine,
-                 int* hiLine,
-                 int* ll,
-                 int* ur,
-                 AthPool<Ath__track>* trackPool,
-                 AthPool<Ath__wire>* wirePool);
-  ~Ath__gridStack();
-  bool isThruPlaced(uint dir);
-  uint getGridOutlines(Ath__zui* zui);
-  uint blockTracks(AthArray<Ath__box*>* obsTable);
-  uint addWire(Ath__box* box, uint trackRange);
-
-  uint placeSortedThru(uint dir,
-                       Ath__box** boxArray,
-                       uint cnt,
-                       uint width,
-                       uint space);
-  uint blockTracks(Ath__box* boxList, uint dir);
-  uint blockTracks(Ath__box* box);
-  Ath__grid** getCornerGrid(uint type,
-                            uint space,
-                            uint width,
-                            uint layer0,
-                            uint layer2);
-  uint placeCornerSorted(uint type,
-                         Ath__box** boxArray,
-                         Ath__box** boxArrayNext,
-                         uint cnt,
-                         uint space,
-                         uint width);
-  Ath__grid* getThruGrid(uint dir, uint layer, uint space, uint width);
-  Ath__grid* getThruGrid(uint dir);
-  Ath__grid* getNextGrid(uint dir);
-  Ath__grid* getNextGrid(uint dir, uint layer, uint space, uint width);
-  uint placeSortedNext(uint dir,
-                       Ath__box** boxArray,
-                       int* heightArray,
-                       uint cnt,
-                       uint space,
-                       uint width);
-  void getBusObs(Ath__zui* zui);
-  bool isPlacedCorner(uint type);
-};
 class Ath__gridTile
 {
  private:
@@ -754,7 +558,6 @@ class Ath__gridTile
                      uint layerNum,
                      uint width,
                      uint pitch);
-  void searchWires(Ath__searchBox* bb, Ath__array1D<uint>* idtable);
 
   void getBounds(int* x1, int* y1, int* x2, int* y2);
   Ath__grid* getGrid(uint level);
@@ -781,8 +584,6 @@ class Ath__gridTable
   uint _overlapAdjust;
   uint _powerMultiTrackWire;
   uint _signalMultiTrackWire;
-  uint _offlineOverlapTouch;
-  uint _offlineOverlapCnt;
   uint _overlapTouchCheck;
   uint _noPowerSource;
   uint _noPowerTarget;
@@ -825,10 +626,6 @@ class Ath__gridTable
   dbBlock* _block;
 
   uint _wireCnt;
-
-  // void (*coupleAndCompute)(int *, void *), void *compPtr;
-  void* _coupleAndCompute;
-  void* _compPtr;
 
   Ath__array1D<Ath__wire*>* _bandWire;
 
@@ -884,7 +681,6 @@ class Ath__gridTable
 
   uint getBoxes(Ath__box* bb, Ath__array1D<Ath__box*>* table);
   bool isOrdered(bool ascending);
-  uint search(Ath__zui* zui, uint row, uint col);
   uint search(Ath__searchBox* bb,
               uint row,
               uint col,
@@ -893,11 +689,6 @@ class Ath__gridTable
   uint search(Ath__searchBox* bb, Ath__array1D<uint>* idTable);
   uint search(Ath__box* bb);
   Ath__wire* getWire_Linear(uint instId);
-  uint white(Ath__searchBox* bb,
-             uint row,
-             uint col,
-             Ath__array1D<uint>* idTable,
-             Ath__grid* g);
 
   uint addBox(int x1,
               int y1,
@@ -924,18 +715,13 @@ class Ath__gridTable
   // EXTRACTION
 
   void setDefaultWireType(uint v);
-  uint searchSpread(void* ip,
-                    uint spreadTrackDist,
-                    std::vector<dbNet*>& inets,
-                    char* bbox,
-                    void (*doSpread)(void*, uint, void*, void*, void*));
   void buildDgContext(int base, uint level, uint dir);
   Ath__array1D<odb::SEQ*>* renewDgContext(uint gridn, uint trackn);
   uint couplingCaps(Ath__gridTable* resGridTable,
                     uint couplingDist,
                     ZInterface* context,
                     Ath__array1D<uint>* ccTable,
-                    void (*coupleAndCompute)(int*, void*),
+                    rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   uint couplingCaps(uint row,
                     uint col,
@@ -988,8 +774,6 @@ class Ath__gridTable
   void setNoPowerSource(uint nps) { _noPowerSource = nps; };
   uint noPowerTarget() { return _noPowerTarget; };
   void setNoPowerTarget(uint npt) { _noPowerTarget = npt; };
-  void incrOfflineOverlapCnt() { _offlineOverlapCnt++; };
-  void incrOfflineOverlapTouch() { _offlineOverlapTouch++; };
   void incrCCshorts() { _CCshorts++; };
   void setExtControl(dbBlock* block,
                      bool useDbSdb,
@@ -1032,13 +816,13 @@ class Ath__gridTable
                    uint couplingDist,
                    uint dir,
                    uint& wireCnt,
-                   void (*coupleAndCompute)(int*, void*),
+                   rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    bool getBandWire,
                    int** limitArray);
   void initCouplingCapLoops(uint dir,
                             uint couplingDist,
-                            void (*coupleAndCompute)(int*, void*),
+                            rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr,
                             int* startXY = NULL);
   int dealloc(uint dir, int hiXY);

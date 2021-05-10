@@ -55,8 +55,8 @@ using utl::GPL;
 namespace gpl {
 
 static bool
-inflationListCompare(std::pair<Tile*, float> l, 
-    std::pair<Tile*, float> r);
+inflationListCompare(std::pair<Tile*, float> &l, 
+    std::pair<Tile*, float> &r);
 
 
 Tile::Tile()
@@ -1270,6 +1270,15 @@ RouteBase::routability() {
 //        * (tile->inflatedRatio() - 1.0)));
   }
 
+
+  // inflationList_ is unused so there is no point in filling and sorting it.
+  // There is also no point in using pairs to record the tile
+  // inflatedRatio() when it could be accessed in the compare function.
+  // inflationList_ probably should be cleared before pushing back in the
+  // "update" also. As it stands it just grows and grows and grows.
+  // Double memory waster.
+  // -cherry 05/08/2021
+#if 0
   // update inflationList_
   for(auto& tile : tg_->tiles()) {
     inflationList_.push_back(
@@ -1279,6 +1288,7 @@ RouteBase::routability() {
   // sort by inflatedRatio
   sort(inflationList_.begin(), inflationList_.end(), 
       inflationListCompare);
+#endif
 
   // target ratio
   float targetInflationDeltaAreaRatio  
@@ -1529,8 +1539,8 @@ RouteBase::increaseCounter() {
 
 // compare based on the inflatedRatio
 static bool
-inflationListCompare(std::pair<Tile*, float> l, 
-   std::pair<Tile*, float> r) {
+inflationListCompare(std::pair<Tile*, float> &l, 
+   std::pair<Tile*, float> &r) {
 
   // inflatedRatio order
   if ( l.second < r.second ) {
@@ -1558,7 +1568,7 @@ inflationListCompare(std::pair<Tile*, float> l,
   else if( l.first->y() > r.first->y() ) {
     return false;
   }
-  return true;
+  return false;
 }
 
 

@@ -508,6 +508,15 @@ resize_net_slack(Net *net)
 ////////////////////////////////////////////////////////////////
 
 float
+buffer_self_delay(LibertyCell *buffer_cell,
+                  const RiseFall *rf)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->bufferSelfDelay(buffer_cell, rf);
+}
+
+float
 buffer_wire_delay(LibertyCell *buffer_cell,
                   float wire_length) // meters
 {

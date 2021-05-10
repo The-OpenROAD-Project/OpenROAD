@@ -51,6 +51,8 @@ using std::min;
 
 using utl::DPL;
 
+using odb::dbBox;
+
 void
 Opendp::initGrid()
 {
@@ -117,25 +119,60 @@ Opendp::gridPixel(int grid_x,
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::assignFixedCells()
+Opendp::visitCellPixels(Cell &cell,
+                        bool padded,
+                        const std::function <void (Pixel *pixel)>& visitor) const
 {
-  for (Cell &cell : cells_) {
-    if (isFixed(&cell)) {
-      int y_start = gridY(&cell);
-      int y_end = gridEndY(&cell);
-      int x_start = gridPaddedX(&cell);
-      int x_end = gridPaddedEndX(&cell);
+  dbMaster *master = cell.db_inst_->getMaster();
+  auto obstructions = master->getObstructions();
+  bool have_obstructions = false;
+  for (dbBox *obs : obstructions) {
+    if (obs->getTechLayer()->getType() == odb::dbTechLayerType::Value::OVERLAP) {
+      have_obstructions = true;
+      int x_start = gridX(obs->xMin() - core_.xMin());
+      int x_end = gridEndX(obs->xMax() - core_.xMin());
+      int y_start = gridY(obs->yMin() - core_.yMin());
+      int y_end = gridEndY(obs->yMax() - core_.yMin());
       for (int x = x_start; x < x_end; x++) {
         for (int y = y_start; y < y_end; y++) {
           Pixel *pixel = gridPixel(x, y);
-          if (pixel) {
-            pixel->cell = &cell;
-            pixel->util = 1.0;
-          }
+          if (pixel)
+            visitor(pixel);
         }
       }
     }
   }
+  if (!have_obstructions) {
+    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
+    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
+    int y_start = gridY(&cell);
+    int y_end = gridEndY(&cell);
+    for (int x = x_start; x < x_end; x++) {
+      for (int y = y_start; y < y_end; y++) {
+        Pixel *pixel = gridPixel(x, y);
+        if (pixel)
+          visitor(pixel);
+      }
+    }
+  }
+}
+
+void
+Opendp::setFixedGridCells()
+{
+  for (Cell &cell : cells_) {
+    if (isFixed(&cell))
+      visitCellPixels(cell, true,
+                      [&] (Pixel *pixel) { setGridCell(cell, pixel); } );
+  }
+}
+
+void
+Opendp::setGridCell(Cell &cell,
+                    Pixel *pixel)
+{
+  pixel->cell = &cell;
+  pixel->util = 1.0;
 }
 
 void

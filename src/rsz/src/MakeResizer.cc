@@ -36,7 +36,7 @@
 #include "rsz/MakeResizer.hh"
 
 #include "rsz/Resizer.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "gui/gui.h"
 
 namespace ord {

@@ -615,6 +615,8 @@ void lefin::layer(lefiLayer* layer)
       else if (!strcmp(layer->propName(iii), "LEF58_RECTONLY"))
         valid
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
+      else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
+        valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
@@ -625,15 +627,16 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         valid
             = lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")){
+      else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")) {
         lefTechLayerCutEnclosureRuleParser encParser(this);
         encParser.parse(layer->propValue(iii), l);
-      }
-      else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
+      } else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
             layer->propValue(iii), this, _incomplete_props);
-      } else
+      } else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
+        valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
+      else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {
       if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
@@ -958,6 +961,9 @@ void lefin::layer(lefiLayer* layer)
   if (layer->hasMaxwidth())
     l->setMaxWidth(dbdist(layer->maxwidth()));
 
+  if (layer->hasMask())
+    l->setNumMasks(layer->mask());
+
   if (layer->hasMinstep()) {
     l->setMinStep(dbdist(layer->minstep(0)));
     if (layer->hasMinstepType(0)) {
@@ -1076,11 +1082,11 @@ void lefin::macro(lefiMacro* macro)
           auto temp = odb::dbSite::create(_lib, site->getName().c_str());
           temp->setWidth(site->getWidth());
           temp->setHeight(site->getHeight());
-          if(site->getSymmetryX())
+          if (site->getSymmetryX())
             temp->setSymmetryX();
-          if(site->getSymmetryY())
+          if (site->getSymmetryY())
             temp->setSymmetryY();
-          if(site->getSymmetryR90())
+          if (site->getSymmetryR90())
             temp->setSymmetryR90();
           temp->setClass(site->getClass());
           site = temp;
@@ -1112,16 +1118,6 @@ void lefin::macro(lefiMacro* macro)
 void lefin::macroEnd(const char* /* unused: macroName */)
 {
   if (_master) {
-    if (_master_modified) {
-      int x, y;
-      _master->getOrigin(x, y);
-
-      if (x != 0 || y != 0) {
-        dbTransform t(Point(x, y));
-        _master->transform(t);
-      }
-    }
-
     _master->setFrozen();
     _master = NULL;
     _master_cnt++;

@@ -17,7 +17,7 @@ TAGS
 .DS_Store
 Makefile
 
-include/openroad/Version.hh
+include/ord/Version.hh
 
 build
 test/results

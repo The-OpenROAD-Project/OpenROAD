@@ -53,12 +53,13 @@ extern int BATCHSIZETA;
 extern int MTSAFEDIST;
 extern int DRCSAFEDIST;
 extern int VERBOSE;
+extern std::string BOTTOM_ROUTING_LAYER_NAME;
+extern std::string TOP_ROUTING_LAYER_NAME;
 extern int BOTTOM_ROUTING_LAYER;
 extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;
 extern bool USENONPREFTRACKS;
 extern bool USEMINSPACING_OBS;
-extern bool RESERVE_VIA_ACCESS;
 extern bool ENABLE_BOUNDARY_MAR_FIX;
 extern bool ENABLE_VIA_GEN;
 // extern int TEST;
@@ -66,13 +67,6 @@ extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_TOPLAYERNUM;
-// uni-directional routing related
-extern fr::frLayerNum ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_WIRE_PREF_TOPLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_VIA_BOTTOMLAYERNUM;
-extern fr::frLayerNum ONGRIDONLY_VIA_TOPLAYERNUM;
 
 extern fr::frLayerNum VIA_ACCESS_LAYERNUM;
 
@@ -94,8 +88,8 @@ extern float TASHAPEBLOATWIDTH;
 extern fr::frUInt4 VIACOST;
 
 extern fr::frUInt4 GRIDCOST;
-extern fr::frUInt4 SHAPECOST;
-extern fr::frUInt4 DRCCOST;
+extern fr::frUInt4 FIXEDSHAPECOST;
+extern fr::frUInt4 ROUTESHAPECOST;
 extern fr::frUInt4 MARKERCOST;
 extern fr::frUInt4 MARKERBLOATWIDTH;
 extern fr::frUInt4 BLOCKCOST;
@@ -140,6 +134,10 @@ std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
 std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frShape& fig);
+std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
+std::ostream& operator<<(std::ostream& os, const frGuide& p);
+// namespace fr
 }  // namespace fr
-
 #endif

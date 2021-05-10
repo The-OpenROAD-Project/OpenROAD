@@ -89,6 +89,7 @@ target_sources(TritonRoute
     src/gc/FlexGC_init.cpp
     src/gc/FlexGC_main.cpp
     src/gc/FlexGC_eol.cpp
+    src/gc/FlexGC_inf.cpp
     src/db/drObj/drShape.cpp
     src/db/drObj/drVia.cpp
     src/db/infra/frBox.cpp
@@ -133,7 +134,7 @@ target_link_libraries(TritonRoute
   PUBLIC
     gui
     opendb
-    flute
+    sst
     OpenSTA
     utl
     Threads::Threads

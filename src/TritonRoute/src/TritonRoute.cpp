@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "triton_route/TritonRoute.h"
-
 #include <fstream>
 #include <iostream>
 
@@ -43,6 +41,7 @@
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "ta/FlexTA.h"
+#include "triton_route/TritonRoute.h"
 
 using namespace std;
 using namespace fr;
@@ -142,6 +141,32 @@ void TritonRoute::init()
 
   io::Parser parser(getDesign(), logger_);
   parser.readDb(db_);
+
+  auto tech = getDesign()->getTech();
+  if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
+    if (layer) {
+      BOTTOM_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    251,
+                    "bottomRoutingLayer {} not found",
+                    BOTTOM_ROUTING_LAYER_NAME);
+    }
+  }
+
+  if (!TOP_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(TOP_ROUTING_LAYER_NAME);
+    if (layer) {
+      TOP_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    252,
+                    "bottomRoutingLayer {} not found",
+                    TOP_ROUTING_LAYER_NAME);
+    }
+  }
+
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {
@@ -264,24 +289,6 @@ void TritonRoute::readParams(const string& fileName)
         else if (field == "dbProcessNode") {
           DBPROCESSNODE = value;
           ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyPrefWireBottomLayerNum") {
-          ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyPrefWireTopLayerNum") {
-          ONGRIDONLY_WIRE_PREF_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyNonPrefWireBottomLayerNum") {
-          ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyNonPrefWireTopLayerNum") {
-          ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyViaBottomLayerNum") {
-          ONGRIDONLY_VIA_BOTTOMLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
-        } else if (field == "drouteOnGridOnlyViaTopLayerNum") {
-          ONGRIDONLY_VIA_TOPLAYERNUM = atoi(value.c_str());
-          ++readParamCnt;
         } else if (field == "drouteViaInPinBottomLayerNum") {
           VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str());
           ++readParamCnt;
@@ -298,10 +305,13 @@ void TritonRoute::readParams(const string& fileName)
           OR_K = atof(value.c_str());
           ++readParamCnt;
         } else if (field == "bottomRoutingLayer") {
-          BOTTOM_ROUTING_LAYER = atoi(value.c_str());
+          BOTTOM_ROUTING_LAYER_NAME = value;
           ++readParamCnt;
         } else if (field == "topRoutingLayer") {
-          TOP_ROUTING_LAYER = atoi(value.c_str());
+          TOP_ROUTING_LAYER_NAME = value;
+          ++readParamCnt;
+        } else if (field == "initRouteShapeCost") {
+          ROUTESHAPECOST = atoi(value.c_str());
           ++readParamCnt;
         }
       }

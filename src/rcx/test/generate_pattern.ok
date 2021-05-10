@@ -1,0 +1,11 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO RCX-0055] Finished 252 bench measurements for pattern MET_OVER_MET
+[INFO RCX-0055] Finished 330 bench measurements for pattern MET_OVER_MET
+[INFO RCX-0056] Finished 240 measurements for pattern MET_UNDER_MET
+[INFO RCX-0057] Finished 180 bench measurements for pattern MET_UNDER_MET
+[INFO RCX-0058] Finished 182 bench measurements for pattern MET_DIAGUNDER_MET
+No differences found.
+No differences found.

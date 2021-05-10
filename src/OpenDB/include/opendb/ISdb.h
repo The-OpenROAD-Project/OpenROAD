@@ -40,6 +40,7 @@
 #include "gseq.h"
 #include "odb.h"
 #include "util.h"
+#include "rcx.h"
 
 // class duiShape;
 // typedef duiShape * duiShapeId;
@@ -142,16 +143,10 @@ class ISdb : public ZObject
                             bool useSdbId,
                             uint excludeId1 = 0)
       = 0;
-  virtual uint searchSpread(void* ip,
-                            uint spreadTrackDist,
-                            std::vector<dbNet*>& inets,
-                            char* bbox,
-                            void (*doSpread)(void*, uint, void*, void*, void*))
-      = 0;
   virtual uint couplingCaps(ZPtr<ISdb> ccSdb,
                             uint couplingDist,
                             ZInterface* Interface,
-                            void (*coupleAndCompute)(int*, void*),
+                            rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr)
       = 0;
   virtual uint startIterator() = 0;

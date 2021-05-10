@@ -28,25 +28,25 @@ TRACKS Y 140 DO 63 STEP 3200 LAYER metal10 ;
 
 PINS 54 ;
 - clk + NET clk + DIRECTION INPUT + USE SIGNAL 
-  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 95390 201600 ) S ;
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + PLACED ( 95390 201600 ) S ;
 - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL 
-  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 190 0 ) N ;
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + PLACED ( 190 0 ) N ;
 - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 200260 186060 ) W ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 200260 186060 ) W ;
 - reset + NET reset + DIRECTION INPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 0 104300 ) E ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 0 104300 ) E ;
 - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 200260 67340 ) W ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 200260 67340 ) W ;
 - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 0 88620 ) E ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 0 88620 ) E ;
 - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 0 147980 ) E ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 0 147980 ) E ;
 - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 0 163660 ) E ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 0 163660 ) E ;
 - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 0 192780 ) E ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 0 192780 ) E ;
 - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL 
-  + LAYER metal5 ( -140 0 ) ( 140 280 ) + FIXED ( 200260 52780 ) W ;
+  + LAYER metal5 ( -140 0 ) ( 140 280 ) + PLACED ( 200260 52780 ) W ;
 END PINS
 
 NETS 10 ;

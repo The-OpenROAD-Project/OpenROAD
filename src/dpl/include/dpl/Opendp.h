@@ -82,7 +82,6 @@ class Pixel;
 struct Group;
 
 using Grid = Pixel *;
-using StringSeq = vector<string>;
 using dbMasterSeq = vector<dbMaster *>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -153,8 +152,6 @@ typedef vector<NetBox> NetBoxes;
 
 ////////////////////////////////////////////////////////////////
 
-typedef set<dbMaster *> dbMasterSet;
-
 // Return value for grid searches.
 class PixelPt
 {
@@ -198,7 +195,8 @@ public:
   int padLeft(dbInst *inst) const;
   // Return true if illegal.
   bool checkPlacement(bool verbose);
-  void fillerPlacement(const StringSeq *filler_master_names);
+  void fillerPlacement(dbMasterSeq *filler_masters,
+                       const char* prefix);
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
   void findDisplacementStats();
@@ -280,8 +278,12 @@ private:
   int anneal();
   int refine();
   bool cellFitsInCore(Cell *cell);
-
-  void assignFixedCells();
+  void setFixedGridCells();
+  void visitCellPixels(Cell &cell,
+                       bool padded,
+                       const std::function <void (Pixel *pixel)>& visitor) const;
+  void setGridCell(Cell &cell,
+                   Pixel *pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
@@ -324,6 +326,8 @@ private:
   // Cell initial location wrt core origin.
   int gridX(int x) const;
   int gridY(int y) const;
+  int gridEndX(int x) const;
+  int gridEndY(int y) const;
   int gridEndX() const;
   int gridEndY() const;
   int gridPaddedWidth(const Cell *cell) const;
@@ -349,10 +353,12 @@ private:
   int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
   // Place fillers
-  void findFillerMasters(const StringSeq *filler_master_names);
-  dbMasterSeq &gapFillers(int gap);
-  void makeCellGrid();
-  void placeRowFillers(int row);
+  void setGridCells();
+  dbMasterSeq &gapFillers(int gap,
+                          dbMasterSeq *filler_masters);
+  void placeRowFillers(int row,
+                       const char* prefix,
+                       dbMasterSeq *filler_masters);
   const char *gridInstName(int row,
                            int col);
 
@@ -396,7 +402,7 @@ private:
   Grid *grid_;
   Cell dummy_cell_;
 
-  dbMasterSeq filler_masters_;
+  // Filler placement.
   // gap (in sites) -> seq of masters
   GapFillers gap_fillers_;
   int filler_count_;

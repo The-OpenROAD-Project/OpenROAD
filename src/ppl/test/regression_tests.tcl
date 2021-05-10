@@ -9,6 +9,10 @@ record_tests {
   on_grid
   random1
   random2
+  random3
+  random4
+  random5
+  random6
   blocked_region
   cells_not_placed
   exclude1
@@ -19,6 +23,7 @@ record_tests {
   add_constraint3
   add_constraint4
   add_constraint5
+  add_constraint6
   group_pins1
   group_pins2
   group_pins3
@@ -27,4 +32,14 @@ record_tests {
   group_pins6
   group_pins7
   group_pins_warn1
+  top_layer1
+  top_layer2
+  top_layer3
+  top_layer4
+  top_layer5
+  top_layer_error
+  place_pin1
+  place_pin2
+  place_pin_error1
+  place_pin_error2
 }

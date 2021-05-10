@@ -21,7 +21,6 @@ set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/sta)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
-set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
 
 set(OPENROAD_SOURCE
@@ -80,7 +79,6 @@ swig_lib(NAME      openroad_swig
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    ${ICEWALL_HOME}/src/ICeWall.tcl
-                   ${PDNGEN_HOME}/src/PdnGen.tcl
                    ${OPENDB_HOME}/src/db/OpenDB.tcl
 )
 
@@ -120,7 +118,7 @@ add_subdirectory(OpenDB)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(flute3)
+add_subdirectory(sst)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
@@ -129,14 +127,15 @@ add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(OpenRCX)
+add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
-add_subdirectory(antenna_checker)
+add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
 add_subdirectory(pdrev)
+add_subdirectory(pdngen)
 
 ################################################################
 
@@ -168,12 +167,12 @@ target_link_libraries(openroad
   fin
   rsz
   ppl
-  flute
+  sst
   dbSta
   OpenSTA
   opendb
   opendbtcl
-  OpenRCX
+  rcx
   TritonCTS
   grt
   tap
@@ -181,9 +180,10 @@ target_link_libraries(openroad
   TritonRoute
   mpl
   psm
-  antennachecker
+  ant
   PartitionMgr
   utl
+  pdn
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
@@ -261,7 +261,7 @@ install(TARGETS openroad DESTINATION bin)
 
 add_custom_target(openroad_tags etags -o TAGS
   ${OPENROAD_SOURCE}
-  ${OPENROAD_HOME}/include/openroad/*.hh
+  ${OPENROAD_HOME}/include/ord/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.hh
   ${DBSTA_HOME}/include/db_sta/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.cc

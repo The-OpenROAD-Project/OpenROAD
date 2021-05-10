@@ -120,6 +120,24 @@
           "type": "uint",
           "flags": [],
           "default": 0
+        },
+        {
+          "name": "horizontal_blockage",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "vertical_blockage",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "up_blockage",
+          "type": "uint",
+          "flags": [],
+          "default": 0
         }
       ],
       "public": true

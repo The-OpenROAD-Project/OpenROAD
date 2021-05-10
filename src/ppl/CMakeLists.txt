@@ -41,8 +41,8 @@ add_subdirectory(src/munkres)
 
 swig_lib(NAME      ppl
          NAMESPACE ppl
-         I_FILE    src/ioplacer.i
-         SCRIPTS   src/ioPlacer.tcl
+         I_FILE    src/IOPlacer.i
+         SCRIPTS   src/IOPlacer.tcl
 )
 
 target_sources(ppl

@@ -37,7 +37,7 @@
 #include "tritoncts/TritonCTS.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

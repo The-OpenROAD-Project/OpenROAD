@@ -82,6 +82,10 @@ class FlexDRGraphics : public gui::Renderer
 
   void pause(drNet* net);
 
+  void debugWholeDesign();
+
+  void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
+
  private:
   FlexDRWorker* worker_;
   drNet* net_;
@@ -92,6 +96,7 @@ class FlexDRGraphics : public gui::Renderer
   gui::Gui* gui_;
   Logger* logger_;
   int dbuPerUU_;
+  bool drawWholeDesign_ = false;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
@@ -100,9 +105,9 @@ class FlexDRGraphics : public gui::Renderer
   static const char* grid_graph_visible_;
   static const char* route_guides_visible_;
   static const char* routing_objs_visible_;
-  static const char* drc_cost_visible_;
+  static const char* route_shape_cost_visible_;
   static const char* marker_cost_visible_;
-  static const char* shape_cost_visible_;
+  static const char* fixed_shape_cost_visible_;
   
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };

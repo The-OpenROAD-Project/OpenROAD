@@ -99,6 +99,7 @@ using sta::DcalcAnalysisPt;
 using sta::ParasiticAnalysisPt;
 using sta::GateTimingModel;
 using sta::Pvt;
+using sta::Parasitics;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
@@ -215,6 +216,9 @@ public:
                      // Return values.
                      Delay &delay,
                      Slew &slew);
+  float bufferSelfDelay(LibertyCell *buffer_cell);
+  float bufferSelfDelay(LibertyCell *buffer_cell,
+                        const RiseFall *rf);
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length); // zero for none (meters)
   // repairDesign but restricted to clock network and
@@ -418,14 +422,18 @@ protected:
                                Pin *drvr_pin,
                                Pin *load_pin,
                                double wire_length, // meters
-                               const Corner *corner);
+                               const Corner *corner,
+                               Parasitics *parasitics);
   string makeUniqueNetName();
   Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
                             bool underscore);
   bool overMaxArea();
-  bool hasTopLevelPort(const Net *net);
+  bool bufferConnectedToPorts(Instance *buffer);
+  bool hasPort(const Net *net);
+  bool hasInputPort(const Net *net);
+  bool hasOutputPort(const Net *net);
   Point location(Instance *inst);
   void setLocation(Instance *inst,
                    Point pt);
@@ -475,7 +483,7 @@ protected:
   void findLoads(Pin *drvr_pin,
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
-  bool isSpecial(Net *net);
+  bool hasPins(Net *net);
   Point tieLocation(Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);
@@ -542,7 +550,7 @@ protected:
                                BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
-  bool removeBuffer(Instance *buffer);
+  void removeBuffer(Instance *buffer);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -619,7 +627,7 @@ protected:
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
-  static constexpr int rebuffer_max_fanout_ = 40;
+  static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
 
   friend class BufferedNet;

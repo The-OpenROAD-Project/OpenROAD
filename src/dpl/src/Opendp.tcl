@@ -93,19 +93,20 @@ proc set_placement_padding { args } {
   }
 }
 
-sta::define_cmd_args "filler_placement" { filler_masters }
+sta::define_cmd_args "filler_placement" { [-prefix prefix] filler_masters }
 
 proc filler_placement { args } {
-  sta::check_argc_eq1 "filler_placement" $args
-  set fillers [dpl::get_masters_arg "filler_masters" [lindex $args 0]]
-  if { [llength $fillers] > 0 } {
-    # pass master names for now
-    set filler_names {}
-    foreach filler $fillers {
-      lappend filler_names [$filler getConstName]
-    }
-    dpl::filler_placement_cmd $filler_names
+  sta::parse_key_args "filler_placement" args \
+    keys {-prefix} flags {}
+  
+  set prefix "FILLER_"
+  if { [info exists keys(-prefix)] } {
+    set prefix $keys(-prefix)
   }
+  
+  sta::check_argc_eq1 "filler_placement" $args
+  set filler_masters [dpl::get_masters_arg "filler_masters" [lindex $args 0]]
+  dpl::filler_placement_cmd $filler_masters $prefix
 }
 
 sta::define_cmd_args "check_placement" {[-verbose]}
@@ -131,25 +132,15 @@ namespace eval dpl {
 proc get_masters_arg { arg_name arg } {
   set matched 0
   set masters {}
-  # Look for liberty cells via get_lib_cells.
-  set cells [sta::get_lib_cells_arg $arg_name $arg sta::warn]
-  if { $cells != {} } {
-    foreach cell $cells {
-      set db_master [sta::sta_to_db_master $cell]
-      lappend masters $db_master
-      set matched 1
-    }
-  } else {
-    # Expand master name regexps
-    set db [ord::get_db]
-    foreach name $arg {
-      foreach lib [$db getLibs] {
-        foreach master [$lib getMasters] {
-          set master_name [$master getConstName]
-          if { [regexp $name $master_name] } {
-            lappend masters $master
-            set matched 1
-          }
+  # Expand master name regexps
+  set db [ord::get_db]
+  foreach name $arg {
+    foreach lib [$db getLibs] {
+      foreach master [$lib getMasters] {
+        set master_name [$master getConstName]
+        if { [regexp $name $master_name] } {
+          lappend masters $master
+          set matched 1
         }
       }
     }

@@ -34,12 +34,11 @@ using namespace fr;
 void FlexTAWorker::initTracks()
 {
   trackLocs_.clear();
-  trackLocs_.resize(getDesign()->getTech()->getLayers().size());
-  vector<set<frCoord>> trackCoordSets(
-      getDesign()->getTech()->getLayers().size());
+  const int numLayers = getDesign()->getTech()->getLayers().size();
+  trackLocs_.resize(numLayers);
+  vector<set<frCoord>> trackCoordSets(numLayers);
   // uPtr for tp
-  for (int lNum = 0; lNum < (int) getDesign()->getTech()->getLayers().size();
-       lNum++) {
+  for (int lNum = 0; lNum < (int) numLayers; lNum++) {
     auto layer = getDesign()->getTech()->getLayer(lNum);
     if (layer->getType() != frLayerTypeEnum::ROUTING) {
       continue;
@@ -52,27 +51,25 @@ void FlexTAWorker::initTracks()
           || (getDir() == frcVertPrefRoutingDir
               && tp->isHorizontal() == true)) {
         bool isH = (getDir() == frcHorzPrefRoutingDir);
-        frCoord tempCoord1
+        frCoord lowCoord
             = (isH ? getRouteBox().bottom() : getRouteBox().left());
-        frCoord tempCoord2
+        frCoord highCoord
             = (isH ? getRouteBox().top() : getRouteBox().right());
         int trackNum
-            = (tempCoord1 - tp->getStartCoord()) / (int) tp->getTrackSpacing();
+            = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
         if (trackNum < 0) {
           trackNum = 0;
         }
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-            < tempCoord1) {
+            < lowCoord) {
           trackNum++;
         }
         for (; trackNum < (int) tp->getNumTracks()
                && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                      < tempCoord2;
+                      < highCoord;
              trackNum++) {
           frCoord trackCoord
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
-          // cout <<"TRACKLOC " <<trackCoord * 1.0 /
-          // getDesign()->getTopBlock()->getDBUPerUU() <<endl;
           trackCoordSets[lNum].insert(trackCoord);
         }
       }
@@ -219,7 +216,6 @@ void FlexTAWorker::initIroute_helper(frGuide* guide,
 void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
                                                     frCoord& wlen2)
 {
-
   frPoint bp, ep;
   guide->getPoints(bp, ep);
   auto net = guide->getNet();
@@ -514,7 +510,6 @@ void FlexTAWorker::initIroutes()
       initIroute(guide);
     }
   }
-
 }
 
 void FlexTAWorker::initCosts()

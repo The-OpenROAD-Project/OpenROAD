@@ -487,6 +487,9 @@ void lefout::writeLayer(dbTechLayer* layer)
   fprintf(_out, "\nLAYER %s\n", name.c_str());
   fprintf(_out, "    TYPE %s ;\n", layer->getType().getString());
 
+  if (layer->getNumMasks() > 1)
+    fprintf(_out, "    MASK %u ;\n", layer->getNumMasks());
+
   if (layer->getPitch())
     fprintf(_out, "    PITCH %g ;\n", lefdist(layer->getPitch()));
 

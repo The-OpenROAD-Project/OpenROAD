@@ -1,32 +1,33 @@
-TAP 0001 tapcell.tcl:327           Macro blocks found: $block_count
-TAP 0002 tapcell.tcl:328           Original rows: $rows_count
-TAP 0003 tapcell.tcl:329           Created rows: $cut_rows_count
-TAP 0004 tapcell.tcl:421           Endcaps inserted: $endcap_count
-TAP 0005 tapcell.tcl:590           Tapcells inserted: $tapcell_count
-TAP 0006 tapcell.tcl:677           Top/bottom cells inserted: $topbottom_cnt
-TAP 0007 tapcell.tcl:862           Cells inserted near blkgs: $blkgs_cnt
-TAP 0009 tapcell.tcl:406           row [$subrow getName] have enough space for only one endcap.
-TAP 0010 tapcell.tcl:194           Master $endcap_master_name not found.
-TAP 0011 tapcell.tcl:474           Master $tapcell_master not found.
-TAP 0012 tapcell.tcl:349           Master $cnrcap_nwin_master_name not found.
-TAP 0013 tapcell.tcl:354           Master $cnrcap_nwout_master_name not found.
-TAP 0014 tapcell.tcl:80            endcap_cpp option is deprecated.
-TAP 0015 tapcell.tcl:152           tbtie_cpp option is deprecated.
-TAP 0016 tapcell.tcl:156           no_cell_at_top_bottom option is deprecated.
-TAP 0017 tapcell.tcl:159           add_boundary_cell option is deprecated.
-TAP 0018 tapcell.tcl:626           Master $tap_nwintie_master_name not found.
-TAP 0019 tapcell.tcl:630           Master $tap_nwin2_master_name not found.
-TAP 0020 tapcell.tcl:634           Master $tap_nwin3_master_name not found.
-TAP 0021 tapcell.tcl:638           Master $tap_nwouttie_master_name not found.
-TAP 0022 tapcell.tcl:642           Master $tap_nwout2_master_name not found.
-TAP 0023 tapcell.tcl:646           Master $tap_nwout3_master_name not found.
-TAP 0024 tapcell.tcl:748           Master $tap_nwintie_master_name not found.
-TAP 0025 tapcell.tcl:752           Master $tap_nwin2_master_name not found.
-TAP 0026 tapcell.tcl:756           Master $tap_nwin3_master_name not found.
-TAP 0027 tapcell.tcl:760           Master $tap_nwouttie_master_name not found.
-TAP 0028 tapcell.tcl:764           Master $tap_nwout2_master_name not found.
-TAP 0029 tapcell.tcl:768           Master $tap_nwout3_master_name not found.
-TAP 0030 tapcell.tcl:772           Master $incnrcap_nwin_master_name not found.
-TAP 0031 tapcell.tcl:776           Master $incnrcap_nwout_master_name not found.
-TAP 0100 tapcell.tcl:248           Tap cells removed: $taps_removed
-TAP 0101 tapcell.tcl:250           Endcaps removed: $endcaps_removed
+TAP 0001 tapcell.tcl:341           Macro blocks found: $block_count
+TAP 0002 tapcell.tcl:342           Original rows: $rows_count
+TAP 0003 tapcell.tcl:343           Created rows: $cut_rows_count
+TAP 0004 tapcell.tcl:435           Endcaps inserted: $endcap_count
+TAP 0005 tapcell.tcl:592           Tapcells inserted: $tapcell_count
+TAP 0006 tapcell.tcl:679           Top/bottom cells inserted: $topbottom_cnt
+TAP 0007 tapcell.tcl:871           Cells inserted near blkgs: $blkgs_cnt
+TAP 0009 tapcell.tcl:420           row [$subrow getName] have enough space for only one endcap.
+TAP 0010 tapcell.tcl:190           Master $endcap_master_name not found.
+TAP 0011 tapcell.tcl:488           Master $tapcell_master not found.
+TAP 0012 tapcell.tcl:363           Master $cnrcap_nwin_master_name not found.
+TAP 0013 tapcell.tcl:368           Master $cnrcap_nwout_master_name not found.
+TAP 0014 tapcell.tcl:75            endcap_cpp option is deprecated.
+TAP 0015 tapcell.tcl:147           tbtie_cpp option is deprecated.
+TAP 0016 tapcell.tcl:151           no_cell_at_top_bottom option is deprecated.
+TAP 0017 tapcell.tcl:154           add_boundary_cell option is deprecated.
+TAP 0018 tapcell.tcl:628           Master $tap_nwintie_master_name not found.
+TAP 0019 tapcell.tcl:632           Master $tap_nwin2_master_name not found.
+TAP 0020 tapcell.tcl:636           Master $tap_nwin3_master_name not found.
+TAP 0021 tapcell.tcl:640           Master $tap_nwouttie_master_name not found.
+TAP 0022 tapcell.tcl:644           Master $tap_nwout2_master_name not found.
+TAP 0023 tapcell.tcl:648           Master $tap_nwout3_master_name not found.
+TAP 0024 tapcell.tcl:757           Master $tap_nwintie_master_name not found.
+TAP 0025 tapcell.tcl:761           Master $tap_nwin2_master_name not found.
+TAP 0026 tapcell.tcl:765           Master $tap_nwin3_master_name not found.
+TAP 0027 tapcell.tcl:769           Master $tap_nwouttie_master_name not found.
+TAP 0028 tapcell.tcl:773           Master $tap_nwout2_master_name not found.
+TAP 0029 tapcell.tcl:777           Master $tap_nwout3_master_name not found.
+TAP 0030 tapcell.tcl:781           Master $incnrcap_nwin_master_name not found.
+TAP 0031 tapcell.tcl:785           Master $incnrcap_nwout_master_name not found.
+TAP 0032 tapcell.tcl:987           Macro [$inst getName] is not placed
+TAP 0100 tapcell.tcl:249           Tap cells removed: $taps_removed
+TAP 0101 tapcell.tcl:251           Endcaps removed: $endcaps_removed

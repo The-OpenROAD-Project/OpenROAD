@@ -1,0 +1,30 @@
+name: GitHub Actions Cron sync this fork from upstream
+# on push can specify branch
+on:
+  schedule:
+  - cron: "0/30 * * * *"
+  workflow_dispatch:
+  repository_dispatch:
+
+jobs:
+  Sync-Fork-From-Upstream:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          ref: master
+          token: ${{ secrets.GITHUBPUBLICREPOTOKEN }}
+
+      
+      - name: Pull Upstream
+        uses: The-OpenROAD-Project/actions/upstream_sync@main
+        with:
+          upstreamRepoUrl: https://github.com/The-OpenROAD-Project/OpenROAD.git
+          upstreamBranch: master
+                

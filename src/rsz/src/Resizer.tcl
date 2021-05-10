@@ -103,7 +103,9 @@ proc set_layer_rc {args} {
     }
     
     if { [info exists keys(-resistance)] } {
-      set res [sta::resistance_ui_sta $keys(-resistance)]
+      set res $keys(-resistance)
+      sta::check_positive_float "-resistance" $res
+      set res [sta::resistance_ui_sta $res]
 
       if { $corners == "NULL" } {
         set corners [sta::corners]
