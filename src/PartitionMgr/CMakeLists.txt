@@ -55,7 +55,7 @@ target_sources(PartitionMgr
     src/MakePartitionMgr.cpp
     src/PartitionMgr.cpp
     src/HypergraphDecomposition.cpp
-    src/PartitionVerilog.cpp
+    src/PartitionNetwork.cpp
 )
 
 if (LOAD_PARTITIONERS)
