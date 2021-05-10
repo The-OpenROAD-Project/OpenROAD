@@ -49,26 +49,10 @@ using ord::getPartitionMgr;
 
 %include "../../Exception.i"
 
-%typemap(in) std::vector<int>* {
-  Tcl_Obj **listobjv;
-  int       nitems;
-  int       i;
-  if (Tcl_ListObjGetElements(interp, $input, &nitems, &listobjv) == TCL_ERROR){
-     return TCL_ERROR;
-  }
-
-  $1 = new std::vector<int>();
-  for (i = 0; i < nitems; i++) {
-    int tmp;
-    if (Tcl_GetIntFromObj(interp, listobjv[i], &tmp) == TCL_ERROR){
-      return TCL_ERROR;
-    }
-    $1->push_back(tmp);
-  }
+%import <std_vector.i>
+namespace std {
+  %template(IntVector) vector<int>;
 }
-%typemap(freearg) std::vector<int>* %{
-    delete $1;
-%}
 
 %inline %{
 

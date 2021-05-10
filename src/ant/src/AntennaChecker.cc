@@ -40,6 +40,7 @@
 #include "opendb/db.h"
 #include "opendb/dbTypes.h"
 #include "opendb/dbWireGraph.h"
+#include "opendb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 
@@ -1661,7 +1662,14 @@ void AntennaChecker::check_antenna_cell()
 
 int AntennaChecker::check_antennas(std::string path, bool simple_report)
 {
-  std::string bname = db_->getChip()->getBlock()->getName();
+  odb::dbBlock *block = db_->getChip()->getBlock();
+  odb::orderWires(block,
+                  nullptr /* net_name_or_id*/,
+                  false /* force */,
+                  false /* verbose */,
+                  true /* quiet */);
+
+  std::string bname = block->getName();
   std::vector<int> nets_info = GetAntennaRatio(path, simple_report);
   if (nets_info[2] != 0) {
     logger_->info(ANT, 1, "Found {} pin violatations.", nets_info[0]);
