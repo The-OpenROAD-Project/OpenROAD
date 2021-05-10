@@ -33,6 +33,7 @@
 
 #include <errno.h>
 
+#include "opendb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 
@@ -470,11 +471,17 @@ bool Ext::flatten(odb::dbBlock* block, bool spef)
 bool Ext::extract(ExtractOptions opts)
 {
   _ext->setBlockFromChip();
+  odb::dbBlock *block = _ext->getBlock();
   logger_->info(RCX,
                 8,
                 "extracting parasitics of {} ...",
-                _ext->getBlock()->getName().c_str());
+                block->getConstName());
 
+  odb::orderWires(block,
+                  nullptr /* net_name_or_id*/,
+                  false /* force */,
+                  false /* verbose */,
+                  true /* quiet */);
   if (opts.lef_rc) {
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
@@ -565,10 +572,10 @@ bool Ext::extract(ExtractOptions opts)
     //_ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
   }
   /*
-  else if (tilingDegree==77) {
-          extdbg= 703;
-          _ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
-  }
+    else if (tilingDegree==77) {
+    extdbg= 703;
+    _ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
+    }
   */
   else if (tilingDegree == 8)
     extdbg = 803;
@@ -667,7 +674,7 @@ bool Ext::extract(ExtractOptions opts)
                                this)
           == 0) {
         logger_->warn(
-            RCX, 13, "Failed to Extract block {}...", blk->getConstName());
+                      RCX, 13, "Failed to Extract block {}...", blk->getConstName());
         return TCL_ERROR;
       }
     }
@@ -707,7 +714,7 @@ bool Ext::extract(ExtractOptions opts)
   //    fprintf(stdout, "Finished extracting %s.\n",
   //    _ext->getBlock()->getName().c_str());
   logger_->info(
-      RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
+                RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
   return 0;
 }
 
