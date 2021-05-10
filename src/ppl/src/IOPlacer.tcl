@@ -172,6 +172,10 @@ proc set_io_pin_constraint { args } {
   }
 }
 
+proc clear_constraints {} {
+  ppl::clear_constraints
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
