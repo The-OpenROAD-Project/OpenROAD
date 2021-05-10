@@ -55,6 +55,7 @@ namespace par {
 using utl::PAR;
 
 using sta::Network;
+using sta::ConcreteNetwork;
 using sta::Library;
 using sta::Cell;
 using sta::Instance;
@@ -407,6 +408,8 @@ void PartitionMgr::writePartitionVerilog(const char* path,
       }
     }
   }
+
+  reinterpret_cast<ConcreteNetwork*>(network)->setTopInstance(top_inst);
 
   writeVerilog(path, false, false, {}, network);
 
