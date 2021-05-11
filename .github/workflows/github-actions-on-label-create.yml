@@ -14,6 +14,7 @@ jobs:
         run: |
           echo "Cleaning up previous run"
           rm -rf "${{ github.workspace }}"
+          
       - name: Check out repository code
         uses: actions/checkout@v2
         with:
