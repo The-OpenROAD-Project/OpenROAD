@@ -276,6 +276,12 @@ clear()
   getIOPlacer()->clear();
 }
 
+void
+clear_constraints()
+{
+  getIOPlacer()->clearConstraints();
+}
+
 } // namespace
 
 %} // inline

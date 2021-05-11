@@ -1,9 +1,9 @@
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2019, OpenROAD
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2019, University of California, San Diego.
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,20 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <array>
 
-namespace par {
-class PartitionMgr;
+namespace rcx {
+
+// CoupleOptions seriously needs to be rewriten to use a class with named members.
+// -cherry 05/09/2021
+typedef std::array<int, 21> CoupleOptions;
+typedef void (*CoupleAndCompute)(CoupleOptions&, void*);
+
 }
-
-namespace ord {
-
-class OpenRoad;
-
-par::PartitionMgr* makePartitionMgr();
-
-void initPartitionMgr(OpenRoad* openroad);
-
-void deletePartitionMgr(par::PartitionMgr* partitionmgr);
-
-}  // namespace ord

@@ -33,6 +33,7 @@
 
 #include <errno.h>
 
+#include "opendb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 #include "opendb/wOrder.h"
@@ -471,14 +472,13 @@ bool Ext::flatten(odb::dbBlock* block, bool spef)
 bool Ext::extract(ExtractOptions opts)
 {
   _ext->setBlockFromChip();
+  odb::dbBlock *block = _ext->getBlock();
   logger_->info(RCX,
                 8,
                 "extracting parasitics of {} ...",
-                _ext->getBlock()->getName().c_str());
+                block->getConstName());
 
-  // orderWires encodes the db wires in a connectivity graph that is
-  // required by rcx.
-  odb::orderWires(_ext->getBlock(),
+  odb::orderWires(block,
                   nullptr /* net_name_or_id*/,
                   false /* force */,
                   false /* verbose */,

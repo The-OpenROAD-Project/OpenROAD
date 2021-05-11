@@ -174,7 +174,6 @@ public:
 	       bool make_library);
 
   void readDef(const char *filename,
-               bool order_wires,
                bool continue_on_errors,
                bool floorplan_init,
                bool incremental);
