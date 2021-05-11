@@ -1380,11 +1380,11 @@ NetRouteMap FastRouteCore::run()
 
   updateDbCongestion();
 
-  if (totalOverflow > 0 && has_2D_overflow && !allowOverflow) {
+  if (has_2D_overflow && !allowOverflow) {
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
-  if (allowOverflow && totalOverflow > 0) {
+  if (totalOverflow > 0) {
     logger->warn(GRT, 115, "Global routing finished with overflow.");
   }
 
