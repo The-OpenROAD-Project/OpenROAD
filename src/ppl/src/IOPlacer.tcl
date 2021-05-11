@@ -172,6 +172,10 @@ proc set_io_pin_constraint { args } {
   }
 }
 
+proc clear_constraints {} {
+  ppl::clear_constraints
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
@@ -534,7 +538,7 @@ proc parse_pin_names {cmd names} {
     if { $db_bterm != "NULL" } {
       lappend pin_list $db_bterm
     } else {
-      utl::warn PPL 44 "Pin $pin_name not found for command $cmd"
+      utl::warn PPL 44 "Pin [get_property $pin name] not found for command $cmd"
     }
   }
 

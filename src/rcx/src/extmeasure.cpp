@@ -1539,7 +1539,7 @@ void extMeasure::updateForBench(extMainOptions* opt, extMain* extMain)
   _create_net_util.setBlock(_block, false);
   _dbunit = _block->getDbUnitsPerMicron();
 }
-uint extMeasure::defineBox(int* options)
+uint extMeasure::defineBox(CoupleOptions &options)
 {
   _no_debug = false;
   _met = options[0];
@@ -3910,7 +3910,7 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
   return totLenCovered;
 }
 
-void extMeasure::measureRC(int* options)
+void extMeasure::measureRC(CoupleOptions &options)
 {
   // return;
 
@@ -4447,7 +4447,7 @@ void extMeasure::getDgOverlap(SEQ* sseq,
   dgContext->get(0)->_ll[0] = idx;
 }
 
-void extMeasure::getDgOverlap(int* options)
+void extMeasure::getDgOverlap(CoupleOptions &options)
 {
   int ttttprintOverlap = 1;
   int srcseqcnt = 0;

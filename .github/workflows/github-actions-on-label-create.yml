@@ -20,8 +20,8 @@ jobs:
       - name: run security scan
         uses: The-OpenROAD-Project/actions/security_scan_on_push@main
         
-      - name: add remote
-        run: git remote add staging https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
+      - name: change remote to staging
+        run: git remote set-url origin https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
       - name: git status
         run: git status
       - name: Current label
@@ -29,6 +29,5 @@ jobs:
       - name: pr info
         run: echo ${{toJson(github.event.pull_request.head.ref)}} 
       - name: push to staging
-        run: git push staging
-         
+        run: git push
         

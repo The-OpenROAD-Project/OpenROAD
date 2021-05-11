@@ -1,6 +1,6 @@
 source "helpers.tcl"
 read_lef merged_spacing.lef
-read_def -order_wires sw130_random.def
+read_def sw130_random.def
 
 # start checking antennas and generate a detail report
 check_antennas -report_file [make_result_file "sw130_random_simple.rpt"] -simple_report

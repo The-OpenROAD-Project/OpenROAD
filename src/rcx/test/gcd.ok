@@ -12,10 +12,10 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Notice 0: Split top of 102 T shapes.
 [INFO RCX-0431] Defined process_corner X with ext_model_index 0
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0008] extracting parasitics of gcd ...
+Notice 0: Split top of 102 T shapes.
 [INFO RCX-0435] Reading extraction model file ext_pattern.rules ...
 [INFO RCX-0432] Database dbFactor= 1.0  dbunit= 1000
 [INFO RCX-0436] RC segment generation gcd (max_merge_res 0.0) ...
