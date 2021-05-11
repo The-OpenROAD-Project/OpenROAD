@@ -56,6 +56,7 @@ target_sources(PartitionMgr
     src/PartitionMgr.cpp
     src/HypergraphDecomposition.cpp
     src/PartitionNetwork.cpp
+    src/PartOptions.cpp
 )
 
 if (LOAD_PARTITIONERS)

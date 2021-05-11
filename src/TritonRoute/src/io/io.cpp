@@ -125,7 +125,7 @@ frOrientEnum getFrOrient(odb::dbOrientType orient)
     case odb::dbOrientType::MY:
       return frOrientEnum::frcMY;
     case odb::dbOrientType::MYR90:
-      return frOrientEnum::frcMXR90;
+      return frOrientEnum::frcMYR90;
     case odb::dbOrientType::MX:
       return frOrientEnum::frcMX;
     case odb::dbOrientType::MXR90:
@@ -1952,6 +1952,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           layerNum = tech->name2layer.at(layer)->getLayerNum();
         auto blkIn = make_unique<frBlockage>();
         blkIn->setId(numBlockages);
+        blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages++;
         auto pinIn = make_unique<frPin>();
         pinIn->setId(0);

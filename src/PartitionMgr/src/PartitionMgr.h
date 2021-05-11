@@ -37,6 +37,7 @@
 
 #include "HypergraphDecomposition.h"
 
+#include <random>
 #include <set>
 
 namespace odb {
@@ -109,8 +110,11 @@ class PartOptions
   unsigned getBalanceConstraint() const { return _balanceConstraint; }
   void setRefinement(unsigned number) { _refinement = number; }
   unsigned getRefinement() const { return _refinement; }
-  void setSeeds(const std::vector<int>& seeds) { _seeds = seeds; }
-  const std::vector<int>& getSeeds() const { return _seeds; }
+  void setRandomSeed(int seed);
+  void generateSeeds(int seeds);
+  int getNewSeed() { return seedGenerator_(); }
+  void setSeeds(const std::set<int>& seeds) { _seeds = seeds; }
+  const std::set<int>& getSeeds() const { return _seeds; }
   void setExistingID(int id) { _existingId = id; }
   int getExistingID() const { return _existingId; }
   void setPartitionsToTest(const std::vector<int>& partIds)
@@ -160,9 +164,10 @@ class PartOptions
   unsigned _finalPartitions = 2;
   bool _forceGraph = false;
   std::vector<int> _archTopology;
-  std::vector<int> _seeds;
+  std::set<int> _seeds;
   std::vector<int> _partitionsToTest;
   std::string _clusteringScheme = "scheme1";
+  std::mt19937 seedGenerator_ = std::mt19937();
 };
 
 class PartSolutions
