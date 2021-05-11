@@ -125,7 +125,7 @@ frOrientEnum getFrOrient(odb::dbOrientType orient)
     case odb::dbOrientType::MY:
       return frOrientEnum::frcMY;
     case odb::dbOrientType::MYR90:
-      return frOrientEnum::frcMXR90;
+      return frOrientEnum::frcMYR90;
     case odb::dbOrientType::MX:
       return frOrientEnum::frcMX;
     case odb::dbOrientType::MXR90:
