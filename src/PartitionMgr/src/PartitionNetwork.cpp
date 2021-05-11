@@ -59,7 +59,6 @@ using sta::ConcreteNetwork;
 using sta::Library;
 using sta::Cell;
 using sta::Instance;
-using sta::InstancePinIterator;
 using sta::Net;
 using sta::Port;
 using sta::PortDirection;
@@ -200,31 +199,27 @@ PartitionMgr::buildPartitionedInstance(
     for (dbInst* db_inst : *insts) {
       for (dbITerm* term : db_inst->getITerms()) {
         dbNet* db_net = term->getNet();
-        if (db_net == nullptr) // not connected
-          continue;
+        if (db_net != nullptr && // connected
+            port_map->find(db_net) == port_map->end()) {// port not present
+          // check if connected to anything in a different partition
+          bool added_internal_port = false;
+          for (dbITerm* iterms : db_net->getITerms()) {
+            if (added_internal_port)
+              break;
 
-        // port already present
-        if (port_map->find(db_net) != port_map->end())
-          continue;
+            PortDirection* port_dir = determinePortDirection(db_net, insts);
+            if (port_dir != nullptr) {
+              std::string port_name = port_prefix;
+              port_name += db_net->getName();
 
-        // check if connected to anything in a different partition
-        bool added_internal_port = false;
-        for (dbITerm* iterms : db_net->getITerms()) {
-          if (added_internal_port)
-            break;
+              Port* port = network->makePort(cell, port_name.c_str());
+              network->setDirection(port, port_dir);
 
-          PortDirection* port_dir = determinePortDirection(db_net, insts);
-          if (port_dir != nullptr) {
-            std::string port_name = port_prefix;
-            port_name += db_net->getName();
+              port_map->insert({db_net, port});
 
-            Port* port = network->makePort(cell, port_name.c_str());
-            network->setDirection(port, port_dir);
-
-            port_map->insert({db_net, port});
-
-            added_internal_port = true;
-            break;
+              added_internal_port = true;
+              break;
+            }
           }
         }
       }
@@ -313,22 +308,21 @@ PartitionMgr::buildPartitionedInstance(
                                                   inst);
       for (dbITerm* term : db_inst->getITerms()) {
         dbNet* db_net = term->getNet();
-        if (db_net == nullptr) // not connected
-          continue;
+        if (db_net != nullptr) { // connected
+          Port* port = db_network->dbToSta(term->getMTerm());
 
-        Port* port = db_network->dbToSta(term->getMTerm());
-
-        // check if connected to a port
-        auto port_find = port_map->find(db_net);
-        if (port_find != port_map->end()) {
-          Net* net = network->findNet(inst, network->name(port_find->second));
-          network->connect(leaf_inst, port, net);
-        }
-        else {
-          Net* net = network->findNet(inst, db_net->getName().c_str());
-          if (net == nullptr)
-            net = network->makeNet(db_net->getName().c_str(), inst);
-          network->connect(leaf_inst, port, net);
+          // check if connected to a port
+          auto port_find = port_map->find(db_net);
+          if (port_find != port_map->end()) {
+            Net* net = network->findNet(inst, network->name(port_find->second));
+            network->connect(leaf_inst, port, net);
+          }
+          else {
+            Net* net = network->findNet(inst, db_net->getName().c_str());
+            if (net == nullptr)
+              net = network->makeNet(db_net->getName().c_str(), inst);
+            network->connect(leaf_inst, port, net);
+          }
         }
       }
     }
@@ -352,19 +346,18 @@ void PartitionMgr::writePartitionVerilog(const char* path,
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
       _logger->warn(PAR, 15, "Property not found for inst {}", inst->getName());
-      continue;
     }
+    else {
+      long partition = prop_id->getValue();
+      if (instance_map.find(partition) == instance_map.end())
+        instance_map.emplace(partition, std::set<dbInst*>());
 
-    long partition = prop_id->getValue();
-    if (instance_map.find(partition) == instance_map.end())
-      instance_map.emplace(partition, std::set<dbInst*>());
-
-    instance_map[partition].insert(inst);
+      instance_map[partition].insert(inst);
+    }
   }
 
-  dbSta* db_sta = ord::OpenRoad::openRoad()->getSta();
   // get top module name
-  dbNetwork* db_network = db_sta->getDbNetwork();
+  dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
   std::string top_name = db_network->name(db_network->topInstance());
 
   // create new network and library
