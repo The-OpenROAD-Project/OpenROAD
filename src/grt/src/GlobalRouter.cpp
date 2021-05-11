@@ -742,7 +742,7 @@ int GlobalRouter::computeTrackConsumption(const Net* net, std::vector<int>& edge
       int ndr_pitch = 2 * (std::ceil(ndr_width/2 + ndr_spacing + default_width/2 - default_pitch));
 
       int consumption = std::ceil((float)ndr_pitch/default_pitch);
-      edgeCostsPerLayer[layerIdx] = consumption;
+      edgeCostsPerLayer[layerIdx-1] = consumption;
 
       trackConsumption = std::max(trackConsumption, consumption);
     }
