@@ -22,6 +22,7 @@ partition_netlist   -tool name \
                     [-max_edge_weight value] \
                     [-max_vertex_weight range] \
                     [-num_starts value] \
+                    [-random_seed value] \
                     [-seeds value] \
                     [-balance_constraint value] \
                     [-coarsening_ratio value] \
@@ -43,6 +44,7 @@ Argument description:
 - ``max_edge_weight`` defines the max weight of an edge.
 - ``max_vertex_weight`` defines the max weight of a vertex.
 - ``num_starts`` is the number of solutions generated with different random seeds.
+- ``random_seed`` is the seed used when generating new ransom set seeds.
 - ``seeds`` is the number of solutions generated with set seeds.
 - ``balance_constraint`` is the max vertex area percentage difference among partitions. E.g., a 50% difference means one partition can hold up to 25% larger area during a 2-way partition.
 - ``coarsening_ratio`` defines the minimal acceptable reduction in the number of vertices in the coarsening step.
