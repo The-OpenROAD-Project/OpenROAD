@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'The-OpenROAD-Project-private' && github.event.label.name == 'Ready To Sync Public'
     steps:
+      - name: Clean repo
+        run: rm -rf OpenROAD
       - name: Check out repository code
         uses: actions/checkout@v2
         with:
