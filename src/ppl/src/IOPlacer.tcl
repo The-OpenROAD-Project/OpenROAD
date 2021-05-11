@@ -172,7 +172,7 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-proc clear_constraints {} {
+proc clear_io_pin_constraints {} {
   ppl::clear_constraints
 }
 
