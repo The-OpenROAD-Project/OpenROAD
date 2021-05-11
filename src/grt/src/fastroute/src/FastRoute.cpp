@@ -1309,6 +1309,8 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
+  bool has_2D_overflow = totalOverflow > 0;
+
   if (minofl > 0) {
     logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
     copyBR();
@@ -1378,7 +1380,7 @@ NetRouteMap FastRouteCore::run()
 
   updateDbCongestion();
 
-  if (totalOverflow > 0 && !allowOverflow) {
+  if (totalOverflow > 0 && has_2D_overflow && !allowOverflow) {
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
