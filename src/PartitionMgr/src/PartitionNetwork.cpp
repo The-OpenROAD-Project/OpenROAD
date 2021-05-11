@@ -59,7 +59,7 @@ using sta::ConcreteNetwork;
 using sta::Library;
 using sta::Cell;
 using sta::Instance;
-using sta::ConcreteInstance;
+using sta::InstancePinIterator;
 using sta::Net;
 using sta::Port;
 using sta::PortDirection;
@@ -158,15 +158,9 @@ PartitionMgr::buildPartitionedInstance(
   dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
   dbBlock* block = getDbBlock();
 
-  // make cell and instance
+  // build cell
   Cell* cell = network->makeCell(library, name, false, nullptr);
-  std::string instname = name;
-  instname += "_inst";
-  Instance* inst = network->makeInstance(cell, instname.c_str(), parent);
 
-  Instance* top_cell_inst = db_network->dbToSta(block->getParentInst());
-
-  std::map<dbNet*, Net*> net_map;
   // add global ports
   for (dbBTerm* bterm : block->getBTerms()) {
     bool add_port = parent == nullptr; // add port if parent
@@ -198,11 +192,10 @@ PartitionMgr::buildPartitionedInstance(
 
       if (port_map != nullptr)
         port_map->insert({net, port});
-      net_map[net] = network->makeNet(portname.c_str(), inst);
     }
   }
 
-  // make internal ports for partitions and if port is not needed, make net instead.
+  // make internal ports for partitions and if port is not needed.
   if (insts != nullptr) {
     for (dbInst* db_inst : *insts) {
       for (dbITerm* term : db_inst->getITerms()) {
@@ -229,36 +222,11 @@ PartitionMgr::buildPartitionedInstance(
             network->setDirection(port, port_dir);
 
             port_map->insert({db_net, port});
-            net_map[db_net] = network->makeNet(port_name.c_str(), inst);
 
             added_internal_port = true;
             break;
           }
         }
-        if (added_internal_port) // added port, no need for net
-          continue;
-
-        // add net
-        if (net_map.find(db_net) != net_map.end()) // check if net is there.
-          continue;
-
-        net_map[db_net] = network->makeNet(db_net->getName().c_str(), inst);
-      }
-    }
-
-    // create and connect instances
-    for (dbInst* db_inst : *insts) {
-      Instance* leaf_inst = network->makeInstance(db_network->dbToSta(db_inst->getMaster()),
-                                                  db_inst->getName().c_str(),
-                                                  inst);
-      for (dbITerm* term : db_inst->getITerms()) {
-        dbNet* db_net = term->getNet();
-        if (db_net == nullptr) // not connected
-          continue;
-
-        auto net_find = net_map.find(db_net);
-        if (net_find != net_map.end())
-          network->connect(leaf_inst, db_network->dbToSta(term->getMTerm()), net_find->second);
       }
     }
   }
@@ -324,10 +292,47 @@ PartitionMgr::buildPartitionedInstance(
       }
     }
   }
-
   network->groupBusPorts(cell);
-  // required to ensure pins_ in instance is initialized.
-  reinterpret_cast<ConcreteInstance*>(inst)->initPins();
+
+  // build instance
+  std::string instname = name;
+  instname += "_inst";
+  Instance* inst = network->makeInstance(cell, instname.c_str(), parent);
+
+  if (port_map != nullptr) {
+    // create nets for ports in cell
+    for (auto& [db_net, port] : *port_map)
+      network->makeNet(network->name(port), inst);
+  }
+
+  if (insts != nullptr) {
+    // create and connect instances
+    for (dbInst* db_inst : *insts) {
+      Instance* leaf_inst = network->makeInstance(db_network->dbToSta(db_inst->getMaster()),
+                                                  db_inst->getName().c_str(),
+                                                  inst);
+      for (dbITerm* term : db_inst->getITerms()) {
+        dbNet* db_net = term->getNet();
+        if (db_net == nullptr) // not connected
+          continue;
+
+        Port* port = db_network->dbToSta(term->getMTerm());
+
+        // check if connected to a port
+        auto port_find = port_map->find(db_net);
+        if (port_find != port_map->end()) {
+          Net* net = network->findNet(inst, network->name(port_find->second));
+          network->connect(leaf_inst, port, net);
+        }
+        else {
+          Net* net = network->findNet(inst, db_net->getName().c_str());
+          if (net == nullptr)
+            net = network->makeNet(db_net->getName().c_str(), inst);
+          network->connect(leaf_inst, port, net);
+        }
+      }
+    }
+  }
 
   return inst;
 }
@@ -393,19 +398,13 @@ void PartitionMgr::writePartitionVerilog(const char* path,
   // connect submodule partitions in new top module
   for (auto& [partition, instance] : sta_instance_map) {
     for (auto& [portnet, port] : sta_port_map[partition]) {
+      const char* net_name = network->name(port);
 
-      dbBTerm* bterm = block->findBTerm(portnet->getName().c_str());
-      if (bterm != nullptr) { // global connection
-        Net* net = network->findNet(top_inst, portnet->getName().c_str());
-        network->connect(instance, port, net);
-      }
-      else { // partition connections
-        Net* net = network->findNet(top_inst, network->name(port));
-        if (net == nullptr)
-          net = network->makeNet(network->name(port), top_inst);
+      Net* net = network->findNet(top_inst, net_name);
+      if (net == nullptr)
+        net = network->makeNet(net_name, top_inst);
 
-        network->connect(instance, port, net);
-      }
+      network->connect(instance, port, net);
     }
   }
 
