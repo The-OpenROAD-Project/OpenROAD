@@ -35,14 +35,7 @@
 
 #include "PartitionMgr.h"
 
-#include <chrono>
-
 namespace par {
-
-void
-PartOptions::setRandomSeed() {
-  setRandomSeed(std::chrono::system_clock::now().time_since_epoch().count());
-}
 
 void
 PartOptions::setRandomSeed(int seed) {

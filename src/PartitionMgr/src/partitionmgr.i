@@ -133,10 +133,6 @@ void set_existing_id(int value) {
         getPartitionMgr()->getOptions().setExistingID(value);
 }
 
-void set_random_seed() {
-        getPartitionMgr()->getOptions().setRandomSeed();
-}
-
 void set_random_seed(int value) {
         getPartitionMgr()->getOptions().setRandomSeed(value);
 }

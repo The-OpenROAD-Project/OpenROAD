@@ -102,7 +102,6 @@ class PartOptions
   unsigned getBalanceConstraint() const { return _balanceConstraint; }
   void setRefinement(unsigned number) { _refinement = number; }
   unsigned getRefinement() const { return _refinement; }
-  void setRandomSeed();
   void setRandomSeed(int seed);
   void generateSeeds(int seeds);
   int getNewSeed() { return seedGenerator_(); }
