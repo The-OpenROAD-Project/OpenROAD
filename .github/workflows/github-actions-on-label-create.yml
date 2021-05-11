@@ -30,5 +30,10 @@ jobs:
         run: echo ${{toJson(github.event.pull_request.head.ref)}} 
       - name: push to staging
         run: git push staging
+      - name: Cleanup
+        if: ${{ always() }}
+        run: |
+          echo "Cleaning up previous run"
+          rm -rf "${{ github.workspace }}"
          
         
