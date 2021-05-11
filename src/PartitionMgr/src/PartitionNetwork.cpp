@@ -149,7 +149,7 @@ determineLibraryBrackets(dbNetwork* db_network, char* left, char* right) {
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
     *left = lib->busBrktLeft();
-    *right = lib->busBrktLeft();
+    *right = lib->busBrktRight();
   }
   delete lib_iter;
 }
@@ -251,8 +251,8 @@ PartitionMgr::buildPartitionedInstance(
   if (parent != nullptr) {
     // loop over buses and to ensure all bit ports are created, only needed for partitioned modules
     char path_escape = db_network->pathEscape();
-    char left_bracket; // library->busBrktLeft();
-    char right_bracket; // library->busBrktRight();
+    char left_bracket;
+    char right_bracket;
     determineLibraryBrackets(db_network, &left_bracket, &right_bracket);
     std::map<std::string, std::vector<Port*>> port_buses;
     for (auto& [net, port] : *port_map) {
