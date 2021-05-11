@@ -401,6 +401,7 @@ Bool newRipup3DType3(int netID, int edgeID)
   int i, k, grid, Zpoint, ymin, ymax, xmin, lv, lh, n1a, n2a, hl, bl, hid, bid,
       deg;
   int edgeCost = nets[netID]->edgeCost;
+  std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
 
   RouteType ripuptype;
   TreeEdge *treeedges, *treeedge;
@@ -511,12 +512,12 @@ Bool newRipup3DType3(int netID, int edgeID)
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage -= edgeCost;
+        v_edges3D[grid].usage -= edgeCostPerLayer[gridsL[i]];
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage -= edgeCost;
+        h_edges3D[grid].usage -= edgeCostPerLayer[gridsL[i]];
       } else {
         logger->error(GRT, 122, "Maze RipUp wrong.");
       }
