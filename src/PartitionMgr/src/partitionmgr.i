@@ -37,8 +37,6 @@
 #include "PartitionMgr.h"
 #include "ord/OpenRoad.hh"
 #include <algorithm>
-#include <iterator>
-#include <sstream>
 #include <time.h>
 
 namespace ord {
@@ -51,6 +49,10 @@ using ord::getPartitionMgr;
 
 %include "../../Exception.i"
 
+%import <std_vector.i>
+namespace std {
+  %template(IntVector) vector<int>;
+}
 
 %inline %{
 
@@ -110,12 +112,8 @@ void set_cut_hop_ratio(float value) {
         getPartitionMgr()->getOptions().setCutHopRatio(value);
 }
 
-void set_architecture(const char* topology) {
-        std::stringstream ss(topology);
-        std::istream_iterator<int> begin(ss);
-        std::istream_iterator<int> end;
-        std::vector<int> archTopology(begin, end);
-        getPartitionMgr()->getOptions().setArchTopology(archTopology);
+void set_architecture(const std::vector<int>& topology) {
+        getPartitionMgr()->getOptions().setArchTopology(topology);
 }
 
 void clear_architecture() {
@@ -127,12 +125,8 @@ void set_refinement(unsigned value) {
         getPartitionMgr()->getOptions().setRefinement(value);
 }
 
-void set_seeds(const char* seeds) {
-        std::stringstream ss(seeds);
-        std::istream_iterator<int> begin(ss);
-        std::istream_iterator<int> end;
-        std::vector<int> seedVector(begin, end);
-        getPartitionMgr()->getOptions().setSeeds(seedVector);
+void set_seeds(const std::vector<int>& seeds) {
+        getPartitionMgr()->getOptions().setSeeds(seeds);
 }
 
 void set_existing_id(int value) {
@@ -156,12 +150,8 @@ void generate_seeds(unsigned value) {
         getPartitionMgr()->getOptions().setSeeds(seedVector);
 }
 
-void set_partition_ids_to_test(const char* ids) {
-        std::stringstream ss(ids);
-        std::istream_iterator<int> begin(ss);
-        std::istream_iterator<int> end;
-        std::vector<int> partIds(begin, end);
-        getPartitionMgr()->getOptions().setPartitionsToTest(partIds);
+void set_partition_ids_to_test(const std::vector<int>& ids) {
+        getPartitionMgr()->getOptions().setPartitionsToTest(ids);
 }
 
 void set_evaluation_function(const char* function) {

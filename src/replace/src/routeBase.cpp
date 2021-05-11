@@ -54,7 +54,6 @@ using utl::GPL;
 
 namespace gpl {
 
-
 Tile::Tile()
 : x_(0), y_(0), 
   lx_(0), ly_(0), ux_(0), uy_(0),

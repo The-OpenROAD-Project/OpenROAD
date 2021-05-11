@@ -43,6 +43,7 @@
 #include "db.h"
 #include "geom.h"
 #include "gseq.h"
+#include "rcx.h"
 
 using namespace odb;
 
@@ -285,7 +286,7 @@ class Ath__track
                     ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     uint met,
-                    void (*coupleAndCompute)(int*, void*),
+                    rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
 
   uint findOverlap(Ath__wire* origWire,
@@ -296,7 +297,7 @@ class Ath__track
                    Ath__array1D<Ath__wire*>* ccTable,
                    ZInterface* context,
                    uint met,
-                   void (*coupleAndCompute)(int*, void*),
+                   rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr);
 
   void initTargetWire(int noPowerWire);
@@ -490,7 +491,7 @@ class Ath__grid
                     uint couplingDist,
                     ZInterface* context,
                     Ath__array1D<uint>* ccTable,
-                    void (*coupleAndCompute)(int*, void*),
+                    rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   AthPool<Ath__wire>* getWirePoolPtr();
   uint placeWire(Ath__wire* w);
@@ -508,14 +509,14 @@ class Ath__grid
   void gridContextOn(int orig, int len, int base, int width);
 
   int initCouplingCapLoops(uint couplingDist,
-                           void (*coupleAndCompute)(int*, void*),
+                           rcx::CoupleAndCompute coupleAndCompute,
                            void* compPtr,
                            bool startSearchTrack = true,
                            int startXY = 0);
   int couplingCaps(int hiXY,
                    uint couplingDist,
                    uint& wireCnt,
-                   void (*coupleAndCompute)(int*, void*),
+                   rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    int* limitArray);
   int dealloc(int hiXY);
@@ -720,7 +721,7 @@ class Ath__gridTable
                     uint couplingDist,
                     ZInterface* context,
                     Ath__array1D<uint>* ccTable,
-                    void (*coupleAndCompute)(int*, void*),
+                    rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   uint couplingCaps(uint row,
                     uint col,
@@ -815,13 +816,13 @@ class Ath__gridTable
                    uint couplingDist,
                    uint dir,
                    uint& wireCnt,
-                   void (*coupleAndCompute)(int*, void*),
+                   rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    bool getBandWire,
                    int** limitArray);
   void initCouplingCapLoops(uint dir,
                             uint couplingDist,
-                            void (*coupleAndCompute)(int*, void*),
+                            rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr,
                             int* startXY = NULL);
   int dealloc(uint dir, int hiXY);
