@@ -276,13 +276,6 @@ Place pins around core boundary.
 auto_place_pins pin_layer
 ```
 
-Get the die and core areas as a list "llx lly urx ury"
-
-```
-get_die_area
-get_core_area
-```
-
 #### Pin placement
 
 Place pins on the boundary of the die on the track grid to
@@ -952,3 +945,13 @@ Options description:
   the voltage value is obtained from operating conditions in the liberty.
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
+
+#### Utility functions
+
+Get the die and core areas as a list "llx lly urx ury" in microns
+
+```
+get_die_area
+get_core_area
+```
+
