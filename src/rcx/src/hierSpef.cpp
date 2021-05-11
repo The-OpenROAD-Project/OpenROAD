@@ -35,9 +35,9 @@
 
 #include <algorithm>
 
-#include "OpenRCX/extRCap.h"
-#include "OpenRCX/extSpef.h"
 #include "parse.h"
+#include "rcx/extRCap.h"
+#include "rcx/extSpef.h"
 #include "utl/Logger.h"
 
 //#ifdef _WIN32
@@ -263,7 +263,7 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
     odb::dbNet* parentNet = iterm->getNet();
     if (parentNet == NULL) {
       logger_->warn(RCX,
-                    233,
+                    408,
                     "Null parent[{}] net : {}",
                     net->getBTermCount(),
                     net->getConstName());

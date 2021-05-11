@@ -54,7 +54,7 @@ using boost::multi_array;
 // global variables
 extern int XRANGE, YRANGE;
 extern int xGrid, yGrid, numGrids, numNets, invalidNets, vCapacity, hCapacity;
-extern int *vCapacity3D, *hCapacity3D;
+extern short *vCapacity3D, *hCapacity3D;
 extern float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
 extern int layerOrientation;
 extern float alpha;

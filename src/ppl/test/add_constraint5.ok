@@ -14,6 +14,14 @@
 [INFO PPL-0048] Restrict pins [resp_val resp_rdy req_rdy req_val] to region 0.0u-100.13u at the bottom edge.
 [INFO PPL-0048] Restrict pins [req_msg[15] req_msg[14] resp_msg[15] resp_msg[14]] to region 0.0u-100.13u at the top edge.
 Found 0 macro blocks.
+[WARNING PPL-0075] Pin req_rdy is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin resp_msg[15] is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin resp_msg[14] is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin resp_val is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin req_msg[15] is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin req_msg[14] is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin req_val is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin resp_rdy is assigned to more than one constraints. Using last defined constraint.
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
 [INFO PPL-0002]  * Num of I/O            54

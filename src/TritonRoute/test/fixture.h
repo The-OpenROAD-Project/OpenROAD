@@ -45,6 +45,22 @@ class Fixture
 
   void makeDesign();
 
+  frBlock* makeMacro(const char* name,
+                     frCoord originX = 0,
+                     frCoord originY = 0,
+                     frCoord sizeX = 0,
+                     frCoord sizeY = 0);
+
+  frBlockage* makeMacroObs(frBlock* refBlock,
+                           frCoord xl,
+                           frCoord yl,
+                           frCoord xh,
+                           frCoord yh,
+                           frLayerNum lNum = 2,
+                           frCoord designRuleWidth = 0);
+
+  frInst* makeInst(const char* name, frBlock* refBlock, frCoord x, frCoord y);
+
   void makeCornerConstraint(frLayerNum layer_num,
                             frCoord eolWidth = -1,
                             frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
@@ -125,11 +141,22 @@ class Fixture
                 frcExtendEndStyle);
   }
 
+  frSpacingTableInfluenceConstraint* makeSpacingTableInfluenceConstraint(
+      frLayerNum layer_num,
+      std::vector<frCoord> widthTbl,
+      std::vector<std::pair<frCoord, frCoord>> valTbl);
+
+  frSpacingTableTwConstraint* makeSpacingTableTwConstraint(
+      frLayerNum layer_num,
+      std::vector<frCoord> widthTbl,
+      std::vector<frCoord> prlTbl,
+      std::vector<std::vector<frCoord>> spacingTbl);
   void initRegionQuery();
 
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<frDesign> design;
+  frUInt4 numBlockages, numTerms, numRefBlocks, numInsts;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

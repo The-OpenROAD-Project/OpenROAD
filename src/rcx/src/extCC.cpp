@@ -41,6 +41,10 @@
 uint ttttGetDgOverlap;
 //#define TEST_GetDgOverlap
 
+namespace rcx {
+CoupleOptions coupleOptionsNull{0};
+};
+
 uint Ath__track::trackContextOn(int orig,
                                 int end,
                                 int base,
@@ -117,10 +121,10 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
                              Ath__array1D<Ath__wire*>* ccTable,
                              ZInterface* context,
                              uint met,
-                             void (*coupleAndCompute)(int*, void*),
+                             rcx::CoupleAndCompute coupleAndCompute,
                              void* compPtr)
 {
-  int coupleOptions[20];
+  rcx::CoupleOptions coupleOptions;
 
   AthPool<Ath__wire>* wirePool = _grid->getWirePoolPtr();
 
@@ -246,7 +250,7 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
               coupleOptions[8] = topwire->_width;
               coupleOptions[9] = botwire->_base;
               coupleOptions[11] = targetHiTrack ? 1 : 0;
-
+              coupleOptions[18] = botwire->_track->getTrackNum();
               coupleAndCompute(coupleOptions, compPtr);
             }
           }
@@ -353,7 +357,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
                               ZInterface* context,
                               Ath__array1D<uint>* ccIdTable,
                               uint met,
-                              void (*coupleAndCompute)(int*, void*),
+                              rcx::CoupleAndCompute coupleAndCompute,
                               void* compPtr)
 {
   Ath__track* tstrack;
@@ -364,7 +368,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
   // 	return 0;
 
   uint dir = _grid->getDir();
-  int coupleOptions[21];
+  rcx::CoupleOptions coupleOptions;
 
   Ath__array1D<Ath__wire*> w1Table;
   Ath__array1D<Ath__wire*> w2Table;
@@ -564,7 +568,7 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
                              uint couplingDist,
                              ZInterface* context,
                              Ath__array1D<uint>* ccTable,
-                             void (*coupleAndCompute)(int*, void*),
+                             rcx::CoupleAndCompute coupleAndCompute,
                              void* compPtr)
 {
   // Ath__array1D<Ath__wire*> ccTable;
@@ -587,7 +591,7 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
     int base = btrack->getBase();
     _gridtable->buildDgContext(base, _level, _dir);
     if (!ttttGetDgOverlap)
-      coupleAndCompute(NULL, compPtr);  // try print dgContext
+      coupleAndCompute(rcx::coupleOptionsNull, compPtr);  // try print dgContext
 
     Ath__track* track = NULL;
     bool tohi = true;
@@ -796,7 +800,7 @@ uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
                                   uint couplingDist,
                                   ZInterface* context,
                                   Ath__array1D<uint>* ccTable,
-                                  void (*coupleAndCompute)(int*, void*),
+                                  rcx::CoupleAndCompute coupleAndCompute,
                                   void* compPtr)
 {
   //	ttttGetDgOverlap= 0;
@@ -847,7 +851,7 @@ uint Ath__gridTable::couplingCaps(uint row,
 int Ath__grid::couplingCaps(int hiXY,
                             uint couplingDist,
                             uint& wireCnt,
-                            void (*coupleAndCompute)(int*, void*),
+                            rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr,
                             int* limitArray)
 {
@@ -896,7 +900,7 @@ int Ath__grid::couplingCaps(int hiXY,
     int base = btrack->getBase();
     _gridtable->buildDgContext(base, _level, _dir);
     if (!ttttGetDgOverlap)
-      coupleAndCompute(NULL, compPtr);  // try print dgContext
+      coupleAndCompute(rcx::coupleOptionsNull, compPtr);  // try print dgContext
 
     Ath__track* track = NULL;
     bool tohi = true;
@@ -1066,7 +1070,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
                                  uint couplingDist,
                                  uint dir,
                                  uint& wireCnt,
-                                 void (*coupleAndCompute)(int*, void*),
+                                 rcx::CoupleAndCompute coupleAndCompute,
                                  void* compPtr,
                                  bool getBandWire,
                                  int** limitArray)
@@ -1111,7 +1115,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
   return minExtracted;
 }
 int Ath__grid::initCouplingCapLoops(uint couplingDist,
-                                    void (*coupleAndCompute)(int*, void*),
+                                    rcx::CoupleAndCompute coupleAndCompute,
                                     void* compPtr,
                                     bool startSearchTrack,
                                     int startXY)
@@ -1139,7 +1143,7 @@ int Ath__grid::initCouplingCapLoops(uint couplingDist,
 }
 void Ath__gridTable::initCouplingCapLoops(uint dir,
                                           uint couplingDist,
-                                          void (*coupleAndCompute)(int*, void*),
+                                          rcx::CoupleAndCompute coupleAndCompute,
                                           void* compPtr,
                                           int* startXY)
 {

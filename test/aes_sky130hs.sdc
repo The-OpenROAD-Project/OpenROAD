@@ -1,1 +1,1 @@
-create_clock [get_ports clk] -period 4
+create_clock -period 2.811 [get_ports clk]

@@ -3,8 +3,8 @@ source helpers.tcl
 set test_nets ""
 
 read_lef Nangate45/Nangate45.lef
-
-read_def -order_wires 45_gcd.def
+read_liberty Nangate45/Nangate45_typ.lib
+read_def 45_gcd.def
 
 # Load via resistance info
 source 45_via_resistance.tcl
@@ -15,5 +15,7 @@ extract_parasitics -ext_model_file 45_patterns.rules \
 
 set spef_file [make_result_file 45_gcd.spef] 
 write_spef $spef_file -nets $test_nets
+# remove rcx turd
+file delete gcd.totCap
 
 diff_files 45_gcd.spefok $spef_file

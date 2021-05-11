@@ -167,7 +167,71 @@ proc set_io_pin_constraint { args } {
       set names $keys(-pin_names)
       ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
     }
+  } else {
+    utl::warn PPL 73 "constraint with region $region has an invalid edge."
   }
+}
+
+proc clear_constraints {} {
+  ppl::clear_constraints
+}
+
+sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
+                                  [-layer layer]\
+                                  [-location location]\
+                                  [-pin_size pin_size]
+}
+
+proc place_pin { args } {
+  sta::parse_key_args "place_pin" args \
+  keys {-pin_name -layer -location -pin_size}
+
+  if [info exists keys(-pin_name)] {
+    set pin_name $keys(-pin_name)
+  } else {
+    utl::error PPL 64 "-pin_name is required."
+  }
+
+  if [info exists keys(-layer)] {
+    set layer $keys(-layer)
+  } else {
+    utl::error PPL 65 "-layer is required."
+  }
+
+  if [info exists keys(-location)] {
+    set location $keys(-location)
+  } else {
+    utl::error PPL 66 "-location is required."
+  }
+
+  if { [llength $location] != 2 } {
+    utl::error PPL 68 "-location is not a list of 2 values."
+  }
+  lassign $location x y
+  set x [ord::microns_to_dbu $x]
+  set y [ord::microns_to_dbu $y]
+
+  if [info exists keys(-pin_size)] {
+    set pin_size $keys(-pin_size)
+  } else {
+    utl::error PPL 67 "-pin_size is required."
+  }
+
+  if { [llength $pin_size] != 2 } {
+    utl::error PPL 69 "-pin_size is not a list of 2 values."
+  }
+  lassign $pin_size width height
+  set width [ord::microns_to_dbu $width]
+  set height [ord::microns_to_dbu $height]
+
+  set pin [ppl::parse_pin_names "place_pin" $pin_name]
+  if { [llength $pin] > 1 } {
+    utl::error PPL 71 "place_pin command should receive only one pin name."
+  }
+
+  set layer_idx [ppl::parse_layer_name $layer]
+
+  ppl::place_pin $pin $layer_idx $x $y $width $height
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
@@ -179,11 +243,6 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-exclude region]\
                                   [-group_pins pin_list]
                                  }
-
-proc io_placer { args } {
-  utl::warn PPL 14 "io_placer command is deprecated. Use place_pins instead."
-  [eval place_pins $args]
-}
 
 proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
@@ -479,7 +538,7 @@ proc parse_pin_names {cmd names} {
     if { $db_bterm != "NULL" } {
       lappend pin_list $db_bterm
     } else {
-      utl::warn PPL 44 "Pin $pin_name not found in constraint"
+      utl::warn PPL 44 "Pin [get_property $pin name] not found for command $cmd"
     }
   }
 

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "OpenRCX/extRCap.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -150,8 +150,6 @@ uint extMain::initPlanes(uint dir,
 }
 uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
 {
-  // logger_->info(RCX, 0, "Initializing Extraction search DB ... ");
-
   if (_geomSeq)
     delete _geomSeq;
   _geomSeq = new odb::gs();

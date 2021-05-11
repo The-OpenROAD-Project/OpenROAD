@@ -200,7 +200,7 @@ class AntennaChecker
 
   void load_antenna_rules();
   void check_antenna_cell();
-  void check_antennas(std::string report_filename, bool simple_report);
+  int check_antennas(std::string report_filename, bool simple_report);
 
   bool check_violation(PARinfo par_info, dbTechLayer* layer);
 

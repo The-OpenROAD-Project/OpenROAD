@@ -1366,7 +1366,7 @@ void io::Parser::addDefaultCutLayer()
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 {
-  if(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
+  if (layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
     return;
   if (readLayerCnt == 0) {
     addDefaultMasterSliceLayer();
@@ -1553,7 +1553,23 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       tmpLayer->setMinSpacing(rptr);
     }
   }
-
+  if (!layer->getV55InfluenceEntries().empty()) {
+    frCollection<frCoord> widthTbl;
+    frCollection<std::pair<frCoord, frCoord>> valTbl;
+    for (auto entry : layer->getV55InfluenceEntries()) {
+      frUInt4 width, within, spacing;
+      entry->getV55InfluenceEntry(width, within, spacing);
+      widthTbl.push_back(width);
+      valTbl.push_back({within, spacing});
+    }
+    fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
+        "WIDTH", widthTbl, valTbl);
+    unique_ptr<frConstraint> uCon
+        = make_unique<frSpacingTableInfluenceConstraint>(tbl);
+    auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->setSpacingTableInfluence(rptr);
+  }
   // read prl spacingTable
   if (layer->hasV55SpacingRules()) {
     frCollection<frUInt4> _rowVals, _colVals;
@@ -1600,24 +1616,15 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       for (size_t j = 0; j < _tblVals[i].size(); j++)
         tblVals[i].push_back(_tblVals[i][j]);
 
-    frCoord defaultPrl = -abs(tblVals[0][0]);
-
-    frCollection<frSpacingTableTwRowType> rowVals, colVals;
-    frString rowName("WIDTH1PRL"), colName("WIDTH2PRL");
-
+    frCollection<frSpacingTableTwRowType> rowVals;
     for (uint j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
       frCoord width = layer->getTwoWidthsSpacingTableWidth(j);
-      frCoord prl = defaultPrl;
-
-      if (layer->getTwoWidthsSpacingTableHasPRL(j)) {
-        prl = layer->getTwoWidthsSpacingTablePRL(j);
-        defaultPrl = prl;
-      }
-      colVals.push_back(frSpacingTableTwRowType(width, prl));
+      frCoord prl = layer->getTwoWidthsSpacingTablePRL(j);
       rowVals.push_back(frSpacingTableTwRowType(width, prl));
     }
-    unique_ptr<frConstraint> uCon = make_unique<frSpacingTableTwConstraint>(
-        fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+
+    unique_ptr<frConstraint> uCon
+        = make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
@@ -1649,7 +1656,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 
 void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 {
-  if(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
+  if (layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
     return;
   if (readLayerCnt == 0)
     addDefaultMasterSliceLayer();
@@ -1945,6 +1952,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           layerNum = tech->name2layer.at(layer)->getLayerNum();
         auto blkIn = make_unique<frBlockage>();
         blkIn->setId(numBlockages);
+        blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages++;
         auto pinIn = make_unique<frPin>();
         pinIn->setId(0);
@@ -2093,9 +2101,11 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
     for (auto box : via->getBoxes()) {
       string layerName = box->getTechLayer()->getName();
       if (tech->name2layer.find(layerName) == tech->name2layer.end()) {
-        logger->warn(
-            DRT, 124, "via {} with unused layer {} will be ignored",
-            layerName, via->getName());
+        logger->warn(DRT,
+                     124,
+                     "via {} with unused layer {} will be ignored",
+                     layerName,
+                     via->getName());
         has_unknown_layer = true;
         continue;
       }
@@ -2338,7 +2348,9 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
               make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
           logger->warn(
-              DRT, 247, "io::Writer::fillConnFigs_net does not support this type");
+              DRT,
+              247,
+              "io::Writer::fillConnFigs_net does not support this type");
         }
       }
     }

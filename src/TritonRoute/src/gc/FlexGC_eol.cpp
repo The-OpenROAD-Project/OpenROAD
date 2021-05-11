@@ -118,10 +118,10 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
 
   std::vector<int> layers;  // cutLayers to search for the vias
   if (encCutCon->isAboveAndBelow() || encCutCon->isAboveOnly())
-    if (edge1->getLayerNum() + 1 <= maxLayerNum_)
+    if (edge1->getLayerNum() + 1 <= getMaxLayerNum())
       layers.push_back(edge1->getLayerNum() + 1);
   if (encCutCon->isAboveAndBelow() || encCutCon->isBelowOnly())
-    if (edge1->getLayerNum() - 1 >= minLayerNum_)
+    if (edge1->getLayerNum() - 1 >= getMinLayerNum())
       layers.push_back(edge1->getLayerNum() - 1);
   // edge2 segment as a rectangle for getting distance
   gtl::rectangle_data<frCoord> metRect(edge2->getLowCorner()->x(),
@@ -523,9 +523,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
       net2->getOwner(),
       make_tuple(
           edge2->getLayerNum(), frBox(llx, lly, urx, ury), edge2->isFixed()));
-  if (addMarker(std::move(marker))) {
-    // true marker
-  }
+  addMarker(std::move(marker));
 }
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
@@ -618,7 +616,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol(gcSegment* edge,
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
 {
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();

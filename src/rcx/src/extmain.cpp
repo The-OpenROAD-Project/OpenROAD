@@ -29,10 +29,11 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #include "darr.h"
-#include "OpenRCX/extRCap.h"
-#include "OpenRCX/extSpef.h"
-#include "OpenRCX/exttree.h"
+#include "rcx/extRCap.h"
+#include "rcx/extSpef.h"
+#include "rcx/exttree.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -65,6 +66,14 @@ using odb::Rect;
 using odb::SEQ;
 using odb::ZPtr;
 
+void extMain::init(odb::dbDatabase* db, Logger* logger)
+{
+  _db = db;
+  _block = NULL;
+  _blockId = 0;
+  logger_ = logger;
+}
+
 void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext)
 {
   if (_ext == NULL)
@@ -88,7 +97,7 @@ void extMain::initExtractedCorners(dbBlock* block)
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   if (tmiExt->_processCornerTable)
     return;
@@ -101,7 +110,7 @@ int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName)
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   int idx = tmiExt->getDbCornerIndex(cornerName);
   return idx;
@@ -177,7 +186,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
     // tmiExt -> setDesign((char *)block->getConstName());
   }
   tmiExt->writeIncrementalSpef(
@@ -260,8 +269,7 @@ void extMain::writeIncrementalSpef(char* filename,
                filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(
-          RCX, 137, "Can't open file \"{}\" to write spef.", filename);
+      logger_->info(RCX, 58, "Can't open file \"{}\" to write spef.", filename);
     else
       cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                               _excludeCells,
@@ -286,7 +294,7 @@ void extMain::writeIncrementalSpef(char* filename,
   _block->replaceOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.1.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 59, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -307,7 +315,7 @@ void extMain::writeIncrementalSpef(char* filename,
   _block->restoreOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.2.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 61, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -325,22 +333,6 @@ void extMain::writeIncrementalSpef(char* filename,
                             _incrNoBackSlash /*noBackSlash*/,
                             false /*flatten*/,
                             false /*parallel*/);
-}
-
-void writeSpef(dbBlock* block,
-               char* filename,
-               char* nets,
-               int corner,
-               char* coord)
-{
-  extMain* tmiExt = (extMain*) block->getExtmi();
-  if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
-    tmiExt->setDB((dbDatabase*) block->getDataBase());
-  }
-  std::vector<dbNet*> tnets;
-  block->findSomeNet(nets, tnets);
-  tmiExt->writeSpef(filename, tnets, corner, coord);
 }
 
 void extMain::writeSpef(char* filename,
@@ -365,7 +357,7 @@ void extMain::writeSpef(char* filename,
   }
   uint cnt;
   if (openSpefFile(filename, 1) > 0) {
-    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", filename);
+    logger_->info(RCX, 62, "Can't open file \"{}\" to write spef.", filename);
     return;
   } else
     cnt = _spef->writeBlock(coord /*nodeCoord*/,
@@ -760,6 +752,21 @@ uint extMain::getResCapTable(bool lefRC)
     m._width = w;
     m._met = n;
 
+    uint sp = layer->getSpacing();  // nm
+
+    _minDistTable[n] = sp;
+    if (sp == 0) {
+      sp = layer->getPitch() - layer->getWidth();
+      _minDistTable[n] = sp;
+    }
+    double resTable[20];
+    bool newResModel = true;
+    if (newResModel) {
+      for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+        resTable[jj] = 0.0;
+      }
+      calcRes0(resTable, n, w, 1);
+    }
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
       uint modelIndex = _modelMap.get(jj);
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
@@ -783,22 +790,27 @@ uint extMain::getResCapTable(bool lefRC)
                    "EXT_RES: "
                    "R "
                    "Layer= {} met= {}   w= {} cc= {:g} fr= {:g} res= {:g} "
-                   "model_res= {:g}",
+                   "model_res= {:g} new_model_res= {:g} ",
                    layer->getConstName(),
                    n,
                    w,
                    rc->getCoupling(),
                    rc->getFringe(),
                    res,
-                   r1);
+                   r1,
+                   resTable[jj]);
       }
 
       extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
 
       if (!_lef_res) {
-        if (rc0 != NULL) {
-          double r1 = rc->getRes();
-          _resistanceTable[jj][n] = r1;
+        if (newResModel) {
+          _resistanceTable[jj][n] = resTable[jj];
+        } else {
+          if (rc0 != NULL) {
+            double r1 = rc->getRes();
+            _resistanceTable[jj][n] = r1;
+          }
         }
       } else {
         debugPrint(logger_,
@@ -905,20 +917,16 @@ double extMain::getResistance(uint level, uint width, uint len, uint model)
           }
   */
 }
-void extMain::setDB(dbDatabase* db)
+void extMain::setBlockFromChip()
 {
-  _db = db;
-  _tech = db->getTech();
-  _block = NULL;
-  _blockId = 0;
-  if (db->getChip() != NULL) {
-    _block = db->getChip()->getBlock();
-    _blockId = _block->getId();
-    _prevControl = _block->getExtControl();
+  _tech = _db->getTech();
+  _block = _db->getChip()->getBlock();
+  _blockId = _block->getId();
+  _prevControl = _block->getExtControl();
 #ifndef _WIN32
-    _block->setExtmi(this);
+  _block->setExtmi(this);
 #endif
-  }
+
   _spef = NULL;
   _bufSpefCnt = 0;
   _origSpefFilePrefix = NULL;
@@ -926,6 +934,7 @@ void extMain::setDB(dbDatabase* db)
   _excludeCells = NULL;
   _extracted = false;
 }
+
 void extMain::setBlock(dbBlock* block)
 {
   _block = block;
@@ -1447,7 +1456,7 @@ bool IsDebugNets(dbNet* srcNet, dbNet* tgtNet, uint debugNetId)
 
   return false;
 }
-void extMain::measureRC(int* options)
+void extMain::measureRC(CoupleOptions& options)
 {
   _totSegCnt++;
   int rsegId1 = options[1];  // dbRSeg id for SRC segment
@@ -1538,13 +1547,13 @@ void extMain::measureRC(int* options)
         logger_->info(RCX, 142, "  layer {}", ii + m._met);
         for (jj = 0; jj < _ccContextArray[ii + m._met]->getCnt(); jj++)
           logger_->info(RCX,
-                        143,
+                        476,
                         "    {}: {}",
                         jj,
                         _ccContextArray[ii + m._met]->get(jj));
       }
       for (ii = 1; ii <= _ccContextDepth && m._met - ii > 0; ii++) {
-        logger_->info(RCX, 142, "  layer {}", m._met - ii);
+        logger_->info(RCX, 65, "  layer {}", m._met - ii);
         for (jj = 0; jj < _ccContextArray[m._met - ii]->getCnt(); jj++)
           logger_->info(RCX,
                         143,
@@ -1623,20 +1632,22 @@ void extMain::measureRC(int* options)
   }
   ccReportProgress();
 }
-void extCompute(int* options, void* computePtr)
+void extCompute(CoupleOptions& options, void* computePtr)
 {
   extMain* mmm = (extMain*) computePtr;
   mmm->measureRC(options);
 }
-void extCompute1(int* options, void* computePtr)
+extern CoupleOptions coupleOptionsNull;
+
+void extCompute1(CoupleOptions& options, void* computePtr)
 {
   extMeasure* mmm = (extMeasure*) computePtr;
-  if (options && options[0] < 0) {
+  if (options != coupleOptionsNull && options[0] < 0) {
     if (options[5] == 1)
       mmm->initTargetSeq();
     else
       mmm->getDgOverlap(options);
-  } else if (options)
+  } else if (options != coupleOptionsNull)
     mmm->measureRC(options);
   else
     mmm->printDgContext();

@@ -63,6 +63,10 @@ class frGuide : public frConnFig
     beginIn.set(begin_);
     endIn.set(end_);
   }
+
+  const frPoint& getBeginPoint() const { return begin_; }
+  const frPoint& getEndPoint() const { return end_; }
+
   frLayerNum getBeginLayerNum() const { return beginLayer_; }
   frLayerNum getEndLayerNum() const { return endLayer_; }
   bool hasRoutes() const { return routeObj_.empty() ? false : true; }

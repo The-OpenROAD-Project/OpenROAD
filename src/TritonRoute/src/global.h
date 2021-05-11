@@ -58,6 +58,7 @@ extern std::string TOP_ROUTING_LAYER_NAME;
 extern int BOTTOM_ROUTING_LAYER;
 extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;
+extern bool USENONPREFTRACKS;
 extern bool USEMINSPACING_OBS;
 extern bool ENABLE_BOUNDARY_MAR_FIX;
 extern bool ENABLE_VIA_GEN;
@@ -133,6 +134,10 @@ std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
 std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frShape& fig);
+std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
+std::ostream& operator<<(std::ostream& os, const frGuide& p);
+// namespace fr
 }  // namespace fr
-
 #endif

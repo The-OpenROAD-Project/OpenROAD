@@ -36,7 +36,7 @@
 #include <vector>
 
 #include "dbUtil.h"
-#include "OpenRCX/extRCap.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 //#define MAXINT 0x7FFFFFFF;
@@ -320,7 +320,7 @@ Ath__array1D<uint>*** extMain::mkInstBins(uint binSize,
     instTable[dd] = new Ath__array1D<uint>*[n];
     if (instTable[dd] == NULL) {
       logger_->error(
-          RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
+          RCX, 466, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
     }
     for (uint jj = 0; jj < n; jj++) {
       instTable[dd][jj] = NULL;
@@ -1960,20 +1960,12 @@ uint extMain::initPlanes(uint dir,
     ur[dir] = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
 
     if (!rotatedFlag) {
-      // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={}, _x0={},
-      // _y0={}, _x1={}, _y1={}", 	ii, res[0], res[1], ll[0], ll[1], ur[0],
-      // ur[1]);
-
       _geomSeq->configureSlice(
           ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
     } else {
       if (dir > 0) {  // horizontal segment extraction
         _geomSeq->configureSlice(
             ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
-
-        // logger_->info(RCX, 0, "HSE_GS: _slicenum={}, _xres={}, _yres={},
-        // _x0={}, _y0={}, _x1={}, _y1={}", 	ii, res[0], res[1], ll[0],
-        // ll[1], ur[0], ur[1]);
       } else {
         if (layerDir > 0) {
           _geomSeq->configureSlice(ii,
@@ -1985,9 +1977,6 @@ uint extMain::initPlanes(uint dir,
                                    ur[0],
                                    skipMemAlloc);
 
-          // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={},
-          // _x0={}, _y0={}, _x1={}, _y1={}", 	ii, pitchTable[ii],
-          // widthTable[ii], ll[1], ll[0], ur[1], ur[0]);
         } else {
           _geomSeq->configureSlice(ii,
                                    widthTable[ii],
@@ -1997,9 +1986,6 @@ uint extMain::initPlanes(uint dir,
                                    ur[1],
                                    ur[0],
                                    skipMemAlloc);
-          // logger_->info(RCX, 0, "H_GS: _slicenum={}, _xres={}, _yres={},
-          // _x0={}, _y0={}, _x1={}, _y1={}", 	ii, widthTable[ii],
-          // pitchTable[ii], ll[1], ll[0], ur[1], ur[0]);
         }
       }
     }
@@ -2157,23 +2143,6 @@ uint extMain::fill_gs4(int dir,
     addInstsGs(&instGsTable, &tmpNetIdTable, dir);
   }
 
-  /*
-  #ifdef TEST_SIGNAL_TABLE
-          FILE *fp= NULL;
-          char filename[64];
-          sprintf(filename, "new/%d.%d.%d.fill", dir, minExt, hiXY);
-          fp= fopen(filename, "w");
-
-          fprintf(fp, "dir= %d   minExt= %d   hiXY= %d  %d %d -- %d %d pwrCnt=
-  %d  sigCnt= %d\n", dir, minExt, hiXY, lo_gs[0], hi_gs[0], lo_gs[1], hi_gs[1],
-  pcnt, scnt);
-
-          if (fp!=NULL)
-                  fclose(fp);
-  #endif
-          // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0],
-  lo_gs[1], hi_gs[0], hi_gs[1]);
-  */
   return pcnt + scnt;
 }
 
@@ -2197,8 +2166,6 @@ int extMain::fill_gs3(int dir,
 {
   if (sdbSignalTable == NULL)
     return 0;
-
-  //	uint cnt= 0;
 
   bool rotatedGs = getRotatedFlag();
 
@@ -2289,8 +2256,7 @@ int extMain::fill_gs3(int dir,
   if (fp != NULL)
     fclose(fp);
 #endif
-  // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0], lo_gs[1],
-  // hi_gs[0], hi_gs[1]);
+
   return lo_gs[dir];
 }
 
@@ -2307,16 +2273,6 @@ int extMain::fill_gs2(int dir,
                       Ath__array1D<uint>*** gsTable,
                       Ath__array1D<uint>*** instGsTable)
 {
-  /*
-  int lo_gs[2];
-  int hi_gs[2];
-
-  lo_gs[!dir]= ll[!dir];
-  hi_gs[!dir]= ur[!dir];
-
-  lo_gs[dir]= minExt;
-  hi_gs[dir]= hiXY;
-*/
   initPlanes(dir, lo_gs, hi_gs, layerCnt, pitchTable, widthTable, dirTable, ll);
 
   int gs_dir = dir;
@@ -2416,7 +2372,7 @@ uint extMain::couplingFlow(bool rlog,
                            uint trackStep,
                            uint ccFlag,
                            extMeasure* m,
-                           void (*coupleAndCompute)(int*, void*))
+                           CoupleAndCompute coupleAndCompute)
 {
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
   if (p != NULL) {
@@ -2558,7 +2514,7 @@ uint extMain::couplingFlow(bool rlog,
     use_signal_tables = true;
 
     logger_->info(RCX,
-                  88,
+                  467,
                   "Signal_table= {} ----------------------------- ",
                   _use_signal_tables);
 
@@ -2569,8 +2525,6 @@ uint extMain::couplingFlow(bool rlog,
       sdbTable_ur[ii] = ur[ii] + step_nm[ii] / 10;
     }
 
-    // mkSignalTables(sdbBucketSize, sdbTable_ll, sdbTable_ur, sdbSignalTable,
-    // NULL, gsInstTable, sdbBucketCnt);
     mkSignalTables2(sdbBucketSize,
                     sdbTable_ll,
                     sdbTable_ur,
@@ -2607,10 +2561,6 @@ uint extMain::couplingFlow(bool rlog,
     if (dir == 0)
       enableRotatedFlag();
 
-    // if (getRotatedFlag())
-    //   logger_->info(RCX, 0, "======> Fast Mode enabled for d= {} <======",
-    //   dir);
-
     lo_gs[!dir] = ll[!dir];
     hi_gs[!dir] = ur[!dir];
     lo_sdb[!dir] = ll[!dir];
@@ -2624,7 +2574,6 @@ uint extMain::couplingFlow(bool rlog,
       AthResourceLog("initCouplingCapLoops", 0);
 
     lo_sdb[dir] = ll[dir] - step_nm[dir];
-    //		int loXY= ll[dir];
     int hiXY = ll[dir] + step_nm[dir];
     if (hiXY > ur[dir])
       hiXY = ur[dir];
@@ -2667,8 +2616,6 @@ uint extMain::couplingFlow(bool rlog,
                    pitchTable,
                    widthTable,
                    NULL);
-        // fill_gs2(dir, ll, ur, lo_gs, hi_gs, layerCnt, dirTable, pitchTable,
-        // widthTable, 0, NULL, NULL);
 
         m->_rotatedGs = getRotatedFlag();
         m->_pixelTable = _geomSeq;
@@ -2680,8 +2627,6 @@ uint extMain::couplingFlow(bool rlog,
 
       uint processWireCnt = 0;
       if (use_signal_tables) {
-        // addNets(dir, lo_sdb, hi_sdb, sigtype, pwrtype,
-        // sdbSignalTable[dir][stepNum]);
         processWireCnt
             += addPowerNets2(dir, lo_sdb, hi_sdb, pwrtype, &sdbPowerTable);
         tmpNetIdTable.resetCnt();
@@ -2713,8 +2658,6 @@ uint extMain::couplingFlow(bool rlog,
                                            _getBandWire,
                                            limitArray);
 
-      // printLimitArray(limitArray, layerCnt);
-
       if (rlog) {
         char buff[64];
         sprintf(buff,
@@ -2742,7 +2685,6 @@ uint extMain::couplingFlow(bool rlog,
       gs_limit = minExtracted - (ccDist + 2) * maxPitch;
 
       stepNum++;
-      // totalWiresExtracted += extractedWireCnt;
       totalWiresExtracted += processWireCnt;
       float percent_extracted
           = Ath__double2int(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
@@ -2750,16 +2692,14 @@ uint extMain::couplingFlow(bool rlog,
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {
         logger_->info(RCX,
-                      44,
+                      442,
                       "{:d}% completion -- {:d} wires have been extracted",
                       (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
                       totalWiresExtracted);
 
         _previous_percent_extracted = percent_extracted;
       }
-      // break;
     }
-    // break;
   }
   if (_printBandInfo)
     fclose(bandinfo);
@@ -2874,15 +2814,9 @@ extWindow* extMain::initWindowSearch(Rect& extRect,
     if (W->_widthTable[i] > maxWidth)
       maxWidth = W->_widthTable[i];
   }
-  // W->_totPowerWireCnt= powerWireCounter(maxWidth);
-  // W->_totWireCnt= signalWireCounter(maxWidth);
-  // W->_totWireCnt += W->_totPowerWireCnt;
 
   W->_maxWidth = maxWidth;
-
   W->initWindowStep(extRect, trackStep, layerCnt, modelLevelCnt);
-
-  // logger_->info(RCX, 0, "{} wires to be extracted", W->_totWireCnt);
 
   return W;
 }
@@ -2939,12 +2873,12 @@ void extMain::printLimitArray(int** limitArray, uint layerCnt)
   uint ii;
   for (ii = 1; ii < layerCnt; ii++)
     logger_->info(
-        RCX, 90, "L={} {}    {}", ii, limitArray[ii][0], limitArray[ii][1]);
+        RCX, 469, "L={} {}    {}", ii, limitArray[ii][0], limitArray[ii][1]);
 
   logger_->info(RCX, 91, "--------------------------- EXT Lower Limits");
   for (ii = 1; ii < layerCnt; ii++)
     logger_->info(
-        RCX, 90, "L={} {}    {}", ii, limitArray[ii][2], limitArray[ii][3]);
+        RCX, 470, "L={} {}    {}", ii, limitArray[ii][2], limitArray[ii][3]);
 
   logger_->info(RCX, 92, " ------------------------ EXT Upper Limits");
   for (ii = 1; ii < layerCnt; ii++)
@@ -3144,7 +3078,8 @@ void extWindow::printBoundaries(FILE* fp, bool flag)
   if (fp == NULL) {
     logger_->info(RCX,
                   238,
-                  "{:15s}= {} \t_currentDir\n"
+                  "{:15s}= {}"
+                  "\t_currentDir\n"
                   "{:15s}= {} \t_hiXY\n"
                   "{:15s}= {} \t_lo_gs\n"
                   "{:15s}= {} \t_hi_gs\n"
@@ -3351,7 +3286,7 @@ void extWindow::updateLoBounds(bool reportFlag)
 
   if ((_totWireCnt > 0) && (_totalWiresExtracted > 0)) {
     logger_->info(RCX,
-                  44,
+                  441,
                   "{:d}% completion -- {:d} wires have been extracted",
                   (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt)),
                   _totalWiresExtracted);
@@ -3578,7 +3513,7 @@ uint extMain::couplingWindowFlow(bool rlog,
                                  uint ccFlag,
                                  bool doExt,
                                  extMeasure* m,
-                                 void (*coupleAndCompute)(int*, void*))
+                                 CoupleAndCompute coupleAndCompute)
 {
   bool single_gs = false;
 
@@ -3627,7 +3562,7 @@ uint extMain::couplingWindowFlow(bool rlog,
     use_signal_tables = true;
 
     logger_->info(RCX,
-                  88,
+                  468,
                   "Signal_table= {} ----------------------------- ",
                   _use_signal_tables);
 
@@ -3803,7 +3738,7 @@ uint extMain::couplingWindowFlow(bool rlog,
 
       uint signalWireCnt = createNetShapePropertires(extBlock);
       logger_->info(RCX,
-                    96,
+                    471,
                     "Block {} has {} signal wires",
                     extBlock->getConstName(),
                     processWireCnt);
@@ -3847,7 +3782,7 @@ uint extMain::extractWindow(bool rlog,
                             Rect& extRect,
                             bool single_sdb,
                             extMeasure* m,
-                            void (*coupleAndCompute)(int*, void*),
+                            CoupleAndCompute coupleAndCompute,
                             int* sdbTable_ll,
                             int* sdbTable_ur,
                             uint* sdbBucketSize,
@@ -4797,7 +4732,6 @@ uint extMain::createWindowsDB(bool rlog,
 
     uint stepNum = 0;
     int hiXY = W->setExtBoundaries(dir);
-    // logger_->info(RCX, 0, "Dir={} hiXY= {}", dir, hiXY);
     for (; hiXY <= W->_ur[dir]; hiXY += W->_step_nm[dir]) {
       hiXY = W->adjust_hiXY(hiXY);
 
@@ -4812,12 +4746,8 @@ uint extMain::createWindowsDB(bool rlog,
                                                _getBandWire,
                                                limitArray);
 
-      // W->reportProcessedWires(rlog);
-
       int deallocLimit = W->getDeallocLimit();
       _search->dealloc(W->_currentDir, deallocLimit);
-
-      // W->printBoundaries(boundFP, true);
 
       W->updateExtLimits(limitArray);
 
@@ -4826,11 +4756,7 @@ uint extMain::createWindowsDB(bool rlog,
 
       W->updateLoBounds(false /*report*/);
 
-      // W->printExtLimits(limitFP);
-
-      // dbBlock* extBlock= W->createExtBlock(m, _block, extRect);
       dbBlock* extBlock = W1->createExtBlock(NULL, _block, extRect);
-      // logger_->info(RCX, 0, "Created dbBlock {} ", extBlock->getConstName());
     }
   }
   return 1;
@@ -4846,8 +4772,6 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
     return 0;
   }
   bool rcgenFlag = use_signal_tables > 1 ? true : false;
-
-  // logger_->info(RCX, 0, "D{}", p->getValue());
 
   extWindow* W = new extWindow(20, logger_);
   W->getExtProperties(_block);
@@ -5030,7 +4954,7 @@ uint extMain::rcGen(const char* netNames,
 
     cnt += rcNetGen(net);
   }
-  logger_->info(RCX, 40, "Final {} rc segments", cnt);
+  logger_->info(RCX, 39, "Final {} rc segments", cnt);
   return cnt;
 }
 uint extMain::rcGenBlock(dbBlock* block)
@@ -5047,7 +4971,7 @@ uint extMain::rcGenBlock(dbBlock* block)
 
     cnt += rcNetGen(net);
   }
-  logger_->info(RCX, 40, "Final {} rc segments", cnt);
+  logger_->info(RCX, 41, "Final {} rc segments", cnt);
   return cnt;
 }
 void extMain::writeMapping(dbBlock* block)

@@ -130,6 +130,7 @@ class IOPlacer
  public:
   void init(odb::dbDatabase* db, Logger* logger);
   void clear();
+  void clearConstraints() { constraints_.clear(); };
   void run(bool random_mode);
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
@@ -154,6 +155,7 @@ class IOPlacer
                              int llx, int lly, int urx, int ury,
                              int width, int height);
   int getTopLayer() { return top_grid_.layer; }
+  void placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height);
 
  private:
   Netlist netlist_;
@@ -193,6 +195,7 @@ class IOPlacer
   void initIOLists();
   void initParms();
   void randomPlacement();
+  void randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
@@ -211,6 +214,7 @@ class IOPlacer
   int assignGroupToSection(const std::vector<int> &io_group,
                            std::vector<Section> &sections);
   void assignConstrainedPinsToSections();
+  std::vector<int> findPinsForConstraint(const Constraint &constraint, Netlist& netlist);
   int returnIONetsHPWL(Netlist&);
   void findPinAssignment(std::vector<Section>& sections);
 
@@ -226,6 +230,7 @@ class IOPlacer
   void populateIOPlacer(std::set<int> hor_layer_idx,
                         std::set<int> ver_layer_idx);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
+  void commitIOPinToDB(const IOPin& pin);
   void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
   void initNetlist();
   void initTracks();

@@ -12,22 +12,22 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Notice 0: Split top of 102 T shapes.
-[INFO RCX-0033] Defined process_corner X with ext_model_index 0
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0008] extracting parasitics of gcd ...
-[INFO RCX-0035] Reading extraction model file ext_pattern.rules ...
-[INFO RCX-0036] Database dbFactor= 1.0  dbunit= 1000
-[INFO RCX-0037] RC segment generation gcd (max_merge_res 0.0) ...
+Notice 0: Split top of 102 T shapes.
+[INFO RCX-0435] Reading extraction model file ext_pattern.rules ...
+[INFO RCX-0432] Database dbFactor= 1.0  dbunit= 1000
+[INFO RCX-0436] RC segment generation gcd (max_merge_res 0.0) ...
 [INFO RCX-0040] Final 3221 rc segments
-[INFO RCX-0041] Coupling Cap extraction gcd ...
-[INFO RCX-0042] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0439] Coupling Cap extraction gcd ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
 [INFO RCX-0043] 2368 wires to be extracted
-[INFO RCX-0044] 50% completion -- 1197 wires have been extracted
-[INFO RCX-0044] 100% completion -- 2368 wires have been extracted
-[INFO RCX-0045] Extract 411 nets, 3632 rsegs, 3632 caps, 2159 ccs
+[INFO RCX-0442] 50% completion -- 1197 wires have been extracted
+[INFO RCX-0442] 100% completion -- 2368 wires have been extracted
+[INFO RCX-0045] Extract 411 nets, 3632 rsegs, 3632 caps, 2237 ccs
 [INFO RCX-0015] Finished extracting gcd.
 [INFO RCX-0016] Writing SPEF ...
-[INFO RCX-0047] 411 nets finished
+[INFO RCX-0443] 411 nets finished
 [INFO RCX-0017] Finished writing SPEF ...
 No differences found.

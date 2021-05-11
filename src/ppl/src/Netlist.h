@@ -95,16 +95,17 @@ class IOPin
         Direction dir,
         odb::Point lower_bound,
         odb::Point upper_bound,
-        std::string location_type)
+        odb::dbPlacementStatus placement_status)
       : bterm_(bterm),
         pos_(pos),
         orientation_(Orientation::north),
         direction_(dir),
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
-        location_type_(location_type),
+        placement_status_(placement_status),
         layer_(-1),
-        in_group(false),
+        is_placed_(false),
+        in_group_(false),
         assigned_to_section_(false)
   {
   }
@@ -133,11 +134,13 @@ class IOPin
   odb::Point getLowerBound() const { return lower_bound_; };
   odb::Point getUpperBound() const { return upper_bound_; };
   std::string getNetName() const { return bterm_->getNet()->getName(); }
-  std::string getLocationType() const { return location_type_; };
+  odb::dbPlacementStatus getPlacementStatus() const { return placement_status_; };
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
-  bool isInGroup() const { return in_group; }
-  void inGroup() { in_group = true; }
+  bool isPlaced() const { return is_placed_; }
+  void setPlaced() { is_placed_ = true; }
+  bool isInGroup() const { return in_group_; }
+  void setInGroup() { in_group_ = true; }
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
 
@@ -148,9 +151,10 @@ class IOPin
   Direction direction_;
   odb::Point lower_bound_;
   odb::Point upper_bound_;
-  std::string location_type_;
+  odb::dbPlacementStatus placement_status_;
   int layer_;
-  bool in_group;
+  bool is_placed_;
+  bool in_group_;
   bool assigned_to_section_;
 };
 

@@ -30,6 +30,7 @@ record_tests {
   multi_height03
   multi_height04
   multi_height05
+  obstruction1
   pad01
   pad02
   pad03
@@ -38,7 +39,6 @@ record_tests {
   pad06
   pad07
   pad08
-  pad09
   simple01
   simple02
   simple03

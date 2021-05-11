@@ -46,7 +46,6 @@
 #include "utl/Logger.h"
 
 #include "opendb/db.h"
-#include "opendb/wOrder.h"
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
@@ -75,7 +74,7 @@
 #include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
-#include "OpenRCX/MakeOpenRCX.h"
+#include "rcx/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
@@ -283,7 +282,6 @@ OpenRoad::readLef(const char *filename,
 
 void
 OpenRoad::readDef(const char *filename,
-		  bool order_wires,
 		  bool continue_on_errors,
       bool floorplan_init,
       bool incremental)
@@ -303,14 +301,6 @@ OpenRoad::readDef(const char *filename,
   dbChip* chip = def_reader.createChip(search_libs, filename);
   if (chip) {
     dbBlock* block = chip->getBlock();
-    if (order_wires) {
-      odb::orderWires(block,
-                      nullptr /* net_name_or_id*/,
-                      false /* force */,
-                      false /* verbose */,
-                      true /* quiet */);
-    }
-
     for (Observer* observer : observers_) {
       observer->postReadDef(block);
     }
