@@ -42,6 +42,7 @@
 #include "db_sta/dbSta.hh"
 
 #include "sta/MakeConcreteNetwork.hh"
+#include "sta/Liberty.hh"
 #include "sta/VerilogWriter.hh"
 #include "sta/PortDirection.hh"
 #include "sta/ParseBus.hh"
@@ -63,71 +64,66 @@ using sta::Net;
 using sta::Port;
 using sta::PortDirection;
 using sta::writeVerilog;
+using sta::NetTermIterator;
+using sta::NetPinIterator;
+using sta::InstancePinIterator;
+using sta::Term;
+using sta::Pin;
+using sta::NetworkReader;
 
 using sta::isBusName;
 using sta::parseBusName;
 
 using sta::dbNetwork;
-
-using odb::dbInst;
-using odb::dbIntProperty;
-using odb::dbBlock;
-using odb::dbBTerm;
-using odb::dbITerm;
-using odb::dbNet;
-using odb::dbIoType;
-
-using sta::NetworkReader;
 using sta::dbSta;
 
+using odb::dbBlock;
+using odb::dbInst;
+using odb::dbIntProperty;
+
+// determine the required direction of a port.
 PortDirection*
-determinePortDirection(dbNet* net, std::set<dbInst*>* insts) {
+determinePortDirection(Net* net, std::set<Instance*>* insts, dbNetwork* db_network) {
   bool local_only = true;
   bool locally_driven = false;
   bool externally_driven = false;
 
-  for (dbBTerm* bterm : net->getBTerms()) {
-    switch (bterm->getIoType()) {
-    case dbIoType::INPUT:
+  NetTermIterator* term_iter = db_network->termIterator(net);
+  while (term_iter->hasNext()) {
+    Term* term = term_iter->next();
+    PortDirection* dir = db_network->direction(db_network->pin(term));
+    if (dir == PortDirection::bidirect() ||
+        dir == PortDirection::input()) {
       externally_driven = true;
       local_only = false;
-      break;
-    case dbIoType::INOUT:
-      externally_driven = true;
-      local_only = false;
-      break;
     }
   }
+  delete term_iter;
 
   if (insts != nullptr) {
-     for (dbITerm* iterm : net->getITerms()) {
-      dbInst* inst = iterm->getInst();
+    NetPinIterator* pin_iter = db_network->pinIterator(net);
+    while (pin_iter->hasNext()) {
+      Pin* pin = pin_iter->next();
+      PortDirection* dir = db_network->direction(pin);
+
+      Instance* inst = db_network->instance(pin);
 
       // check if instance is not present in the current partition, port will be needed
       if (insts->find(inst) == insts->end()) {
         local_only = false;
-        // instance on other partition, so iterm has opposite direction
-        switch (iterm->getIoType()) {
-        case dbIoType::OUTPUT:
+        if (dir == PortDirection::output() ||
+            dir == PortDirection::bidirect()) {
           externally_driven = true;
-          break;
-        case dbIoType::INOUT:
-          externally_driven = true;
-          break;
         }
-      }
-      else {
-        // instance in partition, so iterm has correct port direction
-        switch (iterm->getIoType()) {
-        case dbIoType::OUTPUT:
-          locally_driven = true;
-          break;
-        case dbIoType::INOUT:
-          locally_driven = true;
-          break;
+        else {
+          if (dir == PortDirection::output() ||
+              dir == PortDirection::bidirect()) {
+            locally_driven = true;
+          }
         }
       }
     }
+    delete pin_iter;
   }
 
   // no port is needed
@@ -143,6 +139,21 @@ determinePortDirection(dbNet* net, std::set<dbInst*>* insts) {
   }
 }
 
+// find the correct brackets used in the liberty libraries.
+void
+determineLibraryBrackets(dbNetwork* db_network, char* left, char* right) {
+  *left = '[';
+  *right = ']';
+
+  sta::LibertyLibraryIterator* lib_iter = db_network->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    *left = lib->busBrktLeft();
+    *right = lib->busBrktLeft();
+  }
+  delete lib_iter;
+}
+
 Instance*
 PartitionMgr::buildPartitionedInstance(
     const char* name,
@@ -150,41 +161,45 @@ PartitionMgr::buildPartitionedInstance(
     sta::Library* library,
     sta::NetworkReader* network,
     sta::Instance* parent,
-    std::set<dbInst*>* insts,
-    std::map<dbNet*, Port*>* port_map) {
+    std::set<Instance*>* insts,
+    std::map<Net*, Port*>* port_map) {
 
   // setup access
   dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
-  dbBlock* block = getDbBlock();
 
   // build cell
   Cell* cell = network->makeCell(library, name, false, nullptr);
 
   // add global ports
-  for (dbBTerm* bterm : block->getBTerms()) {
+  InstancePinIterator* pin_iter = db_network->pinIterator(db_network->topInstance());
+  while (pin_iter->hasNext()) {
+    Pin* pin = pin_iter->next();
+
     bool add_port = parent == nullptr; // add port if parent
-    dbNet* net = bterm->getNet();
+    Net* net = db_network->net(db_network->term(pin));
     if (net != nullptr && insts != nullptr) {
-      for (dbITerm* iterm : bterm->getNet()->getITerms()) {
+      NetPinIterator* net_pin_iter = db_network->pinIterator(net);
+      while (net_pin_iter->hasNext()) {
         if (add_port)
           break;
 
         // check if port is connected to instance in this partition
-        if (insts->find(iterm->getInst()) != insts->end()) {
+        if (insts->find(db_network->instance(net_pin_iter->next()))  != insts->end()) {
           add_port = true;
           break;
         }
       }
+      delete net_pin_iter;
     }
 
     if (add_port) {
-      std::string portname = bterm->getName();
+      const char* portname = db_network->name(pin);
 
-      Port* port = network->makePort(cell, portname.c_str());
+      Port* port = network->makePort(cell, portname);
       // copy exactly the parent port direction
-      network->setDirection(port, db_network->dbToSta(bterm->getSigType(), bterm->getIoType()));
+      network->setDirection(port, db_network->direction(pin));
       if (parent != nullptr) {
-        PortDirection* sub_module_dir = determinePortDirection(bterm->getNet(), insts);
+        PortDirection* sub_module_dir = determinePortDirection(net, insts, db_network);
         if (sub_module_dir != nullptr)
           network->setDirection(port, sub_module_dir);
       }
@@ -193,44 +208,52 @@ PartitionMgr::buildPartitionedInstance(
         port_map->insert({net, port});
     }
   }
+  delete pin_iter;
 
   // make internal ports for partitions and if port is not needed.
   if (insts != nullptr) {
-    for (dbInst* db_inst : *insts) {
-      for (dbITerm* term : db_inst->getITerms()) {
-        dbNet* db_net = term->getNet();
-        if (db_net != nullptr && // connected
-            port_map->find(db_net) == port_map->end()) {// port not present
+    for (Instance* inst : *insts) {
+      InstancePinIterator* pin_iter = db_network->pinIterator(inst);
+      while (pin_iter->hasNext()) {
+        Net* net = db_network->net(pin_iter->next());
+        if (net != nullptr && // connected
+            port_map->find(net) == port_map->end()) {// port not present
           // check if connected to anything in a different partition
           bool added_internal_port = false;
-          for (dbITerm* iterms : db_net->getITerms()) {
+
+          NetPinIterator* net_pin_iter = db_network->pinIterator(net);
+          while (net_pin_iter->hasNext()) {
             if (added_internal_port)
               break;
 
-            PortDirection* port_dir = determinePortDirection(db_net, insts);
+            Net* net = db_network->net(net_pin_iter->next());
+            PortDirection* port_dir = determinePortDirection(net, insts, db_network);
             if (port_dir != nullptr) {
               std::string port_name = port_prefix;
-              port_name += db_net->getName();
+              port_name += db_network->name(net);
 
               Port* port = network->makePort(cell, port_name.c_str());
               network->setDirection(port, port_dir);
 
-              port_map->insert({db_net, port});
+              port_map->insert({net, port});
 
               added_internal_port = true;
               break;
             }
           }
+          delete net_pin_iter;
         }
       }
+      delete pin_iter;
     }
   }
 
   if (parent != nullptr) {
     // loop over buses and to ensure all bit ports are created, only needed for partitioned modules
-    char path_escape = network->pathEscape();
-    char left_bracket = '['; // library->busBrktLeft();
-    char right_bracket = ']'; // library->busBrktRight();
+    char path_escape = db_network->pathEscape();
+    char left_bracket; // library->busBrktLeft();
+    char right_bracket; // library->busBrktRight();
+    determineLibraryBrackets(db_network, &left_bracket, &right_bracket);
     std::map<std::string, std::vector<Port*>> port_buses;
     for (auto& [net, port] : *port_map) {
       std::string portname = network->name(port);
@@ -302,29 +325,33 @@ PartitionMgr::buildPartitionedInstance(
 
   if (insts != nullptr) {
     // create and connect instances
-    for (dbInst* db_inst : *insts) {
-      Instance* leaf_inst = network->makeInstance(db_network->dbToSta(db_inst->getMaster()),
-                                                  db_inst->getName().c_str(),
+    for (Instance* instance : *insts) {
+      Instance* leaf_inst = network->makeInstance(db_network->cell(instance),
+                                                  db_network->name(instance),
                                                   inst);
-      for (dbITerm* term : db_inst->getITerms()) {
-        dbNet* db_net = term->getNet();
-        if (db_net != nullptr) { // connected
-          Port* port = db_network->dbToSta(term->getMTerm());
+
+      InstancePinIterator* pin_iter = db_network->pinIterator(instance);
+      while (pin_iter->hasNext()) {
+        Pin* pin = pin_iter->next();
+        Net* net = db_network->net(pin);
+        if (net != nullptr) { // connected
+          Port* port = db_network->port(pin);
 
           // check if connected to a port
-          auto port_find = port_map->find(db_net);
+          auto port_find = port_map->find(net);
           if (port_find != port_map->end()) {
-            Net* net = network->findNet(inst, network->name(port_find->second));
-            network->connect(leaf_inst, port, net);
+            Net* new_net = network->findNet(inst, network->name(port_find->second));
+            network->connect(leaf_inst, port, new_net);
           }
           else {
-            Net* net = network->findNet(inst, db_net->getName().c_str());
-            if (net == nullptr)
-              net = network->makeNet(db_net->getName().c_str(), inst);
-            network->connect(leaf_inst, port, net);
+            Net* new_net = network->findNet(inst, db_network->name(net));
+            if (new_net == nullptr)
+              new_net = network->makeNet(db_network->name(net), inst);
+            network->connect(leaf_inst, port, new_net);
           }
         }
       }
+      delete pin_iter;
     }
   }
 
@@ -339,9 +366,12 @@ void PartitionMgr::writePartitionVerilog(const char* path,
     return;
 
   _logger->report("Writing partition to verilog.");
+  // get top module name
+  dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
+  std::string top_name = db_network->name(db_network->topInstance());
 
   // build partition instance map
-  std::map<long, std::set<dbInst*>> instance_map;
+  std::map<long, std::set<Instance*>> instance_map;
   for (dbInst* inst : block->getInsts()) {
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
@@ -350,15 +380,11 @@ void PartitionMgr::writePartitionVerilog(const char* path,
     else {
       long partition = prop_id->getValue();
       if (instance_map.find(partition) == instance_map.end())
-        instance_map.emplace(partition, std::set<dbInst*>());
+        instance_map.emplace(partition, std::set<Instance*>());
 
-      instance_map[partition].insert(inst);
+      instance_map[partition].insert(db_network->dbToSta(inst));
     }
   }
-
-  // get top module name
-  dbNetwork* db_network = ord::OpenRoad::openRoad()->getSta()->getDbNetwork();
-  std::string top_name = db_network->name(db_network->topInstance());
 
   // create new network and library
   NetworkReader* network = sta::makeConcreteNetwork();
@@ -375,10 +401,10 @@ void PartitionMgr::writePartitionVerilog(const char* path,
 
   // build submodule partitions
   std::map<long, Instance*> sta_instance_map;
-  std::map<long, std::map<dbNet*, Port*>> sta_port_map;
+  std::map<long, std::map<Net*, Port*>> sta_port_map;
   for (auto& [partition, instances] : instance_map) {
     std::string cell_name = top_name + module_suffix + std::to_string(partition);
-    sta_port_map[partition] = std::map<dbNet*, Port*>();
+    sta_port_map[partition] = std::map<Net*, Port*>();
     sta_instance_map[partition] = buildPartitionedInstance(cell_name.c_str(),
                                                            port_prefix,
                                                            library,

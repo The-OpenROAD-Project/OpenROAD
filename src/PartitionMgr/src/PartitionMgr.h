@@ -43,8 +43,6 @@ namespace odb {
 class dbDatabase;
 class dbChip;
 class dbBlock;
-class dbNet;
-class dbInst;
 }  // namespace odb
 
 namespace sta {
@@ -52,6 +50,7 @@ class Instance;
 class NetworkReader;
 class Library;
 class Port;
+class Net;
 }  // namespace sta
 
 namespace utl {
@@ -287,8 +286,8 @@ class PartitionMgr
                                           sta::Library* library,
                                           sta::NetworkReader* network,
                                           sta::Instance* parent,
-                                          std::set<odb::dbInst*>* insts,
-                                          std::map<odb::dbNet*, sta::Port*>* port_map);
+                                          std::set<sta::Instance*>* insts,
+                                          std::map<sta::Net*, sta::Port*>* port_map);
 };
 
 }  // namespace par
