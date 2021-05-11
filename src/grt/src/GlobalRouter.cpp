@@ -376,6 +376,14 @@ void GlobalRouter::setCapacities(int minRoutingLayer, int maxRoutingLayer)
       _vCapacities.push_back(_grid->getVerticalEdgesCapacities()[l - 1]);
     }
   }
+
+  for (int l = 1; l <= _grid->getNumLayers(); l++) {
+    int newCapH = _grid->getHorizontalEdgesCapacities()[l - 1] * 100;
+    _grid->updateHorizontalEdgesCapacities(l - 1, newCapH);
+
+    int newCapV = _grid->getVerticalEdgesCapacities()[l - 1] * 100;
+    _grid->updateVerticalEdgesCapacities(l - 1, newCapV);
+  }
 }
 
 Capacities GlobalRouter::saveCapacities(int previousMinLayer,
@@ -1762,7 +1770,8 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         int edgeCap
-            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer)
+              * 100;
         if (edgeCap != _grid->getHorizontalEdgesCapacities()[layer - 1]) {
           ADJUSTMENT_ adj;
           adj.firstX = x - 1;
@@ -1781,7 +1790,8 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
         int edgeCap
-            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
+            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer)
+              * 100;
         if (edgeCap != _grid->getVerticalEdgesCapacities()[layer - 1]) {
           ADJUSTMENT_ adj;
           adj.firstX = x - 1;

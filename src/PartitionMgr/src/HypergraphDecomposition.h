@@ -33,8 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
 #include "Hypergraph.h"
-#include "string"
+#include <string>
 
 namespace odb {
 class dbDatabase;

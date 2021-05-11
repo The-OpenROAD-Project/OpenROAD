@@ -656,13 +656,10 @@ report_floating_nets [-verbose]
 The `report_floating_nets` command reports nets with only one pin connection.
 Use the `-verbose` flag to see the net names.
 
-A typical resizer command file is shown below.
+A typical resizer command file (after a design and liberty libraries
+have been read) is shown below.
 
 ```
-# resizer/test/gcd_resize.tcl
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
-read_def gcd_placed.def
 read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
@@ -722,11 +719,7 @@ be optionally controlled by parameters specified to configure_cts_characterizati
 Use set_wire_rc command to set clock routing layer.
 
 ```
-read_lef "mylef.lef"
-read_liberty "myliberty.lib"
-read_def "mydef.def"
-read_verilog "myverilog.v"
-read_sdc "mysdc.sdc"
+read_sdc "design.sdc"
 set_wire_rc -clock -layer metal5
 
 configure_cts_characterization [-max_slew <max_slew>] \
@@ -783,15 +776,6 @@ Another command available from TritonCTS is ``report_cts``. It is used to extrac
 The following tcl snippet shows how to call ``report_cts``.
 
 ```
-read_lef "mylef.lef"
-read_liberty "myliberty.lib"
-read_def "mydef.def"
-read_verilog "myverilog.v"
-read_sdc "mysdc.sdc"
-
-set_wire_rc -clock -layer metal5
-report_checks
-
 clock_tree_synthesis -root_buf "BUF_X4" \
                      -buf_list "BUF_X4" \
                      -wire_unit 20 

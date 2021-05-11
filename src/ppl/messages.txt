@@ -31,7 +31,7 @@ PPL 0040 IOPlacer.cpp:456          Negative number of slots
 PPL 0041 IOPlacer.tcl:404          Pin group $group_idx: [$group]
 PPL 0042 IOPlacer.cpp:670          Unsuccessfully assigned I/O groups
 PPL 0043 IOPlacer.tcl:411          Pin $pin_name not found in group $group_idx
-PPL 0044 IOPlacer.tcl:541          Pin $pin_name not found for command $cmd
+PPL 0044 IOPlacer.tcl:541          Pin [get_property $pin name] not found for command $cmd
 PPL 0045 IOPlacer.tcl:334          Layer $hor_layer_name preferred direction is not horizontal.
 PPL 0046 IOPlacer.tcl:353          Layer $ver_layer_name preferred direction is not vertical.
 PPL 0048 IOPlacer.tcl:519          Restrict pins [$names] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge.

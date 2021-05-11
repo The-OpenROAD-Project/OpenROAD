@@ -315,6 +315,36 @@ BOOST_DATA_TEST_CASE(spacing_prl,
   }
 }
 
+// Check violation for spacing eol with design rule width on macro obstruction
+BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
+{
+  // Setup
+  makeSpacingEndOfLineConstraint(2);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  auto block = makeMacro("DRW");
+  if (legal)
+    makeMacroObs(block, 0, 700, 1000, 800);
+  else
+    makeMacroObs(block, 0, 700, 1000, 800, 2, 200);
+  makeInst("i1", block, 0, 0);
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    BOOST_TEST(markers.size() == 0);
+  } else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
+               frBox(450, 500, 550, 650));
+  }
+}
+
 // Check for a min step violation.  The checker seems broken
 // so this test is disabled.
 BOOST_AUTO_TEST_CASE(min_step, *boost::unit_test::disabled())

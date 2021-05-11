@@ -3,5 +3,8 @@
 [INFO ODB-0224]     Created 14 technology vias
 [INFO ODB-0225]     Created 33 library cells
 [INFO ODB-0226] Finished LEF file:  data/gscl45nm.lef
-Summary 47 / 47 (100% pass)
+[INFO ODB-0222] Reading LEF file: data/gscl45nm_ext_macros.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  data/gscl45nm_ext_macros.lef
+Summary 48 / 48 (100% pass)
 pass
