@@ -1081,7 +1081,7 @@ uint extMain::getLayerSearchBoundaries(odb::dbTechLayer* layer,
   uint width = layer->getWidth();
   uint p = layer->getPitch();
   if (p <= 0)
-    error(0, "Layer %s has pitch %u !!\n", layer->getConstName(), *pitch);
+    logger_->error(RCX, 467, "Layer %s has pitch %u !!\n", layer->getConstName(), *pitch);
 
   pitch[0] = 0;
   pitch[1] = 0;

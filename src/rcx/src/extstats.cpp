@@ -35,6 +35,7 @@
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/exttree.h"
+#include <iostream>
 
 namespace rcx {
 
@@ -121,6 +122,7 @@ uint extMain::calcMinMaxRC()
   odb::dbSet<odb::dbTechLayer>::iterator itr;
 
   uint cnt = 0;
+
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     odb::dbTechLayer* layer = *itr;
     odb::dbTechLayerType type = layer->getType();

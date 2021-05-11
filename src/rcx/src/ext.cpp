@@ -461,7 +461,7 @@ bool Ext::assembly(odb::dbBlock* block, odb::dbBlock* main_block)
 bool Ext::flatten(odb::dbBlock* block, bool spef)
 {
   if (block == NULL) {
-    odb::error(0, "No block for flatten command");
+    logger_->error(RCX, 466, "No block for flatten command");
   }
   _ext->addRCtoTop(block, spef);
   return TCL_OK;

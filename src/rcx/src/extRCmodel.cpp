@@ -63,13 +63,13 @@ static int getMetIndexOverUnder(uint met,
   n += mOver - met - 1;
 
   if ((n < 0) || (n >= (int) maxCnt)) {
-    logger->info(RCX,
-                 206,
-                 "getOverUnderIndex: out of range n= {}   m={} u= {} o= {}",
-                 n,
-                 met,
-                 mUnder,
-                 mOver);
+    // logger->info(RCX,
+    //              206,
+    //              "getOverUnderIndex: out of range n= {}   m={} u= {} o= {}",
+    //              n,
+    //              met,
+    //              mUnder,
+    //              mOver);
     return -1;
   }
 
