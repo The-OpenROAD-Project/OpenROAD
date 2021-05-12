@@ -57,7 +57,7 @@ class Fixture
                            frCoord xh,
                            frCoord yh,
                            frLayerNum lNum = 2,
-                           frCoord designRuleWidth = 0);
+                           frCoord designRuleWidth = -1);
 
   frInst* makeInst(const char* name, frBlock* refBlock, frCoord x, frCoord y);
 

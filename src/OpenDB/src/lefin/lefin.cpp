@@ -190,7 +190,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
   int count = geometry->numItems();
   dbTechLayer* layer = NULL;
   int dw = 0;
-  int designRuleWidth = 0;
+  int designRuleWidth = -1;
 
   for (int i = 0; i < count; i++) {
     _master_modified = true;
