@@ -48,13 +48,23 @@ void extMain::resetMinMaxRC(uint ii, uint jj)
 }
 void extMain::setMinRC(uint ii, uint jj, extDistRC* rc)
 {
-  _minCapTable[ii][jj] = 2 * rc->getTotalCap();
-  _minResTable[ii][jj] = 2 * rc->getRes();
+  if (rc) {
+    _minCapTable[ii][jj] = 2 * rc->getTotalCap();
+    _minResTable[ii][jj] = 2 * rc->getRes();
+  } else {
+    _minCapTable[ii][jj] = 0;
+    _minResTable[ii][jj] = 0;
+  }
 }
 void extMain::setMaxRC(uint ii, uint jj, extDistRC* rc)
-{
-  _maxCapTable[ii][jj] = 2 * rc->getTotalCap();
-  _maxResTable[ii][jj] = 2 * rc->getRes();
+{ 
+  if (rc) {
+    _maxCapTable[ii][jj] = 2 * rc->getTotalCap();
+    _maxResTable[ii][jj] = 2 * rc->getRes();
+  } else {
+    _maxCapTable[ii][jj] = 0;
+    _maxResTable[ii][jj] = 0;
+  }
 }
 extDistRC* extRCModel::getMinRC(int met, int width)
 {
