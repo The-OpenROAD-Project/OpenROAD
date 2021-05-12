@@ -932,7 +932,7 @@ Options description:
 
 #### TCL functions
 
-Get the die and core areas as a list "llx lly urx ury" in microns
+Get the die and core areas as a list in microns: "llx lly urx ury"
 
 ```
 get_die_area
