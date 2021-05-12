@@ -11,6 +11,5 @@ record_tests {
   make_tracks4
   make_tracks5
   auto_place_pins1
-  get_core_die_areas
 }
 
