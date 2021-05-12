@@ -38,20 +38,13 @@
 
 namespace ord {
 
-rcx::Ext* makeOpenRCX()
-{
-  return new rcx::Ext();
-}
+rcx::Ext* makeOpenRCX() { return new rcx::Ext(); }
 
-void deleteOpenRCX(rcx::Ext* extractor)
-{
-  delete extractor;
-}
+void deleteOpenRCX(rcx::Ext* extractor) { delete extractor; }
 
-void initOpenRCX(OpenRoad* openroad)
-{
-  openroad->getOpenRCX()->init(
-      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
+void initOpenRCX(OpenRoad* openroad) {
+  openroad->getOpenRCX()->init(openroad->tclInterp(), openroad->getDb(),
+                               openroad->getLogger());
 }
 
 }  // namespace ord

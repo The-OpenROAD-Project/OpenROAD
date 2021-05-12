@@ -38,8 +38,7 @@
 
 namespace rcx {
 
-void extSpef::initSearchForNets()
-{
+void extSpef::initSearchForNets() {
   uint W[16];
   uint S[16];
   uint P[16];
@@ -68,11 +67,8 @@ void extSpef::initSearchForNets()
     S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
     if (P[n] <= 0)
-      error(0,
-            "Layer %s, routing level %d, has pitch %d !!\n",
-            layer->getConstName(),
-            n,
-            P[n]);
+      error(0, "Layer %s, routing level %d, has pitch %d !!\n",
+            layer->getConstName(), n, P[n]);
     tg = _block->findTrackGrid(layer);
     if (tg) {
       tg->getGridX(trackXY);
@@ -89,8 +85,7 @@ void extSpef::initSearchForNets()
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, P, S, X1, Y1);
   _search->setBlock(_block);
 }
-uint extSpef::addNetShapesOnSearch(uint netId)
-{
+uint extSpef::addNetShapesOnSearch(uint netId) {
   dbNet* net = dbNet::getNet(_block, netId);
 
   dbWire* wire = net->getWire();
@@ -130,17 +125,11 @@ uint extSpef::addNetShapesOnSearch(uint netId)
     Rect r;
     s.getBox(r);
 
-    _search->addBox(
-        r.xMin(), r.yMin(), r.xMax(), r.yMax(), level1, netId, shapeId, wtype);
+    _search->addBox(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level1, netId,
+                    shapeId, wtype);
     if (level2)
-      _search->addBox(r.xMin(),
-                      r.yMin(),
-                      r.xMax(),
-                      r.yMax(),
-                      level2,
-                      netId,
-                      shapeId,
-                      wtype);
+      _search->addBox(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level2, netId,
+                      shapeId, wtype);
     cnt++;
     minx = MIN(r.xMin(), minx);
     miny = MIN(r.yMin(), miny);
@@ -155,13 +144,8 @@ uint extSpef::addNetShapesOnSearch(uint netId)
   }
   return cnt;
 }
-uint extSpef::findShapeId(uint netId,
-                          int x1,
-                          int y1,
-                          int x2,
-                          int y2,
-                          uint level)
-{
+uint extSpef::findShapeId(uint netId, int x1, int y1, int x2, int y2,
+                          uint level) {
   _idTable->resetCnt(0);
 
   if (level > 0) {
@@ -197,14 +181,8 @@ uint extSpef::findShapeId(uint netId,
   return id2;
 }
 
-uint extSpef::findShapeId(uint netId,
-                          int x1,
-                          int y1,
-                          int x2,
-                          int y2,
-                          char* layer,
-                          bool matchLayer)
-{
+uint extSpef::findShapeId(uint netId, int x1, int y1, int x2, int y2,
+                          char* layer, bool matchLayer) {
   _idTable->resetCnt(0);
 
   uint level = 0;
@@ -218,8 +196,7 @@ uint extSpef::findShapeId(uint netId,
   return findShapeId(netId, x1, y1, x2, y2, level);
 }
 
-void extSpef::initNodeCoordTables(uint memChunk)
-{
+void extSpef::initNodeCoordTables(uint memChunk) {
   _capNodeTable = new Ath__array1D<uint>(memChunk);
   _xCoordTable = new Ath__array1D<double>(memChunk);
   _yCoordTable = new Ath__array1D<double>(memChunk);
@@ -231,8 +208,7 @@ void extSpef::initNodeCoordTables(uint memChunk)
   _idTable = new Ath__array1D<uint>(16);
   initSearchForNets();  // search DB
 }
-void extSpef::resetNodeCoordTables()
-{
+void extSpef::resetNodeCoordTables() {
   _capNodeTable->resetCnt();
   _xCoordTable->resetCnt();
   _yCoordTable->resetCnt();
@@ -242,8 +218,7 @@ void extSpef::resetNodeCoordTables()
   _y2CoordTable->resetCnt();
   _levelTable->resetCnt();
 }
-void extSpef::deleteNodeCoordTables()
-{
+void extSpef::deleteNodeCoordTables() {
   if (_capNodeTable)
     delete _capNodeTable;
   _capNodeTable = NULL;
@@ -275,8 +250,7 @@ void extSpef::deleteNodeCoordTables()
     delete _idTable;
   _idTable = NULL;
 }
-bool extSpef::readNodeCoords(uint cpos)
-{
+bool extSpef::readNodeCoords(uint cpos) {
   //*CONN
   //*I *877470:SI_x5000y1770 I *C 3.54000 125.970 *L 2.41675 *D R00SPX00HA0
   //*I *875052:SO_x60y3190 O *C 2.66000 120.190 *L 1.54573 *D R00MSX42HD0
@@ -311,8 +285,7 @@ bool extSpef::readNodeCoords(uint cpos)
   _levelTable->add(level);
   return true;
 }
-void extSpef::adjustNodeCoords()
-{
+void extSpef::adjustNodeCoords() {
   for (uint ii = 0; ii < _capNodeTable->getCnt(); ii++) {
     char buff[128];
     sprintf(buff, "*%d%s%d", _tmpNetSpefId, _delimiter, _capNodeTable->get(ii));
@@ -333,8 +306,7 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 
   return ii;
 }
-uint extSpef::getITermShapeId(dbITerm* iterm)
-{
+uint extSpef::getITermShapeId(dbITerm* iterm) {
   if (iterm->getNet()->getWire() == NULL)
     return 0;
   return iterm->getNet()->getWire()->getTermJid(iterm->getId());
@@ -393,8 +365,7 @@ uint extSpef::getITermShapeId(dbITerm* iterm)
     return shapeId;
   */
 }
-uint extSpef::getBTermShapeId(dbBTerm* bterm)
-{
+uint extSpef::getBTermShapeId(dbBTerm* bterm) {
   dbShape pin;
   if (!bterm->getFirstPin(pin))  // TWG: added bpins
     return 0;
@@ -426,8 +397,7 @@ uint extSpef::getBTermShapeId(dbBTerm* bterm)
     return shapeId;
   */
 }
-uint extSpef::getShapeIdFromNodeCoords(uint targetCapNodeId)
-{
+uint extSpef::getShapeIdFromNodeCoords(uint targetCapNodeId) {
   uint shapeId;
   int ii = findNodeIndexFromNodeCoords(targetCapNodeId);
   if (ii < 0)
@@ -453,8 +423,7 @@ lyr=METAL3 2 *1:5 *1:6 23.1819 // x=[740.11,740.25] y=[340.83,358.11] dx=0.14
 dy=17.28 lyr=METAL4 3 *1:7 *1:8 24.5655 // x=[779.31,779.45] y=[357.85,376.81]
 dx=0.14 dy=18.96 lyr=METAL4
 */
-uint extSpef::parseAndFindShapeId()
-{
+uint extSpef::parseAndFindShapeId() {
   if (_parser->getWordCnt() < 10)
     return 0;
 
@@ -476,12 +445,11 @@ uint extSpef::parseAndFindShapeId()
   // bool matchLayer= true;
   bool matchLayer = false;
 
-  uint shapeId
-      = findShapeId(_d_net->getId(), x1, y1, x2, y2, layer, matchLayer);
+  uint shapeId =
+      findShapeId(_d_net->getId(), x1, y1, x2, y2, layer, matchLayer);
   return shapeId;
 }
-void extSpef::readNmCoords()
-{
+void extSpef::readNmCoords() {
   if (_parser->getWordCnt() < 10)
     return;
 
@@ -500,15 +468,11 @@ void extSpef::readNmCoords()
   _x2CoordTable->add(x2);
   _y2CoordTable->add(y2);
 }
-void extSpef::searchDealloc()
-{
-  _search->dealloc();
-}
+void extSpef::searchDealloc() { _search->dealloc(); }
 
 }  // namespace rcx
 
-void Ath__grid::dealloc()
-{
+void Ath__grid::dealloc() {
   for (uint ii = 0; ii <= _searchHiTrack; ii++) {
     Ath__track* btrack = _trackTable[ii];
     if (btrack == NULL)
@@ -523,8 +487,7 @@ void Ath__grid::dealloc()
     _trackTable[ii] = NULL;
   }
 }
-void Ath__gridTable::dealloc()
-{
+void Ath__gridTable::dealloc() {
   for (uint dir = 0; dir < _rowCnt; dir++) {
     for (uint jj = 1; jj < _colCnt; jj++) {
       Ath__grid* netGrid = _gridTable[dir][jj];
