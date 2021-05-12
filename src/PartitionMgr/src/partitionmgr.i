@@ -36,8 +36,7 @@
 %{
 #include "PartitionMgr.h"
 #include "ord/OpenRoad.hh"
-#include <algorithm>
-#include <time.h>
+#include <set>
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -126,28 +125,20 @@ void set_refinement(unsigned value) {
 }
 
 void set_seeds(const std::vector<int>& seeds) {
-        getPartitionMgr()->getOptions().setSeeds(seeds);
+  std::set<int> seedSet(seeds.begin(), seeds.end());
+  getPartitionMgr()->getOptions().setSeeds(seedSet);
 }
 
 void set_existing_id(int value) {
         getPartitionMgr()->getOptions().setExistingID(value);
 }
 
+void set_random_seed(int value) {
+        getPartitionMgr()->getOptions().setRandomSeed(value);
+}
+
 void generate_seeds(unsigned value) {
-        std::vector<int> seedVector;
-        std::srand(42);
-        for (int i = 0; i < value; i++)
-        {
-                int seedVar = 5;
-                int seed = 0;
-                do
-                {
-                        seed = std::rand();
-                        seedVar += 5;
-                } while (std::find(seedVector.begin(), seedVector.end(), seed) != seedVector.end());
-                seedVector.push_back(seed);
-        }
-        getPartitionMgr()->getOptions().setSeeds(seedVector);
+        getPartitionMgr()->getOptions().generateSeeds(value);
 }
 
 void set_partition_ids_to_test(const std::vector<int>& ids) {
