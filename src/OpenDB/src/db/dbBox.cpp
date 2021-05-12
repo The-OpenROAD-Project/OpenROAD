@@ -96,6 +96,8 @@ bool _dbBox::operator==(const _dbBox& rhs) const
     return false;
   if (_octilinear != rhs._octilinear)
     return false;
+  if (design_rule_width_ != rhs.design_rule_width_)
+    return false;
   return true;
 }
 
@@ -137,7 +139,7 @@ int _dbBox::equal(const _dbBox& rhs) const
   }
   if (_octilinear != rhs._octilinear)
     return false;
-  if (_octilinear != rhs._octilinear)
+  if (design_rule_width_ != rhs.design_rule_width_)
     return false;
   if (isOct() && _shape._oct != _shape._oct)
     return false;
@@ -208,6 +210,8 @@ bool _dbBox::operator<(const _dbBox& rhs) const
   }
   if (!isOct() && !rhs.isOct())
     return _shape._rect < rhs._shape._rect;
+  if (design_rule_width_ >= rhs.design_rule_width_)
+    return false;
   return false;
 }
 
@@ -233,6 +237,7 @@ void _dbBox::differences(dbDiff& diff,
   }
   DIFF_FIELD(_owner);
   DIFF_FIELD(_next_box);
+  DIFF_FIELD(design_rule_width_);
   DIFF_END
 }
 
@@ -253,6 +258,7 @@ void _dbBox::out(dbDiff& diff, char side, const char* field) const
     }
     DIFF_OUT_FIELD(_owner);
     DIFF_OUT_FIELD(_next_box);
+    DIFF_OUT_FIELD(design_rule_width_);
     DIFF_END
   } else {
     DIFF_OUT_BEGIN
@@ -561,6 +567,19 @@ uint dbBox::getWidth(uint dir)
   else
     return getDX();
 }
+
+int dbBox::getDesignRuleWidth() const
+{
+  _dbBox* box = (_dbBox*) this;
+  return box->design_rule_width_;
+}
+
+void dbBox::setDesignRuleWidth(int width)
+{
+  _dbBox* box = (_dbBox*) this;
+  box->design_rule_width_ = width;
+}
+
 uint dbBox::getLength(uint dir)
 {
   if (dir == 1)  // horizontal

@@ -5,6 +5,7 @@
 OpenROAD is an integrated chip physical design tool that takes a
 design from synthesized Verilog to routed layout.  
 
+
 An outline of steps used to build a chip using OpenROAD are shown below.
 
 * Initialize floorplan - define the chip size and cell rows
@@ -312,7 +313,7 @@ random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
-or a range of values. Example: `place_pins -hor_layers 2 -ver_layers 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
+or a range of values. Example: `place_pins -hor_layers metal2 -ver_layers metal3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 
@@ -351,9 +352,15 @@ set_io_pin_constraint -direction direction -pin_names names -region edge:interva
 
 The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
-command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
+command call. The `-direction` argument is the pin direction (input, output, inout, or feedthru).
 The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 To restrict pins to the positions defined with `define_pin_shape_pattern`, use `-region up:{llx lly urx ury}` or `-region up:*`.
+
+```
+clear_io_pin_constraints
+```
+
+The `clear_io_pin_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
 
 #### Tapcell
 
@@ -650,13 +657,10 @@ report_floating_nets [-verbose]
 The `report_floating_nets` command reports nets with only one pin connection.
 Use the `-verbose` flag to see the net names.
 
-A typical resizer command file is shown below.
+A typical resizer command file (after a design and liberty libraries
+have been read) is shown below.
 
 ```
-# resizer/test/gcd_resize.tcl
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
-read_def gcd_placed.def
 read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
@@ -716,11 +720,7 @@ be optionally controlled by parameters specified to configure_cts_characterizati
 Use set_wire_rc command to set clock routing layer.
 
 ```
-read_lef "mylef.lef"
-read_liberty "myliberty.lib"
-read_def "mydef.def"
-read_verilog "myverilog.v"
-read_sdc "mysdc.sdc"
+read_sdc "design.sdc"
 set_wire_rc -clock -layer metal5
 
 configure_cts_characterization [-max_slew <max_slew>] \
@@ -777,15 +777,6 @@ Another command available from TritonCTS is ``report_cts``. It is used to extrac
 The following tcl snippet shows how to call ``report_cts``.
 
 ```
-read_lef "mylef.lef"
-read_liberty "myliberty.lib"
-read_def "mydef.def"
-read_verilog "myverilog.v"
-read_sdc "mysdc.sdc"
-
-set_wire_rc -clock -layer metal5
-report_checks
-
 clock_tree_synthesis -root_buf "BUF_X4" \
                      -buf_list "BUF_X4" \
                      -wire_unit 20 

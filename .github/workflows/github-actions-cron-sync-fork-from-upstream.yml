@@ -1,29 +1,46 @@
-name: GitHub Actions Cron sync this fork from upstream
-# on push can specify branch
+name: Automatically sync branch from upstream.
+
 on:
   schedule:
-  - cron: "0/30 * * * *"
+  - cron: "*/5 * * * *"
+
   workflow_dispatch:
+    inputs:
+      force:
+        description: Use GitHub --force push.
+        default:
+
+  repository_dispatch:
+
 
 jobs:
-  Sync-Fork-From-Upstream:
+  Sync-Branch-From-Upstream:
+    name: Automatic sync 'master' from The-OpenROAD-Project/OpenROAD
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    steps:
-      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      
-      - name: Check out repository code
-        uses: actions/checkout@v2
-        with:
-          ref: master
-          token: ${{ secrets.GITHUBPUBLICREPOTOKEN }}
 
-      
-      - name: Pull Upstream
-        uses: The-OpenROAD-Project/actions/upstream_sync@main
-        with:
-          upstreamRepoUrl: https://github.com/The-OpenROAD-Project/OpenROAD.git
-          upstreamBranch: master
-                
+    # Only allow one action to run at a time.
+    concurrency: sync-branch-from-upstream
+
+    # Action needs no permissions, as push is granted via adding a deploy key
+    # with write access to the $DEPLOY_KEY secret.
+    permissions:
+      contents: read
+
+    # Don't run on the upstream repository and only run on the right branch.
+    if: ${{ (github.repository != 'The-OpenROAD-Project/OpenROAD') && endsWith(github.ref, '/master') }}
+
+    steps:
+
+    - uses: The-OpenROAD-Project/actions/upstream_sync@main
+      env:
+        HAS_DEPLOY_KEY: ${{ !!(secrets.DEPLOY_KEY) }}
+      if: ${{ env.HAS_DEPLOY_KEY == 'true' }}
+      with:
+        upstreamRepo: The-OpenROAD-Project/OpenROAD
+        upstreamBranch: master
+        # To always overwrite master branch, set UPSTREAM_SYNC to the exact
+        # string 'always overwrite master branch'.
+        # You can also manually trigger a workflow dispatch with the force
+        # value equal to 'true'.
+        force: ${{ github.event.inputs.force || (secrets.UPSTREAM_SYNC == 'always overwrite master branch') }}
+        deployKey: ${{ secrets.DEPLOY_KEY }}

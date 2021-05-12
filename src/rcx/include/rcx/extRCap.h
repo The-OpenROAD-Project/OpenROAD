@@ -43,6 +43,7 @@
 #include "ISdb.h"
 #include "ZObject.h"
 #include "db.h"
+#include "wire.h"
 #include "extprocess.h"
 #include "gseq.h"
 #include "odb.h"
@@ -1001,7 +1002,7 @@ class extMeasure
 
   bool isBtermConnection(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2);
   bool isConnectedToBterm(odb::dbRSeg* rseg1);
-  uint defineBox(int* options);
+  uint defineBox(CoupleOptions& options);
   void printCoords(FILE* fp);
   void printNet(odb::dbRSeg* rseg, uint netId);
   void updateBox(uint w_layout, uint s_layout, int dir = -1);
@@ -1086,7 +1087,7 @@ class extMeasure
   int underFlowStep(Ath__array1D<odb::SEQ*>* srcTable,
                     Ath__array1D<odb::SEQ*>* overTable);
 
-  void measureRC(int* options);
+  void measureRC(CoupleOptions& options);
   int computeAndStoreRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, int srcCovered);
   int computeAndStoreRC_720(odb::dbRSeg* rseg1,
                             odb::dbRSeg* rseg2,
@@ -1282,7 +1283,7 @@ class extMeasure
                     Ath__array1D<odb::SEQ*>* residueSeq);
   void printDgContext();
   void initTargetSeq();
-  void getDgOverlap(int* options);
+  void getDgOverlap(CoupleOptions &options);
   void getDgOverlap(odb::SEQ* sseq,
                     uint dir,
                     Ath__array1D<odb::SEQ*>* dgContext,
@@ -2159,7 +2160,7 @@ class extMain
                     uint trackStep,
                     uint ccDist,
                     extMeasure* m,
-                    void (*coupleAndCompute)(int*, void*));
+                    CoupleAndCompute coupleAndCompute);
   uint initPlanes(uint dir,
                   uint layerCnt,
                   uint* pitchTable,
@@ -2182,7 +2183,7 @@ class extMain
                           uint ccFlag,
                           bool doExt,
                           extMeasure* m,
-                          void (*coupleAndCompute)(int*, void*));
+                          CoupleAndCompute coupleAndCompute);
   bool isIncluded(odb::Rect& r, uint dir, int* ll, int* ur);
   bool matchDir(uint dir, odb::Rect& r);
   bool isIncludedInsearch(odb::Rect& r, uint dir, int* bb_ll, int* bb_ur);
@@ -2205,7 +2206,7 @@ class extMain
   uint getResCapTable(bool lefRC);
   double getLoCoupling();
   void ccReportProgress();
-  void measureRC(int* options);
+  void measureRC(CoupleOptions& options);
   void updateTotalRes(odb::dbRSeg* rseg1,
                       odb::dbRSeg* rseg2,
                       extMeasure* m,
@@ -2698,7 +2699,7 @@ class extMain
                      odb::Rect& extRect,
                      bool single_sdb,
                      extMeasure* m,
-                     void (*coupleAndCompute)(int*, void*),
+                     CoupleAndCompute coupleAndCompute,
                      int* sdbTable_ll = NULL,
                      int* sdbTable_ur = NULL,
                      uint* bucketSize = NULL,
@@ -2709,7 +2710,7 @@ class extMain
   uint couplingTileFlow(bool rlog,
                         odb::Rect& extRect,
                         extMeasure* m,
-                        void (*coupleAndCompute)(int*, void*));
+                        CoupleAndCompute coupleAndCompute);
 
   uint createWindowsDB(bool rlog,
                        odb::Rect& extRect,

@@ -60,13 +60,15 @@ void IOPlacer::clear()
 {
   hor_layers_.clear();
   ver_layers_.clear();
+  top_grid_ = TopLayerGrid();
   zero_sink_ios_.clear();
   sections_.clear();
+  sections_for_constraints_.clear();
   slots_.clear();
+  top_layer_slots_.clear();
   assignment_.clear();
   netlist_io_pins_.clear();
   excluded_intervals_.clear();
-  constraints_.clear();
   netlist_.clear();
   pin_groups_.clear();
   *parms_ = Parameters();
@@ -122,7 +124,7 @@ void IOPlacer::randomPlacement()
       }
     }
 
-    std::vector<int> pin_indices = findPinsForConstraint(constraint);
+    std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist_);
 
     bool top_layer = constraint.interval.edge == Edge::invalid;
     randomPlacement(pin_indices, valid_slots, top_layer);
@@ -185,7 +187,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     int slot_idx = slot_indices[floor(b * shift)];
     IOPin& io_pin = netlist_.getIoPin(pin_idx);
     io_pin.setPos(slots.at(slot_idx).pos);
-    io_pin.place();
+    io_pin.setPlaced();
     slots.at(slot_idx).used = true;
     slots.at(slot_idx).blocked = true;
     io_pin.setLayer(slots.at(slot_idx).layer);
@@ -542,11 +544,6 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
-bool compareConstraints(const Constraint &c1, const Constraint &c2)
-{
-  return c1.pin_list.size() > c2.pin_list.size();
-}
-
 void IOPlacer::assignConstrainedPinsToSections()
 {
   Netlist& netlist = netlist_io_pins_;
@@ -554,12 +551,18 @@ void IOPlacer::assignConstrainedPinsToSections()
 
   for (Constraint &constraint : constraints_) {
     std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
-    PinList &pin_list = constraint.pin_list;
-    const Direction &dir = constraint.direction;
+    int slots_count = 0;
+    for (Section sec : sections_for_constraint) {
+      slots_count += sec.num_slots;
+    }
 
-    int idx;
-    for (odb::dbBTerm* bterm : pin_list) {
-      idx = netlist.getIoPinIdx(bterm);
+    std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
+    
+    if (pin_indices.size() > slots_count) {
+      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), slots_count);
+    }
+
+    for (int idx : pin_indices) {
       IOPin& io_pin = netlist.getIoPin(idx);
 
       if (assignPinToSection(io_pin, idx, sections_for_constraint)) {
@@ -980,7 +983,8 @@ void IOPlacer::addTopLayerConstraint(PinList* pins,
 void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
 {
   Netlist& netlist = netlist_io_pins_;
-  if (constraint.direction != Direction::invalid) {
+  if (constraint.direction != Direction::invalid &&
+      constraint.pin_list.empty()) {
     for (const IOPin& io_pin : netlist.getIOPins()) {
       if (io_pin.getDirection() == constraint.direction) {
         constraint.pin_list.push_back(io_pin.getBTerm());
@@ -989,13 +993,18 @@ void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
   }
 }
 
-std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint)
+std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint, Netlist& netlist)
 {
   std::vector<int> pin_indices;
   const PinList &pin_list = constraint.pin_list;
   for (odb::dbBTerm* bterm : pin_list) {
-    int idx = netlist_.getIoPinIdx(bterm);
-    pin_indices.push_back(idx);
+    int idx = netlist.getIoPinIdx(bterm);
+    IOPin& io_pin = netlist.getIoPin(idx);
+    if (!io_pin.isPlaced() && !io_pin.isAssignedToSection()) {
+      pin_indices.push_back(idx);
+    } else if (!io_pin.isInGroup()) {
+      logger_->warn(PPL, 75, "Pin {} is assigned to more than one constraints. Using last defined constraint.", io_pin.getName());
+    }
   }
 
   return pin_indices;
@@ -1003,7 +1012,7 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint)
 
 void IOPlacer::initConstraints()
 {
-  std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
+  std::reverse(constraints_.begin(), constraints_.end());
   Netlist& netlist = netlist_io_pins_;
   int pins_assigned = 0;
   for (Constraint &constraint : constraints_) {

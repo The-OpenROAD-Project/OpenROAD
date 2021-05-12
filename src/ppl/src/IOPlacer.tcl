@@ -167,7 +167,13 @@ proc set_io_pin_constraint { args } {
       set names $keys(-pin_names)
       ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
     }
+  } else {
+    utl::warn PPL 73 "constraint with region $region has an invalid edge."
   }
+}
+
+proc clear_io_pin_constraints {} {
+  ppl::clear_constraints
 }
 
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
@@ -528,12 +534,7 @@ proc parse_pin_names {cmd names} {
   set dbBlock [ord::get_db_block]
   set pin_list {}
   foreach pin [get_ports $names] {
-    set db_bterm [$dbBlock findBTerm [get_property $pin name]]
-    if { $db_bterm != "NULL" } {
-      lappend pin_list $db_bterm
-    } else {
-      utl::warn PPL 44 "Pin $pin_name not found for command $cmd"
-    }
+    lappend pin_list [sta::sta_to_db_port $pin]
   }
 
   if {[llength $pin_list] == 0} {

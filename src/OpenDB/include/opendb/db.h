@@ -523,6 +523,10 @@ class dbBox : public dbObject
   ///
   uint getDX();
 
+  int getDesignRuleWidth() const;
+
+  void setDesignRuleWidth(int);
+
   ///
   /// Get the height (yMax-yMin) of the box.
   ///
@@ -8591,6 +8595,9 @@ class dbGCellGrid : public dbObject
     uint horizontal_capacity = 0;
     uint vertical_capacity = 0;
     uint up_capacity = 0;
+    uint horizontal_blockage = 0;
+    uint vertical_blockage = 0;
+    uint up_blockage = 0;
   };
   // User Code Begin dbGCellGridEnums
   // User Code End dbGCellGridEnums
@@ -8668,6 +8675,12 @@ class dbGCellGrid : public dbObject
 
   uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
+  uint getHorizontalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getVerticalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
   void setHorizontalCapacity(dbTechLayer* layer,
                              uint x_idx,
                              uint y_idx,
@@ -8686,6 +8699,18 @@ class dbGCellGrid : public dbObject
 
   void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
 
+  void setHorizontalBlockage(dbTechLayer* layer,
+                             uint x_idx,
+                             uint y_idx,
+                             uint blockage);
+
+  void setVerticalBlockage(dbTechLayer* layer,
+                           uint x_idx,
+                           uint y_idx,
+                           uint blockage);
+
+  void setUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
+
   void setCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
@@ -8700,6 +8725,13 @@ class dbGCellGrid : public dbObject
                 uint vertical,
                 uint up);
 
+  void setBlockage(dbTechLayer* layer,
+                   uint x_idx,
+                   uint y_idx,
+                   uint horizontal,
+                   uint vertical,
+                   uint up);
+
   void getCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
@@ -8713,6 +8745,13 @@ class dbGCellGrid : public dbObject
                 uint& horizontal,
                 uint& vertical,
                 uint& up) const;
+
+  void getBlockage(dbTechLayer* layer,
+                   uint x_idx,
+                   uint y_idx,
+                   uint& horizontal,
+                   uint& vertical,
+                   uint& up) const;
 
   void resetCongestionMap();
 

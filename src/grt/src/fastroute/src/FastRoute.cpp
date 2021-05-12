@@ -393,8 +393,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     YRANGE = 1000;
   }
 
-  vCapacity3D = new int[numLayers];
-  hCapacity3D = new int[numLayers];
+  vCapacity3D = new short[numLayers];
+  hCapacity3D = new short[numLayers];
 
   for (int i = 0; i < numLayers; i++) {
     vCapacity3D[i] = 0;
@@ -465,13 +465,13 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   costTBtest = new float[XRANGE];   // Top and bottom boundary cost
 }
 
-void FastRouteCore::addVCapacity(int verticalCapacity, int layer)
+void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
 {
   vCapacity3D[layer - 1] = verticalCapacity;
   vCapacity += vCapacity3D[layer - 1];
 }
 
-void FastRouteCore::addHCapacity(int horizontalCapacity, int layer)
+void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
 {
   hCapacity3D[layer - 1] = horizontalCapacity;
   hCapacity += hCapacity3D[layer - 1];
@@ -530,7 +530,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int validPins,
                           float alpha,
                           bool isClock,
-                          int cost)
+                          int cost,
+                          std::vector<int> edgeCostPerLayer)
 {
   int netID = newnetID;
   pinInd = validPins;
@@ -541,6 +542,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   nets[newnetID]->alpha = alpha;
   nets[newnetID]->isClock = isClock;
   nets[newnetID]->edgeCost = cost;
+  nets[newnetID]->edgeCostPerLayer = edgeCostPerLayer;
 
   seglistIndex[newnetID] = segcount;
   newnetID++;
@@ -931,19 +933,32 @@ void FastRouteCore::updateDbCongestion()
       logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
       continue;
     }
+
     for (int y = 0; y < yGrid; y++) {
       for (int x = 0; x < xGrid - 1; x++) {
         int gridH = y * (xGrid - 1) + x + k * (xGrid - 1) * yGrid;
+
+        unsigned short capH = hCapacity3D[k];
+        unsigned short blockageH = (hCapacity3D[k] - h_edges3D[gridH].cap);
+        unsigned short usageH = h_edges3D[gridH].usage + blockageH;
+
+        db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
+        db_gcell->setHorizontalUsage(layer, x, y, (uint) usageH);
+        db_gcell->setHorizontalBlockage(layer, x, y, (uint) blockageH);
+      }
+    }
+
+    for (int y = 0; y < yGrid - 1; y++) {
+      for (int x = 0; x < xGrid; x++) {
         int gridV = y * xGrid + x + k * xGrid * (yGrid - 1);
 
-        unsigned short capH = h_edges3D[gridH].cap;
-        unsigned short usageH = h_edges3D[gridH].usage;
+        unsigned short capV = vCapacity3D[k];
+        unsigned short blockageV = (vCapacity3D[k] - v_edges3D[gridV].cap);
+        unsigned short usageV = v_edges3D[gridV].usage + blockageV;
 
-        unsigned short capV = v_edges3D[gridV].cap;
-        unsigned short usageV = v_edges3D[gridV].usage;
-
-        db_gcell->setCapacity(layer, x, y, (uint) capH, (uint) capV, 0);
-        db_gcell->setUsage(layer, x, y, (uint) usageH, (uint) usageV, 0);
+        db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
+        db_gcell->setVerticalUsage(layer, x, y, (uint) usageV);
+        db_gcell->setVerticalBlockage(layer, x, y, (uint) blockageV);
       }
     }
   }
@@ -1294,14 +1309,7 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  if (totalOverflow > 0 && !allowOverflow) {
-    updateDbCongestion();
-    logger->error(GRT, 118, "Routing congestion too high.");
-  }
-
-  if (allowOverflow && totalOverflow > 0) {
-    logger->warn(GRT, 115, "Global routing finished with overflow.");
-  }
+  bool has_2D_overflow = totalOverflow > 0;
 
   if (minofl > 0) {
     logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
@@ -1371,6 +1379,14 @@ NetRouteMap FastRouteCore::run()
   netEO.clear();
 
   updateDbCongestion();
+
+  if (has_2D_overflow && !allowOverflow) {
+    logger->error(GRT, 118, "Routing congestion too high.");
+  }
+
+  if (totalOverflow > 0) {
+    logger->warn(GRT, 115, "Global routing finished with overflow.");
+  }
 
   return routes;
 }
