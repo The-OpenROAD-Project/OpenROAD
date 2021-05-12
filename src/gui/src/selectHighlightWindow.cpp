@@ -82,15 +82,8 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   int row_index = index.row();
   if (row_index > table_data_.size())
     return QVariant();
-  std::string obj_name = table_data_[row_index]->getName();
-  std::string obj_type("");
-  if (obj_name.rfind("Net: ", 0) == 0) {
-    obj_name = obj_name.substr(5);
-    obj_type = "Net";
-  } else if (obj_name.rfind("Inst: ", 0) == 0) {
-    obj_name = obj_name.substr(6);
-    obj_type = "Instance";
-  }
+  const std::string obj_name = table_data_[row_index]->getName();
+  const std::string obj_type = table_data_[row_index]->getTypeName();
   if (index.column() == 0) {
     return QString::fromStdString(obj_name);
   } else if (index.column() == 1) {

@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "mainWindow.h"
-
 #include <QDesktopWidget>
 #include <QMenu>
 #include <QMenuBar>
@@ -43,7 +41,9 @@
 #include <vector>
 
 #include "displayControls.h"
+#include "inspector.h"
 #include "layoutViewer.h"
+#include "mainWindow.h"
 #include "ord/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
@@ -55,8 +55,14 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(
-          new LayoutViewer(controls_, selected_, highlighted_, rulers_, this)),
+      inspector_(new Inspector(selected_, this)),
+      viewer_(new LayoutViewer(
+          controls_,
+          selected_,
+          highlighted_,
+          rulers_,
+          [this](const std::any& object) { return makeSelected(object); },
+          this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
@@ -73,6 +79,7 @@ MainWindow::MainWindow(QWidget* parent)
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
+  addDockWidget(Qt::RightDockWidgetArea, inspector_);
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
 
   tabifyDockWidget(selection_browser_, script_);
@@ -114,6 +121,12 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(update()));
+
+  connect(inspector_,
+          SIGNAL(selected(const Selected&, bool)),
+          this,
+          SLOT(setSelected(const Selected&, bool)));
+  connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
 
   connect(this,
           SIGNAL(selectionChanged()),
@@ -244,6 +257,7 @@ void MainWindow::createMenus()
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
+  windows_menu_->addAction(inspector_->toggleViewAction());
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
@@ -280,7 +294,11 @@ void MainWindow::addSelected(const Selected& selection)
   }
   status(selection ? selection.getName() : "");
   emit selectionChanged();
-  selection_browser_->show();
+  inspector_->inspect(selection);
+  if (selection) {
+    inspector_->show();
+    selection_browser_->show();
+  }
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)
@@ -453,10 +471,9 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
   SelectionSet connected_insts;
   for (auto& sel_obj : selected_) {
     if (sel_obj.isNet()) {
-      odb::dbObject* db_obj = static_cast<odb::dbObject*>(sel_obj.getObject());
-      odb::dbNet* net_obj = static_cast<odb::dbNet*>(db_obj);
+      auto net_obj = std::any_cast<odb::dbNet*>(sel_obj.getObject());
       for (auto inst_term : net_obj->getITerms()) {
-        connected_insts.insert(Selected(inst_term));
+        connected_insts.insert(makeSelected(inst_term));
       }
     }
   }
@@ -476,8 +493,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
   SelectionSet connected_nets;
   for (auto sel_obj : selected_) {
     if (sel_obj.isInst()) {
-      odb::dbObject* db_obj = static_cast<odb::dbObject*>(sel_obj.getObject());
-      odb::dbInst* inst_obj = static_cast<odb::dbInst*>(db_obj);
+      auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
             || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
@@ -487,11 +503,11 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(Selected(inst_term->getNet()));
+          connected_nets.insert(makeSelected(inst_term->getNet()));
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(Selected(inst_term->getNet(), inst_term));
+          connected_nets.insert(makeSelected(inst_term->getNet(), inst_term));
       }
     }
   }
@@ -550,4 +566,25 @@ void MainWindow::fit()
 {
   fit_->trigger();
 }
+
+Selected MainWindow::makeSelected(std::any object, void* additional_data)
+{
+  if (!object.has_value()) {
+    return Selected();
+  }
+
+  auto it = descriptors_.find(object.type());
+  if (it != descriptors_.end()) {
+    return it->second->makeSelected(object, additional_data);
+  } else {
+    return Selected();  // FIXME: null descriptor
+  }
+}
+
+void MainWindow::registerDescriptor(const std::type_info& type,
+                                    const Descriptor* descriptor)
+{
+  descriptors_[type] = descriptor;
+}
+
 }  // namespace gui

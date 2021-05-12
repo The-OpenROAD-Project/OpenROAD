@@ -37,11 +37,11 @@
 #include <QMainWindow>
 #include <QToolBar>
 #include <memory>
+#include <typeindex>
 
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-
 #include "timingDebugDialog.h"
 
 namespace odb {
@@ -59,6 +59,7 @@ class SelectHighlightWindow;
 class LayoutScroll;
 class ScriptWidget;
 class DisplayControls;
+class Inspector;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -82,6 +83,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Fit design in window
   void fit();
+
+  void registerDescriptor(const std::type_info& type,
+                          const Descriptor* descriptor);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -119,6 +123,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Add the selections to the current selections
   void addSelected(const SelectionSet& selections);
+
+  // Make an Selected from object with a known descriptor
+  Selected makeSelected(std::any object,
+                        void* additional_data = nullptr);
 
   // Displays the selection in the status bar
   void setSelected(const Selected& selection, bool show_connectivity = false);
@@ -162,10 +170,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // show Timing Dialog Box
   void showTimingDialog();
 
-  DisplayControls* getControls() const{
-      return controls_;
-  }
-
+  DisplayControls* getControls() const { return controls_; }
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -173,6 +178,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
+
  private:
   void createMenus();
   void createActions();
@@ -189,6 +195,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
+  Inspector* inspector_;
   LayoutViewer* viewer_;  // owned by scroll_
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
@@ -214,6 +221,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   FindObjectDialog* find_dialog_;
   TimingDebugDialog* timing_dialog_;
+
+  // Maps types to descriptors
+  std::unordered_map<std::type_index, const Descriptor*> descriptors_;
 };
 
 }  // namespace gui
