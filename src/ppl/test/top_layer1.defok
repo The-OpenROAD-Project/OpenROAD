@@ -407,7 +407,7 @@ PINS 54 ;
     - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER met5 ( -800 -1250 ) ( 800 1250 )
-        + PLACED ( 138400 124800 ) N ;
+        + PLACED ( 138400 138400 ) N ;
     - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met5 ( -800 -1250 ) ( 800 1250 )
@@ -415,7 +415,7 @@ PINS 54 ;
     - reset + NET reset + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met5 ( -800 -1250 ) ( 800 1250 )
-        + PLACED ( 138400 131600 ) N ;
+        + PLACED ( 138400 145200 ) N ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -483,11 +483,11 @@ PINS 54 ;
     - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met5 ( -800 -1250 ) ( 800 1250 )
-        + PLACED ( 138400 145200 ) N ;
+        + PLACED ( 138400 131600 ) N ;
     - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER met5 ( -800 -1250 ) ( 800 1250 )
-        + PLACED ( 138400 138400 ) N ;
+        + PLACED ( 138400 124800 ) N ;
 END PINS
 NETS 54 ;
     - clk ( PIN clk ) ( _725_ CLK ) ( _724_ CLK ) ( _723_ CLK ) ( _722_ CLK ) ( _721_ CLK ) ( _720_ CLK )
