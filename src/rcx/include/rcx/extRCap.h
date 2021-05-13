@@ -330,7 +330,7 @@ class extDistWidthRCTable
 
   uint _modulo;
   int _firstWidth = 0;
-  int _lastWidth = std::numeric_limits<int>::max();
+  int _lastWidth = -1;
   Ath__array1D<int>* _firstDiagWidth;
   Ath__array1D<int>* _lastDiagWidth;
   Ath__array1D<int>* _firstDiagDist;

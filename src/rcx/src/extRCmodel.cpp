@@ -51,30 +51,23 @@ using utl::RCX;
 
 bool OUREVERSEORDER = false;
 
-static int getMetIndexOverUnder(uint met, uint mUnder, uint mOver,
-                                uint layerCnt, uint maxCnt) {
+static int getMetIndexOverUnder(int met, int mUnder, int mOver,
+                                int layerCnt, int maxCnt=10000) {
   int n = layerCnt - met - 1;
   n *= mUnder - 1;
   n += mOver - met - 1;
-
-  if ((n < 0) || (n >= (int)maxCnt)) {
-    // logger->info(RCX,
-    //              206,
-    //              "getOverUnderIndex: out of range n= {}   m={} u= {} o= {}",
-    //              n,
-    //              met,
-    //              mUnder,
-    //              mOver);
+  
+  if ((n < 0) || (n >= maxCnt)) {
     return -1;
   }
 
   return n;
 }
-static uint getMaxMetIndexOverUnder(uint met, uint layerCnt, Logger* logger) {
-  uint n = 0;
+static int getMaxMetIndexOverUnder(int met, int layerCnt) {
+  int n = 0;
   for (uint u = met - 1; u > 0; u--) {
     for (uint o = met + 1; o < layerCnt; o++) {
-      uint metIndex = getMetIndexOverUnder(met, u, o, layerCnt, 10000);
+      int metIndex = getMetIndexOverUnder(met, u, o, layerCnt);
       if (n < metIndex)
         n = metIndex;
     }
@@ -608,7 +601,7 @@ extDistRC* extDistRCTable::getComputeRC(double dist)
 uint extDistWidthRCTable::getWidthIndex(uint w) {
   // To notify that the RC info for a particular pattern
   // is empty
-  if (_lastWidth == std::numeric_limits<int>::max())
+  if (_lastWidth == -1)
     return -1;
 
   if ((int)w >= _lastWidth)
@@ -1436,7 +1429,7 @@ void extMetRCTable::allocOverUnderTable(uint met, Ath__array1D<double>* wTable,
   if (met < 2)
     return;
 
-  uint n = getMaxMetIndexOverUnder(met, _layerCnt, logger_);
+  int n = getMaxMetIndexOverUnder(met, _layerCnt);
   _capOverUnder[met] = new extDistWidthRCTable(false, met, _layerCnt, n + 1,
                                                wTable, _rcPoolPtr, dbFactor);
 }
@@ -1713,7 +1706,7 @@ extDistRC* extRCModel::getOverUnderFringeRC(extMeasure* m) {
 extDistRC* extMeasure::getOverUnderFringeRC(extMetRCTable* rcModel) {
   //	uint n= getOverUnderIndex();
   uint maxCnt = _currentModel->getMaxCnt(_met);
-  uint n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt);
+  int n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt);
 
   if (rcModel == NULL || rcModel->_capOverUnder[_met] == NULL)
     return NULL;
@@ -1725,7 +1718,7 @@ extDistRC* extMeasure::getOverUnderFringeRC(extMetRCTable* rcModel) {
 extDistRC* extMeasure::getOverUnderRC(extMetRCTable* rcModel) {
   //	uint n= getOverUnderIndex();
   uint maxCnt = _currentModel->getMaxCnt(_met);
-  uint n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt);
+  int n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt);
 
   extDistRC* rc = NULL;
   if (_dist < 0)
@@ -3544,7 +3537,7 @@ void extRCModel::cleanFiles() {
   sprintf(cmd, "rm -rf %s ", _wireDirName);
   system(cmd);
 }
-uint extRCModel::getOverUnderIndex(extMeasure* m, uint maxCnt) {
+int extRCModel::getOverUnderIndex(extMeasure* m, uint maxCnt) {
   return getMetIndexOverUnder(m->_met, m->_underMet, m->_overMet, _layerCnt,
                               maxCnt);
 }
@@ -3767,7 +3760,7 @@ void extMetRCTable::allocateInitialTables(uint layerCnt, uint widthCnt,
                                           bool over, bool under, bool diag) {
   for (uint met = 1; met < _layerCnt; met++) {
     if (over && under && (met > 1) && (met < _layerCnt - 1)) {
-      uint n = getMaxMetIndexOverUnder(met, layerCnt, logger_);
+      int n = getMaxMetIndexOverUnder(met, layerCnt);
       _capOverUnder[met] = new extDistWidthRCTable(false, met, layerCnt, n + 1,
                                                    widthCnt, _rcPoolPtr);
     }

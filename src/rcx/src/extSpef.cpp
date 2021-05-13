@@ -305,16 +305,12 @@ void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib) {
   _calib = calib;
   if (diff && !calib) {
     _diffLogFP = ATH__fopen("diff_spef.log", "w");
-    if (!_diffLogFP)
+    if (_diffLogFP != nullptr)
       logger_->error(
-          RCX, 171,
-          "Can't open log file diff_spef.log for writing. Do you have "
-          "permissions?");
+          RCX, 171, "Can't open log file diff_spef.log for writing!");
     _diffOutFP = ATH__fopen("diff_spef.out", "w");
-    if (!_diffOutFP)
-      logger_->error(RCX, 172,
-                     "Can't open output file diff_spef.out for writing. Do you "
-                     "have permissions?");
+    if (_diffOutFP != nullptr)
+      logger_->error(RCX, 172, "Can't open output file diff_spef.out for writing!");
   }
 }
 void extSpef::preserveFlag(bool v) { _preserveCapValues = v; }
@@ -1115,9 +1111,6 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc,
       writeCapNode(cc->getSourceCapNode(), netId);
       strcat(_bufString, "and ");
       writeCapNode(cc->getTargetCapNode(), netId);
-      logger_->warn(RCX, 173, "{} on the same net {} {}. Discard this CC.",
-                    _bufString, scnode->getNet()->getId(),
-                    scnode->getNet()->getConstName());
       _bufString = NULL;
       continue;
     }
@@ -1282,8 +1275,7 @@ uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug) {
     if (_symmetricCCcaps)
       addCouplingCaps(net, totCap);
     else
-      logger_->warn(RCX, 175,
-                    "dimitris_change NEED TO IMPLEMENT NON SYMMTRIC CASE");
+      logger_->warn(RCX, 175, "Non-symmetric case feature is not implemented!");
 
     //	odb::dbSet<odb::dbCapNode> capSet= net->getCapNodes();
 
@@ -1754,9 +1746,7 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
 
   if (_independentExtCorners) {
     if (_active_corner_cnt != 1) {
-      logger_->warn(RCX, 181,
-                    "Can only write one corner at a time when write_spef for "
-                    "independent_spef_corner.");
+      logger_->warn(RCX, 181, "Can only write one corner at a time when write_spef for independent_spef_corner.");
       return 0;
     }
     _cornersPerBlock = 1;
@@ -1815,8 +1805,6 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel) {
   _cornerBlock = _block;
   _cornersPerBlock = _cornerCnt;
 
-  logger_->info(RCX, 0, "extSpef::write_spef_nets: _cornersPerBlock= {}",
-                _cornersPerBlock);
   uint repChunk = 50000;
   odb::dbSet<odb::dbNet> nets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;

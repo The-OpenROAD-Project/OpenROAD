@@ -175,9 +175,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
       dbTechLayer* techLayer = tech->findLayer(layerName);
       if (techLayer == NULL) {
         logger_->warn(
-            RCX, 370,
-            "Layer {} in line number {} in file {} has not beed defined in "
-            "LEF file, will skip all attached geometries",
+            RCX, 370, "Layer {} in line number {} in file {} has not beed defined in LEF file, will skip all attached geometries!",
             layerName, parser1.getLineNum(), filename);
         continue;
       }
@@ -189,10 +187,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
 
       _idTable[layerNum] = techLayer->getRoutingLevel();
 
-      logger_->info(
-          RCX, 368,
-          "Read layer name {} with number {} that corresponds to routing "
-          "level {}",
+      logger_->info(RCX, 368, "Read layer name {} with number {} that corresponds to routing level {}.",
           layerName, layerNum, _idTable[layerNum]);
 
       continue;

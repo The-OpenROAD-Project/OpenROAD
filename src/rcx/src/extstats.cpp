@@ -35,7 +35,6 @@
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/exttree.h"
-#include <iostream>
 
 namespace rcx {
 
