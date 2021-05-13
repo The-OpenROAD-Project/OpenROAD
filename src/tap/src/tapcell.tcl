@@ -1019,6 +1019,7 @@ proc build_cell {block master orientation x y prefix} {
   $inst setOrient $orientation
   $inst setLocation $x $y
   $inst setPlacementStatus LOCKED
+  $inst setSourceType DIST
 
   set inst_bb [$inst getBBox]
 
