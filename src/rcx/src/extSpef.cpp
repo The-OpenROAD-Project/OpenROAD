@@ -305,11 +305,11 @@ void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib) {
   _calib = calib;
   if (diff && !calib) {
     _diffLogFP = ATH__fopen("diff_spef.log", "w");
-    if (_diffLogFP != nullptr)
+    if (_diffLogFP == nullptr)
       logger_->error(
           RCX, 171, "Can't open log file diff_spef.log for writing!");
     _diffOutFP = ATH__fopen("diff_spef.out", "w");
-    if (_diffOutFP != nullptr)
+    if (_diffOutFP == nullptr)
       logger_->error(RCX, 172, "Can't open output file diff_spef.out for writing!");
   }
 }
