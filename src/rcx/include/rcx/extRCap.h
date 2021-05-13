@@ -722,7 +722,7 @@ class extRCModel
   uint benchWithVar(extMeasure* measure);
   uint measureWithVar(extMeasure* m);
   void addRC(extMeasure* m);
-  uint getOverUnderIndex(extMeasure* m, uint maxCnt);
+  int getOverUnderIndex(extMeasure* m, uint maxCnt);
   uint getUnderIndex(extMeasure* m);
   extDistWidthRCTable* getWidthDistRCtable(uint met,
                                            int mUnder,
