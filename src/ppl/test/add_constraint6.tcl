@@ -11,7 +11,7 @@ place_pins -hor_layers metal3 -ver_layers metal2 -random
 set def_file1 [make_result_file add_constraint6_1.def]
 write_def $def_file1
 
-clear_constraints
+clear_io_pin_constraints
 place_pins -hor_layers metal3 -ver_layers metal2
 
 set def_file2 [make_result_file add_constraint6_2.def]
