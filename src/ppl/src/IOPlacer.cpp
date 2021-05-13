@@ -212,7 +212,7 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
-  for (PinList pin_group : pin_groups_) {
+  for (PinGroup pin_group : pin_groups_) {
     netlist_io_pins_.createIOGroup(pin_group);
   }
 }
@@ -987,7 +987,7 @@ void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
       constraint.pin_list.empty()) {
     for (const IOPin& io_pin : netlist.getIOPins()) {
       if (io_pin.getDirection() == constraint.direction) {
-        constraint.pin_list.push_back(io_pin.getBTerm());
+        constraint.pin_list.insert(io_pin.getBTerm());
       }
     }
   }
@@ -1050,14 +1050,9 @@ Direction IOPlacer::getDirection(std::string direction)
   return Direction::invalid;
 }
 
-void IOPlacer::addPinGroup(PinList* group)
+void IOPlacer::addPinGroup(PinGroup* group)
 {
   pin_groups_.push_back(*group);
-}
-
-void IOPlacer::addPinToList(odb::dbBTerm* pin, PinList* pin_group)
-{
-  pin_group->push_back(pin);
 }
 
 void IOPlacer::findPinAssignment(std::vector<Section>& sections)
@@ -1411,7 +1406,7 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (PinList pin_group : pin_groups_) {
+  for (PinGroup pin_group : pin_groups_) {
     int group_created = netlist_.createIOGroup(pin_group); 
     if(group_created == pin_group.size()) {
       group_idx++;

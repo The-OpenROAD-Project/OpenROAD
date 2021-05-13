@@ -65,7 +65,8 @@ using odb::Rect;
 using utl::Logger;
 
 // A list of pins that will be placed together in the die boundary
-typedef std::vector<odb::dbBTerm*> PinList;
+typedef std::set<odb::dbBTerm*> PinList;
+typedef std::vector<odb::dbBTerm*> PinGroup;
 
 enum class Edge
 {
@@ -149,8 +150,7 @@ class IOPlacer
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
-  void addPinGroup(PinList* group);
-  void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
+  void addPinGroup(PinGroup* group);
   void addTopLayerPinPattern(int layer, int x_step, int y_step,
                              int llx, int lly, int urx, int ury,
                              int width, int height);
@@ -170,7 +170,7 @@ class IOPlacer
   bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<PinList> pin_groups_;
+  std::vector<PinGroup> pin_groups_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;

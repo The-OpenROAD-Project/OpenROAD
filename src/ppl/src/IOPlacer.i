@@ -47,7 +47,9 @@ using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
 using ppl::PinList;
+using ppl::PinGroup;
 using std::vector;
+using std::set;
 
 template <class TYPE>
 vector<TYPE> *
@@ -73,6 +75,30 @@ tclListStdSeq(Tcl_Obj *const source,
     return nullptr;
 }
 
+template <class TYPE>
+set<TYPE> *
+tclSetStdSeq(Tcl_Obj *const source,
+        swig_type_info *swig_type,
+        Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    set<TYPE> *seq = new set<TYPE>;
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      seq->insert(reinterpret_cast<TYPE>(obj));
+    }
+    return seq;
+  }
+  else
+    return nullptr;
+}
+
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -81,8 +107,12 @@ tclListStdSeq(Tcl_Obj *const source,
 //
 ////////////////////////////////////////////////////////////////
 
-%typemap(in) PinList* {
+%typemap(in) PinGroup* {
   $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
+}
+
+%typemap(in) PinList* {
+  $1 = tclSetStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
 }
 
 %include "../../Exception.i"
@@ -190,15 +220,9 @@ add_ver_layer(int layer)
 }
 
 void
-add_pin_group(PinList *pin_list)
+add_pin_group(PinGroup *pin_group)
 {
-  getIOPlacer()->addPinGroup(pin_list);
-}
-
-void
-add_pin_to_list(odb::dbBTerm* pin, PinList* pin_group)
-{
-  getIOPlacer()->addPinToList(pin, pin_group);
+  getIOPlacer()->addPinGroup(pin_group);
 }
 
 void
