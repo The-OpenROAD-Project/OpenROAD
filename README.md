@@ -936,7 +936,7 @@ Options description:
 Get the die and core areas as a list in microns: "llx lly urx ury"
 
 ```
-get_die_area
-get_core_area
+ord::get_die_area
+ord::get_core_area
 ```
 
