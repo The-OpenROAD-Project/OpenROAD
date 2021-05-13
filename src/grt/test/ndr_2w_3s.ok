@@ -16,6 +16,18 @@
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%
 [INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 6714
 [INFO GRT-0019] Found 6 clock nets.
@@ -32,7 +44,7 @@ li1        Vertical            0             0          0.00%
 met1       Horizontal          0             0          0.00%
 met2       Vertical            0             0          0.00%
 met3       Horizontal      12996          6142          52.74%
-met4       Vertical        10108          4625          54.24%
+met4       Vertical         8664          4625          46.62%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 
@@ -44,6 +56,18 @@ Routing clock nets...
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%
 [INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 6714
 [INFO GRT-0001] Minimum degree: 2
@@ -59,7 +83,7 @@ li1        Vertical            0             0          0.00%
 met1       Horizontal      27436          5430          80.21%
 met2       Vertical        21660          6475          70.11%
 met3       Horizontal      12996          6100          53.06%
-met4       Vertical        10108          4613          54.36%
+met4       Vertical         8664          4613          46.76%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 

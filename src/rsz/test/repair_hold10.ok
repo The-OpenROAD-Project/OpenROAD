@@ -15,6 +15,18 @@
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 349
 [INFO GRT-0019] Found 8 clock nets.
@@ -31,7 +43,7 @@ li1        Vertical            0             0          0.00%
 met1       Horizontal     103680        102794          0.85%
 met2       Vertical        77760         77035          0.93%
 met3       Horizontal      51840         51333          0.98%
-met4       Vertical        36288         35997          0.80%
+met4       Vertical        31104         30956          0.48%
 met5       Horizontal      10368         10153          2.07%
 ---------------------------------------------------------------
 
@@ -46,10 +58,10 @@ li1                  0             0            0.00%             0 /  0 /  0
 met1            102794           465            0.45%             0 /  0 /  0
 met2             77035           512            0.66%             0 /  0 /  0
 met3             51333             0            0.00%             0 /  0 /  0
-met4             35997             0            0.00%             0 /  0 /  0
+met4             30956             0            0.00%             0 /  0 /  0
 met5             10153             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           277312           977            0.35%             0 /  0 /  0
+Total           272271           977            0.36%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 6927 um
 worst slack -1.95
@@ -72,6 +84,18 @@ delta HPWL                    0 %
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 364
 [INFO GRT-0019] Found 8 clock nets.
@@ -88,7 +112,7 @@ li1        Vertical            0             0          0.00%
 met1       Horizontal     103680        102792          0.86%
 met2       Vertical        77760         77035          0.93%
 met3       Horizontal      51840         51333          0.98%
-met4       Vertical        36288         35997          0.80%
+met4       Vertical        31104         30956          0.48%
 met5       Horizontal      10368         10153          2.07%
 ---------------------------------------------------------------
 
@@ -103,10 +127,10 @@ li1                  0             0            0.00%             0 /  0 /  0
 met1            102792           466            0.45%             0 /  0 /  0
 met2             77035           512            0.66%             0 /  0 /  0
 met3             51333             0            0.00%             0 /  0 /  0
-met4             35997             0            0.00%             0 /  0 /  0
+met4             30956             0            0.00%             0 /  0 /  0
 met5             10153             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           277310           978            0.35%             0 /  0 /  0
+Total           272269           978            0.36%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 6941 um
 worst slack -1.40
