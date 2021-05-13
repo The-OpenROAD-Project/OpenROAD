@@ -123,7 +123,8 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto inst = std::any_cast<odb::dbInst*>(object);
   auto placed = inst->getPlacementStatus();
   Properties props({{"Master", inst->getMaster()->getConstName()},
-                    {"Placement status", placed.getString()}});
+                    {"Placement status", placed.getString()},
+                    {"Source type", inst->getSourceType().getString()}});
   if (placed.isPlaced()) {
     int x, y;
     inst->getOrigin(x, y);
@@ -312,9 +313,9 @@ bool DbNetDescriptor::isNet(std::any object) const
 Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
-  Properties props({{"Signal Type", net->getSigType().getString()},
-                    {"Source Type", net->getSourceType().getString()},
-                    {"Wire Type", net->getWireType().getString()}});
+  Properties props({{"Signal type", net->getSigType().getString()},
+                    {"Source type", net->getSourceType().getString()},
+                    {"Wire type", net->getWireType().getString()}});
   auto gui = Gui::get();
   SelectionSet iterms;
   for (auto iterm : net->getITerms()) {
@@ -533,8 +534,8 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
   return Properties({{"Net", gui->makeSelected(bterm->getNet())},
-                     {"Signal Type", bterm->getSigType().getString()},
-                     {"IO Type", bterm->getIoType().getString()}});
+                     {"Signal type", bterm->getSigType().getString()},
+                     {"IO type", bterm->getIoType().getString()}});
 }
 
 Selected DbBTermDescriptor::makeSelected(std::any object,
