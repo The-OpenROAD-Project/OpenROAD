@@ -7,7 +7,6 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
-[WARNING PAD-0011] Expected instance u_dr_dm_1_o for padcell sig0 not found
 [INFO PAD-0053] Creating pad ring net: RETN_10
 [INFO PAD-0053] Creating pad ring net: RETN_11
 [INFO PAD-0053] Creating pad ring net: RETN_12
@@ -54,7 +53,6 @@
 [INFO PAD-0053] Creating pad ring net: DVSS_1
 [INFO PAD-0053] Creating pad ring net: DVDD_0
 [INFO PAD-0053] Creating pad ring net: DVDD_1
-[WARNING PAD-0012] Cannot find a terminal p_dr_dm_1_o for sig0 to associate with bondpad bp_u_dr_dm_1_o
 [INFO PAD-0051] Creating pad ring net: VSS
 [INFO PAD-0051] Creating pad ring net: VDD
 No differences found.

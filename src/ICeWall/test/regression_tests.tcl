@@ -6,4 +6,5 @@ record_tests {
   flipchip_test.m9
   coyote_tc_sky130
   caravel_sky130
+  tcl_interface
 }

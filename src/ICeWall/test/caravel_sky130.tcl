@@ -1,3 +1,4 @@
+source ../src/ICeWall.tcl
 source "helpers.tcl"
 
 read_lef ../../../test/sky130hd/sky130hd.tlef
@@ -35,7 +36,14 @@ source caravel_sky130/library.sky130_fd_io.tcl
 
 puts "Extracting footprint"
 
-ICeWall extract_footprint
+if {[catch {ICeWall extract_footprint} msg]} {
+  puts $errorInfo
+  puts $msg
+
+  puts [dict get $::ICeWall::footprint padcell xres_0]
+  return
+}
+
 ICeWall write_footprint results/caravel_sky130.package.tcl
 
 set env(FOOTPRINT_LIBRARY) caravel_sky130/library.sky130_fd_io.tcl

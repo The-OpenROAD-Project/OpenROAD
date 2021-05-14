@@ -2,7 +2,8 @@ namespace eval ICeWall {
   variable footprint {}
   variable library {}
   variable cells {}
-  variable db
+  variable block {}
+  variable db {}
   variable default_orientation {bottom R0 right R90 top R180 left R270 ll R0 lr MY ur R180 ul MX}
   variable connect_pins_by_abutment
   variable idx {fill 0}
@@ -540,23 +541,43 @@ namespace eval ICeWall {
     dict set footprint padcell $padcell side $side_name
   }
 
-  proc get_padcell_type {padcell} {
+  proc set_padcell_location {padcell location} {
     variable footprint
 
-    if {![dict exists $footprint padcell $padcell]} {
-      utl::error PAD 63 "Padcell $padcell not specified"
-    }
-    if {![dict exists $footprint padcell $padcell type]} {
-      utl::error PAD 64 "No type attribute specified for padcell $padcell"
+    dict set footprint padcell $padcell cell $location
+  }
+
+  proc set_padcell_bondpad {padcell bondpad} {
+    variable footprint
+
+    dict set footprint padcell $padcell bondpad $bondpad
+  }
+
+  proc get_padcell_type {padcell} {
+    variable footprint
+    # debug "start"
+
+    if {[llength $padcell] == 1} {
+      set padcell_name $padcell
+      if {![dict exists $footprint padcell $padcell_name]} {
+        utl::error PAD 63 "Padcell $padcell_name not specified"
+      }
+      set padcell [dict get $footprint padcell $padcell]
     }
  
-    return [dict get $footprint padcell $padcell type]
+    if {![dict exists $padcell type]} {
+      utl::error PAD 64 "No type attribute specified for padcell $padcell_name"
+    }
+    # debug "end"
+    return [dict get $padcell type]
   }
   
   proc get_padcell_inst_name {padcell} {
     variable footprint
     
-    if {[dict exists $footprint padcell $padcell pad_inst_name]} {
+    if {[dict exists $footprint padcell $padcell inst] && [dict get $footprint padcell $padcell inst] != "NULL"} {
+      set inst_name [[dict get $footprint padcell $padcell inst] getName]
+    } elseif {[dict exists $footprint padcell $padcell pad_inst_name]} {
       set inst_name [format [dict get $footprint padcell $padcell pad_inst_name] [get_padcell_assigned_name $padcell]]
     } else {
       if {[is_padcell_power $padcell] || [is_padcell_ground $padcell]} {
@@ -623,7 +644,8 @@ namespace eval ICeWall {
   proc get_padcell_inst {padcell} {
     variable footprint
     variable block
-    
+    # debug start
+ 
     if {![dict exists $footprint padcell $padcell inst]} {
       set padcell_inst_name [get_padcell_inst_name $padcell]
       # debug "Looking for padcell with inst name $padcell_inst_name"
@@ -668,7 +690,7 @@ namespace eval ICeWall {
         set_padcell_inst $padcell "NULL" 
       }
     }
-    
+
     return [dict get $footprint padcell $padcell inst]
   }
 
@@ -773,20 +795,6 @@ namespace eval ICeWall {
     }
     
     return [get_library_cell_name $cell_type $side]
-  }
-  
-  proc get_padcell_pin_name {padcell} {
-    variable footprint
-    
-    if {[dict exists $footprint padcell $padcell pad_pin_name]} {
-      return [format [dict get $footprint padcell $padcell pad_pin_name] [get_padcell_assigned_name $padcell]]
-    }
-
-    if {[dict exists $footprint pad_pin_name]} {
-      return [format [dict get $footprint pad_pin_name] [get_padcell_assigned_name $padcell]]
-    }
-    
-    return "u_[get_padcell_assigned_name $padcell]"
   }
   
   proc get_padcell_assigned_name {padcell} {
@@ -952,15 +960,22 @@ namespace eval ICeWall {
     return [dict exists $footprint padcell $padcell bondpad]
   }
   
+  proc new_padcell {padcell} {
+    variable footprint
+
+    dict set footprint padcell $padcell {}
+  }
+
   proc set_padcell_signal_name {padcell signal_name} {
     variable footprint
+    variable block
+
     # debug "start: padcell $padcell, signal_name: $signal_name" 
     if {[dict exists $footprint padcell $padcell]} {
       dict set footprint padcell $padcell signal_name $signal_name
-      # debug "Return: $signal_name"
-      return $signal_name
+      dict set footprint padcell $padcell [check_signal_name [dict get $footprint padcell $padcell]]
+      return [get_padcell_signal_name $padcell]
     } else {
-      # debug "Return: \"\""
       return ""
     }
   }
@@ -972,34 +987,12 @@ namespace eval ICeWall {
       # debug "padcell: $padcell cells: [dict keys [dict get $footprint padcell]]"
       utl::error "PAD" 22 "Cannot find padcell $padcell"
     }
-    
-    if {![dict exists $footprint padcell $padcell signal_name]} {
-      set inst [get_padcell_inst $padcell]
-     
-      if {$inst == "NULL"} {
-        utl::error "PAD" 23 "Signal name for padcell $padcell has not been set"
-      }
-      if {[is_padcell_signal_type $padcell]} {
-        # debug "Get iterms for $padcell"
-        set pin_name [get_padcell_pad_pin_name $padcell]
-        # debug "pin_name: $pin_name"
-        set iterm [$inst findITerm $pin_name]
-        # debug "iterm: $iterm"
-        if {$iterm != "NULL"} {
-          set net [$iterm getNet]
-          if {[llength [set pad_connections [$net getBTerms]]] == 1} {
-            set_padcell_signal_name $padcell [$pad_connections getName]
-          } else {
-            utl::error "PAD" 17 "Found [llength $pad_connections] top level connections to $pin_name of padcell i$padcell (inst:[$inst getName]), expecting only 1"
-          }
-        }
-      } else {
-         # For non-signal based pads, use the instance name for assignment
-        set_padcell_signal_name $padcell [$inst getName]
-      }
+    # debug [dict get $footprint padcell $padcell]  
+    if {![dict exists $footprint padcell $padcell use_signal_name]} {
+      utl::error "PAD" 23 "Signal name for padcell $padcell has not been set"
     }
     
-    return [dict get $footprint padcell $padcell signal_name]
+    return [dict get $footprint padcell $padcell use_signal_name]
   }
 
   proc get_library_min_bump_spacing_to_die_edge {} {
@@ -1209,11 +1202,11 @@ namespace eval ICeWall {
     variable footprint
 
     if {[dict exists $footprint Type]} {
-      return [expr {[dict get $footprint Type] == "Wirebond"}]
+      return [expr {[dict get $footprint Type] == "Wirebond" || [dict get $footprint Type] == "wirebond"}]
     }
     
     if {[dict exists $footprint type]} {
-      return [expr {[dict get $footprint type] == "wirebond"}]
+      return [expr {[dict get $footprint type] == "Wirebond" || [dict get $footprint type] == "wirebond"}]
     }
 
     return 0
@@ -1223,10 +1216,11 @@ namespace eval ICeWall {
     variable footprint
     
     if {[dict exists $footprint Type]} {
-      return [expr {[dict get $footprint Type] == "Flipchip"}]
+      return [expr {[dict get $footprint Type] == "Flipchip" || [dict get $footprint Type] == "flipchip"}]
     }
     
     if {[dict exists $footprint type]} {
+      return [expr {[dict get $footprint type] == "Flipchip" || [dict get $footprint type] == "flipchip"}]
       return [expr {[dict get $footprint type] == "flipchip"}]
     }
 
@@ -1680,6 +1674,32 @@ namespace eval ICeWall {
     dict set footprint padcell $padcell_name cell scaled_origin y [lindex [$inst getOrigin] 1]
   }
 
+  proc get_padcell_design_signal_name {padcell} {
+    set inst [get_padcell_inst $padcell]
+
+    if {$inst == "NULL"} {
+      utl::error "PAD" 23 "Signal name for padcell $padcell has not been set"
+    }
+    if {[is_padcell_signal_type $padcell]} {
+      # debug "Get iterms for $padcell"
+      set pin_name [get_padcell_pad_pin_name $padcell]
+      # debug "pin_name: $pin_name"
+      set iterm [$inst findITerm $pin_name]
+      # debug "iterm: $iterm"
+      if {$iterm != "NULL"} {
+        set net [$iterm getNet]
+        if {[llength [set pad_connections [$net getBTerms]]] == 1} {
+          set_padcell_signal_name $padcell [$pad_connections getName]
+        } else {
+          utl::error "PAD" 17 "Found [llength $pad_connections] top level connections to $pin_name of padcell i$padcell (inst:[$inst getName]), expecting only 1"
+        }
+      }
+    } else {
+       # For non-signal based pads, use the instance name for assignment
+      set_padcell_signal_name $padcell [$inst getName]
+    }
+  }
+
   proc extract_footprint {} {
     variable db
     variable def_units
@@ -1810,8 +1830,10 @@ namespace eval ICeWall {
         set_padcell_side_name $padcell_name $side
         set_footprint_padcell_inst $padcell_name $inst
         if {[is_padcell_signal_type $padcell_name]} {
-          set_padcell_signal_name $padcell_name [get_padcell_signal_name $padcell_name]
+          # debug "Signal type"
+          set_padcell_signal_name $padcell_name [get_padcell_design_signal_name $padcell_name]
         } else {
+          # debug "Non-signal type: $padcell_name [$inst getName]"
           set_padcell_signal_name $padcell_name [$inst getName]
         }
       }
@@ -1962,6 +1984,12 @@ namespace eval ICeWall {
   }
 
   proc load_footprint {footprint_file} {
+    source $footprint_file
+
+    init_process_footprint
+  }
+
+  proc init_process_footprint {} {
     variable footprint
     variable db
     variable tech
@@ -1970,7 +1998,6 @@ namespace eval ICeWall {
     variable chip_width 
     variable chip_height
 
-    source $footprint_file
 
     set db [::ord::get_db]
     set tech [$db getTech]
@@ -2003,6 +2030,39 @@ namespace eval ICeWall {
         set side_name [get_padcell_side_name $padcell]
         # debug "$padcell, $location, $side_name"
         dict set footprint padcell $padcell side $side_name
+      }
+    }
+
+    check_footprint
+  }
+
+  proc check_footprint {} {
+    variable footprint
+
+    foreach padcell [dict keys [dict get $footprint padcell]] {
+      # debug "Checking $padcell, data: [dict get $footprint padcell $padcell]"
+
+      if {[dict exists $footprint padcell $padcell signal_name]} {
+        dict set $footprint padcell $padcell [check_signal_name [dict get $footprint padcell $padcell]]
+      }
+      if {[dict exists $footprint padcell $padcell side]} {
+        check_edge_name [dict get $footprint padcell $padcell side]
+      }
+      if {[dict exists $footprint padcell $padcell type]} {
+        check_pad_type [dict get $footprint padcell $padcell type]
+      }
+      if {[dict exists $footprint padcell $padcell cell]} {
+        check_location [dict get $footprint padcell $padcell cell]
+      }
+      if {[dict exists $footprint padcell $padcell bump]} {
+        check_bump [dict get $footprint padcell $padcell bump]
+      }
+      if {[dict exists $footprint padcell $padcell bondpad]} {
+        check_bondpad [dict get $footprint padcell $padcell bondpad]
+      }
+      if {[dict exists $footprint padcell $padcell inst_name]} {
+        set inst [check_inst_name [dict get $footprint padcell $padcell inst_name] $padcell]
+        set_padcell_inst $padcell $inst
       }
     }
   }
@@ -2044,11 +2104,21 @@ namespace eval ICeWall {
     return [list [expr ([lindex $box 2] + [lindex $box 0]) / 2] [expr ([lindex $box 3] + [lindex $box 1]) / 2]]
   }
 
+  proc has_padcell_signal_name {padcell} {
+    variable footprint
+
+    return [dict exists $footprint padcell $padcell use_signal_name]
+  }
+
   proc add_physical_pin {padcell inst} {
     variable block
     variable tech
 
-    set term [$block findBTerm [get_padcell_pin_name $padcell]]
+    if {![has_padcell_signal_name $padcell]} {
+      return
+    }
+
+    set term [$block findBTerm [get_padcell_signal_name $padcell]]
     if {$term != "NULL"} {
       set net [$term getNet]
       foreach iterm [$net getITerms] {
@@ -2059,12 +2129,13 @@ namespace eval ICeWall {
 
       set pin [odb::dbBPin_create $term]
       set layer [$tech findLayer [get_footprint_pad_pin_layer]]
-
+      
       if {[set mterm [[$inst getMaster] findMTerm [get_library_pad_pin_name [get_padcell_type $padcell]]]] == "NULL"} {
         utl::warn "PAD" 20 "Cannot find pin [get_library_pad_pin_name [get_padcell_type $padcell]] on cell [[$inst getMaster] getName]"
         return 0
       } else {
         set mpin [lindex [$mterm getMPins] 0]
+        
         foreach geometry [$mpin getGeometry] {
           if {[[$geometry getTechLayer] getName] == [get_footprint_pad_pin_layer]} {
             set pin_box [pdngen::transform_box [$geometry xMin] [$geometry yMin] [$geometry xMax] [$geometry yMax] [$inst getOrigin] [$inst getOrient]]
@@ -2081,14 +2152,14 @@ namespace eval ICeWall {
       }
     }
     if {[get_padcell_type $padcell] == "sig"} {
-      utl::warn "PAD" 4 "Cannot find a terminal [get_padcell_pin_name $padcell] for ${padcell}" 
+      utl::warn "PAD" 4 "Cannot find a terminal [get_padcell_signal_name $padcell] for ${padcell}" 
     }
   }
 
   proc connect_to_bondpad_or_bump {inst centre padcell} {
     variable block
     variable tech
-    
+
     set assigned_name [get_padcell_assigned_name $padcell]
     if {[is_power_net $assigned_name]} {
       set type "POWER"
@@ -2098,8 +2169,7 @@ namespace eval ICeWall {
       set type "SIGNAL"
     }
 
-    set term [$block findBTerm [get_padcell_pin_name $padcell]]
-
+    set term [$block findBTerm [get_padcell_signal_name $padcell]]
     if {$term != "NULL"} {
       set net [$term getNet]
       foreach iterm [$net getITerms] {
@@ -2130,11 +2200,12 @@ namespace eval ICeWall {
         set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
         set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
       } else {
-        utl::warn "PAD" 12 "Cannot find a terminal [get_padcell_pin_name $padcell] for $padcell to associate with bondpad [$inst getName]"
+        utl::warn "PAD" 12 "Cannot find a terminal [get_padcell_signal_name $padcell] for $padcell to associate with bondpad [$inst getName]"
         return
       }
     }
 
+    # debug "padcell: $padcell, net: $net"
     $net setSpecial
     $net setSigType $type
 
@@ -2158,12 +2229,14 @@ namespace eval ICeWall {
       foreach padcell [get_footprint_padcells_by_side $side_name] {
         set signal_name [get_padcell_inst_name $padcell]
         set type [get_padcell_type $padcell]
-        
         if {[padcell_has_bondpad $padcell]} {
           set cell [get_cell bondpad $side_name]
           # Padcells have separate bondpads that need to be added to the design
           set origin [get_padcell_bondpad_scaled_origin $padcell]
+          # debug "padcell, $padcell, signal_name: $signal_name"
+
           set inst [odb::dbInst_create $block $cell "bp_${signal_name}"]
+          # debug "inst $inst, block: $block, cell: $cell"
 
           # debug "Add bondpad to padcell: $padcell"
           $inst setOrigin [dict get $origin x] [dict get $origin y]
@@ -2429,11 +2502,9 @@ namespace eval ICeWall {
   proc is_power_net {net_name} {
     variable footprint
 
-    if {[dict exists $footprint power_nets]} {
-      if {[lsearch [dict get $footprint power_nets] $net_name] > -1} {
-        return 1
-      }
-    } 
+    if {[lsearch [get_power_nets] $net_name] > -1} {
+      return 1
+    }
 
     return 0
   } 
@@ -2441,11 +2512,9 @@ namespace eval ICeWall {
   proc is_ground_net {net_name} {
     variable footprint
 
-    if {[dict exists $footprint ground_nets]} {
-      if {[lsearch [dict get $footprint ground_nets] $net_name] > -1} {
-        return 1
-      }
-    } 
+    if {[lsearch [get_ground_nets] $net_name] > -1} {
+      return 1
+    }
 
     return 0
   }
@@ -2731,10 +2800,10 @@ namespace eval ICeWall {
         if {[set padcell [get_padcell_at_row_col $row $col]] == ""} {continue}
         if {[is_padcell_unassigned $padcell]} {continue}
         
-        if {[dict exists $traces [get_padcell_pin_name $padcell]]} {
-          dict set traces [get_padcell_pin_name $padcell] [concat [dict get $traces [get_padcell_pin_name $padcell]] $padcell]
+        if {[dict exists $traces [get_padcell_signal_name $padcell]]} {
+          dict set traces [get_padcell_signal_name $padcell] [concat [dict get $traces [get_padcell_signal_name $padcell]] $padcell]
         } else {
-          dict set traces [get_padcell_pin_name $padcell] $padcell
+          dict set traces [get_padcell_signal_name $padcell] $padcell
         }
       }
     }
@@ -2931,6 +3000,7 @@ namespace eval ICeWall {
         set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
 
         if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
+          # debug "Skip padcell $padcell"
           continue
         }
 
@@ -3347,6 +3417,8 @@ namespace eval ICeWall {
   }
   
   proc init_footprint {args} {
+    init_process_footprint
+
     set arglist $args
 
     # debug "start: $args"
@@ -3369,6 +3441,8 @@ namespace eval ICeWall {
     # Perform signal assignment 
     # debug "assign_signals"
     assign_signals
+
+    check_footprint
 
     # Padring placement
     # debug "padring placement"
@@ -3700,10 +3774,362 @@ namespace eval ICeWall {
     }
   }
 
+  proc find_padcell_with_signal_name {signal_name} {
+    variable footprint
+
+    if {[is_power_net $signal_name] || [is_ground_net $signal_name]} {
+      return ""
+    }
+
+    if {[dict exists $footprint padcell]} {
+      foreach padcell [dict keys [dict get $footprint padcell]] {
+        if {[dict exists $footprint padcell $padcell signal_name]} {
+          if {[dict get $footprint padcell $padcell signal_name] == $signal_name} {
+            return $padcell
+          }
+        }
+      }
+    }
+    return ""
+  }
+
+  proc check_signal_name {padcell} {
+    variable footprint
+    variable block
+    # debug "start"
+
+    set signal_name [dict get $padcell signal_name]
+    if {[$block findNet $signal_name] != "NULL"} {
+      dict set padcell use_signal_name $signal_name
+      # debug "end: signal found"
+      return $padcell
+    }
+
+    if {[is_power_net $signal_name]} {
+      dict set padcell use_signal_name $signal_name
+      # debug "end: pooer net found"
+      return $padcell
+    }
+
+    if {[is_ground_net $signal_name]} {
+      dict set padcell use_signal_name $signal_name
+      # debug "end: ground net found"
+      return $padcell
+    }
+
+    if {$signal_name == "UNASSIGNED"} {
+      dict set padcell use_signal_name $signal_name
+      # debug "end: UNASSIGNED net found"
+      return $padcell
+    }
+
+    if {[is_padcell_physical_only $padcell]} {
+      dict set padcell use_signal_name ""
+      # debug "end: physical only padcell"
+      return $padcell
+    }
+
+    if {[set signal [$block findNet $signal_name]] == "NULL"} {
+      set alt_signal_name 0
+      if {[dict exists $padcell pad_pin_name]} {
+        set alt_signal_name 1
+        set try_signal [format [dict get $padcell pad_pin_name] $signal_name]
+        set signal [$block findNet $try_signal]
+      } elseif {[dict exists $footprint pad_pin_name]} {
+        set alt_signal_name 1
+        set try_signal [format [dict get $footprint pad_pin_name] $signal_name]
+        set signal [$block findNet $try_signal]
+      }
+
+      if {$signal == "NULL"} {
+        if {[$block findInst $signal_name] == "NULL"} {
+          if {$alt_signal_name == 1} {
+            utl::error PAD 92 "No signal $signal_name or $try_signal defined for padcell $padcell"
+          } else {
+            # debug "$signal_name: [$block findInst $signal_name]"
+            utl::error PAD 91 "No signal $signal_name defined for padcell $padcell"
+          }
+        } else {
+          dict set padcell use_signal_name $signal_name
+          # debug "end: inst name as signal name padcell"
+          return $padcell
+        }
+      } else {
+        dict set padcell use_signal_name $try_signal
+        # debug "end: alt signal name padcell"
+        return $padcell
+      }
+    }
+
+    utl::error PAD 93 "Signal \"$signal_name\" not found in design "
+  }
+
+  proc check_edge_name {edge_name} {
+    set edge_names {
+      top {top TOP Top T t}
+      bottom {bottom BOTTOM Bottom B b}
+      right {right RIGHT Right R r}
+      left {left LEFT Left L l}
+    }
+
+    dict for {edge options} $edge_names {
+      if {[lsearch $options $edge_name] > -1} {
+        return $edge
+      }
+    }
+    utl::error PAD 94 "Value for -edge_name ($edge_name) not permitted, choose one of bottom, right, top or left"
+  }
+
+  proc check_pad_type {type} {
+    variable library
+
+    if {[dict exists $library types]} {
+      if {[dict exists $library types $type]} {
+        return $type
+      } else {
+        utl::error PAD 95 "Value for -type ($type) does not match any library types ([dict keys [dict get $library types]])"
+      }
+    } else {
+      utl::error PAD 98 "No library types defined"
+    }
+  }
+
+  proc check_xy {xy} {
+    # debug $xy
+    if {[llength $xy] != 4} {
+      error "expecting a 4 element list in the form \"x number y number\""
+    }
+    if {![dict exists $xy x]} {
+      error "no value specified for x"
+    }
+    if {![dict exists $xy y]} {
+      error "no value specified for y"
+    }
+    if {![regexp {[\+\-]?[0-9]+(\.[0-9]*)?} [dict get $xy x]]} {
+      error "x co-ordinate ([dict get $xy x]), not recognised as a nummber"
+    }
+    if {![regexp {[\+\-]?[0-9]+(\.[0-9]*)?} [dict get $xy y]]} {
+      error "y co-ordinate ([dict get $xy y]), not recognised as a nummber"
+    }
+  }
+
+  proc check_rowcol {rowcol} {
+    if {[llength $rowcol] != 4} {
+      error "expecting a 4 element list in the form \"row <integer> col <integer>\""
+    }
+    if {![regexp {[0-9]+} [dict get $rowcol row]]} {
+      error "row value ([dict get $rowcol row]), not recognised as an integer"
+    }
+    if {![regexp {[0-9]+} [dict get $rowcol col]]} {
+      error "col value ([dict get $rowcol col]), not recognised as an integer"
+    }
+  }
+
+  proc check_orient {orient} {
+    set valid {R0 R90 R180 R270 MX MY MXR90 MYR90}
+
+    if {[lsearch $valid $orient] > -1} {
+      return $orient
+    }
+    utl::error PAD 99 "Invalid orientation $orient, must be one of \"$valid\""
+  }
+
+  proc check_location {location} {
+    # Allowed options are:
+    # {(centre|origin) {x <num> y <num>} [orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)]}
+    if {[llength $location] % 2 == 1} {
+      utl::error PAD 100 "Incorrect number of arguments for location, expected an even number, got [llength $location] ($location)"
+    }
+    if {[dict exists $location centre] && [dict exists $location origin]} {
+      utl::error PAD 101 "Only one of centre or origin may be specified for -location ($location)"
+    }
+    if {[dict exists $location centre]} {
+      if {[catch {check_xy [dict get $location centre]} msg]} {
+        # debug "centre msg: $msg"
+        utl::error PAD 102 "Incorrect value specified for -location centre ([dict get $location centre]), $msg"
+      }
+    } elseif {[dict exists $location origin]} {
+      if {[catch {check_xy [dict get $location origin]} msg]} {
+        # debug "origin msg: $msg"
+        utl::error PAD 103 "Incorrect value specified for -location origin ([dict get $location origin]), $msg"
+      }
+    } else {
+      utl::error PAD 104 "Require origin or centre not specified for -location ($location)"
+    }
+
+    if {[dict exists $location orient]} {
+      check_orient [dict get $location orient]
+    }
+
+    return $location
+  }
+
+  proc check_bondpad {location} {
+    variable footprint
+
+    if {[dict exists $footprint type]} {
+      if {[dict get $footprint type] != "Wirebond"} {
+        utl::error PAD 105 "Specification of bondpads is only allowed for Wirebond padring layouts"
+      }
+    }
+    return [check_location $location]
+  }
+
+  proc check_bump {bump} {
+    variable footprint
+
+    if {[dict exists $footprint type]} {
+      if {[dict get $footprint type] != "Flipchip"} {
+        utl::error PAD 106 "Specification of bumps is only allowed for Flipchip padring layouts"
+      }
+    }
+
+    if {[catch {check_rowcol $bump} msg]} {
+      utl::error PAD 107 "Bump value specified incorrectly, $msg"
+    }
+  }
+
+  proc check_inst_name {inst_name padcell} {
+    variable block
+
+    if {[set inst [$block findInst $inst_name]] == "NULL"} {
+      set cell [get_padcell_cell_name $padcell]
+      if {[is_padcell_physical_only $padcell]} {
+        # debug "Create physical_only cell $cell with name $inst_name for padcell $padcell"
+        # debug "master: [get_cell_master $cell]"
+        set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
+        # debug "done"
+      } elseif {[is_padcell_control $padcell]} {
+        # debug "Create control cell $cell with name $inst_name for padcell $padcell"
+        set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
+      } elseif {[is_footprint_create_padcells]} {
+        # debug "Create cell $cell with name $inst_name for padcell $padcell"
+        set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
+      } elseif {[is_padcell_power $padcell] || [is_padcell_ground $padcell]} {
+        # debug "Create power/ground $cell with name $inst_name for padcell $padcell"
+        set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
+      } else {
+        utl::error PAD 108 "Cannot find an instance with name \"$inst_name\""
+      }
+    }
+    return $inst
+  }
+
+  variable type_index {}
+
+  proc add_pad {args} {
+    variable footprint
+    variable add_pads_command
+    variable block
+    variable type_index
+    variable db
+
+    # debug "$args"
+    if {$db == {}} {
+      set db [ord::get_db]
+    }
+    if {$block == {}} {
+      set block [ord::get_db_block]
+      # debug "[$block getName]"
+    }
+
+    set padcell_name {}
+
+    if {[llength $args] % 2 == 1} {
+        utl::error PAD 109 "In correct number of arguments - expected an even number, received [llength $args]"
+    }
+
+    set padcell {}
+    # Determine the padcell name
+    if {[dict exists $args -name]} {
+      set padcell_name [dict get $args -name]
+    } else {
+      if {[dict exists $args -type]} {
+        set type [dict get $args -type]
+        if {![dict exists $type_index $type]} {
+          dict set type_index $type 0
+        } 
+        set idx [dict get $type_index $type]
+        set padcell_name "${type}_$idx"
+        incr idx
+        dict set type_index $type $idx
+      } else {
+        utl::error PAD 110 "Must specify -type option if -name is not spedified"
+      }
+    }
+
+    set process_args $args
+    while {[llength $process_args] > 0} {
+      set arg [lindex $process_args 0]
+      set value [lindex $process_args 1]
+
+      switch $arg {
+        -name      {dict set padcell name $value}
+        -signal    {dict set padcell signal_name $value}
+        -edge      {dict set padcell side [check_edge_name $value]}
+        -type      {dict set padcell type [check_pad_type $value]}
+        -location  {dict set padcell cell [check_location $value]}
+        -bump      {dict set padcell bump [check_bump $value]}
+        -bondpad   {dict set padcell bondpad [check_bondpad $value]}
+        -inst_name {dict set padcell inst_name $value}
+        default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -name, -signal, -edge, -type, -location, -bump, -bondpad, -inst_name"}
+      }
+
+      set process_args [lrange $process_args 2 end]
+    }
+
+    if {[dict exists $args -signal]} {
+      if {[set padcell_duplicate [find_padcell_with_signal_name [dict get $padcell signal_name]]] != {}} {
+        utl::error PAD 112 "Padcell $padcell_duplicate already defined to use [dict get $padcell signal_name]"
+      }
+    }
+    dict set footprint padcell $padcell_name $padcell
+
+    new_padcell $padcell_name
+    if {[dict exists $args -signal]} {
+      set_padcell_signal_name $padcell_name [dict get $padcell signal_name]
+    }
+    if {[dict exists $args -edge]} {
+      set_padcell_side_name $padcell_name [dict get $padcell side]
+    }
+    if {[dict exists $args -type]} {
+      set_padcell_type $padcell_name [dict get $padcell type]
+    }
+    if {[dict exists $args -location]} {
+      set_padcell_location $padcell_name [dict get $padcell cell]
+    }
+    if {[dict exists $args -bump]} {
+      set_padcell_bump_location $padcell_name [dict get $padcell bump row] [dict get $padcell bump col]
+    }
+    if {[dict exists $args -bondpad]} {
+      set_padcell_bondpad $padcell_name [dict get $padcell bondpad]
+    }
+    if {[dict exists $args -inst_name]} {
+      set inst [check_inst_name [dict get $padcell inst_name] $padcell_name]
+      set_padcell_inst $padcell_name $inst
+    }
+
+    # debug [dict get $ICeWall::footprint padcell $padcell_name]
+    # debug "end"
+  }
+
+  proc check_type {type} {
+    if {$type == "Wirebond" || $type == "Flipchip"} {
+      return $type
+    }
+    utl::error PAD 113 "Type specified must be Flipchip or Wirebond"
+  }
+
+  proc set_type {type} {
+    variable footprint
+
+    dict set footprint type [check_type $type]
+  }
+
   proc define {attribute args} {
     variable footprint
 
-    dict set footprint $attribute $args
+    dict set footprint $attribute {*}$args
   }
 
   proc library {attribute args} {
@@ -3712,7 +4138,7 @@ namespace eval ICeWall {
     dict set library $attribute $args
   }
  
-  namespace export define
+  namespace export define add_pad set_type
   namespace export set_footprint set_library
 
   namespace export get_die_area get_core_area 
