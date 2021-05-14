@@ -63,7 +63,6 @@ void IOPlacer::clear()
   top_grid_ = TopLayerGrid();
   zero_sink_ios_.clear();
   sections_.clear();
-  sections_for_constraints_.clear();
   slots_.clear();
   top_layer_slots_.clear();
   assignment_.clear();
@@ -544,64 +543,46 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
-void IOPlacer::assignConstrainedPinsToSections()
+std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &constraint)
 {
   Netlist& netlist = netlist_io_pins_;
-  int pins_assigned = assignConstrainedGroupsToSections();
+  std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
+  assignConstrainedGroupsToSections(constraint, sections_for_constraint);
 
-  for (Constraint &constraint : constraints_) {
-    std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
-    int slots_count = 0;
-    for (Section sec : sections_for_constraint) {
-      slots_count += sec.num_slots;
-    }
-
-    std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
-    
-    if (pin_indices.size() > slots_count) {
-      logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), slots_count);
-    }
-
-    for (int idx : pin_indices) {
-      IOPin& io_pin = netlist.getIoPin(idx);
-
-      if (assignPinToSection(io_pin, idx, sections_for_constraint)) {
-        pins_assigned++;
-      }
-    }
-
-    for (Section &section : sections_for_constraint) {
-      if (section.net.numIOPins() > 0) {
-        sections_for_constraints_.push_back(section);
-      }
-    }
+  int slots_count = 0;
+  for (Section sec : sections_for_constraint) {
+    slots_count += sec.num_slots;
   }
+
+  std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
+  
+  if (pin_indices.size() > slots_count) {
+    logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), slots_count);
+  }
+
+  for (int idx : pin_indices) {
+    IOPin& io_pin = netlist.getIoPin(idx);
+    assignPinToSection(io_pin, idx, sections_for_constraint);
+  }
+
+  return sections_for_constraint;
 }
 
-int IOPlacer::assignConstrainedGroupsToSections()
+void IOPlacer::assignConstrainedGroupsToSections(Constraint &constraint,
+                                                 std::vector<Section> &sections)
 {
   int total_pins_assigned = 0;
   Netlist& net = netlist_io_pins_;
 
   for (std::vector<int>& io_group : net.getIOGroups()) {
-    for (Constraint &constraint : constraints_) {
-      std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
-      const PinList& pin_list = constraint.pin_list;
-      IOPin& io_pin = net.getIoPin(io_group[0]);
+    const PinList& pin_list = constraint.pin_list;
+    IOPin& io_pin = net.getIoPin(io_group[0]);
 
-      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
-        total_pins_assigned += assignGroupToSection(io_group, sections_for_constraint);
-        for (Section &section : sections_for_constraint) {
-          if (section.net.numIOPins() > 0) {
-            sections_for_constraints_.push_back(section);
-          }
-        }
-        break;
-      }
+    if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
+      total_pins_assigned += assignGroupToSection(io_group, sections);
+      break;
     }
   }
-
-  return total_pins_assigned;
 }
 
 int IOPlacer::assignGroupsToSections()
@@ -674,7 +655,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int> &io_group,
   return total_pins_assigned;
 }
 
-bool IOPlacer::assignPinsToSections()
+bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 {
   Netlist& net = netlist_io_pins_;
   std::vector<Section>& sections = sections_;
@@ -692,9 +673,7 @@ bool IOPlacer::assignPinsToSections()
     idx++;
   }
 
-  for (Section& sec : sections_for_constraints_) {
-    total_pins_assigned += sec.net.numIOPins();
-  }
+  total_pins_assigned += assigned_pins_count;
 
   if (total_pins_assigned == net.numIOPins()) {
     logger_->report("Successfully assigned I/O pins");
@@ -748,7 +727,7 @@ void IOPlacer::printConfig()
   logger_->info(PPL, 9, " * Force Pin Spread      {}", force_pin_spread_);
 }
 
-void IOPlacer::setupSections()
+void IOPlacer::setupSections(int assigned_pins_count)
 {
   bool all_assigned;
   int i = 0;
@@ -757,7 +736,7 @@ void IOPlacer::setupSections()
     logger_->info(PPL, 10, "Tentative {} to setup sections", i++);
     printConfig();
 
-    all_assigned = assignPinsToSections();
+    all_assigned = assignPinsToSections(assigned_pins_count);
 
     slots_per_section_ *= (1 + slots_increase_factor_);
     if (sections_.size() > MAX_SECTIONS_RECOMMENDED) {
@@ -1087,6 +1066,16 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   }
 }
 
+void IOPlacer::updateSlots()
+{
+  for (Slot& slot : slots_) {
+    slot.blocked = slot.used;
+  }
+  for (Slot& slot : top_layer_slots_) {
+    slot.blocked = slot.used;
+  }
+}
+
 void IOPlacer::run(bool random_mode)
 {
   initParms();
@@ -1110,11 +1099,18 @@ void IOPlacer::run(bool random_mode)
     logger_->info(PPL, 3, "Random pin placement.");
     randomPlacement();
   } else {
-    assignConstrainedPinsToSections();
+    int constrained_pins_cnt = 0;
+    for (Constraint &constraint : constraints_) {
+      std::vector<Section> sections_for_constraint = assignConstrainedPinsToSections(constraint);
+      for (Section& sec : sections_for_constraint) {
+        constrained_pins_cnt += sec.net.numIOPins();
+      }
 
-    findPinAssignment(sections_for_constraints_);
+      findPinAssignment(sections_for_constraint);
+      updateSlots();
+    }
 
-    setupSections();
+    setupSections(constrained_pins_cnt);
 
     findPinAssignment(sections_);
   }
