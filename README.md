@@ -930,3 +930,13 @@ Options description:
   the voltage value is obtained from operating conditions in the liberty.
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
+
+#### TCL functions
+
+Get the die and core areas as a list in microns: "llx lly urx ury"
+
+```
+ord::get_die_area
+ord::get_core_area
+```
+
