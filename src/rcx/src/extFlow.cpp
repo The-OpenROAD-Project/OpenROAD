@@ -336,8 +336,7 @@ extWireBin*** extMain::mkSignalBins(uint binSize, int* bb_ll, int* bb_ur,
 
     uint netId = net->getId();
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND)) {
+    if ((net->getSigType().isSupply())) {
       dbSet<dbSWire> swires = net->getSWires();
       dbSet<dbSWire>::iterator itr;
 
@@ -442,8 +441,7 @@ uint extMain::mkSignalTables2(uint* nm_step, int* bb_ll, int* bb_ur,
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND)) {
+    if ((net->getSigType().isSupply())) {
       sdbPowerTable->add(net->getId());
       continue;
     }
@@ -521,8 +519,7 @@ uint extMain::mkSignalTables(uint* nm_step, int* bb_ll, int* bb_ur,
     maxRectSdb[1]->reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
     bool hasSdbWires[2] = {false, false};
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       getNetSboxes(net, maxRectSdb, maxRectGs, hasSdbWires, hasGsWires);
     else
       getNetShapes(net, maxRectSdb, maxRectGs, hasSdbWires, hasGsWires);
@@ -728,8 +725,7 @@ uint extMain::powerWireCounter(uint& maxWidth) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if (!((net->getSigType() == dbSigType::POWER) ||
-          (net->getSigType() == dbSigType::GROUND)))
+    if (!((net->getSigType().isSupply())))
       continue;
 
     cnt += sBoxCounter(net, maxWidth);
@@ -914,8 +910,7 @@ uint extMain::signalWireCounter(uint& maxWidth) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     dbWire* wire = net->getWire();
@@ -955,8 +950,7 @@ uint extMain::addPowerNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if (!((net->getSigType() == dbSigType::POWER) ||
-          (net->getSigType() == dbSigType::GROUND)))
+    if (!((net->getSigType().isSupply())))
       continue;
 
     cnt += addNetSBoxes(net, dir, bb_ll, bb_ur, wtype, netUtil);
@@ -1162,8 +1156,7 @@ uint extMain::addSignalNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, fp, createDbNet);
@@ -1445,8 +1438,7 @@ uint extMain::addNets(uint dir, int* bb_ll, int* bb_ur, uint wtype, uint ptype,
   for (uint ii = 0; ii < netCnt; ii++) {
     dbNet* net = dbNet::getNet(_block, sdbSignalTable->get(ii));
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       cnt += addNetSBoxes(net, dir, bb_ll, bb_ur, ptype);
     else
       cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, NULL);
@@ -1622,8 +1614,7 @@ uint extMain::addNetsGs(Ath__array1D<uint>* gsTable, int dir) {
   for (uint ii = 0; ii < netCnt; ii++) {
     dbNet* net = dbNet::getNet(_block, gsTable->get(ii));
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       cnt += addNetSboxesGs(net, false, false, dir);
     else
       cnt += addNetShapesGs(net, false, false, dir);
@@ -1768,8 +1759,7 @@ uint extMain::fill_gs4(int dir, int* ll, int* ur, int* lo_gs, int* hi_gs,
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if (!((net->getSigType() == dbSigType::POWER) ||
-          (net->getSigType() == dbSigType::GROUND)))
+    if (!((net->getSigType().isSupply())))
       continue;
 
     if (createDbNet != NULL)
@@ -1794,8 +1784,7 @@ uint extMain::fill_gs4(int dir, int* ll, int* ur, int* lo_gs, int* hi_gs,
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
@@ -1974,8 +1963,7 @@ void extMain::resetGndCaps() {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     // uint netId= net->getId();
@@ -2780,8 +2768,7 @@ uint extMain::mkNetPropertiesForRsegs(dbBlock* blk, uint dir) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     dbWire* wire = net->getWire();
@@ -2831,8 +2818,7 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     int dstNetId = 0;
@@ -2920,8 +2906,7 @@ uint extMain::createNetShapePropertires(dbBlock* blk) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     // uint netId= net->getId();
@@ -2959,8 +2944,7 @@ uint extMain::rcGenTile(dbBlock* blk) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     // uint netId= net->getId();
@@ -3540,8 +3524,7 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND))
+    if ((net->getSigType().isSupply()))
       continue;
 
     dbNet* dstNet = getDstNet(net, mainBlock, &parser);
@@ -3714,8 +3697,7 @@ uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts) {
 
     uint netId = net->getId();
 
-    if ((net->getSigType() == dbSigType::POWER) ||
-        (net->getSigType() == dbSigType::GROUND)) {
+    if ((net->getSigType().isSupply())) {
       if (!skipPower)
         _tiles->_powerTable->add(net->getId());
       continue;
