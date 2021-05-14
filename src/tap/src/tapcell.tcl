@@ -1123,8 +1123,8 @@ proc check_symmetry {master ori} {
   set symmetry_y [$master getSymmetryY]
 
   set symmetry_ok 1
-  if {(!$symmetry_x && $ori == "R0") || \
-      (!$symmetry_y && $ori == "MX")} {
+  if {(!$symmetry_x && $ori == "MX") || \
+      (!$symmetry_y && $ori == "R0")} {
     set symmetry_ok 0
   }
 
