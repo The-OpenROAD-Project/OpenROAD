@@ -280,6 +280,7 @@ void MainWindow::setDb(odb::dbDatabase* db)
   db_ = db;
   controls_->setDb(db);
   viewer_->setDb(db);
+  selection_browser_->setDb(db);
 }
 
 void MainWindow::setLocation(qreal x, qreal y)

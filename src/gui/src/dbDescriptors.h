@@ -44,7 +44,6 @@ class DbInstDescriptor : public Descriptor
  public:
   std::string getName(std::any object) const override;
   std::string getTypeName(std::any object) const override;
-  std::string getLocation(std::any object) const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -67,7 +66,6 @@ class DbNetDescriptor : public Descriptor
  public:
   std::string getName(std::any object) const override;
   std::string getTypeName(std::any object) const override;
-  std::string getLocation(std::any object) const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -90,7 +88,6 @@ class DbITermDescriptor : public Descriptor
  public:
   std::string getName(std::any object) const override;
   std::string getTypeName(std::any object) const override;
-  std::string getLocation(std::any object) const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -113,7 +110,6 @@ class DbBTermDescriptor : public Descriptor
  public:
   std::string getName(std::any object) const override;
   std::string getTypeName(std::any object) const override;
-  std::string getLocation(std::any object) const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,

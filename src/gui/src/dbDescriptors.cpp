@@ -30,9 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <iomanip>
-#include <sstream>
-
 #include "db.h"
 #include "dbDescriptors.h"
 #include "dbShape.h"
@@ -47,28 +44,6 @@ std::string DbInstDescriptor::getName(std::any object) const
 std::string DbInstDescriptor::getTypeName(std::any object) const
 {
   return "Inst";
-}
-
-std::string DbInstDescriptor::getLocation(std::any object) const
-{
-  auto inst = std::any_cast<odb::dbInst*>(object);
-  auto block = inst->getDb()->getChip()->getBlock();
-  double to_microns = block->getDbUnitsPerMicron();
-  auto inst_bbox = inst->getBBox();
-  auto placement_status = inst->getPlacementStatus();
-  auto inst_orient = inst->getOrient().getString();
-  std::stringstream ss;
-  if (placement_status.isPlaced()) {
-    ss << std::fixed << std::setprecision(5) << "[("
-       << inst_bbox->xMin() / to_microns << ","
-       << inst_bbox->yMin() / to_microns << "), ("
-       << inst_bbox->xMax() / to_microns << ","
-       << inst_bbox->yMax() / to_microns << ")], " << inst_orient << ": "
-       << placement_status.getString();
-  } else {
-    ss << placement_status.getString();
-  }
-  return ss.str();
 }
 
 bool DbInstDescriptor::getBBox(std::any object, odb::Rect& bbox) const
@@ -170,24 +145,6 @@ std::string DbNetDescriptor::getName(std::any object) const
 std::string DbNetDescriptor::getTypeName(std::any object) const
 {
   return "Net";
-}
-
-std::string DbNetDescriptor::getLocation(std::any object) const
-{
-  auto net = std::any_cast<odb::dbNet*>(object);
-  auto block = net->getDb()->getChip()->getBlock();
-  double to_microns = block->getDbUnitsPerMicron();
-  auto wire = net->getWire();
-  odb::Rect wire_bbox;
-  if (wire && wire->getBBox(wire_bbox)) {
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(5) << "[("
-       << wire_bbox.xMin() / to_microns << "," << wire_bbox.yMin() / to_microns
-       << "), (" << wire_bbox.xMax() / to_microns << ","
-       << wire_bbox.yMax() / to_microns << ")]";
-    return ss.str();
-  }
-  return std::string("NA");
 }
 
 bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
@@ -359,23 +316,6 @@ std::string DbITermDescriptor::getTypeName(std::any object) const
   return "ITerm";
 }
 
-std::string DbITermDescriptor::getLocation(std::any object) const
-{
-  auto iterm = std::any_cast<odb::dbITerm*>(object);
-  auto block = iterm->getDb()->getChip()->getBlock();
-  if (iterm->getInst()->getPlacementStatus().isPlaced()) {
-    double to_microns = block->getDbUnitsPerMicron();
-    int x, y;
-    iterm->getAvgXY(&x, &y);
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(5);
-    ss << "(" << (x / to_microns) << ", " << (y / to_microns) << ")";
-    return ss.str();
-  } else {
-    return "<none>";
-  }
-}
-
 bool DbITermDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
@@ -465,22 +405,6 @@ std::string DbBTermDescriptor::getName(std::any object) const
 std::string DbBTermDescriptor::getTypeName(std::any object) const
 {
   return "BTerm";
-}
-
-std::string DbBTermDescriptor::getLocation(std::any object) const
-{
-  auto* bterm = std::any_cast<odb::dbBTerm*>(object);
-  int x, y;
-  if (bterm->getFirstPinLocation(x, y)) {
-    auto block = bterm->getDb()->getChip()->getBlock();
-    double to_microns = block->getDbUnitsPerMicron();
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(5);
-    ss << "(" << (x / to_microns) << ", " << (y / to_microns) << ")";
-    return ss.str();
-  } else {
-    return "<none>";
-  }
 }
 
 bool DbBTermDescriptor::getBBox(std::any object, odb::Rect& bbox) const

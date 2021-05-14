@@ -59,7 +59,6 @@ class Descriptor
  public:
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getTypeName(std::any object) const = 0;
-  virtual std::string getLocation(std::any object) const = 0;
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
 
   // If the select_flag is false, the drawing will happen in highlight mode.
@@ -108,7 +107,6 @@ class Selected
 
   std::string getName() const { return descriptor_->getName(object_); }
   std::string getTypeName() const { return descriptor_->getTypeName(object_); }
-  std::string getLocation() const { return descriptor_->getLocation(object_); }
   bool getBBox(odb::Rect& bbox) const
   {
     return descriptor_->getBBox(object_, bbox);
