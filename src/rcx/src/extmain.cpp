@@ -829,14 +829,14 @@ void extMain::setBlockFromChip() {
 #endif
 
   if(_spef != nullptr) {
-    _spef = NULL;
+    _spef = nullptr;
     _extracted = false;
   }
 
   _bufSpefCnt = 0;
-  _origSpefFilePrefix = NULL;
-  _newSpefFilePrefix = NULL;
-  _excludeCells = NULL;
+  _origSpefFilePrefix = nullptr;
+  _newSpefFilePrefix = nullptr;
+  _excludeCells = nullptr;
 }
 
 void extMain::setBlock(dbBlock* block) {
