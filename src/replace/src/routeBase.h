@@ -56,7 +56,8 @@ class GNet;
 class Die;
 
 // for GGrid
-class Tile {
+class Tile
+{
  public:
   Tile();
   Tile(int x, int y, int lx, int ly, int ux, int uy, int layers);
@@ -103,23 +104,43 @@ class Tile {
   void reset();
 };
 
-inline int Tile::x() const { return x_; }
+inline int Tile::x() const
+{
+  return x_;
+}
 
-inline int Tile::y() const { return y_; }
+inline int Tile::y() const
+{
+  return y_;
+}
 
-inline int Tile::lx() const { return lx_; }
+inline int Tile::lx() const
+{
+  return lx_;
+}
 
-inline int Tile::ly() const { return ly_; }
+inline int Tile::ly() const
+{
+  return ly_;
+}
 
-inline int Tile::ux() const { return ux_; }
+inline int Tile::ux() const
+{
+  return ux_;
+}
 
-inline int Tile::uy() const { return uy_; }
+inline int Tile::uy() const
+{
+  return uy_;
+}
 
-inline int64_t Tile::area() const {
+inline int64_t Tile::area() const
+{
   return static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
 }
 
-class TileGrid {
+class TileGrid
+{
  public:
   TileGrid();
   ~TileGrid();
@@ -170,9 +191,13 @@ class TileGrid {
   void reset();
 };
 
-inline const std::vector<Tile*>& TileGrid::tiles() const { return tiles_; }
+inline const std::vector<Tile*>& TileGrid::tiles() const
+{
+  return tiles_;
+}
 
-class RouteBaseVars {
+class RouteBaseVars
+{
  public:
   float inflationRatioCoef;
   float maxInflationRatio;
@@ -191,11 +216,14 @@ class RouteBaseVars {
   void reset();
 };
 
-class RouteBase {
+class RouteBase
+{
  public:
   RouteBase();
-  RouteBase(RouteBaseVars rbVars, odb::dbDatabase* db,
-            grt::GlobalRouter* grouter, std::shared_ptr<NesterovBase> nb,
+  RouteBase(RouteBaseVars rbVars,
+            odb::dbDatabase* db,
+            grt::GlobalRouter* grouter,
+            std::shared_ptr<NesterovBase> nb,
             utl::Logger* log);
   ~RouteBase();
 
