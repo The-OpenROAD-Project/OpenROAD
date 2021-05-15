@@ -250,7 +250,7 @@ PINS 54 ;
     - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 144190 105740 ) N ;
+        + PLACED ( 144190 115340 ) N ;
     - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -258,7 +258,7 @@ PINS 54 ;
     - reset + NET reset + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 144190 115340 ) N ;
+        + PLACED ( 144190 105740 ) N ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )

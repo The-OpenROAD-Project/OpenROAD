@@ -1,9 +1,11 @@
 record_tests {
   error1
+  get_core_die_areas
 }
 
 define_test_group "non_flow" {
   error1
+  get_core_die_areas
 }
 
 # Flow tests only check the last line in the log (pass/fail).

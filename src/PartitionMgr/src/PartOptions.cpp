@@ -33,57 +33,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "PartitionMgr.h"
 
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
+namespace par {
 
-#include "Pin.h"
+void
+PartOptions::setRandomSeed(int seed) {
+  seedGenerator_.seed(seed);
+}
 
-namespace grt {
+void
+PartOptions::generateSeeds(int seeds) {
+  _seeds.clear();
 
-class RoutingTracks
-{
- private:
-  int _layerIndex;
-  int _trackPitch;
-  int _line2ViaPitchUp;
-  int _line2ViaPitchDown;
-  int _location;
-  int _numTracks;
-  bool _orientation;
+  while (_seeds.size() < seeds)
+    _seeds.insert(getNewSeed());
+}
 
- public:
-  RoutingTracks() = default;
-  RoutingTracks(const int layerIndex,
-                const int trackPitch,
-                const int line2ViaPitchUp,
-                const int line2ViaPitchDown,
-                const int location,
-                const int numTracks,
-                const bool orientation)
-      : _layerIndex(layerIndex),
-        _trackPitch(trackPitch),
-        _line2ViaPitchUp(line2ViaPitchUp),
-        _line2ViaPitchDown(line2ViaPitchDown),
-        _location(location),
-        _numTracks(numTracks),
-        _orientation(orientation)
-  {
-  }
-
-  int getLayerIndex() const { return _layerIndex; }
-  int getTrackPitch() const { return _trackPitch; }
-  int getLineToViaPitch() const { return std::max(_line2ViaPitchUp, _line2ViaPitchDown); }
-  int getUsePitch() const {
-    return std::max(_trackPitch, std::max(_line2ViaPitchUp, _line2ViaPitchDown));
-  }
-  int getLocation() const { return _location; }
-  int getNumTracks() const { return _numTracks; }
-  bool getOrientation() const { return _orientation; }
-};
-
-}  // namespace grt
+}  // namespace par

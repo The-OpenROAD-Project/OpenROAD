@@ -2026,7 +2026,7 @@ Resizer::repairSetup(float slack_margin)
         journalRestore();
         sta_->worstSlack(max_, worst_slack, worst_vertex);
         debugPrint(logger_, RSZ, "retime", 1,
-                   "decreasing slack for %d passes restoring worst_slack {}",
+                   "decreasing slack for {} passes restoring worst_slack {}",
                    repair_setup_decreasing_slack_passes_allowed_,
                    delayAsString(worst_slack, sta_, 3));
         break;

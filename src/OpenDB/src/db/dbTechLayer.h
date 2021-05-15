@@ -177,6 +177,9 @@ class _dbTechLayer : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   // User Code Begin Methods
+  uint getV55RowIdx(const int& rowVal) const;
+  uint getV55ColIdx(const int& colVal) const;
+  uint getTwIdx(const int width, const int prl) const;
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);
