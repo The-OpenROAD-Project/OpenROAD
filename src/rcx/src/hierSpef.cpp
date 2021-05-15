@@ -50,8 +50,7 @@ namespace rcx {
 
 using utl::RCX;
 
-uint extSpef::writeHierInstNameMap()
-{
+uint extSpef::writeHierInstNameMap() {
   odb::dbSet<odb::dbInst> insts = _block->getInsts();
   odb::dbSet<odb::dbInst>::iterator itr;
 
@@ -65,15 +64,10 @@ uint extSpef::writeHierInstNameMap()
 
     odb::dbIntProperty::create(child, "_instSpefMapBase", _baseNameMap);
     int baseMapId = extSpef::getIntProperty(child, "_instSpefMapBase");
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:S]"
                "\ninstMapBase {} : {}  {}",
-               baseMapId,
-               child->getConstName(),
-               inst->getConstName());
+               baseMapId, child->getConstName(), inst->getConstName());
 
     uint mapId = 0;
     odb::dbSet<odb::dbInst> binsts = child->getInsts();
@@ -83,46 +77,33 @@ uint extSpef::writeHierInstNameMap()
 
       mapId = _baseNameMap + ii->getId();
 
-      char* nname = (char*) ii->getConstName();
+      char* nname = (char*)ii->getConstName();
       char* nname1 = tinkerSpefName(nname);
       ATH__fprintf(_outFP, "*%d %s/%s\n", mapId, inst->getConstName(), nname1);
-      debugPrint(logger_,
-                 RCX,
-                 "hierspef",
-                 1,
-                 "[HEXT:S]",
-                 "\t{} {}/{}",
-                 mapId,
-                 inst->getConstName(),
-                 nname1);
+      debugPrint(logger_, RCX, "hierspef", 1, "[HEXT:S]", "\t{} {}/{}", mapId,
+                 inst->getConstName(), nname1);
 
       instCnt++;
     }
     _baseNameMap = mapId;
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:S]"
                "END_MAP {} inames : {}\n",
-               instCnt,
-               child->getConstName());
+               instCnt, child->getConstName());
   }
   return instCnt;
 }
-int extSpef::getIntProperty(odb::dbBlock* block, const char* name)
-{
+int extSpef::getIntProperty(odb::dbBlock* block, const char* name) {
   odb::dbProperty* p = odb::dbProperty::find(block, name);
 
   if (p == NULL)
     return 0;
 
-  odb::dbIntProperty* ip = (odb::dbIntProperty*) p;
+  odb::dbIntProperty* ip = (odb::dbIntProperty*)p;
   return ip->getValue();
 }
 
-uint extSpef::writeHierNetNameMap()
-{
+uint extSpef::writeHierNetNameMap() {
   odb::dbSet<odb::dbInst> insts = _block->getInsts();
   odb::dbSet<odb::dbInst>::iterator itr;
 
@@ -137,15 +118,10 @@ uint extSpef::writeHierNetNameMap()
     odb::dbIntProperty::create(child, "_netSpefMapBase", _baseNameMap);
     int baseMapId = extSpef::getIntProperty(child, "_netSpefMapBase");
 
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:S]"
                "\nnetMapBase {} : {}  {}",
-               baseMapId,
-               child->getConstName(),
-               inst->getConstName());
+               baseMapId, child->getConstName(), inst->getConstName());
 
     uint mapId = 0;
     odb::dbSet<odb::dbNet> nets = child->getNets();
@@ -158,29 +134,18 @@ uint extSpef::writeHierNetNameMap()
 
       mapId = _baseNameMap + ii->getId();
 
-      char* nname = (char*) ii->getConstName();
+      char* nname = (char*)ii->getConstName();
       char* nname1 = tinkerSpefName(nname);
       ATH__fprintf(_outFP, "*%d %s/%s\n", mapId, inst->getConstName(), nname1);
-      debugPrint(logger_,
-                 RCX,
-                 "hierspef",
-                 1,
-                 "[HEXT:S]",
-                 "\t{} {}/{}",
-                 mapId,
-                 inst->getConstName(),
-                 nname1);
+      debugPrint(logger_, RCX, "hierspef", 1, "[HEXT:S]", "\t{} {}/{}", mapId,
+                 inst->getConstName(), nname1);
       netCnt++;
     }
     _baseNameMap = mapId;
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:S]"
                "\tNET_MAP_END ({} internal nets) : {}\n",
-               netCnt,
-               child->getConstName());
+               netCnt, child->getConstName());
   }
   // OPTIMIZE this ; have to do due to 1st "null" rseg;
   // if not, appending rsegs creates a havoc!
@@ -197,8 +162,7 @@ uint extSpef::writeHierNetNameMap()
   }
   return netCnt;
 }
-uint extMain::markCCsegs(odb::dbBlock* blk, bool flag)
-{
+uint extMain::markCCsegs(odb::dbBlock* blk, bool flag) {
   odb::dbSet<odb::dbCCSeg> ccs = blk->getCCSegs();
   odb::dbSet<odb::dbCCSeg>::iterator ccitr;
   for (ccitr = ccs.begin(); ccitr != ccs.end(); ++ccitr) {
@@ -208,13 +172,9 @@ uint extMain::markCCsegs(odb::dbBlock* blk, bool flag)
   return ccs.size();
 }
 
-uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
-{
-  logger_->info(RCX,
-                232,
-                "Merging Parasitics for Block {} : {} Into parent {}",
-                blk->getConstName(),
-                blk->getParentInst()->getConstName(),
+uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef) {
+  logger_->info(RCX, 232, "Merging Parasitics for Block {} : {} Into parent {}",
+                blk->getConstName(), blk->getParentInst()->getConstName(),
                 _block->getConstName());
 
   // blk->getParent()->getConstName()
@@ -223,13 +183,8 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
   int instBaseMapId = extSpef::getIntProperty(blk, "_instSpefMapBase");
   _spef->setHierBaseNameMap(instBaseMapId, netBaseMapId);
 
-  debugPrint(logger_,
-             RCX,
-             "hierspef",
-             1,
-             "[HEXT:F]",
-             "\n\t_netSpefMapBase= {} _instSpefMapBase= {}",
-             netBaseMapId,
+  debugPrint(logger_, RCX, "hierspef", 1, "[HEXT:F]",
+             "\n\t_netSpefMapBase= {} _instSpefMapBase= {}", netBaseMapId,
              instBaseMapId);
 
   odb::dbSet<odb::dbCapNode> allcapnodes = blk->getCapNodes();
@@ -262,10 +217,7 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
     odb::dbITerm* iterm = bterm->getITerm();
     odb::dbNet* parentNet = iterm->getNet();
     if (parentNet == NULL) {
-      logger_->warn(RCX,
-                    408,
-                    "Null parent[{}] net : {}",
-                    net->getBTermCount(),
+      logger_->warn(RCX, 408, "Null parent[{}] net : {}", net->getBTermCount(),
                     net->getConstName());
       continue;
     }
@@ -284,16 +236,13 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
     odb::dbITerm* iterm = bterm->getITerm();
     odb::dbNet* parentNet = iterm->getNet();
     if (parentNet == NULL) {
-      logger_->warn(RCX,
-                    233,
-                    "Null parent[{}] net : {}",
-                    net->getBTermCount(),
+      logger_->warn(RCX, 233, "Null parent[{}] net : {}", net->getBTermCount(),
                     net->getConstName());
       continue;
     }
 
-    ccCnt += createCCsegs(
-        net, parentNet, topDummyNodeNet, capNodeMap, instBaseMapId);
+    ccCnt += createCCsegs(net, parentNet, topDummyNodeNet, capNodeMap,
+                          instBaseMapId);
   }
   markCCsegs(blk, false);
 
@@ -308,23 +257,15 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
       spefCnt += _spef->writeHierNet(net, resBound, dbg);
   }
   _spef->setBlock(_block);
-  logger_->info(RCX,
-                235,
+  logger_->info(RCX, 235,
                 "{} internal {} IO nets {} gCaps {} rSegs {} ccCaps : {}",
-                spefCnt,
-                flatCnt,
-                gCnt,
-                rCnt,
-                ccCnt,
-                blk->getConstName());
+                spefCnt, flatCnt, gCnt, rCnt, ccCnt, blk->getConstName());
 
   delete[] capNodeMap;
   return flatCnt + spefCnt;
 }
-uint extMain::adjustParentNode(odb::dbNet* net,
-                               odb::dbITerm* from_child_iterm,
-                               uint node_num)
-{
+uint extMain::adjustParentNode(odb::dbNet* net, odb::dbITerm* from_child_iterm,
+                               uint node_num) {
   odb::dbSet<odb::dbCapNode> capNodes = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator cap_node_itr = capNodes.begin();
   for (; cap_node_itr != capNodes.end(); ++cap_node_itr) {
@@ -345,12 +286,9 @@ uint extMain::adjustParentNode(odb::dbNet* net,
   return 0;
 }
 
-bool extMain::createParentCapNode(odb::dbCapNode* node,
-                                  odb::dbNet* parentNet,
-                                  uint nodeNum,
-                                  uint* capNodeMap,
-                                  uint baseNum)
-{
+bool extMain::createParentCapNode(odb::dbCapNode* node, odb::dbNet* parentNet,
+                                  uint nodeNum, uint* capNodeMap,
+                                  uint baseNum) {
   bool foreign = false;
   char buf[1024];
 
@@ -362,37 +300,25 @@ bool extMain::createParentCapNode(odb::dbCapNode* node,
   if (node->isInternal()) {  //
     cap->setInternalFlag();
 
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:C]"
                "\t\tG intrn {} --> {}",
-               node->getId(),
-               capNodeMap[node->getId()]);
+               node->getId(), capNodeMap[node->getId()]);
   } else if (node->isITerm()) {  //
     odb::dbITerm* iterm = node->getITerm();
     odb::dbInst* inst = iterm->getInst();
     uint instId = inst->getId();
-    sprintf(buf,
-            "*%d%s%s",
-            baseNum + instId,
-            _spef->getDelimeter(),
+    sprintf(buf, "*%d%s%s", baseNum + instId, _spef->getDelimeter(),
             iterm->getMTerm()->getConstName());
 
     odb::dbStringProperty::create(cap, "_inode", buf);
     cap->setNode(baseNum + instId);  // so there is some value
     cap->setNameFlag();
 
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:C]"
                "\t\tG ITerm {} --> {} : {}",
-               node->getId(),
-               capNodeMap[node->getId()],
-               buf);
+               node->getId(), capNodeMap[node->getId()], buf);
   } else if (node->isBTerm()) {  //
 
     odb::dbBTerm* bterm = node->getBTerm();
@@ -400,51 +326,37 @@ bool extMain::createParentCapNode(odb::dbCapNode* node,
     uint parentId = adjustParentNode(parentNet, iterm, nodeNum);
     capNodeMap[node->getId()] = parentId;
 
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:C]"
                "\t\tG BTerm {} --> {} : {}",
-               node->getId(),
-               parentId,
-               nodeNum);
+               node->getId(), parentId, nodeNum);
   }
   return true;
 }
-void extMain::createTop1stRseg(odb::dbNet* net, odb::dbNet* parentNet)
-{
+void extMain::createTop1stRseg(odb::dbNet* net, odb::dbNet* parentNet) {
   if (parentNet->getWire() != NULL)
     return;
 
   odb::dbBTerm* bterm = net->get1stBTerm();
   odb::dbITerm* iterm = bterm->getITerm();
 
-  odb::dbCapNode* cap
-      = odb::dbCapNode::create(parentNet, 0, /*_foreign*/ false);
+  odb::dbCapNode* cap =
+      odb::dbCapNode::create(parentNet, 0, /*_foreign*/ false);
   cap->setNode(iterm->getId());
   cap->setITermFlag();
   odb::dbRSeg* rc = odb::dbRSeg::create(parentNet, 0, 0, 0, true);
   rc->setTargetNode(cap->getId());
 }
-uint extMain::createCapNodes(odb::dbNet* net,
-                             odb::dbNet* parentNet,
-                             uint* capNodeMap,
-                             uint baseNum)
-{
+uint extMain::createCapNodes(odb::dbNet* net, odb::dbNet* parentNet,
+                             uint* capNodeMap, uint baseNum) {
   createTop1stRseg(net, parentNet);
 
   // have to improve for performance
   uint maxCap = parentNet->maxInternalCapNum() + 1;
-  debugPrint(logger_,
-             RCX,
-             "hierspef",
-             1,
+  debugPrint(logger_, RCX, "hierspef", 1,
              "[HEXT:C]"
              "\n\tCapNodes: maxCap={} : {} {}",
-             maxCap,
-             net->getConstName(),
-             parentNet->getConstName());
+             maxCap, net->getConstName(), parentNet->getConstName());
 
   uint gCnt = 0;
   bool foreign = false;
@@ -460,8 +372,7 @@ uint extMain::createCapNodes(odb::dbNet* net,
   }
   return gCnt;
 }
-uint extMain::printRSegs(odb::dbNet* net, Logger* logger)
-{
+uint extMain::printRSegs(odb::dbNet* net, Logger* logger) {
   logger->info(RCX, 236, "\t\t\tprintRSegs: {}", net->getConstName());
   odb::dbSet<odb::dbRSeg> rsegs = net->getRSegs();
   uint rsize = rsegs.size();
@@ -471,28 +382,18 @@ uint extMain::printRSegs(odb::dbNet* net, Logger* logger)
   for (; rseg_itr != rsegs.end(); ++rseg_itr) {
     odb::dbRSeg* rseg = *rseg_itr;
 
-    logger->info(RCX,
-                 234,
-                 "\t\t\t\t\trsegId: {} -- {} {}",
-                 rseg->getId(),
-                 rseg->getSourceNode(),
-                 rseg->getTargetNode());
+    logger->info(RCX, 234, "\t\t\t\t\trsegId: {} -- {} {}", rseg->getId(),
+                 rseg->getSourceNode(), rseg->getTargetNode());
     rCnt++;
   }
   return rCnt;
 }
-uint extMain::createRSegs(odb::dbNet* net,
-                          odb::dbNet* parentNet,
-                          uint* capNodeMap)
-{
-  debugPrint(logger_,
-             RCX,
-             "hierspef",
-             1,
+uint extMain::createRSegs(odb::dbNet* net, odb::dbNet* parentNet,
+                          uint* capNodeMap) {
+  debugPrint(logger_, RCX, "hierspef", 1,
              "[HEXT:R]"
              "\n\tRSegs: {} {}",
-             net->getConstName(),
-             parentNet->getConstName());
+             net->getConstName(), parentNet->getConstName());
 
   // extMain::printRSegs(parentNet);
 
@@ -521,18 +422,10 @@ uint extMain::createRSegs(odb::dbNet* net,
 
       rc->setResistance(res, corner);
       rc->setCapacitance(cap, corner);
-      debugPrint(logger_,
-                 RCX,
-                 "hierspef",
-                 1,
+      debugPrint(logger_, RCX, "hierspef", 1,
                  "[HEXT:R]"
                  "\t\tsrc:{}->{} - tgt:{}->{} - {}  {}",
-                 srcId,
-                 capNodeMap[srcId],
-                 tgtId,
-                 capNodeMap[tgtId],
-                 res,
-                 cap);
+                 srcId, capNodeMap[srcId], tgtId, capNodeMap[tgtId], res, cap);
     }
     rCnt++;
   }
@@ -545,10 +438,8 @@ uint extMain::createRSegs(odb::dbNet* net,
   */
   return rCnt;
 }
-void extMain::adjustChildNode(odb::dbCapNode* childNode,
-                              odb::dbNet* parentNet,
-                              uint* capNodeMap)
-{
+void extMain::adjustChildNode(odb::dbCapNode* childNode, odb::dbNet* parentNet,
+                              uint* capNodeMap) {
   char buf[1024];
   uint parentId = capNodeMap[childNode->getId()];
   odb::dbCapNode* parentNode = odb::dbCapNode::getCapNode(_block, parentId);
@@ -558,63 +449,42 @@ void extMain::adjustChildNode(odb::dbCapNode* childNode,
     childNode->resetBTermFlag();
 
     // spefParentNameId == parent netId (just lucky!!)
-    sprintf(buf,
-            "*%d%s%d",
-            parentNet->getId(),
-            _spef->getDelimeter(),
+    sprintf(buf, "*%d%s%d", parentNet->getId(), _spef->getDelimeter(),
             parentNode->getNode());
 
     odb::dbStringProperty::create(childNode, "_inode", buf);
 
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:CC]"
                "\t\tCC intNode {} --> {} : {}",
-               childNode->getId(),
-               parentId,
-               buf);
+               childNode->getId(), parentId, buf);
   } else if (childNode->isITerm()) {  //
     childNode->resetITermFlag();
 
-    odb::dbStringProperty* p
-        = odb::dbStringProperty::find(parentNode, "_inode");
+    odb::dbStringProperty* p =
+        odb::dbStringProperty::find(parentNode, "_inode");
     odb::dbStringProperty::create(childNode, "_inode", p->getValue().c_str());
 
-    debugPrint(logger_,
-               RCX,
-               "hierspef",
-               1,
+    debugPrint(logger_, RCX, "hierspef", 1,
                "[HEXT:CC]"
                "\t\tCC ITermNode {} --> {} : {}",
-               childNode->getId(),
-               parentId,
-               p->getValue().c_str());
+               childNode->getId(), parentId, p->getValue().c_str());
   }
   childNode->setNameFlag();
 }
 
-uint extMain::createCCsegs(odb::dbNet* net,
-                           odb::dbNet* parentNet,
-                           odb::dbNet* topDummyNet,
-                           uint* capNodeMap,
-                           uint baseNum)
-{
+uint extMain::createCCsegs(odb::dbNet* net, odb::dbNet* parentNet,
+                           odb::dbNet* topDummyNet, uint* capNodeMap,
+                           uint baseNum) {
   // IO nets
 
   // have to improve for performance
   uint maxCap = parentNet->maxInternalCapNum() + 1;
 
-  debugPrint(logger_,
-             RCX,
-             "hierspef",
-             1,
+  debugPrint(logger_, RCX, "hierspef", 1,
              "[HEXT:CC]"
              "\tCCsegs: maxCap[{}] {} {}",
-             maxCap,
-             net->getConstName(),
-             parentNet->getConstName());
+             maxCap, net->getConstName(), parentNet->getConstName());
 
   odb::dbBlock* pblock = parentNet->getBlock();
   uint ccCnt = 0;
@@ -638,8 +508,8 @@ uint extMain::createCCsegs(odb::dbNet* net,
       }
       if (!dstCapNode->getNet()->isIO()) {
         uint nodeNum = maxCap++;
-        createParentCapNode(
-            dstCapNode, topDummyNet, nodeNum, capNodeMap, baseNum);
+        createParentCapNode(dstCapNode, topDummyNet, nodeNum, capNodeMap,
+                            baseNum);
         adjustChildNode(srcCapNode, parentNet, capNodeMap);
       }
       uint tId = dstCapNode->getId();
@@ -656,17 +526,10 @@ uint extMain::createCCsegs(odb::dbNet* net,
         double cap = cc->getCapacitance(corner);
         ccap->setCapacitance(cap, corner);
 
-        debugPrint(logger_,
-                   RCX,
-                   "hierspef",
-                   1,
+        debugPrint(logger_, RCX, "hierspef", 1,
                    "[HEXT:C]"
                    "\t\tCC src:{}->{} tgt:{}->{} CC {:g}\n",
-                   sId,
-                   srcId,
-                   tId,
-                   tgtId,
-                   cap);
+                   sId, srcId, tId, tgtId, cap);
       }
       cc->setMark(true);
     }
@@ -709,8 +572,7 @@ capNodeMap); cc->setMark(true);
         return maxCap;
 }
 */
-void extSpef::writeDnetHier(uint mapId, double* totCap)
-{
+void extSpef::writeDnetHier(uint mapId, double* totCap) {
   if (_writeNameMap)
     ATH__fprintf(_outFP, "\n*D_NET *%d ", mapId);
   // else
@@ -720,8 +582,7 @@ void extSpef::writeDnetHier(uint mapId, double* totCap)
   ATH__fprintf(_outFP, "\n");
 }
 
-bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg)
-{
+bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg) {
   _block = net->getBlock();
   _d_net = net;
   uint netId = net->getId();
@@ -759,15 +620,10 @@ bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg)
   else
     computeCaps(rcSet, totCap);
 
-  debugPrint(logger_,
-             RCX,
-             "hierspef",
-             1,
+  debugPrint(logger_, RCX, "hierspef", 1,
              "[HEXT:S]"
              "\tDNET *{}-{} {:g} {}\n",
-             _childBlockNetBaseMap + netId,
-             netId,
-             totCap[0],
+             _childBlockNetBaseMap + netId, netId, totCap[0],
              net->getConstName());
 
   // netId= _childBlockNetBaseMap+netId;
@@ -809,8 +665,7 @@ bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg)
   }
   return true;
 }
-void extSpef::setHierBaseNameMap(uint instBase, uint netBase)
-{
+void extSpef::setHierBaseNameMap(uint instBase, uint netBase) {
   _childBlockNetBaseMap = netBase;
   _childBlockInstBaseMap = instBase;
 }

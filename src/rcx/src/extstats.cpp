@@ -38,25 +38,31 @@
 
 namespace rcx {
 
-void extMain::resetMinMaxRC(uint ii, uint jj)
-{
+void extMain::resetMinMaxRC(uint ii, uint jj) {
   _minCapTable[ii][jj] = 0;
   _maxCapTable[ii][jj] = 0;
   _minResTable[ii][jj] = 0;
   _maxResTable[ii][jj] = 0;
 }
-void extMain::setMinRC(uint ii, uint jj, extDistRC* rc)
-{
-  _minCapTable[ii][jj] = 2 * rc->getTotalCap();
-  _minResTable[ii][jj] = 2 * rc->getRes();
+void extMain::setMinRC(uint ii, uint jj, extDistRC* rc) {
+  if (rc) {
+    _minCapTable[ii][jj] = 2 * rc->getTotalCap();
+    _minResTable[ii][jj] = 2 * rc->getRes();
+  } else {
+    _minCapTable[ii][jj] = 0;
+    _minResTable[ii][jj] = 0;
+  }
 }
-void extMain::setMaxRC(uint ii, uint jj, extDistRC* rc)
-{
-  _maxCapTable[ii][jj] = 2 * rc->getTotalCap();
-  _maxResTable[ii][jj] = 2 * rc->getRes();
+void extMain::setMaxRC(uint ii, uint jj, extDistRC* rc) {
+  if (rc) {
+    _maxCapTable[ii][jj] = 2 * rc->getTotalCap();
+    _maxResTable[ii][jj] = 2 * rc->getRes();
+  } else {
+    _maxCapTable[ii][jj] = 0;
+    _maxResTable[ii][jj] = 0;
+  }
 }
-extDistRC* extRCModel::getMinRC(int met, int width)
-{
+extDistRC* extRCModel::getMinRC(int met, int width) {
   if (met >= _layerCnt)
     return NULL;
 
@@ -68,8 +74,7 @@ extDistRC* extRCModel::getMinRC(int met, int width)
 
   return getOverFringeRC(&m);
 }
-extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
-{
+extDistRC* extRCModel::getMaxRC(int met, int width, int dist) {
   if (met >= _layerCnt)
     return NULL;
 
@@ -93,11 +98,8 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
   }
   return rc;
 }
-void extDistRC::debugRC(const char* debugWord,
-                        const char* from,
-                        int width,
-                        int level)
-{
+void extDistRC::debugRC(const char* debugWord, const char* from, int width,
+                        int level) {
   char tmp[32];
   sprintf(tmp, " ");
   if (level > 0)
@@ -109,8 +111,7 @@ void extDistRC::debugRC(const char* debugWord,
   //		from, tmp, _coupling+_fringe+_diag, _coupling,  _fringe, _diag,
   //_res, _sep);
 }
-uint extMain::calcMinMaxRC()
-{
+uint extMain::calcMinMaxRC() {
   uint cornerCnt = _modelTable->getCnt();
   if (cornerCnt == 0)
     cornerCnt = 1;
@@ -121,6 +122,7 @@ uint extMain::calcMinMaxRC()
   odb::dbSet<odb::dbTechLayer>::iterator itr;
 
   uint cnt = 0;
+
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     odb::dbTechLayer* layer = *itr;
     odb::dbTechLayerType type = layer->getType();
@@ -151,16 +153,9 @@ uint extMain::calcMinMaxRC()
   }
   return cnt;
 }
-uint extMain::getExtStats(odb::dbNet* net,
-                          uint corner,
-                          int& wlen,
-                          double& min_cap,
-                          double& max_cap,
-                          double& min_res,
-                          double& max_res,
-                          double& via_res,
-                          uint& via_cnt)
-{
+uint extMain::getExtStats(odb::dbNet* net, uint corner, int& wlen,
+                          double& min_cap, double& max_cap, double& min_res,
+                          double& max_res, double& via_res, uint& via_cnt) {
   min_cap = 0;
   max_cap = 0;
   min_res = 0;

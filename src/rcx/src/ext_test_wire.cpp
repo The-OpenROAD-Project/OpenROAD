@@ -47,8 +47,7 @@ static odb::dbTechLayer* m3;
 static odb::dbTechVia* v12;
 static odb::dbTechVia* v23;
 
-static void create_tech(odb::dbDatabase* db)
-{
+static void create_tech(odb::dbDatabase* db) {
   odb::dbTech* tech = odb::dbTech::create(db);
 
   m1 = odb::dbTechLayer::create(tech, "M1", (odb::dbTechLayerType::ROUTING));
@@ -102,8 +101,7 @@ static uint print_shape( odb::dbShape & shape, uint j1, uint j2)
 }
 */
 
-int extMain::db_test_wires(odb::dbDatabase* db)
-{
+int extMain::db_test_wires(odb::dbDatabase* db) {
   if (db == NULL)
     db = _db;
 
