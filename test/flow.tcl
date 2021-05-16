@@ -68,9 +68,10 @@ set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
 
 # post resize timing report (ideal clocks)
-report_worst_slack -min
-report_worst_slack -max
-report_tns
+report_worst_slack -min -digits 3
+report_worst_slack -max -digits 3
+report_tns -digits 3
+# Check slew repair
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 
 ################################################################
@@ -97,9 +98,9 @@ set_propagated_clock [all_clocks]
 repair_timing
 
 # Post timing repair using placement based parasitics.
-report_worst_slack -min
-report_worst_slack -max
-report_tns
+report_worst_slack -min -digits 3
+report_worst_slack -max -digits 3
+report_tns -digits 3
 
 detailed_placement
 filler_placement $filler_cells
@@ -124,36 +125,6 @@ if { $antenna_errors > 0 } {
   fail "found $antenna_errors antenna violations"
 }
 
-################################################################
-# Final Report
-
-# Use global routing based parasitics inlieu of rc extraction
-estimate_parasitics -global_routing
-
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
-report_worst_slack -min
-report_worst_slack -max
-report_tns
-report_check_types -max_slew -max_capacitance -max_fanout -violators
-report_clock_skew
-report_power -corner $power_corner
-
-report_floating_nets -verbose
-report_design_area
-
-if { [sta::worst_slack -max] < $setup_slack_limit } {
-  fail "setup slack limit exceeded [format %.2f [sta::worst_slack -max]] < $setup_slack_limit"
-}
-
-if { [sta::worst_slack -min] < $hold_slack_limit } {
-  fail "hold slack limit exceeded [format %.2f [sta::worst_slack -min]] < $hold_slack_limit"
-}
-
-# not really useful without pad locations
-#set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
-#analyze_power_grid -net $vdd_net_name
-
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
@@ -177,16 +148,46 @@ if { ![info exists drv_count] } {
 ################################################################
 # Extraction
 
-# extract_parasitics seg faults on osx so it is disabled
-if { 0 && $rcx_rules_file != "" } {
+if { $rcx_rules_file != "" } {
   define_process_corner -ext_model_index 0 X
   extract_parasitics -ext_model_file $rcx_rules_file
 
   set spef_file [make_result_file ${design}_${platform}.spef]
   write_spef $spef_file
+  # write_spef dribbles this turd
   file delete $design.totCap
 
   read_spef $spef_file
+} else {
+  # Use global routing based parasitics inlieu of rc extraction
+  estimate_parasitics -global_routing
 }
+
+################################################################
+# Final Report
+
+report_checks -path_delay min_max -format full_clock_expanded \
+  -fields {input_pin slew capacitance} -digits 3
+report_worst_slack -min -digits 3
+report_worst_slack -max -digits 3
+report_tns -digits 3
+report_check_types -max_slew -max_capacitance -max_fanout -violators -digits 3
+report_clock_skew -digits 3
+report_power -corner $power_corner
+
+report_floating_nets -verbose
+report_design_area
+
+if { [sta::worst_slack -max] < $setup_slack_limit } {
+  fail "setup slack limit exceeded [format %.3f [sta::worst_slack -max]] < $setup_slack_limit"
+}
+
+if { [sta::worst_slack -min] < $hold_slack_limit } {
+  fail "hold slack limit exceeded [format %.3f [sta::worst_slack -min]] < $hold_slack_limit"
+}
+
+# not really useful without pad locations
+#set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
+#analyze_power_grid -net $vdd_net_name
 
 puts "pass"
