@@ -127,7 +127,6 @@ class Replace
 
     void setRoutabilityTargetRcMetric(float rc);
     void setRoutabilityInflationRatioCoef(float ratio);
-    void setRoutabilityPitchScale(float scale);
     void setRoutabilityMaxInflationRatio(float ratio);
 
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
@@ -174,7 +173,6 @@ class Replace
     float routabilityMaxDensity_;
     float routabilityTargetRcMetric_;
     float routabilityInflationRatioCoef_;
-    float routabilityPitchScale_;
     float routabilityMaxInflationRatio_;
 
     // routability RC metric coefficients
