@@ -33,9 +33,13 @@ pipeline {
                       'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
                       )
                 }
-                sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-                stash name: 'results', includes: '**/*tgz';
               }
+            }
+          }
+          post {
+            always {
+              sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+              archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
             }
           }
         }
@@ -151,10 +155,6 @@ pipeline {
             body: '$DEFAULT_CONTENT',
             );
       }
-    }
-    always {
-      unstash 'results';
-      archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
     }
   }
 }

@@ -76,7 +76,8 @@ class FastRouteCore
              int validPins,
              float alpha,
              bool isClock,
-             int cost);
+             int cost,
+             std::vector<int> edgeCostPerLayer);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(long x1,

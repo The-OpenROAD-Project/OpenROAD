@@ -51,7 +51,6 @@ sta::define_cmd_args "global_placement" {\
     [-routability_max_inflation_iter routability_max_inflation_iter]\
     [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
-    [-routability_pitch_scale routability_pitch_scale]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-pad_left pad_left]\
@@ -69,7 +68,6 @@ proc global_placement { args } {
       -routability_max_bloat_iter -routability_max_inflation_iter \
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
-      -routability_pitch_scale \
       -routability_max_inflation_ratio \
       -routability_rc_coefficients \
       -pad_left -pad_right \
@@ -212,13 +210,6 @@ proc global_placement { args } {
     set target_rc_metric $keys(-routability_target_rc_metric)
     sta::check_positive_float "-routability_target_rc_metric" $target_rc_metric
     gpl::set_routability_target_rc_metric_cmd $target_rc_metric
-  }
-  
-  # routability pitch scale 
-  if { [info exists keys(-routability_pitch_scale)] } {
-    set pitch_scale $keys(-routability_pitch_scale)
-    sta::check_positive_float "-routability_pitch_scale" $pitch_scale
-    gpl::set_routability_pitch_scale_cmd  $pitch_scale
   }
   
   # routability inflation ratio coef 

@@ -836,6 +836,28 @@ _dbTechLayer::~_dbTechLayer()
 }
 
 // User Code Begin PrivateMethods
+uint _dbTechLayer::getV55RowIdx(const int& rowVal) const
+{
+  auto pos = --(std::lower_bound(_v55sp_width_idx.begin(), _v55sp_width_idx.end(), rowVal));
+  return std::max(0, (int) std::distance(_v55sp_width_idx.begin(), pos));
+}
+uint _dbTechLayer::getV55ColIdx(const int& colVal) const
+{
+  auto pos = --(std::lower_bound(_v55sp_length_idx.begin(), _v55sp_length_idx.end(), colVal));
+  return std::max(0, (int) std::distance(_v55sp_length_idx.begin(), pos));
+}
+uint _dbTechLayer::getTwIdx(const int width, const int prl) const
+{
+  int sz = _two_widths_sp_idx.size();
+  for(int i = 0; i < sz ; i++)
+  {
+    if(width <= _two_widths_sp_idx[i])
+      return std::max(0, i-1);
+    if(_two_widths_sp_prl[i] != -1 && prl <= _two_widths_sp_prl[i])
+      return std::max(0, i-1);
+  }
+  return sz-1;
+}
 // User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
@@ -1277,6 +1299,15 @@ bool dbTechLayer::getV55SpacingTable(
   return true;
 }
 
+int dbTechLayer::findV55Spacing(const int width, const int prl) const {
+  if(!hasV55SpacingRules())
+    return 0;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  uint rowIdx = layer->getV55RowIdx(width);
+  uint colIdx = layer->getV55ColIdx(prl);
+  return layer->_v55sp_spacing(rowIdx, colIdx);
+}
+
 void dbTechLayer::initV55LengthIndex(uint numelems)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
@@ -1431,6 +1462,15 @@ void dbTechLayer::addTwoWidthsSpacingTableEntry(uint inrow,
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_two_widths_sp_spacing(inrow, incol) = spacing;
+}
+
+int dbTechLayer::findTwSpacing(const int width1, const int width2, const int prl) const{
+  if(!hasTwoWidthsSpacingRules())
+    return 0;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  auto rowIdx = layer->getTwIdx(width1, prl);
+  auto colIdx = layer->getTwIdx(width2, prl);
+  return layer->_two_widths_sp_spacing(rowIdx, colIdx);
 }
 
 bool dbTechLayer::getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules)
