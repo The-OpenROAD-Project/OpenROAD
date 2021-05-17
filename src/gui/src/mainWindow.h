@@ -211,6 +211,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* exit_;
   QAction* fit_;
   QAction* find_;
+  QAction* inspect_;
   QAction* timing_debug_;
   QAction* zoom_in_;
   QAction* zoom_out_;

@@ -221,6 +221,9 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
+  inspect_ = new QAction("Inspect", this);
+  inspect_->setShortcut(QString("q"));
+
   timing_debug_ = new QAction("Timing ...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
@@ -237,6 +240,7 @@ void MainWindow::createActions()
   connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
   connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
+  connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
 }
 
 void MainWindow::createMenus()
@@ -249,6 +253,7 @@ void MainWindow::createMenus()
   view_menu_->addAction(find_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
+  view_menu_->addAction(inspect_);
   view_menu_->addAction(timing_debug_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
@@ -270,6 +275,7 @@ void MainWindow::createToolbars()
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
   view_tool_bar_->addAction(congestion_setup_);
+  view_tool_bar_->addAction(inspect_);
   view_tool_bar_->addAction(timing_debug_);
 
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
@@ -295,9 +301,7 @@ void MainWindow::addSelected(const Selected& selection)
   }
   status(selection ? selection.getName() : "");
   emit selectionChanged();
-  inspector_->inspect(selection);
   if (selection) {
-    inspector_->show();
     selection_browser_->show();
   }
 }
