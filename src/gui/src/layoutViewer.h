@@ -99,10 +99,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     CLEAR_RULERS_ACT,
     CLEAR_ALL_ACT
   };
+  // makeSelected is so that we don't have to pass in the whole
+  // MainWindow just to get access to one method.  Communication
+  // should happen through signals & slots in all other cases.
   LayoutViewer(Options* options,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const std::vector<QLine>& rulers,
+               std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
@@ -231,6 +235,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPoint mouse_press_pos_;
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
+  std::function<Selected(const std::any&)> makeSelected_;
+
   utl::Logger* logger_;
 
   QMenu* layout_context_menu_;

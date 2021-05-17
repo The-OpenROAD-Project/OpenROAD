@@ -476,6 +476,16 @@ dbBlock* dbBTerm::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+Rect dbBTerm::getBBox()
+{
+  Rect bbox;
+  bbox.mergeInit();
+  for (dbBPin* pin : getBPins()) {
+    bbox.merge(pin->getBBox());
+  }
+  return bbox;
+}
+
 bool dbBTerm::getFirstPin(dbShape& shape)
 {
   dbSet<dbBPin> bpins = getBPins();

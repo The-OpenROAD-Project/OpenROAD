@@ -1,7 +1,7 @@
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2021, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,82 +30,47 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// This file is only used when we can't find Qt5 and are thus
-// disabling the GUI.  It is not included when Qt5 is found.
+#pragma once
 
-#include <cstdio>
+#include <QDockWidget>
+#include <QTreeView>
+#include <QStandardItemModel>
 
 #include "gui/gui.h"
 
 namespace gui {
 
-Gui* Gui::singleton_ = nullptr;
-
-Gui* gui::Gui::get()
+// The inspector is to allow a single object to have it properties displayed.
+// It is generic and builds on the Selected and Descriptor classes.
+// The inspector knows how to handle SelectionSet and Selected objects
+// and will create links for them in the tree widget.  Simple properties,
+// like strings, are handled as well.
+class Inspector : public QDockWidget
 {
-  return singleton_;
-}
+  Q_OBJECT
 
-void gui::Gui::registerRenderer(gui::Renderer*)
-{
-}
+ public:
+  Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
 
-void gui::Gui::unregisterRenderer(gui::Renderer*)
-{
-}
+ signals:
+  void selected(const Selected& selected, bool showConnectivity = false);
 
-void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
-{
-}
+ public slots:
+  void inspect(const Selected& object);
+  void clicked(const QModelIndex& index);
+  void update();
 
-void gui::Gui::redraw()
-{
-}
+ private:
+  // The columns in the tree view
+  enum Column
+  {
+    Name,
+    Value
+  };
 
-void gui::Gui::pause()
-{
-}
-
-void gui::Gui::addCustomVisibilityControl(const std::string& name,
-                                          bool initially_visible)
-{
-}
-
-bool gui::Gui::checkCustomVisibilityControl(const std::string& name)
-{
-  return false;
-}
-
-void Gui::status(const std::string& /* message */)
-{
-}
-
-Renderer::~Renderer()
-{
-}
-
-Selected Gui::makeSelected(std::any /* object */, void* /* additional_data */)
-{
-  return Selected();
-}
-
-// using namespace odb;
-int startGui(int argc, char* argv[])
-{
-  printf(
-      "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
-      "with Qt5 if you want the GUI.\n");
-
-  return 1;  // return unix err
-}
+  QTreeView* view_;
+  QStandardItemModel* model_;
+  const SelectionSet& selected_;
+};
 
 }  // namespace gui
-
-namespace ord {
-
-class OpenRoad;
-void initGui(OpenRoad* openroad)
-{
-}
-
-}  // namespace ord

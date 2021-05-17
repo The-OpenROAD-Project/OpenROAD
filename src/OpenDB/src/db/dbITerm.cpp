@@ -616,6 +616,16 @@ dbITerm* dbITerm::getITerm(dbBlock* block_, uint dbid)
   return (dbITerm*) block->_iterm_tbl->getPtr(dbid);
 }
 
+Rect dbITerm::getBBox()
+{
+  dbMTerm* term = getMTerm();
+  Rect bbox = term->getBBox();
+  odb::dbTransform inst_xfm;
+  getInst()->getTransform(inst_xfm);
+  inst_xfm.apply(bbox);
+  return bbox;
+}
+
 bool dbITerm::getAvgXY(int* x, int* y)
 {
   dbMTerm* mterm = getMTerm();
