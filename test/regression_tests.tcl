@@ -16,6 +16,7 @@ record_flow_tests {
 
   gcd_sky130hs
   aes_sky130hs
+  ibex_sky130hs
   jpeg_sky130hs
 
   gcd_sky130hd
@@ -23,5 +24,3 @@ record_flow_tests {
   ibex_sky130hd
   jpeg_sky130hd
 }
-# rcx seg fault 05/16/2021
-#  ibex_sky130hs
