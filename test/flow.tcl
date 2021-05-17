@@ -4,6 +4,10 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
+utl::open_metrics [make_result_file "${design}_${platform}.metrics"]
+
+utl::metric IFP "instance_count" [sta::network_instance_count]
+
 initialize_floorplan -site $site \
   -die_area $die_area \
   -core_area $core_area
@@ -104,7 +108,12 @@ report_tns -digits 3
 
 detailed_placement
 filler_placement $filler_cells
-check_placement -verbose
+if { [check_placement -verbose] } {
+  utl::metric DPL "errors" "errors"
+  fail "detailed placement failed"
+} else {
+  utl::metric DPL "errors" "pass"
+}
 
 ################################################################
 # Global routing
@@ -121,6 +130,8 @@ global_route -guide_file $route_guide \
 set antenna_report [make_result_file ${design}_${platform}_ant.log]
 set antenna_errors [check_antennas -simple_report -report_file $antenna_report]
 
+utl::metric ANT "errors" $antenna_errors
+
 if { $antenna_errors > 0 } {
   fail "found $antenna_errors antenna violations"
 }
@@ -134,10 +145,12 @@ write_verilog -remove_cells $filler_cells $verilog_file
 set tr_params [make_tr_params $route_guide 0]
 
 detailed_route -param $tr_params
-set routed_def [make_result_file ${design}_${platform}_route.def]
-write_def $routed_def
 
 set drv_count [detailed_route_num_drvs]
+utl::metric DRT "drv" $drv_count
+
+set routed_def [make_result_file ${design}_${platform}_route.def]
+write_def $routed_def
 
 if { ![info exists drv_count] } {
   fail "drv count not found."
@@ -177,6 +190,12 @@ report_power -corner $power_corner
 
 report_floating_nets -verbose
 report_design_area
+
+utl::metric ORD "design_area" [sta::format_area [rsz::design_area] 0]
+utl::metric ORD "utilization" [format %.0f [expr [rsz::utilization] * 100]]
+utl::metric STA "worst_slack_min" [sta::worst_slack -min]
+utl::metric STA "worst_slack_max" [sta::worst_slack -max]
+utl::metric STA "tns_max" [sta::total_negative_slack -max]
 
 if { [sta::worst_slack -max] < $setup_slack_limit } {
   fail "setup slack limit exceeded [format %.3f [sta::worst_slack -max]] < $setup_slack_limit"
