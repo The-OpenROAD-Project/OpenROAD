@@ -828,9 +828,9 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # NE corner
-        build_cell $block $incnr_master $top_row_ori [expr $x_start - [$incnr_master getWidth]] $top_row_y $prefix
+        build_cell $block $incnr_master $top_row_ori $x_end $top_row_y $prefix
         # NW corner
-        build_cell $block $incnr_master $west_ori $x_end $top_row_y $prefix
+        build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $top_row_y $prefix
       }
       if {$bot_row >= 1} {
         set bot_row_inst [lindex $rows $bot_row 0]
@@ -861,9 +861,9 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # SE corner
-        build_cell $block $incnr_master $bot_row_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y $prefix
+        build_cell $block $incnr_master $bot_row_ori $x_end $bot_row_y $prefix
         # SW corner
-        build_cell $block $incnr_master $west_ori $x_end $bot_row_y $prefix
+        build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]]$bot_row_y $prefix
       }
     }
   }
