@@ -48,7 +48,7 @@ using odb::dbPlacementStatus;
 
 using utl::DPL;
 
-bool
+int
 Opendp::checkPlacement(bool verbose)
 {
   importDb();
@@ -88,11 +88,11 @@ Opendp::checkPlacement(bool verbose)
   reportFailures(site_failures, 6, "Site", verbose);
   reportFailures(power_line_failures, 7, "Power line", verbose);
 
-  return !power_line_failures.empty()
-    || !placed_failures.empty()
-    || !in_rows_failures.empty()
-    || !overlap_failures.empty()
-    || !site_failures.empty();
+  return power_line_failures.size()
+    + placed_failures.size()
+    + in_rows_failures.size()
+    + overlap_failures.size()
+    + site_failures.size();
 }
 
 void

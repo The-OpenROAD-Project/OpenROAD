@@ -193,8 +193,8 @@ public:
   // Find instance/master/global padding value for an instance.
   int padRight(dbInst *inst) const;
   int padLeft(dbInst *inst) const;
-  // Return true if illegal.
-  bool checkPlacement(bool verbose);
+  // Return error count.
+  int checkPlacement(bool verbose);
   void fillerPlacement(dbMasterSeq *filler_masters,
                        const char* prefix);
   int64_t hpwl() const;

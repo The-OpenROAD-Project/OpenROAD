@@ -111,12 +111,8 @@ detailed_placement
 utl::metric ORD "utilization" [format %.0f [expr [rsz::utilization] * 100]]
 utl::metric ORD "design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
-if { [check_placement -verbose] } {
-  utl::metric DPL "errors" "errors"
-  fail "detailed placement failed"
-} else {
-  utl::metric DPL "errors" "pass"
-}
+set dp_errors [check_placement -verbose]
+utl::metric DPL "errors" $dp_errors
 
 ################################################################
 # Global routing
