@@ -55,6 +55,7 @@ target_sources(PartitionMgr
     src/MakePartitionMgr.cpp
     src/PartitionMgr.cpp
     src/HypergraphDecomposition.cpp
+    src/PartitionNetwork.cpp
     src/PartOptions.cpp
 )
 
@@ -115,6 +116,7 @@ target_link_libraries(PartitionMgr
     opendb
     OpenSTA
     utl
+    dbSta
 )
 
 unset(LOAD_PARTITIONERS)

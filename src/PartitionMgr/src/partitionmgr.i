@@ -216,4 +216,9 @@ void report_graph() {
         getPartitionMgr()->reportGraph();
 }
 
+void write_partition_verilog(int id, const char* portprefix, const char* module_suffix, const char* path) {
+  write_partitioning_to_db(id);
+  getPartitionMgr()->writePartitionVerilog(path, portprefix, module_suffix);
+}
+
 %}
