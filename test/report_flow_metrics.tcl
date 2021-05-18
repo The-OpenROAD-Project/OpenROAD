@@ -33,9 +33,9 @@ set keys_names {
   "slack_min"
   "slack_max"
   "tns_max"
-  "DPL err"
-  "ANT err"
-  "DRT drv"
+  "DPL"
+  "ANT"
+  "drv"
 }
 
 proc report_all_test_metrics {} {
