@@ -107,6 +107,9 @@ report_worst_slack -max -digits 3
 report_tns -digits 3
 
 detailed_placement
+# Capture utilization before fillers make it 100%
+utl::metric ORD "utilization" [format %.0f [expr [rsz::utilization] * 100]]
+utl::metric ORD "design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
 if { [check_placement -verbose] } {
   utl::metric DPL "errors" "errors"
@@ -191,8 +194,6 @@ report_power -corner $power_corner
 report_floating_nets -verbose
 report_design_area
 
-utl::metric ORD "design_area" [sta::format_area [rsz::design_area] 0]
-utl::metric ORD "utilization" [format %.0f [expr [rsz::utilization] * 100]]
 utl::metric STA "worst_slack_min" [sta::worst_slack -min]
 utl::metric STA "worst_slack_max" [sta::worst_slack -max]
 utl::metric STA "tns_max" [sta::total_negative_slack -max]
