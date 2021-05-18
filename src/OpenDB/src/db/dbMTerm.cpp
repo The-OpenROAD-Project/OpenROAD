@@ -335,6 +335,16 @@ dbSet<dbMPin> dbMTerm::getMPins()
   return dbSet<dbMPin>(mterm, master->_mpin_itr);
 }
 
+Rect dbMTerm::getBBox()
+{
+  Rect bbox;
+  bbox.mergeInit();
+  for (dbMPin* pin : getMPins()) {
+    bbox.merge(pin->getBBox());
+  }
+  return bbox;
+}
+
 dbSet<dbTarget> dbMTerm::getTargets()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;

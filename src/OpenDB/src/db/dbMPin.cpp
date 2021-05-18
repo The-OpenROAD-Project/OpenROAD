@@ -132,6 +132,18 @@ dbSet<dbBox> dbMPin::getGeometry()
   return dbSet<dbBox>(pin, master->_box_itr);
 }
 
+Rect dbMPin::getBBox()
+{
+  Rect bbox;
+  bbox.mergeInit();
+  for (dbBox* box : getGeometry()) {
+    Rect rect;
+    box->getBox(rect);
+    bbox.merge(rect);
+  }
+  return bbox;
+}
+
 dbMPin* dbMPin::create(dbMTerm* mterm_)
 {
   _dbMTerm* mterm = (_dbMTerm*) mterm_;

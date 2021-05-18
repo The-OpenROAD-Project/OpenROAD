@@ -1,0 +1,13 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: get_core_die_areas.def
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 27 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+[INFO ODB-0134] Finished DEF file: get_core_die_areas.def
+0.0 0.0 510.14 255.07
+199.88 99.4 210.14 105.0

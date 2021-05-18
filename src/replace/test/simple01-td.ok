@@ -79,26 +79,27 @@
 [NesterovSolve] Iter: 270 overflow: 0.498141 HPWL: 5762868
 [INFO GPL-0100] worst slack 1.39e-09
 [INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 280 overflow: 0.469443 HPWL: 6012674
-[NesterovSolve] Iter: 290 overflow: 0.413881 HPWL: 6201140
-[NesterovSolve] Iter: 300 overflow: 0.363249 HPWL: 6371254
-[NesterovSolve] Iter: 310 overflow: 0.344287 HPWL: 6431182
-[NesterovSolve] Iter: 320 overflow: 0.309276 HPWL: 6451057
-[NesterovSolve] Iter: 330 overflow: 0.289266 HPWL: 6387507
+[NesterovSolve] Iter: 280 overflow: 0.469443 HPWL: 6012652
+[NesterovSolve] Iter: 290 overflow: 0.413886 HPWL: 6201155
+[NesterovSolve] Iter: 300 overflow: 0.363249 HPWL: 6371687
+[NesterovSolve] Iter: 310 overflow: 0.339522 HPWL: 6392701
+[NesterovSolve] Iter: 320 overflow: 0.301757 HPWL: 6416000
+[NesterovSolve] Iter: 330 overflow: 0.288616 HPWL: 6382777
 [INFO GPL-0100] worst slack 1.39e-09
 [INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 340 overflow: 0.253274 HPWL: 6337681
-[NesterovSolve] Iter: 350 overflow: 0.215767 HPWL: 6295260
-[NesterovSolve] Iter: 360 overflow: 0.210666 HPWL: 6256415
+[NesterovSolve] Iter: 340 overflow: 0.256704 HPWL: 6372204
+[NesterovSolve] Iter: 350 overflow: 0.208381 HPWL: 6312170
 [INFO GPL-0100] worst slack 1.39e-09
 [INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 370 overflow: 0.175008 HPWL: 6246782
-[NesterovSolve] Iter: 380 overflow: 0.153019 HPWL: 6211417
+[NesterovSolve] Iter: 360 overflow: 0.203993 HPWL: 6312177
+[NesterovSolve] Iter: 370 overflow: 0.17189 HPWL: 6282608
+[NesterovSolve] Iter: 380 overflow: 0.158452 HPWL: 6253583
 [INFO GPL-0100] worst slack 1.39e-09
 [INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 390 overflow: 0.129567 HPWL: 6206705
-[NesterovSolve] Iter: 400 overflow: 0.123444 HPWL: 6179797
-[NesterovSolve] Iter: 410 overflow: 0.100277 HPWL: 6200269
-[NesterovSolve] Finished with Overflow: 0.097077
+[NesterovSolve] Iter: 390 overflow: 0.136947 HPWL: 6273268
+[NesterovSolve] Iter: 400 overflow: 0.107529 HPWL: 6260644
+[NesterovSolve] Finished with Overflow: 0.098201
 worst slack 1.37
-No differences found.
+Differences found at line 63.
+    - _276_ NOR2_X2 + PLACED ( 49888 43898 ) N ;
+    - _276_ NOR2_X2 + PLACED ( 49362 51448 ) N ;

@@ -64,12 +64,8 @@ Logger::Logger(const char* log_filename, const char *metrics_filename)
   logger_->set_level(spdlog::level::level_enum::debug);
 
   metrics_logger_ = std::make_shared<spdlog::logger>("metrics");
-  if (metrics_filename) {
-    auto metrics_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(metrics_filename);
-    metrics_logger_->sinks().push_back(metrics_sink);
-    metrics_logger_->set_pattern("%v");
-    metrics_logger_->info("{"); // start json object
-  }
+  if (metrics_filename)
+    addMetricsSink(metrics_filename);
 
   for (auto& counters : message_counters_) {
     counters.fill(0);
@@ -80,6 +76,14 @@ Logger::~Logger()
 {
   // Terminate the json object before we disappear
   metrics_logger_->info("}");
+}
+
+void Logger::addMetricsSink(const char *metrics_filename)
+{
+  auto metrics_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(metrics_filename);
+  metrics_logger_->sinks().push_back(metrics_sink);
+  metrics_logger_->set_pattern("%v");
+  metrics_logger_->info("{"); // start json object
 }
 
 ToolId

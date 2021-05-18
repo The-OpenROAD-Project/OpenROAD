@@ -36,6 +36,7 @@
 #pragma once
 
 #include "HypergraphDecomposition.h"
+
 #include <random>
 #include <set>
 
@@ -43,8 +44,15 @@ namespace odb {
 class dbDatabase;
 class dbChip;
 class dbBlock;
-class dbNet;
 }  // namespace odb
+
+namespace sta {
+class Instance;
+class NetworkReader;
+class Library;
+class Port;
+class Net;
+}  // namespace sta
 
 namespace utl {
 class Logger;
@@ -274,6 +282,17 @@ class PartitionMgr
   void reportNetlistPartitions(unsigned partitionId);
   void readPartitioningFile(std::string filename);
   void reportGraph();
+
+  void writePartitionVerilog(const char* path, const char* port_prefix, const char* module_suffix);
+
+ private:
+  sta::Instance* buildPartitionedInstance(const char* name,
+                                          const char* port_prefix,
+                                          sta::Library* library,
+                                          sta::NetworkReader* network,
+                                          sta::Instance* parent,
+                                          std::set<sta::Instance*>* insts,
+                                          std::map<sta::Net*, sta::Port*>* port_map);
 };
 
 }  // namespace par

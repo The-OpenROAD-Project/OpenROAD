@@ -224,5 +224,25 @@ namespace eval ord {
     profrep profarray cpu $filename
   }
   
-  # namespace ord
+  proc get_die_area { } {
+    set area {}
+    set rect [[ord::get_db_block] getDieArea]
+    lappend area [ord::dbu_to_microns [$rect xMin]]
+    lappend area [ord::dbu_to_microns [$rect yMin]]
+    lappend area [ord::dbu_to_microns [$rect xMax]]
+    lappend area [ord::dbu_to_microns [$rect yMax]]
+    return $area
+  }
+  
+  proc get_core_area { } {
+    set area {}
+    set rect [[ord::get_db_block] getCoreArea]
+    lappend area [ord::dbu_to_microns [$rect xMin]]
+    lappend area [ord::dbu_to_microns [$rect yMin]]
+    lappend area [ord::dbu_to_microns [$rect xMax]]
+    lappend area [ord::dbu_to_microns [$rect yMax]]
+    return $area
+  }
+  
+    # namespace ord
 }

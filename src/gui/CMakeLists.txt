@@ -32,6 +32,8 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/gui.cpp
     src/search.cpp 
     src/findDialog.cpp
+    src/inspector.cpp
+    src/dbDescriptors.cpp
     src/congestionSetupDialog.cpp
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp

@@ -329,6 +329,9 @@ class Rect : public GeomShape
   // Set the coordinates to: min(INT_MAX, INT_MAX) max(INT_MIN, INT_MIN)
   void mergeInit();
 
+  // Indicates if the box has a negative width or height
+  bool isInverted();
+
   uint minDXDY();
   uint maxDXDY();
   int getDir();
@@ -860,6 +863,12 @@ inline void Rect::mergeInit()
   _xhi = INT_MIN;
   _yhi = INT_MIN;
 }
+
+inline bool Rect::isInverted()
+{
+  return _xlo > _xhi || _ylo > _yhi;
+}
+
 inline void Rect::notice(const char*)
 {
   ;  // notice(0, "%s%12d %12d - %12d %12d\n", prefix, _xlo, _ylo, dx, dy);
