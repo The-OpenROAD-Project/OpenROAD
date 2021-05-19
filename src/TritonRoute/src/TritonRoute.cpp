@@ -181,6 +181,7 @@ void TritonRoute::init()
   }
   // GR-related
   parser.initRPin();
+  cout << "BRANCH NDR_testing\n";
 }
 
 void TritonRoute::prep()
