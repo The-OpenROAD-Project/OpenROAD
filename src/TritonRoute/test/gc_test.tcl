@@ -17,7 +17,6 @@ if { $test_status != 0 } {
     CHILDSTATUS {
       # non-zero exit status
       set exit_status [lindex $test_err_info 1]
-      set process_id  [lindex $test_err_info 0]
       puts "ERROR: test returned exit code $exit_status"
       exit 1
 
