@@ -362,6 +362,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
   frNonDefaultRule* fnd;
   unique_ptr<frNonDefaultRule> ptnd;
   int z;
+  logger->info(DRT, 150, "Reading NDRs\n");
   for (auto ndr : db->getTech()->getNonDefaultRules()) {
     ptnd = make_unique<frNonDefaultRule>();
     fnd = ptnd.get();
