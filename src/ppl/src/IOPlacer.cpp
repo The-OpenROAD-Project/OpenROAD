@@ -126,7 +126,18 @@ void IOPlacer::randomPlacement()
     std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist_);
 
     bool top_layer = constraint.interval.edge == Edge::invalid;
-    randomPlacement(pin_indices, valid_slots, top_layer);
+    randomPlacement(pin_indices, valid_slots, top_layer, false);
+  }
+
+  for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+    std::vector<int> valid_slots;
+    for (int i = 0; i < slots_.size(); i++) {
+      if (!slots_[i].blocked) {
+        valid_slots.push_back(i);
+      }
+    }
+
+    randomPlacement(io_group, valid_slots, false, true);
   }
 
   std::vector<int> valid_slots;
@@ -143,10 +154,10 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(pin_indices, valid_slots, false);
+  randomPlacement(pin_indices, valid_slots, false, false);
 }
 
-void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer)
+void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer, bool is_group)
 {
   if (pin_indices.size() > slot_indices.size()) {
     logger_->error(PPL, 72, "Number of pins ({}) exceed number of valid positions ({})", pin_indices.size(), slot_indices.size());
@@ -156,7 +167,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
 
   int num_i_os = pin_indices.size();
   int num_slots = slot_indices.size();
-  double shift = num_slots / double(num_i_os);
+  double shift = is_group ? 1 : num_slots / double(num_i_os);
   int idx = 0;
   std::vector<int> vSlots(num_slots);
   std::vector<int> vIOs(num_i_os);
@@ -175,7 +186,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     vIOs[i] = i;
   }
 
-  if (vIOs.size() > 1) {
+  if (vIOs.size() > 1 && !is_group) {
     utl::shuffle(vIOs.begin(), vIOs.end(), g);
   }
 
