@@ -39,7 +39,7 @@ class frBlockage : public frBlockObject
 {
  public:
   // constructors
-  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(0) {}
+  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1) {}
   // getters
   frPin* getPin() const { return pin_.get(); }
   frCoord getDesignRuleWidth() const { return design_rule_width_; }
