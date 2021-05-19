@@ -602,7 +602,6 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint &constraint,
 
     if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
       total_pins_assigned += assignGroupToSection(io_group, sections);
-      break;
     }
   }
 }
