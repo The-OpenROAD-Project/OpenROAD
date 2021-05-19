@@ -38,14 +38,6 @@ set keys_names {
   "drv"
 }
 
-proc report_all_test_metrics {} {
-  global test_groups
-  report_metrics_header
-  foreach test $test_groups(flow) {
-    report_test_metrics $test
-  }
-}
-
 proc report_metrics_header {} {
   global keys_names
 
@@ -91,6 +83,13 @@ proc test_metrics_file { test } {
   return [file join $result_dir "$test.metrics"]
 }
 
-#report_metrics_header
-#report_test_metrics "gcd_nangate45"
-report_all_test_metrics
+if { $argc == 0 } {
+  set tests $test_groups(flow)
+} else {
+  set tests $argv
+}
+
+report_metrics_header
+foreach test $tests {
+  report_test_metrics $test
+}

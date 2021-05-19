@@ -117,7 +117,7 @@ proc check_placement { args } {
 
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
-  dpl::check_placement_cmd $verbose
+  return [dpl::check_placement_cmd $verbose]
 }
 
 sta::define_cmd_args "optimize_mirroring" {}

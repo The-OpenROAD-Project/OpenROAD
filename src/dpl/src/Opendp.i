@@ -104,7 +104,7 @@ report_legalization_stats()
   opendp->reportLegalizationStats();
 }
 
-bool
+int
 check_placement_cmd(bool verbose)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
