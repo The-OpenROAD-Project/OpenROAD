@@ -44,7 +44,11 @@ if {[catch {ICeWall extract_footprint} msg]} {
   return
 }
 
-ICeWall write_footprint results/caravel_sky130.package.tcl
+if {[catch {ICeWall write_footprint results/caravel_sky130.package.tcl} msg]} {
+  puts $errorInfo
+  puts $msg
+  exit
+}
 
 set env(FOOTPRINT_LIBRARY) caravel_sky130/library.sky130_fd_io.tcl
 diff_files results/caravel_sky130.package.tcl caravel_sky130.package.tclok

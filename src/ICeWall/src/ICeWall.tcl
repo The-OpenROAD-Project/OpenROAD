@@ -1806,6 +1806,8 @@ namespace eval ICeWall {
       }
     }
     # debug "end"
+
+    check_footprint
   }
 
   proc get_power_nets {} {
