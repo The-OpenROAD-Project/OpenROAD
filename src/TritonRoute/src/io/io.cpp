@@ -358,6 +358,14 @@ void io::Parser::setVias(odb::dbBlock* block)
 }
 
 void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr){
+    if (design->tech_->getNondefaultRule(ndr->getName())) {
+      logger->warn(DRT,
+                   0,
+                   "Skipping NDR { } because another rule with the same name "
+                   "already exists\n",
+                   ndr->getName());
+      return;
+    }
     frNonDefaultRule* fnd;
     unique_ptr<frNonDefaultRule> ptnd;
     int z;
@@ -365,18 +373,14 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr){
     fnd = ptnd.get();
     design->tech_->addNDR(std::move(ptnd));
     fnd->setName(ndr->getName().data());
-    cout << "NDR " << ndr->getName().data() << "\n";
     fnd->setHardSpacing(ndr->getHardSpacing());
     vector<odb::dbTechLayerRule*> lr;
     ndr->getLayerRules(lr);
     for (auto& l : lr) {
       z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum() / 2
           - 1;
-      cout << "layer Idx " << z << "\n";
       fnd->setWidth(l->getWidth(), z);
-      cout << "width " << l->getWidth() << "\n";
       fnd->setSpacing(l->getSpacing(), z);
-      cout << "spacing " << l->getSpacing() << "\n";
       fnd->setWireExtension(l->getWireExtension(), z);
     }
     vector<odb::dbTechVia*> vias;
@@ -401,7 +405,6 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr){
 }
 void io::Parser::setNDRs(odb::dbDatabase* db)
 {
-  logger->info(DRT, 150, "Reading NDRs\n");
   for (auto ndr : db->getTech()->getNonDefaultRules()) {
       createNDR(ndr);
   }
