@@ -83,8 +83,7 @@ class RoutingTracks
   }
   int getUsePitch() const
   {
-    return std::max(_trackPitch,
-                    std::max(_line2ViaPitchUp, _line2ViaPitchDown));
+    return std::max({_trackPitch, _line2ViaPitchUp, _line2ViaPitchDown});
   }
   int getLocation() const { return _location; }
   int getNumTracks() const { return _numTracks; }
