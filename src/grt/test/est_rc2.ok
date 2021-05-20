@@ -57,14 +57,14 @@ metal10    Vertical          196           169          13.78%
 ---------------------------------------------------------------
 
 [INFO GRT-0111] Final number of vias: 44
-[INFO GRT-0112] Final usage 3D: 176
+[INFO GRT-0112] Final usage 3D: 182
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            2015            19            0.94%             0 /  0 /  0
-metal3            2756            25            0.91%             0 /  0 /  0
+metal2            2015            23            1.14%             0 /  0 /  0
+metal3            2756            27            0.98%             0 /  0 /  0
 metal4            1287             0            0.00%             0 /  0 /  0
 metal5            1287             0            0.00%             0 /  0 /  0
 metal6            1287             0            0.00%             0 /  0 /  0
@@ -73,9 +73,9 @@ metal8             364             0            0.00%             0 /  0 /  0
 metal9             169             0            0.00%             0 /  0 /  0
 metal10            169             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total             9698            44            0.45%             0 /  0 /  0
+Total             9698            50            0.52%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 161 um
+[INFO GRT-0018] Total wirelength: 151 um
 Net clk
  Pin capacitance: 3.004-3.402
  Wire capacitance: 0.819-0.819

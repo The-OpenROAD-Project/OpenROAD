@@ -50,7 +50,7 @@ met5       Horizontal       2888          1443          50.03%
 
 Routing clock nets...
 [INFO GRT-0111] Final number of vias: 27
-[INFO GRT-0112] Final usage 3D: 135
+[INFO GRT-0112] Final usage 3D: 139
 [INFO GRT-0010] Routed clock nets: 2
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
@@ -82,7 +82,7 @@ Layer     Direction    Resources     Resources    Reduction (%)
 li1        Vertical            0             0          0.00%
 met1       Horizontal      27436          5430          80.21%
 met2       Vertical        21660          6475          70.11%
-met3       Horizontal      12996          6100          53.06%
+met3       Horizontal      12996          6096          53.09%
 met4       Vertical         8664          4613          46.76%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
@@ -98,12 +98,12 @@ Layer         Resource        Demand        Usage (%)    Max H / Max V / Total O
 li1                  0             0            0.00%             0 /  0 /  0
 met1              5430           116            2.14%             1 /  0 /  2
 met2              6475            57            0.88%             0 /  0 /  0
-met3              6100             0            0.00%             0 /  0 /  0
+met3              6096             0            0.00%             0 /  0 /  0
 met4              4613             0            0.00%             0 /  0 /  0
 met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            24061           173            0.72%             1 /  0 /  2
+Total            24057           173            0.72%             1 /  0 /  2
 
-[INFO GRT-0018] Total wirelength: 1699 um
+[INFO GRT-0018] Total wirelength: 1692 um
 [INFO GRT-0014] Num routed nets: 15
 No differences found.

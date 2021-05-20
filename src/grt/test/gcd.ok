@@ -57,13 +57,13 @@ metal10    Vertical         2256          2209          2.08%
 ---------------------------------------------------------------
 
 [INFO GRT-0111] Final number of vias: 1228
-[INFO GRT-0112] Final usage 3D: 7016
+[INFO GRT-0112] Final usage 3D: 7123
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           32066          1729            5.39%             0 /  0 /  0
-metal2           24581          1603            6.52%             0 /  0 /  0
+metal1           32066          1780            5.55%             0 /  0 /  0
+metal2           24581          1659            6.75%             0 /  0 /  0
 metal3           33028             0            0.00%             0 /  0 /  0
 metal4           15698             0            0.00%             0 /  0 /  0
 metal5           15410             0            0.00%             0 /  0 /  0
@@ -73,8 +73,8 @@ metal8            4512             0            0.00%             0 /  0 /  0
 metal9            2162             0            0.00%             0 /  0 /  0
 metal10           2209             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           149734          3332            2.23%             0 /  0 /  0
+Total           149734          3439            2.30%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10266 um
+[INFO GRT-0018] Total wirelength: 10151 um
 [INFO GRT-0014] Num routed nets: 563
 No differences found.
