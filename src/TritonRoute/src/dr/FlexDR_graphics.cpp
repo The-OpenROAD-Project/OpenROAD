@@ -26,13 +26,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexDR_graphics.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
-#include "FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
 
 namespace fr {
@@ -140,7 +141,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw graphs
-  const bool draw_drc = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
+  const bool draw_drc
+      = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
   const bool draw_marker
       = gui_->checkCustomVisibilityControl(marker_cost_visible_);
   const bool draw_shape
@@ -181,7 +183,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         // Planar doesn't distinguish E vs N so just use one
         bool planar
-            = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
+            = (draw_drc
+               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
               || (draw_marker
                   && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
               || (draw_shape
@@ -192,11 +195,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                             grid_graph_->xCoord(x) + offset,
                             grid_graph_->yCoord(y) + offset});
         }
-        bool via = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
-                   || (draw_marker
-                       && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
-                   || (draw_shape
-                       && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
+        bool via
+            = (draw_drc
+               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
+              || (draw_marker
+                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
+              || (draw_shape
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);

@@ -72,7 +72,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           || pathSeg->getEndStyle() != frcTruncateEndStyle)
         return;
     }
-    bool condition2 = (begin.y() <= routeBox.top());     // orthogonal to wire
+    bool condition2 = (begin.y() <= routeBox.top());  // orthogonal to wire
     if (routeBox.left() <= begin.x() && begin.x() <= routeBox.right()
         && !(begin.y() > routeBox.top() || end.y() < routeBox.bottom())) {
       // bottom seg to ext
