@@ -181,7 +181,6 @@ void TritonRoute::init()
   }
   // GR-related
   parser.initRPin();
-  logger_->info(utl::DRT, -1, "BRANCH NDR_testing\n");
 }
 
 void TritonRoute::prep()
