@@ -3266,7 +3266,8 @@ void GlobalRouter::reportCongestion()
         max_v_overflows[l],
         overflows[l]);
   }
-  float total_usage = (float) total_demand / (float) total_resource * 100;
+  float total_usage = (total_resource == 0) ? 0 : 
+                      (float) total_demand / (float) total_resource * 100;
   _logger->report(
       "------------------------------------------------------------------------"
       "---------------");
