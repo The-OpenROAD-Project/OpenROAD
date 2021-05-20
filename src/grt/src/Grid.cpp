@@ -116,10 +116,12 @@ std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
   odb::Point lower = obstruction.ll();  // lower bound of obstruction
   odb::Point upper = obstruction.ur();  // upper bound of obstruction
 
-  lower = getPositionOnGrid(lower);  // translate lower bound of obstruction to the
-                                     // center of the tile where it is inside
-  upper = getPositionOnGrid(upper);  // translate upper bound of obstruction to the
-                                     // center of the tile where it is inside
+  lower
+      = getPositionOnGrid(lower);  // translate lower bound of obstruction to
+                                   // the center of the tile where it is inside
+  upper
+      = getPositionOnGrid(upper);  // translate upper bound of obstruction to
+                                   // the center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
   firstTile._x = (lower.x() - (getTileWidth() / 2)) / getTileWidth();

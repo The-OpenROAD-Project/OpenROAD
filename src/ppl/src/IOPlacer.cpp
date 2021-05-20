@@ -109,6 +109,17 @@ void IOPlacer::initParms()
   }
 }
 
+std::vector<int> IOPlacer::getValidSlots(int first, int last) {
+  std::vector<int> valid_slots;
+  for (int i = first; i <= last; i++) {
+    if (!slots_[i].blocked) {
+      valid_slots.push_back(i);
+    }
+  }
+
+  return valid_slots;
+}
+
 void IOPlacer::randomPlacement()
 {
   for (const Constraint &constraint : constraints_) {
@@ -116,25 +127,36 @@ void IOPlacer::randomPlacement()
     int first_slot = sections.front().begin_slot;
     int last_slot = sections.back().end_slot;
 
-    std::vector<int> valid_slots;
-    for (int i = first_slot; i <= last_slot; i++) {
-      if (!slots_[i].blocked) {
-        valid_slots.push_back(i);
+    bool top_layer = constraint.interval.edge == Edge::invalid;
+    for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+      const PinList& pin_list = constraint.pin_list;
+      IOPin& io_pin = netlist_.getIoPin(io_group[0]);
+      if (io_pin.isPlaced()) {
+        continue;
+      }
+
+      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
+        std::vector<int> valid_slots = getValidSlots(first_slot, last_slot);
+        randomPlacement(io_group, valid_slots, top_layer, true);
       }
     }
 
+    std::vector<int> valid_slots = getValidSlots(first_slot, last_slot);
     std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist_);
-
-    bool top_layer = constraint.interval.edge == Edge::invalid;
-    randomPlacement(pin_indices, valid_slots, top_layer);
+    randomPlacement(pin_indices, valid_slots, top_layer, false);
   }
 
-  std::vector<int> valid_slots;
-  for (int i = 0; i < slots_.size(); i++) {
-    if (!slots_[i].blocked) {
-      valid_slots.push_back(i);
+  for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+    IOPin& io_pin = netlist_.getIoPin(io_group[0]);
+    if (io_pin.isPlaced()) {
+      continue;
     }
+    std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1);
+
+    randomPlacement(io_group, valid_slots, false, true);
   }
+
+  std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1);
 
   std::vector<int> pin_indices;
   for (int i = 0; i < netlist_.numIOPins(); i++) {
@@ -143,10 +165,10 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(pin_indices, valid_slots, false);
+  randomPlacement(pin_indices, valid_slots, false, false);
 }
 
-void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer)
+void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer, bool is_group)
 {
   if (pin_indices.size() > slot_indices.size()) {
     logger_->error(PPL, 72, "Number of pins ({}) exceed number of valid positions ({})", pin_indices.size(), slot_indices.size());
@@ -156,7 +178,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
 
   int num_i_os = pin_indices.size();
   int num_slots = slot_indices.size();
-  double shift = num_slots / double(num_i_os);
+  double shift = is_group ? 1 : num_slots / double(num_i_os);
   int idx = 0;
   std::vector<int> vSlots(num_slots);
   std::vector<int> vIOs(num_i_os);
@@ -175,7 +197,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     vIOs[i] = i;
   }
 
-  if (vIOs.size() > 1) {
+  if (vIOs.size() > 1 && !is_group) {
     utl::shuffle(vIOs.begin(), vIOs.end(), g);
   }
 
@@ -580,7 +602,6 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint &constraint,
 
     if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
       total_pins_assigned += assignGroupToSection(io_group, sections);
-      break;
     }
   }
 }

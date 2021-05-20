@@ -41,12 +41,12 @@
 #include <string>
 
 #include "ant/AntennaChecker.hh"
+#include "dpl/Opendp.h"
 #include "grt/GRoute.h"
 #include "opendb/db.h"
 #include "opendb/dbBlockCallBackObj.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
-#include "dpl/Opendp.h"
 #include "sta/Liberty.hh"
 
 // Forward declaration protects FastRoute code from any
@@ -59,7 +59,7 @@ class dbTech;
 
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -87,7 +87,7 @@ class AntennaRepair
                 ant::AntennaChecker* arc,
                 dpl::Opendp* opendp,
                 odb::dbDatabase* db,
-                utl::Logger *logger);
+                utl::Logger* logger);
 
   int checkAntennaViolations(NetRouteMap& routing,
                              int maxRoutingLayer,
@@ -124,7 +124,7 @@ class AntennaRepair
   ant::AntennaChecker* _arc;
   dpl::Opendp* _opendp;
   odb::dbDatabase* _db;
-  utl::Logger *_logger;
+  utl::Logger* _logger;
   odb::dbBlock* _block;
   std::vector<odb::dbInst*> _diodeInsts;
   AntennaViolations _antennaViolations;

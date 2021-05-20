@@ -162,7 +162,7 @@ void TritonRoute::init()
     } else {
       logger_->warn(utl::DRT,
                     252,
-                    "bottomRoutingLayer {} not found",
+                    "topRoutingLayer {} not found",
                     TOP_ROUTING_LAYER_NAME);
     }
   }
