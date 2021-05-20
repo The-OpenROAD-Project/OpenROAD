@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "layoutViewer.h"
+
 #include <QApplication>
 #include <QDebug>
 #include <QFont>
@@ -55,7 +57,6 @@
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
-#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "search.h"
 #include "utl/Logger.h"
@@ -108,6 +109,12 @@ class GuiPainter : public Painter
         pixels_per_dbu_(pixels_per_dbu),
         dbu_per_micron_(dbu_per_micron)
   {
+  }
+
+  Color getPenColor() override
+  {
+    QColor color = painter_->pen().color();
+    return Color(color.red(), color.green(), color.blue(), color.alpha());
   }
 
   void setPen(odb::dbTechLayer* layer, bool cosmetic = false) override

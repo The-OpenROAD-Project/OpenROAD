@@ -31,6 +31,7 @@
 
 #include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
+#include "dr/FlexDR_graphics.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 #include "global.h"
@@ -126,6 +127,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   // Define swig TCL commands.
   Tritonroute_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
+  FlexDRGraphics::init();
 }
 
 void TritonRoute::init()

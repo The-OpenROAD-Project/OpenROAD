@@ -37,6 +37,185 @@
 
 namespace fr {
 
+// Descriptor for Grid Graph nodes and their edges
+class GridGraphDescriptor : public gui::Descriptor
+{
+ public:
+  struct Data
+  {
+    const FlexGridGraph* graph;
+    const frMIdx x;
+    const frMIdx y;
+    const frMIdx z;
+    const frDesign* design;
+  };
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 gui::Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  gui::Selected makeSelected(std::any object,
+                             void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+};
+
+std::string GridGraphDescriptor::getName(std::any object) const
+{
+  auto data = std::any_cast<Data>(object);
+  return "<" + std::to_string(data.x) + ", " + std::to_string(data.y) + ", "
+         + std::to_string(data.z) + ">";
+}
+
+std::string GridGraphDescriptor::getTypeName(std::any object) const
+{
+  return "Grid Graph Node";
+}
+
+bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto data = std::any_cast<Data>(object);
+  auto* graph = data.graph;
+  auto x = graph->xCoord(data.x);
+  auto y = graph->yCoord(data.y);
+  bbox.init(x, y, x, y);
+  return true;
+}
+
+void GridGraphDescriptor::highlight(std::any object,
+                                    gui::Painter& painter,
+                                    void* additional_data) const
+{
+  odb::Rect bbox;
+  getBBox(object, bbox);
+  auto x = bbox.xMin();
+  auto y = bbox.yMin();
+  bbox.init(x - 20, y - 20, x + 20, y + 20);
+  painter.drawRect(bbox);
+}
+
+gui::Descriptor::Properties GridGraphDescriptor::getProperties(
+    std::any object) const
+{
+  auto data = std::any_cast<Data>(object);
+  auto* graph = data.graph;
+  auto tech = data.design->getTech();
+  double dbu_per_uu = tech->getDBUPerUU();
+
+  auto x = data.x;
+  auto y = data.y;
+  auto z = data.z;
+  auto layer = tech->getLayer(graph->getLayerNum(z));
+
+  Properties props({{"X", graph->xCoord(x) / dbu_per_uu},
+                    {"Y", graph->yCoord(y) / dbu_per_uu},
+                    {"Layer", layer->getName()}});
+  auto gui = gui::Gui::get();
+
+  // put these after the edges so they are always in the same spot for
+  // faster navigation.
+  Properties costs;
+
+  // Iterating enums sucks in C++
+  for (int dir_int = (int) frDirEnum::D; dir_int <= (int) frDirEnum::U;
+       ++dir_int) {
+    frDirEnum dir = static_cast<frDirEnum>(dir_int);
+
+    // Find neighbor's coordinate & name
+    frMIdx nx = x;
+    frMIdx ny = y;
+    frMIdx nz = z;
+    std::string name;
+    switch (dir) {
+      case frDirEnum::UNKNOWN: /* can't happen */
+        name = "ERR";
+        break;
+      case frDirEnum::D:
+        name = "Down";
+        nz -= 1;
+        break;
+      case frDirEnum::S:
+        name = "South";
+        ny -= 1;
+        break;
+      case frDirEnum::W:
+        name = "West";
+        nx -= 1;
+        break;
+      case frDirEnum::E:
+        name = "East";
+        nx += 1;
+        break;
+      case frDirEnum::N:
+        name = "North";
+        ny += 1;
+        break;
+      case frDirEnum::U:
+        name = "Up";
+        nz += 1;
+        break;
+    }
+
+    if (!graph->hasEdge(x, y, z, dir)) {
+      props.push_back({name, "<none>"});
+      continue;
+    }
+
+    GridGraphDescriptor::Data neighbor{graph, nx, ny, nz, data.design};
+    props.push_back({name, gui->makeSelected(neighbor)});
+    if (graph->isBlocked(x, y, z, frDirEnum::W)) {
+      costs.push_back({name + " blocked", true});
+    }
+    if (graph->hasGridCost(x, y, z, dir)) {
+      costs.push_back({name + " grid cost", true});
+    }
+    if (graph->hasRouteShapeCost(x, y, z, dir)) {
+      costs.push_back({name + " route shape cost", true});
+    }
+    if (graph->hasMarkerCost(x, y, z, dir)) {
+      costs.push_back({name + " marker cost", true});
+    }
+    if (graph->hasFixedShapeCost(x, y, z, dir)) {
+      costs.push_back({name + " fixed shape cost", true});
+    }
+    if (!graph->hasGuide(x, y, z, dir)) {
+      costs.push_back({name + " has guide", false});
+    }
+    costs.push_back(
+        {name + " edge length", graph->getEdgeLength(x, y, z, dir)});
+    costs.push_back(
+        {name + " total cost", graph->getCosts(x, y, z, dir, layer)});
+  }
+  props.insert(props.end(), costs.begin(), costs.end());
+  return props;
+}
+
+gui::Selected GridGraphDescriptor::makeSelected(std::any object,
+                                                void* additional_data) const
+{
+  if (auto data = std::any_cast<Data>(&object)) {
+    return gui::Selected(*data, this, additional_data);
+  }
+  return gui::Selected();
+}
+
+bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_grid = std::any_cast<Data>(l);
+  auto r_grid = std::any_cast<Data>(r);
+
+  assert(l_grid.grid_graph == r_grid.grid_graph);
+
+  return std::tie(l_grid.x, l_grid.y, l_grid.z)
+         < std::tie(r_grid.x, r_grid.y, r_grid.z);
+}
+
+//////////////////////////////////////////////////
+
 const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
 const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
 const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
@@ -67,7 +246,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
 {
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
-  dbuPerUU_ = odb_tech->getDbUnitsPerMicron();
+  dbu_per_uu_ = odb_tech->getDbUnitsPerMicron();
 
   layer_map_.resize(odb_tech->getLayerCount(), -1);
 
@@ -140,7 +319,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw graphs
-  const bool draw_drc = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
+  const bool draw_drc
+      = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
   const bool draw_marker
       = gui_->checkCustomVisibilityControl(marker_cost_visible_);
   const bool draw_shape
@@ -181,7 +361,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         // Planar doesn't distinguish E vs N so just use one
         bool planar
-            = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
+            = (draw_drc
+               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
               || (draw_marker
                   && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
               || (draw_shape
@@ -192,11 +373,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                             grid_graph_->xCoord(x) + offset,
                             grid_graph_->yCoord(y) + offset});
         }
-        bool via = (draw_drc && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
-                   || (draw_marker
-                       && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
-                   || (draw_shape
-                       && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
+        bool via
+            = (draw_drc
+               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
+              || (draw_marker
+                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
+              || (draw_shape
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);
@@ -388,8 +571,12 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
   if (settings_->debugMaze && last_pt_layer_ != layer && last_pt_layer_ != -1) {
     if (settings_->draw)
       gui_->redraw();
-    if (settings_->allowPause)
+    if (settings_->allowPause) {
+      GridGraphDescriptor::Data data{
+          grid_graph, grid.x(), grid.y(), grid.z(), worker_->getDesign()};
+      gui_->setSelected(gui_->makeSelected(data));
       gui_->pause();
+    }
   }
 
   last_pt_layer_ = layer;
@@ -420,8 +607,8 @@ void FlexDRGraphics::startNet(drNet* net)
       logger_->info(DRT,
                     251,
                     "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
-                    pt.x() / (double) dbuPerUU_,
-                    pt.y() / (double) dbuPerUU_,
+                    pt.x() / (double) dbu_per_uu_,
+                    pt.y() / (double) dbu_per_uu_,
                     ap->getBeginLayerNum(),
                     ap->getPinCost());
     }
@@ -490,6 +677,13 @@ void FlexDRGraphics::status(const std::string& message)
 bool FlexDRGraphics::guiActive()
 {
   return gui::Gui::get() != nullptr;
+}
+
+/* static */
+void FlexDRGraphics::init()
+{
+  gui::Gui::get()->registerDescriptor<GridGraphDescriptor::Data>(
+      new GridGraphDescriptor);
 }
 
 }  // namespace fr

@@ -61,17 +61,8 @@ class Descriptor
   virtual std::string getTypeName(std::any object) const = 0;
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
 
-  // If the select_flag is false, the drawing will happen in highlight mode.
-  // Highlight shapes are persistent which will not get removed from
-  // highlightSet, if the user clicks on layout view as in case of selectionSet
-  virtual void highlight(std::any object,
-                         Painter& painter,
-                         bool select_flag = true,
-                         int highlight_group = 0,
-                         void* additional_data = nullptr) const = 0;
-
-  virtual bool isInst(std::any object) const = 0;
-  virtual bool isNet(std::any object) const = 0;
+  virtual bool isInst(std::any /* object */) const { return false; }
+  virtual bool isNet(std::any /* object */) const { return false; }
 
   // A property is a name and a value.
   using Property = std::pair<std::string, std::any>;
@@ -81,7 +72,17 @@ class Descriptor
 
   virtual Selected makeSelected(std::any object,
                                 void* additional_data) const = 0;
+
   virtual bool lessThan(std::any l, std::any r) const = 0;
+
+protected:
+  // The caller (Selected) will pre-configure the Painter's pen
+  // and brush before calling.
+  virtual void highlight(std::any object,
+                         Painter& painter,
+                         void* additional_data = nullptr) const = 0;
+
+  friend class Selected;
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -92,9 +93,7 @@ class Selected
 {
  public:
   // Null case
-  Selected() : additional_data_(nullptr), descriptor_(nullptr)
-  {
-  }
+  Selected() : additional_data_(nullptr), descriptor_(nullptr) {}
 
   Selected(std::any object,
            const Descriptor* descriptor,
@@ -116,13 +115,12 @@ class Selected
   bool isNet() const { return descriptor_->isNet(object_); }
   std::any getObject() const { return object_; }
 
+  // If the select_flag is false, the drawing will happen in highlight mode.
+  // Highlight shapes are persistent which will not get removed from
+  // highlightSet, if the user clicks on layout view as in case of selectionSet
   void highlight(Painter& painter,
                  bool select_flag = true,
-                 int highlight_group = 0) const
-  {
-    return descriptor_->highlight(
-        object_, painter, select_flag, highlight_group, additional_data_);
-  }
+                 int highlight_group = 0) const;
 
   Descriptor::Properties getProperties() const
   {
@@ -210,6 +208,9 @@ class Painter
 
   virtual ~Painter() = default;
 
+  // Get the current pen color
+  virtual Color getPenColor() = 0;
+
   // Set the pen to whatever the user has chosen for this layer
   virtual void setPen(odb::dbTechLayer* layer, bool cosmetic = false) = 0;
 
@@ -294,8 +295,10 @@ class Gui
 
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
-  Selected makeSelected(std::any object,
-                        void* additional_data = nullptr);
+  Selected makeSelected(std::any object, void* additional_data = nullptr);
+
+  // Set the current selected object in the gui.
+  void setSelected(Selected selection);
 
   // Add a net to the selection set
   void addSelectedNet(const char* name);
