@@ -1,33 +1,64 @@
 name: Labelled Ready to Sync Public
+
 on:
   pull_request:
     types: [labeled]
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+
+env:
+  ROT13_STAGING_OWNER: ${{ secrets.ROT13_STAGING_OWNER }}
+  ROT13_UPSTREAM_OWNER: ${{ secrets.ROT13_UPSTREAM_OWNER }}
+  ROT13_UPSTREAM_BRANCH: ${{ secrets.ROT13_UPSTREAM_BRANCH }}
 
 jobs:
-  label:
+  Push-To-Staging:
+    name: Push to staging
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'The-OpenROAD-Project-private' && github.event.label.name == 'Ready To Sync Public'
+
+    permissions:
+      # Read-only access so we don't accidentally try to push to *this* repository.
+      contents: read
+      # Pull request write access, so we can remove the label.
+      issues: write
+      pull-requests: write
+      # Deployment write access, so we can add the nice deployment info.
+      deployments: write
+
+    # Only run on the private repository.
+    if: github.event.repository.private && github.event.label.name == 'Ready To Sync Public'
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-        with:
-            ref: ${{github.event.pull_request.head.ref}}
-            fetch-depth: 0
-            token: ${{ secrets.GITHUBPUBLICREPOTOKEN }}
-      
-      - name: run security scan
-        uses: The-OpenROAD-Project/actions/security_scan_on_push@main
-        
-      - name: change remote to staging
-        run: git remote set-url origin https://github.com/The-OpenROAD-Project-staging/OpenROAD.git
-      - name: git status
-        run: git status
-      - name: Current label
-        run: echo ${{github.event.label.name}}
-      - name: pr info
-        run: echo ${{toJson(github.event.pull_request.head.ref)}} 
-      - name: push to staging
-        run: git push
-        
+    - name: Detect configuration
+      uses: The-OpenROAD-Project/actions/auto_config@main
+
+    - name: Removing label '${{ github.event.label.name }}'
+      uses: The-OpenROAD-Project/actions/remove_label@main
+      continue-on-error: true
+
+    - name: Clone repository
+      uses: The-OpenROAD-Project/actions/clone_from@main
+      with:
+        branch: ${{ env.PRIVATE_BRANCH }}
+        checkout: true
+
+    - name: Run security scan
+      uses: The-OpenROAD-Project/actions/security_scan_on_push@main
+
+    - name: Push to staging repository.
+      uses: The-OpenROAD-Project/actions/push_to@main
+      with:
+        owner: ${{ env.STAGING_OWNER }}
+        repo: ${{ env.STAGING_REPO }}
+        branch: ${{ env.STAGING_BRANCH }}
+        deployToken: ${{ secrets.STAGING_GITHUB_TOKEN }}
+        force: true
+
+    - id: send_pr
+      name: Create PR if needed.
+      uses: The-OpenROAD-Project/actions/send_pr@main
+      env:
+        STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+
+    - name: Linking to PR using deployment.
+      uses: The-OpenROAD-Project/actions/link_pr@main
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        UPSTREAM_PR: ${{ steps.send_pr.outputs.pr }}
