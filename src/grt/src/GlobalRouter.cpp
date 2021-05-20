@@ -1597,9 +1597,19 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
   }
 }
 
-bool GlobalRouter::isUnidirectional(odb::dbTechLayer* techLayer)
+bool GlobalRouter::isUnidirectional()
 {
-  return (techLayer->isRectOnly() || (techLayer->getNumMasks() > 1));
+  // E.M. 2021-05-20: If one layer of the technology is unidirectional, considers
+  // all layers as unidirectional. This is a temporary hack to keep FastRoute behavior
+  // in some techs regarding macro and I/O pins access.
+  for (int i = 1; i <= _maxRoutingLayer; i++) {
+    odb::dbTechLayer* techLayer = _db->getTech()->findRoutingLayer(i);
+    if (techLayer->isRectOnly() || (techLayer->getNumMasks() > 1)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
@@ -1973,8 +1983,7 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   pinConnection.initY = pinPosition.y();
   pinConnection.finalY = pinPosition.y();
 
-  odb::dbTechLayer* techLayer = _db->getTech()->findRoutingLayer(topLayer);
-  if (isUnidirectional(techLayer)) {
+  if (isUnidirectional()) {
     if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
       int newXPosition;
       if (pin.getOrientation() == PinOrientation::west) {

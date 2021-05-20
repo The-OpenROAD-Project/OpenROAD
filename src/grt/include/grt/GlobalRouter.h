@@ -223,7 +223,7 @@ class GlobalRouter
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
   void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets,
                           int minRoutingLayer, int maxRoutingLayer);
-  bool isUnidirectional(odb::dbTechLayer* techLayer);
+  bool isUnidirectional();
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
