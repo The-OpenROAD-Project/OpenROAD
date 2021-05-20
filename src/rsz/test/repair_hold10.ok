@@ -48,7 +48,7 @@ met5       Horizontal      10368         10153          2.07%
 ---------------------------------------------------------------
 
 [INFO GRT-0111] Final number of vias: 54
-[INFO GRT-0112] Final usage 3D: 1139
+[INFO GRT-0112] Final usage 3D: 1141
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 
 [INFO GRT-0096] Final congestion report:
@@ -56,14 +56,14 @@ Layer         Resource        Demand        Usage (%)    Max H / Max V / Total O
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
 met1            102794           465            0.45%             0 /  0 /  0
-met2             77035           512            0.66%             0 /  0 /  0
+met2             77035           514            0.67%             0 /  0 /  0
 met3             51333             0            0.00%             0 /  0 /  0
 met4             30956             0            0.00%             0 /  0 /  0
 met5             10153             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           272271           977            0.36%             0 /  0 /  0
+Total           272271           979            0.36%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 6927 um
+[INFO GRT-0018] Total wirelength: 6920 um
 worst slack -1.95
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.553ns delay for hold repairs.
@@ -117,7 +117,7 @@ met5       Horizontal      10368         10153          2.07%
 ---------------------------------------------------------------
 
 [INFO GRT-0111] Final number of vias: 56
-[INFO GRT-0112] Final usage 3D: 1146
+[INFO GRT-0112] Final usage 3D: 1148
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 
 [INFO GRT-0096] Final congestion report:
@@ -125,12 +125,12 @@ Layer         Resource        Demand        Usage (%)    Max H / Max V / Total O
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
 met1            102792           466            0.45%             0 /  0 /  0
-met2             77035           512            0.66%             0 /  0 /  0
+met2             77035           514            0.67%             0 /  0 /  0
 met3             51333             0            0.00%             0 /  0 /  0
 met4             30956             0            0.00%             0 /  0 /  0
 met5             10153             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           272269           978            0.36%             0 /  0 /  0
+Total           272269           980            0.36%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 6941 um
+[INFO GRT-0018] Total wirelength: 6934 um
 worst slack -1.40
