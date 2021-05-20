@@ -1973,39 +1973,42 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   pinConnection.initY = pinPosition.y();
   pinConnection.finalY = pinPosition.y();
 
-  if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
-    int newXPosition;
-    if (pin.getOrientation() == PinOrientation::west) {
-      newXPosition = pinPosition.x() + (_gcellsOffset * _grid->getTileWidth());
-      if (newXPosition <= _grid->getUpperRightX()) {
-        pinConnection.initX = newXPosition;
-        pinPosition.setX(newXPosition);
-      }
-    } else if (pin.getOrientation() == PinOrientation::east) {
-      newXPosition = pinPosition.x() - (_gcellsOffset * _grid->getTileWidth());
-      if (newXPosition >= _grid->getLowerLeftX()) {
-        pinConnection.initX = newXPosition;
-        pinPosition.setX(newXPosition);
-      }
-    } else {
-      _logger->warn(GRT, 32, "Pin {} has invalid orientation.", pin.getName());
-    }
-  } else {
-    int newYPosition;
-    if (pin.getOrientation() == PinOrientation::south) {
-      newYPosition = pinPosition.y() + (_gcellsOffset * _grid->getTileHeight());
-      if (newYPosition <= _grid->getUpperRightY()) {
-        pinConnection.initY = newYPosition;
-        pinPosition.setY(newYPosition);
-      }
-    } else if (pin.getOrientation() == PinOrientation::north) {
-      newYPosition = pinPosition.y() - (_gcellsOffset * _grid->getTileHeight());
-      if (newYPosition >= _grid->getLowerLeftY()) {
-        pinConnection.initY = newYPosition;
-        pinPosition.setY(newYPosition);
+  odb::dbTechLayer* techLayer = tech->findRoutingLayer(topLayer);
+  if (isUnidirectional(techLayer)) {
+    if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
+      int newXPosition;
+      if (pin.getOrientation() == PinOrientation::west) {
+        newXPosition = pinPosition.x() + (_gcellsOffset * _grid->getTileWidth());
+        if (newXPosition <= _grid->getUpperRightX()) {
+          pinConnection.initX = newXPosition;
+          pinPosition.setX(newXPosition);
+        }
+      } else if (pin.getOrientation() == PinOrientation::east) {
+        newXPosition = pinPosition.x() - (_gcellsOffset * _grid->getTileWidth());
+        if (newXPosition >= _grid->getLowerLeftX()) {
+          pinConnection.initX = newXPosition;
+          pinPosition.setX(newXPosition);
+        }
+      } else {
+        _logger->warn(GRT, 32, "Pin {} has invalid orientation.", pin.getName());
       }
     } else {
-      _logger->warn(GRT, 33, "Pin {} has invalid orientation.", pin.getName());
+      int newYPosition;
+      if (pin.getOrientation() == PinOrientation::south) {
+        newYPosition = pinPosition.y() + (_gcellsOffset * _grid->getTileHeight());
+        if (newYPosition <= _grid->getUpperRightY()) {
+          pinConnection.initY = newYPosition;
+          pinPosition.setY(newYPosition);
+        }
+      } else if (pin.getOrientation() == PinOrientation::north) {
+        newYPosition = pinPosition.y() - (_gcellsOffset * _grid->getTileHeight());
+        if (newYPosition >= _grid->getLowerLeftY()) {
+          pinConnection.initY = newYPosition;
+          pinPosition.setY(newYPosition);
+        }
+      } else {
+        _logger->warn(GRT, 33, "Pin {} has invalid orientation.", pin.getName());
+      }
     }
   }
 
