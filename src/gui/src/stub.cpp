@@ -84,9 +84,9 @@ Renderer::~Renderer()
 {
 }
 
-OpenDbDescriptor* OpenDbDescriptor::get()
+Selected Gui::makeSelected(std::any /* object */, void* /* additional_data */)
 {
-  return nullptr;
+  return Selected();
 }
 
 // using namespace odb;

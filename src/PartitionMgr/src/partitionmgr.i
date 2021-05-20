@@ -36,8 +36,7 @@
 %{
 #include "PartitionMgr.h"
 #include "ord/OpenRoad.hh"
-#include <algorithm>
-#include <time.h>
+#include <set>
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -112,8 +111,8 @@ void set_cut_hop_ratio(float value) {
         getPartitionMgr()->getOptions().setCutHopRatio(value);
 }
 
-void set_architecture(std::vector<int>* topology) {
-        getPartitionMgr()->getOptions().setArchTopology(*topology);
+void set_architecture(const std::vector<int>& topology) {
+        getPartitionMgr()->getOptions().setArchTopology(topology);
 }
 
 void clear_architecture() {
@@ -125,33 +124,25 @@ void set_refinement(unsigned value) {
         getPartitionMgr()->getOptions().setRefinement(value);
 }
 
-void set_seeds(std::vector<int>* seeds) {
-        getPartitionMgr()->getOptions().setSeeds(*seeds);
+void set_seeds(const std::vector<int>& seeds) {
+  std::set<int> seedSet(seeds.begin(), seeds.end());
+  getPartitionMgr()->getOptions().setSeeds(seedSet);
 }
 
 void set_existing_id(int value) {
         getPartitionMgr()->getOptions().setExistingID(value);
 }
 
-void generate_seeds(unsigned value) {
-        std::vector<int> seedVector;
-        std::srand(42);
-        for (int i = 0; i < value; i++)
-        {
-                int seedVar = 5;
-                int seed = 0;
-                do
-                {
-                        seed = std::rand();
-                        seedVar += 5;
-                } while (std::find(seedVector.begin(), seedVector.end(), seed) != seedVector.end());
-                seedVector.push_back(seed);
-        }
-        getPartitionMgr()->getOptions().setSeeds(seedVector);
+void set_random_seed(int value) {
+        getPartitionMgr()->getOptions().setRandomSeed(value);
 }
 
-void set_partition_ids_to_test(std::vector<int>* ids) {
-        getPartitionMgr()->getOptions().setPartitionsToTest(*ids);
+void generate_seeds(unsigned value) {
+        getPartitionMgr()->getOptions().generateSeeds(value);
+}
+
+void set_partition_ids_to_test(const std::vector<int>& ids) {
+        getPartitionMgr()->getOptions().setPartitionsToTest(ids);
 }
 
 void set_evaluation_function(const char* function) {
@@ -223,6 +214,11 @@ void run_clustering() {
 
 void report_graph() {
         getPartitionMgr()->reportGraph();
+}
+
+void write_partition_verilog(int id, const char* portprefix, const char* module_suffix, const char* path) {
+  write_partitioning_to_db(id);
+  getPartitionMgr()->writePartitionVerilog(path, portprefix, module_suffix);
 }
 
 %}

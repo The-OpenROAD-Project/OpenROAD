@@ -52,6 +52,7 @@ sta::define_cmd_args "partition_netlist" { [-tool name] \
     [-cut_hop_ratio value] \
     [-architecture value] \
     [-refinement value] \
+    [-random_seed value] \
     [-seeds value] \
     [-partition_id value] \
     [-force_graph value] \
@@ -73,6 +74,7 @@ proc partition_netlist { args } {
         -cut_hop_ratio \ 
         -architecture \
         -refinement \
+        -random_seed \
         -seeds \
         -partition_id \
         -force_graph \
@@ -237,6 +239,11 @@ proc partition_netlist { args } {
   }
 
 # Seeds
+  if { [info exists keys(-random_seed)] } {
+    par::set_random_seed $keys(-random_seed)
+  } else {
+    par::set_random_seed 42
+  }
   if { [info exists keys(-seeds)] } {
     par::set_seeds $keys(-seeds)
   } else {
@@ -340,6 +347,39 @@ proc write_partitioning_to_db { args } {
     if { [info exists keys(-dump_to_file)] } {
       par::dump_part_id_to_file $keys(-dump_to_file)
     } 
+}
+
+#--------------------------------------------------------------------
+# Write partition to verilog
+#--------------------------------------------------------------------
+
+sta::define_cmd_args "write_partition_verilog" { [-partitioning_id id] \
+  [-port_prefix prefix] [-module_suffix suffix] [file]
+}
+
+proc write_partition_verilog { args } {
+  sta::parse_key_args "write_partition_verilog" args \
+    keys { -partitioning_id -port_prefix -module_suffix } flags { }
+
+  sta::check_argc_eq1 "write_partition_verilog" $args
+  
+  if { ![info exists keys(-partitioning_id)] } {
+    utl::error PAR 45 "missing mandatory argument -partitioning_id"
+  } else {
+    set partition_id $keys(-partitioning_id)
+  }
+  
+  set port_prefix "partition_"
+  if { [info exists keys(-port_prefix)] } {
+    set port_prefix $keys(-port_prefix)
+  }
+  
+  set module_suffix "_partition"
+  if { [info exists keys(-module_suffix)] } {
+    set module_suffix $keys(-module_suffix)
+  }
+  
+  par::write_partition_verilog $partition_id $port_prefix $module_suffix $args
 }
 
 #--------------------------------------------------------------------

@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "selectHighlightWindow.h"
-
 #include <QComboBox>
 #include <QDebug>
 #include <QHBoxLayout>
@@ -40,14 +38,30 @@
 #include <QString>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
+#include "selectHighlightWindow.h"
 
 namespace gui {
 
-SelectionModel::SelectionModel(const SelectionSet& objs) : objs_(objs)
+static QString getBBoxString(odb::Rect& bbox, odb::dbDatabase* db)
+{
+  double to_microns = db->getChip()->getBlock()->getDbUnitsPerMicron();
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(5) << "(";
+  ss << bbox.xMin() / to_microns << ",";
+  ss << bbox.yMin() / to_microns << "), (";
+  ss << bbox.xMax() / to_microns << ",";
+  ss << bbox.yMax() / to_microns << ")";
+  return QString::fromStdString(ss.str());
+}
+
+SelectionModel::SelectionModel(const SelectionSet& objs)
+    : db_(nullptr), objs_(objs)
 {
 }
 
@@ -82,21 +96,16 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   int row_index = index.row();
   if (row_index > table_data_.size())
     return QVariant();
-  std::string obj_name = table_data_[row_index]->getName();
-  std::string obj_type("");
-  if (obj_name.rfind("Net: ", 0) == 0) {
-    obj_name = obj_name.substr(5);
-    obj_type = "Net";
-  } else if (obj_name.rfind("Inst: ", 0) == 0) {
-    obj_name = obj_name.substr(6);
-    obj_type = "Instance";
-  }
+  const std::string obj_name = table_data_[row_index]->getName();
+  const std::string obj_type = table_data_[row_index]->getTypeName();
   if (index.column() == 0) {
     return QString::fromStdString(obj_name);
   } else if (index.column() == 1) {
     return QString::fromStdString(obj_type);
   } else if (index.column() == 2) {
-    return QString::fromStdString(table_data_[row_index]->getLocation());
+    odb::Rect bbox;
+    bool valid = table_data_[row_index]->getBBox(bbox);
+    return valid ? getBBoxString(bbox, db_) : "<none>";
   }
   return QVariant();
 }
@@ -111,13 +120,14 @@ QVariant SelectionModel::headerData(int section,
     } else if (section == 1) {
       return QString("Type");
     } else if (section == 2) {
-      return QString("Loc");
+      return QString("Bounds");
     }
   }
   return QVariant();
 }
 
-HighlightModel::HighlightModel(const HighlightSet& objs) : objs_(objs)
+HighlightModel::HighlightModel(const HighlightSet& objs)
+    : db_(nullptr), objs_(objs)
 {
 }
 
@@ -179,7 +189,9 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 1) {
     return QString::fromStdString(obj_type);
   } else if (index.column() == 2) {
-    return QString::fromStdString(table_data_[row_index].second->getLocation());
+    odb::Rect bbox;
+    bool valid = table_data_[row_index].second->getBBox(bbox);
+    return valid ? getBBoxString(bbox, db_) : "<none>";
   } else if (index.column() == 3) {
     return QString("Group ")
            + QString::number(table_data_[row_index].first + 1);
@@ -197,7 +209,7 @@ QVariant HighlightModel::headerData(int section,
     } else if (section == 1) {
       return QString("Type");
     } else if (section == 2) {
-      return QString("Loc");
+      return QString("Bounds");
     } else if (section == 3) {
       return QString("Highlight Group");
     }
@@ -443,6 +455,12 @@ void SelectHighlightWindow::zoomInHighlightedItems()
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(dehlt_items);
+}
+
+void SelectHighlightWindow::setDb(odb::dbDatabase* db)
+{
+  selection_model_.setDb(db);
+  highlight_model_.setDb(db);
 }
 
 }  // namespace gui

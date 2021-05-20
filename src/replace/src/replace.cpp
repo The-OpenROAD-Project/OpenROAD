@@ -70,9 +70,8 @@ Replace::Replace()
   routabilityMaxDensity_(0.99),
   routabilityMaxBloatIter_(1),
   routabilityMaxInflationIter_(4),
-  routabilityTargetRcMetric_(1.01),
+  routabilityTargetRcMetric_(1.25),
   routabilityInflationRatioCoef_(2.5),
-  routabilityPitchScale_(1.08),
   routabilityMaxInflationRatio_(2.5),
   routabilityRcK1_(1.0),
   routabilityRcK2_(1.0),
@@ -131,9 +130,8 @@ void Replace::reset() {
   routabilityMaxDensity_ = 0.99;
   routabilityMaxBloatIter_ = 1;
   routabilityMaxInflationIter_ = 4;
-  routabilityTargetRcMetric_ = 1.01;
+  routabilityTargetRcMetric_ = 1.03;
   routabilityInflationRatioCoef_ = 2.5;
-  routabilityPitchScale_ = 1.08;
   routabilityMaxInflationRatio_ = 2.5;
 
   timingDrivenMode_ = true;
@@ -226,7 +224,6 @@ void Replace::initNesterovPlace() {
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
     rbVars.targetRC = routabilityTargetRcMetric_;
     rbVars.inflationRatioCoef = routabilityInflationRatioCoef_;
-    rbVars.gRoutePitchScale = routabilityPitchScale_;
     rbVars.maxInflationRatio = routabilityMaxInflationRatio_;
     rbVars.rcK1 = routabilityRcK1_;
     rbVars.rcK2 = routabilityRcK2_;
@@ -410,11 +407,6 @@ Replace::setRoutabilityTargetRcMetric(float rc) {
 void
 Replace::setRoutabilityInflationRatioCoef(float coef) {
   routabilityInflationRatioCoef_ = coef;
-}
-
-void
-Replace::setRoutabilityPitchScale(float scale) {
-  routabilityPitchScale_ = scale;
 }
 
 void

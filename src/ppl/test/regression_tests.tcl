@@ -13,6 +13,8 @@ record_tests {
   random4
   random5
   random6
+  random7
+  random8
   blocked_region
   cells_not_placed
   exclude1
@@ -24,6 +26,7 @@ record_tests {
   add_constraint4
   add_constraint5
   add_constraint6
+  add_constraint7
   group_pins1
   group_pins2
   group_pins3

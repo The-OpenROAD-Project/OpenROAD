@@ -172,7 +172,7 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-proc clear_constraints {} {
+proc clear_io_pin_constraints {} {
   ppl::clear_constraints
 }
 
@@ -534,12 +534,7 @@ proc parse_pin_names {cmd names} {
   set dbBlock [ord::get_db_block]
   set pin_list {}
   foreach pin [get_ports $names] {
-    set db_bterm [$dbBlock findBTerm [get_property $pin name]]
-    if { $db_bterm != "NULL" } {
-      lappend pin_list $db_bterm
-    } else {
-      utl::warn PPL 44 "Pin $pin_name not found for command $cmd"
-    }
+    lappend pin_list [sta::sta_to_db_port $pin]
   }
 
   if {[llength $pin_list] == 0} {

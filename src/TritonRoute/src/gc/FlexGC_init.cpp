@@ -150,7 +150,6 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 
 void FlexGCWorker::Impl::initDesign()
 {
-
   if (ignoreDB_) {
     return;
   }

@@ -34,7 +34,10 @@ using namespace fr;
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
-      design(std::make_unique<frDesign>(logger.get()))
+      design(std::make_unique<frDesign>(logger.get())),
+      numBlockages(0),
+      numTerms(0),
+      numRefBlocks(0)
 {
   makeDesign();
 }
@@ -86,6 +89,87 @@ void Fixture::setupTech(frTechObject* tech)
   addLayer(tech, "masterslice", frLayerTypeEnum::MASTERSLICE);
   addLayer(tech, "v0", frLayerTypeEnum::CUT);
   addLayer(tech, "m1", frLayerTypeEnum::ROUTING);
+}
+
+frBlock* Fixture::makeMacro(const char* name,
+                            frCoord originX,
+                            frCoord originY,
+                            frCoord sizeX,
+                            frCoord sizeY)
+{
+  auto block = make_unique<frBlock>(name);
+  vector<frBoundary> bounds;
+  frBoundary bound;
+  vector<frPoint> points;
+  points.push_back(frPoint(originX, originY));
+  points.push_back(frPoint(sizeX, originY));
+  points.push_back(frPoint(sizeX, sizeY));
+  points.push_back(frPoint(originX, sizeY));
+  bound.setPoints(points);
+  bounds.push_back(bound);
+  block->setBoundaries(bounds);
+  block->setMacroClass(MacroClassEnum::CORE);
+  block->setId(++numRefBlocks);
+  auto blkPtr = block.get();
+  design->addRefBlock(std::move(block));
+  return blkPtr;
+}
+
+frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
+                                  frCoord xl,
+                                  frCoord yl,
+                                  frCoord xh,
+                                  frCoord yh,
+                                  frLayerNum lNum,
+                                  frCoord designRuleWidth)
+{
+  int id = refBlock->getBlockages().size();
+  auto blkIn = make_unique<frBlockage>();
+  blkIn->setId(id);
+  blkIn->setDesignRuleWidth(designRuleWidth);
+  auto pinIn = make_unique<frPin>();
+  pinIn->setId(0);
+  // pinFig
+  unique_ptr<frRect> pinFig = make_unique<frRect>();
+  pinFig->setBBox(frBox(xl, yl, xh, yh));
+  pinFig->addToPin(pinIn.get());
+  pinFig->setLayerNum(lNum);
+  unique_ptr<frPinFig> uptr(std::move(pinFig));
+  pinIn->addPinFig(std::move(uptr));
+  blkIn->setPin(std::move(pinIn));
+  auto blk = blkIn.get();
+  refBlock->addBlockage(std::move(blkIn));
+  return blk;
+}
+
+frInst* Fixture::makeInst(const char* name,
+                          frBlock* refBlock,
+                          frCoord x,
+                          frCoord y)
+{
+  auto uInst = make_unique<frInst>(name, refBlock);
+  auto tmpInst = uInst.get();
+  tmpInst->setId(numInsts++);
+  tmpInst->setOrigin(frPoint(x, y));
+  tmpInst->setOrient(frOrientEnum::frcR0);
+  for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
+    auto term = uTerm.get();
+    unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
+    instTerm->setId(numTerms++);
+    int pinCnt = term->getPins().size();
+    instTerm->setAPSize(pinCnt);
+    tmpInst->addInstTerm(std::move(instTerm));
+  }
+  for (auto& uBlk : tmpInst->getRefBlock()->getBlockages()) {
+    auto blk = uBlk.get();
+    unique_ptr<frInstBlockage> instBlk
+        = make_unique<frInstBlockage>(tmpInst, blk);
+    instBlk->setId(numBlockages);
+    numBlockages++;
+    tmpInst->addInstBlockage(std::move(instBlk));
+  }
+  design->getTopBlock()->addInst(std::move(uInst));
+  return tmpInst;
 }
 
 void Fixture::makeDesign()

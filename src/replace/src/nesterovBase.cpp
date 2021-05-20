@@ -1797,11 +1797,12 @@ NesterovBase::updateDbGCells() {
       odb::dbInst* inst = gCell->instance()->dbInst();
       inst->setPlacementStatus(odb::dbPlacementStatus::PLACED); 
 
+      Instance* replInst = gCell->instance();
       // pad awareness on X coordinates
       inst->setLocation( 
-          gCell->dCx()-gCell->dx()/2
+          gCell->dCx()-replInst->dx()/2
           + pb_->siteSizeX() * pb_->padLeft(),
-          gCell->dCy()-gCell->dy()/2 ); 
+          gCell->dCy()-replInst->dy()/2 ); 
     }
   }
 }

@@ -72,7 +72,10 @@ class SelectionModel : public QAbstractTableModel
 
   void populateModel();
 
+  void setDb(odb::dbDatabase* db) { db_ = db; }
+
  private:
+  odb::dbDatabase* db_;
   const SelectionSet& objs_;
   std::vector<const Selected*> table_data_;
 };
@@ -97,9 +100,14 @@ class HighlightModel : public QAbstractTableModel
   void populateModel();
 
   int highlightGroup(const QModelIndex& index) const;
-  bool setData(const QModelIndex& index, const QVariant& value, int role) override;
+  bool setData(const QModelIndex& index,
+               const QVariant& value,
+               int role) override;
+
+  void setDb(odb::dbDatabase* db) { db_ = db; }
 
  private:
+  odb::dbDatabase* db_;
   const HighlightSet& objs_;
   std::vector<std::pair<int, const Selected*>> table_data_;
 };
@@ -138,6 +146,8 @@ class SelectHighlightWindow : public QDockWidget
                                  const HighlightSet& hltSet,
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow();
+
+  void setDb(odb::dbDatabase* db);
 
  signals:
   void clearAllSelections();

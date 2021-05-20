@@ -329,8 +329,8 @@ class extDistWidthRCTable
   Ath__array1D<uint>* _diagDistMapTable[32];
 
   uint _modulo;
-  int _firstWidth;
-  int _lastWidth;
+  int _firstWidth = 0;
+  int _lastWidth = -1;
   Ath__array1D<int>* _firstDiagWidth;
   Ath__array1D<int>* _lastDiagWidth;
   Ath__array1D<int>* _firstDiagDist;
@@ -343,22 +343,19 @@ class extDistWidthRCTable
 
   AthPool<extDistRC>* _rcPoolPtr;
   extDistRC* _rc31;
-  Logger* logger_;
 
  public:
   extDistWidthRCTable(bool dummy,
                       uint met,
                       uint layerCnt,
-                      uint width,
-                      Logger* logger);
+                      uint width);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
                       uint metCnt,
                       Ath__array1D<double>* widthTable,
                       AthPool<extDistRC>* rcPool,
-                      double dbFactor = 1.0,
-                      Logger* logger = nullptr);
+                      double dbFactor = 1.0);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
@@ -367,15 +364,13 @@ class extDistWidthRCTable
                       int diagWidthCnt,
                       int diagDistCnt,
                       AthPool<extDistRC>* rcPool,
-                      double dbFactor = 1.0,
-                      Logger* logger = nullptr);
+                      double dbFactor = 1.0);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
                       uint metCnt,
                       uint maxWidthCnt,
-                      AthPool<extDistRC>* rcPool,
-                      Logger* logger);
+                      AthPool<extDistRC>* rcPool);
   void addRCw(uint n, uint w, extDistRC* rc);
   void createWidthMap();
   void makeWSmapping();
@@ -727,7 +722,7 @@ class extRCModel
   uint benchWithVar(extMeasure* measure);
   uint measureWithVar(extMeasure* m);
   void addRC(extMeasure* m);
-  uint getOverUnderIndex(extMeasure* m, uint maxCnt);
+  int getOverUnderIndex(extMeasure* m, uint maxCnt);
   uint getUnderIndex(extMeasure* m);
   extDistWidthRCTable* getWidthDistRCtable(uint met,
                                            int mUnder,

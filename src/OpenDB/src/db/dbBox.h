@@ -82,6 +82,7 @@ class _dbBox : public _dbObject
   uint _owner;
   dbId<_dbBox> _next_box;
   bool _octilinear;
+  int design_rule_width_;
 
   _dbBox(_dbDatabase*);
   _dbBox(_dbDatabase*, const _dbBox& b);
@@ -123,13 +124,15 @@ inline _dbBox::_dbBox(_dbDatabase*)
   _flags._mark = 0;
   _owner = 0;
   _octilinear = false;
+  design_rule_width_ = -1;
 }
 
 inline _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
     : _flags(b._flags),
       _owner(b._owner),
       _next_box(b._next_box),
-      _octilinear(b._octilinear)
+      _octilinear(b._octilinear),
+      design_rule_width_(b.design_rule_width_)
 {
   if (b.isOct()) {
     new (&_shape._oct) Oct();
@@ -155,6 +158,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
     stream << box._shape._rect;
   stream << box._owner;
   stream << box._next_box;
+  stream << box.design_rule_width_;
   return stream;
 }
 
@@ -170,6 +174,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbBox& box)
     stream >> box._shape._rect;
   stream >> box._owner;
   stream >> box._next_box;
+  stream >> box.design_rule_width_;
   return stream;
 }
 

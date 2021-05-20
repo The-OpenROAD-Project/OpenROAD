@@ -33,7 +33,25 @@
 
 using namespace std;
 using namespace fr;
-
+inline bool isBlockage(frBlockObject* owner)
+{
+  return owner
+         && (owner->typeId() == frcInstBlockage
+             || owner->typeId() == frcBlockage);
+}
+void updateBlockageWidth(frBlockObject* owner, frCoord& width)
+{
+  if (isBlockage(owner)) {
+    frBlockage* blkg;
+    if (owner->typeId() == frcInstBlockage)
+      blkg = static_cast<frInstBlockage*>(owner)->getBlockage();
+    else
+      blkg = static_cast<frBlockage*>(owner);
+    if (blkg->getDesignRuleWidth() != -1) {
+      width = blkg->getDesignRuleWidth();
+    }
+  }
+}
 bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const frBox& box)
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
@@ -245,21 +263,19 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
   auto width1 = rect1->width();
   auto width2 = rect2->width();
   // override width and spacing
-  if (rect1->getNet()->getOwner()
-      && (rect1->getNet()->getOwner()->typeId() == frcInstBlockage
-          || rect1->getNet()->getOwner()->typeId() == frcBlockage)) {
+  if (isBlockage(rect1->getNet()->getOwner())) {
     isObs = true;
     if (USEMINSPACING_OBS) {
       width1 = currLayer->getWidth();
     }
+    updateBlockageWidth(rect1->getNet()->getOwner(), width1);
   }
-  if (rect2->getNet()->getOwner()
-      && (rect2->getNet()->getOwner()->typeId() == frcInstBlockage
-          || rect2->getNet()->getOwner()->typeId() == frcBlockage)) {
+  if (isBlockage(rect2->getNet()->getOwner())) {
     isObs = true;
     if (USEMINSPACING_OBS) {
       width2 = currLayer->getWidth();
     }
+    updateBlockageWidth(rect2->getNet()->getOwner(), width2);
   }
   // check if width is a result of route shape
   // if the width a shape is smaller if only using fixed shape, then it's route
@@ -506,18 +522,8 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipOBSPin(
     gcRect* rect2,
     const gtl::rectangle_data<frCoord>& markerRect)
 {
-  bool isRect1Obs = false;
-  bool isRect2Obs = false;
-  if (rect1->getNet()->getOwner()
-      && (rect1->getNet()->getOwner()->typeId() == frcInstBlockage
-          || rect1->getNet()->getOwner()->typeId() == frcBlockage)) {
-    isRect1Obs = true;
-  }
-  if (rect2->getNet()->getOwner()
-      && (rect2->getNet()->getOwner()->typeId() == frcInstBlockage
-          || rect2->getNet()->getOwner()->typeId() == frcBlockage)) {
-    isRect2Obs = true;
-  }
+  bool isRect1Obs = isBlockage(rect1->getNet()->getOwner());
+  bool isRect2Obs = isBlockage(rect2->getNet()->getOwner());
   if (!isRect1Obs && !isRect2Obs) {
     return false;
   }
@@ -1766,20 +1772,20 @@ frCoord FlexGCWorker::Impl::checkCutSpacing_spc_getReqSpcVal(
       auto owner = ptr1->getNet()->getOwner();
       auto ptr1LayerNum = ptr1->getLayerNum();
       auto ptr1Layer = getDesign()->getTech()->getLayer(ptr1LayerNum);
-      if (owner
-          && (owner->typeId() == frcInstBlockage
-              || owner->typeId() == frcBlockage)
-          && ptr1->width() > int(ptr1Layer->getWidth())) {
-        maxSpcVal = con->getCutWithin();
+      if (isBlockage(owner)) {
+        frCoord width1 = ptr1->width();
+        updateBlockageWidth(owner, width1);
+        if (width1 > int(ptr1Layer->getWidth()))
+          maxSpcVal = con->getCutWithin();
       }
       owner = ptr2->getNet()->getOwner();
       auto ptr2LayerNum = ptr2->getLayerNum();
       auto ptr2Layer = getDesign()->getTech()->getLayer(ptr2LayerNum);
-      if (owner
-          && (owner->typeId() == frcInstBlockage
-              || owner->typeId() == frcBlockage)
-          && ptr2->width() > int(ptr2Layer->getWidth())) {
-        maxSpcVal = con->getCutWithin();
+      if (isBlockage(owner)) {
+        frCoord width2 = ptr2->width();
+        updateBlockageWidth(owner, width2);
+        if (width2 > int(ptr2Layer->getWidth()))
+          maxSpcVal = con->getCutWithin();
       }
     }
   }
@@ -2166,20 +2172,20 @@ frCoord FlexGCWorker::Impl::checkLef58CutSpacing_spc_getReqSpcVal(
       auto owner = ptr1->getNet()->getOwner();
       auto ptr1LayerNum = ptr1->getLayerNum();
       auto ptr1Layer = getDesign()->getTech()->getLayer(ptr1LayerNum);
-      if (owner
-          && (owner->typeId() == frcInstBlockage
-              || owner->typeId() == frcBlockage)
-          && ptr1->width() > int(ptr1Layer->getWidth())) {
-        maxSpcVal = con->getCutWithin();
+      if (isBlockage(owner)) {
+        frCoord width1 = ptr1->width();
+        updateBlockageWidth(owner, width1);
+        if (width1 > int(ptr1Layer->getWidth()))
+          maxSpcVal = con->getCutWithin();
       }
       owner = ptr2->getNet()->getOwner();
       auto ptr2LayerNum = ptr2->getLayerNum();
       auto ptr2Layer = getDesign()->getTech()->getLayer(ptr2LayerNum);
-      if (owner
-          && (owner->typeId() == frcInstBlockage
-              || owner->typeId() == frcBlockage)
-          && ptr2->width() > int(ptr2Layer->getWidth())) {
-        maxSpcVal = con->getCutWithin();
+      if (isBlockage(owner)) {
+        frCoord width2 = ptr2->width();
+        updateBlockageWidth(owner, width2);
+        if (width2 > int(ptr2Layer->getWidth()))
+          maxSpcVal = con->getCutWithin();
       }
     }
   }
@@ -2698,9 +2704,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
   auto layer = getDesign()->getTech()->getLayer(layerNum);
 
   // rect is obs larger than min. size cut, must check against cutWithin
-  if (rect->getNet()->getOwner()
-      && (rect->getNet()->getOwner()->typeId() == frcInstBlockage
-          || rect->getNet()->getOwner()->typeId() == frcBlockage)
+  if (isBlockage(rect->getNet()->getOwner())
       && rect->width() > int(layer->getWidth())) {
     return true;
   }
@@ -2730,9 +2734,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
     }
     // if target is a cut blockage shape larger than min. size, assume it is a
     // blockage from MACRO
-    if (ptr->getNet()->getOwner()
-        && (ptr->getNet()->getOwner()->typeId() == frcInstBlockage
-            || ptr->getNet()->getOwner()->typeId() == frcBlockage)
+    if (isBlockage(ptr->getNet()->getOwner())
         && ptr->width() > int(layer->getWidth())) {
       cnt += reqNumCut;
     } else {

@@ -22,6 +22,7 @@ partition_netlist   -tool name \
                     [-max_edge_weight value] \
                     [-max_vertex_weight range] \
                     [-num_starts value] \
+                    [-random_seed value] \
                     [-seeds value] \
                     [-balance_constraint value] \
                     [-coarsening_ratio value] \
@@ -43,6 +44,7 @@ Argument description:
 - ``max_edge_weight`` defines the max weight of an edge.
 - ``max_vertex_weight`` defines the max weight of a vertex.
 - ``num_starts`` is the number of solutions generated with different random seeds.
+- ``random_seed`` is the seed used when generating new ransom set seeds.
 - ``seeds`` is the number of solutions generated with set seeds.
 - ``balance_constraint`` is the max vertex area percentage difference among partitions. E.g., a 50% difference means one partition can hold up to 25% larger area during a 2-way partition.
 - ``coarsening_ratio`` defines the minimal acceptable reduction in the number of vertices in the coarsening step.
@@ -95,6 +97,30 @@ write_partitioning_to_db    -partitioning_id $id \
 Argument description:
 - ``partitioning_id`` (Mandatory) is the partitioning solution id. These are the return values from the partition_netlist command.
 - ``dump_to_file`` is the file where the vertex assignment results will be saved. These consist of lines with a vertex name (e.g. an instance) and the partition it is part of.
+
+**write_partition_verilog**: Writes the partitioned network to a verilog file containing modules for each partition.
+
+The following tcl snippet shows how to call write_partition_verilog.
+
+```
+set id [partition_netlist   -tool chaco \
+                            -num_partitions 4 \
+                            -num_starts 5           ]
+
+evaluate_partitioning   -partition_ids $id \
+                        -evaluation_function "hyperedges" \
+
+write_partition_verilog -partitioning_id $id \
+                        [-port_prefix prefix] \
+                        [-module_suffix suffix] \
+                        filename.v
+```
+
+Argument description:
+- ``partitioning_id`` (Mandatory) is the partitioning solution id. These are the return values from the partition_netlist command.
+- ``filename`` (Mandatory) is the path to the verilog file.
+- ``port_prefix`` prefix to add to the internal ports created during partitioning, default is "partition_".
+- ``module_suffix`` suffix to add to the submodules, default is "_partition".
 
 **cluster_netlist**:  Divides the netlist into N clusters and returns the id (cluster_id) of the clustering solution. The command may be called many times with different parameters. Each time, the command will generate a new solution.
 

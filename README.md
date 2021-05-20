@@ -5,6 +5,7 @@
 OpenROAD is an integrated chip physical design tool that takes a
 design from synthesized Verilog to routed layout.  
 
+
 An outline of steps used to build a chip using OpenROAD are shown below.
 
 * Initialize floorplan - define the chip size and cell rows
@@ -356,10 +357,10 @@ The `-pin_names` argument is a list of names. The `-region` syntax is the same a
 To restrict pins to the positions defined with `define_pin_shape_pattern`, use `-region up:{llx lly urx ury}` or `-region up:*`.
 
 ```
-clear_constraints
+clear_io_pin_constraints
 ```
 
-The `clear_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
+The `clear_io_pin_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
 
 #### Tapcell
 
@@ -929,3 +930,13 @@ Options description:
   the voltage value is obtained from operating conditions in the liberty.
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
+
+#### TCL functions
+
+Get the die and core areas as a list in microns: "llx lly urx ury"
+
+```
+ord::get_die_area
+ord::get_core_area
+```
+

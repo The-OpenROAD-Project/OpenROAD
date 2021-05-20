@@ -201,13 +201,6 @@ set_routability_inflation_ratio_coef_cmd(float coef)
 }
 
 void
-set_routability_pitch_scale_cmd(float scale) 
-{
-  Replace* replace = getReplace();
-  replace->setRoutabilityPitchScale(scale);
-}
-
-void
 set_routability_max_inflation_ratio_cmd(float ratio) 
 {
   Replace* replace = getReplace();

@@ -584,6 +584,13 @@ proc insert_tapcells {db rows tapcell_master dist prefix} {
         set overlap [check_if_filled $x $tap_width $ori $row_fill_check]
         if {$overlap == 0} {
           build_cell $block $master $ori $x $lly $prefix
+        } elseif {[llength $overlap] == 2} {
+          lassign $overlap new_x_left new_x_right
+          if {$new_x_left >= $llx && [check_if_filled $new_x_left $tap_width $ori $row_fill_check] == 0} {
+            build_cell $block $master $ori $new_x_left $lly $prefix
+          } elseif {$new_x_right < $urx && [check_if_filled $new_x_right $tap_width $ori $row_fill_check] == 0} {
+            build_cell $block $master $ori $new_x_right $lly $prefix
+          }
         }
       }
     }
@@ -606,7 +613,11 @@ proc check_if_filled {x width orient row_insts} {
     if {$x_end > [lindex $placement 0] && $x_start < [lindex $placement 1]} {
       set left_x [expr [lindex $placement 0] - $width]
       set right_x [lindex $placement 1]
-      return "$left_x $right_x"
+      if {$x_start < [lindex $placement 0] || $x_end > [lindex $placement 1]} {
+        return "$left_x $right_x"
+      } else {
+        return 1
+      }
     }
   }
   return 0
@@ -672,7 +683,7 @@ proc insert_at_top_bottom {db rows masters endcap_master prefix} {
       set x_start [expr $llx+$endcapwidth]
       set x_end [expr $urx-$endcapwidth]
 
-      insert_at_top_bottom_helper $block $cur_row $ori $x_start $x_end $lly $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $prefix
+      insert_at_top_bottom_helper $block $cur_row 0 $ori $x_start $x_end $lly $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $prefix
     }
   }
   set topbottom_cnt [expr $phy_idx - $start_phy_idx]
@@ -680,10 +691,11 @@ proc insert_at_top_bottom {db rows masters endcap_master prefix} {
   return $topbottom_cnt
 }
 
-proc insert_at_top_bottom_helper {block top_bottom ori x_start x_end lly tap_nwintie_master tap_nwin2_master tap_nwin3_master tap_nwouttie_master tap_nwout2_master tap_nwout3_master prefix} {
+proc insert_at_top_bottom_helper {block top_bottom is_macro ori x_start x_end lly tap_nwintie_master tap_nwin2_master tap_nwin3_master tap_nwouttie_master tap_nwout2_master tap_nwout3_master prefix} {
   if {$top_bottom == 1} {
     # top
-    if { $ori == "MX" } {
+    if {($ori == "R0" && $is_macro) || \
+        ($ori == "MX" && !$is_macro)} {
       set master $tap_nwintie_master
       set tb2_master $tap_nwin2_master
       set tb3_master $tap_nwin3_master
@@ -694,7 +706,8 @@ proc insert_at_top_bottom_helper {block top_bottom ori x_start x_end lly tap_nwi
     }
   } else {
     # bottom
-    if { $ori == "R0" } {
+    if {($ori == "MX" && $is_macro) || \
+        ($ori == "R0" && !$is_macro)} {
       set master $tap_nwintie_master
       set tb2_master $tap_nwin2_master
       set tb3_master $tap_nwin3_master
@@ -816,7 +829,7 @@ proc insert_around_macros {db rows masters corner_master prefix} {
           set row_end [expr $row_end - $corner_cell_width]
         }
         # do top row
-        insert_at_top_bottom_helper $block 1 $top_row_ori $row_start $row_end $top_row_y $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $prefix
+        insert_at_top_bottom_helper $block 1 1 $top_row_ori $row_start $row_end $top_row_y $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $prefix
         
         # do corners
         if { $top_row_ori == "R0" } {
@@ -828,9 +841,9 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # NE corner
-        build_cell $block $incnr_master $top_row_ori [expr $x_start - [$incnr_master getWidth]] $top_row_y $prefix
+        build_cell $block $incnr_master $top_row_ori $x_end $top_row_y $prefix
         # NW corner
-        build_cell $block $incnr_master $west_ori $x_end $top_row_y $prefix
+        build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $top_row_y $prefix
       }
       if {$bot_row >= 1} {
         set bot_row_inst [lindex $rows $bot_row 0]
@@ -849,7 +862,7 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # do bottom row
-        insert_at_top_bottom_helper $block 0 $bot_row_ori $row_start $row_end $bot_row_y $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $prefix
+        insert_at_top_bottom_helper $block 0 1 $bot_row_ori $row_start $row_end $bot_row_y $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $prefix
         
         # do corners
         if { $bot_row_ori == "MX" } {
@@ -861,9 +874,9 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # SE corner
-        build_cell $block $incnr_master $bot_row_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y $prefix
+        build_cell $block $incnr_master $bot_row_ori $x_end $bot_row_y $prefix
         # SW corner
-        build_cell $block $incnr_master $west_ori $x_end $bot_row_y $prefix
+        build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y $prefix
       }
     }
   }
@@ -1019,6 +1032,7 @@ proc build_cell {block master orientation x y prefix} {
   $inst setOrient $orientation
   $inst setLocation $x $y
   $inst setPlacementStatus LOCKED
+  $inst setSourceType DIST
 
   set inst_bb [$inst getBBox]
 

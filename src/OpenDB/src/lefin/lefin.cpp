@@ -123,6 +123,7 @@ static void create_path_box(dbObject* obj,
                             bool is_pin,
                             dbTechLayer* layer,
                             int dw,
+                            int designRuleWidth,
                             int prev_x,
                             int prev_y,
                             int cur_x,
@@ -136,11 +137,12 @@ static void create_path_box(dbObject* obj,
     y1 = cur_y - dw;
     x2 = cur_x + dw;
     y2 = cur_y + dw;
-
+    dbBox* box;
     if (is_pin)
-      dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
+      box = dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
     else
-      dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+      box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+    box->setDesignRuleWidth(designRuleWidth);
   } else if (cur_x == prev_x) {  // vert. path
     x1 = cur_x - dw;
     x2 = cur_x + dw;
@@ -152,11 +154,12 @@ static void create_path_box(dbObject* obj,
       y1 = cur_y - dw;
       y2 = prev_y + dw;
     }
-
+    dbBox* box;
     if (is_pin)
-      dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
+      box = dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
     else
-      dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+      box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+    box->setDesignRuleWidth(designRuleWidth);
   } else if (cur_y == prev_y) {  // horiz. path
     y1 = cur_y - dw;
     y2 = cur_y + dw;
@@ -168,11 +171,12 @@ static void create_path_box(dbObject* obj,
       x1 = cur_x - dw;
       x2 = prev_x + dw;
     }
-
+    dbBox* box;
     if (is_pin)
-      dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
+      box = dbBox::create((dbMPin*) obj, layer, x1, y1, x2, y2);
     else
-      dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+      box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
+    box->setDesignRuleWidth(designRuleWidth);
   } else {
     logger->warn(utl::ODB, 175, "illegal: non-orthogonal-path at Pin");
   }
@@ -186,6 +190,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
   int count = geometry->numItems();
   dbTechLayer* layer = NULL;
   int dw = 0;
+  int designRuleWidth = -1;
 
   for (int i = 0; i < count; i++) {
     _master_modified = true;
@@ -215,7 +220,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         if (path->numPoints == 1) {
           int x = dbdist(path->x[0]);
           int y = dbdist(path->y[0]);
-          create_path_box(object, is_pin, layer, dw, x, y, x, y, _logger);
+          create_path_box(
+              object, is_pin, layer, dw, designRuleWidth, x, y, x, y, _logger);
           break;
         }
 
@@ -226,8 +232,16 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         for (j = 1; j < path->numPoints; j++) {
           int cur_x = dbdist(path->x[j]);
           int cur_y = dbdist(path->y[j]);
-          create_path_box(
-              object, is_pin, layer, dw, prev_x, prev_y, cur_x, cur_y, _logger);
+          create_path_box(object,
+                          is_pin,
+                          layer,
+                          dw,
+                          designRuleWidth,
+                          prev_x,
+                          prev_y,
+                          cur_x,
+                          cur_y,
+                          _logger);
           prev_x = cur_x;
           prev_y = cur_y;
         }
@@ -256,7 +270,16 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
               Point p = points[0];
               int x = p.getX() + dx;
               int y = p.getY() + dy;
-              create_path_box(object, is_pin, layer, dw, x, y, x, y, _logger);
+              create_path_box(object,
+                              is_pin,
+                              layer,
+                              dw,
+                              designRuleWidth,
+                              x,
+                              y,
+                              x,
+                              y,
+                              _logger);
               continue;
             }
 
@@ -273,6 +296,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
                               is_pin,
                               layer,
                               dw,
+                              designRuleWidth,
                               cur_x,
                               cur_y,
                               prev_x,
@@ -394,13 +418,16 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
               dbBox::create((dbMaster*) object, dbvia, x + dx, y + dy);
           }
         }
+        break;
       }
-
+      case lefiGeomLayerRuleWidthE: {
+        designRuleWidth = dbdist(geometry->getLayerRuleWidth(i));
+        break;
+      }
       // FIXME??
       case lefiGeomUnknown:  // error
       case lefiGeomLayerExceptPgNetE:
       case lefiGeomLayerMinSpacingE:
-      case lefiGeomLayerRuleWidthE:
       case lefiGeomClassE:
 
       default:
@@ -783,8 +810,10 @@ void lefin::layer(lefiLayer* layer)
       lefiTwoWidths* cur_two = cur_sptbl->twoWidths();
 
       l->initTwoWidths(cur_two->numWidth());
+      int defaultPrl = -1;
       for (int i = 0; i < cur_two->numWidth(); i++) {
-        int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i)) : -1;
+        int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i)) : defaultPrl;
+        defaultPrl = prl;
         l->addTwoWidthsIndexEntry(dbdist(cur_two->width(i)), prl);
       }
 
