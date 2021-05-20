@@ -191,8 +191,7 @@ class PartSolutions
   unsigned getClusterId() const { return _clusterId; }
   void setBestSolutionIdx(unsigned idx) { _bestSolutionIdx = idx; }
   unsigned getBestSolutionIdx() const { return _bestSolutionIdx; }
-  void setNumOfRuns(unsigned runs) { _numOfRuns = runs; }
-  unsigned getNumOfRuns() const { return _numOfRuns; }
+  unsigned getNumOfRuns() const { return _seeds.size(); }
   void setBestSetSize(double result) { _bestSetSizeSD = result; }
   double getBestSetSize() const { return _bestSetSizeSD; }
   void setBestSetArea(double result) { _bestSetAreaSD = result; }
@@ -211,6 +210,8 @@ class PartSolutions
   unsigned long getBestRuntime() const { return _bestRuntime; }
   void setBestHopWeigth(unsigned long result) { _bestHopWeigth = result; }
   unsigned long getBestHopWeigth() const { return _bestHopWeigth; }
+
+  void resetEvaluation();
 
  private:
   std::vector<std::vector<unsigned long>> _assignmentResults;
