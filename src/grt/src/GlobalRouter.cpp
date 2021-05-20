@@ -1597,6 +1597,11 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
   }
 }
 
+bool GlobalRouter::isUnidirectional(odb::dbTechLayer* techLayer)
+{
+  return (techLayer->isRectOnly() || (techLayer->getNumMasks() > 1));
+}
+
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
                                       int minRoutingLayer,
