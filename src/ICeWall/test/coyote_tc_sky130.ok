@@ -102,4 +102,6 @@ Loaded library IO cell data
 [WARNING PAD-0048] No padcell instance found for sig161
 [WARNING PAD-0048] No padcell instance found for sig162
 [WARNING PAD-0048] No padcell instance found for sig163
-No differences found.
+Differences found at line 7.
+ROW ROW_0 unit 199680 199800 N DO 10417 BY 1 STEP 480 0 ;
+ROW ROW_0 unit 199680 199800 FS DO 10417 BY 1 STEP 480 0 ;
