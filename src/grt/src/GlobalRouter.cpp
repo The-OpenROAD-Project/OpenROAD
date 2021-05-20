@@ -1973,7 +1973,7 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   pinConnection.initY = pinPosition.y();
   pinConnection.finalY = pinPosition.y();
 
-  odb::dbTechLayer* techLayer = tech->findRoutingLayer(topLayer);
+  odb::dbTechLayer* techLayer = _db->getTech()->findRoutingLayer(topLayer);
   if (isUnidirectional(techLayer)) {
     if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
       int newXPosition;
