@@ -119,6 +119,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
           diodeMTerm->getConstName());
       if (!netViol.empty()) {
         _antennaViolations[db_net] = netViol;
+        _netsWithViolations.push_back(db_net);
         _grouter->addDirtyNet(db_net);
       }
 
@@ -156,12 +157,12 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixedInsts);
 
-  for (auto const& violation : _antennaViolations) {
-    odb::dbNet* net = violation.first;
-    for (int i = 0; i < violation.second.size(); i++) {
-      for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
+  for (auto const& net : _netsWithViolations) {
+    std::vector<ant::VINFO> &violation = _antennaViolations[net];
+    for (int i = 0; i < violation.size(); i++) {
+      for (odb::dbITerm* sinkITerm : violation[i].iterms) {
         odb::dbInst* sinkInst = sinkITerm->getInst();
-        for (int j = 0; j < violation.second[i].antenna_cell_nums; j++) {
+        for (int j = 0; j < violation[i].antenna_cell_nums; j++) {
           std::string antennaInstName = "ANTENNA_" + std::to_string(cnt);
           insertDiode(net,
                       diodeMTerm,
@@ -328,7 +329,7 @@ AntennaCbk::AntennaCbk(GlobalRouter* grouter) : _grouter(grouter)
 void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getNet() != nullptr)
+    if (iterm->getNet() != nullptr && !iterm->getNet()->isSpecial())
       _grouter->addDirtyNet(iterm->getNet());
   }
 }
