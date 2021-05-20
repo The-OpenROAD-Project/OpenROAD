@@ -682,8 +682,10 @@ bool FlexDRGraphics::guiActive()
 /* static */
 void FlexDRGraphics::init()
 {
-  gui::Gui::get()->registerDescriptor<GridGraphDescriptor::Data>(
-      new GridGraphDescriptor);
+  if (guiActive()) {
+    gui::Gui::get()->registerDescriptor<GridGraphDescriptor::Data>(
+        new GridGraphDescriptor);
+  }
 }
 
 }  // namespace fr

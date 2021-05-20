@@ -65,7 +65,7 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 }
 
 // This provides the link for Gui::redraw to the widget
-static gui::MainWindow* main_window;
+static gui::MainWindow* main_window = nullptr;
 
 Gui* Gui::singleton_ = nullptr;
 
