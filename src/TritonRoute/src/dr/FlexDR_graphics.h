@@ -78,6 +78,8 @@ class FlexDRGraphics : public gui::Renderer
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 
+  static void init();
+
   void update();
 
   void pause(drNet* net);
@@ -95,7 +97,7 @@ class FlexDRGraphics : public gui::Renderer
   frLayerNum last_pt_layer_;
   gui::Gui* gui_;
   Logger* logger_;
-  int dbuPerUU_;
+  int dbu_per_uu_;
   bool drawWholeDesign_ = false;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
@@ -108,7 +110,7 @@ class FlexDRGraphics : public gui::Renderer
   static const char* route_shape_cost_visible_;
   static const char* marker_cost_visible_;
   static const char* fixed_shape_cost_visible_;
-  
+
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };
 
