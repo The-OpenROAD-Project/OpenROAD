@@ -1,110 +1,137 @@
-PAD 0001 ICeWall.tcl:1625          $str
+PAD 0001 ICeWall.tcl:1548          $str
 Incorrect signal assignments ([llength $errors]) found
-PAD 0002 ICeWall.tcl:1421          Not enough bumps: available [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)] required $required
-PAD 0003 ICeWall.tcl:3190          $str
+PAD 0002 ICeWall.tcl:1344          Not enough bumps: available [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)] required $required
+PAD 0003 ICeWall.tcl:3131          $str
 Cannot create instance for $cell_name
-PAD 0004 ICeWall.tcl:2171          Cannot find a terminal [get_padcell_signal_name $padcell] for ${padcell}
-PAD 0005 ICeWall.tcl:82            Illegal orientation "$orient" specified
-PAD 0006 ICeWall.tcl:128           Illegal orientation "$orient" specified
-PAD 0007 ICeWall.tcl:1595          File $signal_assignment_file not found
-PAD 0008 ICeWall.tcl:808           Cannot find cell $name in the database
-PAD 0009 ICeWall.tcl:3662          Expected 1, 2 or 4 offset values, got [llength $args]
-PAD 0010 ICeWall.tcl:3690          Expected 1, 2 or 4 inner_offset values, got [llength $args]
-PAD 0011 ICeWall.tcl:1383          Expected instance $name for padcell $padcell not found
-PAD 0012 ICeWall.tcl:2219          Cannot find a terminal [get_padcell_signal_name $padcell] for $padcell to associate with bondpad [$inst getName]
-PAD 0014 ICeWall.tcl:3340          Net ${signal}_$section already exists, so cannot be used in the pad ring
-PAD 0015 ICeWall.tcl:3005          No cells found on $side side
-PAD 0016 ICeWall.tcl:493           Scaled core area not defined
-PAD 0017 ICeWall.tcl:1029          Found [llength $pad_connections] top level connections to $pin_name of padcell i$padcell (inst:[$inst getName]), expecting only 1
-PAD 0018 ICeWall.tcl:3364          No term $signal found on $inst_name
-PAD 0019 ICeWall.tcl:2165          Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]
-PAD 0020 ICeWall.tcl:2150          Cannot find pin [get_library_pad_pin_name [get_padcell_type $padcell]] on cell [[$inst getMaster] getName]
-PAD 0021 ICeWall.tcl:1050          Value of bump spacing_to_edge not specified
-PAD 0022 ICeWall.tcl:1006          Cannot find padcell $padcell
-PAD 0023 ICeWall.tcl:1016          Signal name for padcell $padcell has not been set
-PAD 0024 ICeWall.tcl:165           Cannot find bondpad type in library
-PAD 0025 ICeWall.tcl:235           No instance found for $padcell
-PAD 0026 ICeWall.tcl:176           Cannot find bondpad type in library
-PAD 0027 ICeWall.tcl:2651          Illegal orientation $orientation specified
-PAD 0028 ICeWall.tcl:2672          Illegal orientation $orientation specified
-PAD 0030 ICeWall.tcl:3445          Unrecognised arguments to init_footprint $arglist
-PAD 0031 ICeWall.tcl:399           No die_area specified in the footprint specification
-PAD 0032 ICeWall.tcl:660           Cannot find net $signal_name for $padcell in the design
-PAD 0033 ICeWall.tcl:909           No value defined for pad_pin_name in the library or cell data for $type
-PAD 0034 ICeWall.tcl:2314          No bump pitch table defined in the library
-PAD 0035 ICeWall.tcl:2404          No bump_pitch defined in library data
-PAD 0036 ICeWall.tcl:2423          No width defined for selected bump cell $cell_name
-PAD 0037 ICeWall.tcl:2426          No bump_width defined in library data
-PAD 0038 ICeWall.tcl:2438          No bump_pin_name attribute found in the library
-PAD 0039 ICeWall.tcl:2451          No rdl_width defined in library data
-PAD 0040 ICeWall.tcl:2465          No rdl_spacing defined in library data
-PAD 0041 ICeWall.tcl:412           A value for core_area must specified in the footprint specification, or in the environment variable CORE_AREA
-PAD 0042 ICeWall.tcl:1772          Cannot find any pads on $side side
-PAD 0043 ICeWall.tcl:1775          Pads must be defined on all sides of the die for successful extraction
-PAD 0046 ICeWall.tcl:1955          No power nets found in design
-PAD 0047 ICeWall.tcl:1960          No ground nets found in design
-PAD 0048 ICeWall.tcl:2264          No padcell instance found for $padcell
-PAD 0049 ICeWall.tcl:817           No cells defined in the library description
-PAD 0050 ICeWall.tcl:3330          Multiple nets found on $signal in pad ring
-PAD 0051 ICeWall.tcl:2199          Creating pad ring net: $assigned_name
-PAD 0052 ICeWall.tcl:2215          Creating pad ring net: _UNASSIGNED_$idx
-PAD 0053 ICeWall.tcl:3342          Creating pad ring net: $net_name
-PAD 0054 ICeWall.tcl:44            Parameter centre "$centre" missing a value for x
-PAD 0055 ICeWall.tcl:47            Parameter centre "$centre" missing a value for y
-PAD 0056 ICeWall.tcl:90            Parameter centre "$centre" missing a value for x
-PAD 0057 ICeWall.tcl:93            Parameter centre "$centre" missing a value for y
-PAD 0058 ICeWall.tcl:139           Footprint has no padcell attribute
-PAD 0059 ICeWall.tcl:143           No side attribute spcified for padcell $padcell
-PAD 0060 ICeWall.tcl:254           Cannot determine location of padcell $padcell
-PAD 0061 ICeWall.tcl:442           Footprint attribute die_area has not been defined
-PAD 0062 ICeWall.tcl:452           Footprint attribute die_area has not been defined
-PAD 0063 ICeWall.tcl:560           Padcell $padcell not specified
-PAD 0064 ICeWall.tcl:563           No type attribute specified for padcell $padcell
-PAD 0065 ICeWall.tcl:605           No type attribute specified for padcell $padcell
-PAD 0066 ICeWall.tcl:705           Library data has no type entry $type
-PAD 0067 ICeWall.tcl:785           No type attribute specified for cell $padcell
-PAD 0068 ICeWall.tcl:842           No cell attribute specified for cell $padcell
-PAD 0069 ICeWall.tcl:844           No orient attribute specified for cell $padcell
-PAD 0071 ICeWall.tcl:886           No cell $cell_name found
-PAD 0072 ICeWall.tcl:1108          No bump attribute for padcell $padcell
-PAD 0073 ICeWall.tcl:1112          No row attribute specified for bump associated with padcell $padcell
-PAD 0074 ICeWall.tcl:1115          No col attribute specified for bump associated with padcell $padcell
-PAD 0075 ICeWall.tcl:1152          No bump attribute for padcell $padcell
-PAD 0076 ICeWall.tcl:1155          No row attribute specified for bump associated with padcell $padcell
-PAD 0077 ICeWall.tcl:1158          No col attribute specified for bump associated with padcell $padcell
-PAD 0078 ICeWall.tcl:2231          Layer [get_footprint_pad_pin_layer] not defined in tehcnology
-PAD 0079 ICeWall.tcl:2504          Fottprint does not have the pads_per_pitch attribute specified
-PAD 0080 ICeWall.tcl:3088          Attribute $corner not specified in pad_ring ($pad_ring)
-PAD 0081 ICeWall.tcl:3098          Attribute $corner not specified in pad_ring ($pad_ring)
-PAD 0082 ICeWall.tcl:3232          Type $type not specified in the set of library types
-PAD 0083 ICeWall.tcl:3236          Cell $cell_ref of Type $type is not specified in the list of cells in the library
-PAD 0084 ICeWall.tcl:3386          Type $type not specified in the set of library types
-PAD 0085 ICeWall.tcl:3390          Cell $cell_ref of Type $type is not specified in the list of cells in the library
-PAD 0086 ICeWall.tcl:3523          Type $type not specified in the set of library types
-PAD 0087 ICeWall.tcl:3527          Cell $cell_ref of Type $type is not specified in the list of cells in the library
-PAD 0088 ICeWall.tcl:3166          Placement of cell $cell_name does not have a name attribute
-PAD 0089 ICeWall.tcl:3169          Placement of cell $cell_name does not have a type attribute
-PAD 0090 ICeWall.tcl:3172          Placement of cell $cell_name does not have an orient attribute
-PAD 0091 ICeWall.tcl:981           No signal $signal_name defined for padcell $padcell
-PAD 0092 ICeWall.tcl:985           No signal $signal_name or $try_signal defined for padcell $padcell
-PAD 0093 ICeWall.tcl:3826          Signal "$signal_name" not found in design 
-PAD 0094 ICeWall.tcl:3842          Value for -edge_name ($edge_name) not permitted, choose one of bottom, right, top or left
-PAD 0095 ICeWall.tcl:3852          Value for -type ($type) does not match any library types ([dict keys [dict get $library types]])
-PAD 0096 ICeWall.tcl:819           No cell $cell_type defined in library ([dict keys [dict get $library cells]])
-PAD 0097 ICeWall.tcl:821           No entry found in library definition for cell $cell_type on $position side
-PAD 0098 ICeWall.tcl:3855          No library types defined
-PAD 0099 ICeWall.tcl:3896          Invalid orientation $orient, must be one of "$valid"
-PAD 0100 ICeWall.tcl:3903          Incorrect number of arguments for location, expected an even number, got [llength $location] ($location)
-PAD 0101 ICeWall.tcl:3906          Only one of centre or origin may be specified for -location ($location)
-PAD 0102 ICeWall.tcl:3911          Incorrect value specified for -location centre ([dict get $location centre]), $msg
-PAD 0103 ICeWall.tcl:3916          Incorrect value specified for -location origin ([dict get $location origin]), $msg
-PAD 0104 ICeWall.tcl:3919          Require origin or centre not specified for -location ($location)
-PAD 0105 ICeWall.tcl:3934          Specification of bondpads is only allowed for Wirebond padring layouts
-PAD 0106 ICeWall.tcl:3945          Specification of bumps is only allowed for Flipchip padring layouts
-PAD 0107 ICeWall.tcl:3950          Bump value specified incorrectly, $msg
-PAD 0108 ICeWall.tcl:3974          Cannot find an instance with name "$inst_name"
-PAD 0109 ICeWall.tcl:4001          In correct number of arguments - expected an even number, received [llength $args]
-PAD 0110 ICeWall.tcl:4018          Must specify -type option if -name is not spedified
-PAD 0111 ICeWall.tcl:4036          Unrecognized argument $arg, should be one of -name, -signal, -edge, -type, -location, -bump, -bondpad, -inst_name
-PAD 0112 ICeWall.tcl:4048          Padcell $padcell already defined to use $signal_name
-PAD 0113 ICeWall.tcl:4082          Type specified must be Flipchip or Wirebond
+PAD 0004 ICeWall.tcl:2110          Cannot find a terminal [get_padcell_signal_name $padcell] for ${padcell}
+PAD 0005 ICeWall.tcl:84            Illegal orientation "$orient" specified
+PAD 0006 ICeWall.tcl:130           Illegal orientation "$orient" specified
+PAD 0007 ICeWall.tcl:1518          File $signal_assignment_file not found
+PAD 0008 ICeWall.tcl:781           Cannot find cell $name in the database
+PAD 0009 ICeWall.tcl:3603          Expected 1, 2 or 4 offset values, got [llength $args]
+PAD 0010 ICeWall.tcl:3631          Expected 1, 2 or 4 inner_offset values, got [llength $args]
+PAD 0011 ICeWall.tcl:1306          Expected instance $name for padcell $padcell not found
+PAD 0012 ICeWall.tcl:2158          Cannot find a terminal [get_padcell_signal_name $padcell] for $padcell to associate with bondpad [$inst getName]
+PAD 0014 ICeWall.tcl:3281          Net ${signal}_$section already exists, so cannot be used in the pad ring
+PAD 0015 ICeWall.tcl:2946          No cells found on $side side
+PAD 0016 ICeWall.tcl:440           Scaled core area not defined
+PAD 0017 ICeWall.tcl:1661          Found [llength $pad_connections] top level connections to $pin_name of padcell i$padcell (inst:[$inst getName]), expecting only 1
+PAD 0018 ICeWall.tcl:3305          No term $signal found on $inst_name
+PAD 0019 ICeWall.tcl:2104          Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]
+PAD 0020 ICeWall.tcl:2089          Cannot find pin [get_library_pad_pin_name [get_padcell_type $padcell]] on cell [[$inst getMaster] getName]
+PAD 0021 ICeWall.tcl:973           Value of bump spacing_to_edge not specified
+PAD 0022 ICeWall.tcl:955           Cannot find padcell $padcell
+PAD 0023 ICeWall.tcl:959           Signal name for padcell $padcell has not been set
+PAD 0024 ICeWall.tcl:167           Cannot find bondpad type in library
+PAD 0025 ICeWall.tcl:240           No instance found for $padcell
+PAD 0026 ICeWall.tcl:178           Cannot find bondpad type in library
+PAD 0027 ICeWall.tcl:2592          Illegal orientation $orientation specified
+PAD 0028 ICeWall.tcl:2613          Illegal orientation $orientation specified
+PAD 0030 ICeWall.tcl:3386          Unrecognised arguments to init_footprint $arglist
+PAD 0031 ICeWall.tcl:346           No die_area specified in the footprint specification
+PAD 0032 ICeWall.tcl:624           Cannot find net $signal_name for $padcell in the design
+PAD 0033 ICeWall.tcl:882           No value defined for pad_pin_name in the library or cell data for $type
+PAD 0034 ICeWall.tcl:2255          No bump pitch table defined in the library
+PAD 0035 ICeWall.tcl:2345          No bump_pitch defined in library data
+PAD 0036 ICeWall.tcl:2364          No width defined for selected bump cell $cell_name
+PAD 0037 ICeWall.tcl:2367          No bump_width defined in library data
+PAD 0038 ICeWall.tcl:2379          No bump_pin_name attribute found in the library
+PAD 0039 ICeWall.tcl:2392          No rdl_width defined in library data
+PAD 0040 ICeWall.tcl:2406          No rdl_spacing defined in library data
+PAD 0041 ICeWall.tcl:359           A value for core_area must specified in the footprint specification, or in the environment variable CORE_AREA
+PAD 0042 ICeWall.tcl:1721          Cannot find any pads on $side side
+PAD 0043 ICeWall.tcl:1724          Pads must be defined on all sides of the die for successful extraction
+PAD 0046 ICeWall.tcl:1906          No power nets found in design
+PAD 0047 ICeWall.tcl:1911          No ground nets found in design
+PAD 0048 ICeWall.tcl:2205          No padcell instance found for $padcell
+PAD 0049 ICeWall.tcl:790           No cells defined in the library description
+PAD 0050 ICeWall.tcl:3271          Multiple nets found on $signal in pad ring
+PAD 0051 ICeWall.tcl:2138          Creating pad ring net: $assigned_name
+PAD 0052 ICeWall.tcl:2154          Creating pad ring net: _UNASSIGNED_$idx
+PAD 0053 ICeWall.tcl:3283          Creating pad ring net: $net_name
+PAD 0054 ICeWall.tcl:46            Parameter centre "$centre" missing a value for x
+PAD 0055 ICeWall.tcl:49            Parameter centre "$centre" missing a value for y
+PAD 0056 ICeWall.tcl:92            Parameter centre "$centre" missing a value for x
+PAD 0057 ICeWall.tcl:95            Parameter centre "$centre" missing a value for y
+PAD 0058 ICeWall.tcl:141           Footprint has no padcell attribute
+PAD 0059 ICeWall.tcl:145           No side attribute spcified for padcell $padcell
+PAD 0060 ICeWall.tcl:259           Cannot determine location of padcell $padcell
+PAD 0061 ICeWall.tcl:389           Footprint attribute die_area has not been defined
+PAD 0062 ICeWall.tcl:399           Footprint attribute die_area has not been defined
+PAD 0063 ICeWall.tcl:521           Padcell $padcell_name not specified
+PAD 0064 ICeWall.tcl:527           No type attribute specified for padcell $padcell_name
+PAD 0065 ICeWall.tcl:569           No type attribute specified for padcell $padcell
+PAD 0066 ICeWall.tcl:669           Library data has no type entry $type
+PAD 0067 ICeWall.tcl:750           No type attribute specified for cell $padcell
+PAD 0068 ICeWall.tcl:815           No cell attribute specified for cell $padcell
+PAD 0069 ICeWall.tcl:817           No orient attribute specified for cell $padcell
+PAD 0071 ICeWall.tcl:859           No cell $cell_name found
+PAD 0072 ICeWall.tcl:1031          No bump attribute for padcell $padcell
+PAD 0073 ICeWall.tcl:1035          No row attribute specified for bump associated with padcell $padcell
+PAD 0074 ICeWall.tcl:1038          No col attribute specified for bump associated with padcell $padcell
+PAD 0075 ICeWall.tcl:1075          No bump attribute for padcell $padcell
+PAD 0076 ICeWall.tcl:1078          No row attribute specified for bump associated with padcell $padcell
+PAD 0077 ICeWall.tcl:1081          No col attribute specified for bump associated with padcell $padcell
+PAD 0078 ICeWall.tcl:2170          Layer [get_footprint_pad_pin_layer] not defined in tehcnology
+PAD 0079 ICeWall.tcl:2445          Fottprint does not have the pads_per_pitch attribute specified
+PAD 0080 ICeWall.tcl:3029          Attribute $corner not specified in pad_ring ($pad_ring)
+PAD 0081 ICeWall.tcl:3039          Attribute $corner not specified in pad_ring ($pad_ring)
+PAD 0082 ICeWall.tcl:3173          Type $type not specified in the set of library types
+PAD 0083 ICeWall.tcl:3177          Cell $cell_ref of Type $type is not specified in the list of cells in the library
+PAD 0084 ICeWall.tcl:3327          Type $type not specified in the set of library types
+PAD 0085 ICeWall.tcl:3331          Cell $cell_ref of Type $type is not specified in the list of cells in the library
+PAD 0086 ICeWall.tcl:3464          Type $type not specified in the set of library types
+PAD 0087 ICeWall.tcl:3468          Cell $cell_ref of Type $type is not specified in the list of cells in the library
+PAD 0088 ICeWall.tcl:3107          Placement of cell $cell_name does not have a name attribute
+PAD 0089 ICeWall.tcl:3110          Placement of cell $cell_name does not have a type attribute
+PAD 0090 ICeWall.tcl:3113          Placement of cell $cell_name does not have an orient attribute
+PAD 0091 ICeWall.tcl:3804          No signal $signal_name defined for padcell $padcell
+PAD 0092 ICeWall.tcl:3802          No signal $signal_name or $try_signal defined for padcell $padcell
+PAD 0093 ICeWall.tcl:3818          Signal "$signal_name" not found in design 
+PAD 0094 ICeWall.tcl:3834          Value for -edge_name ($edge_name) not permitted, choose one of bottom, right, top or left
+PAD 0095 ICeWall.tcl:3844          Value for -type ($type) does not match any library types ([dict keys [dict get $library types]])
+PAD 0096 ICeWall.tcl:792           No cell $cell_type defined in library ([dict keys [dict get $library cells]])
+PAD 0097 ICeWall.tcl:794           No entry found in library definition for cell $cell_type on $position side
+PAD 0098 ICeWall.tcl:3847          No library types defined
+PAD 0099 ICeWall.tcl:3888          Invalid orientation $orient, must be one of "$valid"
+PAD 0100 ICeWall.tcl:3895          Incorrect number of arguments for location, expected an even number, got [llength $location] ($location)
+PAD 0101 ICeWall.tcl:3898          Only one of centre or origin may be specified for -location ($location)
+PAD 0102 ICeWall.tcl:3903          Incorrect value specified for -location centre ([dict get $location centre]), $msg
+PAD 0103 ICeWall.tcl:3908          Incorrect value specified for -location origin ([dict get $location origin]), $msg
+PAD 0104 ICeWall.tcl:3911          Require origin or centre not specified for -location ($location)
+PAD 0105 ICeWall.tcl:3926          Specification of bondpads is only allowed for Wirebond padring layouts
+PAD 0106 ICeWall.tcl:3937          Specification of bumps is only allowed for Flipchip padring layouts
+PAD 0107 ICeWall.tcl:3942          Bump value specified incorrectly, $msg
+PAD 0109 ICeWall.tcl:4060          In correct number of arguments - expected an even number, received [llength $args]
+PAD 0110 ICeWall.tcl:4078          Must specify -type option if -name is not spedified
+PAD 0111 ICeWall.tcl:4098          Unrecognized argument $arg, should be one of -name, -signal, -edge, -type, -cell, -location, -bump, -bondpad, -inst_name
+PAD 0112 ICeWall.tcl:4106          Padcell $padcell_duplicate already defined to use [dict get $padcell signal_name]
+PAD 0113 ICeWall.tcl:4344          Type specified must be Flipchip or Wirebond
+PAD 0114 ICeWall.tcl:279           No origin information specified for padcell $padcell $type $inst
+PAD 0115 ICeWall.tcl:300           No origin information specified for padcell $padcell
+PAD 0116 ICeWall.tcl:459           Side for padcell $padcell cannot be determined
+PAD 0117 ICeWall.tcl:475           No orient entry for cell reference $cell_ref matching orientation $orient
+PAD 0118 ICeWall.tcl:477           No orient attribute defined for cell reference $cell_ref ([dict get $library cells $cell_ref])
+PAD 0119 ICeWall.tcl:480           No cell reference $cell_ref found in library data
+PAD 0120 ICeWall.tcl:823           Padcell $padcell does not have any location information to derive orientation
+PAD 0121 ICeWall.tcl:826           Padcell $padcell does not define orientation for $element
+PAD 0122 ICeWall.tcl:3994          Cannot find an instance with name "$inst_name"
+PAD 0123 ICeWall.tcl:4125          Attribute name not defined for padcell
+PAD 0124 ICeWall.tcl:4155          Cell type $type does not exist in the set of library types
+PAD 0125 ICeWall.tcl:4160          No type specified for padcell $padcell
+PAD 0126 ICeWall.tcl:4167          Only one of centre or origin should be used to specify the locations of padcell $padcell
+PAD 0127 ICeWall.tcl:4186          Cannot determine side for padcell $padcell, need to sepecify location of the padcell or the required edge for the padcell
+PAD 0128 ICeWall.tcl:4193          No orientation for $cell_ref specified for side $side_name
+PAD 0129 ICeWall.tcl:4210          Cannot determine cell name for $padcell_name from library element $cell_ref
+PAD 0130 ICeWall.tcl:4216          Cell $cell_name not loaded into design
+PAD 0131 ICeWall.tcl:4229          Orientation of padcell $padcell_name is $orient, which is different from the orientation expected for padcells on side $side_name ($side_from_orient)
+PAD 0132 ICeWall.tcl:4235          No orientation information available for orientation of $cell_ref on side $side_name
+PAD 0133 ICeWall.tcl:4248          Bondpad cell $bondpad_cell_ref not found in library definition
+PAD 0134 ICeWall.tcl:4258          Unexpected value for orient attribute in library definition for $bondpad_cell_ref
+PAD 0135 ICeWall.tcl:4262          Expected orientation ($expected_orient) of bondpad for padcell $padcell_name overridden with value [dict exists $padcell bondpad orient]
+PAD 0136 ICeWall.tcl:4273          Unexpected value for orient attribute in library definition for $bondpad_cell_ref
+PAD 0137 ICeWall.tcl:4277          No orientation information available for orientation of $cell_ref on side $side_name
+PAD 0138 ICeWall.tcl:4034          No cells in the library definitions
+PAD 0139 ICeWall.tcl:4038          Cell $cell_name not found in the set of available cell definitions ([dict keys [dict get $library cells]])
+PAD 0140 ICeWall.tcl:4149          Type [dict get $footprint padcell $padcell type] (cell ref - $expected_cell_name) does not match specified cell_name ($cell_name) for padcell $padcell)
+PAD 0141 ICeWall.tcl:1648          Signal name for padcell $padcell has not been set

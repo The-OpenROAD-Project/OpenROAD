@@ -34,7 +34,9 @@ Trigger errors
 [ERROR PAD-0102] Incorrect value specified for -location centre (X 0 y 0), no value specified for x
 [ERROR PAD-0102] Incorrect value specified for -location centre (x  here y there), x co-ordinate (here), not recognised as a nummber
 [ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 y there), y co-ordinate (there), not recognised as a nummber
-[ERROR PAD-0112] Padcell sig_22 already defined to use p_ddr_dm_1_o
+[ERROR PAD-0139] Cell SIG not found in the set of available cell definitions (PAD PADCELL_SIG PADCELL_VDD PADCELL_VSS PADCELL_VDDIO PADCELL_VSSIO PADCELL_PWRDET PADCELL_CBRK PADCELL_FBRK PAD_FILL5 PAD_FILL1 PAD_CORNER DUMMY_BUMP_small DUMMY_BUMP_medium DUMMY_BUMP_large)
+[ERROR PAD-0130] Cell PADCELL_VDD not loaded into design
+[ERROR PAD-0130] Cell PADCELL_SIG not loaded into design
 No more errors expected
 [INFO PAD-0053] Creating pad ring net: RETN_10
 [INFO PAD-0053] Creating pad ring net: RETN_11

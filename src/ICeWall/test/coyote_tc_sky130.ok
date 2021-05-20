@@ -74,11 +74,6 @@
 Loading library IO cell meta-data
 Loaded library IO cell data
 [INFO IFP-0001] Added 1266 rows of 10417 sites.
-[WARNING PAD-0011] Expected instance u_en_i for padcell sig2 not found
-[WARNING PAD-0011] Expected instance u_TDI for padcell sig155 not found
-[WARNING PAD-0011] Expected instance u_TCK for padcell sig157 not found
-[WARNING PAD-0011] Expected instance u_TRST for padcell sig158 not found
-[WARNING PAD-0011] Expected instance u_TMS for padcell sig159 not found
 [INFO PAD-0053] Creating pad ring net: VSSIO
 [INFO PAD-0053] Creating pad ring net: VSSA
 [INFO PAD-0053] Creating pad ring net: VDDIO_Q
@@ -93,13 +88,4 @@ Loaded library IO cell data
 [INFO PAD-0053] Creating pad ring net: VDDA
 [INFO PAD-0053] Creating pad ring net: VCCHIB
 [INFO PAD-0053] Creating pad ring net: VSWITCH
-[WARNING PAD-0048] No padcell instance found for sig2
-[WARNING PAD-0048] No padcell instance found for sig155
-[WARNING PAD-0048] No padcell instance found for sig157
-[WARNING PAD-0048] No padcell instance found for sig158
-[WARNING PAD-0048] No padcell instance found for sig159
-[WARNING PAD-0048] No padcell instance found for sig160
-[WARNING PAD-0048] No padcell instance found for sig161
-[WARNING PAD-0048] No padcell instance found for sig162
-[WARNING PAD-0048] No padcell instance found for sig163
 No differences found.

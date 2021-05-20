@@ -1,3 +1,4 @@
+source ../src/ICeWall.tcl
 source "helpers.tcl"
 
 read_lef NangateOpenCellLibrary.mod.lef
@@ -5,7 +6,7 @@ read_lef dummy_pads.lef
 
 read_liberty dummy_pads.lib
 
-read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.v
+read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.v
 
 link_design soc_bsg_black_parrot
 

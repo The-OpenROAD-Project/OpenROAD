@@ -67,7 +67,9 @@ catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {ce
 catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {X 0 y 0}}}
 catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  here y there}}}
 catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y there}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
+catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -cell SIG -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
+catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -cell PADCELL_VDD -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
+catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -cell PADCELL_SIG -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
 
 # detect duplicates
 catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
@@ -143,7 +145,7 @@ ICeWall add_pad -edge bottom -inst_name u_vss_7   -signal VSS                  -
 ICeWall add_pad -edge bottom -inst_name u_vdd_7   -signal VDD                  -type vdd   -location {centre {x 2567.000 y  105.000}} -bondpad {centre {x 2567.000 y  149.893}}
 ICeWall add_pad -edge bottom -inst_name u_vzz_8   -signal DVSS_0               -type vssio -location {centre {x 2637.000 y  105.000}} -bondpad {centre {x 2637.000 y  149.893}}
 ICeWall add_pad -edge bottom -inst_name u_v18_8   -signal DVDD_0               -type vddio -location {centre {x 2707.000 y  105.000}} -bondpad {centre {x 2707.000 y  149.893}}
-ICeWall add_pad -edge bottom -inst_name u_cbrk0                -type cbk   -location {centre {x  239.500 y  105.000}}
+catch {ICeWall add_pad -edge bottom -inst_name u_cbrk0                -type cbk   -location {centre {x  239.500 y  105.000}}} msg
 ICeWall add_pad -edge bottom -inst_name u_cbrk1                -type cbk   -location {centre {x  869.500 y  105.000}}
 ICeWall add_pad -edge bottom -inst_name u_cbrk2                -type cbk   -location {centre {x 1499.500 y  105.000}}
 ICeWall add_pad -edge bottom -inst_name u_cbrk3                -type cbk   -location {centre {x 2129.500 y  105.000}}

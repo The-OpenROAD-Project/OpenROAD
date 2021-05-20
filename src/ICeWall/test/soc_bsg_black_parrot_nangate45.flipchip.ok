@@ -49,8 +49,8 @@
 [INFO PAD-0053] Creating pad ring net: RETN_9
 [INFO PAD-0051] Creating pad ring net: VSS
 [INFO PAD-0051] Creating pad ring net: VDD
-[INFO PAD-0052] Creating pad ring net: _UNASSIGNED_0
-[INFO PAD-0052] Creating pad ring net: _UNASSIGNED_1
-[INFO PAD-0052] Creating pad ring net: _UNASSIGNED_2
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_1 for sig136 to associate with bondpad bump_15_1_UNASSIGNED_1
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_0 for sig135 to associate with bondpad bump_15_2_UNASSIGNED_0
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_2 for sig137 to associate with bondpad bump_16_1_UNASSIGNED_2
 [INFO PDN-0015] Writing to database
 No differences found.
