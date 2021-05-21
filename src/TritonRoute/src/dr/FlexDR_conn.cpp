@@ -1237,12 +1237,8 @@ void FlexDR::checkConnectivity(int iter)
 
       int nNetRouteObjs = (int) netDRObjs.size();
       int nNetObjs = (int) netDRObjs.size() + (int) netPins.size();
-      status[i] = checkConnectivity_astar(net,
-                                          adjVisited,
-                                          adjPrevIdx,
-                                          nodeMap,
-                                          nNetRouteObjs,
-                                          nNetObjs);
+      status[i] = checkConnectivity_astar(
+          net, adjVisited, adjPrevIdx, nodeMap, nNetRouteObjs, nNetObjs);
     }
 
     // sequential

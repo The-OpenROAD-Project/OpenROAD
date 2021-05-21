@@ -26,13 +26,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexDR_graphics.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
-#include "FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
 
 namespace fr {

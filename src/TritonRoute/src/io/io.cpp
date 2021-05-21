@@ -357,12 +357,18 @@ void io::Parser::setVias(odb::dbBlock* block)
   }
 }
 
-void io::Parser::setNDRs(odb::dbDatabase* db)
-{
-  frNonDefaultRule* fnd;
-  unique_ptr<frNonDefaultRule> ptnd;
-  int z;
-  for (auto ndr : db->getTech()->getNonDefaultRules()) {
+void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr){
+    if (design->tech_->getNondefaultRule(ndr->getName())) {
+      logger->warn(DRT,
+                   0,
+                   "Skipping NDR { } because another rule with the same name "
+                   "already exists\n",
+                   ndr->getName());
+      return;
+    }
+    frNonDefaultRule* fnd;
+    unique_ptr<frNonDefaultRule> ptnd;
+    int z;
     ptnd = make_unique<frNonDefaultRule>();
     fnd = ptnd.get();
     design->tech_->addNDR(std::move(ptnd));
@@ -396,6 +402,14 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
       }
       fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
     }
+}
+void io::Parser::setNDRs(odb::dbDatabase* db)
+{
+  for (auto ndr : db->getTech()->getNonDefaultRules()) {
+      createNDR(ndr);
+  }
+  for (auto ndr : db->getChip()->getBlock()->getNonDefaultRules()) {
+      createNDR(ndr);
   }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
