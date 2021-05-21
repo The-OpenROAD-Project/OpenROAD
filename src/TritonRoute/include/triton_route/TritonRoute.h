@@ -72,6 +72,21 @@ class TritonRoute
   void reportConstraints();
 
   void readParams(const std::string& fileName);
+  void setParams(const std::string& guide_file,
+                 const std::string& output_guide_file,
+                 const std::string& output_maze_file,
+                 const std::string& output_DRC_file,
+                 const std::string& output_CMap_file,
+                 const std::string& dbProcessNode,
+                 int drouteEndIterNum,
+                 int drouteViaInPinBottomLayerNum,
+                 int drouteViaInPinTopLayerNum,
+                 int or_seed,
+                 double or_k,
+                 int bottomRoutingLayer,
+                 int topRoutingLayer,
+                 int initRouteShapeCost,
+                 int verbose);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;
