@@ -38,6 +38,7 @@
 #include "gr/FlexGR.h"
 #include "gui/gui.h"
 #include "io/io.h"
+#include "ord/OpenRoad.hh"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
