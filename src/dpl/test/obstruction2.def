@@ -1,0 +1,740 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd_mem1 ;
+UNITS DISTANCE MICRONS 2000 ;
+PROPERTYDEFINITIONS
+COMPONENTPIN designRuleWidth REAL ;
+DESIGN FE_CORE_BOX_LL_X REAL 0 ;
+DESIGN FE_CORE_BOX_UR_X REAL 44.08 ;
+DESIGN FE_CORE_BOX_LL_Y REAL 0 ;
+DESIGN FE_CORE_BOX_UR_Y REAL 42 ;
+END PROPERTYDEFINITIONS
+DIEAREA ( 0 0 ) ( 88160 84000 ) ;
+ROW CORE_ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 0 0 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 0 2800 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_2 FreePDK45_38x28_10R_NP_162NW_34O 0 5600 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_3 FreePDK45_38x28_10R_NP_162NW_34O 0 8400 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_4 FreePDK45_38x28_10R_NP_162NW_34O 0 11200 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_5 FreePDK45_38x28_10R_NP_162NW_34O 0 14000 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_6 FreePDK45_38x28_10R_NP_162NW_34O 0 16800 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_7 FreePDK45_38x28_10R_NP_162NW_34O 0 19600 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_8 FreePDK45_38x28_10R_NP_162NW_34O 0 22400 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_9 FreePDK45_38x28_10R_NP_162NW_34O 0 25200 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_10 FreePDK45_38x28_10R_NP_162NW_34O 0 28000 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_11 FreePDK45_38x28_10R_NP_162NW_34O 0 30800 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_12 FreePDK45_38x28_10R_NP_162NW_34O 0 33600 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_13 FreePDK45_38x28_10R_NP_162NW_34O 0 36400 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_14 FreePDK45_38x28_10R_NP_162NW_34O 0 39200 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_15 FreePDK45_38x28_10R_NP_162NW_34O 0 42000 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_16 FreePDK45_38x28_10R_NP_162NW_34O 0 44800 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_17 FreePDK45_38x28_10R_NP_162NW_34O 0 47600 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_18 FreePDK45_38x28_10R_NP_162NW_34O 0 50400 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_19 FreePDK45_38x28_10R_NP_162NW_34O 0 53200 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_20 FreePDK45_38x28_10R_NP_162NW_34O 0 56000 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_21 FreePDK45_38x28_10R_NP_162NW_34O 0 58800 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_22 FreePDK45_38x28_10R_NP_162NW_34O 0 61600 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_23 FreePDK45_38x28_10R_NP_162NW_34O 0 64400 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_24 FreePDK45_38x28_10R_NP_162NW_34O 0 67200 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_25 FreePDK45_38x28_10R_NP_162NW_34O 0 70000 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_26 FreePDK45_38x28_10R_NP_162NW_34O 0 72800 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_27 FreePDK45_38x28_10R_NP_162NW_34O 0 75600 N DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_28 FreePDK45_38x28_10R_NP_162NW_34O 0 78400 FS DO 232 BY 1 STEP 380 0 ;
+ROW CORE_ROW_29 FreePDK45_38x28_10R_NP_162NW_34O 0 81200 N DO 232 BY 1 STEP 380 0 ;
+TRACKS X 3550 DO 26 STEP 3360 LAYER metal10 ;
+TRACKS Y 3340 DO 26 STEP 3200 LAYER metal10 ;
+TRACKS X 1870 DO 52 STEP 1680 LAYER metal9 ;
+TRACKS Y 3340 DO 26 STEP 3200 LAYER metal9 ;
+TRACKS X 1870 DO 52 STEP 1680 LAYER metal8 ;
+TRACKS Y 1820 DO 49 STEP 1680 LAYER metal8 ;
+TRACKS X 750 DO 157 STEP 560 LAYER metal7 ;
+TRACKS Y 1820 DO 49 STEP 1680 LAYER metal7 ;
+TRACKS X 750 DO 157 STEP 560 LAYER metal6 ;
+TRACKS Y 700 DO 149 STEP 560 LAYER metal6 ;
+TRACKS X 750 DO 157 STEP 560 LAYER metal5 ;
+TRACKS Y 700 DO 149 STEP 560 LAYER metal5 ;
+TRACKS X 750 DO 157 STEP 560 LAYER metal4 ;
+TRACKS Y 140 DO 300 STEP 280 LAYER metal4 ;
+TRACKS X 190 DO 232 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 300 STEP 280 LAYER metal3 ;
+TRACKS X 190 DO 232 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 300 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 232 STEP 380 LAYER metal1 ;
+TRACKS Y 140 DO 300 STEP 280 LAYER metal1 ;
+GCELLGRID X 87590 DO 2 STEP 570 ;
+GCELLGRID X 190 DO 24 STEP 3800 ;
+GCELLGRID X 0 DO 2 STEP 190 ;
+GCELLGRID Y 81340 DO 2 STEP 2660 ;
+GCELLGRID Y 140 DO 30 STEP 2800 ;
+GCELLGRID Y 0 DO 2 STEP 140 ;
+COMPONENTS 32 ;
+    - _439_ AND3_X1 + PLACED ( 7980 75600 ) FN ;
+    - _449_ NOR2_X1 + PLACED ( 14820 78400 ) FS ;
+    - _461_ NAND2_X1 + PLACED ( 14060 70000 ) N ;
+    - _472_ AND2_X4 + PLACED ( 79800 36400 ) N ;
+    - _482_ NOR2_X1 + PLACED ( 34200 56000 ) FS ;
+    - _492_ NOR2_X1 + PLACED ( 83600 44800 ) FS ;
+    - _502_ XNOR2_X2 + PLACED ( 4940 14000 ) N ;
+    - _512_ XNOR2_X2 + PLACED ( 23560 16800 ) FS ;
+    - _522_ INV_X1 + PLACED ( 9500 14000 ) N ;
+    - _532_ INV_X1 + PLACED ( 23180 8400 ) FN ;
+    - _542_ NOR3_X4 + PLACED ( 24320 50400 ) FS ;
+    - _556_ NAND2_X2 + PLACED ( 30400 53200 ) N ;
+    - _566_ MUX2_X1 + PLACED ( 20520 78400 ) FS ;
+    - _576_ OAI21_X1 + PLACED ( 71440 67200 ) FS ;
+    - _586_ AND2_X1 + PLACED ( 81320 78400 ) S ;
+    - _596_ AOI21_X1 + PLACED ( 83600 53200 ) N ;
+    - _606_ XNOR2_X1 + PLACED ( 78280 33600 ) S ;
+    - _616_ NAND2_X2 + PLACED ( 12160 58800 ) FN ;
+    - _626_ OAI211_X1 + PLACED ( 13680 50400 ) S ;
+    - _636_ MUX2_X1 + PLACED ( 16720 30800 ) N ;
+    - _646_ OAI21_X1 + PLACED ( 9880 16800 ) S ;
+    - _656_ MUX2_X1 + PLACED ( 42940 16800 ) FS ;
+    - _666_ INV_X1 + PLACED ( 28500 22400 ) FS ;
+    - _676_ NOR2_X2 + PLACED ( 28120 25200 ) N ;
+    - _687_ MUX2_X1 + PLACED ( 28500 64400 ) N ;
+    - _697_ MUX2_X1 + PLACED ( 77520 19600 ) N ;
+    - _707_ MUX2_X1 + PLACED ( 9880 8400 ) N ;
+    - _858_ DFF_X1 + PLACED ( 3420 67200 ) FS ;
+    - _868_ DFF_X1 + PLACED ( 76000 44800 ) FS ;
+    - _878_ DFF_X1 + PLACED ( 33060 61600 ) S ;
+    - _888_ DFF_X1 + PLACED ( 11020 14000 ) N ;
+    - mem0 fakeram45_64x7 + FIXED ( 62720 11760 ) N ;
+END COMPONENTS
+PINS 61 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 37810 83930 ) N ;
+    - mem_out[0] + NET mem_out[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 46930 70 ) N ;
+    - mem_out[1] + NET mem_out[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + PLACED ( 47230 800 ) N ;
+    - mem_out[2] + NET mem_out[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal8 ( -400 -400 ) ( 400 400 )
+        + PLACED ( 47230 400 ) N ;
+    - mem_out[3] + NET mem_out[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 48450 70 ) N ;
+    - mem_out[4] + NET mem_out[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 47790 140 ) N ;
+    - mem_out[5] + NET mem_out[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 47790 140 ) N ;
+    - mem_out[6] + NET mem_out[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 47690 70 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 46620 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 26180 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 11590 70 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 35530 70 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 30210 70 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 38270 140 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 37380 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 35910 83930 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 54460 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 22610 83930 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 46550 83930 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 30210 83930 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 72390 83930 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 63420 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 35420 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 43260 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 54180 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 48580 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 41020 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 24220 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 42750 140 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 38190 70 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 24510 83930 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 43130 70 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 41230 70 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 39330 83930 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 79990 83930 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 60060 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 20860 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 52220 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63420 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 42980 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 48860 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 71820 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 74060 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 49980 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 35980 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 18060 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 26790 70 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 30970 70 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 34010 70 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 34020 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58380 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 27930 83930 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 46110 83860 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 75810 83930 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 88020 69580 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 29260 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 88020 35980 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60340 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal7 ( -400 -400 ) ( 400 400 )
+        + PLACED ( 400 53900 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 75460 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 76300 ) N ;
+END PINS
+SPECIALNETS 2 ;
+    - vdd + USE POWER ;
+    - vss + USE GROUND ;
+END SPECIALNETS
+NETS 384 ;
+    - _003_ + USE SIGNAL ;
+    - _004_ + USE SIGNAL ;
+    - _005_ ( _858_ QN ) ( _439_ A3 ) + USE SIGNAL ;
+    - _006_ ( mem0 we_in ) + USE SIGNAL ;
+    - _007_ ( mem0 ce_in ) ( _878_ QN ) + USE SIGNAL ;
+    - _008_ ( mem0 addr_in[5] ) + USE SIGNAL ;
+    - _009_ ( mem0 addr_in[4] ) + USE SIGNAL ;
+    - _010_ ( mem0 addr_in[3] ) + USE SIGNAL ;
+    - _011_ ( mem0 addr_in[2] ) + USE SIGNAL ;
+    - _012_ ( mem0 addr_in[1] ) + USE SIGNAL ;
+    - _013_ ( mem0 addr_in[0] ) + USE SIGNAL ;
+    - _014_ ( mem0 wd_in[6] ) + USE SIGNAL ;
+    - _015_ ( mem0 wd_in[5] ) ( _626_ C2 ) + USE SIGNAL ;
+    - _016_ ( mem0 wd_in[4] ) + USE SIGNAL ;
+    - _017_ ( mem0 wd_in[3] ) ( _888_ QN ) + USE SIGNAL ;
+    - _018_ ( mem0 wd_in[2] ) + USE SIGNAL ;
+    - _019_ ( mem0 wd_in[1] ) + USE SIGNAL ;
+    - _020_ ( mem0 wd_in[0] ) + USE SIGNAL ;
+    - _021_ ( mem0 w_mask_in[6] ) + USE SIGNAL ;
+    - _054_ ( _858_ D ) + USE SIGNAL ;
+    - _055_ + USE SIGNAL ;
+    - _056_ ( _461_ ZN ) + USE SIGNAL ;
+    - _076_ ( mem0 w_mask_in[5] ) + USE SIGNAL ;
+    - _077_ ( mem0 w_mask_in[4] ) ( _636_ Z ) + USE SIGNAL ;
+    - _078_ ( mem0 w_mask_in[3] ) ( _646_ ZN ) + USE SIGNAL ;
+    - _079_ ( mem0 w_mask_in[2] ) ( _656_ Z ) + USE SIGNAL ;
+    - _080_ ( mem0 w_mask_in[1] ) + USE SIGNAL ;
+    - _081_ ( mem0 w_mask_in[0] ) + USE SIGNAL ;
+    - _082_ + USE SIGNAL ;
+    - _083_ + USE SIGNAL ;
+    - _084_ ( _566_ Z ) + USE SIGNAL ;
+    - _085_ + USE SIGNAL ;
+    - _086_ + USE SIGNAL ;
+    - _087_ + USE SIGNAL ;
+    - _088_ + USE SIGNAL ;
+    - _089_ ( _868_ D ) + USE SIGNAL ;
+    - _090_ + USE SIGNAL ;
+    - _091_ + USE SIGNAL ;
+    - _092_ + USE SIGNAL ;
+    - _093_ + USE SIGNAL ;
+    - _094_ ( _888_ D ) + USE SIGNAL ;
+    - _095_ + USE SIGNAL ;
+    - _096_ + USE SIGNAL ;
+    - _097_ + USE SIGNAL ;
+    - _098_ + USE SIGNAL ;
+    - _099_ ( _878_ D ) + USE SIGNAL ;
+    - _100_ + USE SIGNAL ;
+    - _101_ + USE SIGNAL ;
+    - _102_ + USE SIGNAL ;
+    - _103_ + USE SIGNAL ;
+    - _104_ + USE SIGNAL ;
+    - _105_ + USE SIGNAL ;
+    - _106_ + USE SIGNAL ;
+    - _107_ + USE SIGNAL ;
+    - _142_ ( _576_ B1 ) ( _439_ A1 ) + USE SIGNAL ;
+    - _143_ + USE SIGNAL ;
+    - _144_ + USE SIGNAL ;
+    - _145_ + USE SIGNAL ;
+    - _146_ + USE SIGNAL ;
+    - _147_ ( _449_ A1 ) + USE SIGNAL ;
+    - _148_ + USE SIGNAL ;
+    - _149_ + USE SIGNAL ;
+    - _150_ ( _449_ A2 ) + USE SIGNAL ;
+    - _151_ ( _449_ ZN ) + USE SIGNAL ;
+    - _152_ + USE SIGNAL ;
+    - _153_ + USE SIGNAL ;
+    - _154_ + USE SIGNAL ;
+    - _155_ + USE SIGNAL ;
+    - _156_ + USE SIGNAL ;
+    - _157_ ( _461_ A1 ) + USE SIGNAL ;
+    - _158_ ( _576_ B2 ) + USE SIGNAL ;
+    - _161_ ( _461_ A2 ) + USE SIGNAL ;
+    - _162_ + USE SIGNAL ;
+    - _163_ + USE SIGNAL ;
+    - _164_ + USE SIGNAL ;
+    - _166_ + USE SIGNAL ;
+    - _167_ + USE SIGNAL ;
+    - _168_ + USE SIGNAL ;
+    - _169_ ( _606_ B ) ( _472_ A1 ) + USE SIGNAL ;
+    - _170_ ( _472_ A2 ) + USE SIGNAL ;
+    - _171_ ( _472_ ZN ) + USE SIGNAL ;
+    - _172_ + USE SIGNAL ;
+    - _173_ + USE SIGNAL ;
+    - _174_ + USE SIGNAL ;
+    - _175_ + USE SIGNAL ;
+    - _176_ ( _586_ A2 ) + USE SIGNAL ;
+    - _177_ ( _596_ B2 ) + USE SIGNAL ;
+    - _178_ + USE SIGNAL ;
+    - _179_ ( _482_ A1 ) + USE SIGNAL ;
+    - _180_ + USE SIGNAL ;
+    - _181_ ( _482_ ZN ) + USE SIGNAL ;
+    - _182_ ( _556_ A1 ) + USE SIGNAL ;
+    - _183_ + USE SIGNAL ;
+    - _184_ + USE SIGNAL ;
+    - _185_ + USE SIGNAL ;
+    - _186_ + USE SIGNAL ;
+    - _187_ + USE SIGNAL ;
+    - _188_ + USE SIGNAL ;
+    - _189_ + USE SIGNAL ;
+    - _190_ ( _492_ A1 ) + USE SIGNAL ;
+    - _191_ ( _492_ ZN ) + USE SIGNAL ;
+    - _192_ + USE SIGNAL ;
+    - _193_ + USE SIGNAL ;
+    - _194_ + USE SIGNAL ;
+    - _195_ + USE SIGNAL ;
+    - _196_ + USE SIGNAL ;
+    - _197_ + USE SIGNAL ;
+    - _198_ + USE SIGNAL ;
+    - _199_ + USE SIGNAL ;
+    - _200_ + USE SIGNAL ;
+    - _201_ ( _502_ ZN ) + USE SIGNAL ;
+    - _202_ + USE SIGNAL ;
+    - _203_ + USE SIGNAL ;
+    - _204_ + USE SIGNAL ;
+    - _205_ + USE SIGNAL ;
+    - _206_ ( _666_ A ) + USE SIGNAL ;
+    - _207_ + USE SIGNAL ;
+    - _208_ + USE SIGNAL ;
+    - _209_ + USE SIGNAL ;
+    - _210_ + USE SIGNAL ;
+    - _211_ ( _512_ ZN ) + USE SIGNAL ;
+    - _212_ + USE SIGNAL ;
+    - _213_ + USE SIGNAL ;
+    - _214_ + USE SIGNAL ;
+    - _215_ + USE SIGNAL ;
+    - _216_ + USE SIGNAL ;
+    - _217_ + USE SIGNAL ;
+    - _218_ + USE SIGNAL ;
+    - _219_ + USE SIGNAL ;
+    - _220_ + USE SIGNAL ;
+    - _221_ ( _646_ B1 ) ( _522_ ZN ) + USE SIGNAL ;
+    - _222_ + USE SIGNAL ;
+    - _223_ + USE SIGNAL ;
+    - _224_ + USE SIGNAL ;
+    - _225_ + USE SIGNAL ;
+    - _226_ + USE SIGNAL ;
+    - _227_ + USE SIGNAL ;
+    - _228_ + USE SIGNAL ;
+    - _229_ + USE SIGNAL ;
+    - _230_ + USE SIGNAL ;
+    - _231_ ( _532_ ZN ) + USE SIGNAL ;
+    - _232_ + USE SIGNAL ;
+    - _233_ + USE SIGNAL ;
+    - _234_ + USE SIGNAL ;
+    - _235_ + USE SIGNAL ;
+    - _236_ + USE SIGNAL ;
+    - _237_ + USE SIGNAL ;
+    - _238_ ( _542_ A1 ) + USE SIGNAL ;
+    - _239_ + USE SIGNAL ;
+    - _240_ ( _542_ A3 ) + USE SIGNAL ;
+    - _241_ ( _542_ ZN ) + USE SIGNAL ;
+    - _242_ + USE SIGNAL ;
+    - _243_ + USE SIGNAL ;
+    - _244_ ( _626_ C1 ) + USE SIGNAL ;
+    - _246_ + USE SIGNAL ;
+    - _247_ ( _656_ S ) ( _646_ B2 ) ( _636_ S ) ( _566_ S ) + USE SIGNAL ;
+    - _250_ + USE SIGNAL ;
+    - _251_ + USE SIGNAL ;
+    - _252_ ( _616_ A1 ) + USE SIGNAL ;
+    - _254_ ( _556_ ZN ) + USE SIGNAL ;
+    - _255_ + USE SIGNAL ;
+    - _256_ + USE SIGNAL ;
+    - _257_ + USE SIGNAL ;
+    - _258_ + USE SIGNAL ;
+    - _259_ + USE SIGNAL ;
+    - _260_ ( _566_ B ) + USE SIGNAL ;
+    - _261_ + USE SIGNAL ;
+    - _262_ + USE SIGNAL ;
+    - _263_ + USE SIGNAL ;
+    - _264_ + USE SIGNAL ;
+    - _265_ + USE SIGNAL ;
+    - _266_ + USE SIGNAL ;
+    - _267_ + USE SIGNAL ;
+    - _268_ ( _576_ ZN ) + USE SIGNAL ;
+    - _269_ + USE SIGNAL ;
+    - _270_ + USE SIGNAL ;
+    - _271_ + USE SIGNAL ;
+    - _272_ ( _596_ B1 ) ( _586_ A1 ) + USE SIGNAL ;
+    - _273_ + USE SIGNAL ;
+    - _274_ + USE SIGNAL ;
+    - _275_ + USE SIGNAL ;
+    - _276_ ( _586_ ZN ) + USE SIGNAL ;
+    - _277_ + USE SIGNAL ;
+    - _278_ + USE SIGNAL ;
+    - _279_ + USE SIGNAL ;
+    - _280_ + USE SIGNAL ;
+    - _281_ + USE SIGNAL ;
+    - _282_ + USE SIGNAL ;
+    - _283_ ( _596_ A ) + USE SIGNAL ;
+    - _284_ ( _596_ ZN ) + USE SIGNAL ;
+    - _285_ + USE SIGNAL ;
+    - _286_ + USE SIGNAL ;
+    - _287_ + USE SIGNAL ;
+    - _288_ + USE SIGNAL ;
+    - _289_ + USE SIGNAL ;
+    - _290_ + USE SIGNAL ;
+    - _291_ ( _606_ A ) + USE SIGNAL ;
+    - _292_ + USE SIGNAL ;
+    - _293_ + USE SIGNAL ;
+    - _294_ + USE SIGNAL ;
+    - _295_ + USE SIGNAL ;
+    - _296_ + USE SIGNAL ;
+    - _297_ + USE SIGNAL ;
+    - _298_ + USE SIGNAL ;
+    - _299_ ( _616_ ZN ) + USE SIGNAL ;
+    - _300_ + USE SIGNAL ;
+    - _301_ ( _626_ A ) + USE SIGNAL ;
+    - _302_ + USE SIGNAL ;
+    - _303_ + USE SIGNAL ;
+    - _304_ + USE SIGNAL ;
+    - _305_ + USE SIGNAL ;
+    - _306_ ( _626_ B ) + USE SIGNAL ;
+    - _307_ ( _626_ ZN ) + USE SIGNAL ;
+    - _308_ + USE SIGNAL ;
+    - _309_ + USE SIGNAL ;
+    - _310_ + USE SIGNAL ;
+    - _311_ + USE SIGNAL ;
+    - _312_ + USE SIGNAL ;
+    - _313_ + USE SIGNAL ;
+    - _314_ ( _636_ B ) + USE SIGNAL ;
+    - _315_ + USE SIGNAL ;
+    - _316_ + USE SIGNAL ;
+    - _317_ + USE SIGNAL ;
+    - _318_ + USE SIGNAL ;
+    - _319_ + USE SIGNAL ;
+    - _320_ + USE SIGNAL ;
+    - _321_ + USE SIGNAL ;
+    - _322_ ( _646_ A ) + USE SIGNAL ;
+    - _323_ + USE SIGNAL ;
+    - _324_ + USE SIGNAL ;
+    - _325_ + USE SIGNAL ;
+    - _326_ + USE SIGNAL ;
+    - _327_ + USE SIGNAL ;
+    - _328_ + USE SIGNAL ;
+    - _329_ + USE SIGNAL ;
+    - _330_ ( _656_ B ) + USE SIGNAL ;
+    - _331_ + USE SIGNAL ;
+    - _332_ + USE SIGNAL ;
+    - _333_ + USE SIGNAL ;
+    - _334_ + USE SIGNAL ;
+    - _335_ + USE SIGNAL ;
+    - _336_ + USE SIGNAL ;
+    - _337_ + USE SIGNAL ;
+    - _338_ ( _666_ ZN ) + USE SIGNAL ;
+    - _339_ + USE SIGNAL ;
+    - _340_ + USE SIGNAL ;
+    - _341_ ( _676_ A1 ) + USE SIGNAL ;
+    - _342_ + USE SIGNAL ;
+    - _343_ + USE SIGNAL ;
+    - _344_ + USE SIGNAL ;
+    - _345_ ( _676_ A2 ) + USE SIGNAL ;
+    - _346_ ( _676_ ZN ) + USE SIGNAL ;
+    - _347_ + USE SIGNAL ;
+    - _348_ + USE SIGNAL ;
+    - _349_ + USE SIGNAL ;
+    - _350_ + USE SIGNAL ;
+    - _351_ + USE SIGNAL ;
+    - _352_ + USE SIGNAL ;
+    - _354_ ( _687_ Z ) + USE SIGNAL ;
+    - _355_ + USE SIGNAL ;
+    - _356_ + USE SIGNAL ;
+    - _357_ + USE SIGNAL ;
+    - _358_ + USE SIGNAL ;
+    - _359_ ( _697_ Z ) + USE SIGNAL ;
+    - _360_ + USE SIGNAL ;
+    - _361_ + USE SIGNAL ;
+    - _362_ + USE SIGNAL ;
+    - _363_ + USE SIGNAL ;
+    - _364_ ( _707_ Z ) + USE SIGNAL ;
+    - _365_ + USE SIGNAL ;
+    - _366_ + USE SIGNAL ;
+    - _367_ + USE SIGNAL ;
+    - _368_ + USE SIGNAL ;
+    - _422_ + USE SIGNAL ;
+    - _423_ + USE SIGNAL ;
+    - _424_ + USE SIGNAL ;
+    - _425_ + USE SIGNAL ;
+    - _426_ + USE SIGNAL ;
+    - _427_ + USE SIGNAL ;
+    - _428_ + USE SIGNAL ;
+    - _429_ ( _868_ QN ) + USE SIGNAL ;
+    - _430_ + USE SIGNAL ;
+    - _431_ + USE SIGNAL ;
+    - _432_ + USE SIGNAL ;
+    - _433_ + USE SIGNAL ;
+    - _434_ + USE SIGNAL ;
+    - _435_ + USE SIGNAL ;
+    - _436_ + USE SIGNAL ;
+    - _437_ + USE SIGNAL ;
+    - clk ( PIN clk ) ( mem0 clk ) ( _888_ CK ) ( _878_ CK ) ( _868_ CK ) ( _858_ CK ) + USE SIGNAL ;
+    - ctrl.state.out\[1\] ( _439_ A2 ) + USE SIGNAL ;
+    - ctrl.state.out\[2\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[0\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[10\] ( _636_ A ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[11\] ( _707_ A ) ( _522_ A ) ( _502_ A ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[12\] ( _656_ A ) ( _512_ A ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[13\] ( _532_ A ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[14\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[15\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[1\] ( _687_ A ) ( _482_ A2 ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[2\] ( _566_ A ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[3\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[4\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[5\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[6\] ( _697_ A ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[7\] ( _868_ Q ) ( _492_ A2 ) + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[8\] + USE SIGNAL ;
+    - dpath.a_lt_b$in0\[9\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[0\] ( _556_ A2 ) + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[10\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[11\] ( _888_ Q ) ( _502_ B ) + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[12\] ( _512_ B ) + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[13\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[14\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[15\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[1\] ( _878_ Q ) + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[2\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[3\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[4\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[5\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[6\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[7\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[8\] + USE SIGNAL ;
+    - dpath.a_lt_b$in1\[9\] + USE SIGNAL ;
+    - mem_out[0] ( PIN mem_out[0] ) ( mem0 rd_out[0] ) + USE SIGNAL ;
+    - mem_out[1] ( PIN mem_out[1] ) ( mem0 rd_out[1] ) + USE SIGNAL ;
+    - mem_out[2] ( PIN mem_out[2] ) ( mem0 rd_out[2] ) + USE SIGNAL ;
+    - mem_out[3] ( PIN mem_out[3] ) ( mem0 rd_out[3] ) + USE SIGNAL ;
+    - mem_out[4] ( PIN mem_out[4] ) ( mem0 rd_out[4] ) + USE SIGNAL ;
+    - mem_out[5] ( PIN mem_out[5] ) ( mem0 rd_out[5] ) + USE SIGNAL ;
+    - mem_out[6] ( PIN mem_out[6] ) ( mem0 rd_out[6] ) + USE SIGNAL ;
+    - req_msg[0] ( PIN req_msg[0] ) + USE SIGNAL ;
+    - req_msg[10] ( PIN req_msg[10] ) + USE SIGNAL ;
+    - req_msg[11] ( PIN req_msg[11] ) ( _707_ B ) + USE SIGNAL ;
+    - req_msg[12] ( PIN req_msg[12] ) + USE SIGNAL ;
+    - req_msg[13] ( PIN req_msg[13] ) + USE SIGNAL ;
+    - req_msg[14] ( PIN req_msg[14] ) + USE SIGNAL ;
+    - req_msg[15] ( PIN req_msg[15] ) + USE SIGNAL ;
+    - req_msg[16] ( PIN req_msg[16] ) + USE SIGNAL ;
+    - req_msg[17] ( PIN req_msg[17] ) + USE SIGNAL ;
+    - req_msg[18] ( PIN req_msg[18] ) + USE SIGNAL ;
+    - req_msg[19] ( PIN req_msg[19] ) + USE SIGNAL ;
+    - req_msg[1] ( PIN req_msg[1] ) ( _687_ B ) + USE SIGNAL ;
+    - req_msg[20] ( PIN req_msg[20] ) ( _576_ A ) + USE SIGNAL ;
+    - req_msg[21] ( PIN req_msg[21] ) + USE SIGNAL ;
+    - req_msg[22] ( PIN req_msg[22] ) + USE SIGNAL ;
+    - req_msg[23] ( PIN req_msg[23] ) + USE SIGNAL ;
+    - req_msg[24] ( PIN req_msg[24] ) + USE SIGNAL ;
+    - req_msg[25] ( PIN req_msg[25] ) + USE SIGNAL ;
+    - req_msg[26] ( PIN req_msg[26] ) + USE SIGNAL ;
+    - req_msg[27] ( PIN req_msg[27] ) + USE SIGNAL ;
+    - req_msg[28] ( PIN req_msg[28] ) + USE SIGNAL ;
+    - req_msg[29] ( PIN req_msg[29] ) + USE SIGNAL ;
+    - req_msg[2] ( PIN req_msg[2] ) + USE SIGNAL ;
+    - req_msg[30] ( PIN req_msg[30] ) + USE SIGNAL ;
+    - req_msg[31] ( PIN req_msg[31] ) + USE SIGNAL ;
+    - req_msg[3] ( PIN req_msg[3] ) + USE SIGNAL ;
+    - req_msg[4] ( PIN req_msg[4] ) + USE SIGNAL ;
+    - req_msg[5] ( PIN req_msg[5] ) + USE SIGNAL ;
+    - req_msg[6] ( PIN req_msg[6] ) ( _697_ B ) + USE SIGNAL ;
+    - req_msg[7] ( PIN req_msg[7] ) + USE SIGNAL ;
+    - req_msg[8] ( PIN req_msg[8] ) + USE SIGNAL ;
+    - req_msg[9] ( PIN req_msg[9] ) + USE SIGNAL ;
+    - req_rdy ( PIN req_rdy ) ( _858_ Q ) ( _707_ S ) ( _697_ S ) ( _687_ S ) + USE SIGNAL ;
+    - req_val ( PIN req_val ) + USE SIGNAL ;
+    - reset ( PIN reset ) + USE SIGNAL ;
+    - resp_msg[0] ( PIN resp_msg[0] ) ( _542_ A2 ) + USE SIGNAL ;
+    - resp_msg[10] ( PIN resp_msg[10] ) + USE SIGNAL ;
+    - resp_msg[11] ( PIN resp_msg[11] ) + USE SIGNAL ;
+    - resp_msg[12] ( PIN resp_msg[12] ) + USE SIGNAL ;
+    - resp_msg[13] ( PIN resp_msg[13] ) + USE SIGNAL ;
+    - resp_msg[14] ( PIN resp_msg[14] ) + USE SIGNAL ;
+    - resp_msg[15] ( PIN resp_msg[15] ) + USE SIGNAL ;
+    - resp_msg[1] ( PIN resp_msg[1] ) + USE SIGNAL ;
+    - resp_msg[2] ( PIN resp_msg[2] ) + USE SIGNAL ;
+    - resp_msg[3] ( PIN resp_msg[3] ) + USE SIGNAL ;
+    - resp_msg[4] ( PIN resp_msg[4] ) + USE SIGNAL ;
+    - resp_msg[5] ( PIN resp_msg[5] ) + USE SIGNAL ;
+    - resp_msg[6] ( PIN resp_msg[6] ) + USE SIGNAL ;
+    - resp_msg[7] ( PIN resp_msg[7] ) ( _606_ ZN ) + USE SIGNAL ;
+    - resp_msg[8] ( PIN resp_msg[8] ) ( _616_ A2 ) + USE SIGNAL ;
+    - resp_msg[9] ( PIN resp_msg[9] ) + USE SIGNAL ;
+    - resp_rdy ( PIN resp_rdy ) + USE SIGNAL ;
+    - resp_val ( PIN resp_val ) ( _439_ ZN ) + USE SIGNAL ;
+END NETS
+END DESIGN
