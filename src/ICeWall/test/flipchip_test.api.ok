@@ -1,0 +1,15 @@
+[INFO ODB-0222] Reading LEF file: NangateOpenCellLibrary.mod.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  NangateOpenCellLibrary.mod.lef
+[INFO ODB-0222] Reading LEF file: flipchip_test.dummy_pads.lef
+[INFO ODB-0225]     Created 25 library cells
+[INFO ODB-0226] Finished LEF file:  flipchip_test.dummy_pads.lef
+[INFO IFP-0001] Added 2600 rows of 19158 sites.
+[INFO PAD-0053] Creating pad ring net: DVSS
+[INFO PAD-0053] Creating pad ring net: SNS
+[INFO PAD-0053] Creating pad ring net: RETN
+[INFO PAD-0053] Creating pad ring net: DVDD
+[INFO PDN-0015] Writing to database
+No differences found.

@@ -956,6 +956,7 @@ namespace eval ICeWall {
     }
     # debug [dict get $footprint padcell $padcell]  
     if {![dict exists $footprint padcell $padcell use_signal_name]} {
+      # debug [dict get $footprint padcell $padcell]
       utl::error "PAD" 23 "Signal name for padcell $padcell has not been set"
     }
     
@@ -3925,6 +3926,8 @@ namespace eval ICeWall {
     if {[catch {check_rowcol $bump} msg]} {
       utl::error PAD 107 "Bump value specified incorrectly, $msg"
     }
+
+    return $bump
   }
 
   proc check_inst_name {padcell} {
@@ -4139,6 +4142,22 @@ namespace eval ICeWall {
     dict set footprint pad_inst_name $format_string
   }
 
+  # ICeWall set_pad_pin_name "%s"
+  proc set_pad_pin_name {format_string} {
+    variable footprint
+
+    if {[catch {format $format_string test} msg]} {
+      utl::error PAD 160 "The pad_pin_name value must be a format string with exactly 1 string substitution %s"
+    }
+    dict set footprint pad_pin_name $format_string
+  }
+
+  proc set_rdl_cover_file_name {file_name} {
+    variable footprint
+
+    dict set footprint rdl_cover_file_name $file_name
+  }
+ 
   # ICeWall add_cell -name marker0 -type marker -inst_name u_marker_0 -location {centre {x 1200.000 y 1200.000} orient R0}
   proc add_cell {args} {
     variable footprint
@@ -4597,7 +4616,7 @@ namespace eval ICeWall {
     dict set library $attribute $args
   }
  
-  namespace export set_type set_die_area set_core_area set_offsets set_pin_layer set_pad_inst_name
+  namespace export set_type set_die_area set_core_area set_offsets set_pin_layer set_pad_inst_name set_pad_pin_name set_rdl_cover_file_name
   namespace export add_cell add_pad add_ground_nets add_power_nets 
   namespace export set_footprint set_library
 
