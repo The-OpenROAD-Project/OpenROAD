@@ -1,4 +1,3 @@
-source ../src/ICeWall.tcl
 source "helpers.tcl"
 
 read_lef ../../../test/sky130hd/sky130hd.tlef

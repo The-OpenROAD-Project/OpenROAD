@@ -1,4 +1,3 @@
-source ../src/ICeWall.tcl
 source "helpers.tcl"
 
 read_lef NangateOpenCellLibrary.mod.lef
@@ -23,53 +22,44 @@ ICeWall load_library soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strateg
 
 ICeWall set_type Wirebond
 
-ICeWall define die_area {0 0 3000.000 3000.000}
-ICeWall define core_area {180.012 180.096 2819.964 2819.712}
+ICeWall set_die_area {0 0 3000.000 3000.000}
+ICeWall set_core_area {180.012 180.096 2819.964 2819.712}
 
-ICeWall define power_nets  {VDD DVDD_0 DVDD_1}
-ICeWall define ground_nets {VSS DVSS_0 DVSS_1}
+ICeWall add_power_nets  VDD DVDD_0 DVDD_1
+ICeWall add_ground_nets VSS DVSS_0 DVSS_1
 
-ICeWall define offsets 35
-ICeWall define tracks track.info
-ICeWall define pin_layer metal10
+ICeWall set_offsets 35
+ICeWall set_pin_layer metal10
 
-ICeWall define pad_inst_name "%s"
+ICeWall set_pad_inst_name "%s"
 
-ICeWall define  place {
-    marker0 {type marker name u_marker_0   cell {centre {x 1200.000 y 1200.000} orient R0}}
-  }
+ICeWall add_cell -name marker0 -type marker -inst_name u_marker_0 -location {centre {x 1200.000 y 1200.000} orient R0}
 
 puts "Trigger errors"
 # Trigger errors
-catch {ICeWall add_pad -name t1 -signal not_present -edge outer -type unknown_type -location somewhere -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal dr_dm_1_o  -edge outer  -type unknown_type -location somewhere              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal ddr_dm_1_o -edge outer  -type unknown_type -location somewhere              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge outer  -type unknown_type -location somewhere              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin}                        -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {0 0}}                  -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {x 0 Y 0}}              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {X 0 y 0}}              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {x  here y there}}      -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {x  292.000 y there}}   -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {x  292.000 y 105.000} orient up} -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {x  292.000 y 105.000} orient R0} -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {origin {x  292.000 y 105.000}} -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre}                        -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {0 0}}                  -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x 0 Y 0}}              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {X 0 y 0}}              -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  here y there}}      -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y there}}   -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bump not_allowed -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad elsewhere}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {0 0}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {x 0 Y 0}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {X 0 y 0}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  here y there}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y there}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -cell SIG -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -cell PADCELL_VDD -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
-catch {ICeWall add_pad -signal p_ddr_dm_1_o -edge bottom -type sig -cell PADCELL_SIG -location {centre {x  292.000 y 105.000}} -bondpad {centre {x  292.000 y  63.293}}}
+catch {ICeWall add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal dr_dm_1_o            -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sign  -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location somewhere                        -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre}                         -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin}                         -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {292.000 105.000}}       -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {X  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {X  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}} -bump not_allowed_for_wirebond}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin}                         -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin {292.000 105.000}}       -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin {X  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {X  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000} orient no} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell SIG         -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell PADCELL_VDD -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell PADCELL_SIG -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+
+# This one is correct
+ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell PADCELL_SIG_V -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}
 
 # detect duplicates
 catch {ICeWall add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
@@ -145,7 +135,7 @@ ICeWall add_pad -edge bottom -inst_name u_vss_7   -signal VSS                  -
 ICeWall add_pad -edge bottom -inst_name u_vdd_7   -signal VDD                  -type vdd   -location {centre {x 2567.000 y  105.000}} -bondpad {centre {x 2567.000 y  149.893}}
 ICeWall add_pad -edge bottom -inst_name u_vzz_8   -signal DVSS_0               -type vssio -location {centre {x 2637.000 y  105.000}} -bondpad {centre {x 2637.000 y  149.893}}
 ICeWall add_pad -edge bottom -inst_name u_v18_8   -signal DVDD_0               -type vddio -location {centre {x 2707.000 y  105.000}} -bondpad {centre {x 2707.000 y  149.893}}
-catch {ICeWall add_pad -edge bottom -inst_name u_cbrk0                -type cbk   -location {centre {x  239.500 y  105.000}}} msg
+ICeWall add_pad -edge bottom -inst_name u_cbrk0                -type cbk   -location {centre {x  239.500 y  105.000}}
 ICeWall add_pad -edge bottom -inst_name u_cbrk1                -type cbk   -location {centre {x  869.500 y  105.000}}
 ICeWall add_pad -edge bottom -inst_name u_cbrk2                -type cbk   -location {centre {x 1499.500 y  105.000}}
 ICeWall add_pad -edge bottom -inst_name u_cbrk3                -type cbk   -location {centre {x 2129.500 y  105.000}}

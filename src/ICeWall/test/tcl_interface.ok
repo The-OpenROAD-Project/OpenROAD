@@ -8,35 +8,27 @@
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
 Trigger errors
-[ERROR PAD-0094] Value for -edge_name (outer) not permitted, choose one of bottom, right, top or left
-[ERROR PAD-0094] Value for -edge_name (outer) not permitted, choose one of bottom, right, top or left
-[ERROR PAD-0094] Value for -edge_name (outer) not permitted, choose one of bottom, right, top or left
-[ERROR PAD-0094] Value for -edge_name (outer) not permitted, choose one of bottom, right, top or left
-[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin)
-[ERROR PAD-0103] Incorrect value specified for -location origin (0 0), expecting a 4 element list in the form "x number y number"
-[ERROR PAD-0103] Incorrect value specified for -location origin (x 0 Y 0), no value specified for y
-[ERROR PAD-0103] Incorrect value specified for -location origin (X 0 y 0), no value specified for x
-[ERROR PAD-0103] Incorrect value specified for -location origin (x  here y there), x co-ordinate (here), not recognised as a nummber
-[ERROR PAD-0103] Incorrect value specified for -location origin (x  292.000 y there), y co-ordinate (there), not recognised as a nummber
-[ERROR PAD-0099] Invalid orientation up, must be one of "R0 R90 R180 R270 MX MY MXR90 MYR90"
-[ERROR PAD-0106] Specification of bumps is only allowed for Flipchip padring layouts
-[ERROR PAD-0106] Specification of bumps is only allowed for Flipchip padring layouts
+[ERROR PAD-0094] Value for -edge_name (other) not permitted, choose one of bottom, right, top or left
+[ERROR PAD-0091] No signal dr_dm_1_o defined for padcell sig_1
+[ERROR PAD-0095] Value for -type (sign) does not match any library types (sig vda vsa vdd vss vddio vssio cbk pdt fbk bondpad corner fill marker bump)
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (somewhere)
 [ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (centre)
-[ERROR PAD-0102] Incorrect value specified for -location centre (0 0), expecting a 4 element list in the form "x number y number"
-[ERROR PAD-0102] Incorrect value specified for -location centre (x 0 Y 0), no value specified for y
-[ERROR PAD-0102] Incorrect value specified for -location centre (X 0 y 0), no value specified for x
-[ERROR PAD-0102] Incorrect value specified for -location centre (x  here y there), x co-ordinate (here), not recognised as a nummber
-[ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 y there), y co-ordinate (there), not recognised as a nummber
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin)
+[ERROR PAD-0102] Incorrect value specified for -location centre (292.000 105.000), expecting a 4 element list in the form "x number y number"
+[ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 Y  105.000), no value specified for x
+[ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 Y  105.000), no value specified for y
+[ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 y  105.000), no value specified for x
 [ERROR PAD-0106] Specification of bumps is only allowed for Flipchip padring layouts
-[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (elsewhere)
-[ERROR PAD-0102] Incorrect value specified for -location centre (0 0), expecting a 4 element list in the form "x number y number"
-[ERROR PAD-0102] Incorrect value specified for -location centre (x 0 Y 0), no value specified for y
-[ERROR PAD-0102] Incorrect value specified for -location centre (X 0 y 0), no value specified for x
-[ERROR PAD-0102] Incorrect value specified for -location centre (x  here y there), x co-ordinate (here), not recognised as a nummber
-[ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 y there), y co-ordinate (there), not recognised as a nummber
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin)
+[ERROR PAD-0103] Incorrect value specified for -location origin (292.000 105.000), expecting a 4 element list in the form "x number y number"
+[ERROR PAD-0103] Incorrect value specified for -location origin (X  292.000 Y  105.000), no value specified for x
+[ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 Y  105.000), no value specified for y
+[ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 y  105.000), no value specified for x
+[ERROR PAD-0099] Invalid orientation no, must be one of "R0 R90 R180 R270 MX MY MXR90 MYR90"
 [ERROR PAD-0139] Cell SIG not found in the set of available cell definitions (PAD PADCELL_SIG PADCELL_VDD PADCELL_VSS PADCELL_VDDIO PADCELL_VSSIO PADCELL_PWRDET PADCELL_CBRK PADCELL_FBRK PAD_FILL5 PAD_FILL1 PAD_CORNER DUMMY_BUMP_small DUMMY_BUMP_medium DUMMY_BUMP_large)
 [ERROR PAD-0130] Cell PADCELL_VDD not loaded into design
 [ERROR PAD-0130] Cell PADCELL_SIG not loaded into design
+[ERROR PAD-0112] Padcell sig_19 already defined to use p_ddr_dm_1_o
 No more errors expected
 [INFO PAD-0053] Creating pad ring net: RETN_10
 [INFO PAD-0053] Creating pad ring net: RETN_11
