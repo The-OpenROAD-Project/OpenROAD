@@ -1089,7 +1089,7 @@ NetRouteMap FastRouteCore::run()
   int cost_type = 1;
 
   InitLastUsage(upType);
-  if (totalOverflow > 0) {
+  if (totalOverflow > 0 && overflowIterations > 0) {
     logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 

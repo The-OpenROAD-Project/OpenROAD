@@ -57,7 +57,7 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              ant::AntennaChecker* arc,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
-                             utl::Logger *logger)
+                             utl::Logger* logger)
     : _grouter(grouter), _arc(arc), _opendp(opendp), _db(db), _logger(logger)
 {
   _block = _db->getChip()->getBlock();
@@ -121,7 +121,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
         _antennaViolations[db_net] = netViol;
         _grouter->addDirtyNet(db_net);
       }
-      
+
       odb::dbWire::destroy(wire);
     } else {
       _logger->error(GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
@@ -258,10 +258,10 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     antennaInst->setLocation(instLocX + offset, instLocY);
 
     odb::dbBox* instBox = antennaInst->getBBox();
-    box box(
-        point(instBox->xMin() - ((leftPad+rightPad) * siteWidth) + 1, instBox->yMin() + 1),
-        point(instBox->xMax() + ((leftPad+rightPad) * siteWidth) - 1,
-              instBox->yMax() - 1));
+    box box(point(instBox->xMin() - ((leftPad + rightPad) * siteWidth) + 1,
+                  instBox->yMin() + 1),
+            point(instBox->xMax() + ((leftPad + rightPad) * siteWidth) - 1,
+                  instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
     odb::Rect coreArea;

@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "inspector.h"
+
 #include <QDebug>
 #include <QHeaderView>
 #include <QKeyEvent>
@@ -40,7 +42,6 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "inspector.h"
 
 Q_DECLARE_METATYPE(gui::Selected);
 
@@ -73,8 +74,7 @@ static QStandardItem* makeItem(const char* name,
   return makeItem(QString(name), selected);
 }
 
-Inspector::Inspector(const SelectionSet& selected,
-                     QWidget* parent)
+Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new QTreeView()),
       model_(new QStandardItemModel(0, 2)),
@@ -124,32 +124,27 @@ void Inspector::inspect(const Selected& object)
       if (sel_set->size() < 10) {
         view_->expand(name_item->index());
       }
-      continue;
-    }
-
-    if (auto selected = std::any_cast<Selected>(&value)) {
+    } else if (auto selected = std::any_cast<Selected>(&value)) {
       auto value_item = makeItem(selected->getName(), *selected);
       model_->appendRow({name_item, value_item});
-      continue;
-    }
-
-    if (auto v = std::any_cast<const char*>(&value)) {
+    } else if (auto v = std::any_cast<const char*>(&value)) {
       model_->appendRow({name_item, makeItem(QString(*v))});
-      continue;
-    }
-
-    if (auto v = std::any_cast<const std::string>(&value)) {
+    } else if (auto v = std::any_cast<const std::string>(&value)) {
       model_->appendRow({name_item, makeItem(*v)});
-      continue;
-    }
-
-    if (auto v = std::any_cast<const int>(&value)) {
+    } else if (auto v = std::any_cast<int>(&value)) {
       model_->appendRow({name_item, makeItem(QString::number(*v))});
-      continue;
+    } else if (auto v = std::any_cast<unsigned int>(&value)) {
+      model_->appendRow({name_item, makeItem(QString::number(*v))});
+    } else if (auto v = std::any_cast<double>(&value)) {
+      model_->appendRow({name_item, makeItem(QString::number(*v))});
+    } else if (auto v = std::any_cast<float>(&value)) {
+      model_->appendRow({name_item, makeItem(QString::number(*v))});
+    } else if (auto v = std::any_cast<bool>(&value)) {
+      model_->appendRow({name_item, makeItem(*v ? "True" : "False")});
+    } else {
+      auto value_item = makeItem(QString("<unknown>"));
+      model_->appendRow({name_item, value_item});
     }
-
-    auto value_item = makeItem(QString("<unknown>"));
-    model_->appendRow({name_item, value_item});
   }
 }
 

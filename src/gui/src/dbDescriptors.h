@@ -48,16 +48,12 @@ class DbInstDescriptor : public Descriptor
 
   void highlight(std::any object,
                  Painter& painter,
-                 bool select_flag,
-                 int highlight_group,
                  void* additional_data) const override;
 
   bool isInst(std::any object) const override;
-  bool isNet(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object,
-                        void* additional_data) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
 
@@ -70,16 +66,12 @@ class DbNetDescriptor : public Descriptor
 
   void highlight(std::any object,
                  Painter& painter,
-                 bool select_flag,
-                 int highlight_group,
                  void* additional_data) const override;
 
-  bool isInst(std::any object) const override;
   bool isNet(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object,
-                        void* additional_data) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
 
@@ -92,16 +84,10 @@ class DbITermDescriptor : public Descriptor
 
   void highlight(std::any object,
                  Painter& painter,
-                 bool select_flag,
-                 int highlight_group,
                  void* additional_data) const override;
 
-  bool isInst(std::any object) const override;
-  bool isNet(std::any object) const override;
-
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object,
-                        void* additional_data) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
 
@@ -114,17 +100,11 @@ class DbBTermDescriptor : public Descriptor
 
   void highlight(std::any object,
                  Painter& painter,
-                 bool select_flag,
-                 int highlight_group,
                  void* additional_data) const override;
 
-  bool isInst(std::any object) const override;
-  bool isNet(std::any object) const override;
-
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object,
-                        void* additional_data) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
 
-};
+};  // namespace gui
