@@ -224,6 +224,7 @@ void TritonRoute::reportConstraints()
 
 int TritonRoute::main()
 {
+  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   init();
   if (GUIDE_FILE == string("")) {
     gr();
@@ -246,6 +247,8 @@ int TritonRoute::main()
 
 void TritonRoute::readParams(const string& fileName)
 {
+  logger_->warn(utl::DRT, 998, "params file is deprecated. Use tcl arguments.");
+
   int readParamCnt = 0;
   ifstream fin(fileName.c_str());
   string line;
@@ -284,7 +287,9 @@ void TritonRoute::readParams(const string& fileName)
           CMAP_FILE = value;
           ++readParamCnt;
         } else if (field == "threads") {
-          MAX_THREADS = atoi(value.c_str());
+          logger_->warn(
+              utl::DRT, 999, "deprecated threads param in params file."
+                             " Use 'set_thread_count'");
           ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());
@@ -323,6 +328,51 @@ void TritonRoute::readParams(const string& fileName)
 
   if (readParamCnt < 2) {
     logger_->error(DRT, 1, "Error reading param file: {}", fileName);
+  }
+}
+
+void TritonRoute::setParams(const string& guide_file,
+                            const string& output_guide_file,
+                            const string& output_maze_file,
+                            const string& output_DRC_file,
+                            const string& output_CMap_file,
+                            const string& dbProcessNode,
+                            int drouteEndIterNum,
+                            int drouteViaInPinBottomLayerNum,
+                            int drouteViaInPinTopLayerNum,
+                            int or_seed,
+                            double or_k,
+                            int bottomRoutingLayer,
+                            int topRoutingLayer,
+                            int initRouteShapeCost,
+                            int verbose)
+{
+  GUIDE_FILE = guide_file;
+  OUTGUIDE_FILE = output_guide_file;
+  OUT_MAZE_FILE = output_maze_file;
+  DRC_RPT_FILE = output_DRC_file;
+  CMAP_FILE = output_CMap_file;
+  VERBOSE = verbose;
+  DBPROCESSNODE = dbProcessNode;
+  if (drouteViaInPinBottomLayerNum > 0) {
+    VIAINPIN_BOTTOMLAYERNUM = drouteViaInPinBottomLayerNum;
+  }
+  if (drouteViaInPinTopLayerNum > 0) {
+    VIAINPIN_TOPLAYERNUM = drouteViaInPinTopLayerNum;
+  }
+  if (drouteEndIterNum > 0) {
+    END_ITERATION = drouteEndIterNum;
+  }
+  OR_SEED = or_seed;
+  OR_K = or_k;
+  if (bottomRoutingLayer > 0) {
+    BOTTOM_ROUTING_LAYER_NAME = bottomRoutingLayer;
+  }
+  if (topRoutingLayer > 0) {
+    TOP_ROUTING_LAYER_NAME = topRoutingLayer;
+  }
+  if (initRouteShapeCost > 0) {
+    ROUTESHAPECOST = static_cast<frUInt4>(initRouteShapeCost);
   }
 }
 

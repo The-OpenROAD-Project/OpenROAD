@@ -50,6 +50,41 @@ int detailed_route_num_drvs()
   return router->getNumDRVs();
 }
 
+void detailed_route_cmd(const char* guide_file,
+                        const char* output_guide_file,
+                        const char* output_maze_file,
+                        const char* output_DRC_file,
+                        const char* output_CMap_file,
+                        const char* dbProcessNode,
+                        int drouteEndIterNum,
+                        int drouteViaInPinBottomLayerNum,
+                        int drouteViaInPinTopLayerNum,
+                        int OR_SEED,
+                        double OR_K,
+                        int bottomRoutingLayer,
+                        int topRoutingLayer,
+                        int initRouteShapeCost,
+                        int verbose)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setParams(guide_file,
+                    output_guide_file,
+                    output_maze_file,
+                    output_DRC_file,
+                    output_CMap_file,
+                    dbProcessNode,
+                    drouteEndIterNum,
+                    drouteViaInPinBottomLayerNum,
+                    drouteViaInPinTopLayerNum,
+                    OR_SEED,
+                    OR_K,
+                    bottomRoutingLayer,
+                    topRoutingLayer,
+                    initRouteShapeCost,
+                    verbose);
+  router->main();
+}
+
 void detailed_route_cmd(const char* param_file)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();

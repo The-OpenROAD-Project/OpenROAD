@@ -34,17 +34,120 @@
 #############################################################################
 
 sta::define_cmd_args "detailed_route" {
-    -param filename
+    -guide filename
+    [-outputguide filename]
+    [-outputmaze filename]
+    [-outputDRC filename]
+    [-outputCMap filename]
+    [-dbProcessNode name]
+    [-drouteEndIterNum iter]
+    [-drouteViaInPinBottomLayerNum num]
+    [-drouteViaInPinTopLayerNum num]
+    [-OR_SEED seed]
+    [-OR_K k]
+    [-bottomRoutingLayer layer]
+    [-topRoutingLayer layer]
+    [-initRouteShapeCost cost]
+    [-verbose level]
+    [-param filename]
 }
 
 proc detailed_route { args } {
-  sta::parse_key_args "detailed_route" args keys {-param}
+  sta::parse_key_args "detailed_route" args \
+    keys {-param -guide -outputguide -outputmaze -outputDRC -outputCMap \
+      -dbProcessNode -drouteEndIterNum -drouteViaInPinBottomLayerNum \
+      -drouteViaInPinTopLayerNum -OR_SEED -OR_K -bottomRoutingLayer \
+      -topRoutingLayer -initRouteShapeCost -verbose}
   sta::check_argc_eq0 "detailed_route" $args
 
-  if { ![info exists keys(-param)] } {
+  if { ![info exists keys(-guide)] && ![info exists keys(-param)] } {
     sta::cmd_usage_error "detailed_route"
+  } elseif { [info exists keys(-param)] && [array size keys] > 1} {
+    utl::error DRT 990 "-param cannot be used with other arguments"
   }
-  drt::detailed_route_cmd $keys(-param)
+  if { [info exists keys(-param)] } {
+    drt::detailed_route_cmd $keys(-param)
+  } else {
+    set drt_args [list $keys(-guide)]
+    if { [info exists keys(-outputguide)] } {
+      lappend drt_args $keys(-outputguide)
+    } else {
+      lappend drt_args ""
+    }
+    if { [info exists keys(-outputmaze)] } {
+      lappend drt_args $keys(-outputmaze)
+    } else {
+      lappend drt_args ""
+    }
+    if { [info exists keys(-outputDRC)] } {
+      lappend drt_args $keys(-outputDRC)
+    } else {
+      lappend drt_args ""
+    }
+    if { [info exists keys(-outputCMap)] } {
+      lappend drt_args $keys(-outputCMap)
+    } else {
+      lappend drt_args ""
+    }
+    if { [info exists keys(-dbProcessNode)] } {
+      lappend drt_args $keys(-dbProcessNode)
+    } else {
+      lappend drt_args ""
+    }
+    if { [info exists keys(-drouteEndIterNum)] } {
+      sta::check_positive_integer "-drouteEndIterNumgcell" $keys(-drouteEndIterNum)
+      lappend drt_args $keys(-drouteEndIterNum)
+    } else {
+      lappend drt_args -1
+    }
+    if { [info exists keys(-drouteViaInPinBottomLayerNum)] } {
+      sta::check_positive_integer "-drouteViaInPinBottomLayerNum" $keys(-drouteViaInPinBottomLayerNum)
+      lappend drt_args $keys(-drouteViaInPinBottomLayerNum)
+    } else {
+      lappend drt_args -1
+    }
+    if { [info exists keys(-drouteViaInPinTopLayerNum)] } {
+      sta::check_positive_integer "-drouteViaInPinTopLayerNum" $keys(-drouteViaInPinTopLayerNum)
+      lappend drt_args $keys(-drouteViaInPinTopLayerNum)
+    } else {
+      lappend drt_args -1
+    }
+    if { [info exists keys(-OR_SEED)] } {
+      lappend drt_args $keys(-OR_SEED)
+    } else {
+      lappend drt_args -1
+    }
+    if { [info exists keys(-OR_K)] } {
+      lappend drt_args $keys(-OR_K)
+    } else {
+      lappend drt_args 0
+    }
+    if { [info exists keys(-bottomRoutingLayer)] } {
+      sta::check_positive_integer "-bottomRoutingLayer" $keys(-bottomRoutingLayer)
+      lappend drt_args $keys(-bottomRoutingLayer)
+    } else {
+      lappend drt_args 0
+    }
+    if { [info exists keys(-topRoutingLayer)] } {
+      sta::check_positive_integer "-topRoutingLayer" $keys(-topRoutingLayer)
+      lappend drt_args $keys(-topRoutingLayer)
+    } else {
+      lappend drt_args -1
+    }
+    if { [info exists keys(-initRouteShapeCost)] } {
+      sta::check_positive_integer "-initRouteShapeCost" $keys(-initRouteShapeCost)
+      lappend drt_args $keys(-initRouteShapeCost)
+    } else {
+      lappend drt_args -1
+    }
+    if { [info exists keys(-verbose)] } {
+      sta::check_positive_integer "-verbose" $keys(-verbose)
+      lappend drt_args $keys(-verbose)
+    } else {
+      lappend drt_args 1
+    }
+    drt::detailed_route_cmd {*}$drt_args
+  }
 }
 
 proc detailed_route_num_drvs { args } {
