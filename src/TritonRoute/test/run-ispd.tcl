@@ -16,21 +16,17 @@ proc genFiles { run_dir ispd_year design drv } {
 
     file mkdir $run_dir
     file mkdir $run_dir/$design
-    puts "Create param file for $design"
-    set    paramFile [open "$run_dir/$design/run.param" w]
-    puts  $paramFile "guide:$bench_dir/$design/$design.input.guide"
-    puts  $paramFile "outputguide:$design.output.guide.mod"
-    puts  $paramFile "outputMaze:$design.output.maze.log"
-    puts  $paramFile "outputDRC:$design.outputDRC.rpt"
-    puts  $paramFile "threads:$threads"
-    puts  $paramFile "verbose:$verbose"
-    close $paramFile
 
     puts "Create tcl script for $design"
     set    tclFile [open "$run_dir/$design/run.tcl" w]
+    puts  $tclFile "set_thread_count $threads"
     puts  $tclFile "read_lef $bench_dir/$design/$design.input.lef"
     puts  $tclFile "read_def $bench_dir/$design/$design.input.def"
-    puts  $tclFile "detailed_route -param $run_dir/$design/run.param"
+    puts  $tclFile "detailed_route -guide $bench_dir/$design/$design.input.guide \\"
+    puts  $tclFile "               -outputguide $design.output.guide.mod \\"
+    puts  $tclFile "               -outputmaze $design.output.maze.log \\"
+    puts  $tclFile "               -outputDRC $design.outputDRC.rpt \\"
+    puts  $tclFile "               -verbose $verbose"
     puts  $tclFile "write_def $run_dir/$design/$design.output.def"
     puts  $tclFile "set drv_count \[detailed_route_num_drvs] "
     puts  $tclFile "if { \$drv_count > $drv } {"

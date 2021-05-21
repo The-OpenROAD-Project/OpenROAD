@@ -1,5 +1,0 @@
-guide:testcase/ispd18_sample/ispd18_sample.input.guide
-outputguide:results/ispd18_sample.output_guide.mod
-outputDRC:results/ispd18_sample.output_DRC.rpt
-outputMaze:results/ispd18_sample.output_Maze.log
-verbose:0
