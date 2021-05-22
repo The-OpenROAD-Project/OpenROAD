@@ -55,4 +55,6 @@
 [INFO PAD-0053] Creating pad ring net: DVDD_1
 [INFO PAD-0051] Creating pad ring net: VSS
 [INFO PAD-0051] Creating pad ring net: VDD
-No differences found.
+Differences found at line 7.
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 359860 358400 N DO 13894 BY 1 STEP 380 0 ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 359860 358400 FS DO 13894 BY 1 STEP 380 0 ;

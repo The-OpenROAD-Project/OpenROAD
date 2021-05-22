@@ -1,0 +1,27 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: obstruction2.def
+[INFO ODB-0128] Design: gcd_mem1
+[INFO ODB-0130]     Created 61 pins.
+[INFO ODB-0131]     Created 32 components and 201 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 384 nets and 137 connections.
+[INFO ODB-0134] Finished DEF file: obstruction2.def
+[WARNING DPL-0011] Could not find power special net.
+Placement Analysis
+---------------------------------
+total displacement         50.9 u
+average displacement        1.6 u
+max displacement           10.3 u
+original HPWL             638.4 u
+legalized HPWL            656.9 u
+delta HPWL                    3 %
+
+[INFO DPL-0001] Placed 278 filler instances.
+No differences found.
