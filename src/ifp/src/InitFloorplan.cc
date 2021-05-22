@@ -336,8 +336,8 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
       dbBox::create(domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
 
       dbSet<dbRow> rows = block_->getRows();
-      int total_row_count = 0;
-      for (dbRow *row: rows) total_row_count++;
+      int total_row_count = rows.size();
+
       
       dbSet<dbRow>::iterator row_itr = rows.begin();
       for (int row_processed = 0;
@@ -421,8 +421,8 @@ InitFloorplan::makeRows(dbSite *site,
   int y = core_ly;
   for (int row = 0; row < rows_y; row++) {
     dbOrientType orient = (row % 2 == 0)
-      ? dbOrientType::MX  // FS
-      : dbOrientType::R0; // N
+      ? dbOrientType::R0        // N
+      : dbOrientType::MX;       // FS
     string row_name = stdstrPrint("ROW_%d", row);
     dbRow::create(block_, row_name.c_str(), site, core_lx, y, orient,
 		  dbRowDir::HORIZONTAL, rows_x, site_dx);
