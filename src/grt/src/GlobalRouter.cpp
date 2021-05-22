@@ -34,7 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "grt/GlobalRouter.h"
-#include "grt/GRoute.h"
 
 #include <algorithm>
 #include <cmath>
@@ -55,15 +54,16 @@
 #include "RoutingTracks.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "grt/GRoute.h"
+#include "gui/gui.h"
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
-#include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
-#include "gui/gui.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
+#include "utl/Logger.h"
 
 namespace grt {
 
@@ -141,7 +141,9 @@ GlobalRouter::~GlobalRouter()
   deleteComponents();
 }
 
-std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type)
+std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
+                                               int maxRoutingLayer,
+                                               NetType type)
 {
   initAdjustments();
 
@@ -157,7 +159,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
   _fastRoute->setOverflowIterations(_overflowIterations);
   _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
   _fastRoute->setAllowOverflow(_allowOverflow);
-  
+
   _block = _db->getChip()->getBlock();
   reportLayerSettings(minRoutingLayer, maxRoutingLayer);
 
@@ -199,13 +201,14 @@ void GlobalRouter::applyAdjustments(int minRoutingLayer, int maxRoutingLayer)
 void GlobalRouter::globalRouteClocksSeparately()
 {
   // route clock nets
-  std::vector<Net*> clockNets =
-    startFastRoute(_minLayerForClock, _maxLayerForClock, NetType::Clock);
+  std::vector<Net*> clockNets
+      = startFastRoute(_minLayerForClock, _maxLayerForClock, NetType::Clock);
   reportResources();
 
   _logger->report("Routing clock nets...");
   _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
-  Capacities clk_capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
+  Capacities clk_capacities
+      = saveCapacities(_minLayerForClock, _maxLayerForClock);
   clearObjects();
   _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 
@@ -213,14 +216,15 @@ void GlobalRouter::globalRouteClocksSeparately()
     _maxRoutingLayer = computeMaxRoutingLayer();
   }
   // route signal nets
-  std::vector<Net*> signalNets =
-    startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
+  std::vector<Net*> signalNets
+      = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
   restoreCapacities(clk_capacities, _minLayerForClock, _maxLayerForClock);
   reportResources();
 
   // Store results in a temporary map, allowing to keep previous
   // routing result from clock nets
-  NetRouteMap result = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
+  NetRouteMap result
+      = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
   _routes.insert(result.begin(), result.end());
 }
 
@@ -230,8 +234,8 @@ void GlobalRouter::globalRoute()
     _maxRoutingLayer = computeMaxRoutingLayer();
   }
 
-  std::vector<Net*> nets =
-  startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
+  std::vector<Net*> nets
+      = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
   reportResources();
 
   _routes = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
@@ -255,8 +259,11 @@ void GlobalRouter::run()
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 {
-  AntennaRepair antennaRepair = AntennaRepair(
-      this, _openroad->getAntennaChecker(), _openroad->getOpendp(), _db, _logger);
+  AntennaRepair antennaRepair = AntennaRepair(this,
+                                              _openroad->getAntennaChecker(),
+                                              _openroad->getOpendp(),
+                                              _db,
+                                              _logger);
 
   // Copy first route result and make changes in this new vector
   NetRouteMap originalRoute(_routes);
@@ -267,7 +274,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
   if (diodeMTerm == nullptr) {
     _logger->error(GRT, 69, "liberty port for {}/{} not found.",
-      diodePort->libertyCell()->name(), diodePort->name());
+                   diodePort->libertyCell()->name(),
+                   diodePort->name());
   }
 
   int violationsCnt = antennaRepair.checkAntennaViolations(
@@ -281,8 +289,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
     updateDirtyNets();
-    std::vector<Net*> antennaNets =
-      startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
+    std::vector<Net*> antennaNets
+        = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
 
     _fastRoute->setVerbose(0);
     _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
@@ -290,7 +298,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsRouting();
 
-    NetRouteMap newRoute = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
+    NetRouteMap newRoute
+        = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
     mergeResults(newRoute);
   }
 }
@@ -300,8 +309,9 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   _dirtyNets.insert(net);
 }
 
-NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets, 
-                                      int minRoutingLayer, int maxRoutingLayer)
+NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
+                                      int minRoutingLayer,
+                                      int maxRoutingLayer)
 {
   NetRouteMap routes = _fastRoute->run();
   addRemainingGuides(routes, nets, minRoutingLayer, maxRoutingLayer);
@@ -387,7 +397,7 @@ void GlobalRouter::setCapacities(int minRoutingLayer, int maxRoutingLayer)
 }
 
 Capacities GlobalRouter::saveCapacities(int previousMinLayer,
-                                         int previousMaxLayer)
+                                        int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
@@ -397,8 +407,8 @@ Capacities GlobalRouter::saveCapacities(int previousMinLayer,
 
   Capacities capacities;
 
-  CapacitiesVec &h_caps = capacities.getHorCapacities();
-  CapacitiesVec &v_caps = capacities.getVerCapacities();
+  CapacitiesVec& h_caps = capacities.getHorCapacities();
+  CapacitiesVec& v_caps = capacities.getVerCapacities();
 
   h_caps.resize(_grid->getNumLayers());
   for (int l = 0; l < _grid->getNumLayers(); l++) {
@@ -420,16 +430,14 @@ Capacities GlobalRouter::saveCapacities(int previousMinLayer,
     auto techLayer = _db->getTech()->findRoutingLayer(layer);
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
-        oldCap = getEdgeResource(
-            x - 1, y - 1, x, y - 1, techLayer, gcellGrid);
+        oldCap = getEdgeResource(x - 1, y - 1, x, y - 1, techLayer, gcellGrid);
         h_caps[layer - 1][y - 1][x - 1] = oldCap;
       }
     }
 
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
-        oldCap = getEdgeResource(
-            x - 1, y - 1, x - 1, y, techLayer, gcellGrid);
+        oldCap = getEdgeResource(x - 1, y - 1, x - 1, y, techLayer, gcellGrid);
         v_caps[layer - 1][x - 1][y - 1] = oldCap;
       }
     }
@@ -438,15 +446,16 @@ Capacities GlobalRouter::saveCapacities(int previousMinLayer,
   return capacities;
 }
 
-void GlobalRouter::restoreCapacities(Capacities capacities, int previousMinLayer,
-                                             int previousMaxLayer)
+void GlobalRouter::restoreCapacities(Capacities capacities,
+                                     int previousMinLayer,
+                                     int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
-  const CapacitiesVec &h_caps = capacities.getHorCapacities();
-  const CapacitiesVec &v_caps = capacities.getVerCapacities();
+  const CapacitiesVec& h_caps = capacities.getHorCapacities();
+  const CapacitiesVec& v_caps = capacities.getVerCapacities();
 
   for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
@@ -467,18 +476,21 @@ void GlobalRouter::restoreCapacities(Capacities capacities, int previousMinLayer
   }
 }
 
-int GlobalRouter::getEdgeResource(int x1, int y1, int x2, int y2,
+int GlobalRouter::getEdgeResource(int x1,
+                                  int y1,
+                                  int x2,
+                                  int y2,
                                   odb::dbTechLayer* tech_layer,
                                   odb::dbGCellGrid* gcell_grid)
 {
   int resource = 0;
 
   if (y1 == y2) {
-    resource = gcell_grid->getHorizontalCapacity(tech_layer, x1, y1) -
-               gcell_grid->getHorizontalUsage(tech_layer, x1, y1);
+    resource = gcell_grid->getHorizontalCapacity(tech_layer, x1, y1)
+               - gcell_grid->getHorizontalUsage(tech_layer, x1, y1);
   } else if (x1 == x2) {
-    resource = gcell_grid->getVerticalCapacity(tech_layer, x1, y1) -
-               gcell_grid->getVerticalUsage(tech_layer, x1, y1);
+    resource = gcell_grid->getVerticalCapacity(tech_layer, x1, y1)
+               - gcell_grid->getVerticalUsage(tech_layer, x1, y1);
   }
 
   return resource;
@@ -492,8 +504,7 @@ void GlobalRouter::removeDirtyNetsRouting()
     int segsCnt = 0;
     for (GSegment& segment : netRoute) {
       auto techLayer = _db->getTech()->findRoutingLayer(segment.initLayer);
-      if (!(segment.initLayer != segment.finalLayer
-            || (segment.isVia()))) {
+      if (!(segment.initLayer != segment.finalLayer || (segment.isVia()))) {
         odb::Point initOnGrid = _grid->getPositionOnGrid(
             odb::Point(segment.initX, segment.initY));
         odb::Point finalOnGrid = _grid->getPositionOnGrid(
@@ -513,7 +524,8 @@ void GlobalRouter::removeDirtyNetsRouting()
           for (int x = minX; x < maxX; x++) {
             int newCap
                 = _fastRoute->getEdgeCurrentResource(
-                      x, y, segment.initLayer, x + 1, y, segment.initLayer) + 1;
+                      x, y, segment.initLayer, x + 1, y, segment.initLayer)
+                  + 1;
             _fastRoute->addAdjustment(x,
                                       y,
                                       segment.initLayer,
@@ -537,7 +549,8 @@ void GlobalRouter::removeDirtyNetsRouting()
           for (int y = minY; y < maxY; y++) {
             int newCap
                 = _fastRoute->getEdgeCurrentResource(
-                      x, y, segment.initLayer, x, y + 1, segment.initLayer) + 1;
+                      x, y, segment.initLayer, x, y + 1, segment.initLayer)
+                  + 1;
             _fastRoute->addAdjustment(x,
                                       y,
                                       segment.initLayer,
@@ -698,7 +711,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int numLayers = _grid->getNumLayers();
-        std::vector<int> edgeCostsPerLayer(numLayers+1, 1);
+        std::vector<int> edgeCostsPerLayer(numLayers + 1, 1);
         int edgeCostForNet = computeTrackConsumption(net, edgeCostsPerLayer);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
@@ -721,7 +734,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   _fastRoute->initEdges();
 }
 
-int GlobalRouter::computeTrackConsumption(const Net* net, std::vector<int>& edgeCostsPerLayer)
+int GlobalRouter::computeTrackConsumption(const Net* net,
+                                          std::vector<int>& edgeCostsPerLayer)
 {
   int trackConsumption = 1;
   odb::dbNet* db_net = net->getDbNet();
@@ -732,17 +746,18 @@ int GlobalRouter::computeTrackConsumption(const Net* net, std::vector<int>& edge
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      RoutingTracks routingTracks =
-        getRoutingTracksByIndex(layerIdx);
+      RoutingTracks routingTracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routingTracks.getTrackPitch();
-      
+
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = 2 * (std::ceil(ndr_width/2 + ndr_spacing + default_width/2 - default_pitch));
+      int ndr_pitch = 2
+                      * (std::ceil(ndr_width / 2 + ndr_spacing
+                                   + default_width / 2 - default_pitch));
 
-      int consumption = std::ceil((float)ndr_pitch/default_pitch);
-      edgeCostsPerLayer[layerIdx-1] = consumption;
+      int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      edgeCostsPerLayer[layerIdx - 1] = consumption;
 
       trackConsumption = std::max(trackConsumption, consumption);
     }
@@ -751,7 +766,8 @@ int GlobalRouter::computeTrackConsumption(const Net* net, std::vector<int>& edge
   return trackConsumption;
 }
 
-void GlobalRouter::computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer)
+void GlobalRouter::computeGridAdjustments(int minRoutingLayer,
+                                          int maxRoutingLayer)
 {
   odb::Point upperDieBounds
       = odb::Point(_grid->getUpperRightX(), _grid->getUpperRightY());
@@ -818,7 +834,8 @@ void GlobalRouter::computeGridAdjustments(int minRoutingLayer, int maxRoutingLay
   }
 }
 
-void GlobalRouter::computeTrackAdjustments(int minRoutingLayer, int maxRoutingLayer)
+void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
+                                           int maxRoutingLayer)
 {
   odb::Point upperDieBounds
       = odb::Point(_grid->getUpperRightX(), _grid->getUpperRightY());
@@ -997,7 +1014,8 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer, int maxRoutingLa
   }
 }
 
-void GlobalRouter::computeUserGlobalAdjustments(int minRoutingLayer, int maxRoutingLayer)
+void GlobalRouter::computeUserGlobalAdjustments(int minRoutingLayer,
+                                                int maxRoutingLayer)
 {
   if (_adjustment == 0.0)
     return;
@@ -1141,7 +1159,8 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 
 void GlobalRouter::computeObstructionsAdjustments()
 {
-  std::map<int, std::vector<odb::Rect>> obstructions = _grid->getAllObstructions();
+  std::map<int, std::vector<odb::Rect>> obstructions
+      = _grid->getAllObstructions();
 
   odb::dbTech* tech = _db->getTech();
   odb::dbTechLayer* techLayer;
@@ -1155,16 +1174,21 @@ void GlobalRouter::computeObstructionsAdjustments()
       bool direction = routingLayer.getPreferredDirection();
 
       techLayer = tech->findRoutingLayer(layer);
-      _logger->info(GRT, 17, "Processing {} blockages on layer {}.", layerObstructions.size(), techLayer->getName());
+      _logger->info(GRT, 17, "Processing {} blockages on layer {}.",
+                    layerObstructions.size(),
+                    techLayer->getName());
 
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
       for (odb::Rect& obs : layerObstructions) {
-        if (obs.xMax() <= _grid->getLowerLeftX() || obs.xMin() >= _grid->getUpperRightX() ||
-	          obs.yMax() <= _grid->getLowerLeftY() || obs.yMin() >= _grid->getUpperRightY()) {
-          _logger->info(GRT, 209, "Ignoring an obstruction on layer {} outside the die area.", techLayer->getName());
-      		continue;
-      	}
+        if (obs.xMax() <= _grid->getLowerLeftX()
+            || obs.xMin() >= _grid->getUpperRightX()
+            || obs.yMax() <= _grid->getLowerLeftY()
+            || obs.yMin() >= _grid->getUpperRightY()) {
+          _logger->info(GRT, 209, "Ignoring an obstruction on layer {} outside the die area.",
+              techLayer->getName());
+          continue;
+        }
 
         odb::Rect firstTileBox;
         odb::Rect lastTileBox;
@@ -1272,7 +1296,9 @@ void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
   odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
   odb::dbTechLayer* maxTechLayer = tech->findRoutingLayer(_maxRoutingLayer);
   if (layer > _maxRoutingLayer && _maxRoutingLayer > 0) {
-    _logger->warn(GRT, 30, "Specified layer {} for adjustment is greater than max routing layer {} and will be ignored.", techLayer->getName(), maxTechLayer->getName());
+    _logger->warn(GRT, 30, "Specified layer {} for adjustment is greater than max routing layer {} and will be ignored.",
+                  techLayer->getName(),
+                  maxTechLayer->getName());
   } else {
     _adjustments[layer] = reductionPercentage;
   }
@@ -1375,7 +1401,7 @@ void GlobalRouter::writeGuides(const char* fileName)
               && segment.initX != segment.finalX
               && segment.initY != segment.finalY) {
             _logger->error(GRT, 74, "Routing with guides in blocked metal for net {}.",
-                  db_net->getConstName());
+                           db_net->getConstName());
           }
 
           guideBox.push_back(globalRoutingToBox(segment));
@@ -1384,12 +1410,12 @@ void GlobalRouter::writeGuides(const char* fileName)
         } else {
           if (abs(segment.finalLayer - segment.initLayer) > 1) {
             _logger->error(GRT, 75, "Connection between non-adjacent layers in net {}.",
-                  db_net->getConstName());
+                           db_net->getConstName());
           } else {
             RoutingLayer phLayerI;
             phLayerI = getRoutingLayerByIndex(segment.initLayer);
             phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-            
+
             finalLayer = segment.finalLayer;
             odb::Rect box;
             guideBox.push_back(globalRoutingToBox(segment));
@@ -1456,8 +1482,10 @@ RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
   return selectedRoutingTracks;
 }
 
-void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
-                                         int minRoutingLayer, int maxRoutingLayer)
+void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
+                                         GRoute& route,
+                                         int minRoutingLayer,
+                                         int maxRoutingLayer)
 {
   std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
   int lastLayer = -1;
@@ -1571,7 +1599,8 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
 
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
-                                      int minRoutingLayer, int maxRoutingLayer)
+                                      int minRoutingLayer,
+                                      int maxRoutingLayer)
 {
   for (Net* net : nets) {
     if (net->getNumPins() > 1) {
@@ -1675,7 +1704,8 @@ void GlobalRouter::checkPinPlacement()
   odb::dbTechLayer* techLayer;
   for (Pin* port : getAllPorts()) {
     if (port->getNumLayers() == 0) {
-      _logger->error(GRT, 79, "Pin {} does not have layer assignment.", port->getName().c_str());
+      _logger->error(GRT, 79, "Pin {} does not have layer assignment.",
+                     port->getName().c_str());
     }
     int layer = port->getLayers()[0];  // port have only one layer
 
@@ -1685,7 +1715,10 @@ void GlobalRouter::checkPinPlacement()
     } else {
       for (odb::Point& pos : mapLayerToPositions[layer]) {
         if (pos == port->getPosition()) {
-          _logger->warn(GRT, 31, "At least 2 pins in position ({}, {}), layer {}.", pos.x(), pos.y(), techLayer->getName());
+          _logger->warn(GRT, 31, "At least 2 pins in position ({}, {}), layer {}.",
+                        pos.x(),
+                        pos.y(),
+                        techLayer->getName());
           invalid = true;
         }
       }
@@ -1696,117 +1729,6 @@ void GlobalRouter::checkPinPlacement()
   if (invalid) {
     _logger->error(GRT, 80, "Invalid pin placement.");
   }
-}
-
-GlobalRouter::ROUTE_ GlobalRouter::getRoute()
-{
-  ROUTE_ route;
-
-  int xGrids = _grid->getXGrids();
-  int yGrids = _grid->getYGrids();
-
-  for (int layer = 1; layer <= _grid->getNumLayers(); layer++) {
-    for (int y = 1; y < yGrids; y++) {
-      for (int x = 1; x < xGrids; x++) {
-        int edgeCap
-            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
-        if (edgeCap != _grid->getHorizontalEdgesCapacities()[layer - 1]) {
-          _numAdjusts++;
-        }
-      }
-    }
-
-    for (int x = 1; x < xGrids; x++) {
-      for (int y = 1; y < yGrids; y++) {
-        int edgeCap
-            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
-        if (edgeCap != _grid->getVerticalEdgesCapacities()[layer - 1]) {
-          _numAdjusts++;
-        }
-      }
-    }
-  }
-
-  route.gridCountX = _grid->getXGrids();
-  route.gridCountY = _grid->getYGrids();
-  route.numLayers = _grid->getNumLayers();
-
-  int cnt = 0;
-  for (int vCap : _grid->getVerticalEdgesCapacities()) {
-    route.verticalEdgesCapacities.push_back(vCap);
-    cnt++;
-  }
-
-  cnt = 0;
-  for (int hCap : _grid->getHorizontalEdgesCapacities()) {
-    route.horizontalEdgesCapacities.push_back(hCap);
-    cnt++;
-  }
-
-  for (uint i = 0; i < _grid->getMinWidths().size(); i++) {
-    route.minWireWidths.push_back(100);
-  }
-
-  for (int spacing : _grid->getSpacings()) {
-    route.minWireSpacings.push_back(spacing);
-  }
-
-  for (int i = 0; i < _grid->getNumLayers(); i++) {
-    route.viaSpacings.push_back(1);
-  }
-
-  route.gridOriginX = _grid->getLowerLeftX();
-  route.gridOriginY = _grid->getLowerLeftY();
-  route.tileWidth = _grid->getTileWidth();
-  route.tileHeight = _grid->getTileHeight();
-  route.blockPorosity = 0;
-  route.numAdjustments = _numAdjusts;
-
-  for (int layer = 1; layer <= _grid->getNumLayers(); layer++) {
-    for (int y = 1; y < yGrids; y++) {
-      for (int x = 1; x < xGrids; x++) {
-        int edgeCap
-            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer)
-              * 100;
-        if (edgeCap != _grid->getHorizontalEdgesCapacities()[layer - 1]) {
-          ADJUSTMENT_ adj;
-          adj.firstX = x - 1;
-          adj.firstY = y - 1;
-          adj.firstLayer = layer;
-          adj.finalX = x;
-          adj.finalY = y - 1;
-          adj.finalLayer = layer;
-          adj.edgeCapacity = edgeCap;
-
-          route.adjustments.push_back(adj);
-        }
-      }
-    }
-
-    for (int x = 1; x < xGrids; x++) {
-      for (int y = 1; y < yGrids; y++) {
-        int edgeCap
-            = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer)
-              * 100;
-        if (edgeCap != _grid->getVerticalEdgesCapacities()[layer - 1]) {
-          ADJUSTMENT_ adj;
-          adj.firstX = x - 1;
-          adj.firstY = y - 1;
-          adj.firstLayer = layer;
-          adj.finalX = x - 1;
-          adj.finalY = y;
-          adj.finalLayer = layer;
-          adj.edgeCapacity = edgeCap;
-
-          route.adjustments.push_back(adj);
-        }
-      }
-    }
-  }
-
-  debugPrint(_logger, GRT, "api", 1, "getRoute() = \n{}", route);
-
-  return route;
 }
 
 void GlobalRouter::computeWirelength()
@@ -1824,7 +1746,8 @@ void GlobalRouter::computeWirelength()
       }
     }
   }
-  _logger->info(GRT, 18, "Total wirelength: {} um", totalWirelength / _block->getDefUnits());
+  _logger->info(GRT, 18, "Total wirelength: {} um",
+                totalWirelength / _block->getDefUnits());
 }
 
 // This needs to be rewritten to shift down undeleted elements instead
@@ -1832,7 +1755,7 @@ void GlobalRouter::computeWirelength()
 void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
 {
   if (!route.empty()) {
-    GRoute &segments = route;
+    GRoute& segments = route;
     std::map<RoutePt, int> segsAtPoint;
     for (const GSegment& seg : segments) {
       RoutePt pt0 = RoutePt(seg.initX, seg.initY, seg.initLayer);
@@ -1841,7 +1764,7 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
       segsAtPoint[pt1] += 1;
     }
 
-    for (const Pin &pin : pins) {
+    for (const Pin& pin : pins) {
       RoutePt pinPt = RoutePt(pin.getOnGridPosition().x(),
                               pin.getOnGridPosition().y(),
                               pin.getTopLayer());
@@ -2004,11 +1927,11 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
                                   / tracks.getTrackPitch())
                            * tracks.getTrackPitch()
                        + tracks.getLocation();
-    int nearestTrack2 = std::floor((float) (max - tracks.getLocation())
-                                       / tracks.getTrackPitch()
-                                   - 1)
-                            * tracks.getTrackPitch()
-                        + tracks.getLocation();
+    int nearestTrack2
+        = std::floor(
+              (float) (max - tracks.getLocation()) / tracks.getTrackPitch() - 1)
+              * tracks.getTrackPitch()
+          + tracks.getLocation();
 
     if ((nearestTrack >= min && nearestTrack <= max)
         && (nearestTrack2 >= min && nearestTrack2 <= max)) {
@@ -2016,12 +1939,12 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
     }
 
     if (nearestTrack >= min && nearestTrack <= max) {
-      trackPosition = horizontal ? odb::Point(trackPosition.x(), nearestTrack) :
-                      odb::Point(nearestTrack, trackPosition.y());
+      trackPosition = horizontal ? odb::Point(trackPosition.x(), nearestTrack)
+                                 : odb::Point(nearestTrack, trackPosition.y());
       return true;
     } else if (nearestTrack2 >= min && nearestTrack2 <= max) {
-      trackPosition = horizontal ? odb::Point(trackPosition.x(), nearestTrack2) :
-                      odb::Point(nearestTrack2, trackPosition.y());
+      trackPosition = horizontal ? odb::Point(trackPosition.x(), nearestTrack2)
+                                 : odb::Point(nearestTrack2, trackPosition.y());
       return true;
     } else {
       return false;
@@ -2184,7 +2107,8 @@ void GlobalRouter::initGrid(int maxLayer)
              == odb::dbTechLayerDir::VERTICAL) {
     trackSpacing = trackStepX;
   } else {
-    _logger->error(GRT, 83, "Layer {} does not have valid direction.", selectedLayer->getName());
+    _logger->error(GRT, 83, "Layer {} does not have valid direction.",
+                   selectedLayer->getName());
   }
 
   odb::Rect rect;
@@ -2253,7 +2177,8 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
                == odb::dbTechLayerDir::VERTICAL) {
       preferredDirection = RoutingLayer::VERTICAL;
     } else {
-      _logger->error(GRT, 84, "Layer {} does not have valid direction.", techLayer->getName());
+      _logger->error(GRT, 84, "Layer {} does not have valid direction.",
+                     techLayer->getName());
     }
 
     RoutingLayer routingLayer = RoutingLayer(index, name, preferredDirection);
@@ -2261,20 +2186,18 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
   }
 }
 
-void getViaDims(
-    std::map<int, odb::dbTechVia*> defaultVias,
-    int level,
-    int &widthUp,
-    int &prlUp,
-    int &widthDown,
-    int &prlDown)
+void getViaDims(std::map<int, odb::dbTechVia*> defaultVias,
+                int level,
+                int& widthUp,
+                int& prlUp,
+                int& widthDown,
+                int& prlDown)
 {
   widthUp = -1;
   prlUp = -1;
   widthDown = -1;
   prlDown = -1;
-  if (defaultVias.find(level) != defaultVias.end())
-  {
+  if (defaultVias.find(level) != defaultVias.end()) {
     for (auto box : defaultVias[level]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == level) {
         widthUp = std::min(box->getWidth(), box->getLength());
@@ -2283,9 +2206,8 @@ void getViaDims(
       }
     }
   }
-  if (defaultVias.find(level - 1) != defaultVias.end())
-  {
-    for (auto box : defaultVias[level-1]->getBoxes()) {
+  if (defaultVias.find(level - 1) != defaultVias.end()) {
+    for (auto box : defaultVias[level - 1]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == level) {
         widthDown = std::min(box->getWidth(), box->getLength());
         prlDown = std::max(box->getWidth(), box->getLength());
@@ -2295,11 +2217,11 @@ void getViaDims(
   }
 }
 
-std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
-    int maxLayer)
+std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int maxLayer)
 {
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxLayer);
-  std::vector<std::pair<int, int>> pitches(_db->getTech()->getRoutingLayerCount() + 1);
+  std::vector<std::pair<int, int>> pitches(
+      _db->getTech()->getRoutingLayerCount() + 1);
   odb::dbTech* tech = _db->getTech();
   for (auto layer : tech->getLayers()) {
     if (layer->getType() != odb::dbTechLayerType::ROUTING)
@@ -2313,8 +2235,8 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
     getViaDims(defaultVias, level, widthUp, prlUp, widthDown, prlDown);
     bool upViaValid = widthUp != -1;
     bool downViaValid = widthDown != -1;
-    if(!upViaValid && !downViaValid)
-      continue; //no default vias found
+    if (!upViaValid && !downViaValid)
+      continue;  // no default vias found
     int layerWidth = layer->getWidth();
     int L2V_up = -1;
     int L2V_down = -1;
@@ -2334,26 +2256,31 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
       if (upViaValid)
         minSpcUp = layer->findV55Spacing(std::max(layerWidth, widthUp), prlUp);
       if (downViaValid)
-        minSpcDown = layer->findV55Spacing(std::max(layerWidth, widthDown), prlDown);
+        minSpcDown
+            = layer->findV55Spacing(std::max(layerWidth, widthDown), prlDown);
     } else {
       odb::dbSet<odb::dbTechLayerSpacingRule> rules;
       layer->getV54SpacingRules(rules);
       if (rules.size() > 0) {
         minSpcValid = true;
         int minSpc;
-        for(auto rule : rules)
+        for (auto rule : rules)
           minSpc = rule->getSpacing();
-        if(upViaValid)
+        if (upViaValid)
           minSpcUp = minSpc;
-        if(downViaValid)
+        if (downViaValid)
           minSpcDown = minSpc;
       }
     }
     if (minSpcValid) {
-      if(upViaValid)
-        L2V_up = (level != _maxRoutingLayer) ? (layerWidth / 2) + (widthUp / 2) + minSpcUp : -1;
+      if (upViaValid)
+        L2V_up = (level != _maxRoutingLayer)
+                     ? (layerWidth / 2) + (widthUp / 2) + minSpcUp
+                     : -1;
       if (downViaValid)
-        L2V_down = (level != _minRoutingLayer) ? (layerWidth / 2) + (widthDown / 2) + minSpcDown : -1;
+        L2V_down = (level != _minRoutingLayer)
+                       ? (layerWidth / 2) + (widthDown / 2) + minSpcDown
+                       : -1;
       debugPrint(_logger,
                  utl::GRT,
                  "l2v_pitch",
@@ -2365,27 +2292,27 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(
                  utl::GRT,
                  "l2v_pitch",
                  1,
-                 "L2V_up : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} , L2V = {:.4f} ",
+                 "L2V_up : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} "
+                 ", L2V = {:.4f} ",
                  static_cast<float>(dbuToMicrons(widthUp)),
                  static_cast<float>(dbuToMicrons(prlUp)),
                  static_cast<float>(dbuToMicrons(minSpcUp)),
                  static_cast<float>(dbuToMicrons(L2V_up)));
-      debugPrint(
-          _logger,
-          utl::GRT,
-          "l2v_pitch",
-          1,
-          "L2V_down : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} , L2V = {:.4f} ",
-          static_cast<float>(dbuToMicrons(widthDown)),
-          static_cast<float>(dbuToMicrons(prlDown)),
-          static_cast<float>(dbuToMicrons(minSpcDown)),
-          static_cast<float>(dbuToMicrons(L2V_down)));
+      debugPrint(_logger,
+                 utl::GRT,
+                 "l2v_pitch",
+                 1,
+                 "L2V_down : viaWidth = {:.4f} , prl = {:.4f} , minSpc = "
+                 "{:.4f} , L2V = {:.4f} ",
+                 static_cast<float>(dbuToMicrons(widthDown)),
+                 static_cast<float>(dbuToMicrons(prlDown)),
+                 static_cast<float>(dbuToMicrons(minSpcDown)),
+                 static_cast<float>(dbuToMicrons(L2V_down)));
     }
     pitches[level] = {L2V_up, L2V_down};
   }
   return pitches;
 }
-
 
 void GlobalRouter::initRoutingTracks(
     std::vector<RoutingTracks>& allRoutingTracks,
@@ -2436,16 +2363,22 @@ void GlobalRouter::initRoutingTracks(
       numTracks = numTracksX;
       orientation = RoutingLayer::VERTICAL;
     } else {
-      _logger->error(GRT, 87, "Layer {} does not have valid direction.", techLayer->getName());
+      _logger->error(GRT, 87, "Layer {} does not have valid direction.",
+                     techLayer->getName());
     }
 
-    RoutingTracks routingTracks = RoutingTracks(
-        layer, trackPitch, line2ViaPitchUp, line2ViaPitchDown, location, numTracks, orientation);
+    RoutingTracks routingTracks = RoutingTracks(layer,
+                                                trackPitch,
+                                                line2ViaPitchUp,
+                                                line2ViaPitchDown,
+                                                location,
+                                                numTracks,
+                                                orientation);
     allRoutingTracks.push_back(routingTracks);
     _logger->info(GRT, 88, "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
-                  techLayer->getName(),
-                  static_cast<float>(dbuToMicrons(routingTracks.getTrackPitch())),
-                  static_cast<float>(dbuToMicrons(routingTracks.getLineToViaPitch())));
+        techLayer->getName(),
+        static_cast<float>(dbuToMicrons(routingTracks.getTrackPitch())),
+        static_cast<float>(dbuToMicrons(routingTracks.getLineToViaPitch())));
   }
 }
 
@@ -2471,7 +2404,10 @@ void GlobalRouter::computeCapacities(int maxLayer)
 
       _grid->addHorizontalCapacity(hCapacity, l - 1);
       _grid->addVerticalCapacity(0, l - 1);
-      debugPrint(_logger, GRT, "graph", 1,
+      debugPrint(_logger,
+                 GRT,
+                 "graph",
+                 1,
                  "Layer {} has {} h-capacity",
                  techLayer->getConstName(),
                  hCapacity);
@@ -2481,12 +2417,16 @@ void GlobalRouter::computeCapacities(int maxLayer)
 
       _grid->addHorizontalCapacity(0, l - 1);
       _grid->addVerticalCapacity(vCapacity, l - 1);
-      debugPrint(_logger, GRT, "graph", 1,
+      debugPrint(_logger,
+                 GRT,
+                 "graph",
+                 1,
                  "Layer {} has {} v-capacity",
                  techLayer->getConstName(),
                  vCapacity);
     } else {
-      _logger->error(GRT, 89, "Layer {} does not have valid direction.", techLayer->getName());
+      _logger->error(GRT, 89, "Layer {} does not have valid direction.",
+                     techLayer->getName());
     }
   }
 }
@@ -2524,7 +2464,8 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
                == odb::dbTechLayerDir::VERTICAL) {
       minWidth = trackStepX;
     } else {
-      _logger->error(GRT, 91, "Layer {} does not have valid direction.", techLayer->getName());
+      _logger->error(GRT, 91, "Layer {} does not have valid direction.",
+                     techLayer->getName());
     }
 
     _grid->addSpacing(minSpacing, l - 1);
@@ -2806,7 +2747,8 @@ void GlobalRouter::makeBtermPins(Net* net,
             (connectedToPad || connectedToMacro));
 
     if (pin.getLayers().empty()) {
-      _logger->error(GRT, 93, "Pin {} does not have layer assignment.", bterm->getConstName());
+      _logger->error(GRT, 93, "Pin {} does not have layer assignment.",
+                     bterm->getConstName());
     }
 
     if (connectedToPad) {
@@ -3001,7 +2943,8 @@ int GlobalRouter::findInstancesObstructions(
                                          rect.yMax() + layerExtension);
       odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
       if (!dieArea.contains(obstructionBox)) {
-        _logger->warn(GRT, 38, "Found blockage outside die area in instance {}.", currInst->getConstName());
+        _logger->warn(GRT, 38, "Found blockage outside die area in instance {}.",
+                      currInst->getConstName());
       }
       _grid->addObstruction(layer, obstructionBox);
       obstructionsCnt++;
@@ -3030,7 +2973,8 @@ int GlobalRouter::findInstancesObstructions(
           upperBound = odb::Point(rect.xMax(), rect.yMax());
           pinBox = odb::Rect(lowerBound, upperBound);
           if (!dieArea.contains(pinBox)) {
-            _logger->warn(GRT, 39, "Found pin outside die area in instance {}.", currInst->getConstName());
+            _logger->warn(GRT, 39, "Found pin outside die area in instance {}.",
+                          currInst->getConstName());
           }
           _grid->addObstruction(pinLayer, pinBox);
         }
@@ -3073,7 +3017,8 @@ void GlobalRouter::findNetsObstructions(odb::Rect& dieArea)
                 = odb::Point(wireRect.xMax(), wireRect.yMax());
             odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
             if (!dieArea.contains(obstructionBox)) {
-              _logger->warn(GRT, 40, "Net {} has wires outside die area.", db_net->getConstName());
+              _logger->warn(GRT, 40, "Net {} has wires outside die area.",
+                            db_net->getConstName());
             }
             _grid->addObstruction(l, obstructionBox);
           }
@@ -3100,7 +3045,8 @@ void GlobalRouter::findNetsObstructions(odb::Rect& dieArea)
                 = odb::Point(wireRect.xMax(), wireRect.yMax());
             odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
             if (!dieArea.contains(obstructionBox)) {
-              _logger->warn(GRT, 41, "Net {} has wires outside die area.", db_net->getConstName());
+              _logger->warn(GRT, 41, "Net {} has wires outside die area.",
+                            db_net->getConstName());
             }
             _grid->addObstruction(l, obstructionBox);
           }
@@ -3161,14 +3107,16 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(int maxRoutingLayer)
     for (int i = 1; i <= maxRoutingLayer; i++) {
       for (odb::dbTechVia* currVia : vias) {
         if (currVia->getBottomLayer()->getRoutingLevel() == i) {
-          debugPrint(_logger, utl::GRT, "l2v_pitch", 1,
-              "Via for layers {} and {}: {}",
-              currVia->getBottomLayer()->getName(),
-              currVia->getTopLayer()->getName(),
-              currVia->getName());
+          debugPrint(_logger,
+                     utl::GRT,
+                     "l2v_pitch",
+                     1,
+                     "Via for layers {} and {}: {}",
+                     currVia->getBottomLayer()->getName(),
+                     currVia->getTopLayer()->getName(),
+                     currVia->getName());
           defaultVias[i] = currVia;
-          _logger->info(GRT, 224, "Chose via {} as default.",
-                        currVia->getConstName());
+          _logger->info(GRT, 224, "Chose via {} as default.", currVia->getConstName());
           break;
         }
       }
@@ -3202,12 +3150,12 @@ void GlobalRouter::print(GRoute& route)
 {
   for (GSegment& segment : route) {
     _logger->report("{:6d} {:6d} {:2d} -> {:6d} {:6d} {:2d}",
-           segment.initX,
-           segment.initY,
-           segment.initLayer,
-           segment.finalX,
-           segment.finalY,
-           segment.finalLayer);
+                    segment.initX,
+                    segment.initY,
+                    segment.initLayer,
+                    segment.finalX,
+                    segment.finalY,
+                    segment.finalLayer);
   }
 }
 
@@ -3232,23 +3180,35 @@ void GlobalRouter::reportResources()
   _logger->report("");
   _logger->info(GRT, 53, "Routing resources analysis:");
   _logger->report("          Routing      Original      Derated      Resource");
-  _logger->report("Layer     Direction    Resources     Resources    Reduction (%)");
-  _logger->report("---------------------------------------------------------------");
+  _logger->report(
+      "Layer     Direction    Resources     Resources    Reduction (%)");
+  _logger->report(
+      "---------------------------------------------------------------");
 
   for (int l = 0; l < original_resources.size(); l++) {
-    odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
-    std::string routing_direction = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) ?
-      "Horizontal" : "Vertical";
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l + 1);
+    std::string routing_direction
+        = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
+              ? "Horizontal"
+              : "Vertical";
 
     float reduciton_percent = 0;
     if (original_resources[l] > 0) {
-      reduciton_percent = (1.0 - ((float)derated_resources[l] / (float)original_resources[l]))*100;
+      reduciton_percent
+          = (1.0
+             - ((float) derated_resources[l] / (float) original_resources[l]))
+            * 100;
     }
 
     _logger->report("{:7s}    {:10}   {:8}      {:8}          {:3.2f}%",
-      layer->getName(), routing_direction, original_resources[l], derated_resources[l], reduciton_percent);
+                    layer->getName(),
+                    routing_direction,
+                    original_resources[l],
+                    derated_resources[l],
+                    reduciton_percent);
   }
-  _logger->report("---------------------------------------------------------------");
+  _logger->report(
+      "---------------------------------------------------------------");
   _logger->report("");
 }
 
@@ -3256,11 +3216,13 @@ void GlobalRouter::reportCongestion()
 {
   _fastRoute->computeCongestionInformation();
   odb::dbTech* tech = _db->getTech();
-  const std::vector<int> &resources = _fastRoute->getTotalCapacityPerLayer();
-  const std::vector<int> &demands = _fastRoute->getTotalUsagePerLayer();
-  const std::vector<int> &overflows = _fastRoute->getTotalOverflowPerLayer();
-  const std::vector<int> &max_h_overflows = _fastRoute->getMaxHorizontalOverflows();
-  const std::vector<int> &max_v_overflows = _fastRoute->getMaxVerticalOverflows();
+  const std::vector<int>& resources = _fastRoute->getTotalCapacityPerLayer();
+  const std::vector<int>& demands = _fastRoute->getTotalUsagePerLayer();
+  const std::vector<int>& overflows = _fastRoute->getTotalOverflowPerLayer();
+  const std::vector<int>& max_h_overflows
+      = _fastRoute->getMaxHorizontalOverflows();
+  const std::vector<int>& max_v_overflows
+      = _fastRoute->getMaxVerticalOverflows();
 
   int total_resource = 0;
   int total_demand = 0;
@@ -3270,16 +3232,19 @@ void GlobalRouter::reportCongestion()
 
   _logger->report("");
   _logger->info(GRT, 96, "Final congestion report:");
-  _logger->report("Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow");
-  _logger->report("---------------------------------------------------------------------------------------");
+  _logger->report(
+      "Layer         Resource        Demand        Usage (%)    Max H / Max V "
+      "/ Total Overflow");
+  _logger->report(
+      "------------------------------------------------------------------------"
+      "---------------");
 
   for (int l = 0; l < resources.size(); l++) {
     float usage_percentage;
     if (resources[l] == 0) {
       usage_percentage = 0.0;
     } else {
-      usage_percentage
-          = (float) demands[l] / (float) resources[l];
+      usage_percentage = (float) demands[l] / (float) resources[l];
       usage_percentage *= 100;
     }
 
@@ -3289,15 +3254,32 @@ void GlobalRouter::reportCongestion()
     total_h_overflow += max_h_overflows[l];
     total_v_overflow += max_v_overflows[l];
 
-    odb::dbTechLayer* layer = tech->findRoutingLayer(l+1);
-    _logger->report("{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / {:2}",
-      layer->getName(), resources[l], demands[l], usage_percentage, max_h_overflows[l],
-      max_v_overflows[l], overflows[l]);
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l + 1);
+    _logger->report(
+        "{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
+        "{:2}",
+        layer->getName(),
+        resources[l],
+        demands[l],
+        usage_percentage,
+        max_h_overflows[l],
+        max_v_overflows[l],
+        overflows[l]);
   }
-  float total_usage = (float)total_demand / (float)total_resource * 100;
-  _logger->report("---------------------------------------------------------------------------------------");
-  _logger->report("Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / {:2}",
-    total_resource, total_demand, total_usage, total_h_overflow, total_v_overflow, total_overflow);
+  float total_usage = (total_resource == 0) ? 0 : 
+                      (float) total_demand / (float) total_resource * 100;
+  _logger->report(
+      "------------------------------------------------------------------------"
+      "---------------");
+  _logger->report(
+      "Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
+      "{:2}",
+      total_resource,
+      total_demand,
+      total_usage,
+      total_h_overflow,
+      total_v_overflow,
+      total_overflow);
   _logger->report("");
 }
 
@@ -3309,22 +3291,23 @@ void GlobalRouter::reportLayerWireLengths()
   for (auto& net_route : _routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
-    for (GSegment &seg : route) {
+    for (GSegment& seg : route) {
       int layer1 = seg.initLayer;
       int layer2 = seg.finalLayer;
       if (layer1 == layer2) {
-        int seg_length = abs(seg.initX - seg.finalX) + abs(seg.initY - seg.finalY);
+        int seg_length
+            = abs(seg.initX - seg.finalX) + abs(seg.initY - seg.finalY);
         lengths[layer1] += seg_length;
         total_length += seg_length;
       }
     }
   }
   if (total_length > 0) {
-    odb::dbTech *tech = _db->getTech();
+    odb::dbTech* tech = _db->getTech();
     for (int i = 0; i < lengths.size(); i++) {
       int64_t length = lengths[i];
       if (length > 0) {
-        odb::dbTechLayer *layer = tech->findRoutingLayer(i);
+        odb::dbTechLayer* layer = tech->findRoutingLayer(i);
         _logger->report("{:5s} {:8d}um {:3d}%",
                         layer->getName(),
                         static_cast<int64_t>(dbuToMicrons(length)),
@@ -3348,21 +3331,19 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
 
 class GrouteRenderer : public gui::Renderer
 {
-public:
-  GrouteRenderer(GlobalRouter *groute,
-                 odb::dbTech* tech);
-  void highlight(const odb::dbNet *net);
+ public:
+  GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
+  void highlight(const odb::dbNet* net);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
-private:
-  GlobalRouter *groute_;
-  odb::dbTech *tech_;
-  const odb::dbNet *net_;
+ private:
+  GlobalRouter* groute_;
+  odb::dbTech* tech_;
+  const odb::dbNet* net_;
 };
 
 // Highlight guide in the gui.
-void
-GlobalRouter::highlightRoute(const odb::dbNet *net)
+void GlobalRouter::highlightRoute(const odb::dbNet* net)
 {
   if (_gui) {
     if (_groute_renderer == nullptr) {
@@ -3373,91 +3354,46 @@ GlobalRouter::highlightRoute(const odb::dbNet *net)
   }
 }
 
-GrouteRenderer::GrouteRenderer(GlobalRouter *groute,
-                               odb::dbTech* tech) :
-  groute_(groute),
-  tech_(tech),
-  net_(nullptr)
+GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
+    : groute_(groute), tech_(tech), net_(nullptr)
 {
 }
 
-void
-GrouteRenderer::highlight(const odb::dbNet *net)
+void GrouteRenderer::highlight(const odb::dbNet* net)
 {
   net_ = net;
 }
 
-void
-GrouteRenderer::drawObjects(gui::Painter &painter)
+void GrouteRenderer::drawObjects(gui::Painter& painter)
 {
   if (net_) {
     NetRouteMap& routes = groute_->getRoutes();
-    GRoute &groute = routes[const_cast<odb::dbNet*>(net_)];
-    for (GSegment &seg : groute) {
+    GRoute& groute = routes[const_cast<odb::dbNet*>(net_)];
+    for (GSegment& seg : groute) {
       int layer1 = seg.initLayer;
       int layer2 = seg.finalLayer;
       if (layer1 == layer2) {
-        odb::dbTechLayer *layer = tech_->findRoutingLayer(layer1);
-        // Draw rect because drawLine does not have a way to set the pen thickness.
+        odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
+        // Draw rect because drawLine does not have a way to set the pen
+        // thickness.
         odb::Rect rect;
-        // gui clips visiblity of rect when zoomed out so layer width doesn't work
-        // very well.
+        // gui clips visiblity of rect when zoomed out so layer width doesn't
+        // work very well.
         int thickness = layer->getWidth() * 20;
         if (seg.initX == seg.finalX)
           // vertical
-          rect = odb::Rect(seg.initX, seg.initY, seg.initX + thickness, seg.finalY);
+          rect = odb::Rect(
+              seg.initX, seg.initY, seg.initX + thickness, seg.finalY);
         else
           // horizontal
-          rect = odb::Rect(seg.initX, seg.initY, seg.finalX, seg.initY + thickness);
+          rect = odb::Rect(
+              seg.initX, seg.initY, seg.finalX, seg.initY + thickness);
         painter.setPen(layer);
         painter.setBrush(layer);
         painter.drawRect(rect);
       }
     }
   }
-}
-
-std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route)
-{
-  using std::endl;
-  os << "gridCountX = " << route.gridCountX << endl;
-  os << "gridCountY = " << route.gridCountY << endl;
-  os << "numLayers  = " << route.numLayers << endl;
-  for (size_t i = 0; i < route.verticalEdgesCapacities.size(); ++i) {
-    os << "verticalEdgesCapacities[" << i << "] = "
-       << route.verticalEdgesCapacities[i] << endl;
-  }
-
-  for (size_t i = 0; i < route.horizontalEdgesCapacities.size(); ++i) {
-    os << "horizontalEdgesCapacities[" << i << "] = "
-       << route.horizontalEdgesCapacities[i] << endl;
-  }
-
-  for (size_t i = 0; i < route.minWireWidths.size(); ++i) {
-    os << "minWireWidths[" << i << "] = "
-       << route.minWireWidths[i] << endl;
-  }
-
-  for (size_t i = 0; i < route.minWireSpacings.size(); ++i) {
-    os << "minWireSpacings[" << i << "] = "
-       << route.minWireSpacings[i] << endl;
-  }
-
-  for (size_t i = 0; i < route.viaSpacings.size(); ++i) {
-    os << "viaSpacings[" << i << "] = "
-       << route.viaSpacings[i] << endl;
-  }
-
-  os << "gridOriginX = " << route.gridOriginX << endl;
-  os << "gridOriginY = " << route.gridOriginY << endl;
-
-  os << "tileWidth = " << route.tileWidth << endl;
-  os << "tileHeight = " << route.tileHeight << endl;
-
-  os << "blockPorosity = " << route.blockPorosity << endl;
-  // int numAdjustments;
-  //   std::vector<ADJUSTMENT_> adjustments;
-  return os;
 }
 
 }  // namespace grt

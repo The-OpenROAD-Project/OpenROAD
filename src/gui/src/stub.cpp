@@ -89,6 +89,15 @@ Selected Gui::makeSelected(std::any /* object */, void* /* additional_data */)
   return Selected();
 }
 
+void Gui::setSelected(Selected selection)
+{
+}
+
+void Gui::registerDescriptor(const std::type_info& type,
+                        const Descriptor* descriptor)
+{
+}
+
 // using namespace odb;
 int startGui(int argc, char* argv[])
 {

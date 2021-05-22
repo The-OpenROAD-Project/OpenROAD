@@ -315,33 +315,44 @@ BOOST_DATA_TEST_CASE(spacing_prl,
   }
 }
 
-// Check violation for spacing eol with design rule width on macro obstruction
+// Check violation for spacing two widths with design rule width on macro
+// obstruction
 BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
 {
   // Setup
-  makeSpacingEndOfLineConstraint(2);
-
+  makeSpacingTableTwConstraint(2, {90, 190}, {-1, -1}, {{0, 50}, {50, 100}});
+  /*
+  WIDTH  90     0      50
+  WIDTH 190     50    150
+  */
+  USEMINSPACING_OBS = false;  // Do not use layer width as Obs width
   frNet* n1 = makeNet("n1");
 
-  makePathseg(n1, 2, {500, 0}, {500, 500});
+  makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
   auto block = makeMacro("DRW");
-  if (legal)
-    makeMacroObs(block, 0, 700, 1000, 800);
-  else
-    makeMacroObs(block, 0, 700, 1000, 800, 2, 200);
+  makeMacroObs(block, 0, 140, 500, 340, 2, legal ? 100 : -1);
   makeInst("i1", block, 0, 0);
+  /*
+  If DESIGNRULEWIDTH is 100
+    width(n1) = 100      width(obs) = 100 : reqSpcVal = 0
+  legal
+
+  if DESIGNRULEWIDTH is -1 (undefined)
+    width(n1) = 100      width(obs) = 200 : reqSpcVal = 100
+  illegal
+  */
   runGC();
 
   // Test the results
   auto& markers = worker.getMarkers();
-  if (legal) {
+  if (legal)
     BOOST_TEST(markers.size() == 0);
-  } else {
+  else {
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,
-               frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-               frBox(450, 500, 550, 650));
+               frConstraintTypeEnum::frcSpacingTableTwConstraint,
+               frBox(0, 100, 500, 140));
   }
 }
 

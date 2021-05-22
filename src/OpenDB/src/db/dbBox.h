@@ -124,7 +124,7 @@ inline _dbBox::_dbBox(_dbDatabase*)
   _flags._mark = 0;
   _owner = 0;
   _octilinear = false;
-  design_rule_width_ = 0;
+  design_rule_width_ = -1;
 }
 
 inline _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)

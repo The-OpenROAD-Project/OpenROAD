@@ -657,7 +657,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
   endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
   startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
   endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-  cost += (hasFixedShapeCost(gridX, gridY, gridZ, dir) ? FIXEDSHAPECOST * el : 0);
+  cost += (hasFixedShapeCost(gridX, gridY, gridZ, dir) ? FIXEDSHAPECOST * el
+                                                       : 0);
   cost += (hasRouteShapeCost(gridX, gridY, gridZ, dir) ? ggDRCCost_ * el : 0);
   cost += (hasMarkerCost(gridX, gridY, gridZ, dir) ? ggMarkerCost_ * el : 0);
   cost += (isBlocked(gridX, gridY, gridZ, dir)
@@ -874,7 +875,6 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
                            const frPoint& centerPt,
                            map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
-
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);

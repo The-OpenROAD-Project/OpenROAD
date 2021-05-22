@@ -37,6 +37,7 @@
 
 namespace odb {
 class dbDatabase;
+class dbTechNonDefaultRule;
 class dbBlock;
 class dbTech;
 class dbSBox;
@@ -124,6 +125,7 @@ class Parser
   void setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
 
   void setNDRs(odb::dbDatabase* db);
+  void createNDR(odb::dbTechNonDefaultRule* ndr);
 
   frDesign* design;
   frTechObject* tech;

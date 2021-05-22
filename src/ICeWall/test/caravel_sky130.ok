@@ -176,4 +176,6 @@ Checking result
 [WARNING PAD-0018] No term VDDA found on brk_vdda_0
 [WARNING PAD-0018] No term VDDA found on brk_vdda_1
 [WARNING PAD-0018] No term VDDA found on brk_vdda_2
-No differences found.
+Differences found at line 7.
+ROW ROW_1898 unithd 5520 5173440 N DO 7776 BY 1 STEP 460 0 ;
+ROW ROW_1898 unithd 5520 5173440 FS DO 7776 BY 1 STEP 460 0 ;

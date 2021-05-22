@@ -84,13 +84,8 @@ void PartitionMgr::runChaco()
   currentResults.setToolName(_options.getTool());
   unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  currentResults.setNumOfRuns(_options.getSeeds().size());
   std::string evaluationFunction = _options.getEvaluationFunction();
 
-  PartSolutions bestResult;
-  bestResult.setToolName(_options.getTool());
-  bestResult.setPartitionId(partitionId);
-  bestResult.setNumOfRuns(1);
   int firstRun = 0;
 
   std::vector<int> edgeWeights = _graph.getEdgeWeight();
@@ -266,56 +261,10 @@ void PartitionMgr::runChaco()
     currentResults.addAssignment(chacoResult, runtime, seed);
     free(assigment);
 
-    if (_options.getSeeds().size() > 19) {
-      if (firstRun <= 0) {
-        bestResult.addAssignment(chacoResult, runtime, seed);
-        _results.push_back(bestResult);
-        computePartitionResult(partitionId, evaluationFunction);
-        bestResult = _results.back();
-        currentResults.clearAssignments();
-      } else {
-        currentResults.setNumOfRuns(1);
-        currentResults.setPartitionId(partitionId + 1);
-        _results.push_back(currentResults);
-        computePartitionResult((partitionId + 1), evaluationFunction);
-        currentResults = _results.back();
-        bool isNewIdBetter = comparePartitionings(
-            bestResult, currentResults, evaluationFunction);
-        if (isNewIdBetter) {
-          _results.pop_back();
-          _results.pop_back();
-          bestResult.clearAssignments();
-          bestResult.addAssignment(chacoResult, runtime, seed);
-
-          bestResult.setBestSolutionIdx(0);
-          bestResult.setBestRuntime(runtime);
-          bestResult.setBestNumHyperedgeCuts(
-              currentResults.getBestNumHyperedgeCuts());
-          bestResult.setBestNumTerminals(currentResults.getBestNumTerminals());
-          bestResult.setBestHopWeigth(currentResults.getBestHopWeigth());
-          bestResult.setBestSetSize(currentResults.getBestSetSize());
-          bestResult.setBestSetArea(currentResults.getBestSetArea());
-
-          _results.push_back(bestResult);
-          currentResults.clearAssignments();
-        } else {
-          _results.pop_back();
-          currentResults.clearAssignments();
-        }
-      }
-      firstRun++;
-      if (firstRun % 100 == 0) {
-        _logger->info(PAR, 3, "[Chaco] Partitioned graph for {} seeds.", firstRun);
-      }
-    } else {
-      _logger->info(PAR, 4, "[Chaco] Partitioned graph for seed {} in {} ms.", seed, runtime);
-    }
+    _logger->info(PAR, 4, "[Chaco] Partitioned graph for seed {} in {} ms.", seed, runtime);
   }
 
-  if (_options.getSeeds().size() <= 19) {
-    _results.push_back(currentResults);
-    computePartitionResult(partitionId, evaluationFunction);
-  }
+  _results.push_back(currentResults);
   free(mesh_dims);
 
   _logger->info(PAR, 5, "[Chaco] Run completed. Partition ID = {}. Total runs = {}.", partitionId, _options.getSeeds().size());
@@ -330,13 +279,8 @@ void PartitionMgr::runGpMetis()
   currentResults.setToolName(_options.getTool());
   unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  currentResults.setNumOfRuns(_options.getSeeds().size());
   std::string evaluationFunction = _options.getEvaluationFunction();
 
-  PartSolutions bestResult;
-  bestResult.setToolName(_options.getTool());
-  bestResult.setPartitionId(partitionId);
-  bestResult.setNumOfRuns(1);
   int firstRun = 0;
 
   idx_t edgeCut;
@@ -400,60 +344,14 @@ void PartitionMgr::runGpMetis()
     currentResults.addAssignment(gpmetisResults, runtime, seed);
     free(parts);
 
-    if (_options.getSeeds().size() > 19) {
-      if (firstRun <= 0) {
-        bestResult.addAssignment(gpmetisResults, runtime, seed);
-        _results.push_back(bestResult);
-        computePartitionResult(partitionId, evaluationFunction);
-        bestResult = _results.back();
-        currentResults.clearAssignments();
-      } else {
-        currentResults.setNumOfRuns(1);
-        currentResults.setPartitionId(partitionId + 1);
-        _results.push_back(currentResults);
-        computePartitionResult((partitionId + 1), evaluationFunction);
-        currentResults = _results.back();
-        bool isNewIdBetter = comparePartitionings(
-            bestResult, currentResults, evaluationFunction);
-        if (isNewIdBetter) {
-          _results.pop_back();
-          _results.pop_back();
-          bestResult.clearAssignments();
-          bestResult.addAssignment(gpmetisResults, runtime, seed);
-
-          bestResult.setBestSolutionIdx(0);
-          bestResult.setBestRuntime(runtime);
-          bestResult.setBestNumHyperedgeCuts(
-              currentResults.getBestNumHyperedgeCuts());
-          bestResult.setBestNumTerminals(currentResults.getBestNumTerminals());
-          bestResult.setBestHopWeigth(currentResults.getBestHopWeigth());
-          bestResult.setBestSetSize(currentResults.getBestSetSize());
-          bestResult.setBestSetArea(currentResults.getBestSetArea());
-
-          _results.push_back(bestResult);
-          currentResults.clearAssignments();
-        } else {
-          _results.pop_back();
-          currentResults.clearAssignments();
-        }
-      }
-      firstRun++;
-      if (firstRun % 100 == 0) {
-        _logger->info(PAR, 55, "[GPMetis] Partitioned graph for {} seeds.", firstRun);
-      }
-    } else {
-      _logger->info(PAR, 56, "[GPMetis] Partitioned graph for seed {} in {} ms.", seed, runtime);
-    }
+    _logger->info(PAR, 56, "[GPMetis] Partitioned graph for seed {} in {} ms.", seed, runtime);
   }
   free(vertexWeights);
   free(rowPtr);
   free(colIdx);
   free(edgeWeights);
 
-  if (_options.getSeeds().size() <= 19) {
-    _results.push_back(currentResults);
-    computePartitionResult(partitionId, evaluationFunction);
-  }
+  _results.push_back(currentResults);
 
   _logger->info(PAR, 57, "[GPMetis] Run completed. Partition ID = {}. Total runs = {}.", partitionId, _options.getSeeds().size());
 #endif
@@ -476,13 +374,11 @@ void PartitionMgr::runMlPart()
   currentResults.setToolName(_options.getTool());
   unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  currentResults.setNumOfRuns(_options.getSeeds().size());
   std::string evaluationFunction = _options.getEvaluationFunction();
 
   PartSolutions bestResult;
   bestResult.setToolName(_options.getTool());
   bestResult.setPartitionId(partitionId);
-  bestResult.setNumOfRuns(1);
   int firstRun = 0;
 
   int numOriginalVertices = hypergraph.getNumVertex();
@@ -573,59 +469,12 @@ void PartitionMgr::runMlPart()
               .count();
 
     currentResults.addAssignment(clusters, runtime, seed);
-
-    if (_options.getSeeds().size() > 19) {
-      if (firstRun <= 0) {
-        bestResult.addAssignment(clusters, runtime, seed);
-        _results.push_back(bestResult);
-        computePartitionResult(partitionId, evaluationFunction);
-        bestResult = _results.back();
-        currentResults.clearAssignments();
-      } else {
-        currentResults.setNumOfRuns(1);
-        currentResults.setPartitionId(partitionId + 1);
-        _results.push_back(currentResults);
-        computePartitionResult((partitionId + 1), evaluationFunction);
-        currentResults = _results.back();
-        bool isNewIdBetter = comparePartitionings(
-            bestResult, currentResults, evaluationFunction);
-        if (isNewIdBetter) {
-          _results.pop_back();
-          _results.pop_back();
-          bestResult.clearAssignments();
-          bestResult.addAssignment(clusters, runtime, seed);
-
-          bestResult.setBestSolutionIdx(0);
-          bestResult.setBestRuntime(runtime);
-          bestResult.setBestNumHyperedgeCuts(
-              currentResults.getBestNumHyperedgeCuts());
-          bestResult.setBestNumTerminals(currentResults.getBestNumTerminals());
-          bestResult.setBestHopWeigth(currentResults.getBestHopWeigth());
-          bestResult.setBestSetSize(currentResults.getBestSetSize());
-          bestResult.setBestSetArea(currentResults.getBestSetArea());
-
-          _results.push_back(bestResult);
-          currentResults.clearAssignments();
-        } else {
-          _results.pop_back();
-          currentResults.clearAssignments();
-        }
-      }
-      firstRun++;
-      if (firstRun % 100 == 0) {
-        _logger->info(PAR, 58, "[MLPart] Partitioned graph for {} seeds.", firstRun);
-      }
-    } else {
-      _logger->info(PAR, 59, "[MLPart] Partitioned graph for seed {} in {} ms.", seed, runtime);
-    }
+    _logger->info(PAR, 59, "[MLPart] Partitioned graph for seed {} in {} ms.", seed, runtime);
 
     std::fill(clusters.begin(), clusters.end(), 0);
   }
 
-  if (_options.getSeeds().size() <= 19) {
-    _results.push_back(currentResults);
-    computePartitionResult(partitionId, evaluationFunction);
-  }
+  _results.push_back(currentResults);
 
   _logger->info(PAR, 60, "[MLPart] Run completed. Partition ID = {}. Total runs = {}.", partitionId, _options.getSeeds().size());
 #endif
@@ -682,9 +531,12 @@ void PartitionMgr::evaluatePartitioning()
   std::string evaluationFunction = _options.getEvaluationFunction();
   // Checks if IDs are valid
   for (int partId : partVector) {
-    if (partId >= _results.size()) {
-      std::exit(1);
+    if (partId >= _results.size() || partId < 0) {
+      _logger->error(PAR, 100, "Invalid partitioning id: {}", partId);
     }
+  }
+  for (int partId : partVector) {
+    computePartitionResult(partId, evaluationFunction);
   }
   int bestId = -1;
   for (int partId : partVector) {
@@ -722,7 +574,8 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
   float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
   float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
 
-  PartSolutions currentResults = _results[partitionId];
+  PartSolutions& currentResults = _results[partitionId];
+  currentResults.resetEvaluation();
   for (unsigned idx = 0; idx < currentResults.getNumOfRuns(); idx++) {
     std::vector<unsigned long> currentAssignment
         = currentResults.getAssignment(idx);
@@ -773,18 +626,25 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
         switch (weightModel) {
           case 1:
             currentNetWeight = 1.0 / (netSize - 1);
+            break;
           case 2:
             currentNetWeight = 4.0 / (netSize * (netSize - 1));
+            break;
           case 3:
             currentNetWeight = 4.0 / (netSize * netSize - (netSize % 2));
+            break;
           case 4:
             currentNetWeight = 6.0 / (netSize * (netSize + 1));
+            break;
           case 5:
             currentNetWeight = pow((2.0 / netSize), 1.5);
+            break;
           case 6:
             currentNetWeight = pow((2.0 / netSize), 3);
+            break;
           case 7:
             currentNetWeight = 2.0 / netSize;
+            break;
         }
         int auxWeight;
 
@@ -859,7 +719,6 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
       currentResults.setBestSetArea(areaSD);
     }
   }
-  _results[partitionId] = currentResults;
 }
 
 bool PartitionMgr::comparePartitionings(PartSolutions oldPartition,
@@ -980,7 +839,6 @@ void PartitionMgr::runChacoClustering()
   currentResults.setToolName(_options.getTool());
   unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  currentResults.setNumOfRuns(_options.getSeeds().size());
   std::string evaluationFunction = _options.getEvaluationFunction();
 
   std::vector<int> edgeWeights = _graph.getEdgeWeight();
@@ -1112,7 +970,6 @@ void PartitionMgr::runGpMetisClustering()
   currentResults.setToolName(_options.getTool());
   unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  currentResults.setNumOfRuns(_options.getSeeds().size());
   std::string evaluationFunction = _options.getEvaluationFunction();
 
   idx_t edgeCut;
@@ -1203,7 +1060,6 @@ void PartitionMgr::runMlPartClustering()
   currentResults.setToolName(_options.getTool());
   unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  currentResults.setNumOfRuns(_options.getSeeds().size());
   std::string evaluationFunction = _options.getEvaluationFunction();
   unsigned level = _options.getLevel();
 
@@ -1374,7 +1230,6 @@ void PartitionMgr::readPartitioningFile(std::string filename)
   currentResults.setToolName(_options.getTool());
   unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  currentResults.setNumOfRuns(1);
   std::string evaluationFunction = _options.getEvaluationFunction();
   _options.setTargetPartitions(_options.getFinalPartitions());
 
@@ -1414,9 +1269,22 @@ void PartSolutions::addAssignment(std::vector<unsigned long> currentAssignment,
 
 void PartSolutions::clearAssignments()
 {
+  resetEvaluation();
+
   _assignmentResults.clear();
   _runtimeResults.clear();
   _seeds.clear();
+}
+
+void PartSolutions::resetEvaluation()
+{
+  _bestSolutionIdx = 0;
+  _bestSetSizeSD = 0;
+  _bestSetAreaSD = 0;
+  _bestNumTerminals = 0;
+  _bestNumHyperedgeCuts = 0;
+  _bestRuntime = 0;
+  _bestHopWeigth = 0;
 }
 
 void PartitionMgr::reportGraph()

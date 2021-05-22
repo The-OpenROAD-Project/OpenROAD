@@ -127,36 +127,6 @@ bool operator<(const RoutePt& p1, const RoutePt& p2);
 class GlobalRouter
 {
  public:
-  struct ADJUSTMENT_
-  {
-    int firstX;
-    int firstY;
-    int firstLayer;
-    int finalX;
-    int finalY;
-    int finalLayer;
-    int edgeCapacity;
-  };
-
-  struct ROUTE_
-  {
-    int gridCountX;
-    int gridCountY;
-    int numLayers;
-    std::vector<int> verticalEdgesCapacities;
-    std::vector<int> horizontalEdgesCapacities;
-    std::vector<int> minWireWidths;
-    std::vector<int> minWireSpacings;
-    std::vector<int> viaSpacings;
-    long gridOriginX;
-    long gridOriginY;
-    long tileWidth;
-    long tileHeight;
-    int blockPorosity;
-    int numAdjustments;
-    std::vector<ADJUSTMENT_> adjustments;
-  };
-
   GlobalRouter() = default;
   ~GlobalRouter();
   void init(ord::OpenRoad* openroad);
@@ -199,9 +169,6 @@ class GlobalRouter
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diodePort);
   void addDirtyNet(odb::dbNet* net);
-
-  // congestion drive replace functions
-  ROUTE_ getRoute();
 
   double dbuToMicrons(int64_t dbu);
 
@@ -372,6 +339,5 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
-std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route);
 
 }  // namespace grt
