@@ -209,7 +209,7 @@ bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
   auto l_grid = std::any_cast<Data>(l);
   auto r_grid = std::any_cast<Data>(r);
 
-  assert(l_grid.grid_graph == r_grid.grid_graph);
+  assert(l_grid.graph == r_grid.graph);
 
   return std::tie(l_grid.x, l_grid.y, l_grid.z)
          < std::tie(r_grid.x, r_grid.y, r_grid.z);
