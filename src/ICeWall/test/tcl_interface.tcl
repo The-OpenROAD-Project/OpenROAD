@@ -385,5 +385,5 @@ if {[catch {ICeWall init_footprint} msg]} {
 set def_file [make_result_file "tcl_interface.def"]
 
 write_def $def_file
-diff_files $def_file "soc_bsg_black_parrot_nangate45.defok"
+diff_files $def_file "tcl_interface.defok"
 
