@@ -1,5 +1,5 @@
 ## ICeWall add_power_nets
-### Synopsys
+### Synopsis
 ```
   % ICeWall add_power_nets <power_net_name>, ...
 ```

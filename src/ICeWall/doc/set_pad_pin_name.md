@@ -1,5 +1,5 @@
 ## ICeWall set_pad_pin_name
-### Synopsys
+### Synopsis
 ```
   % ICeWall set_pad_pin_name <pad_pin_name>
 ```

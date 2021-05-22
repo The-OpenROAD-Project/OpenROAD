@@ -1,5 +1,5 @@
 ## ICeWall add_ground_nets
-### Synopsys
+### Synopsis
 ```
   % ICeWall add_ground_nets <ground_net_name>, ...
 ```

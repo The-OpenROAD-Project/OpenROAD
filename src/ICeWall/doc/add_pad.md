@@ -28,7 +28,7 @@ Use the -inst_name option to associate the padcell with a particular instance in
 
 
 | Switch_Name | Description |
-|--------|-------------|
+| ------ | ----------- |
 | -name  | Specify the name of the padcell whne using a separate signal assignment file. A name is automatically generated of not specified |
 | -type  | The type of cell specified in the library data |
 | -cell  |

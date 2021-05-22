@@ -1,5 +1,5 @@
 ## ICeWall set_die_area
-### Synopsys
+### Synopsis
 ```
   % ICeWall set_die_area <minX> <minY> <maxX> <maxY>
 ```

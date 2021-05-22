@@ -1,7 +1,7 @@
 # ICeWall TCL Commands
 
 The following commands can be used from the command prompt to define the padring structure for the chip.
- - [add_cell](add_cell.mdl)
+ - [add_cell](add_cell.md)
  - [add_pad](add_pad.md)
  - [add_power_nets](add_power_nets.md)
  - [add_ground_nets](add_ground_nets.md)

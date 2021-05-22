@@ -2,11 +2,11 @@
 
 ## Introduction
 
-ICeWall is a utility to place IO cells around the periphery of a design, and associate th eIO cells with those present in the netlist of the design.
+ICeWall is a utility to place IO cells around the periphery of a design, and associate the IO cells with those present in the netlist of the design.
 
 Additional data is required to define the IO cells in the library over and above that specified in the LEF description. e.g.
 * Define the orientation of IO cells on each side
-* Allow different cell types to be used for the same type of signal depending upin which side of the die the IO cell is to be placed on. Technologies that require the POLY layer to be aligned in the same direction across the whole die require different cell variants for left/right edges and top/bottom edges
+* Allow different cell types to be used for the same type of signal depending upon which side of the die the IO cell is to be placed on. Technologies that require the POLY layer to be aligned in the same direction across the whole die require different cell variants for left/right edges and top/bottom edges
 * Define the pins that connect through the sides of the pad cells by abutment
 * Define cells that are used as breaker cells around the padring, defining the signals that they break.
 * Define the filler cells and corner cells to be used.
@@ -23,7 +23,7 @@ ICeWall acts upon the information provided in the data files to produce a padrin
 
 ### Library data
 
-The library data is defined by calling the Footpring library function. This function takes a single argument, which is a TCL dictionary structure that defines the needed defintions of the cells.
+The library data is defined by calling the Footprint library function. This function takes a single argument, which is a TCL dictionary structure that defines the needed defintions of the cells.
 
 The following keys need to be defined in the dictionary
 * types
@@ -55,6 +55,7 @@ The cells key defines additional data for each IO cell. Each type defined in the
 * pad_pin_name
 
 | Key | Description |
+| --- | --- |
 | cell_name | Can either be the name of the LEF macro to use, or else a dictionary allowing a different cell name to be specified for each side of the die. Sides are denoted by bottom right top and left |
 | orient | A dictionary that specifies the orientation of the cell for each side of the die |
 | physical_only | Cells that are not associated with cells in the design, primarily used for physical connections through the pad ring |
@@ -67,7 +68,7 @@ The cells key defines additional data for each IO cell. Each type defined in the
 
 ### TCL Command Reference
 
-Details on the [TCL command interface](TCL_interface.md)
+Details on the [TCL command interface](TCL_Interface.md)
 
 
 ### Package data

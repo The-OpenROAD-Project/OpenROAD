@@ -1,5 +1,5 @@
-CeWall set_offsets
-### Synopsys
+## ICeWall set_offsets
+### Synopsis
 ```
   % ICeWall set_offsets <offset_value>
 ```

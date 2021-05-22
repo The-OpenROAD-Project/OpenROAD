@@ -1,5 +1,5 @@
 ## ICeWall set_pad_inst_name
-### Synopsys
+### Synopsis
 ```
   % ICeWall set_pad_inst_name <format_string>
 ```

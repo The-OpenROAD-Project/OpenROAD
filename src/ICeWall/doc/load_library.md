@@ -1,10 +1,10 @@
 ## ICeWall load_library
-### Synopsys
+### Synopsis
 ```
-  % ICeWall load_library <file_name>
+  % ICeWall load_library <library_file_name>
 ```
 ### Description
-Loads the data required to describe the padcells that are available to be used to build a padring
+Additional information about the padcells in the library, over and above what is available in standard EDA views is specified in a library definitions file. This command loads this library data so that it can be used to build a padring.
 ### Example
 ```
 ICeWall load_library_file soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strategy

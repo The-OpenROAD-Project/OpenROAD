@@ -1,5 +1,5 @@
 ## ICeWall init_footprint
-### Synopsys
+### Synopsis
 ```
   % ICeWall init_footprint [<signal_mapping_file>]
 ```

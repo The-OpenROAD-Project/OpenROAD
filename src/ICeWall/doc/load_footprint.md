@@ -1,5 +1,5 @@
 ## ICeWall load_footprint
-### Synopsys
+### Synopsis
 ```
   % ICeWall load_footprint <file_name>
 ```

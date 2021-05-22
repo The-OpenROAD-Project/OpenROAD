@@ -1,5 +1,5 @@
 ## ICeWall set_core_area
-### Synopsys
+### Synopsis
 ```
   % ICeWall set_core_area <minX> <minY> <maxX> <maxY>
 ```

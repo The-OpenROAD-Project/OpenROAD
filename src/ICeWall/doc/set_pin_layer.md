@@ -1,5 +1,5 @@
 ## ICeWall set_pin_layer
-### Synopsys
+### Synopsis
 ```
   % ICeWall set_pin_layer <layer_name>
 ```
