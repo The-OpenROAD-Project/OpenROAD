@@ -49,8 +49,8 @@ using utl::GPL;
 // TimingBase
 TimingBase::TimingBase() 
   : rs_(nullptr),
-    nb_(nullptr),
     log_(nullptr),
+    nb_(nullptr),
     net_weight_max_(4.0)
 {
 }

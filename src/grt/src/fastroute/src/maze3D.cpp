@@ -894,7 +894,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
       curY, curL, crossX, crossY, crossL, tmpX, tmpY, tmpL, tmpi, min_x, min_y,
       *dtmp;
   int regionX1, regionX2, regionY1, regionY2, routeLen;
-  int heapLen1, heapLen2, ind, ind1, tmpind, grid;
+  int heapLen1, heapLen2, ind, ind1, grid;
   float tmp;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;

@@ -82,7 +82,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
   dbSet<dbNet>::iterator itr;
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
-    uint netId = net->getId();
     const char* netName = net->getConstName();
 
     uint wireCnt = 0;

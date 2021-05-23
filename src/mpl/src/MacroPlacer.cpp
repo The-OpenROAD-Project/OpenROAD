@@ -204,7 +204,6 @@ void MacroPlacer::placeMacrosCornerMinWL()
   // the multiple partition algorithm.
 
   Layout layout(lx_, ly_, ux_, uy_);
-  bool horizontal = true;
   Partition partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
   partition.macros_ = macros_;
 
@@ -984,8 +983,6 @@ static CoreEdge getCoreEdge(int cx,
 // just gate connectivity in the levelized graph.
 void MacroPlacer::findAdjacencies()
 {
-  sta::dbNetwork *network = sta_->getDbNetwork();
-  sta::Graph *graph = sta_->ensureGraph();
   sta_->ensureLevelized();
   sta_->ensureClkNetwork();
   VertexFaninMap vertex_fanins;

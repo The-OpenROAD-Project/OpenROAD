@@ -93,7 +93,7 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
   }
-  int row_index = index.row();
+  unsigned int row_index = index.row();
   if (row_index > table_data_.size())
     return QVariant();
   const std::string obj_name = table_data_[row_index]->getName();
@@ -172,7 +172,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
         = Painter::highlightColors[table_data_[index.row()].first];
     return QColor(highlight_color.r, highlight_color.g, highlight_color.b, 100);
   }
-  int row_index = index.row();
+  unsigned int row_index = index.row();
   if (row_index > table_data_.size())
     return QVariant();
   std::string obj_name = table_data_[row_index].second->getName();
@@ -227,7 +227,6 @@ bool HighlightModel::setData(const QModelIndex& index,
                              const QVariant& value,
                              int role)
 {
-  int row_index = index.row();
   return false;
 }
 

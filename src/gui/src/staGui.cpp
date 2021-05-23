@@ -162,7 +162,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
   sta::dbSta* sta = openroad_->getSta();
   auto time_units = sta->search()->units()->timeUnit();
 
-  int row_index = index.row();
+  unsigned int row_index = index.row();
   if (row_index > timing_paths_.size())
     return QVariant();
   auto timing_path = timing_paths_[row_index];
@@ -493,7 +493,6 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
   if (!path_)
     return;
-  sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
   odb::dbObject* sink_node = nullptr;
   odb::dbNet* net = nullptr;
   int node_count = path_->levelsCount();

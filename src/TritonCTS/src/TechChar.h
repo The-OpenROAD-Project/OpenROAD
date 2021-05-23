@@ -181,7 +181,7 @@ class TechChar
   };
 
  public:
-  TechChar(CtsOptions* options, Logger* logger) : _options(options), _logger(logger) {}
+  TechChar(CtsOptions* options, Logger* logger) : _logger(logger), _options(options) {}
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);

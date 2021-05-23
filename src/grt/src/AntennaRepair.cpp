@@ -290,8 +290,6 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
 void AntennaRepair::getFixedInstances(r_tree& fixedInsts)
 {
-  odb::dbTech* tech = _db->getTech();
-
   int fixedInstId = 0;
   for (odb::dbInst* inst : _block->getInsts()) {
     if (inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM) {

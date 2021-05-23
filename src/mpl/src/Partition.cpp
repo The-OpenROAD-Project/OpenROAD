@@ -59,8 +59,8 @@ Partition::Partition(PartClass _partClass,
       ly(_ly),
       width(_width),
       height(_height),
-      macro_placer_(macro_placer),
-      logger_(log)
+      logger_(log),
+      macro_placer_(macro_placer)
 {
 }
 

@@ -90,6 +90,7 @@ template <class T> inline T ADIFF(T x, T y) {
 
 ////////////////////////////////////////////////////////////////
 
+#if LUT_SOURCE==LUT_FILE || LUT_SOURCE==LUT_VAR_CHECK
 static void
 readLUTfiles(LUT_TYPE LUT,
 	     NUMSOLN_TYPE numsoln) {
@@ -176,6 +177,7 @@ readLUTfiles(LUT_TYPE LUT,
   fclose(fprt);
 #endif
 }
+#endif
 
 ////////////////////////////////////////////////////////////////
 
@@ -193,11 +195,13 @@ static void
 ensureLUT(int d);
 static std::string
 base64_decode(std::string const& encoded_string);
+#if LUT_SOURCE==LUT_VAR_CHECK
 static void
 checkLUT(LUT_TYPE LUT1,
 	 NUMSOLN_TYPE numsoln1,
 	 LUT_TYPE LUT2,
 	 NUMSOLN_TYPE numsoln2);
+#endif
 
 // LUTs are initialized to this order at startup.
 static constexpr int lut_initial_d = 8;
@@ -365,6 +369,7 @@ ensureLUT(int d) {
   }
 }
 
+#if LUT_SOURCE==LUT_VAR_CHECK
 static void
 checkLUT(LUT_TYPE LUT1,
 	 NUMSOLN_TYPE numsoln1,
@@ -400,6 +405,7 @@ checkLUT(LUT_TYPE LUT1,
     }
   }
 }
+#endif
 
 /* 
    base64.cpp and base64.h
@@ -485,13 +491,12 @@ base64_decode(std::string const& encoded_string) {
 DTYPE flute_wl(int d, DTYPE x[], DTYPE y[], int acc) {
   DTYPE minval, l, xu, xl, yu, yl;
   DTYPE *xs, *ys;
-  int i, j, minidx, degree;
+  int i, j, minidx;
   int *s;
   struct point **ptp, *tmpp;
   struct point *pt;
         
   /* allocate the dynamic pieces on the heap rather than the stack */
-  degree = d + 1;
   xs = (DTYPE *)malloc(sizeof(DTYPE) * (d));
   ys = (DTYPE *)malloc(sizeof(DTYPE) * (d));
   s = (int *)malloc(sizeof(int) * (d));

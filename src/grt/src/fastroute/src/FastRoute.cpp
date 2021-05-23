@@ -819,7 +819,6 @@ void FastRouteCore::setEdgeUsage(long x1,
 {
   const int k = l1 - 1;
   int grid;
-  int reduce;
 
   if (y1 == y2)  // horizontal edge
   {
@@ -885,7 +884,6 @@ NetRouteMap FastRouteCore::getRoutes()
     TreeEdge* treeedges = sttrees[netID].edges;
     int deg = sttrees[netID].deg;
 
-    TreeNode* nodes = sttrees[netID].nodes;
     for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
@@ -980,9 +978,6 @@ NetRouteMap FastRouteCore::run()
   dcor = new int[maxPin];
   netEO.reserve(maxPin);
 
-  Bool input, WriteOut;
-  input = WriteOut = 0;
-
   LB = 0.9;
   UB = 1.3;
 
@@ -995,21 +990,16 @@ NetRouteMap FastRouteCore::run()
   int CSTEP1 = 2;   // 5
   int CSTEP2 = 2;   // 3
   int CSTEP3 = 5;   // 15
-  int CSTEP4 = 1000;
   COSHEIGHT = 4;
   L = 0;
   VIA = 2;
-  int L_afterSTOP = 1;
   int Ripvalue = -1;
   int ripupTH3D = 10;
   Bool goingLV = TRUE;
   Bool noADJ = FALSE;
   int thStep1 = 10;
   int thStep2 = 4;
-  Bool healingNeed = FALSE;
-  int updateType = 0;
   int LVIter = 3;
-  Bool extremeNeeded = FALSE;
   int mazeRound = 500;
   int bmfl = BIG_INT;
   int minofl = BIG_INT;
@@ -1323,9 +1313,6 @@ NetRouteMap FastRouteCore::run()
   if (verbose > 1)
     logger->info(GRT, 105, "Maze routing finished.");
 
-  clock_t t4 = clock();
-  float maze_Time = (float) (t4 - t3) / CLOCKS_PER_SEC;
-
   if (verbose > 1) {
     logger->report("Final 2D results:");
   }
@@ -1369,8 +1356,6 @@ NetRouteMap FastRouteCore::run()
   int numVia = threeDVIA();
   checkRoute3D();
 
-  clock_t t5 = clock();
-  maze_Time = (float) (t5 - t1) / CLOCKS_PER_SEC;
   logger->info(GRT, 111, "Final number of vias: {}", numVia);
   logger->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
 
