@@ -404,7 +404,6 @@ bool Ext::extract(ExtractOptions opts) {
   }
 
   bool extract_power_grid_only = opts.power_grid;
-  bool skip = opts.skip_power_stubs;
 #ifdef ZUI
   if (extract_power_grid_only) {
     dbBlock* block = _ext->getBlock();
@@ -424,7 +423,6 @@ bool Ext::extract(ExtractOptions opts) {
   const char* extRules = opts.ext_model_file;
   const char* cmpFile = opts.cmp_file;
   bool density_model = opts.wire_density;
-  bool litho = opts.litho;
 
   uint ccUp = opts.cc_up;
   uint ccFlag = opts.cc_model;
@@ -506,7 +504,6 @@ bool Ext::extract(ExtractOptions opts) {
       cnt += _ext->rcNetGen(net);
     }
     logger_->info(RCX, 14, "777: Final rc segments = {}", cnt);
-    odb::dbRSeg* rc = odb::dbRSeg::getRSeg(_ext->getBlock(), 113);
   }
   if (_ext->makeBlockRCsegs(
           btermThresholdFlag, cmpFile, density_model, opts.litho, nets,
@@ -700,9 +697,6 @@ bool Ext::diff_spef(const DiffOptions& opt) {
                    "Filename is not defined to run diff_spef command!");
   }
   logger_->info(RCX, 19, "diffing spef {}", opt.file);
-
-  bool useIds = opt.use_ids;
-  bool testParsing = opt.test_parsing;
 
   Ath__parser parser;
   parser.mkWords(opt.file);

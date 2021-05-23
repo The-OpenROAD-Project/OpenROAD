@@ -146,7 +146,7 @@ void newRipup(TreeEdge* treeedge,
               int netID)
 {
   short *gridsX, *gridsY;
-  int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
+  int i, grid, Zpoint, ymin, ymax, xmin;
   RouteType ripuptype;
 
   int edgeCost = nets[netID]->edgeCost;
@@ -155,8 +155,8 @@ void newRipup(TreeEdge* treeedge,
     return;  // not ripup for degraded edge
   }
 
-  n1 = treeedge->n1;
-  n2 = treeedge->n2;
+  int n1 = treeedge->n1;
+  int n2 = treeedge->n2;
 
   ripuptype = treeedge->route.type;
   if (y1 < y2) {
@@ -241,8 +241,7 @@ Bool newRipupType2(TreeEdge* treeedge,
                    int deg,
                    int netID)
 {
-  int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
-  int *gridsX, *gridsY;
+  int i, grid, ymin, ymax, n1, n2;
   RouteType ripuptype;
   Bool needRipup = FALSE;
 
@@ -339,7 +338,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
                    int edgeID)
 {
   short *gridsX, *gridsY;
-  int i, grid, Zpoint, ymin, xmin, max_usageH, max_usageV;
+  int i, grid, ymin, xmin;
   Bool needRipup = FALSE;
 
   int edgeCost = nets[netID]->edgeCost;
@@ -398,12 +397,10 @@ Bool newRipupCheck(TreeEdge* treeedge,
 Bool newRipup3DType3(int netID, int edgeID)
 {
   short *gridsX, *gridsY, *gridsL;
-  int i, k, grid, Zpoint, ymin, ymax, xmin, lv, lh, n1a, n2a, hl, bl, hid, bid,
+  int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid,
       deg;
-  int edgeCost = nets[netID]->edgeCost;
   std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
 
-  RouteType ripuptype;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
@@ -530,7 +527,7 @@ Bool newRipup3DType3(int netID, int edgeID)
 void newRipupNet(int netID)
 {
   short *gridsX, *gridsY;
-  int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2, edgeID;
+  int i, grid, Zpoint, ymin, ymax, xmin, n1, n2, edgeID;
 
   int edgeCost = nets[netID]->edgeCost;
 

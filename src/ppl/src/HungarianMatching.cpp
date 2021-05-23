@@ -170,7 +170,6 @@ void HungarianMatching::createMatrixForGroups()
       hungarian_matrix_[slot_index].resize(num_pin_groups_);
       for (std::vector<int>& io_group : netlist_.getIOGroups()) {
         int group_hpwl = 0;
-        int pin_count = 0;
         for (int io_idx : io_group) {
           int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos);
           if (pin_hpwl == hungarian_fail) {

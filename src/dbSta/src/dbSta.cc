@@ -395,7 +395,7 @@ dbSta::connectPin(Instance *inst,
                   Net *net)
 {
   NetworkEdit *network = networkCmdEdit();
-  Pin *pin = network->connect(inst, port, net);
+  network->connect(inst, port, net);
 }
 
 void
@@ -562,8 +562,8 @@ dbStaReport::critical(int id,
 dbStaCbk::dbStaCbk(dbSta *sta,
                    Logger *logger) :
   sta_(sta),
-  logger_(logger),
-  network_(nullptr)  // not built yet
+  network_(nullptr),  // not built yet
+  logger_(logger)
 {
 }
 
@@ -703,7 +703,7 @@ PathRenderer::drawObjects(gui::Painter &painter)
   if (path_) {
     dbNetwork *network = sta_->getDbNetwork();
     Point prev_pt;
-    for (int i = 0; i < path_->size(); i++) {
+    for (unsigned int i = 0; i < path_->size(); i++) {
       PathRef *path = path_->path(i);
       TimingArc *prev_arc = path_->prevArc(i);
       // Draw lines for wires on the path.

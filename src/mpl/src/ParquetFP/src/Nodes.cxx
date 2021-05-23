@@ -216,15 +216,10 @@ void Nodes::parseTxt(const string &fnameTxt)
 {
   cout << "txt parsing " << endl;
   char block_name[1024];
-  char block_type[1024];
-  char tempWord1[1024];
 
   vector<Point> vertices;
-  int numVertices;
-  bool success; 
   float width, height;
 
-  int numSoftBl=0;
   int numHardBl=0;
   int numTerm=0;
 
