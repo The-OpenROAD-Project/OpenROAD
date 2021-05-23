@@ -8,7 +8,7 @@
                      [-inst_name <instance_name>]
 ```
 ### Description
-Use the add_cell command to place an instance at a specific location within the design. This can be used to pre-place marker cells, ESD cells, etc which have a known, fixed location in the design and shold not be moved by the automatic macro placer.
+Use the add_cell command to place an instance at a specific location within the design. This can be used to pre-place marker cells, ESD cells, etc which have a known, fixed location in the design and should not be moved by the automatic macro placer.
 
 One of the -cell or -type options is required, which will directly or indirectly associate one of the cells in the library definition with this padcell.
 
@@ -17,7 +17,7 @@ One of the -cell or -type options is required, which will directly or indirectly
 
 | Switch_Name | Description |
 | ------ | ----------- |
-| -name  | Specify the name of the padcell whne using a separate signal assignment file. A name is automatically generated of not specified |
+| -name  | Specify the name of the padcell when using a separate signal assignment file. A name is automatically generated if not specified |
 | -type  | The type of cell specified in the library data |
 | -cell  |
 | -location | Specify the location of the centre or origin of the padcell |

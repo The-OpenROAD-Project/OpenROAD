@@ -23,7 +23,7 @@ ICeWall acts upon the information provided in the data files to produce a padrin
 
 ### Library data
 
-The library data is defined by calling the Footprint library function. This function takes a single argument, which is a TCL dictionary structure that defines the needed defintions of the cells.
+The library data is defined by calling the Footprint library function. This function takes a single argument, which is a TCL dictionary structure that defines the needed definitions of the cells.
 
 The following keys need to be defined in the dictionary
 * types
@@ -33,9 +33,9 @@ The following keys need to be defined in the dictionary
 * breakers
 * cells
 
-The types entry associates types used in the package data file with cells defined in the cells section, and in addition requires the defintion of the the corner cell to be used and the list of pad filler cells to be used ordered by cell width.
+The types entry associates types used in the package data file with cells defined in the cells section, and in addition requires the definition of the the corner cell to be used and the list of pad filler cells to be used ordered by cell width.
 
-The connect_by_abutment key defines the list of pins on the edges of the IO cells that are connected by abutment forming a ring of these signals around the die. ICeWall will connect these abuted signals together into SPECIAL netst, so that the router will not try to add wiring for these pins.
+The connect_by_abutment key defines the list of pins on the edges of the IO cells that are connected by abutment forming a ring of these signals around the die. ICeWall will connect these abutted signals together into SPECIAL nets, so that the router will not try to add wiring for these pins.
 
 The pad_pin_name key defines the name of the pin of the IO cell that is connected to the chip package.
 

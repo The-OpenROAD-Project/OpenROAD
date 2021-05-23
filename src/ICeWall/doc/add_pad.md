@@ -6,7 +6,7 @@
                     [-type <type>] \
                     [-cell <library_cell>] \
                     [-signal <signal_name>] \
-                    [-edge (bottom|righttop|left)] \
+                    [-edge (bottom|right|top|left)] \
                     [-location {(centre|origin) {x <value> y <value>}}] \
                     [-bump {row <number> col <number>}] \
                     [-bondpad {(centre|origin) {x <value> y <value>}}] \
@@ -29,11 +29,11 @@ Use the -inst_name option to associate the padcell with a particular instance in
 
 | Switch_Name | Description |
 | ------ | ----------- |
-| -name  | Specify the name of the padcell whne using a separate signal assignment file. A name is automatically generated of not specified |
+| -name  | Specify the name of the padcell when using a separate signal assignment file. A name is automatically generated if not specified |
 | -type  | The type of cell specified in the library data |
 | -cell  |
 | -signal | The name of the signal in the design that is connected to the bondpad/bump of the padcell. Except for nets which have been defined as power or ground nets, only padcell can be associated with a particular signal, and this signal must be a pin at the top level of the design. |
-| -edge | Specify which edge of the design the padcell is to be placed on. Valid choices are bottom, rioght, top or left |
+| -edge | Specify which edge of the design the padcell is to be placed on. Valid choices are bottom, right, top or left |
 | -location | Specify the location of the centre or origin of the padcell |
 | -bump | For flipchip designs, declare that the padcell is associated with the bump at the specified row/col location on the die |
 | -bondpad | For wirebond designs where the pad cells have separate bondpad instances, use this option to specify the location of the associated bondpad |
