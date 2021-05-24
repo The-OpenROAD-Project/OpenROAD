@@ -4,11 +4,11 @@ read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_verilog reg1.v
 link_design top
-initialize_floorplan -die_area "0 0 1000 1000" \
-  -core_area "100 100 900 900" \
+initialize_floorplan -die_area "0 0 100 100" \
+  -core_area "10 10 90 90" \
   -site FreePDK45_38x28_10R_NP_162NW_34O
-initialize_floorplan -die_area "100 100 1100 1100" \
-  -core_area "200 200 800 800" \
+initialize_floorplan -die_area "10 10 110 110" \
+  -core_area "20 20 80 80" \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 
 set def_file [make_result_file init_floorplan7.def]

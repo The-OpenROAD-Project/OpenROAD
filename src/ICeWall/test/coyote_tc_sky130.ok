@@ -73,7 +73,7 @@
 [INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
 Loading library IO cell meta-data
 Loaded library IO cell data
-[INFO IFP-0001] Added 1266 rows of 10417 sites.
+[INFO IFP-0001] Added 1266 rows of 10416 sites.
 [WARNING PAD-0011] Expected instance u_en_i for padcell sig2 not found
 [WARNING PAD-0011] Expected instance u_TDI for padcell sig155 not found
 [WARNING PAD-0011] Expected instance u_TCK for padcell sig157 not found
@@ -102,6 +102,4 @@ Loaded library IO cell data
 [WARNING PAD-0048] No padcell instance found for sig161
 [WARNING PAD-0048] No padcell instance found for sig162
 [WARNING PAD-0048] No padcell instance found for sig163
-Differences found at line 7.
-ROW ROW_0 unit 199680 199800 N DO 10417 BY 1 STEP 480 0 ;
-ROW ROW_0 unit 199680 199800 FS DO 10417 BY 1 STEP 480 0 ;
+No differences found.

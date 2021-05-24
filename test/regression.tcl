@@ -519,9 +519,7 @@ proc save_defok { test } {
   } else {
     set defok_file [test_defok_file $test]
     set def_file [test_def_result_file $test]
-    if { ! [file exists $def_file] } {
-      puts "Error: def file $def_file not found."
-    } else {
+    if { [file exists $def_file] } {
       file copy -force $def_file $defok_file
     }
   }

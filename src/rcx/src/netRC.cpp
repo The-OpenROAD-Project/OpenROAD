@@ -2181,9 +2181,6 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file) {
     if (dbunit > 1000)
       dbFactor = dbunit * 0.001;
 
-    logger_->info(RCX, 432, "Database dbFactor= {}  dbunit= {}", dbFactor,
-                  dbunit);
-
     extRCModel* m = new extRCModel("MINTYPMAX", logger_);
     _modelTable->add(m);
 

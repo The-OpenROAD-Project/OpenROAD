@@ -296,8 +296,8 @@ InitFloorplan::initFloorplan(double die_lx,
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // floor core lower left corner to multiple of site dx/dy.
-      int clx = (metersToMfgGrid(core_lx) / site_dx) * site_dx;
-      int cly = (metersToMfgGrid(core_ly) / site_dy) * site_dy;
+      int clx = metersToMfgGrid(core_lx);
+      int cly = metersToMfgGrid(core_ly);
       int cux = metersToMfgGrid(core_ux);
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
