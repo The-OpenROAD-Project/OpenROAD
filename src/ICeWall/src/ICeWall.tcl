@@ -2441,7 +2441,7 @@ namespace eval ICeWall {
   proc get_footprint_pads_per_pitch {} {
     variable footprint 
     if {![dict exists $footprint pads_per_pitch]} {
-      utl::error PAD 79 "Fottprint does not have the pads_per_pitch attribute specified"
+      utl::error PAD 79 "Footprint does not have the pads_per_pitch attribute specified"
     } 
     return [dict get $footprint pads_per_pitch]
   }

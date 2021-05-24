@@ -7,7 +7,7 @@
                     [-cell <library_cell>] \
                     [-signal <signal_name>] \
                     [-edge (bottom|right|top|left)] \
-                    [-location {(centre|origin) {x <value> y <value>}}] \
+                    [-location {(centre|origin) {x <value> y <value>} [orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)]}] \
                     [-bump {row <number> col <number>}] \
                     [-bondpad {(centre|origin) {x <value> y <value>}}] \
                     [-inst_name <instance_name>]
@@ -23,6 +23,8 @@ One of the -cell or -type options is required, which will directly or indirectly
 The -signal option can be used to associate the signal name of a top level port with a padcell.
 
 Use the -inst_name option to associate the padcell with a particular instance in the design. e.g. When there are several power/ground padcells in the design, using the -inst_name option will associate a particular instance in the netlist to the specified location on the pad ring. Pad cells with no logical equivalent, e.g. ring breaker cells, an instance will be created of the specified name.
+
+The -edge option is used to determine the orientation of the padcell, the actual orientation of a padcell on a given edge is specified in the library definitions file. The co-ordinates specified for the location of the padcell are cross-checked against the orientation determined from the -edge option. Similarly, if orient is defined by the -location option, this too will be cross-checked against the value of the edge option. If the -edge option is not defined then -location setting is used to determine the side on which the padcell appears, hence determining the orientation of the cell. Once again the orient setting merely serves to act as a cross-check
 
 ### Options
 

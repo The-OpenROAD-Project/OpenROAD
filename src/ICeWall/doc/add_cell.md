@@ -4,7 +4,7 @@
   % ICeWall add_cell [-name <name>] \
                      [-type <type>] \
                      [-cell <library_cell>] \
-                     -location {(centre|origin) {x <value> y <value>}} \
+                     -location {(centre|origin) {x <value> y <value>} orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)} \
                      [-inst_name <instance_name>]
 ```
 ### Description
@@ -20,7 +20,7 @@ One of the -cell or -type options is required, which will directly or indirectly
 | -name  | Specify the name of the padcell when using a separate signal assignment file. A name is automatically generated if not specified |
 | -type  | The type of cell specified in the library data |
 | -cell  |
-| -location | Specify the location of the centre or origin of the padcell |
+| -location | Specify the location of the centre or origin along with the orientation of the cell |
 | -inst_name | Specify the name of the padcell instance in the design |
 
 ### Example
