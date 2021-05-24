@@ -4534,6 +4534,31 @@ namespace eval ICeWall {
       set bondpad_orient [dict get $padcell bondpad orient]
       dict set padcell bondpad [verify_placement [dict get $padcell bondpad] $bondpad_cell_ref bondpad]
     }
+    
+    # Verify bump 
+    if {[dict exists $padcell bump]} {
+      dict set padcell bump [check_bump [dict get $padcell bump]]
+      set row [dict get $padcell row]
+      set col [dict get $padcell col]
+      
+      set pitch [get_footprint_bump_pitch]
+      set origin [get_bump_origin $row $col]
+      
+      lassign [get_scaled_die_area] xMin yMin xMax yMax
+      switch {[dict get padcell side]} {
+        "bottom" {set xMin [expr [dict get $origin x} - $pitch / 2]]; set xMax [expr [dict get $origin x} + $pitch / 2]]
+        "right"  {set yMin [expr [dict get $origin y} - $pitch / 2]]; set yMax [expr [dict get $origin y} + $pitch / 2]}
+        "top"    {set xMin [expr [dict get $origin x} - $pitch / 2]]; set xMax [expr [dict get $origin x} + $pitch / 2]}
+        "left"   {set yMin [expr [dict get $origin y} - $pitch / 2]]; set yMax [expr [dict get $origin y} + $pitch / 2]}
+      }
+      
+      if {[dict get $padcell scaled_centre x] < $xMin || [dict get $padcell scaled_centre x] > $xMax} {
+        utl:error PAD 999 "The padcell x location is [expr 1.0 * [dict get $padcell scaled_centre x] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $xMin <= x <= $xMax"
+      }
+      if {[dict get $padcell scaled_centre y] < $yMin || [dict get $padcell scaled_centre y] > $yMax} {
+        utl:error PAD 999 "The padcell y location is [expr 1.0 * [dict get $padcell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
+      }
+    }
 
     # debug $padcell
     # debug [dict get $ICeWall::footprint padcell $padcell_name]
@@ -4616,6 +4641,7 @@ namespace eval ICeWall {
     dict set library $attribute $args
   }
  
+  namespace export add_libcell define_ring define_bumps
   namespace export set_type set_die_area set_core_area set_offsets set_pin_layer set_pad_inst_name set_pad_pin_name set_rdl_cover_file_name
   namespace export add_cell add_pad add_ground_nets add_power_nets 
   namespace export set_footprint set_library

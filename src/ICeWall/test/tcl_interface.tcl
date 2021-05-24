@@ -17,9 +17,93 @@ make_tracks
 
 source ../../../test/Nangate45/Nangate45.tracks
 
+# ICeWall load_library soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strategy
+ICeWall add_libcell \
+  -name PADCELL_SIG \
+  -type sig 
+  -cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -pad_pin_name PAD
   
-ICeWall load_library soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strategy
+ICeWall add_libcell \
+  -name PADCELL_VDD \
+  -type vdd \
+  -cell_name {top PADCELL_VDD_V bottom PADCELL_VDD_V left PADCELL_VDD_H right PADCELL_VDD_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -pad_pin_name VDD
 
+ICeWall add_libcell \
+  -name PADCELL_VSS \
+  -type vss \
+  -cell_name {top PADCELL_VSS_V bottom PADCELL_VSS_V left PADCELL_VSS_H right PADCELL_VSS_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -pad_pin_name VSS
+
+ICeWall add_libcell \
+  -name PADCELL_VDDIO \
+  -type vddio \
+  -cell_name {top PADCELL_VDDIO_V bottom PADCELL_VDDIO_V left PADCELL_VDDIO_H right PADCELL_VDDIO_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -pad_pin_name VDDIO
+
+ICeWall add_libcell \
+  -name PADCELL_VSSIO \
+  -type vssio \
+  -cell_name {top PADCELL_VSSIO_V bottom PADCELL_VSSIO_V left PADCELL_VSSIO_H right PADCELL_VSSIO_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -pad_pin_name VSSIO
+
+ICeWall add_libcell \
+  -name PADCELL_CBRK \
+  -type cbrk \
+  -cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB}} \
+  -physical_only 1
+  
+ICeWall add_libcell \
+  -name PADCELL_FBRK \
+  -type brk \
+  -cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H} \
+  -orient {bottom R0 right R90 top R180 left R270} \
+  -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB} DVDD {DVDDA DVDDB} DVSS {DVSSA DVSSB}} \
+  -physical_only 1
+
+ICeWall add_libcell \
+  -name PAD_FILL5 \
+  -type fill \
+  -cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H} \
+  -orient {bottom R0 right MY top R180 left MX} \
+  -physical_only 1
+  
+ICeWall add_libcell \
+  -name PAD_FILL1 \
+  -type fill \
+  -cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H} \
+  -orient {bottom R0 right MY top R180 left MX} \
+  -physical_only 1
+  
+ICeWall add_libcell \
+  -name PAD_CORNER \
+  -type corner \
+  -orient {ll R0 lr MY ur R180 ul MX} \
+  -physical_only 1
+  
+ICeWall add_libcell \
+  -name DUMMY_BUMP \
+  -type bump
+  
+ICeWall define_ring \
+  -ring_signals {RETN SNS DVDD DVSS}
+
+ICeWall define_bump \
+  -pitch 160 \
+  -bump_pin_name PAD \
+  -spacing_to_edge 165 \
+  -cell_name {140 DUMMY_BUMP_small 150 DUMMY_BUMP_medium 180 DUMMY_BUMP_large} \
+  -bumps_per_tile 3 \
+  -rdl {layer_name metal10 width 10 spacing 10} \
+  
 ICeWall set_type Wirebond
 
 ICeWall set_die_area {0 0 3000.000 3000.000}
