@@ -33,8 +33,8 @@
 #pragma once
 
 #include <QDockWidget>
-#include <QTreeView>
 #include <QStandardItemModel>
+#include <QTreeView>
 
 #include "gui/gui.h"
 

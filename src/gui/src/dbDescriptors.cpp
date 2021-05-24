@@ -30,8 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "db.h"
 #include "dbDescriptors.h"
+
+#include "db.h"
 #include "dbShape.h"
 
 namespace gui {
@@ -55,8 +56,6 @@ bool DbInstDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void DbInstDescriptor::highlight(std::any object,
                                  Painter& painter,
-                                 bool select_flag,
-                                 int highlight_group,
                                  void* additional_data) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
@@ -64,19 +63,6 @@ void DbInstDescriptor::highlight(std::any object,
     return;
   }
 
-  auto highlight_color = Painter::persistHighlight;
-  if (select_flag == true) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else {
-    if (highlight_group >= 0 && highlight_group < 7) {
-      highlight_color = Painter::highlightColors[highlight_group];
-      highlight_color.a = 100;
-      painter.setPen(highlight_color, true);
-      painter.setBrush(highlight_color);
-    } else
-      painter.setPen(Painter::persistHighlight);
-  }
   odb::dbBox* bbox = inst->getBBox();
   odb::Rect rect;
   bbox->getBox(rect);
@@ -86,11 +72,6 @@ void DbInstDescriptor::highlight(std::any object,
 bool DbInstDescriptor::isInst(std::any object) const
 {
   return true;
-}
-
-bool DbInstDescriptor::isNet(std::any object) const
-{
-  return false;
 }
 
 Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
@@ -104,12 +85,10 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     int x, y;
     inst->getOrigin(x, y);
     double dbuPerUU = inst->getBlock()->getDbUnitsPerMicron();
-    double user_x = x / dbuPerUU;
-    double user_y = y / dbuPerUU;
     props.insert(props.end(),
                  {{"Orientation", inst->getOrient().getString()},
-                  {"X", std::to_string(user_x)},
-                  {"Y", std::to_string(user_y)}});
+                  {"X", x / dbuPerUU},
+                  {"Y", y / dbuPerUU}});
   }
   SelectionSet iterms;
   auto gui = Gui::get();
@@ -159,23 +138,8 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void DbNetDescriptor::highlight(std::any object,
                                 Painter& painter,
-                                bool select_flag,
-                                int highlight_group,
                                 void* additional_data) const
 {
-  auto highlight_color = Painter::persistHighlight;
-  if (select_flag == true) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else {
-    if (highlight_group >= 0 && highlight_group < 7) {
-      highlight_color = Painter::highlightColors[highlight_group];
-      highlight_color.a = 100;
-      painter.setPen(highlight_color, true);
-      painter.setBrush(highlight_color);
-    } else
-      painter.setPen(Painter::persistHighlight);
-  }
   odb::dbObject* sink_object = nullptr;
   if (additional_data != nullptr)
     sink_object = static_cast<odb::dbObject*>(additional_data);
@@ -238,9 +202,10 @@ void DbNetDescriptor::highlight(std::any object,
 
     if (driver_locs.empty() || sink_locs.empty())
       return;
-    highlight_color.a = 255;
-    painter.setPen(highlight_color, true);
-    painter.setBrush(highlight_color);
+    auto color = painter.getPenColor();
+    color.a = 255;
+    painter.setPen(color, true);
+    painter.setBrush(color);
     for (auto& driver : driver_locs) {
       for (auto& sink : sink_locs) {
         painter.drawLine(driver, sink);
@@ -255,11 +220,6 @@ void DbNetDescriptor::highlight(std::any object,
       painter.drawGeomShape(sbox->getGeomShape());
     }
   }
-}
-
-bool DbNetDescriptor::isInst(std::any object) const
-{
-  return false;
 }
 
 bool DbNetDescriptor::isNet(std::any object) const
@@ -328,23 +288,8 @@ bool DbITermDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void DbITermDescriptor::highlight(std::any object,
                                   Painter& painter,
-                                  bool select_flag,
-                                  int highlight_group,
                                   void* additional_data) const
 {
-  auto highlight_color = Painter::persistHighlight;
-  if (select_flag == true) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else {
-    if (highlight_group >= 0 && highlight_group < 7) {
-      highlight_color = Painter::highlightColors[highlight_group];
-      highlight_color.a = 100;
-      painter.setPen(highlight_color, true);
-      painter.setBrush(highlight_color);
-    } else
-      painter.setPen(Painter::persistHighlight);
-  }
   auto iterm = std::any_cast<odb::dbITerm*>(object);
   odb::dbTransform inst_xfm;
   iterm->getInst()->getTransform(inst_xfm);
@@ -358,16 +303,6 @@ void DbITermDescriptor::highlight(std::any object,
       painter.drawRect(rect);
     }
   }
-}
-
-bool DbITermDescriptor::isInst(std::any object) const
-{
-  return false;
-}
-
-bool DbITermDescriptor::isNet(std::any object) const
-{
-  return false;
 }
 
 Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
@@ -416,23 +351,8 @@ bool DbBTermDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void DbBTermDescriptor::highlight(std::any object,
                                   Painter& painter,
-                                  bool select_flag,
-                                  int highlight_group,
                                   void* additional_data) const
 {
-  auto highlight_color = Painter::persistHighlight;
-  if (select_flag == true) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else {
-    if (highlight_group >= 0 && highlight_group < 7) {
-      highlight_color = Painter::highlightColors[highlight_group];
-      highlight_color.a = 100;
-      painter.setPen(highlight_color, true);
-      painter.setBrush(highlight_color);
-    } else
-      painter.setPen(Painter::persistHighlight);
-  }
   auto* bterm = std::any_cast<odb::dbBTerm*>(object);
   for (auto bpin : bterm->getBPins()) {
     for (auto box : bpin->getBoxes()) {
@@ -441,16 +361,6 @@ void DbBTermDescriptor::highlight(std::any object,
       painter.drawRect(rect);
     }
   }
-}
-
-bool DbBTermDescriptor::isInst(std::any object) const
-{
-  return false;
-}
-
-bool DbBTermDescriptor::isNet(std::any object) const
-{
-  return false;
 }
 
 Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const

@@ -67,70 +67,6 @@ struct wire
   int netID;
 };
 
-// global variable
-// ** V_table;
-// int ** H_table;
-
-static int ordery1(const void* a, const void* b)
-{
-  struct wire *pa, *pb;
-
-  pa = *(struct wire**) a;
-  pb = *(struct wire**) b;
-
-  if (pa->y1 < pb->y1)
-    return -1;
-  if (pa->y1 > pb->y1)
-    return 1;
-  return 0;
-  // return ((struct Segment*)a->x1-(struct Segment*)b->x1);
-}
-
-static int ordery2(const void* a, const void* b)
-{
-  struct wire *pa, *pb;
-
-  pa = *(struct wire**) a;
-  pb = *(struct wire**) b;
-
-  if (pa->y2 < pb->y2)
-    return -1;
-  if (pa->y2 > pb->y2)
-    return 1;
-  return 0;
-  // return ((struct Segment*)a->x1-(struct Segment*)b->x1);
-}
-
-static int orderx1(const void* a, const void* b)
-{
-  struct wire *pa, *pb;
-
-  pa = *(struct wire**) a;
-  pb = *(struct wire**) b;
-
-  if (pa->x1 < pb->x1)
-    return -1;
-  if (pa->x1 > pb->x1)
-    return 1;
-  return 0;
-  // return ((struct Segment*)a->x1-(struct Segment*)b->x1);
-}
-
-static int orderx2(const void* a, const void* b)
-{
-  struct wire *pa, *pb;
-
-  pa = *(struct wire**) a;
-  pb = *(struct wire**) b;
-
-  if (pa->x2 < pb->x2)
-    return -1;
-  if (pa->x2 > pb->x2)
-    return 1;
-  return 0;
-  // return ((struct Segment*)a->x1-(struct Segment*)b->x1);
-}
-
 int orderx(const struct pnt* a, const struct pnt* b)
 {
   return a->x < b->x;
@@ -244,7 +180,7 @@ void fluteNormal(int netID,
   DTYPE *xs, *ys, minval, x_max, x_min, x_mid, y_max, y_min, y_mid, *tmp_xs,
       *tmp_ys;
   int* s;
-  int i, j, k, minidx;
+  int i, j, minidx;
   struct pnt *pt, *tmpp;
 
   if (d == 2) {
@@ -420,10 +356,10 @@ void fluteCongest(int netID,
                   float coeffV,
                   Tree* t)
 {
-  DTYPE *xs, *ys, *nxs, *nys, *x_seg, *y_seg, minval, x_max, x_min, x_mid,
+  DTYPE *xs, *ys, *nxs, *nys, *x_seg, *y_seg, x_max, x_min, x_mid,
       y_max, y_min, y_mid;
   int* s;
-  int i, j, k, minidx, grid;
+  int i, j, k, grid;
   DTYPE height, width;
   int usageH, usageV;
   float coeffH = 1;
@@ -580,11 +516,8 @@ void fluteCongest(int netID,
 
 Bool netCongestion(int netID)
 {
-  int i, j, edgeID, edgelength, *gridsX, *gridsY;
-  int n1, n2, x1, y1, x2, y2, distance, grid, ymin, ymax;
-  int cnt, Zpoint;
-  TreeEdge* treeedge;
-  TreeNode* treenodes;
+  int i, j;
+  int grid, ymin, ymax;
   //  Bool Congested;
   Segment* seg;
 

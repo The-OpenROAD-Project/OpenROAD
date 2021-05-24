@@ -413,10 +413,6 @@ void IOPlacer::defineSlots()
 {
   Point lb = core_.getBoundary().ll();
   Point ub = core_.getBoundary().ur();
-  int lb_x = lb.x();
-  int lb_y = lb.y();
-  int ub_x = ub.x();
-  int ub_y = ub.y();
 
   /*******************************************
    *  Order of the edges when creating slots  *
@@ -682,7 +678,6 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   std::vector<Section>& sections = sections_;
   
   createSections();
-  int sections_count = sections_.size();
 
   int total_pins_assigned = assignGroupsToSections();
 
@@ -820,16 +815,8 @@ void IOPlacer::updateOrientation(IOPin& pin)
 
 void IOPlacer::updatePinArea(IOPin& pin)
 {
-  const int x = pin.getX();
-  const int y = pin.getY();
-  const int l = pin.getLayer();
   const int mfg_grid = tech_->getManufacturingGrid();
   
-  int lower_x_bound = core_.getBoundary().ll().x();
-  int lower_y_bound = core_.getBoundary().ll().y();
-  int upper_x_bound = core_.getBoundary().ur().x();
-  int upper_y_bound = core_.getBoundary().ur().y();
-
   if (pin.getLayer() != top_grid_.layer) {
     int index;
 
@@ -998,6 +985,9 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint, N
   std::vector<int> pin_indices;
   const PinList &pin_list = constraint.pin_list;
   for (odb::dbBTerm* bterm : pin_list) {
+    if (bterm->getFirstPinPlacementStatus().isFixed()){
+      continue;
+    }
     int idx = netlist.getIoPinIdx(bterm);
     IOPin& io_pin = netlist.getIoPin(idx);
     if (!io_pin.isPlaced() && !io_pin.isAssignedToSection()) {
@@ -1013,8 +1003,6 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint, N
 void IOPlacer::initConstraints()
 {
   std::reverse(constraints_.begin(), constraints_.end());
-  Netlist& netlist = netlist_io_pins_;
-  int pins_assigned = 0;
   for (Constraint &constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
   }
@@ -1301,9 +1289,6 @@ void IOPlacer::findSlotsForTopLayer()
 
 std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 {
-  const Point& lb = core_.getBoundary().ll();
-  const Point& ub = core_.getBoundary().ur();
-
   int lb_x = region.xMin();
   int lb_y = region.yMin();
   int ub_x = region.xMax();

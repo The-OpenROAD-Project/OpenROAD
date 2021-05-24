@@ -498,12 +498,9 @@ int GlobalRouter::getEdgeResource(int x1,
 
 void GlobalRouter::removeDirtyNetsRouting()
 {
-  auto gcellGrid = _block->getGCellGrid();
   for (odb::dbNet* db_net : _dirtyNets) {
     GRoute& netRoute = _routes[db_net];
-    int segsCnt = 0;
     for (GSegment& segment : netRoute) {
-      auto techLayer = _db->getTech()->findRoutingLayer(segment.initLayer);
       if (!(segment.initLayer != segment.finalLayer || (segment.isVia()))) {
         odb::Point initOnGrid = _grid->getPositionOnGrid(
             odb::Point(segment.initX, segment.initY));
@@ -1033,9 +1030,7 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
   int yGrids = _grid->getYGrids();
 
   odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* techLayer;
   for (int layer = 1; layer <= maxRoutingLayer; layer++) {
-    techLayer = tech->findRoutingLayer(layer);
     float adjustment = _adjustments[layer];
     if (adjustment != 0) {
       if (_hCapacities[layer - 1] != 0) {
@@ -2818,7 +2813,6 @@ void GlobalRouter::makeBtermPins(Net* net,
 std::string getITermName(odb::dbITerm* iterm)
 {
   odb::dbMTerm* mTerm = iterm->getMTerm();
-  odb::dbMaster* master = mTerm->getMaster();
   std::string pin_name = iterm->getInst()->getConstName();
   pin_name += "/";
   pin_name += mTerm->getConstName();
@@ -3306,7 +3300,6 @@ void GlobalRouter::reportLayerWireLengths()
   lengths.resize(_db->getTech()->getRoutingLayerCount() + 1);
   int64_t total_length = 0;
   for (auto& net_route : _routes) {
-    odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     for (GSegment& seg : route) {
       int layer1 = seg.initLayer;

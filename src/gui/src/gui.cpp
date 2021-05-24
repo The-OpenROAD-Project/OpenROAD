@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "gui/gui.h"
+
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
@@ -37,15 +39,14 @@
 #include <string>
 
 #include "db.h"
+#include "dbDescriptors.h"
 #include "dbShape.h"
 #include "defin.h"
 #include "displayControls.h"
 #include "geom.h"
-#include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
-#include "dbDescriptors.h"
 
 namespace gui {
 
@@ -64,7 +65,7 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 }
 
 // This provides the link for Gui::redraw to the widget
-static gui::MainWindow* main_window;
+static gui::MainWindow* main_window = nullptr;
 
 Gui* Gui::singleton_ = nullptr;
 
@@ -108,10 +109,14 @@ void Gui::pause()
   main_window->pause();
 }
 
-Selected Gui::makeSelected(std::any object,
-                           void* additional_data)
+Selected Gui::makeSelected(std::any object, void* additional_data)
 {
   return main_window->makeSelected(object, additional_data);
+}
+
+void Gui::setSelected(Selected selection)
+{
+  main_window->setSelected(selection);
 }
 
 void Gui::addSelectedNet(const char* name)
@@ -361,6 +366,26 @@ int startGui(int argc, char* argv[])
   QObject::connect(&app, SIGNAL(aboutToQuit()), &win, SLOT(saveSettings()));
 
   return app.exec();
+}
+
+void Selected::highlight(Painter& painter,
+                         bool select_flag,
+                         int highlight_group) const
+{
+  if (select_flag) {
+    painter.setPen(Painter::highlight, true);
+    painter.setBrush(Painter::transparent);
+  } else if (highlight_group >= 0 && highlight_group < 7) {
+    auto highlight_color = Painter::highlightColors[highlight_group];
+    highlight_color.a = 100;
+    painter.setPen(highlight_color, true);
+    painter.setBrush(highlight_color);
+  } else {
+    painter.setPen(Painter::persistHighlight);
+    painter.setBrush(Painter::transparent);
+  }
+
+  return descriptor_->highlight(object_, painter, additional_data_);
 }
 
 }  // namespace gui

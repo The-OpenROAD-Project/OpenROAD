@@ -42,6 +42,7 @@
 #include <cmath>
 #include <limits>
 
+#include "opendb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -52,6 +53,7 @@ using std::min;
 using utl::DPL;
 
 using odb::dbBox;
+using odb::dbTransform;
 
 void
 Opendp::initGrid()
@@ -123,16 +125,23 @@ Opendp::visitCellPixels(Cell &cell,
                         bool padded,
                         const std::function <void (Pixel *pixel)>& visitor) const
 {
-  dbMaster *master = cell.db_inst_->getMaster();
+  dbInst *inst = cell.db_inst_;
+  dbMaster *master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
   for (dbBox *obs : obstructions) {
     if (obs->getTechLayer()->getType() == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
-      int x_start = gridX(obs->xMin() - core_.xMin());
-      int x_end = gridEndX(obs->xMax() - core_.xMin());
-      int y_start = gridY(obs->yMin() - core_.yMin());
-      int y_end = gridEndY(obs->yMax() - core_.yMin());
+
+      Rect rect;
+      obs->getBox(rect);
+      dbTransform transform;
+      inst->getTransform(transform);
+      transform.apply(rect);
+      int x_start = gridX(rect.xMin() - core_.xMin());
+      int x_end = gridEndX(rect.xMax() - core_.xMin());
+      int y_start = gridY(rect.yMin() - core_.yMin());
+      int y_end = gridEndY(rect.yMax() - core_.yMin());
       for (int x = x_start; x < x_end; x++) {
         for (int y = y_start; y < y_end; y++) {
           Pixel *pixel = gridPixel(x, y);

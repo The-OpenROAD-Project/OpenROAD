@@ -367,8 +367,7 @@ static void fillPolygon(const Polygon90& area,
 
   auto iter = cfg.shapes.begin();
   while (iter != cfg.shapes.end()) {
-    auto [w, h] = *iter;
-    bool last_shape = ++iter == cfg.shapes.end();
+    auto [w, h] = *iter++;
     // Ensure the longer direction is in the preferred direction
     if ((is_horiz && w < h) || (!is_horiz && h < w)) {
       std::swap(w, h);

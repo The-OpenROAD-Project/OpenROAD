@@ -662,8 +662,6 @@ std::pair<bool, bool> RouteBase::routability()
   int64_t totalGCellArea
       = inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea();
 
-  float prevDensity = nb_->targetDensity();
-
   // newly set Density
   nb_->setTargetDensity(static_cast<float>(totalGCellArea)
                         / static_cast<float>(nb_->whiteSpaceArea()));
