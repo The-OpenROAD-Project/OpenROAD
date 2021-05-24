@@ -713,7 +713,6 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
   }
   treeedge->assigned = TRUE;
 
-  int edgeCost = nets[netID]->edgeCost;
   std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
 
   for (k = 0; k < routelen; k++) {
@@ -1245,7 +1244,6 @@ void recoverEdge(int netID, int edgeID)
 
   treenodes[n2a].assigned = TRUE;
 
-  int edgeCost = nets[netID]->edgeCost;
   std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
 
   for (i = 0; i < treeedge->route.routelen; i++) {
@@ -1401,7 +1399,7 @@ void printTree2D(int netID)
 
 Bool checkRoute2DTree(int netID)
 {
-  Bool STHwrong, gridFlag;
+  Bool STHwrong;
   short *gridsX, *gridsY;
   int i, edgeID, edgelength;
   int n1, n2, x1, y1, x2, y2;
@@ -1423,8 +1421,6 @@ Bool checkRoute2DTree(int netID)
     y2 = treenodes[n2].y;
     gridsX = treeedge->route.gridsX;
     gridsY = treeedge->route.gridsY;
-
-    gridFlag = FALSE;
 
     if (treeedge->len < 0) {
       logger->warn(GRT, 207, "rip upped edge without edge len re assignment.");
@@ -1467,7 +1463,6 @@ Bool checkRoute2DTree(int netID)
                  edgeID,
                  distance,
                  i);
-          gridFlag = TRUE;
           STHwrong = TRUE;
         }
       }

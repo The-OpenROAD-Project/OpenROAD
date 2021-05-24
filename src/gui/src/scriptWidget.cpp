@@ -51,8 +51,8 @@ namespace gui {
 
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
-      input_(new QLineEdit),
       output_(new QTextEdit),
+      input_(new QLineEdit),
       pauser_(new QPushButton("Idle")),
       historyPosition_(0)
 {
