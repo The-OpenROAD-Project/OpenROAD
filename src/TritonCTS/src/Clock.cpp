@@ -99,7 +99,6 @@ Box<double> Clock::computeSinkRegionClustered(
   std::sort(allPositionsX.begin(), allPositionsX.end());
   std::sort(allPositionsY.begin(), allPositionsY.end());
 
-  unsigned numSinks = allPositionsX.size();
   double xMin = allPositionsX[0];
   double xMax = allPositionsX[(allPositionsX.size() - 1)];
   double yMin = allPositionsY[0];

@@ -68,10 +68,11 @@ class Matching
 class SinkClustering
 {
  public:
-  SinkClustering(CtsOptions* options, TechChar* techChar): _options(options), _techChar(techChar),
+  SinkClustering(CtsOptions* options, TechChar* techChar): _options(options), _logger(options->getLogger()),
+                                   _techChar(techChar),
                                    _maxInternalDiameter(10), _capPerUnit(0.0),
-                                  _useMaxCapLimit(options->getSinkClusteringUseMaxCap()),
-                                  _logger(options->getLogger()) { }
+                                  _useMaxCapLimit(options->getSinkClusteringUseMaxCap())
+                                  {}
 
   void addPoint(double x, double y) { _points.emplace_back(x, y); }
   void addCap(float cap) { _pointsCap.emplace_back(cap);}
@@ -109,8 +110,8 @@ class SinkClustering
     return pos < std::numeric_limits<double>::epsilon();
   }
 
-  Logger *_logger;
   CtsOptions *_options;
+  Logger *_logger;
   TechChar* _techChar;
   std::vector<Point<double>> _points;
   std::vector<float> _pointsCap;

@@ -1086,7 +1086,7 @@ void mazeRouteMSMD(int iter,
   int i, j, deg, edgeID, n1, n2, n1x, n1y, n2x, n2y, ymin, ymax, xmin, xmax,
       curX, curY, crossX, crossY, tmpX, tmpY, tmpi, min_x, min_y, num_edges;
   int regionX1, regionX2, regionY1, regionY2;
-  int heapLen1, heapLen2, ind, ind1, tmpind;
+  int heapLen1, heapLen2, ind, ind1;
   int endpt1, endpt2, A1, A2, B1, B2, C1, C2, D1, D2, cnt, cnt_n1n2;
   int edge_n1n2, edge_n1A1, edge_n1A2, edge_n1C1, edge_n1C2, edge_A1A2,
       edge_C1C2;
