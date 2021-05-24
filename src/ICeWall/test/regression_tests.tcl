@@ -8,5 +8,4 @@ record_tests {
   coyote_tc_sky130
   caravel_sky130
   tcl_interface
-  spell_check_documentation
 }

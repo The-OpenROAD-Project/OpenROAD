@@ -4546,10 +4546,10 @@ namespace eval ICeWall {
       
       lassign [get_scaled_die_area] xMin yMin xMax yMax
       switch {[dict get padcell side]} {
-        "bottom" {set xMin [expr [dict get $origin x} - $pitch / 2]]; set xMax [expr [dict get $origin x} + $pitch / 2]]
-        "right"  {set yMin [expr [dict get $origin y} - $pitch / 2]]; set yMax [expr [dict get $origin y} + $pitch / 2]}
-        "top"    {set xMin [expr [dict get $origin x} - $pitch / 2]]; set xMax [expr [dict get $origin x} + $pitch / 2]}
-        "left"   {set yMin [expr [dict get $origin y} - $pitch / 2]]; set yMax [expr [dict get $origin y} + $pitch / 2]}
+        "bottom" {set xMin [expr [dict get $origin x] - $pitch / 2]]; set xMax [expr [dict get $origin x] + $pitch / 2]]}
+        "right"  {set yMin [expr [dict get $origin y] - $pitch / 2]]; set yMax [expr [dict get $origin y] + $pitch / 2]]}
+        "top"    {set xMin [expr [dict get $origin x] - $pitch / 2]]; set xMax [expr [dict get $origin x] + $pitch / 2]]}
+        "left"   {set yMin [expr [dict get $origin y] - $pitch / 2]]; set yMax [expr [dict get $origin y] + $pitch / 2]]}
       }
       
       if {[dict get $padcell scaled_centre x] < $xMin || [dict get $padcell scaled_centre x] > $xMax} {
