@@ -61,8 +61,8 @@ void detailed_route_cmd(const char* guide_file,
                         int drouteViaInPinTopLayerNum,
                         int OR_SEED,
                         double OR_K,
-                        int bottomRoutingLayer,
-                        int topRoutingLayer,
+                        const char* bottomRoutingLayer,
+                        const char* topRoutingLayer,
                         int initRouteShapeCost,
                         int verbose)
 {

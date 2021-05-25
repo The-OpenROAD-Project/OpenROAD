@@ -83,8 +83,8 @@ class TritonRoute
                  int drouteViaInPinTopLayerNum,
                  int or_seed,
                  double or_k,
-                 int bottomRoutingLayer,
-                 int topRoutingLayer,
+                 const std::string& bottomRoutingLayer,
+                 const std::string& topRoutingLayer,
                  int initRouteShapeCost,
                  int verbose);
 

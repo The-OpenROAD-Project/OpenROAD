@@ -343,8 +343,8 @@ void TritonRoute::setParams(const string& guide_file,
                             int drouteViaInPinTopLayerNum,
                             int or_seed,
                             double or_k,
-                            int bottomRoutingLayer,
-                            int topRoutingLayer,
+                            const string& bottomRoutingLayer,
+                            const string& topRoutingLayer,
                             int initRouteShapeCost,
                             int verbose)
 {
@@ -366,10 +366,10 @@ void TritonRoute::setParams(const string& guide_file,
   }
   OR_SEED = or_seed;
   OR_K = or_k;
-  if (bottomRoutingLayer > 0) {
+  if (!bottomRoutingLayer.empty()) {
     BOTTOM_ROUTING_LAYER_NAME = bottomRoutingLayer;
   }
-  if (topRoutingLayer > 0) {
+  if (!topRoutingLayer.empty()) {
     TOP_ROUTING_LAYER_NAME = topRoutingLayer;
   }
   if (initRouteShapeCost > 0) {

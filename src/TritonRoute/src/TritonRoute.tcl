@@ -123,16 +123,14 @@ proc detailed_route { args } {
       lappend drt_args 0
     }
     if { [info exists keys(-bottomRoutingLayer)] } {
-      sta::check_positive_integer "-bottom_routing_layer" $keys(-bottom_routing_layer)
       lappend drt_args $keys(-bottom_routing_layer)
     } else {
-      lappend drt_args 0
+      lappend drt_args ""
     }
     if { [info exists keys(-top_routing_layer)] } {
-      sta::check_positive_integer "-top_routing_layer" $keys(-top_routing_layer)
       lappend drt_args $keys(-top_routing_layer)
     } else {
-      lappend drt_args -1
+      lappend drt_args ""
     }
     if { [info exists keys(-init_route_shape_cost)] } {
       sta::check_positive_integer "-init_route_shape_cost" $keys(-init_route_shape_cost)
