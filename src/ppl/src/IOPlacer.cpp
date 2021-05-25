@@ -53,7 +53,7 @@ void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   parms_ = std::make_unique<Parameters>();
-  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1, -1, -1);
+  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 }
 
 void IOPlacer::clear()
@@ -1271,9 +1271,9 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs,
 
 void IOPlacer::addTopLayerPinPattern(int layer, int x_step, int y_step,
                                      int llx, int lly, int urx, int ury,
-                                     int width, int height)
+                                     int width, int height, int keepout)
 {
-  top_grid_ = TopLayerGrid(layer, x_step, y_step, llx, lly, urx, ury, width, height);
+  top_grid_ = TopLayerGrid(layer, x_step, y_step, llx, lly, urx, ury, width, height, keepout);
 }
 
 void IOPlacer::findSlotsForTopLayer()
@@ -1282,6 +1282,90 @@ void IOPlacer::findSlotsForTopLayer()
     for (int x = top_grid_.llx; x < top_grid_.urx; x += top_grid_.x_step) {
       for (int y = top_grid_.lly; y < top_grid_.ury; y += top_grid_.y_step) {
         top_layer_slots_.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
+      }
+    }
+
+    filterObstructedSlotsForTopLayer();
+  }
+}
+
+void IOPlacer::filterObstructedSlotsForTopLayer()
+{
+  // Collect top_grid_ obstructions
+  std::vector<std::unique_ptr<odb::Rect>> obstructions;
+
+  // Get routing obstructions
+  for (odb::dbObstruction* obstruction : block_->getObstructions()) {
+    odb::dbBox* box = obstruction->getBBox();
+    if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
+      obstructions.push_back(std::make_unique<odb::Rect>());
+      box->getBox(*obstructions.back());
+    }
+  }
+
+  // Get already routed special nets
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      for (odb::dbSWire* swire : net->getSWires()) {
+        for (odb::dbSBox* wire : swire->getWires()) {
+          if (!wire->isVia()) {
+            if (wire->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
+              obstructions.push_back(std::make_unique<odb::Rect>());
+              wire->getBox(*obstructions.back());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Get already placed pins
+  for (odb::dbBTerm* term : block_->getBTerms()) {
+    for (odb::dbBPin* pin : term->getBPins()) {
+      if (pin->getPlacementStatus().isFixed()) {
+        for (odb::dbBox* box : pin->getBoxes()) {
+          if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
+            obstructions.push_back(std::make_unique<odb::Rect>());
+            box->getBox(*obstructions.back());
+          }
+        }
+      }
+    }
+  }
+
+  // remove slots that go beyond the die boundary
+  odb::Rect die_area;
+  block_->getDieArea(die_area);
+  std::vector<Slot>::iterator it = top_layer_slots_.begin();
+  while (it != top_layer_slots_.end()) {
+    odb::Point& point = (*it).pos;
+    if (point.x() - top_grid_.width/2 < die_area.xMin()
+        || point.y() - top_grid_.height/2 < die_area.yMin()
+        || point.x() + top_grid_.width/2 > die_area.xMax()
+        || point.y() + top_grid_.height/2 > die_area.yMax()) {
+      // remove out of die pins
+      it = top_layer_slots_.erase(it);
+    }
+    else {
+      it++;
+    }
+  }
+
+  // Remove slots that overlap with obstructions
+  for (std::unique_ptr<odb::Rect>& rect : obstructions) {
+    it = top_layer_slots_.begin();
+    while (it != top_layer_slots_.end()) {
+      odb::Point& point = (*it).pos;
+      // Mock slot with keepout
+      odb::Rect pin_rect(point.x() - top_grid_.width/2  - top_grid_.keepout,
+                         point.y() - top_grid_.height/2 - top_grid_.keepout,
+                         point.x() + top_grid_.width/2  + top_grid_.keepout,
+                         point.y() + top_grid_.height/2 + top_grid_.keepout);
+      if (rect->intersects(pin_rect)) { // remove overlapping locations
+        it = top_layer_slots_.erase(it);
+      }
+      else {
+        it++;
       }
     }
   }

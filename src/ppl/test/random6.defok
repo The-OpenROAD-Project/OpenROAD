@@ -118,7 +118,7 @@ PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 153600 105600 ) N ;
+        + PLACED ( 153600 96000 ) N ;
     - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -126,7 +126,7 @@ PINS 54 ;
     - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 48000 192000 ) N ;
+        + PLACED ( 48000 182400 ) N ;
     - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -142,11 +142,11 @@ PINS 54 ;
     - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 96000 38400 ) N ;
+        + PLACED ( 96000 28800 ) N ;
     - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 153600 172800 ) N ;
+        + PLACED ( 153600 163200 ) N ;
     - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -158,15 +158,15 @@ PINS 54 ;
     - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 67200 0 ) N ;
+        + PLACED ( 57600 192000 ) N ;
     - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 28800 172800 ) N ;
+        + PLACED ( 28800 163200 ) N ;
     - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 105600 192000 ) N ;
+        + PLACED ( 105600 182400 ) N ;
     - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -178,7 +178,7 @@ PINS 54 ;
     - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 57600 134400 ) N ;
+        + PLACED ( 57600 124800 ) N ;
     - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -186,15 +186,15 @@ PINS 54 ;
     - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 163200 182400 ) N ;
+        + PLACED ( 163200 172800 ) N ;
     - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 172800 124800 ) N ;
+        + PLACED ( 172800 115200 ) N ;
     - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 38400 182400 ) N ;
+        + PLACED ( 38400 172800 ) N ;
     - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -202,7 +202,7 @@ PINS 54 ;
     - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 67200 144000 ) N ;
+        + PLACED ( 67200 134400 ) N ;
     - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -210,11 +210,11 @@ PINS 54 ;
     - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 134400 153600 ) N ;
+        + PLACED ( 134400 144000 ) N ;
     - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 76800 86400 ) N ;
+        + PLACED ( 76800 76800 ) N ;
     - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -222,7 +222,7 @@ PINS 54 ;
     - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 86400 96000 ) N ;
+        + PLACED ( 86400 86400 ) N ;
     - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -230,7 +230,7 @@ PINS 54 ;
     - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 172800 192000 ) N ;
+        + PLACED ( 172800 182400 ) N ;
     - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -238,7 +238,7 @@ PINS 54 ;
     - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 182400 67200 ) N ;
+        + PLACED ( 182400 57600 ) N ;
     - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -258,11 +258,11 @@ PINS 54 ;
     - reset + NET reset + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 86400 163200 ) N ;
+        + PLACED ( 86400 153600 ) N ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 172800 57600 ) N ;
+        + PLACED ( 172800 48000 ) N ;
     - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -270,19 +270,19 @@ PINS 54 ;
     - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 67200 76800 ) N ;
+        + PLACED ( 67200 67200 ) N ;
     - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 124800 0 ) N ;
+        + PLACED ( 115200 192000 ) N ;
     - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 48000 124800 ) N ;
+        + PLACED ( 48000 115200 ) N ;
     - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 76800 153600 ) N ;
+        + PLACED ( 76800 144000 ) N ;
     - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -294,7 +294,7 @@ PINS 54 ;
     - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 124800 144000 ) N ;
+        + PLACED ( 124800 134400 ) N ;
     - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -306,7 +306,7 @@ PINS 54 ;
     - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 163200 115200 ) N ;
+        + PLACED ( 163200 105600 ) N ;
     - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -314,7 +314,7 @@ PINS 54 ;
     - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 182400 134400 ) N ;
+        + PLACED ( 182400 124800 ) N ;
     - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
@@ -326,7 +326,7 @@ PINS 54 ;
     - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )
-        + PLACED ( 144000 163200 ) N ;
+        + PLACED ( 144000 153600 ) N ;
     - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -1600 -2500 ) ( 1600 2500 )

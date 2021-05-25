@@ -119,11 +119,12 @@ struct TopLayerGrid
   int ury;
   int width;
   int height;
+  int keepout;
   TopLayerGrid() = default;
   TopLayerGrid(int l, int x_s, int y_s, int x_l, int y_l,
-               int x_u, int y_u, int w, int h)
+               int x_u, int y_u, int w, int h, int k)
     : layer(l), x_step(x_s), y_step(y_s), llx(x_l), lly(y_l),
-      urx(x_u), ury(y_u), width(w), height(h) {}
+      urx(x_u), ury(y_u), width(w), height(h), keepout(k) {}
 };
 
 class IOPlacer
@@ -153,7 +154,7 @@ class IOPlacer
   void addPinGroup(PinGroup* group);
   void addTopLayerPinPattern(int layer, int x_step, int y_step,
                              int llx, int lly, int urx, int ury,
-                             int width, int height);
+                             int width, int height, int keepout);
   int getTopLayer() { return top_grid_.layer; }
   void placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height);
 
@@ -198,6 +199,7 @@ class IOPlacer
   void randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer, bool is_group);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
+  void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
   void defineSlots();
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
