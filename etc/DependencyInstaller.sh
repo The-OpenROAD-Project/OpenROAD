@@ -20,12 +20,14 @@ _installCommonDev() {
     # CMake
     cd "${baseDir}"
     wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-Linux-x86_64.sh
+    md5sum -c <(echo "73041a43d27a30cdcbfdfdb61310d081  cmake-${cmakeVersionSmall}-Linux-x86_64.sh") || exit 1
     chmod +x cmake-${cmakeVersionSmall}-Linux-x86_64.sh
     ./cmake-${cmakeVersionSmall}-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
     # SWIG
     cd "${baseDir}"
     wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
+    md5sum -c <(echo "ef6a6d1dec755d867e7f5e860dc961f7  rel-${swigVersion}.tar.gz") || exit 1
     tar xfz rel-${swigVersion}.tar.gz
     cd swig-rel-${swigVersion}
     ./autogen.sh
@@ -38,6 +40,7 @@ _installCommonDev() {
     cd "${baseDir}"
     boostVersionUnderscore=${boostVersion//./_}
     wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersion}/source/boost_${boostVersionUnderscore}.tar.gz
+    md5sum -c <(echo "e2b0b1eac302880461bcbef097171758  boost_${boostVersionUnderscore}.tar.gz") || exit 1
     tar -xf boost_${boostVersionUnderscore}.tar.gz
     cd boost_${boostVersionUnderscore}
     ./bootstrap.sh
@@ -53,6 +56,7 @@ _installCommonDev() {
     # lemon
     cd "${baseDir}"
     wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
+    md5sum -c <(echo "e89f887559113b68657eca67cf3329b5  lemon-${lemonVersion}.tar.gz") || exit 1
     tar -xf lemon-${lemonVersion}.tar.gz
     cd lemon-${lemonVersion}
     cmake -B build .
