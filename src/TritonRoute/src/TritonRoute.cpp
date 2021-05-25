@@ -345,7 +345,6 @@ void TritonRoute::setParams(const string& guide_file,
                             double or_k,
                             const string& bottomRoutingLayer,
                             const string& topRoutingLayer,
-                            int initRouteShapeCost,
                             int verbose)
 {
   GUIDE_FILE = guide_file;
@@ -371,16 +370,6 @@ void TritonRoute::setParams(const string& guide_file,
   }
   if (!topRoutingLayer.empty()) {
     TOP_ROUTING_LAYER_NAME = topRoutingLayer;
-  }
-  if (initRouteShapeCost > 0) {
-    int maxCost = std::numeric_limits<frUInt4>::max();
-    if (initRouteShapeCost > maxCost) {
-      logger_->error(
-       utl::DRT, 253, "initRouteShapeCost {} exceeds maximum value of {}",
-       initRouteShapeCost, maxCost);
-    }
-
-    ROUTESHAPECOST = static_cast<frUInt4>(initRouteShapeCost);
   }
 }
 

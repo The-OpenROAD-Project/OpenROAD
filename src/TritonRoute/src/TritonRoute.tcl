@@ -47,7 +47,6 @@ sta::define_cmd_args "detailed_route" {
     [-or_k_ k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
-    [-init_route_shape_cost cost]
     [-verbose level]
     [-param filename]
 }
@@ -57,7 +56,7 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
       -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -init_route_shape_cost -verbose}
+      -top_routing_layer -verbose}
   sta::check_argc_eq0 "detailed_route" $args
 
   if { ![info exists keys(-guide)] && ![info exists keys(-param)] } {
@@ -131,12 +130,6 @@ proc detailed_route { args } {
       lappend drt_args $keys(-top_routing_layer)
     } else {
       lappend drt_args ""
-    }
-    if { [info exists keys(-init_route_shape_cost)] } {
-      sta::check_positive_integer "-init_route_shape_cost" $keys(-init_route_shape_cost)
-      lappend drt_args $keys(-init_route_shape_cost)
-    } else {
-      lappend drt_args -1
     }
     if { [info exists keys(-verbose)] } {
       sta::check_positive_integer "-verbose" $keys(-verbose)

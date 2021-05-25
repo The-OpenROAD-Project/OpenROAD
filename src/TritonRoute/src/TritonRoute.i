@@ -63,7 +63,6 @@ void detailed_route_cmd(const char* guide_file,
                         double OR_K,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
-                        int initRouteShapeCost,
                         int verbose)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
@@ -80,7 +79,6 @@ void detailed_route_cmd(const char* guide_file,
                     OR_K,
                     bottomRoutingLayer,
                     topRoutingLayer,
-                    initRouteShapeCost,
                     verbose);
   router->main();
 }

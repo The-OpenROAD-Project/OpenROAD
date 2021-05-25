@@ -85,7 +85,6 @@ class TritonRoute
                  double or_k,
                  const std::string& bottomRoutingLayer,
                  const std::string& topRoutingLayer,
-                 int initRouteShapeCost,
                  int verbose);
 
  protected:
