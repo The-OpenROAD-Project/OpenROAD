@@ -59,15 +59,19 @@ proc detailed_route { args } {
       -top_routing_layer -verbose}
   sta::check_argc_eq0 "detailed_route" $args
 
-  if { ![info exists keys(-guide)] && ![info exists keys(-param)] } {
-    sta::cmd_usage_error "detailed_route"
-  } elseif { [info exists keys(-param)] && [array size keys] > 1} {
-    utl::error DRT 251 "-param cannot be used with other arguments"
-  }
   if { [info exists keys(-param)] } {
-    drt::detailed_route_cmd $keys(-param)
+    if { [array size keys] > 1 } {
+      utl::error DRT 251 "-param cannot be used with other arguments"
+    } else {
+      drt::detailed_route_cmd $keys(-param)
+    }
   } else {
-    set drt_args [list $keys(-guide)]
+    set drt_args [list]
+    if { [info exists keys(-guide)] } {
+      lappend drt_args $keys(-guide)
+    } else {
+      lappend drt_args ""
+    }
     if { [info exists keys(-output_guide)] } {
       lappend drt_args $keys(-output_guide)
     } else {
