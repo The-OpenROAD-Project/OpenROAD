@@ -176,7 +176,8 @@ class FlexDR
       frLayerNum lNum,
       std::map<frBlockObject*,
                std::set<std::pair<frPoint, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap, bool isWire);
+               frBlockObjectComp>& pin2epMap,
+      bool isWire);
   void checkConnectivity_nodeMap(
       const frNet* net,
       const std::vector<frConnFig*>& netDRObjs,

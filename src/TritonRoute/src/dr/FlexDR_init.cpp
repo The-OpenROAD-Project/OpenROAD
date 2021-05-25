@@ -822,8 +822,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
               != frLayerTypeEnum::ROUTING) {
             continue;
           }
-          halfWidth
-              = getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
+          halfWidth = getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
           frRect instPinRect(*rpinRect);
           instPinRect.move(xform);
           frBox instPinRectBBox;
@@ -846,8 +845,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
               getTrackLocs(
                   false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-            } else if (currLayerNum - 2
-                       >= getTech()->getBottomLayerNum()) {
+            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
               getTrackLocs(
                   false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
             } else {
@@ -859,8 +857,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
               getTrackLocs(
                   false, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-            } else if (currLayerNum - 2
-                       >= getTech()->getBottomLayerNum()) {
+            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
               getTrackLocs(
                   false, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
             } else {
@@ -894,9 +891,8 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             uap->setPinCost(7);
             // to resolve temp AP end seg minArea patch problem
             // frCoord reqArea = 0;
-            auto minAreaConstraint = getTech()
-                                         ->getLayer(currLayerNum)
-                                         ->getAreaConstraint();
+            auto minAreaConstraint
+                = getTech()->getLayer(currLayerNum)->getAreaConstraint();
             if (minAreaConstraint) {
               auto reqArea = minAreaConstraint->getMinArea();
               uap->setBeginArea(reqArea);
@@ -944,8 +940,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
               getTrackLocs(
                   false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-            } else if (currLayerNum - 2
-                       >= getTech()->getBottomLayerNum()) {
+            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
               getTrackLocs(
                   false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
             } else {
@@ -957,8 +952,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
               getTrackLocs(
                   false, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-            } else if (currLayerNum - 2
-                       >= getTech()->getBottomLayerNum()) {
+            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
               getTrackLocs(
                   false, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
             } else {
@@ -1003,9 +997,8 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             uap->setPinCost(7);
             // to resolve temp AP end seg minArea patch problem
             // frCoord reqArea = 0;
-            auto minAreaConstraint = getTech()
-                                         ->getLayer(currLayerNum)
-                                         ->getAreaConstraint();
+            auto minAreaConstraint
+                = getTech()->getLayer(currLayerNum)->getAreaConstraint();
             if (minAreaConstraint) {
               auto reqArea = minAreaConstraint->getMinArea();
               uap->setBeginArea(reqArea);
@@ -1035,8 +1028,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
               != frLayerTypeEnum::ROUTING) {
             continue;
           }
-          halfWidth
-              = getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
+          halfWidth = getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
           frRect instPinRect(*rpinRect);
           // instPinRect.move(xform);
           frBox instPinRectBBox;
@@ -1062,12 +1054,10 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             // get intersecting tracks if any
             if (currPrefRouteDir == frcHorzPrefRoutingDir) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
-              if (currLayerNum + 2
-                  <= getTech()->getTopLayerNum()) {
+              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(
                     false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-              } else if (currLayerNum - 2
-                         >= getTech()->getBottomLayerNum()) {
+              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
                 getTrackLocs(
                     false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
               } else {
@@ -1077,12 +1067,10 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
             } else {
               getTrackLocs(
                   false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
-              if (currLayerNum + 2
-                  <= getTech()->getTopLayerNum()) {
+              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(
                     false, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-              } else if (currLayerNum - 2
-                         >= getTech()->getBottomLayerNum()) {
+              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
                 getTrackLocs(
                     false, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
               } else {
@@ -1108,12 +1096,10 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
                     true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               }
               if (didUseCenterline) {
-                if (currLayerNum + 2
-                    <= getTech()->getTopLayerNum()) {
+                if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                   getTrackLocs(
                       false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-                } else if (currLayerNum - 2
-                           >= getTech()->getBottomLayerNum()) {
+                } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
                   getTrackLocs(
                       false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
                 } else {
@@ -1127,12 +1113,10 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
                   lowerBoundX += layerWidth;
                   upperBoundX -= layerWidth;
                 }
-                if (currLayerNum + 2
-                    <= getTech()->getTopLayerNum()) {
+                if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                   getTrackLocs(
                       false, currLayerNum + 2, lowerBoundX, upperBoundX, xLocs);
-                } else if (currLayerNum - 2
-                           >= getTech()->getBottomLayerNum()) {
+                } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
                   getTrackLocs(
                       false, currLayerNum - 2, lowerBoundX, upperBoundX, xLocs);
                 } else {
@@ -1155,12 +1139,10 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
                     false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
               }
               if (didUseCenterline) {
-                if (currLayerNum + 2
-                    <= getTech()->getTopLayerNum()) {
+                if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                   getTrackLocs(
                       false, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-                } else if (currLayerNum - 2
-                           >= getTech()->getBottomLayerNum()) {
+                } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
                   getTrackLocs(
                       false, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
                 } else {
@@ -1173,8 +1155,7 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
                 if ((upperBoundY - lowerBoundY) >= 2 * layerWidth) {
                   lowerBoundY += layerWidth;
                   upperBoundY -= layerWidth;
-                  if (currLayerNum + 2
-                      <= getTech()->getTopLayerNum()) {
+                  if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                     getTrackLocs(false,
                                  currLayerNum + 2,
                                  lowerBoundY,
@@ -1209,9 +1190,8 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
                 uap->setPoint(pt);
                 // to resolve temp AP end seg minArea patch problem
                 // frCoord reqArea = 0;
-                auto minAreaConstraint = getTech()
-                                             ->getLayer(currLayerNum)
-                                             ->getAreaConstraint();
+                auto minAreaConstraint
+                    = getTech()->getLayer(currLayerNum)->getAreaConstraint();
                 if (minAreaConstraint) {
                   auto reqArea = minAreaConstraint->getMinArea();
                   uap->setBeginArea(reqArea);
@@ -1308,9 +1288,8 @@ void FlexDRWorker::initNet_termGenAp_new(drPin* dPin)
               uap->setPin(dPin);
               // to resolve temp AP end seg minArea patch problem
               // frCoord reqArea = 0;
-              auto minAreaConstraint = getTech()
-                                           ->getLayer(currLayerNum)
-                                           ->getAreaConstraint();
+              auto minAreaConstraint
+                  = getTech()->getLayer(currLayerNum)->getAreaConstraint();
               if (minAreaConstraint) {
                 auto reqArea = minAreaConstraint->getMinArea();
                 uap->setBeginArea(reqArea);
@@ -2038,8 +2017,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     gridGraph_.getMazeIdx(bi, bp, lNum);
     ap->setMazeIdx(bi);
     // set curr layer on track status
-    if (getTech()->getLayer(lNum)->getDir()
-        == frcHorzPrefRoutingDir) {
+    if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -2062,8 +2040,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     FlexMazeIdx bi;
     gridGraph_.getMazeIdx(bi, bp, lNum + 2);
     // set curr layer on track status
-    if (getTech()->getLayer(lNum + 2)->getDir()
-        == frcHorzPrefRoutingDir) {
+    if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -2186,14 +2163,12 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
       for (auto& ap : pin->getAccessPatterns()) {
         lNum = ap->getBeginLayerNum();
         if (ap->hasValidAccess(frDirEnum::U)) {
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == frcHorzPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir
               && ap->isOnTrack(true)) {
             hasUpperOnTrackAP = true;
             break;
           }
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == frcVertPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == frcVertPrefRoutingDir
               && ap->isOnTrack(false)) {
             hasUpperOnTrackAP = true;
             break;
@@ -2209,10 +2184,8 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
       if (ap->hasValidAccess(frDirEnum::U)) {
         lNum = ap->getBeginLayerNum();
         if (lNum + 2 <= getTech()->getTopLayerNum()) {
-          auto upperDefaultWidth
-              = getTech()->getLayer(lNum + 2)->getWidth();
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == frcHorzPrefRoutingDir
+          auto upperDefaultWidth = getTech()->getLayer(lNum + 2)->getWidth();
+          if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir
               && !ap->isOnTrack(true)) {
             if (!hasUpperOnTrackAP) {
               auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
@@ -2228,8 +2201,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
                   isAddPathCost);
             }
           }
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == frcVertPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == frcVertPrefRoutingDir
               && !ap->isOnTrack(false)) {
             if (!hasUpperOnTrackAP) {
               auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
