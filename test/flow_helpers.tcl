@@ -50,16 +50,6 @@ proc derate_layer_wire_rc { layer_name corner derate_factor } {
     -capacitance [expr $c_ui * $derate_factor]
 }
 
-proc make_tr_lef {} {
-  global design platform tech_lef std_cell_lef extra_lef
-  set merged_lef [make_result_file ${design}_${platform}_merged.lef]
-  set lef_files "$tech_lef $std_cell_lef $extra_lef"
-  catch [concat exec ./mergeLef.py --inputLef $lef_files --outputLef $merged_lef]
-  set tr_lef [make_result_file ${design}_tr.lef]
-  exec ./modifyLefSpacing.py -i $merged_lef -o $tr_lef
-  return $tr_lef
-}
-
 proc fail { reason } {
   puts "fail $reason"
   exit
