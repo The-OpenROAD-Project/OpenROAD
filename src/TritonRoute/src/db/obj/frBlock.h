@@ -96,22 +96,7 @@ class frBlock : public frBlockObject
   }
   void getBoundaryBBox(frBox& boxIn) const
   {
-    if (boundaries_.size()) {
-      boundaries_.begin()->getBBox(boxIn);
-    }
-    frCoord llx = boxIn.left();
-    frCoord lly = boxIn.bottom();
-    frCoord urx = boxIn.right();
-    frCoord ury = boxIn.top();
-    frBox tmpBox;
-    for (auto& boundary : boundaries_) {
-      boundary.getBBox(tmpBox);
-      llx = llx < tmpBox.left() ? llx : tmpBox.left();
-      lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
-      urx = urx > tmpBox.right() ? urx : tmpBox.right();
-      ury = ury > tmpBox.top() ? ury : tmpBox.top();
-    }
-    boxIn.set(llx, lly, urx, ury);
+      boxIn.set(dieBox_);
   }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
@@ -289,7 +274,28 @@ class frBlock : public frBlockObject
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
   }
-  void setBoundaries(const std::vector<frBoundary> in) { boundaries_ = in; }
+  const frBox& getDieBox() const {
+      return dieBox_;
+  }
+  void setBoundaries(const std::vector<frBoundary> in) { 
+      boundaries_ = in;
+      if (boundaries_.size()) {
+        boundaries_.begin()->getBBox(dieBox_);
+      }
+      frCoord llx = dieBox_.left();
+      frCoord lly = dieBox_.bottom();
+      frCoord urx = dieBox_.right();
+      frCoord ury = dieBox_.top();
+      frBox tmpBox;
+      for (auto& boundary : boundaries_) {
+        boundary.getBBox(tmpBox);
+        llx = llx < tmpBox.left() ? llx : tmpBox.left();
+        lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
+        urx = urx > tmpBox.right() ? urx : tmpBox.right();
+        ury = ury > tmpBox.top() ? ury : tmpBox.top();
+      }
+      dieBox_.set(llx, lly, urx, ury);
+  }
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {
     for (auto& blk : in) {
@@ -348,6 +354,7 @@ class frBlock : public frBlockObject
 
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
+  frBox dieBox_;
 };
 }  // namespace fr
 

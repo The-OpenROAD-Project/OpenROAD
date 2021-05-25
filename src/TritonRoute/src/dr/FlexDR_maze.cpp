@@ -1898,9 +1898,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         // TODO: output maze area
         cout << "Fatal error: Maze Route cannot find path ("
              << net->getFrNet()->getName() << ") in "
-             << "(" << routeBox.left() / 2000.0 << ", "
-             << routeBox.bottom() / 2000.0 << ") - ("
-             << routeBox.right() / 2000.0 << ", " << routeBox.top() / 2000.0
+             << "(" << routeBox.left() << ", "
+             << routeBox.bottom() << ") - ("
+             << routeBox.right() << ", " << routeBox.top()
              << "). Connectivity Changed.\n";
         if (OUT_MAZE_FILE == string("")) {
           if (VERBOSE > 0) {
