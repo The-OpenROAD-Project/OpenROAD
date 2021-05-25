@@ -50,36 +50,36 @@ int detailed_route_num_drvs()
   return router->getNumDRVs();
 }
 
-void detailed_route_cmd(const char* guide_file,
-                        const char* output_guide_file,
-                        const char* output_maze_file,
-                        const char* output_DRC_file,
-                        const char* output_CMap_file,
+void detailed_route_cmd(const char* guideFile,
+                        const char* outputGuideFile,
+                        const char* outputMazeFile,
+                        const char* outputDrcFile,
+                        const char* outputCmapFile,
                         const char* dbProcessNode,
-                        int drouteEndIterNum,
+                        int drouteEndIter,
                         int drouteViaInPinBottomLayerNum,
                         int drouteViaInPinTopLayerNum,
-                        int OR_SEED,
-                        double OR_K,
+                        int orSeed,
+                        double orK,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
                         int verbose)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setParams(guide_file,
-                    output_guide_file,
-                    output_maze_file,
-                    output_DRC_file,
-                    output_CMap_file,
+  router->setParams({guideFile,
+                    outputGuideFile,
+                    outputMazeFile,
+                    outputDrcFile,
+                    outputCmapFile,
                     dbProcessNode,
-                    drouteEndIterNum,
+                    drouteEndIter,
                     drouteViaInPinBottomLayerNum,
                     drouteViaInPinTopLayerNum,
-                    OR_SEED,
-                    OR_K,
+                    orSeed,
+                    orK,
                     bottomRoutingLayer,
                     topRoutingLayer,
-                    verbose);
+                    verbose});
   router->main();
 }
 

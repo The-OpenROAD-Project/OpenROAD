@@ -332,44 +332,31 @@ void TritonRoute::readParams(const string& fileName)
   }
 }
 
-void TritonRoute::setParams(const string& guide_file,
-                            const string& output_guide_file,
-                            const string& output_maze_file,
-                            const string& output_DRC_file,
-                            const string& output_CMap_file,
-                            const string& dbProcessNode,
-                            int drouteEndIterNum,
-                            int drouteViaInPinBottomLayerNum,
-                            int drouteViaInPinTopLayerNum,
-                            int or_seed,
-                            double or_k,
-                            const string& bottomRoutingLayer,
-                            const string& topRoutingLayer,
-                            int verbose)
+void TritonRoute::setParams(const ParamStruct& params)
 {
-  GUIDE_FILE = guide_file;
-  OUTGUIDE_FILE = output_guide_file;
-  OUT_MAZE_FILE = output_maze_file;
-  DRC_RPT_FILE = output_DRC_file;
-  CMAP_FILE = output_CMap_file;
-  VERBOSE = verbose;
-  DBPROCESSNODE = dbProcessNode;
-  if (drouteViaInPinBottomLayerNum > 0) {
-    VIAINPIN_BOTTOMLAYERNUM = drouteViaInPinBottomLayerNum;
+  GUIDE_FILE = params.guideFile;
+  OUTGUIDE_FILE = params.outputGuideFile;
+  OUT_MAZE_FILE = params.outputMazeFile;
+  DRC_RPT_FILE = params.outputDrcFile;
+  CMAP_FILE = params.outputCmapFile;
+  VERBOSE = params.verbose;
+  DBPROCESSNODE = params.dbProcessNode;
+  if (params.drouteViaInPinBottomLayerNum > 0) {
+    VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;
   }
-  if (drouteViaInPinTopLayerNum > 0) {
-    VIAINPIN_TOPLAYERNUM = drouteViaInPinTopLayerNum;
+  if (params.drouteViaInPinTopLayerNum > 0) {
+    VIAINPIN_TOPLAYERNUM = params.drouteViaInPinTopLayerNum;
   }
-  if (drouteEndIterNum > 0) {
-    END_ITERATION = drouteEndIterNum;
+  if (params.drouteEndIter > 0) {
+    END_ITERATION = params.drouteEndIter;
   }
-  OR_SEED = or_seed;
-  OR_K = or_k;
-  if (!bottomRoutingLayer.empty()) {
-    BOTTOM_ROUTING_LAYER_NAME = bottomRoutingLayer;
+  OR_SEED = params.orSeed;
+  OR_K = params.orK;
+  if (!params.bottomRoutingLayer.empty()) {
+    BOTTOM_ROUTING_LAYER_NAME = params.bottomRoutingLayer;
   }
-  if (!topRoutingLayer.empty()) {
-    TOP_ROUTING_LAYER_NAME = topRoutingLayer;
+  if (!params.topRoutingLayer.empty()) {
+    TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
   }
 }
 
