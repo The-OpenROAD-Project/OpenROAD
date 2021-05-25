@@ -176,7 +176,8 @@ class FlexDR
       frLayerNum lNum,
       std::map<frBlockObject*,
                std::set<std::pair<frPoint, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap, bool isWire);
+               frBlockObjectComp>& pin2epMap,
+      bool isWire);
   void checkConnectivity_nodeMap(
       const frNet* net,
       const std::vector<frConnFig*>& netDRObjs,
@@ -295,8 +296,6 @@ class FlexDRWorkerRegionQuery
  public:
   FlexDRWorkerRegionQuery(FlexDRWorker* in);
   ~FlexDRWorkerRegionQuery();
-  frDesign* getDesign() const;
-  FlexDRWorker* getDRWorker() const;
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
   void query(const frBox& box,

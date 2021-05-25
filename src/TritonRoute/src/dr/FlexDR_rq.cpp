@@ -51,20 +51,10 @@ FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
 
 FlexDRWorkerRegionQuery::~FlexDRWorkerRegionQuery() = default;
 
-FlexDRWorker* FlexDRWorkerRegionQuery::getDRWorker() const
-{
-  return impl_->drWorker;
-}
-
 void FlexDRWorkerRegionQuery::cleanup()
 {
   impl_->shapes_.clear();
   impl_->shapes_.shrink_to_fit();
-}
-
-frDesign* FlexDRWorkerRegionQuery::getDesign() const
-{
-  return impl_->drWorker->getDesign();
 }
 
 void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
@@ -247,11 +237,11 @@ void FlexDRWorkerRegionQuery::query(
 
 void FlexDRWorkerRegionQuery::init()
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = impl_->drWorker->getTech()->getLayers().size();
   impl_->shapes_.clear();
   impl_->shapes_.resize(numLayers);
   vector<vector<rq_box_value_t<drConnFig*>>> allShapes(numLayers);
-  for (auto& net : getDRWorker()->getNets()) {
+  for (auto& net : impl_->drWorker->getNets()) {
     for (auto& connFig : net->getRouteConnFigs()) {
       impl_->add(connFig.get(), allShapes);
     }

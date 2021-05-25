@@ -344,7 +344,7 @@ void FlexDRWorker::endAddNets_merge(frNet* net,
       }
     }
     // always merge offGrid boundary points
-    frCoord manuGrid = getDesign()->getTech()->getManufacturingGrid();
+    frCoord manuGrid = getTech()->getManufacturingGrid();
     if (pt.x() % manuGrid || pt.y() % manuGrid) {
       skip = false;
     }
