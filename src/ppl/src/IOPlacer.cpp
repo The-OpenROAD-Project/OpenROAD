@@ -109,10 +109,13 @@ void IOPlacer::initParms()
   }
 }
 
-std::vector<int> IOPlacer::getValidSlots(int first, int last) {
+std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer) {
   std::vector<int> valid_slots;
+
+  std::vector<Slot> &slots = top_layer ? top_layer_slots_ : slots_;
+
   for (int i = first; i <= last; i++) {
-    if (!slots_[i].blocked) {
+    if (!slots[i].blocked) {
       valid_slots.push_back(i);
     }
   }
@@ -136,12 +139,12 @@ void IOPlacer::randomPlacement()
       }
 
       if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
-        std::vector<int> valid_slots = getValidSlots(first_slot, last_slot);
+        std::vector<int> valid_slots = getValidSlots(first_slot, last_slot, top_layer);
         randomPlacement(io_group, valid_slots, top_layer, true);
       }
     }
 
-    std::vector<int> valid_slots = getValidSlots(first_slot, last_slot);
+    std::vector<int> valid_slots = getValidSlots(first_slot, last_slot, top_layer);
     std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist_);
     randomPlacement(pin_indices, valid_slots, top_layer, false);
   }
@@ -151,12 +154,12 @@ void IOPlacer::randomPlacement()
     if (io_pin.isPlaced()) {
       continue;
     }
-    std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1);
+    std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1, false);
 
     randomPlacement(io_group, valid_slots, false, true);
   }
 
-  std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1);
+  std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1, false);
 
   std::vector<int> pin_indices;
   for (int i = 0; i < netlist_.numIOPins(); i++) {
@@ -1333,39 +1336,31 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
   }
 
-  // remove slots that go beyond the die boundary
+  // check for slots that go beyond the die boundary
   odb::Rect die_area;
   block_->getDieArea(die_area);
-  std::vector<Slot>::iterator it = top_layer_slots_.begin();
-  while (it != top_layer_slots_.end()) {
-    odb::Point& point = (*it).pos;
+  for (auto& slot : top_layer_slots_) {
+    odb::Point& point = slot.pos;
     if (point.x() - top_grid_.width/2 < die_area.xMin()
         || point.y() - top_grid_.height/2 < die_area.yMin()
         || point.x() + top_grid_.width/2 > die_area.xMax()
         || point.y() + top_grid_.height/2 > die_area.yMax()) {
-      // remove out of die pins
-      it = top_layer_slots_.erase(it);
-    }
-    else {
-      it++;
+      // mark slot as blocked since it extends beyond the die area
+      slot.blocked = true;
     }
   }
 
-  // Remove slots that overlap with obstructions
+  // check for slots that overlap with obstructions
   for (std::unique_ptr<odb::Rect>& rect : obstructions) {
-    it = top_layer_slots_.begin();
-    while (it != top_layer_slots_.end()) {
-      odb::Point& point = (*it).pos;
-      // Mock slot with keepout
+    for (auto& slot : top_layer_slots_) {
+      odb::Point& point = slot.pos;
+      // mock slot with keepout
       odb::Rect pin_rect(point.x() - top_grid_.width/2  - top_grid_.keepout,
                          point.y() - top_grid_.height/2 - top_grid_.keepout,
                          point.x() + top_grid_.width/2  + top_grid_.keepout,
                          point.y() + top_grid_.height/2 + top_grid_.keepout);
-      if (rect->intersects(pin_rect)) { // remove overlapping locations
-        it = top_layer_slots_.erase(it);
-      }
-      else {
-        it++;
+      if (rect->intersects(pin_rect)) { // mark slot as blocked
+        slot.blocked = true;
       }
     }
   }

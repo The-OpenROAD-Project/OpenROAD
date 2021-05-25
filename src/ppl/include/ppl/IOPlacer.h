@@ -194,7 +194,7 @@ class IOPlacer
                           std::set<int> ver_layer_idx);
   void initIOLists();
   void initParms();
-  std::vector<int> getValidSlots(int first, int last);
+  std::vector<int> getValidSlots(int first, int last, bool top_layer);
   void randomPlacement();
   void randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer, bool is_group);
   void findSlots(const std::set<int>& layers, Edge edge);
