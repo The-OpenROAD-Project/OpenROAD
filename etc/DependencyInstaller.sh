@@ -158,7 +158,7 @@ EOF
 }
 
 # default option
-option="dev"
+option="runtime"
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
