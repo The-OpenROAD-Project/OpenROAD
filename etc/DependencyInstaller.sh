@@ -36,9 +36,10 @@ _installCommonDev() {
 
     # boost
     cd "${baseDir}"
-    wget https://github.com/boostorg/boost/archive/refs/tags/boost-${boostVersion}.tar.gz -o boost-${boostVersion}
-    tar -xf boost-${boostVersion}.tar.gz
-    cd boost-${boostVersion}
+    boostVersionUnderscore=${boostVersion//./_}
+    wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersion}/source/boost_${boostVersionUnderscore}.tar.gz
+    tar -xf boost_${boostVersionUnderscore}.tar.gz
+    cd boost_${boostVersionUnderscore}
     ./bootstrap.sh
     ./b2 install --with-iostreams --with-test -j $(nproc)
 
@@ -129,6 +130,7 @@ _installCentosDev() {
         tcl \
         tcl-devel \
         tcl-tclreadline-devel \
+        zlib-devel \
         wget
     yum install -y \
         python36 \
@@ -137,6 +139,7 @@ _installCentosDev() {
 }
 
 _installCentosRuntime() {
+    yum update -y
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     yum install -y libgomp python36-libs qt5-qtbase-devel tcl-tclreadline
     yum update -y
@@ -149,6 +152,9 @@ usage: $0 -run[time]
 EOF
     exit "${1:-1}"
 }
+
+# default option
+option="dev"
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
