@@ -102,7 +102,7 @@ proc detailed_route { args } {
     } else {
       set droute_end_iter -1
     }
-    if { [info exists keys(-drouteViaInPinBottomLayerNum)] } {
+    if { [info exists keys(-droute_via_in_pin_bottom_layer_num)] } {
       sta::check_positive_integer "-droute_via_in_pin_bottom_layer_num" $keys(-droute_via_in_pin_bottom_layer_num)
       set droute_via_in_pin_bottom_layer_num $keys(-droute_via_in_pin_bottom_layer_num)
     } else {
@@ -124,7 +124,7 @@ proc detailed_route { args } {
     } else {
       set or_k 0
     }
-    if { [info exists keys(-bottomRoutingLayer)] } {
+    if { [info exists keys(-bottom_routing_layer)] } {
       set bottom_routing_layer $keys(-bottom_routing_layer)
     } else {
       set bottom_routing_layer ""
