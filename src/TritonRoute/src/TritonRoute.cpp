@@ -373,7 +373,7 @@ void TritonRoute::setParams(const string& guide_file,
     TOP_ROUTING_LAYER_NAME = topRoutingLayer;
   }
   if (initRouteShapeCost > 0) {
-    int maxCost = std::numeric_limits<ffrUInt4>::max();
+    int maxCost = std::numeric_limits<frUInt4>::max();
     if (initRouteShapeCost > maxCost) {
       logger_->error(
        utl::DRT, 253, "initRouteShapeCost {} exceeds maximum value of {}",
