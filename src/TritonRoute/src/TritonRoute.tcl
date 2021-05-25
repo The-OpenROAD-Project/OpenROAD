@@ -34,17 +34,117 @@
 #############################################################################
 
 sta::define_cmd_args "detailed_route" {
-    -param filename
+    [-guide filename]
+    [-output_guide filename]
+    [-output_maze filename]
+    [-output_drc filename]
+    [-output_cmap filename]
+    [-db_process_node name]
+    [-droute_end_iter iter]
+    [-droute_via_in_pin_bottom_layer_num num]
+    [-droute_via_in_pin_top_layer_num num]
+    [-or_seed seed]
+    [-or_k_ k]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
+    [-verbose level]
+    [-param filename]
 }
 
 proc detailed_route { args } {
-  sta::parse_key_args "detailed_route" args keys {-param}
+  sta::parse_key_args "detailed_route" args \
+    keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
+      -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
+      -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
+      -top_routing_layer -verbose}
   sta::check_argc_eq0 "detailed_route" $args
 
-  if { ![info exists keys(-param)] } {
-    sta::cmd_usage_error "detailed_route"
+  if { [info exists keys(-param)] } {
+    if { [array size keys] > 1 } {
+      utl::error DRT 251 "-param cannot be used with other arguments"
+    } else {
+      drt::detailed_route_cmd $keys(-param)
+    }
+  } else {
+    if { [info exists keys(-guide)] } {
+      set guide $keys(-guide)
+    } else {
+      set guide ""
+    }
+    if { [info exists keys(-output_guide)] } {
+      set output_guide $keys(-output_guide)
+    } else {
+      set output_guide ""
+    }
+    if { [info exists keys(-output_maze)] } {
+      set output_maze $keys(-output_maze)
+    } else {
+      set output_maze ""
+    }
+    if { [info exists keys(-output_drc)] } {
+      set output_drc $keys(-output_drc)
+    } else {
+      set output_drc ""
+    }
+    if { [info exists keys(-output_cmap)] } {
+      set output_cmap $keys(-output_cmap)
+    } else {
+      set output_cmap ""
+    }
+    if { [info exists keys(-db_process_node)] } {
+      set db_process_node $keys(-db_process_node)
+    } else {
+      set db_process_node ""
+    }
+    if { [info exists keys(-droute_end_iter)] } {
+      sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
+      set droute_end_iter $keys(-droute_end_iter)
+    } else {
+      set droute_end_iter -1
+    }
+    if { [info exists keys(-droute_via_in_pin_bottom_layer_num)] } {
+      sta::check_positive_integer "-droute_via_in_pin_bottom_layer_num" $keys(-droute_via_in_pin_bottom_layer_num)
+      set droute_via_in_pin_bottom_layer_num $keys(-droute_via_in_pin_bottom_layer_num)
+    } else {
+      set droute_via_in_pin_bottom_layer_num -1
+    }
+    if { [info exists keys(-droute_via_in_pin_top_layer_num)] } {
+      sta::check_positive_integer "-droute_via_in_pin_top_layer_num" $keys(-droute_via_in_pin_top_layer_num)
+      set droute_via_in_pin_top_layer_num $keys(-droute_via_in_pin_top_layer_num)
+    } else {
+      set droute_via_in_pin_top_layer_num -1
+    }
+    if { [info exists keys(-or_seed)] } {
+      set or_seed $keys(-or_seed)
+    } else {
+      set or_seed -1
+    }
+    if { [info exists keys(-or_k)] } {
+      set or_k $keys(-or_k)
+    } else {
+      set or_k 0
+    }
+    if { [info exists keys(-bottom_routing_layer)] } {
+      set bottom_routing_layer $keys(-bottom_routing_layer)
+    } else {
+      set bottom_routing_layer ""
+    }
+    if { [info exists keys(-top_routing_layer)] } {
+      set top_routing_layer $keys(-top_routing_layer)
+    } else {
+      set top_routing_layer ""
+    }
+    if { [info exists keys(-verbose)] } {
+      sta::check_positive_integer "-verbose" $keys(-verbose)
+      set verbose $keys(-verbose)
+    } else {
+      set verbose 1
+    }
+    drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
+      $output_cmap $db_process_node $droute_end_iter \
+      $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
+      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose
   }
-  drt::detailed_route_cmd $keys(-param)
 }
 
 proc detailed_route_num_drvs { args } {

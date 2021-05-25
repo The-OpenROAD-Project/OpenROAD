@@ -1212,6 +1212,9 @@ void LayoutViewer::fit()
   }
 
   Rect bbox = getBounds(block);
+  if (bbox.xMax() == 0 || bbox.yMax() == 0) {
+    return;
+  }
 
   QSize viewport = scroller_->maximumViewportSize();
   qreal pixels_per_dbu
