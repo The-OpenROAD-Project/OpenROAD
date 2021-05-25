@@ -60,26 +60,6 @@ proc make_tr_lef {} {
   return $tr_lef
 }
 
-# This is why parameter files suck.
-proc make_tr_params { route_guide verbose } {
-  global design platform
-  # linux/mac compatible virtual processor count
-  set nproc [exec getconf _NPROCESSORS_ONLN]
-  set tr_params [make_result_file ${design}_${platform}_tr.params]
-  set stream [open $tr_params "w"]
-  puts $stream "guide:$route_guide"
-  puts $stream "outputguide:[make_result_file "${design}_${platform}_output_guide.mod"]"
-  puts $stream "outputDRC:[make_result_file "${design}_${platform}_route_drc.rpt"]"
-  puts $stream "outputMaze:[make_result_file "${design}_${platform}_maze.log"]"
-  puts $stream "threads:$nproc"
-  puts $stream "cpxthreads:$nproc"
-  puts $stream "verbose:$verbose"
-  puts $stream "gap:0"
-  puts $stream "timeout:2400"
-  close $stream
-  return $tr_params
-}
-
 proc fail { reason } {
   puts "fail $reason"
   exit
