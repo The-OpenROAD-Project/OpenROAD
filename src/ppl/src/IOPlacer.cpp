@@ -1295,14 +1295,15 @@ void IOPlacer::findSlotsForTopLayer()
 void IOPlacer::filterObstructedSlotsForTopLayer()
 {
   // Collect top_grid_ obstructions
-  std::vector<std::unique_ptr<odb::Rect>> obstructions;
+  std::vector<odb::Rect> obstructions;
 
   // Get routing obstructions
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
     if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-      obstructions.push_back(std::make_unique<odb::Rect>());
-      box->getBox(*obstructions.back());
+      odb::Rect obstruction_rect;
+      box->getBox(obstruction_rect);
+      obstructions.push_back(obstruction_rect);
     }
   }
 
@@ -1313,8 +1314,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
             if (wire->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-              obstructions.push_back(std::make_unique<odb::Rect>());
-              wire->getBox(*obstructions.back());
+              odb::Rect obstruction_rect;
+              wire->getBox(obstruction_rect);
+              obstructions.push_back(obstruction_rect);
             }
           }
         }
@@ -1328,8 +1330,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
           if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-            obstructions.push_back(std::make_unique<odb::Rect>());
-            box->getBox(*obstructions.back());
+            odb::Rect obstruction_rect;
+            box->getBox(obstruction_rect);
+            obstructions.push_back(obstruction_rect);
           }
         }
       }
@@ -1351,7 +1354,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   }
 
   // check for slots that overlap with obstructions
-  for (std::unique_ptr<odb::Rect>& rect : obstructions) {
+  for (odb::Rect& rect : obstructions) {
     for (auto& slot : top_layer_slots_) {
       odb::Point& point = slot.pos;
       // mock slot with keepout
@@ -1359,7 +1362,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
                          point.y() - top_grid_.height/2 - top_grid_.keepout,
                          point.x() + top_grid_.width/2  + top_grid_.keepout,
                          point.y() + top_grid_.height/2 + top_grid_.keepout);
-      if (rect->intersects(pin_rect)) { // mark slot as blocked
+      if (rect.intersects(pin_rect)) { // mark slot as blocked
         slot.blocked = true;
       }
     }
