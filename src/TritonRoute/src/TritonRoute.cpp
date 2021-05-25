@@ -248,7 +248,7 @@ int TritonRoute::main()
 
 void TritonRoute::readParams(const string& fileName)
 {
-  logger_->warn(utl::DRT, 998, "params file is deprecated. Use tcl arguments.");
+  logger_->warn(utl::DRT, 252, "params file is deprecated. Use tcl arguments.");
 
   int readParamCnt = 0;
   ifstream fin(fileName.c_str());
@@ -289,7 +289,7 @@ void TritonRoute::readParams(const string& fileName)
           ++readParamCnt;
         } else if (field == "threads") {
           logger_->warn(
-              utl::DRT, 999, "deprecated threads param in params file."
+              utl::DRT, 253, "deprecated threads param in params file."
                              " Use 'set_thread_count'");
           ++readParamCnt;
         } else if (field == "verbose")
@@ -373,6 +373,13 @@ void TritonRoute::setParams(const string& guide_file,
     TOP_ROUTING_LAYER_NAME = topRoutingLayer;
   }
   if (initRouteShapeCost > 0) {
+    int maxCost = std::numeric_limits<ffrUInt4>::max();
+    if (initRouteShapeCost > maxCost) {
+      logger_->error(
+       utl::DRT, 253, "initRouteShapeCost {} exceeds maximum value of {}",
+       initRouteShapeCost, maxCost);
+    }
+
     ROUTESHAPECOST = static_cast<frUInt4>(initRouteShapeCost);
   }
 }
