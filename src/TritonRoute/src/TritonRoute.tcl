@@ -34,30 +34,30 @@
 #############################################################################
 
 sta::define_cmd_args "detailed_route" {
-    -guide filename
-    [-outputguide filename]
-    [-outputmaze filename]
-    [-outputDRC filename]
-    [-outputCMap filename]
-    [-dbProcessNode name]
-    [-drouteEndIterNum iter]
-    [-drouteViaInPinBottomLayerNum num]
-    [-drouteViaInPinTopLayerNum num]
-    [-OR_SEED seed]
-    [-OR_K k]
-    [-bottomRoutingLayer layer]
-    [-topRoutingLayer layer]
-    [-initRouteShapeCost cost]
+    [-guide filename]
+    [-output_guide filename]
+    [-output_maze filename]
+    [-output_drc filename]
+    [-output_cmap filename]
+    [-db_process_node name]
+    [-droute_end_iter iter]
+    [-droute_via_in_pin_bottom_layer_num num]
+    [-droute_via_in_pin_top_layer_num num]
+    [-or_seed seed]
+    [-or_k_ k]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
+    [-init_route_shape_cost cost]
     [-verbose level]
     [-param filename]
 }
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-param -guide -outputguide -outputmaze -outputDRC -outputCMap \
-      -dbProcessNode -drouteEndIterNum -drouteViaInPinBottomLayerNum \
-      -drouteViaInPinTopLayerNum -OR_SEED -OR_K -bottomRoutingLayer \
-      -topRoutingLayer -initRouteShapeCost -verbose}
+    keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
+      -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
+      -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
+      -top_routing_layer -init_route_shape_cost -verbose}
   sta::check_argc_eq0 "detailed_route" $args
 
   if { ![info exists keys(-guide)] && ![info exists keys(-param)] } {
@@ -69,74 +69,74 @@ proc detailed_route { args } {
     drt::detailed_route_cmd $keys(-param)
   } else {
     set drt_args [list $keys(-guide)]
-    if { [info exists keys(-outputguide)] } {
-      lappend drt_args $keys(-outputguide)
+    if { [info exists keys(-output_guide)] } {
+      lappend drt_args $keys(-output_guide)
     } else {
       lappend drt_args ""
     }
-    if { [info exists keys(-outputmaze)] } {
-      lappend drt_args $keys(-outputmaze)
+    if { [info exists keys(-output_maze)] } {
+      lappend drt_args $keys(-output_maze)
     } else {
       lappend drt_args ""
     }
-    if { [info exists keys(-outputDRC)] } {
-      lappend drt_args $keys(-outputDRC)
+    if { [info exists keys(-output_drc)] } {
+      lappend drt_args $keys(-output_drc)
     } else {
       lappend drt_args ""
     }
-    if { [info exists keys(-outputCMap)] } {
-      lappend drt_args $keys(-outputCMap)
+    if { [info exists keys(-output_cmap)] } {
+      lappend drt_args $keys(-output_cmap)
     } else {
       lappend drt_args ""
     }
-    if { [info exists keys(-dbProcessNode)] } {
-      lappend drt_args $keys(-dbProcessNode)
+    if { [info exists keys(-db_process_node)] } {
+      lappend drt_args $keys(-db_process_node)
     } else {
       lappend drt_args ""
     }
-    if { [info exists keys(-drouteEndIterNum)] } {
-      sta::check_positive_integer "-drouteEndIterNumgcell" $keys(-drouteEndIterNum)
-      lappend drt_args $keys(-drouteEndIterNum)
+    if { [info exists keys(-droute_end_iter)] } {
+      sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
+      lappend drt_args $keys(-droute_end_iter)
     } else {
       lappend drt_args -1
     }
     if { [info exists keys(-drouteViaInPinBottomLayerNum)] } {
-      sta::check_positive_integer "-drouteViaInPinBottomLayerNum" $keys(-drouteViaInPinBottomLayerNum)
-      lappend drt_args $keys(-drouteViaInPinBottomLayerNum)
+      sta::check_positive_integer "-droute_via_in_pin_bottom_layer_num" $keys(-droute_via_in_pin_bottom_layer_num)
+      lappend drt_args $keys(-droute_via_in_pin_bottom_layer_num)
     } else {
       lappend drt_args -1
     }
-    if { [info exists keys(-drouteViaInPinTopLayerNum)] } {
-      sta::check_positive_integer "-drouteViaInPinTopLayerNum" $keys(-drouteViaInPinTopLayerNum)
-      lappend drt_args $keys(-drouteViaInPinTopLayerNum)
+    if { [info exists keys(-droute_via_in_pin_top_layer_num)] } {
+      sta::check_positive_integer "-droute_via_in_pin_top_layer_num" $keys(-droute_via_in_pin_top_layer_num)
+      lappend drt_args $keys(-droute_via_in_pin_top_layer_num)
     } else {
       lappend drt_args -1
     }
-    if { [info exists keys(-OR_SEED)] } {
-      lappend drt_args $keys(-OR_SEED)
+    if { [info exists keys(-or_seed)] } {
+      lappend drt_args $keys(-or_seed)
     } else {
       lappend drt_args -1
     }
-    if { [info exists keys(-OR_K)] } {
-      lappend drt_args $keys(-OR_K)
+    if { [info exists keys(-or_k)] } {
+      lappend drt_args $keys(-or_k)
     } else {
       lappend drt_args 0
     }
     if { [info exists keys(-bottomRoutingLayer)] } {
-      sta::check_positive_integer "-bottomRoutingLayer" $keys(-bottomRoutingLayer)
-      lappend drt_args $keys(-bottomRoutingLayer)
+      sta::check_positive_integer "-bottom_routing_layer" $keys(-bottom_routing_layer)
+      lappend drt_args $keys(-bottom_routing_layer)
     } else {
       lappend drt_args 0
     }
-    if { [info exists keys(-topRoutingLayer)] } {
-      sta::check_positive_integer "-topRoutingLayer" $keys(-topRoutingLayer)
-      lappend drt_args $keys(-topRoutingLayer)
+    if { [info exists keys(-top_routing_layer)] } {
+      sta::check_positive_integer "-top_routing_layer" $keys(-top_routing_layer)
+      lappend drt_args $keys(-top_routing_layer)
     } else {
       lappend drt_args -1
     }
-    if { [info exists keys(-initRouteShapeCost)] } {
-      sta::check_positive_integer "-initRouteShapeCost" $keys(-initRouteShapeCost)
-      lappend drt_args $keys(-initRouteShapeCost)
+    if { [info exists keys(-init_route_shape_cost)] } {
+      sta::check_positive_integer "-init_route_shape_cost" $keys(-init_route_shape_cost)
+      lappend drt_args $keys(-init_route_shape_cost)
     } else {
       lappend drt_args -1
     }
