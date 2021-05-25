@@ -295,8 +295,6 @@ class FlexDRWorkerRegionQuery
  public:
   FlexDRWorkerRegionQuery(FlexDRWorker* in);
   ~FlexDRWorkerRegionQuery();
-  frDesign* getDesign() const;
-  FlexDRWorker* getDRWorker() const;
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
   void query(const frBox& box,

@@ -255,11 +255,10 @@ void FlexDRWorker::modCornerToCornerSpacing(const frBox& box,
                                             int type)
 {
   auto lNum = gridGraph_.getLayerNum(z);
-  frCoord halfwidth2 = getDesign()->getTech()->getLayer(lNum)->getWidth() / 2;
+  frCoord halfwidth2 = getTech()->getLayer(lNum)->getWidth() / 2;
   // spacing value needed
   frCoord bloatDist = 0;
-  auto& cons = getDesign()
-                   ->getTech()
+  auto& cons = getTech()
                    ->getLayer(lNum)
                    ->getLef58CornerSpacingConstraints();
   frBox bx;
@@ -298,11 +297,11 @@ void FlexDRWorker::modCornerToCornerSpacing(const frBox& box,
   frCoord width1 = box.width();
   frCoord length1 = box.length();
   // layer default width
-  frCoord width2 = getDesign()->getTech()->getLayer(lNum)->getWidth();
+  frCoord width2 = getTech()->getLayer(lNum)->getWidth();
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
   frCoord bloatDist = 0;
-  auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
+  auto con = getTech()->getLayer(lNum)->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -391,11 +390,11 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
   frCoord width1 = box.width();
   frCoord length1 = box.length();
   // layer default width
-  frCoord width2planar = getDesign()->getTech()->getLayer(lNum)->getWidth();
+  frCoord width2planar = getTech()->getLayer(lNum)->getWidth();
   frCoord halfwidth2planar = width2planar / 2;
   frViaDef* viaDefL
-      = (lNum > getDesign()->getTech()->getBottomLayerNum())
-            ? getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+      = (lNum > getTech()->getBottomLayerNum())
+            ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
             : nullptr;
   frVia viaL(viaDefL);
   frBox viaBoxL(0, 0, 0, 0);
@@ -406,8 +405,8 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
   frCoord length2viaL = viaBoxL.length();
   // obj2 viaU = other obj
   frViaDef* viaDefU
-      = (lNum < getDesign()->getTech()->getTopLayerNum())
-            ? getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+      = (lNum < getTech()->getTopLayerNum())
+            ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
             : nullptr;
   frVia viaU(viaDefU);
   frBox viaBoxU(0, 0, 0, 0);
@@ -421,7 +420,7 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
   frCoord bloatDistPlanar = 0;
   frCoord bloatDistViaL = 0;
   frCoord bloatDistViaU = 0;
-  auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
+  auto con = getTech()->getLayer(lNum)->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       bloatDistPlanar = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -462,7 +461,7 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
   // no need to bloat eolWithin because eolWithin always < minSpacing
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
-  for (auto con : getDesign()->getTech()->getLayer(lNum)->getEolSpacing()) {
+  for (auto con : getTech()->getLayer(lNum)->getEolSpacing()) {
     auto eolSpace = con->getMinSpacing();
     auto eolWidth = con->getEolWidth();
     // eol up and down
@@ -698,9 +697,9 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const frBox& box,
 {
   auto lNum = gridGraph_.getLayerNum(z);
   frBox testBox;
-  if (getDesign()->getTech()->getLayer(lNum)->hasEolSpacing()) {
+  if (getTech()->getLayer(lNum)->hasEolSpacing()) {
     for (auto eolCon :
-         getDesign()->getTech()->getLayer(lNum)->getEolSpacing()) {
+         getTech()->getLayer(lNum)->getEolSpacing()) {
       auto eolSpace = eolCon->getMinSpacing();
       auto eolWidth = eolCon->getEolWidth();
       auto eolWithin = eolCon->getEolWithin();
@@ -752,13 +751,13 @@ void FlexDRWorker::modMinimumcutCostVia(const frBox& box,
   frViaDef* viaDef = nullptr;
   if (isUpperVia) {
     viaDef
-        = (lNum < getDesign()->getTech()->getTopLayerNum())
-              ? getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+        = (lNum < getTech()->getTopLayerNum())
+              ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
               : nullptr;
   } else {
     viaDef
-        = (lNum > getDesign()->getTech()->getBottomLayerNum())
-              ? getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+        = (lNum > getTech()->getBottomLayerNum())
+              ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
               : nullptr;
   }
   if (viaDef == nullptr) {
@@ -779,7 +778,7 @@ void FlexDRWorker::modMinimumcutCostVia(const frBox& box,
   frCoord dx, dy;
   frVia sVia;
   for (auto& con :
-       getDesign()->getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
+       getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
     // check via2cut to box
     // check whether via can be placed on the pin
     if ((!con->hasLength() || (con->hasLength() && length1 > con->getLength()))
@@ -805,7 +804,7 @@ void FlexDRWorker::modMinimumcutCostVia(const frBox& box,
         dist = con->getDistance();
         // conservative for macro pin
         // TODO: revert the += to be more accurate and check qor change
-        dist += getDesign()->getTech()->getLayer(lNum)->getPitch();
+        dist += getTech()->getLayer(lNum)->getPitch();
       }
       // assumes width always > 2
       bx.set(box.left() - dist - (viaBox.right() - 0) + 1,
@@ -899,13 +898,13 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frViaDef* viaDef = nullptr;
   if (isUpperVia) {
     viaDef
-        = (lNum < getDesign()->getTech()->getTopLayerNum())
-              ? getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+        = (lNum < getTech()->getTopLayerNum())
+              ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
               : nullptr;
   } else {
     viaDef
-        = (lNum > getDesign()->getTech()->getBottomLayerNum())
-              ? getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+        = (lNum > getTech()->getBottomLayerNum())
+              ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
               : nullptr;
   }
   if (viaDef == nullptr) {
@@ -922,8 +921,8 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frCoord length2 = viaBox.length();
 
   // via prl should check min area patch metal if not fat via
-  frCoord defaultWidth = getDesign()->getTech()->getLayer(lNum)->getWidth();
-  bool isH = (getDesign()->getTech()->getLayer(lNum)->getDir()
+  frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
+  bool isH = (getTech()->getLayer(lNum)->getDir()
               == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
   bool isFatVia = (isH) ? (viaBox.top() - viaBox.bottom() > defaultWidth)
                         : (viaBox.right() - viaBox.left() > defaultWidth);
@@ -932,18 +931,18 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frCoord patchLength = 0;
   if (!isFatVia) {
     auto minAreaConstraint
-        = getDesign()->getTech()->getLayer(lNum)->getAreaConstraint();
+        = getTech()->getLayer(lNum)->getAreaConstraint();
     auto minArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
     patchLength
         = frCoord(ceil(1.0 * minArea / defaultWidth
-                       / getDesign()->getTech()->getManufacturingGrid()))
-          * frCoord(getDesign()->getTech()->getManufacturingGrid());
+                       / getTech()->getManufacturingGrid()))
+          * frCoord(getTech()->getManufacturingGrid());
     length2_mar = max(length2_mar, patchLength);
   }
 
   // spacing value needed
   frCoord bloatDist = 0;
-  auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
+  auto con = getTech()->getLayer(lNum)->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -977,7 +976,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   // no need to bloat eolWithin because eolWithin always < minSpacing
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
-  for (auto con : getDesign()->getTech()->getLayer(lNum)->getEolSpacing()) {
+  for (auto con : getTech()->getLayer(lNum)->getEolSpacing()) {
     auto eolSpace = con->getMinSpacing();
     auto eolWidth = con->getEolWidth();
     // eol up and down
@@ -1114,7 +1113,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frBox bx;
   if (eolType == 0) {
     // layer default width
-    frCoord width2 = getDesign()->getTech()->getLayer(lNum)->getWidth();
+    frCoord width2 = getTech()->getLayer(lNum)->getWidth();
     frCoord halfwidth2 = width2 / 2;
     // assumes width always > 2
     bx.set(testbox.left() - halfwidth2 + 1,
@@ -1126,13 +1125,13 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
     frViaDef* viaDef = nullptr;
     if (eolType == 1) {
       viaDef
-          = (lNum > getDesign()->getTech()->getBottomLayerNum())
-                ? getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+          = (lNum > getTech()->getBottomLayerNum())
+                ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
                 : nullptr;
     } else if (eolType == 2) {
       viaDef
-          = (lNum < getDesign()->getTech()->getTopLayerNum())
-                ? getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+          = (lNum < getTech()->getTopLayerNum())
+                ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
                 : nullptr;
     }
     if (viaDef == nullptr) {
@@ -1311,7 +1310,7 @@ void FlexDRWorker::modEolSpacingRulesCost(const frBox& box,
                                           int type,
                                           bool isSkipVia)
 {
-  auto layer = getDesign()->getTech()->getLayer(gridGraph_.getLayerNum(z));
+  auto layer = getTech()->getLayer(gridGraph_.getLayerNum(z));
   frBox testBox;
   if (layer->hasEolSpacing())
     for (auto con : layer->getEolSpacing())
@@ -1329,7 +1328,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
     return;
   }
   auto lNum = origVia->getViaDef()->getCutLayerNum();
-  for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+  for (auto con : getTech()->getLayer(lNum)->getCutSpacing()) {
     if (con->getAdjacentCuts() == -1) {
       continue;
     }
@@ -1392,7 +1391,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
       FlexMazeIdx mIdx1, mIdx2;
       frBox spacingBox;
       auto reqDist = con->getCutSpacing();
-      auto cutWidth = getDesign()->getTech()->getLayer(lNum)->getWidth();
+      auto cutWidth = getTech()->getLayer(lNum)->getWidth();
       if (con->hasCenterToCenter()) {
         spacingBox.set(origCenter.x() - reqDist,
                        origCenter.y() - reqDist,
@@ -1424,20 +1423,20 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
                                                 bool isBlockage)
 {
   auto lNum = gridGraph_.getLayerNum(z) + 1;
-  if (!getDesign()->getTech()->getLayer(lNum)->hasCutSpacing()) {
+  if (!getTech()->getLayer(lNum)->hasCutSpacing()) {
     return;
   }
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
+  frViaDef* viaDef = getTech()->getLayer(lNum)->getDefaultViaDef();
   frVia via(viaDef);
   frBox viaBox(0, 0, 0, 0);
   via.getCutBBox(viaBox);
 
   // spacing value needed
   frCoord bloatDist = 0;
-  for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+  for (auto con : getTech()->getLayer(lNum)->getCutSpacing()) {
     bloatDist = max(bloatDist, con->getCutSpacing());
     if (con->getAdjacentCuts() != -1 && isBlockage) {
       bloatDist = max(bloatDist, con->getCutWithin());
@@ -1479,7 +1478,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
         for (auto con :
-             getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+             getTech()->getLayer(lNum)->getCutSpacing()) {
           hasViol = false;
           reqDistSquare = con->getCutSpacing();
           reqDistSquare *= con->getCutSpacing();
@@ -1551,16 +1550,14 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
 
   frViaDef* viaDef = nullptr;
   if (isUpperVia) {
-    viaDef = (cutLayerNum2 <= getDesign()->getTech()->getTopLayerNum())
-                 ? getDesign()
-                       ->getTech()
+    viaDef = (cutLayerNum2 <= getTech()->getTopLayerNum())
+                 ? getTech()
                        ->getLayer(cutLayerNum2)
                        ->getDefaultViaDef()
                  : nullptr;
   } else {
-    viaDef = (cutLayerNum2 >= getDesign()->getTech()->getBottomLayerNum())
-                 ? getDesign()
-                       ->getTech()
+    viaDef = (cutLayerNum2 >= getTech()->getBottomLayerNum())
+                 ? getTech()
                        ->getLayer(cutLayerNum2)
                        ->getDefaultViaDef()
                  : nullptr;
@@ -1569,13 +1566,11 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
     return;
   }
   frCutSpacingConstraint* con
-      = getDesign()
-            ->getTech()
+      = getTech()
             ->getLayer(cutLayerNum1)
             ->getInterLayerCutSpacing(cutLayerNum2, false);
   if (con == nullptr) {
-    con = getDesign()
-              ->getTech()
+    con = getTech()
               ->getLayer(cutLayerNum2)
               ->getInterLayerCutSpacing(cutLayerNum1, false);
   }
@@ -1682,8 +1677,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modViaForbiddenThrough(bi, ei, type);
     // wrong way wire cannot have eol problem: (1) with via at end, then via
     // will add eol cost; (2) with pref-dir wire, then not eol edge
-    bool isHLayer = (getDesign()
-                         ->getTech()
+    bool isHLayer = (getTech()
                          ->getLayer(gridGraph_.getLayerNum(bi.z()))
                          ->getDir()
                      == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
@@ -2059,7 +2053,7 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
         FlexMazeIdx l, h;
         pin->getAPBbox(l, h);
         frMIdx z;
-        frCoord pitch = design_->getTech()
+        frCoord pitch = getTech()
                             ->getLayer(gridGraph_.getLayerNum(l.z()))
                             ->getPitch(),
                 r;
@@ -2803,7 +2797,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
 
   auto layerNum = gridGraph_.getLayerNum(points.front().z());
   auto minAreaConstraint
-      = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
+      = getTech()->getLayer(layerNum)->getAreaConstraint();
 
   frArea currArea = 0;
   if (ENABLE_BOUNDARY_MAR_FIX) {
@@ -2825,7 +2819,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     if (currIdx.z() != prevIdx.z()) {
       layerNum = gridGraph_.getLayerNum(prevIdx.z());
       minAreaConstraint
-          = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
+          = getTech()->getLayer(layerNum)->getAreaConstraint();
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add next via enclosure
@@ -2855,7 +2849,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         } else {
           bp = points[prev_i];
           ep = points[i - 1];
-          if (getDesign()->getTech()->getLayer(layerNum)->getDir()
+          if (getTech()->getLayer(layerNum)->getDir()
               == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
             if (points[prev_i].x() < points[prev_i + 1].x()) {
               bpPatchStyle = true;
@@ -2905,7 +2899,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           }
         }
         auto patchWidth
-            = getDesign()->getTech()->getLayer(layerNum)->getWidth();
+            = getTech()->getLayer(layerNum)->getWidth();
         routeNet_postAstarAddPatchMetal(
             net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
       }
@@ -2926,10 +2920,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     else {
       layerNum = gridGraph_.getLayerNum(prevIdx.z());
       minAreaConstraint
-          = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
+          = getTech()->getLayer(layerNum)->getAreaConstraint();
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-      auto pathWidth = getDesign()->getTech()->getLayer(layerNum)->getWidth();
+      auto pathWidth = getTech()->getLayer(layerNum)->getWidth();
       frPoint bp, ep;
       gridGraph_.getPoint(bp, prevIdx.x(), prevIdx.y());
       gridGraph_.getPoint(ep, currIdx.x(), currIdx.y());
@@ -2944,7 +2938,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
   if (ENABLE_BOUNDARY_MAR_FIX) {
     layerNum = gridGraph_.getLayerNum(prevIdx.z());
     minAreaConstraint
-        = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
+        = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
     if (areaMap.find(prevIdx) != areaMap.end()) {
       currArea += areaMap.find(prevIdx)->second;
@@ -2968,7 +2962,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       } else {
         bp = points[prev_i];
         ep = points[i - 1];
-        if (getDesign()->getTech()->getLayer(layerNum)->getDir()
+        if (getTech()->getLayer(layerNum)->getDir()
             == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
           if (points[prev_i].x() < points[prev_i + 1].x()) {
             bpPatchStyle = true;
@@ -3017,7 +3011,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           }
         }
       }
-      auto patchWidth = getDesign()->getTech()->getLayer(layerNum)->getWidth();
+      auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
       routeNet_postAstarAddPatchMetal(
           net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
     }
@@ -3178,11 +3172,11 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   frCoord patchLength
       = frCoord(ceil(1.0 * gapArea / patchWidth
-                     / getDesign()->getTech()->getManufacturingGrid()))
-        * getDesign()->getTech()->getManufacturingGrid();
+                     / getTech()->getManufacturingGrid()))
+        * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  if (getDesign()->getTech()->getLayer(layerNum)->getDir()
+  if (getTech()->getLayer(layerNum)->getDir()
       == frcHorzPrefRoutingDir) {
     isPatchHorz = true;
   } else {
