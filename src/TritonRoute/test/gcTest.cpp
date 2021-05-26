@@ -548,6 +548,28 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
              frBox(450, 500, 550, 650));
 }
 
+// Check for eol keepout violation.
+BOOST_AUTO_TEST_CASE(eol_keepout)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  makePathseg(n1, 2, {0, 700}, {1000, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+             frBox(450, 500, 550, 650));
+}
+
 // Check for an end-of-line (EOL) spacing violation involving one
 // parallel edge
 BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)

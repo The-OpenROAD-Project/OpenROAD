@@ -46,6 +46,10 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
       auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
       eolWidth = con->getEolWidth();
     } break;
+    case frConstraintTypeEnum::frcLef58EolKeepOutConstraint: {
+      auto con = (frLef58EolKeepOutConstraint*) constraint;
+      eolWidth = con->getEolWidth();
+    } break;
     default:
       logger_->error(DRT, 223, "Unsupported endofline spacing rule");
       break;
@@ -192,6 +196,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
       break;
   }
 }
+
 // bbox on the gcSegment->low() side
 void FlexGCWorker::Impl::
     checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getQueryBox(
@@ -614,17 +619,123 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol(gcSegment* edge,
   checkMetalEndOfLine_eol_hasEol(edge, constraint, hasRoute);
 }
 
+void FlexGCWorker::Impl::getEolKeepOutQueryBox(
+    gcSegment* edge,
+    frLef58EolKeepOutConstraint* constraint,
+    box_t& queryBox,
+    gtl::rectangle_data<frCoord>& queryRect)
+{
+  frCoord forward = constraint->getForwardExt();
+  frCoord backward = constraint->getBackwardExt();
+  frCoord side = constraint->getSideExt();
+  // Geometry in counter clockwise
+  switch (edge->getDir()) {
+    case frDirEnum::S:
+      bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - forward);
+      bg::set<bg::min_corner, 1>(queryBox, edge->high().y() - side);
+      bg::set<bg::max_corner, 0>(queryBox, edge->low().x() + backward);
+      bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + side);
+      break;
+    case frDirEnum::N:
+      bg::set<bg::min_corner, 0>(queryBox, edge->low().x() - backward);
+      bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - side);
+      bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + forward);
+      bg::set<bg::max_corner, 1>(queryBox, edge->high().y() + side);
+      break;
+    case frDirEnum::E:
+      bg::set<bg::min_corner, 0>(queryBox, edge->low().x() - side);
+      bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - forward);
+      bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + side);
+      bg::set<bg::max_corner, 1>(queryBox, edge->high().y() + backward);
+      break;
+    case frDirEnum::W:
+      bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - side);
+      bg::set<bg::min_corner, 1>(queryBox, edge->high().y() - backward);
+      bg::set<bg::max_corner, 0>(queryBox, edge->low().x() + side);
+      bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + forward);
+      break;
+    default:
+      break;
+  }
+
+  gtl::xl(queryRect, queryBox.min_corner().x());
+  gtl::yl(queryRect, queryBox.min_corner().y());
+  gtl::xh(queryRect, queryBox.max_corner().x());
+  gtl::yh(queryRect, queryBox.max_corner().y());
+}
+
+void FlexGCWorker::Impl::checkMetalEndOfLine_keepout(
+    gcSegment* edge,
+    frLef58EolKeepOutConstraint* constraint)
+{
+  if (!checkMetalEndOfLine_eol_isEolEdge(edge, constraint)) {
+    return;
+  }
+  auto layerNum = edge->getLayerNum();
+  bool hasRoute = edge->isFixed();
+  auto net1 = edge->getNet();
+  frCoord llx = min(edge->getLowCorner()->x(), edge->getHighCorner()->x());
+  frCoord lly = min(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+  frCoord urx = max(edge->getLowCorner()->x(), edge->getHighCorner()->x());
+  frCoord ury = max(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+
+  box_t queryBox;
+  gtl::rectangle_data<frCoord> queryRect;
+  getEolKeepOutQueryBox(edge, constraint, queryBox, queryRect);
+  vector<rq_box_value_t<gcRect*>> results;
+  auto& workerRegionQuery = getWorkerRegionQuery();
+  workerRegionQuery.queryMaxRectangle(queryBox, layerNum, results);
+  for (auto& [triggerRect, ptr] : results) {
+    if (ptr->getPin() == edge->getPin())
+      continue;
+    if (!gtl::intersects(queryRect, *ptr, false)) {
+      continue;
+    }
+    if (hasRoute || !ptr->isFixed()) {
+      gtl::rectangle_data<frCoord> rect2(queryRect);
+      gtl::intersect(rect2, *ptr);
+      frCoord llx2 = gtl::xl(rect2);
+      frCoord lly2 = gtl::yl(rect2);
+      frCoord urx2 = gtl::xh(rect2);
+      frCoord ury2 = gtl::yh(rect2);
+      auto net2 = ptr->getNet();
+      // mark violation
+      gtl::rectangle_data<frCoord> markerRect(llx, lly, urx, ury);
+
+      gtl::generalized_intersect(markerRect, rect2);
+      auto marker = make_unique<frMarker>();
+      frBox box(gtl::xl(markerRect),
+                gtl::yl(markerRect),
+                gtl::xh(markerRect),
+                gtl::yh(markerRect));
+      marker->setBBox(box);
+      marker->setLayerNum(layerNum);
+      marker->setConstraint(constraint);
+      marker->addSrc(net1->getOwner());
+
+      marker->addVictim(
+          net1->getOwner(),
+          make_tuple(layerNum, frBox(llx, lly, urx, ury), edge->isFixed()));
+      marker->addSrc(net2->getOwner());
+      marker->addAggressor(net2->getOwner(),
+                           make_tuple(ptr->getLayerNum(),
+                                      frBox(llx2, lly2, urx2, ury2),
+                                      ptr->isFixed()));
+      addMarker(std::move(marker));
+    }
+  }
+}
+
 void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
 {
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();
-
-  auto& cons = design_->getTech()->getLayer(layerNum)->getEolSpacing();
-  auto lef58Cons = design_->getTech()
-                       ->getLayer(layerNum)
-                       ->getLef58SpacingEndOfLineConstraints();
-  if (cons.empty() && lef58Cons.empty()) {
+  auto layer = design_->getTech()->getLayer(layerNum);
+  auto& cons = layer->getEolSpacing();
+  auto lef58Cons = layer->getLef58SpacingEndOfLineConstraints();
+  auto keepoutCons = layer->getLef58EolKeepOutConstraints();
+  if (cons.empty() && lef58Cons.empty() && keepoutCons.empty()) {
     return;
   }
 
@@ -635,6 +746,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
       }
       for (auto con : lef58Cons) {
         checkMetalEndOfLine_eol(edge.get(), con.get());
+      }
+      for (auto con : keepoutCons) {
+        checkMetalEndOfLine_keepout(edge.get(), con);
       }
     }
   }

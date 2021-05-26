@@ -338,6 +338,24 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   return rptr;
 }
 
+void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                            frCoord forward,
+                                            frCoord side,
+                                            frCoord backward,
+                                            frCoord width)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto con = std::make_unique<frLef58EolKeepOutConstraint>();
+  auto rptr = con.get();
+  rptr->setEolWidth(width);
+  rptr->setForwardExt(forward);
+  rptr->setBackwardExt(backward);
+  rptr->setSideExt(side);
+  layer->addLef58EolKeepOutConstraint(rptr);
+  tech->addUConstraint(std::move(con));
+}
+
 std::shared_ptr<frLef58SpacingEndOfLineConstraint>
 Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                        frCoord space,
