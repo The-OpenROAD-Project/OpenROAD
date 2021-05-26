@@ -804,16 +804,29 @@ frMIdx FlexGridGraph::getUpperBoundIndex(const frVector<frCoord>& tracks,
     return false;
   } 
   if (ndr_) {
-      frCoord hw = (frCoord)design_->getTech()->getLayer(getLayerNum(currGrid.z()))->getWidth();
-      if (ndr_->getWidth(currGrid.z()) > hw && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
-          hw = ndr_->getWidth(currGrid.z())/2;
-          if ((dir == frDirEnum::N || dir == frDirEnum::S) && (xCoords_[currGrid.x()]-hw < design_->getTopBlock()->getDieBox().left() || 
-              xCoords_[currGrid.x()]+hw > design_->getTopBlock()->getDieBox().right()) ||
-              (dir == frDirEnum::E || dir == frDirEnum::W) && (yCoords_[currGrid.y()]-hw < design_->getTopBlock()->getDieBox().bottom() ||
-              yCoords_[currGrid.y()]+hw > design_->getTopBlock()->getDieBox().top())) {
-              return false;
-          }
+    frCoord hw = (frCoord) design_->getTech()
+                     ->getLayer(getLayerNum(currGrid.z()))
+                     ->getWidth()
+                 / 2;
+    if (ndr_->getWidth(currGrid.z()) > 2 * hw
+        && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
+      hw = ndr_->getWidth(currGrid.z()) / 2;
+      // if the expansion goes parallel to a die border and the wire goes out of
+      // the die box, forbid expansion
+      if (dir == frDirEnum::N || dir == frDirEnum::S) {
+        if (xCoords_[currGrid.x()] - hw
+                < design_->getTopBlock()->getDieBox().left()
+            || xCoords_[currGrid.x()] + hw
+                   > design_->getTopBlock()->getDieBox().right())
+          return false;
+      } else if (dir == frDirEnum::E || dir == frDirEnum::W) {
+        if (yCoords_[currGrid.y()] - hw
+                < design_->getTopBlock()->getDieBox().bottom()
+            || yCoords_[currGrid.y()] + hw
+                   > design_->getTopBlock()->getDieBox().top())
+          return false;
       }
+    }
   }
   
   return true;

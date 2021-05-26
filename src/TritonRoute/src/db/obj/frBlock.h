@@ -94,10 +94,7 @@ class frBlock : public frBlockObject
     }
     boxIn.set(llx, lly, urx, ury);
   }
-  void getBoundaryBBox(frBox& boxIn) const
-  {
-      boxIn.set(dieBox_);
-  }
+  void getDieBox(frBox& boxIn) const { boxIn.set(dieBox_); }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
@@ -157,7 +154,7 @@ class frBlock : public frBlockObject
   {
     frPoint idx(idx1);
     frBox dieBox;
-    getBoundaryBBox(dieBox);
+    getDieBox(dieBox);
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
     auto& ygp = gp[1];
@@ -196,7 +193,7 @@ class frBlock : public frBlockObject
   void getGCellCenter(const frPoint& idx, frPoint& pt) const
   {
     frBox dieBox;
-    getBoundaryBBox(dieBox);
+    getDieBox(dieBox);
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
     auto& ygp = gp[1];
@@ -289,10 +286,10 @@ class frBlock : public frBlockObject
       frBox tmpBox;
       for (auto& boundary : boundaries_) {
         boundary.getBBox(tmpBox);
-        llx = llx < tmpBox.left() ? llx : tmpBox.left();
-        lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
-        urx = urx > tmpBox.right() ? urx : tmpBox.right();
-        ury = ury > tmpBox.top() ? ury : tmpBox.top();
+        llx = std::min(llx, tmpBox.left());
+        lly = std::min(lly, tmpBox.bottom());
+        urx = std::max(urx, tmpBox.right());
+        ury = std::max(ury, tmpBox.top());
       }
       dieBox_.set(llx, lly, urx, ury);
   }
