@@ -108,6 +108,42 @@ BOOST_AUTO_TEST_CASE(metal_short)
              frBox(500, -50, 500, 50));
 }
 
+
+/*                     
+*                        (550,200)
+*                     |----|
+*                     |    |
+*                     |    |
+*                     | i1 |
+*                     |OBS |
+*                     |    |
+* --------------------|----|(550,50) 
+* |         n1        |    |
+* --------------------|----|
+* (0,-50)        (450,-50)
+*/
+// short with obs
+BOOST_AUTO_TEST_CASE(metal_short_obs)
+{
+  // Setup
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 0}, {550, 0});
+  auto block = makeMacro("OBS");
+  makeMacroObs(block, 450, -50, 550, 200, 2);
+  makeInst("i1", block, 0, 0);
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcShortConstraint,
+             frBox(450, -50, 550, 50));
+}
+
 // Two touching metal shape from the same net must have sufficient
 // overlap
 BOOST_AUTO_TEST_CASE(metal_non_sufficient)
@@ -325,7 +361,6 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   WIDTH  90     0      50
   WIDTH 190     50    150
   */
-  USEMINSPACING_OBS = false;  // Do not use layer width as Obs width
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 50}, {500, 50}, 100);

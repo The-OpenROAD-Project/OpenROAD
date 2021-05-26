@@ -191,6 +191,7 @@ void Fixture::makeDesign()
   block->addFakeSNet(std::move(vddFakeNet));
 
   design->setTopBlock(std::move(block));
+  USEMINSPACING_OBS = false;
 }
 
 void Fixture::makeCornerConstraint(frLayerNum layer_num,
