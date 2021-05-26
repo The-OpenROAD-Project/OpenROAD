@@ -124,6 +124,16 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(layer->isRectOnly()==true);
     BOOST_TEST(layer->isRectOnlyExceptNonCorePins()==true);
 
+    auto keepoutRules = layer->getTechLayerEolKeepOutRules();
+    BOOST_TEST(keepoutRules.size() == 1);
+    auto keepoutRule = (odb::dbTechLayerEolKeepOutRule*) *(keepoutRules.begin());
+    BOOST_TEST(keepoutRule->getEolWidth() == 0.2*distFactor);
+    BOOST_TEST(keepoutRule->getBackwardExt() == 0.03*distFactor);
+    BOOST_TEST(keepoutRule->getForwardExt() == 0.1*distFactor);
+    BOOST_TEST(keepoutRule->getSideExt() == 0.05*distFactor);
+    BOOST_TEST(keepoutRule->isClassValid());
+    BOOST_TEST(keepoutRule->getClassName() == "EOL_WIDE");
+
     auto cutLayer = dbTech->findLayer("via1");
 
     auto cutRules = cutLayer->getTechLayerCutClassRules();

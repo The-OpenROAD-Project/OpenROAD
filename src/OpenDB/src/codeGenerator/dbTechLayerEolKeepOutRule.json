@@ -1,0 +1,35 @@
+{
+  "name": "dbTechLayerEolKeepOutRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "name": "eol_width_"
+    },
+    {
+      "type": "int",
+      "name": "backward_ext_"
+    },
+    {
+      "type": "int",
+      "name": "forward_ext_"
+    },
+    {
+      "type": "int",
+      "name": "side_ext_"
+    },
+    {
+      "type": "bit",
+      "name": "class_valid_"
+    },
+    {
+      "type": "std::string",
+      "name": "class_name_"
+    }
+  ],
+  "constructors": [],
+  "enums": [],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}
