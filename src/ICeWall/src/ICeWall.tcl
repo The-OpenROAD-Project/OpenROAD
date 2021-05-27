@@ -1,3 +1,94 @@
+sta::define_cmd_args "set_pad_options" { \
+                                         }
+
+proc set_pad_options {args} {
+}
+
+sta::define_cmd_args "set_padring_options" {[-power power_nets] \
+                                            [-ground ground_nets] \
+                                            [-core_area core_area] \
+                                            [-die_area die_area] \
+                                            [-offsets offsets] \
+                                            [-pad_inst_name pad_inst_name] \
+                                            [-pad_pin_name pad_pin_name] \
+                                            [-pin_layer pin_layer_name] \
+                                            [-rdl_cover_file_name rdl_file_name]}
+
+proc set_padring_options {args} {
+  sta::parse_key_args "set_padring_options" args \
+    keys {-power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -rdl_cover_file_name}
+
+  if {[info exists keys(-power)]} {
+    ICeWall::add_power_nets $keys(-power)
+  }
+
+  if {[info exists keys(-ground)]} {
+    ICeWall::add_ground_nets $keys(-ground)
+  }
+
+  if {[info exists keys(-core_area)} {
+    ICeWall::set_core_area $keys(-core_area)
+  }
+
+  if {[info exists keys(-die_area)]} {
+    ICeWall::set_die_area $keys(-die_area)
+  }
+
+  if {[info exists keys(-offsets)]} {
+    ICeWall::set_offsets $keys(-offsets)
+  }
+
+  if {[info exists keys(-pad_inst_name)]} {
+    ICeWall::set_pad_inst_name $keys(-pad_inst_name)
+  }
+
+  if {[info exists keys(-pad_pin_name)]} {
+    ICeWall::set_pad_pin_name $keys(-pad_pin_name)
+  }
+
+  if {[info exists keys(-pin_layer)]} {
+    ICeWall::set_pin_layer $keys(-pin_layer)
+  }
+
+  if {[info exists keys(-rdl_cover_file_name)]} {
+    ICeWall::set_rdl_cover_file_name $keys(-rdl_cover_file_name)
+  }
+}
+
+sta::define_cmd_args "add_pad" {[-name name] \
+                                  [-type type] \
+                                  [-cell library_cell] \
+                                  [-signal signal_name] \
+                                  [-edge edge] \
+                                  [-location location] \
+                                  [-bump rowcol] \
+                                  [-bondpad bondpad] \
+                                  [-inst_name inst_name]}
+
+proc place_pad {args} {
+  sta::parse_key_args "add_pad" args \
+    keys {-name -type -cell -signal -edge -location -bump -bondpad -inst_name}
+
+  ICeWall::add_pad $args
+}
+
+sta::define_cmd_args "init_padring" {[-signal_assignment_file signal_assigment_file]}
+proc init_padring {args} {
+  sta::parse_key_args "init_padring" args \
+    keys {-signal_assignment_file}
+
+  ICeWall::init_footprint $args
+}
+
+sta::define_cmd_args "add_cell" {[-name name] \
+                                   [-type type] \
+                                   [-cell library_cell] \
+                                   [-location location] \
+                                   [-inst_name inst_name]}
+proc place_cell {$args} {
+  ICeWall::add_cell $args
+}
+
 namespace eval ICeWall {
   variable footprint {}
   variable library {}
@@ -9,6 +100,21 @@ namespace eval ICeWall {
   variable idx {fill 0}
   variable unassigned_idx 0
   variable def_units 1
+  variable initialized 0
+
+  proc initialize {} {
+    variable initialized 
+
+    if {$initialized == 0} {
+      init_process_footprint
+      if {[is_footprint_wirebond]} {
+        init_library_bondpad
+      } elseif {[is_footprint_flipchip]} {
+        init_rdl
+      }
+      set initialized 1
+    }
+  }
 
   proc set_message {level message} {
     return "\[$level\] $message"
@@ -767,8 +873,8 @@ namespace eval ICeWall {
   proc get_padcell_assigned_name {padcell} {
     variable footprint 
 
-    if {[dict exists $footprint padcell $padcell signal_name]} {
-      return [dict get $footprint padcell $padcell signal_name]
+    if {[dict exists $footprint padcell $padcell use_signal_name]} {
+      return [dict get $footprint padcell $padcell use_signal_name]
     }
     return "$padcell"
   }
@@ -1182,7 +1288,7 @@ namespace eval ICeWall {
 
   proc is_footprint_flipchip {} {
     variable footprint
-    
+
     if {[dict exists $footprint Type]} {
       return [expr {[dict get $footprint Type] == "Flipchip" || [dict get $footprint Type] == "flipchip"}]
     }
@@ -1956,7 +2062,7 @@ namespace eval ICeWall {
   proc load_footprint {footprint_file} {
     source $footprint_file
 
-    init_process_footprint
+    initialize
   }
 
   proc init_process_footprint {} {
@@ -3239,6 +3345,7 @@ namespace eval ICeWall {
 
       # Wire up the nets that connect by abutment
       # Need to set these nets as SPECIAL so the detail router does not try to route them.
+      set nets_created {}
       dict for {signal sections} [dict get $segment cells] {
         # debug "Signal: $signal"
         set section_keys [dict keys $sections]
@@ -3282,7 +3389,7 @@ namespace eval ICeWall {
             if {[set net [$block findNet $net_name]] != "NULL"} {
               # utl::error "PAD" 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
             } else {
-              utl::info "PAD" 53 "Creating pad ring net: $net_name"
+              lappend nets_created $net_name
               set net [odb::dbNet_create $block $net_name]
             }
           }
@@ -3308,6 +3415,9 @@ namespace eval ICeWall {
             }
           }
         }
+      }
+      if {[llength $nets_created] > 0} {
+        utl::info "PAD" 53 "Creating pad ring nets: [join $nets_created ", "]"
       }
     }
   }
@@ -3374,8 +3484,6 @@ namespace eval ICeWall {
   }
   
   proc init_footprint {args} {
-    init_process_footprint
-
     set arglist $args
 
     # debug "start: $args"
@@ -3393,6 +3501,7 @@ namespace eval ICeWall {
       set_signal_assignment_file $arglist
     }
     
+    initialize
     pdngen::init_tech
 
     # Perform signal assignment 
@@ -3410,11 +3519,9 @@ namespace eval ICeWall {
 
     # Wirebond pad / Flipchip bump connections
     if {[is_footprint_wirebond]} {
-      init_library_bondpad
       place_bondpads
       # Bondpads are assumed to connect by abutment
     } elseif {[is_footprint_flipchip]} {
-      init_rdl
       # assign_padcells_to_bumps
       place_bumps
       connect_bumps_to_padcells
@@ -3906,10 +4013,8 @@ namespace eval ICeWall {
   proc check_bondpad {location} {
     variable footprint
 
-    if {[dict exists $footprint type]} {
-      if {[dict get $footprint type] != "Wirebond"} {
-        utl::error PAD 105 "Specification of bondpads is only allowed for Wirebond padring layouts"
-      }
+    if {![is_footprint_wirebond]} {
+      utl::error PAD 105 "Specification of bondpads is only allowed for Wirebond padring layouts"
     }
     return [check_location $location]
   }
@@ -3917,10 +4022,8 @@ namespace eval ICeWall {
   proc check_bump {bump} {
     variable footprint
 
-    if {[dict exists $footprint type]} {
-      if {[dict get $footprint type] != "Flipchip"} {
-        utl::error PAD 106 "Specification of bumps is only allowed for Flipchip padring layouts"
-      }
+    if {![is_footprint_flipchip]} {
+      utl::error PAD 106 "Specification of bumps is only allowed for Flipchip padring layouts"
     }
 
     if {[catch {check_rowcol $bump} msg]} {
@@ -3972,7 +4075,7 @@ namespace eval ICeWall {
         # debug "Create cell $cell with name $inst_name for padcell $padcell"
         set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
         dict set padcell inst $inst
-      } elseif {[is_padcell_power $padcell] || [is_padcell_ground $padcell]} {
+      } elseif {[dict exists $padcell use_signal_name] && ([is_power_net [dict get $padcell use_signal_name]] || [is_ground_net [dict get $padcell use_signal_name]])} {
         # debug "Create power/ground $cell with name $inst_name for padcell $padcell"
         set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
         dict set padcell inst $inst
@@ -4212,7 +4315,7 @@ namespace eval ICeWall {
     variable db
 
     if {$db == {}} {
-      init_process_footprint
+      initialize
     }
 
     if {![dict exists $cell name]} {
@@ -4303,7 +4406,7 @@ namespace eval ICeWall {
 
     # debug "$args"
     if {$db == {}} {
-      init_process_footprint
+      initialize
     }
 
     set padcell_name {}
@@ -4369,7 +4472,6 @@ namespace eval ICeWall {
     variable db
     variable unassigned_idx
 
-    init_library_bondpad
     # debug $padcell
 
     if {![dict exists $padcell name]} {
@@ -4538,8 +4640,9 @@ namespace eval ICeWall {
     # Verify bump 
     if {[dict exists $padcell bump]} {
       dict set padcell bump [check_bump [dict get $padcell bump]]
-      set row [dict get $padcell row]
-      set col [dict get $padcell col]
+
+      set row [dict get $padcell bump row]
+      set col [dict get $padcell bump col]
       
       set pitch [get_footprint_bump_pitch]
       set origin [get_bump_origin $row $col]
@@ -4552,11 +4655,11 @@ namespace eval ICeWall {
         "left"   {set yMin [expr [dict get $origin y] - $pitch / 2]]; set yMax [expr [dict get $origin y] + $pitch / 2]]}
       }
       
-      if {[dict get $padcell scaled_centre x] < $xMin || [dict get $padcell scaled_centre x] > $xMax} {
-        utl:error PAD 999 "The padcell x location is [expr 1.0 * [dict get $padcell scaled_centre x] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $xMin <= x <= $xMax"
+      if {[dict get $padcell cell scaled_centre x] < $xMin || [dict get $padcell cell scaled_centre x] > $xMax} {
+        utl:error PAD 999 "The padcell x location is [expr 1.0 * [dict get $padcell cell scaled_centre x] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $xMin <= x <= $xMax"
       }
-      if {[dict get $padcell scaled_centre y] < $yMin || [dict get $padcell scaled_centre y] > $yMax} {
-        utl:error PAD 999 "The padcell y location is [expr 1.0 * [dict get $padcell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
+      if {[dict get $padcell cell scaled_centre y] < $yMin || [dict get $padcell cell scaled_centre y] > $yMax} {
+        utl:error PAD 999 "The padcell y location is [expr 1.0 * [dict get $padcell cell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
       }
     }
 
@@ -4639,6 +4742,12 @@ namespace eval ICeWall {
     variable library
 
     dict set library $attribute $args
+  }
+
+  proc define_ring {args} {
+  }
+
+  proc define_bumps {args} {
   }
  
   namespace export add_libcell define_ring define_bumps
