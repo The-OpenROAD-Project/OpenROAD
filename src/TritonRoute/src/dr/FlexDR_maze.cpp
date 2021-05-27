@@ -1904,9 +1904,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           gridGraph_.print();
         }
         logger_->error(DRT,
-                       -1,
+                       255,
                        "Fatal error: Maze Route cannot find path of net {} in "
-                       "worker of routeBox {}\n",
+                       "worker of routeBox {}",
                        net->getFrNet()->getName(),
                        getRouteBox());
       }

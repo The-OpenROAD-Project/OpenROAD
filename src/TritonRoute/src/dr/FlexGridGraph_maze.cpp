@@ -804,25 +804,25 @@ frMIdx FlexGridGraph::getUpperBoundIndex(const frVector<frCoord>& tracks,
     return false;
   } 
   if (ndr_) {
-    frCoord hw = (frCoord) design_->getTech()
+    frCoord halfWidth = (frCoord) design_->getTech()
                      ->getLayer(getLayerNum(currGrid.z()))
                      ->getWidth()
                  / 2;
-    if (ndr_->getWidth(currGrid.z()) > 2 * hw
+    if (ndr_->getWidth(currGrid.z()) > 2 * halfWidth
         && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
-      hw = ndr_->getWidth(currGrid.z()) / 2;
+      halfWidth = ndr_->getWidth(currGrid.z()) / 2;
       // if the expansion goes parallel to a die border and the wire goes out of
       // the die box, forbid expansion
       if (dir == frDirEnum::N || dir == frDirEnum::S) {
-        if (xCoords_[currGrid.x()] - hw
+        if (xCoords_[currGrid.x()] - halfWidth
                 < design_->getTopBlock()->getDieBox().left()
-            || xCoords_[currGrid.x()] + hw
+            || xCoords_[currGrid.x()] + halfWidth
                    > design_->getTopBlock()->getDieBox().right())
           return false;
       } else if (dir == frDirEnum::E || dir == frDirEnum::W) {
-        if (yCoords_[currGrid.y()] - hw
+        if (yCoords_[currGrid.y()] - halfWidth
                 < design_->getTopBlock()->getDieBox().bottom()
-            || yCoords_[currGrid.y()] + hw
+            || yCoords_[currGrid.y()] + halfWidth
                    > design_->getTopBlock()->getDieBox().top())
           return false;
       }
