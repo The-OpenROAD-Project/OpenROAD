@@ -12,4 +12,4 @@
  (clk ^) r -0.03:1.91 f -0.03:1.91
 [INFO RSZ-0046] Found 1 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 2 hold buffers.
- (clk ^) r 0.01:1.89 f 0.01:1.88
+ (clk ^) r 0.01:1.91 f 0.01:1.91

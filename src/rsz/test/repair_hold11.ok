@@ -13,6 +13,6 @@ worst slack -0.24
 worst slack 1.35
 [INFO RSZ-0059] Using CLKBUF_X3 with 0.024ns delay for hold repairs.
 [INFO RSZ-0046] Found 3 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 9 hold buffers.
-worst slack 0.01
-worst slack 1.35
+[INFO RSZ-0032] Inserted 16 hold buffers.
+worst slack 0.02
+worst slack 1.23
