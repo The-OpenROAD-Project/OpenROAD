@@ -563,7 +563,7 @@ bool Ext::extract(ExtractOptions opts) {
 
   // report total net cap
 
-  if (!extract_power_grid_only) {
+  if (opts.write_total_caps) {
     char netcapfile[500];
     sprintf(netcapfile, "%s.totCap", _ext->getBlock()->getConstName());
     _ext->reportTotalCap(netcapfile, true, false, 1.0, NULL, NULL);
