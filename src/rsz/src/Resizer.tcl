@@ -45,7 +45,7 @@ proc set_layer_rc {args} {
     flags {}
 
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    utl::error "ORD" 10 "Use -layer or -via but not both."
+    utl::error "ORD" 101 "Use -layer or -via but not both."
   }
 
   set corners [sta::parse_corner_or_all keys]
@@ -54,15 +54,15 @@ proc set_layer_rc {args} {
     set layer_name $keys(-layer)
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "ORD" 19 "layer $layer_name not found."
+      utl::error "ORD" 102 "layer $layer_name not found."
     }
 
     if { [$layer getRoutingLevel] == 0 } {
-      utl::error "ORD" 18 "$layer_name is not a routing layer."
+      utl::error "ORD" 103 "$layer_name is not a routing layer."
     }
 
     if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-      utl::error "ORD" 12 "missing -capacitance or -resistance argument."
+      utl::error "ORD" 104 "missing -capacitance or -resistance argument."
     }
 
     set cap 0.0
@@ -95,11 +95,11 @@ proc set_layer_rc {args} {
     set layer_name $keys(-via)
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "ORD" 21 "via $layer_name not found."
+      utl::error "ORD" 105 "via $layer_name not found."
     }
     
     if { [info exists keys(-capacitance)] } {
-      utl::warn "ORD" 22 "-capacitance not supported for vias."
+      utl::warn "ORD" 106 "-capacitance not supported for vias."
     }
     
     if { [info exists keys(-resistance)] } {
@@ -117,10 +117,10 @@ proc set_layer_rc {args} {
         rsz::set_layer_rc_cmd $layer $corner $res 0.0
       }
     } else {
-      utl::error "ORD" 17 "no -resistance specified for via."
+      utl::error "ORD" 108 "no -resistance specified for via."
     }
   } else {
-    utl::error "ORD" 9 "missing -layer or -via argument."
+    utl::error "ORD" 109 "missing -layer or -via argument."
   }
 }
 
@@ -532,7 +532,7 @@ proc check_max_wire_length { max_wire_length } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {
-        utl::warn RSZ 17 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
+        utl::warn RSZ 65 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
       }
     } else {
       set max_wire_length $min_delay_max_wire_length
