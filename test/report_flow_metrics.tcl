@@ -56,23 +56,24 @@ proc report_test_metrics { test } {
     set stream [open $metrics_file r]
     set json_string [read $stream]
     close $stream
-    set metrics_dict [json::json2dict $json_string]
     puts -nonewline [format "%-20s" $test]
-    foreach key $metrics_keys {
-      if { [dict exists $metrics_dict $key] } {
-        set value [dict get $metrics_dict $key]
-      } else {
-        set value "N/A"
-      }
+    if { ![catch {json::json2dict $json_string} metrics_dict] } {
+      foreach key $metrics_keys {
+        if { [dict exists $metrics_dict $key] } {
+          set value [dict get $metrics_dict $key]
+        } else {
+          set value "N/A"
+        }
 
-      if { [string is integer $value] } {
-        set value [format "%10d" $value]
-      } elseif { [string is double $value] } {
-        set value [format "%10.3f" $value]
-      } else {
-        set value [format "%10s" $value]
+        if { [string is integer $value] } {
+          set value [format "%10d" $value]
+        } elseif { [string is double $value] } {
+          set value [format "%10.3f" $value]
+        } else {
+          set value [format "%10s" $value]
+        }
+        puts -nonewline $value
       }
-      puts -nonewline $value
     }
     puts ""
   }
@@ -93,3 +94,7 @@ report_metrics_header
 foreach test $tests {
   report_test_metrics $test
 }
+
+# Local Variables:
+# mode:tcl
+# End:

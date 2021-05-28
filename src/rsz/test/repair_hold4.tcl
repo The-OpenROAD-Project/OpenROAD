@@ -11,8 +11,10 @@ set_propagated_clock clk
 set_wire_rc -layer met1
 estimate_parasitics -placement
 
-report_checks -path_delay min -format full_clock -digits 3 -group_count 3
+report_worst_slack -min
+report_worst_slack -max
 
 repair_timing -hold
 
-report_checks -path_delay min -format full_clock -digits 3 -group_count 3
+report_worst_slack -min
+report_worst_slack -max
