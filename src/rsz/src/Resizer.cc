@@ -2003,7 +2003,7 @@ Resizer::repairSetup(float slack_margin)
   Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(max_, worst_slack, worst_vertex);
-  debugPrint(logger_, RSZ, "retime", 1, "worst_slack = {}",
+  debugPrint(logger_, RSZ, "repair_setup", 1, "worst_slack = {}",
              delayAsString(worst_slack, sta_, 3));
   Slack prev_worst_slack = -INF;
   int pass = 1;
@@ -2014,7 +2014,7 @@ Resizer::repairSetup(float slack_margin)
     ensureWireParasitics();
     sta_->findRequireds();
     sta_->worstSlack(max_, worst_slack, worst_vertex);
-    debugPrint(logger_, RSZ, "retime", 1, "pass {} worst_slack = {}",
+    debugPrint(logger_, RSZ, "repair_setup", 1, "pass {} worst_slack = {}",
                pass,
                delayAsString(worst_slack, sta_, 3));
     if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
@@ -2025,7 +2025,7 @@ Resizer::repairSetup(float slack_margin)
         // Undo changes that reduced slack.
         journalRestore();
         sta_->worstSlack(max_, worst_slack, worst_vertex);
-        debugPrint(logger_, RSZ, "retime", 1,
+        debugPrint(logger_, RSZ, "repair_setup", 1,
                    "decreasing slack for {} passes restoring worst_slack {}",
                    repair_setup_decreasing_slack_passes_allowed_,
                    delayAsString(worst_slack, sta_, 3));
@@ -2100,7 +2100,7 @@ Resizer::repairSetup(PathRef &path,
           // Remove intrinsic delay to find load dependent delay.
           - corner_arc->intrinsicDelay();
         load_delays.push_back(pair(i, load_delay));
-        debugPrint(logger_, RSZ, "retime", 3, "{} load_delay = {}",
+        debugPrint(logger_, RSZ, "repair_setup", 3, "{} load_delay = {}",
                    path_vertex->name(network_),
                    delayAsString(load_delay, sta_, 3));
       }
@@ -2122,7 +2122,7 @@ Resizer::repairSetup(PathRef &path,
       Vertex *load_vertex = load_path->vertex(sta_);
       Pin *load_pin = load_vertex->pin();
       int fanout = this->fanout(drvr_vertex);
-      debugPrint(logger_, RSZ, "retime", 2, "{} fanout = {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "{} fanout = {}",
                  network_->pathName(drvr_pin),
                  fanout);
       if (fanout > 1
@@ -2131,7 +2131,7 @@ Resizer::repairSetup(PathRef &path,
         int count_before = inserted_buffer_count_;
         rebuffer(drvr_pin);
         int insert_count = inserted_buffer_count_ - count_before;
-        debugPrint(logger_, RSZ, "retime", 2, "rebuffer {} inserted {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
                    network_->pathName(drvr_pin),
                    insert_count);
         if (insert_count > 0)
@@ -2140,7 +2140,7 @@ Resizer::repairSetup(PathRef &path,
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_) {
         // Divide and conquer.
-        debugPrint(logger_, RSZ, "retime", 2, "split loads {} -> {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
                    network_->pathName(drvr_pin),
                    network_->pathName(load_pin));
         splitLoads(drvr_path, path_slack);
@@ -2167,13 +2167,13 @@ Resizer::repairSetup(PathRef &path,
       }
       else
         prev_drive = 0.0;
-      debugPrint(logger_, RSZ, "retime", 2, "resize {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "resize {}",
                  network_->pathName(drvr_pin));
       LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
                                        prev_drive, dcalc_ap);
       if (upsize) {
         Instance *drvr = network_->instance(drvr_pin);
-        debugPrint(logger_, RSZ, "retime", 2, "resize {} -> {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} -> {}",
                    network_->pathName(drvr_pin),
                    upsize->name());
         if (replaceCell(drvr, upsize, true))
@@ -2199,7 +2199,7 @@ Resizer::splitLoads(PathRef *drvr_path,
     Vertex *fanout_vertex = edge->to(graph_);
     Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
     Slack slack_margin = fanout_slack - drvr_slack;
-    debugPrint(logger_, RSZ, "retime", 3, " fanin {} slack_margin = {}",
+    debugPrint(logger_, RSZ, "repair_setup", 3, " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
                delayAsString(slack_margin, sta_, 3));
     fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
