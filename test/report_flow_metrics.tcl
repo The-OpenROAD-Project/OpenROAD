@@ -14,12 +14,12 @@ source [file join $test_dir "regression_tests.tcl"]
 set result_dir [file join $test_dir "results"]
 
 set metrics_keys {
-  "IFP::instance_count"
-  "ORD::design_area"
-  "ORD::utilization"
-  "STA::worst_slack_min"
-  "STA::worst_slack_max"
-  "STA::tns_max"
+  "instance_count"
+  "design_area"
+  "utilization"
+  "worst_slack_min"
+  "worst_slack_max"
+  "tns_max"
   "DPL::errors"
   "ANT::errors"
   "DRT::drv"

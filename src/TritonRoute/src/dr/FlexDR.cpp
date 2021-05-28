@@ -1725,10 +1725,9 @@ void FlexDR::end(bool writeMetrics)
   }
 
   if (writeMetrics) {
-    logger_->metric(DRT,
-                    "wire length::total",
+    logger_->metric("drt::wire length::total",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-    logger_->metric(DRT, "vias::total", totSCut + totMCut);
+    logger_->metric("drt::vias::total", totSCut + totMCut);
   }
 
   if (VERBOSE > 0) {
