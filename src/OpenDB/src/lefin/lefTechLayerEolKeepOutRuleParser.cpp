@@ -24,7 +24,7 @@ void lefTechLayerEolKeepOutRuleParser::parse(std::string s,
       continue;
     rule += " ; ";
     if (!parseSubRule(rule, layer))
-      lefin_->warning(260,
+      lefin_->warning(280,
                       "parse mismatch in layer propery LEF58_EOLKEEPOUT for "
                       "layer {} :\"{}\"",
                       layer->getName(),
@@ -83,7 +83,11 @@ bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
                                 _1,
                                 rule,
                                 &odb::dbTechLayerEolKeepOutRule::setForwardExt)]
-         >> -CLASS >> lit(";"));
+         >> -CLASS 
+         >> -lit("CORNERONLY")[boost::bind(&odb::dbTechLayerEolKeepOutRule::setCornerOnly,
+                                            rule,
+                                            true)]
+         >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
   bool valid = qi::phrase_parse(first, last, EOLKEEPOUT, space);

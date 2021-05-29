@@ -7774,6 +7774,10 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   bool isClassValid() const;
 
+  void setCornerOnly(bool corner_only);
+
+  bool isCornerOnly() const;
+
   // User Code Begin dbTechLayerEolKeepOutRule
   static dbTechLayerEolKeepOutRule* create(dbTechLayer* layer);
 

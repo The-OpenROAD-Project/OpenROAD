@@ -52,7 +52,8 @@ class _dbDatabase;
 struct dbTechLayerEolKeepOutRuleFlags
 {
   bool class_valid_ : 1;
-  uint spare_bits_ : 31;
+  bool corner_only_ : 1;
+  uint spare_bits_ : 30;
 };
 // User Code Begin Structs
 // User Code End Structs

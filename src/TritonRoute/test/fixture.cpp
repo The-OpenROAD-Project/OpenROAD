@@ -339,6 +339,7 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
 }
 
 void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                            bool cornerOnly,
                                             frCoord forward,
                                             frCoord side,
                                             frCoord backward,
@@ -352,6 +353,7 @@ void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
   rptr->setForwardExt(forward);
   rptr->setBackwardExt(backward);
   rptr->setSideExt(side);
+  rptr->setCornerOnly(cornerOnly);
   layer->addLef58EolKeepOutConstraint(rptr);
   tech->addUConstraint(std::move(con));
 }

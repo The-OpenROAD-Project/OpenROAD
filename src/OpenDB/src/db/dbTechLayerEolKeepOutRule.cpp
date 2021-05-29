@@ -51,6 +51,9 @@ bool _dbTechLayerEolKeepOutRule::operator==(
   if (flags_.class_valid_ != rhs.flags_.class_valid_)
     return false;
 
+  if (flags_.corner_only_ != rhs.flags_.corner_only_)
+    return false;
+
   if (eol_width_ != rhs.eol_width_)
     return false;
 
@@ -85,6 +88,7 @@ void _dbTechLayerEolKeepOutRule::differences(
   DIFF_BEGIN
 
   DIFF_FIELD(flags_.class_valid_);
+  DIFF_FIELD(flags_.corner_only_);
   DIFF_FIELD(eol_width_);
   DIFF_FIELD(backward_ext_);
   DIFF_FIELD(forward_ext_);
@@ -100,6 +104,7 @@ void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_.class_valid_);
+  DIFF_OUT_FIELD(flags_.corner_only_);
   DIFF_OUT_FIELD(eol_width_);
   DIFF_OUT_FIELD(backward_ext_);
   DIFF_OUT_FIELD(forward_ext_);
@@ -122,6 +127,7 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
     const _dbTechLayerEolKeepOutRule& r)
 {
   flags_.class_valid_ = r.flags_.class_valid_;
+  flags_.corner_only_ = r.flags_.corner_only_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   eol_width_ = r.eol_width_;
   backward_ext_ = r.backward_ext_;
@@ -253,22 +259,38 @@ bool dbTechLayerEolKeepOutRule::isClassValid() const
   return obj->flags_.class_valid_;
 }
 
+void dbTechLayerEolKeepOutRule::setCornerOnly(bool corner_only)
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+
+  obj->flags_.corner_only_ = corner_only;
+}
+
+bool dbTechLayerEolKeepOutRule::isCornerOnly() const
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+
+  return obj->flags_.corner_only_;
+}
+
 // User Code Begin dbTechLayerEolKeepOutRulePublicMethods
 
 dbTechLayerEolKeepOutRule* dbTechLayerEolKeepOutRule::create(
     dbTechLayer* _layer)
 {
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerEolKeepOutRule* newrule = layer->eol_keep_out_rules_tbl_->create();
+  _dbTechLayerEolKeepOutRule* newrule
+      = layer->eol_keep_out_rules_tbl_->create();
   return ((dbTechLayerEolKeepOutRule*) newrule);
 }
 
 dbTechLayerEolKeepOutRule*
 dbTechLayerEolKeepOutRule::getTechLayerEolKeepOutRule(dbTechLayer* inly,
-                                                          uint dbid)
+                                                      uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  return (dbTechLayerEolKeepOutRule*) layer->eol_keep_out_rules_tbl_->getPtr(dbid);
+  return (dbTechLayerEolKeepOutRule*) layer->eol_keep_out_rules_tbl_->getPtr(
+      dbid);
 }
 void dbTechLayerEolKeepOutRule::destroy(dbTechLayerEolKeepOutRule* rule)
 {

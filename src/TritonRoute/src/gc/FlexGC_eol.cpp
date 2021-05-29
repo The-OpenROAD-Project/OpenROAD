@@ -663,8 +663,75 @@ void FlexGCWorker::Impl::getEolKeepOutQueryBox(
   gtl::xh(queryRect, queryBox.max_corner().x());
   gtl::yh(queryRect, queryBox.max_corner().y());
 }
+void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
+    gcSegment* edge,
+    gcRect* rect,
+    gtl::rectangle_data<frCoord> queryRect,
+    frLef58EolKeepOutConstraint* constraint)
+{
+  if (rect->getPin() == edge->getPin())
+    return;
+  if (edge->isFixed() && rect->isFixed())
+    return;
+  if (!gtl::intersects(queryRect, *rect, false))
+    return;
+  /*
+  if CORNERONLY, then rect is actualy a polygon edge.
+  We check which corners we should consider in our marked violation.(Either both
+  or only one)
+  */
+  if (constraint->isCornerOnly()) {
+    if (gtl::contains(queryRect, gtl::ll(*rect), false)) {
+      if (!gtl::contains(queryRect, gtl::ur(*rect), false))
+        rect->setRect(
+            gtl::xl(*rect), gtl::yl(*rect), gtl::xl(*rect), gtl::yl(*rect));
+      // else, then both corners should be considered. nothing to change
+    } else if (gtl::contains(queryRect, gtl::ur(*rect), false)) {
+      rect->setRect(
+          gtl::xh(*rect), gtl::yh(*rect), gtl::xh(*rect), gtl::yh(*rect));
+    } else
+      return;
+  }
+  // mark violation
 
-void FlexGCWorker::Impl::checkMetalEndOfLine_keepout(
+  auto net1 = edge->getNet();
+  auto net2 = rect->getNet();
+  frCoord llx = min(edge->getLowCorner()->x(), edge->getHighCorner()->x());
+  frCoord lly = min(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+  frCoord urx = max(edge->getLowCorner()->x(), edge->getHighCorner()->x());
+  frCoord ury = max(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+
+  gtl::rectangle_data<frCoord> rect2(queryRect);
+  gtl::intersect(rect2, *rect);
+  frCoord llx2 = gtl::xl(rect2);
+  frCoord lly2 = gtl::yl(rect2);
+  frCoord urx2 = gtl::xh(rect2);
+  frCoord ury2 = gtl::yh(rect2);
+  gtl::rectangle_data<frCoord> markerRect(llx, lly, urx, ury);
+  gtl::generalized_intersect(markerRect, rect2);
+
+  auto marker = make_unique<frMarker>();
+  frBox box(gtl::xl(markerRect),
+            gtl::yl(markerRect),
+            gtl::xh(markerRect),
+            gtl::yh(markerRect));
+  marker->setBBox(box);
+  marker->setLayerNum(edge->getLayerNum());
+  marker->setConstraint(constraint);
+  marker->addSrc(net1->getOwner());
+
+  marker->addVictim(
+      net1->getOwner(),
+      make_tuple(
+          edge->getLayerNum(), frBox(llx, lly, urx, ury), edge->isFixed()));
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(
+      net2->getOwner(),
+      make_tuple(
+          rect->getLayerNum(), frBox(llx2, lly2, urx2, ury2), rect->isFixed()));
+  addMarker(std::move(marker));
+}
+void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
     gcSegment* edge,
     frLef58EolKeepOutConstraint* constraint)
 {
@@ -672,57 +739,30 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_keepout(
     return;
   }
   auto layerNum = edge->getLayerNum();
-  bool hasRoute = edge->isFixed();
-  auto net1 = edge->getNet();
-  frCoord llx = min(edge->getLowCorner()->x(), edge->getHighCorner()->x());
-  frCoord lly = min(edge->getLowCorner()->y(), edge->getHighCorner()->y());
-  frCoord urx = max(edge->getLowCorner()->x(), edge->getHighCorner()->x());
-  frCoord ury = max(edge->getLowCorner()->y(), edge->getHighCorner()->y());
-
   box_t queryBox;
   gtl::rectangle_data<frCoord> queryRect;
   getEolKeepOutQueryBox(edge, constraint, queryBox, queryRect);
-  vector<rq_box_value_t<gcRect*>> results;
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  workerRegionQuery.queryMaxRectangle(queryBox, layerNum, results);
-  for (auto& [triggerRect, ptr] : results) {
-    if (ptr->getPin() == edge->getPin())
-      continue;
-    if (!gtl::intersects(queryRect, *ptr, false)) {
-      continue;
-    }
-    if (hasRoute || !ptr->isFixed()) {
-      gtl::rectangle_data<frCoord> rect2(queryRect);
-      gtl::intersect(rect2, *ptr);
-      frCoord llx2 = gtl::xl(rect2);
-      frCoord lly2 = gtl::yl(rect2);
-      frCoord urx2 = gtl::xh(rect2);
-      frCoord ury2 = gtl::yh(rect2);
-      auto net2 = ptr->getNet();
-      // mark violation
-      gtl::rectangle_data<frCoord> markerRect(llx, lly, urx, ury);
 
-      gtl::generalized_intersect(markerRect, rect2);
-      auto marker = make_unique<frMarker>();
-      frBox box(gtl::xl(markerRect),
-                gtl::yl(markerRect),
-                gtl::xh(markerRect),
-                gtl::yh(markerRect));
-      marker->setBBox(box);
-      marker->setLayerNum(layerNum);
-      marker->setConstraint(constraint);
-      marker->addSrc(net1->getOwner());
-
-      marker->addVictim(
-          net1->getOwner(),
-          make_tuple(layerNum, frBox(llx, lly, urx, ury), edge->isFixed()));
-      marker->addSrc(net2->getOwner());
-      marker->addAggressor(net2->getOwner(),
-                           make_tuple(ptr->getLayerNum(),
-                                      frBox(llx2, lly2, urx2, ury2),
-                                      ptr->isFixed()));
-      addMarker(std::move(marker));
+  if (constraint->isCornerOnly()) {
+    // For corners, we query polygon edges to make sure we catch concave corners
+    vector<pair<segment_t, gcSegment*>> results;
+    auto& workerRegionQuery = getWorkerRegionQuery();
+    workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
+    for (auto& [box, ptr] : results) {
+      gtl::rectangle_data<frCoord> segrect(ptr->getLowCorner()->x(),
+                                           ptr->getLowCorner()->y(),
+                                           ptr->getHighCorner()->x(),
+                                           ptr->getHighCorner()->y());
+      gcRect* rect = new gcRect(
+          segrect, layerNum, ptr->getPin(), ptr->getNet(), ptr->isFixed());
+      checkMetalEOLkeepout_helper(edge, rect, queryRect, constraint);
     }
+  } else {
+    vector<rq_box_value_t<gcRect*>> results;
+    auto& workerRegionQuery = getWorkerRegionQuery();
+    workerRegionQuery.queryMaxRectangle(queryBox, layerNum, results);
+    for (auto& [box, ptr] : results)
+      checkMetalEOLkeepout_helper(edge, ptr, queryRect, constraint);
   }
 }
 
@@ -748,7 +788,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
         checkMetalEndOfLine_eol(edge.get(), con.get());
       }
       for (auto con : keepoutCons) {
-        checkMetalEndOfLine_keepout(edge.get(), con);
+        checkMetalEOLkeepout_main(edge.get(), con);
       }
     }
   }

@@ -81,6 +81,7 @@ class Fixture
                                       bool two_edges = false);
 
   void makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                     bool cornerOnly = false,
                                      frCoord forward = 200,
                                      frCoord side = 50,
                                      frCoord backward = 0,

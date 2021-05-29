@@ -1675,6 +1675,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     rptr->setBackwardExt(rule->getBackwardExt());
     rptr->setForwardExt(rule->getForwardExt());
     rptr->setSideExt(rule->getSideExt());
+    rptr->setCornerOnly(rule->isCornerOnly());
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }

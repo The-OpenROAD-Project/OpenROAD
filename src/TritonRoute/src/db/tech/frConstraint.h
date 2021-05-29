@@ -955,11 +955,13 @@ class frLef58EolKeepOutConstraint : public frConstraint
   frCoord getForwardExt() const { return forwardExt; }
   frCoord getSideExt() const { return sideExt; }
   frCoord getEolWidth() const { return eolWidth; }
+  bool isCornerOnly() const { return cornerOnly; }
   // setters
   void setBackwardExt(frCoord value) { backwardExt = value; }
   void setForwardExt(frCoord value) { forwardExt = value; }
   void setSideExt(frCoord value) { sideExt = value; }
   void setEolWidth(frCoord value) { eolWidth = value; }
+  void setCornerOnly(bool value) { cornerOnly = value; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -968,11 +970,13 @@ class frLef58EolKeepOutConstraint : public frConstraint
   void report(utl::Logger* logger) const override
   {
     logger->report(
-        "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} ",
+        "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} "
+        "cornerOnly {}",
         backwardExt,
         sideExt,
         forwardExt,
-        eolWidth);
+        eolWidth,
+        cornerOnly);
   }
 
  private:
@@ -980,6 +984,7 @@ class frLef58EolKeepOutConstraint : public frConstraint
   frCoord sideExt;
   frCoord forwardExt;
   frCoord eolWidth;
+  bool cornerOnly;
 };
 
 class frLef58CornerSpacingSpacingConstraint;

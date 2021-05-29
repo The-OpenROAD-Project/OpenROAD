@@ -23,6 +23,10 @@
       "name": "class_valid_"
     },
     {
+      "type": "bit",
+      "name": "corner_only_"
+    },
+    {
       "type": "std::string",
       "name": "class_name_"
     }
