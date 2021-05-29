@@ -2,8 +2,6 @@
 # The next line is executed by /bin/sh, but not Tcl \
 exec tclsh $0 ${1+"$@"}
 
-package require json
-
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname $test_dir]

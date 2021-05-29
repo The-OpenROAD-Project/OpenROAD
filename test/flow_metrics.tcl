@@ -35,7 +35,9 @@
 
 # Functions/variables common to metrics scripts.
 
-package require json
+#package require json
+# tmp local version of tcllib package until jenkins and ucsd installs
+source "json.tcl"
 
 proc define_metric { name short_name fmt cmp_op margin_expr } {
   variable metrics
@@ -177,6 +179,8 @@ proc save_metrics_limits { test } {
 
         puts $limits_stream "}"
         close $limits_stream
+      } else {
+        puts "Error: json parse error $metrics_dict"
       }
     }
   }
