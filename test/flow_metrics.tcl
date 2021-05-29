@@ -70,16 +70,16 @@ proc metric_margin_expr { name } {
 define_metric "instance_count" "instances" "<" {$value * .2}
 define_metric "design_area" "area" "<" {$value * .2}
 define_metric "utilization" "util" "<" {$value * .2}
-define_metric "worst_slack_min" "slack_min" ">" {-$period * .1}
-define_metric "worst_slack_max" "slack_max" ">" {-$period * .1}
-define_metric "tns_max" "tns_max" ">" {-$period * .1 * $instance_count * .1}
+define_metric "worst_slack_min" "slack_min" ">" {-$clock_period * .1}
+define_metric "worst_slack_max" "slack_max" ">" {-$clock_period * .1}
+define_metric "tns_max" "tns_max" ">" {-$clock_period * .1 * $instance_count * .1}
 define_metric "max_slew_violations" "max_slew" "<=" {0}
 define_metric "max_capacitance_violations" "max_cap" "<=" {0}
 define_metric "max_fanout_violations" "max_fanout" "<=" {0}
 define_metric "DPL::errors" "DPL" "<=" {0}
 define_metric "ANT::errors" "ANT" "<=" {0}
 define_metric "DRT::drv" "drv" "<=" {0}
-define_metric "period" "" "<=" {0}
+define_metric "clock_period" "" "<=" {0}
 
 ################################################################
 
@@ -124,7 +124,7 @@ proc save_metrics_limits { test } {
         puts $limits_stream "{"
         set first 1
         # Find value of variables used in margin expr's.
-        foreach var {"period" "instance_count"} {
+        foreach var {"clock_period" "instance_count"} {
           set key [metric_json_key $var]
           if { [dict exists $metrics_dict $key] } {
             set value [dict get $metrics_dict $key]

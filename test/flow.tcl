@@ -109,7 +109,7 @@ report_tns -digits 3
 
 detailed_placement
 # Capture utilization before fillers make it 100%
-utl::metric "utilization" [format %.0f [expr [rsz::utilization] * 100]]
+utl::metric "utilization" [format %.1f [expr [rsz::utilization] * 100]]
 utl::metric "design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
 set dpl_errors [check_placement -verbose]
@@ -142,6 +142,8 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Detailed routing
 
+set detailed_routing 1
+if { $detailed_routing } {
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -guide $route_guide \
                -output_guide [make_result_file "${design}_${platform}_output_guide.mod"] \
@@ -160,11 +162,14 @@ if { ![info exists drv_count] } {
 } elseif { $drv_count > $max_drv_count } {
   fail "max drv count exceeded $drv_count > $max_drv_count."
 }
+} else {
+set rcx_rules_file ""
+utl::metric "DRT::drv" 0
+}
 
 ################################################################
 # Extraction
 
-set rcx_rules_file ""
 if { $rcx_rules_file != "" } {
   define_process_corner -ext_model_index 0 X
   extract_parasitics -ext_model_file $rcx_rules_file

@@ -34,21 +34,24 @@ proc report_test_metrics { test } {
     puts -nonewline [format "%-20s" $test]
     if { ![catch {json::json2dict $json_string} metrics_dict] } {
       foreach name [metric_names] {
-        set key [metric_json_key $name]
-        if { [dict exists $metrics_dict $key] } {
-          set value [dict get $metrics_dict $key]
-        } else {
-          set value "N/A"
-        }
+        set short_name [metric_short_name $name]
+        if { $short_name != "" } {
+          set key [metric_json_key $name]
+          if { [dict exists $metrics_dict $key] } {
+            set value [dict get $metrics_dict $key]
+          } else {
+            set value "N/A"
+          }
 
-        if { [string is integer $value] } {
-          set value [format "%10d" $value]
-        } elseif { [string is double $value] } {
-          set value [format "%10.3f" $value]
-        } else {
-          set value [format "%10s" $value]
+          if { [string is integer $value] } {
+            set value [format "%10d" $value]
+          } elseif { [string is double $value] } {
+            set value [format "%10.3f" $value]
+          } else {
+            set value [format "%10s" $value]
+          }
+          puts -nonewline $value
         }
-        puts -nonewline $value
       }
     }
     puts ""
