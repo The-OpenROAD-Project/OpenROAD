@@ -14,4 +14,7 @@ set max_drv_count 1
 set setup_slack_limit -6.0
 set hold_slack_limit 0.0
 
+# rcx seg faults on this test (see OR-983)
+set rcx_rules_file ""
+
 source -echo "flow.tcl"

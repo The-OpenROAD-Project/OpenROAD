@@ -16,6 +16,7 @@ record_flow_tests {
   gcd_sky130hd
 
   ibex_sky130hd
+  ibex_sky130hs
 
   aes_nangate45
   aes_sky130hs
@@ -24,7 +25,6 @@ record_flow_tests {
   tinyRocket_nangate45
 
   jpeg_sky130hd
+  jpeg_sky130hs
 }
 # rcx seg faults on these:
-#  jpeg_sky130hs
-#  ibex_sky130hs

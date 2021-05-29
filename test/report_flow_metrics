@@ -10,47 +10,22 @@ set openroad_dir [file dirname $test_dir]
 
 source [file join $test_dir "regression.tcl"]
 source [file join $test_dir "regression_tests.tcl"]
+source [file join $test_dir "flow_metrics.tcl"]
 
 set result_dir [file join $test_dir "results"]
 
-set metrics_keys {
-  "instance_count"
-  "design_area"
-  "utilization"
-  "worst_slack_min"
-  "worst_slack_max"
-  "tns_max"
-  "DPL::errors"
-  "ANT::errors"
-  "DRT::drv"
-}
-
-# short names for headers (same order as metrics_keys)
-set keys_names {
-  "instances"
-  "area"
-  "util"
-  "slack_min"
-  "slack_max"
-  "tns_max"
-  "DPL"
-  "ANT"
-  "drv"
-}
-
 proc report_metrics_header {} {
-  global keys_names
-
   puts -nonewline [format "%-20s" ""]
-  foreach key $keys_names {
-    puts -nonewline [format "%10s" $key]
+  foreach name [metric_names] {
+    set short_name [metric_short_name $name]
+    if { $short_name != "" } {
+      puts -nonewline [format "%10s" $short_name]
+    }
   }
   puts ""
 }
 
 proc report_test_metrics { test } {
-  global metrics_keys
-
   set metrics_file [test_metrics_file $test]
   if { [file exists $metrics_file] } {
     set stream [open $metrics_file r]
@@ -58,7 +33,8 @@ proc report_test_metrics { test } {
     close $stream
     puts -nonewline [format "%-20s" $test]
     if { ![catch {json::json2dict $json_string} metrics_dict] } {
-      foreach key $metrics_keys {
+      foreach name [metric_names] {
+        set key [metric_json_key $name]
         if { [dict exists $metrics_dict $key] } {
           set value [dict get $metrics_dict $key]
         } else {

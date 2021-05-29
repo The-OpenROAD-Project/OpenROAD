@@ -164,14 +164,13 @@ if { ![info exists drv_count] } {
 ################################################################
 # Extraction
 
+set rcx_rules_file ""
 if { $rcx_rules_file != "" } {
   define_process_corner -ext_model_index 0 X
   extract_parasitics -ext_model_file $rcx_rules_file
 
   set spef_file [make_result_file ${design}_${platform}.spef]
   write_spef $spef_file
-  # write_spef dribbles this turd
-  file delete $design.totCap
 
   read_spef $spef_file
 } else {
@@ -197,6 +196,10 @@ report_design_area
 utl::metric "worst_slack_min" [sta::worst_slack -min]
 utl::metric "worst_slack_max" [sta::worst_slack -max]
 utl::metric "tns_max" [sta::total_negative_slack -max]
+utl::metric "max_slew_violations" [sta::max_slew_violation_count]
+utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
+utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
 if { [sta::worst_slack -max] < $setup_slack_limit } {
   fail "setup slack limit exceeded [format %.3f [sta::worst_slack -max]] < $setup_slack_limit"
@@ -204,6 +207,18 @@ if { [sta::worst_slack -max] < $setup_slack_limit } {
 
 if { [sta::worst_slack -min] < $hold_slack_limit } {
   fail "hold slack limit exceeded [format %.3f [sta::worst_slack -min]] < $hold_slack_limit"
+}
+
+if { [sta::max_slew_violation_count] > 0 } {
+  fail "found [sta::max_slew_violation_count] max slew violations"
+}
+
+if { [sta::max_capacitance_violation_count] > 0 } {
+  fail "found [sta::max_capacitance_violation_count] max capacitance violations"
+}
+
+if { [sta::max_fanout_violation_count] > 0 } {
+  fail "found [sta::max_fanout_violation_count] max fanout violations"
 }
 
 # not really useful without pad locations
