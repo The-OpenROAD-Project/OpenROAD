@@ -95,6 +95,7 @@ _installUbuntuDev() {
         libpcre3-dev \
         python3-dev \
         tcl-dev \
+        tcllib \
         wget \
         zlib1g-dev
 }
@@ -133,6 +134,7 @@ _installCentosDev() {
         pcre-devel \
         tcl \
         tcl-devel \
+        tcllib \
         tcl-tclreadline-devel \
         zlib-devel \
         wget
