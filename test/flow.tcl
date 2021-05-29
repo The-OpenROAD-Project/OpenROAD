@@ -4,8 +4,6 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-utl::open_metrics [make_result_file "${design}_${platform}.metrics"]
-
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "instance_count" [sta::network_instance_count]
 
@@ -142,7 +140,7 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Detailed routing
 
-set detailed_routing 1
+set detailed_routing 0
 if { $detailed_routing } {
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -guide $route_guide \
@@ -206,28 +204,6 @@ utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
 utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
 utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
-if { [sta::worst_slack -max] < $setup_slack_limit } {
-  fail "setup slack limit exceeded [format %.3f [sta::worst_slack -max]] < $setup_slack_limit"
-}
-
-if { [sta::worst_slack -min] < $hold_slack_limit } {
-  fail "hold slack limit exceeded [format %.3f [sta::worst_slack -min]] < $hold_slack_limit"
-}
-
-if { [sta::max_slew_violation_count] > 0 } {
-  fail "found [sta::max_slew_violation_count] max slew violations"
-}
-
-if { [sta::max_capacitance_violation_count] > 0 } {
-  fail "found [sta::max_capacitance_violation_count] max capacitance violations"
-}
-
-if { [sta::max_fanout_violation_count] > 0 } {
-  fail "found [sta::max_fanout_violation_count] max fanout violations"
-}
-
 # not really useful without pad locations
 #set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
 #analyze_power_grid -net $vdd_net_name
-
-puts "pass"

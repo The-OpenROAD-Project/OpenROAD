@@ -27,4 +27,4 @@ record_flow_tests {
   jpeg_sky130hd
   jpeg_sky130hs
 }
-# rcx seg faults on these:
+

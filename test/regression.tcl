@@ -51,7 +51,10 @@
 # and a file that defines the test scripts, "regresion_tests.tcl".
 # Each test is a tcl command file.
 
-source [file join [file dirname [file normalize [info script]]] "regression_vars.tcl"]
+set openroad_test_dir [file join $openroad_dir "test"]
+
+source [file join $openroad_test_dir "regression_vars.tcl"]
+source [file join $openroad_test_dir "flow_metrics.tcl"]
 
 proc regression_main {} {
   global argv
@@ -224,7 +227,7 @@ proc run_test { test } {
 	  incr errors(no_ok)
 	}
       } else {
-        set error_msg [find_log_pass_fail $log_file]
+        set error_msg [check_flow_metrics $test]
 	if { $error_msg != "pass" } {
 	  puts " *FAIL* $error_msg"
 	  append_failure $test
@@ -238,23 +241,6 @@ proc run_test { test } {
     puts "$test *NO CMD FILE*"
     incr errors(no_cmd)
   }
-}
-
-proc find_log_pass_fail { log_file } {
-  if { [file exists $log_file] } {
-    set stream [open $log_file r]
-    set last_line ""
-    while { [gets $stream line] >= 0 } {
-      set last_line $line
-    }
-    close $stream
-    if { [string match "pass*" $last_line] } {
-      return "pass"
-    } else {
-      return $last_line
-    }
-  }
-  return "fail - reason not found"
 }
 
 proc append_failure { test } {
@@ -284,7 +270,7 @@ proc run_test_plain { test cmd_file log_file } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
-    if { [catch [concat exec $app_path $app_options \
+    if { [catch [concat exec $app_path $app_options -metrics [test_metrics_file $test]\
 		   [file tail $cmd_file] >& $log_file]] } {
       cd $save_dir
       set signal [lindex $errorCode 2]

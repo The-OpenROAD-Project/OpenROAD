@@ -12,67 +12,13 @@ source [file join $test_dir "regression.tcl"]
 source [file join $test_dir "regression_tests.tcl"]
 source [file join $test_dir "flow_metrics.tcl"]
 
-set result_dir [file join $test_dir "results"]
-
-proc report_metrics_header {} {
-  puts -nonewline [format "%-20s" ""]
-  foreach name [metric_names] {
-    set short_name [metric_short_name $name]
-    if { $short_name != "" } {
-      puts -nonewline [format "%10s" $short_name]
-    }
-  }
-  puts ""
-}
-
-proc report_test_metrics { test } {
-  set metrics_file [test_metrics_file $test]
-  if { [file exists $metrics_file] } {
-    set stream [open $metrics_file r]
-    set json_string [read $stream]
-    close $stream
-    puts -nonewline [format "%-20s" $test]
-    if { ![catch {json::json2dict $json_string} metrics_dict] } {
-      foreach name [metric_names] {
-        set short_name [metric_short_name $name]
-        if { $short_name != "" } {
-          set key [metric_json_key $name]
-          if { [dict exists $metrics_dict $key] } {
-            set value [dict get $metrics_dict $key]
-          } else {
-            set value "N/A"
-          }
-
-          if { [string is integer $value] } {
-            set value [format "%10d" $value]
-          } elseif { [string is double $value] } {
-            set value [format "%10.3f" $value]
-          } else {
-            set value [format "%10s" $value]
-          }
-          puts -nonewline $value
-        }
-      }
-    }
-    puts ""
-  }
-}
-
-proc test_metrics_file { test } {
-  global result_dir
-  return [file join $result_dir "$test.metrics"]
-}
-
 if { $argc == 0 } {
   set tests $test_groups(flow)
 } else {
   set tests $argv
 }
 
-report_metrics_header
-foreach test $tests {
-  report_test_metrics $test
-}
+report_flow_metrics $tests
 
 # Local Variables:
 # mode:tcl

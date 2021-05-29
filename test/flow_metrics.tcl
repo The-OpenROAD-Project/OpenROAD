@@ -35,9 +35,11 @@
 
 # Functions/variables common to metrics scripts.
 
-proc define_metric { name short_name cmp_op margin_expr } {
+package require json
+
+proc define_metric { name short_name fmt cmp_op margin_expr } {
   variable metrics
-  dict set metrics $name [list $short_name $cmp_op $margin_expr]
+  dict set metrics $name [list $short_name $fmt $cmp_op $margin_expr]
 }
 
 proc metric_names {} {
@@ -47,39 +49,61 @@ proc metric_names {} {
 
 proc metric_short_name { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name cmp_op margin_expr
+  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
   return $short_name
 }
 
-proc metric_cmp_op { name } {
+proc metric_format { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name cmp_op margin_expr
-  return $cmp_op
+  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  return $fmt
 }
 
 proc metric_json_key { name } {
   return $name
 }
 
+proc metric_cmp_op { name } {
+  variable metrics
+  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  return $cmp_op
+}
+
 proc metric_margin_expr { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name cmp_op margin_expr
+  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
   return $margin_expr
 }
 
-define_metric "instance_count" "instances" "<" {$value * .2}
-define_metric "design_area" "area" "<" {$value * .2}
-define_metric "utilization" "util" "<" {$value * .2}
-define_metric "worst_slack_min" "slack_min" ">" {-$clock_period * .1}
-define_metric "worst_slack_max" "slack_max" ">" {-$clock_period * .1}
-define_metric "tns_max" "tns_max" ">" {-$clock_period * .1 * $instance_count * .1}
-define_metric "max_slew_violations" "max_slew" "<=" {0}
-define_metric "max_capacitance_violations" "max_cap" "<=" {0}
-define_metric "max_fanout_violations" "max_fanout" "<=" {0}
-define_metric "DPL::errors" "DPL" "<=" {0}
-define_metric "ANT::errors" "ANT" "<=" {0}
-define_metric "DRT::drv" "drv" "<=" {0}
-define_metric "clock_period" "" "<=" {0}
+proc cmp_op_negated { cmp_op } {
+  if { $cmp_op == "<" } {
+    return ">="
+  } elseif { $cmp_op == "<=" } {
+    return ">"
+  } elseif { $cmp_op == ">" } {
+    return "<="
+  } elseif { $cmp_op == ">=" } {
+    return "<"
+  } elseif { $cmp_op == "==" } {
+    return "!="
+  } else {
+    error "unknown comparison operator"
+  }
+}
+
+define_metric "instance_count" "instances" "%d" "<" {$value * .2}
+define_metric "design_area" "area" "%.0f" "<" {$value * .2}
+define_metric "utilization" "util" "%.1f" "<" {$value * .2}
+define_metric "worst_slack_min" "slack_min" "%.3f" ">" {-$clock_period * .1}
+define_metric "worst_slack_max" "slack_max" "%.3f" ">" {-$clock_period * .1}
+define_metric "tns_max" "tns_max" "%.3f" ">" {-$clock_period * .1 * $instance_count * .1}
+define_metric "max_slew_violations" "max_slew" "%d" "<=" {0}
+define_metric "max_capacitance_violations" "max_cap" "%d" "<=" {0}
+define_metric "max_fanout_violations" "max_fanout" "%d" "<=" {0}
+define_metric "DPL::errors" "DPL" "%d" "<=" {0}
+define_metric "ANT::errors" "ANT" "%d" "<=" {0}
+define_metric "DRT::drv" "drv" "%d" "<=" {0}
+define_metric "clock_period" "" "%d" "<=" {0}
 
 ################################################################
 
@@ -129,6 +153,9 @@ proc save_metrics_limits { test } {
           if { [dict exists $metrics_dict $key] } {
             set value [dict get $metrics_dict $key]
             set $var $value
+          } else {
+            puts "Error: $test missing $var metric."
+            return
           }
         }
         foreach name [metric_names] {
@@ -167,5 +194,89 @@ proc test_metrics_limits_file { test } {
 
 ################################################################
 
-proc check_metrics {} {
+proc check_flow_metrics { test } {
+  set metrics_file [test_metrics_file $test]
+  set metrics_limits_file [test_metrics_limits_file $test]
+  if { ![file exists $metrics_file] } {
+    return "missing metrics file"
+  }
+  set stream [open $metrics_file r]
+  set json_string [read $stream]
+  close $stream
+  if { [catch {json::json2dict $json_string} metrics_dict] } {
+    return "error parsing metrics json"
+  }
+
+  if { ![file exists $metrics_limits_file] } {
+    return "missing metrics limits file"
+  }
+  set stream [open $metrics_limits_file r]
+  set json_string [read $stream]
+  close $stream
+  if { [catch {json::json2dict $json_string} metrics_limits_dict] } {
+    return "error parsing metrics limits json"
+  }
+
+  foreach name [metric_names] {
+    set json_key [metric_json_key $name]
+    set cmp_op [metric_cmp_op $name]
+    if { ![dict exists $metrics_dict $json_key] } {
+      return "missing $name in metrics"
+    }
+    set value [dict get $metrics_dict $json_key]
+    if { ![dict exists $metrics_limits_dict $json_key] } {
+      return "missing $name in metric limits"
+    }
+    set limit [dict get $metrics_limits_dict $json_key]
+    if { ![expr $value $cmp_op $limit] } {
+      return "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+    }
+  }
+  return "pass"
+}
+
+################################################################
+
+proc report_flow_metrics { tests } {
+  report_metrics_header
+  foreach test $tests {
+    report_test_metrics $test
+  }
+}
+
+proc report_metrics_header {} {
+  puts -nonewline [format "%-20s" ""]
+  foreach name [metric_names] {
+    set short_name [metric_short_name $name]
+    if { $short_name != "" } {
+      puts -nonewline [format "%11s" $short_name]
+    }
+  }
+  puts ""
+}
+
+proc report_test_metrics { test } {
+  set metrics_file [test_metrics_file $test]
+  if { [file exists $metrics_file] } {
+    set stream [open $metrics_file r]
+    set json_string [read $stream]
+    close $stream
+    puts -nonewline [format "%-20s" $test]
+    if { ![catch {json::json2dict $json_string} metrics_dict] } {
+      foreach name [metric_names] {
+        set short_name [metric_short_name $name]
+        if { $short_name != "" } {
+          set key [metric_json_key $name]
+          if { [dict exists $metrics_dict $key] } {
+            set value [dict get $metrics_dict $key]
+            set field [format [metric_format $name] $value]
+          } else {
+            set field "N/A"
+          }
+          puts -nonewline [format "%11s" $field]
+        }
+      }
+    }
+    puts ""
+  }
 }
