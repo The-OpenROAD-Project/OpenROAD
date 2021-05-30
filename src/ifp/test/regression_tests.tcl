@@ -5,6 +5,7 @@ record_tests {
   init_floorplan6
   init_floorplan7
   init_floorplan8
+  init_floorplan9
   make_tracks1
   make_tracks2
   make_tracks3
