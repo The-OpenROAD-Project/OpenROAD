@@ -165,7 +165,7 @@ proc run_tests {} {
 }
 
 proc run_test { test } {
-  global result_dir diff_file errors diff_options compare_logfile
+  global result_dir diff_file errors diff_options
   
   set cmd_file [test_cmd_file $test]
   if [file exists $cmd_file] {
@@ -207,40 +207,70 @@ proc run_test { test } {
 	incr errors(leak)
       }
 
-      if { $compare_logfile($test) } {
-	if { [file exists $ok_file] } {
-	  # Filter dos '/r's from log file.
-	  set tmp_file [file join $result_dir $test.tmp]
-	  exec tr -d "\r" < $log_file > $tmp_file
-	  file rename -force $tmp_file $log_file
-	  if [catch [concat exec diff $diff_options $ok_file $log_file \
-		       >> $diff_file]] {
-	    puts " *FAIL*$error_msg"
-	    append_failure $test
-	    incr errors(fail)
-	  } else {
-	    puts " pass$error_msg"
-	  }
-	} else {
-	  puts " *NO OK FILE*$error_msg"
-	  append_failure $test
-	  incr errors(no_ok)
-	}
-      } else {
-        set error_msg [check_flow_metrics $test]
-	if { $error_msg != "pass" } {
-	  puts " *FAIL* $error_msg"
-	  append_failure $test
-	  incr errors(fail)
-	} else {
-	  puts " pass"
-	}
+      switch [test_pass_criteria $test] {
+        compare_logfile {
+          if { [file exists $ok_file] } {
+            # Filter dos '/r's from log file.
+            set tmp_file [file join $result_dir $test.tmp]
+            exec tr -d "\r" < $log_file > $tmp_file
+            file rename -force $tmp_file $log_file
+            if [catch [concat exec diff $diff_options $ok_file $log_file \
+                         >> $diff_file]] {
+              puts " *FAIL*$error_msg"
+              append_failure $test
+              incr errors(fail)
+            } else {
+              puts " pass$error_msg"
+            }
+          } else {
+            puts " *NO OK FILE*$error_msg"
+            append_failure $test
+            incr errors(no_ok)
+          }
+        }
+        pass_fail {
+          set error_msg [find_log_pass_fail $log_file]
+          if { $error_msg != "pass" } {
+            puts " *FAIL* $error_msg"
+            append_failure $test
+            incr errors(fail)
+          } else {
+            puts " pass"
+          }
+        }
+        check_metrics {
+          set error_msg [check_flow_metrics $test]
+          if { $error_msg != "pass" } {
+            puts " *FAIL* $error_msg"
+            append_failure $test
+            incr errors(fail)
+          } else {
+            puts " pass"
+          }
+        }
       }
     }
   } else {
     puts "$test *NO CMD FILE*"
     incr errors(no_cmd)
   }
+}
+
+proc find_log_pass_fail { log_file } {
+  if { [file exists $log_file] } {
+    set stream [open $log_file r]
+    set last_line ""
+    while { [gets $stream line] >= 0 } {
+      set last_line $line
+    }
+    close $stream
+    if { [string match "pass*" $last_line] } {
+      return "pass"
+    } else {
+      return $last_line
+    }
+  }
+  return "fail - reason not found"
 }
 
 proc append_failure { test } {
@@ -271,19 +301,19 @@ proc run_test_plain { test cmd_file log_file } {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
     if { [catch [concat exec $app_path $app_options -metrics [test_metrics_file $test]\
-		   [file tail $cmd_file] >& $log_file]] } {
+                   [file tail $cmd_file] >& $log_file]] } {
       cd $save_dir
       set signal [lindex $errorCode 2]
       set error [lindex $errorCode 3]
       # Errors strings are not consistent across platforms but signal
       # names are.
       if { $signal == "SIGSEGV" } {
-	# Save corefiles to regression results directory.
-	set pid [lindex $errorCode 1]
-	set sys_corefile [test_sys_core_file $test $pid]
-	if { [file exists $sys_corefile] } {
-	  file copy $sys_corefile [test_core_file $test]
-	}
+        # Save corefiles to regression results directory.
+        set pid [lindex $errorCode 1]
+        set sys_corefile [test_sys_core_file $test $pid]
+        if { [file exists $sys_corefile] } {
+          file copy $sys_corefile [test_core_file $test]
+        }
       }
       cleanse_logfile $test $log_file
       return "ERROR $error"
@@ -305,7 +335,7 @@ proc run_test_valgrind { test cmd_file log_file } {
   close $vg_stream
   
   set cmd [concat exec valgrind $valgrind_options \
-	     $app_path $app_options $vg_cmd_file >& $log_file]
+             $app_path $app_options $vg_cmd_file >& $log_file]
   set error_msg ""
   if { [catch $cmd] } {
     set error_msg "ERROR [lindex $errorCode 3]"
@@ -358,13 +388,13 @@ proc cleanse_valgrind_logfile { test log_file } {
     if {[regexp "^==" $line]} {
       puts $valgrind $line
       if {[regexp $valgrind_leak_regexp $line]} {
-	set leaks 1
+        set leaks 1
       }
       if {[regexp $valgrind_mem_regexp $line]} {
-	set mem_errors 1
+        set mem_errors 1
       }
       if {[regexp $valgrind_shared_lib_failure_regexp $line]} {
-	set valgrind_shared_lib_failure 1
+        set valgrind_shared_lib_failure 1
       }
     } elseif {[regexp {^--[0-9]+} $line]} {
       # Valgrind notification line.
@@ -431,8 +461,8 @@ proc found_errors {} {
   global errors
   
   return [expr $errors(error) != 0 || $errors(fail) != 0 \
-	    || $errors(no_cmd) != 0 || $errors(no_ok) != 0 \
-	    || $errors(memory) != 0 || $errors(leak) != 0 ]
+            || $errors(no_cmd) != 0 || $errors(no_ok) != 0 \
+            || $errors(memory) != 0 || $errors(leak) != 0 ]
 }
 
 ################################################################
@@ -446,10 +476,10 @@ proc save_ok_main {} {
     if [file exists $failure_file] {
       set fail_ch [open $failure_file "r"]
       while { ! [eof $fail_ch] } {
-	set test [gets $fail_ch]
-	if { $test != "" } {
-	  save_ok $test
-	}
+        set test [gets $fail_ch]
+        if { $test != "" } {
+          save_ok $test
+        }
       }
       close $fail_ch
     }
@@ -485,10 +515,10 @@ proc save_defok_main {} {
     if [file exists $failure_file] {
       set fail_ch [open $failure_file "r"]
       while { ! [eof $fail_ch] } {
-	set test [gets $fail_ch]
-	if { $test != "" } {
-	  save_defok $test
-	}
+        set test [gets $fail_ch]
+        if { $test != "" } {
+          save_defok $test
+        }
       }
       close $fail_ch
     }
@@ -577,6 +607,12 @@ proc test_sys_core_file { test pid } {
   
   # Suse
   return [file join [test_cmd_dir $test] "core"]
+}
+
+proc test_pass_criteria { test } {
+  global test_pass_criteria
+
+  return $test_pass_criteria($test)
 }
 
 ################################################################

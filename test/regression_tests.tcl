@@ -27,4 +27,3 @@ record_flow_tests {
   jpeg_sky130hd
   jpeg_sky130hs
 }
-
