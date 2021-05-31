@@ -13,7 +13,7 @@ source [file join $test_dir "flow_metrics.tcl"]
 if { $argc == 0 } {
   set tests $test_groups(flow)
 } else {
-  set tests $argv
+  set tests [expand_tests $argv]
 }
 
 report_flow_metrics $tests
