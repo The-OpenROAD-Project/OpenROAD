@@ -290,13 +290,15 @@ proc cut_rows {db endcap_master blockages halo_x halo_y} {
   set placement_blockage_rows []
   set row_placement_blockages [dict create]
   foreach blockage $placement_blockages {
-    foreach row [$block getRows] {
-      if {[overlaps $blockage $row 0 0]} {
-        set row_name [$row getName]
-        if {![dict exists $row_placement_blockages $row_name]} {
-          lappend placement_blockage_rows $row
+    if {![$blockage isSoft]} {
+      foreach row [$block getRows] {
+        if {[overlaps $blockage $row 0 0]} {
+          set row_name [$row getName]
+          if {![dict exists $row_placement_blockages $row_name]} {
+            lappend placement_blockage_rows $row
+          }
+          dict lappend row_placement_blockages $row_name [$blockage getBBox]
         }
-        dict lappend row_placement_blockages $row_name [$blockage getBBox]
       }
     }
   }
