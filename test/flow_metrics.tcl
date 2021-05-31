@@ -99,7 +99,6 @@ define_metric "worst_slack_min" "slack_min" "%9.3f" ">" {-$clock_period * .1}
 define_metric "worst_slack_max" "slack_max" "%9.3f" ">" {-$clock_period * .1}
 define_metric "tns_max" " tns_max" "%8.1f" ">" {-$clock_period * .1 * $instance_count * .1}
 define_metric "clock_skew" "clk_skew" "%8.3f" "<=" {$value * .2}
-define_metric "skew_hold" "skew_hold" "%9.3f" "<=" {0}
 define_metric "max_slew_violations" "max_slew" "%8d" "<=" {0}
 define_metric "max_capacitance_violations" "max_cap" "%7d" "<=" {0}
 define_metric "max_fanout_violations" "max_fanout" "%10d" "<=" {0}
