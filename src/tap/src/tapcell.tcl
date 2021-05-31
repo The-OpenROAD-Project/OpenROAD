@@ -273,14 +273,37 @@ proc clear { tap_prefix endcap_prefix } {
 proc cut_rows {db endcap_master blockages halo_x halo_y} {
   set block [[$db getChip] getBlock]
 
+  set placement_blockages [$block getBlockages]
+
   set rows_count [llength [$block getRows]]
   set block_count [llength $blockages]
+  set placement_blockages_count [llength $placement_blockages]
 
   if {$endcap_master != "NULL"} {
     set end_width [$endcap_master getWidth]
     set min_row_width [expr 2*$end_width]
   } else {
     set min_row_width 0
+  }
+
+  # Gather rows needing to be cut because of placement blockages
+  set placement_blockage_rows []
+  set row_placement_blockages [dict create]
+  foreach blockage $placement_blockages {
+    foreach row [$block getRows] {
+      if {[overlaps $blockage $row 0 0]} {
+        set row_name [$row getName]
+        if {![dict exists $row_placement_blockages $row_name]} {
+          lappend placement_blockage_rows $row
+        }
+        dict lappend row_placement_blockages $row_name [$blockage getBBox]
+      }
+    }
+  }
+
+  # cut rows around placement blockages
+  foreach row $placement_blockage_rows {
+    tap::cut_row $block $row $row_placement_blockages $min_row_width 0 0
   }
 
   # Gather rows needing to be cut up front
