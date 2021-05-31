@@ -12,6 +12,7 @@
 [INFO ODB-0133]     Created 402 nets and 1192 connections.
 [INFO ODB-0134] Finished DEF file: gcd_sky130hs_floorplan.def
 [INFO TAP-0001] Macro blocks found: 0
+[INFO TAP-0008] Placement blockages found: 0
 [INFO TAP-0002] Original rows: 84
 [INFO TAP-0003] Created rows: 0
 [INFO TAP-0004] Endcaps inserted: 168

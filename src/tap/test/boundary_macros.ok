@@ -14,6 +14,7 @@
 [INFO ODB-0131]     Created 5 components and 160 component-terminals.
 [INFO ODB-0134] Finished DEF file: boundary_macros.def
 [INFO TAP-0001] Macro blocks found: 5
+[INFO TAP-0008] Placement blockages found: 0
 [INFO TAP-0002] Original rows: 57
 [INFO TAP-0003] Created rows: 29
 [INFO TAP-0004] Endcaps inserted: 172
