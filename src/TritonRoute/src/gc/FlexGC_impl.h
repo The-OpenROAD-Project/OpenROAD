@@ -230,7 +230,18 @@ class FlexGCWorker::Impl
   void checkMetalSpacing_short(gcRect* rect1,
                                gcRect* rect2,
                                const gtl::rectangle_data<frCoord>& markerRect);
-  bool checkMetalSpacing_short_skipOBSPin(
+
+  bool checkMetalSpacing_short_skipFixed(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect);
+
+  bool checkMetalSpacing_short_skipSameNet(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect);
+
+  void checkMetalSpacing_short_obs(
       gcRect* rect1,
       gcRect* rect2,
       const gtl::rectangle_data<frCoord>& markerRect);
