@@ -135,6 +135,7 @@ class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerCutSpacingTableDefRule;
 class dbTechLayerCutEnclosureRule;
+class dbTechLayerEolExtensionRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -6902,6 +6903,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerCutEnclosureRule> getTechLayerCutEnclosureRules() const;
 
+  dbSet<dbTechLayerEolExtensionRule> getTechLayerEolExtensionRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -8469,6 +8472,36 @@ class dbTechLayerCutEnclosureRule : public dbObject
       uint dbid);
   static void destroy(dbTechLayerCutEnclosureRule* rule);
   // User Code End dbTechLayerCutEnclosureRule
+};
+
+class dbTechLayerEolExtensionRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerEolExtensionRuleEnums
+  // User Code End dbTechLayerEolExtensionRuleEnums
+
+  void setSpacing(int spacing);
+
+  int getSpacing() const;
+
+  void getExtensionTable(std::vector<std::pair<int, int>>& tbl) const;
+
+  void setParallelOnly(bool parallel_only);
+
+  bool isParallelOnly() const;
+
+  // User Code Begin dbTechLayerEolExtensionRule
+
+  void addEntry(int eol, int ext);
+
+  static dbTechLayerEolExtensionRule* create(dbTechLayer* layer);
+
+  static dbTechLayerEolExtensionRule* getTechLayerEolExtensionRule(
+      dbTechLayer* inly,
+      uint dbid);
+
+  static void destroy(dbTechLayerEolExtensionRule* rule);
+  // User Code End dbTechLayerEolExtensionRule
 };
 
 class dbModule : public dbObject

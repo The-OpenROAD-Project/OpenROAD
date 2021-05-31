@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/fusion/container.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -112,6 +113,22 @@ class lefTechLayerCutEnclosureRuleParser
   void setCutClass(std::string,
                    odb::dbTechLayerCutEnclosureRule* rule,
                    odb::dbTechLayer* layer);
+};
+
+class lefTechLayerEolExtensionRuleParser
+{
+ public:
+  lefTechLayerEolExtensionRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerEolExtensionRule* rule,
+              void (odb::dbTechLayerEolExtensionRule::*func)(int));
+  void addEntry(boost::fusion::vector<double, double>& params,
+                odb::dbTechLayerEolExtensionRule* rule);
 };
 
 }  // namespace odb

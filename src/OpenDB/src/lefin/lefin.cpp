@@ -644,7 +644,10 @@ void lefin::layer(lefiLayer* layer)
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
       else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
-      else
+      else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
+        lefTechLayerEolExtensionRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
+      } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
@@ -812,7 +815,8 @@ void lefin::layer(lefiLayer* layer)
       l->initTwoWidths(cur_two->numWidth());
       int defaultPrl = -1;
       for (int i = 0; i < cur_two->numWidth(); i++) {
-        int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i)) : defaultPrl;
+        int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i))
+                                          : defaultPrl;
         defaultPrl = prl;
         l->addTwoWidthsIndexEntry(dbdist(cur_two->width(i)), prl);
       }
