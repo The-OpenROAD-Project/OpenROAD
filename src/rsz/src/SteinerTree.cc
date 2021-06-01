@@ -47,6 +47,7 @@
 #include "sta/NetworkCmp.hh"
 
 #include "opendb/dbShape.h"
+#include "pdrev/pdrev.h"
 
 namespace rsz {
 
@@ -70,6 +71,7 @@ connectedPins(const Net *net,
               Network *network,
               // Return value.
               PinSeq &pins);
+static stt::Tree pdToTree(PD::Tree pdTree);
 
 ////////////////////////////////////////////////////////////////
 
@@ -109,8 +111,25 @@ makeSteinerTree(const Net *net,
       is_placed &= network->isPlaced(pin);
     }
     if (is_placed) {
-      int flute_accuracy = 3;
-      stt::Tree ftree = stt::flute(pin_count, x, y, flute_accuracy);
+      stt::Tree ftree;
+      if (pin_count <= 40) {
+        int flute_accuracy = 3;
+        ftree = stt::flute(pin_count, x, y, flute_accuracy);
+      }
+      else {
+        printf("pd %s %d\n", network->pathName(net), pin_count);
+        PD::PdRev* pd = new PD::PdRev(logger);
+        std::vector<unsigned> vec_x(x, x + pin_count);
+        std::vector<unsigned> vec_y(y, y + pin_count);
+        //pd->setAlphaPDII(nets[i]->alpha);
+        pd->addNet(pin_count, vec_x, vec_y);
+        pd->setAlphaPDII(.4);
+        pd->runPDII();
+        PD::Tree pdTree = pd->translateTree(0);
+        ftree = pdToTree(pdTree);
+        delete pd;
+        printf("done\n");
+      }
       tree->setTree(ftree, network);
       if (debug->check("steiner", 3)) {
         stt::printtree(ftree);
@@ -411,6 +430,22 @@ SteinerPt
 SteinerTree::right(SteinerPt pt)
 {
   return right_[pt];
+}
+
+// Copied from gpl/src/fastroute/src/utility.cpp
+static stt::Tree pdToTree(PD::Tree pdTree)
+{
+  stt::Tree tree;
+  tree.deg = pdTree.deg;
+  tree.length = (stt::DTYPE) pdTree.length;
+  int branch_count = 2 * pdTree.deg - 2;
+  tree.branch = new stt::Branch[branch_count];
+  for (int i = 0; i < branch_count; i++) {
+    tree.branch[i].x = (stt::DTYPE) pdTree.branch[i].x;
+    tree.branch[i].y = (stt::DTYPE) pdTree.branch[i].y;
+    tree.branch[i].n = pdTree.branch[i].n;
+  }
+  return tree;
 }
 
 }

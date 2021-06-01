@@ -1530,7 +1530,6 @@ void Graph::refineSteiner2()
 {
   debugPrint(
       _logger, GRT, "fastroute", 3, "Pre-refineSteiner() graph status: ");
-  PrintInfo();
 
   for (int i = dag.size() - 1; i >= 0; --i) {
     Node& cN = nodes[dag[i]];
@@ -1582,7 +1581,6 @@ void Graph::refineSteiner2()
   }
   debugPrint(
       _logger, GRT, "fastroute", 3, "Post-refineSteiner() graph status: ");
-  PrintInfo();
 
   RemoveUnneceSTNodes();
 
@@ -1598,19 +1596,16 @@ void Graph::refineSteiner2()
 
   debugPrint(
       _logger, GRT, "fastroute", 3, "Remove unnecessary Steiner nodes -- done");
-  PrintInfo();
 
   UpdateSteinerNodes();
   debugPrint(
       _logger, GRT, "fastroute", 3, "Post-updateSteinerNodes() graph status: ");
-  PrintInfo();
 }
 
 void Graph::refineSteiner()
 {
   debugPrint(
       _logger, GRT, "fastroute", 3, "Pre-refineSteiner() graph status: ");
-  PrintInfo();
 
   for (int i = dag.size() - 1; i >= 0; --i) {
     Node& cN = nodes[dag[i]];
@@ -1724,7 +1719,6 @@ void Graph::refineSteiner()
   }
   debugPrint(
       _logger, GRT, "fastroute", 3, "Post-refineSteiner() graph status: ");
-  PrintInfo();
 
   RemoveUnneceSTNodes();
 
@@ -1740,12 +1734,10 @@ void Graph::refineSteiner()
 
   debugPrint(
       _logger, GRT, "fastroute", 3, "Remove unnecessary Steiner nodes -- done");
-  PrintInfo();
 
   UpdateSteinerNodes();
   debugPrint(
       _logger, GRT, "fastroute", 3, "Post-updateSteinerNodes() graph status: ");
-  PrintInfo();
 }
 
 /***************************************************************************/
@@ -2654,33 +2646,33 @@ void Graph::PDBU_new_NN()
             bool is_found_in_swap_space = false;
             if (nn_node != -1) {
               int child = node_e_new, par = nodes[node_e_new].parent;
-              // for (unsigned i=0;i<=distance+6;i++)
-              for (unsigned i = 0; i <= num_terminals; i++) {
-                if (i < nodes[child].swap_space.size()) {
-                  for (unsigned k = 0; k < nodes[child].swap_space[i].size();
+              for (unsigned i = 0; i < nodes[child].swap_space.size(); i++) {
+                for (unsigned k = 0; k < nodes[child].swap_space[i].size();
+                     k++) {
+                  if (nn_node == nodes[child].swap_space[i][k]) {
+                    is_found_in_swap_space = true;
+                    break;
+                  }
+                }
+                if (is_found_in_swap_space)
+                  break;
+              }
+              unsigned count = 0;
+              while (count < iter) {
+                for (unsigned i = 0; i < nodes[par].swap_space.size(); i++) {
+                  for (unsigned k = 0; k < nodes[par].swap_space[i].size();
                        k++) {
-                    if (nn_node == nodes[child].swap_space[i][k]) {
+                    if (nn_node == nodes[par].swap_space[i][k]) {
+                      is_found_in_swap_space = true;
+                      break;
+                    }
+                    if (nn_node == par) {
                       is_found_in_swap_space = true;
                       break;
                     }
                   }
-                }
-              }
-              unsigned count = 0;
-              while (count < iter) {
-                for (unsigned i = 0; i <= num_terminals; i++) {
-                  if (i < nodes[par].swap_space.size())
-                    for (unsigned k = 0; k < nodes[par].swap_space[i].size();
-                         k++) {
-                      if (nn_node == nodes[par].swap_space[i][k]) {
-                        is_found_in_swap_space = true;
-                        break;
-                      }
-                      if (nn_node == par) {
-                        is_found_in_swap_space = true;
-                        break;
-                      }
-                    }
+                  if (is_found_in_swap_space)
+                    break;
                 }
                 child = par;
                 par = nodes[par].parent;
