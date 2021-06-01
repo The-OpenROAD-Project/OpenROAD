@@ -37,7 +37,8 @@ Fixture::Fixture()
       design(std::make_unique<frDesign>(logger.get())),
       numBlockages(0),
       numTerms(0),
-      numRefBlocks(0)
+      numRefBlocks(0),
+      numInsts(0)
 {
   makeDesign();
 }

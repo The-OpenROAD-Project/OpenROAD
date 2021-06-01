@@ -53,7 +53,7 @@ void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   parms_ = std::make_unique<Parameters>();
-  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1, -1, -1);
+  top_grid_ = TopLayerGrid(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 }
 
 void IOPlacer::clear()
@@ -109,10 +109,13 @@ void IOPlacer::initParms()
   }
 }
 
-std::vector<int> IOPlacer::getValidSlots(int first, int last) {
+std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer) {
   std::vector<int> valid_slots;
+
+  std::vector<Slot> &slots = top_layer ? top_layer_slots_ : slots_;
+
   for (int i = first; i <= last; i++) {
-    if (!slots_[i].blocked) {
+    if (!slots[i].blocked) {
       valid_slots.push_back(i);
     }
   }
@@ -136,12 +139,12 @@ void IOPlacer::randomPlacement()
       }
 
       if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
-        std::vector<int> valid_slots = getValidSlots(first_slot, last_slot);
+        std::vector<int> valid_slots = getValidSlots(first_slot, last_slot, top_layer);
         randomPlacement(io_group, valid_slots, top_layer, true);
       }
     }
 
-    std::vector<int> valid_slots = getValidSlots(first_slot, last_slot);
+    std::vector<int> valid_slots = getValidSlots(first_slot, last_slot, top_layer);
     std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist_);
     randomPlacement(pin_indices, valid_slots, top_layer, false);
   }
@@ -151,12 +154,12 @@ void IOPlacer::randomPlacement()
     if (io_pin.isPlaced()) {
       continue;
     }
-    std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1);
+    std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1, false);
 
     randomPlacement(io_group, valid_slots, false, true);
   }
 
-  std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1);
+  std::vector<int> valid_slots = getValidSlots(0, slots_.size()-1, false);
 
   std::vector<int> pin_indices;
   for (int i = 0; i < netlist_.numIOPins(); i++) {
@@ -1271,9 +1274,9 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs,
 
 void IOPlacer::addTopLayerPinPattern(int layer, int x_step, int y_step,
                                      int llx, int lly, int urx, int ury,
-                                     int width, int height)
+                                     int width, int height, int keepout)
 {
-  top_grid_ = TopLayerGrid(layer, x_step, y_step, llx, lly, urx, ury, width, height);
+  top_grid_ = TopLayerGrid(layer, x_step, y_step, llx, lly, urx, ury, width, height, keepout);
 }
 
 void IOPlacer::findSlotsForTopLayer()
@@ -1282,6 +1285,85 @@ void IOPlacer::findSlotsForTopLayer()
     for (int x = top_grid_.llx; x < top_grid_.urx; x += top_grid_.x_step) {
       for (int y = top_grid_.lly; y < top_grid_.ury; y += top_grid_.y_step) {
         top_layer_slots_.push_back({false, false, Point(x, y), top_grid_.layer, Edge::invalid});
+      }
+    }
+
+    filterObstructedSlotsForTopLayer();
+  }
+}
+
+void IOPlacer::filterObstructedSlotsForTopLayer()
+{
+  // Collect top_grid_ obstructions
+  std::vector<odb::Rect> obstructions;
+
+  // Get routing obstructions
+  for (odb::dbObstruction* obstruction : block_->getObstructions()) {
+    odb::dbBox* box = obstruction->getBBox();
+    if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
+      odb::Rect obstruction_rect;
+      box->getBox(obstruction_rect);
+      obstructions.push_back(obstruction_rect);
+    }
+  }
+
+  // Get already routed special nets
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      for (odb::dbSWire* swire : net->getSWires()) {
+        for (odb::dbSBox* wire : swire->getWires()) {
+          if (!wire->isVia()) {
+            if (wire->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
+              odb::Rect obstruction_rect;
+              wire->getBox(obstruction_rect);
+              obstructions.push_back(obstruction_rect);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Get already placed pins
+  for (odb::dbBTerm* term : block_->getBTerms()) {
+    for (odb::dbBPin* pin : term->getBPins()) {
+      if (pin->getPlacementStatus().isFixed()) {
+        for (odb::dbBox* box : pin->getBoxes()) {
+          if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
+            odb::Rect obstruction_rect;
+            box->getBox(obstruction_rect);
+            obstructions.push_back(obstruction_rect);
+          }
+        }
+      }
+    }
+  }
+
+  // check for slots that go beyond the die boundary
+  odb::Rect die_area;
+  block_->getDieArea(die_area);
+  for (auto& slot : top_layer_slots_) {
+    odb::Point& point = slot.pos;
+    if (point.x() - top_grid_.width/2 < die_area.xMin()
+        || point.y() - top_grid_.height/2 < die_area.yMin()
+        || point.x() + top_grid_.width/2 > die_area.xMax()
+        || point.y() + top_grid_.height/2 > die_area.yMax()) {
+      // mark slot as blocked since it extends beyond the die area
+      slot.blocked = true;
+    }
+  }
+
+  // check for slots that overlap with obstructions
+  for (odb::Rect& rect : obstructions) {
+    for (auto& slot : top_layer_slots_) {
+      odb::Point& point = slot.pos;
+      // mock slot with keepout
+      odb::Rect pin_rect(point.x() - top_grid_.width/2  - top_grid_.keepout,
+                         point.y() - top_grid_.height/2 - top_grid_.keepout,
+                         point.x() + top_grid_.width/2  + top_grid_.keepout,
+                         point.y() + top_grid_.height/2 + top_grid_.keepout);
+      if (rect.intersects(pin_rect)) { // mark slot as blocked
+        slot.blocked = true;
       }
     }
   }

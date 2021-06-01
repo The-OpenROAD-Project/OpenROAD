@@ -30,6 +30,7 @@ pipeline {
                       'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
                       'sky130hs aes':         { sh './test/regression aes_sky130hs' },
                       'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
+                      'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
                       )
                 }
               }

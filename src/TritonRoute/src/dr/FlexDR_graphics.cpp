@@ -286,7 +286,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     frBox box;
     if (drawWholeDesign_) {
-      worker_->getDesign()->getTopBlock()->getBoundaryBBox(box);
+      worker_->getDesign()->getTopBlock()->getDieBox(box);
       fr::frRegionQuery::Objects<frBlockObject> figs;
       worker_->getDesign()->getRegionQuery()->query(box, layerNum, figs);
       for (auto& fig : figs) {

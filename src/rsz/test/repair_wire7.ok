@@ -36,7 +36,7 @@ in1 manhtn 2000.7 steiner 2000.7 0.37
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 u2/Z manhtn 0.4 steiner 0.4 0.00
-[WARNING RSZ-0017] max wire length less than 853u increases wire delays.
+[WARNING RSZ-0065] max wire length less than 853u increases wire delays.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 Driver    length delay

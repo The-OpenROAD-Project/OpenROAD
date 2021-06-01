@@ -38,11 +38,12 @@ sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
                                                  [-x_step x_step] \
                                                  [-y_step y_step] \
                                                  [-region region] \
-                                                 [-size size]}
+                                                 [-size size] \
+                                                 [-pin_keepout dist]}
 
 proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
-  keys {-layer -x_step -y_step -region -size}
+  keys {-layer -x_step -y_step -region -size -pin_keepout}
 
   if [info exists keys(-layer)] {
     set layer_name $keys(-layer)
@@ -95,7 +96,18 @@ proc define_pin_shape_pattern { args } {
     utl::error PPL 57 "-size is required."
   }
 
-  ppl::create_pin_shape_pattern $layer_idx $x_step $y_step $llx $lly $urx $ury $width $height
+  if [info exists keys(-pin_keepout)] {
+    sta::check_positive_float "pin_keepout" $keys(-pin_keepout)
+    set keepout [ord::microns_to_dbu $keys(-pin_keepout)]
+  } else {
+    set max_dim $width
+    if {$max_dim < $height} {
+      set max_dim $height
+    }
+    set keepout [[[ord::get_db_tech] findLayer $keys(-layer)] getSpacing $max_dim]
+  }
+
+  ppl::create_pin_shape_pattern $layer_idx $x_step $y_step $llx $lly $urx $ury $width $height $keepout
 }
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
