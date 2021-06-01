@@ -29,6 +29,8 @@
 #include <boost/polygon/polygon.hpp>
 #include <iostream>
 
+#include "serialization.h"
+#include "db/obj/frAccess.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "frRegionQuery.h"
@@ -39,14 +41,49 @@ using namespace fr;
 using utl::enumerate;
 namespace gtl = boost::polygon;
 
+template <typename T>
+using RTree = bgi::rtree<rq_box_value_t<T*>, bgi::quadratic<16>>;
+
+template <typename T>
+using RTreesByLayer = std::vector<RTree<T>>;
+
+namespace boost::serialization {
+
+// I tried to get the 'experimental' boost rtree serializer code to work
+// without success.  That really is the nicer solution but such is life.
+//
+// So instead save the objects in the rtree as a vector and rebuild
+// the rtree on load.  However this produces a tree which may have a
+// different internal structure and therefore return its results in a
+// different order.  To solve this I have to sort the query results
+// which is unfortunate as it costs runtime.
+
+template <class Archive, typename T>
+void save(Archive& ar, const RTree<T>& tree, const unsigned int version)
+{
+  std::vector<rq_box_value_t<T*>> objects(tree.begin(), tree.end());
+  (ar) & objects;
+}
+
+template <class Archive, typename T>
+void load(Archive& ar, RTree<T>& tree, const unsigned int version)
+{
+  std::vector<rq_box_value_t<T*>> objects;
+  (ar) & objects;
+  tree.insert(objects);
+}
+
+template <class Archive, typename T>
+void serialize(Archive& ar, RTree<T>& tree, const unsigned int version)
+{
+  // calls save or load depending on the archive
+  boost::serialization::split_free(ar, tree, version);
+}
+
+}  // namespace boost::serialization
+
 struct frRegionQuery::Impl
 {
-  template <typename T>
-  using RTree = bgi::rtree<rq_box_value_t<T*>, bgi::quadratic<16>>;
-
-  template <typename T>
-  using RTreesByLayer = std::vector<RTree<T>>;
-
   template <typename T>
   using ObjectsByLayer = std::vector<Objects<T>>;
 
@@ -89,7 +126,27 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
   void addGRObj(grShape* in);
   void addGRObj(grVia* in);
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // Leave the logger alone
+    (ar) & design_;
+    (ar) & shapes_;
+    (ar) & guides_;
+    (ar) & origGuides_;
+    (ar) & grPins_;
+    (ar) & rpins_;
+    (ar) & grObjs_;
+    (ar) & drObjs_;
+    (ar) & markers_;
+  }
+
+  friend class boost::serialization::access;
 };
+
+frRegionQuery::frRegionQuery() = default;  // for serialization
 
 frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
     : impl_(make_unique<Impl>())
@@ -500,6 +557,26 @@ void frRegionQuery::Impl::addOrigGuide(frNet* net,
   allShapes.at(rect.getLayerNum()).push_back(make_pair(boostb, net));
 }
 
+struct Cmp
+{
+  bool operator()(const rq_box_value_t<frBlockObject*>& a,
+                  const rq_box_value_t<frBlockObject*>& b) const
+  {
+    if (!(a.first == b.first)) {
+      return a.first < b.first;
+    }
+    auto ao = a.second;
+    auto bo = b.second;
+    auto at = ao->typeId();
+    auto bt = bo->typeId();
+    if (at != bt) {
+      return at < bt;
+    }
+
+    return ao->getId() < bo->getId();
+  }
+};
+
 void frRegionQuery::query(const frBox& box,
                           const frLayerNum layerNum,
                           Objects<frBlockObject>& result) const
@@ -508,6 +585,8 @@ void frRegionQuery::query(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->shapes_.at(layerNum).query(bgi::intersects(boostb),
                                     back_inserter(result));
+
+  std::sort(result.begin(), result.end(), Cmp());
 }
 
 void frRegionQuery::queryRPin(const frBox& box,
@@ -518,6 +597,7 @@ void frRegionQuery::queryRPin(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->rpins_.at(layerNum).query(bgi::intersects(boostb),
                                    back_inserter(result));
+  std::sort(result.begin(), result.end(), Cmp());
 }
 
 void frRegionQuery::queryGuide(const frBox& box,
@@ -528,6 +608,7 @@ void frRegionQuery::queryGuide(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->guides_.at(layerNum).query(bgi::intersects(boostb),
                                     back_inserter(result));
+  std::sort(result.begin(), result.end(), Cmp());
 }
 
 void frRegionQuery::queryGuide(const frBox& box,
@@ -536,6 +617,7 @@ void frRegionQuery::queryGuide(const frBox& box,
 {
   Objects<frGuide> temp;
   queryGuide(box, layerNum, temp);
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -549,6 +631,7 @@ void frRegionQuery::queryGuide(const frBox& box, vector<frGuide*>& result) const
   for (auto& m : impl_->guides_) {
     m.query(bgi::intersects(boostb), back_inserter(temp));
   }
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -562,6 +645,7 @@ void frRegionQuery::queryOrigGuide(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->origGuides_.at(layerNum).query(bgi::intersects(boostb),
                                         back_inserter(result));
+  std::sort(result.begin(), result.end(), Cmp());
 }
 
 void frRegionQuery::queryGRPin(const frBox& box,
@@ -571,6 +655,7 @@ void frRegionQuery::queryGRPin(const frBox& box,
   box_t boostb = box_t(point_t(box.left(), box.bottom()),
                        point_t(box.right(), box.top()));
   impl_->grPins_.query(bgi::intersects(boostb), back_inserter(temp));
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -584,6 +669,7 @@ void frRegionQuery::queryDRObj(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->drObjs_.at(layerNum).query(bgi::intersects(boostb),
                                     back_inserter(result));
+  std::sort(result.begin(), result.end(), Cmp());
 }
 
 void frRegionQuery::queryDRObj(const frBox& box,
@@ -595,6 +681,7 @@ void frRegionQuery::queryDRObj(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->drObjs_.at(layerNum).query(bgi::intersects(boostb),
                                     back_inserter(temp));
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -609,6 +696,7 @@ void frRegionQuery::queryDRObj(const frBox& box,
   for (auto& m : impl_->drObjs_) {
     m.query(bgi::intersects(boostb), back_inserter(temp));
   }
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -623,6 +711,7 @@ void frRegionQuery::queryGRObj(const frBox& box,
   for (auto& m : impl_->grObjs_) {
     m.query(bgi::intersects(boostb), back_inserter(temp));
   }
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -637,6 +726,7 @@ void frRegionQuery::queryMarker(const frBox& box,
                        point_t(box.right(), box.top()));
   impl_->markers_.at(layerNum).query(bgi::intersects(boostb),
                                      back_inserter(temp));
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -651,6 +741,7 @@ void frRegionQuery::queryMarker(const frBox& box,
   for (auto& m : impl_->markers_) {
     m.query(bgi::intersects(boostb), back_inserter(temp));
   }
+  std::sort(temp.begin(), temp.end(), Cmp());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -1001,3 +1092,18 @@ void frRegionQuery::clearGuides()
     m.clear();
   }
 }
+
+template <class Archive>
+void frRegionQuery::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void frRegionQuery::serialize<boost::archive::binary_iarchive>(
+    boost::archive::binary_iarchive& ar,
+    const unsigned int file_version);
+
+template void frRegionQuery::serialize<boost::archive::binary_oarchive>(
+    boost::archive::binary_oarchive& ar,
+    const unsigned int file_version);

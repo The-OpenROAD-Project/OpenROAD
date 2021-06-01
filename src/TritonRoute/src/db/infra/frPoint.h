@@ -74,8 +74,17 @@ class frPoint
   }
   bool operator!=(const frPoint& pIn) const { return !(*this == pIn); }
 
- protected:
+ private:
   frCoord xCoord_, yCoord_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & xCoord_;
+    (ar) & yCoord_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

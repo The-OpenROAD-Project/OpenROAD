@@ -102,18 +102,38 @@ class frTerm : public frBlockObject
   frTermDirectionEnum getDirection() const { return direction_; }
   // others
   frBlockObjectEnum typeId() const override { return frcTerm; }
-  void setOrderId(int order_id) { _order_id = order_id; }
-  int getOrderId() { return _order_id; }
+  void setOrderId(int order_id) { order_id_ = order_id; }
+  int getOrderId() { return order_id_; }
 
- protected:
+ private:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
   frNet* net_;  // set later, term in instTerm does not have net
   std::vector<std::unique_ptr<frPin>> pins_;  // set later
   frTermEnum type_;
   frTermDirectionEnum direction_;
-  int _order_id;
+  int order_id_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frTerm() = default; // for serialization
+  
+  friend class boost::serialization::access;
 };
+
+template <class Archive>
+void frTerm::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & block_;
+  (ar) & net_;
+  (ar) & pins_;
+  (ar) & type_;
+  (ar) & direction_;
+  (ar) & order_id_;
+}
 }  // namespace fr
 
 #endif

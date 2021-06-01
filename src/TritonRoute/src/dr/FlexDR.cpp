@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexDR.h"
-
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
@@ -35,7 +33,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "serialization.h"
 #include "db/infra/frTime.h"
+#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -43,8 +43,30 @@
 using namespace std;
 using namespace fr;
 
+void serialize_worker(bool read, FlexDRWorker* worker, const std::string& name)
+{
+  if (read) {
+    std::ifstream file(name);
+    boost::archive::binary_iarchive ar(file);
+    register_types(ar);
+    serialize_globals(ar);
+    ar >> *worker;
+  } else {
+    std::ofstream file(name);
+    boost::archive::binary_oarchive ar(file);
+    register_types(ar);
+    serialize_globals(ar);
+    ar << *worker;
+  }
+}
+
 FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
     : design_(designIn), logger_(loggerIn), db_(dbIn)
+{
+}
+
+FlexDR::FlexDR()
+    : design_(nullptr), logger_(nullptr), db_(nullptr), debugSettings_(nullptr)
 {
 }
 
@@ -54,6 +76,7 @@ FlexDR::~FlexDR()
 
 void FlexDR::setDebug(frDebugSettings* settings)
 {
+  debugSettings_ = settings;
   bool on = settings->debugDR;
   graphics_
       = on && FlexDRGraphics::guiActive()
@@ -1476,6 +1499,14 @@ void FlexDR::searchRepair(int iter,
       worker->setGraphics(graphics_.get());
       worker->setCost(workerDRCCost, workerMarkerCost);
 
+      if (debugSettings_->debugDumpDR && iter >= debugSettings_->iter
+          && (debugSettings_->gcellX < 0
+              || worker->getGCellBox().contains(
+                  {debugSettings_->gcellX, debugSettings_->gcellY}))) {
+        std::string name = fmt::format("iter{}_x{}_y{}.worker", iter, i, j);
+        serialize_worker(/* write */ false, worker.get(), name);
+      }
+
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
           || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
@@ -2218,4 +2249,26 @@ int FlexDR::main()
     cout << endl;
   }
   return 0;
+}
+
+std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
+                                                 utl::Logger* logger,
+                                                 frDebugSettings* debugSettings,
+                                                 odb::dbDatabase* db)
+{
+  auto worker = std::make_unique<FlexDRWorker>();
+  serialize_worker(/* read */ true, worker.get(), file_name);
+
+  // We need to fix up the fields we want from the current run rather
+  // than the stored ones.
+  worker->setLogger(logger);
+  worker->setDebug(debugSettings);
+  auto* dr = worker->getDR();
+  dr->setLogger(logger);
+  dr->setDB(db); // must be before setDebug
+  dr->setDebug(debugSettings);
+
+  worker->setGraphics(dr->getGraphics());
+  
+  return worker;
 }

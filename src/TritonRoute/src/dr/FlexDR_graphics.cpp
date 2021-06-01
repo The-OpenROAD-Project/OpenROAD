@@ -527,7 +527,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
 
   frBox gcellBox = in->getGCellBox();
   if (settings_->gcellX >= 0
-      && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+      && !gcellBox.contains({settings_->gcellX, settings_->gcellY})) {
     return;
   }
 

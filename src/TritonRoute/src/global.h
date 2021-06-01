@@ -33,9 +33,9 @@
 #include <memory>
 #include <string>
 
+#include "db/drObj/drFig.h"
 #include "db/obj/frBlock.h"
 #include "frDesign.h"
-#include "db/drObj/drFig.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -65,8 +65,6 @@ extern bool ENABLE_VIA_GEN;
 // extern int TEST;
 extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
-extern fr::frLayerNum VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
-extern fr::frLayerNum VIAONLY_STDCELLPIN_TOPLAYERNUM;
 
 extern fr::frLayerNum VIA_ACCESS_LAYERNUM;
 
@@ -138,6 +136,6 @@ std::ostream& operator<<(std::ostream& os, const frShape& fig);
 std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
 std::ostream& operator<<(std::ostream& os, const frGuide& p);
-// namespace fr
+
 }  // namespace fr
 #endif

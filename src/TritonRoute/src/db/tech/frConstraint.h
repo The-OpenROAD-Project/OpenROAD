@@ -63,6 +63,14 @@ class frConstraint
 
  protected:
   frConstraint() {}
+
+ private:
+  template <class Archive>
+  void serialize(Archive& /* ar */, const unsigned int /* version */)
+  {
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CutClassConstraint : public frConstraint
@@ -96,8 +104,16 @@ class frLef58CutClassConstraint : public frConstraint
     logger->report("Cut class");
   }
 
- protected:
+ private:
   std::map<frString, std::shared_ptr<frLef58CutClass>> cutClasses;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & cutClasses;
+  }
+  friend class boost::serialization::access;
 };
 
 // recheck constraint for negative rules
@@ -109,6 +125,15 @@ class frRecheckConstraint : public frConstraint
     return frConstraintTypeEnum::frcRecheckConstraint;
   }
   void report(utl::Logger* logger) const override { logger->report("Recheck"); }
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 // short
@@ -121,6 +146,15 @@ class frShortConstraint : public frConstraint
     return frConstraintTypeEnum::frcShortConstraint;
   }
   void report(utl::Logger* logger) const override { logger->report("Short"); }
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 // NSMetal
@@ -132,6 +166,15 @@ class frNonSufficientMetalConstraint : public frConstraint
     return frConstraintTypeEnum::frcNonSufficientMetalConstraint;
   }
   void report(utl::Logger* logger) const override { logger->report("NSMetal"); }
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 // offGrid
@@ -146,6 +189,15 @@ class frOffGridConstraint : public frConstraint
   {
     logger->report("Off grid");
   }
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int /* version */)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 // minHole
@@ -171,8 +223,20 @@ class frMinEnclosedAreaConstraint : public frConstraint
     logger->report("Min enclosed area {} width {}", area, width);
   }
 
- protected:
+ private:
   frCoord area, width;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & area;
+    (ar) & width;
+  }
+
+  frMinEnclosedAreaConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 // LEF58_MINSTEP (currently only implement GF14 related API)
@@ -246,7 +310,7 @@ class frLef58MinStepConstraint : public frConstraint
         concaveCorners);
   }
 
- protected:
+ private:
   frCoord minStepLength;
   bool insideCorner;
   bool outsideCorner;
@@ -264,6 +328,30 @@ class frLef58MinStepConstraint : public frConstraint
   bool exceptSameCorners;
   frCoord eolWidth;
   bool concaveCorners;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & minStepLength;
+    (ar) & insideCorner;
+    (ar) & outsideCorner;
+    (ar) & step;
+    (ar) & maxLength;
+    (ar) & maxEdges;
+    (ar) & minAdjLength;
+    (ar) & convexCorner;
+    (ar) & exceptWithin;
+    (ar) & concaveCorner;
+    (ar) & threeConcaveCorners;
+    (ar) & width;
+    (ar) & minAdjLength2;
+    (ar) & minBetweenLength;
+    (ar) & exceptSameCorners;
+    (ar) & eolWidth;
+    (ar) & concaveCorners;
+  }
+  friend class boost::serialization::access;
 };
 
 // minStep
@@ -323,7 +411,7 @@ class frMinStepConstraint : public frConstraint
         maxEdges);
   }
 
- protected:
+ private:
   frCoord minStepLength;
   frMinstepTypeEnum minstepType;
   frCoord maxLength;
@@ -331,6 +419,21 @@ class frMinStepConstraint : public frConstraint
   bool outsideCorner;
   bool step;
   int maxEdges;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & minStepLength;
+    (ar) & minstepType;
+    (ar) & maxLength;
+    (ar) & insideCorner;
+    (ar) & outsideCorner;
+    (ar) & step;
+    (ar) & maxEdges;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // minimumcut
@@ -387,13 +490,27 @@ class frMinimumcutConstraint : public frConstraint
         distance);
   }
 
- protected:
+ private:
   int numCuts;
   frCoord width;
   frCoord cutDistance;
   frMinimumcutConnectionEnum connection;
   frCoord length;
   frCoord distance;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & numCuts;
+    (ar) & width;
+    (ar) & cutDistance;
+    (ar) & connection;
+    (ar) & length;
+    (ar) & distance;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // minArea
@@ -417,8 +534,19 @@ class frAreaConstraint : public frConstraint
     logger->report("Area {}", minArea);
   }
 
- protected:
+ private:
   frCoord minArea;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & minArea;
+  }
+
+  frAreaConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 // minWidth
@@ -441,8 +569,19 @@ class frMinWidthConstraint : public frConstraint
     logger->report("Width {}", minWidth);
   }
 
- protected:
+ private:
   frCoord minWidth;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & minWidth;
+  }
+
+  frMinWidthConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
@@ -495,6 +634,22 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
   frCoord encloseDist;
   frCoord cutToMetalSpace;
   bool allCuts;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & below;
+    (ar) & above;
+    (ar) & encloseDist;
+    (ar) & cutToMetalSpace;
+    (ar) & allCuts;
+  }
+
+  frLef58SpacingEndOfLineWithinEncloseCutConstraint()
+      = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
@@ -570,7 +725,7 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
         otherEndWidth);
   }
 
- protected:
+ private:
   frCoord endToEndSpace;
   bool cutSpace;
   frCoord oneCutSpace;
@@ -580,6 +735,23 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
   frCoord wrongDirExtension;
   bool hOtherEndWidth;
   frCoord otherEndWidth;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & endToEndSpace;
+    (ar) & cutSpace;
+    (ar) & oneCutSpace;
+    (ar) & twoCutSpace;
+    (ar) & hExtension;
+    (ar) & extension;
+    (ar) & wrongDirExtension;
+    (ar) & hOtherEndWidth;
+    (ar) & otherEndWidth;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
@@ -659,7 +831,7 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
         parallelSameMask);
   }
 
- protected:
+ private:
   bool subtractEolWidth;
   frCoord parSpace;
   frCoord parWithin;
@@ -671,6 +843,25 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
   bool sameMetal;
   bool nonEolCornerOnly;
   bool parallelSameMask;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & subtractEolWidth;
+    (ar) & parSpace;
+    (ar) & parWithin;
+    (ar) & hPrl;
+    (ar) & prl;
+    (ar) & hMinLength;
+    (ar) & minLength;
+    (ar) & twoEdges;
+    (ar) & sameMetal;
+    (ar) & nonEolCornerOnly;
+    (ar) & parallelSameMask;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
@@ -709,10 +900,21 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
         twoSides);
   }
 
- protected:
+ private:
   bool maxLength;
   frCoord length;
   bool twoSides;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & maxLength;
+    (ar) & length;
+    (ar) & twoSides;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
@@ -854,7 +1056,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
       parallelEdgeConstraint->report(logger);
   }
 
- protected:
+ private:
   bool hOppositeWidth;
   frCoord oppositeWidth;
   frCoord eolWithin;
@@ -868,6 +1070,23 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
       maxMinLengthConstraint;
   std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
       encloseCutConstraint;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & hOppositeWidth;
+    (ar) & oppositeWidth;
+    (ar) & eolWithin;
+    (ar) & wrongDirWithin;
+    (ar) & sameMask;
+    (ar) & endToEndConstraint;
+    (ar) & parallelEdgeConstraint;
+    (ar) & maxMinLengthConstraint;
+    (ar) & encloseCutConstraint;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingEndOfLineConstraint : public frConstraint
@@ -933,13 +1152,27 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
       withinConstraint->report(logger);
   }
 
- protected:
+ private:
   frCoord eolSpace;
   frCoord eolWidth;
   bool exactWidth;
   bool wrongDirSpacing;
   frCoord wrongDirSpace;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & eolSpace;
+    (ar) & eolWidth;
+    (ar) & exactWidth;
+    (ar) & wrongDirSpacing;
+    (ar) & wrongDirSpace;
+    (ar) & withinConstraint;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CornerSpacingSpacingConstraint;
@@ -965,8 +1198,17 @@ class frSpacingConstraint : public frConstraint
     logger->report("Spacing {}", minSpacing);
   }
 
- protected:
+ private:
   frCoord minSpacing;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & minSpacing;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frSpacingSamenetConstraint : public frSpacingConstraint
@@ -991,8 +1233,17 @@ class frSpacingSamenetConstraint : public frSpacingConstraint
     logger->report("Spacing same net pgonly {}", pgonly);
   }
 
- protected:
+ private:
   bool pgonly;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & pgonly;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frSpacingTableInfluenceConstraint : public frConstraint
@@ -1032,6 +1283,17 @@ class frSpacingTableInfluenceConstraint : public frConstraint
 
  private:
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & tbl;
+  }
+
+  frSpacingTableInfluenceConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 // EOL spacing
@@ -1077,10 +1339,23 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
         isTwoEdges);
   }
 
- protected:
+ private:
   frCoord eolWidth, eolWithin;
   frCoord parSpace, parWithin;
   bool isTwoEdges;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & eolWidth;
+    (ar) & eolWithin;
+    (ar) & parSpace;
+    (ar) & parWithin;
+    (ar) & isTwoEdges;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CutSpacingTableLayerConstraint : public frConstraint
@@ -1108,9 +1383,19 @@ class frLef58CutSpacingTableLayerConstraint : public frConstraint
                    nonZeroEnc);
   }
 
- protected:
+ private:
   frLayerNum secondLayerNum;
   bool nonZeroEnc;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & secondLayerNum;
+    (ar) & nonZeroEnc;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CutSpacingTablePrlConstraint : public frConstraint
@@ -1145,11 +1430,23 @@ class frLef58CutSpacingTablePrlConstraint : public frConstraint
                    maxXY);
   }
 
- protected:
+ private:
   frCoord prl;
   bool horizontal;
   bool vertical;
   bool maxXY;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & prl;
+    (ar) & horizontal;
+    (ar) & vertical;
+    (ar) & maxXY;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // LEF58 cut spacing table
@@ -1234,7 +1531,7 @@ class frLef58CutSpacingTableConstraint : public frConstraint
     return frConstraintTypeEnum::frcLef58CutSpacingTableConstraint;
   }
 
- protected:
+ private:
   std::shared_ptr<
       fr2DLookupTbl<frString, frString, std::pair<frCoord, frCoord>>>
       cutClassTbl;
@@ -1242,6 +1539,19 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   std::shared_ptr<frLef58CutSpacingTableLayerConstraint> layerConstraint;
   bool cutClassHasAll;
   frCoord defaultCutSpacing;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & cutClassTbl;
+    (ar) & prlConstraint;
+    (ar) & layerConstraint;
+    (ar) & cutClassHasAll;
+    (ar) & defaultCutSpacing;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // new SPACINGTABLE Constraints
@@ -1279,8 +1589,19 @@ class frSpacingTablePrlConstraint : public frConstraint
     logger->report("Spacing table PRL");
   }
 
- protected:
+ private:
   fr2DLookupTbl<frCoord, frCoord, frCoord> tbl;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & tbl;
+  }
+
+  frSpacingTablePrlConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 struct frSpacingTableTwRowType
@@ -1288,7 +1609,20 @@ struct frSpacingTableTwRowType
   frSpacingTableTwRowType(frCoord in1, frCoord in2) : width(in1), prl(in2) {}
   frCoord width;
   frCoord prl;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & width;
+    (ar) & prl;
+  }
+
+  frSpacingTableTwRowType() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
+
 // new SPACINGTABLE Constraints
 class frSpacingTableTwConstraint : public frConstraint
 {
@@ -1331,6 +1665,7 @@ class frSpacingTableTwConstraint : public frConstraint
  private:
   frCollection<frSpacingTableTwRowType> rows;
   frCollection<frCollection<frCoord>> spacingTbl;
+
   frUInt4 getIdx(frCoord width, frCoord prl) const
   {
     int sz = rows.size();
@@ -1342,6 +1677,18 @@ class frSpacingTableTwConstraint : public frConstraint
     }
     return sz - 1;
   }
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & rows;
+    (ar) & spacingTbl;
+  }
+
+  frSpacingTableTwConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 // original SPACINGTABLE Constraints
@@ -1356,8 +1703,8 @@ class frSpacingTableConstraint : public frConstraint
     parallelRunLengthConstraint = parallelRunLengthConstraintIn;
   }
   // getter
-  std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>
-  getParallelRunLengthConstraint()
+  const std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>
+  getParallelRunLengthConstraint() const
   {
     return parallelRunLengthConstraint;
   }
@@ -1379,8 +1726,20 @@ class frSpacingTableConstraint : public frConstraint
   }
 
  protected:
+  frSpacingTableConstraint() = default;  // for serialization
+
+ private:
   std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>
       parallelRunLengthConstraint;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & parallelRunLengthConstraint;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58SpacingTableConstraint : public frSpacingTableConstraint
@@ -1403,13 +1762,13 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   // getter
   bool hasExceptWithin(frCoord val) const
   {
-    auto rowIdx = parallelRunLengthConstraint->getRowIdx(val);
+    auto rowIdx = getParallelRunLengthConstraint()->getRowIdx(val);
     return (exceptWithinConstraint.find(rowIdx)
             != exceptWithinConstraint.end());
   }
   std::pair<frCoord, frCoord> getExceptWithin(frCoord val) const
   {
-    auto rowIdx = parallelRunLengthConstraint->getRowIdx(val);
+    auto rowIdx = getParallelRunLengthConstraint()->getRowIdx(val);
     return exceptWithinConstraint.at(rowIdx);
   }
   bool isWrongDirection() const { return wrongDirection; }
@@ -1448,12 +1807,27 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       logger->report("\t{} ({} {})", key, val.first, val.second);
   }
 
- protected:
+ private:
   std::map<frCoord, std::pair<frCoord, frCoord>> exceptWithinConstraint;
   bool wrongDirection;
   bool sameMask;
   bool exceptEol;
   frUInt4 eolWidth;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & exceptWithinConstraint;
+    (ar) & wrongDirection;
+    (ar) & sameMask;
+    (ar) & exceptEol;
+    (ar) & eolWidth;
+  }
+
+  frLef58SpacingTableConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 // ADJACENTCUTS
@@ -1533,7 +1907,7 @@ class frCutSpacingConstraint : public frConstraint
     sameNetConstraint = in;
   }
 
- protected:
+ private:
   frCoord cutSpacing = -1;
   bool centerToCenter = false;
   bool sameNet = false;
@@ -1548,6 +1922,27 @@ class frCutSpacingConstraint : public frConstraint
   frCoord cutArea = -1;
   // LEF58 related
   int twoCuts = -1;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & cutSpacing;
+    (ar) & centerToCenter;
+    (ar) & sameNet;
+    (ar) & sameNetConstraint;
+    (ar) & stack;
+    (ar) & exceptSamePGNet;
+    (ar) & parallelOverlap;
+    (ar) & secondLayerName;
+    (ar) & secondLayerNum;
+    (ar) & adjacentCuts;
+    (ar) & cutWithin;
+    (ar) & cutArea;
+    (ar) & twoCuts;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // LEF58_SPACING for cut layer (new)
@@ -1821,7 +2216,7 @@ class frLef58CutSpacingConstraint : public frConstraint
         cutArea);
   }
 
- protected:
+ private:
   frCoord cutSpacing;
   bool sameMask;
   bool maxXY;
@@ -1874,6 +2269,66 @@ class frLef58CutSpacingConstraint : public frConstraint
   bool exceptTwoEdges;
   int numCut;
   frCoord cutArea;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & cutSpacing;
+    (ar) & sameMask;
+    (ar) & maxXY;
+    (ar) & centerToCenter;
+    (ar) & sameNet;
+    (ar) & sameMetal;
+    (ar) & sameVia;
+    (ar) & secondLayerName;
+    (ar) & secondLayerNum;
+    (ar) & stack;
+    (ar) & orthogonalSpacing;
+    (ar) & cutClassName;
+    (ar) & cutClassIdx;
+    (ar) & shortEdgeOnly;
+    (ar) & prl;
+    (ar) & concaveCorner;
+    (ar) & width;
+    (ar) & enclosure;
+    (ar) & edgeLength;
+    (ar) & parLength;
+    (ar) & parWithin;
+    (ar) & edgeEnclosure;
+    (ar) & adjEnclosure;
+    (ar) & extension;
+    (ar) & eolWidth;
+    (ar) & minLength;
+    (ar) & maskOverlap;
+    (ar) & wrongDirection;
+    (ar) & adjacentCuts;
+    (ar) & exactAlignedCut;
+    (ar) & twoCuts;
+    (ar) & twoCutsSpacing;
+    (ar) & sameCut;
+    (ar) & cutWithin1;
+    (ar) & cutWithin2;
+    (ar) & exceptSamePGNet;
+    (ar) & exceptAllWithin;
+    (ar) & above;
+    (ar) & below;
+    (ar) & toAll;
+    (ar) & noPrl;
+    (ar) & sideParallelOverlap;
+    (ar) & parallelOverlap;
+    (ar) & exceptSameNet;
+    (ar) & exceptSameMetal;
+    (ar) & exceptSameMetalOverlap;
+    (ar) & exceptSameVia;
+    (ar) & within;
+    (ar) & longEdgeOnly;
+    (ar) & exceptTwoEdges;
+    (ar) & numCut;
+    (ar) & cutArea;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // LEF58_CORNERSPACING (new)
@@ -1995,7 +2450,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
     logger->report("\tvals: {}", vals);
   }
 
- protected:
+ private:
   frCornerTypeEnum cornerType;
   bool sameMask;
   frCoord within;
@@ -2012,6 +2467,30 @@ class frLef58CornerSpacingConstraint : public frConstraint
       tbl;      // horz / vert spacing
   bool sameXY;  // indicate whether horz spacing == vert spacing // for write
                 // LEF some day
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & cornerType;
+    (ar) & sameMask;
+    (ar) & within;
+    (ar) & eolWidth;
+    (ar) & length;
+    (ar) & edgeLength;
+    (ar) & includeLShape;
+    (ar) & minLength;
+    (ar) & exceptNotch;
+    (ar) & notchLength;
+    (ar) & exceptSameNet;
+    (ar) & exceptSameMetal;
+    (ar) & tbl;
+    (ar) & sameXY;
+  }
+
+  frLef58CornerSpacingConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CornerSpacingSpacingConstraint : public frConstraint
@@ -2034,7 +2513,19 @@ class frLef58CornerSpacingSpacingConstraint : public frConstraint
   }
 
  protected:
+  frLef58CornerSpacingSpacingConstraint() = default;  // for serialization
+
+ private:
   frCoord width;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & width;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CornerSpacingSpacing1DConstraint
@@ -2061,8 +2552,21 @@ class frLef58CornerSpacingSpacing1DConstraint
     logger->report("58 Corner spacing 1D {}", spacing);
   }
 
- protected:
+ private:
   frCoord spacing = -1;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar)
+        & boost::serialization::base_object<
+            frLef58CornerSpacingSpacingConstraint>(*this);
+    (ar) & spacing;
+  }
+
+  frLef58CornerSpacingSpacing1DConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 class frLef58CornerSpacingSpacing2DConstraint
@@ -2102,8 +2606,22 @@ class frLef58CornerSpacingSpacing2DConstraint
                    verticalSpacing);
   }
 
- protected:
+ private:
   frCoord horizontalSpacing = -1, verticalSpacing = -1;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar)
+        & boost::serialization::base_object<
+            frLef58CornerSpacingSpacingConstraint>(*this);
+    (ar) & horizontalSpacing;
+    (ar) & verticalSpacing;
+  }
+
+  frLef58CornerSpacingSpacing2DConstraint() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
 
 class frLef58RectOnlyConstraint : public frConstraint
@@ -2131,8 +2649,17 @@ class frLef58RectOnlyConstraint : public frConstraint
     logger->report("RECTONLY exceptNonCorePins {}", exceptNonCorePins);
   }
 
- protected:
+ private:
   bool exceptNonCorePins;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & exceptNonCorePins;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frLef58RightWayOnGridOnlyConstraint : public frConstraint
@@ -2157,35 +2684,22 @@ class frLef58RightWayOnGridOnlyConstraint : public frConstraint
     logger->report("RIGHTWAYONGRIDONLY checkMask {}", checkMask);
   }
 
- protected:
+ private:
   bool checkMask;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & checkMask;
+  }
+
+  friend class boost::serialization::access;
 };
 
 using namespace std;
 class frNonDefaultRule
 {
-  friend class FlexRP;
-  friend class frTechObject;
-
- private:
-  string name_;
-  // each vector position is a metal layer
-  vector<frCoord> widths_;
-  vector<frCoord> spacings_;
-  vector<frCoord> wireExtensions_;
-  vector<int> minCuts_;  // min cuts per cut layer
-
-  // vias for each layer
-  vector<vector<frViaDef*>> vias_;
-  vector<vector<frViaRuleGenerate*>> viasRules_;
-
-  bool hardSpacing_ = false;
-
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      via2ViaForbiddenLen;
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      viaForbiddenTurnLen;
-
  public:
   frViaDef* getPrefVia(int z)
   {
@@ -2289,6 +2803,42 @@ class frNonDefaultRule
   }
 
   bool isHardSpacing() const { return hardSpacing_; }
+
+ private:
+  std::string name_;
+  // each vector position is a metal layer
+  vector<frCoord> widths_;
+  vector<frCoord> spacings_;
+  vector<frCoord> wireExtensions_;
+  vector<int> minCuts_;  // min cuts per cut layer
+
+  // vias for each layer
+  vector<vector<frViaDef*>> vias_;
+  vector<vector<frViaRuleGenerate*>> viasRules_;
+
+  bool hardSpacing_ = false;
+
+  vector<vector<vector<std::pair<frCoord, frCoord>>>> via2ViaForbiddenLen_;
+  vector<vector<vector<std::pair<frCoord, frCoord>>>> viaForbiddenTurnLen_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & name_;
+    (ar) & widths_;
+    (ar) & spacings_;
+    (ar) & wireExtensions_;
+    (ar) & minCuts_;
+    (ar) & vias_;
+    (ar) & viasRules_;
+    (ar) & hardSpacing_;
+    (ar) & via2ViaForbiddenLen_;
+    (ar) & viaForbiddenTurnLen_;
+  }
+
+  friend class boost::serialization::access;
+  friend class FlexRP;
+  friend class frTechObject;
 };
 }  // namespace fr
 

@@ -52,6 +52,16 @@ class frBlockage : public frBlockObject
  protected:
   std::unique_ptr<frPin> pin_;
   frCoord design_rule_width_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & pin_;
+    (ar) & design_rule_width_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

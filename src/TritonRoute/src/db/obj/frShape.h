@@ -73,6 +73,15 @@ class frShape : public frPinFig
  protected:
   // constructors
   frShape() : frPinFig() {}
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frPinFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frRect : public frShape
@@ -183,6 +192,19 @@ class frRect : public frShape
   frLayerNum layer_;
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & box_;
+    (ar) & layer_;
+    (ar) & owner_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPatchWire : public frShape
@@ -286,12 +308,25 @@ class frPatchWire : public frShape
   }
 
  protected:
-  // frBox          box_;
   frBox offsetBox_;
   frPoint origin_;
   frLayerNum layer_;
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & offsetBox_;
+    (ar) & origin_;
+    (ar) & layer_;
+    (ar) & owner_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPolygon : public frShape
@@ -404,6 +439,19 @@ class frPolygon : public frShape
   frLayerNum layer_;
   frBlockObject* owner_;
   frListIter<std::unique_ptr<frShape>> iter_;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & points_;
+    (ar) & layer_;
+    (ar) & owner_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPathSeg : public frShape
@@ -575,6 +623,22 @@ class frPathSeg : public frShape
   frBlockObject* owner_;
   bool tapered_;
   frListIter<std::unique_ptr<frShape>> iter_;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & begin_;
+    (ar) & end_;
+    (ar) & layer_;
+    (ar) & style_;
+    (ar) & owner_;
+    (ar) & tapered_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

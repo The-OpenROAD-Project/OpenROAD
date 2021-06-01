@@ -180,8 +180,17 @@ class frBox
     }
   }
 
- protected:
+ private:
   frPoint ll_, ur_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & ll_;
+    (ar) & ur_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frBox3D : public frBox
@@ -210,6 +219,16 @@ class frBox3D : public frBox
  private:
   int zl_;
   int zh_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBox>(*this);
+    (ar) & zl_;
+    (ar) & zh_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

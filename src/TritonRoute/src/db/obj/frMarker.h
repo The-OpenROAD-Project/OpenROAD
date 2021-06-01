@@ -127,7 +127,7 @@ class frMarker : public frFig
   void setIter(frListIter<std::unique_ptr<frMarker>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<frMarker>> getIter() const { return iter_; }
 
- protected:
+ private:
   frConstraint* constraint_;
   frBox bbox_;
   frLayerNum layerNum_;
@@ -139,6 +139,23 @@ class frMarker : public frFig
   frListIter<std::unique_ptr<frMarker>> iter_;
   bool vioHasDir_;
   bool vioIsH_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frFig>(*this);
+    (ar) & constraint_;
+    (ar) & bbox_;
+    (ar) & layerNum_;
+    (ar) & srcs_;
+    (ar) & victims_;
+    (ar) & aggressors_;
+    // iter is handled by the owner
+    (ar) & vioHasDir_;
+    (ar) & vioIsH_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

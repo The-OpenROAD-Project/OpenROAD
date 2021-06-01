@@ -51,7 +51,16 @@ class frBlockObject
 
  private:
   int id_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & id_;
+  }
+
+  friend class boost::serialization::access;
 };
+
 struct frBlockObjectComp
 {
   bool operator()(const frBlockObject* lhs, const frBlockObject* rhs) const

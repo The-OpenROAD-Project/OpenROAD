@@ -535,7 +535,7 @@ class frLayer
 
   void printAllConstraints(utl::Logger* logger);
 
- protected:
+ private:
   frLayerTypeEnum type;
   frLayerNum layerNum;
   frString name;
@@ -587,6 +587,52 @@ class frLayer
   frLef58RectOnlyConstraint* lef58RectOnlyConstraint;
   frLef58RightWayOnGridOnlyConstraint* lef58RightWayOnGridOnlyConstraint;
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & type;
+    (ar) & layerNum;
+    (ar) & name;
+    (ar) & pitch;
+    (ar) & width;
+    (ar) & minWidth;
+    (ar) & numMasks;
+    (ar) & dir;
+    (ar) & defaultViaDef;
+    (ar) & viaDefs;
+    (ar) & cutClasses;
+    (ar) & name2CutClassIdxMap;
+    (ar) & constraints;
+    (ar) & lef58CutSpacingTableConstraints;
+    (ar) & lef58SpacingEndOfLineConstraints;
+    (ar) & minSpc;
+    (ar) & spacingSamenet;
+    (ar) & spacingInfluence;
+    (ar) & eols;
+    (ar) & cutConstraints;
+    (ar) & cutSpacingSamenetConstraints;
+    (ar) & interLayerCutSpacingConstraints;
+    (ar) & interLayerCutSpacingSamenetConstraints;
+    (ar) & interLayerCutSpacingConstraintsMap;
+    (ar) & interLayerCutSpacingSamenetConstraintsMap;
+    (ar) & lef58CutSpacingConstraints;
+    (ar) & lef58CutSpacingSamenetConstraints;
+    (ar) & recheckConstraint;
+    (ar) & shortConstraint;
+    (ar) & offGridConstraint;
+    (ar) & minEnclosedAreaConstraints;
+    (ar) & nonSufficientMetalConstraint;
+    (ar) & areaConstraint;
+    (ar) & minStepConstraint;
+    (ar) & lef58MinStepConstraints;
+    (ar) & minWidthConstraint;
+    (ar) & minimumcutConstraints;
+    (ar) & lef58RectOnlyConstraint;
+    (ar) & lef58RightWayOnGridOnlyConstraint;
+    (ar) & lef58CornerSpacingConstraints;
+  }
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

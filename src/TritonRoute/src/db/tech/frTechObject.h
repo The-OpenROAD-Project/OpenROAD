@@ -73,7 +73,7 @@ class frTechObject
   frLayerNum getBottomLayerNum() const { return 0; }
   frLayerNum getTopLayerNum() const
   {
-    return (frLayerNum)((int) layers.size() - 1);
+    return (frLayerNum) ((int) layers.size() - 1);
   }
   const std::vector<std::unique_ptr<frLayer>>& getLayers() const
   {
@@ -157,7 +157,7 @@ class frTechObject
           via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx], len);
     } else {
       return isIncluded(
-          (ndr ? ndr->via2ViaForbiddenLen
+          (ndr ? ndr->via2ViaForbiddenLen_
                : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
           len);
     }
@@ -170,7 +170,7 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
-    return isIncluded((ndr ? ndr->viaForbiddenTurnLen
+    return isIncluded((ndr ? ndr->viaForbiddenTurnLen_
                            : viaForbiddenTurnLen)[tableLayerIdx][tableEntryIdx],
                       len);
   }
@@ -268,7 +268,7 @@ class frTechObject
 
   friend class io::Parser;
 
- protected:
+ private:
   frUInt4 dbUnit;
   frUInt4 manufacturingGrid;
 
@@ -398,6 +398,31 @@ class frTechObject
     return included;
   }
 
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & dbUnit;
+    (ar) & manufacturingGrid;
+    (ar) & name2layer;
+    (ar) & layers;
+    (ar) & name2via;
+    (ar) & vias;
+    (ar) & layer2Name2CutClass;
+    (ar) & layerCutClass;
+    (ar) & name2viaRuleGenerate;
+    (ar) & viaRuleGenerates;
+    (ar) & constraints;
+    (ar) & uConstraints;
+    (ar) & nonDefaultRules;
+    (ar) & via2ViaForbiddenLen;
+    (ar) & via2ViaForbiddenOverlapLen;
+    (ar) & viaForbiddenTurnLen;
+    (ar) & viaForbiddenPlanarLen;
+    (ar) & line2LineForbiddenLen;
+    (ar) & viaForbiddenThrough;
+  }
+
+  friend class boost::serialization::access;
   friend class FlexRP;
 };
 }  // namespace fr

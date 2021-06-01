@@ -31,6 +31,7 @@
 
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/serialization/base_object.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
@@ -200,19 +201,19 @@ enum class frConstraintTypeEnum
   frcMinimumcutConstraint,
   frcOffGridConstraint,
   frcMinEnclosedAreaConstraint,
-  frcLef58CornerSpacingConstraint,                       // not supported
-  frcLef58CornerSpacingConcaveCornerConstraint,          // not supported
-  frcLef58CornerSpacingConvexCornerConstraint,           // not supported
-  frcLef58CornerSpacingSpacingConstraint,                // not supported
-  frcLef58CornerSpacingSpacing1DConstraint,              // not supported
-  frcLef58CornerSpacingSpacing2DConstraint,              // not supported
+  frcLef58CornerSpacingConstraint,               // not supported
+  frcLef58CornerSpacingConcaveCornerConstraint,  // not supported
+  frcLef58CornerSpacingConvexCornerConstraint,   // not supported
+  frcLef58CornerSpacingSpacingConstraint,        // not supported
+  frcLef58CornerSpacingSpacing1DConstraint,      // not supported
+  frcLef58CornerSpacingSpacing2DConstraint,      // not supported
   frcLef58SpacingEndOfLineConstraint,
   frcLef58SpacingEndOfLineWithinConstraint,
-  frcLef58SpacingEndOfLineWithinEndToEndConstraint,      // not supported
+  frcLef58SpacingEndOfLineWithinEndToEndConstraint,  // not supported
   frcLef58SpacingEndOfLineWithinEncloseCutConstraint,
   frcLef58SpacingEndOfLineWithinParallelEdgeConstraint,
   frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint,
-  frcLef58CutClassConstraint,                            // not supported
+  frcLef58CutClassConstraint,  // not supported
   frcNonSufficientMetalConstraint,
   frcSpacingSamenetConstraint,
   frcLef58RightWayOnGridOnlyConstraint,
@@ -337,6 +338,7 @@ struct frDebugSettings
 {
   frDebugSettings()
       : debugDR(false),
+        debugDumpDR(false),
         debugMaze(false),
         debugPA(false),
         draw(true),
@@ -351,6 +353,7 @@ struct frDebugSettings
   bool is_on() const { return debugDR || debugPA; }
 
   bool debugDR;
+  bool debugDumpDR;
   bool debugMaze;
   bool debugPA;
   bool draw;

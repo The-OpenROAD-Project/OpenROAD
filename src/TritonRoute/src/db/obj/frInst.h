@@ -135,14 +135,31 @@ class frInst : public frRef
   void getUpdatedXform(frTransform& in, bool noOrient = false) const;
   void getBoundaryBBox(frBox& in) const;
 
- protected:
+ private:
   frString name_;
   fr::frBlock* refBlock_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   frTransform xform_;
   int pinAccessIdx_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frRef>(*this);
+    (ar) & name_;
+    (ar) & refBlock_;
+    (ar) & instTerms_;
+    (ar) & instBlockages_;
+    (ar) & xform_;
+    (ar) & pinAccessIdx_;
+  }
+
+  frInst() = default; // for serialization
+  
+  friend class boost::serialization::access;
 };
+
 }  // namespace fr
 
 #endif

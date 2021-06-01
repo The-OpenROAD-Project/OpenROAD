@@ -46,7 +46,10 @@ class FlexGridGraph
 {
  public:
   // constructors
-  // FlexGridGraph() {}
+  FlexGridGraph()  // just for serialization
+  {
+  }
+
   FlexGridGraph(frTechObject* techIn, FlexDRWorker* workerIn)
       : tech_(techIn),
         drWorker_(workerIn),
@@ -922,7 +925,7 @@ class FlexGridGraph
     wavefront_.fit();
   }
 
- protected:
+ private:
   frTechObject* tech_;
   FlexDRWorker* drWorker_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
@@ -960,6 +963,14 @@ class FlexGridGraph
     frUInt4 fixedShapeCostVia : 8;
     // Byte7
     frUInt4 fixedShapeCostPlanar : 8;
+
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+      uint64_t* val = reinterpret_cast<uint64_t*>(this);
+      (ar) & *val;
+    }
+    friend class boost::serialization::access;
   };
   static_assert(sizeof(Node) == 8);
   frVector<Node> nodes_;
@@ -1151,9 +1162,41 @@ class FlexGridGraph
               const FlexMazeIdx& dstMazeIdx2,
               const frPoint& centerPt);
 
- private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
   bool isWorkerBorder(frMIdx v, bool isVert);
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // The wavefront should always be empty here so we don't need to
+    // serialize it.
+    if (!wavefront_.empty()) {
+      throw std::logic_error("dont't serialize non-empty wavefront");
+    }
+
+    (ar) & tech_;
+    (ar) & drWorker_;
+    (ar) & nodes_;
+    (ar) & prevDirs_;
+    (ar) & srcs_;
+    (ar) & dsts_;
+    (ar) & guides_;
+    (ar) & xCoords_;
+    (ar) & yCoords_;
+    (ar) & zCoords_;
+    (ar) & zHeights_;
+    (ar) & zDirs_;
+    (ar) & dieBox_;
+    (ar) & ggDRCCost_;
+    (ar) & ggMarkerCost_;
+    (ar) & halfViaEncArea_;
+    (ar) & via2viaMinLen_;
+    (ar) & via2viaMinLenNew_;
+    (ar) & via2turnMinLen_;
+    (ar) & ndr_;
+    (ar) & dstTaperBox;
+  }
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

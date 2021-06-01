@@ -161,16 +161,18 @@ sta::define_cmd_args "detailed_route_debug" {
     [-gcell x y]
     [-iter iter]
     [-pa_markers]
+    [-dump_dr]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -gcell -iter -pin} \
-      flags {-dr -maze -pa -pa_markers}
+      flags {-dr -maze -pa -pa_markers -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
   set dr [info exists flags(-dr)]
+  set dump_dr [info exists flags(-dump_dr)]
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
   set pa_markers [info exists flags(-pa_markers)]
@@ -205,6 +207,11 @@ proc detailed_route_debug { args } {
     set iter 0
   }
 
-  drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
+ drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
       $gcell_x $gcell_y $iter $pa_markers
+}
+
+proc detailed_route_run_worker { args } {
+  sta::check_argc_eq1 "detailed_route_run_worker" $args
+  drt::run_worker_cmd $args
 }

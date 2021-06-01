@@ -161,6 +161,23 @@ class frNode : public frBlockObject
 
   frListIter<std::unique_ptr<frNode>> iter;
 
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & net;
+    (ar) & loc;
+    (ar) & layerNum;
+    (ar) & connFig;
+    (ar) & pin;
+    (ar) & type;
+    (ar) & parent;
+    (ar) & children;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
   friend class grNode;
 };
 }  // namespace fr

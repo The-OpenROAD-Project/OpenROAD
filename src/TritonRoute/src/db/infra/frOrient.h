@@ -142,9 +142,17 @@ class frOrient
   //  return orient_;
   //}
   operator frOrientEnum() const { return orient_; }
-
- protected:
+ 
+ private:
   frOrientEnum orient_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & orient_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

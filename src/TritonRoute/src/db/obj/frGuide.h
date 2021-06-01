@@ -121,6 +121,21 @@ class frGuide : public frConnFig
   frLayerNum endLayer_;
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConnFig>(*this);
+    (ar) & begin_;
+    (ar) & end_;
+    (ar) & beginLayer_;
+    (ar) & endLayer_;
+    (ar) & routeObj_;
+    (ar) & net_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

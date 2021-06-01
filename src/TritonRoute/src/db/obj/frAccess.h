@@ -184,6 +184,23 @@ class frAccessPoint : public frBlockObject
   frAccessPointEnum typeL_;
   frAccessPointEnum typeH_;
   frPinAccess* aps_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & point_;
+    (ar) & layerNum_;
+    (ar) & accesses_;
+    (ar) & viaDefs_;
+    (ar) & typeL_;
+    (ar) & typeH_;
+    (ar) & aps_;
+  }
+
+  frAccessPoint() = default; // for serialization
+  
+  friend class boost::serialization::access;
 };
 
 class frPinAccess : public frBlockObject
@@ -210,6 +227,16 @@ class frPinAccess : public frBlockObject
  private:
   std::vector<std::unique_ptr<frAccessPoint>> aps_;
   frPin* pin_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & aps_;
+    (ar) & pin_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

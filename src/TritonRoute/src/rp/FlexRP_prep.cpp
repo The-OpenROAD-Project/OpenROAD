@@ -318,7 +318,7 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
   if (ndr)
-    ndr->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   else
     tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
@@ -455,7 +455,7 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
   if (ndr)
-    ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   else {
     tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 

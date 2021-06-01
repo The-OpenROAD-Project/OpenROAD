@@ -76,8 +76,17 @@ class frBoundary : public frFig
   }
   bool overlaps(const frBox& box) const override { return false; }
 
- protected:
+ private:
   std::vector<frPoint> points_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frFig>(*this);
+    (ar) & points_;
+  }
+
+  friend class boost::serialization::access; 
 };
 }  // namespace fr
 

@@ -100,6 +100,7 @@ void
 set_detailed_route_debug_cmd(const char* net_name,
                              const char* pin_name,
                              bool dr,
+                             bool dump_dr,
                              bool pa,
                              bool maze,
                              int gcell_x, int gcell_y,
@@ -110,6 +111,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugNetName(net_name);
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
+  router->setDebugDumpDR(dump_dr);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   if (gcell_x >= 0) {
@@ -119,4 +121,11 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaMarkers(pa_markers);
 }
 
+void
+run_worker_cmd(const char* file_name)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->runDRWorker(file_name);
+}
+  
 %} // inline

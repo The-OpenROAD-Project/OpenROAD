@@ -70,7 +70,7 @@ class frViaRuleGenerate
   void setCutLayerNum(frLayerNum in) { cutLayerNum = in; }
   void setLayer2Num(frLayerNum in) { topLayerNum = in; }
 
- protected:
+ private:
   frString name;
   bool isDefault;
   frPoint botEnc;
@@ -80,6 +80,24 @@ class frViaRuleGenerate
   frLayerNum botLayerNum;
   frLayerNum cutLayerNum;
   frLayerNum topLayerNum;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & name;
+    (ar) & isDefault;
+    (ar) & botEnc;
+    (ar) & cutRect;
+    (ar) & cutSpacing;
+    (ar) & topEnc;
+    (ar) & botLayerNum;
+    (ar) & cutLayerNum;
+    (ar) & topLayerNum;
+  }
+
+  frViaRuleGenerate() = default; // for serialization
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

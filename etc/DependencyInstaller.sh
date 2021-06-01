@@ -44,7 +44,7 @@ _installCommonDev() {
     tar -xf boost_${boostVersionUnderscore}.tar.gz
     cd boost_${boostVersionUnderscore}
     ./bootstrap.sh
-    ./b2 install -j $(nproc)
+    ./b2 install --with-iostreams --with-test --with-serialization -j $(nproc)
 
     # eigen
     cd "${baseDir}"

@@ -74,6 +74,11 @@ void TritonRoute::setDebugDR(bool on)
   debug_->debugDR = on;
 }
 
+void TritonRoute::setDebugDumpDR(bool on)
+{
+  debug_->debugDumpDR = on;
+}
+
 void TritonRoute::setDebugMaze(bool on)
 {
   debug_->debugMaze = on;
@@ -116,6 +121,16 @@ int TritonRoute::getNumDRVs() const
     logger_->error(DRT, 2, "Detailed routing has not been run yet.");
   }
   return num_drvs_;
+}
+
+void TritonRoute::runDRWorker(const char* file_name)
+{
+  auto worker = FlexDRWorker::load(file_name, logger_, debug_.get(), db_);
+  auto graphics = worker->getDR()->getGraphics();
+  if (graphics) {
+    graphics->startIter(worker->getDRIter());
+  }  
+  worker->main();
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,
@@ -223,6 +238,8 @@ void TritonRoute::reportConstraints()
   getDesign()->getTech()->printAllConstraints(logger_);
 }
 
+void test_serialization(bool use_archive);
+
 int TritonRoute::main()
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
@@ -288,9 +305,10 @@ void TritonRoute::readParams(const string& fileName)
           CMAP_FILE = value;
           ++readParamCnt;
         } else if (field == "threads") {
-          logger_->warn(
-              utl::DRT, 253, "deprecated threads param in params file."
-                             " Use 'set_thread_count'");
+          logger_->warn(utl::DRT,
+                        253,
+                        "deprecated threads param in params file."
+                        " Use 'set_thread_count'");
           ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());
@@ -377,3 +395,4 @@ bool fr::isEndcap(MacroClassEnum e)
          || e == MacroClassEnum::ENDCAP_BOTTOMLEFT
          || e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
 }
+

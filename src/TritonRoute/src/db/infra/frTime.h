@@ -53,7 +53,7 @@ class frTime
     return (time_span.count() > in);
   }
 
- protected:
+ private:
   std::chrono::high_resolution_clock::time_point t0_;
   clock_t t_;
 };

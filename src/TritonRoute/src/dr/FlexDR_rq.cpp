@@ -26,7 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "serialization.h"
 #include "dr/FlexDR.h"
+#include "dr/FlexDR_graphics.h"
 #include "frRTree.h"
 
 using namespace std;
@@ -34,19 +36,34 @@ using namespace fr;
 
 struct FlexDRWorkerRegionQuery::Impl
 {
-  FlexDRWorker* drWorker;
+  FlexDRWorker* dr_worker_;
   std::vector<bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>>
       shapes_;  // only for drXXX in dr worker
 
   static void add(
       drConnFig* connFig,
       std::vector<std::vector<rq_box_value_t<drConnFig*>>>& allShapes);
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // We always serialize before calling main on the work unit so the
+    // rtree should be empty.
+    if (!shapes_.empty()) {
+      throw std::logic_error("don't serialize non-empty dr region query");
+    }
+
+    (ar) & dr_worker_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
     : impl_(make_unique<Impl>())
 {
-  impl_->drWorker = in;
+  impl_->dr_worker_ = in;
 }
 
 FlexDRWorkerRegionQuery::~FlexDRWorkerRegionQuery() = default;
@@ -237,11 +254,11 @@ void FlexDRWorkerRegionQuery::query(
 
 void FlexDRWorkerRegionQuery::init()
 {
-  int numLayers = impl_->drWorker->getTech()->getLayers().size();
+  int numLayers = impl_->dr_worker_->getTech()->getLayers().size();
   impl_->shapes_.clear();
   impl_->shapes_.resize(numLayers);
   vector<vector<rq_box_value_t<drConnFig*>>> allShapes(numLayers);
-  for (auto& net : impl_->drWorker->getNets()) {
+  for (auto& net : impl_->dr_worker_->getNets()) {
     for (auto& connFig : net->getRouteConnFigs()) {
       impl_->add(connFig.get(), allShapes);
     }
@@ -257,3 +274,23 @@ void FlexDRWorkerRegionQuery::init()
     allShapes.at(i).shrink_to_fit();
   }
 }
+
+bool FlexDRWorkerRegionQuery::isEmpty() const
+{
+  return impl_->shapes_.empty();
+}
+
+template <class Archive>
+void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void FlexDRWorkerRegionQuery::serialize<boost::archive::binary_iarchive>(
+    boost::archive::binary_iarchive& ar,
+    const unsigned int file_version);
+
+template void FlexDRWorkerRegionQuery::serialize<boost::archive::binary_oarchive>(
+    boost::archive::binary_oarchive& ar,
+    const unsigned int file_version);

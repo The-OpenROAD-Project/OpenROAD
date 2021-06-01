@@ -45,8 +45,16 @@ class frPrefRoutingDir
   // overloads
   operator frPrefRoutingDirEnum() const { return dir_; }
 
- protected:
+ private:
   frPrefRoutingDirEnum dir_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & dir_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

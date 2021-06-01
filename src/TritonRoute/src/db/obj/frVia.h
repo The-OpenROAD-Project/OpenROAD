@@ -286,6 +286,20 @@ class frVia : public frRef
   frBlockObject* owner_;
   bool tapered_;
   frListIter<std::unique_ptr<frVia>> iter_;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frRef>(*this);
+    (ar) & origin_;
+    (ar) & viaDef_;
+    (ar) & owner_;
+    (ar) & tapered_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -125,6 +125,14 @@ class frRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
+
+  // We will have to use explicit instantiation because the impl is private
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frRegionQuery(); // for serialization
+  
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

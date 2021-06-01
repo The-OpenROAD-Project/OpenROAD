@@ -49,7 +49,8 @@ class Gui;
 }
 namespace triton_route {
 
-typedef struct {
+typedef struct
+{
   const std::string& guideFile;
   const std::string& outputGuideFile;
   const std::string& outputMazeFile;
@@ -80,6 +81,7 @@ class TritonRoute
   int getNumDRVs() const;
 
   void setDebugDR(bool on = true);
+  void setDebugDumpDR(bool on = true);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
@@ -91,6 +93,10 @@ class TritonRoute
 
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
+
+  // This runs a serialized worker from file_name.  It is intended
+  // for debugging and not general usage.
+  void runDRWorker(const char* file_name);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;

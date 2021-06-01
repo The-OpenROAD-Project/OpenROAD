@@ -59,8 +59,7 @@ struct FlexDRViaData
   // via2viaMinLen[z][1], last via=down, curr via=up
   // via2viaMinLen[z][2], last via=up,   curr via=down
   // via2viaMinLen[z][3], last via=up,   curr via=up
-  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>>
-      via2viaMinLen;
+  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>> via2viaMinLen;
 
   // via2viaMinLen[z][0], prev via=down, curr via=down, min required x dist
   // via2viaMinLen[z][1], prev via=down, curr via=down, min required y dist
@@ -77,6 +76,17 @@ struct FlexDRViaData
   // via2turnMinLen[z][2], last via=up,   min required x dist
   // via2turnMinLen[z][3], last via=up,   min required y dist
   std::vector<std::vector<frCoord>> via2turnMinLen;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & halfViaEncArea;
+    (ar) & via2viaMinLen;
+    (ar) & via2viaMinLenNew;
+    (ar) & via2turnMinLen;
+  }
+  friend class boost::serialization::access;
 };
 
 class FlexDR
@@ -94,10 +104,16 @@ class FlexDR
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(frDebugSettings* settings);
 
- protected:
+  // For post-deserialization update
+  void setLogger(Logger* logger) { logger_ = logger; }
+  void setDB(odb::dbDatabase* db) { db_ = db; }
+  FlexDRGraphics* getGraphics() { return graphics_.get(); }
+
+ private:
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
+  frDebugSettings* debugSettings_;
   std::vector<std::vector<std::map<frNet*,
                                    std::set<std::pair<frPoint, frLayerNum>>,
                                    frBlockObjectComp>>>
@@ -275,13 +291,31 @@ class FlexDR
 
   // utility
   void reportDRC();
+
+  FlexDR();  // for serialization
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // The logger_ and debugSettings_ are handled by the caller to use
+    // the current ones.  graphics_ is handled when the debugSettings_ are
+    // re-initialized.
+    // FIXME
+    (ar) & design_;
+    // (ar) & db_;
+    (ar) & gcell2BoundaryPin_;
+    (ar) & via_data_;
+    (ar) & numViols_;
+    (ar) & debugNetName_;
+  }
+  friend class boost::serialization::access;
 };
 
 class FlexDRWorker;
 class FlexDRWorkerRegionQuery
 {
  public:
-  FlexDRWorkerRegionQuery(FlexDRWorker* in);
+  FlexDRWorkerRegionQuery(FlexDRWorker* in = 0);  // =0 just for serialization
   ~FlexDRWorkerRegionQuery();
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
@@ -293,10 +327,17 @@ class FlexDRWorkerRegionQuery
              std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
   void cleanup();
+  bool isEmpty() const;
 
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
+
+  // We will have to use explicit instantiation because the impl is private
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 
 class FlexDRMinAreaVio
@@ -340,7 +381,20 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(const FlexDRViaData* via_data, frTechObject* tech, Logger* logger)
+  FlexDRWorker()
+      :  // for serialization
+        tech_(nullptr),
+        logger_(nullptr),
+        graphics_(nullptr),
+        debugSettings_(nullptr),
+        via_data_(nullptr),
+        gcWorker_(nullptr)
+  {
+  }
+
+  FlexDRWorker(const FlexDRViaData* via_data,
+               frTechObject* tech,
+               Logger* logger)
       : tech_(tech),
         logger_(logger),
         graphics_(nullptr),
@@ -369,7 +423,7 @@ class FlexDRWorker
         gridGraph_(tech, this),
         markers_(),
         rq_(this),
-        gcWorker_(nullptr) /*, drcWorker(drIn->getDesign())*/
+        gcWorker_(nullptr)
   {
   }
   // setters
@@ -482,8 +536,15 @@ class FlexDRWorker
   int main(frDesign* design);
 
   Logger* getLogger() { return logger_; }
+  void setLogger(Logger* logger) { logger_ = logger; }
+  void setDebug(frDebugSettings* settings) { debugSettings_ = settings; }
 
- protected:
+  static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
+                                            utl::Logger* logger,
+                                            frDebugSettings* debugSettings,
+                                            odb::dbDatabase* db);
+
+ private:
   typedef struct
   {
     frBlockObject* block;
@@ -502,9 +563,9 @@ class FlexDRWorker
   frBox gcellBox_;
   int drIter_;
   int mazeEndIter_;
-  bool followGuide_ : 1;
-  bool needRecheck_ : 1;
-  bool skipRouting_ : 1;
+  bool followGuide_;
+  bool needRecheck_;
+  bool skipRouting_;
   int ripupMode_;
   // drNetOrderingEnum netOrderingMode;
   frUInt4 workerDRCCost_, workerMarkerCost_;
@@ -941,8 +1002,50 @@ class FlexDRWorker
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // We always serialize before calling main on the work unit so various
+    // fields are empty and don't need to be serialized.  I skip these to
+    // save having to write lots of serializers that will never be called.
+    if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+        || !rq_.isEmpty() || gcWorker_) {
+      logger_->error(DRT, 999, "Can't serialize used worker");
+    }
+
+    // The logger_ and debugSettings_ are handled by the caller to use
+    // the current ones.  graphics_ is handled when the debugSettings_ are
+    // re-initialized.
+    (ar) & tech_;
+    (ar) & via_data_;
+    (ar) & routeBox_;
+    (ar) & extBox_;
+    (ar) & drcBox_;
+    (ar) & gcellBox_;
+    (ar) & drIter_;
+    (ar) & mazeEndIter_;
+    (ar) & followGuide_;
+    (ar) & needRecheck_;
+    (ar) & skipRouting_;
+    (ar) & ripupMode_;
+    (ar) & workerDRCCost_;
+    (ar) & workerMarkerCost_;
+    (ar) & boundaryPin_;
+    (ar) & pinCnt_;
+    (ar) & initNumMarkers_;
+    (ar) & fixedObjs_;
+    (ar) & planarHistoryMarkers_;
+    (ar) & viaHistoryMarkers_;
+    (ar) & historyMarkers_;
+    (ar) & gridGraph_;
+    (ar) & markers_;
+    (ar) & bestMarkers_;
+    (ar) & rq_;
+  }
+
   friend class FlexDR;
   friend class FlexGC;
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

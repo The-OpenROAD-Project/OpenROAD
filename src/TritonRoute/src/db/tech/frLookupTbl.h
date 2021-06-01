@@ -55,6 +55,13 @@ class fr1DLookupTbl
 {
  public:
   // constructor
+  fr1DLookupTbl()  // for serialization
+      : interpolateTypeRow(frInterpolateType::frcSnapDown),
+        interpolateTypeCol(frInterpolateType::frcSnapDown),
+        extrapolateTypeRowLower(frExtrapolateType::frcSnapDown),
+        extrapolateTypeRowUpper(frExtrapolateType::frcSnapDown)
+  {
+  }
 
   fr1DLookupTbl(const fr1DLookupTbl& in)
       : rows(in.rows),
@@ -142,6 +149,20 @@ class fr1DLookupTbl
   frInterpolateType interpolateTypeCol;
   frExtrapolateType extrapolateTypeRowLower;
   frExtrapolateType extrapolateTypeRowUpper;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & rows;
+    (ar) & vals;
+    (ar) & rowName;
+    (ar) & interpolateTypeRow;
+    (ar) & interpolateTypeCol;
+    (ar) & extrapolateTypeRowLower;
+    (ar) & extrapolateTypeRowUpper;
+  }
+
+  friend class boost::serialization::access;
 };
 
 // fr2DLookupTbl
@@ -262,6 +283,24 @@ class fr2DLookupTbl
   frExtrapolateType extrapolateTypeRowUpper;
   frExtrapolateType extrapolateTypeColLower;
   frExtrapolateType extrapolateTypeColUpper;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & rows;
+    (ar) & cols;
+    (ar) & vals;
+    (ar) & rowName;
+    (ar) & colName;
+    (ar) & interpolateTypeRow;
+    (ar) & interpolateTypeCol;
+    (ar) & extrapolateTypeRowLower;
+    (ar) & extrapolateTypeRowUpper;
+    (ar) & extrapolateTypeColLower;
+    (ar) & extrapolateTypeColUpper;
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

@@ -45,8 +45,16 @@ class frEndStyle
   // getters
   operator frEndStyleEnum() const { return style_; }
 
- protected:
+ private:
   frEndStyleEnum style_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & style_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frSegStyle
@@ -85,12 +93,24 @@ class frSegStyle
   frUInt4 getEndExt() const { return endExt_; }
   frEndStyle getEndStyle() const { return endStyle_; }
 
- protected:
+ private:
   frUInt4 beginExt_;
   frUInt4 endExt_;
   frUInt4 width_;
   frEndStyle beginStyle_;
   frEndStyle endStyle_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & beginExt_;
+    (ar) & endExt_;
+    (ar) & width_;
+    (ar) & beginStyle_;
+    (ar) & endStyle_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

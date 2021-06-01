@@ -69,12 +69,27 @@ class frInstTerm : public frBlockObject
   // others
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
 
- protected:
+ private:
   frInst* inst_;
   frTerm* term_;
   frNet* net_;
   std::vector<frAccessPoint*> ap_;  // follows pin index
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & inst_;
+    (ar) & term_;
+    (ar) & net_;
+    (ar) & ap_;
+  }
+
+  frInstTerm() = default; // for serialization
+  
+  friend class boost::serialization::access;
 };
+
 }  // namespace fr
 
 #endif

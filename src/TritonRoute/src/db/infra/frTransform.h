@@ -157,9 +157,18 @@ class frTransform
     transformIn.set(resXOffset, resYOffset, resOrient);
   }
 
- protected:
+ private:
   frPoint offset_;
   frOrient ori_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & offset_;
+    (ar) & ori_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

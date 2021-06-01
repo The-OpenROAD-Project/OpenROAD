@@ -191,7 +191,7 @@ class frNet : public frBlockObject
   void setNondefaultRule(frNonDefaultRule* n) { ndr_ = n; }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
 
- protected:
+ private:
   frString name_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frTerm*> terms_;  // terms is IO
@@ -215,7 +215,63 @@ class frNet : public frBlockObject
   bool modified_;
   bool isFakeNet_;  // indicate floating PG nets
   frNonDefaultRule* ndr_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frNet() = default; // for serialization
+  
+  friend class boost::serialization::access;
 };
+
+template <class Archive>
+void frNet::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & instTerms_;
+  (ar) & terms_;
+  (ar) & shapes_;
+  (ar) & vias_;
+  (ar) & pwires_;
+  // TODO for gr support
+  // (ar) & grShapes_;
+  // (ar) & grVias_;
+  (ar) & nodes_;
+  (ar) & root_;
+  (ar) & rootGCellNode_;
+  (ar) & firstNonRPinNode_;
+  (ar) & rpins_;
+  (ar) & guides_;
+  (ar) & type_;
+  (ar) & modified_;
+  (ar) & isFakeNet_;
+  (ar) & ndr_;
+
+  // The list members can container an iterator representing their position
+  // in the list for fast removal.  It is tricky to serialize the iterator
+  // so just reset them from the list after loading.
+  if (is_loading(ar)) {
+    for (auto it = shapes_.begin(); it != shapes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = vias_.begin(); it != vias_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = pwires_.begin(); it != pwires_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = grShapes_.begin(); it != grShapes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = grVias_.begin(); it != grVias_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = nodes_.begin(); it != nodes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+  }
+}
 }  // namespace fr
 
 #endif
