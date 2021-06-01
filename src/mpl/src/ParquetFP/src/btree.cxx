@@ -686,13 +686,11 @@ void BTree::find_new_block_location(const int tree_ptr,
 	}
 	else
 	{
-    int parent_block = in_tree[tree_parent].block_index;
 		// above parent, use parent's x
 		new_block_contour_begin = in_contour[tree_parent].begin;
 
     // additional HALO consideration
     if( new_block_contour_begin != 0 ) {
-//      new_block_contour_begin += in_blockinfo[parent_block].haloX[theta];
       halo_block_x_shift += in_blockinfo[block].haloX[theta];
     } 
 		// use parent's contour for y
@@ -713,90 +711,40 @@ void BTree::find_new_block_location(const int tree_ptr,
 
 	contour_prev = in_contour[contour_ptr].prev; // begins of cPtr/tPtr match
 
-//  cout << "ctrPtr: " << contour_ptr << ", ctrPrev: " << contour_prev << endl;
-
-//  cout << block << " snapX: " << new_block_contour_begin;
-  // macro snapping  
-//  new_block_contour_begin = 
-//    snap_coordinates( new_block_contour_begin, in_blockinfo[block].snapX[theta] ) ;
-
-//  cout << "new_block_contour_begin: " << new_block_contour_begin << endl;
-
 	float new_block_contour_end = new_block_contour_begin
 	    + in_blockinfo[block].width[theta] + 2*in_blockinfo[block].haloX[theta];
-//  cout << block << " newBlockContourEnd: " << new_block_contour_end << endl;
 	float maxCTL = in_contour[contour_ptr].CTL;
 	float contour_ptr_end = 
     (contour_ptr == tree_ptr)? new_block_contour_end : in_contour[contour_ptr].end;
-//  cout << block << " curContourPtrEnd: " << contour_ptr_end << endl;
 
 	while (contour_ptr_end <=	new_block_contour_end + TOLERANCE) {
-//      cout << "contourPtr: " << contour_ptr << endl;
-//      cout << "ctrMapEnd: " << contour_ptr_end << endl;
-//      cout << "newBlockContourEnd: " << new_block_contour_end<< endl;
 		maxCTL = max(maxCTL, in_contour[contour_ptr].CTL);
 		contour_ptr = in_contour[contour_ptr].next;
 		contour_ptr_end = 
       (contour_ptr == tree_ptr)? new_block_contour_end : in_contour[contour_ptr].end;
-    
-//      cout << "nextContourPtr: " << contour_ptr << endl;
-//      cout << "nextContourPtrEnd: " << contour_ptr_end << endl << endl;
 	}
 
   // contour_prev location Update!!!!  
   if( snap_gap_x + new_block_x_shift > FLT_EPSILON ) { 
-//    cout << "contour_prev update from :" << contour_prev << endl;
     int contour_ptr_tmp = contour_prev;
     float contour_ptr_end_sec = 
       (contour_ptr_tmp == tree_ptr)? new_block_contour_end : in_contour[contour_ptr_tmp].begin;
 
-//    cout << "contour_ptr_end_sec: " <<contour_ptr_end_sec<< endl;
-//    cout << "tree_ptr: " << tree_ptr << endl;
-//    cout << "new_block_contour_end: " << new_block_contour_end<< endl;
-
     while( contour_ptr_end_sec <= new_block_contour_begin ) {
-//      cout << contour_ptr_tmp << " -> " << in_contour[contour_ptr_tmp].next << endl;
       contour_ptr_tmp = in_contour[contour_ptr_tmp].next;
       contour_ptr_end_sec = 
         (contour_ptr_tmp == tree_ptr)? new_block_contour_end : in_contour[contour_ptr_tmp].end;
       contour_prev = in_contour[contour_ptr_tmp].prev;
-//      cout << "contour_prev: " << contour_prev << endl;
-//      cout << "ineq: " << contour_ptr_end_sec << " " << new_block_contour_begin << endl << endl;
-//      contour_prev = contour_ptr_tmp;
     }
 
     int prev_next = in_contour[contour_prev].next;
-
-//    cout << "prev->next: " << in_contour[contour_prev].next << endl;
-//    cout << "ctrMap(prev->next).end: " << in_contour[in_contour[contour_prev].next].end << endl;
-//    cout << "ctrMap(prev->next).begin: " << in_contour[in_contour[contour_prev].next].begin<< endl;
 
     if( prev_next != NUM_BLOCKS+1 
         && in_contour[prev_next].end > new_block_contour_begin 
         && in_contour[prev_next].begin < new_block_contour_begin ) {
        contour_prev = in_contour[contour_prev].next;
     }
-    
-//    cout << "updated contour_ptr_end_sec: " <<contour_ptr_end_sec << endl;
-//    cout << "contour_prev updated into " << contour_prev << endl;
   }
-
-//	contour_prev = in_contour[contour_ptr].prev; // begins of cPtr/tPtr match
-
-//  if( block == 1 || block == 10 || block == 2) { 
-    int tmpCursor = NUM_BLOCKS;
-//    cout << "InnerContourTraverse" << endl;
-//    while (tmpCursor != NUM_BLOCKS+1)
-//    {
-//      cout << "Node: " << tmpCursor << endl;
-//      cout << "Prev: " << in_contour[tmpCursor].prev << endl;
-//      cout << "Next: " << in_contour[tmpCursor].next << endl;
-//      cout << "Begin: " << in_contour[tmpCursor].begin << endl;
-//      cout << "End: " << in_contour[tmpCursor].end << endl;
-//      cout << "CTL: " << in_contour[tmpCursor].CTL << endl << endl;
-//      tmpCursor = in_contour[tmpCursor].next;
-//    }
-//  }
 
 	float contour_ptr_begin = 
     (contour_ptr == tree_ptr)? new_block_contour_begin : in_contour[contour_ptr].begin;
@@ -811,7 +759,6 @@ void BTree::find_new_block_location(const int tree_ptr,
 
 	// get location where new block sho1uld be added
 	out_x = new_block_contour_begin + halo_block_x_shift;
-//	out_x = snap_coordinates( new_block_contour_begin, in_blockinfo[block].snapX[theta] ) ;
 	out_y = get_snap_coordinates( maxCTL + new_block_y_shift + halo_block_y_shift, in_blockinfo[block].snapY[theta] ) ; // XXX
 }
 // --------------------------------------------------------
@@ -832,11 +779,6 @@ void BTree::contour_add_block(const int tree_ptr)
    in_yloc[tree_ptr] = new_yloc;
    in_width[tree_ptr] = in_blockinfo[block].width[theta];
    in_height[tree_ptr] = in_blockinfo[block].height[theta];
-//   printf("Update!: %d: (%f %f)-(%f %f)\n", tree_ptr, new_xloc, new_yloc, 
-//       new_xloc + in_width[tree_ptr], 
-//       new_yloc + in_height[tree_ptr]);
-     
-//   in_contour[tree_ptr].begin = in_xloc[tree_ptr] - new_block_x_shift;
 
    // x_halo control
    int tree_parent = in_tree[tree_ptr].parent;
@@ -854,25 +796,10 @@ void BTree::contour_add_block(const int tree_ptr)
    in_contour[tree_ptr].next = contour_ptr;
    in_contour[tree_ptr].prev = contour_prev;
 
-//     cout << tree_ptr << " ctrMap Update" << endl;
-//     cout << "tree_ptr: " << tree_ptr << endl;
-//     cout << "begin: " << in_contour[tree_ptr].begin << endl;
-//     cout << "end: " << in_contour[tree_ptr].end << endl;
-//     cout << "CTL: " << in_contour[tree_ptr].CTL << endl;
-//     cout << "prev: " << in_contour[tree_ptr].prev << endl;
-//     cout << "next: " << in_contour[tree_ptr].next << endl << endl;
-
-
    in_contour[contour_ptr].prev = tree_ptr;
    in_contour[contour_prev].next = tree_ptr;
    in_contour[contour_ptr].begin = in_xloc[tree_ptr] + in_width[tree_ptr] + in_blockinfo[block].haloX[theta];
-   //in_contour[contour_ptr].begin = in_xloc[tree_ptr] + in_width[tree_ptr];
    in_contour[tree_ptr].begin = max(in_contour[contour_prev].end, in_contour[tree_ptr].begin);
-//   in_contour[tree_ptr].begin = max(0.0f, in_contour[tree_ptr].begin);
-     
-//   cout << "contour_ptr: " << contour_ptr << endl;
-//   cout << "contour_ptr's begin: " << in_contour[contour_ptr].begin << endl ;
-//   cout << "tree_ptr's begin: " << in_contour[tree_ptr].begin << endl << endl;
 }
 // --------------------------------------------------------
 bool BTree::contour_new_block_intersects_obstacle(const int tree_ptr, unsigned &obstacleID,

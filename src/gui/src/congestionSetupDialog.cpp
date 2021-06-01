@@ -261,7 +261,7 @@ std::vector<QString> CongestionSetupDialog::getColorNames(int band_index)
   std::vector<QString> labels;
   QString label;
   auto color_data = _color_ranges[band_index];
-  int index = 0;
+  unsigned int index = 0;
   int min_congestion = getMinCongestionValue();
   int max_congestion = getMaxCongestionValue();
   int percent_step = (max_congestion - min_congestion) / spinBox->value();

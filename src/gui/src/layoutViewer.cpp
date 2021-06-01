@@ -258,6 +258,7 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       logger_(nullptr),
+      design_loaded_(false),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
@@ -1140,11 +1141,6 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     return;
   }
 
-  if (!search_init_) {
-    search_.init(block);
-    search_init_ = true;
-  }
-
   QPainter painter(this);
   painter.setRenderHints(QPainter::Antialiasing);
 
@@ -1152,6 +1148,15 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.setPen(QPen(Qt::black, 0));
   painter.setBrush(Qt::black);
   painter.drawRect(event->rect());
+
+  if (!design_loaded_) {
+    return;
+  }
+
+  if (!search_init_) {
+    search_.init(block);
+    search_init_ = true;
+  }
 
   // Coordinate system setup (see file level comments)
   const QTransform base_transform = painter.transform();
@@ -1212,6 +1217,9 @@ void LayoutViewer::fit()
   }
 
   Rect bbox = getBounds(block);
+  if (bbox.xMax() == 0 || bbox.yMax() == 0) {
+    return;
+  }
 
   QSize viewport = scroller_->maximumViewportSize();
   qreal pixels_per_dbu
@@ -1288,6 +1296,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
+  design_loaded_ = true;
   addOwner(block);  // register as a callback object
   fit();
 }

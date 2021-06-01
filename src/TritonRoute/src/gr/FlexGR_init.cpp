@@ -228,7 +228,7 @@ void FlexGR::initGCell()
          << layer->getName() << " pitch  = "
          << pitch / (double) (design_->getTopBlock()->getDBUPerUU()) << "\n";
     frBox dieBox;
-    design_->getTopBlock()->getBoundaryBBox(dieBox);
+    design_->getTopBlock()->getDieBox(dieBox);
 
     frGCellPattern xgp, ygp;
     // set xgp

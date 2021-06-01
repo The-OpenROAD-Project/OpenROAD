@@ -481,7 +481,7 @@ bool BTreeAreaWireAnnealer::anneal()
   bool moveAccepted = false; 
   bool brokeFromLoop = false;
 
-  float unit=0, total=seconds, percent=1;
+  float total=seconds, percent=1;
   unsigned int moves = 1000;
 
   //Added by DAP to support terminate on 
@@ -1537,7 +1537,6 @@ void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
   int num_zeros = 0;
   for (int i = 0; i < 2*blocknum; i++)
   {
-    bool assigned = false;
     float rand_num = float(rand()) / (RAND_MAX+1.0);
     float threshold;
 
@@ -1552,14 +1551,12 @@ void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
     {
       tree_bits.push_back(1);
       balance--;
-      assigned = true;
     }
     else
     {
       tree_bits.push_back(0);
       balance++;
       num_zeros++;
-      assigned = true;
     }
   }
 

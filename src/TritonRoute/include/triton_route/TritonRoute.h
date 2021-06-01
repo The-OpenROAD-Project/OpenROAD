@@ -48,6 +48,24 @@ namespace gui {
 class Gui;
 }
 namespace triton_route {
+
+typedef struct {
+  const std::string& guideFile;
+  const std::string& outputGuideFile;
+  const std::string& outputMazeFile;
+  const std::string& outputDrcFile;
+  const std::string& outputCmapFile;
+  const std::string& dbProcessNode;
+  int drouteEndIter;
+  int drouteViaInPinBottomLayerNum;
+  int drouteViaInPinTopLayerNum;
+  int orSeed;
+  double orK;
+  const std::string& bottomRoutingLayer;
+  const std::string& topRoutingLayer;
+  int verbose;
+} ParamStruct;
+
 class TritonRoute
 {
  public:
@@ -72,6 +90,7 @@ class TritonRoute
   void reportConstraints();
 
   void readParams(const std::string& fileName);
+  void setParams(const ParamStruct& params);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;

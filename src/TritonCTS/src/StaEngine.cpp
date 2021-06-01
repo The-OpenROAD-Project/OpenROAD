@@ -79,7 +79,6 @@ float StaEngine::getInputPinCap(odb::dbITerm* iterm)
     return 0.0;
   }
 
-  sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
   sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
   if (inputPort) {
     return inputPort->capacitance();
@@ -98,7 +97,6 @@ bool StaEngine::isSink(odb::dbITerm* iterm)
     return false;
   }
 
-  sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
   sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
   if (inputPort) {
     return inputPort->isRegClk();

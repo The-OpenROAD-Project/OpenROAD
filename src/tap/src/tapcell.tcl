@@ -590,13 +590,6 @@ proc insert_tapcells {db rows tapcell_master dist prefix} {
         set overlap [check_if_filled $x $tap_width $ori $row_fill_check]
         if {$overlap == 0} {
           build_cell $block $master $ori $x $lly $prefix
-        } elseif {[llength $overlap] == 2} {
-          lassign $overlap new_x_left new_x_right
-          if {$new_x_left >= $llx && [check_if_filled $new_x_left $tap_width $ori $row_fill_check] == 0} {
-            build_cell $block $master $ori $new_x_left $lly $prefix
-          } elseif {$new_x_right < $urx && [check_if_filled $new_x_right $tap_width $ori $row_fill_check] == 0} {
-            build_cell $block $master $ori $new_x_right $lly $prefix
-          }
         }
       }
     }
@@ -619,11 +612,7 @@ proc check_if_filled {x width orient row_insts} {
     if {$x_end > [lindex $placement 0] && $x_start < [lindex $placement 1]} {
       set left_x [expr [lindex $placement 0] - $width]
       set right_x [lindex $placement 1]
-      if {$x_start < [lindex $placement 0] || $x_end > [lindex $placement 1]} {
-        return "$left_x $right_x"
-      } else {
-        return 1
-      }
+      return "$left_x $right_x"
     }
   }
   return 0

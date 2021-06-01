@@ -7,7 +7,6 @@ read_def obstruction1.def
 
 detailed_placement
 filler_placement FILLCELL*
-
 check_placement
 
 set def_file [make_result_file obstruction1.def]

@@ -40,6 +40,8 @@ record_tests {
   top_layer3
   top_layer4
   top_layer5
+  top_layer6
+  top_layer7
   top_layer_error
   place_pin1
   place_pin2
