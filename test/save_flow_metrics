@@ -37,8 +37,6 @@ exec tclsh $0 ${1+"$@"}
 ##
 ############################################################################
 
-package require json
-
 # Usage: save_flow_metrics | test1 [test2...] | failures
 
 # Directory containing tests.
