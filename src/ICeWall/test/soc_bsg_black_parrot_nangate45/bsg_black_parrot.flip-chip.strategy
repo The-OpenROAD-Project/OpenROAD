@@ -19,7 +19,7 @@ Footprint definition {
   rdl_cover_file_name results/cover.def
 
   place {
-    marker0 {type marker name u_marker_0 cell {centre {x 1200.000 y 1200.000} orient R0}}
+    marker0 {type marker inst_name u_marker_0 cell {centre {x 1200.000 y 1200.000} orient R0}}
   }
 
   padcell {                     
