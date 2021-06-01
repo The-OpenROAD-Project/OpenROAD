@@ -117,7 +117,7 @@ void FlexGridGraph::initEdges(
   // initialize grid graph
   frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
   frBox dieBox;
-  design_->getTopBlock()->getBoundaryBBox(dieBox);
+  design_->getTopBlock()->getDieBox(dieBox);
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
     const auto layer = getTech()->getLayer(layerNum);

@@ -8,6 +8,12 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 
 report_design_area
+report_worst_slack -min
+report_worst_slack -max
+
 catch {repair_timing -hold -slack_margin .4 -max_utilization 13} error
 puts $error
+
 report_design_area
+report_worst_slack -min
+report_worst_slack -max

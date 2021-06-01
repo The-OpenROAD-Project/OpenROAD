@@ -923,7 +923,7 @@ void io::Parser::buildGCellPatterns()
 {
   // horizontal = false is gcell lines along y direction (x-grid)
   frBox dieBox;
-  design->getTopBlock()->getBoundaryBBox(dieBox);
+  design->getTopBlock()->getDieBox(dieBox);
 
   frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
   buildGCellPatterns_helper(GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);

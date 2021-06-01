@@ -180,6 +180,7 @@ class Ext
     int tiling = 0;
     bool skip_m1_caps = false;
     bool power_grid = false;
+    bool write_total_caps = false;
     const char* exclude_cells = nullptr;
     bool skip_power_stubs = false;
     const char* power_source_coords = nullptr;

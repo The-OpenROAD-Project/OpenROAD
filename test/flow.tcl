@@ -4,9 +4,8 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-utl::open_metrics [make_result_file "${design}_${platform}.metrics"]
-
-utl::metric IFP "instance_count" [sta::network_instance_count]
+# Note that sta::network_instance_count is not valid after tapcells are added.
+utl::metric "instance_count" [sta::network_instance_count]
 
 initialize_floorplan -site $site \
   -die_area $die_area \
@@ -108,11 +107,11 @@ report_tns -digits 3
 
 detailed_placement
 # Capture utilization before fillers make it 100%
-utl::metric ORD "utilization" [format %.0f [expr [rsz::utilization] * 100]]
-utl::metric ORD "design_area" [sta::format_area [rsz::design_area] 0]
+utl::metric "utilization" [format %.1f [expr [rsz::utilization] * 100]]
+utl::metric "design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
-set dp_errors [check_placement -verbose]
-utl::metric DPL "errors" $dp_errors
+set dpl_errors [check_placement -verbose]
+utl::metric "DPL::errors" $dpl_errors
 
 ################################################################
 # Global routing
@@ -129,7 +128,7 @@ global_route -guide_file $route_guide \
 set antenna_report [make_result_file ${design}_${platform}_ant.log]
 set antenna_errors [check_antennas -simple_report -report_file $antenna_report]
 
-utl::metric ANT "errors" $antenna_errors
+utl::metric "ANT::errors" $antenna_errors
 
 if { $antenna_errors > 0 } {
   fail "found $antenna_errors antenna violations"
@@ -141,6 +140,8 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Detailed routing
 
+set detailed_routing 0
+if { $detailed_routing } {
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -guide $route_guide \
                -output_guide [make_result_file "${design}_${platform}_output_guide.mod"] \
@@ -149,7 +150,7 @@ detailed_route -guide $route_guide \
                -verbose 0
 
 set drv_count [detailed_route_num_drvs]
-utl::metric DRT "drv" $drv_count
+utl::metric "DRT::drv" $drv_count
 
 set routed_def [make_result_file ${design}_${platform}_route.def]
 write_def $routed_def
@@ -158,6 +159,10 @@ if { ![info exists drv_count] } {
   fail "drv count not found."
 } elseif { $drv_count > $max_drv_count } {
   fail "max drv count exceeded $drv_count > $max_drv_count."
+}
+} else {
+set rcx_rules_file ""
+utl::metric "DRT::drv" 0
 }
 
 ################################################################
@@ -169,8 +174,6 @@ if { $rcx_rules_file != "" } {
 
   set spef_file [make_result_file ${design}_${platform}.spef]
   write_spef $spef_file
-  # write_spef dribbles this turd
-  file delete $design.totCap
 
   read_spef $spef_file
 } else {
@@ -193,20 +196,14 @@ report_power -corner $power_corner
 report_floating_nets -verbose
 report_design_area
 
-utl::metric STA "worst_slack_min" [sta::worst_slack -min]
-utl::metric STA "worst_slack_max" [sta::worst_slack -max]
-utl::metric STA "tns_max" [sta::total_negative_slack -max]
-
-if { [sta::worst_slack -max] < $setup_slack_limit } {
-  fail "setup slack limit exceeded [format %.3f [sta::worst_slack -max]] < $setup_slack_limit"
-}
-
-if { [sta::worst_slack -min] < $hold_slack_limit } {
-  fail "hold slack limit exceeded [format %.3f [sta::worst_slack -min]] < $hold_slack_limit"
-}
+utl::metric "worst_slack_min" [sta::worst_slack -min]
+utl::metric "worst_slack_max" [sta::worst_slack -max]
+utl::metric "tns_max" [sta::total_negative_slack -max]
+utl::metric "max_slew_violations" [sta::max_slew_violation_count]
+utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
+utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
 # not really useful without pad locations
 #set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
 #analyze_power_grid -net $vdd_net_name
-
-puts "pass"

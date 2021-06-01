@@ -20,9 +20,9 @@ repair_tie_fanout LOGIC1_X1/Z
 repair_timing -setup
 repair_timing -hold -slack_margin .2
 
-report_checks -path_delay min_max
+report_worst_slack -min
+report_worst_slack -max
 report_check_types -max_slew -max_fanout -max_capacitance
-report_worst_slack
 report_long_wires 10
 
 report_floating_nets -verbose

@@ -2003,7 +2003,7 @@ Resizer::repairSetup(float slack_margin)
   Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(max_, worst_slack, worst_vertex);
-  debugPrint(logger_, RSZ, "retime", 1, "worst_slack = {}",
+  debugPrint(logger_, RSZ, "repair_setup", 1, "worst_slack = {}",
              delayAsString(worst_slack, sta_, 3));
   Slack prev_worst_slack = -INF;
   int pass = 1;
@@ -2014,7 +2014,7 @@ Resizer::repairSetup(float slack_margin)
     ensureWireParasitics();
     sta_->findRequireds();
     sta_->worstSlack(max_, worst_slack, worst_vertex);
-    debugPrint(logger_, RSZ, "retime", 1, "pass {} worst_slack = {}",
+    debugPrint(logger_, RSZ, "repair_setup", 1, "pass {} worst_slack = {}",
                pass,
                delayAsString(worst_slack, sta_, 3));
     if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
@@ -2025,7 +2025,7 @@ Resizer::repairSetup(float slack_margin)
         // Undo changes that reduced slack.
         journalRestore();
         sta_->worstSlack(max_, worst_slack, worst_vertex);
-        debugPrint(logger_, RSZ, "retime", 1,
+        debugPrint(logger_, RSZ, "repair_setup", 1,
                    "decreasing slack for {} passes restoring worst_slack {}",
                    repair_setup_decreasing_slack_passes_allowed_,
                    delayAsString(worst_slack, sta_, 3));
@@ -2100,7 +2100,7 @@ Resizer::repairSetup(PathRef &path,
           // Remove intrinsic delay to find load dependent delay.
           - corner_arc->intrinsicDelay();
         load_delays.push_back(pair(i, load_delay));
-        debugPrint(logger_, RSZ, "retime", 3, "{} load_delay = {}",
+        debugPrint(logger_, RSZ, "repair_setup", 3, "{} load_delay = {}",
                    path_vertex->name(network_),
                    delayAsString(load_delay, sta_, 3));
       }
@@ -2122,7 +2122,7 @@ Resizer::repairSetup(PathRef &path,
       Vertex *load_vertex = load_path->vertex(sta_);
       Pin *load_pin = load_vertex->pin();
       int fanout = this->fanout(drvr_vertex);
-      debugPrint(logger_, RSZ, "retime", 2, "{} fanout = {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "{} fanout = {}",
                  network_->pathName(drvr_pin),
                  fanout);
       if (fanout > 1
@@ -2131,7 +2131,7 @@ Resizer::repairSetup(PathRef &path,
         int count_before = inserted_buffer_count_;
         rebuffer(drvr_pin);
         int insert_count = inserted_buffer_count_ - count_before;
-        debugPrint(logger_, RSZ, "retime", 2, "rebuffer {} inserted {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
                    network_->pathName(drvr_pin),
                    insert_count);
         if (insert_count > 0)
@@ -2140,7 +2140,7 @@ Resizer::repairSetup(PathRef &path,
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_) {
         // Divide and conquer.
-        debugPrint(logger_, RSZ, "retime", 2, "split loads {} -> {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
                    network_->pathName(drvr_pin),
                    network_->pathName(load_pin));
         splitLoads(drvr_path, path_slack);
@@ -2167,13 +2167,13 @@ Resizer::repairSetup(PathRef &path,
       }
       else
         prev_drive = 0.0;
-      debugPrint(logger_, RSZ, "retime", 2, "resize {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "resize {}",
                  network_->pathName(drvr_pin));
       LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
                                        prev_drive, dcalc_ap);
       if (upsize) {
         Instance *drvr = network_->instance(drvr_pin);
-        debugPrint(logger_, RSZ, "retime", 2, "resize {} -> {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} -> {}",
                    network_->pathName(drvr_pin),
                    upsize->name());
         if (replaceCell(drvr, upsize, true))
@@ -2199,7 +2199,7 @@ Resizer::splitLoads(PathRef *drvr_path,
     Vertex *fanout_vertex = edge->to(graph_);
     Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
     Slack slack_margin = fanout_slack - drvr_slack;
-    debugPrint(logger_, RSZ, "retime", 3, " fanin {} slack_margin = {}",
+    debugPrint(logger_, RSZ, "repair_setup", 3, " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
                delayAsString(slack_margin, sta_, 3));
     fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
@@ -2432,6 +2432,11 @@ Resizer::repairHold(VertexSet *ends,
       findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
       pass++;
     }
+    if (slack_margin == 0.0 && fuzzyLess(worst_slack, 0.0))
+      logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
+    else if (fuzzyLess(worst_slack, slack_margin))
+      logger_->warn(RSZ, 64, "Unable to repair all hold checks within margin.");
+
     if (inserted_buffer_count_ > 0) {
       logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       level_drvr_vertices_valid_ = false;
@@ -2488,55 +2493,88 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
     ensureWireParasitics();
-    Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
-    if (hold_slack < slack_margin
+    Slack drvr_slacks[RiseFall::index_count][MinMax::index_count];
+    sta_->vertexSlacks(vertex, drvr_slacks);
+    int min_index = MinMax::minIndex();
+    int max_index = MinMax::maxIndex();
+    const RiseFall *drvr_rf = (drvr_slacks[RiseFall::riseIndex()][min_index] <
+                               drvr_slacks[RiseFall::fallIndex()][min_index])
+      ? RiseFall::rise()
+      : RiseFall::fall();
+    Slack drvr_hold_slack = drvr_slacks[drvr_rf->index()][min_index] - slack_margin;
+    Slack drvr_setup_slack = drvr_slacks[drvr_rf->index()][max_index];
+    if (fuzzyLess(drvr_hold_slack, 0.0)
+        // Have to have enough setup slack to add delay to repair the hold violation.
+        && (allow_setup_violations
+            || fuzzyLess(drvr_hold_slack, drvr_setup_slack))
         // Hands off special nets.
         && !db_network_->isSpecial(net)) {
       debugPrint(logger_, RSZ, "repair_hold", 2, "driver {}",
                  vertex->name(sdc_network_));
       // Only add delay to loads with hold violations.
       PinSeq load_pins;
-      Delay insert_delay = INF;
+      float load_cap = 0.0;
       bool loads_have_out_port = false;
       VertexOutEdgeIterator edge_iter(vertex, graph_);
       while (edge_iter.hasNext()) {
         Edge *edge = edge_iter.next();
         Vertex *fanout = edge->to(graph_);
-        PathRef hold_path = sta_->vertexWorstSlackPath(vertex, MinMax::min());
-        Slack hold_slack = hold_path.slack(sta_) - slack_margin;
-        if (hold_slack < 0.0) {
-          const RiseFall *rf = hold_path.transition(sta_);
-          Slack setup_slack = sta_->vertexSlack(vertex, rf, max_);
-          Delay delay = allow_setup_violations
-            ? -hold_slack
-            // Don't add delay that leads to a setup violation.
-            : min(-hold_slack, setup_slack);
-          if (delay > 0.0) {
-            insert_delay = min(insert_delay, delay);
-            Pin *fanout_pin = fanout->pin();
-            load_pins.push_back(fanout_pin);
-            if (network_->direction(fanout_pin)->isAnyOutput()
-                && network_->isTopLevelPort(fanout_pin))
-              loads_have_out_port = true;
+        Slack fanout_slack = sta_->vertexSlack(fanout, MinMax::min());
+        if (fanout_slack < slack_margin) {
+          Pin *fanout_pin = fanout->pin();
+          load_pins.push_back(fanout_pin);
+          if (network_->direction(fanout_pin)->isAnyOutput()
+              && network_->isTopLevelPort(fanout_pin))
+            loads_have_out_port = true;
+          else {
+            LibertyPort *fanout_port = network_->libertyPort(fanout_pin);
+            if (fanout_port)
+              load_cap += fanout_port->capacitance();
           }
         }
       }
       if (!load_pins.empty()) {
-        Delay buffer_delay = bufferHoldDelay(buffer_cell);
-        int buffer_count = std::ceil(insert_delay / buffer_delay);
-        debugPrint(logger_, RSZ, "repair_hold", 2,
-                   " {} hold={} inserted {} for {}/{} loads",
-                   vertex->name(sdc_network_),
-                   delayAsString(hold_slack, this, 3),
-                   buffer_count,
-                   load_pins.size(),
-                   fanout(vertex));
-        makeHoldDelay(vertex, buffer_count, load_pins,
-                      loads_have_out_port, buffer_cell);
-        repair_count += buffer_count;
-        if (inserted_buffer_count_ > max_buffer_count
-            || overMaxArea())
-          return repair_count;
+        // multi-corner support MIA
+        const DcalcAnalysisPt *dcalc_ap = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
+        Delay buffer_delay1 = bufferDelay(buffer_cell, drvr_rf, load_cap, dcalc_ap);
+        // Need enough slack to at least insert the last buffer with loads.
+        if (allow_setup_violations
+            || (buffer_delay1 < drvr_slacks[RiseFall::riseIndex()][max_index]
+                && buffer_delay1 < drvr_slacks[RiseFall::fallIndex()][max_index])) {
+          Delay buffer_delay = bufferHoldDelay(buffer_cell);
+          Delay max_insert = min(drvr_slacks[RiseFall::riseIndex()][max_index],
+                                 drvr_slacks[RiseFall::fallIndex()][max_index]);
+          int max_insert_count = (max_insert - buffer_delay1) / buffer_delay + 1;
+          int hold_buffer_count = (-drvr_hold_slack > buffer_delay1)
+            ? std::ceil((-drvr_hold_slack-buffer_delay1)/buffer_delay)+1
+            : 1;
+          int buffer_count = allow_setup_violations
+            ? hold_buffer_count
+            : min(max_insert_count, hold_buffer_count);
+          debugPrint(logger_, RSZ, "repair_hold", 2,
+                     " {} hold={} inserted {} for {}/{} loads",
+                     vertex->name(sdc_network_),
+                     delayAsString(drvr_hold_slack, this, 3),
+                     buffer_count,
+                     load_pins.size(),
+                     fanout(vertex));
+          makeHoldDelay(vertex, buffer_count, load_pins,
+                        loads_have_out_port, buffer_cell);
+          repair_count += buffer_count;
+#if 0
+          // Check that no setup violations are introduced.
+          ensureWireParasitics();
+          Slack drvr_setup_slack1 = sta_->vertexSlack(vertex, max_);
+          if (drvr_setup_slack1 < 0
+              && drvr_setup_slack1 < drvr_setup_slack)
+            printf("%s %s -> %s\n", vertex->name(network_),
+                   delayAsString(drvr_setup_slack, sta_, 3),
+                   delayAsString(drvr_setup_slack1, sta_, 3));
+#endif
+          if (inserted_buffer_count_ > max_buffer_count
+              || overMaxArea())
+            return repair_count;
+        }
       }
     }
   }
