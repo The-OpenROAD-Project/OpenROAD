@@ -275,7 +275,7 @@ proc report_test_metrics { test } {
             set value [dict get $metrics_dict $key]
             set field [format [metric_format $name] $value]
           } else {
-            set field "N/A"
+            set field [format "%[string length $short_name]s" "N/A"]
           }
           puts -nonewline " $field"
         }
