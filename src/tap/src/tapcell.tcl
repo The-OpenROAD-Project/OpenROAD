@@ -305,7 +305,6 @@ proc cut_rows {db endcap_master blockages halo_x halo_y} {
 
   set cut_rows_count [expr [llength [$block getRows]]-$rows_count]
   utl::info TAP 1 "Macro blocks found: $block_count"
-  utl::info TAP 8 "Placement blockages found: $placement_blockages_count"
   utl::info TAP 2 "Original rows: $rows_count"
   utl::info TAP 3 "Created rows: $cut_rows_count"
 }
