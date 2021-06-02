@@ -384,6 +384,9 @@ proc insert_endcaps {db rows endcap_master cnrcap_masters prefix} {
 
   for {set cur_row $bottom_row} {$cur_row <= $top_row} {incr cur_row} {
     foreach subrow [lindex $rows $cur_row] {
+      if {![check_symmetry $endcap_master [$subrow getOrient]]} {
+        continue
+      }
       set row_bb [$subrow getBBox]
       set row_ori [$subrow getOrient]
 
@@ -558,6 +561,9 @@ proc insert_tapcells {db rows tapcell_master dist prefix} {
     }
 
     foreach row $subrows {
+      if {![check_symmetry $master [$row getOrient]]} {
+        continue
+      }
       set site_x [[$row getSite] getWidth]
       set row_bb [$row getBBox]
       set llx [$row_bb xMin]
@@ -725,7 +731,9 @@ proc insert_at_top_bottom_helper {block top_bottom is_macro ori x_start x_end ll
   #insert tb tie
   set x $x_start
   for {set n 0} {$n < $tbtiecount} {incr n} {
-    build_cell $block $master $ori $x $lly $prefix
+    if {[check_symmetry $master $ori]} {
+      build_cell $block $master $ori $x $lly $prefix
+    }
     set x [expr $x+$tbtiewidth]
   }
 
@@ -739,13 +747,17 @@ proc insert_at_top_bottom_helper {block top_bottom is_macro ori x_start x_end ll
   
   # fill with 3s
   for {set n 0} {$n < $tb3tiecount} {incr n} {
-    build_cell $block $tb3_master $ori $x $lly $prefix
+    if {[check_symmetry $tb3_master $ori]} {
+      build_cell $block $tb3_master $ori $x $lly $prefix
+    }
     set x [expr $x+$tap3_master_width]
   }
   
   # fill with 2s
   for {} {$x < $x_end} {set x [expr $x+$tap2_master_width]} {
-    build_cell $block $tb2_master $ori $x $lly $prefix
+    if {[check_symmetry $tb2_master $ori]} {
+      build_cell $block $tb2_master $ori $x $lly $prefix
+    }
   }
 }
 
@@ -835,9 +847,13 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # NE corner
-        build_cell $block $incnr_master $top_row_ori $x_end $top_row_y $prefix
+        if {[check_symmetry $incnr_master $top_row_ori]} {
+          build_cell $block $incnr_master $top_row_ori $x_end $top_row_y $prefix
+        }
         # NW corner
-        build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $top_row_y $prefix
+        if {[check_symmetry $incnr_master $west_ori]} {
+          build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $top_row_y $prefix
+        }
       }
       if {$bot_row >= 1} {
         set bot_row_inst [lindex $rows $bot_row 0]
@@ -868,9 +884,13 @@ proc insert_around_macros {db rows masters corner_master prefix} {
         }
         
         # SE corner
-        build_cell $block $incnr_master $bot_row_ori $x_end $bot_row_y $prefix
+        if {[check_symmetry $incnr_master $bot_row_ori]} {
+          build_cell $block $incnr_master $bot_row_ori $x_end $bot_row_y $prefix
+        }
         # SW corner
-        build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y $prefix
+        if {[check_symmetry $incnr_master $west_ori]} {
+          build_cell $block $incnr_master $west_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y $prefix
+        }
       }
     }
   }
@@ -1090,6 +1110,29 @@ proc remove_cells {prefix} {
   }
 
   return $removed
+}
+
+proc check_symmetry {master ori} {
+  set symmetry_x [$master getSymmetryX]
+  set symmetry_y [$master getSymmetryY]
+
+  switch $ori {
+    R0 {
+      return 1
+    }
+    MX {
+      return $symmetry_x
+    }
+    MY {
+      return $symmetry_y
+    }
+    R180 {
+      return [expr $symmetry_x && $symmetry_y]
+    }
+    default {
+      return 0
+    }
+  }
 }
 
 # namespace end
