@@ -295,7 +295,6 @@ proc cut_rows {block placement_blockages} {
   }
 
   utl::info "IFP" 21 "Cut rows: [llength $rows_to_cut]"
-  utl::info "IFP" 22 "Rows after cut: [llength [$block getRows]]"
 }
 
 }
