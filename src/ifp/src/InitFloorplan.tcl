@@ -278,9 +278,9 @@ proc cut_rows {block placement_blockages} {
   foreach blockage $placement_blockages {
     if {![$blockage isSoft]} {
       foreach row [$block getRows] {
-        if {[tap::overlaps $blockage $row 0 0]} {
-          set row_name [$row getName]
-          if {![dict exists $row_placement_blockages $row_name]} {
+        set row_name [$row getName]
+        if {![dict exists $row_placement_blockages $row_name]} {
+          if {[tap::overlaps $blockage $row 0 0]} {
             lappend rows_to_cut $row
           }
           dict lappend row_placement_blockages $row_name [$blockage getBBox]
