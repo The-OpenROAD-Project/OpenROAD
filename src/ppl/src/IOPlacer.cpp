@@ -125,10 +125,10 @@ std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer) {
 
 void IOPlacer::randomPlacement()
 {
-  for (const Constraint &constraint : constraints_) {
-    std::vector<Section> sections = createSectionsPerConstraint(constraint);
-    int first_slot = sections.front().begin_slot;
-    int last_slot = sections.back().end_slot;
+  for (Constraint &constraint : constraints_) {
+    createSectionsPerConstraint(constraint);
+    int first_slot = constraint.sections.front().begin_slot;
+    int last_slot = constraint.sections.back().end_slot;
 
     bool top_layer = constraint.interval.edge == Edge::invalid;
     for (std::vector<int>& io_group : netlist_.getIOGroups()) {
@@ -485,10 +485,10 @@ void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>&
   }
 }
 
-std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &constraint)
+void IOPlacer::createSectionsPerConstraint(Constraint &constraint)
 {
-  const Interval &interv = constraint.interval;
-  const Edge &edge = interv.edge;
+  Interval &interv = constraint.interval;
+  Edge &edge = interv.edge;
 
   std::vector<Section> sections;
   if (edge != Edge::invalid) {
@@ -529,7 +529,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &con
     sections = findSectionsForTopLayer(constraint.box);
   }
 
-  return sections;
+  constraint.sections = sections;
 }
 
 void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
@@ -567,11 +567,11 @@ void IOPlacer::createSections()
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &constraint)
 {
   Netlist& netlist = netlist_io_pins_;
-  std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
-  assignConstrainedGroupsToSections(constraint, sections_for_constraint);
+  createSectionsPerConstraint(constraint);
+  assignConstrainedGroupsToSections(constraint, constraint.sections);
 
   int slots_count = 0;
-  for (Section sec : sections_for_constraint) {
+  for (Section sec : constraint.sections) {
     slots_count += sec.num_slots;
   }
 
@@ -583,10 +583,10 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &const
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist.getIoPin(idx);
-    assignPinToSection(io_pin, idx, sections_for_constraint);
+    assignPinToSection(io_pin, idx, constraint.sections);
   }
 
-  return sections_for_constraint;
+  return constraint.sections;
 }
 
 void IOPlacer::assignConstrainedGroupsToSections(Constraint &constraint,
