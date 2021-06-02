@@ -16,3 +16,4 @@ IFP 0016 InitFloorplan.tcl:125     -core_area is a list of 4 coordinates.
 IFP 0017 InitFloorplan.tcl:141     no -core_area specified.
 IFP 0019 InitFloorplan.tcl:144     no -utilization or -die_area specified.
 IFP 0020 InitFloorplan.tcl:154     layer $pin_layer not found.
+IFP 0023 InitFloorplan.tcl:297     Cut rows: [llength $rows_to_cut]

@@ -294,7 +294,7 @@ proc cut_rows {block placement_blockages} {
     tap::cut_row $block $row $row_placement_blockages 0 0 0
   }
 
-  utl::info "IFP" 21 "Cut rows: [llength $rows_to_cut]"
+  utl::info "IFP" 23 "Cut rows: [llength $rows_to_cut]"
 }
 
 }
