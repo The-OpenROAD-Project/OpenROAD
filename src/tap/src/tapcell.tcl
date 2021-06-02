@@ -1108,13 +1108,14 @@ proc remove_cells {prefix} {
 }
 
 proc check_symmetry {master ori} {
-  set symmetry_x [$master getSymmetryX]
-  set symmetry_y [$master getSymmetryY]
+  set symmetry_x_only [expr [$master getSymmetryX] && ![$master getSymmetryY]]
+  set symmetry_y_only [expr [$master getSymmetryY] && ![$master getSymmetryX]]
 
-  set symmetry_ok 1
-  if {(!$symmetry_x && $ori == "MX") || \
-      (!$symmetry_y && $ori == "R0")} {
-    set symmetry_ok 0
+  set symmetry_ok 0
+  if {($symmetry_x_only && $ori == "MX") || \
+      ($symmetry_y_only && $ori == "R0") || \
+      (!$symmetry_x_only && !$symmetry_y_only)} {
+    set symmetry_ok 1
   }
 
   return $symmetry_ok
