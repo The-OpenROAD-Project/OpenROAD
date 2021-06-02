@@ -135,6 +135,12 @@ proc initialize_floorplan { args } {
   } else {
     utl::error IFP 19 "no -utilization or -die_area specified."
   }
+
+  set block [ord::get_db_block]
+  set placement_blockages [$block getBlockages]
+  if {[llength $placement_blockages] > 0} {
+    ifp::cut_rows $block $placement_blockages
+  }
 }
 
 sta::define_cmd_args "make_tracks" {[layer]\
@@ -261,6 +267,34 @@ proc microns_to_mfg_grid { microns } {
   } else {
     return [ord::microns_to_dbu $microns]
   }  
+}
+
+proc cut_rows {block placement_blockages} {
+  utl::info "IFP" 6 "Placement blockages found: [llength $placement_blockages]"
+
+  # Gather rows needing to be cut because of placement blockages
+  set rows_to_cut []
+  set row_placement_blockages [dict create]
+  foreach blockage $placement_blockages {
+    if {![$blockage isSoft]} {
+      foreach row [$block getRows] {
+        set row_name [$row getName]
+        if {![dict exists $row_placement_blockages $row_name]} {
+          if {[tap::overlaps $blockage $row 0 0]} {
+            lappend rows_to_cut $row
+          }
+          dict lappend row_placement_blockages $row_name [$blockage getBBox]
+        }
+      }
+    }
+  }
+
+  # cut rows around placement blockages
+  foreach row $rows_to_cut {
+    tap::cut_row $block $row $row_placement_blockages 0 0 0
+  }
+
+  utl::info "IFP" 23 "Cut rows: [llength $rows_to_cut]"
 }
 
 }
