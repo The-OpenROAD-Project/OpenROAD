@@ -126,7 +126,6 @@ std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer) {
 void IOPlacer::randomPlacement()
 {
   for (Constraint &constraint : constraints_) {
-    createSectionsPerConstraint(constraint);
     int first_slot = constraint.sections.front().begin_slot;
     int last_slot = constraint.sections.back().end_slot;
 
@@ -567,7 +566,6 @@ void IOPlacer::createSections()
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &constraint)
 {
   Netlist& netlist = netlist_io_pins_;
-  createSectionsPerConstraint(constraint);
   assignConstrainedGroupsToSections(constraint, constraint.sections);
 
   int slots_count = 0;
@@ -1008,6 +1006,7 @@ void IOPlacer::initConstraints()
   std::reverse(constraints_.begin(), constraints_.end());
   for (Constraint &constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
+    createSectionsPerConstraint(constraint);
   }
 }
 
