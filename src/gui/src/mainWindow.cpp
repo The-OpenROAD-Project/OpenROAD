@@ -301,9 +301,6 @@ void MainWindow::addSelected(const Selected& selection)
   }
   status(selection ? selection.getName() : "");
   emit selectionChanged();
-  if (selection) {
-    selection_browser_->show();
-  }
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)
@@ -311,7 +308,6 @@ void MainWindow::addSelected(const SelectionSet& selections)
   selected_.insert(selections.begin(), selections.end());
   status(std::string("Added ") + std::to_string(selections.size()));
   emit selectionChanged();
-  selection_browser_->show();
 }
 
 void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
