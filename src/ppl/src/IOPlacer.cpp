@@ -565,18 +565,25 @@ void IOPlacer::createSections()
 
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &constraint)
 {
+  bool top_layer = constraint.interval.edge == Edge::invalid;
+  std::vector<Slot> &slots = top_layer ? top_layer_slots_ : slots_;
   Netlist& netlist = netlist_io_pins_;
   assignConstrainedGroupsToSections(constraint, constraint.sections);
 
-  int slots_count = 0;
-  for (Section sec : constraint.sections) {
-    slots_count += sec.num_slots;
+  int total_slots_count = 0;
+  for (Section& sec : constraint.sections) {
+    int new_slots_count = 0;
+    for (int slot_idx = sec.begin_slot; slot_idx <= sec.end_slot; slot_idx++) {
+      new_slots_count += (slots[slot_idx].blocked || slots[slot_idx].used) ? 0 : 1;
+    }
+    sec.num_slots = new_slots_count;
+    total_slots_count += new_slots_count;
   }
 
   std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
   
-  if (pin_indices.size() > slots_count) {
-    logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), slots_count);
+  if (pin_indices.size() > total_slots_count) {
+    logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), total_slots_count);
   }
 
   for (int idx : pin_indices) {
