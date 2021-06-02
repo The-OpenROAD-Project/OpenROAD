@@ -76,6 +76,10 @@ MainWindow::MainWindow(QWidget* parent)
   find_dialog_ = new FindObjectDialog(this);
   timing_dialog_ = new TimingDebugDialog(this);
 
+  QFont font;
+  font.setStyleHint(QFont::Monospace);
+  script_->setFont(font);
+
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
