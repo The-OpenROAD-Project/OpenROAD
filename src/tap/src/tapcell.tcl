@@ -1125,7 +1125,7 @@ proc check_symmetry {master ori} {
       return [expr $symmetry_x && $symmetry_y]
     }
     default {
-      return false
+      return 0
     }
   }
 }
