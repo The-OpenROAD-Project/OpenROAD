@@ -120,13 +120,30 @@ _push() {
         "dev" )
             read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
             echo
-            if [[ $REPLY =~ ^[Yy]$  ]]
-            then
+            if [[ $REPLY =~ ^[Yy]$  ]]; then
                 echo "would have pushed [NOT IMPLEMENTED YET]"
+
+                # create and push image with sha tag
+                ./etc/DockerHelper.sh create -target=dev -sha
+                docker push openroad/centos7-dev:${commitSha}
+
+                # create and push image with sha tag
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 -sha
+                docker push openroad/ubuntu20-dev:${commitSha}
+
+                # create and push image with latest tag
+                ./etc/DockerHelper.sh create -target=dev
+                docker push openroad/centos7-dev:latest
+
+                # create and push image with latest tag
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20
+                docker push openroad/ubuntu20-dev:latest
+
             fi
+            echo "Will not push."
             ;;
         *)
-            echo "Target ${target} is not valid candidate for push to DockerHub" >&2
+            echo "Target ${target} is not valid candidate for push to DockerHub." >&2
             _help
             ;;
     esac
