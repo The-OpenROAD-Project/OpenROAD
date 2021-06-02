@@ -86,6 +86,7 @@ _setup() {
         *)
             echo "Target ${target} not found" >&2
             _help
+            ;;
     esac
     imagePath="${imageName}:${imageTag}"
     buildArgs="--build-arg fromImage=${fromImage} ${buildArgs}"
@@ -100,6 +101,7 @@ _test() {
         *)
             echo "Target ${target} is not valid candidate to run regression" >&2
             _help
+            ;;
     esac
     if [[ "$(docker images -q ${imagePath} 2> /dev/null)" == "" ]]; then
         echo "Could not find ${imagePath}, will attempt to create it" >&2
@@ -126,6 +128,7 @@ _push() {
         *)
             echo "Target ${target} is not valid candidate for push to DockerHub" >&2
             _help
+            ;;
     esac
 }
 
