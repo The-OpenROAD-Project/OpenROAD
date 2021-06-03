@@ -209,6 +209,7 @@ class IOPlacer
   void getPinsFromDirectionConstraint(Constraint &constraint);
   void initConstraints();
   void sortConstraints();
+  bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections(int assigned_pins_count);

@@ -1026,9 +1026,20 @@ void IOPlacer::initConstraints()
 void IOPlacer::sortConstraints() {
   std::stable_sort(constraints_.begin(),
                    constraints_.end(),
-                   [](Constraint c1, Constraint c2) {
-                     return c1.pins_per_slots < c2.pins_per_slots;
+                   [&](const Constraint& c1, const Constraint& c2) {
+                     return (c1.pins_per_slots < c2.pins_per_slots) && overlappingConstraints(c1, c2);
                    });
+}
+
+bool IOPlacer::overlappingConstraints(const Constraint& c1, const Constraint& c2) {
+  const Interval& interv1 = c1.interval;
+  const Interval& interv2 = c2.interval;
+
+  if (interv1.edge == interv2.edge) {
+    return std::max(interv1.begin, interv2.begin) <= std::min(interv1.end, interv2.end);
+  }
+
+  return false;
 }
 
 Edge IOPlacer::getEdge(std::string edge)
