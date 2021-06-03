@@ -174,10 +174,10 @@ proc make_tracks { args } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "IFP" 21 "layer $layer_name not found."
+      utl::error "IFP" 23 "layer $layer_name not found."
     }
     if { [$layer getType] != "ROUTING" } {
-      utl::error "IFP" 22 "layer $layer_name is not a routing layer."
+      utl::error "IFP" 25 "layer $layer_name is not a routing layer."
     }
 
     if { [info exists keys(-x_pitch)] } {
@@ -230,7 +230,7 @@ namespace eval ifp {
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   set block [ord::get_db_block]
   if { $block == "NULL"} {
-    utl::error IFP 21 "No block defined."
+    utl::error IFP 24 "No block defined."
   } else {
     set die_area [$block getDieArea]
     set grid [$block findTrackGrid $layer]
