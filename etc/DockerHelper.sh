@@ -58,7 +58,7 @@ _setup() {
             _help
             ;;
     esac
-    imageName="${org}/${os}-${target}"
+    imageName="${IMAGE_NAME_OVERRIDE:-"${org}/${os}-${target}"}"
     if [[ "${useCommitSha}" == "yes" ]]; then
         imageTag="${commitSha}"
     else
@@ -66,21 +66,21 @@ _setup() {
     fi
     case "${target}" in
         "builder" )
-            fromImage="${org}/${os}-dev:${imageTag}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-"${org}/${os}-dev"}:${imageTag}"
             context="."
             buildArgs="--build-arg compiler=${compiler}"
             buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
-            imageName="${imageName}-${compiler}"
+            imageName="${IMAGE_NAME_OVERRIDE:-"${imageName}-${compiler}"}"
             ;;
         "dev" )
-            fromImage="${osBaseImage}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
             buildArgs=""
             ;;
         "runtime" )
-            fromImage="${osBaseImage}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
-            copyImage="${org}/${os}-builder-${compiler}:${imageTag}"
+            copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
             buildArgs="--build-arg copyImage=${copyImage}"
             ;;
         *)
