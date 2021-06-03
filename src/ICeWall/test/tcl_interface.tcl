@@ -1,5 +1,3 @@
-source ../src/ICeWall.tcl
-source ../src/place_cell.tcl
 source "helpers.tcl"
 
 read_lef NangateOpenCellLibrary.mod.lef

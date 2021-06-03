@@ -13,7 +13,7 @@ proc place_cell {args} {
   if {[info exists keys(-status)]} {
     set placement_status $keys(-status)
     if {[lsearch {PLACED FIRM} $placement_status] == -1} {
-      utl::error PAD 999 "Invalid placement status $placement_status, must be one of either PLACED or FIRM"
+      utl::error PAD 188 "Invalid placement status $placement_status, must be one of either PLACED or FIRM"
     }
   } else {
     set placement_status "PLACED"
@@ -22,14 +22,14 @@ proc place_cell {args} {
   if {[info exists keys(-cell)]} {
     set cell_name $keys(-cell)
     if {[set cell_master [$db findMaster $cell_name]] == "NULL"} {
-      utl::error PAD 999 "Cell $cell_name not loaded into design"
+      utl::error PAD 189 "Cell $cell_name not loaded into design"
     }
   }
 
   if {[info exists keys(-inst_name)]} {
     set inst_name [lindex $keys(-inst_name) 0]
   } else {
-    utl::err PAD 999 "-inst_name is a required argument to the place_cell command"
+    utl::err PAD 190 "-inst_name is a required argument to the place_cell command"
   }
 
   # Verify cell orientation
@@ -37,44 +37,44 @@ proc place_cell {args} {
   if {[info exists keys(-orient)]} {
     set orient $keys(-orient)
     if {[lsearch $valid_orientation $orient] == -1} {
-      utl::error PAD 999 "Invalid orientation $orient specified, must be one of [join $valid_orientation {, }]"
+      utl::error PAD 191 "Invalid orientation $orient specified, must be one of [join $valid_orientation {, }]"
     }
   } else {
-    utl::error PAD 999 "No orientation specified for $inst_name"
+    utl::error PAD 192 "No orientation specified for $inst_name"
   }
 
   # Verify centre/origin
   if {[info exists keys(-origin)]} {
     set origin $keys(-origin) 
     if {[llength $origin] != 2} {
-      utl::error PAD 999 "Origin is $origin, but must be a list of 2 numbers"
+      utl::error PAD 193 "Origin is $origin, but must be a list of 2 numbers"
     }
     if {[catch {set x [ord::microns_to_dbu [lindex $origin 0]]} msg]} {
-      utl::error PAD 999 "Invalid value specified for x value, [lindex $origin 0], $msg"
+      utl::error PAD 194 "Invalid value specified for x value, [lindex $origin 0], $msg"
     }
     if {[catch {set y [ord::microns_to_dbu [lindex $origin 1]]} msg]} {
-      utl::error PAD 999 "Invalid value specified for y value, [lindex $origin 1], $msg"
+      utl::error PAD 195 "Invalid value specified for y value, [lindex $origin 1], $msg"
     }
   } else {
-    utl::error PAD 999 "No origin specified for $inst_name"
+    utl::error PAD 196 "No origin specified for $inst_name"
   }
 
   if {[set inst [$block findInst $inst_name]] == "NULL"} {
     if {[info exists keys(-cell)]} {
       set inst [odb::dbInst_create $block $cell_master $inst_name]
     } else {
-      utl::error PAD 999 "Instance $inst_name no in the design, -cell must be specified to create a new instance"
+      utl::error PAD 197 "Instance $inst_name no in the design, -cell must be specified to create a new instance"
     }
   } else {
     if {[info exists keys(-cell)]} {
       if {[[$inst getMaster] getName] != $cell_name} {
-        utl::error PAD 999 "Instance $inst_name expected to be $cell_name, but is actually [[$inst getMaster] getName]"
+        utl::error PAD 198 "Instance $inst_name expected to be $cell_name, but is actually [[$inst getMaster] getName]"
       }
     }
   }
 
   if {$inst == "NULL"} {
-    utl::error PAD 999 "Cannot create instance $inst_name of $cell_name"
+    utl::error PAD 199 "Cannot create instance $inst_name of $cell_name"
   }
 
   $inst setOrigin $x $y

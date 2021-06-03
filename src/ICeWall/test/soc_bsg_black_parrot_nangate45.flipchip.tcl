@@ -1,4 +1,3 @@
-source ../src/ICeWall.tcl
 
 source "helpers.tcl"
 

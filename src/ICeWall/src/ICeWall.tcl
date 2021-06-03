@@ -12,14 +12,14 @@ sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-bump_pin_name pin_name] \
                                            [-spacing_to_edge spacing] \
                                            [-cell_name bump_cell_table] \
-                                           [-bumps_per_tile value] \
+                                           [-num_pads_per_tile value] \
                                            [-rdl_layer name] \
                                            [-rdl_width value] \
                                            [-rdl_spacing value]}
 
 proc set_bump_options {args} {
   sta::parse_key_args "set_bump_options" args \
-    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -bumps_per_tile -rdl_layer -rdl_width -rdl_spacing}
+    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing}
 
   ICeWall::set_bump_options {*}[array get keys]
 }
@@ -866,6 +866,9 @@ namespace eval ICeWall {
     if {[dict exists $library cells $cell_ref]} {
       if {[dict exists $library cells $cell_ref cell_name]} {
         if {[llength [dict get $library cells $cell_ref cell_name]] > 1} {
+          if {![dict exists $library cells $cell_ref cell_name $position]} {
+            utl::error PAD 161 "Position $position not defined for $cell_ref, expecting one of [join [dict keys [dict get $library cells $cell_ref cell_name]] {, }]"
+          }
           set cell_name [dict get $library cells $cell_ref cell_name $position]
         } else {
           set cell_name [dict get $library cells $cell_ref cell_name]
@@ -1146,7 +1149,7 @@ namespace eval ICeWall {
     variable footprint
     
     if {![dict exists $footprint padcell $padcell rdl_trace]} {
-      dict set $footprint padcell $padcell rdl_trace ""
+      dict set footprint padcell $padcell rdl_trace ""
     }
     
     return [dict get $footprint padcell $padcell rdl_trace]
@@ -2504,14 +2507,19 @@ namespace eval ICeWall {
   proc get_library_bump_width {} {
     variable library
     variable def_units
-    
+    variable db
+ 
     if {![dict exists $library scaled bump_width]} {
       if {[dict exists $library bump width]} {
         dict set library scaled bump_width [expr round([dict get $library bump width] * $def_units)]
       } else {
         if {[dict exists $library bump cell_name]} {
           set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
-          if  {[dict exists $library cells $cell_name width]} {
+          # debug "$cell_name, [$db findMaster $cell_name]"
+          if {[set master [$db findMaster $cell_name]] != "NULL"} {
+            dict set library scaled bump_width [$master getWidth]
+            dict set library scaled bump_height [$master getHeight]
+          } elseif  {[dict exists $library cells $cell_name width]} {
             dict set library scaled bump_width [expr round([dict get $library cells $cell_name width] * $def_units)]
           } else {
             utl::error "PAD" 36 "No width defined for selected bump cell $cell_name"
@@ -2602,8 +2610,17 @@ namespace eval ICeWall {
   
   proc get_footprint_corner_size {} {
     variable library
-    
-    set pads_per_pitch [lookup_by_bump_pitch [dict get $library num_pads_per_tile]]
+
+    if {![dict exists $library num_pads_per_tile]} {
+      utl::error PAD 162 "Required setting for num_pads_per_tile not found"
+    }
+
+    if {[llength [dict get $library num_pads_per_tile]] > 1} { 
+      set pads_per_pitch [lookup_by_bump_pitch [dict get $library num_pads_per_tile]]
+    } else {
+      set pads_per_pitch [dict get $library num_pads_per_tile]
+    }
+
     return $pads_per_pitch
   }
   
@@ -4121,18 +4138,10 @@ namespace eval ICeWall {
     variable library
     variable db
 
-    if {![dict exists $library cells]} {
-      if {[$db findMaster $cell_name] == "NULL"} {
-        utl::error PAD 138 "No cells in the library definitions"
-      } else {
-        return $cell_name
-      }
-    }
-
-    if {![dict exists $library cells $cell_name]} {
-      if {[$db findMaster $cell_name] == "NULL"} {
-        utl::error PAD 139 "Cell $cell_name not found in the set of available cell definitions ([dict keys [dict get $library cells]])"
-      }
+    if {[dict exists $library cells] && [dict exists $library cells $cell_name]} {
+      return $cell_name
+    } else {
+      get_cell_master $cell_name
     }
 
     return $cell_name
@@ -4229,11 +4238,7 @@ namespace eval ICeWall {
     variable footprint
 
     set tech [ord::get_db_tech]
-    if {[$tech findLayer $layer_name] != "NULL"} {
-      dict set footprint pin_layer $layer_name
-    } else {
-      utl::error PAD 146 "Layer $layer_name is not a valid layer for this technology"
-    }
+    dict set footprint pin_layer [check_layer_name $layer_name]
   }
 
   # ICeWall set_pad_inst_name "%s"
@@ -4261,13 +4266,20 @@ namespace eval ICeWall {
 
     dict set footprint rdl_cover_file_name $file_name
   }
- 
-set_bump_options \
+
+  proc check_layer_name {layer_name} {
+    set tech [ord::get_db_tech]
+    if {[$tech findLayer $layer_name] == "NULL"} {
+      utl::error PAD 146 "Layer $layer_name is not a valid layer for this technology"
+    }
+    return $layer_name
+  } 
+# set_bump_options \
   -pitch 160 \
   -bump_pin_name PAD \
   -spacing_to_edge 165 \
   -cell_name {140 DUMMY_BUMP_small 150 DUMMY_BUMP_medium 180 DUMMY_BUMP_large} \
-  -bumps_per_tile 3 \
+  -num_pads_per_tile 3 \
   -rdl {layer_name metal10 width 10 spacing 10} \
 
   proc set_bump_options {args} {
@@ -4283,16 +4295,20 @@ set_bump_options \
         -bump_pin_name     {dict set library bump bump_pin_name $value}
         -spacing_to_edge   {dict set library bump spacing_to_edge $value} 
         -cell_name         {dict set library bump cell_name $value}
-        -bumps_per_tile    {dict set library num_bumps_per_tile $value}
-        -rdl_layer_name    {dict set library rdl layer_name [check_layer_name $value]}
-        -rdl_layer_width   {dict set library rdl width $value}
-        -rdl_layer_spacing {dict set library rdl spacing $value}
-        default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer_name, -rdl_layer_width, -rdl_layer_spacing"}
+        -num_pads_per_tile {dict set library num_pads_per_tile $value}
+        -rdl_layer         {dict set library rdl layer_name [check_layer_name $value]}
+        -rdl_width         {dict set library rdl width $value}
+        -rdl_spacing       {dict set library rdl spacing $value}
+        default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer, -rdl_width, -rdl_spacing"}
       }
 
       set process_args [lrange $process_args 2 end]
     }
 
+    verify_bump_options
+  }
+
+  proc verify_bump_options {} {
   }
 
   proc add_pad {args} {
@@ -4348,7 +4364,7 @@ set_bump_options \
         -bump      {dict set padcell bump [check_bump $value]}
         -bondpad   {dict set padcell bondpad [check_bondpad $value]}
         -inst_name {dict set padcell inst_name $value}
-        default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -name, -signal, -edge, -type, -cell, -location, -bump, -bondpad, -inst_name"}
+        default {utl::error PAD 200 "Unrecognized argument $arg, should be one of -name, -signal, -edge, -type, -cell, -location, -bump, -bondpad, -inst_name"}
       }
 
       set process_args [lrange $process_args 2 end]
@@ -4554,10 +4570,10 @@ set_bump_options \
       }
       
       if {[dict get $padcell cell scaled_centre x] < $xMin || [dict get $padcell cell scaled_centre x] > $xMax} {
-        utl::error PAD 999 "The padcell x location is [expr 1.0 * [dict get $padcell cell scaled_centre x] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $xMin <= x <= $xMax"
+        utl::error PAD 163 "The padcell x location is [expr 1.0 * [dict get $padcell cell scaled_centre x] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $xMin <= x <= $xMax"
       }
       if {[dict get $padcell cell scaled_centre y] < $yMin || [dict get $padcell cell scaled_centre y] > $yMax} {
-        utl::error PAD 999 "The padcell y location is [expr 1.0 * [dict get $padcell cell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
+        utl::error PAD 164 "The padcell y location is [expr 1.0 * [dict get $padcell cell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
       }
     }
 
@@ -4581,7 +4597,7 @@ set_bump_options \
 
     if {![dict exists $cell_inst name]} {
       debug $cell_inst
-      utl::error PAD 999 "Attribute name not defined for cell"
+      utl::error PAD 165 "Attribute name not defined for cell"
     }
     set name [dict get $cell_inst name]
 
@@ -4594,26 +4610,26 @@ set_bump_options \
         set expected_cell_name [dict get $library types [dict get $cell_inst type]]
 
         if {$cell_name != $expected_cell_name} {
-          utl::error PAD 999 "Type [dict get $cell_inst type] (cell ref - $expected_cell_name) does not match specified cell_name ($cell_name) for cell $name)"
+          utl::error PAD 166 "Type [dict get $cell_inst type] (cell ref - $expected_cell_name) does not match specified cell_name ($cell_name) for cell $name)"
         }
       } else {
         if {[dict exists $library types [dict get $cell_inst type]]} {
           dict set cell_inst cell_ref [dict get $library types [dict get $cell_inst type]]
           if {[llength [dict get $cell_inst cell_ref]] > 1} {
-            utl::error PAD 999 "Cell type $type does not exist in the set of library types"
+            utl::error PAD 167 "Cell type $type does not exist in the set of library types"
           }
         }
       }
     } elseif {[dict exists $cell_inst cell_ref]} {
       check_cell_ref [dict get $cell_inst cell_ref]
     } else {
-      utl::error PAD 999 "No type specified for cell $name"
+      utl::error PAD 168 "No type specified for cell $name"
     }
     set cell_ref [dict get $cell_inst cell_ref]
 
     # Verify centre/origin
     if {[dict exists $cell_inst cell centre] && [dict exists $cell_inst cell origin]} {
-      utl::error PAD 999 "Only one of centre or origin should be used to specify the location of cell $name"
+      utl::error PAD 169 "Only one of centre or origin should be used to specify the location of cell $name"
     }
 
     # Verify cell_name
@@ -4623,18 +4639,18 @@ set_bump_options \
       } elseif {[llength [dict get $library cells $cell_ref cell_name]] == 1} {
         set cell_name [dict get $library cells $cell_ref cell_name]
       } else {
-        utl::error PAD 999 "Cannot determine library cell name for cell $name"
+        utl::error PAD 170 "Cannot determine library cell name for cell $name"
       }
       dict set cell_inst cell_name $cell_name
     }
     set cell_name [dict get $cell_inst cell_name]
     if {[$db findMaster $cell_name] == "NULL"} {
-      utl::error PAD 999 "Cell $cell_name not loaded into design"
+      utl::error PAD 171 "Cell $cell_name not loaded into design"
     }
 
     # Verify inst_name
     if {![dict exists $cell_inst inst_name]} {
-      utl::error PAD 999 "No value specified for inst_name for cell $name"
+      utl::error PAD 172 "No value specified for inst_name for cell $name"
     }
 
     # Verify cell orientation
@@ -4644,7 +4660,7 @@ set_bump_options \
       if {[dict exists $library cells $cell_ref orient]} {
         dict set cell_inst cell orient [dict get $library cells $cell_ref orient]
       } else {
-        utl::error PAD 999 "No orientation information available for $name"
+        utl::error PAD 173 "No orientation information available for $name"
       }
     }
     set orient [dict get $cell_inst cell orient]
@@ -4712,7 +4728,7 @@ set_bump_options \
         return [list $edge_type [dict get $valid_keys $edge_type]]
       }
     }
-    utl::error PAD 999 "Incorrect specification $first_side, should be one of bottom, right, top, left, ll, lr, ur or ul"
+    error "incorrect specification $first_side, should be one of bottom, right, top, left, ll, lr, ur or ul"
   }
 
   proc check_side_specification {edges} {
@@ -4729,10 +4745,10 @@ set_bump_options \
   proc check_cell_name_per_side {cell_name_by_side} {
     # debug $cell_name_by_side
     if {[catch {check_side_specification [dict keys $cell_name_by_side]} msg]} {
-      utl::error PAD 999 "Unexpected keyword in cell name specification, $msg"
+      utl::error PAD 174 "Unexpected keyword in cell name specification, $msg"
     }
     foreach side [dict keys $cell_name_by_side] {
-      check_cell_name [dict get $cell_name_by_side $side]
+      get_cell_master [dict get $cell_name_by_side $side]
     }
 
     return $cell_name_by_side
@@ -4740,7 +4756,7 @@ set_bump_options \
 
   proc check_orient_per_side {orient_by_side} {
     if {[catch {check_side_specification [dict keys $orient_by_side]} msg]} {
-      utl::error PAD 999 "Unexpected keyword in orient specification, $msg"
+      utl::error PAD 175 "Unexpected keyword in orient specification, $msg"
     }
     foreach side [dict keys $orient_by_side] {
       check_orient [dict get $orient_by_side $side]
@@ -4760,11 +4776,11 @@ set_bump_options \
     variable db
 
     if {[set master [$db findMaster $cell_name]] == "NULL"} {
-      utl::error PAD 999 "Cannot find $cell_name in the database"
+      utl::error PAD 176 "Cannot find $cell_name in the database"
     }
 
     if {[$master findMTerm $pin_name] == "NULL"} {
-      utl::error PAD 999 "Pin $pin_name does not exist on cell $cell_name"
+      utl::error PAD 177 "Pin $pin_name does not exist on cell $cell_name"
     }
   }
 
@@ -4782,7 +4798,7 @@ set_bump_options \
     set cell_ref_name {}
 
     if {[llength $args] % 2 == 1} {
-        utl::error PAD 999 "Incorrect number of arguments for add_pad - expected an even number, received [llength $args]"
+        utl::error PAD 178 "Incorrect number of arguments for add_pad - expected an even number, received [llength $args]"
     }
 
     set cell_ref {}
@@ -4790,7 +4806,7 @@ set_bump_options \
     if {[dict exists $args -name]} {
       set cell_ref_name [dict get $args -name]
     } else {
-      utl::error PAD 999 "Must specify -name option for add_libcell"
+      utl::error PAD 179 "Must specify -name option for add_libcell"
     }
     dict set cell_ref name $cell_ref_name
 
@@ -4803,12 +4819,12 @@ set_bump_options \
       switch $arg {
         -name          {dict set cell_ref name $value}
         -type          {dict set cell_ref type $value}
-        -cell_name     {dict set cell_ref cell_name [check_cell_name_per_side $value]}
+        -cell_name     {dict set cell_ref cell_name $value}
         -orient        {dict set cell_ref orient [check_orient_per_side $value]}
         -pad_pin_name  {dict set cell_ref pad_pin_name $value}
         -physical_only {dict set cell_ref physical_only [check_boolean $value]}
         -break_signals {dict set cell_ref breaks $value}
-        default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -name, -type, -cell_name, -orient, -pad_pin_name, -break_signals, -physical_only"}
+        default {utl::error PAD 201 "Unrecognized argument $arg, should be one of -name, -type, -cell_name, -orient, -pad_pin_name, -break_signals, -physical_only"}
       }
 
       set process_args [lrange $process_args 2 end]
@@ -4816,7 +4832,7 @@ set_bump_options \
 
     if {[dict exists $args -signal]} {
       if {[set padcell_duplicate [find_padcell_with_signal_name [dict get $padcell signal_name]]] != {}} {
-        utl::error PAD 112 "Padcell $padcell_duplicate already defined to use [dict get $padcell signal_name]"
+        utl::error PAD 202 "Padcell $padcell_duplicate already defined to use [dict get $padcell signal_name]"
       }
     }
 
@@ -4830,7 +4846,7 @@ set_bump_options \
 
     # Verify name
     if {![dict exists $cell_ref name]} {
-      utl::error PAD 999 "Library cell reference missing name attribute"
+      utl::error PAD 180 "Library cell reference missing name attribute"
     }
     set cell_ref_name [dict get $cell_ref name]
 
@@ -4846,7 +4862,7 @@ set_bump_options \
         }
       }
       if {![dict exists $cell_ref type]} {
-        utl::error PAD 999 "Library cell reference $cell_ref_name missing type attribute"
+        utl::error PAD 181 "Library cell reference $cell_ref_name missing type attribute"
       }
     } else {
       set type [dict get $cell_ref type]
@@ -4857,7 +4873,7 @@ set_bump_options \
             lappend types $cell_ref_name
             dict set library types $type $types
           } else {
-            utl::error PAD 999 "Type of $cell_ref_name ($type) clashes with existing setting for type ([dict get $library types $type])"
+            utl::error PAD 182 "Type of $cell_ref_name ($type) clashes with existing setting for type ([dict get $library types $type])"
           }
         }
       } else {
@@ -4868,7 +4884,11 @@ set_bump_options \
 
     # Verify cell_name
     if {[dict exists $cell_ref cell_name]} {
-      dict set cell_ref cell_name [check_cell_name_per_side [dict get $cell_ref cell_name]]
+      if {[llength [dict get $cell_ref cell_name]] > 1} {
+        dict set cell_ref cell_name [check_cell_name_per_side [dict get $cell_ref cell_name]]
+      } else {
+        get_cell_master [dict get $cell_ref cell_name]
+      }
     } else {
       if {[$db findMaster $cell_ref_name] != "NULL"} {
         if {$type == "corner"} {
@@ -4880,7 +4900,7 @@ set_bump_options \
           dict set cell_ref cell_name $side $cell_ref_name
         }
       } else {
-        utl::error PAD 999 "No specification found for which cell names to use on each side"
+        utl::error PAD 183 "No specification found for which cell names to use on each side"
       }
     }
     set cell_name [dict get $cell_ref cell_name]
@@ -4890,7 +4910,7 @@ set_bump_options \
       dict set cell_ref orient [check_orient_per_side [dict get $cell_ref orient]]
     } else {
       if {$type != "bump"} {
-        utl::error PAD 999 "No specification found for the orientation of cells on each side"
+        utl::error PAD 184 "No specification found for the orientation of cells on each side"
       }
       dict set cell_ref orient "R0"
     }
@@ -4910,7 +4930,7 @@ set_bump_options \
         dict set cell_ref pad_pin_name [dict get $library pad_pin_name]
       } else {
         if {$physical_only != 1} {
-          utl::error PAD 999 "No specification of the name of the external pin on cell_ref $cell_ref_name"
+          utl::error PAD 185 "No specification of the name of the external pin on cell_ref $cell_ref_name"
         }
       }
     }
@@ -4927,11 +4947,11 @@ set_bump_options \
     # Verify breaks
     if {[dict exists $cell_ref breaks]} {
       if {![dict exists $library connect_by_abutment]} {
-        utl::error PAD 999 "No signals defined to be connect by abutment"
+        utl::error PAD 186 "No signals defined to be connect by abutment"
       }
       foreach break_signal [dict keys [dict get $cell_ref breaks]] {
         if {[lsearch [dict get $library connect_by_abutment] $break_signal] == -1} {
-          utl::error PAD 999 "Signal $break_signal not defined in the list of signals to connect by abutment"
+          utl::error PAD 187 "Signal $break_signal not defined in the list of signals to connect by abutment"
         }
       }
       dict lappend library breakers $type

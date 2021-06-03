@@ -33,7 +33,7 @@ Trigger errors
 [ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 Y  105.000), no value specified for y
 [ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 y  105.000), no value specified for x
 [ERROR PAD-0099] Invalid orientation no, must be one of "R0 R90 R180 R270 MX MY MXR90 MYR90"
-[ERROR PAD-0139] Cell SIG not found in the set of available cell definitions (PAD PADCELL_SIG PADCELL_VDD PADCELL_VSS PADCELL_VDDIO PADCELL_VSSIO PADCELL_CBRK PADCELL_PWRDET PADCELL_FBRK PAD_FILL5 PAD_FILL1 PAD_CORNER DUMMY_BUMP)
+[ERROR PAD-0008] Cannot find cell SIG in the database
 [ERROR PAD-0130] Cell PADCELL_VDD not loaded into design
 [ERROR PAD-0130] Cell PADCELL_SIG not loaded into design
 This one is correct

@@ -1189,7 +1189,7 @@ module soc_bsg_black_parrot (
   PADCELL_VSS_H u_vss_14 ();
   PADCELL_VSS_H u_vss_15 ();
   PADCELL_VSS_H u_vss_16 ();
-  PADCELL_VSSIO_H u_vzz_25 ();
+  PADCELL_VSSIO_V u_vzz_25 ();
   PADCELL_VSSIO_H u_vzz_26 ();
   PADCELL_VSSIO_H u_vzz_27 ();
   PADCELL_VSSIO_H u_vzz_28 ();
