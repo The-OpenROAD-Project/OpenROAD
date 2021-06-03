@@ -1,4 +1,4 @@
-name: Scan Code with pre commit trigger
+name: Push Actions
 on:
   # Triggers the workflow on push or pull request events
   push:
@@ -8,12 +8,64 @@ on:
 
 jobs:
   scan:
+    name: Scan Code With Pre-Commit Trigger
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: run security_scan_on_push
         uses: The-OpenROAD-Project/actions/security_scan_on_push@main
-
-
-        
+  build-docker:
+    name: Build Docker Container
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["centos7"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Write Image Base name
+        run: |
+          echo "IMAGE_NAME_BASE=$(printf "ghcr.io/${{ github.repository }}-${{ matrix.os }}" | perl -ne "print lc")" >> $GITHUB_ENV
+      - name: "Phase 1: Dev Image"
+        env:
+          IMAGE_NAME_OVERRIDE: ${{ env.IMAGE_NAME_BASE }}-dev
+        run: |
+          bash ./etc/DockerHelper.sh create -target=dev -compiler=gcc -os=${{ matrix.os }}
+      - name: "Phase 2: Build"
+        env:
+          IMAGE_NAME_OVERRIDE: ${{ env.IMAGE_NAME_BASE }}-builder
+          FROM_IMAGE_OVERRIDE: ${{ env.IMAGE_NAME_BASE }}-dev
+        run: |
+          bash ./etc/DockerHelper.sh create -target=builder -compiler=gcc -os=${{ matrix.os }}
+      - name: "Phase 3: Runtime"
+        env:
+          IMAGE_NAME_OVERRIDE: ${{ env.IMAGE_NAME_BASE }}
+          COPY_IMAGE_OVERRIDE: ${{ env.IMAGE_NAME_BASE }}-builder
+        run: |
+          bash ./etc/DockerHelper.sh create -target=runtime -compiler=gcc -os=${{ matrix.os }}
+      - name: Write Upload Data
+        shell: bash # sh does not support complex conditionals
+        run: |
+          if [[ "${{ secrets.UPLOAD_IMAGE }}" == "yes" && ${{ github.event_name }} != "pull_request" ]]; then
+            export TAG_NAME=${GITHUB_REF##*/}
+            if [[ "$TAG_NAME" == "main" || "$TAG_NAME" == "master" ]]; then
+                export TAG_NAME="latest"
+            fi
+            echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          else
+            echo "TAG_NAME=" >> $GITHUB_ENV
+          fi
+      - name: Login to GitHub Container Registry
+        if: ${{ env.TAG_NAME != '' }}
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - name: Push Image To GitHub Container Registry
+        if: ${{ env.TAG_NAME != '' }}
+        run: |
+          docker push ${{ env.IMAGE_NAME_BASE }}:${{ env.TAG_NAME }}
