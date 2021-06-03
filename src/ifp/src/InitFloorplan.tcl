@@ -135,6 +135,12 @@ proc initialize_floorplan { args } {
   } else {
     utl::error IFP 19 "no -utilization or -die_area specified."
   }
+
+  set block [ord::get_db_block]
+  set placement_blockages [$block getBlockages]
+  if {[llength $placement_blockages] > 0} {
+    ifp::cut_rows $block $placement_blockages
+  }
 }
 
 sta::define_cmd_args "make_tracks" {[layer]\
@@ -168,10 +174,10 @@ proc make_tracks { args } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "IFP" 21 "layer $layer_name not found."
+      utl::error "IFP" 23 "layer $layer_name not found."
     }
     if { [$layer getType] != "ROUTING" } {
-      utl::error "IFP" 22 "layer $layer_name is not a routing layer."
+      utl::error "IFP" 25 "layer $layer_name is not a routing layer."
     }
 
     if { [info exists keys(-x_pitch)] } {
@@ -224,7 +230,7 @@ namespace eval ifp {
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   set block [ord::get_db_block]
   if { $block == "NULL"} {
-    utl::error IFP 21 "No block defined."
+    utl::error IFP 24 "No block defined."
   } else {
     set die_area [$block getDieArea]
     set grid [$block findTrackGrid $layer]
@@ -261,6 +267,34 @@ proc microns_to_mfg_grid { microns } {
   } else {
     return [ord::microns_to_dbu $microns]
   }  
+}
+
+proc cut_rows {block placement_blockages} {
+  utl::info "IFP" 6 "Placement blockages found: [llength $placement_blockages]"
+
+  # Gather rows needing to be cut because of placement blockages
+  set rows_to_cut []
+  set row_placement_blockages [dict create]
+  foreach blockage $placement_blockages {
+    if {![$blockage isSoft]} {
+      foreach row [$block getRows] {
+        set row_name [$row getName]
+        if {![dict exists $row_placement_blockages $row_name]} {
+          if {[tap::overlaps $blockage $row 0 0]} {
+            lappend rows_to_cut $row
+          }
+          dict lappend row_placement_blockages $row_name [$blockage getBBox]
+        }
+      }
+    }
+  }
+
+  # cut rows around placement blockages
+  foreach row $rows_to_cut {
+    tap::cut_row $block $row $row_placement_blockages 0 0 0
+  }
+
+  utl::info "IFP" 23 "Cut rows: [llength $rows_to_cut]"
 }
 
 }
