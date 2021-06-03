@@ -205,7 +205,7 @@ class IOPlacer
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
   void defineSlots();
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
-  void createSectionsPerConstraint(Constraint &constraint);
+  std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
   void getPinsFromDirectionConstraint(Constraint &constraint);
   void initConstraints();
   void sortConstraints();

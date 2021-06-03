@@ -484,10 +484,10 @@ void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>&
   }
 }
 
-void IOPlacer::createSectionsPerConstraint(Constraint &constraint)
+std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &constraint)
 {
-  Interval &interv = constraint.interval;
-  Edge &edge = interv.edge;
+  const Interval &interv = constraint.interval;
+  const Edge &edge = interv.edge;
 
   std::vector<Section> sections;
   if (edge != Edge::invalid) {
@@ -528,7 +528,7 @@ void IOPlacer::createSectionsPerConstraint(Constraint &constraint)
     sections = findSectionsForTopLayer(constraint.box);
   }
 
-  constraint.sections = sections;
+  return sections;
 }
 
 void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
@@ -1013,7 +1013,7 @@ void IOPlacer::initConstraints()
   std::reverse(constraints_.begin(), constraints_.end());
   for (Constraint &constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
-    createSectionsPerConstraint(constraint);
+    constraint.sections = createSectionsPerConstraint(constraint);
     int num_slots = 0;
     for (Section sec : constraint.sections) {
       num_slots += sec.num_slots;
