@@ -96,6 +96,7 @@ struct Constraint
   Interval interval;
   odb::Rect box;
   std::vector<Section> sections;
+  float pins_per_slots;
   Constraint() = default;
   Constraint(PinList pins, Direction dir, Interval interv)
       : pin_list(pins), direction(dir), interval(interv)
@@ -207,6 +208,7 @@ class IOPlacer
   void createSectionsPerConstraint(Constraint &constraint);
   void getPinsFromDirectionConstraint(Constraint &constraint);
   void initConstraints();
+  void sortConstraints();
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections(int assigned_pins_count);

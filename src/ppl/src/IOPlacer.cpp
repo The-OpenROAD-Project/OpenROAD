@@ -1014,7 +1014,21 @@ void IOPlacer::initConstraints()
   for (Constraint &constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     createSectionsPerConstraint(constraint);
+    int num_slots = 0;
+    for (Section sec : constraint.sections) {
+      num_slots += sec.num_slots;
+    }
+    constraint.pins_per_slots = (float)constraint.pin_list.size()/num_slots;
   }
+  sortConstraints();
+}
+
+void IOPlacer::sortConstraints() {
+  std::stable_sort(constraints_.begin(),
+                   constraints_.end(),
+                   [](Constraint c1, Constraint c2) {
+                     return c1.pins_per_slots < c2.pins_per_slots;
+                   });
 }
 
 Edge IOPlacer::getEdge(std::string edge)
