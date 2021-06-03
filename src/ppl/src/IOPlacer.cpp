@@ -1027,7 +1027,8 @@ void IOPlacer::sortConstraints() {
   std::stable_sort(constraints_.begin(),
                    constraints_.end(),
                    [&](const Constraint& c1, const Constraint& c2) {
-                     return (c1.pins_per_slots < c2.pins_per_slots) && overlappingConstraints(c1, c2);
+                      // treat every non-overlapping constraint as equal, so stable_sort keeps the user order
+                      return (c1.pins_per_slots < c2.pins_per_slots) && overlappingConstraints(c1, c2);
                    });
 }
 
