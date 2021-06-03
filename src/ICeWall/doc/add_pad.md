@@ -1,8 +1,8 @@
-## ICeWall add_pad
+## add_pad
 
 ### Synopsis
 ```
-  % ICeWall add_pad [-name <name>] \
+  % add_pad [-name <name>] \
                     [-type <type>] \
                     [-cell <library_cell>] \
                     [-signal <signal_name>] \
@@ -43,9 +43,9 @@ The -edge option is used to determine the orientation of the padcell, the actual
 
 ### Examples
 ```
-ICeWall add_pad -edge bottom                    -signal p_ddr_dm_2_o -type sig   -location {centre {x 2742.000 y  105.000}} -bondpad {centre {x 2742.000 y   63.293}}
-ICeWall add_pad -edge bottom -inst_name u_vss_0 -signal VSS          -type vss   -location {centre {x  397.000 y  105.000}} -bondpad {centre {x  397.000 y  149.893}}
-ICeWall add_pad -edge top    -inst_name u_brk0                       -type fbk   -location {centre {x 1587.500 y 2895.000}}
+add_pad -edge bottom                    -signal p_ddr_dm_2_o -type sig   -location {centre {x 2742.000 y  105.000}} -bondpad {centre {x 2742.000 y   63.293}}
+add_pad -edge bottom -inst_name u_vss_0 -signal VSS          -type vss   -location {centre {x  397.000 y  105.000}} -bondpad {centre {x  397.000 y  149.893}}
+add_pad -edge top    -inst_name u_brk0                       -type fbk   -location {centre {x 1587.500 y 2895.000}}
 
 ```
 

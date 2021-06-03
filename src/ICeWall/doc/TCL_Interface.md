@@ -1,20 +1,21 @@
 # ICeWall TCL Commands
 
 The following commands can be used from the command prompt to define the padring structure for the chip.
- - [add_cell](add_cell.md)
  - [add_pad](add_pad.md)
- - [add_power_nets](add_power_nets.md)
- - [add_ground_nets](add_ground_nets.md)
- - [set_core_area](set_core_area.md)
- - [set_die_area](set_die_area.md)
- - [set_offsets](set_offsets.md)
- - [set_pad_inst_name](set_pad_inst_name.md)
- - [set_pad_pin_name](set_pad_pin_name.md)
- - [set_pin_layer](set_pin_layer.md)
- - [set_rdl_cover_file_name](set_rdl_cover_file_name.md)
+ - [add_libcell](add_libcell.md)
+ - [set_padring_options](set_padring_options.md)
+ - [set_bump_options](set_bump_options.md)
 
 The following command are used to load data and run the padring placement
  - [load_library](load_library.md)
  - [load_footprint](load_footprint.md)
- - [init_footprint](init_footprint.md)
+ - [initialize_padring](initialize_padring.md)
+
+Use the place_cell command to pre-place cells in the floorplan
+ - [place_cell](place_cell.md)
+
+
+Full examples of how to use these commands together to build a chip
+ - Example for chip with [wirebond padring](../test/tcl_interface.tcl)
+ - Example for chip with [flipchip bumps](../test/tcl_interface.flipchip.tcl)
 

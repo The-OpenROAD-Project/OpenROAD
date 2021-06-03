@@ -364,6 +364,10 @@ clear_io_pin_constraints
 
 The `clear_io_pin_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
 
+##### Chip level connections
+
+At the top level of the chip, special padcells are use to connect signals to the external package. Additional commands are provided to [specify the placement of padcells, bondpads and bumps](src/ICeWall/docs/TCL_Interface.md)
+
 #### Tapcell
 
 Tapcell and endcap insertion.

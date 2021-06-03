@@ -1,11 +1,11 @@
-## ICeWall init_footprint
+## initialize_padring
 ### Synopsis
 ```
-  % ICeWall init_footprint [<signal_mapping_file>]
+  % initialize_padring [<signal_mapping_file>]
 ```
 ### Description
 Generate the padring placement based on the information supplied about the padcells, their locations bondpads or bumps and library cells. If the footprint has been specified without signal mapping, then signal mapping can be done at this stage using the optional signal_mapping_file argument
 ### Example
 ```
-ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.sigmap
+initialize_padring soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.sigmap
 ```
