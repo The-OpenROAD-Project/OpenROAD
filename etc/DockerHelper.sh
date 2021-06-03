@@ -121,26 +121,36 @@ _push() {
             read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$  ]]; then
-                echo "would have pushed [NOT IMPLEMENTED YET]"
+                mkdir -p build
 
-                # create and push image with sha tag
-                ./etc/DockerHelper.sh create -target=dev -sha
-                docker push openroad/centos7-dev:${commitSha}
+                # create image with sha and latest tag for both os
+                ./etc/DockerHelper.sh create -target=dev \
+                    2>&1 | tee build/create-centos-latest.log
+                ./etc/DockerHelper.sh create -target=dev -sha \
+                    2>&1 | tee build/create-centos-${commitSha}.log
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 \
+                    2>&1 | tee build/create-ubuntu20-latest.log
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 -sha \
+                    2>&1 | tee build/create-ubuntu20-${commitSha}.log
 
-                # create and push image with sha tag
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 -sha
-                docker push openroad/ubuntu20-dev:${commitSha}
+                # test image with sha and latest tag for both os and compiler
+                ./etc/DockerHelper.sh test -target=builder \
+                    2>&1 | tee build/test-centos-gcc-latest.log
+                ./etc/DockerHelper.sh test -target=builder -compiler=clang \
+                    2>&1 | tee build/test-centos-clang-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=ubuntu20 \
+                    2>&1 | tee build/test-ubuntu20-gcc-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=ubuntu20 -compiler=clang \
+                    2>&1 | tee build/test-ubuntu20-clang-latest.log
 
-                # create and push image with latest tag
-                ./etc/DockerHelper.sh create -target=dev
-                docker push openroad/centos7-dev:latest
+                echo [DRY-RUN] docker push openroad/centos7-dev:latest
+                echo [DRY-RUN] docker push openroad/centos7-dev:${commitSha}
+                echo [DRY-RUN] docker push openroad/ubuntu20-dev:latest
+                echo [DRY-RUN] docker push openroad/ubuntu20-dev:${commitSha}
 
-                # create and push image with latest tag
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20
-                docker push openroad/ubuntu20-dev:latest
-
+            else
+                echo "Will not push."
             fi
-            echo "Will not push."
             ;;
         *)
             echo "Target ${target} is not valid candidate for push to DockerHub." >&2
