@@ -1,4 +1,4 @@
-# ICeWall TCL Commands
+# TCL Commands to build chip level padrings
 
 The following commands can be used from the command prompt to define the padring structure for the chip.
  - [add_pad](add_pad.md)
