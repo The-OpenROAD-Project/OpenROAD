@@ -1,13 +1,3 @@
-sta::define_cmd_args "set_padcell_options" {[-connect_by_abutment signal_list]}
-proc set_padcell_options {args} {
-  sta::parse_key_args "set_padring_options" args \
-    keys {-connect_by_abutment}
-
-  if {[info exists keys(-connect_by_abutment)]} {
-    ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
-  }
-}
-
 sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-bump_pin_name pin_name] \
                                            [-spacing_to_edge spacing] \
@@ -33,11 +23,12 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-pad_inst_name pad_inst_name] \
                                             [-pad_pin_name pad_pin_name] \
                                             [-pin_layer pin_layer_name] \
+                                            [-connect_by_abutment signal_list] \
                                             [-rdl_cover_file_name rdl_file_name]}
 
 proc set_padring_options {args} {
   sta::parse_key_args "set_padring_options" args \
-    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -rdl_cover_file_name}
+    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -connect_by_abutment -rdl_cover_file_name}
 
   if {[info exists keys(-type)]} {
     ICeWall::set_type $keys(-type)
@@ -73,6 +64,10 @@ proc set_padring_options {args} {
 
   if {[info exists keys(-pin_layer)]} {
     ICeWall::set_pin_layer $keys(-pin_layer)
+  }
+
+  if {[info exists keys(-connect_by_abutment)]} {
+    ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
   }
 
   if {[info exists keys(-rdl_cover_file_name)]} {
@@ -184,6 +179,22 @@ namespace eval ICeWall {
     variable library
 
     dict set library connect_by_abutment $args
+
+    if {[dict exists $library breakers]} {
+      foreach breaker_cell_type [dict get $library breakers] {
+        if {![dict exists $library types $breaker_cell_type]} {
+          utl::error PAD 203 "No cell type $breaker_cell_type defined"
+        }
+        if {![dict exists $library cells [dict get $library types $breaker_cell_type]]} {
+          utl::error PAD 204 "No cell [dict get $library types $breaker_cell_type] defined"
+        }
+        foreach break_signal [dict keys [dict get $library cells [dict get $library types $breaker_cell_type] breaks]] {
+          if {[lsearch [dict get $library connect_by_abutment] $break_signal] == -1} {
+            utl::error PAD 187 "Signal $break_signal not defined in the list of signals to connect by abutment"
+          }
+        }
+      }
+    }
   }
     
   proc get_origin {centre width height orient} {
@@ -4274,13 +4285,6 @@ namespace eval ICeWall {
     }
     return $layer_name
   } 
-# set_bump_options \
-  -pitch 160 \
-  -bump_pin_name PAD \
-  -spacing_to_edge 165 \
-  -cell_name {140 DUMMY_BUMP_small 150 DUMMY_BUMP_medium 180 DUMMY_BUMP_large} \
-  -num_pads_per_tile 3 \
-  -rdl {layer_name metal10 width 10 spacing 10} \
 
   proc set_bump_options {args} {
     variable library
@@ -4946,14 +4950,6 @@ namespace eval ICeWall {
 
     # Verify breaks
     if {[dict exists $cell_ref breaks]} {
-      if {![dict exists $library connect_by_abutment]} {
-        utl::error PAD 186 "No signals defined to be connect by abutment"
-      }
-      foreach break_signal [dict keys [dict get $cell_ref breaks]] {
-        if {[lsearch [dict get $library connect_by_abutment] $break_signal] == -1} {
-          utl::error PAD 187 "Signal $break_signal not defined in the list of signals to connect by abutment"
-        }
-      }
       dict lappend library breakers $type
     }
 

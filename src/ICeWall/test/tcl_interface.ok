@@ -8,7 +8,7 @@
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
 set_padring_options
-set_padring_options   [-type (flipchip|wirebond)]  [-power power_nets]  [-ground ground_nets]  [-core_area core_area]  [-die_area die_area]  [-offsets offsets]  [-pad_inst_name pad_inst_name]  [-pad_pin_name pad_pin_name]  [-pin_layer pin_layer_name]  [-rdl_cover_file_name rdl_file_name]
+set_padring_options   [-type (flipchip|wirebond)]  [-power power_nets]  [-ground ground_nets]  [-core_area core_area]  [-die_area die_area]  [-offsets offsets]  [-pad_inst_name pad_inst_name]  [-pad_pin_name pad_pin_name]  [-pin_layer pin_layer_name]  [-connect_by_abutment signal_list]  [-rdl_cover_file_name rdl_file_name]
 place_cell -inst_name inst_name
 place_cell -inst_name inst_name   [-cell library_cell]  -origin xy_origin  -orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)  [-status (PLACED|FIRM)]
 add_pad
