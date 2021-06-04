@@ -125,10 +125,9 @@ std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer) {
 
 void IOPlacer::randomPlacement()
 {
-  for (const Constraint &constraint : constraints_) {
-    std::vector<Section> sections = createSectionsPerConstraint(constraint);
-    int first_slot = sections.front().begin_slot;
-    int last_slot = sections.back().end_slot;
+  for (Constraint &constraint : constraints_) {
+    int first_slot = constraint.sections.front().begin_slot;
+    int last_slot = constraint.sections.back().end_slot;
 
     bool top_layer = constraint.interval.edge == Edge::invalid;
     for (std::vector<int>& io_group : netlist_.getIOGroups()) {
@@ -566,27 +565,33 @@ void IOPlacer::createSections()
 
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &constraint)
 {
+  bool top_layer = constraint.interval.edge == Edge::invalid;
+  std::vector<Slot> &slots = top_layer ? top_layer_slots_ : slots_;
   Netlist& netlist = netlist_io_pins_;
-  std::vector<Section> sections_for_constraint = createSectionsPerConstraint(constraint);
-  assignConstrainedGroupsToSections(constraint, sections_for_constraint);
+  assignConstrainedGroupsToSections(constraint, constraint.sections);
 
-  int slots_count = 0;
-  for (Section sec : sections_for_constraint) {
-    slots_count += sec.num_slots;
+  int total_slots_count = 0;
+  for (Section& sec : constraint.sections) {
+    int new_slots_count = 0;
+    for (int slot_idx = sec.begin_slot; slot_idx <= sec.end_slot; slot_idx++) {
+      new_slots_count += (slots[slot_idx].blocked || slots[slot_idx].used) ? 0 : 1;
+    }
+    sec.num_slots = new_slots_count;
+    total_slots_count += new_slots_count;
   }
 
   std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
   
-  if (pin_indices.size() > slots_count) {
-    logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), slots_count);
+  if (pin_indices.size() > total_slots_count) {
+    logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), total_slots_count);
   }
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist.getIoPin(idx);
-    assignPinToSection(io_pin, idx, sections_for_constraint);
+    assignPinToSection(io_pin, idx, constraint.sections);
   }
 
-  return sections_for_constraint;
+  return constraint.sections;
 }
 
 void IOPlacer::assignConstrainedGroupsToSections(Constraint &constraint,
@@ -1008,7 +1013,34 @@ void IOPlacer::initConstraints()
   std::reverse(constraints_.begin(), constraints_.end());
   for (Constraint &constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
+    constraint.sections = createSectionsPerConstraint(constraint);
+    int num_slots = 0;
+    for (Section sec : constraint.sections) {
+      num_slots += sec.num_slots;
+    }
+    constraint.pins_per_slots = (float)constraint.pin_list.size()/num_slots;
   }
+  sortConstraints();
+}
+
+void IOPlacer::sortConstraints() {
+  std::stable_sort(constraints_.begin(),
+                   constraints_.end(),
+                   [&](const Constraint& c1, const Constraint& c2) {
+                      // treat every non-overlapping constraint as equal, so stable_sort keeps the user order
+                      return (c1.pins_per_slots < c2.pins_per_slots) && overlappingConstraints(c1, c2);
+                   });
+}
+
+bool IOPlacer::overlappingConstraints(const Constraint& c1, const Constraint& c2) {
+  const Interval& interv1 = c1.interval;
+  const Interval& interv2 = c2.interval;
+
+  if (interv1.edge == interv2.edge) {
+    return std::max(interv1.begin, interv2.begin) <= std::min(interv1.end, interv2.end);
+  }
+
+  return false;
 }
 
 Edge IOPlacer::getEdge(std::string edge)
