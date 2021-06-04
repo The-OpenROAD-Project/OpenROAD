@@ -330,6 +330,25 @@ write_verilog_cmd(const char *filename,
   ord->writeVerilog(filename, sort, include_pwr_gnd, remove_cells);
 }
 
+void 
+partition_design_cmd(unsigned int max_num_macro, unsigned int min_num_macro,
+                    unsigned int max_num_inst,  unsigned int min_num_inst,
+                    unsigned int net_threshold, unsigned int virtual_weight,
+                    const char* file_name)
+{
+    OpenRoad *ord = getOpenRoad();
+    ord->partitionDesign(max_num_macro, min_num_macro, max_num_inst, 
+                         min_num_inst,  net_threshold, virtual_weight, 
+                         file_name);
+}
+
+void rtl_mp_cmd(const char* config_file) {
+    OpenRoad *ord = getOpenRoad();
+    ord->rtlMacroPlacer(config_file);
+}
+
+
+
 void
 set_debug_level(const char* tool_name,
                 const char* group,

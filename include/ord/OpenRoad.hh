@@ -184,6 +184,14 @@ public:
   
   void writeCdl(const char *filename, bool includeFillers);
 
+  void partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
+                       unsigned int max_num_inst,  unsigned int min_num_inst,
+                       unsigned int net_threshold, unsigned int virtual_weight,
+                       const char* file_name);
+
+  void rtlMacroPlacer(const char* config_file);
+  
+  
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
   void writeVerilog(const char *filename,

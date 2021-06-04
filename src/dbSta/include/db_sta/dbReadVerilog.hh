@@ -34,6 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include "sta/VerilogReader.hh"
+#include "db_sta/dbNetwork.hh"
+#include "sta/ConcreteNetwork.hh"
 
 namespace utl {
 class Logger;
@@ -55,6 +58,24 @@ class OpenRoad;
 using odb::dbDatabase;
 
 using sta::NetworkReader;
+
+
+using sta::Cell;
+using sta::dbNetwork;
+using sta::ConcreteNetwork;
+
+
+class dbVerilogNetwork : public  ConcreteNetwork
+{
+  public:
+    dbVerilogNetwork();
+    virtual Cell *findAnyCell(const char *name);
+    void init(dbNetwork *db_network);
+ 
+    private:
+    NetworkReader *db_network_;
+};
+
 
 dbVerilogNetwork *
 makeDbVerilogNetwork();

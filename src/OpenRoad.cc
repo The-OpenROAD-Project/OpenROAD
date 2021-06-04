@@ -79,7 +79,10 @@
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
+#include "PartitionMgr/include/autocluster.h"
 #include "pdn/MakePdnGen.hh"
+#include "rtlmp/rtl_mp.h"
+
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -393,6 +396,27 @@ OpenRoad::linkDesign(const char *design_name)
     observer->postReadDb(db_);
   }
 }
+
+void 
+OpenRoad::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
+                          unsigned int max_num_inst,  unsigned int min_num_inst,
+                          unsigned int net_threshold, unsigned int virtual_weight,
+                          const char* file_name
+                         ) 
+{
+    dbPartitionDesign(verilog_network_, db_, max_num_macro, min_num_macro,
+                      max_num_inst, min_num_inst, net_threshold, virtual_weight,
+                      file_name);
+}
+
+
+void 
+OpenRoad::rtlMacroPlacer(const char* config_file) 
+{
+    RTLMP(config_file);
+}
+
+
 
 void
 OpenRoad::writeVerilog(const char *filename,

@@ -93,6 +93,7 @@ using utl::STA;
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
 // It is NOT part of an Sta.
+/*
 class dbVerilogNetwork : public  ConcreteNetwork
 {
 public:
@@ -103,6 +104,7 @@ public:
 private:
   NetworkReader *db_network_;
 };
+*/
 
 dbVerilogNetwork::dbVerilogNetwork() :
   ConcreteNetwork(),
