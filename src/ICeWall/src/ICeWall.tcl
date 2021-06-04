@@ -5,13 +5,17 @@ sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-num_pads_per_tile value] \
                                            [-rdl_layer name] \
                                            [-rdl_width value] \
-                                           [-rdl_spacing value]}
+                                           [-rdl_spacing value] \
+                                           [-rdl_cover_file_name rdl_file_name]}
 
 proc set_bump_options {args} {
   sta::parse_key_args "set_bump_options" args \
-    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing}
+    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_cover_file_name}
 
   ICeWall::set_bump_options {*}[array get keys]
+  if {[info exists keys(-rdl_cover_file_name)]} {
+    ICeWall::set_rdl_cover_file_name $keys(-rdl_cover_file_name)
+  }
 }
 
 sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
@@ -23,12 +27,11 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-pad_inst_name pad_inst_name] \
                                             [-pad_pin_name pad_pin_name] \
                                             [-pin_layer pin_layer_name] \
-                                            [-connect_by_abutment signal_list] \
-                                            [-rdl_cover_file_name rdl_file_name]}
+                                            [-connect_by_abutment signal_list]}
 
 proc set_padring_options {args} {
   sta::parse_key_args "set_padring_options" args \
-    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -connect_by_abutment -rdl_cover_file_name}
+    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -connect_by_abutment}
 
   if {[info exists keys(-type)]} {
     ICeWall::set_type $keys(-type)
@@ -68,10 +71,6 @@ proc set_padring_options {args} {
 
   if {[info exists keys(-connect_by_abutment)]} {
     ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
-  }
-
-  if {[info exists keys(-rdl_cover_file_name)]} {
-    ICeWall::set_rdl_cover_file_name $keys(-rdl_cover_file_name)
   }
 }
 

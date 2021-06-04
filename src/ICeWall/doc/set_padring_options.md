@@ -9,8 +9,7 @@
       [-pad_inst_name pad_inst_name] \
       [-pad_pin_name pad_pin_name] \
       [-pin_layer pin_layer_name] \
-      [-connect_by_abutment signal_list] \
-      [-rdl_cover_file_name rdl_file_name]
+      [-connect_by_abutment signal_list]
 ```
 ### Description
 
@@ -26,8 +25,6 @@ The -pad_pin_name option is used to define the default value for the name of the
 
 The -connect_by_abutment option is used to define the list of signals that are connected by abutment through the padring. The placement of breaker cells within the padring can result in these signals being split into a number of different nets.
 
-The -rdl_cover_file_name is used to specify the name of the file to contain the RDL routing for a flipchip design.
-
 ### Options
 
 | Option | Description |
@@ -42,7 +39,6 @@ The -rdl_cover_file_name is used to specify the name of the file to contain the 
 | -pad_pin_name | Used to set the name of the pin on a padcell which is to be connected to the specified signal for the padcell. |
 | -pin_layer | Specify the layer which is to be used to create a top level pin over the pin of the padcell. The creation of a physical pin at this location identifies pin locations for LVS. |
 | -connect_by_abutment | Specify the list of signals that connect by abutment in the padring, the placement of breaker cells in the padring will split these signals into separate nets as required. |
-| -rdl_cover_file_name | Specify the name of the file to which the routing of the redistribution layer is to be written. If not specified, the default value is cover.def.  In the previous release, the openroad database did not support 45 degree lines used by RDL routing, and this cover.def allowed for the RDL to be added at the end of the flow, without being added to the database. Now that the database will allow 45 degree lines, and this command will be deprecated once ICeWall has been modified to write RDL into the database directly. |
 
 ### Examples
 ```
