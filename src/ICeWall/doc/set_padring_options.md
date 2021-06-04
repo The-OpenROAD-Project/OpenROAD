@@ -18,7 +18,7 @@ This command is used to specify general options used to define the padring for a
 
 The -power and -ground options are used to define the external power and ground nets that will be connected to the pads.
 
-The -offsets option is used to define the offset of the edge of the pads from the edge of the die area, this can be specified as a single number, in which case the offst is applied to all four sides, as a list of 2 numbers to be applied to the top/bottom and lef/right edges, or a set of 4 numbers to be applied to the bottom, right, top and left sides respectively.
+The -offsets option is used to define the offset of the edge of the pads from the edge of the die area, this can be specified as a single number, in which case the offset is applied to all four sides, as a list of 2 numbers to be applied to the top/bottom and lef/right edges, or a set of 4 numbers to be applied to the bottom, right, top and left sides respectively.
 
 The -pad_inst_name option allows a format string to be used to define a default instance name for the padcell connected to a top level pin of the design.
 

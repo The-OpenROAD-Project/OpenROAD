@@ -6,12 +6,10 @@ The following commands can be used from the command prompt to define the padring
  - [set_padring_options](set_padring_options.md)
  - [set_bump_options](set_bump_options.md)
 
-The following command are used to load data and run the padring placement
- - [load_library](load_library.md)
- - [load_footprint](load_footprint.md)
+Once the padcells have been added, the padring can be built using the initialize_padring command.
  - [initialize_padring](initialize_padring.md)
 
-Use the place_cell command to pre-place cells in the floorplan
+Use the place_cell command to pre-place additional cells in the floorplan
  - [place_cell](place_cell.md)
 
 
