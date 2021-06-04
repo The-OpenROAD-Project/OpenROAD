@@ -74,22 +74,31 @@ proc set_padring_options {args} {
   }
 }
 
-sta::define_cmd_args "add_libcell" {[-name name] \
-                                      [-type cell_type] \
+sta::define_cmd_args "add_pad_libcell" {[-name name] \
+                                      [-type cell_type|-fill|-corner|-bondpad|-bump] \
                                       [-cell_name cell_names_per_side] \
                                       [-orient orientation_per_side] \
                                       [-pad_pin_name pad_pin_name] \
                                       [-break_signals signal_list] \
                                       [-physical_only]}
 
-proc add_libcell {args} {
-  sta::parse_key_args "add_libcell" args \
+proc add_pad_libcell {args} {
+  sta::parse_key_args "add_pad_libcell" args \
     keys {-name -type -cell_name -orient -pad_pin_name -break_signals} \
-    flags {-physical_only}
+    flags {-fill -corner -bondpad -bump -physical_only}
 
   set args [array get keys]
   if {[info exists flags(-physical_only)]} {
     dict set args -physical_only 1
+  }
+
+  foreach flag {-fill -corner -bondpad -bump} {
+    if {[info exists flags($flag)]} {
+      if {[dict exists $args "-type"]} {
+        utl::error PAD 208 "Type option already set to [dict get $args -type], option $flag cannot be used to reset the type"
+      }
+      dict set args -type [regsub -- {\-} $flag {}]
+    }
   }
 
   ICeWall::add_libcell {*}$args
@@ -993,7 +1002,7 @@ namespace eval ICeWall {
 
     set cell_list {}
     if {![dict exists $library types $type]} {
-      utl::error 70 "Library does not have type $type specified"
+      utl::error PAD 70 "Library does not have type $type specified"
     }
     foreach cell_ref [dict get $library types $type] {
       if {[dict exists $library cells $cell_ref cell_name]} {
@@ -3511,9 +3520,28 @@ namespace eval ICeWall {
     
     set signal_assignment_file $file_name
   }
+
+  proc verify_libcell_type_setup {} {
+    variable library
+
+    if {[dict exists $library types]} {
+      set required_types {fill corner}
+      if {[is_footprint_flipchip]} {
+        lappend required_types bump 
+      }
+
+      foreach required_type $required_types {
+        if {![dict exists $library types $required_type]} {
+          utl::error PAD 207 "Required type of cell ($required_type) has no libcell definition"
+        }
+      }
+    }
+  }
   
   proc init_footprint {args} {
     set arglist $args
+
+    verify_libcell_type_setup
 
     # debug "start: $args"
     if {[set idx [lsearch $arglist "-signal_mapping"]] > -1} {

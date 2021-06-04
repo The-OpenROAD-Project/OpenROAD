@@ -107,15 +107,6 @@ add_pad_libcell \
   -bump \
   -physical_only 1
   
-# Test help messages
-help set_padring_options
-help place_cell
-help add_pad
-help initialize_padring
-
-catch {set_padring_options -type Wirebond -power_nets  {VDD DVDD_0 DVDD_1} -ground_nets {VSS DVSS_0 DVSS_1} -offsets 35 -pin_layer metal10 -pad_inst_name "%s"}
-catch {set_padring_options -type Wirebond -offsets {35 36 37} -pin_layer metal10 -pad_inst_name "%s"}
-
 set_padring_options \
   -type wirebond \
   -power  {VDD DVDD_0 DVDD_1} \
@@ -128,39 +119,9 @@ set_padring_options \
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM
 
-puts "Trigger errors"
-# Trigger errors
-catch {add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal dr_dm_1_o            -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sign  -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location somewhere                        -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre}                         -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin}                         -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {292.000 105.000}}       -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {X  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {X  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}} -bump not_allowed_for_wirebond}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin}                         -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin {292.000 105.000}}       -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {origin {X  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 Y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {X  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000} orient no} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell SIG         -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell PADCELL_VDD -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell PADCELL_SIG -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-
-puts "This one is correct"
-add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -cell PADCELL_SIG_V -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}
-
-puts "Detect duplicates"
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-
-puts "No more errors expected"
-
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
 # 
+add_pad -edge bottom -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}
 add_pad -edge bottom -signal p_ddr_dqs_n_1_io     -type sig   -location {centre {x  362.000 y  105.000}} -bondpad {centre {x  362.000 y   63.293}}
 add_pad -edge bottom -signal p_ddr_dqs_p_1_io     -type sig   -location {centre {x  432.000 y  105.000}} -bondpad {centre {x  432.000 y   63.293}}
 add_pad -edge bottom -signal p_ddr_ba_2_o         -type sig   -location {centre {x  502.000 y  105.000}} -bondpad {centre {x  502.000 y   63.293}}
@@ -474,7 +435,7 @@ if {[catch {initialize_padring} msg]} {
   return
 }
 
-set def_file [make_result_file "tcl_interface.def"]
+set def_file [make_result_file "tcl_interface.example.def"]
 
 write_def $def_file
 diff_files $def_file "tcl_interface.defok"

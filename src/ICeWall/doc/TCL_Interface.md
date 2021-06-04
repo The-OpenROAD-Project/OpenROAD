@@ -2,7 +2,7 @@
 
 The following commands can be used from the command prompt to define the padring structure for the chip.
  - [add_pad](add_pad.md)
- - [add_libcell](add_libcell.md)
+ - [add_pad_libcell](add_pad_libcell.md)
  - [set_padring_options](set_padring_options.md)
  - [set_bump_options](set_bump_options.md)
 
@@ -14,8 +14,8 @@ Use the place_cell command to pre-place additional cells in the floorplan
 
 
 Full examples of how to use these commands together to build a chip
- - Example for chip with [wirebond padring](../test/tcl_interface.tcl)
- - Example for chip with [flipchip bumps](../test/tcl_interface.flipchip.tcl)
+ - Example for chip with [wirebond padring](../test/tcl_interface.example.tcl)
+ - Example for chip with [flipchip bumps](../test/tcl_interface.flipchip.example.tcl)
 
 
 Alternatively, the information needed to build chip level pad rings can be [bundled up into a separate file and loaded in batch fashion](README.md)

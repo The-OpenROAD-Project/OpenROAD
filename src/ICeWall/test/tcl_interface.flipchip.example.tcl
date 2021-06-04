@@ -21,7 +21,7 @@ source ../../../test/Nangate45/Nangate45.tracks
 add_pad_libcell \
   -name PAD \
   -orient {bottom R0 right R90 top R180 left R270} \
-  -type bondpad \
+  -bondpad \
   -pad_pin_name PAD 
 
 add_pad_libcell \
@@ -84,28 +84,28 @@ add_pad_libcell \
 
 add_pad_libcell \
   -name PAD_FILL5 \
-  -type fill \
+  -fill \
   -cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H} \
   -orient {bottom R0 right MY top R180 left MX} \
   -physical_only 1
   
 add_pad_libcell \
   -name PAD_FILL1 \
-  -type fill \
+  -fill \
   -cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H} \
   -orient {bottom R0 right MY top R180 left MX} \
   -physical_only 1
   
 add_pad_libcell \
   -name PAD_CORNER \
-  -type corner \
+  -corner \
   -orient {ll R0 lr R90 ur R180 ul R270} \
   -physical_only 1
   
 add_pad_libcell \
   -name DUMMY_BUMP \
   -cell_name DUMMY_BUMP \
-  -type bump \
+  -bump \
   -physical_only 1
   
 set_bump_options \
@@ -129,12 +129,6 @@ set_padring_options \
   -connect_by_abutment {SNS RETN DVDD DVSS}
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM
-
-puts "Trigger errors"
-# Trigger errors
-catch {add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-
-puts "No more errors expected"
 
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
 # 
@@ -421,7 +415,7 @@ if {[catch {initialize_padring} msg]} {
   return
 }
 
-set def_file [make_result_file "tcl_interface.flipchip.def"]
+set def_file [make_result_file "tcl_interface.flipchip.example.def"]
 
 write_def $def_file
 diff_files $def_file "tcl_interface.flipchip.defok"
