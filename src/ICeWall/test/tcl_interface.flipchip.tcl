@@ -17,7 +17,7 @@ make_tracks
 
 source ../../../test/Nangate45/Nangate45.tracks
 
-# ICeWall load_library soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strategy
+# Load library defintions
 add_libcell \
   -name PAD \
   -orient {bottom R0 right R90 top R180 left R270} \

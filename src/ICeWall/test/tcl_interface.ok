@@ -15,6 +15,7 @@ add_pad
 add_pad   [-name name]  [-type type]  [-cell library_cell]  [-signal signal_name]  [-edge edge]  [-location location]  [-bump rowcol]  [-bondpad bondpad]  [-inst_name inst_name]
 initialize_padring [-signal_assignment_file signal_assigment_file]
 [ERROR STA-0402] set_padring_options -power_nets is not a known keyword or flag.
+[ERROR PAD-0205] Incorrect number of values specified for offsets (3), expected 1, 2 or 4
 Trigger errors
 [ERROR PAD-0094] Value for -edge_name (other) not permitted, choose one of bottom, right, top or left
 [ERROR PAD-0092] No signal dr_dm_1_o or PAD defined for padcell sig_1

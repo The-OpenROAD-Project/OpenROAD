@@ -17,7 +17,7 @@ make_tracks
 
 source ../../../test/Nangate45/Nangate45.tracks
 
-# ICeWall load_library soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strategy
+# Load library defintions
 add_libcell \
   -name PAD \
   -orient {bottom R0 right R90 top R180 left R270} \
@@ -113,15 +113,8 @@ help place_cell
 help add_pad
 help initialize_padring
 
-catch {set_padring_options \
-  -type Wirebond \
-  -die_area {0 0 3000.000 3000.000} \
-  -core_area {180.012 180.096 2819.964 2819.712} \
-  -power_nets  {VDD DVDD_0 DVDD_1} \
-  -ground_nets {VSS DVSS_0 DVSS_1} \
-  -offsets 35 \
-  -pin_layer metal10 \
-  -pad_inst_name "%s"}
+catch {set_padring_options -type Wirebond -power_nets  {VDD DVDD_0 DVDD_1} -ground_nets {VSS DVSS_0 DVSS_1} -offsets 35 -pin_layer metal10 -pad_inst_name "%s"}
+catch {set_padring_options -type Wirebond -offsets {35 36 37} -pin_layer metal10 -pad_inst_name "%s"}
 
 set_padring_options \
   -type wirebond \

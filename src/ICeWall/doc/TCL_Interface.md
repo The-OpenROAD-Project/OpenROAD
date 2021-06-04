@@ -17,3 +17,6 @@ Full examples of how to use these commands together to build a chip
  - Example for chip with [wirebond padring](../test/tcl_interface.tcl)
  - Example for chip with [flipchip bumps](../test/tcl_interface.flipchip.tcl)
 
+
+Alternatively, the information needed to build chip level pad rings can be [bundled up into a separate file and loaded in batch fashion](README.md)
+

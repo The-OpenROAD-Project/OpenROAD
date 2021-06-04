@@ -4238,8 +4238,17 @@ namespace eval ICeWall {
     variable footprint
     variable def_units
 
-    if {[is_number $value]} {
+    if {[llength $value] == 1} {
+      if {[is_number $value]} {
+        set_footprint_offsets $value
+      }
+    } elseif {[llength $value] == 2 || [llength $value] == 4} {
+      foreach number $value {
+        is_number $number
+      }
       set_footprint_offsets $value
+    } else {
+      utl::error PAD 205 "Incorrect number of values specified for offsets ([llength $value]), expected 1, 2 or 4"
     }
   }
 
