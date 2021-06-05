@@ -291,6 +291,22 @@ class FlexGCWorker::Impl
   void checkMetalEndOfLine();
   void checkMetalEndOfLine_main(gcPin* pin);
   void checkMetalEndOfLine_eol(gcSegment* edge, frConstraint* constraint);
+  void getMetalEolExtQueryRegion(gcSegment* edge,
+                                 const gtl::rectangle_data<frCoord>& extRect,
+                                 frCoord spacing,
+                                 box_t& queryBox,
+                                 gtl::rectangle_data<frCoord>& queryRect);
+  void getMetalEolExtRect(gcSegment* edge,
+                          frCoord extension,
+                          gtl::rectangle_data<frCoord>& rect);
+  void checkMetalEndOfLine_ext_helper(
+      gcSegment* edge1,
+      gcSegment* edge2,
+      const gtl::rectangle_data<frCoord>& rect1,
+      const gtl::rectangle_data<frCoord>& queryRect,
+      frLef58EolExtensionConstraint* constraint);
+  void checkMetalEndOfLine_ext(gcSegment* edge,
+                               frLef58EolExtensionConstraint* constraint);
   bool checkMetalEndOfLine_eol_isEolEdge(gcSegment* edge,
                                          frConstraint* constraint);
   bool checkMetalEndOfLine_eol_hasMinMaxLength(gcSegment* edge,

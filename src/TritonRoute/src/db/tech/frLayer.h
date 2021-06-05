@@ -339,6 +339,16 @@ class frLayer
     return lef58MinStepConstraints;
   }
 
+  void addLef58EolExtConstraint(frLef58EolExtensionConstraint* in)
+  {
+    lef58EolExtConstraints.push_back(in);
+  }
+  const std::vector<frLef58EolExtensionConstraint*>& getLef58EolExtConstraints()
+      const
+  {
+    return lef58EolExtConstraints;
+  }
+
   void addCutSpacingConstraint(frCutSpacingConstraint* in)
   {
     if (!(in->isLayer())) {
@@ -582,6 +592,7 @@ class frLayer
   frAreaConstraint* areaConstraint;
   frMinStepConstraint* minStepConstraint;
   std::vector<frLef58MinStepConstraint*> lef58MinStepConstraints;
+  std::vector<frLef58EolExtensionConstraint*> lef58EolExtConstraints;
   frMinWidthConstraint* minWidthConstraint;
   std::vector<frMinimumcutConstraint*> minimumcutConstraints;
   frLef58RectOnlyConstraint* lef58RectOnlyConstraint;
