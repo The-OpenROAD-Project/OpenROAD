@@ -91,18 +91,20 @@ proc cmp_op_negated { cmp_op } {
   }
 }
 
-define_metric "instance_count" "instances" "%d" "<" {$value * .2}
-define_metric "design_area" "area" "%.0f" "<" {$value * .2}
-define_metric "utilization" "util" "%.1f" "<" {$value * .2}
-define_metric "worst_slack_min" "slack_min" "%.3f" ">" {-$clock_period * .1}
-define_metric "worst_slack_max" "slack_max" "%.3f" ">" {-$clock_period * .1}
-define_metric "tns_max" "tns_max" "%.3f" ">" {-$clock_period * .1 * $instance_count * .1}
-define_metric "max_slew_violations" "max_slew" "%d" "<=" {0}
-define_metric "max_capacitance_violations" "max_cap" "%d" "<=" {0}
-define_metric "max_fanout_violations" "max_fanout" "%d" "<=" {0}
-define_metric "DPL::errors" "DPL" "%d" "<=" {0}
-define_metric "ANT::errors" "ANT" "%d" "<=" {0}
-define_metric "DRT::drv" "drv" "%d" "<=" {0}
+# make format field width to match short name width
+define_metric "instance_count" "  insts" "%7d" "<" {$value * .2}
+define_metric "design_area" "   area" "%7.0f" "<" {$value * .2}
+define_metric "utilization" "util" "%4.1f" "<" {$value * .2}
+define_metric "worst_slack_min" "slack_min" "%9.3f" ">" {-$clock_period * .1}
+define_metric "worst_slack_max" "slack_max" "%9.3f" ">" {-$clock_period * .1}
+define_metric "tns_max" " tns_max" "%8.1f" ">" {-$clock_period * .1 * $instance_count * .1}
+define_metric "clock_skew" "clk_skew" "%8.3f" "<=" {$value * .2}
+define_metric "max_slew_violations" "max_slew" "%8d" "<=" {0}
+define_metric "max_capacitance_violations" "max_cap" "%7d" "<=" {0}
+define_metric "max_fanout_violations" "max_fanout" "%10d" "<=" {0}
+define_metric "DPL::errors" "DPL" "%3d" "<=" {0}
+define_metric "ANT::errors" "ANT" "%3d" "<=" {0}
+define_metric "DRT::drv" "drv" "%3d" "<=" {0}
 define_metric "clock_period" "" "%d" "<=" {0}
 
 ################################################################
@@ -118,7 +120,7 @@ proc save_metrics_limits_main {} {
       while { ! [eof $fail_ch] } {
 	set test [gets $fail_ch]
 	if { $test != "" } {
-	  save_metrics $test
+	  save_metrics_limits $test
 	}
       }
       close $fail_ch
@@ -251,7 +253,7 @@ proc report_metrics_header {} {
   foreach name [metric_names] {
     set short_name [metric_short_name $name]
     if { $short_name != "" } {
-      puts -nonewline [format "%11s" $short_name]
+      puts -nonewline " $short_name"
     }
   }
   puts ""
@@ -275,7 +277,7 @@ proc report_test_metrics { test } {
           } else {
             set field "N/A"
           }
-          puts -nonewline [format "%11s" $field]
+          puts -nonewline " $field"
         }
       }
     }
