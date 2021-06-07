@@ -1018,7 +1018,11 @@ void IOPlacer::initConstraints()
     for (Section sec : constraint.sections) {
       num_slots += sec.num_slots;
     }
-    constraint.pins_per_slots = (float)constraint.pin_list.size()/num_slots;
+    if (num_slots > 0) {
+      constraint.pins_per_slots = (float)constraint.pin_list.size()/num_slots;
+    } else {
+      logger_->error(PPL, 76, "Constraint does not have available slots for its pins.");
+    }
   }
   sortConstraints();
 }
