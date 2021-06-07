@@ -74,7 +74,7 @@ proc set_padring_options {args} {
   }
 }
 
-sta::define_cmd_args "add_pad_libcell" {[-name name] \
+sta::define_cmd_args "define_pad_cell" {[-name name] \
                                       [-type cell_type|-fill|-corner|-bondpad|-bump] \
                                       [-cell_name cell_names_per_side] \
                                       [-orient orientation_per_side] \
@@ -82,8 +82,8 @@ sta::define_cmd_args "add_pad_libcell" {[-name name] \
                                       [-break_signals signal_list] \
                                       [-physical_only]}
 
-proc add_pad_libcell {args} {
-  sta::parse_key_args "add_pad_libcell" args \
+proc define_pad_cell {args} {
+  sta::parse_key_args "define_pad_cell" args \
     keys {-name -type -cell_name -orient -pad_pin_name -break_signals} \
     flags {-fill -corner -bondpad -bump -physical_only}
 

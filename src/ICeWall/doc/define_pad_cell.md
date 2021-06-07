@@ -1,7 +1,7 @@
-## add_pad_libcell
+## define_pad_cell
 ### Synopsis
 ```
-  % add_pad_libcell \
+  % define_pad_cell \
         [-name name] \
         [-type cell_type|-fill|-corner|-bump|-bondpad] \
         [-cell_name cell_names_per_side] \
@@ -12,7 +12,7 @@
 ```
 ### Description
 
-In order to create a padring, additional information about the padcells needs to be provided in order to be able to proceed. The add_pad_libcell command is used to specify this additional information.
+In order to create a padring, additional information about the padcells needs to be provided in order to be able to proceed. The define_pad_cell command is used to specify this additional information.
 
 When specifying the orientation of padcells on a per side basis, use keys bottom, right, top and left. In the case of specifying corner cells use keys ll, lr, ur and ul instead.
 
@@ -36,21 +36,21 @@ One or more libcells can be defined as type filli, when filling a gap between pa
 
 ### Examples
 ```
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_SIG \
   -type sig \
   -cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name PAD
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_VDD \
   -type vdd \
   -cell_name {top PADCELL_VDD_V bottom PADCELL_VDD_V left PADCELL_VDD_H right PADCELL_VDD_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name VDD
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_CBRK \
   -type cbk \
   -cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H} \
@@ -58,7 +58,7 @@ add_pad_libcell \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB}} \
   -physical_only 1
 
-add_pad_libcell \
+define_pad_cell \
   -name PAD_CORNER \
   -corner \
   -orient {ll R0 lr R90 ur R180 ul R270} \

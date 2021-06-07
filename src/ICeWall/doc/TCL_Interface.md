@@ -2,7 +2,7 @@
 
 The following commands can be used from the command prompt to define the padring structure for the chip.
  - [add_pad](add_pad.md)
- - [add_pad_libcell](add_pad_libcell.md)
+ - [define_pad_cell](define_pad_cell.md)
  - [set_padring_options](set_padring_options.md)
  - [set_bump_options](set_bump_options.md)
 

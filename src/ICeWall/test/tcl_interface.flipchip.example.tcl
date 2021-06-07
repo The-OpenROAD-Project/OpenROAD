@@ -18,48 +18,48 @@ make_tracks
 source ../../../test/Nangate45/Nangate45.tracks
 
 # Load library defintions
-add_pad_libcell \
+define_pad_cell \
   -name PAD \
   -orient {bottom R0 right R90 top R180 left R270} \
   -bondpad \
   -pad_pin_name PAD 
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_SIG \
   -type sig \
   -cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name PAD
   
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_VDD \
   -type vdd \
   -cell_name {top PADCELL_VDD_V bottom PADCELL_VDD_V left PADCELL_VDD_H right PADCELL_VDD_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name VDD
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_VSS \
   -type vss \
   -cell_name {top PADCELL_VSS_V bottom PADCELL_VSS_V left PADCELL_VSS_H right PADCELL_VSS_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name VSS
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_VDDIO \
   -type vddio \
   -cell_name {top PADCELL_VDDIO_V bottom PADCELL_VDDIO_V left PADCELL_VDDIO_H right PADCELL_VDDIO_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name DVDD
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_VSSIO \
   -type vssio \
   -cell_name {top PADCELL_VSSIO_V bottom PADCELL_VSSIO_V left PADCELL_VSSIO_H right PADCELL_VSSIO_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name DVSS
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_CBRK \
   -type cbk \
   -cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H} \
@@ -67,14 +67,14 @@ add_pad_libcell \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB}} \
   -physical_only 1
   
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_PWRDET \
   -type pdt \
   -cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -physical_only 1
 
-add_pad_libcell \
+define_pad_cell \
   -name PADCELL_FBRK \
   -type fbk \
   -cell_name {bottom PADCELL_FBRK_V right PADCELL_FBRK_H top PADCELL_FBRK_V left PADCELL_FBRK_H} \
@@ -82,27 +82,27 @@ add_pad_libcell \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB} DVDD {DVDDA DVDDB} DVSS {DVSSA DVSSB}} \
   -physical_only 1
 
-add_pad_libcell \
+define_pad_cell \
   -name PAD_FILL5 \
   -fill \
   -cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H} \
   -orient {bottom R0 right MY top R180 left MX} \
   -physical_only 1
   
-add_pad_libcell \
+define_pad_cell \
   -name PAD_FILL1 \
   -fill \
   -cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H} \
   -orient {bottom R0 right MY top R180 left MX} \
   -physical_only 1
   
-add_pad_libcell \
+define_pad_cell \
   -name PAD_CORNER \
   -corner \
   -orient {ll R0 lr R90 ur R180 ul R270} \
   -physical_only 1
   
-add_pad_libcell \
+define_pad_cell \
   -name DUMMY_BUMP \
   -cell_name DUMMY_BUMP \
   -bump \
