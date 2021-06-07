@@ -406,7 +406,7 @@ OpenRoad::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro
 {
     dbPartitionDesign(verilog_network_, db_, max_num_macro, min_num_macro,
                       max_num_inst, min_num_inst, net_threshold, virtual_weight,
-                      file_name);
+                      file_name, logger_);
 }
 
 

@@ -139,10 +139,10 @@ namespace pin_alignment {
     void SimulatedAnnealingCore::Perturb() {
         if(macros_.size() == 1) {
             CalculateWirelength();
-            cout << "Before Flip:  " << wirelength_ << "  ";
+            //cout << "Before Flip:  " << wirelength_ << "  ";
             Flip();
-            CalculateWirelength();
-            cout << "After Flip:  " << wirelength_ << endl;
+            //CalculateWirelength();
+            //cout << "After Flip:  " << wirelength_ << endl;
             return;
         }
 

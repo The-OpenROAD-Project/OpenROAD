@@ -3,6 +3,7 @@
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "MLPart.h"
+#include "utl/Logger.h"
 
 
 #include <vector>
@@ -16,6 +17,8 @@
 #include <cmath>
 #include <tuple>
 #include <sys/stat.h>
+
+using utl::PAR;
 
 
 namespace par {
@@ -91,6 +94,11 @@ namespace par {
     // ******************************************************************************
     // Class autoclusterMgr
     // ******************************************************************************
+    //
+    //  traverseLogicalHierarchy
+    //  Recursive function to collect the design metrics (number of instances, hard macros, area)
+    //  in the logical hierarchy
+    //
     Metric autoclusterMgr::traverseLogicalHierarchy(sta::Instance* inst)
     {
         float area = 0.0;
@@ -163,6 +171,11 @@ namespace par {
 
 
 
+    //
+    // Handle Buffer transparency for handling net connection across buffers
+    //  RV? Is this handling chain of buffers?
+    //  TODO: handle inverter pairs
+    //
     void autoclusterMgr::getBufferNet()
     {
         vector<pair<Net*, Net*> > buffer_net;
@@ -222,7 +235,7 @@ namespace par {
                             else if(buffer_net[buffer_id].second == nullptr)
                                 buffer_net[buffer_id].second = net;
                             else
-                                cout << "[ERROR] This buffer has more than two nets" << endl;
+                                _logger->error(PAR, 101, "Buffer Net has more than two net connection...");
                         }
                     }
                 }
@@ -246,9 +259,19 @@ namespace par {
 
     
 
+    //
+    //  Create a bundled model for external pins.  Group boundary pins into bundles
+    //  Currently creates 3 groups per side
+    //  TODO
+    //     1) Make it customizable  number of bins per side
+    //     2) Use area to determine bundles
+    //     3) handle rectilinear boundaries and area pins (3D connections)
+    //
     void autoclusterMgr::createBundledIO()
     {
         // Get the floorplan information
+
+
         Rect die_box;
         _block->getDieArea(die_box);
         
@@ -299,13 +322,16 @@ namespace par {
             else if(uy == _floorplan_uy)
                 _bterm_map[bterm_name] = string("T");
             else
-                cout << "[ERROR] Please retry after floorplan initialization";
+                _logger->error(PAR, 1, "Floorplan has not been initialized? Pin location error.");
         }
         
         // verify the correctness of  BTerm mapping
+        //
+        // RV Check??
+        //
         unordered_map<string, string>::iterator term_map_iter;
-        int num_L1 = 0;
         int num_L = 0;
+        int num_L1 = 0;
         int num_L3 = 0;
         int num_R = 0;
         int num_R1 = 0;
@@ -1348,12 +1374,25 @@ namespace par {
  
 
 
+    //
+    //  Auto clustering by traversing the design hierarchy
+    //
+    //  Parameters:
+    //     max_num_inst, min_num_inst:  maximum and minimum number of instances in a cluster. If
+    //     a logical module has greater greater than the high threshold of instances, we descend down
+    //     the hierarchy to examine the children. If multiple clusters are created for child modules that
+    //     smaller than the min threshold value, we merge them based on connectivity signatures
+    //
+    //     max_num_macros, min_num_macros:  are used to guide the break up of macro clusters based on
+    //     nummber of macros.
+    //
     void autoclusterMgr::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
                                          unsigned int max_num_inst,  unsigned int min_num_inst,
                                          unsigned int net_threshold, unsigned int virtual_weight,
                                          const char* file_name
                                         ) 
     {
+        _logger->report("Running Partition Design...");
         mkdir("rtl_mp", 0777);
         
         _block = _db->getChip()->getBlock();
@@ -1370,6 +1409,8 @@ namespace par {
         
             
         // Map each boundled IO to cluster with zero area
+        // Create a cluster for each budled io
+        //
         vector<std::string> bundled_ios { string("L"), string("R"), string("T"), string("B"),
                                           string("L1"), string("R1"), string("T1"), string("B1"),
                                           string("L3"), string("R3"), string("T3"), string("B3")
@@ -1383,6 +1424,7 @@ namespace par {
         }
 
         Metric metric = traverseLogicalHierarchy(_network->topInstance());
+        _logger->info(PAR, 101, "Traversed Logical Hierarchy\n\t Number of std cell instances: {}\n\t Total Area: {}\n\t Number of Hard Macros: {}\n\t ", metric.num_inst, metric.area, metric.num_macro);
        
         // get all the nets with buffers
         getBufferNet();
@@ -1393,6 +1435,9 @@ namespace par {
         merge("top");
         
         // Break down clusters
+        // Recursive -- Walk down the tree and create clusters for logical modules
+        // Stop when the clusters are smaller than the max size threshold
+        //
         while(!_break_cluster_list.empty()) {
             Cluster* cluster = _break_cluster_list.front();
             _break_cluster_list.pop();
@@ -1400,6 +1445,9 @@ namespace par {
         }
 
         // Use MLPart to partition large clusters
+        // For clusters that are larger than max threshold size (flat insts) break down the cluster
+        // by netlist partitioning using MLPart
+        //
         for(int i = 0; i < _cluster_list.size(); i++) {
             if(_cluster_list[i]->getNumInst() > _max_num_inst) {
                 _mlpart_cluster_list.push(_cluster_list[i]);
@@ -1413,6 +1461,9 @@ namespace par {
         }
 
         // split the macros and std cells
+        // For clusters that contains HM and std cell -- split the cluster into two
+        // a HM part and a std cell part
+        //
         vector<Cluster*> par_cluster_vec;
         for(int i = 0; i < _cluster_list.size(); i++)
             if(_cluster_list[i]->getNumMacro() > 0)
@@ -1441,6 +1492,8 @@ namespace par {
 
 
         // group macros based on connection signature
+        // Use connection signatures to group and split macros
+        //
         queue<Cluster*> par_cluster_queue;
         for(int i = 0; i < _cluster_list.size(); i++) 
             if(_cluster_list[i]->getNumMacro() > 0)
@@ -1513,6 +1566,8 @@ namespace par {
         
 
         // generate block file
+        // Generates the output files needed by the macro placer
+        //
         unordered_map<int, Cluster*>::iterator map_iter = _cluster_map.begin();
 
         string block_file = string("./rtl_mp/") + string(file_name) + string(".block");
@@ -1611,9 +1666,9 @@ namespace ord {
                          unsigned int max_num_macro, unsigned int min_num_macro,
                          unsigned int max_num_inst,  unsigned int min_num_inst,
                          unsigned int net_threshold, unsigned int virtual_weight,
-                         const char* file_name)
+                         const char* file_name, Logger* logger)
     {
-        par::autoclusterMgr* engine = new par::autoclusterMgr(network, db);
+        par::autoclusterMgr* engine = new par::autoclusterMgr(network, db, logger);
         engine->partitionDesign(max_num_macro, min_num_macro, 
                                 max_num_inst,  min_num_inst,
                                 net_threshold, virtual_weight,

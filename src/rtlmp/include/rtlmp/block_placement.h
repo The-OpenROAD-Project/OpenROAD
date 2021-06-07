@@ -237,6 +237,7 @@ namespace block_placement {
 
     class SimulatedAnnealingCore {
         private:
+            // These parameters are related to fastSA
             float init_prob_ = 0.95;
             float rej_ratio_ = 0.95;
             int max_num_step_ = 1000;
@@ -271,18 +272,19 @@ namespace block_placement {
             float norm_boundary_penalty_;
             float norm_macro_blockage_penalty_;
 
-            float alpha_;
-            float beta_;
-            float gamma_;
-            float boundary_weight_;
-            float macro_blockage_weight_;
+            // These parameters are related to cost function
+            float alpha_; // weight for area
+            float beta_; // weight for wirelength
+            float gamma_; // weight for outline penalty
+            float boundary_weight_; // weight for boundary penalty
+            float macro_blockage_weight_; // weight for macro blockage weight
 
+            // These parameters are related to action probabilities
             float resize_prob_ = 0.4;
             float pos_swap_prob_ = 0.2;
             float neg_swap_prob_ = 0.2;
             float double_swap_prob_ = 0.2;
            
-            
             std::unordered_map<std::string, int> block_map_;
             std::unordered_map<std::string, std::pair<float, float> > terminal_position_;
             std::vector<Net*> nets_;

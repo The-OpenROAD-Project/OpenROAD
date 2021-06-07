@@ -63,32 +63,38 @@ namespace ord {
         const char* net_file = "./rtl_mp/partition.txt.net";
         
         // parameters defined in config_file
+        // These parameters are related to shape engine
         float min_aspect_ratio = 0.33;
         float dead_space = 0.1;
         float halo_width = 2.0;
         
         string region_file = string("macro_blockage.txt");
         
+        // These parameters are related to multi-start in shape engine
         int num_thread = 5;
         int num_run = 5;
-        float heat_rate = 0.5;
         
         unsigned seed = 0;
-        
+   
+        // These parameters are related to "Go with the winner"
+        float heat_rate = 0.5;
         int num_level = 5;
         int num_worker = 10;
         
-        float alpha = 0.4;
-        float beta = 0.3;
-        float gamma = 0.3;
-        float boundary_weight = 0.06;
-        float macro_blockage_weight = 0.08;
+        // These parameters are related to cost function
+        float alpha = 0.4; // weight for area
+        float beta = 0.3; // weight for wirelength
+        float gamma = 0.3; // weight for outline penalty
+        float boundary_weight = 0.06; // weight for pushing macros to boundary
+        float macro_blockage_weight = 0.08; // weight for macro blockage
 
+        // These parameters are related to action probabilities in each step
         float resize_prob = 0.4;
         float pos_swap_prob = 0.2;
         float neg_swap_prob = 0.2;
         float double_swap_prob = 0.2;
 
+        // These parameters are related to fastSA
         float init_prob = 0.95;
         float rej_ratio = 0.95;
         int k = 50;

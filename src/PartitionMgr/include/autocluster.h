@@ -3,6 +3,7 @@
 #include "db_sta/dbReadVerilog.hh"
 #include "opendb/db.h"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 #include <vector>
 #include <string>
@@ -10,6 +11,12 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+
+namespace utl {
+    class Logger;
+}
+
+using utl::Logger;
 
 namespace par {
     // * L1, L2, L3  : all the BTerms on the left boundary
@@ -216,8 +223,8 @@ namespace par {
     
     class autoclusterMgr {
         public:
-            autoclusterMgr(ord::dbVerilogNetwork *network, odb::dbDatabase *db)
-                : _network(network), _db(db) { }
+            autoclusterMgr(ord::dbVerilogNetwork *network, odb::dbDatabase *db, Logger *logger)
+                : _network(network), _db(db), _logger(logger) { }
 
             void partitionDesign(unsigned int max_num_macro,  unsigned int min_num_macro,
                                  unsigned int max_mum_inst,   unsigned int min_num_inst,
@@ -228,6 +235,7 @@ namespace par {
             ord::dbVerilogNetwork *_network = nullptr;
             odb::dbDatabase *_db = nullptr;
             odb::dbBlock* _block = nullptr;
+            Logger      *_logger;
             unsigned int _max_num_macro = 0;
             unsigned int _min_num_macro = 0;
             unsigned int _max_num_inst = 0;
@@ -313,7 +321,7 @@ namespace ord {
                          unsigned int max_num_macro, unsigned int min_num_macro,
                          unsigned int max_num_inst,  unsigned int min_num_inst,
                          unsigned int net_threshold, unsigned int virtual_weight,
-                         const char* file_name);
+                         const char* file_name, Logger* logger);
 
 }
 
