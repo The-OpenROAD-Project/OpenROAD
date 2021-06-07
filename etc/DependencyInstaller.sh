@@ -44,7 +44,7 @@ _installCommonDev() {
     tar -xf boost_${boostVersionUnderscore}.tar.gz
     cd boost_${boostVersionUnderscore}
     ./bootstrap.sh
-    ./b2 install --with-iostreams --with-test -j $(nproc)
+    ./b2 install -j $(nproc)
 
     # eigen
     cd "${baseDir}"
@@ -139,6 +139,7 @@ _installCentosDev() {
         zlib-devel \
         wget
     yum install -y \
+        python-devel \
         python36 \
         python36-devel \
         python36-pip
