@@ -300,9 +300,8 @@ class FlexDR
     // The logger_ and debugSettings_ are handled by the caller to use
     // the current ones.  graphics_ is handled when the debugSettings_ are
     // re-initialized.
-    // FIXME
     (ar) & design_;
-    // (ar) & db_;
+    // (ar) & db_; // only used during connectivity error dump
     (ar) & gcell2BoundaryPin_;
     (ar) & via_data_;
     (ar) & numViols_;
