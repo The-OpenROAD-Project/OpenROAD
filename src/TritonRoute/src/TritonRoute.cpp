@@ -363,7 +363,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   if (params.drouteViaInPinTopLayerNum > 0) {
     VIAINPIN_TOPLAYERNUM = params.drouteViaInPinTopLayerNum;
   }
-  if (params.drouteEndIter > 0) {
+  if (params.drouteEndIter >= 0) {
     END_ITERATION = params.drouteEndIter;
   }
   OR_SEED = params.orSeed;
