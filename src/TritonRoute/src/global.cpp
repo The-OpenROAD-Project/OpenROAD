@@ -62,8 +62,8 @@ bool USENONPREFTRACKS = true;
 bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
-
-frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
+frLayerNum VIAINPIN_DEFAULT_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
+frLayerNum VIAINPIN_BOTTOMLAYERNUM = VIAINPIN_DEFAULT_BOTTOMLAYERNUM;
 frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 int MINNUMACCESSPOINT_MACROCELLPIN = 3;
 int MINNUMACCESSPOINT_STDCELLPIN = 3;

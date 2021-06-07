@@ -816,10 +816,11 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   auto upper_type = ap->getType(false);
   if (layerNum >= VIAINPIN_BOTTOMLAYERNUM && layerNum <= VIAINPIN_TOPLAYERNUM) {
     viainpin = true;
-  } else if ((lower_type == frAccessPointEnum::EncOpt
+  } else if (VIAINPIN_BOTTOMLAYERNUM == VIAINPIN_DEFAULT_BOTTOMLAYERNUM && 
+          ((lower_type == frAccessPointEnum::EncOpt
               && upper_type != frAccessPointEnum::NearbyGrid)
              || (upper_type == frAccessPointEnum::EncOpt
-                 && lower_type != frAccessPointEnum::NearbyGrid)) {
+                 && lower_type != frAccessPointEnum::NearbyGrid))) {
     viainpin = true;
   }
 
