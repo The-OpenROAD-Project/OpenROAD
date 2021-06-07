@@ -155,8 +155,8 @@ class frInst : public frRef
     (ar) & pinAccessIdx_;
   }
 
-  frInst() = default; // for serialization
-  
+  frInst() = default;  // for serialization
+
   friend class boost::serialization::access;
 };
 

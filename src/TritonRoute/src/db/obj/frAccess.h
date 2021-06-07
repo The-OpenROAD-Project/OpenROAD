@@ -198,8 +198,8 @@ class frAccessPoint : public frBlockObject
     (ar) & aps_;
   }
 
-  frAccessPoint() = default; // for serialization
-  
+  frAccessPoint() = default;  // for serialization
+
   friend class boost::serialization::access;
 };
 

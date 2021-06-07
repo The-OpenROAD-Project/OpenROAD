@@ -130,8 +130,8 @@ class frRegionQuery
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
 
-  frRegionQuery(); // for serialization
-  
+  frRegionQuery();  // for serialization
+
   friend class boost::serialization::access;
 };
 }  // namespace fr

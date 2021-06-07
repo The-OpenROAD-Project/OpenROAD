@@ -219,8 +219,8 @@ class frNet : public frBlockObject
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
 
-  frNet() = default; // for serialization
-  
+  frNet() = default;  // for serialization
+
   friend class boost::serialization::access;
 };
 

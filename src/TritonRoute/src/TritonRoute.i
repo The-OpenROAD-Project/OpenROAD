@@ -127,5 +127,5 @@ run_worker_cmd(const char* file_name)
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->runDRWorker(file_name);
 }
-  
+
 %} // inline

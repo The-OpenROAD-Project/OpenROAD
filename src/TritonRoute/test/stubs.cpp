@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Author: Matt Liberty */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,43 +26,48 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_BLOCKAGE_H_
-#define _FR_BLOCKAGE_H_
+#include "db_sta/dbNetwork.hh"
+#include "ord/OpenRoad.hh"
 
-#include <memory>
+// Stubs out functions from OpenRoad that aren't needed by trTest but
+// are referenced from TritonRoute.a or its dependencies.
 
-#include "db/obj/frPin.h"
-#include "frBaseTypes.h"
+namespace ord {
 
-namespace fr {
-class frBlockage : public frBlockObject
+OpenRoad::OpenRoad()
 {
- public:
-  // constructors
-  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1) {}
-  // getters
-  frPin* getPin() const { return pin_.get(); }
-  frCoord getDesignRuleWidth() const { return design_rule_width_; }
-  // setters
-  void setPin(std::unique_ptr<frPin> in) { pin_ = std::move(in); }
-  void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
-  // others
-  frBlockObjectEnum typeId() const override { return frcBlockage; }
+}
 
- private:
-  std::unique_ptr<frPin> pin_;
-  frCoord design_rule_width_;
+OpenRoad* OpenRoad::openRoad()
+{
+  return nullptr;
+}
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & pin_;
-    (ar) & design_rule_width_;
-  }
+void OpenRoad::addObserver(Observer* observer)
+{
+}
 
-  friend class boost::serialization::access;
-};
-}  // namespace fr
+OpenRoad::Observer::~Observer()
+{
+}
 
-#endif
+}  // namespace ord
+
+namespace sta {
+
+Pin* dbNetwork::dbToSta(odb::dbBTerm*) const
+{
+  return nullptr;
+}
+
+void dbNetwork::staToDb(const Pin* pin, dbITerm*& iterm, dbBTerm*& bterm) const
+{
+}
+
+}  // namespace sta
+
+int
+ord::tclAppInit(Tcl_Interp *interp)
+{
+  return -1;
+}

@@ -86,7 +86,7 @@ class frBoundary : public frFig
     (ar) & points_;
   }
 
-  friend class boost::serialization::access; 
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

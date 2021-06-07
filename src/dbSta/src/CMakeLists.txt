@@ -59,9 +59,10 @@ target_include_directories(dbSta
 )
 
 target_link_libraries(dbSta
-  PRIVATE
+  PUBLIC
     OpenSTA
     opendb
+  PRIVATE
     gui
     utl
 )

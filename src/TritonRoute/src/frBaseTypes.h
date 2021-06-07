@@ -309,9 +309,24 @@ enum class MacroClassEnum
   ENDCAP_BOTTOMRIGHT
 };
 
-// This will go away when we move to OpenDB's types
-bool isPad(MacroClassEnum e);
-bool isEndcap(MacroClassEnum e);
+// These will go away when we move to OpenDB's types
+inline bool isPad(MacroClassEnum e)
+{
+  return e == MacroClassEnum::PAD || e == MacroClassEnum::PAD_INPUT
+         || e == MacroClassEnum::PAD_OUTPUT || e == MacroClassEnum::PAD_INOUT
+         || e == MacroClassEnum::PAD_POWER || e == MacroClassEnum::PAD_SPACER
+         || e == MacroClassEnum::PAD_AREAIO;
+}
+
+inline bool isEndcap(MacroClassEnum e)
+{
+  return e == MacroClassEnum::ENDCAP || e == MacroClassEnum::ENDCAP_PRE
+         || e == MacroClassEnum::ENDCAP_POST
+         || e == MacroClassEnum::ENDCAP_TOPLEFT
+         || e == MacroClassEnum::ENDCAP_TOPRIGHT
+         || e == MacroClassEnum::ENDCAP_BOTTOMLEFT
+         || e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
+}
 
 // note: In ascending cost order for FlexPA
 enum class frAccessPointEnum

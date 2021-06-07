@@ -64,8 +64,8 @@ class frInstBlockage : public frBlockObject
     (ar) & blockage_;
   }
 
-  frInstBlockage() = default; // for serialization
-  
+  frInstBlockage() = default;  // for serialization
+
   friend class boost::serialization::access;
 };
 }  // namespace fr

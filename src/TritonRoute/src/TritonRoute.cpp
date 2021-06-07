@@ -129,7 +129,7 @@ void TritonRoute::runDRWorker(const char* file_name)
   auto graphics = worker->getDR()->getGraphics();
   if (graphics) {
     graphics->startIter(worker->getDRIter());
-  }  
+  }
   worker->main();
 }
 
@@ -237,8 +237,6 @@ void TritonRoute::reportConstraints()
 {
   getDesign()->getTech()->printAllConstraints(logger_);
 }
-
-void test_serialization(bool use_archive);
 
 int TritonRoute::main()
 {
@@ -377,22 +375,3 @@ void TritonRoute::setParams(const ParamStruct& params)
     TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
   }
 }
-
-bool fr::isPad(MacroClassEnum e)
-{
-  return e == MacroClassEnum::PAD || e == MacroClassEnum::PAD_INPUT
-         || e == MacroClassEnum::PAD_OUTPUT || e == MacroClassEnum::PAD_INOUT
-         || e == MacroClassEnum::PAD_POWER || e == MacroClassEnum::PAD_SPACER
-         || e == MacroClassEnum::PAD_AREAIO;
-}
-
-bool fr::isEndcap(MacroClassEnum e)
-{
-  return e == MacroClassEnum::ENDCAP || e == MacroClassEnum::ENDCAP_PRE
-         || e == MacroClassEnum::ENDCAP_POST
-         || e == MacroClassEnum::ENDCAP_TOPLEFT
-         || e == MacroClassEnum::ENDCAP_TOPRIGHT
-         || e == MacroClassEnum::ENDCAP_BOTTOMLEFT
-         || e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
-}
-

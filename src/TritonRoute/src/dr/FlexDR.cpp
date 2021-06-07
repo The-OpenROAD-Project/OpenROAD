@@ -43,7 +43,9 @@
 using namespace std;
 using namespace fr;
 
-void serialize_worker(bool read, FlexDRWorker* worker, const std::string& name)
+static void serialize_worker(bool read,
+                             FlexDRWorker* worker,
+                             const std::string& name)
 {
   if (read) {
     std::ifstream file(name);
@@ -2265,10 +2267,10 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
   worker->setDebug(debugSettings);
   auto* dr = worker->getDR();
   dr->setLogger(logger);
-  dr->setDB(db); // must be before setDebug
+  dr->setDB(db);  // must be before setDebug
   dr->setDebug(debugSettings);
 
   worker->setGraphics(dr->getGraphics());
-  
+
   return worker;
 }
