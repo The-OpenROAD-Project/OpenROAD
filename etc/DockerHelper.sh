@@ -86,6 +86,7 @@ _setup() {
         *)
             echo "Target ${target} not found" >&2
             _help
+            ;;
     esac
     imagePath="${imageName}:${imageTag}"
     buildArgs="--build-arg fromImage=${fromImage} ${buildArgs}"
@@ -100,6 +101,7 @@ _test() {
         *)
             echo "Target ${target} is not valid candidate to run regression" >&2
             _help
+            ;;
     esac
     if [[ "$(docker images -q ${imagePath} 2> /dev/null)" == "" ]]; then
         echo "Could not find ${imagePath}, will attempt to create it" >&2
@@ -118,14 +120,42 @@ _push() {
         "dev" )
             read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
             echo
-            if [[ $REPLY =~ ^[Yy]$  ]]
-            then
-                echo "would have pushed [NOT IMPLEMENTED YET]"
+            if [[ $REPLY =~ ^[Yy]$  ]]; then
+                mkdir -p build
+
+                # create image with sha and latest tag for both os
+                ./etc/DockerHelper.sh create -target=dev \
+                    2>&1 | tee build/create-centos-latest.log
+                ./etc/DockerHelper.sh create -target=dev -sha \
+                    2>&1 | tee build/create-centos-${commitSha}.log
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 \
+                    2>&1 | tee build/create-ubuntu20-latest.log
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 -sha \
+                    2>&1 | tee build/create-ubuntu20-${commitSha}.log
+
+                # test image with sha and latest tag for both os and compiler
+                ./etc/DockerHelper.sh test -target=builder \
+                    2>&1 | tee build/test-centos-gcc-latest.log
+                ./etc/DockerHelper.sh test -target=builder -compiler=clang \
+                    2>&1 | tee build/test-centos-clang-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=ubuntu20 \
+                    2>&1 | tee build/test-ubuntu20-gcc-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=ubuntu20 -compiler=clang \
+                    2>&1 | tee build/test-ubuntu20-clang-latest.log
+
+                echo [DRY-RUN] docker push openroad/centos7-dev:latest
+                echo [DRY-RUN] docker push openroad/centos7-dev:${commitSha}
+                echo [DRY-RUN] docker push openroad/ubuntu20-dev:latest
+                echo [DRY-RUN] docker push openroad/ubuntu20-dev:${commitSha}
+
+            else
+                echo "Will not push."
             fi
             ;;
         *)
-            echo "Target ${target} is not valid candidate for push to DockerHub" >&2
+            echo "Target ${target} is not valid candidate for push to DockerHub." >&2
             _help
+            ;;
     esac
 }
 
