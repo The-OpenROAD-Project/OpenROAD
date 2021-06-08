@@ -109,8 +109,7 @@ void FlexGCWorker::Impl::initObj(const frBox& box,
                                  bool isFixed)
 {
   auto currNet = getNet(obj);
-  if (getDesign()->getTech()->getLayer(layerNum)->getType()
-      == frLayerTypeEnum::CUT) {
+  if (getTech()->getLayer(layerNum)->getType() == frLayerTypeEnum::CUT) {
     currNet->addRectangle(box, layerNum, isFixed);
   } else {
     currNet->addPolygon(box, layerNum, isFixed);
@@ -161,11 +160,8 @@ void FlexGCWorker::Impl::initDesign()
   frRegionQuery::Objects<frBlockObject> queryResult;
   int cnt = 0;
   // init all non-dr objs from design
-  // for (auto i = getDesign()->getTech()->getBottomLayerNum(); i <=
-  // design->getTech()->getTopLayerNum(); i++) {
-  for (auto i = 0; i <= design_->getTech()->getTopLayerNum(); i++) {
+  for (auto i = 0; i <= getTech()->getTopLayerNum(); i++) {
     queryResult.clear();
-    // queryResult.clear();
     regionQuery->query(queryBox, i, queryResult);
     for (auto& [box, obj] : queryResult) {
       if (initDesign_skipObj(obj)) {
@@ -180,8 +176,8 @@ void FlexGCWorker::Impl::initDesign()
     return;
   }
   cnt = 0;
-  for (auto i = getDesign()->getTech()->getBottomLayerNum();
-       i <= design_->getTech()->getTopLayerNum();
+  for (auto i = getTech()->getBottomLayerNum();
+       i <= getTech()->getTopLayerNum();
        i++) {
     queryResult.clear();
     regionQuery->queryDRObj(queryBox, i, queryResult);
@@ -377,7 +373,7 @@ void FlexGCWorker::Impl::initDRWorker()
 
 void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   // init pin from polygons
   vector<gtl::polygon_90_set_data<frCoord>> layerPolys(numLayers);
   vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
@@ -406,7 +402,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
     gcNet* net,
     vector<set<pair<frPoint, frPoint>>>& fixedPolygonEdges)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
   frPoint bp, ep, firstPt;
   // get fixed polygon edges from polygons
@@ -615,7 +611,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
 
 void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   vector<set<pair<frPoint, frPoint>>> fixedPolygonEdges(numLayers);
   // get all fixed polygon edges
   initNet_pins_polygonEdges_getFixedPolygonEdges(net, fixedPolygonEdges);
@@ -729,7 +725,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
 
 void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
       initNet_pins_polygonCorners_helper(net, pin.get());
@@ -741,7 +737,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(
     gcNet* net,
     vector<set<pair<frPoint, frPoint>>>& fixedMaxRectangles)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   vector<gtl::rectangle_data<frCoord>> rects;
   frPoint bp, ep;
   for (int i = 0; i < numLayers; i++) {
@@ -803,7 +799,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
 
 void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
+  int numLayers = getTech()->getLayers().size();
   vector<set<pair<frPoint, frPoint>>> fixedMaxRectangles(numLayers);
   // get all fixed max rectangles
   initNet_pins_maxRectangles_getFixedMaxRectangles(net, fixedMaxRectangles);
@@ -840,7 +836,7 @@ void FlexGCWorker::Impl::initNets()
 
 void FlexGCWorker::Impl::initRegionQuery()
 {
-  getWorkerRegionQuery().init(getDesign()->getTech()->getLayers().size());
+  getWorkerRegionQuery().init(getTech()->getLayers().size());
 }
 
 // init initializes all nets from frDesign if no drWorker is provided
