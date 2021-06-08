@@ -23,5 +23,8 @@ build
 test/results
 flow
 
+.idea/
+cmake-build-debug/
+
 coverage-output
 messages.txt
