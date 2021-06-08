@@ -26,6 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <boost/geometry.hpp>
 #include <iostream>
 
 #include "frProfileTask.h"
@@ -33,6 +34,9 @@
 
 using namespace std;
 using namespace fr;
+typedef bg::model::polygon<point_t> polygon_t;
+typedef bg::model::multi_polygon<polygon_t> mpolygon_t;
+
 inline bool isBlockage(frBlockObject* owner)
 {
   return owner
@@ -517,18 +521,41 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   addMarker(std::move(marker));
 }
 
-bool FlexGCWorker::Impl::checkMetalSpacing_short_skipOBSPin(
+inline polygon_t rect2polygon(const gtl::rectangle_data<frCoord>& rect)
+{
+  polygon_t poly;
+  bg::append(poly.outer(), point_t(gtl::xl(rect), gtl::yl(rect)));
+  bg::append(poly.outer(), point_t(gtl::xl(rect), gtl::yh(rect)));
+  bg::append(poly.outer(), point_t(gtl::xh(rect), gtl::yh(rect)));
+  bg::append(poly.outer(), point_t(gtl::xh(rect), gtl::yl(rect)));
+  bg::append(poly.outer(), point_t(gtl::xl(rect), gtl::yl(rect)));
+  return poly;
+}
+
+inline gtl::polygon_90_set_data<frCoord> bg2gtl(const polygon_t& p)
+{
+  gtl::polygon_90_set_data<frCoord> set;
+  gtl::polygon_90_data<frCoord> poly;
+  std::vector<gtl::point_data<frCoord>> points;
+  for (auto pt : p.outer()) {
+    points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
+  }
+  poly.set(points.begin(), points.end());
+  using namespace boost::polygon::operators;
+  set += poly;
+  return set;
+}
+void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     gcRect* rect1,
     gcRect* rect2,
     const gtl::rectangle_data<frCoord>& markerRect)
 {
+  if (rect1->isFixed() && rect2->isFixed())
+    return;
   bool isRect1Obs = isBlockage(rect1->getNet()->getOwner());
   bool isRect2Obs = isBlockage(rect2->getNet()->getOwner());
-  if (!isRect1Obs && !isRect2Obs) {
-    return false;
-  }
   if (isRect1Obs && isRect2Obs) {
-    return false;
+    return;
   }
   // always make obs to be rect2
   if (isRect1Obs) {
@@ -537,20 +564,34 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipOBSPin(
   // now rect is not obs, rect2 is obs
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
-
   // check if markerRect is covered by fixed shapes of net1
+  mpolygon_t pins;
   auto& polys1 = net1->getPolygons(layerNum, true);
   vector<gtl::rectangle_data<frCoord>> rects;
   gtl::get_max_rectangles(rects, polys1);
   for (auto& rect : rects) {
     if (gtl::contains(rect, markerRect)) {
-      return true;
+      return;
+    }
+    pins.push_back(rect2polygon(rect));
+  }
+  polygon_t markerPoly = rect2polygon(markerRect);
+  std::vector<polygon_t> result;
+  bg::difference(markerPoly, pins, result);
+  for (auto poly : result) {
+    std::list<gtl::rectangle_data<frCoord>> res;
+    gtl::get_max_rectangles(res, bg2gtl(poly));
+    for (auto rect : res) {
+      gcRect* rect3 = new gcRect(*rect2);
+      rect3->setRect(rect);
+      gtl::rectangle_data<frCoord> newMarkerRect(markerRect);
+      gtl::intersect(newMarkerRect, *rect3);
+      checkMetalSpacing_short(rect1, rect3, newMarkerRect);
     }
   }
-  return false;
 }
 
-void FlexGCWorker::Impl::checkMetalSpacing_short(
+bool FlexGCWorker::Impl::checkMetalSpacing_short_skipFixed(
     gcRect* rect1,
     gcRect* rect2,
     const gtl::rectangle_data<frCoord>& markerRect)
@@ -558,48 +599,46 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  if (rect1->isFixed() && rect2->isFixed()) {
-    return;
+  gtl::rectangle_data<frCoord> bloatMarkerRect(markerRect);
+  if (gtl::delta(markerRect, gtl::HORIZONTAL) == 0) {
+    gtl::bloat(bloatMarkerRect, gtl::HORIZONTAL, 1);
   }
-  // skip obs overlaps with pin
-  if (checkMetalSpacing_short_skipOBSPin(rect1, rect2, markerRect)) {
-    return;
+  if (gtl::delta(markerRect, gtl::VERTICAL) == 0) {
+    gtl::bloat(bloatMarkerRect, gtl::VERTICAL, 1);
   }
+  using namespace boost::polygon::operators;
+  auto& polys1 = net1->getPolygons(layerNum, false);
+  auto intersection_polys1 = polys1 & bloatMarkerRect;
+  auto& polys2 = net2->getPolygons(layerNum, false);
+  auto intersection_polys2 = polys2 & bloatMarkerRect;
+  if (gtl::empty(intersection_polys1) && gtl::empty(intersection_polys2)) {
+    return true;
+  }
+  return false;
+}
 
-  // skip if marker area does not have route shape, must exclude touching
-  {
-    // bloat marker by minimum coord if zero
-    gtl::rectangle_data<frCoord> bloatMarkerRect(markerRect);
-    if (gtl::delta(markerRect, gtl::HORIZONTAL) == 0) {
-      gtl::bloat(bloatMarkerRect, gtl::HORIZONTAL, 1);
-    }
-    if (gtl::delta(markerRect, gtl::VERTICAL) == 0) {
-      gtl::bloat(bloatMarkerRect, gtl::VERTICAL, 1);
-    }
-    using namespace boost::polygon::operators;
-    auto& polys1 = net1->getPolygons(layerNum, false);
-    auto intersection_polys1 = polys1 & bloatMarkerRect;
-    auto& polys2 = net2->getPolygons(layerNum, false);
-    auto intersection_polys2 = polys2 & bloatMarkerRect;
-    if (gtl::empty(intersection_polys1) && gtl::empty(intersection_polys2)) {
-      return;
-    }
-  }
-  // skip same-net sufficient metal
+bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
+    gcRect* rect1,
+    gcRect* rect2,
+    const gtl::rectangle_data<frCoord>& markerRect)
+{
+  auto layerNum = rect1->getLayerNum();
+  auto net1 = rect1->getNet();
+  auto net2 = rect2->getNet();
   if (net1 == net2) {
     // skip if good
     auto minWidth = getDesign()->getTech()->getLayer(layerNum)->getMinWidth();
     auto xLen = gtl::delta(markerRect, gtl::HORIZONTAL);
     auto yLen = gtl::delta(markerRect, gtl::VERTICAL);
     if (xLen * xLen + yLen * yLen >= minWidth * minWidth) {
-      return;
+      return true;
     }
     // skip if rect < minwidth
     if ((gtl::delta(*rect1, gtl::HORIZONTAL) < minWidth
          || gtl::delta(*rect1, gtl::VERTICAL) < minWidth)
         || (gtl::delta(*rect2, gtl::HORIZONTAL) < minWidth
             || gtl::delta(*rect2, gtl::VERTICAL) < minWidth)) {
-      return;
+      return true;
     }
     // query third object that can bridge rect1 and rect2 in bloated marker area
     gtl::point_data<frCoord> centerPt;
@@ -638,11 +677,31 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
         auto yLen2 = gtl::delta(tmpRect2, gtl::VERTICAL);
         if (xLen1 * xLen1 + yLen1 * yLen1 >= minWidth * minWidth
             && xLen2 * xLen2 + yLen2 * yLen2 >= minWidth * minWidth) {
-          return;
+          return true;
         }
       }
     }
   }
+  return false;
+}
+
+void FlexGCWorker::Impl::checkMetalSpacing_short(
+    gcRect* rect1,
+    gcRect* rect2,
+    const gtl::rectangle_data<frCoord>& markerRect)
+{
+  auto layerNum = rect1->getLayerNum();
+  auto net1 = rect1->getNet();
+  auto net2 = rect2->getNet();
+  if (rect1->isFixed() && rect2->isFixed())
+    return;
+
+  // skip if marker area does not have route shape, must exclude touching
+  if (checkMetalSpacing_short_skipFixed(rect1, rect2, markerRect))
+    return;
+  // skip same-net sufficient metal
+  if (checkMetalSpacing_short_skipSameNet(rect1, rect2, markerRect))
+    return;
 
   auto marker = make_unique<frMarker>();
   frBox box(gtl::xl(markerRect),
@@ -705,7 +764,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
 
   // short, nsmetal
   if (distX == 0 && distY == 0) {
-    checkMetalSpacing_short(ptr1, ptr2, markerRect);
+    if (isBlockage(ptr1->getNet()->getOwner())
+        || isBlockage(ptr2->getNet()->getOwner()))
+      checkMetalSpacing_short_obs(ptr1, ptr2, markerRect);
+    else
+      checkMetalSpacing_short(ptr1, ptr2, markerRect);
     // prl
   } else {
     checkMetalSpacing_prl(
