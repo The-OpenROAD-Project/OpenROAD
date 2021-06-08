@@ -407,7 +407,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
     frCoord prl,
     frCoord distX,
     frCoord distY,
-    bool isNDR)
+    bool isNDR,
+    bool checkPolyEdge)
 {
   // no violation if fixed shapes
   if (rect1->isFixed() && rect2->isFixed()) {
@@ -416,19 +417,19 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
+  
+    auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+    if (isNDR) {
+      frCoord ndrSpc1 = 0, ndrSpc2 = 0;
+      if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
+        ndrSpc1
+            = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
+      if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
+        ndrSpc2
+            = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
 
-  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
-  if (isNDR) {
-    frCoord ndrSpc1 = 0, ndrSpc2 = 0;
-    if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
-      ndrSpc1
-          = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
-    if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
-      ndrSpc2
-          = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
-
-    reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
-  }
+      reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
+    }
 
   // no violation if spacing satisfied
   if (distX * distX + distY * distY >= reqSpcVal * reqSpcVal) {
@@ -446,49 +447,89 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
       type = 1;
     }
   }
-  if (!checkMetalSpacing_prl_hasPolyEdge(rect1, rect2, markerRect, type, prl)) {
-    return;
-  }
-  // no violation if bloat width cannot find non-fixed route shapes
-  bool hasRoute = false;
-  if (!hasRoute) {
-    // marker enlarged by width
-    auto width = rect1->width();
-    gtl::rectangle_data<frCoord> enlargedMarkerRect(markerRect);
-    gtl::bloat(enlargedMarkerRect, width);
-    // widthrect
-    gtl::polygon_90_set_data<frCoord> tmpPoly;
-    using namespace boost::polygon::operators;
-    tmpPoly += enlargedMarkerRect;
-    tmpPoly &= *rect1;  // tmpPoly now is widthrect
-    auto targetArea = gtl::area(tmpPoly);
-    // get fixed shapes
-    tmpPoly &= net1->getPolygons(layerNum, true);
-    if (gtl::area(tmpPoly) < targetArea) {
-      hasRoute = true;
+  if (checkPolyEdge) {
+    if (!checkMetalSpacing_prl_hasPolyEdge(rect1, rect2, markerRect, type, prl)) {
+      return;
     }
-  }
-  if (!hasRoute) {
-    // marker enlarged by width
-    auto width = rect2->width();
-    gtl::rectangle_data<frCoord> enlargedMarkerRect(markerRect);
-    gtl::bloat(enlargedMarkerRect, width);
-    // widthrect
-    gtl::polygon_90_set_data<frCoord> tmpPoly;
-    using namespace boost::polygon::operators;
-    tmpPoly += enlargedMarkerRect;
-    tmpPoly &= *rect2;  // tmpPoly now is widthrect
-    auto targetArea = gtl::area(tmpPoly);
-    // get fixed shapes
-    tmpPoly &= net2->getPolygons(layerNum, true);
-    if (gtl::area(tmpPoly) < targetArea) {
-      hasRoute = true;
+    // no violation if bloat width cannot find non-fixed route shapes
+    bool hasRoute = false;
+    if (!hasRoute) {
+      // marker enlarged by width
+      auto width = rect1->width();
+      gtl::rectangle_data<frCoord> enlargedMarkerRect(markerRect);
+      gtl::bloat(enlargedMarkerRect, width);
+      // widthrect
+      gtl::polygon_90_set_data<frCoord> tmpPoly;
+      using namespace boost::polygon::operators;
+      tmpPoly += enlargedMarkerRect;
+      tmpPoly &= *rect1;  // tmpPoly now is widthrect
+      auto targetArea = gtl::area(tmpPoly);
+      // get fixed shapes
+      tmpPoly &= net1->getPolygons(layerNum, true);
+      if (gtl::area(tmpPoly) < targetArea) {
+        hasRoute = true;
+      }
     }
+    if (!hasRoute) {
+      // marker enlarged by width
+      auto width = rect2->width();
+      gtl::rectangle_data<frCoord> enlargedMarkerRect(markerRect);
+      gtl::bloat(enlargedMarkerRect, width);
+      // widthrect
+      gtl::polygon_90_set_data<frCoord> tmpPoly;
+      using namespace boost::polygon::operators;
+      tmpPoly += enlargedMarkerRect;
+      tmpPoly &= *rect2;  // tmpPoly now is widthrect
+      auto targetArea = gtl::area(tmpPoly);
+      // get fixed shapes
+      tmpPoly &= net2->getPolygons(layerNum, true);
+      if (gtl::area(tmpPoly) < targetArea) {
+        hasRoute = true;
+      }
+    }
+    if (!hasRoute) {
+      return;
+    }
+  }else {
+      using namespace boost::polygon::operators;
+      auto& netPoly = net1->getPolygons(layerNum, false); //consider net1 since spc rect is always rect1
+      gtl::polygon_90_set_data<frCoord> markerPoly;
+      gtl::rectangle_data<frCoord> mRect(markerRect);
+      //special treatment for  0 width marker since we cant create a polygon with it
+      if (gtl::xh(markerRect) - gtl::xl(markerRect) == 0 || gtl::yh(markerRect) - gtl::yl(markerRect) == 0) { 
+          bool isX = gtl::xh(markerRect) - gtl::xl(markerRect) == 0;
+          // bloat marker to be able to create a valid polygon
+          if (isX) {
+              gtl::xh(mRect, gtl::xh(mRect)+1);
+              gtl::xl(mRect, gtl::xl(mRect)-1);
+          }else{
+              gtl::yh(mRect, gtl::yh(mRect)+1);
+              gtl::yl(mRect, gtl::yl(mRect)-1);
+          }
+          markerPoly += mRect;
+          markerPoly -= netPoly;
+          if (markerPoly.size() == 0)
+            return;
+          //check if the edge related to the 0 width is within the net shape (this is an indirect check)
+          vector<gtl::rectangle_data<frCoord>> rects;
+          markerPoly.get_rectangles(rects);
+          if (rects.size() == 1) {
+              if (isX) {
+                  if (gtl::xl(rects[0]) == gtl::xl(markerRect) || gtl::xh(rects[0]) == gtl::xl(markerRect))
+                      return;
+              }else {
+                  if (gtl::yl(rects[0]) == gtl::yl(markerRect) || gtl::yh(rects[0]) == gtl::yl(markerRect))
+                      return;
+              }
+          }
+      } else {
+        markerPoly += mRect;
+        markerPoly -= netPoly;
+        if (markerPoly.size() == 0)
+            return;
+      }
+      
   }
-  if (!hasRoute) {
-    return;
-  }
-
   auto marker = make_unique<frMarker>();
   frBox box(gtl::xl(markerRect),
             gtl::yl(markerRect),
@@ -681,7 +722,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
 
 void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                                                 gcRect* ptr2,
-                                                bool isNDR)
+                                                bool isNDR, bool isSpc)
 {
   // NSMetal does not need self-intersection
   // Minimum width rule handles outsite this function
@@ -709,7 +750,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
     // prl
   } else {
     checkMetalSpacing_prl(
-        ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY, isNDR);
+        ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY, isNDR, !isSpc);
   }
 }
 
@@ -729,12 +770,12 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect,
     vector<rq_box_value_t<gcRect>> resultS;
     workerRegionQuery.querySpcRectangle(queryBox, layerNum, resultS);
     for (auto& [objBox, ptr] : resultS) {
-      checkMetalSpacing_main(rect, &ptr, isNDR);
+      checkMetalSpacing_main(rect, &ptr, isNDR, true);
     }
   }
   // Short, metSpc, NSMetal here
   for (auto& [objBox, ptr] : result) {
-    checkMetalSpacing_main(rect, ptr, isNDR);
+    checkMetalSpacing_main(rect, ptr, isNDR, querySpcRects);
   }
 }
 

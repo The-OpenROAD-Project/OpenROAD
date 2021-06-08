@@ -270,10 +270,8 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  if (!net_) {
-    return;
-  }
-
+  if (points_by_layer_.empty())
+        return;
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
@@ -283,7 +281,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
+  if (worker_ && gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     frBox box;
     if (drawWholeDesign_) {
       worker_->getDesign()->getTopBlock()->getDieBox(box);
@@ -302,7 +300,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (gui_->checkCustomVisibilityControl(route_guides_visible_)) {
+  if (net_ && gui_->checkCustomVisibilityControl(route_guides_visible_)) {
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
@@ -388,7 +386,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
     }
   }
-
+  if (!worker_)
+      return;
   // Draw markers
   frBox box;
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
@@ -546,6 +545,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     frBox box;
     worker_->getExtBox(box);
     gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+    if (settings_->draw)
+      gui_->redraw();
     if (settings_->allowPause)
       gui_->pause();
   }
