@@ -620,10 +620,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();
 
-  auto& cons = design_->getTech()->getLayer(layerNum)->getEolSpacing();
-  auto lef58Cons = design_->getTech()
-                       ->getLayer(layerNum)
-                       ->getLef58SpacingEndOfLineConstraints();
+  auto& cons = getTech()->getLayer(layerNum)->getEolSpacing();
+  auto lef58Cons
+      = getTech()->getLayer(layerNum)->getLef58SpacingEndOfLineConstraints();
   if (cons.empty() && lef58Cons.empty()) {
     return;
   }
@@ -644,13 +643,12 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
 {
   if (targetNet_) {
     // layer --> net --> polygon
-    for (int i
-         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
-                    minLayerNum_);
-         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
-                       maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getDesign()->getTech()->getLayer(i);
+      auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
         continue;
       }
@@ -660,13 +658,12 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
     }
   } else {
     // layer --> net --> polygon
-    for (int i
-         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
-                    minLayerNum_);
-         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
-                       maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getDesign()->getTech()->getLayer(i);
+      auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
         continue;
       }

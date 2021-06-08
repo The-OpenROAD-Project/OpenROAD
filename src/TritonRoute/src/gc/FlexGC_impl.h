@@ -89,17 +89,16 @@ class FlexGCWorker::Impl
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
   {
-    return std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
+    return std::max((frLayerNum) (getTech()->getBottomLayerNum()),
                     minLayerNum_);
   }
   frLayerNum getMaxLayerNum()  // inclusive
   {
-    return std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
-                    maxLayerNum_);
+    return std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {
-    auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());
+    auto uNet = std::make_unique<gcNet>(getTech()->getLayers().size());
     auto net = uNet.get();
     net->setOwner(owner);
     nets_.push_back(std::move(uNet));
@@ -115,9 +114,9 @@ class FlexGCWorker::Impl
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
   frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
   const frBox& getExtBox() const { return extBox_; }
-  frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
   std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
   // others
   void init();
