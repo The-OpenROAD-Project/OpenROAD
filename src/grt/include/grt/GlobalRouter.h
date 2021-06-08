@@ -276,6 +276,7 @@ class GlobalRouter
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
+  void findClockDrivers();
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool clockHasLeafITerm(odb::dbNet* db_net);

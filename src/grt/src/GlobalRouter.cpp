@@ -2484,6 +2484,7 @@ void GlobalRouter::initNetlist()
     }
 
     addNets(db_nets);
+    findClockDrivers();
   }
 }
 
@@ -2791,6 +2792,27 @@ void GlobalRouter::makeBtermPins(Net* net,
       }
     }
     net->addPin(pin);
+  }
+}
+
+void GlobalRouter::findClockDrivers()
+{
+  for (Net& net : *_nets) {
+    if ((net.getSignalType() == odb::dbSigType::CLOCK) &&
+        !clockHasLeafITerm(net.getDbNet())) {
+      odb::dbNet* db_net = net.getDbNet();
+      odb::dbITerm* driver = db_net->getFirstOutput();
+      if (driver != nullptr) {
+        std::vector<Pin>& pins = net.getPins();
+        std::vector<Pin>::iterator it = 
+          std::find_if(pins.begin(), pins.end(),
+            [&](Pin p) {
+              return (p.getITerm() == driver);
+            });
+        int pin_idx = it - pins.begin();
+        pins[pin_idx].setDriver();
+      }
+    }
   }
 }
 
