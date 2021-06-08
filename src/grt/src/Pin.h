@@ -92,6 +92,8 @@ class Pin
   bool isConnectedToPad() const { return _connectedToPad; }
   const odb::Point& getOnGridPosition() const { return _onGridPosition; }
   void setOnGridPosition(odb::Point onGridPos) { _onGridPosition = onGridPos; }
+  void setDriver() { _isDriver = true; }
+  bool isDriver() const { return _isDriver; }
 
  private:
   union
@@ -106,6 +108,7 @@ class Pin
   std::map<int, std::vector<odb::Rect>> _boxesPerLayer;
   bool _isPort;
   bool _connectedToPad;
+  bool _isDriver;
 };
 
 }  // namespace grt

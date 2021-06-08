@@ -51,6 +51,7 @@ Pin::Pin(odb::dbITerm* iterm,
       _orientation(orientation),
       _boxesPerLayer(boxesPerLayer),
       _isPort(false),
+      _isDriver(false),
       _connectedToPad(connectedToPad)
 {
   std::sort(_layers.begin(), _layers.end());
@@ -68,6 +69,7 @@ Pin::Pin(odb::dbBTerm* bterm,
       _orientation(orientation),
       _boxesPerLayer(boxesPerLayer),
       _isPort(true),
+      _isDriver(false),
       _connectedToPad(connectedToPad)
 {
   std::sort(_layers.begin(), _layers.end());
