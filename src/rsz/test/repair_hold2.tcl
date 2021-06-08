@@ -18,7 +18,8 @@ report_checks -path_delay min -to out
 
 repair_timing -hold
 
-report_checks -path_delay min
+report_worst_slack -min
+report_worst_slack -max
 
 # Verilog "ports" are based on net names so make sure port nets
 # are preserved on inputs and outputs.

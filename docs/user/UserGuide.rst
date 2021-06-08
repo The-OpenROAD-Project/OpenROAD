@@ -47,8 +47,8 @@ The dependencies can either be obtained from a pre-compiled build export
 or built manually. See the `KLayout website <https://www.klayout.de/>`__
 for installation instructions.
 
-Option 1: Installing build exports*\*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Option 1: Installing build exports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Clone the OpenROAD-flow repository
 
@@ -67,7 +67,7 @@ Option 1: Installing build exports*\*
       source setup_env.sh
 
 Option 2: Building the tools using docker
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This build option leverages a multi-step docker flow to install the
 tools and dependencies to a runner image. To follow these instructions,
@@ -95,8 +95,8 @@ tagged as ``openroad/flow``.
 
       docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow bash
 
-Option 3: Building the tools locally*\*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Option 3: Building the tools locally
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Reference the Dockerfiles and READMEs for the separate tools on the
    build steps and dependencies.
