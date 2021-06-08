@@ -706,8 +706,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
           netAlpha = _netsAlpha[net->getName()];
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK) &&
-                       !clockHasLeafITerm(net->getDbNet()) &&
-                       _minLayerForClock > 0 && _maxLayerForClock > 0;
+                       !clockHasLeafITerm(net->getDbNet());
 
         int numLayers = _grid->getNumLayers();
         std::vector<int> edgeCostsPerLayer(numLayers + 1, 1);
