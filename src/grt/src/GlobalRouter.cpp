@@ -661,7 +661,11 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
       }
 
       if (!invalid) {
-        pinsOnGrid.push_back(RoutePt(pinX, pinY, topLayer));
+        RoutePt onGrid = RoutePt(pinX, pinY, topLayer);
+        if (pin.isDriver()) {
+          onGrid.setAsRoot();
+        }
+        pinsOnGrid.push_back(onGrid);
       }
     }
   }
@@ -720,7 +724,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
                                        edgeCostForNet,
                                        edgeCostsPerLayer);
         for (RoutePt& pinPos : pinsOnGrid) {
-          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
+          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer()-1, pinPos.isRoot());
         }
       }
     }
@@ -3337,6 +3341,7 @@ void GlobalRouter::reportLayerWireLengths()
 
 RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
 {
+  _is_root = false;
 }
 
 bool operator<(const RoutePt& p1, const RoutePt& p2)

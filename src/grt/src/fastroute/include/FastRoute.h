@@ -70,7 +70,7 @@ class FastRouteCore
   void setLowerLeft(int x, int y);
   void setTileSize(int width, int height);
   void setLayerOrientation(int x);
-  void addPin(int netID, int x, int y, int layer);
+  void addPin(int netID, int x, int y, int layer, bool isRoot);
   int addNet(odb::dbNet* db_net,
              int nPins,
              int validPins,
