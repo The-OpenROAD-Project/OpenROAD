@@ -27,7 +27,7 @@ jobs:
     if: github.event.repository.private && github.event.label.name == 'Ready To Sync Public'
     steps:
     - name: Detect configuration
-      uses: The-OpenROAD-Project/actions/auto_config@main
+      uses: mithro/openroad-actions/auto_config@main
 
     - name: Removing label '${{ github.event.label.name }}'
       uses: The-OpenROAD-Project/actions/remove_label@main
@@ -39,8 +39,8 @@ jobs:
         branch: ${{ env.PRIVATE_BRANCH }}
         checkout: true
 
-    - name: Run security scan
-      uses: The-OpenROAD-Project/actions/security_scan_on_push@main
+#    - name: Run security scan
+#      uses: The-OpenROAD-Project/actions/security_scan_on_push@main
 
     - name: Push to staging repository.
       uses: The-OpenROAD-Project/actions/push_to@main
@@ -51,9 +51,15 @@ jobs:
         deployToken: ${{ secrets.STAGING_GITHUB_TOKEN }}
         force: true
 
+#    - id: send_pr
+#      name: Create PR if needed.
+#      uses: The-OpenROAD-Project/actions/send_pr@main
+#      env:
+#        STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+#
     - id: send_pr
       name: Create PR if needed.
-      uses: The-OpenROAD-Project/actions/send_pr@main
+      uses: mithro/openroad-actions/send_pr@main
       env:
         STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
 
