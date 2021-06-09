@@ -79,7 +79,7 @@ You can select a design using either of the following methods:
 1. The flow `Makefile`_ contains a list of sample design configurations at
 the top of the file.  Uncomment the respective line to select the design
 2. Specify the design using the shell environment, e.g.
-``make DESIGN_CONFIG=./designs/nangate45/swerve/config.mk`` or
+``make DESIGN_CONFIG=./designs/nangate45/swerv/config.mk`` or
 ``export DESIGN_CONFIG=./designs/nangate45/swerv/config.mk ; make``
 
 By default, the simple design gcd is selected. We recommend implementing
