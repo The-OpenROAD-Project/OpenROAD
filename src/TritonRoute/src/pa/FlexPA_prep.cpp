@@ -838,9 +838,9 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   }
 
   // check if ap is on the left/right boundary of the cell
+  frBox boundaryBBox;
   bool isLRBound = false;
   if (instTerm) {
-    frBox boundaryBBox;
     instTerm->getInst()->getBoundaryBBox(boundaryBBox);
     frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
     if (bp.x() <= boundaryBBox.left() + 3 * width
@@ -855,49 +855,42 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     auto via = make_unique<frVia>(viaDef);
     via->setOrigin(bp);
     via->getLayer1BBox(box);
+    if (instTerm) {
+        if (!boundaryBBox.contains(box))
+            continue;
+        frBox layer2BBox;
+        via->getLayer2BBox(layer2BBox);
+        if (!boundaryBBox.contains(layer2BBox))
+            continue;
+    }
+    
+    frCoord maxExt = 0;
     gtl::rectangle_data<frCoord> viarect(
         box.left(), box.bottom(), box.right(), box.top());
     using namespace boost::polygon::operators;
-    gtl::polygon_90_set_data<frCoord> intersection = polyset & viarect;
-    gtl::rectangle_data<frCoord> intersection_extRect;
-    intersection.extents(intersection_extRect);
-    frCoord leftExt
-        = std::max(0, gtl::xl(intersection_extRect) - gtl::xl(viarect));
-    frCoord rightExt
-        = std::max(0, -gtl::xh(intersection_extRect) + gtl::xh(viarect));
-    frCoord bottomExt
-        = std::max(0, gtl::yl(intersection_extRect) - gtl::yl(viarect));
-    frCoord topExt
-        = std::max(0, -gtl::yh(intersection_extRect) + gtl::yh(viarect));
-    // via ranking criteria: max extension distance beyond pin shape
-    frCoord maxExt
-        = std::max(std::max(leftExt, rightExt), std::max(bottomExt, topExt));
-    if (isLRBound && !viainpin) {
-      maxExt = std::max(leftExt, rightExt);
-    }
-    if (viainpin && maxExt > 0) {
-      continue;
-    }
-    if (instTerm) {
-      frBox boundaryBBox;
-      instTerm->getInst()->getBoundaryBBox(boundaryBBox);
-      if (!boundaryBBox.contains(box)) {
+    gtl::polygon_90_set_data<frCoord> diff;
+    diff += viarect;
+    diff -= polyset;
+    if (viainpin && diff.size() > 0) {
         continue;
-      }
     }
-
-    // avoid layer2BBox outside of cell
-    if (instTerm) {
-      frBox layer2BBox, boundaryBBox;
-      via->getLayer2BBox(layer2BBox);
-      instTerm->getInst()->getBoundaryBBox(boundaryBBox);
-      if (!boundaryBBox.contains(layer2BBox)) {
-        continue;
-      }
-    }
-
     if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
+        if (diff.size() > 0) {
+            // via ranking criteria: max extension distance beyond pin shape
+            vector<gtl::rectangle_data<frCoord>> remnRects;
+            diff.get_rectangles(remnRects, gtl::orientation_2d_enum::HORIZONTAL);
+            for (auto& r : remnRects) {
+                maxExt = max(maxExt, gtl::xh(r) - gtl::xl(r));
+            }
+            if (!isLRBound) {
+                remnRects.clear();
+                diff.get_rectangles(remnRects, gtl::orientation_2d_enum::VERTICAL);
+                for (auto& r : remnRects) {
+                    maxExt = max(maxExt, gtl::yh(r) - gtl::yl(r));
+                }
+            }
+        }
+        validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
     }
   }
   if (validViaDefs.empty()) {
