@@ -520,10 +520,17 @@ void FastRouteCore::setLayerOrientation(int x)
 
 void FastRouteCore::addPin(int netID, int x, int y, int layer, bool isRoot)
 {
-  nets[netID]->pinX.push_back(x);
-  nets[netID]->pinY.push_back(y);
-  nets[netID]->pinL.push_back(layer);
-  nets[netID]->pinRoot.push_back(isRoot);
+  if (isRoot) {
+    nets[netID]->pinX.insert(nets[netID]->pinX.begin(), x);
+    nets[netID]->pinY.insert(nets[netID]->pinY.begin(), y);
+    nets[netID]->pinL.insert(nets[netID]->pinL.begin(), layer);
+    nets[netID]->pinRoot.insert(nets[netID]->pinRoot.begin(), isRoot);
+  } else {
+    nets[netID]->pinX.push_back(x);
+    nets[netID]->pinY.push_back(y);
+    nets[netID]->pinL.push_back(layer);
+    nets[netID]->pinRoot.push_back(isRoot);
+  }
 }
 
 int FastRouteCore::addNet(odb::dbNet* db_net,

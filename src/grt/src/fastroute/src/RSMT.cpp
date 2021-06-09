@@ -724,7 +724,6 @@ void gen_brk_RSMT(Bool congestionDriven,
     int sizeV = nets[i]->numPins;
     int x[sizeV];
     int y[sizeV];
-    int root = 0;
 
     if (congestionDriven) {
       coeffV = coeffADJ(i);
@@ -740,9 +739,6 @@ void gen_brk_RSMT(Bool congestionDriven,
     for (j = 0; j < d; j++) {
       x[j] = nets[i]->pinX[j];
       y[j] = nets[i]->pinY[j];
-      if (nets[i]->pinRoot[j]) {
-        root = j;
-      }
     }
 
     if (reRoute) {
@@ -782,13 +778,8 @@ void gen_brk_RSMT(Bool congestionDriven,
       std::vector<unsigned> vecY;
 
       for (j = 0; j < d; j++) {
-        if (j == root) {
-          vecX.insert(vecX.begin(), x[j]);
-          vecY.insert(vecY.begin(), y[j]);
-        } else {
-          vecX.push_back(x[j]);
-          vecY.push_back(y[j]);
-        }
+        vecX.push_back(x[j]);
+        vecY.push_back(y[j]);
       }
       pd->setAlphaPDII(nets[i]->alpha);
       pd->addNet(d, vecX, vecY);
