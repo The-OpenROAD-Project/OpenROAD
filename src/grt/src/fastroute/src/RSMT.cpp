@@ -774,7 +774,9 @@ void gen_brk_RSMT(Bool congestionDriven,
     if (noADJ) {
       coeffV = 1.2;
     }
-    if (nets[i]->deg >= pdRevForHighFanout && nets[i]->isClock) {
+    if (nets[i]->deg >= pdRevForHighFanout &&
+        nets[i]->deg <= max_fanout_for_pdrev &&
+        nets[i]->isClock) {
       PD::PdRev* pd = new PD::PdRev(logger);
       std::vector<unsigned> vecX;
       std::vector<unsigned> vecY;
