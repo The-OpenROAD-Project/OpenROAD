@@ -50,7 +50,7 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design.get(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get()) {}
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
@@ -76,7 +76,7 @@ struct GCFixture : public Fixture
     worker.setExtBox(work);
     worker.setDrcBox(work);
 
-    worker.init();
+    worker.init(design.get());
     worker.main();
     worker.end();
   }
