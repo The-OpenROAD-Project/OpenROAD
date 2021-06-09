@@ -43,6 +43,7 @@
 #include <string>
 #include <tuple>
 #include "utl/Logger.h"
+#include "SinkAgglDriver.h"
 
 namespace cts {
 
@@ -167,6 +168,221 @@ void SinkClustering::findBestMatching()
   }
 }
 
+
+void SinkClustering::runAgglomerative(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
+{
+  _scaleFactor = scaleFactor;
+  normalizePoints(maxDiameter);
+  computeAllThetas();
+  sortPoints();
+
+  float THRESHOLD_MAX_POINTS = 25000;
+  int numberPoints = _points.size();
+
+  int initnclusters = ceil((float)numberPoints/THRESHOLD_MAX_POINTS);
+  int maxClusterSize = ceil((float)numberPoints/initnclusters);
+
+  std::vector<std::vector<unsigned>> thetaSolution;
+
+
+  int currentIndex = 0;
+  
+  for(unsigned i=0; i<_thetaIndexVector.size(); ++i){
+
+    if(thetaSolution.size() == 0){
+      std::vector<unsigned> indexesVector;
+      thetaSolution.push_back(indexesVector);
+      currentIndex = 0;
+    }
+    unsigned idx = _thetaIndexVector[i].second;
+    if(thetaSolution[currentIndex].size() < maxClusterSize){
+      thetaSolution[currentIndex].push_back(idx);
+    }
+    else{
+      std::vector<unsigned> indexesVector;
+      thetaSolution.push_back(indexesVector);
+      currentIndex++;
+    }
+  }
+
+  SinkAgglClustering agglClus;
+
+  std::vector<std::vector<unsigned>> clusterSolution;
+  std::vector<unsigned> pointsToCluster;
+
+  for(unsigned clusterCounter=0; clusterCounter<thetaSolution.size(); ++clusterCounter){
+
+    // Empty Vector
+    pointsToCluster.clear();
+
+    // Agglomerative for each cluster..
+    for(unsigned pointCounter=0; pointCounter<thetaSolution[clusterCounter].size(); ++pointCounter){
+      pointsToCluster.push_back(thetaSolution[clusterCounter][pointCounter]);
+    }
+
+    // Keep Running Till All Cluster Size <= GroupSize and Cluster Diameter <= _maxDiameter
+    while(true)
+    {
+
+      int npoints = pointsToCluster.size();
+      int clusMethod = HCLUSTMETHODCOMPLETE;
+      // distance computation
+      double* distMatrix = new double[(npoints*(npoints-1))/2];
+      unsigned k = 0;
+      for(unsigned i = 0; i < npoints; ++i){
+        Point<double>& point = _points[pointsToCluster[i]];
+        for (unsigned j = i+1; j < npoints; ++j){
+          Point<double>& p = _points[pointsToCluster[j]];
+          distMatrix[k] = p.computeDist(point);
+          ++k;
+        }
+      }
+
+      int* merge = new int[2*(npoints-1)];
+      double* height = new double[npoints-1];
+
+      int runInt = agglClus.hclustFast(npoints, distMatrix, clusMethod, merge, height);
+
+      delete[] distMatrix;
+
+      int* labels = new int[npoints];
+      // cutreeK(npoints, merge, 2, labels);
+      agglClus.cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
+      delete[] height;
+      delete[] merge;
+
+      std::vector<std::vector<unsigned>> tempClusterSolution;
+
+      int nclusters = 0;
+      for (unsigned i = 0; i < npoints; i++){
+        nclusters = std::max(nclusters, labels[i]);
+      }
+      ++nclusters;
+
+      for (unsigned i = 0; i< nclusters; i++){
+        std::vector<unsigned> indexesVector;
+        tempClusterSolution.push_back(indexesVector);
+      }
+
+      for (unsigned i = 0; i<npoints; i++){
+        tempClusterSolution[labels[i]].push_back(pointsToCluster[i]);
+      }
+
+      // clear
+      pointsToCluster.clear();
+
+
+
+      for (unsigned i = 0; i< nclusters; ++i){
+        // Add to Solution
+        if(tempClusterSolution[i].size() <= groupSize) {
+          std::vector<unsigned> indexesVector;
+          clusterSolution.push_back(indexesVector);
+          for(unsigned j=0; j<tempClusterSolution[i].size(); ++j){
+            int clusterIndex = clusterSolution.size()-1;
+            clusterSolution[clusterIndex].push_back(tempClusterSolution[i][j]);
+          }
+        }
+        // Else Again Cluster
+        else{
+          for(unsigned j=0; j<tempClusterSolution[i].size(); ++j){
+            pointsToCluster.push_back(tempClusterSolution[i][j]);
+          }
+        }
+      }
+
+      if(pointsToCluster.size() == npoints){
+        for (unsigned i = 0; i< nclusters; ++i){
+          std::vector<unsigned> indexesVector;
+          clusterSolution.push_back(indexesVector);
+          for(unsigned j=0; j<tempClusterSolution[i].size(); ++j){
+            int clusterIndex = clusterSolution.size()-1;
+            clusterSolution[clusterIndex].push_back(tempClusterSolution[i][j]);
+          }
+        }
+        break;  
+      }
+
+      if(pointsToCluster.size()==0){
+        break;
+      }
+
+    } // end while
+
+  }
+  
+  unsigned bigCluster = 0;
+  int maxSizeCluster = 0;
+  unsigned l = 0;
+  while(l<clusterSolution.size()){
+
+    if(clusterSolution[l].size() > groupSize){
+      maxSizeCluster = std::max(maxSizeCluster, (int)(clusterSolution[l].size()));
+      bigCluster++;
+
+      int npoints = clusterSolution[l].size();
+      int clusMethod = HCLUSTMETHODCOMPLETE;
+      // distance computation
+      double* distMatrix = new double[(npoints*(npoints-1))/2];
+      unsigned k = 0;
+      for(unsigned i = 0; i < npoints; ++i){
+        Point<double>& point = _points[clusterSolution[l][i]];
+        for (unsigned j = i+1; j < npoints; ++j){
+          Point<double>& p = _points[clusterSolution[l][j]];
+          distMatrix[k] = p.computeDist(point);
+          ++k;
+        }
+      }
+
+      int* merge = new int[2*(npoints-1)];
+      double* height = new double[npoints-1];
+
+      int runInt = agglClus.hclustFast(npoints, distMatrix, clusMethod, merge, height);
+
+      delete[] distMatrix;
+      delete[] height;
+      
+      int* labels = new int[npoints];
+
+      int initNewclusters = ceil((float)npoints/groupSize);
+
+      agglClus.cutreeK(npoints, merge, initNewclusters, labels);
+      // cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
+
+      int numberClusters = 0;
+      for (unsigned i = 0; i < npoints; i++){
+        numberClusters = std::max(numberClusters, labels[i]);
+      }
+      ++numberClusters;
+
+      // assert(numberClusters==initNewclusters);
+
+      std::vector<std::vector<unsigned>> tempSolution;
+
+      for (unsigned i = 0; i< numberClusters; i++){
+        std::vector<unsigned> indexesVector;
+        tempSolution.push_back(indexesVector);
+      }
+
+      for (unsigned i = 0; i<npoints; i++){
+        tempSolution[labels[i]].push_back(clusterSolution[l][i]);
+      }
+
+      clusterSolution[l].clear();
+      clusterSolution[l] = tempSolution[0];
+      for (unsigned i = 1; i< numberClusters; i++){
+        clusterSolution.push_back(tempSolution[i]);
+      }
+    }
+    else{
+      ++l;
+    }
+  }
+
+  _bestSolution = clusterSolution;
+
+}
+
 void SinkClustering::run()
 {
   normalizePoints();
@@ -179,15 +395,22 @@ void SinkClustering::run()
 
 void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
 {
-  _scaleFactor = scaleFactor;
 
-  normalizePoints(maxDiameter);
-  computeAllThetas();
-  sortPoints();
-  findBestMatching(groupSize);
-  if (_logger->debugCheck(CTS, "Stree", 1))
-    writePlotFile(groupSize);
-  
+  if(_options->isAgglomerativeEnabled()){
+    runAgglomerative(groupSize, maxDiameter, scaleFactor);
+  }
+  else{
+    // Default
+    _scaleFactor = scaleFactor;
+
+    normalizePoints(maxDiameter);
+    computeAllThetas();
+    sortPoints();
+    findBestMatching(groupSize);
+    if (_logger->debugCheck(CTS, "Stree", 1))
+      writePlotFile(groupSize);
+
+  }
 }
 
 void SinkClustering::writePlotFile()

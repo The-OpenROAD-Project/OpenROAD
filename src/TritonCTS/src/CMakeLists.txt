@@ -56,6 +56,7 @@ target_sources(TritonCTS
     TechChar.cpp
     TritonCTS.cpp
     clustering.cpp
+    SinkAgglDriver.cpp
     LevelBalancer.cpp
 )
 
