@@ -6,7 +6,7 @@
  ,"worst_slack_max" : "-6.100307330225523"
  ,"tns_max" : "-6167.553605145834"
  ,"clock_skew" : "6.91716943302796"
- ,"max_slew_violations" : "909"
+ ,"max_slew_violations" : "1032"
  ,"max_capacitance_violations" : "23"
  ,"max_fanout_violations" : "0"
  ,"DPL::errors" : "0"
