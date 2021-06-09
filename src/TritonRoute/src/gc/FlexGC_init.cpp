@@ -147,16 +147,20 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
   return false;
 }
 
-void FlexGCWorker::Impl::initDesign()
+void FlexGCWorker::Impl::initDesign(const frDesign* design)
 {
   if (ignoreDB_) {
     return;
   }
 
+  if (design->getTech() != tech_) {
+    logger_->error(DRT, 253, "Design and tech mismatch");
+  }
+
   auto& extBox = getExtBox();
   box_t queryBox(point_t(extBox.left(), extBox.bottom()),
                  point_t(extBox.right(), extBox.top()));
-  auto regionQuery = getDesign()->getRegionQuery();
+  auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> queryResult;
   int cnt = 0;
   // init all non-dr objs from design
@@ -840,23 +844,23 @@ void FlexGCWorker::Impl::initRegionQuery()
 }
 
 // init initializes all nets from frDesign if no drWorker is provided
-void FlexGCWorker::Impl::init()
+void FlexGCWorker::Impl::init(const frDesign* design)
 {
   ProfileTask profile("GC:init");
-  addNet(design_->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
-  addNet(design_->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
-  initDesign();
+  addNet(design->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
+  addNet(design->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
+  initDesign(design);
   initDRWorker();
   initNets();
   initRegionQuery();
 }
 
 // init initializes all nets from frDesign if no drWorker is provided
-void FlexGCWorker::Impl::initPA0()
+void FlexGCWorker::Impl::initPA0(const frDesign* design)
 {
-  addNet(design_->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
-  addNet(design_->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
-  initDesign();
+  addNet(design->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
+  addNet(design->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
+  initDesign(design);
   initDRWorker();
 }
 

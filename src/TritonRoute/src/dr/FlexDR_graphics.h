@@ -91,6 +91,7 @@ class FlexDRGraphics : public gui::Renderer
 
  private:
   FlexDRWorker* worker_;
+  const frDesign* design_;
   drNet* net_;
   const FlexGridGraph* grid_graph_;
   frDebugSettings* settings_;

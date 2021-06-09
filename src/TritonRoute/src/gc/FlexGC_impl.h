@@ -83,7 +83,7 @@ class FlexGCWorker::Impl
 
  public:
   // constructors
-  Impl(frDesign* designIn,
+  Impl(frTechObject* techIn,
        Logger* logger,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
@@ -113,21 +113,20 @@ class FlexGCWorker::Impl
   }
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
-  frDesign* getDesign() const { return design_; }
-  frTechObject* getTech() const { return design_->getTech(); }
+  frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
   const frBox& getExtBox() const { return extBox_; }
   std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
   // others
-  void init();
+  void init(const frDesign* design);
   int main();
   void end();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
-  void initPA0();
+  void initPA0(const frDesign* design);
   void initPA1();
 
  protected:
-  frDesign* design_;
+  frTechObject* tech_;
   Logger* logger_;
   FlexDRWorker* drWorker_;
 
@@ -173,7 +172,7 @@ class FlexGCWorker::Impl
                frBlockObject* obj,
                bool isFixed);
   gcNet* initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
-  void initDesign();
+  void initDesign(const frDesign* design);
   bool initDesign_skipObj(frBlockObject* obj);
   void initDRWorker();
   void initNets();
