@@ -709,8 +709,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
           netAlpha = _netsAlpha[net->getName()];
         }
-        bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK) &&
-                       !clockHasLeafITerm(net->getDbNet());
+        bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int numLayers = _grid->getNumLayers();
         std::vector<int> edgeCostsPerLayer(numLayers + 1, 1);
@@ -2802,8 +2801,7 @@ void GlobalRouter::makeBtermPins(Net* net,
 void GlobalRouter::findClockDrivers()
 {
   for (Net& net : *_nets) {
-    if ((net.getSignalType() == odb::dbSigType::CLOCK) &&
-        !clockHasLeafITerm(net.getDbNet())) {
+    if (net.getSignalType() == odb::dbSigType::CLOCK) {
       odb::dbNet* db_net = net.getDbNet();
       odb::dbITerm* driver = db_net->getFirstOutput();
       if (driver != nullptr) {

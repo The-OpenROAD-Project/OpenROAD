@@ -87,8 +87,8 @@ met4       Vertical         8664          4613          46.76%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 120
-[INFO GRT-0112] Final usage 3D: 533
+[INFO GRT-0111] Final number of vias: 123
+[INFO GRT-0112] Final usage 3D: 539
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [WARNING GRT-0115] Global routing finished with overflow.
 
@@ -96,14 +96,14 @@ met5       Horizontal       2888          1443          50.03%
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              5430           116            2.14%             1 /  0 /  2
-met2              6475            57            0.88%             0 /  0 /  0
+met1              5430           110            2.03%             1 /  0 /  2
+met2              6475            60            0.93%             0 /  0 /  0
 met3              6100             0            0.00%             0 /  0 /  0
 met4              4613             0            0.00%             0 /  0 /  0
 met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            24061           173            0.72%             1 /  0 /  2
+Total            24061           170            0.71%             1 /  0 /  2
 
-[INFO GRT-0018] Total wirelength: 1706 um
+[INFO GRT-0018] Total wirelength: 1728 um
 [INFO GRT-0014] Num routed nets: 15
 No differences found.
