@@ -34,6 +34,9 @@
 
 #include <tcl.h>
 
+#include <QMimeData>
+#include <QTextStream>
+
 namespace gui {
 
 TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
@@ -41,6 +44,7 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
 {
   setObjectName("tcl_scripting");  // for settings
   setPlaceholderText("TCL commands");
+  setAcceptDrops(true);
 
   max_height_  = QWIDGETSIZE_MAX;
   determineLineHeight();
@@ -172,6 +176,29 @@ void TclCmdInputWidget::updateSize()
   setFixedHeight(desired_height);
 
   ensureCursorVisible();
+}
+
+// Handle dragged and drop script files
+void TclCmdInputWidget::dragEnterEvent(QDragEnterEvent* event)
+{
+  if (event->mimeData()->text().startsWith("file://")) {
+    event->accept();
+  }
+}
+
+void TclCmdInputWidget::dropEvent(QDropEvent* event)
+{
+  if (event->mimeData()->text().startsWith("file://")) {
+    event->accept();
+
+    // replace the content in the text area with the file
+    QFile drop_file(event->mimeData()->text().remove(0, 7).simplified());
+    if (drop_file.open(QIODevice::ReadOnly)) {
+      QTextStream file_data(&drop_file);
+      setText(file_data.readAll());
+      drop_file.close();
+    }
+  }
 }
 
 // replicate QLineEdit function

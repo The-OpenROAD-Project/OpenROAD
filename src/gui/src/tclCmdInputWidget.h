@@ -66,6 +66,10 @@ class TclCmdInputWidget: public QPlainTextEdit {
   private slots:
     void updateSize();
 
+  protected:
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+
   private:
     void keyPressEvent(QKeyEvent* e) override;
     void keyReleaseEvent(QKeyEvent* e) override;
