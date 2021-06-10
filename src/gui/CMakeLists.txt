@@ -29,6 +29,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/mainWindow.cpp
     src/scriptWidget.cpp
     src/tclCmdInputWidget.cpp
+    src/tclCmdHighlighter.cpp
     src/displayControls.cpp
     src/gui.cpp
     src/search.cpp 

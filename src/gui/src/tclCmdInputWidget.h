@@ -32,7 +32,12 @@
 
 #pragma once
 
+#include <tcl.h>
+#include <memory>
+
 #include <QPlainTextEdit>
+
+#include "tclCmdHighlighter.h"
 
 namespace gui {
 
@@ -42,6 +47,8 @@ class TclCmdInputWidget: public QPlainTextEdit {
   public:
     TclCmdInputWidget(QWidget* parent = nullptr);
     ~TclCmdInputWidget();
+
+    void init(Tcl_Interp* interp);
 
     void setFont(const QFont& font);
 
@@ -82,6 +89,8 @@ class TclCmdInputWidget: public QPlainTextEdit {
     int document_margins_;
 
     int max_height_;
+
+    std::unique_ptr<TclCmdHighlighter> highlighter_;
 };
 
 }  // namespace gui

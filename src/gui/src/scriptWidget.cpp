@@ -169,6 +169,8 @@ void ScriptWidget::setupTcl()
   // TODO: tclAppInit should return the status which we could
   // pass to updateOutput
   updateOutput(TCL_OK, /* command_finished */ true);
+
+  input_->init(interp_);
 }
 
 void ScriptWidget::executeCommand()

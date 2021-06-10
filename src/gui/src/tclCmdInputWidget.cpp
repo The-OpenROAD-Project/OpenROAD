@@ -49,6 +49,8 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
   max_height_  = QWIDGETSIZE_MAX;
   determineLineHeight();
 
+  highlighter_ = nullptr;
+
   // precompute size for updating text box size
   document_margins_ = 2 * document()->documentMargin();
 
@@ -199,6 +201,12 @@ void TclCmdInputWidget::dropEvent(QDropEvent* event)
       drop_file.close();
     }
   }
+}
+
+// setup syntax highlighter
+void TclCmdInputWidget::init(Tcl_Interp* interp)
+{
+  highlighter_ = std::make_unique<TclCmdHighlighter>(document(), interp);
 }
 
 // replicate QLineEdit function
