@@ -772,17 +772,14 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
     if (pdRevForHighFanout > 0 && nets[i]->deg >= pdRevForHighFanout
         && nets[i]->isClock) {
-      PD::PdRev* pd = new PD::PdRev(logger);
-      // Sad this is copying an array of int to another array of unsigned
-      // when pdrev should be using ints -cherry
-      std::vector<unsigned> vecX(x, x + d);
-      std::vector<unsigned> vecY(y, y + d);
-      pd->setAlphaPDII(nets[i]->alpha);
-      pd->addNet(vecX, vecY);
-      pd->runPDII();
-      PD::Tree pdTree = pd->translateTree();
+      PD::PdRev pd(logger);
+      std::vector<int> vecX(x, x + d);
+      std::vector<int> vecY(y, y + d);
+      pd.setAlphaPDII(nets[i]->alpha);
+      pd.addNet(vecX, vecY);
+      pd.runPDII();
+      PD::Tree pdTree = pd.translateTree();
       rsmt = pdToTree(pdTree);
-      delete pd;
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT

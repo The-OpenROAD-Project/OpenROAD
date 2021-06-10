@@ -103,8 +103,8 @@ class Graph
         float _margin,
         unsigned _seed,
         unsigned _distance,
-        vector<unsigned>& x,
-        vector<unsigned>& y,
+        vector<int>& x,
+        vector<int>& y,
         Logger* logger);
   void buildNearestNeighborsForSPT(unsigned num_terminals);
   void buildNearestNeighbors_single_node(unsigned num_terminals, unsigned idx);

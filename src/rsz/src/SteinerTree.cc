@@ -116,25 +116,29 @@ makeSteinerTree(const Pin *drvr_pin,
     }
     if (is_placed) {
       stt::Tree ftree;
-      bool use_pd = true;
-      if (use_pd) {
-        // Move the driver to the pole position.
-        std::swap(pins[0], pins[drvr_idx]);
-        std::swap(x[0], x[drvr_idx]);
-        std::swap(y[0], y[drvr_idx]);
+      bool use_pd = false;
+      bool use_pdrevII = false;
+      if (use_pd || use_pdrevII) {
         int notify_pin_count = 50;
         if (pin_count > notify_pin_count)
           debugPrint(debug, "pdrev", 1, "pdrev %s %d",
                      sdc_network->pathName(drvr_pin),
                      pin_count);
         PD::PdRev pd(logger);
-        std::vector<unsigned> vec_x(x, x + pin_count);
-        std::vector<unsigned> vec_y(y, y + pin_count);
+        std::vector<int> x1(x, x + pin_count);
+        std::vector<int> y1(y, y + pin_count);
+        // Move the driver to the pole position.
+        std::swap(pins[0], pins[drvr_idx]);
+        std::swap(x1[0], x1[drvr_idx]);
+        std::swap(y1[0], y1[drvr_idx]);
         float alpha = 0.8;
-        pd.setAlphaPDII(alpha);
-        pd.addNet(vec_x, vec_y);
-        pd.runPD(alpha);
-        //pd->runPDII();
+        pd.addNet(x1, y1);
+        if (use_pd)
+          pd.runPD(alpha);
+        else {
+          pd.setAlphaPDII(alpha);
+          pd.runPDII();
+        }
         PD::Tree pdTree = pd.translateTree();
         ftree = pdToTree(pdTree);
         if (pin_count > notify_pin_count)

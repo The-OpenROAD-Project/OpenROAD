@@ -60,8 +60,8 @@ Graph::Graph(float _alpha2,
              float _margin,
              unsigned _seed,
              unsigned _distance,
-             vector<unsigned>& x,
-             vector<unsigned>& y,
+             vector<int>& x,
+             vector<int>& y,
              Logger* logger)
 {
   num_terminals = x.size();

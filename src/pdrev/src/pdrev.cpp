@@ -55,8 +55,8 @@ void PdRev::setAlphaPDII(float alpha)
   alpha2 = alpha;
 }
 
-void PdRev::addNet(std::vector<unsigned> x,
-                   std::vector<unsigned> y)
+void PdRev::addNet(std::vector<int> x,
+                   std::vector<int> y)
 {
   graph_ = new Graph(alpha2,
                      alpha3,

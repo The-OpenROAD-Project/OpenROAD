@@ -443,8 +443,8 @@ void SinkClustering::writePlotFile(unsigned groupSize)
 double SinkClustering::getWireLength(std::vector<Point<double>> points)
 {
   std::unique_ptr<PD::PdRev> pd(new PD::PdRev(_logger));
-  std::vector<unsigned> vecX;
-  std::vector<unsigned> vecY;
+  std::vector<int> vecX;
+  std::vector<int> vecY;
   double driverX = 0;
   double driverY = 0;
   for (auto point: points) {
