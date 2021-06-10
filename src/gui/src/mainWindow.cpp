@@ -76,7 +76,7 @@ MainWindow::MainWindow(QWidget* parent)
   find_dialog_ = new FindObjectDialog(this);
   timing_dialog_ = new TimingDebugDialog(this);
 
-  QFont font;
+  QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
   script_->setFont(font);
 

@@ -57,7 +57,6 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
-  output_->setFont(QFont("Monospace"));
 
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
@@ -174,11 +173,7 @@ void ScriptWidget::executeCommand()
   input_->clear();
 
   // Show the command that we executed
-  output_->setTextColor(Qt::black);
-  output_->append("> " + command);
-
-  // Make changes visible while command runs
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  addToOutput(command, command, "> ");
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
@@ -203,10 +198,9 @@ void ScriptWidget::executeCommand()
 void ScriptWidget::updateOutput(int return_code, bool command_finished)
 {
   // Show whatever we captured from the output channel in grey
-  output_->setTextColor(QColor(0x30, 0x30, 0x30));
   for (auto& out : outputBuffer_) {
     if (!out.isEmpty()) {
-      output_->append(out);
+      addToOutput(out, buffer_msg_);
     }
   }
   outputBuffer_.clear();
@@ -215,10 +209,30 @@ void ScriptWidget::updateOutput(int return_code, bool command_finished)
     // Show the return value color-coded by ok/err.
     const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
     if (result[0] != '\0') {
-      output_->setTextColor((return_code == TCL_OK) ? Qt::blue : Qt::red);
-      output_->append(result);
+      addToOutput(result, (return_code == TCL_OK) ? tcl_ok_msg_ : tcl_error_msg_);
     }
   }
+}
+
+void ScriptWidget::addToOutput(const QString& text, const QColor& color, const QString& prefix)
+{
+  // make sure cursor is at the end of the document
+  QTextCursor cursor = output_->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  output_->setTextCursor(cursor);
+
+  output_->setTextColor(color);
+  for (const QString& text_line : text.split('\n')) {
+    QString new_text_line = prefix + text_line;
+    if (new_text_line.size() > max_output_line_length_) {
+      new_text_line = new_text_line.left(max_output_line_length_-3);
+      new_text_line += "...";
+    }
+    output_->append(new_text_line);
+  }
+
+  // ensure changes are updated
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 ScriptWidget::~ScriptWidget()
@@ -293,6 +307,13 @@ void ScriptWidget::pauserClicked()
   paused_ = false;
 }
 
+void ScriptWidget::setFont(const QFont& font)
+{
+  QDockWidget::setFont(font);
+  output_->setFont(font);
+  input_->setFont(font);
+}
+
 // This class is an spdlog sink that writes the messages into the output
 // area.
 template <typename Mutex>
@@ -314,8 +335,6 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 
     // Make it appear now
     widget_->updateOutput(0, /* command_finished */ false);
-    widget_->output_->update();
-    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   }
 
   void flush_() override {}

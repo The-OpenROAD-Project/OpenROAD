@@ -70,6 +70,8 @@ class ScriptWidget : public QDockWidget
 
   void setLogger(utl::Logger* logger);
 
+  void setFont(const QFont& font);
+
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
@@ -90,6 +92,7 @@ class ScriptWidget : public QDockWidget
   void keyPressEvent(QKeyEvent* e) override;
   void setupTcl();
   void updateOutput(int return_code, bool command_finished);
+  void addToOutput(const QString& text, const QColor& color, const QString& prefix = "");
   static int channelOutput(ClientData instanceData,
                            const char* buf,
                            int toWrite,
@@ -114,6 +117,14 @@ class ScriptWidget : public QDockWidget
   class GuiSink;
 
   static Tcl_ChannelType stdout_channel_type_;
+
+  // maximum number of character to display in a log line
+  const int max_output_line_length_ = 1000;
+
+  const QColor cmd_msg_        = Qt::black;
+  const QColor tcl_error_msg_  = Qt::red;
+  const QColor tcl_ok_msg_     = Qt::blue;
+  const QColor buffer_msg_     = QColor(0x30, 0x30, 0x30);
 };
 
 }  // namespace gui
