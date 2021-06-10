@@ -758,9 +758,8 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     ps->addToPin(pin);
   }
 
-
   // new gcWorker
-  FlexGCWorker gcWorker(getDesign(), logger_);
+  FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
   frBox extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
@@ -770,7 +769,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   } else {
     gcWorker.setTargetObj(pin->getTerm());
   }
-  gcWorker.initPA0();
+  gcWorker.initPA0(getDesign());
   if (instTerm) {
     if (instTerm->hasNet()) {
       gcWorker.addPAObj(ps.get(), instTerm->getNet());
@@ -916,7 +915,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   }
 
   // new gcWorker
-  FlexGCWorker gcWorker(getDesign(), logger_);
+  FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
   frBox extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
@@ -932,7 +931,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
       gcWorker.setTargetObj(pin->getTerm());
   }
 
-  gcWorker.initPA0();
+  gcWorker.initPA0(getDesign());
   if (instTerm) {
     if (instTerm->hasNet()) {
       gcWorker.addPAObj(via, instTerm->getNet());
@@ -963,7 +962,6 @@ void FlexPA::prepPoint_pin_checkPoint(
     frPin* pin,
     frInstTerm* instTerm)
 {
-
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
@@ -1436,7 +1434,6 @@ void FlexPA::prepPattern()
   if (VERBOSE > 0) {
     logger_->info(DRT, 84, "  complete {} groups", cnt);
   }
-
 }
 
 void FlexPA::revertAccessPoints()
@@ -1489,7 +1486,6 @@ void FlexPA::genInstPattern(std::vector<frInst*>& insts)
 void FlexPA::genInstPattern_init(std::vector<FlexDPNode>& nodes,
                                  const std::vector<frInst*>& insts)
 {
-
   // init virutal nodes
   int startNodeIdx = getFlatIdx(-1, 0, maxAccessPatternSize_);
   int endNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
@@ -1854,7 +1850,6 @@ void FlexPA::genPatterns(
     const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
     int currUniqueInstIdx)
 {
-
   if (pins.empty()) {
     return;
   }
@@ -1874,7 +1869,6 @@ void FlexPA::genPatterns(
   std::set<std::vector<int>> instAccessPatterns;
   std::set<std::pair<int, int>> usedAccessPoints;
   std::set<std::pair<int, int>> violAccessPoints;
-
 
   genPatterns_init(nodes,
                    pins,
@@ -2047,7 +2041,7 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
     return false;
   }
 
-  FlexGCWorker gcWorker(getDesign(), logger_);
+  FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
 
   frCoord llx = std::numeric_limits<frCoord>::max();
@@ -2070,7 +2064,7 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
   gcWorker.setTargetObj(targetObj);
   gcWorker.setIgnoreDB();
   // cout <<flush;
-  gcWorker.initPA0();
+  gcWorker.initPA0(getDesign());
   for (auto& [connFig, owner] : objs) {
     gcWorker.addPAObj(connFig, owner);
   }
