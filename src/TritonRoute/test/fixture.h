@@ -59,6 +59,14 @@ class Fixture
                            frLayerNum lNum = 2,
                            frCoord designRuleWidth = -1);
 
+  frTerm* makeMacroPin(frBlock* refBlock,
+                       std::string name,
+                       frCoord xl,
+                       frCoord yl,
+                       frCoord xh,
+                       frCoord yh,
+                       frLayerNum lNum = 2);
+
   frInst* makeInst(const char* name, frBlock* refBlock, frCoord x, frCoord y);
 
   void makeCornerConstraint(frLayerNum layer_num,

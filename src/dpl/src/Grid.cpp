@@ -82,15 +82,11 @@ Opendp::initGrid()
     db_row->getOrigin(orig_x, orig_y);
 
     int x_start = (orig_x - core_.xMin()) / site_width_;
-    int y_start = (orig_y - core_.yMin()) / row_height_;
-
     int x_end = x_start + db_row->getSiteCount();
-    int y_end = y_start + 1;
+    int y = (orig_y - core_.yMin()) / row_height_;
 
     for (int x = x_start; x < x_end; x++) {
-      for (int y = y_start; y < y_end; y++) {
-        grid_[y][x].is_valid = true;
-      }
+      grid_[y][x].is_valid = true;
     }
   }
 }
