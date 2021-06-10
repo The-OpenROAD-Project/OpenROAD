@@ -461,9 +461,9 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
   pd->setAlphaPDII(0.8);
-  pd->addNet(points.size() + 1, vecX, vecY);
+  pd->addNet(vecX, vecY);
   pd->runPDII();
-  PD::Tree pdTree = pd->translateTree(0);
+  PD::Tree pdTree = pd->translateTree();
   unsigned wl=0;
   for (int i = 0; i < 2 * pdTree.deg - 2; i++) {
     int x1 = (PD::DTYPE) pdTree.branch[i].x;

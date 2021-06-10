@@ -65,8 +65,7 @@ class Node
                          // the source through the tree
   int K_t;               // No. of downstream sinks
   unsigned level;        // Level in tree
-  vector<int>
-      nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
+  vector<int> nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
   vector<float> nn_sw_cost;
   float sw_cost_min;
   unsigned sw_cost_min_nn_idx;
@@ -79,12 +78,15 @@ class Node
                       // of the edges from the source to the node j
   int maxPLToChild;
 
-  Node(){};
-  Node(int _idx, int _x, int _y)
+  Node(int _idx, int _x, int _y) :
+    idx(_idx),
+    x(_x),
+    y(_y),
+    // magic number alert -cherry
+    nn_edge_detcost(8, 10000),
+    nn_sw_cost(8, 10000),
+    maxPLToChild(0)
   {
-    idx = _idx;
-    x = _x;
-    y = _y;
     parent = 0;
     min_dist = 0;
     path_length = 0;
@@ -94,29 +96,10 @@ class Node
     K_t = 1;
     level = 0;
     conn_to_par = false;
+    // magic number alert -cherry
     idx_of_cn_x = 105;
     idx_of_cn_y = 105;
-
-    for (unsigned oct = 0; oct < 8; oct++) {
-      nn_edge_detcost.push_back(10000);
-      nn_sw_cost.push_back(10000);
-    }
   };
-  ~Node()
-  {
-    nn_edge_detcost.clear();
-    nn_sw_cost.clear();
-    children.clear();
-    for (unsigned i = 0; i < swap_space.size(); ++i)
-      swap_space[i].clear();
-    swap_space.clear();
-    sp_chil.clear();
-    N.clear();
-    S.clear();
-    E.clear();
-    W.clear();
-  }
-
   friend ostream& operator<<(ostream& os, const Node& n)
   {
     os << n.idx << "(" << n.x << ", " << n.y << ") "
@@ -153,7 +136,6 @@ class Node1
   int y;
   unsigned parent;  // parent's node index
 
-  Node1(){};
   Node1(int _idx, int _x, int _y)
   {
     idx = _idx;
@@ -161,8 +143,6 @@ class Node1
     y = _y;
     parent = 0;
   };
-
-  ~Node1() {}
 };
 
 }  // namespace PD

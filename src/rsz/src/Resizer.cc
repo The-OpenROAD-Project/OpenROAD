@@ -745,9 +745,9 @@ Resizer::repairNet(Net *net,
                    int &fanout_violations,
                    int &length_violations)
 {
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
+  Pin *drvr_pin = drvr->pin();
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
   if (tree) {
-    Pin *drvr_pin = drvr->pin();
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
     ensureWireParasitic(drvr_pin, net);
@@ -2840,10 +2840,7 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-    Net *net = network_->isTopLevelPort(drvr_pin)
-      ? network_->net(network_->term(drvr_pin))
-      : network_->net(drvr_pin);
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(drvr, tree);
     delete tree;
@@ -3582,18 +3579,18 @@ private:
   SteinerTree *tree_;
 };
 
-// Highlight guide in the gui.
 void
-Resizer::highlightSteiner(const Net *net)
+Resizer::highlightSteiner(const Pin *drvr)
 {
   if (gui_) {
     if (steiner_renderer_ == nullptr) {
       steiner_renderer_ = new SteinerRenderer(this);
       gui_->registerRenderer(steiner_renderer_);
     }
-    SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
-    if (tree)
-      steiner_renderer_->highlight(tree);
+    SteinerTree *tree = nullptr;
+    if (drvr)
+      tree = makeSteinerTree(drvr, false, db_network_, logger_);
+    steiner_renderer_->highlight(tree);
   }
 }
 

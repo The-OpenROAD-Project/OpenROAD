@@ -290,7 +290,18 @@ Resizer::makePadParasitic(const Net *net)
 void
 Resizer::estimateWireParasiticSteiner(const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
+  const Pin *drvr_pin = nullptr;
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    const Pin *pin = pin_iter->next();
+    drvr_pin = pin;
+    if (network_->isDriver(pin)) {
+      break;
+    }
+  }
+  delete pin_iter;
+
+  SteinerTree *tree = makeSteinerTree(drvr_pin, false, db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));

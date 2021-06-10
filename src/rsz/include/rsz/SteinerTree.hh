@@ -70,7 +70,7 @@ typedef Vector<SteinerPt> SteinerPtSeq;
 
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
-makeSteinerTree(const Net *net,
+makeSteinerTree(const Pin *drvr_pin,
                 bool find_left_rights,
                 dbNetwork *network,
                 Logger *logger);

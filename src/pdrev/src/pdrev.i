@@ -57,12 +57,12 @@ reportPdrevTree(bool use_pd,
   // Move driver to pole position.
   std::swap(x1[0], x1[drvr_index]);
   std::swap(y1[0], y1[drvr_index]);
-  pd->addNet(x.size(), x1, y1);
+  pd->addNet(x1, y1);
   if (use_pd)
     pd->runPD(alpha);
   else
     pd->runPDII();
-  PD::Tree tree = pd->translateTree(0);
+  PD::Tree tree = pd->translateTree();
   printf("WL = %d\n", tree.length);
   for (int i = 0; i < 2 * tree.deg - 2; i++) {
     int x1 = tree.branch[i].x;

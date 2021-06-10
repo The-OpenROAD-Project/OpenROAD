@@ -38,78 +38,56 @@
 
 namespace PD {
 
+PdRev::PdRev(Logger* logger) :
+  logger_(logger)
+{
+}
+
+PdRev::~PdRev()
+{
+  delete graph_;
+}
+
+// Bad bad API: this MUST be called before PdRev::addNet -cherry 06/07/2021
+// Should be a parameter of runPDII, not a set function.
 void PdRev::setAlphaPDII(float alpha)
 {
   alpha2 = alpha;
 }
 
-void PdRev::addNet(int numPins,
-                   std::vector<unsigned> x,
+void PdRev::addNet(std::vector<unsigned> x,
                    std::vector<unsigned> y)
 {
-  my_graphs.push_back(new Graph(numPins,
-                                verbose,
-                                alpha1,
-                                alpha2,
-                                alpha3,
-                                alpha4,
-                                root_idx,
-                                beta,
-                                margin,
-                                seed,
-                                dist,
-                                x,
-                                y,
-                                _logger));
-}
-
-void PdRev::config()
-{
-  num_nets = my_graphs.size();
-  for (unsigned i = 0; i < num_nets; ++i) {
-    // Guibas-Stolfi algorithm for computing nearest NE (north-east) neighbors
-    if (i == net_num || !runOneNet) {
-      my_graphs[i]->buildNearestNeighborsForSPT(my_graphs[i]->num_terminals);
-    }
-  }
+  graph_ = new Graph(alpha2,
+                     alpha3,
+                     alpha4,
+                     root_idx,
+                     beta,
+                     margin,
+                     seed,
+                     dist,
+                     x,
+                     y,
+                     logger_);
 }
 
 void PdRev::runPD(float alpha)
 {
-  config();
-  my_graphs[0]->run_PD_brute_force(alpha);
-  my_graphs[0]->doSteiner_HoVW();
+  graph_->buildNearestNeighborsForSPT(graph_->num_terminals);
+  graph_->run_PD_brute_force(alpha);
+  graph_->doSteiner_HoVW();
 }
 
 void PdRev::runPDII()
 {
-  config();
-  for (unsigned i = 0; i < num_nets; ++i) {
-    if (i == net_num || !runOneNet) {
-      my_graphs[i]->PDBU_new_NN();
-    }
-  }
-  runDAS();
+  graph_->buildNearestNeighborsForSPT(graph_->num_terminals);
+  graph_->PDBU_new_NN();
+  graph_->doSteiner_HoVW();
+  graph_->fix_max_dc();
 }
 
-void PdRev::runDAS()
+void PdRev::replaceNode(Graph* tree, int originalNode)
 {
-  for (unsigned i = 0; i < num_nets; ++i) {
-    if (i == net_num || !runOneNet) {
-      my_graphs[i]->doSteiner_HoVW();
-    }
-  }
-
-  for (unsigned i = 0; i < num_nets; ++i) {
-    if (i == net_num || !runOneNet) {
-      my_graphs[i]->fix_max_dc();
-    }
-  }
-}
-
-void PdRev::replaceNode(int graph, int originalNode)
-{
-  Graph* tree = my_graphs[graph];
   std::vector<Node>& nodes = tree->nodes;
   Node& node = nodes[originalNode];
   int nodeParent = node.parent;
@@ -140,14 +118,13 @@ void PdRev::replaceNode(int graph, int originalNode)
   nodes.push_back(newSP);
 }
 
-void PdRev::transferChildren(int graph, int originalNode)
+void PdRev::transferChildren(int originalNode)
 {
-  Graph* tree = my_graphs[graph];
-  std::vector<Node>& nodes = tree->nodes;
+  std::vector<Node>& nodes = graph_->nodes;
   Node& node = nodes[originalNode];
   std::vector<int> nodeChildren = node.children;
 
-  int newNode = tree->nodes.size();
+  int newNode = nodes.size();
   Node newSP(newNode, node.x, node.y);
 
   // Replace parent in old node children
@@ -156,56 +133,58 @@ void PdRev::transferChildren(int graph, int originalNode)
   node.children.clear();
   for (int child : nodeChildren) {
     if (count < 2) {
-      tree->replaceParent(tree->nodes[child], originalNode, newNode);
-      tree->addChild(newSP, child);
+      graph_->replaceParent(nodes[child], originalNode, newNode);
+      graph_->addChild(newSP, child);
     } else {
-      tree->addChild(node, child);
+      graph_->addChild(node, child);
     }
     count++;
   }
   newSP.parent = originalNode;
 
-  tree->addChild(node, newNode);
+  graph_->addChild(node, newNode);
   nodes.push_back(newSP);
 }
 
-Tree PdRev::translateTree(int nTree)
+Tree PdRev::translateTree()
 {
-  Graph* pdTree = my_graphs[nTree];
-  Tree fluteTree;
-  fluteTree.deg = pdTree->orig_num_terminals;
-  fluteTree.branch = (Branch*) malloc((2 * fluteTree.deg - 2) * sizeof(Branch));
-  // need to unify wl -cherry
-  fluteTree.length = pdTree->daf_wl + pdTree->pd_wl;
-  if (pdTree->orig_num_terminals > 2) {
-    for (int i = 0; i < pdTree->orig_num_terminals; ++i) {
-      Node& child = pdTree->nodes[i];
+  if (graph_->orig_num_terminals > 2) {
+    for (int i = 0; i < graph_->orig_num_terminals; ++i) {
+      Node& child = graph_->nodes[i];
       if (child.children.size() == 0
           || (child.parent == i && child.children.size() == 1
-              && child.children[0] >= pdTree->orig_num_terminals))
+              && child.children[0] >= graph_->orig_num_terminals))
         continue;
-      replaceNode(nTree, i);
+      replaceNode(graph_, i);
     }
-    int nNodes = pdTree->nodes.size();
-    for (int i = pdTree->orig_num_terminals; i < nNodes; ++i) {
-      Node& child = pdTree->nodes[i];
-      while (pdTree->nodes[i].children.size() > 3
-             || (pdTree->nodes[i].parent != i
-                 && pdTree->nodes[i].children.size() == 3)) {
-        transferChildren(nTree, i);
+    int nNodes = graph_->nodes.size();
+    for (int i = graph_->orig_num_terminals; i < nNodes; ++i) {
+      Node& child = graph_->nodes[i];
+      while (graph_->nodes[i].children.size() > 3
+             || (graph_->nodes[i].parent != i
+                 && graph_->nodes[i].children.size() == 3)) {
+        transferChildren(i);
       }
     }
-    pdTree->RemoveSTNodes();
+    graph_->RemoveSTNodes();
   }
-  for (int i = 0; i < pdTree->nodes.size(); ++i) {
-    Node& child = pdTree->nodes[i];
+  Tree fluteTree;
+  fluteTree.deg = graph_->orig_num_terminals;
+  int branch_count = fluteTree.deg * 2 - 2;
+  if (graph_->nodes.size() != branch_count)
+    logger_->error(utl::GRT, 666, "steiner branch count inconsistent");
+  fluteTree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
+  fluteTree.length = graph_->calc_tree_wl_pd();
+  for (int i = 0; i < graph_->nodes.size(); ++i) {
+    Node& child = graph_->nodes[i];
     int parent = child.parent;
+    if (parent >= graph_->nodes.size())
+      logger_->error(utl::GRT, 666, "steiner branch node out of bounds");
     Branch& newBranch = fluteTree.branch[i];
     newBranch.x = (DTYPE) child.x;
     newBranch.y = (DTYPE) child.y;
     newBranch.n = parent;
   }
-  my_graphs.clear();
   return fluteTree;
 }
 
@@ -213,11 +192,24 @@ void PdRev::printTree(Tree fluteTree)
 {
   int i;
   for (i = 0; i < 2 * fluteTree.deg - 2; i++) {
-    _logger->report("{} ", i);
-    _logger->report("{} {}", fluteTree.branch[i].x, fluteTree.branch[i].y);
-    _logger->report("{} {}",
+    logger_->report("{} ", i);
+    logger_->report("{} {}", fluteTree.branch[i].x, fluteTree.branch[i].y);
+    logger_->report("{} {}",
                     fluteTree.branch[fluteTree.branch[i].n].x,
                     fluteTree.branch[fluteTree.branch[i].n].y);
+  }
+}
+
+void
+PdRev::graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines)
+{
+  vector<Node> &nodes = graph_->nodes;
+  for (Node &node : nodes) {
+    Node &parent = nodes[node.parent];
+    std::pair<int, int> node_xy(node.x, node.y);
+    std::pair<int, int> parent_xy(parent.x, parent.y);
+    std::pair<std::pair<int, int>, std::pair<int, int>> line(node_xy, parent_xy);
+    lines.push_back(line);
   }
 }
 

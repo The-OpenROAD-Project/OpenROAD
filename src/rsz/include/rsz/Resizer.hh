@@ -259,7 +259,7 @@ public:
   // Rebuffer net (for testing).
   // resizerPreamble() required.
   void rebuffer(Net *net);
-  void highlightSteiner(const Net *net);
+  void highlightSteiner(const Pin *drvr);
 
   ////////////////////////////////////////////////////////////////
   // Slack API for timing driven placement.

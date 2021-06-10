@@ -35,7 +35,7 @@
 
 namespace utl {
 class Logger;
-}  // namespace utl
+}
 
 namespace PD {
 
@@ -61,24 +61,20 @@ typedef struct
 class PdRev
 {
  public:
-  PdRev(Logger* logger) : _logger(logger){};
+  PdRev(Logger* logger);
+  ~PdRev();
   void setAlphaPDII(float alpha);
-  void addNet(int numPins, std::vector<unsigned> x, std::vector<unsigned> y);
+  void addNet(std::vector<unsigned> x, std::vector<unsigned> y);
   void runPD(float alpha);
   void runPDII();
-  Tree translateTree(int nTree);
+  Tree translateTree();
+  void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
 
  private:
-  void runDAS();
-  void config();
-  void replaceNode(int graph, int originalNode);
-  void transferChildren(int graph, int originalNode);
+  void replaceNode(Graph* tree, int originalNode);
+  void transferChildren(int originalNode);
   void printTree(Tree fluteTree);
 
-  unsigned num_nets = 1000;
-  unsigned num_terminals = 64;
-  unsigned verbose = 0;
-  float alpha1 = 1;
   float alpha2 = 0.45;
   float alpha3 = 0;
   float alpha4 = 0;
@@ -87,10 +83,8 @@ class PdRev
   unsigned root_idx = 0;
   unsigned dist = 2;
   float beta = 1.4;
-  bool runOneNet = false;
-  unsigned net_num = 0;
-  std::vector<Graph*> my_graphs;
-  Logger* _logger;
+  Graph* graph_;
+  Logger* logger_;
 };
 
 }  // namespace PD

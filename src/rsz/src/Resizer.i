@@ -600,10 +600,10 @@ utilization()
 }
 
 void
-highlight_steiner_tree(const Net *net)
+highlight_steiner_tree(const Pin *drvr_pin)
 {
   Resizer *resizer = getResizer();
-  resizer->highlightSteiner(net);
+  resizer->highlightSteiner(drvr_pin);
 }
 
 PinSet

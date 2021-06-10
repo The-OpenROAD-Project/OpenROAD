@@ -33,8 +33,6 @@
 
 #pragma once
 
-#include <fstream>
-#include <unordered_map>
 #include <vector>
 
 #include "edge.h"
@@ -60,11 +58,9 @@ class Graph
   float maxPLRatio;
   vector<vector<int>> ManhDist;
   float PLmargin;
-  unsigned verbose;
   unsigned num_terminals;
   unsigned orig_num_terminals;
   unsigned root_idx;
-  float alpha1;
   unsigned seed;
   float alpha2;
   float alpha3;
@@ -72,21 +68,6 @@ class Graph
   float beta;
   unsigned distance;
   float M;
-
-  float pd_wl;
-  float pd_pl;
-  float mst_wl;
-  float spt_pl;
-  float pd_dc;
-  float pdbu_wl;
-  float pdbu_pl;
-  float pdbu_dc;
-  float st_wl;
-  float st_pl;
-  float st_dc;
-  float daf_wl;
-  float daf_pl;
-  float daf_dc;
 
   vector<int> urux;
   vector<int> urlx;
@@ -114,31 +95,26 @@ class Graph
   vector<int> tree_struct_1darr;
 
   // functions
-  Graph(){};
-  Graph(unsigned _num_terminals,
-        unsigned _verbose,
-        float _alpha1,
-        float _alpha2,
+  Graph(float _alpha2,
         float _alpha3,
         float _alpha4,
         unsigned _root,
         float _beta,
         float _margin,
-        unsigned seed,
-        unsigned distance,
+        unsigned _seed,
+        unsigned _distance,
         vector<unsigned>& x,
         vector<unsigned>& y,
         Logger* logger);
-  ~Graph();
-  bool buildNearestNeighborsForSPT(unsigned num_terminals);
-  bool buildNearestNeighbors_single_node(unsigned num_terminals, unsigned idx);
-  bool run_PD_brute_force(float alp);
-  bool doSteiner_HoVW();
-  bool fix_max_dc();
-  bool find_max_dc_node(vector<float>& node_and_dc);
+  void buildNearestNeighborsForSPT(unsigned num_terminals);
+  void buildNearestNeighbors_single_node(unsigned num_terminals, unsigned idx);
+  void run_PD_brute_force(float alpha);
+  void doSteiner_HoVW();
+  void fix_max_dc();
+  void find_max_dc_node(vector<float>& node_and_dc);
   unsigned calc_overlap(vector<vector<Node>>& set_of_nodes);
-  unsigned calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[]);
-  bool get_overlap_lshape(vector<Node>& set_of_nodes, int index);
+  unsigned calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
+  void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
   void generate_permutations(vector<vector<unsigned>> lists,
                              vector<vector<unsigned>>& result,
                              unsigned depth,
@@ -160,7 +136,6 @@ class Graph
 
   void get_children_of_node();
   void print_tree();
-  void print_tree_v2(ofstream& ofs);
   float calc_tree_det_cost();
   unsigned calc_tree_wl_pd();
   unsigned calc_tree_pl();

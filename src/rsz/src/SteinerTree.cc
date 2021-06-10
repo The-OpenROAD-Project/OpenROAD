@@ -46,7 +46,6 @@
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
-#include "opendb/dbShape.h"
 #include "pdrev/pdrev.h"
 
 namespace rsz {
@@ -78,7 +77,7 @@ static stt::Tree pdToTree(PD::Tree pdTree);
 SteinerPt SteinerTree::null_pt = -1;
 
 SteinerTree *
-makeSteinerTree(const Net *net,
+makeSteinerTree(const Pin *drvr_pin,
                 bool find_left_rights,
                 dbNetwork *network,
                 Logger *logger)
@@ -86,9 +85,11 @@ makeSteinerTree(const Net *net,
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
   Report *report = network->report();
-  debugPrint(debug, "steiner", 1, "Net %s\n",
+  Net *net = network->isTopLevelPort(drvr_pin)
+    ? network->net(network->term(drvr_pin))
+    : network->net(drvr_pin);
+  debugPrint(debug, "steiner", 1, "Net %s",
              sdc_network->pathName(net));
-
   SteinerTree *tree = new SteinerTree();
   PinSeq &pins = tree->pins();
   connectedPins(net, network, pins);
@@ -98,37 +99,49 @@ makeSteinerTree(const Net *net,
   int pin_count = pins.size();
   bool is_placed = true;
   if (pin_count >= 2) {
-    int *x = new int[pin_count];
-    int *y = new int[pin_count];
+    int x[pin_count];
+    int y[pin_count];
+    int drvr_idx = 0;
     for (int i = 0; i < pin_count; i++) {
       Pin *pin = pins[i];
+      if (pin == drvr_pin)
+        drvr_idx = i;
       Point loc = network->location(pin);
       x[i] = loc.x();
       y[i] = loc.y();
-      debugPrint(debug, "steiner", 3, "%s (%d %d)\n",
+      debugPrint(debug, "steiner", 3, " %s (%d %d)",
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
       is_placed &= network->isPlaced(pin);
     }
     if (is_placed) {
       stt::Tree ftree;
-      if (pin_count <= 40) {
-        int flute_accuracy = 3;
-        ftree = stt::flute(pin_count, x, y, flute_accuracy);
-      }
-      else {
-        printf("pd %s %d\n", network->pathName(net), pin_count);
-        PD::PdRev* pd = new PD::PdRev(logger);
+      bool use_pd = true;
+      if (use_pd) {
+        // Move the driver to the pole position.
+        std::swap(pins[0], pins[drvr_idx]);
+        std::swap(x[0], x[drvr_idx]);
+        std::swap(y[0], y[drvr_idx]);
+        int notify_pin_count = 50;
+        if (pin_count > notify_pin_count)
+          debugPrint(debug, "pdrev", 1, "pdrev %s %d",
+                     sdc_network->pathName(drvr_pin),
+                     pin_count);
+        PD::PdRev pd(logger);
         std::vector<unsigned> vec_x(x, x + pin_count);
         std::vector<unsigned> vec_y(y, y + pin_count);
-        //pd->setAlphaPDII(nets[i]->alpha);
-        pd->addNet(pin_count, vec_x, vec_y);
-        pd->setAlphaPDII(.4);
-        pd->runPDII();
-        PD::Tree pdTree = pd->translateTree(0);
+        float alpha = 0.8;
+        pd.setAlphaPDII(alpha);
+        pd.addNet(vec_x, vec_y);
+        pd.runPD(alpha);
+        //pd->runPDII();
+        PD::Tree pdTree = pd.translateTree();
         ftree = pdToTree(pdTree);
-        delete pd;
-        printf("done\n");
+        if (pin_count > notify_pin_count)
+          debugPrint(debug, "pdrev", 3, "pdrev done");
+      } else {
+        int flute_accuracy = 3;
+        ftree = stt::flute(pin_count, x, y, flute_accuracy);
       }
       tree->setTree(ftree, network);
       if (debug->check("steiner", 3)) {
@@ -141,8 +154,6 @@ makeSteinerTree(const Net *net,
         tree->findLeftRights(network, logger);
       if (debug->check("steiner", 2))
         tree->report(logger, network);
-      delete [] x;
-      delete [] y;
       return tree;
     }
   }
@@ -256,7 +267,7 @@ SteinerTree::report(Logger *logger,
     int j = pt1.n;
     stt::Branch &pt2 = tree_.branch[j];
     int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
-    logger->report(" {} () {}) - {} wire_length = {} left = {} right = {}",
+    logger->report(" {} ({} {}) - {} wire_length = {} left = {} right = {}",
                    name(i, network),
                    pt1.x,
                    pt1.y,
@@ -432,14 +443,17 @@ SteinerTree::right(SteinerPt pt)
   return right_[pt];
 }
 
-// Copied from gpl/src/fastroute/src/utility.cpp
+// Copied from grt/src/fastroute/src/utility.cpp
+// Note that this should NOT be necessary but pdrev stoopdily
+// reproduces the flute structs.
 static stt::Tree pdToTree(PD::Tree pdTree)
 {
   stt::Tree tree;
   tree.deg = pdTree.deg;
   tree.length = (stt::DTYPE) pdTree.length;
   int branch_count = 2 * pdTree.deg - 2;
-  tree.branch = new stt::Branch[branch_count];
+  //tree.branch = new stt::Branch[branch_count];
+  tree.branch = (stt::Branch*) malloc(branch_count * sizeof(stt::Branch));
   for (int i = 0; i < branch_count; i++) {
     tree.branch[i].x = (stt::DTYPE) pdTree.branch[i].x;
     tree.branch[i].y = (stt::DTYPE) pdTree.branch[i].y;
@@ -447,5 +461,7 @@ static stt::Tree pdToTree(PD::Tree pdTree)
   }
   return tree;
 }
+
+////////////////////////////////////////////////////////////////
 
 }
