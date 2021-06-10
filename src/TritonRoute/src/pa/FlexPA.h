@@ -55,6 +55,7 @@ class FlexPA
   ~FlexPA();
   // getters
   frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
   // setters
   int main();
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
