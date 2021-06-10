@@ -52,7 +52,7 @@ namespace gui {
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
       output_(new QTextEdit),
-      input_(new QLineEdit),
+      input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
       historyPosition_(0)
 {
@@ -60,10 +60,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
+  pauser_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
 
   QHBoxLayout* inner_layout = new QHBoxLayout;
   inner_layout->addWidget(pauser_);
-  inner_layout->addWidget(input_, /* stretch */ 1);
+  inner_layout->addWidget(input_);
 
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(output_, /* stretch */ 1);
@@ -74,7 +75,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
   QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
-  connect(input_, SIGNAL(returnPressed()), this, SLOT(executeCommand()));
+  connect(input_, SIGNAL(completeCommand()), this, SLOT(executeCommand()));
+  connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
+  connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
+  connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
+  connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
 
   setWidget(container);
@@ -170,7 +176,6 @@ void ScriptWidget::executeCommand()
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
   QString command = input_->text();
-  input_->clear();
 
   // Show the command that we executed
   addToOutput(command, command, "> ");
@@ -180,19 +185,22 @@ void ScriptWidget::executeCommand()
   // Show its output
   updateOutput(return_code, /* command_finished */ true);
 
-  // Update history; ignore repeated commands and keep last 100
-  const int history_limit = 100;
-  if (history_.empty() || command != history_.last()) {
-    if (history_.size() == history_limit) {
-      history_.pop_front();
-    }
+  if (return_code == TCL_OK) {
+    // Update history; ignore repeated commands and keep last 100
+    const int history_limit = 100;
+    if (history_.empty() || command != history_.last()) {
+      if (history_.size() == history_limit) {
+        history_.pop_front();
+      }
 
-    history_.append(command);
+      history_.append(command);
+    }
+    historyPosition_ = history_.size();
   }
-  historyPosition_ = history_.size();
+
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
-  emit commandExecuted();
+  emit commandExecuted(return_code);
 }
 
 void ScriptWidget::updateOutput(int return_code, bool command_finished)
@@ -241,27 +249,27 @@ ScriptWidget::~ScriptWidget()
   // We are likely exiting anyways
 }
 
-void ScriptWidget::keyPressEvent(QKeyEvent* e)
+void ScriptWidget::goForwardHistory()
 {
-  // Handle up/down through history
-  int key = e->key();
-  if (key == Qt::Key_Down) {
-    if (historyPosition_ < history_.size() - 1) {
-      ++historyPosition_;
-      input_->setText(history_[historyPosition_]);
-    } else if (historyPosition_ == history_.size() - 1) {
-      ++historyPosition_;
-      input_->clear();
-    }
-    return;
-  } else if (key == Qt::Key_Up) {
-    if (historyPosition_ > 0) {
-      --historyPosition_;
-      input_->setText(history_[historyPosition_]);
-    }
-    return;
+  if (historyPosition_ < history_.size() - 1) {
+    ++historyPosition_;
+    input_->setText(history_[historyPosition_]);
+  } else if (historyPosition_ == history_.size() - 1) {
+    ++historyPosition_;
+    input_->setText(history_buffer_last_);
   }
-  QDockWidget::keyPressEvent(e);
+}
+
+void ScriptWidget::goBackHistory()
+{
+  if (historyPosition_ > 0) {
+    if (historyPosition_ == history_.size()) {
+      // whats in the buffer is the last thing the user was editing
+      history_buffer_last_ = input_->text();
+    }
+    --historyPosition_;
+    input_->setText(history_[historyPosition_]);
+  }
 }
 
 void ScriptWidget::readSettings(QSettings* settings)
@@ -305,6 +313,20 @@ void ScriptWidget::pause()
 void ScriptWidget::pauserClicked()
 {
   paused_ = false;
+}
+
+void ScriptWidget::outputChanged()
+{
+  // ensure the new output is visible
+  output_->ensureCursorVisible();
+  // Make changes visible
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+void ScriptWidget::resizeEvent(QResizeEvent* event)
+{
+  input_->setMaximumHeight(event->size().height() - output_->sizeHint().height());
+  QDockWidget::resizeEvent(event);
 }
 
 void ScriptWidget::setFont(const QFont& font)

@@ -35,11 +35,12 @@
 #include <tcl.h>
 
 #include <QDockWidget>
-#include <QLineEdit>
 #include <QPushButton>
 #include <QSettings>
 #include <QStringList>
 #include <QTextEdit>
+
+#include "tclCmdInputWidget.h"
 
 namespace odb {
 class dbDatabase;
@@ -75,7 +76,7 @@ class ScriptWidget : public QDockWidget
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
-  void commandExecuted();
+  void commandExecuted(int return_code);
   // tcl exit has been initiated, want the gui to handle
   // shutdown
   void tclExiting();
@@ -84,12 +85,20 @@ class ScriptWidget : public QDockWidget
   // Triggered when the user hits return in the line edit
   void executeCommand();
 
+  void outputChanged();
+
   void pause();
 
   void pauserClicked();
 
+  void goBackHistory();
+  void goForwardHistory();
+
+ protected:
+  // required to ensure input command space it set to correct height
+  void resizeEvent(QResizeEvent* event) override;
+
  private:
-  void keyPressEvent(QKeyEvent* e) override;
   void setupTcl();
   void updateOutput(int return_code, bool command_finished);
   void addToOutput(const QString& text, const QColor& color, const QString& prefix = "");
@@ -103,11 +112,12 @@ class ScriptWidget : public QDockWidget
                             const char **argv);
 
   QTextEdit* output_;
-  QLineEdit* input_;
+  TclCmdInputWidget* input_;
   QPushButton* pauser_;
   Tcl_Interp* interp_;
   QStringList outputBuffer_;
   QStringList history_;
+  QString history_buffer_last_;
   int historyPosition_;
   bool paused_;
   utl::Logger* logger_;
