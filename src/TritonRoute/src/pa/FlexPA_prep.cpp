@@ -815,11 +815,11 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   auto upper_type = ap->getType(false);
   if (layerNum >= VIAINPIN_BOTTOMLAYERNUM && layerNum <= VIAINPIN_TOPLAYERNUM) {
     viainpin = true;
-  } else if (VIAINPIN_BOTTOMLAYERNUM == VIAINPIN_DEFAULT_BOTTOMLAYERNUM && 
-          ((lower_type == frAccessPointEnum::EncOpt
-              && upper_type != frAccessPointEnum::NearbyGrid)
-             || (upper_type == frAccessPointEnum::EncOpt
-                 && lower_type != frAccessPointEnum::NearbyGrid))) {
+  } else if (VIAINPIN_BOTTOMLAYERNUM == VIAINPIN_DEFAULT_BOTTOMLAYERNUM
+             && ((lower_type == frAccessPointEnum::EncOpt
+                  && upper_type != frAccessPointEnum::NearbyGrid)
+                 || (upper_type == frAccessPointEnum::EncOpt
+                     && lower_type != frAccessPointEnum::NearbyGrid))) {
     viainpin = true;
   }
 
@@ -855,14 +855,14 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     via->setOrigin(bp);
     via->getLayer1BBox(box);
     if (instTerm) {
-        if (!boundaryBBox.contains(box))
-            continue;
-        frBox layer2BBox;
-        via->getLayer2BBox(layer2BBox);
-        if (!boundaryBBox.contains(layer2BBox))
-            continue;
+      if (!boundaryBBox.contains(box))
+        continue;
+      frBox layer2BBox;
+      via->getLayer2BBox(layer2BBox);
+      if (!boundaryBBox.contains(layer2BBox))
+        continue;
     }
-    
+
     frCoord maxExt = 0;
     gtl::rectangle_data<frCoord> viarect(
         box.left(), box.bottom(), box.right(), box.top());
@@ -871,25 +871,25 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     diff += viarect;
     diff -= polyset;
     if (viainpin && diff.size() > 0) {
-        continue;
+      continue;
     }
     if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-        if (diff.size() > 0) {
-            // via ranking criteria: max extension distance beyond pin shape
-            vector<gtl::rectangle_data<frCoord>> remnRects;
-            diff.get_rectangles(remnRects, gtl::orientation_2d_enum::HORIZONTAL);
-            for (auto& r : remnRects) {
-                maxExt = max(maxExt, gtl::xh(r) - gtl::xl(r));
-            }
-            if (!isLRBound) {
-                remnRects.clear();
-                diff.get_rectangles(remnRects, gtl::orientation_2d_enum::VERTICAL);
-                for (auto& r : remnRects) {
-                    maxExt = max(maxExt, gtl::yh(r) - gtl::yl(r));
-                }
-            }
+      if (diff.size() > 0) {
+        // via ranking criteria: max extension distance beyond pin shape
+        vector<gtl::rectangle_data<frCoord>> remnRects;
+        diff.get_rectangles(remnRects, gtl::orientation_2d_enum::HORIZONTAL);
+        for (auto& r : remnRects) {
+          maxExt = max(maxExt, gtl::xh(r) - gtl::xl(r));
         }
-        validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
+        if (!isLRBound) {
+          remnRects.clear();
+          diff.get_rectangles(remnRects, gtl::orientation_2d_enum::VERTICAL);
+          for (auto& r : remnRects) {
+            maxExt = max(maxExt, gtl::yh(r) - gtl::yl(r));
+          }
+        }
+      }
+      validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
     }
   }
   if (validViaDefs.empty()) {

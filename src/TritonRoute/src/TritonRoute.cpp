@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "triton_route/TritonRoute.h"
+
 #include <fstream>
 #include <iostream>
 
@@ -43,7 +45,6 @@
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "ta/FlexTA.h"
-#include "triton_route/TritonRoute.h"
 
 using namespace std;
 using namespace fr;
@@ -288,9 +289,10 @@ void TritonRoute::readParams(const string& fileName)
           CMAP_FILE = value;
           ++readParamCnt;
         } else if (field == "threads") {
-          logger_->warn(
-              utl::DRT, 253, "deprecated threads param in params file."
-                             " Use 'set_thread_count'");
+          logger_->warn(utl::DRT,
+                        253,
+                        "deprecated threads param in params file."
+                        " Use 'set_thread_count'");
           ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());

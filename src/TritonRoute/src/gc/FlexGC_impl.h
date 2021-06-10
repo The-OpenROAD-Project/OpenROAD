@@ -89,12 +89,11 @@ class FlexGCWorker::Impl
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
   {
-    return std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                    minLayerNum_);
+    return std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
   }
   frLayerNum getMaxLayerNum()  // inclusive
   {
-    return std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    return std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {

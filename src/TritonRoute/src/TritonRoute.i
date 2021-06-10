@@ -42,81 +42,82 @@
 
 %include "../../Exception.i"
 
-%inline %{
-
-int detailed_route_num_drvs()
+%inline %
 {
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  return router->getNumDRVs();
-}
-
-void detailed_route_cmd(const char* guideFile,
-                        const char* outputGuideFile,
-                        const char* outputMazeFile,
-                        const char* outputDrcFile,
-                        const char* outputCmapFile,
-                        const char* dbProcessNode,
-                        int drouteEndIter,
-                        int drouteViaInPinBottomLayerNum,
-                        int drouteViaInPinTopLayerNum,
-                        int orSeed,
-                        double orK,
-                        const char* bottomRoutingLayer,
-                        const char* topRoutingLayer,
-                        int verbose)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setParams({guideFile,
-                    outputGuideFile,
-                    outputMazeFile,
-                    outputDrcFile,
-                    outputCmapFile,
-                    dbProcessNode,
-                    drouteEndIter,
-                    drouteViaInPinBottomLayerNum,
-                    drouteViaInPinTopLayerNum,
-                    orSeed,
-                    orK,
-                    bottomRoutingLayer,
-                    topRoutingLayer,
-                    verbose});
-  router->main();
-}
-
-void detailed_route_cmd(const char* param_file)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->readParams(param_file);
-  router->main();
-}
-
-void report_constraints()
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->reportConstraints();
-}
-
-void
-set_detailed_route_debug_cmd(const char* net_name,
-                             const char* pin_name,
-                             bool dr,
-                             bool pa,
-                             bool maze,
-                             int gcell_x, int gcell_y,
-                             int iter,
-                             bool pa_markers)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setDebugNetName(net_name);
-  router->setDebugPinName(pin_name);
-  router->setDebugDR(dr);
-  router->setDebugPA(pa);
-  router->setDebugMaze(maze);
-  if (gcell_x >= 0) {
-    router->setDebugGCell(gcell_x, gcell_y);
+  int detailed_route_num_drvs()
+  {
+    auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+    return router->getNumDRVs();
   }
-  router->setDebugIter(iter);
-  router->setDebugPaMarkers(pa_markers);
-}
 
-%} // inline
+  void detailed_route_cmd(const char* guideFile,
+                          const char* outputGuideFile,
+                          const char* outputMazeFile,
+                          const char* outputDrcFile,
+                          const char* outputCmapFile,
+                          const char* dbProcessNode,
+                          int drouteEndIter,
+                          int drouteViaInPinBottomLayerNum,
+                          int drouteViaInPinTopLayerNum,
+                          int orSeed,
+                          double orK,
+                          const char* bottomRoutingLayer,
+                          const char* topRoutingLayer,
+                          int verbose)
+  {
+    auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+    router->setParams({guideFile,
+                       outputGuideFile,
+                       outputMazeFile,
+                       outputDrcFile,
+                       outputCmapFile,
+                       dbProcessNode,
+                       drouteEndIter,
+                       drouteViaInPinBottomLayerNum,
+                       drouteViaInPinTopLayerNum,
+                       orSeed,
+                       orK,
+                       bottomRoutingLayer,
+                       topRoutingLayer,
+                       verbose});
+    router->main();
+  }
+
+  void detailed_route_cmd(const char* param_file)
+  {
+    auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+    router->readParams(param_file);
+    router->main();
+  }
+
+  void report_constraints()
+  {
+    auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+    router->reportConstraints();
+  }
+
+  void set_detailed_route_debug_cmd(const char* net_name,
+                                    const char* pin_name,
+                                    bool dr,
+                                    bool pa,
+                                    bool maze,
+                                    int gcell_x,
+                                    int gcell_y,
+                                    int iter,
+                                    bool pa_markers)
+  {
+    auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+    router->setDebugNetName(net_name);
+    router->setDebugPinName(pin_name);
+    router->setDebugDR(dr);
+    router->setDebugPA(pa);
+    router->setDebugMaze(maze);
+    if (gcell_x >= 0) {
+      router->setDebugGCell(gcell_x, gcell_y);
+    }
+    router->setDebugIter(iter);
+    router->setDebugPaMarkers(pa_markers);
+  }
+
+  %
+}  // inline

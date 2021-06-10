@@ -200,19 +200,19 @@ enum class frConstraintTypeEnum
   frcMinimumcutConstraint,
   frcOffGridConstraint,
   frcMinEnclosedAreaConstraint,
-  frcLef58CornerSpacingConstraint,                       // not supported
-  frcLef58CornerSpacingConcaveCornerConstraint,          // not supported
-  frcLef58CornerSpacingConvexCornerConstraint,           // not supported
-  frcLef58CornerSpacingSpacingConstraint,                // not supported
-  frcLef58CornerSpacingSpacing1DConstraint,              // not supported
-  frcLef58CornerSpacingSpacing2DConstraint,              // not supported
+  frcLef58CornerSpacingConstraint,               // not supported
+  frcLef58CornerSpacingConcaveCornerConstraint,  // not supported
+  frcLef58CornerSpacingConvexCornerConstraint,   // not supported
+  frcLef58CornerSpacingSpacingConstraint,        // not supported
+  frcLef58CornerSpacingSpacing1DConstraint,      // not supported
+  frcLef58CornerSpacingSpacing2DConstraint,      // not supported
   frcLef58SpacingEndOfLineConstraint,
   frcLef58SpacingEndOfLineWithinConstraint,
-  frcLef58SpacingEndOfLineWithinEndToEndConstraint,      // not supported
+  frcLef58SpacingEndOfLineWithinEndToEndConstraint,  // not supported
   frcLef58SpacingEndOfLineWithinEncloseCutConstraint,
   frcLef58SpacingEndOfLineWithinParallelEdgeConstraint,
   frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint,
-  frcLef58CutClassConstraint,                            // not supported
+  frcLef58CutClassConstraint,  // not supported
   frcNonSufficientMetalConstraint,
   frcSpacingSamenetConstraint,
   frcLef58RightWayOnGridOnlyConstraint,

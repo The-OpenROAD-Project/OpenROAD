@@ -33,9 +33,9 @@
 #include <memory>
 #include <string>
 
+#include "db/drObj/drFig.h"
 #include "db/obj/frBlock.h"
 #include "frDesign.h"
-#include "db/drObj/drFig.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
