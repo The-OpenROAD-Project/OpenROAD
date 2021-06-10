@@ -2561,16 +2561,16 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
           makeHoldDelay(vertex, buffer_count, load_pins,
                         loads_have_out_port, buffer_cell);
           repair_count += buffer_count;
-#if 0
-          // Check that no setup violations are introduced.
-          ensureWireParasitics();
-          Slack drvr_setup_slack1 = sta_->vertexSlack(vertex, max_);
-          if (drvr_setup_slack1 < 0
-              && drvr_setup_slack1 < drvr_setup_slack)
-            printf("%s %s -> %s\n", vertex->name(network_),
-                   delayAsString(drvr_setup_slack, sta_, 3),
-                   delayAsString(drvr_setup_slack1, sta_, 3));
-#endif
+          if (logger_->debugCheck(RSZ, "repair_hold", 4)) {
+            // Check that no setup violations are introduced.
+            ensureWireParasitics();
+            Slack drvr_setup_slack1 = sta_->vertexSlack(vertex, max_);
+            if (drvr_setup_slack1 < 0
+                && drvr_setup_slack1 < drvr_setup_slack)
+              printf("%s %s -> %s\n", vertex->name(network_),
+                     delayAsString(drvr_setup_slack, sta_, 3),
+                     delayAsString(drvr_setup_slack1, sta_, 3));
+          }
           if (inserted_buffer_count_ > max_buffer_count
               || overMaxArea())
             return repair_count;

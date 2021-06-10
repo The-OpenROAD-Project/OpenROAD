@@ -10,4 +10,5 @@ record_tests {
   gcd_prefix
   gcd_ripup
   no_endcap
+  symmetry
 }

@@ -15,19 +15,19 @@ San Diego) is developing a fully autonomous, open-source tool chain for digital
 layout generation across die, package and board, with initial focus on the
 RTL-to-GDSII phase of system-on-chip design. Thus, OpenROAD holistically attacks
 the multiple facets of today's design cost crisis: engineering resources, design
-tool licenses, project schedule, and risk. 
+tool licenses, project schedule, and risk.
 
 The IDEA program targets no-human-in-loop (NHIL) design, with 24-hour turnaround
-time and zero loss of power-performance-area (PPA) design quality. 
+time and zero loss of power-performance-area (PPA) design quality.
 
 No humans means tools must adapt and auto-tune successfully to flow completion
-without requiring human intervention. Machine intelligence augments human expertise 
+without requiring human intervention. Machine intelligence augments human expertise
 through efficient modeling and prediction of flow outcomes during layout generation.
 
 24 hours means that problems must be strategically decomposed into optimal partitions
 during the design process through intellgient distribution and management of computational
 resources. This ensures that the design constraints are met for schedule, performance
-and cost. Any quality loss due to decomposition that uses a parallel and distributed search 
+and cost. Any quality loss due to decomposition that uses a parallel and distributed search
 over cloud resources, is recovered through improved flow predictability and enhanced optimization.
 
 For a technical description of the OpenROAD flow, please refer to our DAC paper:
