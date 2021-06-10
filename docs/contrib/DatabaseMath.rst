@@ -13,7 +13,7 @@ DBUs are integers, so the distance resolution is typically 1/1000u or
 
 OpenDB uses an ``int`` to represent a DBU, which on most hardware is 4
 bytes. This means a database coordinate can be +/-2147483647, which is
-about 2 billion, or 2000 microns or 2 meters.
+about 2 billion units, corresponding to 2 million microns or 2 meters.
 
 Since chip coordinates cannot be negative, it would make sense to use an
 ``unsigned int`` to represent a distance. This conveys the fact that it
