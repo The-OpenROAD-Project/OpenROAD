@@ -107,7 +107,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         marker->setBBox(box);
         marker->setLayerNum(lNum);
         marker->setConstraint(
-            design_->getTech()->getLayer(lNum)->getSpacingTableInfluence());
+            getTech()->getLayer(lNum)->getSpacingTableInfluence());
         marker->addSrc(rects[i]->getNet()->getOwner());
         marker->addVictim(rects[i]->getNet()->getOwner(),
                           make_tuple(lNum,
@@ -208,7 +208,7 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
 void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
 {
   frLayerNum lNum = pin->getPolygon()->getLayerNum();
-  auto con = design_->getTech()->getLayer(lNum)->getSpacingTableInfluence();
+  auto con = getTech()->getLayer(lNum)->getSpacingTableInfluence();
   for (auto& rect : pin->getMaxRectangles()) {
     checkRectMetSpcTblInf(rect.get(), con);
   }
@@ -216,13 +216,12 @@ void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
 void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
 {
   if (targetNet_) {
-    for (int i
-         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
-                    minLayerNum_);
-         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
-                       maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getDesign()->getTech()->getLayer(i);
+      auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
         continue;
       }
@@ -234,13 +233,12 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
     }
   } else {
     // layer --> net --> polygon
-    for (int i
-         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
-                    minLayerNum_);
-         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
-                       maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
-      auto currLayer = getDesign()->getTech()->getLayer(i);
+      auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
         continue;
       }

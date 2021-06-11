@@ -56,15 +56,15 @@ Opendp::checkPlacement(bool verbose)
   vector<Cell *> placed_failures;
   vector<Cell *> in_rows_failures;
   vector<Cell *> overlap_failures;
-  vector<Cell *> site_failures;
+  vector<Cell *> site_align_failures;
   vector<Cell *> power_line_failures;
 
   initGrid();
   for (Cell &cell : cells_) {
     if (isStdCell(&cell)) {
-      // Site check
+      // Site alignment check
       if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0)
-        site_failures.push_back(&cell);
+        site_align_failures.push_back(&cell);
       if (checkPowerLine(cell)) {
         checkPowerLine(cell);
         power_line_failures.push_back(&cell);
@@ -85,14 +85,14 @@ Opendp::checkPlacement(bool verbose)
   reportFailures(overlap_failures, 5, "Overlap", verbose, [&](Cell *cell) -> void {
     reportOverlapFailure(cell);
   });
-  reportFailures(site_failures, 6, "Site", verbose);
+  reportFailures(site_align_failures, 6, "Site aligned", verbose);
   reportFailures(power_line_failures, 7, "Power line", verbose);
 
   return power_line_failures.size()
     + placed_failures.size()
     + in_rows_failures.size()
     + overlap_failures.size()
-    + site_failures.size();
+    + site_align_failures.size();
 }
 
 void

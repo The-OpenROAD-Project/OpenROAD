@@ -84,23 +84,22 @@ class FlexGCWorker::Impl
 
  public:
   // constructors
-  Impl(frDesign* designIn,
+  Impl(frTechObject* techIn,
        Logger* logger,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
   {
-    return std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
+    return std::max((frLayerNum) (getTech()->getBottomLayerNum()),
                     minLayerNum_);
   }
   frLayerNum getMaxLayerNum()  // inclusive
   {
-    return std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
-                    maxLayerNum_);
+    return std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {
-    auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());
+    auto uNet = std::make_unique<gcNet>(getTech()->getLayers().size());
     auto net = uNet.get();
     net->setOwner(owner);
     nets_.push_back(std::move(uNet));
@@ -115,21 +114,20 @@ class FlexGCWorker::Impl
   }
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
-  frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
   const frBox& getExtBox() const { return extBox_; }
-  frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
   std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
   // others
-  void init();
+  void init(const frDesign* design);
   int main();
   void end();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
-  void initPA0();
+  void initPA0(const frDesign* design);
   void initPA1();
 
  protected:
-  frDesign* design_;
+  frTechObject* tech_;
   Logger* logger_;
   FlexDRWorker* drWorker_;
 
@@ -175,7 +173,7 @@ class FlexGCWorker::Impl
                frBlockObject* obj,
                bool isFixed);
   gcNet* initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
-  void initDesign();
+  void initDesign(const frDesign* design);
   bool initDesign_skipObj(frBlockObject* obj);
   void initDRWorker();
   void initNets();
@@ -231,7 +229,18 @@ class FlexGCWorker::Impl
   void checkMetalSpacing_short(gcRect* rect1,
                                gcRect* rect2,
                                const gtl::rectangle_data<frCoord>& markerRect);
-  bool checkMetalSpacing_short_skipOBSPin(
+
+  bool checkMetalSpacing_short_skipFixed(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect);
+
+  bool checkMetalSpacing_short_skipSameNet(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect);
+
+  void checkMetalSpacing_short_obs(
       gcRect* rect1,
       gcRect* rect2,
       const gtl::rectangle_data<frCoord>& markerRect);

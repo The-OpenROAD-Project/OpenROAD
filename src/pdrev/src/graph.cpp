@@ -81,6 +81,8 @@ Graph::Graph(unsigned _num_terminals,
   alpha2 = _alpha2;
   beta = _beta;
   distance = _distance;
+  pd_wl = 0;
+  daf_wl = 0;
   _logger = logger;
 
   M = (1 + beta * (1 - alpha2))
@@ -2505,10 +2507,11 @@ bool Graph::run_PD_brute_force(float alp)
           if ((heap_idx[nn1] > 0) && (d <= heap_key[nn1]))  // FIXME : Tie-break
           {
             heap_decrease_key(nn1, d);
+            nodes[nn1].parent = i;
           } else if (heap_idx[nn1] == 0) {
             heap_insert(nn1, d);
+            nodes[nn1].parent = i;
           }
-          nodes[nn1].parent = i;
         }
       }
     }

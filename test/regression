@@ -50,6 +50,7 @@ define_tool_script "OpenDB" "src/OpenDB/test/regression"
 define_tool_script "rcx" "src/rcx/test/regression"
 define_tool_script "PartitionMgr" "src/PartitionMgr/test/regression"
 define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
+define_tool_script "pdrev" "src/pdrev/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
