@@ -40,6 +40,9 @@ namespace PD {
 
 class Graph;
 
+using stt::Tree;
+using stt::Branch;
+
 class PdRev
 {
 public:
@@ -195,36 +198,25 @@ Tree PdRev::translateTree()
     }
     graph_->RemoveSTNodes();
   }
-  Tree fluteTree;
-  fluteTree.deg = graph_->orig_num_terminals;
-  int branch_count = fluteTree.deg * 2 - 2;
+
+  Tree tree;
+  tree.deg = graph_->orig_num_terminals;
+  int branch_count = tree.deg * 2 - 2;
   if (graph_->nodes.size() != branch_count)
     logger_->error(utl::GRT, 666, "steiner branch count inconsistent");
-  fluteTree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
-  fluteTree.length = graph_->calc_tree_wl_pd();
+  tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
+  tree.length = graph_->calc_tree_wl_pd();
   for (int i = 0; i < graph_->nodes.size(); ++i) {
     Node& child = graph_->nodes[i];
     int parent = child.parent;
     if (parent >= graph_->nodes.size())
       logger_->error(utl::GRT, 666, "steiner branch node out of bounds");
-    Branch& newBranch = fluteTree.branch[i];
-    newBranch.x = (DTYPE) child.x;
-    newBranch.y = (DTYPE) child.y;
+    Branch& newBranch = tree.branch[i];
+    newBranch.x = child.x;
+    newBranch.y = child.y;
     newBranch.n = parent;
   }
-  return fluteTree;
-}
-
-void PdRev::printTree(Tree fluteTree)
-{
-  int i;
-  for (i = 0; i < 2 * fluteTree.deg - 2; i++) {
-    logger_->report("{} ", i);
-    logger_->report("{} {}", fluteTree.branch[i].x, fluteTree.branch[i].y);
-    logger_->report("{} {}",
-                    fluteTree.branch[fluteTree.branch[i].n].x,
-                    fluteTree.branch[fluteTree.branch[i].n].y);
-  }
+  return tree;
 }
 
 void

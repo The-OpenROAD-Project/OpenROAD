@@ -774,8 +774,8 @@ void gen_brk_RSMT(Bool congestionDriven,
         && nets[i]->isClock) {
       std::vector<int> vecX(x, x + d);
       std::vector<int> vecY(y, y + d);
-      PD::Tree pdTree = PD::primDikstraRevII(vecX, vecY, nets[i]->alpha, logger);
-      rsmt = pdToTree(pdTree);
+      stt::Tree tree = PD::primDikstraRevII(vecX, vecY, nets[i]->alpha, logger);
+      rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT

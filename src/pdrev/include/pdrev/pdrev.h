@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
+#include "flute.h"
 
 namespace utl {
 class Logger;
@@ -40,21 +41,7 @@ class Logger;
 namespace PD {
 
 using utl::Logger;
-
-typedef int DTYPE;
-
-typedef struct
-{
-  DTYPE x, y;
-  int n;
-} Branch;
-
-typedef struct
-{
-  int deg;
-  DTYPE length;
-  Branch* branch;
-} Tree;
+using stt::Tree;
 
 Tree
 primDikstra(std::vector<int> x,

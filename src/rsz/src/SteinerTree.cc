@@ -70,9 +70,6 @@ connectedPins(const Net *net,
               Network *network,
               // Return value.
               PinSeq &pins);
-static stt::Tree pdToTree(PD::Tree pdTree);
-
-////////////////////////////////////////////////////////////////
 
 SteinerPt SteinerTree::null_pt = -1;
 
@@ -131,10 +128,9 @@ makeSteinerTree(const Pin *drvr_pin,
         std::swap(x1[0], x1[drvr_idx]);
         std::swap(y1[0], y1[drvr_idx]);
         float alpha = 0.8;
-        PD::Tree pd_tree = use_pd
-        ? PD::primDikstra(x1, y1, alpha, logger)
-        : PD::primDikstraRevII(x1, y1, alpha, logger);
-        ftree = pdToTree(pd_tree);
+        ftree = use_pd
+          ? PD::primDikstra(x1, y1, alpha, logger)
+          : PD::primDikstraRevII(x1, y1, alpha, logger);
         if (pin_count > notify_pin_count)
           debugPrint(debug, "pdrev", 3, "pdrev done");
       } else {
@@ -440,26 +436,5 @@ SteinerTree::right(SteinerPt pt)
 {
   return right_[pt];
 }
-
-// Copied from grt/src/fastroute/src/utility.cpp
-// Note that this should NOT be necessary but pdrev stoopdily
-// reproduces the flute structs.
-static stt::Tree pdToTree(PD::Tree pdTree)
-{
-  stt::Tree tree;
-  tree.deg = pdTree.deg;
-  tree.length = (stt::DTYPE) pdTree.length;
-  int branch_count = 2 * pdTree.deg - 2;
-  //tree.branch = new stt::Branch[branch_count];
-  tree.branch = (stt::Branch*) malloc(branch_count * sizeof(stt::Branch));
-  for (int i = 0; i < branch_count; i++) {
-    tree.branch[i].x = (stt::DTYPE) pdTree.branch[i].x;
-    tree.branch[i].y = (stt::DTYPE) pdTree.branch[i].y;
-    tree.branch[i].n = pdTree.branch[i].n;
-  }
-  return tree;
-}
-
-////////////////////////////////////////////////////////////////
 
 }
