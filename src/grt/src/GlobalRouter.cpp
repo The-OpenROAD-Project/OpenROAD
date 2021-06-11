@@ -60,6 +60,7 @@
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "ord/OpenRoad.hh"
+#include "pdrev/pdrev.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -92,7 +93,6 @@ void GlobalRouter::init()
   _verbose = 0;
 
   // Clock net routing variables
-  _pdRev = 0;
   _alpha = 0.3;
 }
 
