@@ -220,14 +220,14 @@ class FlexGCWorker::Impl
 
   void checkMetalSpacing();
   frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
-                                         bool isNDR = true);
+                                         bool checkNDRs = true);
   void myBloat(const gtl::rectangle_data<frCoord>& rect,
                frCoord val,
                box_t& box);
   void checkMetalSpacing_main(gcRect* rect,
-                              bool isNDR = true,
-                              bool querySpcRects = false);
-  void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool isNDR = true, bool isSpc = false);
+                              bool checkNDRs = true,
+                              bool isSpcRect = false);
+  void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool checkNDRs = true, bool isSpcRect = false);
   void checkMetalSpacing_short(gcRect* rect1,
                                gcRect* rect2,
                                const gtl::rectangle_data<frCoord>& markerRect);
@@ -250,7 +250,7 @@ class FlexGCWorker::Impl
                              frCoord prl,
                              frCoord distX,
                              frCoord distY,
-                             bool isNDR = true,
+                             bool checkNDRs = true,
                              bool checkPolyEdge = true);
   box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner,
                                             frCoord& maxSpcValX,

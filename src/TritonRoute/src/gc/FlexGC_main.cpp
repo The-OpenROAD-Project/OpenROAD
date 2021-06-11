@@ -125,7 +125,7 @@ void FlexGCWorker::Impl::myBloat(const gtl::rectangle_data<frCoord>& rect,
 }
 
 frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
-                                                           bool isNDR)
+                                                           bool checkNDRs)
 {
   frCoord maxSpcVal = 0;
   auto currLayer = getDesign()->getTech()->getLayer(layerNum);
@@ -144,7 +144,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
       default:
         logger_->warn(DRT, 41, "Warning: Unsupported metSpc rule.");
     }
-    if (isNDR)
+    if (checkNDRs)
       return max(
           maxSpcVal,
           getDesign()->getTech()->getMaxNondefaultSpacing(layerNum / 2 - 1));
@@ -399,7 +399,11 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(
     return false;
   }
 }
-
+string rectToString(gcRect& r) {
+    string s = to_string(gtl::xl(r)) + " " + to_string(gtl::yl(r)) + " " + to_string(gtl::xh(r))
+            + " " + to_string(gtl::yh(r)) + " tapered ? " + to_string(r.isTapered());
+    return s;
+}
 void FlexGCWorker::Impl::checkMetalSpacing_prl(
     gcRect* rect1,
     gcRect* rect2,
@@ -407,7 +411,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
     frCoord prl,
     frCoord distX,
     frCoord distY,
-    bool isNDR,
+    bool checkNDRs,
     bool checkPolyEdge)
 {
   // no violation if fixed shapes
@@ -419,7 +423,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   auto net2 = rect2->getNet();
   
     auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
-    if (isNDR) {
+    if (checkNDRs) {
       frCoord ndrSpc1 = 0, ndrSpc2 = 0;
       if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
         ndrSpc1
@@ -430,7 +434,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
 
       reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
     }
-
+    
   // no violation if spacing satisfied
   if (distX * distX + distY * distY >= reqSpcVal * reqSpcVal) {
     return;
@@ -722,7 +726,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
 
 void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                                                 gcRect* ptr2,
-                                                bool isNDR, bool isSpc)
+                                                bool checkNDRs, bool isSpcRect)
 {
   // NSMetal does not need self-intersection
   // Minimum width rule handles outsite this function
@@ -750,32 +754,33 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
     // prl
   } else {
     checkMetalSpacing_prl(
-        ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY, isNDR, !isSpc);
+        ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY, checkNDRs, !isSpcRect);
   }
 }
 
 void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect,
-                                                bool isNDR,
-                                                bool querySpcRects)
+                                                bool checkNDRs,
+                                                bool isSpcRect)
 {
   auto layerNum = rect->getLayerNum();
-  auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, isNDR);
+  auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, checkNDRs);
+  
   box_t queryBox;
   myBloat(*rect, maxSpcVal, queryBox);
 
   auto& workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<gcRect*>> result;
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
-  if (querySpcRects) {
+  if (checkNDRs) {
     vector<rq_box_value_t<gcRect>> resultS;
     workerRegionQuery.querySpcRectangle(queryBox, layerNum, resultS);
     for (auto& [objBox, ptr] : resultS) {
-      checkMetalSpacing_main(rect, &ptr, isNDR, true);
+      checkMetalSpacing_main(rect, &ptr, checkNDRs, isSpcRect);
     }
   }
   // Short, metSpc, NSMetal here
   for (auto& [objBox, ptr] : result) {
-    checkMetalSpacing_main(rect, ptr, isNDR, querySpcRects);
+    checkMetalSpacing_main(rect, ptr, checkNDRs, isSpcRect);
   }
 }
 

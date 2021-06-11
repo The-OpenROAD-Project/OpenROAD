@@ -1818,7 +1818,9 @@ void FlexDRWorker::route_queue()
   gcWorker.resetTargetNet();
   gcWorker.setEnableSurgicalFix(true);
   gcWorker.main();
-
+   if (graphics_) {
+    graphics_->show();
+  }
   // write back GC patches
   for (auto& pwire : gcWorker.getPWires()) {
     auto net = pwire->getNet();

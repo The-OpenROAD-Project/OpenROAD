@@ -390,17 +390,19 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       return;
   // Draw markers
   frBox box;
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
+  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
-  painter.setPen(gui::Painter::green, /* cosmetic */ true);
-  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
+  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
+      cout << "MARKER " << box << "\n";
+      cout << "constraint: " << (int)marker->getConstraint()->typeId() << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
@@ -456,6 +458,19 @@ void FlexDRGraphics::drawMarker(int xl,
   painter.drawRect({xl, yl, xh, yh});
   painter.drawLine({xl, yl}, {xh, yh});
   painter.drawLine({xl, yh}, {xh, yl});
+}
+
+void FlexDRGraphics::show() {
+    if (!worker_ || current_iter_ < settings_->iter) {
+        return;
+    }
+    frBox gcellBox = worker_->getGCellBox();
+    if (settings_->gcellX >= 0
+        && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+      return;
+    }
+    update();
+    pause(nullptr);
 }
 
 void FlexDRGraphics::update()
