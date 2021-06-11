@@ -320,7 +320,6 @@ class GlobalRouter
   std::vector<RegionAdjustment> _regionAdjustments;
 
   // Clock net routing variables
-  bool _pdRev;
   float _alpha;
   int _verbose;
   std::map<std::string, float> _netsAlpha;
