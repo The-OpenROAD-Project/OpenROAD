@@ -35,8 +35,6 @@
 
 # Functions/variables common to metrics scripts.
 
-package require json
-
 proc define_metric { name short_name fmt cmp_op margin_expr } {
   variable metrics
   dict set metrics $name [list $short_name $fmt $cmp_op $margin_expr]
@@ -137,6 +135,9 @@ proc save_metrics_limits { test } {
   if { [lsearch [group_tests "all"] $test] == -1 } {
     puts "Error: test $test not found."
   } else {
+    # Don't require json until it is really needed.
+    package require json
+
     set metrics_file [test_metrics_file $test]
     set metrics_limits [test_metrics_limits_file $test]
     if { ! [file exists $metrics_file] } {
@@ -199,6 +200,9 @@ proc test_metrics_limits_file { test } {
 ################################################################
 
 proc check_flow_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_file [test_metrics_file $test]
   set metrics_limits_file [test_metrics_limits_file $test]
   if { ![file exists $metrics_file] } {
@@ -260,6 +264,9 @@ proc report_metrics_header {} {
 }
 
 proc report_test_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_file [test_metrics_file $test]
   if { [file exists $metrics_file] } {
     set stream [open $metrics_file r]

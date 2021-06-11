@@ -57,8 +57,8 @@ reportPdrevTree(bool use_pd,
   std::swap(y1[0], y1[drvr_index]);
   utl::Logger *logger = ord::getLogger();
   stt::Tree tree = use_pd
-    ? pdr::primDikstra(x1, y1, alpha, logger)
-    : pdr::primDikstraRevII(x1, y1, alpha, logger);
+    ? pdr::primDijkstra(x1, y1, alpha, logger)
+    : pdr::primDijkstraRevII(x1, y1, alpha, logger);
   printf("WL = %d\n", tree.length);
   for (int i = 0; i < 2 * tree.deg - 2; i++) {
     int x1 = tree.branch[i].x;

@@ -65,10 +65,10 @@ private:
 };
 
 Tree
-primDikstra(std::vector<int> x,
-            std::vector<int> y,
-            float alpha,
-            Logger* logger)
+primDijkstra(std::vector<int> x,
+             std::vector<int> y,
+             float alpha,
+             Logger* logger)
 {
   pdr::PdRev pd(x, y, logger);
   pd.runPD(alpha);
@@ -77,10 +77,10 @@ primDikstra(std::vector<int> x,
 }
 
 Tree
-primDikstraRevII(std::vector<int> x,
-                 std::vector<int> y,
-                 float alpha,
-                 Logger* logger)
+primDijkstraRevII(std::vector<int> x,
+                  std::vector<int> y,
+                  float alpha,
+                  Logger* logger)
 {
   pdr::PdRev pd(x, y, logger);
   pd.runPDII(alpha);

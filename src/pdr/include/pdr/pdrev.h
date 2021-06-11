@@ -44,15 +44,15 @@ using utl::Logger;
 using stt::Tree;
 
 Tree
-primDikstra(std::vector<int> x,
-            std::vector<int> y,
-            float alpha,
-            Logger* logger);
+primDijkstra(std::vector<int> x,
+             std::vector<int> y,
+             float alpha,
+             Logger* logger);
 
 Tree
-primDikstraRevII(std::vector<int> x,
-                 std::vector<int> y,
-                 float alpha,
-                 Logger* logger);
+primDijkstraRevII(std::vector<int> x,
+                  std::vector<int> y,
+                  float alpha,
+                  Logger* logger);
 
 }  // namespace PD

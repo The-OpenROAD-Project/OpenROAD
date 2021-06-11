@@ -460,7 +460,7 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
   float alpha = 0.8;
-  stt::Tree pdTree = pdr::primDikstraRevII(vecX, vecY, alpha, _logger);
+  stt::Tree pdTree = pdr::primDijkstraRevII(vecX, vecY, alpha, _logger);
   int wl = pdTree.length;
   return wl/double(_options->getDbUnits());
 }
