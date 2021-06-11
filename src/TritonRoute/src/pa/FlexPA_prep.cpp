@@ -870,11 +870,11 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     gtl::polygon_90_set_data<frCoord> diff;
     diff += viarect;
     diff -= polyset;
-    if (viainpin && diff.size() > 0) {
+    if (viainpin && !diff.empty()) {
       continue;
     }
     if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      if (diff.size() > 0) {
+      if (!diff.empty()) {
         // via ranking criteria: max extension distance beyond pin shape
         vector<gtl::rectangle_data<frCoord>> remnRects;
         diff.get_rectangles(remnRects, gtl::orientation_2d_enum::HORIZONTAL);
