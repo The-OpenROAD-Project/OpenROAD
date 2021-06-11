@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,68 +30,25 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include "ord/OpenRoad.hh"
 
-namespace utl {
-class Logger;
-}  // namespace utl
+extern "C" {
+extern int Pdrev_Init(Tcl_Interp *interp);
+}
 
-namespace PD {
+namespace ord {
 
-using utl::Logger;
+class OpenRoad;
 
-class Graph;
-
-typedef int DTYPE;
-
-typedef struct
+void
+initPdrev(OpenRoad *openroad)
 {
-  DTYPE x, y;
-  int n;
-} Branch;
+  Tcl_Interp *interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  Pdrev_Init(interp);
+}
 
-typedef struct
-{
-  int deg;
-  DTYPE length;
-  Branch* branch;
-} Tree;
-
-class PdRev
-{
- public:
-  PdRev(Logger* logger) : _logger(logger){};
-  void setAlphaPDII(float alpha);
-  void addNet(int numPins, std::vector<unsigned> x, std::vector<unsigned> y);
-  void runPD(float alpha);
-  void runPDII();
-  Tree translateTree(int nTree);
-
- private:
-  void runDAS();
-  void config();
-  void replaceNode(int graph, int originalNode);
-  void transferChildren(int graph, int originalNode);
-  void printTree(Tree fluteTree);
-
-  unsigned num_nets = 1000;
-  unsigned num_terminals = 64;
-  unsigned verbose = 0;
-  float alpha1 = 1;
-  float alpha2 = 0.45;
-  float alpha3 = 0;
-  float alpha4 = 0;
-  float margin = 1.1;
-  unsigned seed = 0;
-  unsigned root_idx = 0;
-  unsigned dist = 2;
-  float beta = 1.4;
-  bool runOneNet = false;
-  unsigned net_num = 0;
-  std::vector<Graph*> my_graphs;
-  Logger* _logger;
-};
-
-}  // namespace PD
+} // namespace
