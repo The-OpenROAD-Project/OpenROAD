@@ -31,12 +31,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 
 #include "graph.h"
 #include "utl/Logger.h"
 
-namespace PD {
+namespace pdr {
 
 class Graph;
 
@@ -70,9 +70,9 @@ primDikstra(std::vector<int> x,
             float alpha,
             Logger* logger)
 {
-  PD::PdRev pd(x, y, logger);
+  pdr::PdRev pd(x, y, logger);
   pd.runPD(alpha);
-  PD::Tree tree = pd.translateTree();
+  Tree tree = pd.translateTree();
   return tree;
 }
 
@@ -82,9 +82,9 @@ primDikstraRevII(std::vector<int> x,
                  float alpha,
                  Logger* logger)
 {
-  PD::PdRev pd(x, y, logger);
+  pdr::PdRev pd(x, y, logger);
   pd.runPDII(alpha);
-  PD::Tree tree = pd.translateTree();
+  Tree tree = pd.translateTree();
   return tree;
 }
 

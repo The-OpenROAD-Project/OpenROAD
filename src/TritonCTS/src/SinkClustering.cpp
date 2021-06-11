@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -460,7 +460,7 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
   float alpha = 0.8;
-  stt::Tree pdTree = PD::primDikstraRevII(vecX, vecY, alpha, _logger);
+  stt::Tree pdTree = pdr::primDikstraRevII(vecX, vecY, alpha, _logger);
   int wl = pdTree.length;
   return wl/double(_options->getDbUnits());
 }

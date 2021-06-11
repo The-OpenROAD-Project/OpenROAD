@@ -36,7 +36,7 @@
 #include <ostream>
 #include <vector>
 
-namespace PD {
+namespace pdr {
 
 using std::ostream;
 using std::vector;

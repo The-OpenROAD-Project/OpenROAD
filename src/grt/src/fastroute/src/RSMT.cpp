@@ -43,7 +43,7 @@
 #include "EdgeShift.h"
 #include "RipUp.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -774,7 +774,7 @@ void gen_brk_RSMT(Bool congestionDriven,
         && nets[i]->isClock) {
       std::vector<int> vecX(x, x + d);
       std::vector<int> vecY(y, y + d);
-      stt::Tree tree = PD::primDikstraRevII(vecX, vecY, nets[i]->alpha, logger);
+      stt::Tree tree = pdr::primDikstraRevII(vecX, vecY, nets[i]->alpha, logger);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {

@@ -40,7 +40,7 @@
 #include "DataProc.h"
 #include "DataType.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"

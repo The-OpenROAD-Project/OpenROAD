@@ -39,7 +39,7 @@
 #include "DataProc.h"
 #include "DataType.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "utl/Logger.h"
 
 namespace grt {

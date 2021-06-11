@@ -33,72 +33,22 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
+#include "ord/OpenRoad.hh"
 
-#include <vector>
-#include "pdrev/pdrev.h"
+extern "C" {
+extern int Pdr_Init(Tcl_Interp *interp);
+}
 
 namespace ord {
-utl::Logger *
-getLogger();
-}
+
+class OpenRoad;
 
 void
-reportPdrevTree(bool use_pd,
-                const std::vector<int> &x,
-                const std::vector<int> &y,
-                int drvr_index,
-                float alpha)
+initPdrev(OpenRoad *openroad)
 {
-  std::vector<int> x1(x);
-  std::vector<int> y1(y);
-  // Move driver to pole position.
-  std::swap(x1[0], x1[drvr_index]);
-  std::swap(y1[0], y1[drvr_index]);
-  utl::Logger *logger = ord::getLogger();
-  PD::Tree tree = use_pd
-    ? PD::primDikstra(x1, y1, alpha, logger)
-    : PD::primDikstraRevII(x1, y1, alpha, logger);
-  printf("WL = %d\n", tree.length);
-  for (int i = 0; i < 2 * tree.deg - 2; i++) {
-    int x1 = tree.branch[i].x;
-    int y1 = tree.branch[i].y;
-    int parent = tree.branch[i].n;
-    int x2 = tree.branch[parent].x;
-    int y2 = tree.branch[parent].y;
-    int length = abs(x1-x2)+abs(y1-y2);
-    printf("%d (%d %d) parent %d length %d\n",
-           i, x1, y1, parent, length);
-  }
+  Tcl_Interp *interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  Pdr_Init(interp);
 }
 
-%}
-
-%include "../../Exception.i"
-
-%import <std_vector.i>
-namespace std {
-  %template(pdrev_xy) vector<int>;
-}
-
-%inline %{
-
-void
-report_pd_tree(const std::vector<int> &x,
-               const std::vector<int> &y,
-               int drvr_index,
-               float alpha)
-{
-  reportPdrevTree(true, x, y, drvr_index, alpha);
-}
-
-void
-report_pdII_tree(const std::vector<int> &x,
-                 const std::vector<int> &y,
-                 int drvr_index,
-                 float alpha)
-{
-  reportPdrevTree(false, x, y, drvr_index, alpha);
-}
-
-%} // inline
+} // namespace

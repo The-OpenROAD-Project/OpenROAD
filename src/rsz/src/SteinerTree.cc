@@ -46,7 +46,7 @@
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 
 namespace rsz {
 
@@ -129,8 +129,8 @@ makeSteinerTree(const Pin *drvr_pin,
         std::swap(y1[0], y1[drvr_idx]);
         float alpha = 0.8;
         ftree = use_pd
-          ? PD::primDikstra(x1, y1, alpha, logger)
-          : PD::primDikstraRevII(x1, y1, alpha, logger);
+          ? pdr::primDikstra(x1, y1, alpha, logger)
+          : pdr::primDikstraRevII(x1, y1, alpha, logger);
         if (pin_count > notify_pin_count)
           debugPrint(debug, "pdrev", 3, "pdrev done");
       } else {

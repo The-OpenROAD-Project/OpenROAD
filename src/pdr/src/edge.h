@@ -38,7 +38,7 @@
 
 #include "node.h"
 
-namespace PD {
+namespace pdr {
 
 using std::ostream;
 

@@ -43,7 +43,7 @@
 
 #include "utl/Logger.h"
 
-namespace PD {
+namespace pdr {
 
 using std::map;
 using std::max;

@@ -42,7 +42,7 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
-namespace PD {
+namespace pdr {
 
 using std::ofstream;
 using std::vector;

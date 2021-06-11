@@ -38,7 +38,7 @@ namespace utl {
 class Logger;
 }
 
-namespace PD {
+namespace pdr {
 
 using utl::Logger;
 using stt::Tree;

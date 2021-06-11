@@ -134,7 +134,7 @@ add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
-add_subdirectory(pdrev)
+add_subdirectory(pdr)
 add_subdirectory(pdngen)
 
 ################################################################
@@ -184,7 +184,7 @@ target_link_libraries(openroad
   PartitionMgr
   utl
   pdn
-  pdrev
+  pdr
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

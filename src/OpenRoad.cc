@@ -80,7 +80,7 @@
 #include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
-#include "pdrev/MakePdrev.h"
+#include "pdr/MakePdrev.h"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];

@@ -74,6 +74,6 @@ target_link_libraries(TritonCTS
     OpenSTA
     rsz
     stt
-    pdrev
+    pdr
     utl
  )
