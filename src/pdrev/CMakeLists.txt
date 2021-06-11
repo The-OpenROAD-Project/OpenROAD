@@ -56,5 +56,5 @@ target_include_directories(pdrev
 target_link_libraries(pdrev
   PUBLIC
     utl
-    sst
+    stt
 )

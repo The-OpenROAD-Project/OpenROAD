@@ -58,7 +58,7 @@ target_include_directories(rsz
 
 target_link_libraries(rsz
   PUBLIC
-    sst
+    stt
     opendb
     OpenSTA
     dbSta
