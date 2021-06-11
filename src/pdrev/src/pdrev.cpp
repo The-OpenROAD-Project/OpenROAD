@@ -38,9 +38,59 @@
 
 namespace PD {
 
-PdRev::PdRev(Logger* logger) :
+class Graph;
+
+class PdRev
+{
+public:
+  PdRev(std::vector<int> x,
+        std::vector<int> y,
+        Logger* logger);
+  ~PdRev();
+  void runPD(float alpha);
+  void runPDII(float alpha);
+  Tree translateTree();
+  void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
+
+private:
+  void replaceNode(Graph* graph, int originalNode);
+  void transferChildren(int originalNode);
+  void printTree(Tree fluteTree);
+
+  Graph* graph_;
+  Logger* logger_;
+};
+
+Tree
+primDikstra(std::vector<int> x,
+            std::vector<int> y,
+            float alpha,
+            Logger* logger)
+{
+  PD::PdRev pd(x, y, logger);
+  pd.runPD(alpha);
+  PD::Tree tree = pd.translateTree();
+  return tree;
+}
+
+Tree
+primDikstraRevII(std::vector<int> x,
+                 std::vector<int> y,
+                 float alpha,
+                 Logger* logger)
+{
+  PD::PdRev pd(x, y, logger);
+  pd.runPDII(alpha);
+  PD::Tree tree = pd.translateTree();
+  return tree;
+}
+
+PdRev::PdRev(std::vector<int> x,
+             std::vector<int> y,
+             Logger* logger) :
   logger_(logger)
 {
+  graph_ = new Graph(x, y, logger_);
 }
 
 PdRev::~PdRev()
@@ -48,40 +98,17 @@ PdRev::~PdRev()
   delete graph_;
 }
 
-// Bad bad API: this MUST be called before PdRev::addNet -cherry 06/07/2021
-// Should be a parameter of runPDII, not a set function.
-void PdRev::setAlphaPDII(float alpha)
-{
-  alpha2 = alpha;
-}
-
-void PdRev::addNet(std::vector<int> x,
-                   std::vector<int> y)
-{
-  graph_ = new Graph(alpha2,
-                     alpha3,
-                     alpha4,
-                     root_idx,
-                     beta,
-                     margin,
-                     seed,
-                     dist,
-                     x,
-                     y,
-                     logger_);
-}
-
 void PdRev::runPD(float alpha)
 {
-  graph_->buildNearestNeighborsForSPT(graph_->num_terminals);
+  graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
   graph_->doSteiner_HoVW();
 }
 
-void PdRev::runPDII()
+void PdRev::runPDII(float alpha)
 {
-  graph_->buildNearestNeighborsForSPT(graph_->num_terminals);
-  graph_->PDBU_new_NN();
+  graph_->buildNearestNeighborsForSPT();
+  graph_->PDBU_new_NN(alpha);
   graph_->doSteiner_HoVW();
   graph_->fix_max_dc();
 }

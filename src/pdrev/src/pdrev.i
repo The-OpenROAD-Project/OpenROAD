@@ -50,19 +50,15 @@ reportPdrevTree(bool use_pd,
                 int drvr_index,
                 float alpha)
 {
-  PD::PdRev pd(ord::getLogger());
-  pd.setAlphaPDII(alpha);
   std::vector<int> x1(x);
   std::vector<int> y1(y);
   // Move driver to pole position.
   std::swap(x1[0], x1[drvr_index]);
   std::swap(y1[0], y1[drvr_index]);
-  pd.addNet(x1, y1);
-  if (use_pd)
-    pd.runPD(alpha);
-  else
-    pd.runPDII();
-  PD::Tree tree = pd.translateTree();
+  utl::Logger *logger = ord::getLogger();
+  PD::Tree tree = use_pd
+    ? PD::primDikstra(x1, y1, alpha, logger)
+    : PD::primDikstraRevII(x1, y1, alpha, logger);
   printf("WL = %d\n", tree.length);
   for (int i = 0; i < 2 * tree.deg - 2; i++) {
     int x1 = tree.branch[i].x;

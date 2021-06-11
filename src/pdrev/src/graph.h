@@ -50,64 +50,12 @@ using utl::Logger;
 
 class Graph
 {
- public:
-  vector<Node> nodes;
-  vector<Edge> edges;
-  vector<int> dag;
-  int maxPL;  // max source to sink pathlength
-  float maxPLRatio;
-  vector<vector<int>> ManhDist;
-  float PLmargin;
-  unsigned num_terminals;
-  unsigned orig_num_terminals;
-  unsigned root_idx;
-  unsigned seed;
-  float alpha2;
-  float alpha3;
-  float alpha4;
-  float beta;
-  unsigned distance;
-  float M;
-
-  vector<int> urux;
-  vector<int> urlx;
-  vector<int> ulux;
-  vector<int> ullx;
-  vector<int> lrux;
-  vector<int> lrlx;
-  vector<int> llux;
-  vector<int> lllx;
-
-  vector<Node> sheared;
-  vector<Node> hanan;
-  vector<vector<int>> nn;
-  float avgNN;
-  vector<vector<int>> nn_hanan;
-  vector<int> sorted;
-  vector<int> sorted_hanan;
-  vector<int> aux;
-
-  vector<unsigned> heap_key;
-  vector<int> heap_idx;
-  vector<int> heap_elt;
-  unsigned heap_size;
-  vector<vector<int>> tree_struct;
-  vector<int> tree_struct_1darr;
-
-  // functions
-  Graph(float _alpha2,
-        float _alpha3,
-        float _alpha4,
-        unsigned _root,
-        float _beta,
-        float _margin,
-        unsigned _seed,
-        unsigned _distance,
-        vector<int>& x,
+public:
+  Graph(vector<int>& x,
         vector<int>& y,
         Logger* logger);
-  void buildNearestNeighborsForSPT(unsigned num_terminals);
-  void buildNearestNeighbors_single_node(unsigned num_terminals, unsigned idx);
+  void buildNearestNeighborsForSPT();
+  void buildNearestNeighbors_single_node(int idx);
   void run_PD_brute_force(float alpha);
   void doSteiner_HoVW();
   void fix_max_dc();
@@ -122,7 +70,7 @@ class Graph
   void update_edgecosts_to_parent(unsigned child, unsigned par);
   void update_node_detcost_Kt(unsigned j);
   void get_level_in_tree();
-  void PDBU_new_NN();
+  void PDBU_new_NN(float alpha);
   void update_detourcosts_to_NNs(unsigned j);
   void swap_and_update_tree(unsigned min_node,
                             int nn_idx,
@@ -201,8 +149,53 @@ class Graph
                            std::pair<double, double> D,
                            std::pair<double, double>& out);
 
- private:
-  Logger* _logger;
+  vector<Node> nodes;
+  int orig_num_terminals;
+
+private:
+  float alpha2;
+  float alpha3;
+  float alpha4;
+  float beta;
+  unsigned distance;
+  float M;
+
+  vector<Edge> edges;
+  vector<int> dag;
+  int maxPL;  // max source to sink pathlength
+  float maxPLRatio;
+  vector<vector<int>> ManhDist;
+  float PLmargin;
+  int num_terminals;
+  int root_idx;
+
+  vector<int> urux;
+  vector<int> urlx;
+  vector<int> ulux;
+  vector<int> ullx;
+  vector<int> lrux;
+  vector<int> lrlx;
+  vector<int> llux;
+  vector<int> lllx;
+
+  vector<Node> sheared;
+  vector<Node> hanan;
+  vector<vector<int>> nn;
+  float avgNN;
+  vector<vector<int>> nn_hanan;
+  vector<int> sorted;
+  vector<int> sorted_hanan;
+  vector<int> aux;
+
+  vector<vector<int>> tree_struct;
+  vector<int> tree_struct_1darr;
+
+  vector<unsigned> heap_key;
+  vector<int> heap_idx;
+  vector<int> heap_elt;
+  unsigned heap_size;
+
+  Logger* logger_;
 };
 
 }  // namespace PD

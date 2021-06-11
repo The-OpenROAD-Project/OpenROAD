@@ -41,8 +41,6 @@ namespace PD {
 
 using utl::Logger;
 
-class Graph;
-
 typedef int DTYPE;
 
 typedef struct
@@ -58,33 +56,16 @@ typedef struct
   Branch* branch;
 } Tree;
 
-class PdRev
-{
- public:
-  PdRev(Logger* logger);
-  ~PdRev();
-  void setAlphaPDII(float alpha);
-  void addNet(std::vector<int> x, std::vector<int> y);
-  void runPD(float alpha);
-  void runPDII();
-  Tree translateTree();
-  void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
+Tree
+primDikstra(std::vector<int> x,
+            std::vector<int> y,
+            float alpha,
+            Logger* logger);
 
- private:
-  void replaceNode(Graph* tree, int originalNode);
-  void transferChildren(int originalNode);
-  void printTree(Tree fluteTree);
-
-  float alpha2 = 0.45;
-  float alpha3 = 0;
-  float alpha4 = 0;
-  float margin = 1.1;
-  unsigned seed = 0;
-  unsigned root_idx = 0;
-  unsigned dist = 2;
-  float beta = 1.4;
-  Graph* graph_;
-  Logger* logger_;
-};
+Tree
+primDikstraRevII(std::vector<int> x,
+                 std::vector<int> y,
+                 float alpha,
+                 Logger* logger);
 
 }  // namespace PD
