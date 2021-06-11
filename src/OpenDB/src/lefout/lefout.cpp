@@ -42,6 +42,11 @@
 
 using namespace odb;
 
+void lefout::writeVersion(const char* version)
+{
+  fprintf(_out, "VERSION %s ;\n", version);
+}
+
 void lefout::writeBoxes(void* boxes, const char* indent)
 {
   dbSet<dbBox>* geoms = (dbSet<dbBox>*) boxes;
@@ -100,12 +105,43 @@ void lefout::writeBoxes(void* boxes, const char* indent)
   }
 }
 
+void lefout::writeHeader(dbBlock* db_block)
+{
+  dbTech* tech = db_block->getDataBase()->getTech();
+
+  char left_bus_delimeter = 0;
+  char right_bus_delimeter = 0;
+  char hier_delimeter = db_block->getHierarchyDelimeter();
+
+  db_block->getBusDelimeters(left_bus_delimeter, right_bus_delimeter);
+
+  if (left_bus_delimeter == 0)
+    left_bus_delimeter = '[';
+
+  if (right_bus_delimeter == 0)
+    right_bus_delimeter = ']';
+
+  if (hier_delimeter == 0)
+    hier_delimeter = '|';
+
+  writeVersion(tech->getLefVersionStr());
+  writeNameCaseSensitive(tech->getNamesCaseSensitive());
+  writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
+  writeDividerChar(hier_delimeter);
+
+  if (tech->getLefUnits()) {
+    writeUnits(tech->getLefUnits());
+  }
+}
+
 void lefout::writeHeader(dbLib* lib)
 {
   dbTech* tech = lib->getDb()->getTech();
 
-  char left_bus_delimeter;
-  char right_bus_delimeter;
+  char left_bus_delimeter = 0;
+  char right_bus_delimeter = 0;
+  char hier_delimeter = lib->getHierarchyDelimeter();
+
   lib->getBusDelimeters(left_bus_delimeter, right_bus_delimeter);
 
   if (left_bus_delimeter == 0)
@@ -114,27 +150,43 @@ void lefout::writeHeader(dbLib* lib)
   if (right_bus_delimeter == 0)
     right_bus_delimeter = ']';
 
-  char hier_delimeter = lib->getHierarchyDelimeter();
-
   if (hier_delimeter == 0)
     hier_delimeter = '|';
 
-  fprintf(_out, "VERSION %s ;\n", tech->getLefVersionStr());
-  fprintf(_out,
-          "NAMESCASESENSITIVE %s ;\n",
-          tech->getNamesCaseSensitive().getString());
+  writeVersion(tech->getLefVersionStr());
+  writeNameCaseSensitive(tech->getNamesCaseSensitive());
+  writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
+  writeDividerChar(hier_delimeter);
+  writePropertyDefinitions(lib);
+
+  if (lib->getLefUnits()) {
+    writeUnits(lib->getLefUnits());
+  }
+}
+
+void lefout::writeDividerChar(char hier_delimeter)
+{
+  fprintf(_out, "DIVIDERCHAR \"%c\" ;\n", hier_delimeter);
+}
+
+void lefout::writeUnits(int database_units)
+{
+  fprintf(_out, "UNITS\n");
+  fprintf(_out, "    DATABASE MICRONS %d ;\n", database_units);
+  fprintf(_out, "END UNITS\n");
+}
+
+void lefout::writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter)
+{
   fprintf(_out,
           "BUSBITCHARS \"%c%c\" ;\n",
           left_bus_delimeter,
           right_bus_delimeter);
-  fprintf(_out, "DIVIDERCHAR \"%c\" ;\n", hier_delimeter);
-  writePropertyDefinitions(lib);
+}
 
-  if (lib->getLefUnits()) {
-    fprintf(_out, "UNITS\n");
-    fprintf(_out, "    DATABASE MICRONS %d ;\n", lib->getLefUnits());
-    fprintf(_out, "END UNITS\n");
-  }
+void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
+{
+  fprintf(_out, "NAMESCASESENSITIVE %s ;\n", on_off_type.getString());
 }
 
 void lefout::writeTech(dbTech* tech)
@@ -1013,4 +1065,14 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   fclose(_out);
 
   return true;
+}
+
+bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
+{
+  _out = fopen(lef_file, "w");
+
+  if (_out == nullptr) {
+    fprintf(stderr, "Cannot open LEF file %s\n", lef_file);
+    return false;
+  }
 }
