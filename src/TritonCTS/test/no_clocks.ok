@@ -35,3 +35,4 @@ TritonCTS forced slew degradation on these wires.
 [WARNING CTS-0083] No clock nets have been found.
 [INFO CTS-0008]  TritonCTS found 0 clock nets.
 [WARNING CTS-0082] No valid clock nets in the design. Skipping CTS...
+
