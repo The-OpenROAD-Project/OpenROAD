@@ -151,7 +151,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
     if (checkNDRs)
       return max(
           maxSpcVal,
-          getDesign()->getTech()->getMaxNondefaultSpacing(layerNum / 2 - 1));
+          getTech()->getMaxNondefaultSpacing(layerNum / 2 - 1));
   }
   return maxSpcVal;
 }

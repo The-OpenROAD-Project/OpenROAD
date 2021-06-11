@@ -395,15 +395,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
-      cout << "MARKER " << box << "\n";
-      cout << "constraint: " << (int)marker->getConstraint()->typeId() << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
+      cout << "MARKER " << box << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
