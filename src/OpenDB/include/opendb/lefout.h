@@ -38,6 +38,7 @@
 #include "cdl.h"
 #include "dbObject.h"
 #include "odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -64,6 +65,7 @@ class lefout
   bool _write_marked_masters;
   double _dist_factor;
   double _area_factor;
+  utl::Logger* _logger;
 
   void writeBoxes(void* boxes, const char* indent);
   void writeTech(dbTech* tech);
@@ -98,12 +100,13 @@ class lefout
 
   double lefarea(int value) { return ((double) value * _area_factor); }
 
-  lefout()
+  lefout(utl::Logger* logger)
   {
     _out = nullptr;
     _write_marked_masters = _use_alias = _use_master_ids = false;
     _dist_factor = 0.001;
     _area_factor = 0.000001;
+    _logger = logger;
   }
 
   ~lefout() {}

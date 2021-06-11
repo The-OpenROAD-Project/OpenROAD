@@ -123,18 +123,21 @@ int write_def(odb::dbBlock* block,
 
 int write_lef(odb::dbLib* lib, const char* path)
 {
-  odb::lefout writer;
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::lefout writer(logger);
   return writer.writeTechAndLib(lib, path);
 }
 
 int write_tech_lef(odb::dbTech* tech, const char* path)
 {
-  odb::lefout writer;
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::lefout writer(logger);
   return writer.writeTech(tech, path);
 }
 int write_macro_lef(odb::dbLib* lib, const char* path)
 {
-  odb::lefout writer;
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::lefout writer(logger);
   return writer.writeLib(lib, path);
 }
 
