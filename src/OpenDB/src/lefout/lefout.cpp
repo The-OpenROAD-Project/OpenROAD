@@ -1075,4 +1075,6 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
     fprintf(stderr, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
+
+  writeHeader(db_block);
 }
