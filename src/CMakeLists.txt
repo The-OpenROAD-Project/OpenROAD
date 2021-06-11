@@ -184,6 +184,7 @@ target_link_libraries(openroad
   PartitionMgr
   utl
   pdn
+  pdrev
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
