@@ -187,13 +187,14 @@ SteinerTree::setTree(stt::Tree tree,
     loc_pin_map_[loc] = pin;
     loc_pins_map[loc].push_back(pin);
   }
-  for (int i = 0; i < stt::branch_count(tree); i++) {
+  for (int i = 0; i < pin_count; i++) {
     stt::Branch &branch_pt = tree_.branch[i];
     PinSeq &loc_pins = loc_pins_map[Point(branch_pt.x, branch_pt.y)];
-    Pin *pin = loc_pins.back();
-    loc_pins.pop_back();
-    steiner_pt_pin_map_[i] = pin;
-    pin_steiner_pt_map_[pin] = i;
+    for (Pin *pin : loc_pins) {
+      steiner_pt_pin_map_[i] = pin;
+      pin_steiner_pt_map_[pin] = i;
+    }
+    loc_pins.clear();
   }
 }
 
