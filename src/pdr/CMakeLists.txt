@@ -46,6 +46,8 @@ target_sources(pdr
   src/MakePdrev.cpp
   src/pdrev.cpp
   src/graph.cpp
+  src/node.cpp
+  src/edge.cpp
 )
 
 target_include_directories(pdr

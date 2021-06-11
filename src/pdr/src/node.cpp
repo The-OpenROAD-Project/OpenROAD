@@ -31,39 +31,66 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <ostream>
-#include <vector>
-
 #include "node.h"
 
 namespace pdr {
 
-using std::ostream;
-
-class Edge
+Node::Node(int _idx, int _x, int _y) :
+  idx(_idx),
+  x(_x),
+  y(_y),
+  // magic number alert -cherry
+  nn_edge_detcost(8, 10000),
+  nn_sw_cost(8, 10000),
+  maxPLToChild(0)
 {
-public:
-  Edge(int _idx, int _head, int _tail);
-  ~Edge();
-
-  int idx;
-  int head;
-  int tail;
-  int best_shape;        // 0 = lower L, 1 = upper L
-  int final_best_shape;  // 0 = lower L, 1 = upper L
-  int best_ov;
-  unsigned lower_ov, upper_ov;
-  vector<int> upper_best_config, lower_best_config;
-  unsigned lower_idx_of_cn_x, lower_idx_of_cn_y;
-  unsigned upper_idx_of_cn_x, upper_idx_of_cn_y;
-
-  vector<Node> STNodes;
-  vector<Node> lower_sps_to_be_added_x, lower_sps_to_be_added_y;
-  vector<Node> upper_sps_to_be_added_x, upper_sps_to_be_added_y;
-
-  friend ostream& operator<<(ostream& os, const Edge& n);
+  parent = 0;
+  min_dist = 0;
+  path_length = 0;
+  detcost_edgePToNode = -1;
+  detcost_edgeNodeToP = -1;
+  src_to_sink_dist = 0;
+  K_t = 1;
+  level = 0;
+  conn_to_par = false;
+  // magic number alert -cherry
+  idx_of_cn_x = 105;
+  idx_of_cn_y = 105;
 };
 
-}  // namespace
+ostream& operator<<(ostream& os, const Node& n)
+{
+  os << n.idx << "(" << n.x << ", " << n.y << ") "
+     << " parent: " << n.parent << " children: ";
+  for (unsigned i = 0; i < n.children.size(); ++i) {
+    os << n.children[i] << " ";
+  }
+  os << " N: ";
+  for (unsigned i = 0; i < n.N.size(); ++i) {
+    os << n.N[i] << " ";
+  }
+  os << " S: ";
+  for (unsigned i = 0; i < n.S.size(); ++i) {
+    os << n.S[i] << " ";
+  }
+  os << " E: ";
+  for (unsigned i = 0; i < n.E.size(); ++i) {
+    os << n.E[i] << " ";
+  }
+  os << " W: ";
+  for (unsigned i = 0; i < n.W.size(); ++i) {
+    os << n.W[i] << " ";
+  }
+  os << "PL: " << n.src_to_sink_dist << " MaxPLToChild: " << n.maxPLToChild;
+  return os;
+}
+
+Node1::Node1(int _idx, int _x, int _y)
+{
+  idx = _idx;
+  x = _x;
+  y = _y;
+  parent = 0;
+}
+
+} // namespace

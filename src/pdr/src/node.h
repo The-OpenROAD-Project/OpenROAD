@@ -43,7 +43,9 @@ using std::vector;
 
 class Node
 {
- public:
+public:
+  Node(int _idx, int _x, int _y);
+
   int idx;
   int x;
   int y;
@@ -78,71 +80,18 @@ class Node
                       // of the edges from the source to the node j
   int maxPLToChild;
 
-  Node(int _idx, int _x, int _y) :
-    idx(_idx),
-    x(_x),
-    y(_y),
-    // magic number alert -cherry
-    nn_edge_detcost(8, 10000),
-    nn_sw_cost(8, 10000),
-    maxPLToChild(0)
-  {
-    parent = 0;
-    min_dist = 0;
-    path_length = 0;
-    detcost_edgePToNode = -1;
-    detcost_edgeNodeToP = -1;
-    src_to_sink_dist = 0;
-    K_t = 1;
-    level = 0;
-    conn_to_par = false;
-    // magic number alert -cherry
-    idx_of_cn_x = 105;
-    idx_of_cn_y = 105;
-  };
-  friend ostream& operator<<(ostream& os, const Node& n)
-  {
-    os << n.idx << "(" << n.x << ", " << n.y << ") "
-       << " parent: " << n.parent << " children: ";
-    for (unsigned i = 0; i < n.children.size(); ++i) {
-      os << n.children[i] << " ";
-    }
-    os << " N: ";
-    for (unsigned i = 0; i < n.N.size(); ++i) {
-      os << n.N[i] << " ";
-    }
-    os << " S: ";
-    for (unsigned i = 0; i < n.S.size(); ++i) {
-      os << n.S[i] << " ";
-    }
-    os << " E: ";
-    for (unsigned i = 0; i < n.E.size(); ++i) {
-      os << n.E[i] << " ";
-    }
-    os << " W: ";
-    for (unsigned i = 0; i < n.W.size(); ++i) {
-      os << n.W[i] << " ";
-    }
-    os << "PL: " << n.src_to_sink_dist << " MaxPLToChild: " << n.maxPLToChild;
-    return os;
-  }
+  friend ostream& operator<<(ostream& os, const Node& n);
 };
 
 class Node1
 {
- public:
+public:
+  Node1(int _idx, int _x, int _y);
+
   int idx;
   int x;
   int y;
   unsigned parent;  // parent's node index
-
-  Node1(int _idx, int _x, int _y)
-  {
-    idx = _idx;
-    x = _x;
-    y = _y;
-    parent = 0;
-  };
 };
 
-}  // namespace PD
+}  // namespace
