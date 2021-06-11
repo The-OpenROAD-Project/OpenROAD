@@ -406,7 +406,12 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
 {
-  int dbu_height = getBounds(getBlock()).yMax();
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+  
+  int dbu_height = getBounds(block).yMax();
   mouse_press_pos_ = event->pos();
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
@@ -431,7 +436,7 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
 void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 {
   dbBlock* block = getBlock();
-  if (!block) {
+  if (block == nullptr) {
     return;
   }
 
@@ -449,6 +454,11 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
 void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 {
+  dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
   if (event->button() == Qt::RightButton && rubber_band_showing_) {
     rubber_band_showing_ = false;
     updateRubberBandRegion();
@@ -462,7 +472,6 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
     Rect rubber_band_dbu = screenToDBU(rect);
     // Clip to the block bounds
-    dbBlock* block = getBlock();
     Rect bbox = getBounds(block);
 
     rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox.xMin()));
@@ -473,10 +482,10 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
       if (rect.width() < 10 && rect.height() < 10)
         return;
-      int dbu_height = getBounds(getBlock()).yMax();
+      int dbu_height = getBounds(block).yMax();
       auto mouse_release_pos = screenToDBU(event->pos());
       auto mouse_press_pos = screenToDBU(mouse_press_pos_);
-      qreal to_dbu = getBlock()->getDbUnitsPerMicron();
+      qreal to_dbu = block->getDbUnitsPerMicron();
 
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
