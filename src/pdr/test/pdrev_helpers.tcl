@@ -52,6 +52,8 @@ proc write_pin { pin stream } {
   puts $stream "[get_full_name $pin] [sta::format_distance $x 2 ] [sta::format_distance $y 2]"
 }
 
+# Each net is
+# net_name pin_count drvr_index {{pin_name x y}...}
 proc read_nets { filename } {
   set stream [open $filename "r"]
   set nets {}
@@ -94,9 +96,9 @@ proc report_pdrev_net { net alpha use_pd } {
     lappend ys [expr int($y * 1000)]
   }
   if { $use_pd } {
-    pdrev::report_pd_tree $xs $ys $drvr_index $alpha
+    pdr::report_pd_tree $xs $ys $drvr_index $alpha
   } else {
-    pdrev::report_pdII_tree $xs $ys $drvr_index $alpha
+    pdr::report_pdII_tree $xs $ys $drvr_index $alpha
   }
 }
 

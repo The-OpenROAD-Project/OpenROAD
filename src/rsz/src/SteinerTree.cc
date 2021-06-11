@@ -35,7 +35,6 @@
 
 #include "rsz/SteinerTree.hh"
 
-#include <fstream>
 #include <string>
 
 #include "utl/Logger.h"
@@ -128,9 +127,10 @@ makeSteinerTree(const Pin *drvr_pin,
         std::swap(x1[0], x1[drvr_idx]);
         std::swap(y1[0], y1[drvr_idx]);
         float alpha = 0.8;
-        ftree = use_pd
-          ? pdr::primDikstra(x1, y1, alpha, logger)
-          : pdr::primDikstraRevII(x1, y1, alpha, logger);
+        if (use_pd)
+          ftree = pdr::primDikstra(x1, y1, alpha, logger);
+        else
+          ftree = pdr::primDikstraRevII(x1, y1, alpha, logger);
         if (pin_count > notify_pin_count)
           debugPrint(debug, "pdrev", 3, "pdrev done");
       } else {
@@ -187,7 +187,7 @@ SteinerTree::setTree(stt::Tree tree,
     loc_pin_map_[loc] = pin;
     loc_pins_map[loc].push_back(pin);
   }
-  for (int i = 0; i < pin_count; i++) {
+  for (int i = 0; i < stt::branch_count(tree); i++) {
     stt::Branch &branch_pt = tree_.branch[i];
     PinSeq &loc_pins = loc_pins_map[Point(branch_pt.x, branch_pt.y)];
     Pin *pin = loc_pins.back();

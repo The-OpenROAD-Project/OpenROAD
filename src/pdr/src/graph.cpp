@@ -71,6 +71,7 @@ Graph::Graph(vector<int>& x,
     }
     if (flag)
       continue;
+
     int idx = nodes.size();
     nodes.push_back(Node(idx, x[i], y[i]));
     edges.push_back(Edge(idx, 0, 0));

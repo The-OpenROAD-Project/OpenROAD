@@ -1,0 +1,12 @@
+Net dup1
+WL = 30000
+0 (0 0) parent 0 length 0
+1 (10000 10000) parent 3 length 0
+2 (10000 20000) parent 3 length 10000
+3 (10000 10000) parent 0 length 20000
+Net dup1
+WL = 30000
+0 (0 0) parent 0 length 0
+1 (10000 10000) parent 3 length 0
+2 (10000 20000) parent 3 length 10000
+3 (10000 10000) parent 0 length 20000
