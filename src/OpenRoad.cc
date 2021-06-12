@@ -82,7 +82,7 @@
 #include "PartitionMgr/include/autocluster.h"
 #include "pdn/MakePdnGen.hh"
 #include "rtlmp/rtl_mp.h"
-
+#include "pdrev/MakePdrev.h"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -249,6 +249,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
+  initPdrev(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
