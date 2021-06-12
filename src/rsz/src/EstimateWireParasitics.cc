@@ -241,8 +241,7 @@ void
 Resizer::estimateWireParasitic(const Net *net)
 {
   if (!network_->isPower(net)
-      && !network_->isGround(net)
-      && !sta_->isClock(net)) {
+      && !network_->isGround(net)) {
     if (isPadNet(net))
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
