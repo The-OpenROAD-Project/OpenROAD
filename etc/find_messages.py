@@ -96,7 +96,7 @@ warn_regexp_tcl = \
 
 def scan_file(path, file_name, msgs):
     # Grab the file contents as a single string
-    with open(os.path.join(path, file_name)) as file_handle:
+    with open(os.path.join(path, file_name), encoding='utf-8') as file_handle:
         lines = file_handle.read()
 
     warn_regexp = warn_regexp_tcl if file_name.endswith('tcl') \
