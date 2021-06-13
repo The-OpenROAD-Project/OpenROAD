@@ -26,10 +26,8 @@ the necessary scripts to build and test the flow.
 
 **Prerequisites**
 
-Build dependencies are documented in the Dockerfile of each tool.
-
-1. See `yosys Dockerfile`_
-2. See `OpenROAD App Dockerfile`_
+Build dependencies can be installed with `etc/DependencyInstaller.sh` and
+for yosys they are documented in the `yosys Dockerfile`_.
 
 Before proceeding to the next step:
 1. [recommended] Install `Docker`_ on your machine, OR
@@ -48,10 +46,7 @@ The build script will automatically use Docker builds if it finds
 Verify Installation
 ~~~~~~~~~~~~~~~~~~~
 
-Setup environment:
-
-1. ``./setup_env.sh`` if the build was done using Docker.
-2. ``./setup_env_bare_metal_build.sh`` if the build was done on the bare-metal.
+Setup environment: ``source ./setup_env.sh``
 
 **Verify**
 
@@ -83,9 +78,9 @@ You can select a design using either of the following methods:
 
 1. The flow `Makefile`_ contains a list of sample design configurations at
 the top of the file.  Uncomment the respective line to select the design
-2. Specify the design using the shell environment, e.g.  ``make
-DESIGN_CONFIG=./designs/nangate45/swerv.mk`` or ``export
-DESIGN_CONFIG=./designs/nangate45/swerv.mk; make``
+2. Specify the design using the shell environment, e.g.
+``make DESIGN_CONFIG=./designs/nangate45/swerv/config.mk`` or
+``export DESIGN_CONFIG=./designs/nangate45/swerv/config.mk ; make``
 
 By default, the simple design gcd is selected. We recommend implementing
 this design first to validate your flow and tool setup.
@@ -168,7 +163,6 @@ nangate45 smoke-test harness for top level Verilog designs
 .. _`OpenROAD App`: https://github.com/The-OpenROAD-Project/OpenROAD
 .. _`OpenROAD-flow`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
 .. _`yosys Dockerfile`: https://github.com/The-OpenROAD-Project/yosys/blob/master/Dockerfile
-.. _`OpenROAD App Dockerfile`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/Dockerfile
-.. _`Docker`: https://docs.docker.com/install/linux/docker-ce/centos/
+.. _`Docker`: https://docs.docker.com/engine/install
 .. _`Makefile`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/Makefile
 .. _`Nangate45`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms/nangate45

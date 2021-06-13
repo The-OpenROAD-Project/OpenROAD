@@ -47,8 +47,8 @@ class FlexGridGraph
  public:
   // constructors
   // FlexGridGraph() {}
-  FlexGridGraph(frDesign* designIn, FlexDRWorker* workerIn)
-      : design_(designIn),
+  FlexGridGraph(frTechObject* techIn, FlexDRWorker* workerIn)
+      : tech_(techIn),
         drWorker_(workerIn),
         graphics_(nullptr),
         xCoords_(),
@@ -66,8 +66,7 @@ class FlexGridGraph
   {
   }
   // getters
-  frTechObject* getTech() const { return design_->getTech(); }
-  frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
   // getters
   // unsafe access, no check
@@ -846,7 +845,8 @@ class FlexGridGraph
   frNonDefaultRule* getNDR() const { return ndr_; }
   const frBox3D* getDstTaperBox() const { return dstTaperBox; }
   // functions
-  void init(const frBox& routeBBox,
+  void init(const frDesign* design,
+            const frBox& routeBBox,
             const frBox& extBBox,
             std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
             std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
@@ -923,7 +923,7 @@ class FlexGridGraph
   }
 
  protected:
-  frDesign* design_;
+  frTechObject* tech_;
   FlexDRWorker* drWorker_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
 
@@ -972,6 +972,7 @@ class FlexGridGraph
   frVector<frLayerNum> zCoords_;
   frVector<frCoord> zHeights_;  // accumulated Z diff
   std::vector<bool> zDirs_;     // is horz dir
+  frBox dieBox_;
   frUInt4 ggDRCCost_;
   frUInt4 ggMarkerCost_;
   // temporary variables
@@ -1105,6 +1106,7 @@ class FlexGridGraph
   }
   // internal init utility
   void initTracks(
+      const frDesign* design,
       std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
           horLoc2TrackPatterns,
       std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
@@ -1117,6 +1119,7 @@ class FlexGridGraph
       const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
       bool followGuide);
   void initEdges(
+      const frDesign* design,
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
       const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,

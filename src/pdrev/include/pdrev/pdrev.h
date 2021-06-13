@@ -64,6 +64,7 @@ class PdRev
   PdRev(Logger* logger) : _logger(logger){};
   void setAlphaPDII(float alpha);
   void addNet(int numPins, std::vector<unsigned> x, std::vector<unsigned> y);
+  void runPD(float alpha);
   void runPDII();
   Tree translateTree(int nTree);
 

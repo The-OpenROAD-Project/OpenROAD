@@ -74,6 +74,13 @@ void PdRev::config()
   }
 }
 
+void PdRev::runPD(float alpha)
+{
+  config();
+  my_graphs[0]->run_PD_brute_force(alpha);
+  my_graphs[0]->doSteiner_HoVW();
+}
+
 void PdRev::runPDII()
 {
   config();
@@ -168,7 +175,8 @@ Tree PdRev::translateTree(int nTree)
   Tree fluteTree;
   fluteTree.deg = pdTree->orig_num_terminals;
   fluteTree.branch = (Branch*) malloc((2 * fluteTree.deg - 2) * sizeof(Branch));
-  fluteTree.length = pdTree->daf_wl;
+  // need to unify wl -cherry
+  fluteTree.length = pdTree->daf_wl + pdTree->pd_wl;
   if (pdTree->orig_num_terminals > 2) {
     for (int i = 0; i < pdTree->orig_num_terminals; ++i) {
       Node& child = pdTree->nodes[i];

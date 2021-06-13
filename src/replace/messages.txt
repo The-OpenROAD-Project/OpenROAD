@@ -31,57 +31,53 @@ GPL 0032 nesterovBase.cpp:1105     FillerInit: NumGNets: {}
 GPL 0033 nesterovBase.cpp:1106     FillerInit: NumGPins: {}
 GPL 0034 nesterovBase.cpp:1492     gCellFiller: {}
 GPL 0036 nesterovBase.cpp:1512     NewTotalFillerArea: {}
-GPL 0036 routeBase.cpp:433         TileLxL: {} {}
-GPL 0037 routeBase.cpp:434         TileSize: {} {}
-GPL 0038 routeBase.cpp:435         TileCnt: {} {}
-GPL 0039 routeBase.cpp:436         numRoutingLayers: {}
-GPL 0040 routeBase.cpp:459         NumTiles: {}
-GPL 0041 routeBase.cpp:783         NumHTracks: {}
-GPL 0042 routeBase.cpp:784         NumVTracks: {}
-GPL 0043 routeBase.cpp:798         PitchH: {}
-GPL 0044 routeBase.cpp:799         PitchV: {}
-GPL 0045 routeBase.cpp:1294        InflatedAreaDelta: {}
-GPL 0046 routeBase.cpp:1295        TargetDensity: {}
-GPL 0047 routeBase.cpp:1314        SavedMinRC: {}
-GPL 0048 routeBase.cpp:1315        SavedTargetDensity: {}
-GPL 0049 routeBase.cpp:1327        WhiteSpaceArea: {}
-GPL 0050 routeBase.cpp:1328        NesterovInstsArea: {}
-GPL 0051 routeBase.cpp:1329        TotalFillerArea: {}
-GPL 0052 routeBase.cpp:1330        TotalGCellsArea: {}
-GPL 0053 routeBase.cpp:1332        ExpectedTotalGCellsArea: {}
-GPL 0054 routeBase.cpp:1349        NewTargetDensity: {}
-GPL 0055 routeBase.cpp:1350        NewWhiteSpaceArea: {}
-GPL 0056 routeBase.cpp:1351        MovableArea: {}
-GPL 0057 routeBase.cpp:1352        NewNesterovInstsArea: {}
-GPL 0058 routeBase.cpp:1353        NewTotalFillerArea: {}
-GPL 0059 routeBase.cpp:1354        NewTotalGCellsArea: {}
-GPL 0060 routeBase.cpp:1398        TotalRouteOverflowH: {}
-GPL 0061 routeBase.cpp:1399        TotalRouteOverflowV: {}
-GPL 0062 routeBase.cpp:1400        OverflowTileCnt: {}
-GPL 0063 routeBase.cpp:1441        TotalRouteOverflowH2: {}
-GPL 0064 routeBase.cpp:1442        TotalRouteOverflowV2: {}
-GPL 0065 routeBase.cpp:1443        OverflowTileCnt2: {}
-GPL 0066 routeBase.cpp:1499        0.5%RC: {}
-GPL 0067 routeBase.cpp:1500        1.0%RC: {}
-GPL 0068 routeBase.cpp:1501        2.0%RC: {}
-GPL 0069 routeBase.cpp:1502        5.0%RC: {}
-GPL 0070 routeBase.cpp:1504        0.5rcK: {}
-GPL 0071 routeBase.cpp:1505        1.0rcK: {}
-GPL 0072 routeBase.cpp:1506        2.0rcK: {}
-GPL 0073 routeBase.cpp:1507        5.0rcK: {}
-GPL 0074 routeBase.cpp:1515        FinalRC: {}
+GPL 0036 routeBase.cpp:196         TileLxLy: {} {}
+GPL 0037 routeBase.cpp:197         TileSize: {} {}
+GPL 0038 routeBase.cpp:198         TileCnt: {} {}
+GPL 0039 routeBase.cpp:199         numRoutingLayers: {}
+GPL 0040 routeBase.cpp:221         NumTiles: {}
+GPL 0045 routeBase.cpp:659         InflatedAreaDelta: {}
+GPL 0046 routeBase.cpp:660         TargetDensity: {}
+GPL 0047 routeBase.cpp:676         SavedMinRC: {}
+GPL 0048 routeBase.cpp:677         SavedTargetDensity: {}
+GPL 0049 routeBase.cpp:689         WhiteSpaceArea: {}
+GPL 0050 routeBase.cpp:690         NesterovInstsArea: {}
+GPL 0051 routeBase.cpp:691         TotalFillerArea: {}
+GPL 0052 routeBase.cpp:692         TotalGCellsArea: {}
+GPL 0053 routeBase.cpp:696         ExpectedTotalGCellsArea: {}
+GPL 0054 routeBase.cpp:715         NewTargetDensity: {}
+GPL 0055 routeBase.cpp:716         NewWhiteSpaceArea: {}
+GPL 0056 routeBase.cpp:717         MovableArea: {}
+GPL 0057 routeBase.cpp:718         NewNesterovInstsArea: {}
+GPL 0058 routeBase.cpp:719         NewTotalFillerArea: {}
+GPL 0059 routeBase.cpp:720         NewTotalGCellsArea: {}
+GPL 0063 routeBase.cpp:786         TotalRouteOverflowH2: {}
+GPL 0064 routeBase.cpp:787         TotalRouteOverflowV2: {}
+GPL 0065 routeBase.cpp:788         OverflowTileCnt2: {}
+GPL 0066 routeBase.cpp:843         0.5%RC: {}
+GPL 0067 routeBase.cpp:844         1.0%RC: {}
+GPL 0068 routeBase.cpp:845         2.0%RC: {}
+GPL 0069 routeBase.cpp:846         5.0%RC: {}
+GPL 0070 routeBase.cpp:848         0.5rcK: {}
+GPL 0071 routeBase.cpp:849         1.0rcK: {}
+GPL 0072 routeBase.cpp:850         2.0rcK: {}
+GPL 0073 routeBase.cpp:851         5.0rcK: {}
+GPL 0074 routeBase.cpp:859         FinalRC: {}
+GPL 0075 routeBase.cpp:872         Routability numCall: {} inflationIterCnt: {} bloatIterCnt: {}
 GPL 0100 timingBase.cpp:162        worst slack {:.3g}
 GPL 0102 timingBase.cpp:165        No slacks found. Timing-driven mode disabled.
 GPL 0103 timingBase.cpp:186        Weighted {} nets.
 GPL 0114 timingBase.cpp:154        No net slacks found. Timing-driven mode disabled.
-GPL 0115 replace.tcl:101           -disable_timing_driven is deprecated.
-GPL 0116 replace.tcl:107           -disable_routability_driven is deprecated.
+GPL 0115 replace.tcl:99            -disable_timing_driven is deprecated.
+GPL 0116 replace.tcl:105           -disable_routability_driven is deprecated.
 GPL 0118 placerBase.cpp:709        core area outside of die.
 GPL 0119 placerBase.cpp:735        instance {} height is larger than core.
 GPL 0120 placerBase.cpp:737        instance {} width is larger than core.
-GPL 0121 replace.tcl:97            No liberty libraries found.
+GPL 0121 replace.tcl:95            No liberty libraries found.
 GPL 0200 plot.cpp:619              {} image has been saved
 GPL 0201 plot.cpp:638              {} image has been saved
 GPL 0202 plot.cpp:656              {} image has been saved
 GPL 0301 placerBase.cpp:1090       Utilization exceeds 100%.
-GPL 0304 nesterovPlace.cpp:236     RePlAce diverged at initial iteration. 
+GPL 0302 nesterovBase.cpp:1198     Use a higher -density or 
+GPL 0303 nesterovBase.cpp:1475     Use a higher -density or 
+GPL 0304 nesterovPlace.cpp:240     RePlAce diverged at initial iteration. 
