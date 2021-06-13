@@ -1,11 +1,11 @@
 ODB 0000 dbWireCodec.cpp:1383      {} Net {} not found
+ODB 0001 dbDatabase.cpp:670        Error opening file {}
+ODB 0002 dbDatabase.cpp:695        Error opening file {}
 ODB 0004 dbBlock.cpp:906           Hierarchical block information is lost
 ODB 0005 dbBlock.cpp:1756          Can not find master {}
 ODB 0006 dbBlock.cpp:1781          Can not find net {}
 ODB 0007 dbBlock.cpp:1806          Can not find inst {}
 ODB 0008 dbBlock.cpp:2393          Cannot duplicate net {}
-ODB 0008 dbDatabase.cpp:670        Error opening file {}
-ODB 0008 dbDatabase.cpp:695        Error opening file {}
 ODB 0009 dbBlock.cpp:2397          id mismatch ({},{}) for net {}
 ODB 0010 dbBlock.cpp:2756          tot = {}, upd = {}, enc = {}
 ODB 0011 dbBlock.cpp:2900          net {} {} capNode {} ccseg {} has otherCapNode {} not from 
@@ -178,77 +178,70 @@ ODB 0179 lefin.cpp:508             invalid BUSBITCHARS ({})\n
 ODB 0180 lefin.cpp:586             duplicate LAYER ({}) ignored
 ODB 0181 lefin.cpp:599             Skipping LAYER ({}) ; Non Routing or Cut type
 ODB 0182 lefin.cpp:608             Skipping LAYER ({}) ; cannot understand type
-ODB 0183 lefin.cpp:765             In layer {}, spacing layer {} not found
-ODB 0184 lefin.cpp:1074            cannot find EEQ for macro {}
-ODB 0185 lefin.cpp:1083            cannot find LEQ for macro {}
-ODB 0186 lefin.cpp:1128            macro {} references unkown site {}
-ODB 0187 lefin.cpp:1178            duplicate NON DEFAULT RULE ({})
-ODB 0188 lefin.cpp:1189            Invalid layer name {} in NON DEFAULT RULE {}
-ODB 0189 lefin.cpp:1226            Invalid layer name {} in NONDEFAULT SPACING
-ODB 0190 lefin.cpp:1234            Invalid layer name {} in NONDEFAULT SPACING
-ODB 0191 lefin.cpp:1257            error: undefined VIA {}
-ODB 0192 lefin.cpp:1270            error: undefined VIA GENERATE RULE {}
-ODB 0193 lefin.cpp:1284            error: undefined LAYER {}
-ODB 0194 lefin.cpp:1334            Cannot add a new PIN ({}) to MACRO ({}), because the pins have 
-ODB 0195 lefin.cpp:1359            Invalid layer name {} in antenna info for term {}
-ODB 0196 lefin.cpp:1376            Invalid layer name {} in antenna info for term {}
-ODB 0197 lefin.cpp:1393            Invalid layer name {} in antenna info for term {}
-ODB 0198 lefin.cpp:1410            Invalid layer name {} in antenna info for term {}
-ODB 0199 lefin.cpp:1436            Invalid layer name {} in antenna info for term {}
-ODB 0200 lefin.cpp:1452            Invalid layer name {} in antenna info for term {}
-ODB 0201 lefin.cpp:1468            Invalid layer name {} in antenna info for term {}
-ODB 0202 lefin.cpp:1485            Invalid layer name {} in antenna info for term {}
-ODB 0203 lefin.cpp:1576            Invalid layer name {} in SPACING
-ODB 0204 lefin.cpp:1582            Invalid layer name {} in SPACING
-ODB 0205 lefin.cpp:1625            The LEF UNITS DATABASE MICRON convert factor ({}) is greater than 
-ODB 0206 lefin.cpp:1655            error: invalid dbu-per-micron value {}; valid units (100, 
-ODB 0207 lefin.cpp:1672            Unknown object type for USEMINSPACING: {}
-ODB 0208 lefin.cpp:1690            VIA: duplicate VIA ({}) ignored...
-ODB 0209 lefin.cpp:1723            VIA: undefined layer ({}) in VIA ({})
-ODB 0210 lefin.cpp:1753            error: missing VIA GENERATE rule {}
-ODB 0211 lefin.cpp:1769            error: missing LAYER {}
-ODB 0212 lefin.cpp:1778            error: missing LAYER {}
-ODB 0213 lefin.cpp:1786            error: missing LAYER {}
-ODB 0214 lefin.cpp:1838            duplicate VIARULE ({}) ignoring...
-ODB 0215 lefin.cpp:1848            error: VIARULE ({}) undefined layer {}
-ODB 0216 lefin.cpp:1878            error: undefined VIA {} in VIARULE {}
-ODB 0217 lefin.cpp:1897            duplicate VIARULE ({}) ignoring...
-ODB 0218 lefin.cpp:1907            error: VIARULE ({}) undefined layer {}
-ODB 0221 lefin.cpp:1975            {} lines parsed!
-ODB 0222 lefin.cpp:1980            Reading LEF file: {}
-ODB 0223 lefin.cpp:2029                Created {} technology layers
-ODB 0224 lefin.cpp:2033                Created {} technology vias
-ODB 0225 lefin.cpp:2035                Created {} library cells
-ODB 0226 lefin.cpp:2037            Finished LEF file:  {}
-ODB 0227 lefin.cpp:2048            Error: technology already exists
-ODB 0228 lefin.cpp:2076            Error: technolgy does not exists
-ODB 0229 lefin.cpp:2081            Error: library ({}) already exists
-ODB 0230 lefin.cpp:2110            Error: library ({}) already exists
-ODB 0231 lefin.cpp:2116            Error: technology already exists
-ODB 0232 lefin.cpp:2155            Error: library ({}) already exists
-ODB 0233 lefin.cpp:2161            Error: technology already exists
-ODB 0234 lefin.cpp:2177            Reading LEF file:  {} ...
-ODB 0235 lefin.cpp:2179            Error reading {}
-ODB 0236 lefin.cpp:2186            Finished LEF file:  {}
-ODB 0237 lefin.cpp:2190                Created {} technology layers
-ODB 0238 lefin.cpp:2194                Created {} technology vias
-ODB 0239 lefin.cpp:2197                Created {} library cells
+ODB 0183 lefin.cpp:762             In layer {}, spacing layer {} not found
+ODB 0184 lefin.cpp:1071            cannot find EEQ for macro {}
+ODB 0185 lefin.cpp:1080            cannot find LEQ for macro {}
+ODB 0186 lefin.cpp:1125            macro {} references unkown site {}
+ODB 0187 lefin.cpp:1175            duplicate NON DEFAULT RULE ({})
+ODB 0188 lefin.cpp:1186            Invalid layer name {} in NON DEFAULT RULE {}
+ODB 0189 lefin.cpp:1223            Invalid layer name {} in NONDEFAULT SPACING
+ODB 0190 lefin.cpp:1231            Invalid layer name {} in NONDEFAULT SPACING
+ODB 0191 lefin.cpp:1254            error: undefined VIA {}
+ODB 0192 lefin.cpp:1267            error: undefined VIA GENERATE RULE {}
+ODB 0193 lefin.cpp:1281            error: undefined LAYER {}
+ODB 0194 lefin.cpp:1331            Cannot add a new PIN ({}) to MACRO ({}), because the pins have 
+ODB 0195 lefin.cpp:1356            Invalid layer name {} in antenna info for term {}
+ODB 0196 lefin.cpp:1373            Invalid layer name {} in antenna info for term {}
+ODB 0197 lefin.cpp:1390            Invalid layer name {} in antenna info for term {}
+ODB 0198 lefin.cpp:1407            Invalid layer name {} in antenna info for term {}
+ODB 0199 lefin.cpp:1433            Invalid layer name {} in antenna info for term {}
+ODB 0200 lefin.cpp:1449            Invalid layer name {} in antenna info for term {}
+ODB 0201 lefin.cpp:1465            Invalid layer name {} in antenna info for term {}
+ODB 0202 lefin.cpp:1482            Invalid layer name {} in antenna info for term {}
+ODB 0203 lefin.cpp:1573            Invalid layer name {} in SPACING
+ODB 0204 lefin.cpp:1579            Invalid layer name {} in SPACING
+ODB 0205 lefin.cpp:1622            The LEF UNITS DATABASE MICRON convert factor ({}) is greater than 
+ODB 0206 lefin.cpp:1652            error: invalid dbu-per-micron value {}; valid units (100, 
+ODB 0207 lefin.cpp:1669            Unknown object type for USEMINSPACING: {}
+ODB 0208 lefin.cpp:1687            VIA: duplicate VIA ({}) ignored...
+ODB 0209 lefin.cpp:1720            VIA: undefined layer ({}) in VIA ({})
+ODB 0210 lefin.cpp:1750            error: missing VIA GENERATE rule {}
+ODB 0211 lefin.cpp:1766            error: missing LAYER {}
+ODB 0212 lefin.cpp:1775            error: missing LAYER {}
+ODB 0213 lefin.cpp:1783            error: missing LAYER {}
+ODB 0214 lefin.cpp:1835            duplicate VIARULE ({}) ignoring...
+ODB 0215 lefin.cpp:1845            error: VIARULE ({}) undefined layer {}
+ODB 0216 lefin.cpp:1875            error: undefined VIA {} in VIARULE {}
+ODB 0217 lefin.cpp:1894            duplicate VIARULE ({}) ignoring...
+ODB 0218 lefin.cpp:1904            error: VIARULE ({}) undefined layer {}
+ODB 0221 lefin.cpp:1972            {} lines parsed!
+ODB 0222 lefin.cpp:1977            Reading LEF file: {}
+ODB 0223 lefin.cpp:2026                Created {} technology layers
+ODB 0224 lefin.cpp:2030                Created {} technology vias
+ODB 0225 lefin.cpp:2032                Created {} library cells
+ODB 0226 lefin.cpp:2034            Finished LEF file:  {}
+ODB 0227 lefin.cpp:2045            Error: technology already exists
+ODB 0228 lefin.cpp:2073            Error: technolgy does not exists
+ODB 0229 lefin.cpp:2078            Error: library ({}) already exists
+ODB 0230 lefin.cpp:2107            Error: library ({}) already exists
+ODB 0231 lefin.cpp:2113            Error: technology already exists
+ODB 0232 lefin.cpp:2152            Error: library ({}) already exists
+ODB 0233 lefin.cpp:2158            Error: technology already exists
+ODB 0234 lefin.cpp:2174            Reading LEF file:  {} ...
+ODB 0235 lefin.cpp:2176            Error reading {}
+ODB 0236 lefin.cpp:2183            Finished LEF file:  {}
+ODB 0237 lefin.cpp:2187                Created {} technology layers
+ODB 0238 lefin.cpp:2191                Created {} technology vias
+ODB 0239 lefin.cpp:2194                Created {} library cells
 ODB 0240 reader.cpp:559            error: Cannot open LEF file {}
 ODB 0241 create_box.cpp:154        error: Cannot create a via instance, via ({}) has no shapes
 ODB 0242 create_box.cpp:183        error: Can not determine which direction to continue path,
 ODB 0243 create_box.cpp:186               via ({}) spans above and below the current layer ({}).
 ODB 0244 create_box.cpp:218        error: Cannot create a via instance, via ({}) has no shapes
 ODB 0245 create_box.cpp:247        error: Net {}: Can not determine which direction to continue path,
-ODB 0246 create_box.cpp:252               via ({}) spans above and below the current layer ({}).
-ODB 0246 definReader.cpp:689       skipping undefined net {} encountered in FLOORPLAN DEF
-ODB 0246 lefin.cpp:1986            unknown incomplete layer prop of type {}
+ODB 0246 lefin.cpp:1983            unknown incomplete layer prop of type {}
 ODB 0247 definReader.cpp:923       skipping undefined pin {} encountered in {} DEF
-ODB 0247 lefin.cpp:2006            dropping LEF58_SPACING rule for cut layer {} for 
-ODB 0247 lefin.cpp:676             unsupported layer propery {} for layer
-    //   {}
 ODB 0248 definReader.cpp:454       skipping undefined comp {} encountered in {} DEF
-ODB 0248 lefin.cpp:2017            dropping LEF58_SPACINGTABLE rule for cut layer {} for 
-ODB 0248 lefin.cpp:679             parse mismatch in layer propery {} for layer {} : \"{}\"
 ODB 0249 definReader.cpp:1450      skipping undefined net {} encountered in FLOORPLAN DEF
 ODB 0250 definReader.cpp:1628      Chip does not exist
 ODB 0252 definReader.cpp:1649          Updated {} pins.
@@ -257,12 +250,17 @@ ODB 0254 definReader.cpp:1677          Updated {} nets and {} connections.
 ODB 0260 definReader.cpp:68        DESIGN is not defined in DEF
 ODB 0261 definReader.cpp:326       Block with name \"{}\" already exists, renaming too \"{}\"
 ODB 0270 reader.cpp:550            error: Cannot open zipped LEF file {}
-ODB 0271 dbFlatten.cpp:390         Failed to create net {}
-ODB 0271 dbTechLayer.cpp:1637      setNumMask {} not in range [1,3]
 ODB 0271 definReader.cpp:1833      error: Cannot open zipped DEF file {}
 ODB 0272 dbFlatten.cpp:999         Failed to create region {}
 ODB 0273 dbUtil.cpp:963            Create ND RULE {} for layer/width {},{}
 ODB 0274 create_box.cpp:59         Zero length path segment ({},{}) ({},{})
+ODB 0275 definReader.cpp:689       skipping undefined net {} encountered in FLOORPLAN DEF
+ODB 0276 create_box.cpp:252               via ({}) spans above and below the current layer ({}).
+ODB 0277 lefin.cpp:2003            dropping LEF58_SPACING rule for cut layer {} for 
+ODB 0279 lefin.cpp:676             parse mismatch in layer propery {} for layer {} : \"{}\"
+ODB 0280 lefin.cpp:2014            dropping LEF58_SPACINGTABLE rule for cut layer {} for 
+ODB 0281 dbFlatten.cpp:390         Failed to create net {}
+ODB 0282 dbTechLayer.cpp:1637      setNumMask {} not in range [1,3]
 ODB 1000 OpenDB.tcl:69             Layer ${layerName} not found, skipping NDR for this layer
 ODB 1001 OpenDB.tcl:137            Layer ${firstLayer} not found
 ODB 1002 OpenDB.tcl:140            Layer ${lastLayer} not found

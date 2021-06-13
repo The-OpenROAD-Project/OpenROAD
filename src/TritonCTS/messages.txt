@@ -52,8 +52,8 @@ CTS 0058 SinkClustering.cpp:123    Invalid parameters in {}
 CTS 0059 TechChar.cpp:268          Could not open characterization file.
 CTS 0060 TechChar.cpp:300           Could not open characterization file.
 CTS 0065 TechChar.cpp:154          Normalized values in the LUT should be in the range [1, {}
-CTS 0066 TechChar.cpp:580          Could not get maxSlew/maxCap values from buffer {}. Using library values
 CTS 0066 TechChar.cpp:603          Could not get maxSlew/maxCap values from buffer {}
+CTS 0067 TechChar.cpp:580          Could not get maxSlew/maxCap values from buffer {}. Using library values
 CTS 0068 TechChar.cpp:445          Network not found. Check your lef/def/verilog file.
 CTS 0069 TechChar.cpp:449          Database not found. Check your lef/def/verilog file.
 CTS 0070 TechChar.cpp:453          Chip not found. Check your lef/def/verilog file.
@@ -62,7 +62,6 @@ CTS 0072 TechChar.cpp:462          Network not found. Check your lef/def/verilog
 CTS 0073 TechChar.cpp:492          Buffer not found. Check your -buf_list input.
 CTS 0074 TechChar.cpp:498          Buffer {} not found. Check your -buf_list input.
 CTS 0075 TechChar.cpp:556          Error generating the wirelengths to test. Check your -wire_unit 
-CTS 0076 TechChar.cpp:575          No Liberty cell found for {}.
 CTS 0076 TechChar.cpp:593          No Liberty cell found for {}.
 CTS 0077 TechChar.cpp:587          Liberty Library does not have Max Slew or Max Cap values.
 CTS 0078 TechChar.cpp:632          Error generating the wirelengths to test. 
@@ -81,3 +80,4 @@ CTS 0092 TritonCTS.cpp:337         Avg Sink Wire Length = {:.3} um
 CTS 0093 LevelBalancer.cpp:53      Fixing tree levels for max depth {}
 CTS 0094 TritonCTS.cpp:338         Min path depth = {} Max path depth = {}
 CTS 0095 TritonCTS.cpp:496          Net \"{}\" found
+CTS 0096 TechChar.cpp:575          No Liberty cell found for {}.

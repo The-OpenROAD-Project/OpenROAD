@@ -1,9 +1,3 @@
-RCX 0000 extBench.cpp:848          Finished {} boxes for net ({},{}) at coords ({},{}) ({},{})
-RCX 0000 extFlow.cpp:3568          zero rseg wire
-         property {} on main net {} {}
-RCX 0000 extmain.cpp:740           Warning: No RESISTANCE from all layers in
-  // the
-  // lef files. Can't do extraction.\n\n
 RCX 0001 ext.cpp:658               Reading SPEF file: {}
 RCX 0002 ext.cpp:672               Filename is not defined!
 RCX 0003 netRC.cpp:3175            Read SPEF into extracted db!
@@ -11,7 +5,6 @@ RCX 0004 netRC.cpp:3170            There is no extraction db!
 RCX 0005 netRC.cpp:3187            Can't open SPEF file {} to write.
 RCX 0006 ext.cpp:523               List of extraction tile blocks:
 RCX 0007 extBench.cpp:451          Finished {} measurements for pattern MET_UNDER_MET
-RCX 0007 netRC.cpp:3230                cc appearance count -- 1:{} 2:{} 3:{} 4:{} 5:{} 6:{} 
 RCX 0008 ext.cpp:394               extracting parasitics of {} ...
 RCX 0009 ext.cpp:84                Using LEF RC values to extract!
 RCX 0010 ext.cpp:414               There is no block to extract!
@@ -43,9 +36,9 @@ RCX 0035 extRCap.cpp:602           Can't read {}
 RCX 0036 extRCmodel.cpp:5072       Database dbFactor= {}  dbunit= {}
 RCX 0037 extRCap.cpp:655           Can't read {}
 RCX 0038 extRCap.cpp:759           Can't open file {}
-RCX 0039 extFlow.cpp:4127          Final {} rc segments
+RCX 0039 extFlow.cpp:4110          Final {} rc segments
 RCX 0040 netRC.cpp:2671            Final {} rc segments
-RCX 0041 extFlow.cpp:4143          Final {} rc segments
+RCX 0041 extFlow.cpp:4126          Final {} rc segments
 RCX 0042 extSpef.cpp:1790          {} nets finished
 RCX 0043 extFlow.cpp:2084          {} wires to be extracted
 RCX 0044 extSpefIn.cpp:2570        {} spef insts not found in db.
@@ -60,19 +53,16 @@ RCX 0052 extSpefIn.cpp:2573        Unmatched spef and db!
 RCX 0053 extmeasure.cpp:666        Have read {} nets from file {}
 RCX 0054 extmeasure.cpp:757        Have read {} nets from file {}
 RCX 0055 extBench.cpp:281          Finished {} bench measurements for pattern MET_OVER_MET
-RCX 0055 extmeasure.cpp:149        Reading layer section of file {}
 RCX 0056 extmeasure.cpp:668        No nets were read from file {}
 RCX 0057 extBench.cpp:335          Finished {} bench measurements for pattern MET_UNDER_MET
-RCX 0057 extmeasure.cpp:759        No nets were read from file {}
 RCX 0058 extBench.cpp:390          Finished {} bench measurements for pattern MET_DIAGUNDER_MET
-RCX 0058 extmain.cpp:247           Can't open file \"{}\" to write spef.
 RCX 0059 extmain.cpp:263           Can't open file \"{}\" to write spef.
 RCX 0060 extSpefIn.cpp:2525             merged {} coupling caps
 RCX 0061 extmain.cpp:274           Can't open file \"{}\" to write spef.
 RCX 0062 extmain.cpp:303           Can't open file \"{}\" to write spef.
 RCX 0063 extmeasure.cpp:434        Reading layer section of file {}
 RCX 0064 extSpef.cpp:1651          \" -N {} \" is unknown.
-RCX 0065 extmain.cpp:1392            layer {}
+RCX 0065 extmain.cpp:1386            layer {}
 RCX 0066 extRCap.cpp:70            Can't find net {} in db
 RCX 0067 extRCap.cpp:57            Reading ref_file {} ... ... 
 RCX 0068 extmeasure.cpp:750        Have read {} nets 
@@ -94,7 +84,7 @@ RCX 0084 extFlow.cpp:1427          \tbucket= {} -- {} nets
 RCX 0085 extFlow.cpp:1986          shapeIds {}: rc= {} tgt= {} src {}
 RCX 0086 extFlow.cpp:2004          Created {} Net Properties
 RCX 0087 extFlow.cpp:2018          Extracted {} valid rsegs
-RCX 0088 extFlow.cpp:3926          Signal_table= {} ----------------------------- 
+RCX 0088 extFlow.cpp:3909          Signal_table= {} ----------------------------- 
 RCX 0089 extFlow.cpp:2413           ------------------------ Context Lower Limits
 RCX 0090 extFlow.cpp:2426          L={} {}    {}
 RCX 0091 extFlow.cpp:2419          --------------------------- EXT Lower Limits
@@ -102,17 +92,17 @@ RCX 0092 extFlow.cpp:2424           ------------------------ EXT Upper Limits
 RCX 0093 extFlow.cpp:2645          ======> Fast Mode enabled for d= {} <======
 RCX 0094 extFlow.cpp:2851          GndCap: cannot find rseg for net [{}] {} and shapeId {}
 RCX 0095 extFlow.cpp:2896          Deleted {} Rsegs/CapNodes from total {} with {} remaing
-RCX 0096 extFlow.cpp:4052          Block {} has {} signal wires
-RCX 0097 extFlow.cpp:3747          created {} power wires for block {}
-RCX 0098 extFlow.cpp:3833          {} local out of {} tile wires out of {} total
-RCX 0099 extFlow.cpp:3985          Block {} has no defined extraction boundaries
-RCX 0100 extFlow.cpp:4034          BBlock {} has {} signal wires and {} rcSegs were generated
-RCX 0101 extFlow.cpp:4058          {} rsegs for {}
-RCX 0102 extFlow.cpp:4085          RC segment generation {} ...
-RCX 0103 extFlow.cpp:4089          No RC model was read with command <load_model>
-RCX 0104 extFlow.cpp:4090          Can't perform RC generation!
-RCX 0105 extFlow.cpp:4095          Wrong combination of corner related options
-RCX 0106 extFlow.cpp:4117          Setup for RCgen done!
+RCX 0096 extFlow.cpp:4035          Block {} has {} signal wires
+RCX 0097 extFlow.cpp:3730          created {} power wires for block {}
+RCX 0098 extFlow.cpp:3816          {} local out of {} tile wires out of {} total
+RCX 0099 extFlow.cpp:3968          Block {} has no defined extraction boundaries
+RCX 0100 extFlow.cpp:4017          BBlock {} has {} signal wires and {} rcSegs were generated
+RCX 0101 extFlow.cpp:4041          {} rsegs for {}
+RCX 0102 extFlow.cpp:4068          RC segment generation {} ...
+RCX 0103 extFlow.cpp:4072          No RC model was read with command <load_model>
+RCX 0104 extFlow.cpp:4073          Can't perform RC generation!
+RCX 0105 extFlow.cpp:4078          Wrong combination of corner related options
+RCX 0106 extFlow.cpp:4100          Setup for RCgen done!
 RCX 0107 netRC.cpp:2874            Nothing is extracted out of {} nets!
 RCX 0108 netRC.cpp:558             Net {} multiple-ended at bterm {}
 RCX 0109 netRC.cpp:568             Net {} multiple-ended at iterm {}
@@ -144,12 +134,12 @@ RCX 0134 netRC.cpp:3094            Can't execute write_spef command. There's no 
 RCX 0135 netRC.cpp:3029            Corner {} is out of range; There are {} corners in DB!
 RCX 0136 netRC.cpp:3050            Can't find corner name {} in the parasitics DB!
 RCX 0137 netRC.cpp:3118            Can't open file \"{}\" to write spef.
-RCX 0138 extmain.cpp:767           {} layers are missing resistance value; Check LEF file. 
-RCX 0139 extmain.cpp:761           Missing Resistance value for layer {}
-RCX 0140 extmain.cpp:1284          Have processed {} total segments, {} signal segments, {} CC 
-RCX 0141 extmain.cpp:1379          Context of layer {} xy={} len={} base={} width={}
-RCX 0142 extmain.cpp:1386            layer {}
-RCX 0143 extmain.cpp:1394              {}: {}
+RCX 0138 extmain.cpp:761           {} layers are missing resistance value; Check LEF file. 
+RCX 0139 extmain.cpp:755           Missing Resistance value for layer {}
+RCX 0140 extmain.cpp:1278          Have processed {} total segments, {} signal segments, {} CC 
+RCX 0141 extmain.cpp:1373          Context of layer {} xy={} len={} base={} width={}
+RCX 0142 extmain.cpp:1380            layer {}
+RCX 0143 extmain.cpp:1388              {}: {}
 RCX 0144 ext.cpp:162               Net (={}), should be a positive number
 RCX 0145 ext.cpp:165               Benchmarking using 3d field solver net {}...
 RCX 0146 ext.cpp:172               Finished 3D field solver benchmarking.
@@ -245,18 +235,17 @@ RCX 0237 hierSpef.cpp:599          No cap nodes net: {}
 RCX 0238 extFlow.cpp:2597          {:15s}= {}
 RCX 0239 extFlow.cpp:3320          Zero rseg wire property {} on main net {} {}
 RCX 0240 extFlow.cpp:3327          GndCap: cannot find rseg for rsegId {} on net {} {}
-RCX 0240 extFlow.cpp:3579          GndCap: cannot find rseg for rsegId {} on net {} {}
 RCX 0241 extFlow.cpp:3349          {} nodes on block {}
 RCX 0242 extFlow.cpp:3351          \tdifferent from {} cap nodes read
 RCX 0243 extFlow.cpp:3377          {} rsegs on block {}
 RCX 0244 extFlow.cpp:3379          Different from {} rsegs read
-RCX 0245 extFlow.cpp:3623          CCap: cannot find main net for {}
+RCX 0245 extFlow.cpp:3606          CCap: cannot find main net for {}
 RCX 0246 extFlow.cpp:3395          CCap: cannot find rseg for net for {}
 RCX 0247 extFlow.cpp:3404          CCap: cannot find rseg for capNode {}
 RCX 0248 extFlow.cpp:3410          CCap: cannot find rseg {}
 RCX 0249 extFlow.cpp:3509          Updated {} rsegs and added {} ccsegs of {} from {}
-RCX 0250 extFlow.cpp:3615          Mismatch for CCap {} for net {}
-RCX 0251 extFlow.cpp:3656          Updated {} nets, {} rsegs, and added {} ({}) ccsegs of {} from {}
+RCX 0250 extFlow.cpp:3598          Mismatch for CCap {} for net {}
+RCX 0251 extFlow.cpp:3639          Updated {} nets, {} rsegs, and added {} ({}) ccsegs of {} from {}
 RCX 0252 extmain.cpp:86            Ext object on dbBlock is NULL!
 RCX 0255 netRC.cpp:1205            Need to CODE removeCC.
 RCX 0256 extmeasure.cpp:294        \t\tCreated net {} : {} {}   {} {}
@@ -452,7 +441,7 @@ RCX 0446 exttree.cpp:726           Net id {} has no RC segments.\tEither an empt
 RCX 0447 extSpefIn.cpp:2556        Db inst {} {} not read from spef file!
 RCX 0448 extSpefIn.cpp:2544        Db net {} {} not read from spef file!
 RCX 0449 extSpefIn.cpp:2589        {} 
-RCX 0450 extRCmodel.cpp:2305       Cannot open file {} with permissions {}
+RCX 0450 extBench.cpp:848          Finished {} boxes for net ({},{}) at coords ({},{}) ({},{})
 RCX 0451 extSpefIn.cpp:2592        {}
 RCX 0452 extSpefIn.cpp:72          Spef instance {} not found in db.
 RCX 0453 extmeasure.cpp:859        Created coupling Cap {} for nets {} and {}
@@ -468,18 +457,24 @@ RCX 0462 extmeasure.cpp:373        \t\tCannot create wire: {} {}   {} {} for nam
 RCX 0463 extSpefIn.cpp:2519        Have read {} D_NET nets, {} resistors, {} gnd caps {} coupling caps
 RCX 0464 extSpefIn.cpp:2527        Broke {} coupling caps of {} fF or smaller
 RCX 0465 extSpef.cpp:1835          {} nets finished
-RCX 0466 ext.cpp:385               No block for flatten command
 RCX 0466 extFlow.cpp:287           cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>
 RCX 0467 extFlow.cpp:2119          Signal_table= {} ----------------------------- 
 RCX 0468 netRC.cpp:2208            Can't open extraction model file {}
 RCX 0469 extFlow.cpp:2416          L={} {}    {}
-RCX 0469 netRC.cpp:2221            No RC model read from the extraction model! 
 RCX 0470 extFlow.cpp:2421          L={} {}    {}
 RCX 0471 extFlow.cpp:3125          Block {} has {} signal wires
 RCX 0472 netRC.cpp:1873            The corresponding process corner has to be defined using the 
 RCX 0473 netRC.cpp:2351            Initial Tiling {} ...
 RCX 0474 netRC.cpp:2993            Can't execute write_spef command. There's no block in db!
 RCX 0475 netRC.cpp:3068            Can't execute write_spef command. There's no block in db
-RCX 0476 extmain.cpp:1388              {}: {}
+RCX 0476 extmain.cpp:1382              {}: {}
 RCX 0477 powerConn.cpp:956         Layer %s has pitch %u !!
 RCX 0479 extFlow.cpp:3389          CCap: cannot find main net for {}
+RCX 0480 netRC.cpp:3230                cc appearance count -- 1:{} 2:{} 3:{} 4:{} 5:{} 6:{} 
+RCX 0481 extmeasure.cpp:149        Reading layer section of file {}
+RCX 0482 extmeasure.cpp:759        No nets were read from file {}
+RCX 0483 extmain.cpp:247           Can't open file \"{}\" to write spef.
+RCX 0484 extFlow.cpp:3562          GndCap: cannot find rseg for rsegId {} on net {} {}
+RCX 0485 extRCmodel.cpp:2305       Cannot open file {} with permissions {}
+RCX 0486 ext.cpp:385               No block for flatten command
+RCX 0487 netRC.cpp:2221            No RC model read from the extraction model! 

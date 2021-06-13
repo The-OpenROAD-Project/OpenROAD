@@ -174,7 +174,7 @@ proc make_tracks { args } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "IFP" 23 "layer $layer_name not found."
+      utl::error "IFP" 10 "layer $layer_name not found."
     }
     if { [$layer getType] != "ROUTING" } {
       utl::error "IFP" 25 "layer $layer_name is not a routing layer."

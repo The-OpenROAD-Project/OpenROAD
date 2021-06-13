@@ -337,7 +337,7 @@ proc write_partitioning_to_db { args } {
 
   set partitioning_id 0
     if { ![info exists keys(-partitioning_id)] } {
-      utl::error PAR 45 "missing mandatory argument -partitioning_id"
+      utl::error PAR 102 "missing mandatory argument -partitioning_id"
     } else {
       set partition_id $keys(-partitioning_id)
     } 

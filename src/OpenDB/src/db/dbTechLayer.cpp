@@ -1668,7 +1668,7 @@ void dbTechLayer::setNumMasks(uint number)
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (number < 1 || number > 3) {
     getImpl()->getLogger()->error(
-        utl::ODB, 271, "setNumMask {} not in range [1,3]", number);
+        utl::ODB, 282, "setNumMask {} not in range [1,3]", number);
   }
   layer->flags_.num_masks_ = number;
 }

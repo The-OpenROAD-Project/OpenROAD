@@ -51,7 +51,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
       eolWidth = con->getEolWidth();
     } break;
     default:
-      logger_->error(DRT, 223, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 269, "Unsupported endofline spacing rule");
       break;
   }
   // skip if >= eolWidth
@@ -225,7 +225,7 @@ void FlexGCWorker::Impl::
                      ->getParSpace();
     } break;
     default:
-      logger_->error(DRT, 224, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 270, "Unsupported endofline spacing rule");
       break;
   }
 
@@ -395,7 +395,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
       break;
     }
     default:
-      logger_->error(DRT, 225, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 271, "Unsupported endofline spacing rule");
       break;
   }
 

@@ -1,10 +1,10 @@
 PPL 0001 IOPlacer.cpp:743           * Num of slots          {}
 PPL 0002 IOPlacer.cpp:744           * Num of I/O            {}
-PPL 0003 IOPlacer.cpp:1143         Random pin placement.
 PPL 0003 IOPlacer.cpp:745           * Num of I/O w/sink     {}
 PPL 0004 IOPlacer.cpp:747           * Num of I/O w/o sink   {}
 PPL 0005 IOPlacer.cpp:748           * Slots Per Section     {}
 PPL 0006 IOPlacer.cpp:749           * Slots Increase Factor {:.1}
+PPL 0007 IOPlacer.cpp:1143         Random pin placement.
 PPL 0008 IOPlacer.cpp:750           * Usage Increase Factor {:.1}
 PPL 0009 IOPlacer.cpp:751           * Force Pin Spread      {}
 PPL 0010 IOPlacer.cpp:760          Tentative {} to setup sections
@@ -31,8 +31,8 @@ PPL 0033 HungarianMatching.cpp:110 I/O pin {} cannot be placed in the specified 
 PPL 0036 IOPlacer.cpp:767          Number of sections is {}
 PPL 0037 IOPlacer.cpp:776          Number of slots per sections is {}
 PPL 0038 IOPlacer.cpp:1474         Pin {} without net
+PPL 0039 IOPlacer.cpp:1168         Assigned {} pins out of {} IO pins
 PPL 0040 IOPlacer.cpp:475          Negative number of slots
-PPL 0041 IOPlacer.cpp:1168         Assigned {} pins out of {} IO pins
 PPL 0041 IOPlacer.tcl:416          Pin group $group_idx: \[$group\]
 PPL 0042 IOPlacer.cpp:676          Unsuccessfully assigned I/O groups
 PPL 0043 IOPlacer.tcl:423          Pin $pin_name not found in group $group_idx
