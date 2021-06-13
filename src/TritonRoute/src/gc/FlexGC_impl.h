@@ -300,6 +300,16 @@ class FlexGCWorker::Impl
   void checkMetalEndOfLine();
   void checkMetalEndOfLine_main(gcPin* pin);
   void checkMetalEndOfLine_eol(gcSegment* edge, frConstraint* constraint);
+  void checkMetalEOLkeepout_helper(gcSegment* edge,
+                                   gcRect* rect,
+                                   gtl::rectangle_data<frCoord> queryRect,
+                                   frLef58EolKeepOutConstraint* constraint);
+  void checkMetalEOLkeepout_main(gcSegment* edge,
+                                 frLef58EolKeepOutConstraint* constraint);
+  void getEolKeepOutQueryBox(gcSegment* edge,
+                             frLef58EolKeepOutConstraint* constraint,
+                             box_t& queryBox,
+                             gtl::rectangle_data<frCoord>& queryRect);
   bool checkMetalEndOfLine_eol_isEolEdge(gcSegment* edge,
                                          frConstraint* constraint);
   bool checkMetalEndOfLine_eol_hasMinMaxLength(gcSegment* edge,

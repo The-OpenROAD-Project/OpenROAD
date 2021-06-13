@@ -490,6 +490,11 @@ void dbDiff::diff(const char* field, const char* lhs, const char* rhs)
   }
 }
 
+void dbDiff::diff(const char* field, std::string lhs, std::string rhs)
+{
+  diff(field, lhs.c_str(), rhs.c_str());
+}
+
 void dbDiff::diff(const char* field,
                   dbOrientType::Value lhs,
                   dbOrientType::Value rhs)
@@ -789,6 +794,11 @@ void dbDiff::out(char side, const char* field, const char* value)
   report("%c %s: ", side, field);
   (*this) << (value);
   (*this) << "\n";
+}
+
+void dbDiff::out(char side, const char* field, std::string value)
+{
+  out(side, field, value.c_str());
 }
 
 void dbDiff::out(char side, const char* field, dbOrientType::Value value)

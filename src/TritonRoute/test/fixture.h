@@ -88,6 +88,13 @@ class Fixture
                                       frCoord par_within = -1,
                                       bool two_edges = false);
 
+  void makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                     bool cornerOnly = false,
+                                     frCoord forward = 200,
+                                     frCoord side = 50,
+                                     frCoord backward = 0,
+                                     frCoord width = 200);
+
   std::shared_ptr<frLef58SpacingEndOfLineConstraint>
   makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                 frCoord space = 200,
