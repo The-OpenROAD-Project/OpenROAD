@@ -48,17 +48,17 @@ proc cleanse_logfile { test log_file } {
 # Record tests in the /test directory.
 # Compare results/<test>.log to <test>.ok for pass/fail.
 proc record_tests { tests } {
-  record_tests1 $tests 1
+  record_tests1 $tests "compare_logfile"
 }
 
 # Record tests in the /test directory.
 # Last line of results/<test>.log should be pass/fail.
 proc record_pass_fail_tests { tests } {
-  record_tests1 $tests 0
+  record_tests1 $tests "pass_fail"
 }
 
 proc record_flow_tests { tests } {
-  record_tests1 $tests 0
+  record_tests1 $tests "check_metrics"
   define_test_group "flow" $tests
 }
 
@@ -73,11 +73,11 @@ proc record_tests1 { tests cmp_logfile } {
 }
 
 # Record a test in the regression suite.
-proc record_test { test cmd_dir cmp_logfile } {
-  global cmd_dirs test_groups compare_logfile
+proc record_test { test cmd_dir pass_criteria } {
+  global cmd_dirs test_groups test_pass_criteria
   set cmd_dirs($test) $cmd_dir
   lappend test_groups(all) $test
-  set compare_logfile($test) $cmp_logfile
+  set test_pass_criteria($test) $pass_criteria
   return $test
 }
 

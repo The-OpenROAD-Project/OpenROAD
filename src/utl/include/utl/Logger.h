@@ -107,7 +107,14 @@ class Logger
                       const std::string& message,
                       const Args&... args)
     {
-      log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
+      // Message counters do NOT apply to debug messages.
+      logger_->log(spdlog::level::level_enum::debug,
+                   "[{} {}-{:04d}] " + message,
+                   level_names[spdlog::level::level_enum::debug],
+                   tool_names_[tool],
+                   level,
+                   args...);
+      logger_->flush();
     }
 
   template <typename... Args>
@@ -159,18 +166,16 @@ class Logger
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
             typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-  inline void metric(ToolId tool,
-                     const std::string_view metric,
+  inline void metric(const std::string_view metric,
                      T value)
   {
-    log_metric(tool, metric, value);
+    log_metric(metric, value);
   }
 
-  inline void metric(ToolId tool,
-                     const std::string_view metric,
+  inline void metric(const std::string_view metric,
                      const std::string& value)
   {
-    log_metric(tool, metric, '"' +  value + '"');
+    log_metric(metric, '"' +  value + '"');
   }
 
   void setDebugLevel(ToolId tool, const char* group, int level);
@@ -221,13 +226,11 @@ class Logger
     }
 
   template <typename Value>
-    inline void log_metric(ToolId tool,
-                           const std::string_view metric,
+    inline void log_metric(const std::string_view metric,
                            const Value& value)
     {
-      metrics_logger_->info("  {}\"{}::{}\" : {}",
+      metrics_logger_->info("  {}\"{}\" : {}",
                             first_metric_ ? "  " : ", ",
-                            tool_names_[tool],
                             metric,
                             value);
       first_metric_ = false;

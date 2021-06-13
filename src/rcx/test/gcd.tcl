@@ -17,8 +17,6 @@ extract_parasitics -ext_model_file ext_pattern.rules \
 
 set spef_file [make_result_file gcd.spef] 
 write_spef $spef_file -nets $test_nets
-# remove rcx turd
-file delete gcd.totCap
 
 read_spef $spef_file
 

@@ -647,6 +647,9 @@ void lefin::layer(lefiLayer* layer)
       else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
         lefTechLayerEolExtensionRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
+        lefTechLayerEolKeepOutRuleParser eolkoutParser(this);
+        eolkoutParser.parse(layer->propValue(iii), l);
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {

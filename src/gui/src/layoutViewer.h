@@ -238,6 +238,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   std::function<Selected(const std::any&)> makeSelected_;
 
   utl::Logger* logger_;
+  bool design_loaded_;
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;

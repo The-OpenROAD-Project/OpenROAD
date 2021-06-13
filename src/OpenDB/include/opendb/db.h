@@ -130,6 +130,7 @@ class dbTechLayerSpacingEolRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerSpacingTablePrlRule;
+class dbTechLayerEolKeepOutRule;
 class dbTechLayerCutClassRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingTableOrthRule;
@@ -6905,6 +6906,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerEolExtensionRule> getTechLayerEolExtensionRules() const;
 
+  dbSet<dbTechLayerEolKeepOutRule> getTechLayerEolKeepOutRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -7742,6 +7745,50 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
   std::pair<int, int> getExceptWithin(int width) const;
 
   // User Code End dbTechLayerSpacingTablePrlRule
+};
+
+class dbTechLayerEolKeepOutRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerEolKeepOutRuleEnums
+  // User Code End dbTechLayerEolKeepOutRuleEnums
+
+  void setEolWidth(int eol_width);
+
+  int getEolWidth() const;
+
+  void setBackwardExt(int backward_ext);
+
+  int getBackwardExt() const;
+
+  void setForwardExt(int forward_ext);
+
+  int getForwardExt() const;
+
+  void setSideExt(int side_ext);
+
+  int getSideExt() const;
+
+  void setClassName(std::string class_name);
+
+  std::string getClassName() const;
+
+  void setClassValid(bool class_valid);
+
+  bool isClassValid() const;
+
+  void setCornerOnly(bool corner_only);
+
+  bool isCornerOnly() const;
+
+  // User Code Begin dbTechLayerEolKeepOutRule
+  static dbTechLayerEolKeepOutRule* create(dbTechLayer* layer);
+
+  static dbTechLayerEolKeepOutRule* getTechLayerEolKeepOutRule(
+      dbTechLayer* inly,
+      uint dbid);
+  static void destroy(dbTechLayerEolKeepOutRule* rule);
+  // User Code End dbTechLayerEolKeepOutRule
 };
 
 class dbTechLayerCutClassRule : public dbObject

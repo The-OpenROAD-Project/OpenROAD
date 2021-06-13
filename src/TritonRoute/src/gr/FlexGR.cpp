@@ -163,7 +163,7 @@ void FlexGR::searchRepairMacro(int iter,
   }
 
   frBox dieBox;
-  getDesign()->getTopBlock()->getBoundaryBBox(dieBox);
+  getDesign()->getTopBlock()->getDieBox(dieBox);
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
@@ -273,7 +273,7 @@ void FlexGR::searchRepair(int iter,
   }
 
   frBox dieBox;
-  getDesign()->getTopBlock()->getBoundaryBBox(dieBox);
+  getDesign()->getTopBlock()->getDieBox(dieBox);
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
@@ -654,7 +654,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
   gcell->addGridPatternY(
       ygp->getStartCoord(), ygp->getCount(), ygp->getSpacing());
   frBox dieBox;
-  design_->getTopBlock()->getBoundaryBBox(dieBox);
+  design_->getTopBlock()->getDieBox(dieBox);
   gcell->addGridPatternX(dieBox.right(), 1, 0);
   gcell->addGridPatternY(dieBox.top(), 1, 0);
   unsigned cmapLayerIdx = 0;

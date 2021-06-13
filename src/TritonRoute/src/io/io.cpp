@@ -1683,6 +1683,18 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
+
+  for (auto rule : layer->getTechLayerEolKeepOutRules()) {
+    unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
+    auto rptr = static_cast<frLef58EolKeepOutConstraint*>(uCon.get());
+    rptr->setEolWidth(rule->getEolWidth());
+    rptr->setBackwardExt(rule->getBackwardExt());
+    rptr->setForwardExt(rule->getForwardExt());
+    rptr->setSideExt(rule->getSideExt());
+    rptr->setCornerOnly(rule->isCornerOnly());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58EolKeepOutConstraint(rptr);
+  }
 }
 
 void io::Parser::addCutLayer(odb::dbTechLayer* layer)
@@ -2249,7 +2261,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
   if (VERBOSE > 0) {
     logger->report("");
     frBox dieBox;
-    design->getTopBlock()->getBoundaryBBox(dieBox);
+    design->getTopBlock()->getDieBox(dieBox);
     logger->report("design:      {}", design->getTopBlock()->getName());
     logger->report("die area:    {}", dieBox);
     logger->report("trackPts:    {}",

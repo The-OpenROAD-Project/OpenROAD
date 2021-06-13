@@ -13,6 +13,7 @@ add_library(lefin
     lefTechLayerCutEnclosureParser.cpp
     lefTechLayerTypeParser.cpp
     lefTechLayerEolExtensionParser.cpp
+    lefTechLayerEolKeepOutRuleParser.cpp
 )
 
 target_include_directories(lefin

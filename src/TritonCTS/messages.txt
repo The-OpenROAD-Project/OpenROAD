@@ -1,80 +1,83 @@
-Warning: 76 duplicated
-CTS 0001 TritonCTS.cpp:169          Running TritonCTS with user-specified clock roots: {}
-CTS 0002 TritonCTS.cpp:173          User did not specify clock roots.
-CTS 0003 TritonCTS.cpp:334         [TritonCTS Metrics] Total number of Clock Roots: {}.
-CTS 0004 TritonCTS.cpp:335         [TritonCTS Metrics] Total number of Buffers Inserted: {}.
-CTS 0005 TritonCTS.cpp:336         [TritonCTS Metrics] Total number of Clock Subnets: {}.
-CTS 0006 TritonCTS.cpp:337         [TritonCTS Metrics] Total number of Sinks: {}.
-CTS 0007 TritonCTS.cpp:434          found
-CTS 0008 TritonCTS.cpp:447          TritonCTS found {} clock nets.
-CTS 0009 TritonCTS.cpp:472         {}"
-CTS 0010 TritonCTS.cpp:501          has {} sinks
-CTS 0011 TritonCTS.cpp:523          Number of user-input clocks: {}.
-CTS 0012 TritonCTS.cpp:670             Minimum number of buffers in the clock path: {}.
-CTS 0013 TritonCTS.cpp:671             Maximum number of buffers in the clock path: {}.
-CTS 0014 TritonCTS.cpp:674             {} clock nets were removed/fixed.
-CTS 0015 TritonCTS.cpp:677             Created {} clock nets.
-CTS 0016 TritonCTS.cpp:681         {}
-CTS 0017 TritonCTS.cpp:682             Max level of the clock tree: {}.
-CTS 0018 TritonCTS.cpp:774             Created {} clock buffers.
-CTS 0019 HTreeBuilder.cpp:130       Tot. number of sinks after clustering: {}
-CTS 0020 HTreeBuilder.cpp:139       Wire segment unit: {}  dbu ({} um)
-CTS 0021 HTreeBuilder.cpp:144       Distance between buffers: {} units ({} um)
-CTS 0022 HTreeBuilder.cpp:148       Branch Length for Vertex Buffer: {} units ({} um)
-CTS 0023 HTreeBuilder.cpp:162       Original sink region: {}
-CTS 0024 HTreeBuilder.cpp:168       Normalized sink region: {}
-CTS 0025 HTreeBuilder.cpp:169          Width:  {:.4f}
-CTS 0026 HTreeBuilder.cpp:170          Height: {:.4f}
-CTS 0027 HTreeBuilder.cpp:175       Generating H-Tree topology for net {}
-CTS 0028 HTreeBuilder.cpp:176          Tot. number of sinks: {}
-CTS 0029 HTreeBuilder.cpp:181          Sinks will be clustered in groups of {} and a maximum diameter of {} um
-CTS 0030 HTreeBuilder.cpp:185          Number of static layers: {}
-CTS 0031 HTreeBuilder.cpp:208       Stop criterion found. Min length of sink region is ({})
-CTS 0032 HTreeBuilder.cpp:217       Stop criterion found. Max number of sinks is ({})
-CTS 0033 HTreeBuilder.cpp:235       done.
-CTS 0034 HTreeBuilder.cpp:288          Segment length (rounded): {}
-CTS 0035 HTreeBuilder.cpp:804       Number of sinks covered: {}
+CTS 0001 TritonCTS.cpp:172          Running TritonCTS with user-specified clock roots: {}
+CTS 0002 TritonCTS.cpp:176          User did not specify clock roots.
+CTS 0003 TritonCTS.cpp:380         [TritonCTS Metrics] Total number of Clock Roots: {}.
+CTS 0004 TritonCTS.cpp:381         [TritonCTS Metrics] Total number of Buffers Inserted: {}.
+CTS 0005 TritonCTS.cpp:382         [TritonCTS Metrics] Total number of Clock Subnets: {}.
+CTS 0006 TritonCTS.cpp:383         [TritonCTS Metrics] Total number of Sinks: {}.
+CTS 0007 TritonCTS.cpp:498          Net \"{}\" found for clock \"{}\"
+CTS 0008 TritonCTS.cpp:512          TritonCTS found {} clock nets.
+CTS 0009 TritonCTS.cpp:537          Initializing clock net for : \"{}\"
+CTS 0010 TritonCTS.cpp:567          Clock net \"{}\" has {} sinks
+CTS 0011 TritonCTS.cpp:590          Number of user-input clocks: {}.
+CTS 0012 TritonCTS.cpp:737             Minimum number of buffers in the clock path: {}.
+CTS 0013 TritonCTS.cpp:738             Maximum number of buffers in the clock path: {}.
+CTS 0014 TritonCTS.cpp:741             {} clock nets were removed/fixed.
+CTS 0015 TritonCTS.cpp:744             Created {} clock nets.
+CTS 0016 TritonCTS.cpp:748         {}
+CTS 0017 TritonCTS.cpp:749             Max level of the clock tree: {}.
+CTS 0018 TritonCTS.cpp:841             Created {} clock buffers.
+CTS 0019 HTreeBuilder.cpp:142       Tot. number of sinks after clustering: {}
+CTS 0020 HTreeBuilder.cpp:151       Wire segment unit: {}  dbu ({} um)
+CTS 0021 HTreeBuilder.cpp:156       Distance between buffers: {} units ({} um)
+CTS 0022 HTreeBuilder.cpp:162       Branch Length for Vertex Buffer: {} units ({} um)
+CTS 0023 HTreeBuilder.cpp:178       Original sink region: {}
+CTS 0024 HTreeBuilder.cpp:193       Normalized sink region: {}
+CTS 0025 HTreeBuilder.cpp:194          Width:  {:.4f}
+CTS 0026 HTreeBuilder.cpp:195          Height: {:.4f}
+CTS 0027 HTreeBuilder.cpp:200       Generating H-Tree topology for net {}
+CTS 0028 HTreeBuilder.cpp:201          Tot. number of sinks: {}
+CTS 0029 HTreeBuilder.cpp:206          Sinks will be clustered in groups of {} and a maximum diameter of {:.1f} um
+CTS 0030 HTreeBuilder.cpp:210          Number of static layers: {}
+CTS 0031 HTreeBuilder.cpp:233       Stop criterion found. Min length of sink region is ({})
+CTS 0032 HTreeBuilder.cpp:242       Stop criterion found. Max number of sinks is ({})
+CTS 0033 HTreeBuilder.cpp:261       Clock topology of net \"{}\" done.
+CTS 0034 HTreeBuilder.cpp:314          Segment length (rounded): {}
+CTS 0035 HTreeBuilder.cpp:843       Number of sinks covered: {}
 CTS 0036 PostCtsOpt.cpp:63          Avg. source sink dist: {:.2f} dbu.
 CTS 0037 PostCtsOpt.cpp:90          Num outlier sinks: {}
-CTS 0038 TechChar.cpp:1262         Number of created patterns = {}.
-CTS 0039 TechChar.cpp:1275         Number of created patterns = {}.
-CTS 0040 TritonCTS.cpp:439         A net was not found in the design. Skipping...
-CTS 0041 TritonCTS.cpp:490          has {} sinks. Skipping...
-CTS 0042 TritonCTS.cpp:495          has 0 sinks. Disconnected net or
-CTS 0043 TechChar.cpp:117          {} wires are pure wire and no slew degration.
-
+CTS 0038 TechChar.cpp:1264         Number of created patterns = {}.
+CTS 0039 TechChar.cpp:1277         Number of created patterns = {}.
+CTS 0040 TritonCTS.cpp:503         Net was not found in the design for {}, please check. Skipping...
+CTS 0041 TritonCTS.cpp:556         Net \"{}\" has {} sinks. Skipping...
+CTS 0042 TritonCTS.cpp:561         Net \"{}\" has 0 sinks. Unconnected net or
+CTS 0043 TechChar.cpp:117          {} wires are pure wire and no slew degration.\n
 CTS 0045 TechChar.cpp:337          Creating fake entries in the LUT.
 CTS 0046 TechChar.cpp:122              Num wire segments: {}
 CTS 0047 TechChar.cpp:124              Num keys in characterization LUT: {}
 CTS 0048 TechChar.cpp:127              Actual min input cap: {}
-CTS 0055 tritoncts.tcl:139         Missing argument -buf_list
-CTS 0056 tritoncts.tcl:151         Error when finding -clk_nets in DB!
-CTS 0057 tritoncts.tcl:173         Missing argument -root_buf
+CTS 0055 tritoncts.tcl:148         Missing argument -buf_list
+CTS 0056 tritoncts.tcl:160         Error when finding -clk_nets in DB!
+CTS 0057 tritoncts.tcl:182         Missing argument -root_buf
 CTS 0058 SinkClustering.cpp:123    Invalid parameters in {}
 CTS 0059 TechChar.cpp:268          Could not open characterization file.
 CTS 0060 TechChar.cpp:300           Could not open characterization file.
 CTS 0065 TechChar.cpp:154          Normalized values in the LUT should be in the range [1, {}
-CTS 0068 TechChar.cpp:446          Network not found. Check your lef/def/verilog file.
-CTS 0069 TechChar.cpp:450          Database not found. Check your lef/def/verilog file.
-CTS 0070 TechChar.cpp:454          Chip not found. Check your lef/def/verilog file.
-CTS 0071 TechChar.cpp:458          Block not found. Check your lef/def/verilog file.
-CTS 0072 TechChar.cpp:463          Network not found. Check your lef/def/verilog file.
-CTS 0073 TechChar.cpp:493          Buffer not found. Check your -buf_list input.
-CTS 0074 TechChar.cpp:499          Buffer {} not found. Check your -buf_list input.
-CTS 0075 TechChar.cpp:557          Error generating the wirelengths to test. Check your -wire_unit 
-CTS 0076 TechChar.cpp:576          No Liberty cell found for {}.
-CTS 0076 TechChar.cpp:594          No Liberty cell found for {}.
-CTS 0077 TechChar.cpp:588          Liberty Library does not have Max Slew or Max Cap values.
-CTS 0078 TechChar.cpp:630          Error generating the wirelengths to test. 
-CTS 0079 HTreeBuilder.cpp:97       Sink not found.
-CTS 0080 HTreeBuilder.cpp:796      Sink not found.
-CTS 0081 TritonCTS.cpp:152         Buffer {} is not in the loaded DB.
-CTS 0082 TritonCTS.cpp:186         No valid clock nets in the design.
-CTS 0083 TritonCTS.cpp:444         No clock nets have been found.
+CTS 0066 TechChar.cpp:580          Could not get maxSlew/maxCap values from buffer {}. Using library values
+CTS 0066 TechChar.cpp:603          Could not get maxSlew/maxCap values from buffer {}
+CTS 0068 TechChar.cpp:445          Network not found. Check your lef/def/verilog file.
+CTS 0069 TechChar.cpp:449          Database not found. Check your lef/def/verilog file.
+CTS 0070 TechChar.cpp:453          Chip not found. Check your lef/def/verilog file.
+CTS 0071 TechChar.cpp:457          Block not found. Check your lef/def/verilog file.
+CTS 0072 TechChar.cpp:462          Network not found. Check your lef/def/verilog file.
+CTS 0073 TechChar.cpp:492          Buffer not found. Check your -buf_list input.
+CTS 0074 TechChar.cpp:498          Buffer {} not found. Check your -buf_list input.
+CTS 0075 TechChar.cpp:556          Error generating the wirelengths to test. Check your -wire_unit 
+CTS 0076 TechChar.cpp:575          No Liberty cell found for {}.
+CTS 0076 TechChar.cpp:593          No Liberty cell found for {}.
+CTS 0077 TechChar.cpp:587          Liberty Library does not have Max Slew or Max Cap values.
+CTS 0078 TechChar.cpp:632          Error generating the wirelengths to test. 
+CTS 0079 HTreeBuilder.cpp:104      Sink not found.
+CTS 0080 HTreeBuilder.cpp:835      Sink not found.
+CTS 0081 TritonCTS.cpp:155         Buffer {} is not in the loaded DB.
+CTS 0082 TritonCTS.cpp:188         No valid clock nets in the design.
+CTS 0083 TritonCTS.cpp:509         No clock nets have been found.
 CTS 0084 TechChar.cpp:62           Compiling LUT
-CTS 0087 TritonCTS.cpp:320         Could not open output metric file.
+CTS 0087 TritonCTS.cpp:366         Could not open output metric file.
 CTS 0088 SinkClustering.cpp:161    Matching0 size: {}.
 CTS 0089 SinkClustering.cpp:162    Matching1 size: {}.
-CTS 0090 HTreeBuilder.cpp:179          Sinks will be clustered based on buffer max cap.
-CTS 0091 TritonCTS.cpp:293         Sinks after db write = {} (Leaf Buffers = {})
-CTS 0092 TritonCTS.cpp:295         Avg Sink Wire Length = {:.3} um
+CTS 0090 HTreeBuilder.cpp:204          Sinks will be clustered based on buffer max cap.
+CTS 0091 TritonCTS.cpp:335         Sinks after db write = {} (Leaf Buffers = {})
+CTS 0092 TritonCTS.cpp:337         Avg Sink Wire Length = {:.3} um
+CTS 0093 LevelBalancer.cpp:53      Fixing tree levels for max depth {}
+CTS 0094 TritonCTS.cpp:338         Min path depth = {} Max path depth = {}
+CTS 0095 TritonCTS.cpp:496          Net \"{}\" found

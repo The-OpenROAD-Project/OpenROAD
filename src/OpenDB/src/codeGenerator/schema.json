@@ -16,6 +16,9 @@
       "src": "dbTechLayerSpacingTablePrlRule.json"
     },
     {
+      "src": "dbTechLayerEolKeepOutRule.json"
+    },
+    {
       "src":"dbTechLayerCutClassRule.json"
     },
     {
@@ -312,6 +315,12 @@
       "second":"dbTechLayerEolExtensionRule",
       "type":"1_n",
       "tbl_name":"eol_ext_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerEolKeepOutRule",
+      "type":"1_n",
+      "tbl_name":"eol_keep_out_rules_tbl_"
     }
   ]
 }

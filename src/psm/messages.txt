@@ -1,52 +1,57 @@
-1 "Reading Voltage source file: {}."
-2 "Output voltage file specified as: {}."
-3 "Output current file specified {}."
-4 "EM calculation enabled."
-5 "Output spice file is specified as: {}."
-6 "Spice file is written at: {}."
-7 "Falied to write out spice file: {}."
-8 "Power grid is not connected to all instances, therefore the IR Solver may not be accurate. LVS may also fail."
-12 "Solving V = inv(G)*J failed."
-14 "Number of voltage sources cannot be 0."
-15 "Reading location of VDD and VSS sources from {}."
-16 "Voltage pad location (vsrc) file not spcified, defaulting pad location to checkerboard pattern on core area."
-17 "X direction bump pitch is not specified, defaulting to {}um."
-18 "Y direction bump pitch is not specified, defaulting to {}um."
-19 "Voltage on net {} is not explicitly set."
-20 "Cannot find net {} in the design. Please provide a valid VDD/VSS net."
-21 "Using voltage {:4.3f}V for ground network."
-22 "Using voltage {:4.3f}V for VDD network."
-23 "Instance {} not found within database."
-24 "Instance {} curent node at ({}, {}) at layer {} have been moved from ({}, {})."
-27 "Cannot find net {} in the design. Please provide a valid VDD/VSS net." 
-29 "No power stripes found in design. Power grid checker will not run."
-30 "Vsrc location at ({:4.3f}um, {:4.3f}um) and size ={:4.3f}um, is not located on a power stripe. Moving to closest stripe at ({:4.3f}um, {:4.3f}um)."
-31 "Number of nodes on net {} = {}."
-32 "Node at ({}, {}) and layer {} moved from ({}, {})."
-33 "Node at ({}, {}) and layer {} moved from ({}, {})."
-34 "Unxpected condition. Null pointer received for node."
-35 "At least one via resistance not found in DB. Check the LEF or set it with a set_layer_rc -via command."
-36 "At least one layer's per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command."
-38 "Unconnected PDN node on net {} at location ({:4.3f}um, {:4.3f}um), layer: {}." 
-39 "Unconnected Instance {} at location ({:4.3f}um, {:4.3f}um), layer: {}."
-40 "No floating PDN stripes on net {}."
-41 "Spice file {} did not open. Please check if it is a valid path."
-46 "Node location lookup error for y."
-47 "Node location lookup error for x."
-48 "Printing GMat obj, with {} nodes."
-49 "No nodes in object initialization stopped."
-50 "Creating stripe condunctance with invalid inputs. Min and max values for X or Y are interchanged."
-51 "Index out of bound for getting G matrix conductance. Ensure object is initialized to the correct size first."
-52 "Index out of bound for getting G matrix conductance. Ensure object is initialized to the correct size first."
-53 "Cannot read $vsrc_file."
-54 "Argument -net not specified."
-55 "EM outfile defined without EM enable flag. Add -enable_em."  
-56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows." 
-57 "Argument -net not specified."
-58 "No rows defined in design. Use initialize_floorplan to add rows." 
-59 "Cannot read $vsrc_file."
-60 "Argument -net not specified."
-61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN." 
-62 "Argument -net or -voltage not specified. Please specifiy both -net and -voltage arguments."
-63 "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of {:4.3f}. Changing bump location to a center of the die at {:4.3f}, {:4.3f}"
-64 "Number of voltage sources = {}"
+PSM 0001 pdnsim.cpp:108            Reading voltage source file: {}.
+PSM 0002 pdnsim.cpp:114            Output voltage file is specified as: {}.
+PSM 0003 pdnsim.cpp:121            Output current file specified {}.
+PSM 0004 pdnsim.cpp:127            EM calculation is enabled.
+PSM 0005 pdnsim.cpp:134            Output spice file is specified as: {}.
+PSM 0006 pdnsim.cpp:158            Spice file is written at: {}.
+PSM 0007 pdnsim.cpp:161            Falied to write out spice file: {}.
+PSM 0008 ir_solver.cpp:119         Powergrid is not connected to all instances, therefore the 
+PSM 0010 ir_solver.cpp:149         LU factorization of the G Matrix failed.
+PSM 0012 ir_solver.cpp:155         Solving V = inv(G)*J failed.
+PSM 0014 ir_solver.cpp:276         Number of voltage sources cannot be 0.
+PSM 0015 ir_solver.cpp:295         Reading location of VDD and VSS sources from {}.
+PSM 0016 ir_solver.cpp:323         Voltage pad location (vsrc) file not specified, defaulting 
+PSM 0017 ir_solver.cpp:341         X direction bump pitch is not specified, defaulting to {}um.
+PSM 0018 ir_solver.cpp:349         Y direction bump pitch is not specified, defaulting to {}um.
+PSM 0019 ir_solver.cpp:359         Voltage on net {} is not explicitly set.
+PSM 0020 ir_solver.cpp:366         Cannot find net {} in the design. Please provide a 
+PSM 0021 ir_solver.cpp:375         Using voltage {:4.3f}V for ground network.
+PSM 0022 ir_solver.cpp:381         Using voltage {:4.3f}V for VDD network.
+PSM 0023 ir_solver.cpp:432         Instance {} not found within database.
+PSM 0024 ir_solver.cpp:444         Instance {} curent node at ({}, {}) at layer {} have 
+PSM 0025 ir_solver.cpp:468         Created J vector
+PSM 0027 ir_solver.cpp:489          Cannot find net {} in the design. Please provide a valid 
+PSM 0029 ir_solver.cpp:502         No power stripes found in design. Power grid checker will not run.
+PSM 0030 ir_solver.cpp:691         Vsrc location at ({:4.3f}um, {:4.3f}um) and size ={:4.3f}um, is not located on a power stripe. Moving to closest stripe at ({:4.3f}um, {:4.3f}um).
+PSM 0031 ir_solver.cpp:715         Number of PDN nodes on net {} = {}.
+PSM 0032 ir_solver.cpp:775         Node at ({}, {}) and layer {} moved from ({}, {}).
+PSM 0033 ir_solver.cpp:792         Node at ({}, {}) and layer {} moved from ({}, {}).
+PSM 0034 ir_solver.cpp:803         Unxpected condition. Null pointer received for node.
+PSM 0035 ir_solver.cpp:767         {} resistance not found in DB. Check the LEF or set it with set_layer_rc command.
+PSM 0036 ir_solver.cpp:821         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
+PSM 0036 ir_solver.cpp:850         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
+PSM 0036 ir_solver.cpp:879         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
+PSM 0038 ir_solver.cpp:983         Unconnected PDN node on net {} at location ({:4.3f}um, {:4.3f}um), layer: {}.
+PSM 0039 ir_solver.cpp:990         Unconnected Instance {} at location ({:4.3f}um, {:4.3f}um) layer: {}.
+PSM 0040 ir_solver.cpp:997         All PDN stripes on net {} are connected.
+PSM 0041 ir_solver.cpp:1043        Spice file {} did not open. Please check if it is a valid path.
+PSM 0046 gmat.cpp:76               Node location lookup error for y.
+PSM 0047 gmat.cpp:79               Node location lookup error for x.
+PSM 0048 gmat.cpp:192              Printing GMat obj, with {} nodes.
+PSM 0049 gmat.cpp:230              No nodes in object initialization stopped.
+PSM 0050 gmat.cpp:285              Creating stripe condunctance with invalid inputs. Min and 
+PSM 0051 gmat.cpp:504              Index out of bound for getting G matrix conductance. \n
+PSM 0052 gmat.cpp:531              Index out of bound for getting G matrix conductance. \n
+PSM 0053 pdnsim.tcl:19             Cannot read $vsrc_file.
+PSM 0054 pdnsim.tcl:26             Argument -net not specified.
+PSM 0055 pdnsim.tcl:47             EM outfile defined without EM enable flag. Add -enable_em.
+PSM 0056 pdnsim.tcl:53             No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows.
+PSM 0057 pdnsim.tcl:67             Argument -net not specified.
+PSM 0058 pdnsim.tcl:73             No rows defined in design. Use initialize_floorplan to add rows.
+PSM 0059 pdnsim.tcl:93             Cannot read $vsrc_file.
+PSM 0060 pdnsim.tcl:104            Argument -net not specified.
+PSM 0061 pdnsim.tcl:118            No rows defined in design. Use initialize_floorplan to add rows and construct PDN.
+PSM 0062 pdnsim.tcl:134            Argument -net or -voltage not specified. Please specifiy both -net and -voltage arguments.
+PSM 0063 ir_solver.cpp:390         Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of 
+PSM 0064 ir_solver.cpp:278         Number of voltage sources = {}
+PSM 0065 ir_solver.cpp:400         VSRC location not specified using default checkerboard pattern with one VDD every

@@ -60,6 +60,7 @@ class _dbTechLayerCutSpacingTableOrthRule;
 class _dbTechLayerCutSpacingTableDefRule;
 class _dbTechLayerCutEnclosureRule;
 class _dbTechLayerEolExtensionRule;
+class _dbTechLayerEolKeepOutRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -119,6 +120,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerCutEnclosureRule>* cut_enc_rules_tbl_;
 
   dbTable<_dbTechLayerEolExtensionRule>* eol_ext_rules_tbl_;
+
+  dbTable<_dbTechLayerEolKeepOutRule>* eol_keep_out_rules_tbl_;
 
   // User Code Begin Fields
 

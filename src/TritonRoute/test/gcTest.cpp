@@ -50,7 +50,7 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design.get(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get()) {}
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
@@ -76,7 +76,7 @@ struct GCFixture : public Fixture
     worker.setExtBox(work);
     worker.setDrcBox(work);
 
-    worker.init();
+    worker.init(design.get());
     worker.main();
     worker.end();
   }
@@ -106,6 +106,67 @@ BOOST_AUTO_TEST_CASE(metal_short)
              2,
              frConstraintTypeEnum::frcShortConstraint,
              frBox(500, -50, 500, 50));
+}
+
+/*
+ *
+ *                     |---------------|(750,200)
+ *                     |               |
+ *                     |               |
+ *                     |     i1        |
+ *                     |     OBS       |
+ *                     |               |
+ *                     |****|(550,90)  |
+ *                     | in |          |
+ * --------------------|----|--(600,50)|
+ * |           (450,40)|****| |        |
+ * |         n1        |      |        |
+ * --------------------|---------------|
+ * (0,-50)        (450,-50)
+ */
+// short with obs
+BOOST_AUTO_TEST_CASE(metal_short_obs)
+{
+  // Setup
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 0}, {600, 0});
+  auto block = makeMacro("OBS");
+  makeMacroObs(block, 450, -50, 750, 200, 2);
+  auto pin = makeMacroPin(block, "in", 450, 40, 550, 90, 2);
+  auto i1 = makeInst("i1", block, 0, 0);
+  auto instTerm = i1->getInstTerms()[0].get();
+  instTerm->addToNet(n1);
+
+  n1->addInstTerm(instTerm);
+  auto instTermNode = make_unique<frNode>();
+  instTermNode->setPin(instTerm);
+  instTermNode->setType(frNodeTypeEnum::frcPin);
+  n1->addNode(instTermNode);
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == 3);
+  // short of pin+net (450,-50), (550,90)
+  // with obs 450,-50), (750,200)
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcShortConstraint,
+             frBox(450, -50, 550, 40));
+
+  // shorts of net (0,-50), (600,50)
+  // with obs (450,-50), (750,200)
+  // 2 max rectangles generated
+  testMarker(markers[1].get(),
+             2,
+             frConstraintTypeEnum::frcShortConstraint,
+             frBox(550, -50, 600, 50));
+  testMarker(markers[2].get(),
+             2,
+             frConstraintTypeEnum::frcShortConstraint,
+             frBox(450, -50, 600, 40));
 }
 
 // Two touching metal shape from the same net must have sufficient
@@ -325,7 +386,6 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   WIDTH  90     0      50
   WIDTH 190     50    150
   */
-  USEMINSPACING_OBS = false;  // Do not use layer width as Obs width
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
@@ -547,7 +607,6 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
              frBox(450, 500, 550, 650));
 }
-
 BOOST_DATA_TEST_CASE(eol_ext_basic,
                      (bdata::make({30, 50})) ^ (bdata::make({true, false})),
                      ext,
@@ -586,7 +645,6 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
 
   makePathseg(n1, 2, {0, 100}, {500, 100});
   makePathseg(n1, 2, {520, 290}, {910, 290});
-
   runGC();
 
   // Test the results
@@ -599,6 +657,68 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
                2,
                frConstraintTypeEnum::frcLef58EolExtensionConstraint,
                frBox(500, 150, 520, 240));
+  }
+}
+// Check for eol keepout violation.
+BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  frCoord x_extra = 0;
+  if (legal)
+    x_extra = 200;
+  makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+               frBox(450, 500, 550, 650));
+  }
+}
+
+// Check for eol keepout violation CORNERONLY.
+BOOST_DATA_TEST_CASE(eol_keepout_corner,
+                     (bdata::make({true, false}) * bdata::make({true, false})),
+                     concave,
+                     legal)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2, true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  frCoord x_extra = 0;
+  if (concave && !legal)
+    makePathseg(n1, 2, {360, 400}, {360, 750});
+  if (!concave && !legal)
+    x_extra = 10;
+  makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+               frBox(410, 500, 450, 650));
   }
 }
 
