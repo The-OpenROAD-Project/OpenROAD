@@ -21,6 +21,7 @@ record_tests {
   polygon
   def_parser
   ndr
+  gcd_abstract_lef
 }
 
 record_pass_fail_tests {
