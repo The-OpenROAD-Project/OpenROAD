@@ -41,7 +41,6 @@
 // Move logger macro out of the way.
 #undef debugPrint
 
-#include "sta/Report.hh"
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
@@ -80,13 +79,12 @@ makeSteinerTree(const Pin *drvr_pin,
 {
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
-  Report *report = network->report();
   Net *net = network->isTopLevelPort(drvr_pin)
     ? network->net(network->term(drvr_pin))
     : network->net(drvr_pin);
   debugPrint(debug, "steiner", 1, "Net %s",
              sdc_network->pathName(net));
-  SteinerTree *tree = new SteinerTree();
+  SteinerTree *tree = new SteinerTree(drvr_pin);
   PinSeq &pins = tree->pins();
   connectedPins(net, network, pins);
   // Steiner tree is apparently sensitive to pin order.
@@ -109,6 +107,11 @@ makeSteinerTree(const Pin *drvr_pin,
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
       is_placed &= network->isPlaced(pin);
+
+      // Flute may reorder the input points, so it takes some unravelling
+      // to find the mapping back to the original pins. The complication is
+      // that multiple pins can occupy the same location.
+      tree->locAddPin(loc, pin);
     }
     if (is_placed) {
       stt::Tree ftree;
@@ -126,7 +129,7 @@ makeSteinerTree(const Pin *drvr_pin,
         std::swap(pins[0], pins[drvr_idx]);
         std::swap(x1[0], x1[drvr_idx]);
         std::swap(y1[0], y1[drvr_idx]);
-        float alpha = 0.8;
+        float alpha = 0.4;
         if (use_pd)
           ftree = pdr::primDijkstra(x1, y1, alpha, logger);
         else
@@ -137,16 +140,12 @@ makeSteinerTree(const Pin *drvr_pin,
         int flute_accuracy = 3;
         ftree = stt::flute(pin_count, x, y, flute_accuracy);
       }
-      tree->setTree(ftree, network);
-      if (debug->check("steiner", 3)) {
+      if (debug->check("steiner", 3))
         stt::printtree(ftree);
-        logger->report("pin map");
-        for (int i = 0; i < pin_count; i++)
-          logger->report(" {} -> {}",i, network->pathName(tree->pin(i)));
-      }
+      tree->setTree(ftree, network);
       if (find_left_rights)
         tree->findLeftRights(network, logger);
-      if (debug->check("steiner", 2))
+      if (debug->check("steiner", 3))
         tree->report(logger, network);
       return tree;
     }
@@ -174,31 +173,25 @@ SteinerTree::setTree(stt::Tree tree,
                      const dbNetwork *network)
 {
   tree_ = tree;
-  int pin_count = pins_.size();
-  // Flute may reorder the input points, so it takes some unravelling
-  // to find the mapping back to the original pins. The complication is
-  // that multiple pins can occupy the same location.
-  steiner_pt_pin_map_.resize(pin_count);
-  UnorderedMap<Point, PinSeq, PointHash, PointEqual> loc_pins_map;
-  // Find all of the pins at a location.
-  for (int i = 0; i < pin_count; i++) {
-    Pin *pin = pins_[i];
-    Point loc = network->location(pin);
-    loc_pin_map_[loc] = pin;
-    loc_pins_map[loc].push_back(pin);
-  }
-  for (int i = 0; i < pin_count; i++) {
-    stt::Branch &branch_pt = tree_.branch[i];
-    PinSeq &loc_pins = loc_pins_map[Point(branch_pt.x, branch_pt.y)];
-    for (Pin *pin : loc_pins) {
-      steiner_pt_pin_map_[i] = pin;
-      pin_steiner_pt_map_[pin] = i;
+
+  // Find driver steiner point.
+  drvr_steiner_pt_ = null_pt;
+  Point drvr_loc = network->location(drvr_pin_);
+  int drvr_x = drvr_loc.getX();
+  int drvr_y = drvr_loc.getY();
+  int branch_count = stt::branch_count(tree_);
+  for (int i = 0; i < branch_count; i++) {
+    stt::Branch &pt1 = tree_.branch[i];
+    if (pt1.x == drvr_x
+        && pt1.y == drvr_y) {
+      drvr_steiner_pt_ = i;
+      break;
     }
-    loc_pins.clear();
   }
 }
 
-SteinerTree::SteinerTree() :
+SteinerTree::SteinerTree(const Pin *drvr_pin) :
+  drvr_pin_(drvr_pin),
   tree_({0, 0, nullptr})
 {
 }
@@ -211,43 +204,32 @@ SteinerTree::~SteinerTree()
 int
 SteinerTree::branchCount() const
 {
-  return tree_.deg * 2 - 2;
+  return stt::branch_count(tree_);
+}
+
+void
+SteinerTree::locAddPin(Point &loc,
+                       Pin *pin)
+{
+  PinSeq &pins = loc_pin_map_[loc];
+  pins.push_back(pin);
 }
 
 void
 SteinerTree::branch(int index,
                     // Return values.
                     Point &pt1,
-                    Pin *&pin1,
                     int &steiner_pt1,
                     Point &pt2,
-                    Pin *&pin2,
                     int &steiner_pt2,
                     int &wire_length)
 {
   stt::Branch &branch_pt1 = tree_.branch[index];
-  int index2 = branch_pt1.n;
-  stt::Branch &branch_pt2 = tree_.branch[index2];
+  steiner_pt1 = index;
+  steiner_pt2 = branch_pt1.n;
+  stt::Branch &branch_pt2 = tree_.branch[steiner_pt2];
   pt1 = Point(branch_pt1.x, branch_pt1.y);
-  if (index < pinCount()) {
-    pin1 = pin(index);
-    steiner_pt1 = 0;
-  }
-  else {
-    pin1 = nullptr;
-    steiner_pt1 = index;
-  }
-
   pt2 = Point(branch_pt2.x, branch_pt2.y);
-  if (index2 < pinCount()) {
-    pin2 = pin(index2);
-    steiner_pt2 = 0;
-  }
-  else {
-    pin2 = nullptr;
-    steiner_pt2 = index2;
-  }
-
   wire_length = abs(branch_pt1.x - branch_pt2.x)
     + abs(branch_pt1.y - branch_pt2.y);
 }
@@ -262,8 +244,9 @@ SteinerTree::report(Logger *logger,
     int j = pt1.n;
     stt::Branch &pt2 = tree_.branch[j];
     int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
-    logger->report(" {} ({} {}) - {} wire_length = {} left = {} right = {}",
+    logger->report(" {}{} ({} {}) - {} wire_length = {} left = {} right = {}",
                    name(i, network),
+                   i == drvr_steiner_pt_ ? " drvr" : "",
                    pt1.x,
                    pt1.y,
                    name(j, network),
@@ -273,13 +256,6 @@ SteinerTree::report(Logger *logger,
   }
 }
 
-Pin *
-SteinerTree::steinerPtAlias(SteinerPt pt)
-{
-  stt::Branch &branch_pt = tree_.branch[pt];
-  return loc_pin_map_[Point(branch_pt.x, branch_pt.y)];
-}
-
 const char *
 SteinerTree::name(SteinerPt pt,
                   const Network *network)
@@ -287,45 +263,38 @@ SteinerTree::name(SteinerPt pt,
   if (pt == null_pt)
     return "NULL";
   else {
-    const Pin *pin = this->pin(pt);
-    if (pin)
-      return network->pathName(pin);
+    const PinSeq *pt_pins = pins(pt);
+    if (pt_pins) {
+      string pin_names;
+      bool first = true;
+      for (const Pin *pin : *pt_pins) {
+        if (!first)
+          pin_names += " ";
+        pin_names += network->pathName(pin);
+        first = false;
+      }
+      return stringPrintTmp("%s", pin_names.c_str());
+    }
     else
       return stringPrintTmp("S%d", pt);
   }
 }
 
-Pin *
-SteinerTree::pin(SteinerPt pt) const
+const PinSeq *
+SteinerTree::pins(SteinerPt pt) const
 {
-  if (pt < pinCount())
-    return steiner_pt_pin_map_[pt];
-  else
-    return nullptr;
-}
-
-SteinerPt
-SteinerTree::steinerPt(Pin *pin) const
-{
-  SteinerPt pt;
-  bool exists;
-  pin_steiner_pt_map_.findKey(pin, pt, exists);
-  if (exists)
-    return pt;
-  else
-    return null_pt;
+  if (pt < tree_.deg) {
+    auto loc_pins = loc_pin_map_.find(location(pt));
+    if (loc_pins != loc_pin_map_.end())
+      return &loc_pins->second;
+  }
+  return nullptr;
 }
 
 SteinerPt
 SteinerTree::drvrPt(const Network *network) const
 {
-  int pin_count = pinCount();
-  for (int i = 0; i < pin_count; i++) {
-    Pin *pin = this->pin(i);
-    if (network->isDriver(pin))
-      return i;
-  }
-  return null_pt;
+  return drvr_steiner_pt_;
 }
 
 Point
@@ -392,7 +361,7 @@ SteinerTree::findLeftRights(SteinerPt from,
                             SteinerPtSeq &adj3,
                             Logger *logger)
 {
-  if (to >= pinCount()) {
+  if (to >= tree_.deg) {
     SteinerPt adj;
     adj = adj1[to];
     findLeftRights(from, to, adj, adj1, adj2, adj3, logger);

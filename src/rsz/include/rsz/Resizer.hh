@@ -315,16 +315,10 @@ protected:
                              Slew slews[],
                              int counts[]);
   bool hasMultipleOutputs(const Instance *inst);
-  ParasiticNode *findParasiticNode(SteinerTree *tree,
-                                   Parasitic *parasitic,
-                                   const Net *net,
-                                   const Pin *pin,
-                                   SteinerPt steiner_pt);
   void findLongWires(VertexSeq &drvrs);
   void findLongWiresSteiner(VertexSeq &drvrs);
   int findMaxSteinerDist(Vertex *drvr);
-  int findMaxSteinerDist(Vertex *drvr,
-                         SteinerTree *tree);
+  int findMaxSteinerDist(SteinerTree *tree);
   int findMaxSteinerDist(SteinerTree *tree,
                          SteinerPt pt,
                          int dist_from_drvr);
@@ -502,6 +496,11 @@ protected:
   void net2Pins(const Net *net,
                 const Pin *&pin1,
                 const Pin *&pin2) const;
+  void parasiticNodeConnectPins(Parasitic *parasitic,
+                                ParasiticNode *node,
+                                SteinerTree *tree,
+                                SteinerPt pt,
+                                const ParasiticAnalysisPt *parasitics_ap);
 
   void repairSetup(PathRef &path,
                    Slack path_slack);

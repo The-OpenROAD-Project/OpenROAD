@@ -176,28 +176,32 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
                           int level)
 {
   if (k != SteinerTree::null_pt) {
-    Pin *pin = tree->pin(k);
-    if (pin && network_->isLoad(pin)) {
-      Vertex *vertex = graph_->pinLoadVertex(pin);
-      PathRef req_path = sta_->vertexWorstRequiredPath(vertex, max_);
-      const DcalcAnalysisPt *dcalc_ap = req_path.isNull()
-        ? tgt_slew_dcalc_ap_
-        : req_path.dcalcAnalysisPt(sta_);
-      BufferedNet *z = makeBufferedNet(BufferedNetType::load,
-                                       tree->location(k),
-                                       pinCapacitance(pin, dcalc_ap),
-                                       pin,
-                                       req_path,
-                                       0.0,
-                                       nullptr,
-                                       nullptr, nullptr);
-      if (logger_->debugCheck(RSZ, "rebuffer", 4))
-        z->report(level, this);
-      BufferedNetSeq Z;
-      Z.push_back(z);
-      return addWireAndBuffer(Z, tree, k, prev, level);
+    const PinSeq *pins = tree->pins(k);
+    if (pins) {
+      for (Pin *pin : *pins) {
+        if (network_->isLoad(pin)) {
+          Vertex *vertex = graph_->pinLoadVertex(pin);
+          PathRef req_path = sta_->vertexWorstRequiredPath(vertex, max_);
+          const DcalcAnalysisPt *dcalc_ap = req_path.isNull()
+            ? tgt_slew_dcalc_ap_
+            : req_path.dcalcAnalysisPt(sta_);
+          BufferedNet *z = makeBufferedNet(BufferedNetType::load,
+                                           tree->location(k),
+                                           pinCapacitance(pin, dcalc_ap),
+                                           pin,
+                                           req_path,
+                                           0.0,
+                                           nullptr,
+                                           nullptr, nullptr);
+          if (logger_->debugCheck(RSZ, "rebuffer", 4))
+            z->report(level, this);
+          BufferedNetSeq Z;
+          Z.push_back(z);
+          return addWireAndBuffer(Z, tree, k, prev, level);
+        }
+      }
     }
-    else if (pin == nullptr) {
+    else if (pins == nullptr) {
       // Steiner pt.
       BufferedNetSeq Zl = rebufferBottomUp(tree, tree->left(k), k, level + 1);
       BufferedNetSeq Zr = rebufferBottomUp(tree, tree->right(k), k, level + 1);
@@ -515,17 +519,21 @@ Resizer::makeBufferedNet(SteinerTree *tree,
                          int level)
 {
   if (k != SteinerTree::null_pt) {
-    Pin *pin = tree->pin(k);
-    if (pin && network_->isLoad(pin)) {
-      return new BufferedNet(BufferedNetType::load,
-                             tree->location(k),
-                             // should wait unil req path is known to find
-                             // dcalc_ap
-                             pinCapacitance(pin, tgt_slew_dcalc_ap_),
-                             pin,
-                             nullptr, nullptr);
-    }
-    else if (pin == nullptr) {
+    const PinSeq *pins = tree->pins(k);
+    if (pins) {
+      for (Pin *pin : *pins) {
+        if (network_->isLoad(pin)) {
+          return new BufferedNet(BufferedNetType::load,
+                                 tree->location(k),
+                                 // should wait unil req path is known to find
+                                 // dcalc_ap
+                                 pinCapacitance(pin, tgt_slew_dcalc_ap_),
+                                 pin,
+                                 nullptr, nullptr);
+        }
+      }
+    }  
+    else if (pins == nullptr) {
       // Steiner pt.
       BufferedNet *bnet1 = makeBufferedNetWire(tree, k, tree->left(k), level + 1);
       BufferedNet *bnet2 = makeBufferedNetWire(tree, k, tree->right(k), level + 1);

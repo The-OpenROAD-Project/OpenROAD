@@ -788,7 +788,7 @@ Resizer::repairNet(Net *net,
         repair_fanout = true;
       }
     }
-    int wire_length = findMaxSteinerDist(drvr, tree);
+    int wire_length = findMaxSteinerDist(tree);
     if (max_length
         && wire_length > max_length) {
       length_violations++;
@@ -838,7 +838,7 @@ Resizer::repairNet(Net *net,
                  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 1),
                  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 1),
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1));
-      SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+      SteinerPt drvr_pt = tree->drvrPt(network_);
       int wire_length;
       float pin_cap, fanout;
       PinSeq load_pins;
@@ -965,8 +965,8 @@ Resizer::repairNet(SteinerTree *tree,
   Point pt_loc = tree->location(pt);
   int pt_x = pt_loc.getX();
   int pt_y = pt_loc.getY();
-  debugPrint(logger_, RSZ, "repair_net", 2, "%*spt ({} {})",
-             level, "",
+  debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}pt ({} {})",
+             "", level,
              units_->distanceUnit()->asString(dbuToMeters(pt_x), 1),
              units_->distanceUnit()->asString(dbuToMeters(pt_y), 1));
   double wire_cap = wireSignalCapacitance(corner);
@@ -986,24 +986,26 @@ Resizer::repairNet(SteinerTree *tree,
   if (right != SteinerTree::null_pt)
     repairNet(tree, right, pt, net, max_cap, max_fanout, max_length, corner, level+1,
               wire_length_right, pin_cap_right, fanout_right, loads_right);
-  debugPrint(logger_, RSZ, "repair_net", 3, "%*sleft l={} cap={}, right l={} cap={}",
-             level, "",
+  debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}left l={} pin_cap={} fanout={}, right l={} pin_cap={} fanout={}",
+             "", level,
              units_->distanceUnit()->asString(dbuToMeters(wire_length_left), 1),
              units_->capacitanceUnit()->asString(pin_cap_left, 3),
+             fanout_left,
              units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 1),
-             units_->capacitanceUnit()->asString(pin_cap_right, 3));
+             units_->capacitanceUnit()->asString(pin_cap_right, 3),
+             fanout_right);
   // Add a buffer to left or right branch to stay under the max cap/length/fanout.
   bool repeater_left = false;
   bool repeater_right = false;
   double cap_left = pin_cap_left + dbuToMeters(wire_length_left) * wire_cap;
   double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_cap;
-  debugPrint(logger_, RSZ, "repair_net", 3, "%*scap_left={}, right_cap={}",
-             level, "",
+  debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}cap_left={}, right_cap={}",
+             "", level,
              units_->capacitanceUnit()->asString(cap_left, 3),
              units_->capacitanceUnit()->asString(cap_right, 3));
   bool cap_violation = (cap_left + cap_right) > max_cap;
   if (cap_violation) {
-    debugPrint(logger_, RSZ, "repair_net", 3, "%*scap violation", level, "");
+    debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}cap violation", "", level);
     if (cap_left > cap_right)
       repeater_left = true;
     else
@@ -1012,7 +1014,7 @@ Resizer::repairNet(SteinerTree *tree,
   bool length_violation = max_length > 0
     && (wire_length_left + wire_length_right) > max_length;
   if (length_violation) {
-    debugPrint(logger_, RSZ, "repair_net", 3, "%*slength violation", level, "");
+    debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}length violation", "", level);
     if (wire_length_left > wire_length_right)
       repeater_left = true;
     else
@@ -1021,7 +1023,7 @@ Resizer::repairNet(SteinerTree *tree,
   bool fanout_violation = max_fanout > 0
     && (fanout_left + fanout_right) > max_fanout;
   if (fanout_violation) {
-    debugPrint(logger_, RSZ, "repair_net", 3, "%*sfanout violation", level, "");
+    debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}fanout violation", "", level);
     if (fanout_left > fanout_right)
       repeater_left = true;
     else
@@ -1046,27 +1048,28 @@ Resizer::repairNet(SteinerTree *tree,
     load_pins.push_back(load_pin);
 
   Net *buffer_out = nullptr;
-  Pin *load_pin = tree->pin(pt);
   // Steiner pt pin is the net driver if prev_pt is null.
   if (prev_pt != SteinerTree::null_pt) {
-    Pin *load_pin = tree->pin(pt);
-    if (load_pin) {
-      Point load_loc = db_network_->location(load_pin);
-      int load_dist = Point::manhattanDistance(load_loc, pt_loc);
-      debugPrint(logger_, RSZ, "repair_net", 2, "%*sload {} ({} {}) dist={}",
-                 level, "",
-                 sdc_network_->pathName(load_pin),
-                 units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 1),
-                 units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 1),
-                 units_->distanceUnit()->asString(dbuToMeters(load_dist), 1));
-      LibertyPort *load_port = network_->libertyPort(load_pin);
-      if (load_port) {
-        pin_cap += load_port->capacitance();
-        fanout += portFanoutLoad(load_port);
+    const PinSeq *pt_pins = tree->pins(pt);
+    if (pt_pins) {
+      for (Pin *load_pin : *pt_pins) {
+        Point load_loc = db_network_->location(load_pin);
+        int load_dist = Point::manhattanDistance(load_loc, pt_loc);
+        debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}load {} ({} {}) dist={}",
+                   "", level,
+                   sdc_network_->pathName(load_pin),
+                   units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 1),
+                   units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 1),
+                   units_->distanceUnit()->asString(dbuToMeters(load_dist), 1));
+        LibertyPort *load_port = network_->libertyPort(load_pin);
+        if (load_port) {
+          pin_cap += load_port->capacitance();
+          fanout += portFanoutLoad(load_port);
+        }
+        else
+          fanout += 1;
+        load_pins.push_back(load_pin);
       }
-      else
-        fanout += 1;
-      load_pins.push_back(load_pin);
     }
 
     Point prev_loc = tree->location(prev_pt);
@@ -1075,8 +1078,8 @@ Resizer::repairNet(SteinerTree *tree,
     // Back up from pt to prev_pt adding repeaters every max_length.
     int prev_x = prev_loc.getX();
     int prev_y = prev_loc.getY();
-    debugPrint(logger_, RSZ, "repair_net", 3, "%*swl={} l={}",
-               level, "",
+    debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
+               "", level,
                units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                units_->distanceUnit()->asString(dbuToMeters(length), 1));
     while ((max_length > 0 && wire_length > max_length)
@@ -1110,8 +1113,8 @@ Resizer::repairNet(SteinerTree *tree,
       wire_length = length;
       pt_x = buf_x;
       pt_y = buf_y;
-      debugPrint(logger_, RSZ, "repair_net", 3, "%*swl={} l={}",
-                 level, "",
+      debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
+                 "", level,
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                  units_->distanceUnit()->asString(dbuToMeters(length), 1));
     }
@@ -1154,8 +1157,8 @@ Resizer::makeRepeater(const char *where,
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
     string buffer_name = makeUniqueInstName("repeater");
-    debugPrint(logger_, RSZ, "repair_net", 2, "%*s{} {} ({} {})",
-               level, "",
+    debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}{} {} ({} {})",
+               "", level,
                where,
                buffer_name.c_str(),
                units_->distanceUnit()->asString(dbuToMeters(x), 1),
@@ -2842,7 +2845,7 @@ Resizer::findMaxSteinerDist(Vertex *drvr)
   Pin *drvr_pin = drvr->pin();
   SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
   if (tree) {
-    int dist = findMaxSteinerDist(drvr, tree);
+    int dist = findMaxSteinerDist(tree);
     delete tree;
     return dist;
   }
@@ -2850,11 +2853,9 @@ Resizer::findMaxSteinerDist(Vertex *drvr)
 }
 
 int
-Resizer::findMaxSteinerDist(Vertex *drvr,
-                            SteinerTree *tree)
+Resizer::findMaxSteinerDist(SteinerTree *tree)
 {
-  Pin *drvr_pin = drvr->pin();
-  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+  SteinerPt drvr_pt = tree->drvrPt(network_);
   return findMaxSteinerDist(tree, drvr_pt, 0);
 }
 
@@ -2864,25 +2865,27 @@ Resizer::findMaxSteinerDist(SteinerTree *tree,
                             SteinerPt pt,
                             int dist_from_drvr)
 {
-  Pin *pin = tree->pin(pt);
-  if (pin && db_network_->isLoad(pin))
-    return dist_from_drvr;
-  else {
-    Point loc = tree->location(pt);
-    SteinerPt left = tree->left(pt);
-    int left_max = 0;
-    if (left != SteinerTree::null_pt) {
-      int left_dist = Point::manhattanDistance(loc, tree->location(left));
-      left_max = findMaxSteinerDist(tree, left, dist_from_drvr + left_dist);
+  const PinSeq *pins = tree->pins(pt);
+  if (pins) {
+    for (const Pin *pin : *pins) {
+      if (db_network_->isLoad(pin))
+        return dist_from_drvr;
     }
-    SteinerPt right = tree->right(pt);
-    int right_max = 0;
-    if (right != SteinerTree::null_pt) {
-      int right_dist = Point::manhattanDistance(loc, tree->location(right));
-      right_max = findMaxSteinerDist(tree, right, dist_from_drvr + right_dist);
-    }
-    return max(left_max, right_max);
   }
+  Point loc = tree->location(pt);
+  SteinerPt left = tree->left(pt);
+  int left_max = 0;
+  if (left != SteinerTree::null_pt) {
+    int left_dist = Point::manhattanDistance(loc, tree->location(left));
+    left_max = findMaxSteinerDist(tree, left, dist_from_drvr + left_dist);
+  }
+  SteinerPt right = tree->right(pt);
+  int right_max = 0;
+  if (right != SteinerTree::null_pt) {
+    int right_dist = Point::manhattanDistance(loc, tree->location(right));
+    right_max = findMaxSteinerDist(tree, right, dist_from_drvr + right_dist);
+  }
+  return max(left_max, right_max);
 }
 
 double
@@ -3613,10 +3616,9 @@ SteinerRenderer::drawObjects(gui::Painter &painter)
     painter.setPen(gui::Painter::red, true);
     for (int i = 0 ; i < tree_->branchCount(); ++i) {
       Point pt1, pt2;
-      Pin *pin1, *pin2;
       int steiner_pt1, steiner_pt2;
       int wire_length;
-      tree_->branch(i, pt1, pin1, steiner_pt1, pt2, pin2, steiner_pt2, wire_length);
+      tree_->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length);
       painter.drawLine(pt1, pt2);
     }
   }
