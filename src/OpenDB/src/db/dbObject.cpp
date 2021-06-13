@@ -388,7 +388,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
 
       case 'D':  // Database
         oid = getOid(name);
-        ZASSERT(oid == (uint) ((_dbDatabase*) db_)->_unique_id);
+        ZASSERT(oid == (uint)((_dbDatabase*) db_)->_unique_id);
         obj = db_;
         break;
 
@@ -684,6 +684,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerMinStepRule",
                                  "dbTechLayerCornerSpacingRule",
                                  "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerEolKeepOutRule",
                                  "dbTechLayerCutClassRule",
                                  "dbTechLayerCutSpacingRule",
                                  "dbTechLayerCutSpacingTableOrthRule",

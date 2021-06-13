@@ -533,6 +533,22 @@ class frLayer
     return (!lef58CornerSpacingConstraints.empty());
   }
 
+  void addLef58EolKeepOutConstraint(frLef58EolKeepOutConstraint* in)
+  {
+    lef58EolKeepOutConstraints.push_back(in);
+  }
+
+  const std::vector<frLef58EolKeepOutConstraint*>&
+  getLef58EolKeepOutConstraints() const
+  {
+    return lef58EolKeepOutConstraints;
+  }
+
+  bool hasLef58EolKeepOutConstraint() const
+  {
+    return (!lef58EolKeepOutConstraints.empty());
+  }
+
   void printAllConstraints(utl::Logger* logger);
 
  protected:
@@ -587,6 +603,7 @@ class frLayer
   frLef58RectOnlyConstraint* lef58RectOnlyConstraint;
   frLef58RightWayOnGridOnlyConstraint* lef58RightWayOnGridOnlyConstraint;
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
+  std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
 };
 }  // namespace fr
 

@@ -608,6 +608,69 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
              frBox(450, 500, 550, 650));
 }
 
+// Check for eol keepout violation.
+BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  frCoord x_extra = 0;
+  if (legal)
+    x_extra = 200;
+  makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+               frBox(450, 500, 550, 650));
+  }
+}
+
+// Check for eol keepout violation CORNERONLY.
+BOOST_DATA_TEST_CASE(eol_keepout_corner,
+                     (bdata::make({true, false}) * bdata::make({true, false})),
+                     concave,
+                     legal)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2, true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  frCoord x_extra = 0;
+  if (concave && !legal)
+    makePathseg(n1, 2, {360, 400}, {360, 750});
+  if (!concave && !legal)
+    x_extra = 10;
+  makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+               frBox(410, 500, 450, 650));
+  }
+}
+
 // Check for an end-of-line (EOL) spacing violation involving one
 // parallel edge
 BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)

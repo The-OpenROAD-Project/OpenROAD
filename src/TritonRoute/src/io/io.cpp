@@ -357,59 +357,60 @@ void io::Parser::setVias(odb::dbBlock* block)
   }
 }
 
-void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr){
-    if (design->tech_->getNondefaultRule(ndr->getName())) {
-      logger->warn(DRT,
-                   0,
-                   "Skipping NDR { } because another rule with the same name "
-                   "already exists\n",
-                   ndr->getName());
-      return;
+void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
+{
+  if (design->tech_->getNondefaultRule(ndr->getName())) {
+    logger->warn(DRT,
+                 0,
+                 "Skipping NDR { } because another rule with the same name "
+                 "already exists\n",
+                 ndr->getName());
+    return;
+  }
+  frNonDefaultRule* fnd;
+  unique_ptr<frNonDefaultRule> ptnd;
+  int z;
+  ptnd = make_unique<frNonDefaultRule>();
+  fnd = ptnd.get();
+  design->tech_->addNDR(std::move(ptnd));
+  fnd->setName(ndr->getName().data());
+  fnd->setHardSpacing(ndr->getHardSpacing());
+  vector<odb::dbTechLayerRule*> lr;
+  ndr->getLayerRules(lr);
+  for (auto& l : lr) {
+    z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum() / 2
+        - 1;
+    fnd->setWidth(l->getWidth(), z);
+    fnd->setSpacing(l->getSpacing(), z);
+    fnd->setWireExtension(l->getWireExtension(), z);
+  }
+  vector<odb::dbTechVia*> vias;
+  ndr->getUseVias(vias);
+  for (auto via : vias) {
+    fnd->addVia(design->getTech()->getVia(via->getName()),
+                via->getBottomLayer()->getNumber() / 2);
+  }
+  vector<odb::dbTechViaGenerateRule*> viaRules;
+  ndr->getUseViaRules(viaRules);
+  z = std::numeric_limits<int>().max();
+  for (auto via : viaRules) {
+    for (int i = 0; i < (int) via->getViaLayerRuleCount(); i++) {
+      if (via->getViaLayerRule(i)->getLayer()->getType()
+          == odb::dbTechLayerType::CUT)
+        continue;
+      if (via->getViaLayerRule(i)->getLayer()->getNumber() / 2 < z)
+        z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
     }
-    frNonDefaultRule* fnd;
-    unique_ptr<frNonDefaultRule> ptnd;
-    int z;
-    ptnd = make_unique<frNonDefaultRule>();
-    fnd = ptnd.get();
-    design->tech_->addNDR(std::move(ptnd));
-    fnd->setName(ndr->getName().data());
-    fnd->setHardSpacing(ndr->getHardSpacing());
-    vector<odb::dbTechLayerRule*> lr;
-    ndr->getLayerRules(lr);
-    for (auto& l : lr) {
-      z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum() / 2
-          - 1;
-      fnd->setWidth(l->getWidth(), z);
-      fnd->setSpacing(l->getSpacing(), z);
-      fnd->setWireExtension(l->getWireExtension(), z);
-    }
-    vector<odb::dbTechVia*> vias;
-    ndr->getUseVias(vias);
-    for (auto via : vias) {
-      fnd->addVia(design->getTech()->getVia(via->getName()),
-                  via->getBottomLayer()->getNumber() / 2);
-    }
-    vector<odb::dbTechViaGenerateRule*> viaRules;
-    ndr->getUseViaRules(viaRules);
-    z = std::numeric_limits<int>().max();
-    for (auto via : viaRules) {
-      for (int i = 0; i < (int) via->getViaLayerRuleCount(); i++) {
-        if (via->getViaLayerRule(i)->getLayer()->getType()
-            == odb::dbTechLayerType::CUT)
-          continue;
-        if (via->getViaLayerRule(i)->getLayer()->getNumber() / 2 < z)
-          z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
-      }
-      fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
-    }
+    fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
+  }
 }
 void io::Parser::setNDRs(odb::dbDatabase* db)
 {
   for (auto ndr : db->getTech()->getNonDefaultRules()) {
-      createNDR(ndr);
+    createNDR(ndr);
   }
   for (auto ndr : db->getChip()->getBlock()->getNonDefaultRules()) {
-      createNDR(ndr);
+    createNDR(ndr);
   }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
@@ -1665,6 +1666,18 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       rptr->setLength(length, distance);
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
+  }
+
+  for (auto rule : layer->getTechLayerEolKeepOutRules()) {
+    unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
+    auto rptr = static_cast<frLef58EolKeepOutConstraint*>(uCon.get());
+    rptr->setEolWidth(rule->getEolWidth());
+    rptr->setBackwardExt(rule->getBackwardExt());
+    rptr->setForwardExt(rule->getForwardExt());
+    rptr->setSideExt(rule->getSideExt());
+    rptr->setCornerOnly(rule->isCornerOnly());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }
 }
 

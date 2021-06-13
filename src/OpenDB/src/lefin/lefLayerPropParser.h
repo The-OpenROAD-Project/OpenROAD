@@ -114,4 +114,21 @@ class lefTechLayerCutEnclosureRuleParser
                    odb::dbTechLayer* layer);
 };
 
+class lefTechLayerEolKeepOutRuleParser
+{
+ public:
+  lefTechLayerEolKeepOutRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerEolKeepOutRule* rule,
+              void (odb::dbTechLayerEolKeepOutRule::*func)(int));
+  void setClass(std::string,
+                odb::dbTechLayerEolKeepOutRule* rule,
+                odb::dbTechLayer* layer);
+};
+
 }  // namespace odb
