@@ -2245,7 +2245,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
   if (VERBOSE > 0) {
     logger->report("");
     frBox dieBox;
-    design->getTopBlock()->getBoundaryBBox(dieBox);
+    design->getTopBlock()->getDieBox(dieBox);
     logger->report("design:      {}", design->getTopBlock()->getName());
     logger->report("die area:    {}", dieBox);
     logger->report("trackPts:    {}",

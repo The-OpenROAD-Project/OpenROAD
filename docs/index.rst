@@ -18,13 +18,17 @@ the multiple facets of today's design cost crisis: engineering resources, design
 tool licenses, project schedule, and risk.
 
 The IDEA program targets no-human-in-loop (NHIL) design, with 24-hour turnaround
-time and eventual zero loss of power-performance-area (PPA) design quality. No
-humans means that tools must adapt and self-tune, and never get stuck: thus,
-machine intelligence must replace today's human intelligence within the layout
-generation process. 24 hours means that problems must be aggressively decomposed
-into bite-sized subproblems for the design process to remain within the schedule
-constraint. Eventual zero loss of PPA quality requires parallel and distributed
-search to recoup the solution quality lost by problem decomposition.
+time and zero loss of power-performance-area (PPA) design quality.
+
+No humans means tools must adapt and auto-tune successfully to flow completion
+without requiring human intervention. Machine intelligence augments human expertise
+through efficient modeling and prediction of flow outcomes during layout generation.
+
+24 hours means that problems must be strategically decomposed into optimal partitions
+during the design process through intellgient distribution and management of computational
+resources. This ensures that the design constraints are met for schedule, performance
+and cost. Any quality loss due to decomposition that uses a parallel and distributed search
+over cloud resources, is recovered through improved flow predictability and enhanced optimization.
 
 For a technical description of the OpenROAD flow, please refer to our DAC paper:
 `Toward an Open-Source Digital Flow: First Learnings from the OpenROAD Project`_.

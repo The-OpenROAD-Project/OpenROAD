@@ -3,15 +3,16 @@
 # NOTE: don't use this file directly unless you know what you are doing,
 # instead use etc/DockerHelper.sh
 
+# https://github.com/moby/moby/issues/38379#issuecomment-448445652
 ARG copyImage=openroad/centos7-builder:latest
+ARG fromImage=centos:centos7
+
 # need to use the line below as the "COPY --from" does not accept an ARG
 FROM $copyImage AS copyfrom
+FROM $fromImage AS runtime
 
-ARG fromImage=centos:centos7
-FROM $fromImage
-
-COPY Installer.sh /tmp/.
-RUN /tmp/Installer.sh -runtime && rm -f /tmp/Installer.sh
+COPY DependencyInstaller.sh /tmp/.
+RUN /tmp/DependencyInstaller.sh -runtime && rm -f /tmp/DependencyInstaller.sh
 
 COPY --from=copyfrom /OpenROAD/build/src/openroad /usr/bin/.
 ENTRYPOINT [ "openroad" ]

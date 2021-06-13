@@ -1306,7 +1306,8 @@ void FlexDRWorker::modEolSpacingRulesCost(const frBox& box,
 }
 
 // forbid via if it would trigger violation
-void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
+void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
+                                                 const frBox& origCutBox,
                                                  frVia* origVia)
 {
   if (origVia->getNet()->getType() != frNetEnum::frcPowerNet
@@ -1339,7 +1340,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
     viaBox.bloat(cutWithin, queryBox);
 
     frRegionQuery::Objects<frBlockObject> result;
-    getRegionQuery()->query(queryBox, lNum, result);
+    design->getRegionQuery()->query(queryBox, lNum, result);
 
     for (auto& [box, obj] : result) {
       if (obj->typeId() == frcVia) {
@@ -1778,20 +1779,10 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
-void FlexDRWorker::route_queue()
+void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
 {
   queue<RouteQueueEntry> rerouteQueue;
 
-  if (skipRouting_) {
-    return;
-  }
-
-  // init GC
-  FlexGCWorker gcWorker(getDesign(), logger_, this);
-  gcWorker.setExtBox(getExtBox());
-  gcWorker.setDrcBox(getDrcBox());
-  gcWorker.init();
-  gcWorker.setEnableSurgicalFix(true);
   if (needRecheck_) {
     gcWorker.main();
     setMarkers(gcWorker.getMarkers());
@@ -1894,14 +1885,6 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       mazeNetInit(net);
       bool isRouted = routeNet(net);
       if (isRouted == false) {
-        frBox routeBox = getRouteBox();
-        // TODO: output maze area
-        cout << "Fatal error: Maze Route cannot find path ("
-             << net->getFrNet()->getName() << ") in "
-             << "(" << routeBox.left() / 2000.0 << ", "
-             << routeBox.bottom() / 2000.0 << ") - ("
-             << routeBox.right() / 2000.0 << ", " << routeBox.top() / 2000.0
-             << "). Connectivity Changed.\n";
         if (OUT_MAZE_FILE == string("")) {
           if (VERBOSE > 0) {
             cout << "Waring: no output maze log specified, skipped writing "
@@ -1911,41 +1894,16 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         } else {
           gridGraph_.print();
         }
-        exit(1);
+        logger_->error(DRT,
+                       255,
+                       "Fatal error: Maze Route cannot find path of net {} in "
+                       "worker of routeBox {}",
+                       net->getFrNet()->getName(),
+                       getRouteBox());
       }
       mazeNetEnd(net);
       net->addNumReroutes();
       didRoute = true;
-
-      // if (routeBox.left() == 462000 && routeBox.bottom() == 81100) {
-      //   cout << "@@@ debug net: " << net->getFrNet()->getName() << ", numPins
-      //   = " << net->getNumPinsIn() << "\n"; for (auto &uConnFig:
-      //   net->getRouteConnFigs()) {
-      //     if (uConnFig->typeId() == drcPathSeg) {
-      //       auto ps = static_cast<drPathSeg*>(uConnFig.get());
-      //       frPoint bp , ep;
-      //       ps->getPoints(bp, ep);
-      //       cout << "  pathseg: (" << bp.x() / 1000.0 << ", " << bp.y() /
-      //       1000.0 << ") - ("
-      //                              << ep.x() / 1000.0 << ", " << ep.y() /
-      //                              1000.0 << ") layerNum = "
-      //                              << ps->getLayerNum() << "\n";
-      //     }
-      //   }
-      //   // sanity check
-      //   auto vptr = getDRNets(net->getFrNet());
-      //   if (vptr) {
-      //     bool isFound = false;
-      //     for (auto dnet: *vptr) {
-      //       if (dnet == net) {
-      //         isFound = true;
-      //       }
-      //     }
-      //     if (!isFound) {
-      //       cout << "Error: drNet does not exist in frNet-to-drNets map\n";
-      //     }
-      //   }
-      // }
 
       // gc
       if (gcWorker_->setTargetNet(net->getFrNet())) {

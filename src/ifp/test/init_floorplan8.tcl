@@ -11,3 +11,4 @@ initialize_floorplan -die_area "0 0 150 150" \
 set def_file [make_result_file init_floorplan8.def]
 write_def $def_file
 diff_files init_floorplan8.defok $def_file
+

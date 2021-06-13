@@ -51,7 +51,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
   nextPathCost = getNextPathCost(currGrid, dir);
   auto lNum = getLayerNum(currGrid.z());
-  auto pathWidth = getDesign()->getTech()->getLayer(lNum)->getWidth();
+  auto pathWidth = getTech()->getLayer(lNum)->getWidth();
   frPoint currPt;
   getPoint(currPt, gridX, gridY);
   frCoord currDist
@@ -307,29 +307,29 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
         && drWorker_->getRipupMode() == 0) {
       if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
         auto layerNum = (gridZ + 1) * 2;
-        auto layer = getDesign()->getTech()->getLayer(layerNum);
+        auto layer = getTech()->getLayer(layerNum);
         bool isH
             = (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
         if (isH) {
           auto gap = abs(nextPoint.y() - dstPoint1.y());
           if (gap
-              && (getDesign()->getTech()->isVia2ViaForbiddenLen(
+              && (getTech()->isVia2ViaForbiddenLen(
                       gridZ, false, false, false, gap, ndr_, false)
                   || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-              && (getDesign()->getTech()->isVia2ViaForbiddenLen(
+              && (getTech()->isVia2ViaForbiddenLen(
                       gridZ, true, true, false, gap, ndr_, false)
-                  || layerNum + 2 > getDesign()->getTech()->getTopLayerNum())) {
+                  || layerNum + 2 > getTech()->getTopLayerNum())) {
             forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
           }
         } else {
           auto gap = abs(nextPoint.x() - dstPoint1.x());
           if (gap
-              && (getDesign()->getTech()->isVia2ViaForbiddenLen(
+              && (getTech()->isVia2ViaForbiddenLen(
                       gridZ, false, false, true, gap, ndr_, false)
                   || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-              && (getDesign()->getTech()->isVia2ViaForbiddenLen(
+              && (getTech()->isVia2ViaForbiddenLen(
                       gridZ, true, true, true, gap, ndr_, false)
-                  || layerNum + 2 > getDesign()->getTech()->getTopLayerNum())) {
+                  || layerNum + 2 > getTech()->getTopLayerNum())) {
             forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
           }
         }
@@ -417,7 +417,7 @@ void FlexGridGraph::getPrevGrid(frMIdx& gridX,
   // bending cost
   auto currDir = currGrid.getLastDir();
   auto lNum = getLayerNum(currGrid.z());
-  auto layer = getDesign()->getTech()->getLayer(lNum);
+  auto layer = getTech()->getLayer(lNum);
 
   if (currDir != dir && currDir != frDirEnum::UNKNOWN) {
     // original
@@ -552,14 +552,14 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
   frMIdx startX, startY, endX, endY;
   frCoord r, x1, x2, y1, y2;
   frCoord sp, wext;
-  frCoord layerWidth = max((int) layer->getMinWidth(), ndr_->getWidth(gridZ));
+  frCoord layerWidth = max((int) layer->getWidth(), ndr_->getWidth(gridZ));
   sp = max(ndr_->getSpacing(gridZ),
-           getMinSpacingValue(layer, layerWidth, layer->getMinWidth(), 0));
-  wext = max(ndr_->getWireExtension(gridZ), (int) layer->getMinWidth() / 2)
-         - layer->getMinWidth() / 2;
+           getMinSpacingValue(layer, layerWidth, layer->getWidth(), 0));
+  wext = max(ndr_->getWireExtension(gridZ), (int) layer->getWidth() / 2)
+         - layer->getWidth() / 2;
 
   // get iteration bounds
-  r = layerWidth / 2 + sp + layer->getMinWidth() / 2 - 1;
+  r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
   if (dir == frDirEnum::N || dir == frDirEnum::S) {
     startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
     endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
@@ -643,13 +643,13 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
     return getCosts(gridX, gridY, gridZ, dir, layer);
   frMIdx startX, startY, endX, endY;
   frCoord x1, x2, y1, y2;
-  frCoord layerWidth = max((int) layer->getMinWidth(), ndr_->getWidth(gridZ));
+  frCoord layerWidth = max((int) layer->getWidth(), ndr_->getWidth(gridZ));
   frCoord r,
       sp = max(ndr_->getSpacing(gridZ),
-               getMinSpacingValue(layer, layerWidth, layer->getMinWidth(), 0));
+               getMinSpacingValue(layer, layerWidth, layer->getWidth(), 0));
 
   // get iteration bounds
-  r = layerWidth / 2 + sp + layer->getMinWidth() / 2 - 1;
+  r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
   frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
   frCoord cost = el;
 
@@ -802,9 +802,29 @@ frMIdx FlexGridGraph::getUpperBoundIndex(const frVector<frCoord>& tracks,
       ||  // comment out for non-buffer enablement
       currGrid.getLastDir() == dir) {
     return false;
-  } else {
-    return true;
   }
+  if (ndr_) {
+    frCoord halfWidth
+        = (frCoord) getTech()->getLayer(getLayerNum(currGrid.z()))->getWidth()
+          / 2;
+    if (ndr_->getWidth(currGrid.z()) > 2 * halfWidth
+        && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
+      halfWidth = ndr_->getWidth(currGrid.z()) / 2;
+      // if the expansion goes parallel to a die border and the wire goes out of
+      // the die box, forbid expansion
+      if (dir == frDirEnum::N || dir == frDirEnum::S) {
+        if (xCoords_[currGrid.x()] - halfWidth < dieBox_.left()
+            || xCoords_[currGrid.x()] + halfWidth > dieBox_.right())
+          return false;
+      } else if (dir == frDirEnum::E || dir == frDirEnum::W) {
+        if (yCoords_[currGrid.y()] - halfWidth < dieBox_.bottom()
+            || yCoords_[currGrid.y()] + halfWidth > dieBox_.top())
+          return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
@@ -901,8 +921,7 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
     }
     // get min area min length
     auto lNum = getLayerNum(idx.z());
-    auto minAreaConstraint
-        = getDesign()->getTech()->getLayer(lNum)->getAreaConstraint();
+    auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
     frCoord fakeArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
     getPoint(currPt, idx.x(), idx.y());
     frCoord currDist

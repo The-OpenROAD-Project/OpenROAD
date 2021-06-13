@@ -113,12 +113,11 @@ open_metrics(const char *metrics_filename)
 }
 
 void
-metric(utl::ToolId tool,
-       const char *metric,
+metric(const char *metric,
        const char *value)
 {
   Logger *logger = getLogger();
-  logger->metric(tool, metric, value);
+  logger->metric(metric, value);
 }
 
 } // namespace

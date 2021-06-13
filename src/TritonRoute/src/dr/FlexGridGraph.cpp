@@ -26,13 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexGridGraph.h"
-
 #include <fstream>
 #include <iostream>
 #include <map>
 
 #include "dr/FlexDR.h"
+#include "dr/FlexGridGraph.h"
 
 using namespace std;
 using namespace fr;
@@ -88,8 +87,7 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx z,
                                 const frBox& dieBox)
 {
-  frViaDef* via
-      = design_->getTech()->getLayer(getLayerNum(z) + 1)->getDefaultViaDef();
+  frViaDef* via = getTech()->getLayer(getLayerNum(z) + 1)->getDefaultViaDef();
   frBox viaBox(via->getLayer1ShapeBox());
   viaBox.merge(via->getLayer2ShapeBox());
   viaBox.shift(xCoords_[x], yCoords_[y]);
@@ -106,6 +104,7 @@ bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
 }
 
 void FlexGridGraph::initEdges(
+    const frDesign* design,
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
     const map<frLayerNum, frPrefRoutingDirEnum>& zMap,
@@ -116,8 +115,7 @@ void FlexGridGraph::initEdges(
   getDim(xDim, yDim, zDim);
   // initialize grid graph
   frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
-  frBox dieBox;
-  design_->getTopBlock()->getBoundaryBBox(dieBox);
+  design->getTopBlock()->getDieBox(dieBox_);
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
     const auto layer = getTech()->getLayer(layerNum);
@@ -169,7 +167,7 @@ void FlexGridGraph::initEdges(
                         != nullptr
                     && xIt2->second == nullptr)) {
               ;
-            } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox)) {
+            } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
@@ -198,7 +196,7 @@ void FlexGridGraph::initEdges(
                         != nullptr
                     && yIt2->second == nullptr)) {
               ;
-            } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox)) {
+            } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
@@ -237,28 +235,32 @@ void FlexGridGraph::initEdges(
 }
 
 // initialization: update grid graph topology, does not assign edge cost
-void FlexGridGraph::init(const frBox& routeBBox,
+void FlexGridGraph::init(const frDesign* design,
+                         const frBox& routeBBox,
                          const frBox& extBBox,
                          map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
                          map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
                          bool initDR,
                          bool followGuide)
 {
-  halfViaEncArea_ = getDRWorker()->getDR()->getHalfViaEncArea();
-  via2viaMinLen_ = getDRWorker()->getDR()->getVia2ViaMinLen();
-  via2turnMinLen_ = getDRWorker()->getDR()->getVia2TurnMinLen();
-  via2viaMinLenNew_ = getDRWorker()->getDR()->getVia2ViaMinLenNew();
+  auto* via_data = getDRWorker()->getViaData();
+  halfViaEncArea_ = &via_data->halfViaEncArea;
+  via2viaMinLen_ = &via_data->via2viaMinLen;
+  via2turnMinLen_ = &via_data->via2turnMinLen;
+  via2viaMinLenNew_ = &via_data->via2viaMinLenNew;
 
   // get tracks intersecting with the Maze bbox
   map<frLayerNum, frPrefRoutingDirEnum> zMap;
-  initTracks(xMap, yMap, zMap, extBBox);
-  initGrids(xMap, yMap, zMap, followGuide);        // buildGridGraph
-  initEdges(xMap, yMap, zMap, routeBBox, initDR);  // add edges and edgeCost
+  initTracks(design, xMap, yMap, zMap, extBBox);
+  initGrids(xMap, yMap, zMap, followGuide);  // buildGridGraph
+  initEdges(
+      design, xMap, yMap, zMap, routeBBox, initDR);  // add edges and edgeCost
 }
 
 // initialization helpers
 // get all tracks intersecting with the Maze bbox, left/bottom are inclusive
 void FlexGridGraph::initTracks(
+    const frDesign* design,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
     map<frLayerNum, frPrefRoutingDirEnum>& zMap,
@@ -270,8 +272,7 @@ void FlexGridGraph::initTracks(
     }
     frLayerNum currLayerNum = layer->getLayerNum();
     frPrefRoutingDirEnum currPrefRouteDir = layer->getDir();
-    for (auto& tp :
-         getDesign()->getTopBlock()->getTrackPatterns(currLayerNum)) {
+    for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global varialble and design rule allow
       bool flag = (USENONPREFTRACKS && !layer->isUnidirectional())
                       ? (tp->isHorizontal()

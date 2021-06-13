@@ -115,7 +115,7 @@ each tool should maintain a file named ‘messages.txt’ in the top level
 tool directory listing the message IDs along with the format string.
 When code that uses a message ID is removed the ID should be retired by
 removing it from ‘messages.txt’. See the tuility
-``etc/FindMessages.tcl`` to scan a tool directory and write a
+``etc/find_messages.py`` to scan a tool directory and write a
 ``messages.txt`` file.
 
 Spdlog comes with the fmt library which supports message formatting in a
