@@ -1,3 +1,11 @@
+ORD 0101 Resizer.tcl:48            Use -layer or -via but not both.
+ORD 0102 Resizer.tcl:57            layer $layer_name not found.
+ORD 0103 Resizer.tcl:61            $layer_name is not a routing layer.
+ORD 0104 Resizer.tcl:65            missing -capacitance or -resistance argument.
+ORD 0105 Resizer.tcl:98            via $layer_name not found.
+ORD 0106 Resizer.tcl:102           -capacitance not supported for vias.
+ORD 0108 Resizer.tcl:120           no -resistance specified for via.
+ORD 0109 Resizer.tcl:123           missing -layer or -via argument.
 RSZ 0001 Resizer.tcl:145           Use -layer or -resistance/-capacitance but not both.
 RSZ 0002 Resizer.tcl:150           layer $layer_name not found.
 RSZ 0003 Resizer.tcl:239           missing -placement or -global_routing flag.
@@ -54,11 +62,3 @@ RSZ 0063 Resizer.tcl:394           -libraries is deprecated.
 RSZ 0064 Resizer.cc:2438           Unable to repair all hold checks within margin.
 RSZ 0065 Resizer.tcl:535           max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays.
 RSZ 0066 Resizer.cc:2436           Unable to repair all hold violations.
-ORD 0101 Resizer.tcl:48            Use -layer or -via but not both.
-ORD 0102 Resizer.tcl:57            layer $layer_name not found.
-ORD 0103 Resizer.tcl:61            $layer_name is not a routing layer.
-ORD 0104 Resizer.tcl:65            missing -capacitance or -resistance argument.
-ORD 0105 Resizer.tcl:98            via $layer_name not found.
-ORD 0106 Resizer.tcl:102           -capacitance not supported for vias.
-ORD 0108 Resizer.tcl:120           no -resistance specified for via.
-ORD 0109 Resizer.tcl:123           missing -layer or -via argument.
