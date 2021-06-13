@@ -1,21 +1,27 @@
-MPL 0002 MacroPlacer.cpp:146       Missing Liberty Detected. TritonMP will place macros without 
-MPL 0004 MacroPlacer.cpp:683       No macros found.
-MPL 0005 MacroPlacer.cpp:686       Found {} macros
-MPL 0009 MacroPlacer.cpp:175       {} pins {}
-MPL 0011 MacroPlacer.cpp:1145      pin {} is not placed. Using west.
-MPL 0061 Partition.cpp:373         Parquet BBOX exceed the given area
-MPL 0063 Partition.cpp:379         TargetLayout {:g} {:g}
-MPL 0070 MacroPlacer.cpp:312       Using {} partiion sets
-MPL 0071 MacroPlacer.cpp:344       Solution {} weighted wire length {:g}
-MPL 0072 MacroPlacer.cpp:366       No partition solutions found.
-MPL 0073 MacroPlacer.cpp:358       Best weighted wire length {:g}
-MPL 0076 MacroPlacer.cpp:445       Partition {} macros
-MPL 0077 MacroPlacer.cpp:499       Using {} cut lines
-MPL 0079 MacroPlacer.cpp:511       Cut line {:.2f}
-MPL 0080 MacroPlacer.cpp:644       Impossible partiton found.
-MPL 0085 MacroPlacer.tcl:84        fence_region outside of core area. Using core area.
-MPL 0089 MacroPlacer.tcl:68        No rows found. Use initialize_floorplan to add rows.
-MPL 0092 MacroPlacer.tcl:48        -halo is not a list of 2 values.
-MPL 0093 MacroPlacer.tcl:59        -channel is not a list of 2 values.
-MPL 0094 MacroPlacer.tcl:79        -fence_region is not a list of 4 values.
-MPL 0095 MacroPlacer.tcl:99        snap layer $snap_layer is not a routing layer.
+MPL 0002 MacroPlacer.cpp:161       Some instances do not have liberty models. TritonMP will place macros without connection information.
+MPL 0003 MacroPlacer.cpp:785       Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.
+MPL 0004 MacroPlacer.cpp:805       No macros found.
+MPL 0005 MacroPlacer.cpp:808       Found {} macros
+MPL 0009 MacroPlacer.cpp:189       {} pins {}
+MPL 0011 MacroPlacer.cpp:1254      pin {} is not placed. Using west.
+MPL 0012 MacroPlacer.cpp:687       unhandled partition class
+MPL 0061 MacroPlacer.cpp:420       Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.
+MPL 0070 MacroPlacer.cpp:392       Using {} partition sets
+MPL 0071 MacroPlacer.cpp:201       Initial weighted wire length {:g}
+MPL 0071 MacroPlacer.cpp:222       Placed weighted wire length {:g}
+MPL 0071 MacroPlacer.cpp:270       Initial weighted wire length {:g}
+MPL 0071 MacroPlacer.cpp:437       Solution {} weighted wire length {:g}
+MPL 0072 MacroPlacer.cpp:225       Partitioning failed.
+MPL 0072 MacroPlacer.cpp:473       No partition solutions found.
+MPL 0073 MacroPlacer.cpp:465       Best weighted wire length {:g}
+MPL 0076 MacroPlacer.cpp:552       Partition {} macros
+MPL 0077 MacroPlacer.cpp:606       Using {} cut lines
+MPL 0079 MacroPlacer.cpp:618       Cut line {:.2f}
+MPL 0080 MacroPlacer.cpp:754       Impossible partiton found.
+MPL 0085 MacroPlacer.tcl:85        fence_region outside of core area. Using core area.
+MPL 0089 MacroPlacer.tcl:69        No rows found. Use initialize_floorplan to add rows.
+MPL 0092 MacroPlacer.tcl:49        -halo is not a list of 2 values.
+MPL 0093 MacroPlacer.tcl:60        -channel is not a list of 2 values.
+MPL 0094 MacroPlacer.tcl:80        -fence_region is not a list of 4 values.
+MPL 0095 MacroPlacer.tcl:102       snap layer $snap_layer is not a routing layer.
+MPL 0096 MacroPlacer.tcl:115       Unknown placement style.
