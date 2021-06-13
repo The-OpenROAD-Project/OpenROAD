@@ -100,6 +100,7 @@ enum dbObjectType
   dbTechLayerCutSpacingTableOrthRuleObj,
   dbTechLayerCutSpacingTableDefRuleObj,
   dbTechLayerCutEnclosureRuleObj,
+  dbTechLayerEolExtensionRuleObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,

@@ -348,6 +348,26 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
   return rptr;
 }
 
+frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
+    frLayerNum layer_num,
+    frCoord spacing,
+    std::vector<frCoord> eol,
+    std::vector<frCoord> ext,
+    bool parallelOnly)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  fr1DLookupTbl<frCoord, frCoord> tbl("WIDTH", eol, ext, false);
+  unique_ptr<frLef58EolExtensionConstraint> uCon
+      = make_unique<frLef58EolExtensionConstraint>(tbl);
+  uCon->setMinSpacing(spacing);
+  uCon->setParallelOnly(parallelOnly);
+  auto rptr = uCon.get();
+  tech->addUConstraint(std::move(uCon));
+  layer->addLef58EolExtConstraint(rptr);
+  return rptr;
+}
+
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
     std::vector<frCoord> widthTbl,

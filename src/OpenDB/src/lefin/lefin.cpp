@@ -644,7 +644,10 @@ void lefin::layer(lefiLayer* layer)
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
       else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
+      else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
+        lefTechLayerEolExtensionRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
         lefTechLayerEolKeepOutRuleParser eolkoutParser(this);
         eolkoutParser.parse(layer->propValue(iii), l);
       } else

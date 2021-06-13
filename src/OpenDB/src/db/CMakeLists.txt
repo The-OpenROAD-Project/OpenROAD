@@ -105,6 +105,7 @@ add_library(opendb
     dbTechLayerCutSpacingTableOrthRule.cpp
     dbTechLayerCutSpacingTableDefRule.cpp
     dbTechLayerCutEnclosureRule.cpp
+    dbTechLayerEolExtensionRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp

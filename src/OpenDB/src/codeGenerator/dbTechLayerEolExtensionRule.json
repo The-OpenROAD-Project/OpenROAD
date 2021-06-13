@@ -1,0 +1,30 @@
+{
+  "name": "dbTechLayerEolExtensionRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "name": "spacing_"
+    },
+    {
+      "type": "bit",
+      "name": "parallel_only_"
+    },
+    {
+      "type": "dbVector<std::pair<int, int>>",
+      "name": "extension_tbl_",
+      "flags": [
+        "no-set",
+        "no-template"
+      ]
+    }
+  ],
+  "constructors": [],
+  "enums": [],
+  "h_includes": [
+    "dbVector.h"
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

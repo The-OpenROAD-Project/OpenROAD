@@ -1112,6 +1112,22 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerEolExtensionRules()) {
+    frCollection<frCoord> widthTbl;
+    frCollection<frCoord> extTbl;
+    frCollection<std::pair<frCoord, frCoord>> dbExtTbl;
+    rule->getExtensionTable(dbExtTbl);
+    for (auto& [width, ext] : dbExtTbl) {
+      widthTbl.push_back(width);
+      extTbl.push_back(ext);
+    }
+    auto con = make_unique<frLef58EolExtensionConstraint>(
+        fr1DLookupTbl<frCoord, frCoord>("WIDTH", widthTbl, extTbl, false));
+    con->setMinSpacing(rule->getSpacing());
+    con->setParallelOnly(rule->isParallelOnly());
+    tmpLayer->addLef58EolExtConstraint(con.get());
+    tech->addUConstraint(std::move(con));
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,

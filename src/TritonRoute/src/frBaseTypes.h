@@ -219,6 +219,7 @@ enum class frConstraintTypeEnum
   frcLef58RectOnlyConstraint,
   frcRecheckConstraint,
   frcSpacingTableInfluenceConstraint,
+  frcLef58EolExtensionConstraint,
   frcLef58EolKeepOutConstraint
 };
 

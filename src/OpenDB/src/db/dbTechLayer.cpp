@@ -45,6 +45,7 @@
 #include "dbTechLayerCutSpacingRule.h"
 #include "dbTechLayerCutSpacingTableDefRule.h"
 #include "dbTechLayerCutSpacingTableOrthRule.h"
+#include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
@@ -133,6 +134,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
 
   if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_)
+    return false;
+
+  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
     return false;
 
   if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
@@ -307,6 +311,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(cut_spacing_table_orth_tbl_);
   DIFF_TABLE(cut_spacing_table_def_tbl_);
   DIFF_TABLE(cut_enc_rules_tbl_);
+  DIFF_TABLE(eol_ext_rules_tbl_);
   DIFF_TABLE(eol_keep_out_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
@@ -378,6 +383,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(cut_spacing_table_orth_tbl_);
   DIFF_OUT_TABLE(cut_spacing_table_def_tbl_);
   DIFF_OUT_TABLE(cut_enc_rules_tbl_);
+  DIFF_OUT_TABLE(eol_ext_rules_tbl_);
   DIFF_OUT_TABLE(eol_keep_out_rules_tbl_);
 
   // User Code Begin Out
@@ -484,6 +490,12 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutEnclosureRuleObj);
   ZALLOCATED(cut_enc_rules_tbl_);
+  eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerEolExtensionRuleObj);
+  ZALLOCATED(eol_ext_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db,
       this,
@@ -605,6 +617,9 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   cut_enc_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureRule>(
       db, this, *r.cut_enc_rules_tbl_);
   ZALLOCATED(cut_enc_rules_tbl_);
+  eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
+      db, this, *r.eol_ext_rules_tbl_);
+  ZALLOCATED(eol_ext_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db, this, *r.eol_keep_out_rules_tbl_);
   ZALLOCATED(eol_keep_out_rules_tbl_);
@@ -684,6 +699,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.cut_spacing_table_orth_tbl_;
   stream >> *obj.cut_spacing_table_def_tbl_;
   stream >> *obj.cut_enc_rules_tbl_;
+  stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
   // User Code Begin >>
   stream >> obj._pitch_x;
@@ -741,6 +757,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.cut_spacing_table_orth_tbl_;
   stream << *obj.cut_spacing_table_def_tbl_;
   stream << *obj.cut_enc_rules_tbl_;
+  stream << *obj.eol_ext_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
   // User Code Begin <<
   stream << obj._pitch_x;
@@ -806,6 +823,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return cut_spacing_table_def_tbl_;
     case dbTechLayerCutEnclosureRuleObj:
       return cut_enc_rules_tbl_;
+    case dbTechLayerEolExtensionRuleObj:
+      return eol_ext_rules_tbl_;
     case dbTechLayerEolKeepOutRuleObj:
       return eol_keep_out_rules_tbl_;
       // User Code Begin getObjectTable
@@ -837,6 +856,7 @@ _dbTechLayer::~_dbTechLayer()
   delete cut_spacing_table_orth_tbl_;
   delete cut_spacing_table_def_tbl_;
   delete cut_enc_rules_tbl_;
+  delete eol_ext_rules_tbl_;
   delete eol_keep_out_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
@@ -958,6 +978,13 @@ dbSet<dbTechLayerCutEnclosureRule> dbTechLayer::getTechLayerCutEnclosureRules()
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerCutEnclosureRule>(obj, obj->cut_enc_rules_tbl_);
+}
+
+dbSet<dbTechLayerEolExtensionRule> dbTechLayer::getTechLayerEolExtensionRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerEolExtensionRule>(obj, obj->eol_ext_rules_tbl_);
 }
 
 dbSet<dbTechLayerEolKeepOutRule> dbTechLayer::getTechLayerEolKeepOutRules()

@@ -34,6 +34,9 @@
       "src":"dbTechLayerCutEnclosureRule.json"
     },
     {
+      "src":"dbTechLayerEolExtensionRule.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -306,6 +309,12 @@
       "second":"dbTechLayerCutEnclosureRule",
       "type":"1_n",
       "tbl_name":"cut_enc_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerEolExtensionRule",
+      "type":"1_n",
+      "tbl_name":"eol_ext_rules_tbl_"
     },
     {
       "first":"dbTechLayer",

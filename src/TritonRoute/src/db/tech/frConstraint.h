@@ -1197,6 +1197,46 @@ class frLef58CutSpacingTablePrlConstraint : public frConstraint
   bool maxXY;
 };
 
+class frLef58EolExtensionConstraint : public frSpacingConstraint
+{
+ public:
+  // constructors
+  frLef58EolExtensionConstraint(const fr1DLookupTbl<frCoord, frCoord>& tbl)
+      : frSpacingConstraint(), parallelOnly(false), extensionTbl(tbl)
+  {
+  }
+  // setters
+
+  void setParallelOnly(bool value) { parallelOnly = value; }
+
+  // getters
+
+  bool isParallelOnly() const { return parallelOnly; }
+
+  fr1DLookupTbl<frCoord, frCoord> getExtensionTable() const
+  {
+    return extensionTbl;
+  }
+
+  // others
+
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EolExtensionConstraint;
+  }
+
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("EOLEXTENSIONSPACING spacing {} parallelonly {} ",
+                   minSpacing,
+                   parallelOnly);
+  }
+
+ private:
+  bool parallelOnly;
+  fr1DLookupTbl<frCoord, frCoord> extensionTbl;
+};
+
 // LEF58 cut spacing table
 class frLef58CutSpacingTableConstraint : public frConstraint
 {

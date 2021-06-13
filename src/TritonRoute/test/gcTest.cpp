@@ -607,7 +607,58 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
              frBox(450, 500, 550, 650));
 }
+BOOST_DATA_TEST_CASE(eol_ext_basic,
+                     (bdata::make({30, 50})) ^ (bdata::make({true, false})),
+                     ext,
+                     legal)
+{
+  // Setup
+  makeEolExtensionConstraint(2, 100, {51, 101}, {20, ext}, false);
 
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {500, 100});
+  makePathseg(n1, 2, {690, 100}, {1000, 100});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    if (markers.size() == 1)
+      testMarker(markers[0].get(),
+                 2,
+                 frConstraintTypeEnum::frcLef58EolExtensionConstraint,
+                 frBox(500, 50, 690, 150));
+  }
+}
+
+BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
+{
+  // Setup
+  makeEolExtensionConstraint(2, 100, {101}, {50}, parOnly);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {500, 100});
+  makePathseg(n1, 2, {520, 290}, {910, 290});
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (parOnly)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolExtensionConstraint,
+               frBox(500, 150, 520, 240));
+  }
+}
 // Check for eol keepout violation.
 BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
 {
@@ -754,8 +805,8 @@ BOOST_DATA_TEST_CASE(eol_min_max,
     else if (!max && !legal)
       y += 100;      // right(600) & left(500) >= min(500) --> minMax is met
                      // --> illegal
-  } else if (legal)  // both sides need to violate minMax to have no eolSpacing
-                     // violations
+  } else if (legal)  // both sides need to violate minMax to have no
+                     // eolSpacing violations
   {
     if (max)
       y += 110;  // right(610) & left(510) > max(500)

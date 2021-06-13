@@ -130,6 +130,18 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(layer->isRectOnly() == true);
   BOOST_TEST(layer->isRectOnlyExceptNonCorePins() == true);
 
+  auto eolextrules = layer->getTechLayerEolExtensionRules();
+  BOOST_TEST(eolextrules.size() == 1);
+  odb::dbTechLayerEolExtensionRule* eolextrule
+      = (odb::dbTechLayerEolExtensionRule*) *eolextrules.begin();
+  BOOST_TEST(eolextrule->isParallelOnly());
+  BOOST_TEST(eolextrule->getSpacing() == 0.1 * distFactor);
+  std::vector<std::pair<int, int>> ext_tbl;
+  eolextrule->getExtensionTable(ext_tbl);
+  BOOST_TEST(ext_tbl.size() == 1);
+  BOOST_TEST(ext_tbl[0].first == 0.11 * distFactor);
+  BOOST_TEST(ext_tbl[0].second == 0.14 * distFactor);
+
   auto keepoutRules = layer->getTechLayerEolKeepOutRules();
   BOOST_TEST(keepoutRules.size() == 1);
   auto keepoutRule = (odb::dbTechLayerEolKeepOutRule*) *(keepoutRules.begin());
