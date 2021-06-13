@@ -771,7 +771,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();
-  auto layer = design_->getTech()->getLayer(layerNum);
+  auto layer = getTech()->getLayer(layerNum);
   auto& cons = layer->getEolSpacing();
   auto lef58Cons = layer->getLef58SpacingEndOfLineConstraints();
   auto keepoutCons = layer->getLef58EolKeepOutConstraints();
