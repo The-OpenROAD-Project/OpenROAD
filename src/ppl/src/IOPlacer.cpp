@@ -1140,7 +1140,7 @@ void IOPlacer::run(bool random_mode)
     init_hpwl = returnIONetsHPWL(netlist_);
   }
   if (random_mode) {
-    logger_->info(PPL, 3, "Random pin placement.");
+    logger_->info(PPL, 7, "Random pin placement.");
     randomPlacement();
   } else {
     int constrained_pins_cnt = 0;
@@ -1166,7 +1166,7 @@ void IOPlacer::run(bool random_mode)
 
   if (assignment_.size() != (int) netlist_.numIOPins()) {
     logger_->error(PPL,
-                   41,
+                   39,
                    "Assigned {} pins out of {} IO pins",
                    assignment_.size(),
                    netlist_.numIOPins());

@@ -807,7 +807,7 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
     std::string instName = inst->getName();
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
     if (!propId) {
-      _logger->warn(PAR, 15, "Property not found for inst {}", instName);
+      _logger->warn(PAR, 101, "Property not found for inst {}", instName);
       continue;
     }
     file << instName << " " << propId->getValue() << "\n";

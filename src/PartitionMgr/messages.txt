@@ -11,7 +11,6 @@ PAR 0011 PartitionMgr.cpp:758      Cluster Area SD = {}.
 PAR 0012 PartitionMgr.cpp:759      Total Hop Weigth = {}.
 PAR 0013 PartitionMgr.cpp:760      Total Runtime = {}.
 PAR 0014 PartitionMgr.cpp:777      Partition id out of range ({}).
-PAR 0015 PartitionMgr.cpp:810      Property not found for inst {}
 PAR 0015 PartitionNetwork.cpp:378  Property not found for inst {}
 PAR 0016 PartitionMgr.cpp:955      [Chaco] Clustered graph in {} ms.
 PAR 0017 PartitionMgr.cpp:961      [Chaco] Run completed. Cluster ID = {}.
@@ -42,7 +41,6 @@ PAR 0041 partitionmgr.tcl:262      argument -num_partitions should be an integer
 PAR 0042 partitionmgr.tcl:273      argument -partition_id should be an integer
 PAR 0043 partitionmgr.tcl:307      missing argument -partition_ids.
 PAR 0044 partitionmgr.tcl:314      invalid function. Use one of the following: $functions
-PAR 0045 partitionmgr.tcl:340      missing mandatory argument -partitioning_id
 PAR 0045 partitionmgr.tcl:367      missing mandatory argument -partitioning_id
 PAR 0046 partitionmgr.tcl:405      missing mandatory argument -tool
 PAR 0047 partitionmgr.tcl:407      invalid tool. Use one of the following: $tools
@@ -67,3 +65,5 @@ PAR 0067 PartitionMgr.cpp:1303     #Nodes: {}
 PAR 0068 PartitionMgr.cpp:1304     #Hyperedges/Edges: {}
 PAR 0069 partitionmgr.tcl:557      argument -clique_threshold should be an integer in the range \[3, 32768\]
 PAR 0100 PartitionMgr.cpp:535      Invalid partitioning id: {}
+PAR 0101 PartitionMgr.cpp:810      Property not found for inst {}
+PAR 0102 partitionmgr.tcl:340      missing mandatory argument -partitioning_id

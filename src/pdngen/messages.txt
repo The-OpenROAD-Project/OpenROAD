@@ -22,7 +22,6 @@ PDN 0024 PdnGen.tcl:1622           Missing logical viarule [dict get $intersecti
 PDN 0025 PdnGen.tcl:1956           Unexpected row orientation $orient for row [$row getName]
 PDN 0026 PdnGen.tcl:2054           Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\".
 PDN 0027 PdnGen.tcl:3006           Illegal orientation $orientation specified
-PDN 0028 PdnGen.tcl:3146           File $PDN_cfg does not exist
 PDN 0028 PdnGen.tcl:3150           File $PDN_cfg is empty
 PDN 0029 PdnGen.tcl:3231           Illegal number of elements defined for ::halo \"$::halo\" (1, 2 or 4 allowed)
 PDN 0030 PdnGen.tcl:3284           Layer specified for std. cell rails '$layer' not in list of layers.
@@ -54,11 +53,12 @@ PDN 0055 PdnGen.tcl:3397           Cannot find pin $pin_name on inst [$inst getN
 PDN 0056 PdnGen.tcl:3401           Cannot find master pin $pin_name for cell [[$inst getMaster] getName]
 PDN 0060 PdnGen.cc:136             Unable to add invalid net
 PDN 0061 PdnGen.cc:209             Unable to add invalid net
-PDN 0099 PdnGen.tcl:1601           Via $via_name specified in the grid specification does not exist in this technology
-PDN 0099 PdnGen.tcl:2349           No power/ground pads found on bottom edge
-PDN 0099 PdnGen.tcl:2352           No power/ground pads found on right edge
-PDN 0099 PdnGen.tcl:2355           No power/ground pads found on top edge
-PDN 0099 PdnGen.tcl:2358           No power/ground pads found on left edge
-PDN 0099 PdnGen.tcl:2361           Cannot place core rings without pwr/gnd pads on each side
-PDN 0099 PdnGen.tcl:2825           Cannot find via $via_name
+PDN 0062 PdnGen.tcl:3146           File $PDN_cfg does not exist
+PDN 0063 PdnGen.tcl:1601           Via $via_name specified in the grid specification does not exist in this technology
+PDN 0064 PdnGen.tcl:2349           No power/ground pads found on bottom edge
+PDN 0065 PdnGen.tcl:2352           No power/ground pads found on right edge
+PDN 0066 PdnGen.tcl:2355           No power/ground pads found on top edge
+PDN 0067 PdnGen.tcl:2358           No power/ground pads found on left edge
+PDN 0068 PdnGen.tcl:2361           Cannot place core rings without pwr/gnd pads on each side
+PDN 0069 PdnGen.tcl:2825           Cannot find via $via_name
 PDN 9999 PdnGen.tcl:45             Unexpected error: $error_msg

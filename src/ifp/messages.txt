@@ -2,6 +2,7 @@ IFP 0001 InitFloorplan.cc:434      Added {} rows of {} sites.
 IFP 0002 InitFloorplan.cc:477      pin layer {} not found.
 IFP 0006 InitFloorplan.tcl:273     Placement blockages found: [llength $placement_blockages]
 IFP 0009 InitFloorplan.cc:307      SITE {} not found.
+IFP 0010 InitFloorplan.tcl:177     layer $layer_name not found.
 IFP 0011 InitFloorplan.tcl:56      use -site to add placement rows.
 IFP 0012 InitFloorplan.tcl:64      -utilization must be from 0% to 100%
 IFP 0013 InitFloorplan.tcl:82      -core_space is either a list of 4 margins or one value for all margins.
@@ -12,7 +13,6 @@ IFP 0019 InitFloorplan.tcl:136     no -utilization or -die_area specified.
 IFP 0020 InitFloorplan.tcl:224     layer $pin_layer not found.
 IFP 0021 InitFloorplan.tcl:245     -x_offset > die width.
 IFP 0022 InitFloorplan.tcl:254     -y_offset > die height.
-IFP 0023 InitFloorplan.tcl:177     layer $layer_name not found.
 IFP 0023 InitFloorplan.tcl:297     Cut rows: [llength $rows_to_cut]
 IFP 0024 InitFloorplan.tcl:233     No block defined.
 IFP 0025 InitFloorplan.tcl:180     layer $layer_name is not a routing layer.

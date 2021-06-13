@@ -29,8 +29,7 @@ PSM 0033 ir_solver.cpp:792         Node at ({}, {}) and layer {} moved from ({},
 PSM 0034 ir_solver.cpp:803         Unxpected condition. Null pointer received for node.
 PSM 0035 ir_solver.cpp:767         {} resistance not found in DB. Check the LEF or set it with set_layer_rc command.
 PSM 0036 ir_solver.cpp:821         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
-PSM 0036 ir_solver.cpp:850         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
-PSM 0036 ir_solver.cpp:879         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
+PSM 0037 ir_solver.cpp:850         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.
 PSM 0038 ir_solver.cpp:983         Unconnected PDN node on net {} at location ({:4.3f}um, {:4.3f}um), layer: {}.
 PSM 0039 ir_solver.cpp:990         Unconnected Instance {} at location ({:4.3f}um, {:4.3f}um) layer: {}.
 PSM 0040 ir_solver.cpp:997         All PDN stripes on net {} are connected.
@@ -55,3 +54,4 @@ PSM 0062 pdnsim.tcl:134            Argument -net or -voltage not specified. Plea
 PSM 0063 ir_solver.cpp:390         Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of 
 PSM 0064 ir_solver.cpp:278         Number of voltage sources = {}
 PSM 0065 ir_solver.cpp:400         VSRC location not specified using default checkerboard pattern with one VDD every
+PSM 0066 ir_solver.cpp:879         Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.

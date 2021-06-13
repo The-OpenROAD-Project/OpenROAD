@@ -845,7 +845,7 @@ uint extRCModel::netWiresBench(extMainOptions* opt, extMain* xMain, uint netId,
     }
     fclose(fp);
 
-    logger_->info(RCX, 0,
+    logger_->info(RCX, 450,
                   "Finished {} boxes for net ({},{}) at coords ({},{}) ({},{})",
                   boxCnt - 1, netId, shapeId, s.xMin(), s.yMin(), s.xMax(),
                   s.yMax(), boxCnt);

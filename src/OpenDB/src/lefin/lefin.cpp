@@ -675,12 +675,9 @@ void lefin::layer(lefiLayer* layer)
         supported = false;
     } else
       supported = false;
-    // if(!supported)
-    //   _logger->warn(utl::ODB, 247, "unsupported layer propery {} for layer
-    //   {}",layer->propName(iii), layer->name());
     if (supported && !valid)
       _logger->warn(utl::ODB,
-                    248,
+                    279,
                     "parse mismatch in layer propery {} for layer {} : \"{}\"",
                     layer->propName(iii),
                     layer->name(),
@@ -2008,7 +2005,7 @@ bool lefin::readLef(const char* lef_file)
         odb::dbTechLayerCutSpacingRule* cutSpacingRule
             = (odb::dbTechLayerCutSpacingRule*) obj;
         _logger->warn(utl::ODB,
-                      247,
+                      277,
                       "dropping LEF58_SPACING rule for cut layer {} for "
                       "referencing undefined layer {}",
                       cutSpacingRule->getTechLayer()->getName(),
@@ -2019,7 +2016,7 @@ bool lefin::readLef(const char* lef_file)
         odb::dbTechLayerCutSpacingTableDefRule* cutSpacingTableRule
             = (odb::dbTechLayerCutSpacingTableDefRule*) obj;
         _logger->warn(utl::ODB,
-                      248,
+                      280,
                       "dropping LEF58_SPACINGTABLE rule for cut layer {} for "
                       "referencing undefined layer {}",
                       cutSpacingTableRule->getTechLayer()->getName(),

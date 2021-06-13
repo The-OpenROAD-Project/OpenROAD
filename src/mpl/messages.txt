@@ -6,12 +6,12 @@ MPL 0009 MacroPlacer.cpp:189       {} pins {}
 MPL 0011 MacroPlacer.cpp:1254      pin {} is not placed. Using west.
 MPL 0012 MacroPlacer.cpp:687       unhandled partition class
 MPL 0061 MacroPlacer.cpp:420       Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.
+MPL 0066 MacroPlacer.cpp:225       Partitioning failed.
+MPL 0067 MacroPlacer.cpp:201       Initial weighted wire length {:g}
+MPL 0068 MacroPlacer.cpp:222       Placed weighted wire length {:g}
+MPL 0069 MacroPlacer.cpp:270       Initial weighted wire length {:g}
 MPL 0070 MacroPlacer.cpp:392       Using {} partition sets
-MPL 0071 MacroPlacer.cpp:201       Initial weighted wire length {:g}
-MPL 0071 MacroPlacer.cpp:222       Placed weighted wire length {:g}
-MPL 0071 MacroPlacer.cpp:270       Initial weighted wire length {:g}
 MPL 0071 MacroPlacer.cpp:437       Solution {} weighted wire length {:g}
-MPL 0072 MacroPlacer.cpp:225       Partitioning failed.
 MPL 0072 MacroPlacer.cpp:473       No partition solutions found.
 MPL 0073 MacroPlacer.cpp:465       Best weighted wire length {:g}
 MPL 0076 MacroPlacer.cpp:552       Partition {} macros
