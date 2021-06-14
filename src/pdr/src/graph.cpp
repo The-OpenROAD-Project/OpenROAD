@@ -3063,8 +3063,9 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (unsigned i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
-  // This "counts" from 0 to list.size() using each index in the array as one bit.
-  // Horrifically inefficient.
+  // This "counts" from 0 to list.size() using each index in the array as one bit, so it
+  // result is 2^lists.size() - exponential.
+  // Horrifically inefficient in both memory and time.
   // This is is the kiss of death -cherry 05/03/2021
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
