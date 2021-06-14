@@ -143,6 +143,35 @@ frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
   return blk;
 }
 
+frTerm* Fixture::makeMacroPin(frBlock* refBlock,
+                              std::string name,
+                              frCoord xl,
+                              frCoord yl,
+                              frCoord xh,
+                              frCoord yh,
+                              frLayerNum lNum)
+{
+  int id = refBlock->getTerms().size();
+  unique_ptr<frTerm> uTerm = make_unique<frTerm>(name);
+  auto term = uTerm.get();
+  term->setId(id);
+  refBlock->addTerm(std::move(uTerm));
+  frTermEnum termType = frTermEnum::frcNormalTerm;
+  term->setType(termType);
+  frTermDirectionEnum termDirection = frTermDirectionEnum::INPUT;
+  term->setDirection(termDirection);
+  auto pinIn = make_unique<frPin>();
+  pinIn->setId(0);
+  unique_ptr<frRect> pinFig = make_unique<frRect>();
+  pinFig->setBBox(frBox(xl, yl, xh, yh));
+  pinFig->addToPin(pinIn.get());
+  pinFig->setLayerNum(lNum);
+  unique_ptr<frPinFig> uptr(std::move(pinFig));
+  pinIn->addPinFig(std::move(uptr));
+  term->addPin(std::move(pinIn));
+  return term;
+}
+
 frInst* Fixture::makeInst(const char* name,
                           frBlock* refBlock,
                           frCoord x,
@@ -191,6 +220,7 @@ void Fixture::makeDesign()
   block->addFakeSNet(std::move(vddFakeNet));
 
   design->setTopBlock(std::move(block));
+  USEMINSPACING_OBS = false;
 }
 
 void Fixture::makeCornerConstraint(frLayerNum layer_num,
@@ -318,6 +348,26 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
   return rptr;
 }
 
+frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
+    frLayerNum layer_num,
+    frCoord spacing,
+    std::vector<frCoord> eol,
+    std::vector<frCoord> ext,
+    bool parallelOnly)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  fr1DLookupTbl<frCoord, frCoord> tbl("WIDTH", eol, ext, false);
+  unique_ptr<frLef58EolExtensionConstraint> uCon
+      = make_unique<frLef58EolExtensionConstraint>(tbl);
+  uCon->setMinSpacing(spacing);
+  uCon->setParallelOnly(parallelOnly);
+  auto rptr = uCon.get();
+  tech->addUConstraint(std::move(uCon));
+  layer->addLef58EolExtConstraint(rptr);
+  return rptr;
+}
+
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
     std::vector<frCoord> widthTbl,
@@ -336,6 +386,26 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   tech->addUConstraint(std::move(uCon));
   layer->setMinSpacing(rptr);
   return rptr;
+}
+
+void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                            bool cornerOnly,
+                                            frCoord forward,
+                                            frCoord side,
+                                            frCoord backward,
+                                            frCoord width)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto con = std::make_unique<frLef58EolKeepOutConstraint>();
+  auto rptr = con.get();
+  rptr->setEolWidth(width);
+  rptr->setForwardExt(forward);
+  rptr->setBackwardExt(backward);
+  rptr->setSideExt(side);
+  rptr->setCornerOnly(cornerOnly);
+  layer->addLef58EolKeepOutConstraint(rptr);
+  tech->addUConstraint(std::move(con));
 }
 
 std::shared_ptr<frLef58SpacingEndOfLineConstraint>

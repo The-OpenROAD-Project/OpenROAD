@@ -3555,28 +3555,11 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger) {
       }
       dbRSeg* rseg1 = dbRSeg::getRSeg(blk, rsegId1);
 
-      // if (rseg1->marked())
-      // continue;
-
-      // rseg1->setMark(true);
-
       cnt++;
-      /*
-                              int rsegId2= 0;
-                              dstNet->getWire()->getProperty(shapeId, rsegId2);
-                              if (rsegId2==0) {
-                                      logger_->warn(RCX, 0, "zero rseg wire
-         property {} on main net {} {}", shapeId, dstNet->getId(),
-         dstNet->getConstName()); continue;
-                              }
-                              dbRSeg *rseg2= dbRSeg::getRSeg(dstNet->getBlock(),
-         rsegId2);
-
-      */
       dbRSeg* rseg2 = getMainRSeg3(net, shapeId, dstNet);
 
       if (rseg2 == NULL) {
-        logger->warn(RCX, 240,
+        logger->warn(RCX, 484,
                      "GndCap: cannot find rseg for rsegId {} on net {} {}",
                      rsegId1, dstNet->getId(), dstNet->getConstName());
         continue;

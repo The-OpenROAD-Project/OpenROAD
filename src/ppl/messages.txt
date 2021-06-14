@@ -1,9 +1,10 @@
 PPL 0001 IOPlacer.cpp:743           * Num of slots          {}
 PPL 0002 IOPlacer.cpp:744           * Num of I/O            {}
-PPL 0003 IOPlacer.cpp:1147         Random pin placement.
+PPL 0003 IOPlacer.cpp:745           * Num of I/O w/sink     {}
 PPL 0004 IOPlacer.cpp:747           * Num of I/O w/o sink   {}
 PPL 0005 IOPlacer.cpp:748           * Slots Per Section     {}
 PPL 0006 IOPlacer.cpp:749           * Slots Increase Factor {:.1}
+PPL 0007 IOPlacer.cpp:1147         Random pin placement.
 PPL 0008 IOPlacer.cpp:750           * Usage Increase Factor {:.1}
 PPL 0009 IOPlacer.cpp:751           * Force Pin Spread      {}
 PPL 0010 IOPlacer.cpp:760          Tentative {} to setup sections
@@ -26,14 +27,18 @@ PPL 0029 IOPlacer.tcl:495          $cmd: Invalid edge
 PPL 0030 IOPlacer.tcl:503          $cmd: Invalid edge
 PPL 0031 IOPlacer.tcl:268          no technology found.
 PPL 0032 IOPlacer.tcl:273          no block found.
+PPL 0033 HungarianMatching.cpp:110 I/O pin {} cannot be placed in the specified region. 
+PPL 0036 IOPlacer.cpp:767          Number of sections is {}
+PPL 0037 IOPlacer.cpp:776          Number of slots per sections is {}
 PPL 0038 IOPlacer.cpp:1478         Pin {} without net
+PPL 0039 IOPlacer.cpp:1172         Assigned {} pins out of {} IO pins
 PPL 0040 IOPlacer.cpp:475          Negative number of slots
-PPL 0041 IOPlacer.tcl:416          Pin group $group_idx: [$group]
+PPL 0041 IOPlacer.tcl:416          Pin group $group_idx: \[$group\]
 PPL 0042 IOPlacer.cpp:676          Unsuccessfully assigned I/O groups
 PPL 0043 IOPlacer.tcl:423          Pin $pin_name not found in group $group_idx
 PPL 0045 IOPlacer.tcl:346          Layer $hor_layer_name preferred direction is not horizontal.
 PPL 0046 IOPlacer.tcl:365          Layer $ver_layer_name preferred direction is not vertical.
-PPL 0048 IOPlacer.tcl:531          Restrict pins [$names] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge.
+PPL 0048 IOPlacer.tcl:531          Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge.
 PPL 0049 IOPlacer.tcl:154          Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge.
 PPL 0050 IOPlacer.tcl:518          no technology has been read.
 PPL 0051 IOPlacer.tcl:523          layer $layer_name not found.
@@ -44,7 +49,7 @@ PPL 0055 IOPlacer.tcl:84           -region is required.
 PPL 0056 IOPlacer.tcl:90           -size is not a list of 2 values.
 PPL 0057 IOPlacer.tcl:96           -size is required.
 PPL 0059 IOPlacer.tcl:175          box at top layer must have 4 values (llx lly urx ury).
-PPL 0060 IOPlacer.tcl:540          Restrict pins [$names] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name.
+PPL 0060 IOPlacer.tcl:540          Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name.
 PPL 0061 IOPlacer.tcl:553          Pins for $cmd command were not found
 PPL 0063 IOPlacer.tcl:81           -region is not a list of 4 values {llx lly urx ury}.
 PPL 0064 IOPlacer.tcl:204          -pin_name is required.

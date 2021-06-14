@@ -1,7 +1,7 @@
 GUI 0001 gui.i:137                 No database loaded
 GUI 0002 gui.i:141                 No chip loaded
 GUI 0003 gui.i:145                 No block loaded
-GUI 0004 layoutViewer.cpp:751      Skipping malformed GCell
+GUI 0004 layoutViewer.cpp:772      Skipping malformed GCell
 GUI 0005 gui.i:68                  Command selection_add_nets is not usable in non-GUI mode
 GUI 0006 gui.i:79                  Command selection_add_inst is not usable in non-GUI mode
 GUI 0007 gui.i:90                  Command selection_add_insts is not usable in non-GUI mode
