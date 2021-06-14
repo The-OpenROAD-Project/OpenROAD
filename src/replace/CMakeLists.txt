@@ -67,7 +67,9 @@ target_sources(replace
     src/timingBase.cpp
     src/graphics.cpp
 )
- 
+
+messages(TARGET replace)
+
 target_include_directories(replace
   PUBLIC
     include

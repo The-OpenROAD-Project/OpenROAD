@@ -77,3 +77,8 @@ target_link_libraries(TritonCTS
     pdrev
     utl
  )
+
+messages(
+  TARGET TritonCTS
+  OUTPUT_DIR ..
+)

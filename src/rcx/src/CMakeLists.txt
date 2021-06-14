@@ -79,3 +79,8 @@ target_link_libraries(rcx
   PRIVATE
     OpenSTA
 )
+
+messages(
+  TARGET rcx
+  OUTPUT_DIR ..
+)

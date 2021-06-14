@@ -73,3 +73,7 @@ target_link_libraries(grt
     OpenSTA
     Boost::boost
 )
+
+messages(
+  TARGET grt
+)

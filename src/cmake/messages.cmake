@@ -1,13 +1,9 @@
-###########################################################################
-## Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu Woo(mwoo@eng.ucsd.edu)
-##          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-## Rewrite by James Cherry, Parallax Software, Inc.
+############################################################################
+##
+## Copyright (c) 2021, OpenROAD
+## All rights reserved.
 ##
 ## BSD 3-Clause License
-##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
-## Copyright (c) 2018, SangGi Do and Mingyu Woo
-## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -34,48 +30,57 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-###########################################################################
+##
+############################################################################
 
-include("openroad")
+# Generate the messages.txt file automatically
+# Arguments
+#   TARGET <target>: the target to post-build trigger from
+#   OUTPUT_DIR <dir>: the directory to write the messages.txt in
+#   LOCAL: don't recurse
 
-swig_lib(NAME         dpl
-         NAMESPACE    dpl
-         I_FILE       src/Opendp.i
-         SCRIPTS      src/Opendp.tcl
-)
+function(messages)
 
-target_sources(dpl
-  PRIVATE
-    src/Opendp.cpp
-    src/dbToOpendp.cpp
-    src/MakeOpendp.cpp
-    src/Grid.cpp
-    src/CheckPlacement.cpp
-    src/Place.cpp
-    src/FillerPlacement.cpp
-    src/OptMirror.cpp
-)
+  # Parse args
+  set(options LOCAL)
+  set(oneValueArgs TARGET OUTPUT_DIR)
+  set(multiValueArgs "")
 
-target_include_directories(dpl
-  PUBLIC
-    include
-)
+  cmake_parse_arguments(
+      ARG  # prefix on the parsed args
+      "${options}"
+      "${oneValueArgs}"
+      "${multiValueArgs}"
+      ${ARGN}
+  )
 
-target_link_libraries(dpl
-  PRIVATE
-    opendb
-    OpenSTA
-    utl
-)
+  # Validate args
+  if (DEFINED ARG_UNPARSED_ARGUMENTS)
+     message(FATAL_ERROR "Unknown argument(s) to swig_lib: ${ARG_UNPARSED_ARGUMENTS}")
+  endif()
 
-messages(
-  TARGET dpl
-)
+  if (DEFINED ARG_KEYWORDS_MISSING_VALUES)
+     message(FATAL_ERROR "Missing value for argument(s) to swig_lib: ${ARG_KEYWORDS_MISSING_VALUES}")
+  endif()
 
-################################################################
+  if (NOT DEFINED ARG_TARGET)
+    message(FATAL_ERROR "TARGET argument must be provided to messages")
+  endif()
 
-add_custom_target(opendp_tags etags -o TAGS
-  ${OPENDP_SRC}
-  ${OPENDB_HOME}/include/dpl/*.h
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+  if (NOT DEFINED ARG_OUTPUT_DIR)
+    set(ARG_OUTPUT_DIR .)
+  endif()
+
+  if (${ARG_LOCAL})
+    set(local '--local')
+  endif()
+
+  add_custom_command(
+    TARGET ${ARG_TARGET}
+    POST_BUILD
+    COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py
+        ${local}
+        > ${ARG_OUTPUT_DIR}/messages.txt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+endfunction()

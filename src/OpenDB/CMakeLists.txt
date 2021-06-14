@@ -54,3 +54,8 @@ if (DOXYGEN_FOUND)
 
   doxygen_add_docs(docs include)
 endif()
+
+# TODO
+#messages(
+#  TARGET opendb
+#)

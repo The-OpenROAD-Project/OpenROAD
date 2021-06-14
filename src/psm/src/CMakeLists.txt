@@ -63,3 +63,8 @@ target_link_libraries(psm
     dbSta
     Eigen3::Eigen
 )
+
+messages(
+  TARGET psm
+  OUTPUT_DIR ..
+)

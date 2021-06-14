@@ -1,23 +1,19 @@
 ORD 0001 OpenRoad.tcl:45           $filename does not exist.
 ORD 0002 OpenRoad.tcl:48           $filename is not readable.
-ORD 0003 OpenRoad.tcl:68           $filename does not exist.
-ORD 0004 OpenRoad.tcl:71           $filename is not readable.
-ORD 0005 OpenRoad.tcl:74           no technology has been read.
-ORD 0006 OpenRoad.tcl:99           DEF versions 5.8, 5.6, 5.4, 5.3 supported.
-ORD 0007 OpenRoad.tcl:127          $filename does not exist.
-ORD 0008 OpenRoad.tcl:130          $filename is not readable.
-ORD 0009 OpenRoad.tcl:218          missing -layer or -via argument.
-ORD 0010 OpenRoad.tcl:154          Use -layer or -via but not both.
-ORD 0012 OpenRoad.tcl:198          missing -capacitance or -resistance argument.
-ORD 0013 OpenRoad.tcl:241          command units uninitialized. Use the read_liberty or set_cmd_units command to set units.
-ORD 0015 OpenRoad.i:333            Unknown tool name {}
-ORD 0016 OpenRoad.tcl:81           incremental and floorplan_initialization options are both set. At most one should be used.
-ORD 0017 OpenRoad.tcl:215          no -resistance specified for via.
-ORD 0018 OpenRoad.tcl:170          $layer_name is not a routing layer.
-ORD 0019 OpenRoad.tcl:162          layer $layer_name not found.
-ORD 0020 OpenRoad.tcl:166          layer not found.
-ORD 0021 OpenRoad.tcl:204          via $layer_name not found.
-ORD 0022 OpenRoad.tcl:208          -capacitance not supported for vias.
+ORD 0003 OpenRoad.tcl:71           $filename does not exist.
+ORD 0004 OpenRoad.tcl:74           $filename is not readable.
+ORD 0005 OpenRoad.tcl:77           no technology has been read.
+ORD 0006 OpenRoad.tcl:104          DEF versions 5.8, 5.6, 5.4, 5.3 supported.
+ORD 0007 OpenRoad.tcl:132          $filename does not exist.
+ORD 0008 OpenRoad.tcl:135          $filename is not readable.
+ORD 0013 OpenRoad.tcl:205          command units uninitialized. Use the read_liberty or set_cmd_units command to set units.
+ORD 0015 OpenRoad.i:343            Unknown tool name {}
+ORD 0016 OpenRoad.tcl:86           incremental and floorplan_initialization options are both set. At most one should be used.
 ORD 0030 OpenRoad.cc:464           Using {} thread(s)
-ORD 0031 OpenRoad.cc:458           Unable to determine maximum number of threads
-ORD 0032 OpenRoad.cc:477           Invalid thread number specification: {}
+ORD 0031 OpenRoad.cc:453           Unable to determine maximum number of threads
+ORD 0032 OpenRoad.cc:481           Invalid thread number specification: {}
+ORD 0033 OpenRoad.tcl:80           -order_wires is deprecated.
+ORD 1009 OpenRoad.tcl:153          -name is missing
+ORD 1010 OpenRoad.tcl:156          Either -net or -all_clocks need to be defined
+ORD 1011 OpenRoad.tcl:162          No NDR named ${ndrName} found
+ORD 1012 OpenRoad.tcl:168          No net named ${netName} found
