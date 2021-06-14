@@ -365,7 +365,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
 
     if (VERBOSE > 0) {
       logger_->info(DRT,
-                    185,
+                    268,
                     "Done with {} horizontal wires in {} frboxes and "
                     "{} vertical wires in {} frboxes.",
                     numAssignedH,

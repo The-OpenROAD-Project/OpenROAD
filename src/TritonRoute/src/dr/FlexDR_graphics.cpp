@@ -606,7 +606,7 @@ void FlexDRGraphics::startNet(drNet* net)
       frPoint pt;
       ap->getPoint(pt);
       logger_->info(DRT,
-                    251,
+                    275,
                     "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
                     pt.x() / (double) dbu_per_uu_,
                     pt.y() / (double) dbu_per_uu_,

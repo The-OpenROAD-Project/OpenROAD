@@ -1509,7 +1509,7 @@ NesterovBase::cutFillerCells(int64_t targetFillerArea) {
 
   // update totalFillerArea_
   totalFillerArea_ = curFillerArea;
-  log_->info(GPL, 36, "NewTotalFillerArea: {}", totalFillerArea_);
+  log_->info(GPL, 35, "NewTotalFillerArea: {}", totalFillerArea_);
 
   gCells_.swap(newGCells);
   gCellFillers_.swap(newGCellFillers);

@@ -1,8 +1,9 @@
-DPL 0001 FillerPlacement.cpp:74    Placed {} filler instances.
+DPL 0001 FillerPlacement.cpp:73    Placed {} filler instances.
+DPL 0002 FillerPlacement.cpp:107   could not fill gap of size {} at {},{} dbu between {} and {}
 DPL 0010 dbToOpendp.cpp:315        Cannot find MACRO with VDD/VSS pins.
 DPL 0011 dbToOpendp.cpp:318        Could not find power special net.
 DPL 0012 dbToOpendp.cpp:179        no rows found.
-DPL 0013 Grid.cpp:347              Cannot paint grid because it is already occupied.
+DPL 0013 Grid.cpp:352              Cannot paint grid because it is already occupied.
 DPL 0015 Place.cpp:275             instance {} does not fit inside the ROW core area.
 DPL 0016 Place.cpp:400             cannot place instance {}.
 DPL 0017 Place.cpp:460             cannot place instance {}.
@@ -14,7 +15,6 @@ DPL 0022 OptMirror.cpp:91          HPWL after           {:8.1f} u
 DPL 0023 OptMirror.cpp:95          HPWL delta           {:8.1f} %
 DPL 0026 Place.cpp:895             legalPt called on fixed cell.
 DPL 0027 Opendp.tcl:53             no rows defined in design. Use initialize_floorplan to add rows.
-DPL 0028 Opendp.tcl:166            $name did not match any masters.
-DPL 0029 Opendp.tcl:178            cannot find instance $inst_name
-DPL 0030 Opendp.tcl:193            cannot find instance $inst_name
-DPL 0031 Opendp.i:181              filler master {} not found.
+DPL 0028 Opendp.tcl:149            $name did not match any masters.
+DPL 0029 Opendp.tcl:161            cannot find instance $inst_name
+DPL 0030 Opendp.tcl:176            cannot find instance $inst_name

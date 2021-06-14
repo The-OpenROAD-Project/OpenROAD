@@ -249,7 +249,7 @@ void FlexPAGraphics::setMarkersAndShapes(
     frBox bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
-                  119,
+                  257,
                   "marker {} at ({}, {}) ({}, {})",
                   marker->getConstraint()->typeId(),
                   bbox.left(),
