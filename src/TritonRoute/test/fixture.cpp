@@ -348,6 +348,26 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
   return rptr;
 }
 
+frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
+    frLayerNum layer_num,
+    frCoord spacing,
+    std::vector<frCoord> eol,
+    std::vector<frCoord> ext,
+    bool parallelOnly)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  fr1DLookupTbl<frCoord, frCoord> tbl("WIDTH", eol, ext, false);
+  unique_ptr<frLef58EolExtensionConstraint> uCon
+      = make_unique<frLef58EolExtensionConstraint>(tbl);
+  uCon->setMinSpacing(spacing);
+  uCon->setParallelOnly(parallelOnly);
+  auto rptr = uCon.get();
+  tech->addUConstraint(std::move(uCon));
+  layer->addLef58EolExtConstraint(rptr);
+  return rptr;
+}
+
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
     std::vector<frCoord> widthTbl,
@@ -366,6 +386,26 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   tech->addUConstraint(std::move(uCon));
   layer->setMinSpacing(rptr);
   return rptr;
+}
+
+void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                            bool cornerOnly,
+                                            frCoord forward,
+                                            frCoord side,
+                                            frCoord backward,
+                                            frCoord width)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto con = std::make_unique<frLef58EolKeepOutConstraint>();
+  auto rptr = con.get();
+  rptr->setEolWidth(width);
+  rptr->setForwardExt(forward);
+  rptr->setBackwardExt(backward);
+  rptr->setSideExt(side);
+  rptr->setCornerOnly(cornerOnly);
+  layer->addLef58EolKeepOutConstraint(rptr);
+  tech->addUConstraint(std::move(con));
 }
 
 std::shared_ptr<frLef58SpacingEndOfLineConstraint>

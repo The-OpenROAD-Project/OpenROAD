@@ -192,7 +192,7 @@ proc detailed_route_debug { args } {
   if [info exists keys(-gcell)] {
     set gcell $keys(-gcell)
     if { [llength $gcell] != 2 } {
-      ord::error DRT 118 "-gcell is a list of 2 coordinates."
+      utl::error DRT 118 "-gcell is a list of 2 coordinates."
     }
     lassign $gcell gcell_x gcell_y
     sta::check_positive_integer "-gcell" $gcell_x

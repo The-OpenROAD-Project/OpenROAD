@@ -251,7 +251,7 @@ dbTechLayer* create_via_array(dbSWire* wire,
         wire->getNet()->getConstName());
     logger->info(
         utl::ODB,
-        246,
+        276,
         "       via ({}) spans above and below the current layer ({}).",
         vname.c_str(),
         lname.c_str());

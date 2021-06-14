@@ -572,12 +572,12 @@ void TechChar::initCharacterization()
     bool maxCapExist = false;
 
     if (!libertyCell) {
-      _logger->error(CTS, 76, "No Liberty cell found for {}.", bufMasterName);
+      _logger->error(CTS, 96, "No Liberty cell found for {}.", bufMasterName);
     } else {
       sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
       getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist, maxCap, maxCapExist);
       if (!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
-        _logger->warn(CTS, 66,
+        _logger->warn(CTS, 67,
               "Could not get maxSlew/maxCap values from buffer {}. Using library values", bufMasterName);
         staLib->defaultMaxSlew(maxSlew, maxSlewExist);
         staLib->defaultMaxCapacitance(maxCap, maxCapExist);

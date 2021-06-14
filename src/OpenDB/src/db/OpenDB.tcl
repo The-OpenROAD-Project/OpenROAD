@@ -7,12 +7,12 @@ proc create_physical_cluster { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [odb::dbGroup_create $block $cluster_name]
   if { $group == "NULL" } {
-    ord::error "duplicate group name"
+    utl::error "duplicate group name"
   }
 }
 
@@ -24,7 +24,7 @@ proc create_child_physical_clusters { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   if { [info exists flags(-top_module)] } {
@@ -32,10 +32,10 @@ proc create_child_physical_clusters { args } {
   } elseif { [info exists keys(-modinst)] } {
     set module [[$block findModInst $keys(-modinst)] getMaster]
   } else {
-    ord::error "please define either top module or the modinst path"
+    utl::error "please define either top module or the modinst path"
   }
   if { $module == "NULL" } {
-    ord::error "module does not exist"
+    utl::error "module does not exist"
   }
   set module_instance [$module getModInst]
   set modinsts [$module getChildren]
@@ -44,7 +44,7 @@ proc create_child_physical_clusters { args } {
     set cluster_name "[$module getName]_[$modinst getName]"
     set group [odb::dbGroup_create $block $cluster_name]
     if { $group == "NULL" } {
-      ord::error "duplicate group name"
+      utl::error "duplicate group name"
     }
     $group addModInst $modinst
   }
@@ -56,7 +56,7 @@ proc create_child_physical_clusters { args } {
       set group [odb::dbGroup_create $block "[$parent getName]_[$module_instance getName]_glue"]
     }
     if { $group == "NULL" } {
-      ord::error "duplicate group name"
+      utl::error "duplicate group name"
     }
     foreach inst $insts {
       $group addInst $inst
@@ -193,7 +193,7 @@ proc create_voltage_domain { args } {
   if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-      ord::error "-area is a list of 4 coordinates"
+      utl::error "-area is a list of 4 coordinates"
     }
     lassign $area llx lly urx ury
     sta::check_positive_float "-area" $llx
@@ -201,21 +201,21 @@ proc create_voltage_domain { args } {
     sta::check_positive_float "-area" $urx
     sta::check_positive_float "-area" $ury
   } else {
-    ord::error "please define area"
+    utl::error "please define area"
   }
   sta::check_argc_eq1 "create_voltage_domain" $args
   set domain_name $args
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [odb::dbGroup_create $block $domain_name \
 		[ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
 		[ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
   if { $group == "NULL" } {
-    ord::error "duplicate group name"
+    utl::error "duplicate group name"
   }
 }
 
@@ -227,15 +227,15 @@ proc delete_physical_cluster { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [$block findGroup $cluster_name]
   if { $group == "NULL" } {
-    ord::error "group does not exist"
+    utl::error "group does not exist"
   }
   if { [$group getType] == "VOLTAGE_DOMAIN" } {
-    ord::error "group is not of physical cluster type"
+    utl::error "group is not of physical cluster type"
   }
   odb::dbGroup_destroy $group
 }
@@ -248,15 +248,15 @@ proc delete_voltage_domain { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [$block findGroup $domain_name]
   if { $group == "NULL" } {
-    ord::error "group does not exist"
+    utl::error "group does not exist"
   }
   if { [$group getType] == "PHYSICAL_CLUSTER" } {
-    ord::error "group is not of voltage domain type"
+    utl::error "group is not of voltage domain type"
   }
   odb::dbGroup_destroy $group
 }
@@ -268,29 +268,29 @@ proc assign_power_net { args } {
   if { [info exists keys(-domain)] } {
     set domain_name $keys(-domain)
   } else {
-    ord::error "define domain name"
+    utl::error "define domain name"
   }
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
   } else {
-    ord::error "define net name"
+    utl::error "define net name"
   }
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [$block findGroup $domain_name]
   set net [$block findNet $net_name]
   if { $group == "NULL" } {
-    ord::error "group does not exist"
+    utl::error "group does not exist"
   }
   if { [$group getType] == "PHYSICAL_CLUSTER" } {
-    ord::error "group is not of voltage domain type"
+    utl::error "group is not of voltage domain type"
   }
   if { $net == "NULL" } {
-    ord::error "net does not exist"
+    utl::error "net does not exist"
   }
   $group addPowerNet $net
 }
@@ -302,29 +302,29 @@ proc assign_ground_net { args } {
   if { [info exists keys(-domain)] } {
     set domain_name $keys(-domain)
   } else {
-    ord::error "define domain name"
+    utl::error "define domain name"
   }
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
   } else {
-    ord::error "define net name"
+    utl::error "define net name"
   }
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [$block findGroup $domain_name]
   set net [$block findNet $net_name]
   if { $group == "NULL" } {
-    ord::error "group does not exist"
+    utl::error "group does not exist"
   }
   if { [$group getType] == "PHYSICAL_CLUSTER" } {
-    ord::error "group is not of voltage domain type"
+    utl::error "group is not of voltage domain type"
   }
   if { $net == "NULL" } {
-    ord::error "net does not exist"
+    utl::error "net does not exist"
   }
   $group addGroundNet $net
 }
@@ -338,37 +338,37 @@ proc add_to_physical_cluster { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [$block findGroup $cluster_name]
   if { $group == "NULL" } {
-    ord::error "cluster does not exist"
+    utl::error "cluster does not exist"
   }
   if { [$group getType] == "VOLTAGE_DOMAIN" } {
-    ord::error "group is not of physical cluster type"
+    utl::error "group is not of physical cluster type"
   }
   if { [info exists keys(-modinst)] } {
     set modinst [$block findModInst $keys(-modinst)]
     if { $modinst == "NULL" } {
-      ord::error "modinst does not exist"
+      utl::error "modinst does not exist"
     }
     $group addModInst $modinst
   }
   if { [info exists keys(-inst)] } {
     set inst [$block findInst $keys(-inst)]
     if { $inst == "NULL" } {
-      ord::error "inst does not exist"
+      utl::error "inst does not exist"
     }
     $group addInst $inst
   }
   if { [info exists keys(-physical_cluster)] } {
     set child [$block findGroup $keys(-physical_cluster)]
     if { $child == "NULL" } {
-      ord::error "child physical cluster does not exist"
+      utl::error "child physical cluster does not exist"
     }
     if { [$child getType] == "VOLTAGE DOMAIN" } {
-      ord::error "child group is not of physical cluster type"
+      utl::error "child group is not of physical cluster type"
     }
     $group addGroup $child
   }
@@ -383,41 +383,41 @@ proc remove_from_physical_cluster { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set group [$block findGroup $cluster_name]
   if { $group == "NULL" } {
-    ord::error "cluster does not exist"
+    utl::error "cluster does not exist"
   }
   if { [$group getType] == "VOLTAGE_DOMAIN" } {
-    ord::error "group is not of physical cluster type"
+    utl::error "group is not of physical cluster type"
   }
   if { [info exists keys(-parent_module)] } {
     set module [$block findModule $keys(-parent_module)]
     if { $module == "NULL" } {
-      ord::error "parent module does not exist"
+      utl::error "parent module does not exist"
     }
     set modinst [$module findModInst $keys(-modinst)]
     if { $modinst == "NULL" } {
-      ord::error "modinst does not exist"
+      utl::error "modinst does not exist"
     }
     $group removeModInst $modinst
   }
   if { [info exists keys(-inst)] } {
     set inst [$block findInst $keys(-inst)]
     if { $inst == "NULL" } {
-      ord::error "inst does not exist"
+      utl::error "inst does not exist"
     }
     $group removeInst $inst
   }
   if { [info exists keys(-physical_cluster)] } {
     set child [$block findGroup $keys(-physical_cluster)]
     if { $child == "NULL" } {
-      ord::error "child physical cluster does not exist"
+      utl::error "child physical cluster does not exist"
     }
     if { [$child getType] == "VOLTAGE_DOMAIN" } {
-      ord::error "child group is not of physical cluster type"
+      utl::error "child group is not of physical cluster type"
     }
     $group removeGroup $child
   }
@@ -429,7 +429,7 @@ proc report_physical_clusters {} {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set groups [$block getGroups]
@@ -447,7 +447,7 @@ proc report_voltage_domains {} {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set groups [$block getGroups]
@@ -506,7 +506,7 @@ proc report_group { group } {
 namespace eval ord {
 
 proc error { args } {
- ord::error ODB 0 [lindex $args 0]
+ utl::error ODB 0 [lindex $args 0]
 }
 
 }

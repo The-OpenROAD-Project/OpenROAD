@@ -198,7 +198,7 @@ void MacroPlacer::placeMacrosCornerMinWL()
   init();
 
   double wl = getWeightedWL();
-  logger_->info(MPL, 71, "Initial weighted wire length {:g}", wl);
+  logger_->info(MPL, 67, "Initial weighted wire length {:g}", wl);
 
   // All of this partitioning garbage is unnecessary but survives to support
   // the multiple partition algorithm.
@@ -219,10 +219,10 @@ void MacroPlacer::placeMacrosCornerMinWL()
     setDbInstLocations(partition);
 
     double curWwl = getWeightedWL();
-    logger_->info(MPL, 71, "Placed weighted wire length {:g}", curWwl);
+    logger_->info(MPL, 68, "Placed weighted wire length {:g}", curWwl);
   }
   else
-    logger_->warn(MPL, 72, "Partitioning failed.");
+    logger_->warn(MPL, 66, "Partitioning failed.");
 }
 
 void MacroPlacer::setDbInstLocations(Partition &partition)
@@ -267,7 +267,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   init();
 
   double wl = getWeightedWL();
-  logger_->info(MPL, 71, "Initial weighted wire length {:g}", wl);
+  logger_->info(MPL, 69, "Initial weighted wire length {:g}", wl);
 
   Layout layout(lx_, ly_, ux_, uy_);
   bool horizontal = true;
