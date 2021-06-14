@@ -149,9 +149,8 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
         logger_->warn(DRT, 41, "Warning: Unsupported metSpc rule.");
     }
     if (checkNDRs)
-      return max(
-          maxSpcVal,
-          getTech()->getMaxNondefaultSpacing(layerNum / 2 - 1));
+      return max(maxSpcVal,
+                 getTech()->getMaxNondefaultSpacing(layerNum / 2 - 1));
   }
   return maxSpcVal;
 }
@@ -403,10 +402,12 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(
     return false;
   }
 }
-string rectToString(gcRect& r) {
-    string s = to_string(gtl::xl(r)) + " " + to_string(gtl::yl(r)) + " " + to_string(gtl::xh(r))
-            + " " + to_string(gtl::yh(r)) + " tapered ? " + to_string(r.isTapered());
-    return s;
+string rectToString(gcRect& r)
+{
+  string s = to_string(gtl::xl(r)) + " " + to_string(gtl::yl(r)) + " "
+             + to_string(gtl::xh(r)) + " " + to_string(gtl::yh(r))
+             + " tapered ? " + to_string(r.isTapered());
+  return s;
 }
 void FlexGCWorker::Impl::checkMetalSpacing_prl(
     gcRect* rect1,
@@ -425,20 +426,20 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  
-    auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
-    if (checkNDRs) {
-      frCoord ndrSpc1 = 0, ndrSpc2 = 0;
-      if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
-        ndrSpc1
-            = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
-      if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
-        ndrSpc2
-            = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
 
-      reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
-    }
-    
+  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+  if (checkNDRs) {
+    frCoord ndrSpc1 = 0, ndrSpc2 = 0;
+    if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
+      ndrSpc1
+          = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
+    if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
+      ndrSpc2
+          = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
+
+    reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
+  }
+
   // no violation if spacing satisfied
   if (distX * distX + distY * distY >= reqSpcVal * reqSpcVal) {
     return;
@@ -456,7 +457,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
     }
   }
   if (checkPolyEdge) {
-    if (!checkMetalSpacing_prl_hasPolyEdge(rect1, rect2, markerRect, type, prl)) {
+    if (!checkMetalSpacing_prl_hasPolyEdge(
+            rect1, rect2, markerRect, type, prl)) {
       return;
     }
     // no violation if bloat width cannot find non-fixed route shapes
@@ -498,45 +500,50 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
     if (!hasRoute) {
       return;
     }
-  }else {
-      using namespace boost::polygon::operators;
-      auto& netPoly = net1->getPolygons(layerNum, false); //consider net1 since spc rect is always rect1
-      gtl::polygon_90_set_data<frCoord> markerPoly;
-      gtl::rectangle_data<frCoord> mRect(markerRect);
-      //special treatment for  0 width marker since we cant create a polygon with it
-      if (gtl::xh(markerRect) - gtl::xl(markerRect) == 0 || gtl::yh(markerRect) - gtl::yl(markerRect) == 0) { 
-          bool isX = gtl::xh(markerRect) - gtl::xl(markerRect) == 0;
-          // bloat marker to be able to create a valid polygon
-          if (isX) {
-              gtl::xh(mRect, gtl::xh(mRect)+1);
-              gtl::xl(mRect, gtl::xl(mRect)-1);
-          }else{
-              gtl::yh(mRect, gtl::yh(mRect)+1);
-              gtl::yl(mRect, gtl::yl(mRect)-1);
-          }
-          markerPoly += mRect;
-          markerPoly -= netPoly;
-          if (markerPoly.size() == 0)
-            return;
-          //check if the edge related to the 0 width is within the net shape (this is an indirect check)
-          vector<gtl::rectangle_data<frCoord>> rects;
-          markerPoly.get_rectangles(rects);
-          if (rects.size() == 1) {
-              if (isX) {
-                  if (gtl::xl(rects[0]) == gtl::xl(markerRect) || gtl::xh(rects[0]) == gtl::xl(markerRect))
-                      return;
-              }else {
-                  if (gtl::yl(rects[0]) == gtl::yl(markerRect) || gtl::yh(rects[0]) == gtl::yl(markerRect))
-                      return;
-              }
-          }
+  } else {
+    using namespace boost::polygon::operators;
+    auto& netPoly = net1->getPolygons(
+        layerNum, false);  // consider net1 since spc rect is always rect1
+    gtl::polygon_90_set_data<frCoord> markerPoly;
+    gtl::rectangle_data<frCoord> mRect(markerRect);
+    // special treatment for  0 width marker since we cant create a polygon with
+    // it
+    if (gtl::xh(markerRect) - gtl::xl(markerRect) == 0
+        || gtl::yh(markerRect) - gtl::yl(markerRect) == 0) {
+      bool isX = gtl::xh(markerRect) - gtl::xl(markerRect) == 0;
+      // bloat marker to be able to create a valid polygon
+      if (isX) {
+        gtl::xh(mRect, gtl::xh(mRect) + 1);
+        gtl::xl(mRect, gtl::xl(mRect) - 1);
       } else {
-        markerPoly += mRect;
-        markerPoly -= netPoly;
-        if (markerPoly.size() == 0)
-            return;
+        gtl::yh(mRect, gtl::yh(mRect) + 1);
+        gtl::yl(mRect, gtl::yl(mRect) - 1);
       }
-      
+      markerPoly += mRect;
+      markerPoly -= netPoly;
+      if (markerPoly.size() == 0)
+        return;
+      // check if the edge related to the 0 width is within the net shape (this
+      // is an indirect check)
+      vector<gtl::rectangle_data<frCoord>> rects;
+      markerPoly.get_rectangles(rects);
+      if (rects.size() == 1) {
+        if (isX) {
+          if (gtl::xl(rects[0]) == gtl::xl(markerRect)
+              || gtl::xh(rects[0]) == gtl::xl(markerRect))
+            return;
+        } else {
+          if (gtl::yl(rects[0]) == gtl::yl(markerRect)
+              || gtl::yh(rects[0]) == gtl::yl(markerRect))
+            return;
+        }
+      }
+    } else {
+      markerPoly += mRect;
+      markerPoly -= netPoly;
+      if (markerPoly.size() == 0)
+        return;
+    }
   }
   auto marker = make_unique<frMarker>();
   frBox box(gtl::xl(markerRect),
@@ -781,7 +788,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
 
 void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                                                 gcRect* ptr2,
-                                                bool checkNDRs, bool isSpcRect)
+                                                bool checkNDRs,
+                                                bool isSpcRect)
 {
   // NSMetal does not need self-intersection
   // Minimum width rule handles outsite this function
@@ -812,8 +820,14 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
       checkMetalSpacing_short(ptr1, ptr2, markerRect);
     // prl
   } else {
-    checkMetalSpacing_prl(
-        ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY, checkNDRs, !isSpcRect);
+    checkMetalSpacing_prl(ptr1,
+                          ptr2,
+                          markerRect,
+                          std::max(prlX, prlY),
+                          distX,
+                          distY,
+                          checkNDRs,
+                          !isSpcRect);
   }
 }
 
@@ -823,7 +837,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect,
 {
   auto layerNum = rect->getLayerNum();
   auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, checkNDRs);
-  
+
   box_t queryBox;
   myBloat(*rect, maxSpcVal, queryBox);
 
@@ -847,10 +861,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
 {
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
@@ -868,10 +881,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
     }
   } else {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
@@ -1185,10 +1197,9 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
 {
   if (targetNet_) {
     // layer --> net --> polygon --> corner
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING
@@ -1206,10 +1217,9 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
     }
   } else {
     // layer --> net --> polygon --> corner
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING
@@ -1792,10 +1802,9 @@ void FlexGCWorker::Impl::checkMetalShape()
 {
   if (targetNet_) {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
@@ -1807,10 +1816,9 @@ void FlexGCWorker::Impl::checkMetalShape()
     }
   } else {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
@@ -2940,10 +2948,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
 {
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::CUT) {
@@ -2957,10 +2964,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
     }
   } else {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::CUT) {
