@@ -249,6 +249,13 @@ messages(
   LOCAL
 )
 
+# ICeWall isn't a proper module with its own CMakeLists.txt so it
+# is handled here (just like the tcl encoding).
+messages(
+  TARGET openroad
+  OUTPUT_DIR ICeWall
+)
+
 # Ancient versions of glibc found on CentOS required librt.
 # OSX has an empty version of librt that causes a link error,
 # so this is protected from linking there.
