@@ -68,8 +68,8 @@ CTS 0078 TechChar.cpp:632          Error generating the wirelengths to test.
 CTS 0079 HTreeBuilder.cpp:104      Sink not found.
 CTS 0080 HTreeBuilder.cpp:835      Sink not found.
 CTS 0081 TritonCTS.cpp:155         Buffer {} is not in the loaded DB.
-CTS 0082 TritonCTS.cpp:188         No valid clock nets in the design.
-CTS 0083 TritonCTS.cpp:509         No clock nets have been found.
+CTS 0082 TritonCTS.cpp:188         No valid clock nets in the design. Skipping CTS...
+CTS 0083 TritonCTS.cpp:509         No clock nets have been found. Skipping CTS...
 CTS 0084 TechChar.cpp:62           Compiling LUT
 CTS 0087 TritonCTS.cpp:366         Could not open output metric file.
 CTS 0088 SinkClustering.cpp:161    Matching0 size: {}.
