@@ -244,6 +244,7 @@ endif()
 
 messages(
   TARGET openroad
+  SOURCE_DIR .
   OUTPUT_DIR ..
   LOCAL
 )

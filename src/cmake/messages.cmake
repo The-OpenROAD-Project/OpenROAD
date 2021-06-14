@@ -35,15 +35,18 @@
 
 # Generate the messages.txt file automatically
 # Arguments
-#   TARGET <target>: the target to post-build trigger from
+#   TARGET <target>: the target to post-build trigger from [required]
 #   OUTPUT_DIR <dir>: the directory to write the messages.txt in
-#   LOCAL: don't recurse
+#                     [defaults to .]
+#   SOURCE_DIR <dir>: the directory to search for sources from
+#                     [defaults to OUTPUT_DIR]
+#   LOCAL: don't recurse [defaults to false]
 
 function(messages)
 
   # Parse args
   set(options LOCAL)
-  set(oneValueArgs TARGET OUTPUT_DIR)
+  set(oneValueArgs TARGET OUTPUT_DIR SOURCE_DIR)
   set(multiValueArgs "")
 
   cmake_parse_arguments(
@@ -67,8 +70,16 @@ function(messages)
     message(FATAL_ERROR "TARGET argument must be provided to messages")
   endif()
 
-  if (NOT DEFINED ARG_OUTPUT_DIR)
-    set(ARG_OUTPUT_DIR .)
+  if (DEFINED ARG_OUTPUT_DIR)
+    set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_OUTPUT_DIR})
+  else()
+    set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  endif()
+
+  if (DEFINED ARG_SOURCE_DIR)
+    set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_SOURCE_DIR})
+  else()
+    set(SOURCE_DIR ${OUTPUT_DIR})
   endif()
 
   if (${ARG_LOCAL})
@@ -80,7 +91,7 @@ function(messages)
     POST_BUILD
     COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py
         ${local}
-        > ${ARG_OUTPUT_DIR}/messages.txt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        > ${OUTPUT_DIR}/messages.txt
+    WORKING_DIRECTORY ${SOURCE_DIR}
   )
 endfunction()
