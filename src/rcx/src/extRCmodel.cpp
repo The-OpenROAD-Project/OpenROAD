@@ -2302,7 +2302,7 @@ FILE* extRCModel::openFile(const char* topDir, const char* name,
 
   FILE* fp = fopen(filename, permissions);
   if (fp == NULL) {
-    logger_->info(RCX, 450, "Cannot open file {} with permissions {}", filename,
+    logger_->info(RCX, 485, "Cannot open file {} with permissions {}", filename,
                   permissions);
     return NULL;
   }

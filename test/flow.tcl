@@ -89,8 +89,8 @@ global_placement -timing_driven -density $global_place_density \
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 # checkpoint
-set global_place_db [make_result_file ${design}_${platform}_global_place.db]
-write_db $global_place_db
+set global_place_def [make_result_file ${design}_${platform}_global_place.def]
+write_def $global_place_def
 
 ################################################################
 # Repair max slew/cap/fanout violations and normalize slews
@@ -125,8 +125,8 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 repair_clock_nets
 
 # checkpoint
-set cts_db [make_result_file ${design}_${platform}_cts.db]
-write_db $cts_db
+set cts_def [make_result_file ${design}_${platform}_cts.def]
+write_def $cts_def
 
 ################################################################
 # Setup/hold timing repair

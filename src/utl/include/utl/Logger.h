@@ -107,7 +107,14 @@ class Logger
                       const std::string& message,
                       const Args&... args)
     {
-      log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
+      // Message counters do NOT apply to debug messages.
+      logger_->log(spdlog::level::level_enum::debug,
+                   "[{} {}-{:04d}] " + message,
+                   level_names[spdlog::level::level_enum::debug],
+                   tool_names_[tool],
+                   level,
+                   args...);
+      logger_->flush();
     }
 
   template <typename... Args>

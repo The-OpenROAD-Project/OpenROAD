@@ -688,7 +688,7 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
       && reader->_block->findNet(net->name()) == nullptr) {
     reader->_logger->warn(
         utl::ODB,
-        246,
+        275,
         "skipping undefined net {} encountered in FLOORPLAN DEF",
         net->name());
     return PARSE_OK;

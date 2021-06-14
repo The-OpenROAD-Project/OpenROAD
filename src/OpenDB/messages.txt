@@ -1,82 +1,272 @@
+ODB 0000 dbWireCodec.cpp:1383      {} Net {} not found
+ODB 0001 dbDatabase.cpp:670        Error opening file {}
+ODB 0002 dbDatabase.cpp:695        Error opening file {}
+ODB 0004 dbBlock.cpp:906           Hierarchical block information is lost
+ODB 0005 dbBlock.cpp:1756          Can not find master {}
 ODB 0006 dbBlock.cpp:1781          Can not find net {}
+ODB 0007 dbBlock.cpp:1806          Can not find inst {}
+ODB 0008 dbBlock.cpp:2393          Cannot duplicate net {}
+ODB 0009 dbBlock.cpp:2397          id mismatch ({},{}) for net {}
+ODB 0010 dbBlock.cpp:2756          tot = {}, upd = {}, enc = {}
+ODB 0011 dbBlock.cpp:2900          net {} {} capNode {} ccseg {} has otherCapNode {} not from 
+ODB 0012 dbBlock.cpp:2910             the other capNode is from net {} {}
+ODB 0013 dbBlock.cpp:3065          ccseg {} has other capn {} not from changed or halo nets
 ODB 0014 dbBlock.cpp:3239          Failed to generate non-default rule for single wire net {}
 ODB 0015 dbBlock.cpp:3312          Library lib does not exist
+ODB 0016 dbBlock.cpp:3316          Failed to write lef file {}
+ODB 0017 dbBlock.cpp:3337          Failed to write def file {}
+ODB 0019 dbBlock.cpp:3358          Can not open file {} to write!
+ODB 0020 dbBlock.cpp:3365          Memory allocation failed for io buffer
+ODB 0021 dbCCSeg.cpp:408               ccSeg={} capn0={} next0={} capn1={} next1={}
+ODB 0022 dbCCSeg.cpp:434           ccSeg {} has capnd {} {}, not {} !
+ODB 0023 dbCCSeg.cpp:755           CCSeg {} does not have orig capNode {}. Can not swap.
+ODB 0024 dbCapNode.cpp:182         cc seg {} has both capNodes {} {} from the same net {} . 
 ODB 0025 dbCapNode.cpp:1100          capn {}
+ODB 0026 dbFlatten.cpp:542         Cannot Open file {} to write
+ODB 0027 dbFlatten.cpp:1328        rsegId {} has zero shape : {}
+ODB 0028 dbFlatten.cpp:1405        \t\t\tprintRSegs: {}
+ODB 0029 dbFlatten.cpp:1418        \t\t\t\t\trsegId: {} J{} -- 
 ODB 0030 dbFlatten.cpp:1432         0 --
+ODB 0031 dbFlatten.cpp:1434         {} I{} B{} -- 
 ODB 0032 dbFlatten.cpp:1453         0
+ODB 0033 dbFlatten.cpp:1455         {} I{} B{}
+ODB 0034 dbITerm.cpp:660           Can not find physical location of iterm {}/{}
+ODB 0035 dbITerm.cpp:677           {} {} {} {}{}
+ODB 0036 dbInst.cpp:653            setLevel {} greater than 255 is illegal! inst {}
+ODB 0037 dbInst.cpp:1006           instance bound to a block {}
+ODB 0038 dbInst.cpp:1027           instance already bound to a block {}
 ODB 0039 dbInst.cpp:1032           Forced Initialize to 0
+ODB 0040 dbInst.cpp:1040           block already bound to an instance {}
 ODB 0041 dbInst.cpp:1045           Forced Initialize to 0
+ODB 0042 dbInst.cpp:1053           block not a direct child of instance owner
 ODB 0043 dbInst.cpp:1062           _dbHier::create fails
+ODB 0044 dbInst.cpp:1173           Failed(_hierarchy) to swap: {} -> {} {}
+ODB 0045 dbInst.cpp:1221           Failed(termSize) to swap: {} -> {} {}
+ODB 0046 dbInst.cpp:1248           Failed(mtermEquiv) to swap: {} -> {} {}
+ODB 0047 dbInst.cpp:1525           instance {} has no output pin
+ODB 0048 dbNet.cpp:996             Net {} {} had been CC adjusted by {}. Please unadjust first.
+ODB 0049 dbNet.cpp:2085            Donor net {} {} has no rc data
+ODB 0050 dbNet.cpp:2091            Donor net {} {} has no capnode attached to iterm {}/{}
+ODB 0051 dbNet.cpp:2115            Receiver net {} {} has no capnode attached to iterm {}/{}
+ODB 0052 dbNet.cpp:2530            Net {}, {} has no extraction data
+ODB 0053 dbNet.cpp:2576            Net {}, {} has no extraction data
+ODB 0054 dbRSeg.cpp:553            CC segs of RSeg {}-{}
 ODB 0055 dbRSeg.cpp:561                       CC{} : {}-{}
 ODB 0056 dbRSeg.cpp:568            rseg {}
+ODB 0057 dbRSeg.cpp:845            Cannot find cap nodes for Rseg {}
+ODB 0058 dbTech.cpp:970            Layer {} is not a routing layer!
+ODB 0059 dbTech.cpp:979            Layer {}, routing level {}, has {} pitch !!
+ODB 0060 dbTech.cpp:988            Layer {}, routing level {}, has {} width !!
+ODB 0061 dbTech.cpp:997            Layer {}, routing level {}, has {} spacing !!
 ODB 0062 dbWire.cpp:1879           This wire has no net
+ODB 0063 dbWireCodec.cpp:1124      {} No wires for net {}
+ODB 0064 dbWireCodec.cpp:1133      {} begin decoder for net {}
+ODB 0065 dbWireCodec.cpp:1142      {} End decoder for net {}
+ODB 0066 dbWireCodec.cpp:1154      {} New path: layer {} type {}  non-default rule {}
+ODB 0067 dbWireCodec.cpp:1163      {} New path: layer {} type {}\n
+ODB 0068 dbWireCodec.cpp:1186      {} New path at junction {}, point(ext) {} {} {}, with rule 
+ODB 0069 dbWireCodec.cpp:1198      {} New path at junction {}, point(ext) {} {} {}
+ODB 0070 dbWireCodec.cpp:1210      {} New path at junction {}, point {} {}, with rule {}
+ODB 0071 dbWireCodec.cpp:1220      {} New path at junction {}, point {} {}
+ODB 0072 dbWireCodec.cpp:1229      {} opcode after junction is not point or point_ext??\n
+ODB 0073 dbWireCodec.cpp:1248      {} Short at junction {}, with rule {}
 ODB 0074 dbWireCodec.cpp:1255      {} Short at junction {}
+ODB 0075 dbWireCodec.cpp:1270      {} Virtual wire at junction {}, with rule {}
+ODB 0076 dbWireCodec.cpp:1277      {} Virtual wire at junction {}
 ODB 0077 dbWireCodec.cpp:1284      {} Found point {} {}
+ODB 0078 dbWireCodec.cpp:1290      {} Found point(ext){} {} {}
+ODB 0079 dbWireCodec.cpp:1296      {} Found via {}
 ODB 0080 dbWireCodec.cpp:1305      block via found in signal net!
 ODB 0081 dbWireCodec.cpp:1319      {} Found Iterm
 ODB 0082 dbWireCodec.cpp:1324      {} Found Bterm
+ODB 0083 dbWireCodec.cpp:1332      {} GOT RULE {}, EXPECTED RULE {}
+ODB 0084 dbWireCodec.cpp:1341      {} Found Rule {} in middle of path
+ODB 0085 dbWireCodec.cpp:1350      {} End decoder for net {}
 ODB 0086 dbWireCodec.cpp:1358      {} Hit default!
-ODB 0094 definComponent.cpp:179    		Created {} Insts
+ODB 0087 dbWirePathItr.cpp:515     {} No wires for net {}
+ODB 0088 definBlockage.cpp:72      error: undefined layer ({}) referenced
+ODB 0089 definBlockage.cpp:83      error: undefined component ({}) referenced
+ODB 0090 definBlockage.cpp:196     error: undefined component ({}) referenced
+ODB 0091 definBlockage.cpp:217     warning: Blockage max density {} not in [0, 100] will be ignored
+ODB 0092 definComponent.cpp:151    error: unknown library cell referenced ({}) for instance ({})
+ODB 0093 definComponent.cpp:173    error: duplicate instance definition({})
+ODB 0094 definComponent.cpp:179    \t\tCreated {} Insts
+ODB 0095 definFill.cpp:64          error: undefined layer ({}) referenced
 ODB 0096 definNet.cpp:122          net {} does not exist
-ODB 0097 definNet.cpp:147          		Created {} Nets
+ODB 0097 definNet.cpp:147          \t\tCreated {} Nets
 ODB 0098 definNet.cpp:161          duplicate mustjoin net found ({})
+ODB 0099 definNet.cpp:200          error: netlist component ({}) is not defined
+ODB 0100 definNet.cpp:210          error: netlist component-pin ({}, {}) is not defined
+ODB 0101 definNet.cpp:247          error: undefined NONDEFAULTRULE ({}) referenced
+ODB 0102 definNet.cpp:264          error: NONDEFAULTRULE ({}) of net ({}) does not match DEF rule 
+ODB 0103 definNet.cpp:278          error: undefined NONDEFAULTRULE ({}) referenced
+ODB 0104 definNet.cpp:363          error: undefined layer ({}) referenced
+ODB 0105 definNet.cpp:378          error: RULE ({}) referenced for layer ({})
+ODB 0106 definNet.cpp:404          error: undefined TAPER RULE ({}) referenced
+ODB 0107 definNet.cpp:518          error: undefined via ({}) referenced
+ODB 0108 definNet.cpp:550          error: invalid VIA layers, cannot determine exit layer of path
+ODB 0109 definNet.cpp:574          error: undefined via ({}) referenced
+ODB 0110 definNet.cpp:591          error: invalid VIA layers, cannot determine exit layer of path
 ODB 0111 definNonDefaultRule.cpp:64 error: Duplicate NONDEFAULTRULE {}
 ODB 0112 definNonDefaultRule.cpp:85 error: Cannot find tech-via {}
+ODB 0113 definNonDefaultRule.cpp:101 error: Cannot find tech-via-genreate rule {}
 ODB 0114 definNonDefaultRule.cpp:118 error: Cannot find layer {}
 ODB 0115 definNonDefaultRule.cpp:134 error: Cannot find layer {}
+ODB 0116 definNonDefaultRule.cpp:142 error: Duplicate layer rule ({}) in non-default-rule statement.
 ODB 0117 definPin.cpp:118          PIN {} missing right bus character.
 ODB 0118 definPin.cpp:124          PIN {} missing left bus character.
+ODB 0119 definPin.cpp:202          error: Cannot specify effective width and minimum spacing 
+ODB 0120 definPin.cpp:217          error: Cannot specify effective width and minimum spacing 
+ODB 0121 definPin.cpp:237          error: undefined layer ({}) referenced
 ODB 0122 definPin.cpp:372          error: Cannot find PIN {}
 ODB 0123 definPin.cpp:385          error: Cannot find PIN {}
+ODB 0124 definReader.cpp:533       warning: Polygon DIEAREA statement not supported.  The bounding 
 ODB 0125 definReader.cpp:1606      lines processed: {}
 ODB 0126 definReader.cpp:1611      error: {}
 ODB 0127 definReader.cpp:1637      Reading DEF file: {}
 ODB 0128 definReader.cpp:349       Design: {}
 ODB 0129 definReader.cpp:1641      Error: Failed to read DEF file
 ODB 0130 definReader.cpp:1646          Created {} pins.
+ODB 0131 definReader.cpp:1652          Created {} components and {} component-terminals.
+ODB 0132 definReader.cpp:1663          Created {} special nets and {} connections.
+ODB 0133 definReader.cpp:1670          Created {} nets and {} connections.
 ODB 0134 definReader.cpp:1683      Finished DEF file: {}
 ODB 0135 definReader.cpp:1695      Reading DEF file: {}
 ODB 0137 definReader.cpp:1699      Error: Failed to read DEF file
 ODB 0138 definReader.cpp:1704          Created {} pins.
+ODB 0139 definReader.cpp:1707          Created {} components and {} component-terminals.
+ODB 0140 definReader.cpp:1714          Created {} special nets and {} connections.
+ODB 0141 definReader.cpp:1721          Created {} nets and {} connections.
 ODB 0142 definReader.cpp:1727      Finished DEF file: {}
 ODB 0143 definReader.cpp:1738      Reading DEF file: {}
 ODB 0144 definReader.cpp:1742      Error: Failed to read DEF file
+ODB 0145 definReader.cpp:1747          Processed {} special nets.
 ODB 0146 definReader.cpp:1751          Processed {} nets.
 ODB 0147 definReader.cpp:1753      Finished DEF file: {}
 ODB 0148 definReader.cpp:1824      error: Cannot open DEF file {}
 ODB 0149 definReader.cpp:1842      DEF parser returns an error!
 ODB 0150 definReader.cpp:1859      error: Cannot open DEF file {}
 ODB 0151 definReader.cpp:1877      DEF parser returns an error!
-ODB 0152 definRegion.cpp:76         already exists
+ODB 0152 definRegion.cpp:76        Region \"{}\" already exists
+ODB 0153 definRegion.cpp:89        Warning: A REGION with the name \"{}\" already exists, renaming 
+ODB 0154 definRegion.cpp:135       error: netlist component ({}) is not defined
+ODB 0155 definRow.cpp:111          error: undefined site ({}) referenced in row ({}) statement.
 ODB 0156 definSNet.cpp:124         special net {} does not exist
+ODB 0157 definSNet.cpp:179         error: netlist component ({}) is not defined
+ODB 0158 definSNet.cpp:189         error: netlist component-pin ({}, {}) is not defined
+ODB 0159 definSNet.cpp:243         error: undefined layer ({}) referenced
+ODB 0160 definSNet.cpp:262         error: undefined layer ({}) referenced
+ODB 0161 definSNet.cpp:297         error: SHIELD net ({}) does not exists.
+ODB 0162 definSNet.cpp:315         error: undefined layer ({}) referenced
+ODB 0163 definSNet.cpp:442         error: undefined ia ({}) referenced
+ODB 0164 definSNet.cpp:499         error: undefined ia ({}) referenced
+ODB 0165 definTracks.cpp:70        error: undefined layer ({}) referenced
 ODB 0166 definVia.cpp:67           error: duplicate via ({})
-ODB 0174 defout_impl.cpp:1591      warning: missing shield net
-ODB 0175 lefin.cpp:177             illegal: non-orthogonal-path at Pin
-ODB 0179 lefin.cpp:481             invalid BUSBITCHARS ({})
-
-ODB 0180 lefin.cpp:559             duplicate LAYER ({}) ignored
-ODB 0191 lefin.cpp:1238            error: undefined VIA {}
-ODB 0193 lefin.cpp:1265            error: undefined LAYER {}
-ODB 0212 lefin.cpp:1759            error: missing LAYER {}
-ODB 0214 lefin.cpp:1819            duplicate VIARULE ({}) ignoring...
-ODB 0217 lefin.cpp:1878            duplicate VIARULE ({}) ignoring...
-ODB 0221 lefin.cpp:1956            {} lines parsed!
-ODB 0222 lefin.cpp:1961            Reading LEF file: {}
-ODB 0224 lefin.cpp:2014                Created {} technology vias
-ODB 0225 lefin.cpp:2016                Created {} library cells
-ODB 0226 lefin.cpp:2018            Finished LEF file:  {}
-ODB 0227 lefin.cpp:2029            Error: technology already exists
-ODB 0228 lefin.cpp:2057            Error: technolgy does not exists
-ODB 0229 lefin.cpp:2062            Error: library ({}) already exists
-ODB 0231 lefin.cpp:2097            Error: technology already exists
-ODB 0233 lefin.cpp:2142            Error: technology already exists
-ODB 0234 lefin.cpp:2158            Reading LEF file:  {} ...
-ODB 0235 lefin.cpp:2160            Error reading {}
-ODB 0236 lefin.cpp:2167            Finished LEF file:  {}
-ODB 0238 lefin.cpp:2175                Created {} technology vias
-ODB 0239 lefin.cpp:2178                Created {} library cells
+ODB 0167 definVia.cpp:80           error: cannot file VIA GENERATE rule in technology ({}).
+ODB 0168 definVia.cpp:116          error: undefined layer ({}) referenced
+ODB 0169 definVia.cpp:125          error: undefined layer ({}) referenced
+ODB 0170 definVia.cpp:134          error: undefined layer ({}) referenced
+ODB 0171 definVia.cpp:231          error: undefined layer ({}) referenced
+ODB 0172 defout_impl.cpp:148       Cannot open DEF file ({}) for writing
+ODB 0173 defout_impl.cpp:915       warning: pin {} skipped because it has no net
+ODB 0174 defout_impl.cpp:1590      warning: missing shield net
+ODB 0175 lefin.cpp:181             illegal: non-orthogonal-path at Pin
+ODB 0176 lefin.cpp:203             error: undefined layer ({}) referenced
+ODB 0177 lefin.cpp:378             error: undefined via ({}) referenced
+ODB 0178 lefin.cpp:398             error: undefined via ({}) referenced
+ODB 0179 lefin.cpp:508             invalid BUSBITCHARS ({})\n
+ODB 0180 lefin.cpp:586             duplicate LAYER ({}) ignored
+ODB 0181 lefin.cpp:599             Skipping LAYER ({}) ; Non Routing or Cut type
+ODB 0182 lefin.cpp:608             Skipping LAYER ({}) ; cannot understand type
+ODB 0183 lefin.cpp:762             In layer {}, spacing layer {} not found
+ODB 0184 lefin.cpp:1071            cannot find EEQ for macro {}
+ODB 0185 lefin.cpp:1080            cannot find LEQ for macro {}
+ODB 0186 lefin.cpp:1125            macro {} references unkown site {}
+ODB 0187 lefin.cpp:1175            duplicate NON DEFAULT RULE ({})
+ODB 0188 lefin.cpp:1186            Invalid layer name {} in NON DEFAULT RULE {}
+ODB 0189 lefin.cpp:1223            Invalid layer name {} in NONDEFAULT SPACING
+ODB 0190 lefin.cpp:1231            Invalid layer name {} in NONDEFAULT SPACING
+ODB 0191 lefin.cpp:1254            error: undefined VIA {}
+ODB 0192 lefin.cpp:1267            error: undefined VIA GENERATE RULE {}
+ODB 0193 lefin.cpp:1281            error: undefined LAYER {}
+ODB 0194 lefin.cpp:1331            Cannot add a new PIN ({}) to MACRO ({}), because the pins have 
+ODB 0195 lefin.cpp:1356            Invalid layer name {} in antenna info for term {}
+ODB 0196 lefin.cpp:1373            Invalid layer name {} in antenna info for term {}
+ODB 0197 lefin.cpp:1390            Invalid layer name {} in antenna info for term {}
+ODB 0198 lefin.cpp:1407            Invalid layer name {} in antenna info for term {}
+ODB 0199 lefin.cpp:1433            Invalid layer name {} in antenna info for term {}
+ODB 0200 lefin.cpp:1449            Invalid layer name {} in antenna info for term {}
+ODB 0201 lefin.cpp:1465            Invalid layer name {} in antenna info for term {}
+ODB 0202 lefin.cpp:1482            Invalid layer name {} in antenna info for term {}
+ODB 0203 lefin.cpp:1573            Invalid layer name {} in SPACING
+ODB 0204 lefin.cpp:1579            Invalid layer name {} in SPACING
+ODB 0205 lefin.cpp:1622            The LEF UNITS DATABASE MICRON convert factor ({}) is greater than 
+ODB 0206 lefin.cpp:1652            error: invalid dbu-per-micron value {}; valid units (100, 
+ODB 0207 lefin.cpp:1669            Unknown object type for USEMINSPACING: {}
+ODB 0208 lefin.cpp:1687            VIA: duplicate VIA ({}) ignored...
+ODB 0209 lefin.cpp:1720            VIA: undefined layer ({}) in VIA ({})
+ODB 0210 lefin.cpp:1750            error: missing VIA GENERATE rule {}
+ODB 0211 lefin.cpp:1766            error: missing LAYER {}
+ODB 0212 lefin.cpp:1775            error: missing LAYER {}
+ODB 0213 lefin.cpp:1783            error: missing LAYER {}
+ODB 0214 lefin.cpp:1835            duplicate VIARULE ({}) ignoring...
+ODB 0215 lefin.cpp:1845            error: VIARULE ({}) undefined layer {}
+ODB 0216 lefin.cpp:1875            error: undefined VIA {} in VIARULE {}
+ODB 0217 lefin.cpp:1894            duplicate VIARULE ({}) ignoring...
+ODB 0218 lefin.cpp:1904            error: VIARULE ({}) undefined layer {}
+ODB 0221 lefin.cpp:1972            {} lines parsed!
+ODB 0222 lefin.cpp:1977            Reading LEF file: {}
+ODB 0223 lefin.cpp:2026                Created {} technology layers
+ODB 0224 lefin.cpp:2030                Created {} technology vias
+ODB 0225 lefin.cpp:2032                Created {} library cells
+ODB 0226 lefin.cpp:2034            Finished LEF file:  {}
+ODB 0227 lefin.cpp:2045            Error: technology already exists
+ODB 0228 lefin.cpp:2073            Error: technolgy does not exists
+ODB 0229 lefin.cpp:2078            Error: library ({}) already exists
+ODB 0230 lefin.cpp:2107            Error: library ({}) already exists
+ODB 0231 lefin.cpp:2113            Error: technology already exists
+ODB 0232 lefin.cpp:2152            Error: library ({}) already exists
+ODB 0233 lefin.cpp:2158            Error: technology already exists
+ODB 0234 lefin.cpp:2174            Reading LEF file:  {} ...
+ODB 0235 lefin.cpp:2176            Error reading {}
+ODB 0236 lefin.cpp:2183            Finished LEF file:  {}
+ODB 0237 lefin.cpp:2187                Created {} technology layers
+ODB 0238 lefin.cpp:2191                Created {} technology vias
+ODB 0239 lefin.cpp:2194                Created {} library cells
 ODB 0240 reader.cpp:559            error: Cannot open LEF file {}
+ODB 0241 create_box.cpp:154        error: Cannot create a via instance, via ({}) has no shapes
+ODB 0242 create_box.cpp:183        error: Can not determine which direction to continue path,
+ODB 0243 create_box.cpp:186               via ({}) spans above and below the current layer ({}).
+ODB 0244 create_box.cpp:218        error: Cannot create a via instance, via ({}) has no shapes
+ODB 0245 create_box.cpp:247        error: Net {}: Can not determine which direction to continue path,
+ODB 0246 lefin.cpp:1983            unknown incomplete layer prop of type {}
+ODB 0247 definReader.cpp:923       skipping undefined pin {} encountered in {} DEF
+ODB 0248 definReader.cpp:454       skipping undefined comp {} encountered in {} DEF
+ODB 0249 definReader.cpp:1450      skipping undefined net {} encountered in FLOORPLAN DEF
 ODB 0250 definReader.cpp:1628      Chip does not exist
 ODB 0252 definReader.cpp:1649          Updated {} pins.
+ODB 0253 definReader.cpp:1659          Updated {} components.
+ODB 0254 definReader.cpp:1677          Updated {} nets and {} connections.
 ODB 0260 definReader.cpp:68        DESIGN is not defined in DEF
+ODB 0261 definReader.cpp:326       Block with name \"{}\" already exists, renaming too \"{}\"
 ODB 0270 reader.cpp:550            error: Cannot open zipped LEF file {}
+ODB 0271 definReader.cpp:1833      error: Cannot open zipped DEF file {}
+ODB 0272 dbFlatten.cpp:999         Failed to create region {}
+ODB 0273 dbUtil.cpp:963            Create ND RULE {} for layer/width {},{}
+ODB 0274 create_box.cpp:59         Zero length path segment ({},{}) ({},{})
+ODB 0275 definReader.cpp:689       skipping undefined net {} encountered in FLOORPLAN DEF
+ODB 0276 create_box.cpp:252               via ({}) spans above and below the current layer ({}).
+ODB 0277 lefin.cpp:2003            dropping LEF58_SPACING rule for cut layer {} for 
+ODB 0279 lefin.cpp:676             parse mismatch in layer propery {} for layer {} : \"{}\"
+ODB 0280 lefin.cpp:2014            dropping LEF58_SPACINGTABLE rule for cut layer {} for 
+ODB 0281 dbFlatten.cpp:390         Failed to create net {}
+ODB 0282 dbTechLayer.cpp:1637      setNumMask {} not in range [1,3]
+ODB 1000 OpenDB.tcl:69             Layer ${layerName} not found, skipping NDR for this layer
+ODB 1001 OpenDB.tcl:137            Layer ${firstLayer} not found
+ODB 1002 OpenDB.tcl:140            Layer ${lastLayer} not found
+ODB 1004 OpenDB.tcl:152            -name is missing
+ODB 1005 OpenDB.tcl:159            NonDefaultRule ${name} already exists
+ODB 1006 OpenDB.tcl:164            Spacing values \[$spacings\] are malformed
+ODB 1007 OpenDB.tcl:171            Width values \[$widths\] are malformed
+ODB 1008 OpenDB.tcl:179            Via ${viaName} not found, skipping NDR for this via
+ODB 1009 OpenDB.tcl:89             Invalid input in create_ndr cmd
