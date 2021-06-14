@@ -146,7 +146,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
   while (parser1.parseNextLine() > 0) {
     if (parser1.isKeyword(0, "layer")) {
       if (!layerSectionFlag) {
-        logger_->info(RCX, 55, "Reading layer section of file {}", filename);
+        logger_->info(RCX, 481, "Reading layer section of file {}", filename);
         layerSectionFlag = true;
       }
       char* layerName = parser1.get(1);
@@ -756,7 +756,7 @@ int extMeasure::readAB(extMain* extMain, const char* filename,
 
     logger_->info(RCX, 54, "Have read {} nets from file {}", netCnt, filename);
   } else {
-    logger_->warn(RCX, 57, "No nets were read from file {}", filename);
+    logger_->warn(RCX, 482, "No nets were read from file {}", filename);
   }
   uint ccCnt = 0;
   int gndCnt = 0;

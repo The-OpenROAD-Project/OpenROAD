@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "io/io.h"
-
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -36,6 +34,7 @@
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
 #include "global.h"
+#include "io/io.h"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -361,7 +360,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
 {
   if (design->tech_->getNondefaultRule(ndr->getName())) {
     logger->warn(DRT,
-                 0,
+                 256,
                  "Skipping NDR { } because another rule with the same name "
                  "already exists\n",
                  ndr->getName());
@@ -1000,7 +999,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
         || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
       logger->warn(utl::DRT,
-                   168,
+                   265,
                    "unsupported LEF58_SPACING rule for layer {}",
                    layer->getName());
       continue;
@@ -1111,6 +1110,22 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
     con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
     tmpLayer->addLef58MinStepConstraint(con.get());
+    tech->addUConstraint(std::move(con));
+  }
+  for (auto rule : layer->getTechLayerEolExtensionRules()) {
+    frCollection<frCoord> widthTbl;
+    frCollection<frCoord> extTbl;
+    frCollection<std::pair<frCoord, frCoord>> dbExtTbl;
+    rule->getExtensionTable(dbExtTbl);
+    for (auto& [width, ext] : dbExtTbl) {
+      widthTbl.push_back(width);
+      extTbl.push_back(ext);
+    }
+    auto con = make_unique<frLef58EolExtensionConstraint>(
+        fr1DLookupTbl<frCoord, frCoord>("WIDTH", widthTbl, extTbl, false));
+    con->setMinSpacing(rule->getSpacing());
+    con->setParallelOnly(rule->isParallelOnly());
+    tmpLayer->addLef58EolExtConstraint(con.get());
     tech->addUConstraint(std::move(con));
   }
 }
@@ -1231,7 +1246,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       }
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
         logger->warn(utl::DRT,
-                     160,
+                     258,
                      "unsupported LEF58_SPACING rule for layer {} of type AREA",
                      layer->getName());
         break;
@@ -1245,34 +1260,34 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMASK:
         logger->warn(
             utl::DRT,
-            162,
+            259,
             "unsupported LEF58_SPACING rule for layer {} of type SAMEMASK",
             layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP:
         logger->warn(utl::DRT,
-                     163,
+                     260,
                      "unsupported LEF58_SPACING rule for layer {} of type "
                      "PARALLELOVERLAP",
                      layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
         logger->warn(utl::DRT,
-                     164,
+                     261,
                      "unsupported LEF58_SPACING rule for layer {} of type "
                      "PARALLELWITHIN",
                      layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE:
         logger->warn(utl::DRT,
-                     165,
+                     262,
                      "unsupported LEF58_SPACING rule for layer {} of type "
                      "SAMEMETALSHAREDEDGE",
                      layer->getName());
         break;
       default:
         logger->warn(utl::DRT,
-                     166,
+                     263,
                      "unsupported LEF58_SPACING rule for layer {}",
                      layer->getName());
         break;
@@ -1297,7 +1312,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
       if (tech->name2layer.find(secondLayerName) == tech->name2layer.end()) {
         logger->warn(utl::DRT,
-                     167,
+                     264,
                      "layer {} is not found to layer {} LEF58_SPACINGTABLE",
                      secondLayerName,
                      layer->getName());
@@ -1666,6 +1681,18 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       rptr->setLength(length, distance);
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
+  }
+
+  for (auto rule : layer->getTechLayerEolKeepOutRules()) {
+    unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
+    auto rptr = static_cast<frLef58EolKeepOutConstraint*>(uCon.get());
+    rptr->setEolWidth(rule->getEolWidth());
+    rptr->setBackwardExt(rule->getBackwardExt());
+    rptr->setForwardExt(rule->getForwardExt());
+    rptr->setSideExt(rule->getSideExt());
+    rptr->setCornerOnly(rule->isCornerOnly());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }
 }
 

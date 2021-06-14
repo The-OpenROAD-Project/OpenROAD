@@ -668,7 +668,7 @@ void dbDatabase::readEco(dbBlock* block_, const char* filename)
   if (!file) {
     int errnum = errno;
     block->getImpl()->getLogger()->error(
-        utl::ODB, 8, "Error opening file {}", strerror(errnum));
+        utl::ODB, 1, "Error opening file {}", strerror(errnum));
     return;
   }
 
@@ -693,7 +693,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   if (!file) {
     int errnum = errno;
     block->getImpl()->getLogger()->error(
-        utl::ODB, 8, "Error opening file {}", strerror(errnum));
+        utl::ODB, 2, "Error opening file {}", strerror(errnum));
     return;
   }
 

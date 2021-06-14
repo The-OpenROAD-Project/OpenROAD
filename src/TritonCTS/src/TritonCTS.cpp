@@ -96,6 +96,8 @@ void TritonCTS::runTritonCts()
   setupCharacterization();
   findClockRoots();
   populateTritonCts();
+  if (_builders->size() < 1)
+    return;
   checkCharacterization();
   buildClockTrees();
   if (_options->runPostCtsOpt()) {
@@ -185,7 +187,7 @@ void TritonCTS::populateTritonCts()
   populateTritonCTS();
 
   if (_builders->size() < 1) {
-    _logger->error(CTS, 82, "No valid clock nets in the design.");
+    _logger->warn(CTS, 82, "No valid clock nets in the design. Skipping CTS...");
   }
 }
 
@@ -506,7 +508,7 @@ void TritonCTS::initAllClocks()
   }
 
   if (getNumClocks() == 0) {
-    _logger->error(CTS, 83, "No clock nets have been found.");
+    _logger->warn(CTS, 83, "No clock nets have been found.");
   }
 
   _logger->info(CTS, 8, " TritonCTS found {} clock nets.", getNumClocks());

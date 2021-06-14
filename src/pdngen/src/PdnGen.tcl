@@ -1598,7 +1598,7 @@ proc generate_vias {layer1 layer2 intersections connection} {
         set lower_layer_name [[$via getBottomLayer] getName]
         dict set constraints use_fixed_via $lower_layer_name $via_name
       } else {
-        utl::warn "PDN" 99 "Via $via_name specified in the grid specification does not exist in this technology"
+        utl::warn "PDN" 63 "Via $via_name specified in the grid specification does not exist in this technology"
       }
     }
   }
@@ -2346,19 +2346,19 @@ proc find_pad_offset_area {} {
       }
     }
     if {$found_b == 0} {
-      utl::warn "PDN" 99 "No power/ground pads found on bottom edge"
+      utl::warn "PDN" 64 "No power/ground pads found on bottom edge"
     }
     if {$found_r == 0} {
-      utl::warn "PDN" 99 "No power/ground pads found on right edge"
+      utl::warn "PDN" 65 "No power/ground pads found on right edge"
     }
     if {$found_t == 0} {
-      utl::warn "PDN" 99 "No power/ground pads found on top edge"
+      utl::warn "PDN" 66 "No power/ground pads found on top edge"
     }
     if {$found_l == 0} {
-      utl::warn "PDN" 99 "No power/ground pads found on left edge"
+      utl::warn "PDN" 67 "No power/ground pads found on left edge"
     }
     if {$found_b == 0 || $found_r == 0 || $found_t == 0 || $found_l == 0} {
-      utl::error "PDN" 99 "Cannot place core rings without pwr/gnd pads on each side"
+      utl::error "PDN" 68 "Cannot place core rings without pwr/gnd pads on each side"
     }
     # debug "pad_area: ([real_value $xMin] [real_value $yMin]) ([real_value $xMax] [real_value $yMax])"
     dict set design_data config pad_offset_area [list $xMin $yMin $xMax $yMax]
@@ -2822,7 +2822,7 @@ proc export_opendb_specialnet {net_name signal_type} {
         } elseif {[set techvia [$tech findVia $via_name]] != "NULL"} {
           odb::dbSBox_create $swire $techvia $x $y "STRIPE"
         } else {
-          utl::error "PDN" 99 "Cannot find via $via_name"
+          utl::error "PDN" 69 "Cannot find via $via_name"
         }
         # debug "via created"
       }
@@ -3143,7 +3143,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   init_tech 
   
   if {![file exists $PDN_cfg]} {
-    utl::error "PDN" 28 "File $PDN_cfg does not exist"
+    utl::error "PDN" 62 "File $PDN_cfg does not exist"
   }
  
   if {![file_exists_non_empty $PDN_cfg]} {

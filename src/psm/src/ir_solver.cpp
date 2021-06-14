@@ -848,7 +848,7 @@ bool IRSolver::CreateGmat(bool connection_only)
             double rho = via_layer->getResistance();
             if (!CheckValidR(rho) && !connection_only) {
               m_logger->error( utl::PSM,
-                    36, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",via_layer->getName());
+                    37, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",via_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -877,7 +877,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           double       rho        = wire_layer->getResistance();
           if (!CheckValidR(rho) && !connection_only) {
             m_logger->error( utl::PSM,
-                  36, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",wire_layer->getName());
+                  66, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",wire_layer->getName());
           }
           dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
           if (l == m_bottom_layer) {  // ensure that the bootom layer(rail) is
