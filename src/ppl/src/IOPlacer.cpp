@@ -341,9 +341,9 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     int curr_x, curr_y, start_idx, end_idx;
     // get the on grid min distance
     int min_dst_ver = core_.getMinDstPinsX()[i]*
-                      std::ceil((float)parms_->getMinDistance()/core_.getMinDstPinsX()[i]);
+                      std::ceil(static_cast<float>(parms_->getMinDistance())/core_.getMinDstPinsX()[i]);
     int min_dst_hor = core_.getMinDstPinsY()[i]*
-                      std::ceil((float)parms_->getMinDistance()/core_.getMinDstPinsY()[i]);
+                      std::ceil(static_cast<float>(parms_->getMinDistance())/core_.getMinDstPinsY()[i]);
 
     min_dst_ver = (min_dst_ver == 0) ? default_min_dist*core_.getMinDstPinsX()[i] : min_dst_ver;
     min_dst_hor = (min_dst_hor == 0) ? default_min_dist*core_.getMinDstPinsY()[i] : min_dst_hor;
@@ -375,7 +375,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
           + num_tracks_offset;
     end_idx
         = std::min((num_tracks - 1),
-                   (int) floor((max - half_width - init_tracks) / min_dst_pins))
+                   static_cast<int>(floor((max - half_width - init_tracks) / min_dst_pins)))
           - num_tracks_offset;
     if (vertical) {
       curr_x = init_tracks + start_idx * min_dst_pins;
@@ -861,7 +861,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       }
 
       if (height % mfg_grid != 0) {
-        height = mfg_grid*std::ceil((float)height/mfg_grid);
+        height = mfg_grid*std::ceil(static_cast<float>(height)/mfg_grid);
       }
 
       if (pin.getOrientation() == Orientation::north) {
@@ -891,7 +891,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       }
 
       if (height % mfg_grid != 0) {
-        height = mfg_grid*std::ceil((float)height/mfg_grid);
+        height = mfg_grid*std::ceil(static_cast<float>(height)/mfg_grid);
       }
 
       if (pin.getOrientation() == Orientation::east) {
@@ -907,11 +907,11 @@ void IOPlacer::updatePinArea(IOPin& pin)
     int height = top_grid_.height;
 
     if (width % mfg_grid != 0) {
-      width = mfg_grid*std::ceil((float)width/mfg_grid);
+      width = mfg_grid*std::ceil(static_cast<float>(width)/mfg_grid);
     }
 
     if (height % mfg_grid != 0) {
-      height = mfg_grid*std::ceil((float)height/mfg_grid);
+      height = mfg_grid*std::ceil(static_cast<float>(height)/mfg_grid);
     }
 
     pin.setLowerBound(pin.getX() - width/2, pin.getY() - height/2);
@@ -1018,7 +1018,11 @@ void IOPlacer::initConstraints()
     for (Section sec : constraint.sections) {
       num_slots += sec.num_slots;
     }
-    constraint.pins_per_slots = (float)constraint.pin_list.size()/num_slots;
+    if (num_slots > 0) {
+      constraint.pins_per_slots = static_cast<float>(constraint.pin_list.size())/num_slots;
+    } else {
+      logger_->error(PPL, 76, "Constraint does not have available slots for its pins.");
+    }
   }
   sortConstraints();
 }
@@ -1164,7 +1168,7 @@ void IOPlacer::run(bool random_mode)
     updatePinArea(assignment_[i]);
   }
 
-  if (assignment_.size() != (int) netlist_.numIOPins()) {
+  if (assignment_.size() != static_cast<int>(netlist_.numIOPins())) {
     logger_->error(PPL,
                    39,
                    "Assigned {} pins out of {} IO pins",
@@ -1192,11 +1196,11 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
   block_ = db_->getChip()->getBlock();
   const int mfg_grid = tech_->getManufacturingGrid();
   if (width % mfg_grid != 0) {
-    width = mfg_grid*std::ceil((float)width/mfg_grid);
+    width = mfg_grid*std::ceil(static_cast<float>(width)/mfg_grid);
   }
 
   if (height % mfg_grid != 0) {
-    height = mfg_grid*std::ceil((float)height/mfg_grid);
+    height = mfg_grid*std::ceil(static_cast<float>(height)/mfg_grid);
   }
 
   odb::Point pos = odb::Point(x, y);

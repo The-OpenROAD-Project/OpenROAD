@@ -4,13 +4,13 @@ PPL 0003 IOPlacer.cpp:745           * Num of I/O w/sink     {}
 PPL 0004 IOPlacer.cpp:747           * Num of I/O w/o sink   {}
 PPL 0005 IOPlacer.cpp:748           * Slots Per Section     {}
 PPL 0006 IOPlacer.cpp:749           * Slots Increase Factor {:.1}
-PPL 0007 IOPlacer.cpp:1143         Random pin placement.
+PPL 0007 IOPlacer.cpp:1147         Random pin placement.
 PPL 0008 IOPlacer.cpp:750           * Usage Increase Factor {:.1}
 PPL 0009 IOPlacer.cpp:751           * Force Pin Spread      {}
 PPL 0010 IOPlacer.cpp:760          Tentative {} to setup sections
-PPL 0011 IOPlacer.cpp:1180         HPWL before ioPlacer: {}
-PPL 0012 IOPlacer.cpp:1181         HPWL after  ioPlacer: {}
-PPL 0013 IOPlacer.cpp:1182         HPWL delta  ioPlacer: {}
+PPL 0011 IOPlacer.cpp:1184         HPWL before ioPlacer: {}
+PPL 0012 IOPlacer.cpp:1185         HPWL after  ioPlacer: {}
+PPL 0013 IOPlacer.cpp:1186         HPWL delta  ioPlacer: {}
 PPL 0015 IOPlacer.tcl:283          Macro [$inst getName] is not placed.
 PPL 0016 IOPlacer.tcl:148          Both -direction and -pin_names constraints not allowed..
 PPL 0017 IOPlacer.tcl:301          -hor_layers is required.
@@ -30,8 +30,8 @@ PPL 0032 IOPlacer.tcl:273          no block found.
 PPL 0033 HungarianMatching.cpp:110 I/O pin {} cannot be placed in the specified region. 
 PPL 0036 IOPlacer.cpp:767          Number of sections is {}
 PPL 0037 IOPlacer.cpp:776          Number of slots per sections is {}
-PPL 0038 IOPlacer.cpp:1474         Pin {} without net
-PPL 0039 IOPlacer.cpp:1168         Assigned {} pins out of {} IO pins
+PPL 0038 IOPlacer.cpp:1478         Pin {} without net
+PPL 0039 IOPlacer.cpp:1172         Assigned {} pins out of {} IO pins
 PPL 0040 IOPlacer.cpp:475          Negative number of slots
 PPL 0041 IOPlacer.tcl:416          Pin group $group_idx: \[$group\]
 PPL 0042 IOPlacer.cpp:676          Unsuccessfully assigned I/O groups
@@ -58,9 +58,10 @@ PPL 0066 IOPlacer.tcl:216          -location is required.
 PPL 0067 IOPlacer.tcl:229          -pin_size is required.
 PPL 0068 IOPlacer.tcl:220          -location is not a list of 2 values.
 PPL 0069 IOPlacer.tcl:233          -pin_size is not a list of 2 values.
-PPL 0070 IOPlacer.cpp:1211         Pin {} placed at ({}um, {}um)
+PPL 0070 IOPlacer.cpp:1215         Pin {} placed at ({}um, {}um)
 PPL 0071 IOPlacer.tcl:241          place_pin command should receive only one pin name.
 PPL 0072 IOPlacer.cpp:176          Number of pins ({}) exceed number of valid positions ({})
 PPL 0073 IOPlacer.tcl:183          constraint with region $region has an invalid edge.
 PPL 0074 IOPlacer.cpp:586          Number of pins ({}) exceed number of valid positions ({}) for constraint.
 PPL 0075 IOPlacer.cpp:1004         Pin {} is assigned to more than one constraints. Using last defined constraint.
+PPL 0076 IOPlacer.cpp:1024         Constraint does not have available slots for its pins.
