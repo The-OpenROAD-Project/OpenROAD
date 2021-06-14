@@ -65,3 +65,8 @@ target_link_libraries(rsz
     gui
     utl
 )
+
+messages(
+  TARGET rsz
+  OUTPUT_DIR ..
+)

@@ -63,3 +63,7 @@ target_link_libraries(mpl
     utl
     gui
 )
+
+messages(
+  TARGET mpl
+)

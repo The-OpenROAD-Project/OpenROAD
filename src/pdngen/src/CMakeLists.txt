@@ -57,3 +57,8 @@ target_link_libraries(pdn
     opendb
     utl
 )
+
+messages(
+  TARGET pdn
+  OUTPUT_DIR ..
+)

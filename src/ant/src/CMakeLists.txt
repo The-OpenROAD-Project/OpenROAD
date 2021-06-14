@@ -54,3 +54,8 @@ target_link_libraries(ant
     OpenSTA
     utl
 )
+
+messages(
+  TARGET ant
+  OUTPUT_DIR ..
+)

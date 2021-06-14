@@ -242,6 +242,12 @@ else()
   message(STATUS "Python3 disabled")
 endif()
 
+messages(
+  TARGET openroad
+  OUTPUT_DIR ..
+  LOCAL
+)
+
 # Ancient versions of glibc found on CentOS required librt.
 # OSX has an empty version of librt that causes a link error,
 # so this is protected from linking there.

@@ -1,5 +1,4 @@
 ORD 1001 dbNetwork.cc:908          LEF macro {} pin {} missing from liberty cell.
-ORD 1001 dbReadVerilog.cc:257      instance {} LEF master {} not found.
 ORD 1002 dbNetwork.cc:994          Liberty cell {} pin {} missing from LEF macro.
 ORD 1003 dbNetwork.cc:1158         deletePin not implemented for dbITerm
 ORD 1004 dbNetwork.cc:1194         unimplemented network function mergeInto
@@ -11,4 +10,5 @@ ORD 1009 dbReadVerilog.tcl:51      missing top_cell_name argument and no current
 ORD 1010 dbReadVerilog.tcl:58      no technology has been read.
 ORD 1011 dbReadVerilog.cc:362      LEF master {} has no liberty cell.
 ORD 1012 dbReadVerilog.cc:368      Liberty cell has no LEF master.
+ORD 1013 dbReadVerilog.cc:257      instance {} LEF master {} not found.
 STA 1000 dbSta.cc:600              instance {} swap master {} is not equivalent

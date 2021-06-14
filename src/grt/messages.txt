@@ -104,8 +104,6 @@ GRT 0113 FastRoute.cpp:704         Underflow in reduce: cap, reducedCap: {}, {}
 GRT 0114 FastRoute.cpp:731         Underflow in reduce: cap, reducedCap: {}, {}
 GRT 0115 FastRoute.cpp:1373        Global routing finished with overflow.
 GRT 0118 FastRoute.cpp:1369        Routing congestion too high.
-GRT 0119 RipUp.cpp:229             MAZE RIPUP WRONG in newRipup.
-GRT 0120 RipUp.cpp:327             type2 ripup not type L.
 GRT 0121 RipUp.cpp:393             route type is not maze, netID {}.
 GRT 0122 RipUp.cpp:519             Maze RipUp wrong.
 GRT 0123 RipUp.cpp:621             MAZE RIPUP WRONG in newRipupNet for net {}.
@@ -183,3 +181,5 @@ GRT 0221 AntennaRepair.cpp:127     Cannot create wire for net {}.
 GRT 0222 GlobalRouter.tcl:300      no technology has been read.
 GRT 0223 GlobalRouter.tcl:352      missing dbBlock.
 GRT 0224 GlobalRouter.cpp:3113     Chose via {} as default.
+GRT 0225 RipUp.cpp:229             MAZE RIPUP WRONG in newRipup.
+GRT 0226 RipUp.cpp:327             type2 ripup not type L.
