@@ -244,7 +244,7 @@ void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
                filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(RCX, 58, "Can't open file \"{}\" to write spef.", filename);
+      logger_->info(RCX, 483, "Can't open file \"{}\" to write spef.", filename);
     else
       cnt = _spef->writeBlock(
           NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/,
@@ -735,12 +735,6 @@ uint extMain::getResCapTable(bool lefRC) {
     }
     cnt++;
   }
-  //	if (allRzero)
-  //	{
-  //		logger_->info(RCX, 0, "Warning: No RESISTANCE from all layers in
-  // the
-  // lef files. Can't do extraction.\n\n"); 		return 0;
-  //	}
   return cnt;
 }
 bool extMain::checkLayerResistance() {

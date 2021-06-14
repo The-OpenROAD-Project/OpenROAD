@@ -102,11 +102,13 @@ struct Constraint
       : pin_list(pins), direction(dir), interval(interv)
   {
     box = odb::Rect(-1, -1, -1, -1);
+    pins_per_slots = 0;
   }
   Constraint(PinList pins, Direction dir, odb::Rect b)
       : pin_list(pins), direction(dir), box(b)
   {
     interval = Interval(Edge::invalid, -1, -1);
+    pins_per_slots = 0;
   }
 };
 

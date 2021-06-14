@@ -88,6 +88,13 @@ class Fixture
                                       frCoord par_within = -1,
                                       bool two_edges = false);
 
+  void makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                     bool cornerOnly = false,
+                                     frCoord forward = 200,
+                                     frCoord side = 50,
+                                     frCoord backward = 0,
+                                     frCoord width = 200);
+
   std::shared_ptr<frLef58SpacingEndOfLineConstraint>
   makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                 frCoord space = 200,
@@ -153,6 +160,13 @@ class Fixture
       frLayerNum layer_num,
       std::vector<frCoord> widthTbl,
       std::vector<std::pair<frCoord, frCoord>> valTbl);
+
+  frLef58EolExtensionConstraint* makeEolExtensionConstraint(
+      frLayerNum layer_num,
+      frCoord spacing,
+      std::vector<frCoord> eol,
+      std::vector<frCoord> ext,
+      bool parallelOnly = false);
 
   frSpacingTableTwConstraint* makeSpacingTableTwConstraint(
       frLayerNum layer_num,

@@ -388,7 +388,7 @@ dbNet* dbFlatten::copyNet(dbBlock* parent_block, dbNet* child_net)
   if (net == NULL) {
     // TODO:
     parent_block->getImpl()->getLogger()->warn(
-        utl::ODB, 271, "Failed to create net {}", name);
+        utl::ODB, 281, "Failed to create net {}", name);
     return NULL;
   }
 

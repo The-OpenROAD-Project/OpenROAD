@@ -135,7 +135,7 @@ void HungarianMatching::findAssignmentForGroups()
 void HungarianMatching::createMatrixForGroups()
 {
   for (std::vector<int>& io_group : netlist_.getIOGroups()) {
-    group_size_ = std::max((int)io_group.size(), group_size_);
+    group_size_ = std::max(static_cast<int>(io_group.size()), group_size_);
   }
 
   if (group_size_ > 0) {
