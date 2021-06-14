@@ -43,6 +43,11 @@ class Graph;
 using stt::Tree;
 using stt::Branch;
 
+static void
+reportXY(std::vector<int> x,
+         std::vector<int> y,
+         Logger* logger);
+
 class PdRev
 {
 public:
@@ -230,6 +235,16 @@ PdRev::graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>
     std::pair<std::pair<int, int>, std::pair<int, int>> line(node_xy, parent_xy);
     lines.push_back(line);
   }
+}
+
+// Useful for generating regression data.
+static void
+reportXY(std::vector<int> x,
+         std::vector<int> y,
+         Logger* logger)
+{
+  for (int i = 0; i < x.size(); i++)
+    logger->report("{} {}", x[i], y[i]);
 }
 
 }  // namespace

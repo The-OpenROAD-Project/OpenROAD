@@ -92,8 +92,8 @@ proc report_pdrev_net { net alpha use_pd } {
   set ys {}
   foreach pin $pins {
     lassign $pin pin_name x y
-    lappend xs [expr int($x * 1000)]
-    lappend ys [expr int($y * 1000)]
+    lappend xs $x
+    lappend ys $y
   }
   if { $use_pd } {
     pdr::report_pd_tree $xs $ys $drvr_index $alpha

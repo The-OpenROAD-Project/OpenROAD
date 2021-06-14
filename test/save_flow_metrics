@@ -37,7 +37,7 @@ exec tclsh $0 ${1+"$@"}
 ##
 ############################################################################
 
-# Usage: save_flow_metrics | test1 [test2...] | failures
+# Usage: save_flow_metrics | test1 [test2...]
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
@@ -47,7 +47,7 @@ source [file join $test_dir "regression.tcl"]
 source [file join $test_dir "regression_tests.tcl"]
 source [file join $test_dir "flow_metrics.tcl"]
 
-save_metrics_limits_main
+save_flow_metrics_main
 
 # Local Variables:
 # mode:tcl
