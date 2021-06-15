@@ -39,7 +39,7 @@
 #include "DataProc.h"
 #include "DataType.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -1777,18 +1777,4 @@ stt::Tree treeToFlute(Tree tree)
   return fluteTree;
 }
 
-Tree pdToTree(PD::Tree pdTree)
-{
-  Tree tree;
-  tree.deg = pdTree.deg;
-  tree.totalDeg = 2 * pdTree.deg - 2;
-  tree.length = (DTYPE) pdTree.length;
-  tree.branch = new Branch[tree.totalDeg];
-  for (int i = 0; i < tree.totalDeg; i++) {
-    tree.branch[i].x = (DTYPE) pdTree.branch[i].x;
-    tree.branch[i].y = (DTYPE) pdTree.branch[i].y;
-    tree.branch[i].n = pdTree.branch[i].n;
-  }
-  return tree;
-}
 }  // namespace grt

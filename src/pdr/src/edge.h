@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, OpenROAD
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2018, The Regents of the University of California
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,25 +29,41 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ord/OpenRoad.hh"
+#pragma once
 
-extern "C" {
-extern int Pdrev_Init(Tcl_Interp *interp);
-}
+#include <ostream>
+#include <vector>
 
-namespace ord {
+#include "node.h"
 
-class OpenRoad;
+namespace pdr {
 
-void
-initPdrev(OpenRoad *openroad)
+using std::ostream;
+
+class Edge
 {
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  Pdrev_Init(interp);
-}
+public:
+  Edge(int _idx, int _head, int _tail);
+  ~Edge();
 
-} // namespace
+  int idx;
+  int head;
+  int tail;
+  int best_shape;        // 0 = lower L, 1 = upper L
+  int final_best_shape;  // 0 = lower L, 1 = upper L
+  int best_ov;
+  unsigned lower_ov, upper_ov;
+  vector<int> upper_best_config, lower_best_config;
+  unsigned lower_idx_of_cn_x, lower_idx_of_cn_y;
+  unsigned upper_idx_of_cn_x, upper_idx_of_cn_y;
+
+  vector<Node> STNodes;
+  vector<Node> lower_sps_to_be_added_x, lower_sps_to_be_added_y;
+  vector<Node> upper_sps_to_be_added_x, upper_sps_to_be_added_y;
+
+  friend ostream& operator<<(ostream& os, const Edge& n);
+};
+
+}  // namespace

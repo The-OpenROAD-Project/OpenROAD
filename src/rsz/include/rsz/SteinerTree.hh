@@ -65,16 +65,6 @@ using sta::hashIncr;
 
 class SteinerTree;
 
-typedef int SteinerPt;
-typedef Vector<SteinerPt> SteinerPtSeq;
-
-// Returns nullptr if net has less than 2 pins or any pin is not placed.
-SteinerTree *
-makeSteinerTree(const Net *net,
-                bool find_left_rights,
-                dbNetwork *network,
-                Logger *logger);
-
 class PointHash
 {
 public:
@@ -98,11 +88,31 @@ public:
   }
 };
 
+typedef int SteinerPt;
+typedef Vector<SteinerPt> SteinerPtSeq;
+typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+
+// Returns nullptr if net has less than 2 pins or any pin is not placed.
+SteinerTree *
+makeSteinerTree(const Pin *drvr_pin,
+                bool find_left_rights,
+                dbNetwork *network,
+                Logger *logger);
+
 // Wrapper for stt::Tree
+//
+// Flute
+//   rearranges pin order
+//   compile time option to remove duplicate locations (disabled)
+//
+// pd/pdrev
+//   preserves pin order
+//   removes duplicate locations
+
 class SteinerTree
 {
 public:
-  SteinerTree();
+  SteinerTree(const Pin *drvr_pin);
   ~SteinerTree();
   PinSeq &pins() { return pins_; }
   int pinCount() const { return pins_.size(); }
@@ -110,24 +120,19 @@ public:
   void branch(int index,
               // Return values.
               Point &pt1,
-              Pin *&pin1,
               int &steiner_pt1,
               Point &pt2,
-              Pin *&pin2,
               int &steiner_pt2,
               int &wire_length);
   void report(Logger *logger,
               const Network *network);
-  // Return a pin in the same location as the steiner pt if it exists.
-  Pin *steinerPtAlias(SteinerPt pt);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt(const Network *network) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
                    const Network *network);
-  Pin *pin(SteinerPt pt) const;
-  SteinerPt steinerPt(Pin *pin) const;
+  const PinSeq *pins(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
@@ -154,17 +159,22 @@ protected:
                       SteinerPtSeq &adj2,
                       SteinerPtSeq &adj3,
                       Logger *logger);
+  void locAddPin(Point &loc,
+                 Pin *pin);
 
   stt::Tree tree_;
+  const Pin *drvr_pin_;
+  int drvr_steiner_pt_;
   PinSeq pins_;
-  // Flute steiner pt index -> pin index.
-  Vector<Pin*> steiner_pt_pin_map_;
-  // pin -> steiner pt index
-  UnorderedMap<Pin*, int> pin_steiner_pt_map_;
-  // location -> pin (any pin if there are multiple at the location).
-  UnorderedMap<Point, Pin*, PointHash, PointEqual> loc_pin_map_;
+  // location -> pins
+  LocPinMap loc_pin_map_;
   SteinerPtSeq left_;
   SteinerPtSeq right_;
+
+  friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
+                                      bool find_left_rights,
+                                      dbNetwork *network,
+                                      Logger *logger);
 };
 
 } // namespace
