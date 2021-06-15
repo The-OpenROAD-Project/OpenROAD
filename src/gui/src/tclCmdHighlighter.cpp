@@ -92,7 +92,7 @@ void TclCmdHighlighter::initOpenRoad(Tcl_Interp* interp)
 {
   std::set<std::string> cmds;
 
-  QVector<SyntaxRulePtr> cmd_regexes;
+  std::vector<SyntaxRulePtr> cmd_regexes;
 
   // get registered commands
   if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
@@ -160,7 +160,7 @@ void TclCmdHighlighter::parseOpenRoadArguments(const char* or_args,
 
 void TclCmdHighlighter::initTclKeywords()
 {
-  QVector<SyntaxRulePtr> rules;
+  std::vector<SyntaxRulePtr> rules;
 
   // tcl keywords
   const std::string tcl_keywords[] = {"after", "append", "apply", "array", "auto_execok",
@@ -188,33 +188,28 @@ void TclCmdHighlighter::initOther()
 {
   std::string not_escaped = "(?<!\\\\)";
 
-  QVector<SyntaxRulePtr> rules;
-
   // string
-  rules.clear();
-  rules.push_back(buildRule("\".*?"+not_escaped+"\"")); // complete string
-  rules.push_back(buildRule("(\".*?$)")); // string at end of line
-  rules.push_back(buildRule("^.*?"+not_escaped+"\"")); //start of line
-  rules.push_back(buildRule(".*")); //whole line
-  string_rule.rules = rules;
+  string_rule.rules.push_back(buildRule("\".*?"+not_escaped+"\"")); // complete string
+  string_rule.rules.push_back(buildRule("(\".*?$)")); // string at end of line
+  string_rule.rules.push_back(buildRule("^.*?"+not_escaped+"\"")); //start of line
+  string_rule.rules.push_back(buildRule(".*")); //whole line
   string_rule.format = &string_format_;
   string_rule.args_format = nullptr;
 
+  std::vector<SyntaxRulePtr> rules;
+
   // tcl {} []
-  rules.clear();
   rules.push_back(buildRule(not_escaped+"(\\{|\\})"));
   rules.push_back(buildRule(not_escaped+"(\\[|\\])"));
   addRuleGroup(syntax_rules_, rules, &brackets_format_, nullptr);
 
   // variable
-  rules.clear();
   std::string variable_form = "(\\w*::)*\\w+(\\(\\w+\\))?";
   rules.push_back(buildRule("(\\$"+variable_form+")"));
   rules.push_back(buildRule("(\\$\\{"+variable_form+"\\})"));
   addRuleGroup(syntax_rules_, rules, &variable_format_, nullptr);
 
   // comment
-  rules.clear();
   rules.push_back(buildRule(not_escaped+"#.*"));
   addRuleGroup(syntax_rules_, rules, &comment_format_, nullptr);
 }
@@ -245,33 +240,36 @@ SyntaxRulePtr TclCmdHighlighter::buildRule(const std::string& pattern)
 SyntaxRulePtr TclCmdHighlighter::buildRule(const std::string& pattern,
                                            const std::vector<std::string>& args)
 {
-  SyntaxRulePtr rule = std::make_shared<SyntaxRule>();
+  SyntaxRulePtr rule = std::make_unique<SyntaxRule>();
 
-  rule->pattern = std::make_shared<QRegularExpression>(pattern.c_str());
+  rule->pattern = std::make_unique<QRegularExpression>(pattern.c_str());
   if (args.empty()) {
     rule->args = nullptr;
   }
   else {
-    rule->args = std::make_shared<QVector<QRegularExpressionPtr>>();
+    rule->args = std::make_unique<std::vector<QRegularExpressionPtr>>();
     for (const std::string& arg : args) {
-      rule->args->push_back(std::make_shared<QRegularExpression>(arg.c_str()));
+      rule->args->push_back(std::make_unique<QRegularExpression>(arg.c_str()));
     }
   }
 
   return rule;
 }
 
-void TclCmdHighlighter::addRuleGroup(QVector<SyntaxRuleGroup>& rule_group,
-                                     const QVector<SyntaxRulePtr>& rules,
+void TclCmdHighlighter::addRuleGroup(std::vector<SyntaxRuleGroup>& rule_group,
+                                     std::vector<SyntaxRulePtr>& rules,
                                      const QTextCharFormat* format,
                                      const QTextCharFormat* args_format)
 {
   SyntaxRuleGroup group;
-  group.rules = rules;
+  for (SyntaxRulePtr& rule : rules) {
+    group.rules.push_back(std::move(rule));
+  }
+  rules.clear();
   group.format = format;
   group.args_format = args_format;
 
-  rule_group.push_back(group);
+  rule_group.push_back(std::move(group));
 }
 
 void TclCmdHighlighter::highlightBlock(const QString& text)
@@ -360,13 +358,13 @@ int TclCmdHighlighter::highlightBlockWithRule(const QString& text,
 
 void TclCmdHighlighter::highlightBlockWithRules(const QString& text,
                                                 int start_idx,
-                                                const QVector<SyntaxRuleGroup>& group)
+                                                const std::vector<SyntaxRuleGroup>& group)
 {
-  for (const SyntaxRuleGroup& rules : qAsConst(group)) {
+  for (const SyntaxRuleGroup& rules : group) {
     for (const SyntaxRulePtr& rule : rules.rules) {
       if (highlightBlockWithRule(text, start_idx, rule->pattern, rules.format) != -1) {
         if (rule->args != nullptr) {
-          argument_rules_.push_back(std::make_pair(rule->args, rules.args_format));
+          argument_rules_.push_back(std::make_pair(rule->args.get(), rules.args_format));
         }
       }
     }

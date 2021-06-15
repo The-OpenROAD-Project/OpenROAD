@@ -44,18 +44,18 @@
 
 namespace gui {
 
-using QRegularExpressionPtr = std::shared_ptr<QRegularExpression>;
+using QRegularExpressionPtr = std::unique_ptr<QRegularExpression>;
 struct SyntaxRule
 {
   QRegularExpressionPtr pattern;
-  std::shared_ptr<QVector<QRegularExpressionPtr>> args;
+  std::unique_ptr<std::vector<QRegularExpressionPtr>> args;
 };
 
-using SyntaxRulePtr = std::shared_ptr<SyntaxRule>;
+using SyntaxRulePtr = std::unique_ptr<SyntaxRule>;
 
 struct SyntaxRuleGroup
 {
-  QVector<SyntaxRulePtr> rules;
+  std::vector<SyntaxRulePtr> rules;
   const QTextCharFormat* format;
   const QTextCharFormat* args_format;
 };
@@ -89,14 +89,14 @@ class TclCmdHighlighter : public QSyntaxHighlighter
     SyntaxRulePtr buildRule(const std::string& pattern,
                             const std::vector<std::string>& args);
 
-    void addRuleGroup(QVector<SyntaxRuleGroup>& rule_group,
-                      const QVector<SyntaxRulePtr>& rules,
+    void addRuleGroup(std::vector<SyntaxRuleGroup>& rule_group,
+                      std::vector<SyntaxRulePtr>& rules,
                       const QTextCharFormat* format,
                       const QTextCharFormat* args_format);
 
     void highlightBlockWithRules(const QString& text,
                                  int start_idx,
-                                 const QVector<SyntaxRuleGroup>& rules);
+                                 const std::vector<SyntaxRuleGroup>& rules);
     int highlightBlockWithRule(const QString& text,
                                int start_idx,
                                const QRegularExpressionPtr& rule,
@@ -104,14 +104,14 @@ class TclCmdHighlighter : public QSyntaxHighlighter
 
     void highlightBlockWithString(const QString& text);
 
-    QVector<SyntaxRuleGroup> cmd_rules_;
+    std::vector<SyntaxRuleGroup> cmd_rules_;
     // general syntax rules
-    QVector<SyntaxRuleGroup> syntax_rules_;
+    std::vector<SyntaxRuleGroup> syntax_rules_;
     // string formatting, needs to be handled separately since it can span multiple lines
     SyntaxRuleGroup string_rule;
 
     // holds the rules for commands detected
-    QVector<std::pair<const std::shared_ptr<QVector<QRegularExpressionPtr>>, const QTextCharFormat*>> argument_rules_;
+    std::vector<std::pair<const std::vector<QRegularExpressionPtr>*, const QTextCharFormat*>> argument_rules_;
 
     // formatting
     QTextCharFormat openroad_cmd_format_;
