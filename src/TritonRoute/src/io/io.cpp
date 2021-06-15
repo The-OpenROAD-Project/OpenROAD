@@ -411,6 +411,11 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
   for (auto ndr : db->getChip()->getBlock()->getNonDefaultRules()) {
     createNDR(ndr);
   }
+  for (auto& layer : design->getTech()->getLayers()) {
+      if (layer->getType() != frLayerTypeEnum::ROUTING)
+          continue;
+      MTSAFEDIST = max(MTSAFEDIST, design->getTech()->getMaxNondefaultSpacing(layer->getLayerNum()/2 -1));
+  }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginX,
