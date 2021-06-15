@@ -133,7 +133,57 @@ namespace pin_alignment {
             macros_[i].Flip(flip_flag_);
     }
 
+    void SimulatedAnnealingCore::SingleFlip() {
+        CalculateWirelength();
+        float wirelength_best = wirelength_;
+        int action_id = 0;
+        flip_flag_ = true;
+        macros_[0].Flip(flip_flag_);
+        CalculateWirelength();
+        if(wirelength_best > wirelength_) {
+            wirelength_ = wirelength_best;
+            action_id = 1;
+        }
 
+        flip_flag_ = false;
+        macros_[0].Flip(flip_flag_);
+        CalculateWirelength();
+        if(wirelength_best > wirelength_) {
+            wirelength_ = wirelength_best;
+            action_id = 2;
+        }
+
+        flip_flag_ = true;
+        macros_[0].Flip(flip_flag_);
+        CalculateWirelength();
+        if(wirelength_best > wirelength_) {
+            wirelength_ = wirelength_best;
+            action_id = 3;
+        }
+        
+        if(action_id == 3) {
+            return;    
+        } else {
+            flip_flag_ = false;
+            macros_[0].Flip(flip_flag_);
+            if(action_id == 0) {
+                CalculateWirelength();
+                return;
+            } else {
+                flip_flag_ = true;
+                macros_[0].Flip(flip_flag_);
+                if(action_id == 1) {
+                    CalculateWirelength();
+                    return;
+                } else {
+                    flip_flag_ = false;
+                    macros_[0].Flip(flip_flag_);
+                    CalculateWirelength();
+                    return;
+                }
+            }
+        }
+    }
 
     
     void SimulatedAnnealingCore::Perturb() {
@@ -416,7 +466,10 @@ namespace pin_alignment {
                 for(int j = 0; j < name.size(); j++) 
                     if(name[j] == '/')
                         name[j] = '*';
-                
+            
+
+                cout << "macro_cluster:   " << name << endl;
+
                 float lx = clusters[i]->GetX();
                 float ly = clusters[i]->GetY();
                 float ux = lx + clusters[i]->GetWidth();
@@ -481,10 +534,12 @@ namespace pin_alignment {
                     vector<thread> threads;
                     for(int j = 0; j < run_thread; j++)
                         threads.push_back(thread(Run, sa_vector[sa_id++]));
-
+                    
+                    cout << "begin running SA" << endl;
                     for(auto &th : threads)
                         th.join();
 
+                    cout << "Finish running SA" << endl;
                     remaining_run = remaining_run - run_thread;
                 }
 
@@ -501,6 +556,9 @@ namespace pin_alignment {
                 } else {
                     clusters[i]->SpecifyMacros(sa_vector[min_id]->GetMacros());
                 }
+                
+                for(int j = 0; j < sa_vector.size(); j++) 
+                    delete sa_vector[j];
             }
         }
         cout << "Finish Pin Alignment" << endl;

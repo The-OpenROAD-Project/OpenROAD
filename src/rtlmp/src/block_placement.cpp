@@ -576,8 +576,11 @@ namespace block_placement {
             content.push_back(line);
         
         f.close();
+       
+        cout << "Finish reading macro blockage file" << endl;
         
         for(int i = 0; i < content.size(); i++) {
+            cout << "content[i]:  " << content[i] << endl;
             vector<string> words = Split(content[i]);
             float lx = stof(words[1]);
             float ly = stof(words[2]);
@@ -678,7 +681,7 @@ namespace block_placement {
 
         for(int i = 0; i < num_level; i++) {
             init_T = init_T * heat_count;
-            heat_count = heat_rate;
+            heat_count = heat_count * heat_rate;
             vector<SimulatedAnnealingCore*> sa_vec;
             vector<thread> threads;
             for(int j = 0; j < num_worker; j++) {
@@ -731,7 +734,14 @@ namespace block_placement {
             cout << "boundary_penalty:  " << sa_vec[min_id]->GetBoundaryPenalty() << "   ";
             cout << "macro_blockage_penalty:   " << sa_vec[min_id]->GetMacroBlockagePenalty() << "   ";
             cout<< endl;
+            
+            for(int j = 0; j < num_worker; j++) {
+                if(best_cost < sa_vec[j]->GetCost()) {
+                    delete sa_vec[j];
+                }
+            }
         }
+
 
         blocks = best_sa->GetBlocks();
         cout << "width:   " << best_sa->GetWidth() << "   ";

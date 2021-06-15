@@ -1584,6 +1584,7 @@ namespace par {
         output_file << "[INFO] Num buffers:  " << _num_buffer << endl;
         output_file << "[INFO] Buffer area:  " << _area_buffer << endl;
         output_file << endl;
+        _logger->info(PAR, 101, "Number of Clusters created: {}", _cluster_list.size());
         map_iter = _cluster_map.begin();
         float dbu = _db->getTech()->getDbUnitsPerMicron();
         while(map_iter != _cluster_map.end()) {

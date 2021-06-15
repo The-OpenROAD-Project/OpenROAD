@@ -69,6 +69,7 @@ namespace pin_alignment {
             std::uniform_real_distribution<float> distribution_;
             
             void PackFloorplan();
+            void SingleFlip();
             void SingleSwap(bool flag); // true for pos swap and false for neg swap
             void DoubleSwap();
             void Flip();
@@ -130,13 +131,22 @@ namespace pin_alignment {
                 generator_ = randGen;
                 std::uniform_real_distribution<float> distribution(0.0,1.0);
                 distribution_ = distribution;
-                
-                // Initialize init_T_, norm_area_, norm_wirelength, norm_outline_penalty_
-                Initialize();
+               
+                if(macros_.size() == 1) {
+                    width_ = macros_[0].GetWidth();
+                    height_ = macros_[0].GetHeight();
+                    area_ = width_ * height_;
+                } else {
+                    // Initialize init_T_, norm_area_, norm_wirelength, norm_outline_penalty_
+                    Initialize();
+                }
             }
             
             void Run() {
-                FastSA();
+                if(macros_.size() > 1)
+                    FastSA();
+                else
+                    SingleFlip();
             }
             
             float GetWidth() {  return width_; }
