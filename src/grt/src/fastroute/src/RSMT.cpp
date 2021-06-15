@@ -162,7 +162,7 @@ void copyStTree(int ind, Tree rsmt)
       edgecnt++;
     }
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
-      logger->error(GRT, 188, "Invalid number of node neighbours.");
+      logger->warn(GRT, 188, "Invalid number of node neighbours.");
   }
   if (edgecnt != numnodes - 1) {
     logger->error(GRT, 189, "Fail in copy tree. Num edges: {}, num nodes: {}.", edgecnt, numnodes);
