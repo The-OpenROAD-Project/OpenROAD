@@ -118,7 +118,7 @@ add_subdirectory(OpenDB)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(sst)
+add_subdirectory(stt)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
@@ -134,7 +134,7 @@ add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
-add_subdirectory(pdrev)
+add_subdirectory(pdr)
 add_subdirectory(pdngen)
 
 ################################################################
@@ -167,7 +167,7 @@ target_link_libraries(openroad
   fin
   rsz
   ppl
-  sst
+  stt
   dbSta
   OpenSTA
   opendb
@@ -184,7 +184,7 @@ target_link_libraries(openroad
   PartitionMgr
   utl
   pdn
-  pdrev
+  pdr
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
@@ -241,6 +241,20 @@ if (Python3_FOUND AND BUILD_PYTHON)
 else()
   message(STATUS "Python3 disabled")
 endif()
+
+messages(
+  TARGET openroad
+  SOURCE_DIR .
+  OUTPUT_DIR ..
+  LOCAL
+)
+
+# ICeWall isn't a proper module with its own CMakeLists.txt so it
+# is handled here (just like the tcl encoding).
+messages(
+  TARGET openroad
+  OUTPUT_DIR ICeWall
+)
 
 # Ancient versions of glibc found on CentOS required librt.
 # OSX has an empty version of librt that causes a link error,

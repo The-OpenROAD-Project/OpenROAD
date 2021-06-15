@@ -51,6 +51,11 @@ if (Qt5_FOUND AND BUILD_GUI)
       utl
       Boost::boost
   )
+
+messages(
+  TARGET gui
+)
+
 else()
   message(STATUS "GUI is not enabled")
   add_library(gui src/stub.cpp)

@@ -59,6 +59,10 @@ target_sources(PartitionMgr
     src/PartOptions.cpp
 )
 
+messages(
+  TARGET PartitionMgr
+)
+
 if (LOAD_PARTITIONERS)
   target_compile_definitions(PartitionMgr
     PRIVATE

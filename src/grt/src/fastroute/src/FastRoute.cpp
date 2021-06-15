@@ -56,7 +56,7 @@
 #include "maze.h"
 #include "maze3D.h"
 #include "utl/Logger.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "opendb/db.h"
 
 #include "route.h"

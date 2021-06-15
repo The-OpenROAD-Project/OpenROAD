@@ -134,13 +134,17 @@ target_link_libraries(TritonRoute
   PUBLIC
     gui
     opendb
-    sst
+    stt
     OpenSTA
     utl
     Threads::Threads
     OpenMP::OpenMP_CXX
     Boost::boost
     ZLIB::ZLIB
+)
+
+messages(
+  TARGET TritonRoute
 )
 
 ############################################################

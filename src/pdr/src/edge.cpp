@@ -31,66 +31,65 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include "edge.h"
 
-namespace utl {
-class Logger;
-}  // namespace utl
+namespace pdr {
 
-namespace PD {
-
-using utl::Logger;
-
-class Graph;
-
-typedef int DTYPE;
-
-typedef struct
+Edge::Edge(int _idx, int _head, int _tail)
 {
-  DTYPE x, y;
-  int n;
-} Branch;
+  idx = _idx;
+  head = _head;
+  tail = _tail;
+  lower_ov = 0;
+  upper_ov = 0;
+  best_ov = 0;
+  best_shape = 5;
+  final_best_shape = 5;
+  lower_idx_of_cn_x = 9999999;
+  lower_idx_of_cn_y = 9999999;
+  upper_idx_of_cn_x = 9999999;
+  upper_idx_of_cn_y = 9999999;
+}
 
-typedef struct
+Edge::~Edge()
 {
-  int deg;
-  DTYPE length;
-  Branch* branch;
-} Tree;
+  STNodes.clear();
+}
 
-class PdRev
+ostream& operator<<(ostream& os, const Edge& n)
 {
- public:
-  PdRev(Logger* logger) : _logger(logger){};
-  void setAlphaPDII(float alpha);
-  void addNet(int numPins, std::vector<unsigned> x, std::vector<unsigned> y);
-  void runPD(float alpha);
-  void runPDII();
-  Tree translateTree(int nTree);
+  os << n.idx << "(" << n.head << ", " << n.tail
+     << ") edgeShape: " << n.best_shape;
+  os << "  Steiner: ";
+  for (unsigned i = 0; i < n.STNodes.size(); ++i) {
+    os << " (" << n.STNodes[i].x << " " << n.STNodes[i].y << ") Child: ";
+    for (unsigned j = 0; j < n.STNodes[i].sp_chil.size(); ++j) {
+      os << n.STNodes[i].sp_chil[j] << " ";
+    }
+    os << "/";
+  }
+  if (n.best_shape == 0) {
+    for (unsigned i = 0; i < n.lower_sps_to_be_added_x.size(); ++i) {
+      os << " (" << n.lower_sps_to_be_added_x[i].x << " "
+         << n.lower_sps_to_be_added_x[i].y << ") Child: ";
+      for (unsigned j = 0; j < n.lower_sps_to_be_added_x[i].sp_chil.size();
+           ++j) {
+        os << n.lower_sps_to_be_added_x[i].sp_chil[j] << " ";
+      }
+      os << "/";
+    }
+  } else {
+    for (unsigned i = 0; i < n.upper_sps_to_be_added_x.size(); ++i) {
+      os << " (" << n.upper_sps_to_be_added_x[i].x << " "
+         << n.upper_sps_to_be_added_x[i].y << ") Child: ";
+      for (unsigned j = 0; j < n.upper_sps_to_be_added_x[i].sp_chil.size();
+           ++j) {
+        os << n.upper_sps_to_be_added_x[i].sp_chil[j] << " ";
+      }
+      os << "/";
+    }
+  }
+  return os;
+}
 
- private:
-  void runDAS();
-  void config();
-  void replaceNode(int graph, int originalNode);
-  void transferChildren(int graph, int originalNode);
-  void printTree(Tree fluteTree);
-
-  unsigned num_nets = 1000;
-  unsigned num_terminals = 64;
-  unsigned verbose = 0;
-  float alpha1 = 1;
-  float alpha2 = 0.45;
-  float alpha3 = 0;
-  float alpha4 = 0;
-  float margin = 1.1;
-  unsigned seed = 0;
-  unsigned root_idx = 0;
-  unsigned dist = 2;
-  float beta = 1.4;
-  bool runOneNet = false;
-  unsigned net_num = 0;
-  std::vector<Graph*> my_graphs;
-  Logger* _logger;
-};
-
-}  // namespace PD
+} // namespace

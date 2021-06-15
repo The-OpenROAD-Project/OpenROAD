@@ -59,3 +59,8 @@ target_link_libraries(ifp
     OpenSTA
     utl
 )
+
+messages(
+  TARGET ifp
+  OUTPUT_DIR ..
+)

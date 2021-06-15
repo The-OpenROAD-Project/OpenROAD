@@ -239,7 +239,7 @@ proc run_test { test } {
           }
         }
         check_metrics {
-          set error_msg [check_flow_metrics $test]
+          set error_msg [check_test_metrics $test]
           if { $error_msg != "pass" } {
             puts " *FAIL* $error_msg"
             append_failure $test
@@ -300,7 +300,7 @@ proc run_test_plain { test cmd_file log_file } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
-    if { [catch [concat exec $app_path $app_options -metrics [test_metrics_file $test]\
+    if { [catch [concat exec $app_path $app_options -metrics [test_metrics_result_file $test]\
                    [file tail $cmd_file] >& $log_file]] } {
       cd $save_dir
       set signal [lindex $errorCode 2]
@@ -471,36 +471,46 @@ proc save_ok_main {} {
   global argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_ok [failures] test1 [test2]...}
-  } elseif { $argv == "failures" } {
-    global failure_file
-    if [file exists $failure_file] {
-      set fail_ch [open $failure_file "r"]
-      while { ! [eof $fail_ch] } {
-        set test [gets $fail_ch]
-        if { $test != "" } {
-          save_ok $test
-        }
-      }
-      close $fail_ch
-    }
   } else {
-    foreach test $argv {
-      save_ok $test
+    if { $argv == "failures" } {
+      set tests [failed_tests]
+    } else {
+      set tests $argv
+    }
+    foreach test $tests {
+      if { [lsearch [group_tests "all"] $test] == -1 } {
+        puts "Error: test $test not found."
+      } else {
+        save_ok $test
+      }
     }
   }
 }
 
-proc save_ok { test } {
-  if { [lsearch [group_tests "all"] $test] == -1 } {
-    puts "Error: test $test not found."
-  } else {
-    set ok_file [test_ok_file $test]
-    set log_file [test_log_file $test]
-    if { ! [file exists $log_file] } {
-      puts "Error: log file $log_file not found."
-    } else {
-      file copy -force $log_file $ok_file
+proc failed_tests {} {
+  global failure_file
+
+  set failures {}
+  if { [file exists $failure_file] } {
+    set fail_ch [open $failure_file "r"]
+    while { ![eof $fail_ch] } {
+      set test [gets $fail_ch]
+      if { $test != "" } {
+        lappend failures $test
+      }
     }
+    close $fail_ch
+  }
+  return $failures
+}
+
+proc save_ok { test } {
+  set ok_file [test_ok_file $test]
+  set log_file [test_log_file $test]
+  if { ! [file exists $log_file] } {
+    puts "Error: log file $log_file not found."
+  } else {
+    file copy -force $log_file $ok_file
   }
 }
 
@@ -510,36 +520,29 @@ proc save_defok_main {} {
   global argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_defok [failures] test1 [test2]...}
-  } elseif { $argv == "failures" } {
-    global failure_file
-    if [file exists $failure_file] {
-      set fail_ch [open $failure_file "r"]
-      while { ! [eof $fail_ch] } {
-        set test [gets $fail_ch]
-        if { $test != "" } {
-          save_defok $test
-        }
-      }
-      close $fail_ch
-    }
   } else {
-    foreach test $argv {
-      save_defok $test
+    if { $argv == "failures" } {
+      set tests [failed_tests]
+    } else {
+      set tests $argv
+    }
+    foreach test $tests {
+      if { [lsearch [group_tests "all"] $test] == -1 } {
+        puts "Error: test $test not found."
+      } else {
+        save_defok $test
+      }
     }
   }
 }
 
 proc save_defok { test } {
-  if { [lsearch [group_tests "all"] $test] == -1 } {
-    puts "Error: test $test not found."
+  set defok_file [test_defok_file $test]
+  set def_file [test_def_result_file $test]
+  if { ! [file exists $def_file] } {
+    puts "Error: def file $def_file not found."
   } else {
-    set defok_file [test_defok_file $test]
-    set def_file [test_def_result_file $test]
-    if { ! [file exists $def_file] } {
-      puts "Error: def file $def_file not found."
-    } else {
-      file copy -force $def_file $defok_file
-    }
+    file copy -force $def_file $defok_file
   }
 }
 
