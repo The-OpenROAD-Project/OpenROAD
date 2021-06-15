@@ -150,10 +150,10 @@ GRT 0186 maze3D.cpp:1851           Steiner nodes only have one connection.
 GRT 0187 maze3D.cpp:506            In 3D maze routing, type 1 node shift, cnt_n1A1 is 1.
 GRT 0188 RSMT.cpp:165              Invalid number of node neighbours.
 GRT 0189 RSMT.cpp:168              Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes.
-GRT 0190 RSMT.cpp:806              Net degree differs from rsmt degree.
-GRT 0191 RSMT.cpp:859              WIRELEN : {}, WIRELEN1 : {}
-GRT 0192 RSMT.cpp:860              NumSeg  : {}
-GRT 0193 RSMT.cpp:861              NumShift: {}
+GRT 0190 RSMT.cpp:801              Net degree differs from rsmt degree.
+GRT 0191 RSMT.cpp:854              WIRELEN : {}, WIRELEN1 : {}
+GRT 0192 RSMT.cpp:855              NumSeg  : {}
+GRT 0193 RSMT.cpp:856              NumShift: {}
 GRT 0194 utility.cpp:87            Fail when open file plottree.
 GRT 0195 utility.cpp:184           Invalid route type.
 GRT 0196 utility.cpp:189           Routed len: {}
