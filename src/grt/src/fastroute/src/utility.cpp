@@ -1041,7 +1041,9 @@ void checkRoute3D()
                edgeID,
                deg,
                n1);
-        printEdge3D(netID, edgeID);
+        if (logger->debugCheck(GRT, "checkRoute3D", 1)) {
+          printEdge3D(netID, edgeID);
+        }
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
         debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] end node wrong, net deg {}, n2 {}",
@@ -1049,7 +1051,9 @@ void checkRoute3D()
                edgeID,
                deg,
                n2);
-        printEdge3D(netID, edgeID);
+        if (logger->debugCheck(GRT, "checkRoute3D", 1)) {
+          printEdge3D(netID, edgeID);
+        }
       }
       for (i = 0; i < treeedge->route.routelen; i++) {
         distance = ADIFF(gridsX[i + 1], gridsX[i])
