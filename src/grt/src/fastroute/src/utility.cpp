@@ -1036,16 +1036,16 @@ void checkRoute3D()
       gridFlag = FALSE;
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        logger->report("net[{}] edge[{}] start node wrong, net deg {}, n1 {}",
-               netID,
+        debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] start node wrong, net deg {}, n1 {}",
+               netName(nets[netID]),
                edgeID,
                deg,
                n1);
         printEdge3D(netID, edgeID);
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger->report("net[{}] edge[{}] end node wrong, net deg {}, n2 {}",
-               netID,
+        debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] end node wrong, net deg {}, n2 {}",
+               netName(nets[netID]),
                edgeID,
                deg,
                n2);
@@ -1057,12 +1057,12 @@ void checkRoute3D()
                    + ADIFF(gridsL[i + 1], gridsL[i]);
         if (distance > 1 || distance < 0) {
           gridFlag = TRUE;
-          logger->report("net {} edge[{}] maze route wrong, distance {}, i {}",
+          debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] maze route wrong, distance {}, i {}",
                  netName(nets[netID]),
                  edgeID,
                  distance,
                  i);
-          logger->report("current [{}, {}, {}], next [{}, {}, {}]",
+          debugPrint(logger, GRT, "checkRoute3D", 1, "current [{}, {}, {}], next [{}, {}, {}]",
                  gridsL[i],
                  gridsY[i],
                  gridsX[i],
