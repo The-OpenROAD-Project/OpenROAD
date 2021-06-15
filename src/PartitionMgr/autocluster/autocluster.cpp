@@ -235,7 +235,7 @@ namespace par {
                             else if(buffer_net[buffer_id].second == nullptr)
                                 buffer_net[buffer_id].second = net;
                             else
-                                _logger->error(PAR, 101, "Buffer Net has more than two net connection...");
+                                _logger->error(PAR, 401, "Buffer Net has more than two net connection...");
                         }
                     }
                 }
@@ -322,7 +322,7 @@ namespace par {
             else if(uy == _floorplan_uy)
                 _bterm_map[bterm_name] = string("T");
             else
-                _logger->error(PAR, 1, "Floorplan has not been initialized? Pin location error.");
+                _logger->error(PAR, 400, "Floorplan has not been initialized? Pin location error.");
         }
         
         // verify the correctness of  BTerm mapping
@@ -1424,7 +1424,7 @@ namespace par {
         }
 
         Metric metric = traverseLogicalHierarchy(_network->topInstance());
-        _logger->info(PAR, 101, "Traversed Logical Hierarchy\n\t Number of std cell instances: {}\n\t Total Area: {}\n\t Number of Hard Macros: {}\n\t ", metric.num_inst, metric.area, metric.num_macro);
+        _logger->info(PAR, 402, "Traversed Logical Hierarchy\n\t Number of std cell instances: {}\n\t Total Area: {}\n\t Number of Hard Macros: {}\n\t ", metric.num_inst, metric.area, metric.num_macro);
        
         // get all the nets with buffers
         getBufferNet();
@@ -1584,7 +1584,7 @@ namespace par {
         output_file << "[INFO] Num buffers:  " << _num_buffer << endl;
         output_file << "[INFO] Buffer area:  " << _area_buffer << endl;
         output_file << endl;
-        _logger->info(PAR, 101, "Number of Clusters created: {}", _cluster_list.size());
+        _logger->info(PAR, 403, "Number of Clusters created: {}", _cluster_list.size());
         map_iter = _cluster_map.begin();
         float dbu = _db->getTech()->getDbUnitsPerMicron();
         while(map_iter != _cluster_map.end()) {
