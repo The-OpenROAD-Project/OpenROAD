@@ -70,4 +70,6 @@ target_link_libraries(ppl
     utl
 )
                       
-                      
+messages(
+  TARGET ppl
+)

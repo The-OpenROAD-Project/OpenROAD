@@ -10,5 +10,5 @@
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 0 connections.
 [INFO ODB-0134] Finished DEF file: check4.def
-[WARNING DPL-0006] Site check failed (1).
+[WARNING DPL-0006] Site aligned check failed (1).
  FILL01

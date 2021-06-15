@@ -68,6 +68,10 @@ target_link_libraries(dpl
     utl
 )
 
+messages(
+  TARGET dpl
+)
+
 ################################################################
 
 add_custom_target(opendp_tags etags -o TAGS

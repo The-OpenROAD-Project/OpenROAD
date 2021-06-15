@@ -644,7 +644,13 @@ void lefin::layer(lefiLayer* layer)
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
       else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
-      else
+      else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
+        lefTechLayerEolExtensionRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
+        lefTechLayerEolKeepOutRuleParser eolkoutParser(this);
+        eolkoutParser.parse(layer->propValue(iii), l);
+      } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
@@ -672,12 +678,9 @@ void lefin::layer(lefiLayer* layer)
         supported = false;
     } else
       supported = false;
-    // if(!supported)
-    //   _logger->warn(utl::ODB, 247, "unsupported layer propery {} for layer
-    //   {}",layer->propName(iii), layer->name());
     if (supported && !valid)
       _logger->warn(utl::ODB,
-                    248,
+                    279,
                     "parse mismatch in layer propery {} for layer {} : \"{}\"",
                     layer->propName(iii),
                     layer->name(),
@@ -812,7 +815,8 @@ void lefin::layer(lefiLayer* layer)
       l->initTwoWidths(cur_two->numWidth());
       int defaultPrl = -1;
       for (int i = 0; i < cur_two->numWidth(); i++) {
-        int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i)) : defaultPrl;
+        int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i))
+                                          : defaultPrl;
         defaultPrl = prl;
         l->addTwoWidthsIndexEntry(dbdist(cur_two->width(i)), prl);
       }
@@ -2004,7 +2008,7 @@ bool lefin::readLef(const char* lef_file)
         odb::dbTechLayerCutSpacingRule* cutSpacingRule
             = (odb::dbTechLayerCutSpacingRule*) obj;
         _logger->warn(utl::ODB,
-                      247,
+                      277,
                       "dropping LEF58_SPACING rule for cut layer {} for "
                       "referencing undefined layer {}",
                       cutSpacingRule->getTechLayer()->getName(),
@@ -2015,7 +2019,7 @@ bool lefin::readLef(const char* lef_file)
         odb::dbTechLayerCutSpacingTableDefRule* cutSpacingTableRule
             = (odb::dbTechLayerCutSpacingTableDefRule*) obj;
         _logger->warn(utl::ODB,
-                      248,
+                      280,
                       "dropping LEF58_SPACINGTABLE rule for cut layer {} for "
                       "referencing undefined layer {}",
                       cutSpacingTableRule->getTechLayer()->getName(),

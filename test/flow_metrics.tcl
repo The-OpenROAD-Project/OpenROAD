@@ -35,8 +35,6 @@
 
 # Functions/variables common to metrics scripts.
 
-package require json
-
 proc define_metric { name short_name fmt cmp_op margin_expr } {
   variable metrics
   dict set metrics $name [list $short_name $fmt $cmp_op $margin_expr]
@@ -109,97 +107,13 @@ define_metric "clock_period" "" "%d" "<=" {0}
 
 ################################################################
 
-proc save_metrics_limits_main {} {
-  global argv
-  if { $argv == "help" || $argv == "-help" } {
-    puts {Usage: save_flow_metrics [failures] test1 [test2]...}
-  } elseif { $argv == "failures" } {
-    global failure_file
-    if [file exists $failure_file] {
-      set fail_ch [open $failure_file "r"]
-      while { ! [eof $fail_ch] } {
-	set test [gets $fail_ch]
-	if { $test != "" } {
-	  save_metrics_limits $test
-	}
-      }
-      close $fail_ch
-    }
-  } else {
-    set tests [expand_tests $argv]
-    foreach test $tests {
-      save_metrics_limits $test
-    }
-  }
-}
+# Used by regression.tcl to check pass/fail metrics test.
+# Returns "pass" or failing metric comparison string.
+proc check_test_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
 
-proc save_metrics_limits { test } {
-  if { [lsearch [group_tests "all"] $test] == -1 } {
-    puts "Error: test $test not found."
-  } else {
-    set metrics_file [test_metrics_file $test]
-    set metrics_limits [test_metrics_limits_file $test]
-    if { ! [file exists $metrics_file] } {
-      puts "Error: metrics file $metrics_file not found."
-    } else {
-      set stream [open $metrics_file r]
-      set json_string [read $stream]
-      close $stream
-      if { ![catch {json::json2dict $json_string} metrics_dict] } {
-        set limits_stream [open $metrics_limits w]
-        puts $limits_stream "{"
-        set first 1
-        # Find value of variables used in margin expr's.
-        foreach var {"clock_period" "instance_count"} {
-          set key [metric_json_key $var]
-          if { [dict exists $metrics_dict $key] } {
-            set value [dict get $metrics_dict $key]
-            set $var $value
-          } else {
-            puts "Error: $test missing $var metric."
-            return
-          }
-        }
-        foreach name [metric_names] {
-          set key [metric_json_key $name]
-          if { [dict exists $metrics_dict $key] } {
-            set value [dict get $metrics_dict $key]
-            set margin_expr [metric_margin_expr $name]
-            set margin [expr $margin_expr]
-            set value_limit [expr $value + $margin]
-            if { $first } {
-              puts -nonewline $limits_stream "  "
-            } else {
-              puts -nonewline $limits_stream " ,"
-            }
-            puts $limits_stream "\"$key\" : \"$value_limit\""
-            set first 0
-          }
-        }
-
-        puts $limits_stream "}"
-        close $limits_stream
-      } else {
-        puts "Error: json parse error $metrics_dict"
-      }
-    }
-  }
-}
-
-proc test_metrics_file { test } {
-  global test_dir
-  return [file join $test_dir "results" "$test.metrics"]
-}
-
-proc test_metrics_limits_file { test } {
-  global test_dir
-  return [file join $test_dir "$test.metrics_limits"]
-}
-
-################################################################
-
-proc check_flow_metrics { test } {
-  set metrics_file [test_metrics_file $test]
+  set metrics_file [test_metrics_result_file $test]
   set metrics_limits_file [test_metrics_limits_file $test]
   if { ![file exists $metrics_file] } {
     return "missing metrics file"
@@ -241,7 +155,14 @@ proc check_flow_metrics { test } {
 
 ################################################################
 
-proc report_flow_metrics { tests } {
+proc report_flow_metrics_main {} {
+  global arc argv
+  if { $argc == 0 } {
+    set tests $test_groups(flow)
+  } else {
+    set tests [expand_tests $argv]
+  }
+
   report_metrics_header
   foreach test $tests {
     report_test_metrics $test
@@ -260,9 +181,12 @@ proc report_metrics_header {} {
 }
 
 proc report_test_metrics { test } {
-  set metrics_file [test_metrics_file $test]
-  if { [file exists $metrics_file] } {
-    set stream [open $metrics_file r]
+  # Don't require json until it is really needed.
+  package require json
+
+  set metrics_result_file [test_metrics_result_file $test]
+  if { [file exists $metrics_result_file] } {
+    set stream [open $metrics_result_file r]
     set json_string [read $stream]
     close $stream
     puts -nonewline [format "%-20s" $test]
@@ -275,7 +199,7 @@ proc report_test_metrics { test } {
             set value [dict get $metrics_dict $key]
             set field [format [metric_format $name] $value]
           } else {
-            set field "N/A"
+            set field [format "%[string length $short_name]s" "N/A"]
           }
           puts -nonewline " $field"
         }
@@ -283,4 +207,179 @@ proc report_test_metrics { test } {
     }
     puts ""
   }
+}
+
+################################################################
+
+proc compare_test_metrics_main {} {
+  global arc argv
+  if { $argc == 0 } {
+    set tests $test_groups(flow)
+  } else {
+    set tests [expand_tests $argv]
+  }
+
+  report_metrics_header
+  foreach test $tests {
+    compare_test_metrics $test
+  }
+}
+
+proc compare_test_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
+
+  set metrics_file [test_metrics_file $test]
+  set result_file [test_metrics_result_file $test]
+  if { [file exists $metrics_file] \
+         && [file exists $result_file] } {
+    set metrics_stream [open $metrics_file r]
+    set results_stream [open $metrics_result_file r]
+    set metrics_json [read $metrics_stream]
+    set results_json [read $results_stream]
+    close $metrics_stream
+    close $results_stream
+    puts -nonewline [format "%-20s" $test]
+    if { ![catch {json::json2dict $metrics_string} metrics_dict] \
+         && ![catch {json::json2dict $result_string} results_dict]} {
+      foreach name [metric_names] {
+        set short_name [metric_short_name $name]
+        if { $short_name != "" } {
+          set key [metric_json_key $name]
+          if { [dict exists $metrics_dict $key] \
+               && [dict exists $results_dict $key]} {
+            set metrics_value [dict get $metrics_dict $key]
+            set result_value [dict get $result_dict $key]
+            if ($metrics_value != 0) {
+              set delta [expr ($result_value - $metrics_value) / $metrics_value]
+            } else {
+              set delta [expr $result_value - $metrics_value]
+            }
+            set field [format [metric_format $name] $delta]
+          } else {
+            set field [format "%[string length $short_name]s" "N/A"]
+          }
+          puts -nonewline " $field"
+        }
+      }
+    }
+    puts ""
+  }
+}
+
+################################################################
+
+# Copy result metrics to test results saved in the repository.
+proc save_flow_metrics_main {} {
+  global argv
+  if { $argv == "help" || $argv == "-help" } {
+    puts {Usage: save_flow_metrics test1 [test2]...}
+  } else {
+    set tests [expand_tests $argv]
+    foreach test $tests {
+      save_metrics $test
+    }
+  }
+}
+
+proc save_metrics { test } {
+  if { [lsearch [group_tests "all"] $test] == -1 } {
+    puts "Error: test $test not found."
+  } else {
+    set metrics_result_file [test_metrics_result_file $test]
+    set metrics_file [test_metrics_file $test]
+    file copy $metrics_result_file $metrics_file
+  }
+}
+
+################################################################
+
+# Save result metrics + margins as metric limits.
+proc save_flow_metric_limits_main {} {
+  global argv
+  if { $argv == "help" || $argv == "-help" } {
+    puts {Usage: save_flow_metric_limits [failures] test1 [test2]...}
+  } else {
+    if { $argv == "failures" } {
+      set tests [failed_tests]
+    } else {
+      set tests $argv
+    }
+    foreach test $tests {
+      if { [lsearch [group_tests "all"] $test] == -1 } {
+        puts "Error: test $test not found."
+      } else {
+        save_metric_limits $test
+      }
+    }
+  }
+}
+
+proc save_metric_limits { test } {
+  # Don't require json until it is really needed.
+  package require json
+  
+  set metrics_file [test_metrics_result_file $test]
+  set metrics_limits [test_metrics_limits_file $test]
+  if { ! [file exists $metrics_file] } {
+    puts "Error: metrics file $metrics_file not found."
+  } else {
+    set stream [open $metrics_file r]
+    set json_string [read $stream]
+    close $stream
+    if { ![catch {json::json2dict $json_string} metrics_dict] } {
+      set limits_stream [open $metrics_limits w]
+      puts $limits_stream "{"
+      set first 1
+      # Find value of variables used in margin expr's.
+      foreach var {"clock_period" "instance_count"} {
+        set key [metric_json_key $var]
+        if { [dict exists $metrics_dict $key] } {
+          set value [dict get $metrics_dict $key]
+          set $var $value
+        } else {
+          puts "Error: $test missing $var metric."
+          return
+        }
+      }
+      foreach name [metric_names] {
+        set key [metric_json_key $name]
+        if { [dict exists $metrics_dict $key] } {
+          set value [dict get $metrics_dict $key]
+          set margin_expr [metric_margin_expr $name]
+          set margin [expr $margin_expr]
+          set value_limit [expr $value + $margin]
+          if { $first } {
+            puts -nonewline $limits_stream "  "
+          } else {
+            puts -nonewline $limits_stream " ,"
+          }
+          puts $limits_stream "\"$key\" : \"$value_limit\""
+          set first 0
+        }
+      }
+      
+      puts $limits_stream "}"
+      close $limits_stream
+    } else {
+      puts "Error: json parse error $metrics_dict"
+    }
+  }
+}
+
+################################################################
+
+proc test_metrics_file { test } {
+  global test_dir
+  return [file join $test_dir "$test.metrics"]
+}
+
+proc test_metrics_result_file { test } {
+  global test_dir
+  return [file join $test_dir "results" "$test.metrics"]
+}
+
+proc test_metrics_limits_file { test } {
+  global test_dir
+  return [file join $test_dir "$test.metrics_limits"]
 }

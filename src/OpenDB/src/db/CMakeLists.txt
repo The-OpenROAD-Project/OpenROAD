@@ -99,11 +99,13 @@ add_library(opendb
     dbTechLayerMinStepRule.cpp
     dbTechLayerCornerSpacingRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
+    dbTechLayerEolKeepOutRule.cpp
     dbTechLayerCutClassRule.cpp
     dbTechLayerCutSpacingRule.cpp
     dbTechLayerCutSpacingTableOrthRule.cpp
     dbTechLayerCutSpacingTableDefRule.cpp
     dbTechLayerCutEnclosureRule.cpp
+    dbTechLayerEolExtensionRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp
@@ -140,4 +142,9 @@ target_link_libraries(opendb
         zutil
         utl
         tcl
+)
+
+messages(
+  TARGET opendb
+  OUTPUT_DIR ../..
 )

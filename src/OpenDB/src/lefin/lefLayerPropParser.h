@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/fusion/container.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -112,6 +113,37 @@ class lefTechLayerCutEnclosureRuleParser
   void setCutClass(std::string,
                    odb::dbTechLayerCutEnclosureRule* rule,
                    odb::dbTechLayer* layer);
+};
+class lefTechLayerEolExtensionRuleParser
+{
+ public:
+  lefTechLayerEolExtensionRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerEolExtensionRule* rule,
+              void (odb::dbTechLayerEolExtensionRule::*func)(int));
+  void addEntry(boost::fusion::vector<double, double>& params,
+                odb::dbTechLayerEolExtensionRule* rule);
+};
+class lefTechLayerEolKeepOutRuleParser
+{
+ public:
+  lefTechLayerEolKeepOutRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerEolKeepOutRule* rule,
+              void (odb::dbTechLayerEolKeepOutRule::*func)(int));
+  void setClass(std::string,
+                odb::dbTechLayerEolKeepOutRule* rule,
+                odb::dbTechLayer* layer);
 };
 
 }  // namespace odb

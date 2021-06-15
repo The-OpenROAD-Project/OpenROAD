@@ -36,14 +36,17 @@
 #include <ostream>
 #include <vector>
 
-namespace PD {
+namespace pdr {
 
 using std::ostream;
 using std::vector;
 
 class Node
 {
- public:
+public:
+  Node(int _idx, int _x, int _y);
+  void report(ostream& os, int level) const;
+
   int idx;
   int x;
   int y;
@@ -65,8 +68,7 @@ class Node
                          // the source through the tree
   int K_t;               // No. of downstream sinks
   unsigned level;        // Level in tree
-  vector<int>
-      nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
+  vector<int> nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
   vector<float> nn_sw_cost;
   float sw_cost_min;
   unsigned sw_cost_min_nn_idx;
@@ -79,90 +81,18 @@ class Node
                       // of the edges from the source to the node j
   int maxPLToChild;
 
-  Node(){};
-  Node(int _idx, int _x, int _y)
-  {
-    idx = _idx;
-    x = _x;
-    y = _y;
-    parent = 0;
-    min_dist = 0;
-    path_length = 0;
-    detcost_edgePToNode = -1;
-    detcost_edgeNodeToP = -1;
-    src_to_sink_dist = 0;
-    K_t = 1;
-    level = 0;
-    conn_to_par = false;
-    idx_of_cn_x = 105;
-    idx_of_cn_y = 105;
-
-    for (unsigned oct = 0; oct < 8; oct++) {
-      nn_edge_detcost.push_back(10000);
-      nn_sw_cost.push_back(10000);
-    }
-  };
-  ~Node()
-  {
-    nn_edge_detcost.clear();
-    nn_sw_cost.clear();
-    children.clear();
-    for (unsigned i = 0; i < swap_space.size(); ++i)
-      swap_space[i].clear();
-    swap_space.clear();
-    sp_chil.clear();
-    N.clear();
-    S.clear();
-    E.clear();
-    W.clear();
-  }
-
-  friend ostream& operator<<(ostream& os, const Node& n)
-  {
-    os << n.idx << "(" << n.x << ", " << n.y << ") "
-       << " parent: " << n.parent << " children: ";
-    for (unsigned i = 0; i < n.children.size(); ++i) {
-      os << n.children[i] << " ";
-    }
-    os << " N: ";
-    for (unsigned i = 0; i < n.N.size(); ++i) {
-      os << n.N[i] << " ";
-    }
-    os << " S: ";
-    for (unsigned i = 0; i < n.S.size(); ++i) {
-      os << n.S[i] << " ";
-    }
-    os << " E: ";
-    for (unsigned i = 0; i < n.E.size(); ++i) {
-      os << n.E[i] << " ";
-    }
-    os << " W: ";
-    for (unsigned i = 0; i < n.W.size(); ++i) {
-      os << n.W[i] << " ";
-    }
-    os << "PL: " << n.src_to_sink_dist << " MaxPLToChild: " << n.maxPLToChild;
-    return os;
-  }
+  friend ostream& operator<<(ostream& os, const Node& n);
 };
 
 class Node1
 {
- public:
+public:
+  Node1(int _idx, int _x, int _y);
+
   int idx;
   int x;
   int y;
   unsigned parent;  // parent's node index
-
-  Node1(){};
-  Node1(int _idx, int _x, int _y)
-  {
-    idx = _idx;
-    x = _x;
-    y = _y;
-    parent = 0;
-  };
-
-  ~Node1() {}
 };
 
-}  // namespace PD
+}  // namespace
