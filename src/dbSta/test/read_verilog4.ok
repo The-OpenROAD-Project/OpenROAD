@@ -3,5 +3,5 @@
 [INFO ODB-0225]     Created 6 library cells
 [INFO ODB-0226] Finished LEF file:  liberty1.lef
 [WARNING STA-0198] read_verilog4.v line 6, module xxx not found.  Creating black box for r1.
-[WARNING ORD-1001] instance r1 LEF master xxx not found.
+[WARNING ORD-1013] instance r1 LEF master xxx not found.
 No differences found.

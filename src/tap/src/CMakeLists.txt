@@ -58,3 +58,8 @@ target_link_libraries(tap
     opendb
     OpenSTA
 )
+
+messages(
+  TARGET tap
+  OUTPUT_DIR ..
+)

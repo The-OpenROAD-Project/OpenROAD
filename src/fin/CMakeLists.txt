@@ -59,3 +59,7 @@ target_link_libraries(fin
     OpenSTA
     Boost::boost
 )
+
+messages(
+  TARGET fin
+)

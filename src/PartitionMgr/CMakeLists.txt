@@ -61,6 +61,10 @@ target_sources(PartitionMgr
     autocluster/autocluster.cpp
 )
 
+messages(
+  TARGET PartitionMgr
+)
+
 if (LOAD_PARTITIONERS)
   target_compile_definitions(PartitionMgr
     PRIVATE

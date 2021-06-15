@@ -143,6 +143,10 @@ target_link_libraries(TritonRoute
     ZLIB::ZLIB
 )
 
+messages(
+  TARGET TritonRoute
+)
+
 ############################################################
 # Compiler flags
 ############################################################

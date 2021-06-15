@@ -1,21 +1,21 @@
-CTS 0001 TritonCTS.cpp:172          Running TritonCTS with user-specified clock roots: {}
-CTS 0002 TritonCTS.cpp:176          User did not specify clock roots.
-CTS 0003 TritonCTS.cpp:380         [TritonCTS Metrics] Total number of Clock Roots: {}.
-CTS 0004 TritonCTS.cpp:381         [TritonCTS Metrics] Total number of Buffers Inserted: {}.
-CTS 0005 TritonCTS.cpp:382         [TritonCTS Metrics] Total number of Clock Subnets: {}.
-CTS 0006 TritonCTS.cpp:383         [TritonCTS Metrics] Total number of Sinks: {}.
-CTS 0007 TritonCTS.cpp:498          Net \"{}\" found for clock \"{}\"
-CTS 0008 TritonCTS.cpp:512          TritonCTS found {} clock nets.
-CTS 0009 TritonCTS.cpp:537          Initializing clock net for : \"{}\"
-CTS 0010 TritonCTS.cpp:567          Clock net \"{}\" has {} sinks
-CTS 0011 TritonCTS.cpp:590          Number of user-input clocks: {}.
-CTS 0012 TritonCTS.cpp:737             Minimum number of buffers in the clock path: {}.
-CTS 0013 TritonCTS.cpp:738             Maximum number of buffers in the clock path: {}.
-CTS 0014 TritonCTS.cpp:741             {} clock nets were removed/fixed.
-CTS 0015 TritonCTS.cpp:744             Created {} clock nets.
-CTS 0016 TritonCTS.cpp:748         {}
-CTS 0017 TritonCTS.cpp:749             Max level of the clock tree: {}.
-CTS 0018 TritonCTS.cpp:841             Created {} clock buffers.
+CTS 0001 TritonCTS.cpp:174          Running TritonCTS with user-specified clock roots: {}
+CTS 0002 TritonCTS.cpp:178          User did not specify clock roots.
+CTS 0003 TritonCTS.cpp:382         [TritonCTS Metrics] Total number of Clock Roots: {}.
+CTS 0004 TritonCTS.cpp:383         [TritonCTS Metrics] Total number of Buffers Inserted: {}.
+CTS 0005 TritonCTS.cpp:384         [TritonCTS Metrics] Total number of Clock Subnets: {}.
+CTS 0006 TritonCTS.cpp:385         [TritonCTS Metrics] Total number of Sinks: {}.
+CTS 0007 TritonCTS.cpp:500          Net \"{}\" found for clock \"{}\"
+CTS 0008 TritonCTS.cpp:514          TritonCTS found {} clock nets.
+CTS 0009 TritonCTS.cpp:539          Initializing clock net for : \"{}\"
+CTS 0010 TritonCTS.cpp:569          Clock net \"{}\" has {} sinks
+CTS 0011 TritonCTS.cpp:592          Number of user-input clocks: {}.
+CTS 0012 TritonCTS.cpp:739             Minimum number of buffers in the clock path: {}.
+CTS 0013 TritonCTS.cpp:740             Maximum number of buffers in the clock path: {}.
+CTS 0014 TritonCTS.cpp:743             {} clock nets were removed/fixed.
+CTS 0015 TritonCTS.cpp:746             Created {} clock nets.
+CTS 0016 TritonCTS.cpp:750         {}
+CTS 0017 TritonCTS.cpp:751             Max level of the clock tree: {}.
+CTS 0018 TritonCTS.cpp:843             Created {} clock buffers.
 CTS 0019 HTreeBuilder.cpp:142       Tot. number of sinks after clustering: {}
 CTS 0020 HTreeBuilder.cpp:151       Wire segment unit: {}  dbu ({} um)
 CTS 0021 HTreeBuilder.cpp:156       Distance between buffers: {} units ({} um)
@@ -37,9 +37,9 @@ CTS 0036 PostCtsOpt.cpp:63          Avg. source sink dist: {:.2f} dbu.
 CTS 0037 PostCtsOpt.cpp:90          Num outlier sinks: {}
 CTS 0038 TechChar.cpp:1264         Number of created patterns = {}.
 CTS 0039 TechChar.cpp:1277         Number of created patterns = {}.
-CTS 0040 TritonCTS.cpp:503         Net was not found in the design for {}, please check. Skipping...
-CTS 0041 TritonCTS.cpp:556         Net \"{}\" has {} sinks. Skipping...
-CTS 0042 TritonCTS.cpp:561         Net \"{}\" has 0 sinks. Unconnected net or
+CTS 0040 TritonCTS.cpp:505         Net was not found in the design for {}, please check. Skipping...
+CTS 0041 TritonCTS.cpp:558         Net \"{}\" has {} sinks. Skipping...
+CTS 0042 TritonCTS.cpp:563         Net \"{}\" has 0 sinks. Unconnected net or
 CTS 0043 TechChar.cpp:117          {} wires are pure wire and no slew degration.\n
 CTS 0045 TechChar.cpp:337          Creating fake entries in the LUT.
 CTS 0046 TechChar.cpp:122              Num wire segments: {}
@@ -67,17 +67,17 @@ CTS 0077 TechChar.cpp:587          Liberty Library does not have Max Slew or Max
 CTS 0078 TechChar.cpp:632          Error generating the wirelengths to test. 
 CTS 0079 HTreeBuilder.cpp:104      Sink not found.
 CTS 0080 HTreeBuilder.cpp:835      Sink not found.
-CTS 0081 TritonCTS.cpp:155         Buffer {} is not in the loaded DB.
-CTS 0082 TritonCTS.cpp:188         No valid clock nets in the design.
-CTS 0083 TritonCTS.cpp:509         No clock nets have been found.
+CTS 0081 TritonCTS.cpp:157         Buffer {} is not in the loaded DB.
+CTS 0082 TritonCTS.cpp:190         No valid clock nets in the design. Skipping CTS...
+CTS 0083 TritonCTS.cpp:511         No clock nets have been found.
 CTS 0084 TechChar.cpp:62           Compiling LUT
-CTS 0087 TritonCTS.cpp:366         Could not open output metric file.
+CTS 0087 TritonCTS.cpp:368         Could not open output metric file.
 CTS 0088 SinkClustering.cpp:161    Matching0 size: {}.
 CTS 0089 SinkClustering.cpp:162    Matching1 size: {}.
 CTS 0090 HTreeBuilder.cpp:204          Sinks will be clustered based on buffer max cap.
-CTS 0091 TritonCTS.cpp:335         Sinks after db write = {} (Leaf Buffers = {})
-CTS 0092 TritonCTS.cpp:337         Avg Sink Wire Length = {:.3} um
+CTS 0091 TritonCTS.cpp:337         Sinks after db write = {} (Leaf Buffers = {})
+CTS 0092 TritonCTS.cpp:339         Avg Sink Wire Length = {:.3} um
 CTS 0093 LevelBalancer.cpp:53      Fixing tree levels for max depth {}
-CTS 0094 TritonCTS.cpp:338         Min path depth = {} Max path depth = {}
-CTS 0095 TritonCTS.cpp:496          Net \"{}\" found
+CTS 0094 TritonCTS.cpp:340         Min path depth = {} Max path depth = {}
+CTS 0095 TritonCTS.cpp:498          Net \"{}\" found
 CTS 0096 TechChar.cpp:575          No Liberty cell found for {}.
