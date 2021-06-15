@@ -97,9 +97,8 @@ Graph::Graph(vector<int>& x,
 
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
     debugPrint(logger_, PDR, "pdrev", 3, "-- Node locations --");
-    for (unsigned i = 0; i < nodes.size(); ++i) {
+    for (int i = 0; i < nodes.size(); ++i)
       debugPrint(logger_, PDR, "pdrev", 3, "   {}", nodes[i]);
-    }
   }
 }
 
@@ -1761,19 +1760,21 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   }
 
   // print neighbors
-  debugPrint(logger_, PDR, "pdrev", 3, "Print neighbors");
-  debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[node_idx]);
-  for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
-    debugPrint(logger_, PDR, "pdrev", 3, " {} {}",
-               nn[node_idx][j],
-               nodes[nn[node_idx][j]]);
+  if (logger_->debugCheck(PDR, "pdrev", 3)) {
+    debugPrint(logger_, PDR, "pdrev", 3, "Print neighbors");
+    debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[node_idx]);
+    for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
+      debugPrint(logger_, PDR, "pdrev", 3, " {} {}",
+                 nn[node_idx][j],
+                 nodes[nn[node_idx][j]]);
+    }
   }
-}  // End of buildNearestNeighbors_single_node function
+}
 
 // Guibas-Stolfi algorithm for computing nearest NE (north-east) neighbors
 void Graph::buildNearestNeighborsForSPT()
 {
-  int num_terms = nodes.size();
+  int node_count = nodes.size();
   for (unsigned i = 0; i < nn.size(); ++i) {
     nn[i].clear();
   }
@@ -1788,7 +1789,7 @@ void Graph::buildNearestNeighborsForSPT()
   lrlx.clear();
   llux.clear();
   lllx.clear();
-  for (unsigned i = 0; i < num_terms; ++i) {
+  for (unsigned i = 0; i < node_count; ++i) {
     sorted.push_back(nodes[i].idx);
     urux.push_back(9999999);
     urlx.push_back(nodes[i].x);
@@ -1803,12 +1804,12 @@ void Graph::buildNearestNeighborsForSPT()
   }
   // sort in y-axis
   sort(tmp.begin(), tmp.end(), comp_y);
-  for (unsigned i = 0; i < num_terms; ++i) {
+  for (unsigned i = 0; i < node_count; ++i) {
     sorted[i] = tmp[i].idx;
   }
 
   // collect neighbor
-  for (unsigned idx = 0; idx < num_terms; ++idx) {
+  for (unsigned idx = 0; idx < node_count; ++idx) {
     debugPrint(logger_, PDR, "pdrev", 3, "sorted idx: {}", sorted[idx]);
     Node& cNode = nodes[sorted[idx]];
     // update idx to neighbors
@@ -1837,7 +1838,7 @@ void Graph::buildNearestNeighborsForSPT()
                    sorted[idx],
                    nNode.idx);
         ;
-        if (idx == num_terms - 1) {
+        if (idx == node_count - 1) {
           // left
           nn[nNode.idx].push_back(cNode.idx);
           ullx[nNode.idx] = cNode.x;
@@ -1858,7 +1859,7 @@ void Graph::buildNearestNeighborsForSPT()
     int tIdx = idx;
     while (nodes[sorted[tIdx]].x == nodes[sorted[idx]].x) {
       tIdx++;
-      if (tIdx == num_terms)
+      if (tIdx == node_count)
         break;
     }
     tIdx = tIdx - 1;
@@ -1895,7 +1896,7 @@ void Graph::buildNearestNeighborsForSPT()
     }
   }
   unsigned total = 0, max = 0, size = 0, max_id = 0;
-  for (unsigned i = 0; i < num_terms; ++i) {
+  for (unsigned i = 0; i < node_count; ++i) {
     size = nn[i].size();
     total += size;
     if (size > max) {
@@ -1906,7 +1907,7 @@ void Graph::buildNearestNeighborsForSPT()
   // print neighbors
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
     debugPrint(logger_, PDR, "pdrev", 3, "Print neighbors");
-    for (unsigned i = 0; i < num_terms; ++i) {
+    for (unsigned i = 0; i < node_count; ++i) {
       debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[i]);
       for (unsigned j = 0; j < nn[i].size(); ++j) {
         debugPrint(logger_, PDR, "pdrev", 3, "    {} {}", nn[i][j], nodes[nn[i][j]]);
@@ -2227,12 +2228,12 @@ void Graph::print_tree()
 {
   /* For each terminal */
   for (size_t j = 0; j < nodes.size(); ++j) {
-    debugPrint(logger_, PDR, "pdrev", 3, "Node {} ({} , {}) parent= {} Level= {}",
-               j,
-               nodes[j].x,
-               nodes[j].y,
-               nodes[j].parent,
-               nodes[j].level);
+    logger_->report("Node {} ({} , {}) parent= {} Level= {}",
+                    j,
+                    nodes[j].x,
+                    nodes[j].y,
+                    nodes[j].parent,
+                    nodes[j].level);
   }
 }
 
@@ -3063,6 +3064,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (unsigned i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
+  if (lists.size() > 10)
+    logger_->error(PDR, 666, "luse");
   // This "counts" from 0 to list.size() using each index in the array as one bit, so it
   // result is 2^lists.size() - exponential.
   // Horrifically inefficient in both memory and time.

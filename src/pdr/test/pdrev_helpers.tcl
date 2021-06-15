@@ -31,7 +31,7 @@ proc write_net { net stream } {
       }
     }
     if { $drvr != "NULL" } {
-      puts $stream "Net [get_full_name $net] $pin_count $drvr_index"
+      puts $stream "Net [get_full_name $net] $drvr_index"
       foreach port $ports {
         write_pin $port $stream
       }
@@ -53,7 +53,7 @@ proc write_pin { pin stream } {
 }
 
 # Each net is
-# net_name pin_count drvr_index {{pin_name x y}...}
+# {net_name pin_count drvr_index {pin_name x y}...}
 proc read_nets { filename } {
   set stream [open $filename "r"]
   set nets {}
@@ -62,16 +62,17 @@ proc read_nets { filename } {
     if { [eof $stream] } {
       break
     }
-    lassign $line ignore net_name pin_count drvr_index
+    lassign $line ignore net_name drvr_index
     set pins {}
-    for {set i 0} {$i < $pin_count} {incr i} {
+    while { 1 } {
       gets $stream line
+      if { $line == "" } {
+        break
+      }
       lassign $line pin_name x y
       lappend pins [list $pin_name $x $y]
     }
-    # blank line
-    gets $stream line
-    set net [list $net_name $pin_count $drvr_index $pins]
+    set net [concat [list $net_name $drvr_index] $pins]
     lappend nets $net
   }
   close $stream
@@ -86,7 +87,7 @@ proc write_gcd_nets {} {
 }
 
 proc report_pdrev_net { net alpha use_pd } {
-  lassign $net net_name pin_count drvr_index pins
+  set pins [lassign $net net_name drvr_index]
   puts "Net $net_name"
   set xs {}
   set ys {}

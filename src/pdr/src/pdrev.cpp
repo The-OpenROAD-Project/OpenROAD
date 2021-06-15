@@ -35,6 +35,7 @@
 
 #include "graph.h"
 #include "utl/Logger.h"
+#include "gui/gui.h"
 
 namespace pdr {
 
@@ -42,11 +43,6 @@ class Graph;
 
 using stt::Tree;
 using stt::Branch;
-
-static void
-reportXY(std::vector<int> x,
-         std::vector<int> y,
-         Logger* logger);
 
 class PdRev
 {
@@ -59,6 +55,7 @@ public:
   void runPDII(float alpha);
   Tree translateTree();
   void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
+  void highlightGraph();
 
 private:
   void replaceNode(Graph* graph, int originalNode);
@@ -110,6 +107,7 @@ void PdRev::runPD(float alpha)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
+  highlightGraph();
   graph_->doSteiner_HoVW();
 }
 
@@ -238,13 +236,69 @@ PdRev::graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>
 }
 
 // Useful for generating regression data.
-static void
+void
 reportXY(std::vector<int> x,
          std::vector<int> y,
          Logger* logger)
 {
   for (int i = 0; i < x.size(); i++)
-    logger->report("{} {}", x[i], y[i]);
+    logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
+}
+
+// Simple general purpose render for a group of lines.
+class LinesRenderer : public gui::Renderer
+{
+public:
+  void highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
+                 gui::Painter::Color color);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  std::vector<std::pair<odb::Point, odb::Point>> lines_;
+  gui::Painter::Color color_;
+};
+
+static LinesRenderer *lines_renderer = nullptr;
+
+void
+LinesRenderer::highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
+                         gui::Painter::Color color)
+{
+  lines_ = lines;
+  color_ = color;
+}
+
+void
+LinesRenderer::drawObjects(gui::Painter &painter)
+{
+  if (!lines_.empty()) {
+    painter.setPen(color_, true);
+    for (int i = 0 ; i < lines_.size(); ++i) {
+      painter.drawLine(lines_[i].first, lines_[i].second);
+    }
+  }
+}
+
+void
+PdRev::highlightGraph()
+{
+  gui::Gui *gui = gui::Gui::get();
+  if (gui) {
+    if (lines_renderer == nullptr) {
+      lines_renderer = new LinesRenderer();
+      gui->registerRenderer(lines_renderer);
+    }
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> xy_lines;
+    graphLines(xy_lines);
+    std::vector<std::pair<odb::Point, odb::Point>> lines;
+    for (int i = 0; i < xy_lines.size(); i++) {
+      std::pair<int, int> xy1 = xy_lines[i].first;
+      std::pair<int, int> xy2 = xy_lines[i].second;
+      lines.push_back(std::pair(odb::Point(xy1.first, xy1.second),
+                                odb::Point(xy2.first, xy2.second)));
+    }
+    lines_renderer->highlight(lines, gui::Painter::red);
+  }
 }
 
 }  // namespace

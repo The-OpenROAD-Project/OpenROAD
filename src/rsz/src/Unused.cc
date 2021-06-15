@@ -639,40 +639,6 @@ Resizer::findBufferMinCap(LibertyLibrarySeq *resize_libs)
   return min_cap;
 }
 
-// Simple general purpose render for a group of lines.
-class LinesRenderer : public gui::Renderer
-{
-public:
-  void highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
-                 gui::Painter::Color color);
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-
-private:
-  std::vector<std::pair<odb::Point, odb::Point>> lines_;
-  gui::Painter::Color color_;
-};
-
-static LinesRenderer *lines_renderer = nullptr;
-
-void
-LinesRenderer::highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
-                         gui::Painter::Color color)
-{
-  lines_ = lines;
-  color_ = color;
-}
-
-void
-LinesRenderer::drawObjects(gui::Painter &painter)
-{
-  if (!lines_.empty()) {
-    painter.setPen(color_, true);
-    for (int i = 0 ; i < lines_.size(); ++i) {
-      painter.drawLine(lines_[i].first, lines_[i].second);
-    }
-  }
-}
-
 ////////////////////////////////////////////////////////////////
 
 static void
@@ -771,4 +737,3 @@ highlight_pdII_tree(const Pin *drvr_pin,
 {
   highlightPdrevTree(drvr_pin, alpha, false);
 }
-

@@ -57,6 +57,7 @@ target_include_directories(pdr
 
 target_link_libraries(pdr
   PUBLIC
-    utl
     stt
+    utl
+    gui
 )

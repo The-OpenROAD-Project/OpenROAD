@@ -180,6 +180,7 @@ private:
 
   vector<Node> sheared;
   vector<Node> hanan;
+  // nearest neighbor in some undocumented sense -cherry 06/14/2021
   vector<vector<int>> nn;
   float avgNN;
   vector<vector<int>> nn_hanan;
