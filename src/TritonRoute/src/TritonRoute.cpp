@@ -289,9 +289,10 @@ void TritonRoute::readParams(const string& fileName)
           CMAP_FILE = value;
           ++readParamCnt;
         } else if (field == "threads") {
-          logger_->warn(
-              utl::DRT, 274, "deprecated threads param in params file."
-                             " Use 'set_thread_count'");
+          logger_->warn(utl::DRT,
+                        274,
+                        "deprecated threads param in params file."
+                        " Use 'set_thread_count'");
           ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());
