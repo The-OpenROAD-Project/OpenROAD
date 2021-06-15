@@ -3,6 +3,9 @@ source "pdrev_helpers.tcl"
 
 set alpha .4
 
+# p27 p29 same x
+# p9  p17 same xy
+# p2  p5  same y
 set net {lalaland 0
   {p0 2013675 1174195}
   {p1 1705307 714185}

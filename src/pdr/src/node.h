@@ -45,6 +45,7 @@ class Node
 {
 public:
   Node(int _idx, int _x, int _y);
+  void report(ostream& os, int level) const;
 
   int idx;
   int x;

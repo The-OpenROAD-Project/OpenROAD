@@ -308,7 +308,7 @@ void Graph::PrintInfo()
 
   debugPrint(logger_, PDR, "pdrev", 3, "{}", dagRpt);
 
-  std::string nnRpt = "  NN:\n";
+  std::string nnRpt = "  Nearest Neighbors:\n";
   for (unsigned i = 0; i < nn.size(); ++i) {
     nnRpt = nnRpt + "     " + std::to_string(i) + " -- ";
     for (unsigned j = 0; j < nn[i].size(); ++j) {
@@ -1699,16 +1699,15 @@ static bool comp_det_cost(const Node& i, const Node& j)
   return (i.det_cost_node > j.det_cost_node);
 }
 
-// num_terms arg is redundant -cherry 06/07/2021
 void Graph::buildNearestNeighbors_single_node(int node_idx)
 {
-  int num_terms = nodes.size();
+  int node_count = nodes.size();
   vector<Node> tmp = nodes;
-  sorted.resize(num_terms);
-  nn.resize(num_terms);
+  sorted.resize(node_count);
+  nn.resize(node_count);
   // sort in y-axis
   sort(tmp.begin(), tmp.end(), comp_y);
-  for (unsigned i = 0; i < num_terms; ++i) {
+  for (unsigned i = 0; i < node_count; ++i) {
     sorted[i] = tmp[i].idx;
   }
 
@@ -1759,14 +1758,12 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
     }
   }
 
-  // print neighbors
+  // Print neighbors.
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
-    debugPrint(logger_, PDR, "pdrev", 3, "Print neighbors");
+    debugPrint(logger_, PDR, "pdrev", 3, "Neighbors");
     debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[node_idx]);
     for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
-      debugPrint(logger_, PDR, "pdrev", 3, " {} {}",
-                 nn[node_idx][j],
-                 nodes[nn[node_idx][j]]);
+      debugPrint(logger_, PDR, "pdrev", 3, " {}", nodes[nn[node_idx][j]]);
     }
   }
 }
@@ -1904,13 +1901,13 @@ void Graph::buildNearestNeighborsForSPT()
       max_id = i;
     }
   }
-  // print neighbors
+  // Print neighbors.
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
-    debugPrint(logger_, PDR, "pdrev", 3, "Print neighbors");
+    debugPrint(logger_, PDR, "pdrev", 3, "Neighbors");
     for (unsigned i = 0; i < node_count; ++i) {
       debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[i]);
       for (unsigned j = 0; j < nn[i].size(); ++j) {
-        debugPrint(logger_, PDR, "pdrev", 3, "    {} {}", nn[i][j], nodes[nn[i][j]]);
+        debugPrint(logger_, PDR, "pdrev", 3, " {}", nodes[nn[i][j]]);
       }
     }
   }
@@ -3064,8 +3061,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (unsigned i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
-  if (lists.size() > 10)
-    logger_->error(PDR, 666, "luse");
+  //if (lists.size() > 10)
+  // logger_->error(PDR, 1, "pdrev steiner conversion failure");
   // This "counts" from 0 to list.size() using each index in the array as one bit, so it
   // result is 2^lists.size() - exponential.
   // Horrifically inefficient in both memory and time.
