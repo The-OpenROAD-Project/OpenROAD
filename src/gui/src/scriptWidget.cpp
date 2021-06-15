@@ -279,6 +279,9 @@ void ScriptWidget::readSettings(QSettings* settings)
   settings->beginGroup("scripting");
   history_ = settings->value("history").toStringList();
   historyPosition_ = history_.size();
+
+  input_->readSettings(settings);
+
   settings->endGroup();
 }
 
@@ -286,6 +289,9 @@ void ScriptWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup("scripting");
   settings->setValue("history", history_);
+
+  input_->writeSettings(settings);
+
   settings->endGroup();
 }
 

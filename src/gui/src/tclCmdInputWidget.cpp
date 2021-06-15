@@ -36,6 +36,7 @@
 
 #include <QMimeData>
 #include <QTextStream>
+#include <QMenu>
 
 namespace gui {
 
@@ -51,6 +52,15 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
 
   highlighter_ = nullptr;
 
+  // add option to default context menu to enable or disable syntax highlighting
+  context_menu_ = createStandardContextMenu();
+  context_menu_->addSeparator();
+  enable_highlighting_ = new QAction("Syntax highlighting", this);
+  enable_highlighting_->setCheckable(true);
+  enable_highlighting_->setChecked(true);
+  context_menu_->addAction(enable_highlighting_);
+  connect(enable_highlighting_, SIGNAL(triggered()), this, SLOT(updateHighlighting()));
+
   // precompute size for updating text box size
   document_margins_ = 2 * (document()->documentMargin() + 3);
 
@@ -60,6 +70,8 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
 
 TclCmdInputWidget::~TclCmdInputWidget()
 {
+  delete enable_highlighting_;
+  delete context_menu_;
 }
 
 void TclCmdInputWidget::setFont(const QFont& font)
@@ -207,6 +219,8 @@ void TclCmdInputWidget::dropEvent(QDropEvent* event)
 void TclCmdInputWidget::init(Tcl_Interp* interp)
 {
   highlighter_ = std::make_unique<TclCmdHighlighter>(document(), interp);
+
+  updateHighlighting();
 }
 
 // replicate QLineEdit function
@@ -234,6 +248,37 @@ void TclCmdInputWidget::setMaximumHeight(int height)
   QPlainTextEdit::setMaximumHeight(height);
 
   updateSize();
+}
+
+void TclCmdInputWidget::contextMenuEvent(QContextMenuEvent *event)
+{
+    context_menu_->exec(event->globalPos());
+}
+
+void TclCmdInputWidget::updateHighlighting()
+{
+  if (highlighter_ != nullptr) {
+    if (enable_highlighting_->isChecked()) {
+      highlighter_->setDocument(document());
+    }
+    else {
+      highlighter_->setDocument(nullptr);
+    }
+  }
+}
+
+void TclCmdInputWidget::readSettings(QSettings* settings)
+{
+  settings->beginGroup(objectName());
+  enable_highlighting_->setChecked(settings->value(enable_highlighting_keyword_, true).toBool());
+  settings->endGroup();
+}
+
+void TclCmdInputWidget::writeSettings(QSettings* settings)
+{
+  settings->beginGroup(objectName());
+  settings->setValue(enable_highlighting_keyword_, enable_highlighting_->isChecked());
+  settings->endGroup();
 }
 
 }  // namespace gui

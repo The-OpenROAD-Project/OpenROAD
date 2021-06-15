@@ -35,7 +35,9 @@
 #include <tcl.h>
 #include <memory>
 
+#include <QMenu>
 #include <QPlainTextEdit>
+#include <QSettings>
 
 #include "tclCmdHighlighter.h"
 
@@ -57,6 +59,9 @@ class TclCmdInputWidget: public QPlainTextEdit {
 
     void setMaximumHeight(int height);
 
+    void readSettings(QSettings* settings);
+    void writeSettings(QSettings* settings);
+
   public slots:
     void commandExecuted(int return_code);
 
@@ -73,9 +78,12 @@ class TclCmdInputWidget: public QPlainTextEdit {
   private slots:
     void updateSize();
 
+    void updateHighlighting();
+
   protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
+    void contextMenuEvent(QContextMenuEvent* event) override;
 
   private:
     void keyPressEvent(QKeyEvent* e) override;
@@ -89,6 +97,11 @@ class TclCmdInputWidget: public QPlainTextEdit {
     int document_margins_;
 
     int max_height_;
+
+    QMenu* context_menu_;
+    QAction* enable_highlighting_;
+
+    static constexpr const char* enable_highlighting_keyword_ = "highlighting";
 
     std::unique_ptr<TclCmdHighlighter> highlighter_;
 };
