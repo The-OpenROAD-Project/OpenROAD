@@ -58,30 +58,38 @@ Node::Node(int _idx, int _x, int _y) :
   idx_of_cn_y = 105;
 };
 
+void Node::report(ostream& os,
+                  int level) const
+{
+  os << idx << " (" << x << ", " << y << ") "
+     << "parent: " << parent << " children: ";
+  for (unsigned i = 0; i < children.size(); ++i) {
+    os << children[i] << " ";
+  }
+  if (level > 1) {
+    os << " N: ";
+    for (unsigned i = 0; i < N.size(); ++i) {
+      os << N[i] << " ";
+    }
+    os << " S: ";
+    for (unsigned i = 0; i < S.size(); ++i) {
+      os << S[i] << " ";
+    }
+    os << " E: ";
+    for (unsigned i = 0; i < E.size(); ++i) {
+      os << E[i] << " ";
+    }
+    os << " W: ";
+    for (unsigned i = 0; i < W.size(); ++i) {
+      os << W[i] << " ";
+    }
+    os << "PL: " << src_to_sink_dist << " MaxPLToChild: " << maxPLToChild;
+  }
+}
+
 ostream& operator<<(ostream& os, const Node& n)
 {
-  os << n.idx << "(" << n.x << ", " << n.y << ") "
-     << " parent: " << n.parent << " children: ";
-  for (unsigned i = 0; i < n.children.size(); ++i) {
-    os << n.children[i] << " ";
-  }
-  os << " N: ";
-  for (unsigned i = 0; i < n.N.size(); ++i) {
-    os << n.N[i] << " ";
-  }
-  os << " S: ";
-  for (unsigned i = 0; i < n.S.size(); ++i) {
-    os << n.S[i] << " ";
-  }
-  os << " E: ";
-  for (unsigned i = 0; i < n.E.size(); ++i) {
-    os << n.E[i] << " ";
-  }
-  os << " W: ";
-  for (unsigned i = 0; i < n.W.size(); ++i) {
-    os << n.W[i] << " ";
-  }
-  os << "PL: " << n.src_to_sink_dist << " MaxPLToChild: " << n.maxPLToChild;
+  n.report(os, 1);
   return os;
 }
 
