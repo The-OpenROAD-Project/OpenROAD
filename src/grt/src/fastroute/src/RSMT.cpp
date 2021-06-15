@@ -773,9 +773,7 @@ void gen_brk_RSMT(Bool congestionDriven,
     if (nets[i]->deg >= pdRevForHighFanout &&
         nets[i]->deg <= max_fanout_for_pdrev &&
         nets[i]->isClock) {
-      std::vector<int> vecX(x, x + d);
-      std::vector<int> vecY(y, y + d);
-      stt::Tree tree = pdr::primDijkstraRevII(vecX, vecY, nets[i]->alpha, logger);
+      stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, nets[i]->alpha, logger);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
