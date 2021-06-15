@@ -52,7 +52,7 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
   highlighter_ = nullptr;
 
   // precompute size for updating text box size
-  document_margins_ = 2 * document()->documentMargin();
+  document_margins_ = 2 * (document()->documentMargin() + 3);
 
   connect(this, SIGNAL(textChanged()), this, SLOT(updateSize()));
   updateSize();
