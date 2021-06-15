@@ -33,8 +33,6 @@
 
 #pragma once
 
-#include <fstream>
-#include <unordered_map>
 #include <vector>
 
 #include "edge.h"
@@ -44,7 +42,7 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
-namespace PD {
+namespace pdr {
 
 using std::ofstream;
 using std::vector;
@@ -52,93 +50,19 @@ using utl::Logger;
 
 class Graph
 {
- public:
-  vector<Node> nodes;
-  vector<Edge> edges;
-  vector<int> dag;
-  int maxPL;  // max source to sink pathlength
-  float maxPLRatio;
-  vector<vector<int>> ManhDist;
-  float PLmargin;
-  unsigned verbose;
-  unsigned num_terminals;
-  unsigned orig_num_terminals;
-  unsigned root_idx;
-  float alpha1;
-  unsigned seed;
-  float alpha2;
-  float alpha3;
-  float alpha4;
-  float beta;
-  unsigned distance;
-  float M;
-
-  float pd_wl;
-  float pd_pl;
-  float mst_wl;
-  float spt_pl;
-  float pd_dc;
-  float pdbu_wl;
-  float pdbu_pl;
-  float pdbu_dc;
-  float st_wl;
-  float st_pl;
-  float st_dc;
-  float daf_wl;
-  float daf_pl;
-  float daf_dc;
-
-  vector<int> urux;
-  vector<int> urlx;
-  vector<int> ulux;
-  vector<int> ullx;
-  vector<int> lrux;
-  vector<int> lrlx;
-  vector<int> llux;
-  vector<int> lllx;
-
-  vector<Node> sheared;
-  vector<Node> hanan;
-  vector<vector<int>> nn;
-  float avgNN;
-  vector<vector<int>> nn_hanan;
-  vector<int> sorted;
-  vector<int> sorted_hanan;
-  vector<int> aux;
-
-  vector<unsigned> heap_key;
-  vector<int> heap_idx;
-  vector<int> heap_elt;
-  unsigned heap_size;
-  vector<vector<int>> tree_struct;
-  vector<int> tree_struct_1darr;
-
-  // functions
-  Graph(){};
-  Graph(unsigned _num_terminals,
-        unsigned _verbose,
-        float _alpha1,
-        float _alpha2,
-        float _alpha3,
-        float _alpha4,
-        unsigned _root,
-        float _beta,
-        float _margin,
-        unsigned seed,
-        unsigned distance,
-        vector<unsigned>& x,
-        vector<unsigned>& y,
+public:
+  Graph(vector<int>& x,
+        vector<int>& y,
         Logger* logger);
-  ~Graph();
-  bool buildNearestNeighborsForSPT(unsigned num_terminals);
-  bool buildNearestNeighbors_single_node(unsigned num_terminals, unsigned idx);
-  bool run_PD_brute_force(float alp);
-  bool doSteiner_HoVW();
-  bool fix_max_dc();
-  bool find_max_dc_node(vector<float>& node_and_dc);
+  void buildNearestNeighborsForSPT();
+  void buildNearestNeighbors_single_node(int idx);
+  void run_PD_brute_force(float alpha);
+  void doSteiner_HoVW();
+  void fix_max_dc();
+  void find_max_dc_node(vector<float>& node_and_dc);
   unsigned calc_overlap(vector<vector<Node>>& set_of_nodes);
-  unsigned calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[]);
-  bool get_overlap_lshape(vector<Node>& set_of_nodes, int index);
+  unsigned calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
+  void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
   void generate_permutations(vector<vector<unsigned>> lists,
                              vector<vector<unsigned>>& result,
                              unsigned depth,
@@ -146,7 +70,7 @@ class Graph
   void update_edgecosts_to_parent(unsigned child, unsigned par);
   void update_node_detcost_Kt(unsigned j);
   void get_level_in_tree();
-  void PDBU_new_NN();
+  void PDBU_new_NN(float alpha);
   void update_detourcosts_to_NNs(unsigned j);
   void swap_and_update_tree(unsigned min_node,
                             int nn_idx,
@@ -160,7 +84,6 @@ class Graph
 
   void get_children_of_node();
   void print_tree();
-  void print_tree_v2(ofstream& ofs);
   float calc_tree_det_cost();
   unsigned calc_tree_wl_pd();
   unsigned calc_tree_pl();
@@ -226,8 +149,54 @@ class Graph
                            std::pair<double, double> D,
                            std::pair<double, double>& out);
 
- private:
-  Logger* _logger;
+  vector<Node> nodes;
+  int orig_num_terminals;
+
+private:
+  float alpha2;
+  float alpha3;
+  float alpha4;
+  float beta;
+  unsigned distance;
+  float M;
+
+  vector<Edge> edges;
+  vector<int> dag;
+  int maxPL;  // max source to sink pathlength
+  float maxPLRatio;
+  vector<vector<int>> ManhDist;
+  float PLmargin;
+  int num_terminals;
+  int root_idx;
+
+  vector<int> urux;
+  vector<int> urlx;
+  vector<int> ulux;
+  vector<int> ullx;
+  vector<int> lrux;
+  vector<int> lrlx;
+  vector<int> llux;
+  vector<int> lllx;
+
+  vector<Node> sheared;
+  vector<Node> hanan;
+  // nearest neighbor in some undocumented sense -cherry 06/14/2021
+  vector<vector<int>> nn;
+  float avgNN;
+  vector<vector<int>> nn_hanan;
+  vector<int> sorted;
+  vector<int> sorted_hanan;
+  vector<int> aux;
+
+  vector<vector<int>> tree_struct;
+  vector<int> tree_struct_1darr;
+
+  vector<unsigned> heap_key;
+  vector<int> heap_idx;
+  vector<int> heap_elt;
+  unsigned heap_size;
+
+  Logger* logger_;
 };
 
 }  // namespace PD

@@ -67,7 +67,9 @@ target_sources(replace
     src/timingBase.cpp
     src/graphics.cpp
 )
- 
+
+messages(TARGET replace)
+
 target_include_directories(replace
   PUBLIC
     include
@@ -80,7 +82,7 @@ target_link_libraries(replace
     gui
     opendb
     OpenSTA
-    sst
+    stt
     rsz
     grt
 )

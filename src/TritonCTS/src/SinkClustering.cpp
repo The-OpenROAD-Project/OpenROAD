@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -442,9 +442,8 @@ void SinkClustering::writePlotFile(unsigned groupSize)
 
 double SinkClustering::getWireLength(std::vector<Point<double>> points)
 {
-  std::unique_ptr<PD::PdRev> pd(new PD::PdRev(_logger));
-  std::vector<unsigned> vecX;
-  std::vector<unsigned> vecY;
+  std::vector<int> vecX;
+  std::vector<int> vecY;
   double driverX = 0;
   double driverY = 0;
   for (auto point: points) {
@@ -460,11 +459,9 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     vecX.emplace_back(point.getX() * _options->getDbUnits());
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
-  pd->setAlphaPDII(0.8);
-  pd->addNet(points.size() + 1, vecX, vecY);
-  pd->runPDII();
-  PD::Tree pdTree = pd->translateTree(0);
-  unsigned wl = pdTree.length;
+  float alpha = 0.8;
+  stt::Tree pdTree = pdr::primDijkstraRevII(vecX, vecY, alpha, _logger);
+  int wl = pdTree.length;
   return wl/double(_options->getDbUnits());
 }
 }  // namespace cts

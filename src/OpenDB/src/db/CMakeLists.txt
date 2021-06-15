@@ -143,3 +143,8 @@ target_link_libraries(opendb
         utl
         tcl
 )
+
+messages(
+  TARGET opendb
+  OUTPUT_DIR ../..
+)

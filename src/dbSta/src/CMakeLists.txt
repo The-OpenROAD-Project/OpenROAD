@@ -65,3 +65,8 @@ target_link_libraries(dbSta
     gui
     utl
 )
+
+messages(
+  TARGET dbSta
+  OUTPUT_DIR ..
+)

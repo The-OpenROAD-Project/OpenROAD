@@ -43,7 +43,7 @@
 #include "EdgeShift.h"
 #include "RipUp.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -772,15 +772,10 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
     if (pdRevForHighFanout > 0 && nets[i]->deg >= pdRevForHighFanout
         && nets[i]->isClock) {
-      PD::PdRev* pd = new PD::PdRev(logger);
-      std::vector<unsigned> vecX(x, x + d);
-      std::vector<unsigned> vecY(y, y + d);
-      pd->setAlphaPDII(nets[i]->alpha);
-      pd->addNet(d, vecX, vecY);
-      pd->runPDII();
-      PD::Tree pdTree = pd->translateTree(0);
-      rsmt = pdToTree(pdTree);
-      delete pd;
+      std::vector<int> vecX(x, x + d);
+      std::vector<int> vecY(y, y + d);
+      stt::Tree tree = pdr::primDijkstraRevII(vecX, vecY, nets[i]->alpha, logger);
+      rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT

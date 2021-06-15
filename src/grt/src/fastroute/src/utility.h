@@ -67,7 +67,6 @@ extern void copyRS(void);
 extern void freeRR(void);
 extern Tree fluteToTree(stt::Tree fluteTree);
 extern stt::Tree treeToFlute(Tree tree);
-extern Tree pdToTree(PD::Tree pdTree);
 
 }  // namespace grt
 

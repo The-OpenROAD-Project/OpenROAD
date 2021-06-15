@@ -73,7 +73,12 @@ target_link_libraries(TritonCTS
     dbSta
     OpenSTA
     rsz
-    sst
-    pdrev
+    stt
+    pdr
     utl
  )
+
+messages(
+  TARGET TritonCTS
+  OUTPUT_DIR ..
+)

@@ -1,8 +1,8 @@
 DRT 0000 FlexDR_init.cpp:362       Error: initNetTerms unsupported obj
 DRT 0001 TritonRoute.cpp:331       Error reading param file: {}
 DRT 0002 TritonRoute.cpp:116       Detailed routing has not been run yet.
-DRT 0003 io.cpp:2849               load design first
-DRT 0004 io.cpp:2854               load design first
+DRT 0003 io.cpp:2877               load design first
+DRT 0004 io.cpp:2882               load design first
 DRT 0005 frRegionQuery.cpp:116     Unsupported region query add
 DRT 0006 frRegionQuery.cpp:131     Unsupported region query add
 DRT 0007 frRegionQuery.cpp:157     Unsupported region query add
@@ -91,14 +91,14 @@ DRT 0090 FlexPA_prep.cpp:2289      valid access pattern not found.
 DRT 0091 FlexPA_prep.cpp:2346      pin does not have valid ap.
 DRT 0092 FlexRP_prep.cpp:874       duplicate diff layer samenet cut spacing, skipping cut 
 DRT 0093 FlexRP_prep.cpp:898       duplicate diff layer diffnet cut spacing, skipping 
-DRT 0094 io.cpp:79                 cannot find layer: {}
-DRT 0095 io.cpp:142                library cell {} not found
-DRT 0096 io.cpp:146                same cell name: {}
-DRT 0097 io.cpp:223                cannot find cut layer {}
-DRT 0098 io.cpp:233                cannot find bottom layer {}
-DRT 0099 io.cpp:243                cannot find top layer {}
-DRT 0100 io.cpp:327                unsupported via: {}
-DRT 0101 io.cpp:329                non-consecutive layers for via: {}
+DRT 0094 io.cpp:78                 cannot find layer: {}
+DRT 0095 io.cpp:141                library cell {} not found
+DRT 0096 io.cpp:145                same cell name: {}
+DRT 0097 io.cpp:222                cannot find cut layer {}
+DRT 0098 io.cpp:232                cannot find bottom layer {}
+DRT 0099 io.cpp:242                cannot find top layer {}
+DRT 0100 io.cpp:326                unsupported via: {}
+DRT 0101 io.cpp:328                non-consecutive layers for via: {}
 DRT 0102 io.cpp:461                odd dimension in both directions
 DRT 0103 io.cpp:490                unknown direction
 DRT 0104 io.cpp:513                term {} not found
@@ -110,54 +110,54 @@ DRT 0109 io.cpp:774                unsupported via in db
 DRT 0110 io.cpp:804                unsupported NET USE in def
 DRT 0111 io.cpp:833                unsupported PIN USE in db
 DRT 0112 io.cpp:863                unsupported layer {}
-DRT 0113 io.cpp:2709               techlayers for via {} not found in db tech
-DRT 0114 io.cpp:2832               unknown connfig type while writing net {}
+DRT 0113 io.cpp:2737               techlayers for via {} not found in db tech
+DRT 0114 io.cpp:2860               unknown connfig type while writing net {}
 DRT 0115 FlexPA_graphics.cpp:66    Setting MAX_THREADS=1 for use with the PA GUI.
 DRT 0116 io.cpp:888                load design first
 DRT 0117 io.cpp:891                load design first
 DRT 0118 TritonRoute.tcl:195       -gcell is a list of 2 coordinates.
 DRT 0119 FlexPA_graphics.cpp:216   marker {} at ({}, {}) ({}, {})
-DRT 0120 io.cpp:1896               unsupported PIN USE in lef
-DRT 0121 io.cpp:1912               unsupported term direction {} in lef
-DRT 0122 io.cpp:1927               layer {} is skipped for {}/{}
-DRT 0123 io.cpp:1959               layer {} is skipped for {}/OBS
-DRT 0124 io.cpp:2118               via {} with unused layer {} will be ignored
-DRT 0125 io.cpp:2133               unsupported via {}
-DRT 0126 io.cpp:2140               non consecutive layers for via {}
-DRT 0127 io.cpp:2150               unknown layer {} for via {}
-DRT 0128 io.cpp:2001               unsupported viarule {}
-DRT 0129 io.cpp:2007               unknown layer {} for viarule {}
-DRT 0130 io.cpp:2020               non consecutive layers for viarule {}
-DRT 0131 io.cpp:2041               cutLayer cannot have overhangs in viarule {}, 
-DRT 0132 io.cpp:2062               botLayer cannot have rect in viarule {}, skipping rect
-DRT 0133 io.cpp:2072               topLayer cannot have rect in viarule {}, skipping rect
-DRT 0134 io.cpp:2087               botLayer cannot have spacing in viarule {}, skipping spacing
-DRT 0135 io.cpp:2097               botLayer cannot have spacing in viarule {}, skipping spacing
-DRT 0136 io.cpp:2197               load design first
-DRT 0138 io.cpp:1551               new SPACING SAMENET overrides old SPACING SAMENET rule
-DRT 0139 io.cpp:1491               minEnclosedArea constraint with width is not supported, skipped
-DRT 0140 io.cpp:1523               SpacingRange unsupported
-DRT 0141 io.cpp:1525               SpacingLengthThreshold unsupported
-DRT 0142 io.cpp:1527               SpacingNotchLength unsupported
-DRT 0143 io.cpp:1529               SpacingEndOfNotchWidth unsupported
-DRT 0144 io.cpp:1565               new SPACING SAMENET overrides old SPACING SAMENET rule
-DRT 0145 io.cpp:1617               new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-DRT 0146 io.cpp:1645               new SPACINGTABLE TWOWIDTHS overrides old SPACING rule
-DRT 0147 io.cpp:1724               cutWithin is smaller than cutSpacing for ADJACENTCUTS on 
+DRT 0120 io.cpp:1924               unsupported PIN USE in lef
+DRT 0121 io.cpp:1940               unsupported term direction {} in lef
+DRT 0122 io.cpp:1955               layer {} is skipped for {}/{}
+DRT 0123 io.cpp:1987               layer {} is skipped for {}/OBS
+DRT 0124 io.cpp:2146               via {} with unused layer {} will be ignored
+DRT 0125 io.cpp:2161               unsupported via {}
+DRT 0126 io.cpp:2168               non consecutive layers for via {}
+DRT 0127 io.cpp:2178               unknown layer {} for via {}
+DRT 0128 io.cpp:2029               unsupported viarule {}
+DRT 0129 io.cpp:2035               unknown layer {} for viarule {}
+DRT 0130 io.cpp:2048               non consecutive layers for viarule {}
+DRT 0131 io.cpp:2069               cutLayer cannot have overhangs in viarule {}, 
+DRT 0132 io.cpp:2090               botLayer cannot have rect in viarule {}, skipping rect
+DRT 0133 io.cpp:2100               topLayer cannot have rect in viarule {}, skipping rect
+DRT 0134 io.cpp:2115               botLayer cannot have spacing in viarule {}, skipping spacing
+DRT 0135 io.cpp:2125               botLayer cannot have spacing in viarule {}, skipping spacing
+DRT 0136 io.cpp:2225               load design first
+DRT 0138 io.cpp:1567               new SPACING SAMENET overrides old SPACING SAMENET rule
+DRT 0139 io.cpp:1507               minEnclosedArea constraint with width is not supported, skipped
+DRT 0140 io.cpp:1539               SpacingRange unsupported
+DRT 0141 io.cpp:1541               SpacingLengthThreshold unsupported
+DRT 0142 io.cpp:1543               SpacingNotchLength unsupported
+DRT 0143 io.cpp:1545               SpacingEndOfNotchWidth unsupported
+DRT 0144 io.cpp:1581               new SPACING SAMENET overrides old SPACING SAMENET rule
+DRT 0145 io.cpp:1633               new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+DRT 0146 io.cpp:1661               new SPACINGTABLE TWOWIDTHS overrides old SPACING rule
+DRT 0147 io.cpp:1752               cutWithin is smaller than cutSpacing for ADJACENTCUTS on 
 DRT 0148 TritonRoute.cpp:266       deprecated lef param in params file
-DRT 0149 io.cpp:2211               Reading Tech And Libs
-DRT 0150 io.cpp:2227               Reading Design
-DRT 0151 io.cpp:2254               Reading Guide
-DRT 0152 io.cpp:2288               Error reading guide file!
-DRT 0153 io.cpp:2293               cannot find net {}
-DRT 0154 io.cpp:2298               cannot find layer {}
-DRT 0155 io.cpp:2304               guide in net {} uses layer {} ({})
-DRT 0156 io.cpp:2325               guideIn read {} guides
-DRT 0157 io.cpp:2329               guideIn read {} guides
-DRT 0158 io.cpp:2334               Error reading guide file!
-DRT 0159 io.cpp:2339               failed to open guide file
+DRT 0149 io.cpp:2239               Reading Tech And Libs
+DRT 0150 io.cpp:2255               Reading Design
+DRT 0151 io.cpp:2282               Reading Guide
+DRT 0152 io.cpp:2316               Error reading guide file!
+DRT 0153 io.cpp:2321               cannot find net {}
+DRT 0154 io.cpp:2326               cannot find layer {}
+DRT 0155 io.cpp:2332               guide in net {} uses layer {} ({})
+DRT 0156 io.cpp:2353               guideIn read {} guides
+DRT 0157 io.cpp:2357               guideIn read {} guides
+DRT 0158 io.cpp:2362               Error reading guide file!
+DRT 0159 io.cpp:2367               failed to open guide file
 DRT 0160 io_parser_helper.cpp:116  Warning: {} does not have viaDef aligned with layer 
-DRT 0161 io.cpp:1238               unsupported LEF58_SPACING rule for layer {} of type MAXXY
+DRT 0161 io.cpp:1254               unsupported LEF58_SPACING rule for layer {} of type MAXXY
 DRT 0162 io_pin.cpp:37             libcell analysis ...
 DRT 0163 io_pin.cpp:83             instance analysis ...
 DRT 0164 io_pin.cpp:139            # unique instances = {}
@@ -176,7 +176,7 @@ DRT 0176 io_parser_helper.cpp:964  GCELLGRID X {} DO {} STEP {} ;
 DRT 0177 io_parser_helper.cpp:970  GCELLGRID Y {} DO {} STEP {} ;
 DRT 0178 io_parser_helper.cpp:700  init guide query ...
 DRT 0179 io_parser_helper.cpp:703  init gr pin query ...
-DRT 0180 io.cpp:2684               post processing ...
+DRT 0180 io.cpp:2712               post processing ...
 DRT 0181 FlexTA.cpp:403            start track assignment
 DRT 0182 FlexTA.cpp:409            complete track assignment
 DRT 0183 FlexTA.cpp:296            Done with {} horizontal wires in {} frboxes and 
@@ -194,7 +194,7 @@ DRT 0203 FlexGR.cpp:643            dbGcellGrid already exists in db. Clearing ex
 DRT 0205 TritonRoute.cpp:276       deprecated output param in params file
 DRT 0206 FlexDR_conn.cpp:1272      checkConnectivity error
 DRT 0207 FlexDR_graphics.cpp:661   Setting MAX_THREADS=1 for use with the DR GUI.
-DRT 0210 io.cpp:1397               layer {} minWidth is larger than width. Using width as minWidth
+DRT 0210 io.cpp:1413               layer {} minWidth is larger than width. Using width as minWidth
 DRT 0214 io_guide.cpp:639          genGuides empty pin2GCellMap
 DRT 0215 io_guide.cpp:647          pin {}/{} not covered by guide
 DRT 0216 io_guide.cpp:654          pin PIN/{} not covered by guide
@@ -207,7 +207,7 @@ DRT 0222 io_guide.cpp:769          genGuides_final pin not in any guide
 DRT 0223 io_guide.cpp:821          pin dangling id {} ({},{}) {}
 DRT 0224 io_guide.cpp:1029         {} {} pin not visited #guides = {}
 DRT 0225 io_guide.cpp:1039         {} {} pin not visited, fall back to feedrough mode
-DRT 0226 FlexGC_eol.cpp:432        Unsupported endofline spacing rule
+DRT 0226 FlexGC_eol.cpp:441        Unsupported endofline spacing rule
 DRT 0227 TritonRoute.cpp:268       deprecated def param in params file
 DRT 0228 io_guide.cpp:117          genGuides_merge cannot find touching layer
 DRT 0229 io_guide.cpp:244          genGuides_split lineIdx is empty on {}
@@ -227,7 +227,7 @@ DRT 0243 io_parser_helper.cpp:311  Non-rect shape in via definition
 DRT 0244 io_parser_helper.cpp:316  CUT layer {} has smaller width defined in LEF compared 
 DRT 0245 io_parser_helper.cpp:708  No output guide specified, skipped writing guide
 DRT 0246 io_parser_helper.cpp:755  {}/{} from {} has nullptr as prefAP
-DRT 0247 io.cpp:2364               io::Writer::fillConnFigs_net does not support this type
+DRT 0247 io.cpp:2392               io::Writer::fillConnFigs_net does not support this type
 DRT 0248 io_pin.cpp:72             instAnalysis unsupported pinFig
 DRT 0249 FlexDR_graphics.cpp:601   Net {} (id = {})
 DRT 0250 FlexDR_graphics.cpp:604     Pin {}
@@ -238,20 +238,20 @@ DRT 0254 FlexDR_init.cpp:3457      Design and tech mismatch
 DRT 0255 FlexDR_maze.cpp:1897      Fatal error: Maze Route cannot find path of net {} in 
 DRT 0256 io.cpp:362                Skipping NDR { } because another rule with the same name 
 DRT 0257 FlexPA_graphics.cpp:251   marker {} at ({}, {}) ({}, {})
-DRT 0258 io.cpp:1232               unsupported LEF58_SPACING rule for layer {} of type AREA
-DRT 0259 io.cpp:1245               unsupported LEF58_SPACING rule for layer {} of type SAMEMASK
-DRT 0260 io.cpp:1252               unsupported LEF58_SPACING rule for layer {} of type 
-DRT 0261 io.cpp:1259               unsupported LEF58_SPACING rule for layer {} of type 
-DRT 0262 io.cpp:1266               unsupported LEF58_SPACING rule for layer {} of type 
-DRT 0263 io.cpp:1273               unsupported LEF58_SPACING rule for layer {}
-DRT 0264 io.cpp:1298               layer {} is not found to layer {} LEF58_SPACINGTABLE
+DRT 0258 io.cpp:1248               unsupported LEF58_SPACING rule for layer {} of type AREA
+DRT 0259 io.cpp:1261               unsupported LEF58_SPACING rule for layer {} of type SAMEMASK
+DRT 0260 io.cpp:1268               unsupported LEF58_SPACING rule for layer {} of type 
+DRT 0261 io.cpp:1275               unsupported LEF58_SPACING rule for layer {} of type 
+DRT 0262 io.cpp:1282               unsupported LEF58_SPACING rule for layer {} of type 
+DRT 0263 io.cpp:1289               unsupported LEF58_SPACING rule for layer {}
+DRT 0264 io.cpp:1314               layer {} is not found to layer {} LEF58_SPACINGTABLE
 DRT 0265 io.cpp:1001               unsupported LEF58_SPACING rule for layer {}
 DRT 0266 TritonRoute.cpp:273       deprecated outputTA param in params file
 DRT 0267 frTime.cpp:48             cpu time = {:02}:{:02}:{:02}, 
 DRT 0268 FlexTA.cpp:367            Done with {} horizontal wires in {} frboxes and 
-DRT 0269 FlexGC_eol.cpp:50         Unsupported endofline spacing rule
-DRT 0270 FlexGC_eol.cpp:223        Unsupported endofline spacing rule
-DRT 0271 FlexGC_eol.cpp:393        Unsupported endofline spacing rule
+DRT 0269 FlexGC_eol.cpp:58         Unsupported endofline spacing rule
+DRT 0270 FlexGC_eol.cpp:232        Unsupported endofline spacing rule
+DRT 0271 FlexGC_eol.cpp:402        Unsupported endofline spacing rule
 DRT 0272 TritonRoute.cpp:154       bottomRoutingLayer {} not found
 DRT 0273 TritonRoute.cpp:166       topRoutingLayer {} not found
 DRT 0274 TritonRoute.cpp:291       deprecated threads param in params file.
