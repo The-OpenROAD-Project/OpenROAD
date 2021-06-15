@@ -46,7 +46,7 @@ using utl::Logger;
 extern int** V_table;
 extern int** H_table;
 
-const int max_fanout_for_pdrev = 30;
+const int max_fanout_for_pdrev = 100;
 
 extern void copyStTree(int ind, Tree rsmt);
 extern void gen_brk_RSMT(Bool congestionDriven,
