@@ -628,7 +628,7 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
     auto minWidth = getTech()->getLayer(layerNum)->getMinWidth();
     auto xLen = gtl::delta(markerRect, gtl::HORIZONTAL);
     auto yLen = gtl::delta(markerRect, gtl::VERTICAL);
-    if (xLen * xLen + yLen * yLen >= minWidth * minWidth) {
+    if (xLen * xLen + yLen * yLen >= minWidth * (long long) minWidth) {
       return true;
     }
     // skip if rect < minwidth
@@ -673,8 +673,8 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
         auto yLen1 = gtl::delta(tmpRect1, gtl::VERTICAL);
         auto xLen2 = gtl::delta(tmpRect2, gtl::HORIZONTAL);
         auto yLen2 = gtl::delta(tmpRect2, gtl::VERTICAL);
-        if (xLen1 * xLen1 + yLen1 * yLen1 >= minWidth * minWidth
-            && xLen2 * xLen2 + yLen2 * yLen2 >= minWidth * minWidth) {
+        if (xLen1 * xLen1 + yLen1 * yLen1 >= minWidth * (long long) minWidth
+            && xLen2 * xLen2 + yLen2 * yLen2 >= minWidth * (long long) minWidth) {
           return true;
         }
       }
