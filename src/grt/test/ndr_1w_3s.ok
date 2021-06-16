@@ -105,5 +105,5 @@ met5              1443             0            0.00%             0 /  0 /  0
 Total            24061           170            0.71%             1 /  0 /  2
 
 [INFO GRT-0018] Total wirelength: 1720 um
-[INFO GRT-0014] Num routed nets: 15
+[INFO GRT-0014] Routed nets: 15
 No differences found.

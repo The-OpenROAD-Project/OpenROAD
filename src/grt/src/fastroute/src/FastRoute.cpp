@@ -1310,7 +1310,7 @@ NetRouteMap FastRouteCore::run()
   bool has_2D_overflow = totalOverflow > 0;
 
   if (minofl > 0) {
-    logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
+    logger->info(GRT, 104, "Minimal overflow {} occuring at round {}.", minofl, minoflrnd);
     copyBR();
   }
 
@@ -1327,7 +1327,7 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   if (verbose > 1)
-    logger->info(GRT, 106, "Layer Assignment Begins.");
+    logger->info(GRT, 106, "Layer assignment begins.");
   newLA();
   if (verbose > 1)
     logger->info(GRT, 107, "Layer assignment finished.");
@@ -1348,7 +1348,7 @@ NetRouteMap FastRouteCore::run()
 
   if (goingLV && past_cong == 0) {
     if (verbose > 1)
-      logger->info(GRT, 108, "Post Processing Begins.");
+      logger->info(GRT, 108, "Post-processing begins.");
     mazeRouteMSMDOrder3D(enlarge, 0, ripupTH3D);
 
     //  mazeRouteMSMDOrder3D(enlarge, 0, 10 );
@@ -1356,7 +1356,7 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge, 0, 12);
     }
     if (verbose > 1)
-      logger->info(GRT, 109, "Post Processsing finished.\n Starting via filling.");
+      logger->info(GRT, 109, "Post-processsing finished.\n Starting via filling.");
   }
 
   fillVIA();

@@ -186,7 +186,7 @@ void getlen()
         totlen += treeedge->route.routelen;
     }
   }
-  logger->info(GRT, 196, "Routed len: {}", totlen);
+  logger->info(GRT, 196, "Routed length: {}", totlen);
 }
 
 void ConvertToFull3DType2()
@@ -404,7 +404,7 @@ void fillVIA()
 
   if (verbose > 1) {
    logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
-   logger->info(GRT, 198, "Via related stiner nodes: {}", numVIAT2);
+   logger->info(GRT, 198, "Via related steiner nodes: {}", numVIAT2);
    logger->info(GRT, 199, "Via filling finished.");
   }
 }
@@ -1013,7 +1013,7 @@ void checkRoute3D()
     for (nodeID = 0; nodeID < 2 * deg - 2; nodeID++) {
       if (nodeID < deg) {
         if (treenodes[nodeID].botL != 0) {
-          logger->error(GRT, 203, "Causing pin node floating.");
+          logger->error(GRT, 203, "Caused floating pin node.");
         }
       }
     }
@@ -1205,7 +1205,7 @@ void recoverEdge(int netID, int edgeID)
   routeLen = treeedge->route.routelen;
 
   if (treeedge->len == 0) {
-    logger->error(GRT, 206, "trying to recover an 0 length edge.");
+    logger->error(GRT, 206, "Trying to recover a 0-length edge.");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -1427,20 +1427,20 @@ Bool checkRoute2DTree(int netID)
     gridsY = treeedge->route.gridsY;
 
     if (treeedge->len < 0) {
-      logger->warn(GRT, 207, "rip upped edge without edge len re assignment.");
+      logger->warn(GRT, 207, "Ripped up edge without edge length reassignment.");
       STHwrong = TRUE;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        logger->warn(GRT, 208, ".routelen {} len {}.",
+        logger->warn(GRT, 208, "Route length {}, tree length {}.",
           treeedge->route.routelen, treeedge->len);
         STHwrong = TRUE;
         return (TRUE);
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        logger->warn(GRT, 164, "initial grid wrong y1 x1 [{} {}] , net start [{} {}] routelen "
+        logger->warn(GRT, 164, "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
             "{}.",
             y1,
             x1,
@@ -1450,7 +1450,7 @@ Bool checkRoute2DTree(int netID)
         STHwrong = TRUE;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger->warn(GRT, 165, "end grid wrong y2 x2 [{} {}] , net start [{} {}] routelen {}.",
+        logger->warn(GRT, 165, "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
             y1,
             x1,
             gridsY[edgelength],
@@ -1462,7 +1462,7 @@ Bool checkRoute2DTree(int netID)
         distance
             = ADIFF(gridsX[i + 1], gridsX[i]) + ADIFF(gridsY[i + 1], gridsY[i]);
         if (distance != 1) {
-          logger->warn(GRT, 166, "net {} edge[{}] maze route wrong, distance {}, i {}.",
+          logger->warn(GRT, 166, "Net {} edge[{}] maze route wrong, distance {}, i {}.",
                  netName(nets[netID]),
                  edgeID,
                  distance,
@@ -1472,7 +1472,7 @@ Bool checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        logger->warn(GRT, 167, "checking failed {}.", netID);
+        logger->warn(GRT, 167, "Checking failed {}.", netID);
         return (TRUE);
       }
     }
