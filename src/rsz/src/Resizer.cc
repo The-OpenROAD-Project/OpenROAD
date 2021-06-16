@@ -299,7 +299,7 @@ Resizer::removeBuffers()
       Instance *buffer = db_network_->dbToSta(inst);
       // Do not remove buffers connected to input/output ports
       // because verilog netlists use the net name for the port.
-      if (!bufferConnectedToPorts(buffer)) {
+      if (!bufferBetweenPorts(buffer)) {
         removeBuffer(buffer);
         remove_count++;
       }
@@ -310,7 +310,7 @@ Resizer::removeBuffers()
 }
 
 bool
-Resizer::bufferConnectedToPorts(Instance *buffer)
+Resizer::bufferBetweenPorts(Instance *buffer)
 {
   LibertyCell *lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
