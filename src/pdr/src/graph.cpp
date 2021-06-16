@@ -1775,7 +1775,10 @@ void Graph::buildNearestNeighborsForSPT()
     nn[i].clear();
   }
   nn.clear();
+  // This is super stupid - copies node structures to sort them and then
+  // gets the indexes out of the sorted node copies and puts them in 'sorted' below.-cherry 06/15/2021
   vector<Node> tmp = nodes;
+  // sorted should be a local inited with size node_count -cherry 06/15/2021
   sorted.clear();
   urux.clear();
   urlx.clear();
@@ -1795,6 +1798,7 @@ void Graph::buildNearestNeighborsForSPT()
     lrlx.push_back(nodes[i].x);
     llux.push_back(nodes[i].x);
     lllx.push_back(-9999999);
+    // should just reserve out of loop -cherry 06/15/2021
     vector<int> tmp2;
     nn.push_back(tmp2);
   }
@@ -1803,6 +1807,7 @@ void Graph::buildNearestNeighborsForSPT()
   for (unsigned i = 0; i < node_count; ++i) {
     sorted[i] = tmp[i].idx;
   }
+  // sorted now has indicies of nodes sorted by y
 
   // collect neighbor
   for (unsigned idx = 0; idx < node_count; ++idx) {
@@ -1810,6 +1815,7 @@ void Graph::buildNearestNeighborsForSPT()
     Node& cNode = nodes[sorted[idx]];
     // update idx to neighbors
     // Note: nNode.y <= cNode.y
+    // cNode.y > nNode.y => neighbors of nNode have y >
     for (unsigned i = 0; i < idx; ++i) {
       Node& nNode = nodes[sorted[i]];
       if (urlx[nNode.idx] == cNode.x) {
@@ -1819,34 +1825,30 @@ void Graph::buildNearestNeighborsForSPT()
       } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
         debugPrint(logger_, PDR, "pdrev", 3,
                    "right for nNode cNode idx: {} nNode idx: {}",
-                   sorted[idx],
+                   cNode.idx,
                    nNode.idx);
-        ;
         // right
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
         debugPrint(logger_, PDR, "pdrev", 3,
                    "added to nNode right: {}",
-                   sorted[idx]);
+                   cNode.idx);
       } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
         debugPrint(logger_, PDR, "pdrev", 3,
                    "left for nNode cNode idx: {} nNode idx: {}",
-                   sorted[idx],
+                   cNode.idx,
                    nNode.idx);
-        ;
         if (idx == node_count - 1) {
           // left
           nn[nNode.idx].push_back(cNode.idx);
           ullx[nNode.idx] = cNode.x;
-          debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}",
-                     sorted[idx]);
+          debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}", cNode.idx);
         } else {
           if (nodes[sorted[idx + 1]].y != cNode.y
               || nodes[sorted[idx + 1]].x > nNode.x) {
             nn[nNode.idx].push_back(cNode.idx);
             ullx[nNode.idx] = cNode.x;
-            debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}",
-                       sorted[idx]);
+            debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}", cNode.idx);
           }
         }
       }
@@ -1872,8 +1874,7 @@ void Graph::buildNearestNeighborsForSPT()
       if (lrlx[cNode.idx] == nNode.x) {
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-        debugPrint(
-            logger_, PDR, "pdrev", 3, "added cNode center: {}", nNode.idx);
+        debugPrint(logger_, PDR, "pdrev", 3, "added cNode center: {}", nNode.idx);
       } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
         // right
         nn[cNode.idx].push_back(nNode.idx);
@@ -2281,7 +2282,6 @@ void Graph::run_PD_brute_force(float alpha)
 
   // update shortest path
   updateMinDist();
-  unsigned count = 0;
   /* n points to be extracted from heap */
   for (unsigned k = 0; k < num_terminals; k++) {
     int i = heap_delete_min();
@@ -2309,8 +2309,7 @@ void Graph::run_PD_brute_force(float alpha)
     }
 
     if (i >= 0) {
-      // pt[i] entered the tree, update heap keys for its neighbors
-      // BruteForcefor(unsigned oct = 0;  oct < num_terminals;  oct++ )
+      // node[i] entered the tree, update heap keys for its neighbors
       unsigned par = nodes[i].parent;
       debugPrint(logger_, PDR, "pdrev", 3,
                  "nodes[{}].path_length = nodes[{}].path_length={} + dist={} = {}",
@@ -2319,44 +2318,41 @@ void Graph::run_PD_brute_force(float alpha)
       nodes[i].path_length = nodes[par].path_length + dist(nodes[i], nodes[par]);
       for (unsigned oct = 0; oct < nn[i].size(); oct++) {
         int nn1 = nn[i][oct];
-        // BruteForceint nn1 = nodes[oct].idx;
-        if (nn1 >= 0) {
-          debugPrint(logger_, PDR, "pdrev", 3, "NN={} i={} min_dist of node i={}",
-                     nn1,
-                     i,
-                     nodes[i].min_dist);
-          unsigned edge_len = dist(nodes[i], nodes[nn1]);
-          float d = alpha * (float) nodes[i].path_length;
-          debugPrint(logger_, PDR, "pdrev", 3,
-                     "intermediate d = alpha * nodes[i].path_length = "
-                     "{}*{} = {}",
-                     alpha,
-                     nodes[i].path_length,
-                     d);
-          if (nn1 != root_idx)
-            d += edge_len;
-          debugPrint(logger_, PDR, "pdrev", 3,
-                     " d={} heap_idx[nn1]={} heap_key[nn1]={}",
-                     d,
-                     heap_idx[nn1],
-                     heap_key[nn1]);
-          // FIXME : Tie-break
-          if ((heap_idx[nn1] > 0) && (d <= heap_key[nn1])) {
-            heap_decrease_key(nn1, d);
-            nodes[nn1].parent = i;
-          } else if (heap_idx[nn1] == 0) {
-            heap_insert(nn1, d);
-            nodes[nn1].parent = i;
-          }
+        debugPrint(logger_, PDR, "pdrev", 3, "NN={} i={} min_dist of node i={}",
+                   nn1,
+                   i,
+                   nodes[i].min_dist);
+        unsigned edge_len = dist(nodes[i], nodes[nn1]);
+        float d = alpha * (float) nodes[i].path_length;
+        debugPrint(logger_, PDR, "pdrev", 3,
+                   "intermediate d = alpha * nodes[i].path_length = "
+                   "{}*{} = {}",
+                   alpha,
+                   nodes[i].path_length,
+                   d);
+        if (nn1 != root_idx)
+          d += edge_len;
+        debugPrint(logger_, PDR, "pdrev", 3,
+                   " d={} heap_idx[nn1]={} heap_key[nn1]={}",
+                   d,
+                   heap_idx[nn1],
+                   heap_key[nn1]);
+        // FIXME : Tie-break
+        if ((heap_idx[nn1] > 0) && (d <= heap_key[nn1])) {
+          heap_decrease_key(nn1, d);
+          nodes[nn1].parent = i;
+        } else if (heap_idx[nn1] == 0) {
+          heap_insert(nn1, d);
+          nodes[nn1].parent = i;
         }
       }
     }
   }
 
   if (logger_->debugCheck(PDR, "pdrev", 1)) {
-    // debugPrint(logger_, PDR, "pdrev", 1, "WL={} PL={}",
-    //            calc_tree_wl_pd(),
-    //            calc_tree_pl());
+    debugPrint(logger_, PDR, "pdrev", 1, "WL={} PL={}",
+                calc_tree_wl_pd(),
+                calc_tree_pl());
     print_tree();
   }
 }
@@ -3059,22 +3055,21 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (unsigned i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
-  //if (lists.size() > 10)
-  // logger_->error(PDR, 1, "pdrev steiner conversion failure");
   // This "counts" from 0 to list.size() using each index in the array as one bit, so it
   // result is 2^lists.size() - exponential.
   // Horrifically inefficient in both memory and time.
   // This is is the kiss of death -cherry 05/03/2021
+  //if (lists.size() > 10)
+  // logger_->error(PDR, 1, "pdrev steiner conversion failure");
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
   // For each combination, calc overlap
   unsigned max_ov = 0;
   vector<int> best_config;
   vector<Node> best_sps_x, best_sps_y;
+  // magic number alert -cherry
   unsigned best_sps_curr_node_idx_x = 9999999,
            best_sps_curr_node_idx_y = 9999999;
-  // unsigned best_sps_curr_node_idx_x=INT_MAX,
-  // best_sps_curr_node_idx_y=INT_MAX;
   vector<unsigned> all_lower_ovs;
 
   for (unsigned i = 0; i < result.size(); i++) {

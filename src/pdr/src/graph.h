@@ -169,6 +169,7 @@ private:
   int num_terminals;
   int root_idx;
 
+  // All of these should be local variables to buildNearestNeighborsForSPT -cherry 06/16/2021
   vector<int> urux;
   vector<int> urlx;
   vector<int> ulux;
@@ -192,6 +193,8 @@ private:
   vector<int> tree_struct_1darr;
 
   vector<unsigned> heap_key;
+  //   0 empty
+  //  -1 visited (removed)
   vector<int> heap_idx;
   vector<int> heap_elt;
   unsigned heap_size;

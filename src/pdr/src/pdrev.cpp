@@ -43,6 +43,7 @@ class Graph;
 
 using stt::Tree;
 using stt::Branch;
+using utl::PDR;
 
 class PdRev
 {
@@ -56,6 +57,7 @@ public:
   Tree translateTree();
   void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
   void highlightGraph();
+  void highlightSteinerTree(Tree &tree);
 
 private:
   void replaceNode(Graph* graph, int originalNode);
@@ -75,6 +77,7 @@ primDijkstra(std::vector<int> x,
   pdr::PdRev pd(x, y, logger);
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
+  pd.highlightSteinerTree(tree);
   return tree;
 }
 
@@ -206,14 +209,14 @@ Tree PdRev::translateTree()
   tree.deg = graph_->orig_num_terminals;
   int branch_count = tree.deg * 2 - 2;
   if (graph_->nodes.size() != branch_count)
-    logger_->error(utl::GRT, 666, "steiner branch count inconsistent");
+    logger_->error(PDR, 666, "steiner branch count inconsistent");
   tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
   tree.length = graph_->calc_tree_wl_pd();
   for (int i = 0; i < graph_->nodes.size(); ++i) {
     Node& child = graph_->nodes[i];
     int parent = child.parent;
     if (parent >= graph_->nodes.size())
-      logger_->error(utl::GRT, 666, "steiner branch node out of bounds");
+      logger_->error(PDR, 667, "steiner branch node out of bounds");
     Branch& newBranch = tree.branch[i];
     newBranch.x = child.x;
     newBranch.y = child.y;
@@ -296,6 +299,32 @@ PdRev::highlightGraph()
       std::pair<int, int> xy2 = xy_lines[i].second;
       lines.push_back(std::pair(odb::Point(xy1.first, xy1.second),
                                 odb::Point(xy2.first, xy2.second)));
+    }
+    lines_renderer->highlight(lines, gui::Painter::red);
+  }
+}
+
+void
+PdRev::highlightSteinerTree(Tree &tree)
+{
+  gui::Gui *gui = gui::Gui::get();
+  if (gui) {
+    if (lines_renderer == nullptr) {
+      lines_renderer = new LinesRenderer();
+      gui->registerRenderer(lines_renderer);
+    }
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> xy_lines;
+    graphLines(xy_lines);
+    std::vector<std::pair<odb::Point, odb::Point>> lines;
+    for (int i = 0; i < branch_count(tree); i++) {
+      stt::Branch &branch = tree.branch[i];
+      int x1 = branch.x;
+      int y1 = branch.y;
+      stt::Branch &neighbor = tree.branch[branch.n];
+      int x2 = neighbor.x;
+      int y2 = neighbor.y;
+      lines.push_back(std::pair(odb::Point(x1, y1),
+                                odb::Point(x2, y2)));
     }
     lines_renderer->highlight(lines, gui::Painter::red);
   }
