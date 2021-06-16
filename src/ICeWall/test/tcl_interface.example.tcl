@@ -1,5 +1,3 @@
-source "helpers.tcl"
-
 read_lef NangateOpenCellLibrary.mod.lef
 read_lef dummy_pads.lef
 
@@ -14,8 +12,6 @@ initialize_floorplan \
   -core_area {180.012 180.096 2819.964 2819.712} \
   -site      FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
-
-source ../../../test/Nangate45/Nangate45.tracks
 
 # Load library defintions
 define_pad_cell \
@@ -429,14 +425,7 @@ add_pad -edge left   -inst_name u_pwrdet14             -type pdt   -location {ce
 add_pad -edge left   -inst_name u_pwrdet15             -type pdt   -location {centre {x  105.000 y 1205.000}}
 add_pad -edge left   -inst_name u_pwrdet16             -type pdt   -location {centre {x  105.000 y  541.000}}
 
-if {[catch {initialize_padring} msg]} {
-  puts $errorInfo
-  puts $msg
-  return
-}
+initialize_padring
 
-set def_file [make_result_file "tcl_interface.example.def"]
-
-write_def $def_file
-diff_files $def_file "tcl_interface.defok"
+write_def tcl_interface.example.def
 

@@ -1,5 +1,3 @@
-source "helpers.tcl"
-
 read_lef NangateOpenCellLibrary.mod.lef
 read_lef dummy_pads.lef
 
@@ -14,8 +12,6 @@ initialize_floorplan \
   -core_area {180.012 180.096 2819.964 2819.712} \
   -site      FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
-
-source ../../../test/Nangate45/Nangate45.tracks
 
 # Load library defintions
 define_pad_cell \
@@ -409,14 +405,7 @@ add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {o
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  525}} -bump {row 15 col 1}
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  395}} -bump {row 16 col 1}
 
-if {[catch {initialize_padring} msg]} {
-  puts $errorInfo
-  puts $msg
-  return
-}
+initialize_padring
 
-set def_file [make_result_file "tcl_interface.flipchip.example.def"]
-
-write_def $def_file
-diff_files $def_file "tcl_interface.flipchip.defok"
+write_def tcl_interface.flipchip.example.def
 

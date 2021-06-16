@@ -15,8 +15,6 @@ initialize_floorplan \
   -site      FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
 
-source ../../../test/Nangate45/Nangate45.tracks
-
 # Load library defintions
 define_pad_cell \
   -name PAD \

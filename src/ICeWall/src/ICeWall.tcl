@@ -13,9 +13,6 @@ proc set_bump_options {args} {
     keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_cover_file_name}
 
   ICeWall::set_bump_options {*}[array get keys]
-  if {[info exists keys(-rdl_cover_file_name)]} {
-    ICeWall::set_rdl_cover_file_name $keys(-rdl_cover_file_name)
-  }
 }
 
 sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
@@ -2996,7 +2993,7 @@ namespace eval ICeWall {
 
         set inst [odb::dbInst_create $block $bump_master $bump_name]
 
-        $inst setOrigin [expr [dict get $origin x] - $master_x] [expr [dict get $origin y] - $master_y]
+        $inst setOrigin [expr [dict get $origin x] + $master_x] [expr [dict get $origin y] + $master_y]
         $inst setOrient "R0"
         $inst setPlacementStatus "FIRM"
         
@@ -3558,6 +3555,10 @@ namespace eval ICeWall {
       set_signal_assignment_file $arglist
     }
     
+    if {[is_footprint_flipchip]} {
+      verify_bump_options
+    }
+
     initialize
     pdngen::init_tech
 
@@ -4331,24 +4332,78 @@ namespace eval ICeWall {
       set value [lindex $process_args 1]
 
       switch $arg {
-        -pitch             {dict set library bump pitch $value}
-        -bump_pin_name     {dict set library bump bump_pin_name $value}
-        -spacing_to_edge   {dict set library bump spacing_to_edge $value} 
-        -cell_name         {dict set library bump cell_name $value}
-        -num_pads_per_tile {dict set library num_pads_per_tile $value}
-        -rdl_layer         {dict set library rdl layer_name [check_layer_name $value]}
-        -rdl_width         {dict set library rdl width $value}
-        -rdl_spacing       {dict set library rdl spacing $value}
+        -pitch               {dict set library bump pitch $value}
+        -bump_pin_name       {dict set library bump bump_pin_name $value}
+        -spacing_to_edge     {dict set library bump spacing_to_edge $value} 
+        -cell_name           {dict set library bump cell_name $value}
+        -num_pads_per_tile   {dict set library num_pads_per_tile [check_num_pads_per_tile_option $value]}
+        -rdl_layer           {dict set library rdl layer_name [check_layer_name $value]}
+        -rdl_width           {dict set library rdl width $value}
+        -rdl_spacing         {dict set library rdl spacing $value}
+        -rdl_cover_file_name {set_rdl_cover_file_name $value}
         default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer, -rdl_width, -rdl_spacing"}
       }
 
       set process_args [lrange $process_args 2 end]
     }
+  }
 
-    verify_bump_options
+  proc check_num_pads_per_tile_option {num_pads_per_tile} {
+    if {[llength $num_pads_per_tile] == 1} {
+      if {$num_pads_per_tile < 1 || $num_pads_per_tile > 5} {
+        utl::error PAD 209 "The number of padcells within a pad pitch ($num_pads_per_tile) must be a number between 1 and 5"
+      }
+    } else {
+      dict for {pitch value} $num_pads_per_tile {
+        if {$value < 1 || $value > 5} {
+          utl::error PAD 210 "The number of padcells within a pad pitch (pitch $pitch: num_padcells: $value) must be a number between 1 and 5"
+        }
+      }
+    }
+    return $num_pads_per_tile
   }
 
   proc verify_bump_options {} {
+    variable library
+    set tech [ord::get_db_tech]
+
+    if {[dict exists $library rdl layer_name]} {
+    } else {
+      utl::error PAD 211 "No rdl layer specified"
+    }
+    set rdl_layer_name [dict get $library rdl layer_name]
+    set rdl_layer [$tech findLayer $rdl_layer_name]
+
+    if {[dict exists $library rdl width]} {
+      set scaled_rdl_width [ord::microns_to_dbu [dict get $library rdl width]]
+      set min_width [$rdl_layer getMinWidth]
+      set max_width [$rdl_layer getMaxWidth]
+
+      if {$scaled_rdl_width < $min_width} {
+        utl::error PAD 212 "Width set for RDL layer $rdl_layer_name ([ord::dbu_to_microns $scaled_rdl_width]) is less than the minimum width of the layer in this technology ([ord::dbu_to_microns $min_width])"
+      }
+      if {$scaled_rdl_width > $max_width} {
+        utl::error PAD 213 "Width set for RDL layer $rdl_layer_name ([ord::dbu_to_microns $scaled_rdl_width]) is greater than the maximum width of the layer in this technology ([ord::dbu_to_microns $max_width])"
+      }
+    } else {
+      dict set library rdl width [$rdl_layer getWidth]
+    }
+    set rdl_width [dict get $library rdl width]
+
+    if {[dict exists $library rdl spacing]} {
+      set scaled_rdl_spacing [ord::microns_to_dbu [dict get $library rdl spacing]]
+      set spacing [$rdl_layer getSpacing]
+
+      if {$scaled_rdl_spacing < $spacing} {
+        utl::error PAD 214 "Spacing set for RDL layer $rdl_layer_name ([ord::dbu_to_microns $scaled_rdl_spacing]) is less than the required spacing for the layer in this technology ([ord::dbu_to_microns $spacing])"
+      }
+    }  
+
+    if {[dict exists $library num_pads_per_tile]} {
+      check_num_pads_per_tile_option [dict get $library num_pads_per_tile]
+    } else {
+      utl::error PAD 215 "The number of pads within a bump pitch has not been specified"
+    }
   }
 
   proc add_pad {args} {
@@ -4386,6 +4441,9 @@ namespace eval ICeWall {
         debug $args
         utl::error PAD 110 "Must specify -type option if -name is not spedified"
       }
+    }
+    if {[dict exists $footprint padcell $padcell_name]} {
+      utl::error PAD 216 "A padcell with the name $padcell_name already exists"
     }
     dict set padcell name $padcell_name
 

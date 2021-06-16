@@ -15,8 +15,6 @@ initialize_floorplan \
   -site      FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
 
-source ../../../test/Nangate45/Nangate45.tracks
-
 # Load library defintions
 define_pad_cell \
   -name PAD \
@@ -133,7 +131,6 @@ place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0
 puts "Trigger errors"
 # Trigger errors
 catch {add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
-
 puts "No more errors expected"
 
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
@@ -415,14 +412,25 @@ add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {o
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  525}} -bump {row 15 col 1}
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  395}} -bump {row 16 col 1}
 
+puts "Trigger errors for incorrect bump options"
+set_bump_options -rdl_layer metal10 -rdl_width 0.5 -rdl_spacing 1
+catch {initialize_padring}
+set_bump_options -rdl_layer metal10 -rdl_width 1.0 -rdl_spacing 0.5
+catch {initialize_padring}
+
+puts "Reset bump options"
+set_bump_options -rdl_layer metal10 -rdl_width 10  -rdl_spacing 10
+
 if {[catch {initialize_padring} msg]} {
   puts $errorInfo
   puts $msg
   return
 }
 
-set def_file [make_result_file "tcl_interface.flipchip.def"]
+set def_file1 [make_result_file "tcl_interface.flipchip.1.def"]
+set def_file  [make_result_file "tcl_interface.flipchip.def"]
 
-write_def $def_file
+write_def $def_file1
+exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" $def_file1 > $def_file
 diff_files $def_file "tcl_interface.flipchip.defok"
 
