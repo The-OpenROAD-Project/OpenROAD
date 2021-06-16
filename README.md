@@ -866,7 +866,7 @@ FastRoute has an alternative tool for the routing topology construction, called 
 priority of PDRev between wire length and skew, using the `alpha` parameter.
 The `set_pdrev_topology_priority` command sets the PDRev routing topology construction priority for specific nets.
 Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generates topologies with shorter wire length,
-and alpha close to 1.0 generates topologies with lower skew. For more information about PDRev, check the paper in
+and alpha close to 1.0 generates topologies prioritizing path depth. For more information about PDRev, check the paper in
 `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
 Example: `set_pdrev_topology_priority clk 0.3` sets an alpha value of 0.3 for net *clk*.

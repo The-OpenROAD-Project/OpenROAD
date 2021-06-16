@@ -171,7 +171,7 @@ proc set_clock_routing { args } {
     grt::set_topology_priority $clock_topology_priority
   } else {
     # Default alpha as 0.3 prioritize wire length, but keeps
-    # aware of skew in the topology construction (see PDRev paper
+    # aware of path depth in the topology construction (see PDRev paper
     # for more reference)
     grt::set_topology_priority 0.3
   }
