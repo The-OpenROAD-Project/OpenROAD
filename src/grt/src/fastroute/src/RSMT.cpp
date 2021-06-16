@@ -770,14 +770,12 @@ void gen_brk_RSMT(Bool congestionDriven,
     if (noADJ) {
       coeffV = 1.2;
     }
-    bool pd_tree = false;
     if (pdrev_for_high_fanout > 0 &&
         nets[i]->deg >= pdrev_for_high_fanout &&
         nets[i]->deg <= max_fanout_for_pdrev &&
         nets[i]->isClock) {
       stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, nets[i]->alpha, logger);
       rsmt = fluteToTree(tree);
-      pd_tree = true;
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
@@ -800,10 +798,6 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
 
     if (nets[i]->deg != rsmt.deg) {
-      if (!pd_tree) {
-        logger->warn(GRT, 190, "Net degree ({}) differs from RSMT number of terminals ({}).",
-                     nets[i]->deg, rsmt.deg);
-      }
       d = rsmt.deg;
     }
 
