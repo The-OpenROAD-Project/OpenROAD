@@ -78,15 +78,14 @@ Graph::Graph(vector<int>& x,
     sheared.push_back(Node(idx, 0, 0));
     sorted.push_back(idx);
 
-    // major magic number alert -cherry
-    urux.push_back(9999999);
+    urux.push_back(std::numeric_limits<int>::max());
     urlx.push_back(x[i]);
     ulux.push_back(x[i]);
-    ullx.push_back(-9999999);
-    lrux.push_back(9999999);
+    ullx.push_back(std::numeric_limits<int>::min());
+    lrux.push_back(std::numeric_limits<int>::max());
     lrlx.push_back(x[i]);
     llux.push_back(x[i]);
-    lllx.push_back(-9999999);
+    lllx.push_back(std::numeric_limits<int>::min());
 
     vector<int> newColumn;
     nn.push_back(newColumn);
@@ -1110,15 +1109,11 @@ int Graph::DeltaN(int idx, int rIdx, bool isRemove)
       return delta;
     }
     if (isRemove) {
-      int idxN = 100000;
-      for (unsigned i = 0; i < nList.size(); ++i) {
+      for (int i = 0; i < nList.size(); ++i) {
         if (nList[i] == rIdx) {
-          idxN = i;
+          nList.erase(nList.begin() + i);
           break;
         }
-      }
-      if (idxN != 100000) {
-        nList.erase(nList.begin() + idxN);
       }
     }
   }
@@ -1141,15 +1136,11 @@ int Graph::DeltaS(int idx, int rIdx, bool isRemove)
       return delta;
     }
     if (isRemove) {
-      int idxN = 100000;
       for (unsigned i = 0; i < nList.size(); ++i) {
         if (nList[i] == rIdx) {
-          idxN = i;
+          nList.erase(nList.begin() + i);
           break;
         }
-      }
-      if (idxN != 100000) {
-        nList.erase(nList.begin() + idxN);
       }
     }
   }
@@ -1173,15 +1164,11 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
       return delta;
     }
     if (isRemove) {
-      int idxN = 100000;
       for (unsigned i = 0; i < nList.size(); ++i) {
         if (nList[i] == rIdx) {
-          idxN = i;
+          nList.erase(nList.begin() + i);
           break;
         }
-      }
-      if (idxN != 100000) {
-        nList.erase(nList.begin() + idxN);
       }
     }
   }
@@ -1204,16 +1191,11 @@ int Graph::DeltaE(int idx, int rIdx, bool isRemove)
       return delta;
     }
     if (isRemove) {
-      // horrid. asking for trouble -cherry 06/07/2021
-      int idxN = 100000;
-      for (unsigned i = 0; i < nList.size(); ++i) {
+      for (int i = 0; i < nList.size(); ++i) {
         if (nList[i] == rIdx) {
-          idxN = i;
+          nList.erase(nList.begin() + i);
           break;
         }
-      }
-      if (idxN != 100000) {
-        nList.erase(nList.begin() + idxN);
       }
     }
   }
@@ -1790,14 +1772,14 @@ void Graph::buildNearestNeighborsForSPT()
   lllx.clear();
   for (unsigned i = 0; i < node_count; ++i) {
     sorted.push_back(nodes[i].idx);
-    urux.push_back(9999999);
+    urux.push_back(std::numeric_limits<int>::max());
     urlx.push_back(nodes[i].x);
     ulux.push_back(nodes[i].x);
-    ullx.push_back(-9999999);
-    lrux.push_back(9999999);
+    ullx.push_back(std::numeric_limits<int>::min());
+    lrux.push_back(std::numeric_limits<int>::max());
     lrlx.push_back(nodes[i].x);
     llux.push_back(nodes[i].x);
-    lllx.push_back(-9999999);
+    lllx.push_back(std::numeric_limits<int>::min());
     // should just reserve out of loop -cherry 06/15/2021
     vector<int> tmp2;
     nn.push_back(tmp2);
@@ -3067,10 +3049,9 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   unsigned max_ov = 0;
   vector<int> best_config;
   vector<Node> best_sps_x, best_sps_y;
-  // magic number alert -cherry
-  unsigned best_sps_curr_node_idx_x = 9999999,
-           best_sps_curr_node_idx_y = 9999999;
-  vector<unsigned> all_lower_ovs;
+  int best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
+  int best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
+  vector<int> all_lower_ovs;
 
   for (unsigned i = 0; i < result.size(); i++) {
     vector<vector<Node>> set_of_points;
@@ -3115,8 +3096,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
       best_config = config;
       best_sps_x.clear();
       best_sps_y.clear();
-      best_sps_curr_node_idx_x = 9999999;
-      best_sps_curr_node_idx_y = 9999999;
+      best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
+      best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
       if (set_of_points.size() != num_edges) {
         best_sps_x = set_of_points[num_edges];
         best_sps_curr_node_idx_x = nodes[index].idx_of_cn_x;
@@ -3236,8 +3217,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     if (upper_ov >= max_ov) {
       max_ov = upper_ov;
       best_config = config;
-      best_sps_curr_node_idx_x = 9999999;
-      best_sps_curr_node_idx_y = 9999999;
+      best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
+      best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
       best_sps_x.clear();
       best_sps_y.clear();
       if (set_of_points.size() != num_edges) {
@@ -3500,7 +3481,7 @@ unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
           }
           // If not present in all_pts
           bool is_present = false;
-          unsigned all_pts_idx = 9999999;
+          int all_pts_idx = std::numeric_limits<int>::max();
           for (unsigned s = 0; s < all_pts.size(); s++) {
             if ((output_nodes[k].x == all_pts[s].x)
                 && (output_nodes[k].y == all_pts[s].y)) {
@@ -3542,13 +3523,13 @@ unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
     }
   }
   if (all_pts.size() > 1) {
-    unsigned posn_of_cn = 9999999;
-    for (unsigned u = 0; u < all_pts.size(); u++)
+    int posn_of_cn = std::numeric_limits<int>::max();
+    for (int u = 0; u < all_pts.size(); u++)
       if ((all_pts[u].x == curr_node.x) && (all_pts[u].y == curr_node.y)) {
         posn_of_cn = u;
         break;
       }
-    for (unsigned u = 0; u < all_pts.size(); u++) {
+    for (int u = 0; u < all_pts.size(); u++) {
       if (all_pts[u].x == all_pts[posn_of_cn].x)
         sorted_y.push_back(all_pts[u]);
       if (all_pts[u].y == all_pts[posn_of_cn].y)

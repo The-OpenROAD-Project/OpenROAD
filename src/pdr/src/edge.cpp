@@ -45,10 +45,10 @@ Edge::Edge(int _idx, int _head, int _tail)
   best_ov = 0;
   best_shape = 5;
   final_best_shape = 5;
-  lower_idx_of_cn_x = 9999999;
-  lower_idx_of_cn_y = 9999999;
-  upper_idx_of_cn_x = 9999999;
-  upper_idx_of_cn_y = 9999999;
+  lower_idx_of_cn_x = std::numeric_limits<int>::max();
+  lower_idx_of_cn_y = std::numeric_limits<int>::max();
+  upper_idx_of_cn_x = std::numeric_limits<int>::max();
+  upper_idx_of_cn_y = std::numeric_limits<int>::max();
 }
 
 Edge::~Edge()
