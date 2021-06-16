@@ -24,7 +24,7 @@ and for yosys they are documented in the `yosys Dockerfile`_.
 Get the tools
 -------------
 
-There are currently two options to get OpenROAD tools.
+There are currently three options to get OpenROAD tools.
 
 Option 1: download pre-build binaries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +78,6 @@ environment.
 
 .. code-block:: shell
 
-   $ docker run --rm -it openroad/flow
    $ source ./setup_env.sh
    $ yosys -h
    $ openroad -h
