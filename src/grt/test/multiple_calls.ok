@@ -76,7 +76,7 @@ metal10           2209             0            0.00%             0 /  0 /  0
 Total           149734           629            0.42%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2312 um
-[INFO GRT-0014] Num routed nets: 87
+[INFO GRT-0014] Routed nets: 87
 [INFO GRT-0020] Min routing layer: metal1
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 80%
@@ -145,7 +145,7 @@ metal10             47             0            0.00%             0 /  0 /  0
 Total            23161           626            2.70%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2310 um
-[INFO GRT-0014] Num routed nets: 87
+[INFO GRT-0014] Routed nets: 87
 Differences found at line 65.
 105000 134400 109200 138600 metal1
 105000 130200 109200 134400 metal1
