@@ -1,9 +1,8 @@
-PAD 0001 ICeWall.tcl:1707          $str
-Incorrect signal assignments ([llength $errors]) found
+PAD 0001 ICeWall.tcl:1707          $str\nIncorrect signal assignments ([llength $errors]) found
 PAD 0002 ICeWall.tcl:1503          Not enough bumps: available [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)] required $required
 PAD 0004 ICeWall.tcl:2282          Cannot find a terminal [get_padcell_signal_name $padcell] for ${padcell}
-PAD 0005 ICeWall.tcl:245           Illegal orientation "$orient" specified
-PAD 0006 ICeWall.tcl:291           Illegal orientation "$orient" specified
+PAD 0005 ICeWall.tcl:245           Illegal orientation \"$orient\" specified
+PAD 0006 ICeWall.tcl:291           Illegal orientation \"$orient\" specified
 PAD 0007 ICeWall.tcl:1677          File $signal_assignment_file not found
 PAD 0008 ICeWall.tcl:947           Cannot find cell $name in the database
 PAD 0009 ICeWall.tcl:3751          Expected 1, 2 or 4 offset values, got [llength $args]
@@ -47,10 +46,10 @@ PAD 0050 ICeWall.tcl:3415          Multiple nets found on $signal in pad ring
 PAD 0051 ICeWall.tcl:2310          Creating pad ring net: $assigned_name
 PAD 0052 ICeWall.tcl:2326          Creating pad ring net: _UNASSIGNED_$idx
 PAD 0053 ICeWall.tcl:3455          Creating pad ring nets: [join $nets_created {, }]
-PAD 0054 ICeWall.tcl:207           Parameter centre "$centre" missing a value for x
-PAD 0055 ICeWall.tcl:210           Parameter centre "$centre" missing a value for y
-PAD 0056 ICeWall.tcl:253           Parameter centre "$centre" missing a value for x
-PAD 0057 ICeWall.tcl:256           Parameter centre "$centre" missing a value for y
+PAD 0054 ICeWall.tcl:207           Parameter centre \"$centre\" missing a value for x
+PAD 0055 ICeWall.tcl:210           Parameter centre \"$centre\" missing a value for y
+PAD 0056 ICeWall.tcl:253           Parameter centre \"$centre\" missing a value for x
+PAD 0057 ICeWall.tcl:256           Parameter centre \"$centre\" missing a value for y
 PAD 0058 ICeWall.tcl:302           Footprint has no padcell attribute
 PAD 0059 ICeWall.tcl:306           No side attribute spcified for padcell $padcell
 PAD 0060 ICeWall.tcl:418           Cannot determine location of padcell $padcell
@@ -80,13 +79,13 @@ PAD 0086 ICeWall.tcl:3611          Type $type not specified in the set of librar
 PAD 0087 ICeWall.tcl:3615          Cell $cell_ref of Type $type is not specified in the list of cells in the library
 PAD 0091 ICeWall.tcl:3952          No signal $signal_name defined for padcell [dict get $padcell name]
 PAD 0092 ICeWall.tcl:3950          No signal $signal_name or $try_signal defined for padcell [dict get $padcell name]
-PAD 0093 ICeWall.tcl:3966          Signal "$signal_name" not found in design 
+PAD 0093 ICeWall.tcl:3966          Signal \"$signal_name\" not found in design 
 PAD 0094 ICeWall.tcl:3982          Value for -edge_name ($edge_name) not permitted, choose one of bottom, right, top or left
 PAD 0095 ICeWall.tcl:3992          Value for -type ($type) does not match any library types ([dict keys [dict get $library types]])
 PAD 0096 ICeWall.tcl:958           No cell $cell_type defined in library ([dict keys [dict get $library cells]])
 PAD 0097 ICeWall.tcl:960           No entry found in library definition for cell $cell_type on $position side
 PAD 0098 ICeWall.tcl:3995          No library types defined
-PAD 0099 ICeWall.tcl:4036          Invalid orientation $orient, must be one of "$valid"
+PAD 0099 ICeWall.tcl:4036          Invalid orientation $orient, must be one of \"$valid\"
 PAD 0100 ICeWall.tcl:4043          Incorrect number of arguments for location, expected an even number, got [llength $location] ($location)
 PAD 0101 ICeWall.tcl:4046          Only one of centre or origin may be specified for -location ($location)
 PAD 0102 ICeWall.tcl:4051          Incorrect value specified for -location centre ([dict get $location centre]), $msg
@@ -108,7 +107,7 @@ PAD 0118 ICeWall.tcl:646           No orient attribute defined for cell referenc
 PAD 0119 ICeWall.tcl:649           No cell reference $cell_ref found in library data
 PAD 0120 ICeWall.tcl:980           Padcell $padcell does not have any location information to derive orientation
 PAD 0121 ICeWall.tcl:983           Padcell $padcell does not define orientation for $element
-PAD 0122 ICeWall.tcl:4140          Cannot find an instance with name "$inst_name"
+PAD 0122 ICeWall.tcl:4140          Cannot find an instance with name \"$inst_name\"
 PAD 0123 ICeWall.tcl:4491          Attribute name not defined for padcell
 PAD 0124 ICeWall.tcl:4521          Cell type $type does not exist in the set of library types
 PAD 0125 ICeWall.tcl:4528          No type specified for padcell $padcell
