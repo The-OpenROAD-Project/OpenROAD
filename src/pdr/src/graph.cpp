@@ -1746,7 +1746,6 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
     if (lrlx[cNode.idx] == nNode.x) {
       nn[cNode.idx].push_back(nNode.idx);
       lrux[cNode.idx] = nNode.x;
-      lllx[cNode.idx] = nNode.x;
     } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
       // right
       nn[cNode.idx].push_back(nNode.idx);
@@ -1873,7 +1872,6 @@ void Graph::buildNearestNeighborsForSPT()
       if (lrlx[cNode.idx] == nNode.x) {
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-        lllx[cNode.idx] = nNode.x;
         debugPrint(
             logger_, PDR, "pdrev", 3, "added cNode center: {}", nNode.idx);
       } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
