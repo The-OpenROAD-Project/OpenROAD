@@ -74,6 +74,13 @@ class FlexGCWorker
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;
+
+  FlexGCWorker(); // for serialization
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -298,13 +298,27 @@ class drVia : public drRef
 
   const frPoint& getOrigin() const { return origin_; }
 
- protected:
+ private:
   frPoint origin_;
   frViaDef* viaDef_;
   drBlockObject* owner_;
   FlexMazeIdx beginMazeIdx_;
   FlexMazeIdx endMazeIdx_;
   bool tapered_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drRef>(*this);
+    (ar) & origin_;
+    (ar) & viaDef_;
+    (ar) & owner_;
+    (ar) & beginMazeIdx_;
+    (ar) & endMazeIdx_;
+    (ar) & tapered_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

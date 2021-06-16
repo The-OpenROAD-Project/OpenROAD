@@ -125,12 +125,26 @@ int TritonRoute::getNumDRVs() const
 
 void TritonRoute::runDRWorker(const char* file_name)
 {
-  auto worker = FlexDRWorker::load(file_name, logger_, debug_.get(), db_);
-  auto graphics = worker->getDR()->getGraphics();
+  // must be at this scope to persist to the end of the method
+  std::unique_ptr<FlexDRGraphics> graphics;
+  if (debug_->debugDR && FlexDRGraphics::guiActive()) {
+    graphics = std::make_unique<FlexDRGraphics>(
+        debug_.get(), design_.get(), db_, logger_);
+  }
+
+  auto worker = FlexDRWorker::load(
+      file_name, logger_, debug_.get(), db_, graphics.get());
+
+  // Replace the stub tech with the reloaded one for the gui
+  std::unique_ptr<frTechObject> tech(worker->getTech());
+  graphics->setTech(tech.get(), db_);
+  design_->setTech(std::move(tech));
+
   if (graphics) {
     graphics->startIter(worker->getDRIter());
   }
-  worker->main();
+
+  worker->reloadedMain();
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,

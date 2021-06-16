@@ -33,21 +33,27 @@
 #include <fstream>
 #include <sstream>
 
-#include "serialization.h"
 #include "db/infra/frTime.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
 
-static void serialize_worker(bool read,
+enum class SerializationType
+{
+  READ,
+  WRITE
+};
+
+static void serialize_worker(SerializationType type,
                              FlexDRWorker* worker,
                              const std::string& name)
 {
-  if (read) {
+  if (type == SerializationType::READ) {
     std::ifstream file(name);
     boost::archive::binary_iarchive ar(file);
     register_types(ar);
@@ -67,11 +73,6 @@ FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
 {
 }
 
-FlexDR::FlexDR()
-    : design_(nullptr), logger_(nullptr), db_(nullptr), debugSettings_(nullptr)
-{
-}
-
 FlexDR::~FlexDR()
 {
 }
@@ -84,6 +85,15 @@ void FlexDR::setDebug(frDebugSettings* settings)
       = on && FlexDRGraphics::guiActive()
             ? std::make_unique<FlexDRGraphics>(settings, design_, db_, logger_)
             : nullptr;
+}
+
+// Used when reloaded a serialized worker.  init() will already have
+// been run. We don't support end() in this case as it is intended for
+// debugging route_queue().  The gc worker will have beeen reloaded
+// from the serialization.
+void FlexDRWorker::reloadedMain()
+{
+  route_queue();
 }
 
 int FlexDRWorker::main(frDesign* design)
@@ -104,6 +114,7 @@ int FlexDRWorker::main(frDesign* design)
   }
 
   init(design);
+
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
     FlexGCWorker gcWorker(design->getTech(), logger_, this);
@@ -111,8 +122,22 @@ int FlexDRWorker::main(frDesign* design)
     gcWorker.setDrcBox(getDrcBox());
     gcWorker.init(design);
     gcWorker.setEnableSurgicalFix(true);
+    setGCWorker(&gcWorker);
 
-    route_queue(gcWorker);
+    // Save the worker in its fully initialized state
+    frPoint debugGCell(debugSettings_->gcellX, debugSettings_->gcellY);
+    if (debugSettings_->debugDumpDR && getDRIter() >= debugSettings_->iter
+        && (debugGCell.x() < 0 || getGCellBox().contains(debugGCell))) {
+      std::string name = fmt::format("iter{}_x{}_y{}.worker",
+                                     getDRIter(),
+                                     getGCellBox().left(),
+                                     getGCellBox().bottom());
+      serialize_worker(SerializationType::WRITE, this, name);
+    }
+
+    route_queue();
+
+    setGCWorker(nullptr);  // just for safety
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cleanup();
@@ -1290,15 +1315,14 @@ void FlexDR::init_via2turnMinLen()
     if (getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2turnMinLen[i][0]
-        = max(via2turnMinLen[i][0],
-              init_via2turnMinLen_minSpc(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(
-        via2turnMinLen[i][1], init_via2turnMinLen_minSpc(lNum, downVia, true));
+    via2turnMinLen[i][0] = max(
+        via2turnMinLen[i][0], init_via2turnMinLen_minSpc(lNum, downVia, false));
+    via2turnMinLen[i][1] = max(via2turnMinLen[i][1],
+                               init_via2turnMinLen_minSpc(lNum, downVia, true));
     via2turnMinLen[i][2] = max(via2turnMinLen[i][2],
-                                init_via2turnMinLen_minSpc(lNum, upVia, false));
+                               init_via2turnMinLen_minSpc(lNum, upVia, false));
     via2turnMinLen[i][3] = max(via2turnMinLen[i][3],
-                                init_via2turnMinLen_minSpc(lNum, upVia, true));
+                               init_via2turnMinLen_minSpc(lNum, upVia, true));
     i++;
   }
 
@@ -1317,15 +1341,14 @@ void FlexDR::init_via2turnMinLen()
       upVia = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
-    via2turnMinLen[i][0]
-        = max(via2turnMinLen[i][0],
-              init_via2turnMinLen_minStp(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(
-        via2turnMinLen[i][1], init_via2turnMinLen_minStp(lNum, downVia, true));
+    via2turnMinLen[i][0] = max(
+        via2turnMinLen[i][0], init_via2turnMinLen_minStp(lNum, downVia, false));
+    via2turnMinLen[i][1] = max(via2turnMinLen[i][1],
+                               init_via2turnMinLen_minStp(lNum, downVia, true));
     via2turnMinLen[i][2] = max(via2turnMinLen[i][2],
-                                init_via2turnMinLen_minStp(lNum, upVia, false));
+                               init_via2turnMinLen_minStp(lNum, upVia, false));
     via2turnMinLen[i][3] = max(via2turnMinLen[i][3],
-                                init_via2turnMinLen_minStp(lNum, upVia, true));
+                               init_via2turnMinLen_minStp(lNum, upVia, true));
     i++;
   }
 }
@@ -1487,10 +1510,8 @@ void FlexDR::searchRepair(int iter,
       worker->setGCellBox(frBox(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
+      worker->setDebug(debugSettings_);
       if (!iter) {
-        // if (routeBox.left() == 441000 && routeBox.bottom() == 816100) {
-        //   cout << "@@@ debug: " << i << " " << j << endl;
-        // }
         // set boundary pin
         auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
         worker->setDRIter(0, bp);
@@ -1500,14 +1521,6 @@ void FlexDR::searchRepair(int iter,
       // TODO: only pass to relevant workers
       worker->setGraphics(graphics_.get());
       worker->setCost(workerDRCCost, workerMarkerCost);
-
-      if (debugSettings_->debugDumpDR && iter >= debugSettings_->iter
-          && (debugSettings_->gcellX < 0
-              || worker->getGCellBox().contains(
-                  {debugSettings_->gcellX, debugSettings_->gcellY}))) {
-        std::string name = fmt::format("iter{}_x{}_y{}.worker", iter, i, j);
-        serialize_worker(/* write */ false, worker.get(), name);
-      }
 
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
@@ -2256,21 +2269,17 @@ int FlexDR::main()
 std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
                                                  utl::Logger* logger,
                                                  frDebugSettings* debugSettings,
-                                                 odb::dbDatabase* db)
+                                                 odb::dbDatabase* db,
+                                                 FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();
-  serialize_worker(/* read */ true, worker.get(), file_name);
+  serialize_worker(SerializationType::READ, worker.get(), file_name);
 
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.
   worker->setLogger(logger);
   worker->setDebug(debugSettings);
-  auto* dr = worker->getDR();
-  dr->setLogger(logger);
-  dr->setDB(db);  // must be before setDebug
-  dr->setDebug(debugSettings);
-
-  worker->setGraphics(dr->getGraphics());
+  worker->setGraphics(graphics);
 
   return worker;
 }

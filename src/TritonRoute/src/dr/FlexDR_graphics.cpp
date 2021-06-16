@@ -26,14 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexDR_graphics.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
+#include "FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
 
 namespace fr {
@@ -224,11 +223,9 @@ const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 
-static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
+static std::string workerOrigin(FlexDRWorker* worker)
 {
-  frPoint ll = worker->getRouteBox().lowerLeft();
-  frPoint origin;
-  design->getTopBlock()->getGCellIdx(ll, origin);
+  frPoint origin = worker->getGCellBox().lowerLeft();
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -246,19 +243,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
       gui_(gui::Gui::get()),
       logger_(logger)
 {
-  // Build the layer map between opendb & tr
-  auto odb_tech = db->getTech();
-  dbu_per_uu_ = odb_tech->getDbUnitsPerMicron();
-
-  layer_map_.resize(odb_tech->getLayerCount(), -1);
-
-  for (auto& tr_layer : design->getTech()->getLayers()) {
-    auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
-    if (odb_layer) {
-      layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
-    }
-  }
-
+  setTech(design->getTech(), db);
   gui_->addCustomVisibilityControl(grid_graph_visible_);
   gui_->addCustomVisibilityControl(route_shape_cost_visible_);
   gui_->addCustomVisibilityControl(marker_cost_visible_);
@@ -267,6 +252,22 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   gui_->addCustomVisibilityControl(routing_objs_visible_, true);
 
   gui_->registerRenderer(this);
+}
+
+void FlexDRGraphics::setTech(frTechObject* tech, odb::dbDatabase* db)
+{
+  // Build the layer map between opendb & tr
+  auto odb_tech = db->getTech();
+  dbu_per_uu_ = odb_tech->getDbUnitsPerMicron();
+
+  layer_map_.resize(odb_tech->getLayerCount(), -1);
+
+  for (auto& tr_layer : tech->getLayers()) {
+    auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
+    if (odb_layer) {
+      layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
+    }
+  }
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
@@ -400,10 +401,12 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
   painter.setPen(gui::Painter::green, /* cosmetic */ true);
-  for (auto& marker : design_->getTopBlock()->getMarkers()) {
-    if (marker->getLayerNum() == layerNum) {
-      marker->getBBox(box);
-      drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
+  if (design_->getTopBlock()) {
+    for (auto& marker : design_->getTopBlock()->getMarkers()) {
+      if (marker->getLayerNum() == layerNum) {
+        marker->getBBox(box);
+        drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
+      }
     }
   }
 }
@@ -531,9 +534,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
 
-  frPoint origin;
-  design_->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(), origin);
-  status("Start worker: gcell origin " + workerOrigin(in, design_) + " "
+  status("Start worker: gcell origin " + workerOrigin(in) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
@@ -597,7 +598,7 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 
   status("Start net: " + net->getFrNet()->getName() + " "
-         + workerOrigin(worker_, design_));
+         + workerOrigin(worker_));
   logger_->info(
       DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {

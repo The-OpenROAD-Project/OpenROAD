@@ -57,6 +57,8 @@ class FlexDRGraphics : public gui::Renderer
                  odb::dbDatabase* db,
                  Logger* logger);
 
+  void setTech(frTechObject* tech, odb::dbDatabase* db);
+
   void startWorker(FlexDRWorker* worker);
 
   void startIter(int iter);

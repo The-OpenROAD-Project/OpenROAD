@@ -36,6 +36,7 @@
 
 #include "db/infra/frBox.h"
 #include "db/infra/frPoint.h"
+#include "serialization.h"
 
 namespace bgi = boost::geometry::index;
 
@@ -49,5 +50,44 @@ BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(fr::frPoint,
                                          setY)
 
 BOOST_GEOMETRY_REGISTER_BOX(fr::frBox, fr::frPoint, lowerLeft(), upperRight())
+
+namespace fr {
+
+template <typename T, typename Key = frBox>
+using RTree = bgi::rtree<rq_box_value_t<T, Key>, bgi::quadratic<16>>;
+
+// I tried to get the 'experimental' boost rtree serializer code to work
+// without success.  That really is the nicer solution but such is life.
+//
+// So instead save the objects in the rtree as a vector and rebuild
+// the rtree on load.  However this produces a tree which may have a
+// different internal structure and therefore return its results in a
+// different order.  To solve this you have to sort the query results
+// which is unfortunate as it costs runtime.  If you can be certain
+// that the ordering doesn't matter then you can skip the sort.
+
+template <class Archive, typename T, typename Key>
+void save(Archive& ar, const RTree<T, Key>& tree, const unsigned int version)
+{
+  std::vector<rq_box_value_t<T, Key>> objects(tree.begin(), tree.end());
+  (ar) & objects;
+}
+
+template <class Archive, typename T, typename Key>
+void load(Archive& ar, RTree<T, Key>& tree, const unsigned int version)
+{
+  std::vector<rq_box_value_t<T, Key>> objects;
+  (ar) & objects;
+  tree = boost::move(RTree<T, Key>(objects));
+}
+
+template <class Archive, typename T, typename Key>
+void serialize(Archive& ar, RTree<T, Key>& tree, const unsigned int version)
+{
+  // calls save or load depending on the archive
+  boost::serialization::split_free(ar, tree, version);
+}
+
+}  // namespace fr
 
 #endif

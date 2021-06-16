@@ -44,6 +44,15 @@ class gcBlockObject : public frBlockObject
   // constructors
   gcBlockObject() : frBlockObject() {}
   gcBlockObject(const gcBlockObject& in) : frBlockObject(in) {}
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

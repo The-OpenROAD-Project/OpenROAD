@@ -227,10 +227,12 @@ class frNet : public frBlockObject
 template <class Archive>
 void frNet::serialize(Archive& ar, const unsigned int version)
 {
+  // instTerms_ and terms_ are intentionally NOT serialized.  This cuts
+  // the serializer from recursing across the whole design.  Any
+  // instTerm/term must attach itself to a net on deserialization.
+
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
-  (ar) & instTerms_;
-  (ar) & terms_;
   (ar) & shapes_;
   (ar) & vias_;
   (ar) & pwires_;

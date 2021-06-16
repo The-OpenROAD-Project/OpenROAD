@@ -181,7 +181,7 @@ class drAccessPattern : public drBlockObject
   // others
   frBlockObjectEnum typeId() const override { return drcAccessPattern; }
 
- protected:
+ private:
   frPoint beginPoint_;
   frLayerNum beginLayerNum_;
   frCoord beginArea_;
@@ -195,6 +195,27 @@ class drAccessPattern : public drBlockObject
   bool onTrackX_;    // initialized in initMazeIdx_ap
   bool onTrackY_;    // initialized in initMazeIdx_ap
   frUInt4 pinCost_;  // is preferred ap
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drBlockObject>(*this);
+    (ar) & beginPoint_;
+    (ar) & beginLayerNum_;
+    (ar) & beginArea_;
+    (ar) & mazeIdx_;
+    (ar) & pin_;
+    (ar) & validAccess_;
+    (ar) & vU_;
+    (ar) & vD_;
+    (ar) & vUIdx_;
+    (ar) & vDIdx_;
+    (ar) & onTrackX_;
+    (ar) & onTrackY_;
+    (ar) & pinCost_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

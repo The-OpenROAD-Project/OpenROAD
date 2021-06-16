@@ -76,10 +76,21 @@ class drMazeMarker : public drBlockObject
     return (constraint_ < b.constraint_);
   }
 
- protected:
+ private:
   frConstraint* constraint_;
   std::map<drNet*, int> trigNets_;
   int cnt_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drBlockObject>(*this);
+    (ar) & constraint_;
+    (ar) & trigNets_;
+    (ar) & cnt_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 #endif

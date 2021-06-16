@@ -1779,16 +1779,14 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
-void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
+void FlexDRWorker::route_queue()
 {
   queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
-    gcWorker.main();
-    setMarkers(gcWorker.getMarkers());
+    gcWorker_->main();
+    setMarkers(gcWorker_->getMarkers());
   }
-
-  setGCWorker(&gcWorker);
 
   // init net status
   route_queue_resetRipup();
@@ -1806,12 +1804,12 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
   route_queue_main(rerouteQueue);
 
   // end
-  gcWorker.resetTargetNet();
-  gcWorker.setEnableSurgicalFix(true);
-  gcWorker.main();
+  gcWorker_->resetTargetNet();
+  gcWorker_->setEnableSurgicalFix(true);
+  gcWorker_->main();
 
   // write back GC patches
-  for (auto& pwire : gcWorker.getPWires()) {
+  for (auto& pwire : gcWorker_->getPWires()) {
     auto net = pwire->getNet();
     if (!net) {
       cout << "Error: pwire with no net\n";
@@ -1833,9 +1831,9 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
     net->addRoute(std::move(tmp));
   }
 
-  gcWorker.end();
+  gcWorker_->end();
 
-  setMarkers(gcWorker.getMarkers());
+  setMarkers(gcWorker_->getMarkers());
 
   for (auto& net : nets_) {
     net->setBestRouteConnFigs();

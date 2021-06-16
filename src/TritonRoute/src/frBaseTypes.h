@@ -346,8 +346,8 @@ typedef bg::model::segment<point_t> segment_t;
 
 class frBox;
 
-template <typename T>
-using rq_box_value_t = std::pair<frBox, T>;
+template <typename T, typename Key = frBox>
+using rq_box_value_t = std::pair<Key, T>;
 
 struct frDebugSettings
 {
@@ -380,6 +380,16 @@ struct frDebugSettings
   int iter;
   bool paMarkers;
 };
+
+// Avoids the need to split the whole serializer like
+// BOOST_SERIALIZATION_SPLIT_MEMBER while still allowing for read/write
+// specific code.
+template <class Archive>
+inline bool is_loading(const Archive& ar)
+{
+  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+}
+
 }  // namespace fr
 
 #endif

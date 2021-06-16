@@ -26,19 +26,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "serialization.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frRTree.h"
+#include "gc/FlexGC.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
 
+// I believe it is safe not to sort the query results here despite the
+// use of the serializer.  Most of the use of the query is in init()
+// which we call pre-serialization.  The only post-serialization use I
+// see is in the graphics which don't care about order (it's just
+// drawing the shapes).
+
 struct FlexDRWorkerRegionQuery::Impl
 {
   FlexDRWorker* dr_worker_;
-  std::vector<bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>>
-      shapes_;  // only for drXXX in dr worker
+  std::vector<RTree<drConnFig*>> shapes_;  // only for drXXX in dr worker
 
   static void add(
       drConnFig* connFig,
@@ -48,13 +54,8 @@ struct FlexDRWorkerRegionQuery::Impl
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
-    // We always serialize before calling main on the work unit so the
-    // rtree should be empty.
-    if (!shapes_.empty()) {
-      throw std::logic_error("don't serialize non-empty dr region query");
-    }
-
     (ar) & dr_worker_;
+    (ar) & shapes_;
   }
 
   friend class boost::serialization::access;
@@ -267,9 +268,7 @@ void FlexDRWorkerRegionQuery::init()
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    impl_->shapes_.at(i) = boost::move(
-        bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>(
-            allShapes.at(i)));
+    impl_->shapes_.at(i) = boost::move(RTree<drConnFig*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }
@@ -287,10 +286,10 @@ void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void FlexDRWorkerRegionQuery::serialize<boost::archive::binary_iarchive>(
-    boost::archive::binary_iarchive& ar,
-    const unsigned int file_version);
+template void FlexDRWorkerRegionQuery::serialize<
+    boost::archive::binary_iarchive>(boost::archive::binary_iarchive& ar,
+                                     const unsigned int file_version);
 
-template void FlexDRWorkerRegionQuery::serialize<boost::archive::binary_oarchive>(
-    boost::archive::binary_oarchive& ar,
-    const unsigned int file_version);
+template void FlexDRWorkerRegionQuery::serialize<
+    boost::archive::binary_oarchive>(boost::archive::binary_oarchive& ar,
+                                     const unsigned int file_version);

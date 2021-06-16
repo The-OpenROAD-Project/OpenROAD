@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frPin.h"
 #include "frBaseTypes.h"
 
@@ -133,6 +134,10 @@ void frTerm::serialize(Archive& ar, const unsigned int version)
   (ar) & type_;
   (ar) & direction_;
   (ar) & order_id_;
+
+  if (net_) {
+    net_->addTerm(this);
+  }
 }
 }  // namespace fr
 

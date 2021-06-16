@@ -75,6 +75,11 @@ class FlexGCWorkerRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 
 class FlexGCWorker::Impl
@@ -83,6 +88,7 @@ class FlexGCWorker::Impl
 
  public:
   // constructors
+  Impl(); // for serialization
   Impl(frTechObject* techIn,
        Logger* logger,
        FlexDRWorker* drWorkerIn,
@@ -125,7 +131,7 @@ class FlexGCWorker::Impl
   void initPA0(const frDesign* design);
   void initPA1();
 
- protected:
+ private:
   frTechObject* tech_;
   Logger* logger_;
   FlexDRWorker* drWorker_;
@@ -420,6 +426,11 @@ class FlexGCWorker::Impl
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

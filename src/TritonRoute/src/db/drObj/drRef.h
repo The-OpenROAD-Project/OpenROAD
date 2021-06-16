@@ -48,6 +48,15 @@ class drRef : public drPinFig
  protected:
   // constructors
   drRef() : drPinFig() {}
+
+private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drPinFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

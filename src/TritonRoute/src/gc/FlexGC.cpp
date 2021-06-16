@@ -29,6 +29,7 @@
 #include <iostream>
 
 #include "gc/FlexGC_impl.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -40,7 +41,16 @@ FlexGCWorker::FlexGCWorker(frTechObject* techIn,
 {
 }
 
+FlexGCWorker::FlexGCWorker()
+    : impl_(std::make_unique<Impl>(nullptr, nullptr, nullptr, this))
+{
+}
+
 FlexGCWorker::~FlexGCWorker() = default;
+
+FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr)
+{
+}
 
 FlexGCWorker::Impl::Impl(frTechObject* techIn,
                          Logger* logger,
@@ -184,3 +194,42 @@ std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
 {
   return impl_->getNets();
 }
+
+template <class Archive>
+void FlexGCWorker::Impl::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & tech_;
+  (ar) & drWorker_;
+  (ar) & extBox_;
+  (ar) & drcBox_;
+  (ar) & owner2nets_;
+  (ar) & nets_;
+  (ar) & markers_;
+  (ar) & mapMarkers_;
+  (ar) & pwires_;
+  (ar) & rq_;
+  (ar) & printMarker_;
+  (ar) & modifiedDRNets_;
+  (ar) & targetNet_;
+  (ar) & minLayerNum_;
+  (ar) & maxLayerNum_;
+  (ar) & targetObj_;
+  (ar) & ignoreDB_;
+  (ar) & ignoreMinArea_;
+  (ar) & surgicalFixEnabled_;
+}
+
+template <class Archive>
+void FlexGCWorker::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void FlexGCWorker::serialize<boost::archive::binary_iarchive>(
+    boost::archive::binary_iarchive& ar,
+    const unsigned int file_version);
+
+template void FlexGCWorker::serialize<boost::archive::binary_oarchive>(
+    boost::archive::binary_oarchive& ar,
+    const unsigned int file_version);

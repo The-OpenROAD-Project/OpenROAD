@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frTerm.h"
 #include "frBaseTypes.h"
 #include "frInst.h"
@@ -83,6 +84,10 @@ class frInstTerm : public frBlockObject
     (ar) & term_;
     (ar) & net_;
     (ar) & ap_;
+
+    if (net_) {
+      net_->addInstTerm(this);
+    }
   }
 
   frInstTerm() = default;  // for serialization

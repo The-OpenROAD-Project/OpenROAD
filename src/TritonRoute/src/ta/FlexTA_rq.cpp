@@ -34,13 +34,10 @@ using namespace fr;
 
 struct FlexTAWorkerRegionQuery::Impl
 {
-  template <typename T>
-  using rtree = bgi::rtree<rq_box_value_t<T>, bgi::quadratic<16>>;
-
   FlexTAWorker* taWorker;
-  std::vector<rtree<taPinFig*>> shapes_;  // resource map
+  std::vector<RTree<taPinFig*>> shapes_;  // resource map
   // fixed objs, owner:: nullptr or net, con = short
-  std::vector<rtree<std::pair<frBlockObject*, frConstraint*>>> costs_;
+  std::vector<RTree<std::pair<frBlockObject*, frConstraint*>>> costs_;
 };
 
 FlexTAWorkerRegionQuery::FlexTAWorkerRegionQuery(FlexTAWorker* in)

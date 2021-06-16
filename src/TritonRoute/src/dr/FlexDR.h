@@ -291,23 +291,6 @@ class FlexDR
 
   // utility
   void reportDRC();
-
-  FlexDR();  // for serialization
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // The logger_ and debugSettings_ are handled by the caller to use
-    // the current ones.  graphics_ is handled when the debugSettings_ are
-    // re-initialized.
-    (ar) & design_;
-    // (ar) & db_; // only used during connectivity error dump
-    (ar) & gcell2BoundaryPin_;
-    (ar) & via_data_;
-    (ar) & numViols_;
-    (ar) & debugNetName_;
-  }
-  friend class boost::serialization::access;
 };
 
 class FlexDRWorker;
@@ -533,6 +516,7 @@ class FlexDRWorker
 
   // others
   int main(frDesign* design);
+  void reloadedMain();
 
   Logger* getLogger() { return logger_; }
   void setLogger(Logger* logger) { logger_ = logger; }
@@ -541,7 +525,8 @@ class FlexDRWorker
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
                                             frDebugSettings* debugSettings,
-                                            odb::dbDatabase* db);
+                                            odb::dbDatabase* db,
+                                            FlexDRGraphics* graphics);
 
  private:
   typedef struct
@@ -769,7 +754,7 @@ class FlexDRWorker
   void initMarkers(const frDesign* design);
 
   // route_queue
-  void route_queue(FlexGCWorker& gcWorker);
+  void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
   void route_queue_resetRipup();
   void route_queue_markerCostDecay();
@@ -1004,17 +989,16 @@ class FlexDRWorker
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
-    // We always serialize before calling main on the work unit so various
-    // fields are empty and don't need to be serialized.  I skip these to
-    // save having to write lots of serializers that will never be called.
-    if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
-        || !rq_.isEmpty() || gcWorker_) {
-      logger_->error(DRT, 999, "Can't serialize used worker");
-    }
+    // // We always serialize before calling main on the work unit so various
+    // // fields are empty and don't need to be serialized.  I skip these to
+    // // save having to write lots of serializers that will never be called.
+    // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+    //     || !rq_.isEmpty() || gcWorker_) {
+    //   logger_->error(DRT, 999, "Can't serialize used worker");
+    // }
 
-    // The logger_ and debugSettings_ are handled by the caller to use
-    // the current ones.  graphics_ is handled when the debugSettings_ are
-    // re-initialized.
+    // The logger_, graphics_ and debugSettings_ are handled by the caller to
+    // use the current ones.
     (ar) & tech_;
     (ar) & via_data_;
     (ar) & routeBox_;
@@ -1032,14 +1016,18 @@ class FlexDRWorker
     (ar) & boundaryPin_;
     (ar) & pinCnt_;
     (ar) & initNumMarkers_;
+    (ar) & apSVia_;
     (ar) & fixedObjs_;
     (ar) & planarHistoryMarkers_;
     (ar) & viaHistoryMarkers_;
     (ar) & historyMarkers_;
+    (ar) & nets_;
+    (ar) & owner2nets_;
     (ar) & gridGraph_;
     (ar) & markers_;
     (ar) & bestMarkers_;
     (ar) & rq_;
+    (ar) & gcWorker_;
   }
 
   friend class FlexDR;

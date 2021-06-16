@@ -43,6 +43,15 @@ class drBlockObject : public frBlockObject
  protected:
   // constructors
   drBlockObject() {}
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

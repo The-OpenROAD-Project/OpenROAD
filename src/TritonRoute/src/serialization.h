@@ -30,6 +30,7 @@
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/polygon/polygon.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
@@ -38,16 +39,12 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 
-namespace fr {
-
-template <class Archive>
-bool is_loading(const Archive& ar);
-
-}
-
 #include "db/obj/frShape.h"
 #include "db/tech/frConstraint.h"
 #include "global.h"
+
+namespace gtl = boost::polygon;
+namespace bg = boost::geometry;
 
 namespace boost::serialization {
 
@@ -83,6 +80,188 @@ void serialize(Archive& ar, std::tuple<Types...>& t, const unsigned int version)
   TupleSerializer<sizeof...(Types)>::serialize(ar, t, version);
 }
 
+// Sadly boost polygon lacks serializers so here are some home grown ones.
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::point_data<fr::frCoord>& point,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    fr::frCoord x;
+    fr::frCoord y;
+    (ar) & x;
+    (ar) & y;
+    point.x(x);
+    point.y(y);
+  } else {
+    fr::frCoord x = point.x();
+    fr::frCoord y = point.y();
+    (ar) & x;
+    (ar) & y;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::interval_data<fr::frCoord>& interval,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    fr::frCoord low;
+    fr::frCoord high;
+    (ar) & low;
+    (ar) & high;
+    interval.low(low);
+    interval.high(high);
+  } else {
+    auto low = interval.low();
+    auto high = interval.high();
+    (ar) & low;
+    (ar) & high;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::segment_data<fr::frCoord>& segment,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    gtl::point_data<fr::frCoord> low;
+    gtl::point_data<fr::frCoord> high;
+    (ar) & low;
+    (ar) & high;
+    segment.low(low);
+    segment.high(high);
+  } else {
+    gtl::point_data<fr::frCoord> low = segment.low();
+    gtl::point_data<fr::frCoord> high = segment.high();
+    (ar) & low;
+    (ar) & high;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::rectangle_data<fr::frCoord>& rect,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    gtl::interval_data<fr::frCoord> h;
+    gtl::interval_data<fr::frCoord> v;
+    (ar) & h;
+    (ar) & v;
+    rect.set(gtl::HORIZONTAL, h);
+    rect.set(gtl::VERTICAL, v);
+  } else {
+    auto h = rect.get(gtl::HORIZONTAL);
+    auto v = rect.get(gtl::VERTICAL);
+    (ar) & h;
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::polygon_90_data<fr::frCoord>& polygon,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    std::vector<fr::frCoord> coordinates;
+    (ar) & coordinates;
+    polygon.set_compact(coordinates.begin(), coordinates.end());
+  } else {
+    std::vector<fr::frCoord> coordinates(polygon.begin_compact(),
+                                         polygon.end_compact());
+    (ar) & coordinates;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::polygon_90_with_holes_data<fr::frCoord>& polygon,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    gtl::polygon_90_data<fr::frCoord> outside;
+    (ar) & outside;
+    polygon.set(outside.begin(), outside.end());
+
+    std::list<gtl::polygon_90_data<fr::frCoord>> holes;
+    (ar) & holes;
+    polygon.set_holes(holes.begin(), holes.end());
+  } else {
+    gtl::polygon_90_data<fr::frCoord> outside;
+    outside.set(polygon.begin(), polygon.end());
+    (ar) & outside;
+    std::list<gtl::polygon_90_data<fr::frCoord>> holes(polygon.begin_holes(),
+                                                       polygon.end_holes());
+    (ar) & holes;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               gtl::polygon_90_set_data<fr::frCoord>& polygon_set,
+               const unsigned int version)
+{
+  std::vector<gtl::polygon_90_with_holes_data<fr::frCoord>> polygons;
+  if (fr::is_loading(ar)) {
+    (ar) & polygons;
+    polygon_set.insert(polygons.begin(), polygons.end());
+  } else {
+    polygon_set.get_polygons(polygons);
+    (ar) & polygons;
+  }
+}
+
+// Sadly boost geometry lacks serializers so here are some home grown ones.
+template <class Archive>
+void serialize(Archive& ar, fr::point_t& point, const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    fr::frCoord x;
+    fr::frCoord y;
+    (ar) & x;
+    (ar) & y;
+    point.x(x);
+    point.y(y);
+  } else {
+    fr::frCoord x = point.x();
+    fr::frCoord y = point.y();
+    (ar) & x;
+    (ar) & y;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    fr::frCoord xl;
+    fr::frCoord xh;
+    fr::frCoord yl;
+    fr::frCoord yh;
+    (ar) & xl;
+    (ar) & xh;
+    (ar) & yl;
+    (ar) & yh;
+    bg::set<0, 0>(segment, xl);
+    bg::set<0, 1>(segment, xh);
+    bg::set<1, 0>(segment, yl);
+    bg::set<1, 1>(segment, yh);
+  } else {
+    fr::frCoord xl = bg::get<0, 0>(segment);
+    fr::frCoord xh = bg::get<0, 1>(segment);
+    fr::frCoord yl = bg::get<1, 0>(segment);
+    fr::frCoord yh = bg::get<1, 1>(segment);
+    (ar) & xl;
+    (ar) & xh;
+    (ar) & yl;
+    (ar) & yh;
+  }
+}
+
 }  // namespace boost::serialization
 
 namespace fr {
@@ -99,6 +278,7 @@ void register_types(Archive& ar)
   ar.template register_type<frPathSeg>();
   ar.template register_type<frPatchWire>();
   ar.template register_type<frPolygon>();
+  ar.template register_type<frInstTerm>();
 
   ar.template register_type<frLef58CutClassConstraint>();
   ar.template register_type<frRecheckConstraint>();
@@ -140,6 +320,10 @@ void register_types(Archive& ar)
   ar.template register_type<frLef58CornerSpacingSpacing2DConstraint>();
   ar.template register_type<frLef58RectOnlyConstraint>();
   ar.template register_type<frLef58RightWayOnGridOnlyConstraint>();
+
+  ar.template register_type<drPathSeg>();
+  ar.template register_type<drVia>();
+  ar.template register_type<drPatchWire>();
 }
 
 template <class Archive>
@@ -196,15 +380,6 @@ void serialize_globals(Archive& ar)
   (ar) & MISALIGNMENTCOST;
   (ar) & HISTCOST;
   (ar) & CONGCOST;
-}
-
-// Avoids the need to split the whole serializer like
-// BOOST_SERIALIZATION_SPLIT_MEMBER while still allowing for read/write
-// specific code.
-template <class Archive>
-inline bool is_loading(const Archive& ar)
-{
-  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
 }
 
 }  // namespace fr

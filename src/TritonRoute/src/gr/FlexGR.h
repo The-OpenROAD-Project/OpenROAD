@@ -262,8 +262,8 @@ class FlexGRWorkerRegionQuery
 
  protected:
   FlexGRWorker* grWorker_;
-  std::vector<bgi::rtree<rq_box_value_t<grConnFig*>, bgi::quadratic<16>>>
-      shapes_;  // only for routeConnFigs in gr worker
+  // only for routeConnFigs in gr worker
+  std::vector<RTree<grConnFig*>> shapes_;
 };
 
 class FlexGRWorker

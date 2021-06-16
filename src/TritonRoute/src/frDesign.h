@@ -62,11 +62,14 @@ class frDesign
   }
   // setters
   void setTopBlock(std::unique_ptr<frBlock> in) { topBlock_ = std::move(in); }
+  void setTech(std::unique_ptr<frTechObject> in) { tech_ = std::move(in); }
   void addRefBlock(std::unique_ptr<frBlock> in)
   {
     name2refBlock_[in->getName()] = in.get();
     refBlocks_.push_back(std::move(in));
   }
+  // others
+  friend class io::Parser;
 
  private:
   std::unique_ptr<frBlock> topBlock_;
@@ -74,26 +77,7 @@ class frDesign
   std::vector<std::unique_ptr<frBlock>> refBlocks_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frDesign() = default;  // for serialization
-
-  friend class boost::serialization::access;
-  friend class io::Parser;
 };
-
-template <class Archive>
-void frDesign::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & topBlock_;
-  (ar) & name2refBlock_;
-  (ar) & refBlocks_;
-  (ar) & tech_;
-  (ar) & rq_;
-}
-
 }  // namespace fr
 
 #endif
