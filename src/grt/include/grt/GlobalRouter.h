@@ -113,8 +113,6 @@ class RoutePt
   int x() { return _x; };
   int y() { return _y; };
   int layer() { return _layer; };
-  bool isRoot() { return _is_root; }
-  void setAsRoot() { _is_root = true; };
 
   friend bool operator<(const RoutePt& p1, const RoutePt& p2);
 
@@ -122,7 +120,6 @@ class RoutePt
   int _x;
   int _y;
   int _layer;
-  bool _is_root;
 };
 
 bool operator<(const RoutePt& p1, const RoutePt& p2);
@@ -218,7 +215,7 @@ class GlobalRouter
 
   // aux functions
   void findPins(Net* net);
-  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
+  int findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
