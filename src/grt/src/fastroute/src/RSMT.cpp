@@ -797,8 +797,6 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
 
     if (nets[i]->deg != rsmt.deg) {
-      logger->warn(GRT, 190, "Net degree ({}) differs from RSMT number of terminals ({}).",
-                   nets[i]->deg, rsmt.deg);
       d = rsmt.deg;
     }
 
