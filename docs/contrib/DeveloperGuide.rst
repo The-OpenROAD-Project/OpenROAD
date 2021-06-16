@@ -1,5 +1,5 @@
-OpenROAD Architecture
-=====================
+Developer Guide
+===============
 
 Tool Philosophy
 ~~~~~~~~~~~~~~~
