@@ -689,7 +689,6 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D(FlexGRCMap* cmap)
 {
-
   if (VERBOSE > 0) {
     cout << endl << "start reporting 3D congestion ...\n\n";
   }
@@ -763,7 +762,6 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D()
 {
-
   if (VERBOSE > 0) {
     cout << endl << "start reporting 3D congestion ...\n\n";
   }
@@ -1528,7 +1526,6 @@ void FlexGR::initGR_genTopology()
 // to be followed by layer assignment
 void FlexGR::initGR_genTopology_net(frNet* net)
 {
-
   if (net->getNodes().size() == 0) {
     return;
   }
@@ -2547,8 +2544,6 @@ void FlexGR::getBatchInfo(int& batchStepX, int& batchStepY)
 // GRWorker related
 void FlexGRWorker::main_mt()
 {
-
-
   init();
   route();
 }
