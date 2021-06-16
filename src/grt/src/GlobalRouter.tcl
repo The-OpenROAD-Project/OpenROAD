@@ -156,7 +156,7 @@ proc set_macro_extension { args } {
 }
 
 sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_topology_priority priority]
+                                           [-clock_topology_priority clock_topology_priority]
 }
 
 proc set_clock_routing { args } {
@@ -166,14 +166,14 @@ proc set_clock_routing { args } {
          }
 
   if { [info exists keys(-clock_topology_priority) ] } {
-    set priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $priority
-    grt::set_alpha $priority
+    set clock_topology_priority $keys(-clock_topology_priority)
+    sta::check_positive_float "-clock_topology_priority" $clock_topology_priority
+    grt::set_topology_priority $clock_topology_priority
   } else {
     # Default alpha as 0.3 prioritize wire length, but keeps
     # aware of skew in the topology construction (see PDRev paper
     # for more reference)
-    grt::set_alpha 0.3
+    grt::set_topology_priority 0.3
   }
 
   if { [info exists keys(-clock_pdrev_fanout)] } {

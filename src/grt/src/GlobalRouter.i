@@ -97,9 +97,9 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_alpha(float alpha)
+set_topology_priority(float priority)
 {
-  getFastRoute()->setAlpha(alpha);
+  getFastRoute()->setTopologyPriority(priority);
 }
 
 void
