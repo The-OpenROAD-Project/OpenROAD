@@ -877,10 +877,11 @@ void FlexPA::prepPoint_pin_checkPoint_via(
       maxExt = max(maxExt, gtl::xl(r) - box.left());
     }
     if (!isLRBound) {
-        if (intRects.size() > 1) {
-            intRects.clear();
-            intersection.get_rectangles(intRects, gtl::orientation_2d_enum::VERTICAL);
-        }
+      if (intRects.size() > 1) {
+        intRects.clear();
+        intersection.get_rectangles(intRects,
+                                    gtl::orientation_2d_enum::VERTICAL);
+      }
       for (auto& r : intRects) {
         maxExt = max(maxExt, box.top() - gtl::yh(r));
         maxExt = max(maxExt, gtl::yl(r) - box.bottom());
