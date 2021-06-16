@@ -866,28 +866,29 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     gtl::rectangle_data<frCoord> viarect(
         box.left(), box.bottom(), box.right(), box.top());
     using namespace boost::polygon::operators;
-    gtl::polygon_90_set_data<frCoord> diff;
-    diff += viarect;
-    diff -= polyset;
-    if (viainpin && !diff.empty()) {
-      continue;
+    gtl::polygon_90_set_data<frCoord> intersection;
+    intersection += viarect;
+    intersection &= polyset;
+    // via ranking criteria: max extension distance beyond pin shape
+    vector<gtl::rectangle_data<frCoord>> intRects;
+    intersection.get_rectangles(intRects, gtl::orientation_2d_enum::HORIZONTAL);
+    for (auto& r : intRects) {
+      maxExt = max(maxExt, box.right() - gtl::xh(r));
+      maxExt = max(maxExt, gtl::xl(r) - box.left());
     }
-    if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      if (!diff.empty()) {
-        // via ranking criteria: max extension distance beyond pin shape
-        vector<gtl::rectangle_data<frCoord>> remnRects;
-        diff.get_rectangles(remnRects, gtl::orientation_2d_enum::HORIZONTAL);
-        for (auto& r : remnRects) {
-          maxExt = max(maxExt, gtl::xh(r) - gtl::xl(r));
+    if (!isLRBound) {
+        if (intRects.size() > 1) {
+            intRects.clear();
+            intersection.get_rectangles(intRects, gtl::orientation_2d_enum::VERTICAL);
         }
-        if (!isLRBound) {
-          remnRects.clear();
-          diff.get_rectangles(remnRects, gtl::orientation_2d_enum::VERTICAL);
-          for (auto& r : remnRects) {
-            maxExt = max(maxExt, gtl::yh(r) - gtl::yl(r));
-          }
-        }
+      for (auto& r : intRects) {
+        maxExt = max(maxExt, box.top() - gtl::yh(r));
+        maxExt = max(maxExt, gtl::yl(r) - box.bottom());
       }
+    }
+    if (viainpin && maxExt)
+      continue;
+    if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
       validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
     }
   }
