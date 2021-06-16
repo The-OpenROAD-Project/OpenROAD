@@ -111,8 +111,8 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-[INFO GRT-0012] #Antenna violations: 1
-[INFO GRT-0011] 5890 filler cells deleted.
+[INFO GRT-0012] Antenna violations: 1
+[INFO GRT-0011] Deleted 5890 filler cells.
 [INFO GRT-0015] 1 diodes inserted.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
@@ -142,6 +142,6 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0112] Final usage 3D: 33
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO DPL-0001] Placed 5890 filler instances.
-[INFO GRT-0014] Num routed nets: 437
+[INFO GRT-0014] Routed nets: 437
 No differences found.
 No differences found.
