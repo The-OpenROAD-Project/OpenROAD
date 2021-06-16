@@ -771,8 +771,8 @@ void gen_brk_RSMT(Bool congestionDriven,
       coeffV = 1.2;
     }
     bool pd_tree = false;
-    if (pdRevForHighFanout > 0 &&
-        nets[i]->deg >= pdRevForHighFanout &&
+    if (pdrev_for_high_fanout > 0 &&
+        nets[i]->deg >= pdrev_for_high_fanout &&
         nets[i]->deg <= max_fanout_for_pdrev &&
         nets[i]->isClock) {
       stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, nets[i]->alpha, logger);

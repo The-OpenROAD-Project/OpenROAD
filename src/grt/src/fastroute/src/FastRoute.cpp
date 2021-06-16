@@ -1399,9 +1399,9 @@ void FastRouteCore::setOverflowIterations(int iterations)
   overflowIterations = iterations;
 }
 
-void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
+void FastRouteCore::setPDRevForHighFanout(int pdrev_high_fanout)
 {
-  pdRevForHighFanout = pdRevHihgFanout;
+  pdrev_for_high_fanout = pdrev_high_fanout;
 }
 
 void FastRouteCore::setAllowOverflow(bool allow)
