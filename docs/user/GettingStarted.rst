@@ -1,6 +1,26 @@
 Getting Started
 ===============
 
+OpenROAD is divided into a number of tools that are orchestrated
+together to achieve RTL-to-GDS. As of the current implementation, the
+flow is divided into two stages:
+
+1. Logic Synthesis: is performed by `yosys`_.
+2. Floorplanning through Detailed Routing: are performed by `OpenROAD App`_.
+
+In order to integrate the flow steps, `OpenROAD-flow`_ repository includes
+the necessary scripts to build and test the flow.
+
+Prerequisites
+-------------
+
+Before proceeding to the next step:
+1. Install `Docker`_ on your machine, OR
+2. Make sure that build dependencies for all the tools are installed on your machine.
+
+Build and runtime dependencies can be installed with `DependencyInstaller.sh`_.
+and for yosys they are documented in the `yosys Dockerfile`_.
+
 Get the tools
 -------------
 
@@ -9,66 +29,60 @@ There are currently two options to get OpenROAD tools.
 Option 1: download pre-build binaries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We currently support pre-built binaries on CentOS 7. Please, refer to the `releases page on GitHub`_.
+We currently support pre-built binaries on CentOS 7.
+Please, refer to the `releases page on GitHub`_.
 
-Option 2: build from sources
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 2: build from sources using Docker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-OpenROAD is divided into a number of tools that are orchestrated
-together to achieve RTL-to-GDS. As of the current implementation, the
-flow is divided into three stages:
-
-1. Logic Synthesis: is performed by `yosys`_.
-2. Floorplanning through Detailed Routing: are performed by `OpenROAD App`_.
-
-In order to integrate the flow steps, `OpenROAD-flow`_ repository includes
-the necessary scripts to build and test the flow.
-
-**Prerequisites**
-
-Build dependencies can be installed with `etc/DependencyInstaller.sh` and
-for yosys they are documented in the `yosys Dockerfile`_.
-
-Before proceeding to the next step:
-1. [recommended] Install `Docker`_ on your machine, OR
-2. [bare-metal] Make sure that build dependencies for all the tools are installed on your machine.
-
-**Clone and build**
+Clone and Build
++++++++++++++++
 
 .. code-block:: shell
 
    $ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow
+   $ cd OpenROAD-flow
    $ ./build_openroad.sh
 
-The build script will automatically use Docker builds if it finds
-``docker`` command installed on the system.
-
 Verify Installation
-~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++
 
-Setup environment: ``source ./setup_env.sh``
-
-**Verify**
-
-The following binaries should be available on your ``$PATH`` after
-setting up the environment
-
--  ``yosys -h``
--  ``openroad -h``
-
-Setting up the Flow
--------------------
-
-1. Clone the repository
+The binaries should be available on your ``$PATH`` after setting up the
+environment.
 
 .. code-block:: shell
 
-   git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow
-   cd OpenROAD-flow/flow
+   $ docker run --rm -it openroad/flow
+   [inside docker] $ source ./setup_env.sh
+   [inside docker] $ yosys -h
+   [inside docker] $ openroad -h
+   [inside docker] $ exit
 
-2. Setup your shell environment. The ``openroad`` app must be setup to
-   implement designs or run tests. See setup instructions in the
-   repository *Verify Installation* section above.
+Option 3: build from sources locally
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Clone and Build
++++++++++++++++
+
+.. code-block:: shell
+
+   $ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow
+   $ cd OpenROAD-flow
+   $ ./build_openroad.sh --local
+
+Verify Installation
++++++++++++++++++++
+
+The binaries should be available on your ``$PATH`` after setting up the
+environment.
+
+.. code-block:: shell
+
+   $ docker run --rm -it openroad/flow
+   $ source ./setup_env.sh
+   $ yosys -h
+   $ openroad -h
+   $ exit
 
 Designs
 -------
@@ -163,6 +177,7 @@ nangate45 smoke-test harness for top level Verilog designs
 .. _`OpenROAD App`: https://github.com/The-OpenROAD-Project/OpenROAD
 .. _`OpenROAD-flow`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
 .. _`yosys Dockerfile`: https://github.com/The-OpenROAD-Project/yosys/blob/master/Dockerfile
+.. _`DependencyInstaller.sh`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/etc/DependencyInstaller.sh
 .. _`Docker`: https://docs.docker.com/engine/install
 .. _`Makefile`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/Makefile
 .. _`Nangate45`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms/nangate45
