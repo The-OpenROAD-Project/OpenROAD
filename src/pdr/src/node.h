@@ -56,22 +56,22 @@ public:
   vector<int> E;
   vector<int> W;
 
-  unsigned parent;       // parent's node index
+  int parent;       // parent's node index
   vector<int> children;  // immediate children's indices
-  unsigned size_of_chi;
-  unsigned min_dist;  // source to sink manhattan dist
-  unsigned path_length;
+  int size_of_chi;
+  int min_dist;  // source to sink manhattan dist
+  int path_length;
   int detcost_edgePToNode;  // Detour cost of edge, from parent to node
   int detcost_edgeNodeToP;  // Detour cost of edge, from node to parent
   int cost_edgeToP;         // Cost of edge to parent
   int src_to_sink_dist;  // source to sink distance tranversing from the node to
                          // the source through the tree
   int K_t;               // No. of downstream sinks
-  unsigned level;        // Level in tree
+  int level;        // Level in tree
   vector<int> nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
   vector<float> nn_sw_cost;
   float sw_cost_min;
-  unsigned sw_cost_min_nn_idx;
+  int sw_cost_min_nn_idx;
   vector<vector<int>> swap_space;
 
   bool conn_to_par;
@@ -92,7 +92,7 @@ public:
   int idx;
   int x;
   int y;
-  unsigned parent;  // parent's node index
+  int parent;  // parent's node index
 };
 
 }  // namespace

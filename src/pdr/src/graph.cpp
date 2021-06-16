@@ -63,7 +63,7 @@ Graph::Graph(vector<int>& x,
   for (int i = 0; i < x.size(); ++i) {
     // This is N^2 stoopid. Use a set. -cherry 06/06/2021
     bool flag = false;
-    for (unsigned j = 0; j < nodes.size(); ++j) {
+    for (int j = 0; j < nodes.size(); ++j) {
       if (nodes[j].x == x[i] && nodes[j].y == y[i]) {
         flag = true;
         break;
@@ -247,9 +247,9 @@ int dist(Node& p, Node& q)
 
 void Graph::UpdateManhDist()
 {
-  for (unsigned i = 0; i < nodes.size(); ++i) {
+  for (int i = 0; i < nodes.size(); ++i) {
     vector<int> distV;
-    for (unsigned j = 0; j < nodes.size(); ++j) {
+    for (int j = 0; j < nodes.size(); ++j) {
       if (i == j) {
         distV.push_back(0);
       } else {
@@ -268,7 +268,7 @@ bool Graph::IsSubTree(int cIdx, int tIdx)
   while (!myqueue.empty()) {
     int cIdx = myqueue.front();
     myqueue.pop();
-    for (unsigned i = 0; i < nodes[cIdx].children.size(); ++i) {
+    for (int i = 0; i < nodes[cIdx].children.size(); ++i) {
       myqueue.push(nodes[cIdx].children[i]);
       if (tIdx == nodes[cIdx].children[i])
         return true;
@@ -287,7 +287,7 @@ void Graph::UpdateMaxPLToChild(int cIdx)
   while (!myqueue.empty()) {
     int cIdx = myqueue.front();
     myqueue.pop();
-    for (unsigned i = 0; i < nodes[cIdx].children.size(); ++i) {
+    for (int i = 0; i < nodes[cIdx].children.size(); ++i) {
       int ccIdx = nodes[cIdx].children[i];
       if (nodes[ccIdx].src_to_sink_dist > maxPL) {
         maxPL = nodes[ccIdx].src_to_sink_dist;
@@ -301,16 +301,16 @@ void Graph::UpdateMaxPLToChild(int cIdx)
 void Graph::PrintInfo()
 {
   std::string dagRpt = "  Dag:";
-  for (unsigned i = 0; i < dag.size(); ++i) {
+  for (int i = 0; i < dag.size(); ++i) {
     dagRpt = dagRpt + " " + std::to_string(i);
   }
 
   debugPrint(logger_, PDR, "pdrev", 3, "{}", dagRpt);
 
   std::string nnRpt = "  Nearest Neighbors:\n";
-  for (unsigned i = 0; i < nn.size(); ++i) {
+  for (int i = 0; i < nn.size(); ++i) {
     nnRpt = nnRpt + "     " + std::to_string(i) + " -- ";
-    for (unsigned j = 0; j < nn[i].size(); ++j) {
+    for (int j = 0; j < nn[i].size(); ++j) {
       nnRpt = nnRpt + std::to_string(nn[i][j]) + " ";
     }
     nnRpt = nnRpt + "\n";
@@ -321,9 +321,9 @@ void Graph::PrintInfo()
   debugPrint(logger_, PDR, "pdrev", 3, "  maxPL: {}", maxPL);
 
   std::string dist = "  Manhattan distance:\n";
-  for (unsigned i = 0; i < ManhDist.size(); ++i) {
+  for (int i = 0; i < ManhDist.size(); ++i) {
     dist = dist + "    ";
-    for (unsigned j = 0; j < ManhDist[i].size(); ++j) {
+    for (int j = 0; j < ManhDist[i].size(); ++j) {
       dist = dist + std::to_string(ManhDist[i][j]) + " ";
     }
   }
@@ -331,12 +331,12 @@ void Graph::PrintInfo()
   debugPrint(logger_, PDR, "pdrev", 3, "{}", dist);
 
   debugPrint(logger_, PDR, "pdrev", 3, "  Node Info: ");
-  for (unsigned i = 0; i < dag.size(); ++i) {
+  for (int i = 0; i < dag.size(); ++i) {
     debugPrint(logger_, PDR, "pdrev", 3, "    {}", nodes[dag[i]]);
   }
 
   debugPrint(logger_, PDR, "pdrev", 3, "  Edge Info: ");
-  for (unsigned i = 0; i < dag.size(); ++i) {
+  for (int i = 0; i < dag.size(); ++i) {
     debugPrint(logger_, PDR, "pdrev", 3, "    {}", edges[dag[i]]);
   }
 }
@@ -427,10 +427,10 @@ bool Graph::IsParent(int cIdx, int nIdx)
 void Graph::DupRemoval(vector<Node>& STNodes)
 {
   vector<Node> optSTNodes;
-  for (unsigned i = 0; i < STNodes.size(); ++i) {
+  for (int i = 0; i < STNodes.size(); ++i) {
     bool IsDup = false;
     int tIdx;
-    for (unsigned j = 0; j < optSTNodes.size(); ++j) {
+    for (int j = 0; j < optSTNodes.size(); ++j) {
       if (STNodes[i].x == optSTNodes[j].x && STNodes[i].y == optSTNodes[j].y) {
         tIdx = j;
         IsDup = true;
@@ -439,9 +439,9 @@ void Graph::DupRemoval(vector<Node>& STNodes)
     }
     if (IsDup) {
       vector<int> sp = optSTNodes[tIdx].sp_chil;
-      for (unsigned k1 = 0; k1 < STNodes[i].sp_chil.size(); ++k1) {
+      for (int k1 = 0; k1 < STNodes[i].sp_chil.size(); ++k1) {
         bool IsDupN = false;
-        for (unsigned k2 = 0; k2 < sp.size(); ++k2) {
+        for (int k2 = 0; k2 < sp.size(); ++k2) {
           if (STNodes[i].sp_chil[k1] == sp[k2]) {
             IsDupN = true;
             break;
@@ -456,7 +456,7 @@ void Graph::DupRemoval(vector<Node>& STNodes)
     }
   }
   STNodes.clear();
-  for (unsigned i = 0; i < optSTNodes.size(); ++i) {
+  for (int i = 0; i < optSTNodes.size(); ++i) {
     STNodes.push_back(optSTNodes[i]);
   }
 }
@@ -468,7 +468,7 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
 
   int cIdx = dag[idx];
   vector<Node> STNodes;
-  for (unsigned i = idx + 1; i < dag.size(); ++i) {
+  for (int i = idx + 1; i < dag.size(); ++i) {
     int nIdx = dag[i];
     debugPrint(logger_,
                PDR,
@@ -483,17 +483,17 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
     }
   }
 
-  for (unsigned i = 0; i < fSTNodes.size(); ++i) {
+  for (int i = 0; i < fSTNodes.size(); ++i) {
     STNodes.push_back(fSTNodes[i]);
   }
 
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
-    for (unsigned i = 0; i < STNodes.size(); ++i) {
+    for (int i = 0; i < STNodes.size(); ++i) {
       debugPrint(logger_, PDR, "pdrev", 3, "Before dupRemoval STNodes: {}",
                  STNodes[i]);
 
       std::string childRpt = " Child: ";
-      for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
+      for (int j = 0; j < STNodes[i].sp_chil.size(); ++j) {
         childRpt = childRpt + std::to_string(STNodes[i].sp_chil[j]) + " ";
       }
       debugPrint(logger_, PDR, "pdrev", 3, "{}", childRpt);
@@ -504,7 +504,7 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
   DupRemoval(STNodes);
 
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
-    for (unsigned i = 0; i < STNodes.size(); ++i) {
+    for (int i = 0; i < STNodes.size(); ++i) {
       debugPrint(logger_,
                  PDR,
                  "pdrev",
@@ -512,7 +512,7 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
                  "After dupRemoval STNodes: {}",
                  STNodes[i]);
       std::string childRpt = " Child: ";
-      for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
+      for (int j = 0; j < STNodes[i].sp_chil.size(); ++j) {
         childRpt = childRpt + std::to_string(STNodes[i].sp_chil[j]) + " ";
       }
       debugPrint(logger_, PDR, "pdrev", 3, "{}", childRpt);
@@ -520,7 +520,7 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
   }
 
   fSTNodes.clear();
-  for (unsigned i = 0; i < STNodes.size(); ++i) {
+  for (int i = 0; i < STNodes.size(); ++i) {
     fSTNodes.push_back(STNodes[i]);
   }
 }
@@ -587,9 +587,9 @@ void Graph::SortCNodes(vector<Node>& cNodes, int cIdx, int pIdx, int eShape)
 void Graph::UpdateEdges(vector<Node>& STNodes)
 {
   vector<int> idxs;
-  for (unsigned j = 0; j < STNodes.size(); ++j) {
+  for (int j = 0; j < STNodes.size(); ++j) {
     Node& cN = STNodes[j];
-    for (unsigned i = 0; i < dag.size(); ++i) {
+    for (int i = 0; i < dag.size(); ++i) {
       Node& tN = nodes[dag[i]];
       if (tN.x == cN.x && tN.y == cN.y) {
         idxs.push_back(j);
@@ -599,16 +599,16 @@ void Graph::UpdateEdges(vector<Node>& STNodes)
   }
   sort(idxs.begin(), idxs.end());
   reverse(idxs.begin(), idxs.end());
-  for (unsigned i = 0; i < idxs.size(); ++i) {
+  for (int i = 0; i < idxs.size(); ++i) {
     STNodes.erase(STNodes.begin() + idxs[i]);
   }
-  for (unsigned i = 0; i < dag.size(); ++i) {
+  for (int i = 0; i < dag.size(); ++i) {
     int cIdx = dag[i];
     if (cIdx != 0) {
       vector<Node> cNodes;
-      for (unsigned j = 0; j < STNodes.size(); ++j) {
+      for (int j = 0; j < STNodes.size(); ++j) {
         bool flag = false;
-        for (unsigned k = 0; k < STNodes[j].sp_chil.size(); ++k) {
+        for (int k = 0; k < STNodes[j].sp_chil.size(); ++k) {
           if (cIdx == STNodes[j].sp_chil[k]) {
             flag = true;
             break;
@@ -622,7 +622,7 @@ void Graph::UpdateEdges(vector<Node>& STNodes)
       Edge& e = edges[cIdx];
 
       SortCNodes(cNodes, cIdx, nodes[cIdx].parent, e.best_shape);
-      for (unsigned i = 0; i < cNodes.size(); ++i) {
+      for (int i = 0; i < cNodes.size(); ++i) {
         e.STNodes.push_back(cNodes[i]);
       }
     }
@@ -634,7 +634,7 @@ void Graph::UpdateSteinerNodes()
   BuildDAG();
 
   vector<Node> fSTNodes;
-  for (unsigned i = 0; i < dag.size(); ++i) {
+  for (int i = 0; i < dag.size(); ++i) {
     int cIdx = dag[i];
     Edge& e = edges[cIdx];
     e.STNodes.clear();
@@ -652,7 +652,7 @@ void Graph::addChild(Node& pNode, int idx)
   // rewrite with find and no copy -cherry
   vector<int> newC = pNode.children;
   bool flag = true;
-  for (unsigned i = 0; i < newC.size(); ++i) {
+  for (int i = 0; i < newC.size(); ++i) {
     if (newC[i] == idx) {
       flag = false;
       break;
@@ -667,7 +667,7 @@ void Graph::removeN(Node& pN, int idx)
   bool flag = false;
   int cIdx = 1000;
   vector<int>& nList = pN.N;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     if (nList[i] == idx) {
       flag = true;
       cIdx = i;
@@ -683,7 +683,7 @@ void Graph::removeS(Node& pN, int idx)
   bool flag = false;
   int cIdx = 1000;
   vector<int>& nList = pN.S;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     if (nList[i] == idx) {
       flag = true;
       cIdx = i;
@@ -699,7 +699,7 @@ void Graph::removeE(Node& pN, int idx)
   bool flag = false;
   int cIdx = 1000;
   vector<int>& nList = pN.E;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     if (nList[i] == idx) {
       flag = true;
       cIdx = i;
@@ -715,7 +715,7 @@ void Graph::removeW(Node& pN, int idx)
   bool flag = false;
   int cIdx = 1000;
   vector<int>& nList = pN.W;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     if (nList[i] == idx) {
       flag = true;
       cIdx = i;
@@ -729,7 +729,7 @@ void Graph::removeW(Node& pN, int idx)
 void Graph::RemoveSTNodes()
 {
   vector<int> toBeRemoved;
-  for (unsigned i = num_terminals; i < nodes.size(); ++i) {
+  for (int i = num_terminals; i < nodes.size(); ++i) {
     if (nodes[i].children.size() < 2
         || (nodes[i].parent == i && nodes[i].children.size() == 2)) {
       toBeRemoved.push_back(i);
@@ -738,7 +738,7 @@ void Graph::RemoveSTNodes()
   for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
     Node& cN = nodes[toBeRemoved[i]];
     removeChild(nodes[cN.parent], cN.idx);
-    for (unsigned j = 0; j < cN.children.size(); ++j) {
+    for (int j = 0; j < cN.children.size(); ++j) {
       replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
       addChild(nodes[cN.parent], cN.children[j]);
     }
@@ -748,17 +748,17 @@ void Graph::RemoveSTNodes()
   }
 
   map<int, int> idxMap;
-  for (unsigned i = 0; i < nodes.size(); ++i) {
+  for (int i = 0; i < nodes.size(); ++i) {
     idxMap[nodes[i].idx] = i;
   }
-  for (unsigned i = 0; i < nodes.size(); ++i) {
+  for (int i = 0; i < nodes.size(); ++i) {
     Node& cN = nodes[i];
-    for (unsigned j = 0; j < toBeRemoved.size(); ++j) {
+    for (int j = 0; j < toBeRemoved.size(); ++j) {
       removeChild(nodes[i], toBeRemoved[j]);
     }
 
     sort(cN.children.begin(), cN.children.end());
-    for (unsigned j = 0; j < cN.children.size(); ++j) {
+    for (int j = 0; j < cN.children.size(); ++j) {
       if (cN.children[j] != idxMap[cN.children[j]])
         replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
     }
@@ -770,7 +770,7 @@ void Graph::RemoveSTNodes()
 void Graph::RemoveUnneceSTNodes()
 {
   vector<int> toBeRemoved;
-  for (unsigned i = num_terminals; i < nodes.size(); ++i) {
+  for (int i = num_terminals; i < nodes.size(); ++i) {
     if (nodes[i].children.size() < 2) {
       toBeRemoved.push_back(i);
     }
@@ -778,7 +778,7 @@ void Graph::RemoveUnneceSTNodes()
   for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
     Node& cN = nodes[toBeRemoved[i]];
     removeChild(nodes[cN.parent], cN.idx);
-    for (unsigned j = 0; j < cN.children.size(); ++j) {
+    for (int j = 0; j < cN.children.size(); ++j) {
       replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
       addChild(nodes[cN.parent], cN.children[j]);
       edges[cN.children[j]].head = cN.parent;
@@ -790,19 +790,19 @@ void Graph::RemoveUnneceSTNodes()
   }
 
   map<int, int> idxMap;
-  for (unsigned i = 0; i < nodes.size(); ++i) {
+  for (int i = 0; i < nodes.size(); ++i) {
     debugPrint(logger_, PDR, "pdrev", 3, "idxMap {} {}", i, nodes[i].idx);
     idxMap[nodes[i].idx] = i;
   }
-  for (unsigned i = 0; i < nodes.size(); ++i) {
+  for (int i = 0; i < nodes.size(); ++i) {
     Node& cN = nodes[i];
-    for (unsigned j = 0; j < toBeRemoved.size(); ++j) {
+    for (int j = 0; j < toBeRemoved.size(); ++j) {
       removeChild(nodes[i], toBeRemoved[j]);
     }
 
     debugPrint(logger_, PDR, "pdrev", 3, "before cN: {}", cN);
     sort(cN.children.begin(), cN.children.end());
-    for (unsigned j = 0; j < cN.children.size(); ++j) {
+    for (int j = 0; j < cN.children.size(); ++j) {
       if (cN.children[j] != idxMap[cN.children[j]])
         replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
     }
@@ -825,7 +825,7 @@ void Graph::replaceChild(Node& pNode, int idx, int tIdx)
 {
   vector<int> newC = pNode.children;
   pNode.children.clear();
-  for (unsigned i = 0; i < newC.size(); ++i) {
+  for (int i = 0; i < newC.size(); ++i) {
     if (newC[i] != idx) {
       pNode.children.push_back(newC[i]);
     } else {
@@ -838,7 +838,7 @@ void Graph::removeChild(Node& pNode, int idx)
 {
   vector<int> newC = pNode.children;
   pNode.children.clear();
-  for (unsigned i = 0; i < newC.size(); ++i) {
+  for (int i = 0; i < newC.size(); ++i) {
     if (newC[i] != idx) {
       pNode.children.push_back(newC[i]);
     }
@@ -1006,13 +1006,13 @@ void Graph::SortE(Node& n)
 {
   vector<Node1> tmpNode1;
   vector<int>& nList = n.E;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     Node& cN = nodes[nList[i]];
     tmpNode1.push_back(Node1(cN.idx, cN.x, cN.y));
   }
   sort(tmpNode1.begin(), tmpNode1.end(), comp_xi);
   nList.clear();
-  for (unsigned i = 0; i < tmpNode1.size(); ++i) {
+  for (int i = 0; i < tmpNode1.size(); ++i) {
     nList.push_back(tmpNode1[i].idx);
   }
 }
@@ -1021,13 +1021,13 @@ void Graph::SortW(Node& n)
 {
   vector<Node1> tmpNode1;
   vector<int>& nList = n.W;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     Node& cN = nodes[nList[i]];
     tmpNode1.push_back(Node1(cN.idx, cN.x, cN.y));
   }
   sort(tmpNode1.begin(), tmpNode1.end(), comp_xd);
   nList.clear();
-  for (unsigned i = 0; i < tmpNode1.size(); ++i) {
+  for (int i = 0; i < tmpNode1.size(); ++i) {
     nList.push_back(tmpNode1[i].idx);
   }
 }
@@ -1036,13 +1036,13 @@ void Graph::SortS(Node& n)
 {
   vector<Node1> tmpNode1;
   vector<int>& nList = n.S;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     Node& cN = nodes[nList[i]];
     tmpNode1.push_back(Node1(cN.idx, cN.x, cN.y));
   }
   sort(tmpNode1.begin(), tmpNode1.end(), comp_yd);
   nList.clear();
-  for (unsigned i = 0; i < tmpNode1.size(); ++i) {
+  for (int i = 0; i < tmpNode1.size(); ++i) {
     nList.push_back(tmpNode1[i].idx);
   }
 }
@@ -1051,13 +1051,13 @@ void Graph::SortN(Node& n)
 {
   vector<Node1> tmpNode1;
   vector<int>& nList = n.N;
-  for (unsigned i = 0; i < nList.size(); ++i) {
+  for (int i = 0; i < nList.size(); ++i) {
     Node& cN = nodes[nList[i]];
     tmpNode1.push_back(Node1(cN.idx, cN.x, cN.y));
   }
   sort(tmpNode1.begin(), tmpNode1.end(), comp_yi);
   nList.clear();
-  for (unsigned i = 0; i < tmpNode1.size(); ++i) {
+  for (int i = 0; i < tmpNode1.size(); ++i) {
     nList.push_back(tmpNode1[i].idx);
   }
 }
@@ -1136,7 +1136,7 @@ int Graph::DeltaS(int idx, int rIdx, bool isRemove)
       return delta;
     }
     if (isRemove) {
-      for (unsigned i = 0; i < nList.size(); ++i) {
+      for (int i = 0; i < nList.size(); ++i) {
         if (nList[i] == rIdx) {
           nList.erase(nList.begin() + i);
           break;
@@ -1164,7 +1164,7 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
       return delta;
     }
     if (isRemove) {
-      for (unsigned i = 0; i < nList.size(); ++i) {
+      for (int i = 0; i < nList.size(); ++i) {
         if (nList[i] == rIdx) {
           nList.erase(nList.begin() + i);
           break;
@@ -1209,25 +1209,25 @@ bool Graph::IsSameDir(int cIdx, int nIdx)
   bool isSameDir = false;
   int pId = 0;
   int cId = 0;
-  for (unsigned i = 0; i < cN.N.size(); ++i) {
+  for (int i = 0; i < cN.N.size(); ++i) {
     if (cN.N[i] == pIdx)
       pId = 1;
     if (cN.N[i] == cIdx)
       cId = 1;
   }
-  for (unsigned i = 0; i < cN.S.size(); ++i) {
+  for (int i = 0; i < cN.S.size(); ++i) {
     if (cN.S[i] == pIdx)
       pId = 2;
     if (cN.S[i] == cIdx)
       cId = 2;
   }
-  for (unsigned i = 0; i < cN.E.size(); ++i) {
+  for (int i = 0; i < cN.E.size(); ++i) {
     if (cN.E[i] == pIdx)
       pId = 3;
     if (cN.E[i] == cIdx)
       cId = 3;
   }
-  for (unsigned i = 0; i < cN.W.size(); ++i) {
+  for (int i = 0; i < cN.W.size(); ++i) {
     if (cN.W[i] == pIdx)
       pId = 4;
     if (cN.W[i] == cIdx)
@@ -1542,7 +1542,7 @@ void Graph::refineSteiner()
     vector<int> neighbors = nn[cN.idx];
     int newMaxPL = 0;
     int newPLToChildForParent = 0;
-    for (unsigned j = 0; j < neighbors.size(); ++j) {
+    for (int j = 0; j < neighbors.size(); ++j) {
       Node& nNode = nodes[neighbors[j]];
 
       int newPLToChildForParentCandi = 0;
@@ -1557,7 +1557,7 @@ void Graph::refineSteiner()
       // is this neighbor node in sub-tree rooted by Node cN
 
       if (IsSubTree(cN.idx, nNode.idx) == false) {
-        for (unsigned i = 0; i < 2; ++i) {
+        for (int i = 0; i < 2; ++i) {
           AddNode(cN.idx, nNode.idx, i);
 
           cGain = ComputeWL(cN.idx, nNode.idx, true, i);
@@ -1647,8 +1647,8 @@ void Graph::refineSteiner()
  */
 bool Graph::make_unique(vector<Node>& vec)
 {
-  for (unsigned a = 0; a < vec.size(); a++) {
-    for (unsigned b = 0; b < vec.size(); b++)
+  for (int a = 0; a < vec.size(); a++) {
+    for (int b = 0; b < vec.size(); b++)
       if (a != b) {
         if ((vec[a].x == vec[b].x) && (vec[a].y == vec[b].y)) {
           swap(vec[b], vec.back());
@@ -1689,12 +1689,12 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   nn.resize(node_count);
   // sort in y-axis
   sort(tmp.begin(), tmp.end(), comp_y);
-  for (unsigned i = 0; i < node_count; ++i) {
+  for (int i = 0; i < node_count; ++i) {
     sorted[i] = tmp[i].idx;
   }
 
-  unsigned idx = 0;
-  for (unsigned abc = 0; abc < sorted.size(); abc++)
+  int idx = 0;
+  for (int abc = 0; abc < sorted.size(); abc++)
     if (sorted[abc] == node_idx) {
       idx = abc;
       break;
@@ -1704,7 +1704,7 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   Node& cNode = nodes[node_idx];
   // update idx to neighbors
   // Note: nNode.y <= cNode.y
-  for (unsigned i = 0; i < idx; ++i) {
+  for (int i = 0; i < idx; ++i) {
     Node& nNode = nodes[sorted[i]];
     if (urlx[nNode.idx] == cNode.x) {
       nn[nNode.idx].push_back(cNode.idx);
@@ -1743,7 +1743,7 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
     debugPrint(logger_, PDR, "pdrev", 3, "Neighbors");
     debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[node_idx]);
-    for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
+    for (int j = 0; j < nn[node_idx].size(); ++j) {
       debugPrint(logger_, PDR, "pdrev", 3, " {}", nodes[nn[node_idx][j]]);
     }
   }
@@ -1753,7 +1753,7 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
 void Graph::buildNearestNeighborsForSPT()
 {
   int node_count = nodes.size();
-  for (unsigned i = 0; i < nn.size(); ++i) {
+  for (int i = 0; i < nn.size(); ++i) {
     nn[i].clear();
   }
   nn.clear();
@@ -1770,7 +1770,7 @@ void Graph::buildNearestNeighborsForSPT()
   lrlx.clear();
   llux.clear();
   lllx.clear();
-  for (unsigned i = 0; i < node_count; ++i) {
+  for (int i = 0; i < node_count; ++i) {
     sorted.push_back(nodes[i].idx);
     urux.push_back(std::numeric_limits<int>::max());
     urlx.push_back(nodes[i].x);
@@ -1786,19 +1786,19 @@ void Graph::buildNearestNeighborsForSPT()
   }
   // sort in y-axis
   sort(tmp.begin(), tmp.end(), comp_y);
-  for (unsigned i = 0; i < node_count; ++i) {
+  for (int i = 0; i < node_count; ++i) {
     sorted[i] = tmp[i].idx;
   }
   // sorted now has indicies of nodes sorted by y
 
   // collect neighbor
-  for (unsigned idx = 0; idx < node_count; ++idx) {
+  for (int idx = 0; idx < node_count; ++idx) {
     debugPrint(logger_, PDR, "pdrev", 3, "sorted idx: {}", sorted[idx]);
     Node& cNode = nodes[sorted[idx]];
     // update idx to neighbors
     // Note: nNode.y <= cNode.y
     // cNode.y > nNode.y => neighbors of nNode have y >
-    for (unsigned i = 0; i < idx; ++i) {
+    for (int i = 0; i < idx; ++i) {
       Node& nNode = nodes[sorted[i]];
       if (urlx[nNode.idx] == cNode.x) {
         nn[nNode.idx].push_back(cNode.idx);
@@ -1873,8 +1873,8 @@ void Graph::buildNearestNeighborsForSPT()
       }
     }
   }
-  unsigned total = 0, max = 0, size = 0, max_id = 0;
-  for (unsigned i = 0; i < node_count; ++i) {
+  int total = 0, max = 0, size = 0, max_id = 0;
+  for (int i = 0; i < node_count; ++i) {
     size = nn[i].size();
     total += size;
     if (size > max) {
@@ -1885,22 +1885,22 @@ void Graph::buildNearestNeighborsForSPT()
   // Print neighbors.
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
     debugPrint(logger_, PDR, "pdrev", 3, "Neighbors");
-    for (unsigned i = 0; i < node_count; ++i) {
+    for (int i = 0; i < node_count; ++i) {
       debugPrint(logger_, PDR, "pdrev", 3, "node {}", nodes[i]);
-      for (unsigned j = 0; j < nn[i].size(); ++j) {
+      for (int j = 0; j < nn[i].size(); ++j) {
         debugPrint(logger_, PDR, "pdrev", 3, " {}", nodes[nn[i][j]]);
       }
     }
   }
 
   int totNN = 0;
-  for (unsigned j = 0; j < nodes.size(); ++j) /* For each terminal */ {
+  for (int j = 0; j < nodes.size(); ++j) /* For each terminal */ {
     totNN += nn[j].size();
   }
   avgNN = (float) totNN * 1.0 / nodes.size();
 }
 
-void Graph::NESW_Combine(int left, int mid, int right, unsigned oct)
+void Graph::NESW_Combine(int left, int mid, int right, int oct)
 {
   int i, j, k, y2;
   int i1;
@@ -2036,7 +2036,7 @@ void Graph::NESW_Combine(int left, int mid, int right, unsigned oct)
   }
 }
 
-void Graph::NESW_NearestNeighbors(int left, int right, unsigned oct)
+void Graph::NESW_NearestNeighbors(int left, int right, int oct)
 {
   if (right == left + 1) {
     nn[sorted[left]][oct] = nn[sorted[left]][(oct + 4) % 8] = -1;
@@ -2050,7 +2050,7 @@ void Graph::NESW_NearestNeighbors(int left, int right, unsigned oct)
     if (logger_->debugCheck(PDR, "pdrev", 3)) {
       debugPrint(logger_, PDR, "pdrev", 3, "{} {} {} {}", oct, left, mid, right);
       std::string numTermRpt;
-      for (unsigned i = 0; i < num_terminals; ++i) {
+      for (int i = 0; i < num_terminals; ++i) {
         numTermRpt = numTermRpt + "  " + std::to_string(nn[i][oct]);
       }
       debugPrint(logger_, PDR, "pdrev", 3, "{}", numTermRpt);
@@ -2058,7 +2058,7 @@ void Graph::NESW_NearestNeighbors(int left, int right, unsigned oct)
   }
 }
 
-void Graph::heap_insert(int p, unsigned key)
+void Graph::heap_insert(int p, int key)
 {
   int k; /* hole in the heap     */
   int j; /* parent of the hole   */
@@ -2106,12 +2106,12 @@ void Graph::heap_insert(int p, unsigned key)
   }
 }
 
-unsigned Graph::heap_delete_min()
+int Graph::heap_delete_min()
 {
-  unsigned min, last;
-  unsigned k;     /* hole in the heap     */
-  unsigned j;     /* child of the hole    */
-  unsigned l_key; /* key of last point    */
+  int min, last;
+  int k;     /* hole in the heap     */
+  int j;     /* child of the hole    */
+  int l_key; /* key of last point    */
 
   if (heap_size == 0) /* heap is empty */
     return (-1);
@@ -2181,7 +2181,7 @@ void Graph::heap_decrease_key(int p, float new_key)
 
 void Graph::updateMinDist()
 {
-  for (unsigned i = 0; i < num_terminals; ++i) {
+  for (int i = 0; i < num_terminals; ++i) {
     if (i == root_idx) {
       nodes[i].min_dist = 0;
     } else {
@@ -2192,9 +2192,9 @@ void Graph::updateMinDist()
 
 void Graph::get_children_of_node()
 {
-  for (unsigned j = 0; j < num_terminals; ++j) {
+  for (int j = 0; j < num_terminals; ++j) {
     nodes[j].children.clear();
-    for (unsigned k = 0; k < num_terminals; ++k) {
+    for (int k = 0; k < num_terminals; ++k) {
       if ((nodes[k].parent == j) && (k != nodes[root_idx].idx) && (k != j)) {
         nodes[j].children.push_back(nodes[k].idx);
       }
@@ -2215,24 +2215,24 @@ void Graph::print_tree()
   }
 }
 
-unsigned Graph::calc_tree_wl_pd()
+int Graph::calc_tree_wl_pd()
 {
   int wl = 0;
-  for (unsigned j = 0; j < nodes.size(); ++j) {
-    unsigned child = j;
-    unsigned par = nodes[j].parent;
+  for (int j = 0; j < nodes.size(); ++j) {
+    int child = j;
+    int par = nodes[j].parent;
     nodes[child].cost_edgeToP = dist(nodes[par], nodes[child]);
     wl += nodes[child].cost_edgeToP;
   }
   return wl;
 }
 
-unsigned Graph::calc_tree_pl()
+int Graph::calc_tree_pl()
 {
   int pl = 0;
-  for (unsigned j = 0; j < orig_num_terminals; ++j) {
-    unsigned child = j;
-    unsigned par = nodes[j].parent;
+  for (int j = 0; j < orig_num_terminals; ++j) {
+    int child = j;
+    int par = nodes[j].parent;
     while (par != child) {
       debugPrint(logger_, PDR, "pdrev", 3, "Child = {} ; SV Par = {}", child, par);
       nodes[child].cost_edgeToP = dist(nodes[par], nodes[child]);
@@ -2247,7 +2247,7 @@ unsigned Graph::calc_tree_pl()
 float Graph::calc_tree_det_cost()
 {
   int det_cost = 0;
-  for (unsigned j = 0; j < num_terminals; ++j)
+  for (int j = 0; j < num_terminals; ++j)
     det_cost += nodes[j].det_cost_node;
   return det_cost;
 }
@@ -2265,26 +2265,26 @@ void Graph::run_PD_brute_force(float alpha)
   // update shortest path
   updateMinDist();
   /* n points to be extracted from heap */
-  for (unsigned k = 0; k < num_terminals; k++) {
+  for (int k = 0; k < num_terminals; k++) {
     int i = heap_delete_min();
 
     if (logger_->debugCheck(PDR, "pdrev", 3)) {
       std::string rpt = "\n############## k=" + std::to_string(k)
         + " i=" + std::to_string(i) + "\n";
       rpt = rpt + "Heap_idx array: ";
-      for (unsigned ar = 0; ar < heap_idx.size(); ar++)
+      for (int ar = 0; ar < heap_idx.size(); ar++)
         rpt = rpt + std::to_string(heap_idx[ar]) + " ";
       rpt = rpt + "\n";
       rpt = rpt + "Heap_key array: ";
-      for (unsigned ar = 0; ar < heap_key.size(); ar++)
+      for (int ar = 0; ar < heap_key.size(); ar++)
         rpt = rpt + std::to_string(heap_key[ar]) + " ";
       rpt = rpt + "\n";
       rpt = rpt + "Heap_elt array: ";
-      for (unsigned ar = 0; ar < heap_elt.size(); ar++)
+      for (int ar = 0; ar < heap_elt.size(); ar++)
         rpt = rpt + std::to_string(heap_elt[ar]) + " ";
       rpt = rpt + "\n";
       rpt = rpt + "Heap min_dist: ";
-      for (unsigned ar = 0; ar < heap_elt.size(); ar++)
+      for (int ar = 0; ar < heap_elt.size(); ar++)
         rpt = rpt + std::to_string(nodes[heap_elt[ar]].min_dist) + " ";
 
       debugPrint(logger_, PDR, "pdrev", 3, "{}", rpt);
@@ -2292,19 +2292,19 @@ void Graph::run_PD_brute_force(float alpha)
 
     if (i >= 0) {
       // node[i] entered the tree, update heap keys for its neighbors
-      unsigned par = nodes[i].parent;
+      int par = nodes[i].parent;
       debugPrint(logger_, PDR, "pdrev", 3,
                  "nodes[{}].path_length = nodes[{}].path_length={} + dist={} = {}",
                  i, par, nodes[par].path_length, dist(nodes[i], nodes[par]),
                  nodes[par].path_length + dist(nodes[i], nodes[par]));
       nodes[i].path_length = nodes[par].path_length + dist(nodes[i], nodes[par]);
-      for (unsigned oct = 0; oct < nn[i].size(); oct++) {
+      for (int oct = 0; oct < nn[i].size(); oct++) {
         int nn1 = nn[i][oct];
         debugPrint(logger_, PDR, "pdrev", 3, "NN={} i={} min_dist of node i={}",
                    nn1,
                    i,
                    nodes[i].min_dist);
-        unsigned edge_len = dist(nodes[i], nodes[nn1]);
+        int edge_len = dist(nodes[i], nodes[nn1]);
         float d = alpha * (float) nodes[i].path_length;
         debugPrint(logger_, PDR, "pdrev", 3,
                    "intermediate d = alpha * nodes[i].path_length = "
@@ -2355,9 +2355,9 @@ void Graph::PDBU_new_NN(float alpha)
   buildNearestNeighborsForSPT();
 
   // Tree preparation
-  for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
-    unsigned child = j;
-    unsigned par = nodes[j].parent;
+  for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
+    int child = j;
+    int par = nodes[j].parent;
     update_edgecosts_to_parent(child, par);
     debugPrint(logger_, PDR, "pdrev", 3, "  Detour cost of edge to parent = {}",
                nodes[child].detcost_edgePToNode);
@@ -2370,14 +2370,14 @@ void Graph::PDBU_new_NN(float alpha)
   get_children_of_node();
 
   // Calculating detour cost of each node and the K_t value
-  for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */
+  for (int j = 0; j < num_terminals; ++j) /* For each terminal */
     update_node_detcost_Kt(j);
   // End tree preparation
 
   float initial_tree_cost = calc_tree_cost();
   float final_tree_cost = 0;
   float tree_cost_difference = final_tree_cost - initial_tree_cost;
-  unsigned count = 1;
+  int count = 1;
 
   while ((tree_cost_difference > 0) || (tree_cost_difference < -1)) {
     debugPrint(logger_, PDR, "pdrev", 3,
@@ -2402,10 +2402,10 @@ void Graph::PDBU_new_NN(float alpha)
     // This is N^2 in the terminal count, and should probably be using
     // sets instead of 2D arrays. -cherry 05/03/2021
     // Generating the swap space
-    for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
+    for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
       nodes[j].swap_space.clear();
       vector<int> tmp_children = nodes[j].children;
-      unsigned iter = 0;
+      int iter = 0;
       vector<int> tmp;
       nodes[j].swap_space.push_back(tmp);
       nodes[j].swap_space[iter].insert(nodes[j].swap_space[iter].end(),
@@ -2415,8 +2415,8 @@ void Graph::PDBU_new_NN(float alpha)
       while (iter <= num_terminals) {
         vector<int> tmp;
         nodes[j].swap_space.push_back(tmp);
-        for (unsigned k = 0; k < tmp_children.size(); k++) {
-          unsigned child = tmp_children[k];
+        for (int k = 0; k < tmp_children.size(); k++) {
+          int child = tmp_children[k];
           if (nodes[child].children.size() > 0) {
             nodes[j].swap_space[iter].insert(nodes[j].swap_space[iter].end(),
                                              nodes[child].children.begin(),
@@ -2430,8 +2430,8 @@ void Graph::PDBU_new_NN(float alpha)
       if (logger_->debugCheck(PDR, "pdrev", 3)) {
         debugPrint(logger_, PDR, "pdrev", 3, "j = {}  Swap space: ", j);
         std::string swapSpcRpt;
-        for (unsigned p = 0; p < nodes[j].swap_space.size(); p++) {
-          for (unsigned q = 0; q < nodes[j].swap_space[p].size(); q++) {
+        for (int p = 0; p < nodes[j].swap_space.size(); p++) {
+          for (int q = 0; q < nodes[j].swap_space[p].size(); q++) {
             swapSpcRpt
               = swapSpcRpt + std::to_string(nodes[j].swap_space[p][q]) + " ";
           }
@@ -2447,24 +2447,24 @@ void Graph::PDBU_new_NN(float alpha)
     int overall_min_node = -1;
     int overall_min_nn_idx = -1;
     int overall_swap_dist = -1;
-    unsigned overall_initial_i = 0;
+    int overall_initial_i = 0;
 
     // Min node of the entire tree
-    for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
+    for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
       // For every row in the nodes[j].swap_space
-      for (unsigned iter = 0; iter <= distance; iter++) {
+      for (int iter = 0; iter <= distance; iter++) {
         // For every element in the "iter"th row of nodes[j].swap_space
-        for (unsigned idx = 0; idx < nodes[j].swap_space[iter].size(); idx++) {
+        for (int idx = 0; idx < nodes[j].swap_space[iter].size(); idx++) {
           float swap_cost = 10000;
           // Node to get new edge
           int node_e_new = nodes[j].swap_space[iter][idx];
-          for (unsigned oct = 0; oct < nn[node_e_new].size(); oct++) {
+          for (int oct = 0; oct < nn[node_e_new].size(); oct++) {
             int nn_node = nn[node_e_new][oct];
             bool is_found_in_swap_space = false;
             if (nn_node != -1) {
               int child = node_e_new, par = nodes[node_e_new].parent;
-              for (unsigned i = 0; i < nodes[child].swap_space.size(); i++) {
-                for (unsigned k = 0; k < nodes[child].swap_space[i].size();
+              for (int i = 0; i < nodes[child].swap_space.size(); i++) {
+                for (int k = 0; k < nodes[child].swap_space[i].size();
                      k++) {
                   if (nn_node == nodes[child].swap_space[i][k]) {
                     is_found_in_swap_space = true;
@@ -2475,10 +2475,10 @@ void Graph::PDBU_new_NN(float alpha)
                   break;
               }
               if (!is_found_in_swap_space) {
-                unsigned count = 0;
+                int count = 0;
                 while (count < iter) {
-                  for (unsigned i = 0; i < nodes[par].swap_space.size(); i++) {
-                    for (unsigned k = 0; k < nodes[par].swap_space[i].size();
+                  for (int i = 0; i < nodes[par].swap_space.size(); i++) {
+                    for (int k = 0; k < nodes[par].swap_space[i].size();
                          k++) {
                       if (nn_node == nodes[par].swap_space[i][k]) {
                         is_found_in_swap_space = true;
@@ -2597,7 +2597,7 @@ void Graph::PDBU_new_NN(float alpha)
 
 int Graph::IsAdded(Node& cN)
 {
-  for (unsigned i = 1; i < nodes.size(); ++i) {
+  for (int i = 1; i < nodes.size(); ++i) {
     if (nodes[i].x == cN.x && nodes[i].y == cN.y) {
       return i;
     }
@@ -2607,7 +2607,7 @@ int Graph::IsAdded(Node& cN)
 
 void Graph::FreeManhDist()
 {
-  for (unsigned i = 0; i < ManhDist.size(); ++i) {
+  for (int i = 0; i < ManhDist.size(); ++i) {
     ManhDist[i].clear();
   }
   ManhDist.clear();
@@ -2616,7 +2616,7 @@ void Graph::FreeManhDist()
 void Graph::constructSteiner()
 {
   vector<int> newSP;
-  for (unsigned i = 1; i < dag.size(); ++i) {
+  for (int i = 1; i < dag.size(); ++i) {
     int cIdx = dag[i];
     Node child = nodes[cIdx];
     Node pN = nodes[child.parent];
@@ -2625,7 +2625,7 @@ void Graph::constructSteiner()
     Edge e = edges[cIdx];
 
     vector<int> toBeRemoved;
-    for (unsigned j = 0; j < e.STNodes.size(); ++j) {
+    for (int j = 0; j < e.STNodes.size(); ++j) {
       Node& cN = e.STNodes[j];
       if (!IsOnEdge(cN, cIdx)) {
         continue;
@@ -2637,7 +2637,7 @@ void Graph::constructSteiner()
         // baffling magic number alert -cherry
         int pIdx = 10000;
         bool flagIdx = true;
-        for (unsigned k = 0; k < cN.sp_chil.size(); ++k) {
+        for (int k = 0; k < cN.sp_chil.size(); ++k) {
           if (pN.idx == cN.sp_chil[k]) {
             flagIdx = false;
             pIdx = nodes[pN.idx].parent;
@@ -2653,7 +2653,7 @@ void Graph::constructSteiner()
         nodes[nodes.size() - 1].parent = pIdx;
         newSP.push_back(nodes.size() - 1);
         // update parent node pN
-        for (unsigned k = 0; k < cN.sp_chil.size(); ++k) {
+        for (int k = 0; k < cN.sp_chil.size(); ++k) {
           nodes[nodes.size() - 1].children.push_back(cN.sp_chil[k]);
 
           removeChild(nodes[pN.idx], cN.sp_chil[k]);
@@ -2675,7 +2675,7 @@ void Graph::constructSteiner()
           logger_->warn(
               PDR, 120, "cNode ({}) != pNode ({})", nodes[idx], nodes[pN.idx]);
 
-          for (unsigned k = 0; k < newSP.size(); k++) {
+          for (int k = 0; k < newSP.size(); k++) {
             if (newSP[k] == idx) {
               removeChild(nodes[idx], pN.idx);
               addChild(nodes[nodes[pN.idx].parent], pN.idx);
@@ -2693,7 +2693,7 @@ void Graph::constructSteiner()
                   removeChild(nodes[nodes[idx].parent], idx);
 
                   bool flag2 = true;
-                  for (unsigned l = 0; l < nodes[pN.idx].children.size(); ++l) {
+                  for (int l = 0; l < nodes[pN.idx].children.size(); ++l) {
                     if (nodes[pN.idx].children[l] == nodes[idx].parent) {
                       flag2 = false;
                       break;
@@ -2703,7 +2703,7 @@ void Graph::constructSteiner()
                     nodes[pN.idx].parent = nodes[idx].parent;
                   addChild(nodes[nodes[idx].parent], pN.idx);
                   nodes[idx].parent = pN.idx;
-                  for (unsigned l = 0; l < nodes[idx].children.size(); ++l) {
+                  for (int l = 0; l < nodes[idx].children.size(); ++l) {
                     removeChild(nodes[pN.idx], nodes[idx].children[l]);
                   }
                   addChild(nodes[pN.idx], idx);
@@ -2713,7 +2713,7 @@ void Graph::constructSteiner()
               } else if (dir1 == dir3) {
                 removeChild(nodes[idx], pN.idx);
                 addChild(nodes[pN.parent], pN.idx);
-                for (unsigned k = 0; k < cN.sp_chil.size(); ++k) {
+                for (int k = 0; k < cN.sp_chil.size(); ++k) {
                   removeChild(nodes[pN.idx], cN.sp_chil[k]);
                 }
               }
@@ -2729,12 +2729,12 @@ void Graph::constructSteiner()
         nodes[child.idx].parent = pN.idx;
         edges[child.idx].head = pN.idx;
         edges[child.idx].best_shape = 5;
-        for (unsigned k = 0; k < cN.sp_chil.size(); ++k) {
+        for (int k = 0; k < cN.sp_chil.size(); ++k) {
           removeChild(nodes[child.idx], cN.sp_chil[k]);
         }
         addChild(nodes[pN.idx], child.idx);
 
-        for (unsigned k = 0; k < pN.children.size(); ++k) {
+        for (int k = 0; k < pN.children.size(); ++k) {
           removeChild(nodes[pN.children[k]], child.idx);
         }
       }
@@ -2748,12 +2748,12 @@ void Graph::constructSteiner()
 
 void Graph::doSteiner_HoVW()
 {
-  // unsigned orig_num_terminals = num_terminals;
+  // int orig_num_terminals = num_terminals;
   // Tree preparation
   updateMinDist();
-  for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
-    unsigned child = j;
-    unsigned par = nodes[j].parent;
+  for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
+    int child = j;
+    int par = nodes[j].parent;
     edges[j].head = par;
     edges[j].tail = child;
     update_edgecosts_to_parent(child, par);
@@ -2762,7 +2762,7 @@ void Graph::doSteiner_HoVW()
   get_children_of_node();
   get_level_in_tree();
 
-  for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */
+  for (int j = 0; j < num_terminals; ++j) /* For each terminal */
     update_node_detcost_Kt(j);
   // End tree preparation
 
@@ -2779,13 +2779,13 @@ void Graph::doSteiner_HoVW()
   vector<Node> set_of_nodes;
   // Starting from the nodes in the second level from bottom
   for (int k = tree_struct.size() - 3; k >= 0; k--) {
-    for (unsigned l = 0; l < tree_struct[k].size(); l++) {
-      unsigned child = tree_struct[k][l], par = nodes[child].parent;
+    for (int l = 0; l < tree_struct[k].size(); l++) {
+      int child = tree_struct[k][l], par = nodes[child].parent;
       Node tmp_node = nodes[child];
 
       set_of_nodes.push_back(tmp_node);
       set_of_nodes.push_back(nodes[par]);
-      for (unsigned m = 0; m < tmp_node.children.size(); m++)
+      for (int m = 0; m < tmp_node.children.size(); m++)
         set_of_nodes.push_back(nodes[tmp_node.children[m]]);
 
       if (set_of_nodes.size() > 2) {
@@ -2798,26 +2798,26 @@ void Graph::doSteiner_HoVW()
   // Assigning best shapes top-down
   if (tree_struct.size() >= 3) {
     for (int k = 0; k <= tree_struct.size() - 3; k++) {
-      for (unsigned l = 0; l < tree_struct[k].size(); l++) {
-        unsigned curr_node = tree_struct[k][l];
+      for (int l = 0; l < tree_struct[k].size(); l++) {
+        int curr_node = tree_struct[k][l];
         if (nodes[curr_node].children.size() > 0) {
           if (curr_node == 0) {
-            for (unsigned i = 0; i < edges[curr_node].lower_best_config.size();
+            for (int i = 0; i < edges[curr_node].lower_best_config.size();
                  i = i + 2)
               edges[edges[curr_node].lower_best_config[i]].best_shape
                 = edges[curr_node].lower_best_config[i + 1];
           } else if (edges[curr_node].best_shape == 0) {
-            for (unsigned i = 0; i < edges[curr_node].lower_best_config.size();
+            for (int i = 0; i < edges[curr_node].lower_best_config.size();
                  i = i + 2)
               edges[edges[curr_node].lower_best_config[i]].best_shape
                 = edges[curr_node].lower_best_config[i + 1];
           } else if (edges[curr_node].best_shape == 1) {
-            for (unsigned i = 0; i < edges[curr_node].upper_best_config.size();
+            for (int i = 0; i < edges[curr_node].upper_best_config.size();
                  i = i + 2)
               edges[edges[curr_node].upper_best_config[i]].best_shape
                 = edges[curr_node].upper_best_config[i + 1];
           } else if (edges[curr_node].best_shape == 5) {
-            for (unsigned i = 0; i < edges[curr_node].upper_best_config.size();
+            for (int i = 0; i < edges[curr_node].upper_best_config.size();
                  i = i + 2)
               edges[edges[curr_node].upper_best_config[i]].best_shape
                 = edges[curr_node].upper_best_config[i + 1];
@@ -2907,7 +2907,7 @@ void Graph::fix_max_dc()
   float st_wl = calc_tree_wl_pd();
   float st_dc = calc_tree_det_cost();
 
-  unsigned use_nn = 0;
+  int use_nn = 0;
 
   float init_wl = st_wl;
   for (int k = 1; k < tree_struct_1darr.size(); k++) {
@@ -2918,7 +2918,7 @@ void Graph::fix_max_dc()
         buildNearestNeighbors_single_node(cnode);
         update_detourcosts_to_NNs(cnode);
       }
-      unsigned cpar = nodes[cnode].parent;
+      int cpar = nodes[cnode].parent;
       int edge_len_to_par = dist(nodes[cnode], nodes[cpar]);
       int new_edge_len, nn2, det_cost_new_edge, size = 0, new_tree_wl = 0,
                                                 diff_in_wl, diff_in_dc = 0;
@@ -2932,7 +2932,7 @@ void Graph::fix_max_dc()
         size = k;
       }
 
-      for (unsigned ag = 0; ag < size; ag++) {
+      for (int ag = 0; ag < size; ag++) {
         if (use_nn == 1) {
           nn2 = nn[cnode][ag];
         } else {
@@ -2967,7 +2967,7 @@ void Graph::fix_max_dc()
         vector<int> chi = nodes[cnode].children, tmp;
         float init_dc = cnode_dc, final_dc = min_dc,
               change = init_dc - final_dc;
-        unsigned id = 0, count = 0;
+        int id = 0, count = 0;
         while (chi.size() != 0) {
           tmp = chi;
           chi.clear();
@@ -2990,7 +2990,7 @@ void Graph::fix_max_dc()
           init_wl = min_dc_new_tree_wl;
           // Update the DCs of the nodes in the subtree of k
           vector<int> chi = nodes[cnode].children, tmp;
-          unsigned id = 0;
+          int id = 0;
           while (chi.size() != 0) {
             tmp = chi;
             chi.clear();
@@ -3010,17 +3010,17 @@ void Graph::fix_max_dc()
   }
 }
 
-void Graph::generate_permutations(vector<vector<unsigned>> lists,
-                                  vector<vector<unsigned>>& result,
-                                  unsigned depth,
-                                  vector<unsigned> current)
+void Graph::generate_permutations(vector<vector<int>> lists,
+                                  vector<vector<int>>& result,
+                                  int depth,
+                                  vector<int> current)
 {
   if (depth == lists.size()) {
     result.push_back(current);  // result.add(current);
     return;
   }
-  for (unsigned i = 0; i < lists[depth].size(); ++i) {
-    vector<unsigned> tmp = current;
+  for (int i = 0; i < lists[depth].size(); ++i) {
+    vector<int> tmp = current;
     tmp.push_back(lists[depth][i]);
     generate_permutations(lists, result, depth + 1, tmp);
   }
@@ -3028,13 +3028,13 @@ void Graph::generate_permutations(vector<vector<unsigned>> lists,
 
 void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
 {
-  vector<vector<unsigned>> lists, result;
-  vector<unsigned> tmp1, tmp2;
+  vector<vector<int>> lists, result;
+  vector<int> tmp1, tmp2;
   tmp1.push_back(0);
   tmp1.push_back(1);
 
   // Enumerate all possible options for children
-  for (unsigned i = 2; i < set_of_nodes.size(); i++)
+  for (int i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
   // This "counts" from 0 to list.size() using each index in the array as one bit, so it
@@ -3046,23 +3046,23 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
   // For each combination, calc overlap
-  unsigned max_ov = 0;
+  int max_ov = 0;
   vector<int> best_config;
   vector<Node> best_sps_x, best_sps_y;
   int best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
   int best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
   vector<int> all_lower_ovs;
 
-  for (unsigned i = 0; i < result.size(); i++) {
+  for (int i = 0; i < result.size(); i++) {
     vector<vector<Node>> set_of_points;
     vector<Node> tmp3;
     tmp3.push_back(set_of_nodes[0]);
     tmp3.push_back(Node(0, set_of_nodes[1].x, set_of_nodes[0].y));
     tmp3.push_back(set_of_nodes[1]);
     set_of_points.push_back(tmp3);
-    unsigned lower_ov = 0;
+    int lower_ov = 0;
     vector<int> config;
-    for (unsigned j = 2; j < set_of_nodes.size(); j++) {
+    for (int j = 2; j < set_of_nodes.size(); j++) {
       if (result[i][j - 2] == 0) {
         vector<Node> tmp4;
         tmp4.push_back(set_of_nodes[0]);
@@ -3087,8 +3087,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     }
 
     // Calculation of overlaps
-    unsigned num_edges = set_of_points.size();
-    unsigned curr_level_ov = calc_overlap(set_of_points);
+    int num_edges = set_of_points.size();
+    int curr_level_ov = calc_overlap(set_of_points);
     lower_ov += curr_level_ov;
     result[i].push_back(lower_ov);
     if (lower_ov >= max_ov) {
@@ -3105,7 +3105,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
         best_sps_curr_node_idx_y = nodes[index].idx_of_cn_y;
       }
     }
-    for (unsigned i = 0; i < set_of_points.size(); ++i)
+    for (int i = 0; i < set_of_points.size(); ++i)
       set_of_points[i].clear();
     set_of_points.clear();
     config.clear();
@@ -3113,17 +3113,17 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
 
   // New part added from here
   // Count of Max_ov value appearing in the results combination
-  unsigned max_ap_cnt = 0;
-  unsigned res_size = result[0].size(), not_dont_care_flag = 0;
-  vector<unsigned> tmp_res, not_dont_care_child;
-  for (unsigned p = 0; p < result.size(); p++) {
+  int max_ap_cnt = 0;
+  int res_size = result[0].size(), not_dont_care_flag = 0;
+  vector<int> tmp_res, not_dont_care_child;
+  for (int p = 0; p < result.size(); p++) {
     if (max_ov == result[p][res_size - 1]) {
       max_ap_cnt++;
       // Set first row which matches as reference row
       if (max_ap_cnt == 1) {
         tmp_res = result[p];
       } else if (max_ap_cnt > 1) {
-        for (unsigned idk = 0; idk < res_size - 1; idk++) {
+        for (int idk = 0; idk < res_size - 1; idk++) {
           if (res_size == 2) {
             not_dont_care_flag++;
           } else {
@@ -3140,23 +3140,23 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   // Only if dont_care_flag = number of repeating rows - 1, then make the child
   // edge dont_care
   if ((dont_care_flag != 0) && (dont_care_flag == max_ap_cnt - 1)) {
-    vector<unsigned> List1;
-    for (unsigned mm = 0; mm < result[0].size() - 1; mm++)
+    vector<int> List1;
+    for (int mm = 0; mm < result[0].size() - 1; mm++)
       List1.push_back(mm);
-    vector<unsigned> dont_care_child;
+    vector<int> dont_care_child;
     // Get dont care child index by removing the rest of the children indices
     copy_if(
         List1.begin(),
         List1.end(),
         back_inserter(dont_care_child),
-        [&not_dont_care_child](const unsigned& arg) {
+        [&not_dont_care_child](const int& arg) {
           return (
               find(not_dont_care_child.begin(), not_dont_care_child.end(), arg)
               == not_dont_care_child.end());
         });
 
     if (best_config.size() != 0) {
-      for (unsigned mm = 0; mm < dont_care_child.size(); mm++) {
+      for (int mm = 0; mm < dont_care_child.size(); mm++) {
         best_config[dont_care_child[mm] * 2 + 1] = 5;
       }
     }
@@ -3177,16 +3177,16 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   best_sps_x.clear();
   best_sps_y.clear();
   max_ov = 0;
-  for (unsigned i = 0; i < result.size(); i++) {
+  for (int i = 0; i < result.size(); i++) {
     vector<vector<Node>> set_of_points;
     vector<Node> tmp3;
     tmp3.push_back(set_of_nodes[0]);
     tmp3.push_back(Node(0, set_of_nodes[0].x, set_of_nodes[1].y));
     tmp3.push_back(set_of_nodes[1]);
     set_of_points.push_back(tmp3);
-    unsigned upper_ov = 0;
+    int upper_ov = 0;
     vector<int> config;
-    for (unsigned j = 2; j < set_of_nodes.size(); j++) {
+    for (int j = 2; j < set_of_nodes.size(); j++) {
       if (result[i][j - 2] == 0) {
         vector<Node> tmp4;
         tmp4.push_back(set_of_nodes[0]);
@@ -3209,8 +3209,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     }
 
     // Calculation of overlaps
-    unsigned num_edges = set_of_points.size();
-    unsigned curr_level_ov = calc_overlap(set_of_points);
+    int num_edges = set_of_points.size();
+    int curr_level_ov = calc_overlap(set_of_points);
     upper_ov += curr_level_ov;
     int last_res_idx = result[i].size() - 1;
     result[i][last_res_idx] = upper_ov;
@@ -3228,7 +3228,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
         best_sps_curr_node_idx_y = nodes[index].idx_of_cn_y;
       }
     }
-    for (unsigned i = 0; i < set_of_points.size(); ++i)
+    for (int i = 0; i < set_of_points.size(); ++i)
       set_of_points[i].clear();
     set_of_points.clear();
     config.clear();
@@ -3238,13 +3238,13 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   max_ap_cnt = 0;  // Count of Max_ov value appearing in the results combination
   res_size = result[0].size();
   not_dont_care_flag = 0;
-  for (unsigned p = 0; p < result.size(); p++) {
+  for (int p = 0; p < result.size(); p++) {
     if (max_ov == result[p][res_size - 1]) {
       max_ap_cnt++;
       if (max_ap_cnt == 1) {
         tmp_res = result[p];
       } else if (max_ap_cnt > 1) {
-        for (unsigned idk = 0; idk < res_size - 1; idk++) {
+        for (int idk = 0; idk < res_size - 1; idk++) {
           if (res_size == 2) {
             not_dont_care_flag++;
           } else {
@@ -3262,22 +3262,22 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   // Only if dont_care_flag = number of repeating rows - 1, then make the child
   // edge dont_care
   if ((dont_care_flag != 0) && (dont_care_flag == max_ap_cnt - 1)) {
-    vector<unsigned> List1;
-    for (unsigned mm = 0; mm < result[0].size() - 1; mm++)
+    vector<int> List1;
+    for (int mm = 0; mm < result[0].size() - 1; mm++)
       List1.push_back(mm);
-    vector<unsigned> dont_care_child;
+    vector<int> dont_care_child;
     // Get dont care child index by removing the rest of the children indices
     copy_if(
         List1.begin(),
         List1.end(),
         back_inserter(dont_care_child),
-        [&not_dont_care_child](const unsigned& arg) {
+        [&not_dont_care_child](const int& arg) {
           return (
               find(not_dont_care_child.begin(), not_dont_care_child.end(), arg)
               == not_dont_care_child.end());
         });
     if (best_config.size() != 0) {
-      for (unsigned mm = 0; mm < dont_care_child.size(); mm++) {
+      for (int mm = 0; mm < dont_care_child.size(); mm++) {
         best_config[dont_care_child[mm] * 2 + 1] = 5;
       }
     }
@@ -3309,9 +3309,9 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     edges[index].best_shape = 5;
   }
 
-  for (unsigned i = 0; i < lists.size(); i++)
+  for (int i = 0; i < lists.size(); i++)
     lists[i].clear();
-  for (unsigned i = 0; i < result.size(); i++)
+  for (int i = 0; i < result.size(); i++)
     result[i].clear();
   lists.clear();
   result.clear();
@@ -3436,14 +3436,14 @@ double Graph::length(std::vector<std::pair<double, double>> l)
   return totalLen;
 }
 
-unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
+int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
 {
-  unsigned max_ov = 0, tmp_ov = 0;
+  int max_ov = 0, tmp_ov = 0;
   typedef std::pair<double, double> s_point;
   Node curr_node = set_of_nodes[0][0];
   vector<Node> all_pts, sorted_x, sorted_y;
   for (int i = 0; i < set_of_nodes.size(); i++) {
-    for (unsigned j = i + 1; j < set_of_nodes.size(); j++) {
+    for (int j = i + 1; j < set_of_nodes.size(); j++) {
       vector<Node> &n = set_of_nodes[i];
       vector<Node> &m = set_of_nodes[j];
 
@@ -3461,20 +3461,20 @@ unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
 
       intersection(line1, line2, output);
 
-      tmp_ov = (unsigned) length(output);
+      tmp_ov = (int) length(output);
 
       //            Known Problem - output-double, when converting to int for
       //            output_nodes, 232 becomes 231 for somereason
       vector<Node> output_nodes;
-      for (unsigned g = 0; g < output.size(); g++)
+      for (int g = 0; g < output.size(); g++)
         output_nodes.push_back(Node(0, output[g].first, output[g].second));
 
       make_unique(output_nodes);
 
       if (output_nodes.size() > 1) {
-        for (unsigned k = 0; k < output_nodes.size(); ++k) {
+        for (int k = 0; k < output_nodes.size(); ++k) {
           // set flag if this node == curr_node
-          unsigned curr_node_flag = 0;
+          int curr_node_flag = 0;
           if ((output_nodes[k].x == curr_node.x)
               && (output_nodes[k].y == curr_node.y)) {
             curr_node_flag = 1;
@@ -3482,7 +3482,7 @@ unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
           // If not present in all_pts
           bool is_present = false;
           int all_pts_idx = std::numeric_limits<int>::max();
-          for (unsigned s = 0; s < all_pts.size(); s++) {
+          for (int s = 0; s < all_pts.size(); s++) {
             if ((output_nodes[k].x == all_pts[s].x)
                 && (output_nodes[k].y == all_pts[s].y)) {
               if (curr_node_flag == 1) {
@@ -3537,19 +3537,19 @@ unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
     }
     sort(sorted_x.begin(), sorted_x.end(), comp_x);
     sort(sorted_y.begin(), sorted_y.end(), comp_y);
-    for (unsigned u = 0; u < sorted_x.size(); u++)
+    for (int u = 0; u < sorted_x.size(); u++)
       if ((sorted_x[u].x == curr_node.x) && (sorted_x[u].y == curr_node.y)) {
         nodes[curr_node.idx].idx_of_cn_x = u;
         break;
       }
-    for (unsigned u = 0; u < sorted_y.size(); u++)
+    for (int u = 0; u < sorted_y.size(); u++)
       if ((sorted_y[u].x == curr_node.x) && (sorted_y[u].y == curr_node.y)) {
         nodes[curr_node.idx].idx_of_cn_y = u;
         break;
       }
     set_of_nodes.push_back(sorted_x);
     set_of_nodes.push_back(sorted_y);
-    unsigned ov_x = 0, ov_y = 0;
+    int ov_x = 0, ov_y = 0;
     if (sorted_x.size() > 1) {
       ov_x = calc_ov_x_or_y(sorted_x, curr_node, 'x');
     }
@@ -3562,10 +3562,10 @@ unsigned Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
   return max_ov;
 }
 
-unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
+int Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
 {
-  unsigned ov1 = 0, ov2 = 0;
-  vector<unsigned> tmp_ov, tmp;
+  int ov1 = 0, ov2 = 0;
+  vector<int> tmp_ov, tmp;
   int ind_of_curr_node = 0;
   for (int i = 0; i < sorted.size(); i++)  // Getting position of "curr_node"
     if ((sorted[i].x == curr_node.x) && (sorted[i].y == curr_node.y)) {
@@ -3573,7 +3573,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
       break;
     }
   if (ind_of_curr_node > 0) {
-    unsigned cnt = 0;
+    int cnt = 0;
     for (int j = ind_of_curr_node - 1; j >= 0; j--) {
       tmp.push_back(0);
       if (tag == 'x')
@@ -3584,19 +3584,19 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
     }
     cnt = 0;
     size_t s = tmp.size();
-    for (unsigned j = 0; j < s; j++) {
+    for (int j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
     }
-    for (unsigned j = 0; j < s; j++)
+    for (int j = 0; j < s; j++)
       ov1 += tmp_ov[j];
 
     tmp_ov.clear();
     tmp.clear();
   }
   if (ind_of_curr_node < (sorted.size() - 1)) {
-    unsigned cnt = 0;
-    for (unsigned j = ind_of_curr_node + 1; j <= sorted.size() - 1; j++) {
+    int cnt = 0;
+    for (int j = ind_of_curr_node + 1; j <= sorted.size() - 1; j++) {
       tmp.push_back(0);
       if (tag == 'x')
         tmp[cnt] = sorted[j].x - sorted[j - 1].x;
@@ -3606,11 +3606,11 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
     }
     cnt = 0;
     size_t s = tmp.size();
-    for (unsigned j = 0; j < s; j++) {
+    for (int j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
     }
-    for (unsigned j = 0; j < s; j++)
+    for (int j = 0; j < s; j++)
       ov2 += tmp_ov[j];
     tmp_ov.clear();
     tmp.clear();
@@ -3620,7 +3620,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
   return (ov1 + ov2);
 }
 
-void Graph::update_edgecosts_to_parent(unsigned child, unsigned par)
+void Graph::update_edgecosts_to_parent(int child, int par)
 {
   nodes[child].cost_edgeToP = dist(nodes[par], nodes[child]);
   nodes[child].detcost_edgePToNode = nodes[par].min_dist
@@ -3631,11 +3631,11 @@ void Graph::update_edgecosts_to_parent(unsigned child, unsigned par)
                                      - nodes[par].min_dist;
 }
 
-void Graph::update_node_detcost_Kt(unsigned j)
+void Graph::update_node_detcost_Kt(int j)
 {
-  unsigned par = nodes[j].parent;
-  unsigned child = j;
-  unsigned count = 1;
+  int par = nodes[j].parent;
+  int child = j;
+  int count = 1;
   nodes[j].det_cost_node = 0;
   while (par != child) {
     nodes[j].det_cost_node += nodes[child].detcost_edgePToNode;
@@ -3651,27 +3651,27 @@ void Graph::update_node_detcost_Kt(unsigned j)
 void Graph::get_level_in_tree()
 {
   tree_struct.clear();
-  unsigned iter = 0;
+  int iter = 0;
   vector<int> tmp1;
   tree_struct.push_back(tmp1);
   tmp1.clear();
   tree_struct[iter].push_back(0);
   iter++;
-  unsigned j = 0, level_count = 0;
+  int j = 0, level_count = 0;
   vector<int> set_of_chi = nodes[j].children, tmp;
   vector<int> tmp2;
   tree_struct.push_back(tmp2);
   tmp2.clear();
   tree_struct[iter].insert(
       tree_struct[iter].end(), set_of_chi.begin(), set_of_chi.end());
-  unsigned size_of_chi = set_of_chi.size();
+  int size_of_chi = set_of_chi.size();
   nodes[j].level = level_count;
   while (size_of_chi != 0) {
     level_count++;
     iter++;
     tmp = set_of_chi;
     set_of_chi.clear();
-    for (unsigned l = 0; l < tmp.size(); l++) {
+    for (int l = 0; l < tmp.size(); l++) {
       nodes[tmp[l]].level = level_count;
       set_of_chi.insert(set_of_chi.end(),
                         nodes[tmp[l]].children.begin(),
@@ -3689,10 +3689,10 @@ void Graph::get_level_in_tree()
   set_of_chi.clear();
 }
 
-void Graph::update_detourcosts_to_NNs(unsigned j)
+void Graph::update_detourcosts_to_NNs(int j)
 {
-  unsigned child = j;
-  for (unsigned oct = 0; oct < nn[child].size(); oct++) {
+  int child = j;
+  for (int oct = 0; oct < nn[child].size(); oct++) {
     int nn_node = nn[child][oct];
     int det_cost_nn_edge;
     if ((nn_node > -1) && (nodes[nn_node].parent != j)) {
@@ -3706,14 +3706,14 @@ void Graph::update_detourcosts_to_NNs(unsigned j)
   }
 }
 
-void Graph::swap_and_update_tree(unsigned min_node,
+void Graph::swap_and_update_tree(int min_node,
                                  int nn_idx,
-                                 unsigned distance,
-                                 unsigned i_node)
+                                 int distance,
+                                 int i_node)
 {
-  unsigned child = min_node, par = nodes[child].parent;
+  int child = min_node, par = nodes[child].parent;
   while ((par != i_node) && (par != 0)) {
-    unsigned tmp_par = nodes[par].parent;
+    int tmp_par = nodes[par].parent;
     nodes[par].parent = child;
     update_edgecosts_to_parent(par, nodes[par].parent);
     child = par;
@@ -3724,10 +3724,10 @@ void Graph::swap_and_update_tree(unsigned min_node,
 
   update_edgecosts_to_parent(min_node, nodes[min_node].parent);
 
-  for (unsigned j = 0; j < num_terminals; ++j)
+  for (int j = 0; j < num_terminals; ++j)
     nodes[j].K_t = 1;  // Resetting the K_t value for each node
 
-  for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
+  for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
     update_detourcosts_to_NNs(j);
     update_node_detcost_Kt(j);
   }
@@ -3738,7 +3738,7 @@ float Graph::calc_tree_cost()
 {
   float tree_cost = 0;
   int det_cost = 0, wl = 0;
-  for (unsigned j = 0; j < num_terminals; ++j) {
+  for (int j = 0; j < num_terminals; ++j) {
     wl += abs(nodes[j].cost_edgeToP);
     det_cost += nodes[j].det_cost_node;
   }
@@ -3757,7 +3757,7 @@ void Graph::BuildDAG()
     int cIdx = myqueue.front();
     if (isVisited[cIdx]) {
       int cParent = nodes[cIdx].parent;
-      for (unsigned i = 0; i < nodes.size(); ++i) {
+      for (int i = 0; i < nodes.size(); ++i) {
         if (i != cParent) {
           removeChild(nodes[i], cIdx);
         }
@@ -3773,12 +3773,12 @@ void Graph::BuildDAG()
                                      + ManhDist[cIdx][nodes[cIdx].parent];
     }
     myqueue.pop();
-    for (unsigned i = 0; i < nodes[cIdx].children.size(); ++i) {
+    for (int i = 0; i < nodes[cIdx].children.size(); ++i) {
       myqueue.push(nodes[cIdx].children[i]);
     }
   }
 
-  for (unsigned i = 0; i < dag.size(); ++i) {
+  for (int i = 0; i < dag.size(); ++i) {
     if (nodes[dag[i]].src_to_sink_dist > maxPL) {
       maxPL = nodes[dag[i]].src_to_sink_dist;
     }
@@ -3789,8 +3789,8 @@ void Graph::BuildDAG()
 // unused
 void Graph::find_max_dc_node(vector<float>& node_and_dc)
 {
-  unsigned max_node = 0, max_node_dc = 0;
-  for (unsigned j = 1; j < num_terminals; ++j) /* For each terminal */ {
+  int max_node = 0, max_node_dc = 0;
+  for (int j = 1; j < num_terminals; ++j) /* For each terminal */ {
     if (nodes[j].det_cost_node > max_node_dc) {
       max_node_dc = nodes[j].det_cost_node;
       max_node = j;

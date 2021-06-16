@@ -64,25 +64,25 @@ void Node::report(ostream& os,
   os << idx << " (" << x << ", " << y << ")";
   if (level > 1) {
     os << " parent: " << parent << " children: ";
-    for (unsigned i = 0; i < children.size(); ++i) {
+    for (int i = 0; i < children.size(); ++i) {
       os << children[i] << " ";
     }
   }
   if (level > 2) {
     os << " N: ";
-    for (unsigned i = 0; i < N.size(); ++i) {
+    for (int i = 0; i < N.size(); ++i) {
       os << N[i] << " ";
     }
     os << " S: ";
-    for (unsigned i = 0; i < S.size(); ++i) {
+    for (int i = 0; i < S.size(); ++i) {
       os << S[i] << " ";
     }
     os << " E: ";
-    for (unsigned i = 0; i < E.size(); ++i) {
+    for (int i = 0; i < E.size(); ++i) {
       os << E[i] << " ";
     }
     os << " W: ";
-    for (unsigned i = 0; i < W.size(); ++i) {
+    for (int i = 0; i < W.size(); ++i) {
       os << W[i] << " ";
     }
     os << "PL: " << src_to_sink_dist << " MaxPLToChild: " << maxPLToChild;
