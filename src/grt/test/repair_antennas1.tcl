@@ -15,6 +15,8 @@ set_global_routing_layer_adjustment met2-met5 0.15
 
 set_routing_layers -signal met1-met5
 
+set_clock_routing -clock_pdrev_fanout 1
+
 global_route
 
 repair_antennas sky130_fd_sc_hs__diode_2/DIODE
