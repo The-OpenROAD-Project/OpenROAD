@@ -28,6 +28,6 @@ TAP 0028 tapcell.tcl:792           Master $tap_nwout2_master_name not found.
 TAP 0029 tapcell.tcl:796           Master $tap_nwout3_master_name not found.
 TAP 0030 tapcell.tcl:800           Master $incnrcap_nwin_master_name not found.
 TAP 0031 tapcell.tcl:804           Master $incnrcap_nwout_master_name not found.
-TAP 0032 tapcell.tcl:1014          Macro [$inst getName] is not placed
-TAP 0100 tapcell.tcl:249           Tap cells removed: $taps_removed
+TAP 0032 tapcell.tcl:1014          Macro [$inst getName] is not placed.
+TAP 0100 tapcell.tcl:249           Tapcells removed: $taps_removed
 TAP 0101 tapcell.tcl:251           Endcaps removed: $endcaps_removed
