@@ -942,6 +942,51 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
 };
 
+class frLef58EolKeepOutConstraint : public frConstraint
+{
+ public:
+  // constructors
+  frLef58EolKeepOutConstraint()
+      : backwardExt(0), sideExt(0), forwardExt(0), eolWidth(0)
+  {
+  }
+  // getters
+  frCoord getBackwardExt() const { return backwardExt; }
+  frCoord getForwardExt() const { return forwardExt; }
+  frCoord getSideExt() const { return sideExt; }
+  frCoord getEolWidth() const { return eolWidth; }
+  bool isCornerOnly() const { return cornerOnly; }
+  // setters
+  void setBackwardExt(frCoord value) { backwardExt = value; }
+  void setForwardExt(frCoord value) { forwardExt = value; }
+  void setSideExt(frCoord value) { sideExt = value; }
+  void setEolWidth(frCoord value) { eolWidth = value; }
+  void setCornerOnly(bool value) { cornerOnly = value; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EolKeepOutConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report(
+        "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} "
+        "cornerOnly {}",
+        backwardExt,
+        sideExt,
+        forwardExt,
+        eolWidth,
+        cornerOnly);
+  }
+
+ private:
+  frCoord backwardExt;
+  frCoord sideExt;
+  frCoord forwardExt;
+  frCoord eolWidth;
+  bool cornerOnly;
+};
+
 class frLef58CornerSpacingSpacingConstraint;
 
 // SPACING Constraints
@@ -1150,6 +1195,46 @@ class frLef58CutSpacingTablePrlConstraint : public frConstraint
   bool horizontal;
   bool vertical;
   bool maxXY;
+};
+
+class frLef58EolExtensionConstraint : public frSpacingConstraint
+{
+ public:
+  // constructors
+  frLef58EolExtensionConstraint(const fr1DLookupTbl<frCoord, frCoord>& tbl)
+      : frSpacingConstraint(), parallelOnly(false), extensionTbl(tbl)
+  {
+  }
+  // setters
+
+  void setParallelOnly(bool value) { parallelOnly = value; }
+
+  // getters
+
+  bool isParallelOnly() const { return parallelOnly; }
+
+  fr1DLookupTbl<frCoord, frCoord> getExtensionTable() const
+  {
+    return extensionTbl;
+  }
+
+  // others
+
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EolExtensionConstraint;
+  }
+
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("EOLEXTENSIONSPACING spacing {} parallelonly {} ",
+                   minSpacing,
+                   parallelOnly);
+  }
+
+ private:
+  bool parallelOnly;
+  fr1DLookupTbl<frCoord, frCoord> extensionTbl;
 };
 
 // LEF58 cut spacing table

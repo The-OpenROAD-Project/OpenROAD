@@ -2218,7 +2218,7 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file) {
 
     // If RCX reads wrong extRules file format
     if (modelCnt == 0)
-      logger_->error(RCX, 469,
+      logger_->error(RCX, 487,
                      "No RC model read from the extraction model! "
                      "Ensure the right extRules file is used!");
 
@@ -3227,7 +3227,7 @@ uint extMain::readSPEF(char* filename, char* netNames, bool force, bool useIds,
       dbCCSeg* cc = *cc_itr;
       appcnt[cc->getInfileCnt()]++;
     }
-    logger_->info(RCX, 7,
+    logger_->info(RCX, 480,
                   "    cc appearance count -- 1:{} 2:{} 3:{} 4:{} 5:{} 6:{} "
                   "7:{} 8:{} 9:{} 10:{} 11:{} 12:{} 13:{} 14:{} 15:{} 16:{}",
                   appcnt[0], appcnt[1], appcnt[2], appcnt[3], appcnt[4],

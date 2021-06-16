@@ -58,10 +58,16 @@ target_include_directories(rsz
 
 target_link_libraries(rsz
   PUBLIC
-    sst
+    stt
     opendb
     OpenSTA
     dbSta
     gui
+    pdr
     utl
+)
+
+messages(
+  TARGET rsz
+  OUTPUT_DIR ..
 )

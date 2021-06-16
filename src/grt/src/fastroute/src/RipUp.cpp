@@ -40,7 +40,7 @@
 #include "DataProc.h"
 #include "DataType.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -226,7 +226,7 @@ void newRipup(TreeEdge* treeedge,
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
       } else {
-        logger->error(GRT, 119, "MAZE RIPUP WRONG in newRipup.");
+        logger->error(GRT, 225, "MAZE RIPUP WRONG in newRipup.");
       }
     }
   }
@@ -324,7 +324,7 @@ Bool newRipupType2(TreeEdge* treeedge,
     return (needRipup);
 
   } else {
-    logger->error(GRT, 120, "type2 ripup not type L.");
+    logger->error(GRT, 226, "type2 ripup not type L.");
   }
 }
 

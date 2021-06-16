@@ -638,3 +638,102 @@ Resizer::findBufferMinCap(LibertyLibrarySeq *resize_libs)
   }
   return min_cap;
 }
+
+////////////////////////////////////////////////////////////////
+
+static void
+highlightPdRevGraph(PD::PdRev *pdrev,
+                    gui::Gui *gui);
+
+void
+highlightPdrevTree(const Pin *drvr_pin,
+                   float alpha,
+                   bool use_pd)
+{
+  gui::Gui *gui = gui::Gui::get();
+  if (drvr_pin) {
+    ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
+    sta::dbNetwork *network = openroad->getDbNetwork();
+    utl::Logger *logger = openroad->getLogger();
+    Net *net = network->isTopLevelPort(drvr_pin)
+      ? network->net(network->term(drvr_pin))
+      : network->net(drvr_pin);
+    PinSeq pins;
+    connectedPins(net, network, pins);
+    int pin_count = pins.size();
+    bool is_placed = true;
+    if (pin_count >= 2) {
+      int *x = new int[pin_count];
+      int *y = new int[pin_count];
+      int drvr_idx = 0;
+      bool found_drvr = false;
+      for (int i = 0; i < pin_count; i++) {
+        Pin *pin = pins[i];
+        if (pin == drvr_pin)
+          drvr_idx = i;
+        Point loc = network->location(pin);
+        x[i] = loc.x();
+        y[i] = loc.y();
+        is_placed &= network->isPlaced(pin);
+      }
+      if (is_placed) {
+        // Move the driver to the pole position.
+        std::swap(pins[0], pins[drvr_idx]);
+        std::swap(x[0], x[drvr_idx]);
+        std::swap(y[0], y[drvr_idx]);
+
+        PD::PdRev* pd = new PD::PdRev(logger);
+        std::vector<unsigned> vec_x(x, x + pin_count);
+        std::vector<unsigned> vec_y(y, y + pin_count);
+        // Must be called before addNet.
+        pd->setAlphaPDII(alpha);
+        pd->addNet(vec_x, vec_y);
+        if (use_pd)
+          pd->runPD(alpha);
+        else
+          pd->runPDII();
+        highlightPdRevGraph(pd, gui::Gui::get());
+        delete pd;
+      }
+    }
+  }
+  else
+    highlightPdRevGraph(nullptr, gui);
+}
+
+static void
+highlightPdRevGraph(PD::PdRev *pdrev,
+                    gui::Gui *gui)
+{
+  if (gui) {
+    if (lines_renderer == nullptr) {
+      lines_renderer = new LinesRenderer();
+      gui->registerRenderer(lines_renderer);
+    }
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> xy_lines;
+    if (pdrev)
+      pdrev->graphLines(xy_lines);
+    std::vector<std::pair<odb::Point, odb::Point>> lines;
+    for (int i = 0; i < xy_lines.size(); i++) {
+      std::pair<int, int> xy1 = xy_lines[i].first;
+      std::pair<int, int> xy2 = xy_lines[i].second;
+      lines.push_back(std::pair(odb::Point(xy1.first, xy1.second),
+                                odb::Point(xy2.first, xy2.second)));
+    }
+    lines_renderer->highlight(lines, gui::Painter::red);
+  }
+}
+
+void
+highlight_pd_tree(const Pin *drvr_pin,
+                  float alpha)
+{
+  highlightPdrevTree(drvr_pin, alpha, true);
+}
+
+void
+highlight_pdII_tree(const Pin *drvr_pin,
+                    float alpha)
+{
+  highlightPdrevTree(drvr_pin, alpha, false);
+}

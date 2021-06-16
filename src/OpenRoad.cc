@@ -61,7 +61,7 @@
 #include "db_sta/dbNetwork.hh"
 
 #include "ord/InitOpenRoad.hh"
-#include "sst/flute.h"
+#include "stt/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"
 #include "ppl/MakeIoplacer.h"
@@ -80,6 +80,7 @@
 #include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
+#include "pdr/MakePdrev.h"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -246,6 +247,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
+  initPdrev(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

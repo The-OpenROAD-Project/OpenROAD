@@ -43,7 +43,7 @@ class FlexGCWorker
 {
  public:
   // constructors
-  FlexGCWorker(frDesign* designIn,
+  FlexGCWorker(frTechObject* techIn,
                Logger* logger,
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
@@ -63,11 +63,11 @@ class FlexGCWorker
   const std::vector<std::unique_ptr<frMarker>>& getMarkers() const;
   const std::vector<std::unique_ptr<drPatchWire>>& getPWires() const;
   // others
-  void init();
+  void init(const frDesign* design);
   int main();
   void end();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
-  void initPA0();
+  void initPA0(const frDesign* design);
   void initPA1();
   void updateDRNet(drNet* net);
 

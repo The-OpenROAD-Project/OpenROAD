@@ -1,39 +1,39 @@
-GRT 0001 GlobalRouter.cpp:731      Minimum degree: {}
-GRT 0002 GlobalRouter.cpp:732      Maximum degree: {}
-GRT 0003 GlobalRouter.cpp:2985     Macros: {}
-GRT 0004 GlobalRouter.cpp:2824     Blockages: {}
+GRT 0001 GlobalRouter.cpp:728      Minimum degree: {}
+GRT 0002 GlobalRouter.cpp:729      Maximum degree: {}
+GRT 0003 GlobalRouter.cpp:2979     Macros: {}
+GRT 0004 GlobalRouter.cpp:2818     Blockages: {}
 GRT 0005 GlobalRouter.tcl:305      layer $layer_name not found.
-GRT 0008 GlobalRouter.cpp:3100     Default via: {}.
+GRT 0008 GlobalRouter.cpp:3094     Default via: {}.
 GRT 0009 GlobalRouter.cpp:296      Nets to reroute: {}.
 GRT 0010 GlobalRouter.cpp:213      Routed clock nets: {}
 GRT 0011 AntennaRepair.cpp:205     {} filler cells deleted.
 GRT 0012 AntennaRepair.cpp:131     #Antenna violations: {}
-GRT 0014 GlobalRouter.cpp:1367     Num routed nets: {}
+GRT 0014 GlobalRouter.cpp:1362     Num routed nets: {}
 GRT 0015 GlobalRouter.cpp:289      {} diodes inserted.
-GRT 0017 GlobalRouter.cpp:1177     Processing {} blockages on layer {}.
-GRT 0018 GlobalRouter.cpp:1749     Total wirelength: {} um
-GRT 0019 GlobalRouter.cpp:2544     Found {} clock nets.
-GRT 0020 GlobalRouter.cpp:3167     Min routing layer: {}
-GRT 0021 GlobalRouter.cpp:3168     Max routing layer: {}
-GRT 0022 GlobalRouter.cpp:3169     Global adjustment: {}%
-GRT 0023 GlobalRouter.cpp:3170     Grid origin: ({}, {})
+GRT 0017 GlobalRouter.cpp:1172     Processing {} blockages on layer {}.
+GRT 0018 GlobalRouter.cpp:1744     Total wirelength: {} um
+GRT 0019 GlobalRouter.cpp:2539     Found {} clock nets.
+GRT 0020 GlobalRouter.cpp:3161     Min routing layer: {}
+GRT 0021 GlobalRouter.cpp:3162     Max routing layer: {}
+GRT 0022 GlobalRouter.cpp:3163     Global adjustment: {}%
+GRT 0023 GlobalRouter.cpp:3164     Grid origin: ({}, {})
 GRT 0025 MakeWireParasitics.cpp:159 non wire or via route found on net {}.
 GRT 0026 MakeWireParasitics.cpp:197 missing route to pin {}.
 GRT 0027 AntennaRepair.cpp:150     Design has rows with different site width.
-GRT 0030 GlobalRouter.cpp:1299     Specified layer {} for adjustment is greater than max routing layer {} and will be ignored.
-GRT 0031 GlobalRouter.cpp:1718     At least 2 pins in position ({}, {}), layer {}.
-GRT 0032 GlobalRouter.cpp:1986     Pin {} has invalid orientation.
-GRT 0033 GlobalRouter.cpp:2003     Pin {} has invalid orientation.
-GRT 0034 GlobalRouter.cpp:2589     Net connected with instance of class COVER added for routing.
-GRT 0035 GlobalRouter.cpp:2629     Pin {} is outside die area.
-GRT 0036 GlobalRouter.cpp:2728     Pin {} is outside die area.
-GRT 0037 GlobalRouter.cpp:2894     Found blockage outside die area.
-GRT 0038 GlobalRouter.cpp:2946     Found blockage outside die area in instance {}.
-GRT 0039 GlobalRouter.cpp:2976     Found pin outside die area in instance {}.
-GRT 0040 GlobalRouter.cpp:3020     Net {} has wires outside die area.
-GRT 0041 GlobalRouter.cpp:3048     Net {} has wires outside die area.
-GRT 0042 GlobalRouter.cpp:1453     Routing layers were not initialized.
-GRT 0043 GlobalRouter.cpp:3106     No OR_DEFAULT vias defined.
+GRT 0030 GlobalRouter.cpp:1294     Specified layer {} for adjustment is greater than max routing layer {} and will be ignored.
+GRT 0031 GlobalRouter.cpp:1713     At least 2 pins in position ({}, {}), layer {}.
+GRT 0032 GlobalRouter.cpp:1981     Pin {} has invalid orientation.
+GRT 0033 GlobalRouter.cpp:1998     Pin {} has invalid orientation.
+GRT 0034 GlobalRouter.cpp:2584     Net connected with instance of class COVER added for routing.
+GRT 0035 GlobalRouter.cpp:2624     Pin {} is outside die area.
+GRT 0036 GlobalRouter.cpp:2723     Pin {} is outside die area.
+GRT 0037 GlobalRouter.cpp:2888     Found blockage outside die area.
+GRT 0038 GlobalRouter.cpp:2940     Found blockage outside die area in instance {}.
+GRT 0039 GlobalRouter.cpp:2970     Found pin outside die area in instance {}.
+GRT 0040 GlobalRouter.cpp:3014     Net {} has wires outside die area.
+GRT 0041 GlobalRouter.cpp:3042     Net {} has wires outside die area.
+GRT 0042 GlobalRouter.cpp:1448     Routing layers were not initialized.
+GRT 0043 GlobalRouter.cpp:3100     No OR_DEFAULT vias defined.
 GRT 0044 GlobalRouter.tcl:61       set_global_routing_layer_adjustment: Wrong number of arguments.
 GRT 0046 GlobalRouter.tcl:74       set_pdrev_topology_priority: Wrong number of arguments.
 GRT 0047 GlobalRouter.tcl:88       missing dbTech.
@@ -42,7 +42,7 @@ GRT 0049 GlobalRouter.tcl:102      set_global_routing_region_adjustment: Missing
 GRT 0050 GlobalRouter.tcl:125      set_global_routing_region_adjustment: Wrong number of arguments to define a region.
 GRT 0051 GlobalRouter.tcl:202      missing dbTech.
 GRT 0052 GlobalRouter.tcl:206      missing dbBlock.
-GRT 0053 GlobalRouter.cpp:3181     Routing resources analysis:
+GRT 0053 GlobalRouter.cpp:3175     Routing resources analysis:
 GRT 0055 GlobalRouter.tcl:222      Wrong number of arguments for origin.
 GRT 0056 GlobalRouter.tcl:386      -clock_layers: Min routing layer is greater than max routing layer.
 GRT 0057 GlobalRouter.tcl:372      missing track structure.
@@ -58,58 +58,55 @@ GRT 0066 GlobalRouter.tcl:341      Upper right x is outside die area.
 GRT 0067 GlobalRouter.tcl:345      Upper right y is outside die area.
 GRT 0068 AntennaRepair.cpp:88      Global route segment not valid.
 GRT 0069 GlobalRouter.cpp:276      liberty port for {}/{} not found.
-GRT 0070 GlobalRouter.cpp:564      Invalid segment for net {}.
-GRT 0071 GlobalRouter.cpp:804      Layer spacing not found.
-GRT 0072 GlobalRouter.cpp:1088     Informed region is outside die area.
-GRT 0073 GlobalRouter.cpp:1360     Guides file could not be opened.
-GRT 0074 GlobalRouter.cpp:1403     Routing with guides in blocked metal for net {}.
-GRT 0075 GlobalRouter.cpp:1412     Connection between non-adjacent layers in net {}.
-GRT 0076 GlobalRouter.cpp:1498     Net {} not properly covered.
-GRT 0077 GlobalRouter.cpp:1573     Segment has invalid layer assignment.
-GRT 0078 GlobalRouter.cpp:1637     Guides vector is empty.
-GRT 0079 GlobalRouter.cpp:1707     Pin {} does not have layer assignment.
-GRT 0080 GlobalRouter.cpp:1730     Invalid pin placement.
-GRT 0081 GlobalRouter.cpp:2086     Layer {} not found.
-GRT 0082 GlobalRouter.cpp:2092     Track for layer {} not found.
-GRT 0083 GlobalRouter.cpp:2110     Layer {} does not have valid direction.
-GRT 0084 GlobalRouter.cpp:2180     Layer {} does not have valid direction.
-GRT 0085 GlobalRouter.cpp:2331     Routing layer {} not found.
-GRT 0086 GlobalRouter.cpp:2337     Track for layer {} not found.
-GRT 0087 GlobalRouter.cpp:2366     Layer {} does not have valid direction.
-GRT 0088 GlobalRouter.cpp:2378     Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}
-GRT 0089 GlobalRouter.cpp:2428     Layer {} does not have valid direction.
-GRT 0090 GlobalRouter.cpp:2454     Track for layer {} not found.
-GRT 0091 GlobalRouter.cpp:2467     Layer {} does not have valid direction.
-GRT 0092 GlobalRouter.cpp:2487     Design without nets.
-GRT 0093 GlobalRouter.cpp:2750     Pin {} does not have layer assignment.
-GRT 0094 GlobalRouter.cpp:2994     Design without nets.
-GRT 0095 GlobalRouter.cpp:3070     Layer {} not found.
-GRT 0096 GlobalRouter.cpp:3234     Final congestion report:
-GRT 0097 FastRoute.cpp:1011        First L Route.
-GRT 0098 FastRoute.cpp:1016        Second L Route.
-GRT 0099 FastRoute.cpp:1022        First Z Route.
-GRT 0100 FastRoute.cpp:1047        LV routing round {}, enlarge {}.
-GRT 0101 FastRoute.cpp:1078        Running extra iterations to remove overflow.
-GRT 0102 FastRoute.cpp:1158        iteration {}, enlarge {}, costheight {},
-GRT 0103 FastRoute.cpp:1201        Extra Run for hard benchmark.
-GRT 0104 FastRoute.cpp:1307        minimal ofl {}, occuring at round {}.
-GRT 0105 FastRoute.cpp:1316        Maze routing finished.
-GRT 0106 FastRoute.cpp:1327        Layer Assignment Begins.
-GRT 0107 FastRoute.cpp:1330        Layer assignment finished.
-GRT 0108 FastRoute.cpp:1348        Post Processing Begins.
-GRT 0109 FastRoute.cpp:1356        Post Processsing finished.
- Starting via filling.
-GRT 0111 FastRoute.cpp:1366        Final number of vias: {}
-GRT 0112 FastRoute.cpp:1367        Final usage 3D: {}
-GRT 0113 FastRoute.cpp:702         Underflow in reduce: cap, reducedCap: {}, {}
-GRT 0114 FastRoute.cpp:729         Underflow in reduce: cap, reducedCap: {}, {}
-GRT 0115 FastRoute.cpp:1303        Global routing finished with overflow.
-GRT 0118 FastRoute.cpp:1299        Routing congestion too high.
-GRT 0119 RipUp.cpp:229             MAZE RIPUP WRONG in newRipup.
-GRT 0120 RipUp.cpp:328             type2 ripup not type L.
-GRT 0121 RipUp.cpp:394             route type is not maze, netID {}.
-GRT 0122 RipUp.cpp:521             Maze RipUp wrong.
-GRT 0123 RipUp.cpp:623             MAZE RIPUP WRONG in newRipupNet for net {}.
+GRT 0070 GlobalRouter.cpp:561      Invalid segment for net {}.
+GRT 0071 GlobalRouter.cpp:801      Layer spacing not found.
+GRT 0072 GlobalRouter.cpp:1083     Informed region is outside die area.
+GRT 0073 GlobalRouter.cpp:1355     Guides file could not be opened.
+GRT 0074 GlobalRouter.cpp:1398     Routing with guides in blocked metal for net {}.
+GRT 0075 GlobalRouter.cpp:1407     Connection between non-adjacent layers in net {}.
+GRT 0076 GlobalRouter.cpp:1493     Net {} not properly covered.
+GRT 0077 GlobalRouter.cpp:1568     Segment has invalid layer assignment.
+GRT 0078 GlobalRouter.cpp:1632     Guides vector is empty.
+GRT 0079 GlobalRouter.cpp:1702     Pin {} does not have layer assignment.
+GRT 0080 GlobalRouter.cpp:1725     Invalid pin placement.
+GRT 0081 GlobalRouter.cpp:2081     Layer {} not found.
+GRT 0082 GlobalRouter.cpp:2087     Track for layer {} not found.
+GRT 0083 GlobalRouter.cpp:2105     Layer {} does not have valid direction.
+GRT 0084 GlobalRouter.cpp:2175     Layer {} does not have valid direction.
+GRT 0085 GlobalRouter.cpp:2326     Routing layer {} not found.
+GRT 0086 GlobalRouter.cpp:2332     Track for layer {} not found.
+GRT 0087 GlobalRouter.cpp:2361     Layer {} does not have valid direction.
+GRT 0088 GlobalRouter.cpp:2373     Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}
+GRT 0089 GlobalRouter.cpp:2423     Layer {} does not have valid direction.
+GRT 0090 GlobalRouter.cpp:2449     Track for layer {} not found.
+GRT 0091 GlobalRouter.cpp:2462     Layer {} does not have valid direction.
+GRT 0092 GlobalRouter.cpp:2482     Design without nets.
+GRT 0093 GlobalRouter.cpp:2745     Pin {} does not have layer assignment.
+GRT 0094 GlobalRouter.cpp:2988     Design without nets.
+GRT 0095 GlobalRouter.cpp:3064     Layer {} not found.
+GRT 0096 GlobalRouter.cpp:3228     Final congestion report:
+GRT 0097 FastRoute.cpp:1016        First L Route.
+GRT 0098 FastRoute.cpp:1021        Second L Route.
+GRT 0099 FastRoute.cpp:1027        First Z Route.
+GRT 0100 FastRoute.cpp:1052        LV routing round {}, enlarge {}.
+GRT 0101 FastRoute.cpp:1083        Running extra iterations to remove overflow.
+GRT 0102 FastRoute.cpp:1163        iteration {}, enlarge {}, costheight {},
+GRT 0103 FastRoute.cpp:1206        Extra Run for hard benchmark.
+GRT 0104 FastRoute.cpp:1305        minimal ofl {}, occuring at round {}.
+GRT 0105 FastRoute.cpp:1314        Maze routing finished.
+GRT 0106 FastRoute.cpp:1322        Layer Assignment Begins.
+GRT 0107 FastRoute.cpp:1325        Layer assignment finished.
+GRT 0108 FastRoute.cpp:1343        Post Processing Begins.
+GRT 0109 FastRoute.cpp:1351        Post Processsing finished.\n Starting via filling.
+GRT 0111 FastRoute.cpp:1359        Final number of vias: {}
+GRT 0112 FastRoute.cpp:1360        Final usage 3D: {}
+GRT 0113 FastRoute.cpp:704         Underflow in reduce: cap, reducedCap: {}, {}
+GRT 0114 FastRoute.cpp:731         Underflow in reduce: cap, reducedCap: {}, {}
+GRT 0115 FastRoute.cpp:1373        Global routing finished with overflow.
+GRT 0118 FastRoute.cpp:1369        Routing congestion too high.
+GRT 0121 RipUp.cpp:393             route type is not maze, netID {}.
+GRT 0122 RipUp.cpp:519             Maze RipUp wrong.
+GRT 0123 RipUp.cpp:621             MAZE RIPUP WRONG in newRipupNet for net {}.
 GRT 0124 maze.cpp:304              Update congestion history type {}.
 GRT 0125 maze.cpp:602              Setup Heap: not maze routing.
 GRT 0126 maze.cpp:1898             Overflow Report:
@@ -120,8 +117,7 @@ GRT 0130 maze.cpp:1902             Max Overflow  : {}
 GRT 0131 maze.cpp:1903             Num Overflow e: {}
 GRT 0132 maze.cpp:1904             H   Overflow  : {}
 GRT 0133 maze.cpp:1905             V   Overflow  : {}
-GRT 0134 maze.cpp:1906             Final Overflow: {}
-
+GRT 0134 maze.cpp:1906             Final Overflow: {}\n
 GRT 0135 maze.cpp:1975             Overflow Report:
 GRT 0136 maze.cpp:1976             Total hCap    : {}
 GRT 0137 maze.cpp:1977             Total vCap    : {}
@@ -132,13 +128,12 @@ GRT 0141 maze.cpp:1981             Max Overflow  : {}
 GRT 0142 maze.cpp:1982             Num Overflow e: {}
 GRT 0143 maze.cpp:1983             H   Overflow  : {}
 GRT 0144 maze.cpp:1984             V   Overflow  : {}
-GRT 0145 maze.cpp:1985             Final Overflow: {}
-
-GRT 0164 utility.cpp:1441          initial grid wrong y1 x1 [{} {}] , net start [{} {}] routelen
-GRT 0165 utility.cpp:1451          end grid wrong y2 x2 [{} {}] , net start [{} {}] routelen {}.
-GRT 0166 utility.cpp:1463          net {} edge[{}] maze route wrong, distance {}, i {}.
-GRT 0167 utility.cpp:1474          checking failed {}.
-GRT 0168 utility.cpp:1493          Error in opening {}.
+GRT 0145 maze.cpp:1985             Final Overflow: {}\n
+GRT 0164 utility.cpp:1439          initial grid wrong y1 x1 [{} {}] , net start [{} {}] routelen 
+GRT 0165 utility.cpp:1449          end grid wrong y2 x2 [{} {}] , net start [{} {}] routelen {}.
+GRT 0166 utility.cpp:1461          net {} edge[{}] maze route wrong, distance {}, i {}.
+GRT 0167 utility.cpp:1471          checking failed {}.
+GRT 0168 utility.cpp:1490          Error in opening {}.
 GRT 0169 maze.cpp:807              Invalid index for position ({}, {}).
 GRT 0170 maze.cpp:985              Invalid index for position ({}, {}).
 GRT 0171 maze3D.cpp:519            Invalid index for position ({}, {}).
@@ -153,12 +148,12 @@ GRT 0184 maze3D.cpp:816            Shift to 0 length edge, type2.
 GRT 0185 maze3D.cpp:1844           Bottom layer acutally {}.
 GRT 0186 maze3D.cpp:1851           Steiner nodes only have one connection.
 GRT 0187 maze3D.cpp:506            In 3D maze routing, type 1 node shift, cnt_n1A1 is 1.
-GRT 0188 RSMT.cpp:229              Invalid number of node neighbours.
-GRT 0189 RSMT.cpp:232              Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes.
-GRT 0190 RSMT.cpp:873              Net degree differs from rsmt degree.
-GRT 0191 RSMT.cpp:926              WIRELEN : {}, WIRELEN1 : {}
-GRT 0192 RSMT.cpp:927              NumSeg  : {}
-GRT 0193 RSMT.cpp:928              NumShift: {}
+GRT 0188 RSMT.cpp:165              Invalid number of node neighbours.
+GRT 0189 RSMT.cpp:168              Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes.
+GRT 0190 RSMT.cpp:801              Net degree differs from rsmt degree.
+GRT 0191 RSMT.cpp:854              WIRELEN : {}, WIRELEN1 : {}
+GRT 0192 RSMT.cpp:855              NumSeg  : {}
+GRT 0193 RSMT.cpp:856              NumShift: {}
 GRT 0194 utility.cpp:87            Fail when open file plottree.
 GRT 0195 utility.cpp:184           Invalid route type.
 GRT 0196 utility.cpp:189           Routed len: {}
@@ -172,17 +167,19 @@ GRT 0203 utility.cpp:1016          Causing pin node floating.
 GRT 0204 utility.cpp:1077          Invalid layer value in gridsL, {}.
 GRT 0205 utility.cpp:1097          Error in opening output.out.
 GRT 0206 utility.cpp:1204          trying to recover an 0 length edge.
-GRT 0207 utility.cpp:1428          rip upped edge without edge len re assignment.
-GRT 0208 utility.cpp:1434          .routelen {} len {}.
-GRT 0209 GlobalRouter.cpp:1188     Ignoring an obstruction on layer {} outside the die area.
+GRT 0207 utility.cpp:1426          rip upped edge without edge len re assignment.
+GRT 0208 utility.cpp:1432          .routelen {} len {}.
+GRT 0209 GlobalRouter.cpp:1183     Ignoring an obstruction on layer {} outside the die area.
 GRT 0211 FastRoute.cpp:922         dbGcellGrid already exists in db. Clearing existing dbGCellGrid
-GRT 0212 FastRoute.cpp:647         Cannot get edge resource: edge is not vertical or horizontal.
-GRT 0213 FastRoute.cpp:672         Cannot get edge usage: edge is not vertical or horizontal.
-GRT 0214 FastRoute.cpp:771         Cannot get edge capacity: edge is not vertical or horizontal.
+GRT 0212 FastRoute.cpp:649         Cannot get edge resource: edge is not vertical or horizontal.
+GRT 0213 FastRoute.cpp:674         Cannot get edge usage: edge is not vertical or horizontal.
+GRT 0214 FastRoute.cpp:773         Cannot get edge capacity: edge is not vertical or horizontal.
 GRT 0215 FastRoute.cpp:931         skipping layer {} not found in db
 GRT 0219 GlobalRouter.tcl:154      set_macro_extension: Wrong number of arguments.
-GRT 0220 GlobalRouter.cpp:1466     Routing layer of index {} not found.
+GRT 0220 GlobalRouter.cpp:1461     Routing layer of index {} not found.
 GRT 0221 AntennaRepair.cpp:127     Cannot create wire for net {}.
 GRT 0222 GlobalRouter.tcl:300      no technology has been read.
 GRT 0223 GlobalRouter.tcl:352      missing dbBlock.
-GRT 0224 GlobalRouter.cpp:3119     Chose via {} as default.
+GRT 0224 GlobalRouter.cpp:3113     Chose via {} as default.
+GRT 0225 RipUp.cpp:229             MAZE RIPUP WRONG in newRipup.
+GRT 0226 RipUp.cpp:327             type2 ripup not type L.

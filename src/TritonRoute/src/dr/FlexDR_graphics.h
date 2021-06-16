@@ -80,7 +80,9 @@ class FlexDRGraphics : public gui::Renderer
   static bool guiActive();
 
   static void init();
-
+  
+  void show();
+  
   void update();
 
   void pause(drNet* net);
@@ -91,6 +93,7 @@ class FlexDRGraphics : public gui::Renderer
 
  private:
   FlexDRWorker* worker_;
+  const frDesign* design_;
   drNet* net_;
   const FlexGridGraph* grid_graph_;
   frDebugSettings* settings_;

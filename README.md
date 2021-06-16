@@ -126,6 +126,16 @@ src/<tool>/test/regression
 
 ```
 
+The flow tests check results such as worst slack against reference values.
+Use `report_flow_metrics [test]...` to see the all of the metrics.
+Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
+
+```
+> report_flow_metrics gcd_nangate45
+                       insts    area util slack_min slack_max  tns_max clk_skew max_slew max_cap max_fanout DPL ANT drv
+gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004        0       0          0   0   0   0
+```
+
 #### Run
 
 ```

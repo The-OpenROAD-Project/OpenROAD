@@ -59,6 +59,14 @@ class Fixture
                            frLayerNum lNum = 2,
                            frCoord designRuleWidth = -1);
 
+  frTerm* makeMacroPin(frBlock* refBlock,
+                       std::string name,
+                       frCoord xl,
+                       frCoord yl,
+                       frCoord xh,
+                       frCoord yh,
+                       frLayerNum lNum = 2);
+
   frInst* makeInst(const char* name, frBlock* refBlock, frCoord x, frCoord y);
 
   void makeCornerConstraint(frLayerNum layer_num,
@@ -79,6 +87,13 @@ class Fixture
                                       frCoord par_space = -1,
                                       frCoord par_within = -1,
                                       bool two_edges = false);
+
+  void makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                     bool cornerOnly = false,
+                                     frCoord forward = 200,
+                                     frCoord side = 50,
+                                     frCoord backward = 0,
+                                     frCoord width = 200);
 
   std::shared_ptr<frLef58SpacingEndOfLineConstraint>
   makeLef58SpacingEolConstraint(frLayerNum layer_num,
@@ -145,6 +160,13 @@ class Fixture
       frLayerNum layer_num,
       std::vector<frCoord> widthTbl,
       std::vector<std::pair<frCoord, frCoord>> valTbl);
+
+  frLef58EolExtensionConstraint* makeEolExtensionConstraint(
+      frLayerNum layer_num,
+      frCoord spacing,
+      std::vector<frCoord> eol,
+      std::vector<frCoord> ext,
+      bool parallelOnly = false);
 
   frSpacingTableTwConstraint* makeSpacingTableTwConstraint(
       frLayerNum layer_num,

@@ -224,11 +224,11 @@ const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 
-static std::string workerOrigin(FlexDRWorker* worker)
+static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
 {
   frPoint ll = worker->getRouteBox().lowerLeft();
   frPoint origin;
-  worker->getDesign()->getTopBlock()->getGCellIdx(ll, origin);
+  design->getTopBlock()->getGCellIdx(ll, origin);
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -238,6 +238,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                odb::dbDatabase* db,
                                Logger* logger)
     : worker_(nullptr),
+      design_(design),
       net_(nullptr),
       settings_(settings),
       current_iter_(-1),
@@ -270,10 +271,8 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  if (!net_) {
-    return;
-  }
-
+  if (points_by_layer_.empty())
+        return;
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
@@ -283,12 +282,12 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
+  if (worker_ && gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     frBox box;
     if (drawWholeDesign_) {
-      worker_->getDesign()->getTopBlock()->getDieBox(box);
+      design_->getTopBlock()->getDieBox(box);
       fr::frRegionQuery::Objects<frBlockObject> figs;
-      worker_->getDesign()->getRegionQuery()->query(box, layerNum, figs);
+      design_->getRegionQuery()->query(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
@@ -302,7 +301,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (gui_->checkCustomVisibilityControl(route_guides_visible_)) {
+  if (net_ && gui_->checkCustomVisibilityControl(route_guides_visible_)) {
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
@@ -388,20 +387,22 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
     }
   }
-
+  if (!worker_)
+      return;
   // Draw markers
   frBox box;
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
+  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
-  painter.setPen(gui::Painter::green, /* cosmetic */ true);
-  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
+  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
+      cout << "MARKER " << box << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
@@ -457,6 +458,19 @@ void FlexDRGraphics::drawMarker(int xl,
   painter.drawRect({xl, yl, xh, yh});
   painter.drawLine({xl, yl}, {xh, yh});
   painter.drawLine({xl, yh}, {xh, yl});
+}
+
+void FlexDRGraphics::show() {
+    if (!worker_ || current_iter_ < settings_->iter) {
+        return;
+    }
+    frBox gcellBox = worker_->getGCellBox();
+    if (settings_->gcellX >= 0
+        && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+      return;
+    }
+    update();
+    pause(nullptr);
 }
 
 void FlexDRGraphics::update()
@@ -531,9 +545,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   }
 
   frPoint origin;
-  in->getDesign()->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(),
-                                              origin);
-  status("Start worker: gcell origin " + workerOrigin(in) + " "
+  design_->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(), origin);
+  status("Start worker: gcell origin " + workerOrigin(in, design_) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
@@ -546,6 +559,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     frBox box;
     worker_->getExtBox(box);
     gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+    if (settings_->draw)
+      gui_->redraw();
     if (settings_->allowPause)
       gui_->pause();
   }
@@ -574,7 +589,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
       gui_->redraw();
     if (settings_->allowPause) {
       GridGraphDescriptor::Data data{
-          grid_graph, grid.x(), grid.y(), grid.z(), worker_->getDesign()};
+          grid_graph, grid.x(), grid.y(), grid.z(), design_};
       gui_->setSelected(gui_->makeSelected(data));
       gui_->pause();
     }
@@ -597,7 +612,7 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 
   status("Start net: " + net->getFrNet()->getName() + " "
-         + workerOrigin(worker_));
+         + workerOrigin(worker_, design_));
   logger_->info(
       DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {
@@ -606,7 +621,7 @@ void FlexDRGraphics::startNet(drNet* net)
       frPoint pt;
       ap->getPoint(pt);
       logger_->info(DRT,
-                    251,
+                    275,
                     "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
                     pt.x() / (double) dbu_per_uu_,
                     pt.y() / (double) dbu_per_uu_,

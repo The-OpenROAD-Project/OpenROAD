@@ -1,7 +1,5 @@
-ANT 0001 AntennaChecker.cc:1463    Found {} pin violatations.
-ANT 0002 AntennaChecker.cc:1464    Found {} net violatations in {} nets.
-ANT 0003 AntennaChecker.cc:1594    Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}
-ANT 0004 AntennaChecker.tcl:67     no -layer specified.
-ANT 0005 AntennaChecker.tcl:60     no -net_name specified.
+ANT 0001 AntennaChecker.cc:1668    Found {} pin violatations.
+ANT 0002 AntennaChecker.cc:1669    Found {} net violatations in {} nets.
+ANT 0003 AntennaChecker.cc:1792    Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}
 ANT 0006 AntennaChecker.tcl:42     missing -report_file argument.
-ANT 0007 AntennaChecker.cc:1415    Cannot open report file (%s) for writing
+ANT 0007 AntennaChecker.cc:1613    Cannot open report file (%s) for writing

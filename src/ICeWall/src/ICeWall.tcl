@@ -3132,7 +3132,7 @@ namespace eval ICeWall {
       set bbox {}
       set padcells_on_side [get_footprint_padcells_by_side $side_name]
       if {[llength $padcells_on_side] == 0} {
-        ord::error "PAD" 15 "No cells found on $side side"
+        utl::error "PAD" 15 "No cells found on $side side"
       }
       foreach padcell [get_footprint_padcells_by_side $side_name] {
         set name [get_padcell_inst_name $padcell]

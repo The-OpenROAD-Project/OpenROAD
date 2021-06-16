@@ -1306,7 +1306,8 @@ void FlexDRWorker::modEolSpacingRulesCost(const frBox& box,
 }
 
 // forbid via if it would trigger violation
-void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
+void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
+                                                 const frBox& origCutBox,
                                                  frVia* origVia)
 {
   if (origVia->getNet()->getType() != frNetEnum::frcPowerNet
@@ -1339,7 +1340,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
     viaBox.bloat(cutWithin, queryBox);
 
     frRegionQuery::Objects<frBlockObject> result;
-    getRegionQuery()->query(queryBox, lNum, result);
+    design->getRegionQuery()->query(queryBox, lNum, result);
 
     for (auto& [box, obj] : result) {
       if (obj->typeId() == frcVia) {
@@ -1778,20 +1779,10 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
-void FlexDRWorker::route_queue()
+void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
 {
   queue<RouteQueueEntry> rerouteQueue;
 
-  if (skipRouting_) {
-    return;
-  }
-
-  // init GC
-  FlexGCWorker gcWorker(getDesign(), logger_, this);
-  gcWorker.setExtBox(getExtBox());
-  gcWorker.setDrcBox(getDrcBox());
-  gcWorker.init();
-  gcWorker.setEnableSurgicalFix(true);
   if (needRecheck_) {
     gcWorker.main();
     setMarkers(gcWorker.getMarkers());
@@ -1818,7 +1809,6 @@ void FlexDRWorker::route_queue()
   gcWorker.resetTargetNet();
   gcWorker.setEnableSurgicalFix(true);
   gcWorker.main();
-
   // write back GC patches
   for (auto& pwire : gcWorker.getPWires()) {
     auto net = pwire->getNet();
@@ -1850,6 +1840,9 @@ void FlexDRWorker::route_queue()
     net->setBestRouteConnFigs();
   }
   setBestMarkers();
+  if (graphics_) {
+    graphics_->show();
+  }
 }
 
 void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)

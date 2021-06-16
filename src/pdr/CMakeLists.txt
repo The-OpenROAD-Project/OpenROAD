@@ -34,17 +34,30 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-add_library(pdrev
-  src/graph.cpp
-  src/pdrev.cpp
+include("openroad")
+
+swig_lib(NAME      pdr
+         NAMESPACE pdr
+         I_FILE    src/pdrev.i
 )
 
-target_include_directories(pdrev
+target_sources(pdr
+  PRIVATE
+  src/MakePdrev.cpp
+  src/pdrev.cpp
+  src/graph.cpp
+  src/node.cpp
+  src/edge.cpp
+)
+
+target_include_directories(pdr
   PUBLIC
     include
 )
 
-target_link_libraries(pdrev
+target_link_libraries(pdr
   PUBLIC
+    stt
     utl
+    gui
 )
