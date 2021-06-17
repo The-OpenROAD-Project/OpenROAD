@@ -2972,6 +2972,12 @@ dbNet* dbNet::getValidNet(dbBlock* block_, uint dbid_)
   return (dbNet*) block->_net_tbl->getPtr(dbid_);
 }
 
+dbNet* dbNet::getValidNet(dbBlock* block_, const char * name){
+  _dbBlock* block = (_dbBlock*) block_;
+  if(!block->_net_hash.hasMember(name)) return NULL;
+  return (dbNet*) block->_net_hash.find(name);
+}
+
 void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)
 {
   uint j;

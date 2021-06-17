@@ -1,0 +1,6 @@
+RMP 0001 blif.cpp:73               cannot open file %s
+RMP 0001 blif.cpp:271              cannot open file %s
+RMP 0001 blif.cpp:293              cannot open file %s
+RMP 0001 blif.cpp:309              blif parsed successfully, destroying %d existing instances...
+RMP 0001 blif.cpp:316              inserting %d new instances...
+RMP 0001 rmp.tcl:65                Missing argument -liberty_file

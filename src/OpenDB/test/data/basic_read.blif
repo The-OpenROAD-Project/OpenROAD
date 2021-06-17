@@ -1,0 +1,8 @@
+.model tmp_circuit
+.inputs n5 n6
+.outputs n7
+
+.gate or2 a=n5 b=n6 o=a1
+.gate or2 a=a1 b=n5 o=a2
+.gate or2 a=a2 b=a1 o=n7
+.end

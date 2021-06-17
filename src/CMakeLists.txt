@@ -123,6 +123,7 @@ add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
 add_subdirectory(ppl)
+add_subdirectory(rmp)
 add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
@@ -173,6 +174,7 @@ target_link_libraries(openroad
   opendb
   opendbtcl
   rcx
+  rmp
   TritonCTS
   grt
   tap

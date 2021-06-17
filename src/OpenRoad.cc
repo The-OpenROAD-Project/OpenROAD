@@ -72,6 +72,7 @@
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "grt/MakeFastRoute.h"
+#include "rmp/MakeRestructure.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
 #include "rcx/MakeOpenRCX.h"
@@ -127,6 +128,7 @@ OpenRoad::OpenRoad()
     finale_(nullptr),
     macro_placer_(nullptr),
     fastRoute_(nullptr),
+    restructure_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
     extractor_(nullptr),
@@ -149,6 +151,7 @@ OpenRoad::~OpenRoad()
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
   deleteFastRoute(fastRoute_);
+  deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
@@ -209,6 +212,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   opendp_ = makeOpendp();
   finale_ = makeFinale();
   fastRoute_ = makeFastRoute();
+  restructure_ = makeRestructure();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
@@ -242,6 +246,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initMacroPlacer(this);
   initOpenRCX(this);
+  initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);

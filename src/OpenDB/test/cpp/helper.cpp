@@ -94,3 +94,41 @@ dbDatabase* create2LevetDbWithBTerms()
   IN1->setIoType(dbIoType::OUTPUT);
   return db;
 }
+
+
+dbDatabase* create3LevetDbNoBTerms()
+{
+  dbDatabase* db    = createSimpleDB();
+  dbLib*      lib   = db->findLib("lib1");
+  dbChip*     chip  = db->getChip();
+  dbBlock*    block = chip->getBlock();
+  auto        and2  = lib->findMaster("and2");
+  auto        or2   = lib->findMaster("or2");
+  dbInst*     i1    = dbInst::create(block, and2, "i1");
+  dbInst*     i2    = dbInst::create(block, and2, "i2");
+  dbInst*     i3    = dbInst::create(block, or2, "i3");
+  dbInst*     i4    = dbInst::create(block, or2, "i4");
+  dbNet*      n1    = dbNet::create(block, "n1");
+  dbNet*      n2    = dbNet::create(block, "n2");
+  dbNet*      n3    = dbNet::create(block, "n3");
+  dbNet*      n4    = dbNet::create(block, "n4");
+  dbNet*      n5    = dbNet::create(block, "n5");
+  dbNet*      n6    = dbNet::create(block, "n6");
+  dbNet*      n7    = dbNet::create(block, "n7");
+  dbNet*      n8    = dbNet::create(block, "n8");
+  dbNet*      n9    = dbNet::create(block, "n9");
+  dbITerm::connect(i1->findITerm("a"), n1);
+  dbITerm::connect(i1->findITerm("b"), n2);
+  dbITerm::connect(i2->findITerm("a"), n3);
+  dbITerm::connect(i2->findITerm("b"), n4);
+  dbITerm::connect(i3->findITerm("a"), n5);
+  dbITerm::connect(i3->findITerm("b"), n6);
+  dbITerm::connect(i1->findITerm("o"), n5);
+  dbITerm::connect(i2->findITerm("o"), n6);
+  dbITerm::connect(i3->findITerm("o"), n7);
+  dbITerm::connect(i4->findITerm("a"), n7);
+  dbITerm::connect(i4->findITerm("b"), n8);
+  dbITerm::connect(i4->findITerm("o"), n9);
+
+  return db;
+}
