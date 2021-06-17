@@ -16,25 +16,25 @@ CTS 0015 TritonCTS.cpp:746             Created {} clock nets.
 CTS 0016 TritonCTS.cpp:750         {}
 CTS 0017 TritonCTS.cpp:751             Max level of the clock tree: {}.
 CTS 0018 TritonCTS.cpp:843             Created {} clock buffers.
-CTS 0019 HTreeBuilder.cpp:142       Tot. number of sinks after clustering: {}
+CTS 0019 HTreeBuilder.cpp:142       Total number of sinks after clustering: {}
 CTS 0020 HTreeBuilder.cpp:151       Wire segment unit: {}  dbu ({} um)
 CTS 0021 HTreeBuilder.cpp:156       Distance between buffers: {} units ({} um)
-CTS 0022 HTreeBuilder.cpp:162       Branch Length for Vertex Buffer: {} units ({} um)
+CTS 0022 HTreeBuilder.cpp:162       Branch length for Vertex Buffer: {} units ({} um)
 CTS 0023 HTreeBuilder.cpp:178       Original sink region: {}
 CTS 0024 HTreeBuilder.cpp:193       Normalized sink region: {}
 CTS 0025 HTreeBuilder.cpp:194          Width:  {:.4f}
 CTS 0026 HTreeBuilder.cpp:195          Height: {:.4f}
 CTS 0027 HTreeBuilder.cpp:200       Generating H-Tree topology for net {}
-CTS 0028 HTreeBuilder.cpp:201          Tot. number of sinks: {}
-CTS 0029 HTreeBuilder.cpp:206          Sinks will be clustered in groups of {} and a maximum diameter of {:.1f} um
+CTS 0028 HTreeBuilder.cpp:201          Total number of sinks: {}
+CTS 0029 HTreeBuilder.cpp:206          Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um
 CTS 0030 HTreeBuilder.cpp:210          Number of static layers: {}
 CTS 0031 HTreeBuilder.cpp:233       Stop criterion found. Min length of sink region is ({})
 CTS 0032 HTreeBuilder.cpp:242       Stop criterion found. Max number of sinks is ({})
 CTS 0033 HTreeBuilder.cpp:261       Clock topology of net \"{}\" done.
 CTS 0034 HTreeBuilder.cpp:314          Segment length (rounded): {}
 CTS 0035 HTreeBuilder.cpp:843       Number of sinks covered: {}
-CTS 0036 PostCtsOpt.cpp:63          Avg. source sink dist: {:.2f} dbu.
-CTS 0037 PostCtsOpt.cpp:90          Num outlier sinks: {}
+CTS 0036 PostCtsOpt.cpp:63          Average source sink dist: {:.2f} dbu.
+CTS 0037 PostCtsOpt.cpp:90          Number of outlier sinks: {}
 CTS 0038 TechChar.cpp:1264         Number of created patterns = {}.
 CTS 0039 TechChar.cpp:1277         Number of created patterns = {}.
 CTS 0040 TritonCTS.cpp:505         Net was not found in the design for {}, please check. Skipping...
@@ -42,8 +42,8 @@ CTS 0041 TritonCTS.cpp:558         Net \"{}\" has {} sinks. Skipping...
 CTS 0042 TritonCTS.cpp:563         Net \"{}\" has 0 sinks. Unconnected net or
 CTS 0043 TechChar.cpp:117          {} wires are pure wire and no slew degration.\n
 CTS 0045 TechChar.cpp:337          Creating fake entries in the LUT.
-CTS 0046 TechChar.cpp:122              Num wire segments: {}
-CTS 0047 TechChar.cpp:124              Num keys in characterization LUT: {}
+CTS 0046 TechChar.cpp:122              Number of wire segments: {}
+CTS 0047 TechChar.cpp:124              Number of keys in characterization LUT: {}
 CTS 0048 TechChar.cpp:127              Actual min input cap: {}
 CTS 0055 tritoncts.tcl:148         Missing argument -buf_list
 CTS 0056 tritoncts.tcl:160         Error when finding -clk_nets in DB!

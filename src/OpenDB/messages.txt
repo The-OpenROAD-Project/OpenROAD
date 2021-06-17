@@ -94,7 +94,7 @@ ODB 0094 definComponent.cpp:179    \t\tCreated {} Insts
 ODB 0095 definFill.cpp:64          error: undefined layer ({}) referenced
 ODB 0096 definNet.cpp:122          net {} does not exist
 ODB 0097 definNet.cpp:147          \t\tCreated {} Nets
-ODB 0098 definNet.cpp:161          duplicate mustjoin net found ({})
+ODB 0098 definNet.cpp:161          duplicate must join net found ({})
 ODB 0099 definNet.cpp:200          error: netlist component ({}) is not defined
 ODB 0100 definNet.cpp:210          error: netlist component-pin ({}, {}) is not defined
 ODB 0101 definNet.cpp:247          error: undefined NONDEFAULTRULE ({}) referenced
@@ -109,7 +109,7 @@ ODB 0109 definNet.cpp:574          error: undefined via ({}) referenced
 ODB 0110 definNet.cpp:591          error: invalid VIA layers, cannot determine exit layer of path
 ODB 0111 definNonDefaultRule.cpp:64 error: Duplicate NONDEFAULTRULE {}
 ODB 0112 definNonDefaultRule.cpp:85 error: Cannot find tech-via {}
-ODB 0113 definNonDefaultRule.cpp:101 error: Cannot find tech-via-genreate rule {}
+ODB 0113 definNonDefaultRule.cpp:101 error: Cannot find tech-via-generate rule {}
 ODB 0114 definNonDefaultRule.cpp:118 error: Cannot find layer {}
 ODB 0115 definNonDefaultRule.cpp:134 error: Cannot find layer {}
 ODB 0116 definNonDefaultRule.cpp:142 error: Duplicate layer rule ({}) in non-default-rule statement.
@@ -181,7 +181,7 @@ ODB 0182 lefin.cpp:608             Skipping LAYER ({}) ; cannot understand type
 ODB 0183 lefin.cpp:768             In layer {}, spacing layer {} not found
 ODB 0184 lefin.cpp:1078            cannot find EEQ for macro {}
 ODB 0185 lefin.cpp:1087            cannot find LEQ for macro {}
-ODB 0186 lefin.cpp:1132            macro {} references unkown site {}
+ODB 0186 lefin.cpp:1132            macro {} references unknown site {}
 ODB 0187 lefin.cpp:1182            duplicate NON DEFAULT RULE ({})
 ODB 0188 lefin.cpp:1193            Invalid layer name {} in NON DEFAULT RULE {}
 ODB 0189 lefin.cpp:1230            Invalid layer name {} in NONDEFAULT SPACING
@@ -221,7 +221,7 @@ ODB 0224 lefin.cpp:2037                Created {} technology vias
 ODB 0225 lefin.cpp:2039                Created {} library cells
 ODB 0226 lefin.cpp:2041            Finished LEF file:  {}
 ODB 0227 lefin.cpp:2052            Error: technology already exists
-ODB 0228 lefin.cpp:2080            Error: technolgy does not exists
+ODB 0228 lefin.cpp:2080            Error: technology does not exists
 ODB 0229 lefin.cpp:2085            Error: library ({}) already exists
 ODB 0230 lefin.cpp:2114            Error: library ({}) already exists
 ODB 0231 lefin.cpp:2120            Error: technology already exists
@@ -257,7 +257,7 @@ ODB 0274 create_box.cpp:59         Zero length path segment ({},{}) ({},{})
 ODB 0275 definReader.cpp:689       skipping undefined net {} encountered in FLOORPLAN DEF
 ODB 0276 create_box.cpp:252               via ({}) spans above and below the current layer ({}).
 ODB 0277 lefin.cpp:2010            dropping LEF58_SPACING rule for cut layer {} for 
-ODB 0279 lefin.cpp:682             parse mismatch in layer propery {} for layer {} : \"{}\"
+ODB 0279 lefin.cpp:682             parse mismatch in layer property {} for layer {} : \"{}\"
 ODB 0280 lefin.cpp:2021            dropping LEF58_SPACINGTABLE rule for cut layer {} for 
 ODB 0281 dbFlatten.cpp:390         Failed to create net {}
 ODB 0282 dbTechLayer.cpp:1697      setNumMask {} not in range [1,3]

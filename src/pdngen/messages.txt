@@ -2,7 +2,7 @@ PDN 0002 PdnGen.tcl:1788           No shapes on layer $l1 for $tag
 PDN 0003 PdnGen.tcl:1792           No shapes on layer $l2 for $tag
 PDN 0004 PdnGen.tcl:1803           Unexpected number of points in connection shape ($l1,$l2 $tag [llength $points])
 PDN 0006 PdnGen.tcl:3687           Unexpected number of points in stripe of $layer_name
-PDN 0008 PdnGen.tcl:3177           Design Name is $design_name
+PDN 0008 PdnGen.tcl:3177           Design name is $design_name
 PDN 0009 PdnGen.tcl:3225           Reading technology data
 PDN 0010 PdnGen.tcl:4990           Inserting macro grid for [llength [dict keys $instances]] macros
 PDN 0011 PdnGen.tcl:5026           ****** INFO ******
@@ -16,15 +16,15 @@ PDN 0018 PdnGen.tcl:5023           No macro grid specifications found - no strap
 PDN 0019 PdnGen.tcl:197            Cannot find layer $layer_name in loaded technology
 PDN 0020 PdnGen.tcl:373            Failed to read CUTCLASS property '$line'
 PDN 0021 PdnGen.tcl:439            Failed to read ENCLOSURE property '$line'
-PDN 0022 PdnGen.tcl:1614           Cant find lower metal layer $layer1
-PDN 0023 PdnGen.tcl:1615           Cant find upper metal layer $layer2
+PDN 0022 PdnGen.tcl:1614           Cannot find lower metal layer $layer1
+PDN 0023 PdnGen.tcl:1615           Cannot find upper metal layer $layer2
 PDN 0024 PdnGen.tcl:1622           Missing logical viarule [dict get $intersection rule]\nAvailable logical viarules [dict keys $logical_viarules]
 PDN 0025 PdnGen.tcl:1956           Unexpected row orientation $orient for row [$row getName]
 PDN 0026 PdnGen.tcl:2054           Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\".
 PDN 0027 PdnGen.tcl:3019           Illegal orientation $orientation specified
 PDN 0028 PdnGen.tcl:3163           File $PDN_cfg is empty
 PDN 0029 PdnGen.tcl:3244           Illegal number of elements defined for ::halo \"$::halo\" (1, 2 or 4 allowed)
-PDN 0030 PdnGen.tcl:3297           Layer specified for std. cell rails '$layer' not in list of layers.
+PDN 0030 PdnGen.tcl:3297           Layer specified for stdcell rails '$layer' not in list of layers.
 PDN 0031 PdnGen.tcl:4038           No matching grid specification found for $instance
 PDN 0032 PdnGen.tcl:3975           Generating blockages for TritonRoute
 PDN 0033 PdnGen.tcl:117            Unknown direction for layer $layer_name
@@ -32,8 +32,8 @@ PDN 0034 PdnGen.tcl:4993             - grid for instance $instance
 PDN 0035 PdnGen.tcl:4092           No track information found for layer $layer_name
 PDN 0036 PdnGen.tcl:1448           Attempt to add illegal via at : ([expr 1.0 * [lindex $via_location 0] / $def_units] [expr 1.0 * [lindex $via_location 1] / $def_units]), via will not be added
 PDN 0037 PdnGen.tcl:3065           Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])
-PDN 0038 PdnGen.tcl:1421           Illegal via number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $lower_layer to $cut_class with width [expr 1.0 * $lower_width / $def_units]
-PDN 0039 PdnGen.tcl:1442           Illegal via number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $upper_layer to $cut_class with width [expr 1.0 * $upper_width / $def_units]
+PDN 0038 PdnGen.tcl:1421           Illegal via: number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $lower_layer to $cut_class with width [expr 1.0 * $lower_width / $def_units]
+PDN 0039 PdnGen.tcl:1442           Illegal via: number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $upper_layer to $cut_class with width [expr 1.0 * $upper_width / $def_units]
 PDN 0040 PdnGen.tcl:1822           No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap
 PDN 0041 PdnGen.tcl:1828           No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap
 PDN 0042 PdnGen.tcl:1836           No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap

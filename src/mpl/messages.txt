@@ -1,5 +1,5 @@
-MPL 0002 MacroPlacer.cpp:161       Some instances do not have liberty models. TritonMP will place macros without connection information.
-MPL 0003 MacroPlacer.cpp:785       Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.
+MPL 0002 MacroPlacer.cpp:161       Some instances do not have Liberty models. TritonMP will place macros without connection information.
+MPL 0003 MacroPlacer.cpp:785       Macro {} is unplaced. Use global_placement to get an initial placement before macro placement.
 MPL 0004 MacroPlacer.cpp:805       No macros found.
 MPL 0005 MacroPlacer.cpp:808       Found {} macros
 MPL 0009 MacroPlacer.cpp:189       {} pins {}
@@ -17,7 +17,7 @@ MPL 0073 MacroPlacer.cpp:465       Best weighted wire length {:g}
 MPL 0076 MacroPlacer.cpp:552       Partition {} macros
 MPL 0077 MacroPlacer.cpp:606       Using {} cut lines
 MPL 0079 MacroPlacer.cpp:618       Cut line {:.2f}
-MPL 0080 MacroPlacer.cpp:754       Impossible partiton found.
+MPL 0080 MacroPlacer.cpp:754       Impossible partition found.
 MPL 0085 MacroPlacer.tcl:85        fence_region outside of core area. Using core area.
 MPL 0089 MacroPlacer.tcl:69        No rows found. Use initialize_floorplan to add rows.
 MPL 0092 MacroPlacer.tcl:49        -halo is not a list of 2 values.

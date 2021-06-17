@@ -92,12 +92,12 @@ GRT 0100 FastRoute.cpp:1052        LV routing round {}, enlarge {}.
 GRT 0101 FastRoute.cpp:1083        Running extra iterations to remove overflow.
 GRT 0102 FastRoute.cpp:1163        iteration {}, enlarge {}, costheight {},
 GRT 0103 FastRoute.cpp:1206        Extra Run for hard benchmark.
-GRT 0104 FastRoute.cpp:1305        Minimal overflow {} occuring at round {}.
+GRT 0104 FastRoute.cpp:1305        Minimal overflow {} occurring at round {}.
 GRT 0105 FastRoute.cpp:1314        Maze routing finished.
 GRT 0106 FastRoute.cpp:1322        Layer assignment begins.
 GRT 0107 FastRoute.cpp:1325        Layer assignment finished.
 GRT 0108 FastRoute.cpp:1343        Post-processing begins.
-GRT 0109 FastRoute.cpp:1351        Post-processsing finished.\n Starting via filling.
+GRT 0109 FastRoute.cpp:1351        Post-processing finished.\n Starting via filling.
 GRT 0111 FastRoute.cpp:1359        Final number of vias: {}
 GRT 0112 FastRoute.cpp:1360        Final usage 3D: {}
 GRT 0113 FastRoute.cpp:704         Underflow in reduce: cap, reducedCap: {}, {}
@@ -158,7 +158,7 @@ GRT 0194 utility.cpp:87            Fail when open file plottree.
 GRT 0195 utility.cpp:184           Invalid route type.
 GRT 0196 utility.cpp:189           Routed length: {}
 GRT 0197 utility.cpp:406           Via related to pin nodes: {}
-GRT 0198 utility.cpp:407           Via related steiner nodes: {}
+GRT 0198 utility.cpp:407           Via related Steiner nodes: {}
 GRT 0199 utility.cpp:408           Via filling finished.
 GRT 0200 utility.cpp:493           Start point not assigned.
 GRT 0201 maze.cpp:688              Setup heap: not maze routing.
