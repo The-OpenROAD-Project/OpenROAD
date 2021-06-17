@@ -628,7 +628,7 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& roo
 {
   findPins(net);
 
-  root_idx = -1;
+  root_idx = 0;
   for (Pin& pin : net->getPins()) {
     odb::Point pinPosition = pin.getOnGridPosition();
     int topLayer = pin.getTopLayer();
