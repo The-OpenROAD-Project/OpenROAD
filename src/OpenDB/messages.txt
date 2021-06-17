@@ -94,7 +94,7 @@ ODB 0094 definComponent.cpp:179    \t\tCreated {} Insts
 ODB 0095 definFill.cpp:64          error: undefined layer ({}) referenced
 ODB 0096 definNet.cpp:122          net {} does not exist
 ODB 0097 definNet.cpp:147          \t\tCreated {} Nets
-ODB 0098 definNet.cpp:161          duplicate must join net found ({})
+ODB 0098 definNet.cpp:161          duplicate must-join net found ({})
 ODB 0099 definNet.cpp:200          error: netlist component ({}) is not defined
 ODB 0100 definNet.cpp:210          error: netlist component-pin ({}, {}) is not defined
 ODB 0101 definNet.cpp:247          error: undefined NONDEFAULTRULE ({}) referenced
