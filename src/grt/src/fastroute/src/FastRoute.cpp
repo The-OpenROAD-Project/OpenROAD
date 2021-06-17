@@ -521,17 +521,18 @@ void FastRouteCore::setLayerOrientation(int x)
 void FastRouteCore::addPin(int netID, int x, int y, int layer, bool isRoot)
 {
   FrNet* net = nets[netID];
+  net->pinX.push_back(x);
+  net->pinY.push_back(y);
+  net->pinL.push_back(layer);
+  net->pinRoot.push_back(isRoot);
+  
   // move the root pin to the beginning of the vector
   if (isRoot) {
-    net->pinX.insert(net->pinX.begin(), x);
-    net->pinY.insert(net->pinY.begin(), y);
-    net->pinL.insert(net->pinL.begin(), layer);
-    net->pinRoot.insert(net->pinRoot.begin(), isRoot);
-  } else {
-    net->pinX.push_back(x);
-    net->pinY.push_back(y);
-    net->pinL.push_back(layer);
-    net->pinRoot.push_back(isRoot);
+    int drvr_idx = net->pinX.size() - 1;
+    std::swap(net->pinX[0], net->pinX[drvr_idx]);
+    std::swap(net->pinY[0], net->pinY[drvr_idx]);
+    std::swap(net->pinL[0], net->pinL[drvr_idx]);
+    std::swap(net->pinRoot[0], net->pinRoot[drvr_idx]);
   }
 }
 
