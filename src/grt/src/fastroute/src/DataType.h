@@ -86,7 +86,6 @@ typedef struct
   std::vector<int> pinX;  // array of X coordinates of pins
   std::vector<int> pinY;  // array of Y coordinates of pins
   std::vector<int> pinL;  // array of L coordinates of pins
-  std::vector<bool> pinRoot;  // array with information if pin is root or not
   float alpha;              // alpha for pdrev when routing clock nets
   bool isClock;             // flag that indicates if net is a clock net
   int edgeCost;

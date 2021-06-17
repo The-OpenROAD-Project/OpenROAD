@@ -524,7 +524,6 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer, bool isRoot)
   net->pinX.push_back(x);
   net->pinY.push_back(y);
   net->pinL.push_back(layer);
-  net->pinRoot.push_back(isRoot);
   
   // move the root pin to the beginning of the vector
   if (isRoot) {
@@ -532,7 +531,6 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer, bool isRoot)
     std::swap(net->pinX[0], net->pinX[drvr_idx]);
     std::swap(net->pinY[0], net->pinY[drvr_idx]);
     std::swap(net->pinL[0], net->pinL[drvr_idx]);
-    std::swap(net->pinRoot[0], net->pinRoot[drvr_idx]);
   }
 }
 
