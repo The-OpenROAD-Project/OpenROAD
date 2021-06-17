@@ -156,7 +156,7 @@ proc check_test_metrics { test } {
 ################################################################
 
 proc report_flow_metrics_main {} {
-  global argc argv
+  global argc argv test_groups
   if { $argc == 0 } {
     set tests $test_groups(flow)
   } else {
@@ -212,7 +212,7 @@ proc report_test_metrics { test } {
 ################################################################
 
 proc compare_flow_metrics_main {} {
-  global argc argv
+  global argc argv test_groups
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_flow_metrics [test1]...}
   } else {
