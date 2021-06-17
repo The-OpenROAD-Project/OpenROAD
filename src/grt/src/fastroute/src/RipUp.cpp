@@ -226,7 +226,7 @@ void newRipup(TreeEdge* treeedge,
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
       } else {
-        logger->error(GRT, 225, "MAZE RIPUP WRONG in newRipup.");
+        logger->error(GRT, 225, "Maze ripup wrong in newRipup.");
       }
     }
   }
@@ -324,7 +324,7 @@ Bool newRipupType2(TreeEdge* treeedge,
     return (needRipup);
 
   } else {
-    logger->error(GRT, 226, "type2 ripup not type L.");
+    logger->error(GRT, 226, "Type2 ripup not type L.");
   }
 }
 
@@ -390,7 +390,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
     }
   } else {
     printEdge(netID, edgeID);
-    logger->error(GRT, 121, "route type is not maze, netID {}.", netID);
+    logger->error(GRT, 121, "Route type is not maze, netID {}.", netID);
   }
 }
 
@@ -516,7 +516,7 @@ Bool newRipup3DType3(int netID, int edgeID)
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
         h_edges3D[grid].usage -= edgeCostPerLayer[gridsL[i]];
       } else {
-        logger->error(GRT, 122, "Maze RipUp wrong.");
+        logger->error(GRT, 122, "Maze ripup wrong.");
       }
     }
   }
@@ -618,7 +618,7 @@ void newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
           } else {
-            logger->error(GRT, 123, "MAZE RIPUP WRONG in newRipupNet for net {}.",
+            logger->error(GRT, 123, "Maze ripup wrong in newRipupNet for net {}.",
                           netName(nets[netID]));
           }
         }

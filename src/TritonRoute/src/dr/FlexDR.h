@@ -59,8 +59,7 @@ struct FlexDRViaData
   // via2viaMinLen[z][1], last via=down, curr via=up
   // via2viaMinLen[z][2], last via=up,   curr via=down
   // via2viaMinLen[z][3], last via=up,   curr via=up
-  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>>
-      via2viaMinLen;
+  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>> via2viaMinLen;
 
   // via2viaMinLen[z][0], prev via=down, curr via=down, min required x dist
   // via2viaMinLen[z][1], prev via=down, curr via=down, min required y dist
@@ -340,7 +339,9 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(const FlexDRViaData* via_data, frTechObject* tech, Logger* logger)
+  FlexDRWorker(const FlexDRViaData* via_data,
+               frTechObject* tech,
+               Logger* logger)
       : tech_(tech),
         logger_(logger),
         graphics_(nullptr),

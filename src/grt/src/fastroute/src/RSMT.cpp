@@ -162,7 +162,7 @@ void copyStTree(int ind, Tree rsmt)
       edgecnt++;
     }
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
-      logger->error(GRT, 188, "Invalid number of node neighbours.");
+      logger->error(GRT, 188, "Invalid number of node neighbors.");
   }
   if (edgecnt != numnodes - 1) {
     logger->error(GRT, 189, "Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes.");
@@ -798,7 +798,8 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
 
     if (nets[i]->deg != rsmt.deg) {
-      logger->warn(GRT, 190, "Net degree differs from rsmt degree.");
+      logger->warn(GRT, 190, "Net degree ({}) differs from RSMT number of terminals ({}).",
+                   nets[i]->deg, rsmt.deg);
       d = rsmt.deg;
     }
 
@@ -851,9 +852,9 @@ void gen_brk_RSMT(Bool congestionDriven,
   }  // loop i
 
   if (verbose > 1) {
-    logger->info(GRT, 191, "WIRELEN : {}, WIRELEN1 : {}", wl, wl1);
-    logger->info(GRT, 192, "NumSeg  : {}", totalNumSeg);
-    logger->info(GRT, 193, "NumShift: {}", numShift);
+    logger->info(GRT, 191, "Wirelength: {}, Wirelength1: {}", wl, wl1);
+    logger->info(GRT, 192, "Number of segments: {}", totalNumSeg);
+    logger->info(GRT, 193, "Number of shifts: {}", numShift);
   }
 }
 

@@ -78,9 +78,9 @@ class FlexGridGraph
   frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
   {
     auto baseIdx = 3 * getIdx(x, y, z);
-    return (frDirEnum) (((unsigned short) (prevDirs_[baseIdx]) << 2)
-                        + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
-                        + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
+    return (frDirEnum)(((unsigned short) (prevDirs_[baseIdx]) << 2)
+                       + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
+                       + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
   }
   // unsafe access, no check
   bool isSrc(frMIdx x, frMIdx y, frMIdx z) const

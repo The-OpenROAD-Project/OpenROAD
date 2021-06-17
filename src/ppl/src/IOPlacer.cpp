@@ -740,15 +740,15 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
 
 void IOPlacer::printConfig()
 {
-  logger_->info(PPL, 1, " * Num of slots          {}", slots_.size());
-  logger_->info(PPL, 2, " * Num of I/O            {}", netlist_.numIOPins());
+  logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
+  logger_->info(PPL, 2, "Number of I/O            {}", netlist_.numIOPins());
   logger_->info(
-      PPL, 3, " * Num of I/O w/sink     {}", netlist_io_pins_.numIOPins());
-  logger_->info(PPL, 4, " * Num of I/O w/o sink   {}", zero_sink_ios_.size());
-  logger_->info(PPL, 5, " * Slots Per Section     {}", slots_per_section_);
-  logger_->info(PPL, 6, " * Slots Increase Factor {:.1}", slots_increase_factor_);
-  logger_->info(PPL, 8, " * Usage Increase Factor {:.1}", usage_increase_factor_);
-  logger_->info(PPL, 9, " * Force Pin Spread      {}", force_pin_spread_);
+      PPL, 3, "Number of I/O w/sink     {}", netlist_io_pins_.numIOPins());
+  logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
+  logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
+  logger_->info(PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  logger_->info(PPL, 8, "Usage increase factor    {:.1}", usage_increase_factor_);
+  logger_->info(PPL, 9, "Force pin spread         {}", force_pin_spread_);
 }
 
 void IOPlacer::setupSections(int assigned_pins_count)
@@ -757,7 +757,7 @@ void IOPlacer::setupSections(int assigned_pins_count)
   int i = 0;
 
   do {
-    logger_->info(PPL, 10, "Tentative {} to setup sections", i++);
+    logger_->info(PPL, 10, "Tentative {} to set up sections", i++);
     printConfig();
 
     all_assigned = assignPinsToSections(assigned_pins_count);

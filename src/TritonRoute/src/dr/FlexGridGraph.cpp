@@ -26,12 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexGridGraph.h"
+
 #include <fstream>
 #include <iostream>
 #include <map>
 
 #include "dr/FlexDR.h"
-#include "dr/FlexGridGraph.h"
 
 using namespace std;
 using namespace fr;

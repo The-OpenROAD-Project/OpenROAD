@@ -42,9 +42,9 @@ that file. Please pay careful attention to the :ref:`tool-checklist` for
 all code. If you want to add or improve functionality in OpenROAD please
 start with the top level `app`_ repo. You can see in the src directory that
 submodules exist pointing to tested versions of the other relevant repos
-in the project. Please look at the tool workflow in the code architecture
-:doc:`document <OpenROADArch>` to work with the app and its submodule repos
-in an efficient way.
+in the project. Please look at the tool workflow in the developer guide
+:doc:`document <DeveloperGuide>` to work with the app and its submodule
+repos in an efficient way.
 
 Please pay attention to the `test directory`_ and be sure to add tests
 for any code changes that you make with open sourceable PDK and design

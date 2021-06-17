@@ -128,7 +128,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     }
   }
 
-  _logger->info(GRT, 12, "#Antenna violations: {}", _antennaViolations.size());
+  _logger->info(GRT, 12, "Antenna violations: {}", _antennaViolations.size());
   return _antennaViolations.size();
 }
 
@@ -147,7 +147,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     }
 
     if (siteWidth != site_width) {
-      _logger->warn(GRT, 27, "Design has rows with different site width.");
+      _logger->warn(GRT, 27, "Design has rows with different site widths.");
     }
   }
 
@@ -202,7 +202,7 @@ void AntennaRepair::deleteFillerCells()
   }
 
   if (fillerCnt > 0) {
-    _logger->info(GRT, 11, "{} filler cells deleted.", fillerCnt);
+    _logger->info(GRT, 11, "Deleted {} filler cells.", fillerCnt);
   }
 }
 
