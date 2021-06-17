@@ -3,10 +3,12 @@ source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
 read_def "gcd.def"
 
-set guide_file [make_result_file gcd.guide]
+set guide_file [make_result_file gcd_random.guide]
+
+set_global_routing_random -seed 1
 
 global_route
 
 write_guides $guide_file
 
-diff_file gcd.guideok $guide_file
+diff_file gcd_random.guideok $guide_file
