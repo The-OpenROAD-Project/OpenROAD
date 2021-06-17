@@ -60,7 +60,7 @@ extern int layerOrientation;
 extern float alpha;
 extern int verbose;
 extern int overflowIterations;
-extern int pdrev_for_high_fanout;
+extern int pdrev_min_fanout;
 extern bool allowOverflow;
 
 extern int enlarge, costheight, ripup_threshold;

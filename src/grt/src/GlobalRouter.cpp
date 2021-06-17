@@ -86,7 +86,7 @@ void GlobalRouter::init()
   _minRoutingLayer = 1;
   _maxRoutingLayer = -1;
   _overflowIterations = 50;
-  _pdRevForHighFanout = -1;
+  pdrev_min_fanout_ = -1;
   _allowOverflow = false;
   _macroExtension = 0;
   _verbose = 0;
@@ -150,13 +150,13 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
     setSelectedMetal(maxRoutingLayer);
   }
 
-  if (_pdRevForHighFanout != -1) {
+  if (pdrev_min_fanout_ != -1) {
     _fastRoute->setAlpha(pdrev_alpha_);
   }
 
   _fastRoute->setVerbose(_verbose);
   _fastRoute->setOverflowIterations(_overflowIterations);
-  _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
+  _fastRoute->setPDRevMinFanout(pdrev_min_fanout_);
   _fastRoute->setAllowOverflow(_allowOverflow);
 
   _block = _db->getChip()->getBlock();
@@ -1337,9 +1337,9 @@ void GlobalRouter::setGridOrigin(long x, long y)
   *_gridOrigin = odb::Point(x, y);
 }
 
-void GlobalRouter::setPDRevForHighFanout(int pdRevForHighFanout)
+void GlobalRouter::setPDRevMinFanout(int min_fanout)
 {
-  _pdRevForHighFanout = pdRevForHighFanout;
+  pdrev_min_fanout_ = min_fanout;
 }
 
 void GlobalRouter::setAllowOverflow(bool allowOverflow)

@@ -127,9 +127,9 @@ set_grid_origin(long x, long y)
 }
 
 void
-set_pdrev_for_high_fanout(int pdRevForHighFanout)
+set_pdrev_min_fanout(int min_fanout)
 {
-  getFastRoute()->setPDRevForHighFanout(pdRevForHighFanout);
+  getFastRoute()->setPDRevMinFanout(min_fanout);
 }
 
 void

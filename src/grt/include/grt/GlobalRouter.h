@@ -151,7 +151,7 @@ class GlobalRouter
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
-  void setPDRevForHighFanout(int pdRevForHighFanout);
+  void setPDRevMinFanout(int min_fanout);
   void setAllowOverflow(bool allowOverflow);
   void setMacroExtension(int macroExtension);
   void printGrid();
@@ -303,7 +303,7 @@ class GlobalRouter
   const int _selectedMetal = 3;
   const int _gcellsOffset = 2;
   int _overflowIterations;
-  int _pdRevForHighFanout;
+  int pdrev_min_fanout_;
   bool _allowOverflow;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;

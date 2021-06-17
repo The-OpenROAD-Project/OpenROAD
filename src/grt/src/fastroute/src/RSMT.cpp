@@ -770,8 +770,8 @@ void gen_brk_RSMT(Bool congestionDriven,
     if (noADJ) {
       coeffV = 1.2;
     }
-    if (pdrev_for_high_fanout > 0 &&
-        nets[i]->deg >= pdrev_for_high_fanout &&
+    if (pdrev_min_fanout > 0 &&
+        nets[i]->deg >= pdrev_min_fanout &&
         nets[i]->deg <= max_fanout_for_pdrev &&
         nets[i]->isClock) {
       stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, nets[i]->alpha, logger);

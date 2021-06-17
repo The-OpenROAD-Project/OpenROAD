@@ -178,9 +178,9 @@ proc set_clock_routing { args } {
 
   if { [info exists keys(-clock_pdrev_fanout)] } {
     set fanout $keys(-clock_pdrev_fanout)
-    grt::set_pdrev_for_high_fanout $fanout
+    grt::set_pdrev_min_fanout $fanout
   } else {
-    grt::set_pdrev_for_high_fanout -1
+    grt::set_pdrev_min_fanout -1
   }
 }
 
