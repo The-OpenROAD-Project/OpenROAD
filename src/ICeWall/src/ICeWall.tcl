@@ -1831,7 +1831,6 @@ namespace eval ICeWall {
     variable def_units
     variable tech
     variable block
-    variable signal_map
 
     # debug "start"
     set db [::ord::get_db]
@@ -1957,10 +1956,14 @@ namespace eval ICeWall {
         set_footprint_padcell_inst $padcell_name $inst
         if {[is_padcell_signal_type $padcell_name]} {
           # debug "Signal type"
-          set_padcell_signal_name $padcell_name [get_padcell_design_signal_name $padcell_name]
+          if {[set signal_name [get_padcell_design_signal_name $padcell_name]] != ""} {
+            set_padcell_signal_name $padcell_name [get_padcell_design_signal_name $padcell_name]
+          }
         } else {
           # debug "Non-signal type: $padcell_name [$inst getName]"
-          set_padcell_signal_name $padcell_name [$inst getName]
+          if {![is_padcell_physical_only $padcell_name]} {
+            set_padcell_signal_name $padcell_name [$inst getName]
+          }
         }
       }
     }
@@ -2152,8 +2155,20 @@ namespace eval ICeWall {
     }
   }
 
+  variable checks {}
+  proc consistency_check {name attribute value} {
+    variable checks
+
+    if {[dict exists $checks $attribute $value]} {
+      utl::error PAD 217 "Attribute $attribute $value for padcell $name has already been used for padcell [dict get $checks $attribute $value]"
+    } else {
+      dict set checks $attribute $value $name
+    }
+  }
+
   proc check_footprint {} {
     variable footprint
+    variable checks
 
     if {[is_footprint_wirebond]} {
       init_library_bondpad
@@ -2161,12 +2176,15 @@ namespace eval ICeWall {
       init_rdl
     }
 
+    set checks {}
     foreach padcell_name [dict keys [dict get $footprint padcell]] {
       # debug "Checking $padcell, data: [dict get $footprint padcell $padcell]"
       set padcell [dict get $footprint padcell $padcell_name]
       dict set padcell name $padcell_name
       # debug "$padcell_name: $padcell"
-      dict set footprint padcell $padcell_name [verify_padcell $padcell]
+      set padcell [verify_padcell $padcell]
+
+      dict set footprint padcell $padcell_name $padcell
     }
 
     # Lookup side assignment
@@ -3927,7 +3945,7 @@ namespace eval ICeWall {
     }
 
     if {[is_padcell_physical_only $padcell]} {
-      dict set padcell use_signal_name ""
+      # dict set padcell use_signal_name ""
       # debug "end: physical only padcell"
       return $padcell
     }
@@ -4674,6 +4692,13 @@ namespace eval ICeWall {
         utl::error PAD 164 "The padcell y location is [expr 1.0 * [dict get $padcell cell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
       }
     }
+
+    if {[dict exists $padcell use_signal_name]} {
+      if {![is_power_net $signal_name] && ![is_ground_net $signal_name]} {
+        consistency_check $padcell_name signal [dict get $padcell use_signal_name]
+      }
+    }
+    consistency_check $padcell_name instance $inst_name
 
     # debug $padcell
     # debug [dict get $ICeWall::footprint padcell $padcell_name]

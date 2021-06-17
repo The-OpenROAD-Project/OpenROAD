@@ -424,6 +424,8 @@ add_pad -edge left   -signal p_ddr_dq_11_io       -type sig   -location {centre 
 add_pad -edge left   -signal p_ddr_dq_10_io       -type sig   -location {centre {x  105.000 y  393.000}} -bondpad {centre {x  63.293 y  393.000}}
 add_pad -edge left   -signal p_ddr_dq_9_io        -type sig   -location {centre {x  105.000 y  319.000}} -bondpad {centre {x  63.293 y  319.000}}
 add_pad -edge left   -signal p_ddr_dq_8_io        -type sig   -location {centre {x  105.000 y  245.000}} -bondpad {centre {x  63.293 y  245.000}}
+puts "Detect duplicate signal name (not power/ground) specified"
+catch {add_pad -edge left   -signal p_ddr_dq_8_io        -type sig   -location {centre {x  105.000 y  245.000}} -bondpad {centre {x  63.293 y  245.000}}}
 add_pad -edge left   -inst_name u_vzz_25  -signal DVSS_0               -type vssio -location {centre {x  105.000 y 2718.000}} -bondpad {centre {x 149.893 y 2718.000}}
 add_pad -edge left   -inst_name u_v18_25  -signal DVDD_0               -type vddio -location {centre {x  105.000 y 2644.000}} -bondpad {centre {x 149.893 y 2644.000}}
 add_pad -edge left   -inst_name u_vss_25  -signal VSS                  -type vss   -location {centre {x  105.000 y 2570.000}} -bondpad {centre {x 149.893 y 2570.000}}
@@ -457,6 +459,8 @@ add_pad -edge left   -inst_name u_v18_32  -signal DVDD_0               -type vdd
 add_pad -edge left   -inst_name u_vss_32  -signal VSS                  -type vssio -location {centre {x  105.000 y  356.000}} -bondpad {centre {x 149.893 y  356.000}}
 add_pad -edge left   -inst_name u_vdd_32  -signal VDD                  -type vddio -location {centre {x  105.000 y  282.000}} -bondpad {centre {x 149.893 y  282.000}}
 add_pad -edge left   -inst_name u_cbrk14               -type cbk   -location {centre {x  105.000 y 2772.500}}
+puts "Detect duplicate inst_name specified"
+catch {add_pad -edge left   -inst_name u_cbrk14               -type cbk   -location {centre {x  105.000 y 2772.500}}}
 add_pad -edge left   -inst_name u_cbrk15               -type cbk   -location {centre {x  105.000 y 2145.500}}
 add_pad -edge left   -inst_name u_cbrk16               -type cbk   -location {centre {x  105.000 y 1518.500}}
 add_pad -edge left   -inst_name u_cbrk17               -type cbk   -location {centre {x  105.000 y  891.500}}
