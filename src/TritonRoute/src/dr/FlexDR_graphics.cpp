@@ -481,8 +481,8 @@ void FlexDRGraphics::debugWholeDesign()
   if (!settings_->allowPause)
     return;
   drawWholeDesign_ = true;
-  gui_->pause();
   update();
+  gui_->pause();
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
