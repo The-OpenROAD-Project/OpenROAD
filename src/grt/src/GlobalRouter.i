@@ -158,6 +158,12 @@ set_seed(int seed)
 }
 
 void
+set_capacities_perturbation_percentage(float percentage)
+{
+  getFastRoute()->setCapacitiesPerturbationPercentage(percentage);
+}
+
+void
 global_route()
 {
   getFastRoute()->globalRoute();

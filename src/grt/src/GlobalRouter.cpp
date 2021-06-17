@@ -93,6 +93,7 @@ void GlobalRouter::init()
   _macroExtension = 0;
   _verbose = 0;
   seed_ = 0;
+  caps_perturbation_percentage_ = 0;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -1356,6 +1357,11 @@ void GlobalRouter::setAllowOverflow(bool allowOverflow)
 void GlobalRouter::setMacroExtension(int macroExtension)
 {
   _macroExtension = macroExtension;
+}
+
+void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
+{
+  caps_perturbation_percentage_ = percentage;
 }
 
 void GlobalRouter::writeGuides(const char* fileName)

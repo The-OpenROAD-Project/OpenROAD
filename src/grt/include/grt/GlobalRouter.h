@@ -177,6 +177,7 @@ class GlobalRouter
 
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
+  void setCapacitiesPerturbationPercentage(float percentage);
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet *net);
@@ -328,6 +329,7 @@ class GlobalRouter
 
   // variables for random grt
   int seed_;
+  float caps_perturbation_percentage_;
 
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;
