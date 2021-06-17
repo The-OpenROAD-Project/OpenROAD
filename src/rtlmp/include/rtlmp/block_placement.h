@@ -186,6 +186,32 @@ namespace block_placement {
                 }
             }
 
+        
+            bool IsResize() {
+                if(num_macro_ > 0 && aspect_ratio_.size() == 1)
+                    return false;
+                else
+                    return true;
+            }
+
+            void ResizeHardBlock() {
+                if(num_macro_ == 0 || (num_macro_  > 0 && aspect_ratio_.size() == 1)) {
+                    return;
+                } else {
+                    int index1 = (int)(floor((*distribution_)(*generator_) * aspect_ratio_.size()));
+                    float ar = aspect_ratio_[index1].first;
+                    float temp_ar = height_ / width_;
+                    while(abs(ar - temp_ar) / ar < 0.01) {
+                        index1 = (int)(floor((*distribution_)(*generator_) * aspect_ratio_.size()));
+                        ar = aspect_ratio_[index1].first;
+                        temp_ar = height_ / width_;
+                    }
+                    
+                    height_ = std::sqrt(area_ * ar);
+                    width_ = area_ / height_;
+                }
+            }
+
 
             void ChooseAspectRatioRandom() {
                 float ar = 0.0;
@@ -200,10 +226,33 @@ namespace block_placement {
                     float num = (*distribution_)(*generator_);
                     ar = ar_low + (ar_high - ar_low) * num;
                 }
-                
+            
                 height_ = std::sqrt(area_ * ar);
                 width_ = area_ / height_;
             }
+            
+            void RemoveSoftBlock() {
+                if(num_macro_ == 0) {
+                    width_ = 0.0;
+                    height_ = 0.0;
+                }
+            }
+        
+            void ShrinkSoftBlock(float width_factor, float height_factor) {
+                //if(num_macro_ == 0) {
+                    std::cout << "name:   " << name_ << "   ";
+                    std::cout << "pre_width:  " << width_ << "   ";
+                    std::cout << "pre_height:  " << height_ << "   ";
+                    width_ = width_ * width_factor;
+                    height_ = height_ * height_factor;
+                    //area_ = width_ * height_;
+                    area_ = width_ * height_;
+                    std::cout << "width:   " << width_ << "   ";
+                    std::cout << "height:  " << height_ << "   ";
+                    std::cout << std::endl;
+                //}
+            }
+
     };
 
 
@@ -418,11 +467,11 @@ namespace block_placement {
             float GetNormMacroBlockagePenalty() { return norm_macro_blockage_penalty_; }
 
             float GetCost() {
-                PackFloorplan();
-                CalculateWirelength();
-                CalculateOutlinePenalty();
-                CalculateBoundaryPenalty();
-                CalculateMacroBlockagePenalty();
+                //PackFloorplan();
+                //CalculateWirelength();
+                //CalculateOutlinePenalty();
+                //CalculateBoundaryPenalty();
+                //CalculateMacroBlockagePenalty();
                 return NormCost(area_, wirelength_,  outline_penalty_, boundary_penalty_, macro_blockage_penalty_); 
             }
 
@@ -437,6 +486,10 @@ namespace block_placement {
             std::vector<int> GetPosSeq() { return pos_seq_; }
             std::vector<int> GetNegSeq() { return neg_seq_; }
             
+            void ShrinkBlocks();    
+            bool FitFloorplan();
+
+
             bool IsFeasible() {
                 float tolerance = 0.001;
                 if(width_ <= outline_width_ * (1 + tolerance) &&  height_ <= outline_height_ * (1 + tolerance))

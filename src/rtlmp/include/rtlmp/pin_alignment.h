@@ -159,7 +159,7 @@ namespace pin_alignment {
                 std::cout << "outline_width_  " << outline_width_ << "   ";
                 std::cout << "outline_height_  " << outline_height_ << "   ";
                 std::cout << std::endl;
-                float tolerance = 0.001;
+                float tolerance = 0.01;
                 if(width_ <= outline_width_ * (1 + tolerance) && height_ <= outline_height_ * (1 + tolerance))
                     return true;
                 else

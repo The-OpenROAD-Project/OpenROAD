@@ -454,6 +454,7 @@ namespace shape_engine {
         words = Split(content[4]);
         outline_ly = stof(words[words.size() - 1]);
 
+        /*
         int i = 0;
         float std_cell_area = 0.0;
         float macro_area = 0.0;
@@ -477,11 +478,18 @@ namespace shape_engine {
         }
 
         float chip_area = outline_width * outline_height;
-        float std_cell_util = std_cell_area / (chip_area * (1 - dead_space) - macro_area);
-    
+        //float std_cell_util = std_cell_area / (chip_area * (1 - dead_space) - macro_area);
+        float std_cell_util = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
+        cout << "chip_area:   " << chip_area << "   ";
+        cout << "macro_area:   " << macro_area << "    ";
+        cout << "std_cell_area:   " << std_cell_area << "   ";
+        cout << "std_cell_util:   " << std_cell_util << "   ";
+        cout << endl;
+        */
+        float macro_area = 0.0;
+        float std_cell_area = 0.0;
 
-
-        i = 0;
+        int i = 0;
         while(i < content.size()) {
             words = Split(content[i]);
             if(words.size() == 2 && words[0] == string("cluster:")) {
@@ -492,7 +500,7 @@ namespace shape_engine {
                 //        name[j] = '*';
                 //}
 
-                
+                cout << "name:   " << name << "   ";        
                 Cluster* cluster = new Cluster(name);
                 clusters.push_back(cluster);
                 i++;
@@ -512,18 +520,37 @@ namespace shape_engine {
                     i++;
                 }
 
-                if(block_area > 0.0) 
+                if(block_area > 0.0) {
                     area = block_area;
-                else
-                    area = area / std_cell_util;
-
+                    macro_area += block_area;
+                } else {
+                    area = area;
+                    std_cell_area += area;
+                }
+                
+                cout << "area:   " << area << endl;
                 cluster->SpecifyArea(area);
                 cluster->SortMacro();
             } else {
                 i++;
             }
         }
+       
+        float chip_area = outline_width * outline_height;
+        float std_cell_util = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
+        cout << "chip_area:   " << chip_area << "   ";
+        cout << "macro_area:   " << macro_area << "    ";
+        cout << "std_cell_area:   " << std_cell_area << "   ";
+        cout << "std_cell_util:   " << std_cell_util << "   ";
+        cout << endl;
         
+        for(int j = 0; j < clusters.size(); j++) {
+            if(clusters[j]->GetNumMacro() == 0) {
+                float area = clusters[j]->GetArea() / std_cell_util;
+                clusters[j]->SpecifyArea(area);
+            }
+        }
+
         cout << "Finish ParseBlockFile" << endl;
 
     }
@@ -592,6 +619,7 @@ namespace shape_engine {
         // Verify the results
         for(int i = 0; i < clusters.size(); i++) {
             cout << "cluster_name:  " << clusters[i]->GetName() << endl;
+            cout << "area:   " << clusters[i]->GetArea() << "   ";
             cout << "aspect_ratio:  " << "  ";
             vector<pair<float, float> > aspect_ratio = clusters[i]->GetAspectRatio();
             for(int j = 0; j < aspect_ratio.size(); j++)
