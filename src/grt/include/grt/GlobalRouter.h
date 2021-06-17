@@ -215,7 +215,7 @@ class GlobalRouter
 
   // aux functions
   void findPins(Net* net);
-  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& rootIdx);
+  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& root_idx);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
