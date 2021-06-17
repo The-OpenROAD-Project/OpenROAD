@@ -7,6 +7,11 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
+[ERROR PAD-0220] Unrecognized arguments (type) specified for define_pad_cell
+define_pad_cell
+define_pad_cell   [-name name]  [-type cell_type|-fill|-corner|-bondpad|-bump]  [-cell_name cell_names_per_side]  [-orient orientation_per_side]  [-pad_pin_name pad_pin_name]  [-break_signals signal_list]  [-physical_only]
+set_bump_options
+set_bump_options   [-pitch pitch]  [-bump_pin_name pin_name]  [-spacing_to_edge spacing]  [-cell_name bump_cell_table]  [-num_pads_per_tile value]  [-rdl_layer name]  [-rdl_width value]  [-rdl_spacing value]  [-rdl_cover_file_name rdl_file_name]
 set_padring_options
 set_padring_options   [-type (flipchip|wirebond)]  [-power power_nets]  [-ground ground_nets]  [-core_area core_area]  [-die_area die_area]  [-offsets offsets]  [-pad_inst_name pad_inst_name]  [-pad_pin_name pad_pin_name]  [-pin_layer pin_layer_name]  [-connect_by_abutment signal_list]
 place_cell -inst_name inst_name
@@ -16,6 +21,7 @@ add_pad   [-name name]  [-type type]  [-cell library_cell]  [-signal signal_name
 initialize_padring [-signal_assignment_file signal_assigment_file]
 [ERROR STA-0402] set_padring_options -power_nets is not a known keyword or flag.
 [ERROR PAD-0205] Incorrect number of values specified for offsets (3), expected 1, 2 or 4
+[ERROR PAD-0219] Unrecognized arguments (offsets) specified for set_padring_options
 Trigger errors
 [ERROR PAD-0094] Value for -edge_name (other) not permitted, choose one of bottom, right, top or left
 [ERROR PAD-0092] No signal dr_dm_1_o or PAD defined for padcell sig_1
@@ -40,6 +46,7 @@ Trigger errors
 This one is correct
 Detect duplicates
 [ERROR PAD-0112] Padcell sig_19 already defined to use p_ddr_dm_1_o
+[ERROR PAD-0221] Unrecognized arguments (bondpad) specified for add_pad
 No more errors expected
 Detect duplicate signal name (not power/ground) specified
 [ERROR PAD-0112] Padcell sig_154 already defined to use p_ddr_dq_8_io

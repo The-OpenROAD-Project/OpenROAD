@@ -12,6 +12,9 @@ proc set_bump_options {args} {
   sta::parse_key_args "set_bump_options" args \
     keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_cover_file_name}
 
+  if {[llength $args] > 0} {
+    utl::error PAD 218 "Unrecognized arguments ([lindex $args 0]) specified for set_bump_options"
+  }
   ICeWall::set_bump_options {*}[array get keys]
 }
 
@@ -30,6 +33,9 @@ proc set_padring_options {args} {
   sta::parse_key_args "set_padring_options" args \
     keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -connect_by_abutment}
 
+  if {[llength $args] > 0} {
+    utl::error PAD 219 "Unrecognized arguments ([lindex $args 0]) specified for set_padring_options"
+  }
   if {[info exists keys(-type)]} {
     ICeWall::set_type $keys(-type)
   }
@@ -84,6 +90,9 @@ proc define_pad_cell {args} {
     keys {-name -type -cell_name -orient -pad_pin_name -break_signals} \
     flags {-fill -corner -bondpad -bump -physical_only}
 
+  if {[llength $args] > 0} {
+    utl::error PAD 220 "Unrecognized arguments ([lindex $args 0]) specified for define_pad_cell"
+  }
   set args [array get keys]
   if {[info exists flags(-physical_only)]} {
     dict set args -physical_only 1
@@ -115,6 +124,9 @@ proc add_pad {args} {
   sta::parse_key_args "add_pad" args \
     keys {-name -type -cell -signal -edge -location -bump -bondpad -inst_name}
 
+  if {[llength $args] > 0} {
+    utl::error PAD 221 "Unrecognized arguments ([lindex $args 0]) specified for add_pad"
+  }
   ICeWall::add_pad {*}[array get keys]
 }
 
@@ -123,6 +135,9 @@ proc initialize_padring {args} {
   # sta::parse_key_args "initialize_padring" args \
   #  keys {-signal_assignment_file}
 
+  if {[llength $args] > 0} {
+    utl::error PAD 222 "Unrecognized arguments ([lindex $args 0]) specified for initialize_padring"
+  }
   ICeWall::init_footprint {*}$args
 }
 

@@ -61,14 +61,14 @@ define_pad_cell \
   -cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB}} \
-  -physical_only 1
+  -physical_only 
   
 define_pad_cell \
   -name PADCELL_PWRDET \
   -type pdt \
   -cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
-  -physical_only 1
+  -physical_only 
 
 define_pad_cell \
   -name PADCELL_FBRK \
@@ -76,32 +76,32 @@ define_pad_cell \
   -cell_name {bottom PADCELL_FBRK_V right PADCELL_FBRK_H top PADCELL_FBRK_V left PADCELL_FBRK_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB} DVDD {DVDDA DVDDB} DVSS {DVSSA DVSSB}} \
-  -physical_only 1
+  -physical_only 
 
 define_pad_cell \
   -name PAD_FILL5 \
   -fill \
   -cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H} \
   -orient {bottom R0 right MY top R180 left MX} \
-  -physical_only 1
+  -physical_only 
   
 define_pad_cell \
   -name PAD_FILL1 \
   -fill \
   -cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H} \
   -orient {bottom R0 right MY top R180 left MX} \
-  -physical_only 1
+  -physical_only 
   
 define_pad_cell \
   -name PAD_CORNER \
   -corner \
   -orient {ll R0 lr R90 ur R180 ul R270} \
-  -physical_only 1
+  -physical_only 
   
 define_pad_cell \
   -name DUMMY_BUMP \
   -bump \
-  -physical_only 1
+  -physical_only 
   
 set_padring_options \
   -type wirebond \
