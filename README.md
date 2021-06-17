@@ -850,13 +850,13 @@ You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
-set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_pdrev_alpha alpha]
+set_clock_routing [-pdrev_fanout fanout] \
+                  [-pdrev_alpha alpha]
 ```
 The `set_clock_routing` command sets specific configurations for clock nets.
 Options description:
-- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_pdrev_alpha**: Set the PDRev routing topology construction trade-off for clock nets.
+- **pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -pdrev_fanout 5)
+- **pdrev_alpha**: Set the PDRev routing topology construction trade-off for clock nets.
 See `set_pdrev_alpha` command description for more details about PDRev and topology trade-off (e.g.: -clock_pdrev_alpha 0.6)
 
 ```

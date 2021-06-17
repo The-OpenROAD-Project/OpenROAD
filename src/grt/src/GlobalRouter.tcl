@@ -166,18 +166,18 @@ proc set_macro_extension { args } {
   }
 }
 
-sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_pdrev_alpha alpha]
+sta::define_cmd_args "set_clock_routing" { [-pdrev_fanout fanout] \
+                                           [-pdrev_alpha alpha]
 }
 
 proc set_clock_routing { args } {
   sta::parse_key_args "set_clock_routing" args \
-    keys { -clock_pdrev_fanout \
-           -clock_pdrev_alpha
+    keys { -pdrev_fanout \
+           -pdrev_alpha
          }
 
-  if { [info exists keys(-clock_pdrev_alpha) ] } {
-    set alpha $keys(-clock_pdrev_alpha)
+  if { [info exists keys(-pdrev_alpha) ] } {
+    set alpha $keys(-pdrev_alpha)
     sta::check_positive_float "-alpha" $alpha
     grt::set_pdrev_alpha_cmd $alpha
   } else {
@@ -187,8 +187,8 @@ proc set_clock_routing { args } {
     grt::set_pdrev_alpha_cmd 0.3
   }
 
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
+  if { [info exists keys(-pdrev_fanout)] } {
+    set fanout $keys(-pdrev_fanout)
     grt::set_pdrev_min_fanout $fanout
   } else {
     grt::set_pdrev_min_fanout -1
