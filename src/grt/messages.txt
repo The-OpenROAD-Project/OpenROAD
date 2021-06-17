@@ -2,7 +2,7 @@ GRT 0001 GlobalRouter.cpp:728      Minimum degree: {}
 GRT 0002 GlobalRouter.cpp:729      Maximum degree: {}
 GRT 0003 GlobalRouter.cpp:2979     Macros: {}
 GRT 0004 GlobalRouter.cpp:2818     Blockages: {}
-GRT 0005 GlobalRouter.tcl:305      layer $layer_name not found.
+GRT 0005 GlobalRouter.tcl:318      layer $layer_name not found.
 GRT 0008 GlobalRouter.cpp:3094     Default via: {}.
 GRT 0009 GlobalRouter.cpp:296      Nets to reroute: {}.
 GRT 0010 GlobalRouter.cpp:213      Routed clock nets: {}
@@ -40,22 +40,22 @@ GRT 0047 GlobalRouter.tcl:88       missing dbTech.
 GRT 0048 GlobalRouter.tcl:96       set_global_routing_region_adjustment: Missing layer.
 GRT 0049 GlobalRouter.tcl:102      set_global_routing_region_adjustment: Missing adjustment.
 GRT 0050 GlobalRouter.tcl:125      set_global_routing_region_adjustment: Wrong number of arguments to define a region.
-GRT 0051 GlobalRouter.tcl:202      missing dbTech.
-GRT 0052 GlobalRouter.tcl:206      missing dbBlock.
+GRT 0051 GlobalRouter.tcl:215      missing dbTech.
+GRT 0052 GlobalRouter.tcl:219      missing dbBlock.
 GRT 0053 GlobalRouter.cpp:3175     Routing resources analysis:
-GRT 0055 GlobalRouter.tcl:222      Wrong number of arguments for origin.
-GRT 0056 GlobalRouter.tcl:386      -clock_layers: Min routing layer is greater than max routing layer.
-GRT 0057 GlobalRouter.tcl:372      missing track structure.
-GRT 0058 GlobalRouter.tcl:273      run global_route before estimating parasitics for global routing.
-GRT 0059 GlobalRouter.tcl:279      no technology has been read.
-GRT 0060 GlobalRouter.tcl:291      layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName]).
-GRT 0061 GlobalRouter.tcl:294      layer [$tech_layer getConstName] is lesser than the min routing layer ([$min_tech_layer getConstName]).
-GRT 0062 GlobalRouter.tcl:320      Input format to define layer range for $cmd is min-max.
-GRT 0063 GlobalRouter.tcl:327      missing dbBlock.
-GRT 0064 GlobalRouter.tcl:333      Lower left x is outside die area.
-GRT 0065 GlobalRouter.tcl:337      Lower left y is outside die area.
-GRT 0066 GlobalRouter.tcl:341      Upper right x is outside die area.
-GRT 0067 GlobalRouter.tcl:345      Upper right y is outside die area.
+GRT 0055 GlobalRouter.tcl:235      Wrong number of arguments for origin.
+GRT 0056 GlobalRouter.tcl:399      -clock_layers: Min routing layer is greater than max routing layer.
+GRT 0057 GlobalRouter.tcl:385      missing track structure.
+GRT 0058 GlobalRouter.tcl:286      run global_route before estimating parasitics for global routing.
+GRT 0059 GlobalRouter.tcl:292      no technology has been read.
+GRT 0060 GlobalRouter.tcl:304      layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName]).
+GRT 0061 GlobalRouter.tcl:307      layer [$tech_layer getConstName] is lesser than the min routing layer ([$min_tech_layer getConstName]).
+GRT 0062 GlobalRouter.tcl:333      Input format to define layer range for $cmd is min-max.
+GRT 0063 GlobalRouter.tcl:340      missing dbBlock.
+GRT 0064 GlobalRouter.tcl:346      Lower left x is outside die area.
+GRT 0065 GlobalRouter.tcl:350      Lower left y is outside die area.
+GRT 0066 GlobalRouter.tcl:354      Upper right x is outside die area.
+GRT 0067 GlobalRouter.tcl:358      Upper right y is outside die area.
 GRT 0068 AntennaRepair.cpp:88      Global route segment not valid.
 GRT 0069 GlobalRouter.cpp:276      Liberty port for {}/{} not found.
 GRT 0070 GlobalRouter.cpp:561      Invalid segment for net {}.
@@ -178,8 +178,8 @@ GRT 0215 FastRoute.cpp:931         skipping layer {} not found in db
 GRT 0219 GlobalRouter.tcl:154      set_macro_extension: Wrong number of arguments.
 GRT 0220 GlobalRouter.cpp:1461     Routing layer of index {} not found.
 GRT 0221 AntennaRepair.cpp:127     Cannot create wire for net {}.
-GRT 0222 GlobalRouter.tcl:300      no technology has been read.
-GRT 0223 GlobalRouter.tcl:352      missing dbBlock.
+GRT 0222 GlobalRouter.tcl:313      no technology has been read.
+GRT 0223 GlobalRouter.tcl:365      missing dbBlock.
 GRT 0224 GlobalRouter.cpp:3113     Chose via {} as default.
 GRT 0225 RipUp.cpp:229             Maze ripup wrong in newRipup.
 GRT 0226 RipUp.cpp:327             Type2 ripup not type L.

@@ -184,6 +184,19 @@ proc set_clock_routing { args } {
   }
 }
 
+sta::define_cmd_args "set_global_routing_random" { [-seed seed] }
+
+proc set_global_routing_random { args } {
+  sta::parse_key_args "set_global_routing_random" args \
+  keys { -seed }
+
+  if { [info exists keys(-seed)] } {
+    set seed $keys(-seed)
+    sta::check_integer "set_global_routing_random" $seed
+    grt::set_seed $seed
+  }
+}
+
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \

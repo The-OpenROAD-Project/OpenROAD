@@ -152,6 +152,12 @@ set_macro_extension(int macroExtension)
 }
 
 void
+set_seed(int seed)
+{
+  getFastRoute()->setSeed(seed);
+}
+
+void
 global_route()
 {
   getFastRoute()->globalRoute();
