@@ -1,0 +1,15 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: clock_route.def
+[INFO ODB-0128] Design: gcd
+[WARNING ODB-0099] error: netlist component (_462_) is not defined
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 170 components and 1258 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 72 connections.
+[INFO ODB-0134] Finished DEF file: clock_route.def
+[ERROR GRT-0029] The alpha value must be greater than 0.0 and lesser or equal to 1.0.

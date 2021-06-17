@@ -1,5 +1,7 @@
 record_tests {
   clock_route
+  clock_route_error1
+  clock_route_error2
   est_rc1
   est_rc2
   gcd

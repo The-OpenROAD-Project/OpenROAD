@@ -73,13 +73,12 @@ proc set_pdrev_alpha { args } {
     set alpha [lindex $args 0]
     set net_name $keys(-net)
     
-    sta::check_positive_float "alpha" $alpha
+    grt::check_pdrev_alpha $alpha
     grt::set_alpha_for_net $net_name $alpha
-    puts "$net_name: $alpha"
   } elseif { [llength $args] == 1 } {
     set alpha [lindex $args 0]
 
-    sta::check_positive_float "alpha" $alpha
+    grt::check_pdrev_alpha $alpha
     grt::set_pdrev_alpha_cmd $alpha
   } else {
     utl::error GRT 46 "set_pdrev_alpha: Wrong number of arguments."
@@ -383,6 +382,13 @@ proc define_clock_layer_range { layers } {
     grt::set_clock_layer_range $min_clock_layer $max_clock_layer
   } else {
     utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
+  }
+}
+
+proc check_pdrev_alpha { alpha } {
+  sta::check_positive_float "check_pdrev_alpha" $alpha
+  if {$alpha > 1.0} {
+    utl::error GRT 29 "The alpha value must be greater than 0.0 and lesser or equal to 1.0."
   }
 }
 
