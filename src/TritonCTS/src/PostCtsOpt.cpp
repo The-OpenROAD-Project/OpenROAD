@@ -60,7 +60,7 @@ void PostCtsOpt::initSourceSinkDists()
   });
 
   _avgSourceSinkDist /= _clock->getNumSinks();
-  _logger->info(CTS, 36, " Avg. source sink dist: {:.2f} dbu.", _avgSourceSinkDist);
+  _logger->info(CTS, 36, " Average source sink dist: {:.2f} dbu.", _avgSourceSinkDist);
 }
 
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)

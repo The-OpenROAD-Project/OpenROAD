@@ -1302,7 +1302,7 @@ NetRouteMap FastRouteCore::run()
   bool has_2D_overflow = totalOverflow > 0;
 
   if (minofl > 0) {
-    logger->info(GRT, 104, "Minimal overflow {} occuring at round {}.", minofl, minoflrnd);
+    logger->info(GRT, 104, "Minimal overflow {} occurring at round {}.", minofl, minoflrnd);
     copyBR();
   }
 
@@ -1348,7 +1348,7 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge, 0, 12);
     }
     if (verbose > 1)
-      logger->info(GRT, 109, "Post-processsing finished.\n Starting via filling.");
+      logger->info(GRT, 109, "Post-processing finished.\n Starting via filling.");
   }
 
   fillVIA();
