@@ -642,10 +642,11 @@ void GlobalRouter::findPins(Net* net)
   }
 }
 
-void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
+void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& root_idx)
 {
   findPins(net);
 
+  root_idx = 0;
   for (Pin& pin : net->getPins()) {
     odb::Point pinPosition = pin.getOnGridPosition();
     int topLayer = pin.getTopLayer();
@@ -676,6 +677,9 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
 
       if (!invalid) {
         pinsOnGrid.push_back(RoutePt(pinX, pinY, topLayer));
+        if (pin.isDriver()) {
+          root_idx = pinsOnGrid.size()-1;
+        }
       }
     }
   }
@@ -712,12 +716,13 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       std::vector<RoutePt> pinsOnGrid;
-      findPins(net, pinsOnGrid);
+      int root_idx;
+      findPins(net, pinsOnGrid, root_idx);
 
       if (pinsOnGrid.size() > 1) {
-        float netPriority = pdrev_alpha_;
+        float net_alpha = pdrev_alpha_;
         if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
-          netPriority = _netsAlpha[net->getName()];
+          net_alpha = _netsAlpha[net->getName()];
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
@@ -728,7 +733,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
                                        pinsOnGrid.size(),
-                                       netPriority,
+                                       net_alpha,
                                        isClock,
                                        edgeCostForNet,
                                        edgeCostsPerLayer);
