@@ -100,7 +100,7 @@ std::string Pin::getName() const
 bool Pin::isDriver()
 {
   if (_isPort) {
-    return false;
+    return (_bterm->getIoType() == odb::dbIoType::INPUT);
   } else {
     odb::dbNet* db_net = _iterm->getNet();
     odb::dbITerm* driver = db_net->getFirstOutput();
