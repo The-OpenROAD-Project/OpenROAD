@@ -158,7 +158,7 @@ void MacroPlacer::init()
     reportEdgePinCounts();
     findAdjacencies();
   } else {
-    logger_->warn(MPL, 2, "Some instances do not have liberty models. TritonMP will place macros without connection information.");
+    logger_->warn(MPL, 2, "Some instances do not have Liberty models. TritonMP will place macros without connection information.");
   }
 }
 
@@ -751,7 +751,7 @@ MacroPlacer::getPartitions(const Layout& layout,
 
     // impossible partitioning
     if (upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      logger_->info(MPL, 80, "Impossible partiton found.");
+      logger_->info(MPL, 80, "Impossible partition found.");
       continue;
     }
 
@@ -784,7 +784,7 @@ void MacroPlacer::findMacros()
       if (dps == dbPlacementStatus::NONE || dps == dbPlacementStatus::UNPLACED) {
         logger_->error(MPL,
                        3,
-                       "Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.",
+                       "Macro {} is unplaced. Use global_placement to get an initial placement before macro placement.",
                        inst->getConstName());
       }
 
@@ -1000,7 +1000,7 @@ void MacroPlacer::findAdjacencies()
 
   AdjWeightMap adj_map;
   findAdjWeights(vertex_fanins, adj_map);
-  
+
   fillMacroWeights(adj_map);
 }
 
