@@ -33,6 +33,8 @@
 
 #include "edge.h"
 
+#include <limits>
+
 namespace pdr {
 
 Edge::Edge(int _idx, int _head, int _tail)
