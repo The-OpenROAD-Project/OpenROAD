@@ -216,10 +216,9 @@ void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
 void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
 {
   if (targetNet_) {
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
@@ -233,10 +232,9 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
     }
   } else {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i
+         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != frLayerTypeEnum::ROUTING) {

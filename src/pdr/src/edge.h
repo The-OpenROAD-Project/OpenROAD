@@ -54,10 +54,10 @@ public:
   int best_shape;        // 0 = lower L, 1 = upper L
   int final_best_shape;  // 0 = lower L, 1 = upper L
   int best_ov;
-  unsigned lower_ov, upper_ov;
+  int lower_ov, upper_ov;
   vector<int> upper_best_config, lower_best_config;
-  unsigned lower_idx_of_cn_x, lower_idx_of_cn_y;
-  unsigned upper_idx_of_cn_x, upper_idx_of_cn_y;
+  int lower_idx_of_cn_x, lower_idx_of_cn_y;
+  int upper_idx_of_cn_x, upper_idx_of_cn_y;
 
   vector<Node> STNodes;
   vector<Node> lower_sps_to_be_added_x, lower_sps_to_be_added_y;

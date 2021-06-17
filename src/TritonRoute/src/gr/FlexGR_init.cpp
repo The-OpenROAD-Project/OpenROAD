@@ -272,7 +272,6 @@ void FlexGR::initCMap()
 
 void FlexGRWorker::initBoundary()
 {
-
   vector<grBlockObject*> result;
   getRegionQuery()->queryGRObj(extBox_, result);
   for (auto rptr : result) {
@@ -307,7 +306,6 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
   } else {
     // break on both sides
 
-
     frPoint childLoc = child->getLoc();
     if (childLoc == bp) {
       auto breakNode1
@@ -318,7 +316,6 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
           = initBoundary_splitPathSeg_split(child, parent, breakPt2);
       initBoundary_splitPathSeg_split(breakNode2, parent, breakPt1);
     }
-
   }
 }
 
@@ -1108,8 +1105,6 @@ void FlexGRWorker::initGridGraph()
 // copy from global cmap
 void FlexGRWorker::initGridGraph_fromCMap()
 {
-
-
   auto cmap = getCMap();
   frPoint gcellIdxLL = getRouteGCellIdxLL();
   frPoint gcellIdxUR = getRouteGCellIdxUR();
@@ -1119,7 +1114,6 @@ void FlexGRWorker::initGridGraph_fromCMap()
   int idxURY = gcellIdxUR.y();
 
   for (int zIdx = 0; zIdx < (int) cmap->getZMap().size(); zIdx++) {
-
     for (int xIdx = 0; xIdx <= (idxURX - idxLLX); xIdx++) {
       int cmapXIdx = xIdx + idxLLX;
       for (int yIdx = 0; yIdx <= (idxURY - idxLLY); yIdx++) {
@@ -1172,7 +1166,6 @@ void FlexGRWorker::initGridGraph_fromCMap()
             zIdx,
             frDirEnum::N,
             cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
-
       }
     }
   }

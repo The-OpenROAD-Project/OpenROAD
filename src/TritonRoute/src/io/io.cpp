@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "io/io.h"
+
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -34,7 +36,6 @@
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
 #include "global.h"
-#include "io/io.h"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
 #include "utl/Logger.h"

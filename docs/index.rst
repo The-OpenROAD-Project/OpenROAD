@@ -70,7 +70,6 @@ Site Map
    contrib/DatabaseMath
    contrib/GettingInvolved
    contrib/Logger
-   contrib/OpenROADArch
    user/FAQS
 
 
