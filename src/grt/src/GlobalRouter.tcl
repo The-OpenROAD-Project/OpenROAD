@@ -62,16 +62,27 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_pdrev_alpha_for_net" { net alpha }
+sta::define_cmd_args "set_pdrev_alphav" { alpha \
+                                          [-net net_name] }
 
-proc set_pdrev_alpha_for_net { args } {
-  if {[llength $args] == 2} {
-    lassign $args net alpha
+proc set_pdrev_alpha { args } {
+  sta::parse_key_args "set_pdrev_alphav" args \
+                 keys {-net}
+
+  if { [info exists keys(-net)] } {
+    set alpha [lindex $args 0]
+    set net_name $keys(-net)
     
-    sta::check_positive_float "-alpha" $alpha
-    grt::set_alpha_for_net $net $alpha
+    sta::check_positive_float "alpha" $alpha
+    grt::set_alpha_for_net $net_name $alpha
+    puts "$net_name: $alpha"
+  } elseif { [llength $args] == 1 } {
+    set alpha [lindex $args 0]
+
+    sta::check_positive_float "alpha" $alpha
+    grt::set_pdrev_alpha_cmd $alpha
   } else {
-    utl::error GRT 46 "set_pdrev_alpha_for_net: Wrong number of arguments."
+    utl::error GRT 46 "set_pdrev_alpha: Wrong number of arguments."
   }
 }
 
@@ -168,12 +179,12 @@ proc set_clock_routing { args } {
   if { [info exists keys(-clock_pdrev_alpha) ] } {
     set alpha $keys(-clock_pdrev_alpha)
     sta::check_positive_float "-alpha" $alpha
-    grt::set_pdrev_alpha $alpha
+    grt::set_pdrev_alpha_cmd $alpha
   } else {
     # Default alpha as 0.3 prioritize wire length, but keeps
     # aware of path depth in the topology construction (see PDRev paper
     # for more reference)
-    grt::set_pdrev_alpha 0.3
+    grt::set_pdrev_alpha_cmd 0.3
   }
 
   if { [info exists keys(-clock_pdrev_fanout)] } {
