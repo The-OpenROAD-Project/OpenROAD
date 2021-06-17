@@ -97,9 +97,9 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_alpha(float alpha)
+set_pdrev_alpha(float alpha)
 {
-  getFastRoute()->setAlpha(alpha);
+  getFastRoute()->setPdRevAlpha(alpha);
 }
 
 void
