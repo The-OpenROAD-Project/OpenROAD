@@ -127,6 +127,7 @@ class AntennaRepair
   utl::Logger* _logger;
   odb::dbBlock* _block;
   std::vector<odb::dbInst*> _diodeInsts;
+  std::vector<odb::dbNet*> nets_with_violations_;
   AntennaViolations _antennaViolations;
 };
 
