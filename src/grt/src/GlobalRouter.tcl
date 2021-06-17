@@ -62,16 +62,16 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
+sta::define_cmd_args "set_pdrev_alpha_for_net" { net alpha }
 
-proc set_pdrev_topology_priority { args } {
+proc set_pdrev_alpha_for_net { args } {
   if {[llength $args] == 2} {
     lassign $args net alpha
     
     sta::check_positive_float "-alpha" $alpha
     grt::set_alpha_for_net $net $alpha
   } else {
-    utl::error GRT 46 "set_pdrev_topology_priority: Wrong number of arguments."
+    utl::error GRT 46 "set_pdrev_alpha_for_net: Wrong number of arguments."
   }
 }
 
@@ -156,24 +156,24 @@ proc set_macro_extension { args } {
 }
 
 sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_topology_priority clock_topology_priority]
+                                           [-clock_pdrev_alpha alpha]
 }
 
 proc set_clock_routing { args } {
   sta::parse_key_args "set_clock_routing" args \
     keys { -clock_pdrev_fanout \
-           -clock_topology_priority
+           -clock_pdrev_alpha
          }
 
-  if { [info exists keys(-clock_topology_priority) ] } {
-    set clock_topology_priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $clock_topology_priority
-    grt::set_topology_priority $clock_topology_priority
+  if { [info exists keys(-clock_pdrev_alpha) ] } {
+    set alpha $keys(-clock_pdrev_alpha)
+    sta::check_positive_float "-alpha" $alpha
+    grt::set_pdrev_alpha $alpha
   } else {
     # Default alpha as 0.3 prioritize wire length, but keeps
     # aware of path depth in the topology construction (see PDRev paper
     # for more reference)
-    grt::set_topology_priority 0.3
+    grt::set_pdrev_alpha 0.3
   }
 
   if { [info exists keys(-clock_pdrev_fanout)] } {

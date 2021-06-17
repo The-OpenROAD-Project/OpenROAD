@@ -851,25 +851,25 @@ Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
 set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_topology_priority priority]
+                  [-clock_pdrev_alpha alpha]
 ```
 The `set_clock_routing` command sets specific configurations for clock nets.
 Options description:
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
-See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
+- **clock_pdrev_alpha**: Set the PDRev routing topology construction trade-off for clock nets.
+See `set_pdrev_alpha_for_net` command description for more details about PDRev and topology trade-off (e.g.: -clock_pdrev_alpha 0.6)
 
 ```
-set_pdrev_topology_priority netName alpha
+set_pdrev_alpha_for_net netName alpha
 ```
 FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
-priority of PDRev between wire length and skew, using the `alpha` parameter.
-The `set_pdrev_topology_priority` command sets the PDRev routing topology construction priority for specific nets.
+trade-off between minimum wire length and path length between the driver and the loads, using the `alpha` parameter.
+The `set_pdrev_alpha_for_net` command sets the PDRev routing topology construction priority for specific nets.
 Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generates topologies with shorter wire length,
 and alpha close to 1.0 generates topologies prioritizing path depth. For more information about PDRev, check the paper in
 `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_topology_priority clk 0.3` sets an alpha value of 0.3 for net *clk*.
+Example: `set_pdrev_alpha_for_net clk 0.3` sets an alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}

@@ -92,7 +92,7 @@ void GlobalRouter::init()
   _verbose = 0;
 
   // Clock net routing variables
-  _topologyPriority = 0.3;
+  pdrev_alpha_ = 0.3;
 }
 
 void GlobalRouter::makeComponents()
@@ -151,7 +151,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
   }
 
   if (_pdRevForHighFanout != -1) {
-    _fastRoute->setAlpha(_topologyPriority);
+    _fastRoute->setAlpha(pdrev_alpha_);
   }
 
   _fastRoute->setVerbose(_verbose);
@@ -707,7 +707,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       int root_idx = findPins(net, pinsOnGrid);
 
       if (pinsOnGrid.size() > 1) {
-        float netPriority = _topologyPriority;
+        float netPriority = pdrev_alpha_;
         if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
           netPriority = _netsAlpha[net->getName()];
         }
@@ -1287,9 +1287,9 @@ void GlobalRouter::setMaxLayerForClock(const int maxLayer)
   _maxLayerForClock = maxLayer;
 }
 
-void GlobalRouter::setTopologyPriority(const float priority)
+void GlobalRouter::setPdRevAlpha(const float alpha)
 {
-  _topologyPriority = priority;
+  pdrev_alpha_ = alpha;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
