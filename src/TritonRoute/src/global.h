@@ -37,12 +37,13 @@
 #include "db/obj/frBlock.h"
 #include "frDesign.h"
 
-extern std::string GUIDE_FILE;
-extern std::string OUTGUIDE_FILE;
-extern std::string DBPROCESSNODE;
-extern std::string OUT_MAZE_FILE;
-extern std::string DRC_RPT_FILE;
-extern std::string CMAP_FILE;
+using namespace std;
+extern string GUIDE_FILE;
+extern string OUTGUIDE_FILE;
+extern string DBPROCESSNODE;
+extern string OUT_MAZE_FILE;
+extern string DRC_RPT_FILE;
+extern string CMAP_FILE;
 // to be removed
 extern int OR_SEED;
 extern double OR_K;
@@ -53,8 +54,8 @@ extern int BATCHSIZETA;
 extern int MTSAFEDIST;
 extern int DRCSAFEDIST;
 extern int VERBOSE;
-extern std::string BOTTOM_ROUTING_LAYER_NAME;
-extern std::string TOP_ROUTING_LAYER_NAME;
+extern string BOTTOM_ROUTING_LAYER_NAME;
+extern string TOP_ROUTING_LAYER_NAME;
 extern int BOTTOM_ROUTING_LAYER;
 extern int TOP_ROUTING_LAYER;
 extern bool ALLOW_PIN_AS_FEEDTHROUGH;
@@ -122,22 +123,23 @@ frCoord getGCELLOFFSETY();
 
 // These need to be in the fr namespace to support argument-dependent
 // lookup
-std::ostream& operator<<(std::ostream& os, const fr::frViaDef& viaDefIn);
-std::ostream& operator<<(std::ostream& os, const fr::frBlock& blockIn);
-std::ostream& operator<<(std::ostream& os, const fr::frInst& instIn);
-std::ostream& operator<<(std::ostream& os, const fr::frInstTerm& instTermIn);
-std::ostream& operator<<(std::ostream& os, const fr::frTerm& termIn);
-std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
-std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
-std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
-std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
-std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
-std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
-std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
-std::ostream& operator<<(std::ostream& os, const frShape& fig);
-std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
-std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
-std::ostream& operator<<(std::ostream& os, const frGuide& p);
+ostream& operator<<(ostream& os, const fr::frViaDef& viaDefIn);
+ostream& operator<<(ostream& os, const fr::frBlock& blockIn);
+ostream& operator<<(ostream& os, const fr::frInst& instIn);
+ostream& operator<<(ostream& os, const fr::frInstTerm& instTermIn);
+ostream& operator<<(ostream& os, const fr::frTerm& termIn);
+ostream& operator<<(ostream& os, const fr::frPin& pinIn);
+ostream& operator<<(ostream& os, const fr::frRect& pinFig);
+ostream& operator<<(ostream& os, const fr::frPolygon& pinFig);
+ostream& operator<<(ostream& os, const fr::frNet& net);
+ostream& operator<<(ostream& os, const fr::frPoint& pIn);
+ostream& operator<<(ostream& os, const fr::frBox& box);
+ostream& operator<<(ostream& os, const fr::drConnFig& fig);
+ostream& operator<<(ostream& os, const frShape& fig);
+ostream& operator<<(ostream& os, const frConnFig& fig);
+ostream& operator<<(ostream& os, const frPathSeg& fig);
+ostream& operator<<(ostream& os, const frGuide& p);
+ostream& operator<<(ostream& os, const frBlockObject& fig);
 // namespace fr
 }  // namespace fr
 #endif
