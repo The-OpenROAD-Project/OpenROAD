@@ -62,11 +62,11 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_pdrev_alphav" { alpha \
+sta::define_cmd_args "set_pdrev_alpha" { alpha \
                                           [-net net_name] }
 
 proc set_pdrev_alpha { args } {
-  sta::parse_key_args "set_pdrev_alphav" args \
+  sta::parse_key_args "set_pdrev_alpha" args \
                  keys {-net}
 
   if { [info exists keys(-net)] } {
