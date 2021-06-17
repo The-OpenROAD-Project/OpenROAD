@@ -16,7 +16,7 @@ stages. Alternatively, you can run the individual steps manually.
 --------------------------
 
 **GitHub:**
-`OpenROAD-flow`_
+`OpenROAD-flow-scripts`_
 
 Code Organization
 ~~~~~~~~~~~~~~~~~
@@ -50,15 +50,15 @@ for installation instructions.
 Option 1: Installing build exports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Clone the OpenROAD-flow repository
+1. Clone the OpenROAD-flow-scripts repository
 
    ::
 
-      git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow.git
+      git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git
 
 2. Navigate to the “Releases” tab and download the latest release
 
-3. Extract the tar to ``OpenROAD-flow/tools/OpenROAD``
+3. Extract the tar to ``OpenROAD-flow-scripts/tools/OpenROAD``
 
 4. Update your shell environment
 
@@ -73,13 +73,13 @@ This build option leverages a multi-step docker flow to install the
 tools and dependencies to a runner image. To follow these instructions,
 you must have docker installed, permissions to run docker, and docker
 container network access enabled. This step will create a runner image
-tagged as ``openroad/flow``.
+tagged as ``openroad/flow-scripts``.
 
-1. Clone the OpenROAD-flow repository
+1. Clone the OpenROAD-flow-scripts repository
 
    ::
 
-      git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow.git
+      git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git
 
 2. Ensure your docker daemon is running and ``docker`` is in your PATH,
    then run the docker build.
@@ -93,7 +93,7 @@ tagged as ``openroad/flow``.
 
    ::
 
-      docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow bash
+      docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow-scripts bash
 
 Option 3: Building the tools locally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -103,8 +103,8 @@ Option 3: Building the tools locally
 
    ::
 
-      OpenROAD-flow/tools/OpenROAD/Dockerfile
-      OpenROAD-flow/tools/yosys/Dockerfile
+      OpenROAD-flow-scripts/tools/OpenROAD/Dockerfile
+      OpenROAD-flow-scripts/tools/yosys/Dockerfile
 
 See the `KLayout <https://www.klayout.de/>`__ instructions for
 installing KLayout from source.
@@ -699,7 +699,7 @@ Options description:
 -  **param_file**: This file contains the parameters used to
    control the detailed router)
 
-.. _`OpenROAD-flow`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+.. _`OpenROAD-flow-scripts`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
 .. _`yosys`: https://github.com/The-OpenROAD-Project/yosys
 .. _`OpenROAD App`: https://github.com/The-OpenROAD-Project/OpenROAD
 .. _`README`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/README.md
