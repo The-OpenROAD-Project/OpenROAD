@@ -87,7 +87,7 @@ void FlexDR::checkConnectivity_pin2epMap(
     map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
         pin2epMap)
 {
-  bool enableOutput = false;
+  bool enableOutput = net->getName() == "_06727_";
   // bool enableOutput = true;
   frPoint bp, ep;
   set<pair<frPoint, frLayerNum>>
@@ -104,19 +104,11 @@ void FlexDR::checkConnectivity_pin2epMap(
              << endl;
         cout << "  query bp" << endl;
       }
-      if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, bp, lNum, pin2epMap, true);
-      } else {
-        extEndPoints.insert(make_pair(bp, lNum));
-      }
       if (enableOutput) {
         cout << "  query ep" << endl;
       }
-      if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, ep, lNum, pin2epMap, true);
-      } else {
-        extEndPoints.insert(make_pair(ep, lNum));
-      }
     }
   }
   for (auto& connFig : netDRObjs) {
@@ -131,15 +123,11 @@ void FlexDR::checkConnectivity_pin2epMap(
       if (enableOutput) {
         cout << "  query pt l1" << endl;
       }
-      if (extEndPoints.find(make_pair(bp, l1Num)) == extEndPoints.end()) {
         checkConnectivity_pin2epMap_helper(net, bp, l1Num, pin2epMap, false);
-      }
       if (enableOutput) {
         cout << "  query pt l2" << endl;
       }
-      if (extEndPoints.find(make_pair(bp, l2Num)) == extEndPoints.end()) {
         checkConnectivity_pin2epMap_helper(net, bp, l2Num, pin2epMap, false);
-      }
       //} else if (connFig->typeId() == frcPatchWire) {
       //  ;
     }
@@ -149,7 +137,7 @@ void FlexDR::checkConnectivity_pin2epMap(
 void FlexDR::checkConnectivity_initDRObjs(const frNet* net,
                                           vector<frConnFig*>& netDRObjs)
 {
-  bool enableOutput = false;
+  bool enableOutput = net->getName() == "_06727_";
   // bool enableOutput = true;
   for (auto& uPtr : net->getShapes()) {
     auto connFig = uPtr.get();
@@ -374,7 +362,7 @@ void FlexDR::checkConnectivity_nodeMap(
               frBlockObjectComp>& pin2epMap,
     map<pair<frPoint, frLayerNum>, set<int>>& nodeMap)
 {
-  bool enableOutput = false;
+  bool enableOutput = net->getName() == "_06727_";
   // bool enableOutput = true;
   checkConnectivity_nodeMap_routeObjEnd(net, netRouteObjs, nodeMap);
   checkConnectivity_nodeMap_routeObjSplit(net, netRouteObjs, nodeMap);
@@ -421,7 +409,7 @@ bool FlexDR::checkConnectivity_astar(
     const int& nNetObjs)
 {
   // bool enableOutput = true;
-  bool enableOutput = false;
+  bool enableOutput = net->getName() == "_06727_";
   // a star search
 
   // node index, node visited
