@@ -150,10 +150,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
     setSelectedMetal(maxRoutingLayer);
   }
 
-  if (pdrev_min_fanout_ != -1) {
-    _fastRoute->setAlpha(pdrev_alpha_);
-  }
-
+  _fastRoute->setAlpha(pdrev_alpha_);
   _fastRoute->setVerbose(_verbose);
   _fastRoute->setOverflowIterations(_overflowIterations);
   _fastRoute->setPDRevMinFanout(pdrev_min_fanout_);
