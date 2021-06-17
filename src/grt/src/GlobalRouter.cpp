@@ -41,6 +41,7 @@
 #include <fstream>
 #include <iostream>
 #include <istream>
+#include <random>
 #include <set>
 #include <string>
 #include <utility>
@@ -64,6 +65,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace grt {
 
@@ -90,6 +92,7 @@ void GlobalRouter::init()
   _allowOverflow = false;
   _macroExtension = 0;
   _verbose = 0;
+  seed_ = 0;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -685,6 +688,15 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
   _fastRoute->setNumberNets(validNets);
   _fastRoute->setMaxNetDegree(getMaxNetDegree());
+
+  if (seed_ != 0) {
+    std::mt19937 g;
+    g.seed(seed_);
+
+    if (nets.size() > 1) {
+      utl::shuffle(nets.begin(), nets.end(), g);
+    }
+  }
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
