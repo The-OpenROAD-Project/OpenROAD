@@ -108,8 +108,8 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
   frCoord high = low
-                 + (frCoord) (tp->getTrackSpacing())
-                       * ((frCoord) (tp->getNumTracks()) - 1);
+                 + (frCoord)(tp->getTrackSpacing())
+                       * ((frCoord)(tp->getNumTracks()) - 1);
   if (isVerticalTrack) {
     return !(low > box.right() || high < box.left());
   } else {
@@ -351,8 +351,6 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
 
 void FlexPA::initTrackCoords()
 {
-
-
   int numLayers = getDesign()->getTech()->getLayers().size();
   frCoord manuGrid = getDesign()->getTech()->getManufacturingGrid();
 

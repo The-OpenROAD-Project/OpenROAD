@@ -32,7 +32,7 @@ Starting tomorrow at 5pm Pacific Time on Friday 12/13
    not slow down but rather continuing working in branches as usual
    until we are ready for their changes.
 -  Documentation can be updated at any time, please update your README’s
--  The OpenROAD-flow repo will be changing as we get more designs to
+-  The OpenROAD-flow-scripts repo will be changing as we get more designs to
    work. The scripts there will be have control added when get to the
    demo freeze on 12/20. At that time we should also make an
    alpha_release_2.0.0 branch there.
