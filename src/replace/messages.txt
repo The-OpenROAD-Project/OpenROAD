@@ -26,11 +26,11 @@ GPL 0027 nesterovBase.cpp:695      TotalBinArea: {}
 GPL 0028 nesterovBase.cpp:718      BinCnt: {} {}
 GPL 0029 nesterovBase.cpp:725      BinSize: {} {}
 GPL 0030 nesterovBase.cpp:759      NumBins: {}
-GPL 0031 nesterovBase.cpp:1104     FillerInit: NumGCells: {}
-GPL 0032 nesterovBase.cpp:1105     FillerInit: NumGNets: {}
-GPL 0033 nesterovBase.cpp:1106     FillerInit: NumGPins: {}
-GPL 0034 nesterovBase.cpp:1492     gCellFiller: {}
-GPL 0035 nesterovBase.cpp:1512     NewTotalFillerArea: {}
+GPL 0031 nesterovBase.cpp:1106     FillerInit: NumGCells: {}
+GPL 0032 nesterovBase.cpp:1107     FillerInit: NumGNets: {}
+GPL 0033 nesterovBase.cpp:1108     FillerInit: NumGPins: {}
+GPL 0034 nesterovBase.cpp:1504     gCellFiller: {}
+GPL 0035 nesterovBase.cpp:1524     NewTotalFillerArea: {}
 GPL 0036 routeBase.cpp:196         TileLxLy: {} {}
 GPL 0037 routeBase.cpp:197         TileSize: {} {}
 GPL 0038 routeBase.cpp:198         TileCnt: {} {}
@@ -78,6 +78,6 @@ GPL 0200 plot.cpp:619              {} image has been saved
 GPL 0201 plot.cpp:638              {} image has been saved
 GPL 0202 plot.cpp:656              {} image has been saved
 GPL 0301 placerBase.cpp:1090       Utilization exceeds 100%.
-GPL 0302 nesterovBase.cpp:1198     Use a higher -density or 
-GPL 0303 nesterovBase.cpp:1475     Use a higher -density or 
+GPL 0302 nesterovBase.cpp:1202     Use a higher -density or 
+GPL 0303 nesterovBase.cpp:1487     Use a higher -density or 
 GPL 0304 nesterovPlace.cpp:240     RePlAce diverged at initial iteration. 

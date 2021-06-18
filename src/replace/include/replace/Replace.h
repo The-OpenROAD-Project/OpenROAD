@@ -106,6 +106,8 @@ class Replace
     void setMinPhiCoef(float minPhiCoef);
     void setMaxPhiCoef(float maxPhiCoef);
 
+    float getUniformTargetDensity();
+
     // HPWL: half-parameter wire length.
     void setReferenceHpwl(float deltaHpwl);
 
