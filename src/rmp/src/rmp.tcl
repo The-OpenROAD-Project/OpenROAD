@@ -33,9 +33,17 @@
 ##
 ############################################################################
 
-# Restructureing could be done in various modes targeting area or timing.
-# Possible values of mode_name: area, delay
-# depth and slack thresholds can be provided for delay mode
+# Restructuring could be done in various modes targeting area or timing.
+# 
+# Argument Description
+# liberty_file:    Liberty file with description of cells used in design. This would be passed to ABC.
+# mode:            Could be area or delay. In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
+# slack_threshold: specifies slack value below which timing paths need to be analyzed for restructuring
+# depth_threshold: specifies the path depth above which a timing path would be considered for restructuring
+# locell:          specifies tie cell which can drive constant zero
+# loport:          specifies port name of tie low cell
+# hicell:          specifies tie cell which can drive constant one
+# hiport:          specifies port name of tie high cell
 
 sta::define_cmd_args "restructure" { \
                                       [-slack_threshold slack]\
