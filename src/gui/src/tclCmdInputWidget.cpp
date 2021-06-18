@@ -95,8 +95,6 @@ void TclCmdInputWidget::determineLineHeight()
 
 void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
 {
-  bool forward_key_press = true;
-
   bool has_control = e->modifiers().testFlag(Qt::ControlModifier);
   int key = e->key();
   if (key == Qt::Key_Enter || key == Qt::Key_Return) {
@@ -105,14 +103,15 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
       // don't execute just insert the newline
       // does not get inserted by Qt, so manually inserting
       insertPlainText("\n");
+
+      return;
     } else {
       // Check if command complete and attempt to execute, otherwise do nothing
       if (isCommandComplete(toPlainText().simplified().toStdString())) {
+        // execute command
         emit completeCommand();
-        if (toPlainText().isEmpty()) {
-          // if successful, contents was cleared
-          forward_key_press = false;
-        }
+
+        return;
       }
     }
   } else if (key == Qt::Key_Down) {
@@ -131,9 +130,7 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     }
   }
 
-  if (forward_key_press) {
-    QPlainTextEdit::keyPressEvent(e);
-  }
+  QPlainTextEdit::keyPressEvent(e);
 }
 
 void TclCmdInputWidget::keyReleaseEvent(QKeyEvent* e)
