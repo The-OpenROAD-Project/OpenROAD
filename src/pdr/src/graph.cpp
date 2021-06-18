@@ -1782,16 +1782,10 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
 // Guibas-Stolfi algorithm for computing nearest NE (north-east) neighbors
 void Graph::buildNearestNeighborsForSPT()
 {
-  int node_count = nodes.size();
-  for (int i = 0; i < nn.size(); ++i) {
-    nn[i].clear();
-  }
   nn.clear();
-  // This is super stupid - copies node structures to sort them and then
-  // gets the indexes out of the sorted node copies and puts them in 'sorted' below.-cherry 06/15/2021
-  vector<Node> tmp = nodes;
-  // sorted should be a local inited with size node_count -cherry 06/15/2021
-  sorted.clear();
+  int node_count = nodes.size();
+  nn.resize(node_count);
+
   urux.clear();
   urlx.clear();
   ulux.clear();
@@ -1800,6 +1794,8 @@ void Graph::buildNearestNeighborsForSPT()
   lrlx.clear();
   llux.clear();
   lllx.clear();
+
+  sorted.clear();
   for (int i = 0; i < node_count; ++i) {
     sorted.push_back(nodes[i].idx);
     urux.push_back(std::numeric_limits<int>::max());
@@ -1810,11 +1806,13 @@ void Graph::buildNearestNeighborsForSPT()
     lrlx.push_back(nodes[i].x);
     llux.push_back(nodes[i].x);
     lllx.push_back(std::numeric_limits<int>::min());
-    // should just reserve out of loop -cherry 06/15/2021
-    vector<int> tmp2;
-    nn.push_back(tmp2);
   }
+
+  // This is super stupid - copies node structures to sort them and then
+  // gets the indexes out of the sorted node copies and puts them in 'sorted' below.-cherry 06/15/2021
+  // sorted should be a local inited with size node_count -cherry 06/15/2021
   // sort in y-axis
+  vector<Node> tmp = nodes;
   sort(tmp.begin(), tmp.end(), comp_y);
   for (int i = 0; i < node_count; ++i) {
     sorted[i] = tmp[i].idx;
@@ -1824,12 +1822,12 @@ void Graph::buildNearestNeighborsForSPT()
   // collect neighbor
   for (int idx = 0; idx < node_count; ++idx) {
     Node& cNode = nodes[sorted[idx]];
-    debugPrint(logger_, PDR, "pdrev", 3, "sorted {} {} {}", cNode.idx, cNode.x, cNode.y);
+    debugPrint(logger_, PDR, "pdrev", 3, "sorted by y {} ({} {})", cNode.idx, cNode.x, cNode.y);
     // update idx to neighbors
     // Note: nNode.y <= cNode.y
     for (int i = 0; i < idx; ++i) {
       Node& nNode = nodes[sorted[i]];
-      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} {} {}", nNode.idx, nNode.x, nNode.y);
+      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", nNode.idx, nNode.x, nNode.y);
       if (urlx[nNode.idx] == cNode.x) {
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} above",
                    nNode.idx,
@@ -1879,7 +1877,7 @@ void Graph::buildNearestNeighborsForSPT()
       if (idx == i)
         continue;
       Node& nNode = nodes[sorted[i]];
-      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} {} {}", cNode.idx, cNode.x, cNode.y);
+      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", cNode.idx, cNode.x, cNode.y);
       if (i >= 1) {
         if (nodes[sorted[i]].y == nodes[sorted[i - 1]].y)
           continue;
