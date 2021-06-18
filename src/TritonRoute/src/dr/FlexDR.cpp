@@ -1265,15 +1265,14 @@ void FlexDR::init_via2turnMinLen()
     if (getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2turnMinLen[i][0]
-        = max(via2turnMinLen[i][0],
-              init_via2turnMinLen_minSpc(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(
-        via2turnMinLen[i][1], init_via2turnMinLen_minSpc(lNum, downVia, true));
+    via2turnMinLen[i][0] = max(
+        via2turnMinLen[i][0], init_via2turnMinLen_minSpc(lNum, downVia, false));
+    via2turnMinLen[i][1] = max(via2turnMinLen[i][1],
+                               init_via2turnMinLen_minSpc(lNum, downVia, true));
     via2turnMinLen[i][2] = max(via2turnMinLen[i][2],
-                                init_via2turnMinLen_minSpc(lNum, upVia, false));
+                               init_via2turnMinLen_minSpc(lNum, upVia, false));
     via2turnMinLen[i][3] = max(via2turnMinLen[i][3],
-                                init_via2turnMinLen_minSpc(lNum, upVia, true));
+                               init_via2turnMinLen_minSpc(lNum, upVia, true));
     i++;
   }
 
@@ -1292,15 +1291,14 @@ void FlexDR::init_via2turnMinLen()
       upVia = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
-    via2turnMinLen[i][0]
-        = max(via2turnMinLen[i][0],
-              init_via2turnMinLen_minStp(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(
-        via2turnMinLen[i][1], init_via2turnMinLen_minStp(lNum, downVia, true));
+    via2turnMinLen[i][0] = max(
+        via2turnMinLen[i][0], init_via2turnMinLen_minStp(lNum, downVia, false));
+    via2turnMinLen[i][1] = max(via2turnMinLen[i][1],
+                               init_via2turnMinLen_minStp(lNum, downVia, true));
     via2turnMinLen[i][2] = max(via2turnMinLen[i][2],
-                                init_via2turnMinLen_minStp(lNum, upVia, false));
+                               init_via2turnMinLen_minStp(lNum, upVia, false));
     via2turnMinLen[i][3] = max(via2turnMinLen[i][3],
-                                init_via2turnMinLen_minStp(lNum, upVia, true));
+                               init_via2turnMinLen_minStp(lNum, upVia, true));
     i++;
   }
 }

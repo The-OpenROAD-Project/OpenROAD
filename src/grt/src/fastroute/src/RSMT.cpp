@@ -43,7 +43,7 @@
 #include "EdgeShift.h"
 #include "RipUp.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -162,7 +162,7 @@ void copyStTree(int ind, Tree rsmt)
       edgecnt++;
     }
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
-      logger->error(GRT, 188, "Invalid number of node neighbours.");
+      logger->error(GRT, 188, "Invalid number of node neighbors.");
   }
   if (edgecnt != numnodes - 1) {
     logger->error(GRT, 189, "Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes.");
@@ -772,15 +772,10 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
     if (pdRevForHighFanout > 0 && nets[i]->deg >= pdRevForHighFanout
         && nets[i]->isClock) {
-      PD::PdRev* pd = new PD::PdRev(logger);
-      std::vector<unsigned> vecX(x, x + d);
-      std::vector<unsigned> vecY(y, y + d);
-      pd->setAlphaPDII(nets[i]->alpha);
-      pd->addNet(d, vecX, vecY);
-      pd->runPDII();
-      PD::Tree pdTree = pd->translateTree(0);
-      rsmt = pdToTree(pdTree);
-      delete pd;
+      std::vector<int> vecX(x, x + d);
+      std::vector<int> vecY(y, y + d);
+      stt::Tree tree = pdr::primDijkstraRevII(vecX, vecY, nets[i]->alpha, logger);
+      rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
@@ -803,7 +798,8 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
 
     if (nets[i]->deg != rsmt.deg) {
-      logger->warn(GRT, 190, "Net degree differs from rsmt degree.");
+      logger->warn(GRT, 190, "Net degree ({}) differs from RSMT number of terminals ({}).",
+                   nets[i]->deg, rsmt.deg);
       d = rsmt.deg;
     }
 
@@ -856,9 +852,9 @@ void gen_brk_RSMT(Bool congestionDriven,
   }  // loop i
 
   if (verbose > 1) {
-    logger->info(GRT, 191, "WIRELEN : {}, WIRELEN1 : {}", wl, wl1);
-    logger->info(GRT, 192, "NumSeg  : {}", totalNumSeg);
-    logger->info(GRT, 193, "NumShift: {}", numShift);
+    logger->info(GRT, 191, "Wirelength: {}, Wirelength1: {}", wl, wl1);
+    logger->info(GRT, 192, "Number of segments: {}", totalNumSeg);
+    logger->info(GRT, 193, "Number of shifts: {}", numShift);
   }
 }
 

@@ -273,7 +273,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
   if (diodeMTerm == nullptr) {
-    _logger->error(GRT, 69, "liberty port for {}/{} not found.",
+    _logger->error(GRT, 69, "Liberty port for {}/{} not found.",
                    diodePort->libertyCell()->name(),
                    diodePort->name());
   }
@@ -1359,7 +1359,7 @@ void GlobalRouter::writeGuides(const char* fileName)
   int offsetX = _gridOrigin->x();
   int offsetY = _gridOrigin->y();
 
-  _logger->info(GRT, 14, "Num routed nets: {}", _routes.size());
+  _logger->info(GRT, 14, "Routed nets: {}", _routes.size());
   int finalLayer;
 
   // Sort nets so guide file net order is consistent.

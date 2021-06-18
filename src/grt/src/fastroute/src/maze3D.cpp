@@ -43,7 +43,7 @@
 #include "DataType.h"
 #include "RipUp.h"
 #include "flute.h"
-#include "pdrev/pdrev.h"
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -1827,10 +1827,10 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
       }
     }
     if (nlID == -1) {
-      logger->error(GRT, 173, "Invalid lower neighbour for node {}.", n1);
+      logger->error(GRT, 173, "Invalid lower neighbor for node {}.", n1);
     }
     if (nhID == -1) {
-      logger->error(GRT, 174, "Invalid upper neighbour for node {}.", n1);
+      logger->error(GRT, 174, "Invalid upper neighbor for node {}.", n1);
     }
     if (n1 < deg) {
       nbtL = 0;
@@ -1841,7 +1841,7 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
     treenodes[n1].lID = nlID;
   } else {
     if (treenodes[n1].botL > 0) {
-      logger->warn(GRT, 185, "Bottom layer acutally {}.", treenodes[n1].botL);
+      logger->warn(GRT, 185, "Bottom layer actually {}.", treenodes[n1].botL);
     }
     treenodes[n1].topL = 0;
     treenodes[n1].botL = 0;

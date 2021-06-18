@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "io/io.h"
+
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -34,7 +36,6 @@
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
 #include "global.h"
-#include "io/io.h"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -410,6 +411,11 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
   }
   for (auto ndr : db->getChip()->getBlock()->getNonDefaultRules()) {
     createNDR(ndr);
+  }
+  for (auto& layer : design->getTech()->getLayers()) {
+      if (layer->getType() != frLayerTypeEnum::ROUTING)
+          continue;
+      MTSAFEDIST = max(MTSAFEDIST, design->getTech()->getMaxNondefaultSpacing(layer->getLayerNum()/2 -1));
   }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,

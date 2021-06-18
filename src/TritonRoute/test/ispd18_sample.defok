@@ -126,7 +126,7 @@ NETS 11 ;
       + ROUTED Metal3 ( 87800 83410 ) ( 97400 * )
       NEW Metal1 ( 87800 83410 ) VIA12_1C_V
       NEW Metal2 ( 87800 83410 ) VIA23_1C
-      NEW Metal1 ( 97400 83410 ) VIA12_1C
+      NEW Metal1 ( 97400 83410 ) VIA12_1C_V
       NEW Metal2 ( 97400 83410 ) VIA23_1C
       NEW Metal2 ( 87800 83410 ) RECT ( -70 -442 70 0 ) 
       NEW Metal2 ( 97400 83410 ) RECT ( -70 -442 70 0 )  ;

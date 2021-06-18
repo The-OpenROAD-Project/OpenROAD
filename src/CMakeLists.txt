@@ -118,7 +118,7 @@ add_subdirectory(OpenDB)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(sst)
+add_subdirectory(stt)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
@@ -135,7 +135,7 @@ add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
-add_subdirectory(pdrev)
+add_subdirectory(pdr)
 add_subdirectory(pdngen)
 
 ################################################################
@@ -168,7 +168,7 @@ target_link_libraries(openroad
   fin
   rsz
   ppl
-  sst
+  stt
   dbSta
   OpenSTA
   opendb
@@ -186,7 +186,7 @@ target_link_libraries(openroad
   PartitionMgr
   utl
   pdn
-  pdrev
+  pdr
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

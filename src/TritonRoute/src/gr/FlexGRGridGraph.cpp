@@ -103,7 +103,6 @@ void FlexGRGridGraph::initGrids()
 
 void FlexGRGridGraph::initEdges()
 {
-
   for (frMIdx zIdx = 0; zIdx < (int) zCoords_.size(); zIdx++) {
     auto dir = is2DRouting_ ? frcNonePrefRoutingDir
                             : (zDirs_[zIdx] ? frcHorzPrefRoutingDir
