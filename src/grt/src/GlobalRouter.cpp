@@ -1380,7 +1380,7 @@ void GlobalRouter::perturbCapacities()
 
     std::uniform_int_distribution<int> uni_x(1, xGrids-1);
     std::uniform_int_distribution<int> uni_y(1, yGrids-1);
-    std::uniform_int_distribution<bool> sum_or_subtract;
+    std::bernoulli_distribution sum_or_subtract;
 
     for (int i = 0; i < num_perturbations; i++) {
       int x = uni_x(g);
