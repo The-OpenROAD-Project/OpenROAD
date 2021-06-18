@@ -65,7 +65,6 @@ extern bool ENABLE_VIA_GEN;
 // extern int TEST;
 extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
-constexpr fr::frLayerNum VIAINPIN_DEFAULT_BOTTOMLAYERNUM = std::numeric_limits::max();
 extern fr::frLayerNum VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_TOPLAYERNUM;
 
