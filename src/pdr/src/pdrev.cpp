@@ -252,6 +252,37 @@ reportXY(std::vector<int> x,
     logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
 }
 
+// Used by regressions.
+void
+reportPdrevTree(bool use_pd,
+                const std::vector<int> &x,
+                const std::vector<int> &y,
+                int drvr_index,
+                float alpha,
+                Logger *logger)
+{
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
+  stt::Tree tree = use_pd
+    ? pdr::primDijkstra(x1, y1, drvr_index, alpha, logger)
+    : pdr::primDijkstraRevII(x1, y1, drvr_index, alpha, logger);
+  printf("WL = %d\n", tree.length);
+  for (int i = 0; i < stt::branch_count(tree); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    int parent = tree.branch[i].n;
+    int x2 = tree.branch[parent].x;
+    int y2 = tree.branch[parent].y;
+    int length = abs(x1-x2)+abs(y1-y2);
+    printf("%d (%d %d) parent %d length %d\n",
+           i, x1, y1, parent, length);
+  }
+}
+
 // Simple general purpose render for a group of lines.
 class LinesRenderer : public gui::Renderer
 {

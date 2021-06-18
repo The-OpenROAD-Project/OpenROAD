@@ -57,4 +57,13 @@ primDijkstraRevII(std::vector<int> x,
                   float alpha,
                   Logger* logger);
 
+// Used by regressions.
+void
+reportPdrevTree(bool use_pd,
+                const std::vector<int> &x,
+                const std::vector<int> &y,
+                int drvr_index,
+                float alpha,
+                Logger *logger);
+
 }  // namespace PD
