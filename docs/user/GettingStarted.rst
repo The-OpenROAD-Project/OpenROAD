@@ -54,8 +54,8 @@ environment.
 
    $ docker run --rm -it openroad/flow-scripts
    [inside docker] $ source ./setup_env.sh
-   [inside docker] $ yosys -h
-   [inside docker] $ openroad -h
+   [inside docker] $ yosys -help
+   [inside docker] $ openroad -help
    [inside docker] $ exit
 
 Option 3: build from sources locally
@@ -79,8 +79,8 @@ environment.
 .. code-block:: shell
 
    $ source ./setup_env.sh
-   $ yosys -h
-   $ openroad -h
+   $ yosys -help
+   $ openroad -help
    $ exit
 
 Designs
