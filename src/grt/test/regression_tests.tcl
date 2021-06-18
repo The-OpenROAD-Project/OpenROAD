@@ -3,7 +3,8 @@ record_tests {
   est_rc1
   est_rc2
   gcd
-  gcd_random
+  gcd_random1
+  gcd_random2
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
