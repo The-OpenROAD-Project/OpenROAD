@@ -5,15 +5,6 @@ read_lef dummy_pads.lef
 
 read_liberty dummy_pads.lib
 
-read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.v
-
-link_design soc_bsg_black_parrot
-
-initialize_floorplan \
-  -die_area  {0 0 3000.000 3000.000} \
-  -core_area {180.012 180.096 2819.964 2819.712} \
-  -site      FreePDK45_38x28_10R_NP_162NW_34O
-make_tracks
 
 # Load library defintions
 define_pad_cell \
@@ -120,6 +111,10 @@ help set_padring_options
 help place_cell
 help add_pad
 help initialize_padring
+
+read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.v
+
+link_design soc_bsg_black_parrot
 
 catch {set_padring_options -type Wirebond -power_nets  {VDD DVDD_0 DVDD_1} -ground_nets {VSS DVSS_0 DVSS_1} -offsets 35 -pin_layer metal10 -pad_inst_name "%s"}
 catch {set_padring_options -type Wirebond -offsets {35 36 37} -pin_layer metal10 -pad_inst_name "%s"}
@@ -491,6 +486,12 @@ add_pad -edge left   -inst_name u_pwrdet13             -type pdt   -location {ce
 add_pad -edge left   -inst_name u_pwrdet14             -type pdt   -location {centre {x  105.000 y 1832.000}}
 add_pad -edge left   -inst_name u_pwrdet15             -type pdt   -location {centre {x  105.000 y 1205.000}}
 add_pad -edge left   -inst_name u_pwrdet16             -type pdt   -location {centre {x  105.000 y  541.000}}
+
+initialize_floorplan \
+  -die_area  {0 0 3000.000 3000.000} \
+  -core_area {180.012 180.096 2819.964 2819.712} \
+  -site      FreePDK45_38x28_10R_NP_162NW_34O
+make_tracks
 
 if {[catch {initialize_padring} msg]} {
   puts $errorInfo

@@ -151,17 +151,16 @@ namespace eval ICeWall {
   variable connect_pins_by_abutment
   variable idx {fill 0}
   variable unassigned_idx 0
-  variable def_units 1
-  variable initialized 0
 
   proc initialize {} {
-    variable initialized 
-    variable footprint
+    variable db
+    variable tech
+    variable block 
 
-    if {$initialized == 0} {
-      init_process_footprint
-      set initialized 1
-    }
+    set db [::ord::get_db]
+    set tech [$db getTech]
+    set block [[$db getChip] getBlock]
+    init_process_footprint
   }
 
   proc set_message {level message} {
@@ -435,7 +434,6 @@ namespace eval ICeWall {
   
   proc get_scaled_origin {padcell {type "cell"}} {
     variable library
-    variable def_units
     # debug "padcell: $padcell"
 
     set inst [get_padcell_inst_info $padcell]
@@ -445,8 +443,8 @@ namespace eval ICeWall {
       set scaled_origin [dict get $inst $type scaled_origin];
     } elseif {[dict exists $inst $type origin]} {
       set scaled_origin [list \
-        x [expr round([dict get $inst $type origin x] * $def_units)] \
-        y [expr round([dict get $inst $type origin y] * $def_units)] \
+        x [ord::microns_to_dbu [dict get $inst $type origin x]] \
+        y [ord::microns_to_dbu [dict get $inst $type origin y]] \
       ]
     } else {
       # debug "$padcell $type $inst"
@@ -459,7 +457,6 @@ namespace eval ICeWall {
   
   proc get_scaled_centre {padcell {type cell}} {
     variable library
-    variable def_units
 
     set inst [get_padcell_inst_info $padcell]
 
@@ -467,8 +464,8 @@ namespace eval ICeWall {
       set scaled_centre [dict get $inst $type scaled_centre];
     } elseif {[dict exists $inst $type centre]} {
       set scaled_centre [list \
-        x [expr round([dict get $inst $type centre x] * $def_units)] \
-        y [expr round([dict get $inst $type centre y] * $def_units)] \
+        x [ord::microns_to_dbu [dict get $inst $type centre x]] \
+        y [ord::microns_to_dbu [dict get $inst $type centre y]] \
       ]
     } else {
       utl::error PAD 115 "No origin information specified for padcell $padcell"
@@ -488,11 +485,9 @@ namespace eval ICeWall {
   }
   
   proc get_padcell_origin {padcell {type cell}} {
-    variable def_units
-
     set scaled_origin [get_padcell_scaled_origin $padcell]
 
-    return [list x [expr [dict get $scaled_origin x] * 1.0 / $def_units] y [expr [dict get $scaled_origin y] * 1.0 / $def_units]]
+    return [list x [ord::dbu_to_microns [dict get $scaled_origin x]] y [ord::dbu_to_microns [dict get $scaled_origin y]]]
   }
 
   proc get_padcell_scaled_centre {padcell {type cell}} {
@@ -507,13 +502,12 @@ namespace eval ICeWall {
 
   proc get_die_area {} {
     variable footprint
-    variable def_units
  
     if {![dict exists $footprint die_area]} {
       if {[dict exists $footprint scaled_die_area]} {
         set die_area {}
         foreach value [dict get $footprint scaled_die_area] {
-          lappend die_area [expr $value * 1.0 / $def_units]
+          lappend die_area [ord::dbu_to_microns $value]
         }
         dict set footprint die_area $die_area
       } else {
@@ -549,12 +543,11 @@ namespace eval ICeWall {
 
   proc get_scaled_die_area {} {
     variable footprint
-    variable def_units
     
     if {![dict exists $footprint scaled_die_area]} {
       set area {}
       foreach value [get_die_area] {
-        lappend area [expr round($value * $def_units)]
+        lappend area [ord::microns_to_dbu $value]
       }
       dict set footprint scaled_die_area $area
     }
@@ -563,7 +556,6 @@ namespace eval ICeWall {
 
   proc get_footprint_die_size_x {} {
     variable footprint
-    variable def_units
 
     if {![dict exists $footprint die_area]} {
       get_die_area
@@ -572,17 +564,16 @@ namespace eval ICeWall {
       }
     }
  
-    return [expr round(([lindex [dict get $footprint die_area] 2] - [lindex [dict get $footprint die_area] 0]) * $def_units)]
+    return [ord::microns_to_dbu [expr [lindex [dict get $footprint die_area] 2] - [lindex [dict get $footprint die_area] 0]]]
   }
 
   proc get_footprint_die_size_y {} {
     variable footprint
-    variable def_units
     
     if {![dict exists $footprint die_area]} {
       utl::error PAD 62 "Footprint attribute die_area has not been defined"
     } 
-    return [expr round(([lindex [dict get $footprint die_area] 3] - [lindex [dict get $footprint die_area] 1]) * $def_units)]
+    return [ord::microns_to_dbu [expr [lindex [dict get $footprint die_area] 3] - [lindex [dict get $footprint die_area] 1]]]
   }
 
   proc get_core_area {} {
@@ -857,12 +848,11 @@ namespace eval ICeWall {
   
   proc get_library_cell_offset {cell_name} {
     variable library
-    variable def_units
 
     if {![dict exists $library cells $cell_name scaled_offset]} {
       if {[dict exists $library cells $cell_name offset]} {
         set offset [dict get $library cells $cell_name offset]
-        dict set library cells $cell_name scaled_offset [list [expr round([lindex $offset 0] * $def_units)] [expr round([lindex $offset 1] * $def_units)]]
+        dict set library cells $cell_name scaled_offset [list [ord::microns_to_dbu [lindex $offset 0]] [ord::microns_to_dbu [lindex $offset 1]]]
       } else {
         dict set library cells $cell_name scaled_offset {0 0}
       }
@@ -1137,10 +1127,9 @@ namespace eval ICeWall {
 
   proc get_library_min_bump_spacing_to_die_edge {} {
     variable library
-    variable def_units
     
     if {[dict exists $library bump spacing_to_edge]} {
-      return [expr round(([dict get $library bump spacing_to_edge]) * $def_units)]
+      return [ord::microns_to_dbu [expr [dict get $library bump spacing_to_edge]]]
     }
 
     utl::error "PAD" 21 "Value of bump spacing_to_edge not specified"
@@ -1148,11 +1137,10 @@ namespace eval ICeWall {
   
   proc get_footprint_min_bump_spacing_to_die_edge {} {
     variable footprint
-    variable def_units
 
     if {![dict exists $footprint scaled bump_spacing_to_edge]} {
       if {[dict exists $footprint bump spacing_to_edge]} {
-        dict set footprint scaled bump_spacing_to_edge [expr round([dict get $footprint bump spacing_to_edge] * $def_units)]
+        dict set footprint scaled bump_spacing_to_edge [ord::microns_to_dbu [dict get $footprint bump spacing_to_edge]]
       } else {
         dict set footprint scaled bump_spacing_to_edge [get_library_min_bump_spacing_to_die_edge]
       }
@@ -1843,14 +1831,12 @@ namespace eval ICeWall {
 
   proc extract_footprint {} {
     variable db
-    variable def_units
     variable tech
     variable block
 
     # debug "start"
     set db [::ord::get_db]
     set tech [$db getTech]
-    set def_units [$tech getDbUnitsPerMicron]
     set block [ord::get_db_block]
 
     # debug "cells"
@@ -2039,7 +2025,6 @@ namespace eval ICeWall {
 
   proc write_footprint {footprint_file} {
     variable footprint
-    variable def_units
 
     # debug "start"
     if {[catch {set ch [open $footprint_file "w"]} msg]} {
@@ -2061,7 +2046,7 @@ namespace eval ICeWall {
       # debug [llength $scaled_core_area]
       set core_area {}
       foreach value $scaled_core_area {
-        lappend core_area [expr $value * 1.0 / $def_units]
+        lappend core_area [ord::dbu_to_microns $value]
       }
       puts $ch "  core_area \"$core_area\""
     }
@@ -2069,7 +2054,7 @@ namespace eval ICeWall {
     set scaled_offsets [get_footprint_offsets]
     set offsets {}
     foreach value $scaled_offsets {
-      lappend offsets [expr $value * 1.0 / $def_units]
+      lappend offsets [ord::dbu_to_microns $value]
     }
 
     # debug "pad_layer: [get_footprint_pad_pin_layer]"
@@ -2140,7 +2125,6 @@ namespace eval ICeWall {
     variable db
     variable tech
     variable block
-    variable def_units
     variable chip_width 
     variable chip_height
 
@@ -2148,8 +2132,9 @@ namespace eval ICeWall {
     set db [::ord::get_db]
     set tech [$db getTech]
     set block [[$db getChip] getBlock]
-
-    set def_units [$tech getDbUnitsPerMicron]
+    if {[catch {set_die_area {*}[ord::get_die_area]} msg]} {
+      utl::error PAD 223 "Design data needs to be loaded  before this command"
+    }
 
     set chip_width  [get_footprint_die_size_x]
     set chip_height [get_footprint_die_size_y]
@@ -2210,8 +2195,6 @@ namespace eval ICeWall {
     }
 
     if {[dict exists $footprint place]} {
-      variable def_units 
-
       foreach place_name [dict keys [dict get $footprint place]] {
         set cell [dict get $footprint place $place_name]
         dict set cell name $place_name
@@ -2220,7 +2203,7 @@ namespace eval ICeWall {
         place_cell \
           -inst_name [dict get $cell inst_name] \
           -cell [dict get $cell cell_name] \
-          -origin [list [expr 1.0 * [dict get $cell cell scaled_origin x] / $def_units] [expr 1.0 * [dict get $cell cell scaled_origin y] / $def_units]] \
+          -origin [list [ord::dbu_to_microns [dict get $cell cell scaled_origin x]] [ord::dbu_to_microns [dict get $cell cell scaled_origin y]]] \
           -orient [dict get $cell cell orient] \
           -status "FIRM"
       }
@@ -2448,12 +2431,11 @@ namespace eval ICeWall {
 
   proc get_bump_pitch_table {} {
     variable library
-    variable def_units
     
     if {![dict exists $library scaled lookup_by_pitch]} {
       if {[dict exists $library lookup_by_pitch]} {
         dict for {key value} [dict get $library lookup_by_pitch] {
-          set scaled_key [expr round($key * $def_units)]
+          set scaled_key [ord::microns_to_dbu $key]
           dict set library scaled lookup_by_pitch $scaled_key $value
         }
       } else {
@@ -2483,11 +2465,10 @@ namespace eval ICeWall {
 
   proc get_footprint_bump_pitch {} {
     variable footprint
-    variable def_units
     
     if {![dict exists $footprint scaled bump_pitch]} {
       if {[dict exists $footprint bump pitch]} {
-        dict set footprint scaled bump_pitch [expr round([dict get $footprint bump pitch] * $def_units)]
+        dict set footprint scaled bump_pitch [ord::microns_to_dbu [dict get $footprint bump pitch]]
       } else {
         dict set footprint scaled bump_pitch [get_library_bump_pitch]
       }
@@ -2497,11 +2478,10 @@ namespace eval ICeWall {
 
   proc get_footprint_bump_width {} {
     variable footprint
-    variable def_units
     
     if {![dict exists $footprint scaled bump_width]} {
       if {[dict exists $footprint bump width]} {
-        dict set footprint scaled bump_width [expr round([dict get $footprint bump width] * $def_units)]
+        dict set footprint scaled bump_width [ord::microns_to_dbu [dict get $footprint bump width]]
       } else {
         dict set footprint scaled bump_width [get_library_bump_width]
       }
@@ -2511,11 +2491,10 @@ namespace eval ICeWall {
 
   proc get_footprint_rdl_width {} {
     variable footprint 
-    variable def_units
     
     if {![dict exists $footprint scaled rdl_width]} {
       if {[dict exists $footprint rdl width]} {
-        dict set footprint scaled rdl_width [expr round([dict get $footprint rdl width] * $def_units)]
+        dict set footprint scaled rdl_width [ord::microns_to_dbu [dict get $footprint rdl width]]
       } else {
         dict set footprint scaled rdl_width [get_library_rdl_width]
       }
@@ -2526,11 +2505,10 @@ namespace eval ICeWall {
 
   proc get_footprint_rdl_spacing {} {
     variable footprint 
-    variable def_units
     
     if {![dict exists $footprint scaled rdl_spacing]} {
       if {[dict exists $footprint rdl spacing]} {
-        dict set footprint scaled rdl_spacing [expr round([dict get $footprint rdl spacing] * $def_units)]
+        dict set footprint scaled rdl_spacing [ord::microns_to_dbu [dict get $footprint rdl spacing]]
       } else {
         dict set footprint scaled rdl_spacing [get_library_rdl_spacing]
       }
@@ -2541,11 +2519,10 @@ namespace eval ICeWall {
 
   proc get_library_bump_pitch {} {
     variable library
-    variable def_units
     
     if {![dict exists $library scaled bump_pitch]} {
       if {[dict exists $library bump pitch]} {
-        dict set library scaled bump_pitch [expr round([dict get $library bump pitch] * $def_units)]
+        dict set library scaled bump_pitch [ord::microns_to_dbu [dict get $library bump pitch]]
       } else {
         utl::error "PAD" 35 "No bump_pitch defined in library data"
       }
@@ -2555,12 +2532,11 @@ namespace eval ICeWall {
   
   proc get_library_bump_width {} {
     variable library
-    variable def_units
     variable db
  
     if {![dict exists $library scaled bump_width]} {
       if {[dict exists $library bump width]} {
-        dict set library scaled bump_width [expr round([dict get $library bump width] * $def_units)]
+        dict set library scaled bump_width [ord::microns_to_dbu [dict get $library bump width]]
       } else {
         if {[dict exists $library bump cell_name]} {
           set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
@@ -2569,7 +2545,7 @@ namespace eval ICeWall {
             dict set library scaled bump_width [$master getWidth]
             dict set library scaled bump_height [$master getHeight]
           } elseif  {[dict exists $library cells $cell_name width]} {
-            dict set library scaled bump_width [expr round([dict get $library cells $cell_name width] * $def_units)]
+            dict set library scaled bump_width [ord::microns_to_dbu [dict get $library cells $cell_name width]]
           } else {
             utl::error "PAD" 36 "No width defined for selected bump cell $cell_name"
           }
@@ -2583,7 +2559,6 @@ namespace eval ICeWall {
   
   proc get_library_bump_pin_name {} {
     variable library
-    variable def_units
     
     if {![dict exists $library bump pin_name]} {
       utl::error "PAD" 38 "No bump_pin_name attribute found in the library"
@@ -2593,11 +2568,10 @@ namespace eval ICeWall {
   
   proc get_library_rdl_width {} {
     variable library
-    variable def_units
 
     if {![dict exists $library scaled rdl_width]} {
       if {[dict exists $library rdl width]} {
-        dict set library scaled rdl_width [expr round([dict get $library rdl width] * $def_units)]
+        dict set library scaled rdl_width [ord::microns_to_dbu [dict get $library rdl width]]
       } else {
         utl::error "PAD" 39 "No rdl_width defined in library data"
       }
@@ -2607,11 +2581,10 @@ namespace eval ICeWall {
 
   proc get_library_rdl_spacing {} {
     variable library
-    variable def_units
 
     if {![dict exists $library scaled rdl_spacing]} {
       if {[dict exists $library rdl spacing]} {
-        dict set library scaled rdl_spacing [expr round([dict get $library rdl spacing] * $def_units)]
+        dict set library scaled rdl_spacing [ord::microns_to_dbu [dict get $library rdl spacing]]
       } else {
         utl::error "PAD" 40 "No rdl_spacing defined in library data"
       }
@@ -3042,7 +3015,6 @@ namespace eval ICeWall {
   proc add_power_ground_rdl_straps {} {
     variable num_bumps_x
     variable num_bumps_y
-    variable def_units
 
     set rdl_routing_layer [get_footprint_rdl_layer_name]
     set rdl_stripe_width [get_footprint_rdl_width]
@@ -3063,7 +3035,7 @@ namespace eval ICeWall {
       set point [get_bump_centre 1 [expr $num_bumps_x - $corner_size]]
       set maxX [expr [dict get $point x] + $bump_pitch / 2]
 
-      # debug "minX: [expr 1.0 * $minX / $def_units], maxX: [expr 1.0 * $maxX / $def_units]"
+      # debug "minX: [ord::dbu_to_microns $minX], maxX: [ord::dbu_to_microns $maxX]"
       for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
         if {$row % 2 == 0} {
           set tag "POWER"
@@ -3090,7 +3062,7 @@ namespace eval ICeWall {
       set point [get_bump_centre [expr $num_bumps_y - $corner_size] 1]
       set minY [expr [dict get $point y] - $bump_pitch / 2]
 
-      # debug "minY: [expr 1.0 * $minY / $def_units], maxY: [expr 1.0 * $maxY / $def_units]"
+      # debug "minY: [ord::dbu_to_microns $minY], maxY: [ord::dbu_to_microns $maxY]"
       for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
         if {$col % 2 == 0} {
           set tag "POWER"
@@ -3314,6 +3286,8 @@ namespace eval ICeWall {
     $inst setOrigin {*}$place_at
     $inst setOrient $corner_orient
     $inst setPlacementStatus "FIRM"
+
+    # debug "End"
   }  
   
   proc connect_by_abutment {} {
@@ -3761,28 +3735,29 @@ namespace eval ICeWall {
     variable edge_right_offset 
     variable edge_top_offset 
     variable edge_left_offset
-    variable def_units
 
     set args [get_footprint_offsets]
     
     if {[llength $args] == 1} {
-      set edge_bottom_offset [expr round($args * $def_units)]
-      set edge_right_offset  [expr round($args * $def_units)]
-      set edge_top_offset    [expr round($args * $def_units)]
-      set edge_left_offset   [expr round($args * $def_units)]
+      set edge_bottom_offset [ord::microns_to_dbu $args]
+      set edge_right_offset  [ord::microns_to_dbu $args]
+      set edge_top_offset    [ord::microns_to_dbu $args]
+      set edge_left_offset   [ord::microns_to_dbu $args]
     } elseif {[llength $args] == 2} {
-      set edge_bottom_offset [expr round([lindex $args 0] * $def_units)]
-      set edge_right_offset  [expr round([lindex $args 1] * $def_units)]
-      set edge_top_offset    [expr round([lindex $args 0] * $def_units)]
-      set edge_left_offset   [expr round([lindex $args 1] * $def_units)]
+      set edge_bottom_offset [ord::microns_to_dbu [lindex $args 0]]
+      set edge_right_offset  [ord::microns_to_dbu [lindex $args 1]]
+      set edge_top_offset    [ord::microns_to_dbu [lindex $args 0]]
+      set edge_left_offset   [ord::microns_to_dbu [lindex $args 1]]
     } elseif {[llength $args] == 4} {
-      set edge_bottom_offset [expr round([lindex $args 0] * $def_units)]
-      set edge_right_offset  [expr round([lindex $args 1] * $def_units)]
-      set edge_top_offset    [expr round([lindex $args 2] * $def_units)]
-      set edge_left_offset   [expr round([lindex $args 3] * $def_units)]
+      set edge_bottom_offset [ord::microns_to_dbu [lindex $args 0]]
+      set edge_right_offset  [ord::microns_to_dbu [lindex $args 1]]
+      set edge_top_offset    [ord::microns_to_dbu [lindex $args 2]]
+      set edge_left_offset   [ord::microns_to_dbu [lindex $args 3]]
     } else {
       utl::error "PAD" 9 "Expected 1, 2 or 4 offset values, got [llength $args]"
     }
+
+    # debug "bottom: $edge_bottom_offset, right: $edge_right_offset, top: $edge_top_offset, left: $edge_left_offset"
   }
 
   proc set_inner_offset {args} {
@@ -3791,23 +3766,22 @@ namespace eval ICeWall {
     variable inner_right_offset 
     variable inner_top_offset 
     variable inner_left_offset
-    variable def_units
     
     if {[llength $args] == 1} {
-      set inner_bottom_offset [expr $args * $def_units]
-      set inner_right_offset  [expr $args * $def_units]
-      set inner_top_offset    [expr $args * $def_units]
-      set inner_left_offset   [expr $args * $def_units]
+      set inner_bottom_offset [ord::microns_to_dbu $args]
+      set inner_right_offset  [ord::microns_to_dbu $args]
+      set inner_top_offset    [ord::microns_to_dbu $args]
+      set inner_left_offset   [ord::microns_to_dbu $args]
     } elseif {[llength $args] == 2} {
-      set inner_bottom_offset [expr [lindex $args 0] * $def_units]
-      set inner_right_offset  [expr [lindex $args 1] * $def_units]
-      set inner_top_offset    [expr [lindex $args 0] * $def_units]
-      set inner_left_offset   [expr [lindex $args 1] * $def_units]
+      set inner_bottom_offset [ord::microns_to_dbu [lindex $args 0]]
+      set inner_right_offset  [ord::microns_to_dbu [lindex $args 1]]
+      set inner_top_offset    [ord::microns_to_dbu [lindex $args 0]]
+      set inner_left_offset   [ord::microns_to_dbu [lindex $args 1]]
     } elseif {[llength $inner_offset] == 4} {
-      set inner_bottom_offset [expr [lindex $args 0] * $def_units]
-      set inner_right_offset  [expr [lindex $args 1] * $def_units]
-      set inner_top_offset    [expr [lindex $args 2] * $def_units]
-      set inner_left_offset   [expr [lindex $args 3] * $def_units]
+      set inner_bottom_offset [ord::microns_to_dbu [lindex $args 0]]
+      set inner_right_offset  [ord::microns_to_dbu [lindex $args 1]]
+      set inner_top_offset    [ord::microns_to_dbu [lindex $args 2]]
+      set inner_left_offset   [ord::microns_to_dbu [lindex $args 3]]
     } else {
       utl::error "PAD" 10 "Expected 1, 2 or 4 inner_offset values, got [llength $args]"
     }
@@ -4169,7 +4143,6 @@ namespace eval ICeWall {
         set inst [odb::dbInst_create $block [get_cell_master $cell] $inst_name]
         dict set padcell inst $inst
       } else {
-        debug $padcell
         utl::error PAD 122 "Cannot find an instance with name \"$inst_name\""
       }
     }
@@ -4298,7 +4271,6 @@ namespace eval ICeWall {
   # ICeWall set_offsets 35
   proc set_offsets {value} {
     variable footprint
-    variable def_units
 
     if {[llength $value] == 1} {
       if {[is_number $value]} {
@@ -4444,11 +4416,11 @@ namespace eval ICeWall {
     variable block
     variable type_index
     variable db
+    variable tech
 
-    # debug "$args"
-    if {$db == {}} {
-      initialize
-    }
+    set db [::ord::get_db]
+    set tech [$db getTech]
+    set block [ord::get_db_block]
 
     set padcell_name {}
 
@@ -4471,7 +4443,6 @@ namespace eval ICeWall {
         incr idx
         dict set type_index $type $idx
       } else {
-        debug $args
         utl::error PAD 110 "Must specify -type option if -name is not spedified"
       }
     }
@@ -4513,14 +4484,12 @@ namespace eval ICeWall {
   proc verify_padcell {padcell} {
     variable footprint
     variable library
-    variable def_units
     variable db
     variable unassigned_idx
 
     # debug $padcell
 
     if {![dict exists $padcell name]} {
-      debug $padcell
       utl::error PAD 123 "Attribute name not defined for padcell"
     }
     set padcell_name [dict get $padcell name]
@@ -4699,12 +4668,12 @@ namespace eval ICeWall {
         "top"    {set xMin [expr [dict get $origin x] - $pitch / 2]]; set xMax [expr [dict get $origin x] + $pitch / 2]]}
         "left"   {set yMin [expr [dict get $origin y] - $pitch / 2]]; set yMax [expr [dict get $origin y] + $pitch / 2]]}
       }
-      
+
       if {[dict get $padcell cell scaled_centre x] < $xMin || [dict get $padcell cell scaled_centre x] > $xMax} {
-        utl::error PAD 163 "The padcell x location is [expr 1.0 * [dict get $padcell cell scaled_centre x] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $xMin <= x <= $xMax"
+        utl::error PAD 163 "The padcell x location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre x]], but for bump $row,$col to connect to a pad on the $side_name edge, $xMin <= x <= $xMax"
       }
       if {[dict get $padcell cell scaled_centre y] < $yMin || [dict get $padcell cell scaled_centre y] > $yMax} {
-        utl::error PAD 164 "The padcell y location is [expr 1.0 * [dict get $padcell cell scaled_centre y] / $def_units], but for bump $row,$col to connect to a pad on the $side edge, $yMin <= y <= $yMax"
+        utl::error PAD 164 "The padcell y location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre y]], but for bump $row,$col to connect to a pad on the $side_name edge, $yMin <= y <= $yMax"
       }
     }
 
@@ -4724,7 +4693,6 @@ namespace eval ICeWall {
   proc verify_cell_inst {cell_inst} {
     variable footprint
     variable library
-    variable def_units
     variable db
 
     # debug $cell_inst
@@ -4734,7 +4702,6 @@ namespace eval ICeWall {
     # }
 
     if {![dict exists $cell_inst name]} {
-      debug $cell_inst
       utl::error PAD 165 "Attribute name not defined for cell"
     }
     set name [dict get $cell_inst name]
@@ -4813,15 +4780,14 @@ namespace eval ICeWall {
   }
 
   proc verify_placement {place cell_name {element "cell"}} {
-    variable def_units
     variable bondpad_width
     variable bondpad_height
 
     # debug "$element: $cell_name, place $place"
     if {[dict exists $place origin]} {
       dict set place scaled_origin [list \
-        x [expr round([dict get $place origin x] * $def_units)] \
-        y [expr round([dict get $place origin y] * $def_units)] \
+        x [ord::microns_to_dbu [dict get $place origin x]] \
+        y [ord::microns_to_dbu [dict get $place origin y]] \
       ]
       if {$element == "bondpad"} {
         set width $bondpad_width
@@ -4838,8 +4804,8 @@ namespace eval ICeWall {
     }
     if {[dict exists $place centre]} {
       dict set place scaled_centre [list \
-        x [expr round([dict get $place centre x] * $def_units)] \
-        y [expr round([dict get $place centre y] * $def_units)] \
+        x [ord::microns_to_dbu [dict get $place centre x]] \
+        y [ord::microns_to_dbu [dict get $place centre y]] \
       ]
       if {$element == "bondpad"} {
         set width $bondpad_width
@@ -4928,10 +4894,8 @@ namespace eval ICeWall {
     variable type_index
     variable db
 
-    # debug "$args"
-    if {$db == {}} {
-      initialize
-    }
+    set db [::ord::get_db]
+    set tech [$db getTech]
 
     set cell_ref_name {}
 
@@ -4949,7 +4913,6 @@ namespace eval ICeWall {
     dict set cell_ref name $cell_ref_name
 
     set process_args $args
-    # debug $args
     while {[llength $process_args] > 0} {
       set arg [lindex $process_args 0]
       set value [lindex $process_args 1]
@@ -4973,7 +4936,6 @@ namespace eval ICeWall {
         utl::error PAD 202 "Padcell $padcell_duplicate already defined to use [dict get $padcell signal_name]"
       }
     }
-
     set cell_ref [verify_cell_ref $cell_ref]
     dict set library cells [dict get $cell_ref name] $cell_ref
   }
