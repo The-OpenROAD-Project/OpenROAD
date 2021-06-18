@@ -94,6 +94,7 @@ void GlobalRouter::init()
   _verbose = 0;
   seed_ = 0;
   caps_perturbation_percentage_ = 0;
+  perturbation_amount_ = 1;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -1384,19 +1385,21 @@ void GlobalRouter::perturbCapacities()
       int x = uni_x(g);
       int y = uni_y(g);
       if (_hCapacities[layer - 1] != 0) {
-        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] - 1;
+        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] - perturbation_amount_;
         _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
         int edgeCap = _fastRoute->getEdgeCapacity(
             x - 1, y - 1, layer, x, y - 1, layer);
-        int newHCapacity = (edgeCap - 1) < 0 ? 0 : (edgeCap - 1);
+        int newHCapacity = (edgeCap - perturbation_amount_);
+        newHCapacity = newHCapacity < 0 ? 0 : newHCapacity;
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
       } else if (_vCapacities[layer - 1] != 0) {
-        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] - 1;
+        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] - perturbation_amount_;
         _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
         int edgeCap = _fastRoute->getEdgeCapacity(
             x - 1, y - 1, layer, x - 1, y, layer);
-        int newVCapacity = (edgeCap - 1) < 0 ? 0 : (edgeCap - 1);
+        int newVCapacity = (edgeCap - perturbation_amount_);
+        newVCapacity = newVCapacity < 0 ? 0 : newVCapacity;
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
       }

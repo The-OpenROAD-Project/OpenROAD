@@ -185,12 +185,13 @@ proc set_clock_routing { args } {
 }
 
 sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
-                                                   [-capacities_perturbation_percentage percent]
+                                                   [-capacities_perturbation_percentage percent] \
+                                                   [-perturbation_amount value]
                                                  }
 
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
-  keys { -seed -capacities_perturbation_percentage }
+  keys { -seed -capacities_perturbation_percentage -perturbation_amount }
 
   if { [info exists keys(-seed)] } {
     set seed $keys(-seed)
@@ -202,6 +203,12 @@ proc set_global_routing_random { args } {
     set percentage $keys(-capacities_perturbation_percentage)
     sta::check_positive_float "set_global_routing_random" $percentage
     grt::set_capacities_perturbation_percentage $percentage
+  }
+
+  if { [info exists keys(-perturbation_amount)] } {
+    set perturbation $keys(-perturbation_amount)
+    sta::check_positive_integer "set_global_routing_random" $perturbation
+    grt::set_perturbation_amount $perturbation
   }
 }
 

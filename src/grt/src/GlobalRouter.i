@@ -164,6 +164,12 @@ set_capacities_perturbation_percentage(float percentage)
 }
 
 void
+set_perturbation_amount(int perturbation)
+{
+  getFastRoute()->setPerturbationAmount(perturbation);
+}
+
+void
 global_route()
 {
   getFastRoute()->globalRoute();
