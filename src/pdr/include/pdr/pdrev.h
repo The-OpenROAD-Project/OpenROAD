@@ -46,12 +46,14 @@ using stt::Tree;
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
+             int root_index,
              float alpha,
              Logger* logger);
 
 Tree
 primDijkstraRevII(std::vector<int> x,
                   std::vector<int> y,
+                  int root_index,
                   float alpha,
                   Logger* logger);
 

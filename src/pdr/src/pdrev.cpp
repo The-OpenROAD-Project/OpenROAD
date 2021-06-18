@@ -50,6 +50,7 @@ class PdRev
 public:
   PdRev(std::vector<int> x,
         std::vector<int> y,
+        int root_index,
         Logger* logger);
   ~PdRev();
   void runPD(float alpha);
@@ -71,10 +72,11 @@ private:
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
+             int root_index,
              float alpha,
              Logger* logger)
 {
-  pdr::PdRev pd(x, y, logger);
+  pdr::PdRev pd(x, y, root_index, logger);
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
   pd.highlightSteinerTree(tree);
@@ -84,10 +86,11 @@ primDijkstra(std::vector<int> x,
 Tree
 primDijkstraRevII(std::vector<int> x,
                   std::vector<int> y,
+                  int root_index,
                   float alpha,
                   Logger* logger)
 {
-  pdr::PdRev pd(x, y, logger);
+  pdr::PdRev pd(x, y, root_index, logger);
   pd.runPDII(alpha);
   Tree tree = pd.translateTree();
   return tree;
@@ -95,10 +98,11 @@ primDijkstraRevII(std::vector<int> x,
 
 PdRev::PdRev(std::vector<int> x,
              std::vector<int> y,
+             int root_index,
              Logger* logger) :
   logger_(logger)
 {
-  graph_ = new Graph(x, y, logger_);
+  graph_ = new Graph(x, y, root_index, logger_);
 }
 
 PdRev::~PdRev()
@@ -207,7 +211,7 @@ Tree PdRev::translateTree()
 
   Tree tree;
   tree.deg = graph_->orig_num_terminals;
-  int branch_count = tree.deg * 2 - 2;
+  int branch_count = stt::branch_count(tree);
   if (graph_->nodes.size() != branch_count)
     logger_->error(PDR, 666, "steiner branch count inconsistent");
   tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));

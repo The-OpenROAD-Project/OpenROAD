@@ -53,6 +53,7 @@ class Graph
 public:
   Graph(vector<int>& x,
         vector<int>& y,
+        int root_index,
         Logger* logger);
   void buildNearestNeighborsForSPT();
   void buildNearestNeighbors_single_node(int idx);

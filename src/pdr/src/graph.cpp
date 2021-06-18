@@ -38,8 +38,10 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <unordered_set>
 #include <queue>
 #include <string>
+#include <utility>
 
 #include "utl/Logger.h"
 
@@ -50,46 +52,74 @@ using std::max;
 using std::min;
 using std::queue;
 using std::swap;
+using std::pair;
+
 using utl::PDR;
+
+// Don't add odb::Point as a dependent here.
+typedef pair<int, int> Pt;
+class PtHash
+{
+public:
+  size_t operator()(const Pt &pt) const
+  {
+    size_t hash = 5381;
+    // hash * 31 ^ add
+    hash = ((hash << 5) + hash) ^ pt.first;
+    hash = ((hash << 5) + hash) ^ pt.second;
+    return hash;
+  }
+};
+
+class PtEqual
+{
+public:
+  bool operator()(const Pt &pt1,
+		  const Pt &pt2) const
+  {
+    return pt1.first == pt2.first
+      && pt1.second == pt2.second;
+  }
+};
+
+typedef std::unordered_set<Pt, PtHash, PtEqual> PtSet;
 
 Graph::Graph(vector<int>& x,
              vector<int>& y,
+             int root_index,
              Logger* logger) :
+  root_idx(root_index),
   logger_(logger)
 {
-  root_idx = 0;
-  aux.resize(x.size());
-
+  PtSet pts;
   for (int i = 0; i < x.size(); ++i) {
-    // This is N^2 stoopid. Use a set. -cherry 06/06/2021
-    bool flag = false;
-    for (int j = 0; j < nodes.size(); ++j) {
-      if (nodes[j].x == x[i] && nodes[j].y == y[i]) {
-        flag = true;
-        break;
-      }
-    }
-    if (flag)
-      continue;
+    int x1 = x[i];
+    int y1 = y[i];
+    Pt pt(x1, y1);
+    if (pts.find(pt) == pts.end()) {
+      pts.insert(pt);
+      int idx = nodes.size();
+      nodes.push_back(Node(idx, x[i], y[i]));
+      edges.push_back(Edge(idx, 0, 0));
+      sheared.push_back(Node(idx, 0, 0));
+      sorted.push_back(idx);
 
-    int idx = nodes.size();
-    nodes.push_back(Node(idx, x[i], y[i]));
-    edges.push_back(Edge(idx, 0, 0));
-    sheared.push_back(Node(idx, 0, 0));
-    sorted.push_back(idx);
+      urux.push_back(std::numeric_limits<int>::max());
+      urlx.push_back(x[i]);
+      ulux.push_back(x[i]);
+      ullx.push_back(std::numeric_limits<int>::min());
+      lrux.push_back(std::numeric_limits<int>::max());
+      lrlx.push_back(x[i]);
+      llux.push_back(x[i]);
+      lllx.push_back(std::numeric_limits<int>::min());
 
-    urux.push_back(std::numeric_limits<int>::max());
-    urlx.push_back(x[i]);
-    ulux.push_back(x[i]);
-    ullx.push_back(std::numeric_limits<int>::min());
-    lrux.push_back(std::numeric_limits<int>::max());
-    lrlx.push_back(x[i]);
-    llux.push_back(x[i]);
-    lllx.push_back(std::numeric_limits<int>::min());
-
-    vector<int> newColumn;
-    nn.push_back(newColumn);
+      vector<int> newColumn;
+      nn.push_back(newColumn);
+    } 
+    else if (root_idx > i)
+      root_idx--;
   }
+
   num_terminals = nodes.size();
   orig_num_terminals = nodes.size();
   aux.resize(num_terminals);
@@ -1871,15 +1901,6 @@ void Graph::buildNearestNeighborsForSPT()
           ullx[cNode.idx] = nNode.x;
         }
       }
-    }
-  }
-  int total = 0, max = 0, size = 0, max_id = 0;
-  for (int i = 0; i < node_count; ++i) {
-    size = nn[i].size();
-    total += size;
-    if (size > max) {
-      max = size;
-      max_id = i;
     }
   }
   // Print neighbors.

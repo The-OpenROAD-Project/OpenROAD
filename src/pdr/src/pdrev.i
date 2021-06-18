@@ -52,15 +52,16 @@ reportPdrevTree(bool use_pd,
 {
   std::vector<int> x1(x);
   std::vector<int> y1(y);
-  // Move driver to pole position.
+  // Move driver to pole position until drvr_index arg works.
   std::swap(x1[0], x1[drvr_index]);
   std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
   utl::Logger *logger = ord::getLogger();
   stt::Tree tree = use_pd
-    ? pdr::primDijkstra(x1, y1, alpha, logger)
-    : pdr::primDijkstraRevII(x1, y1, alpha, logger);
+    ? pdr::primDijkstra(x1, y1, drvr_index, alpha, logger)
+    : pdr::primDijkstraRevII(x1, y1, drvr_index, alpha, logger);
   printf("WL = %d\n", tree.length);
-  for (int i = 0; i < 2 * tree.deg - 2; i++) {
+  for (int i = 0; i < stt::branch_count(tree); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
     int parent = tree.branch[i].n;
