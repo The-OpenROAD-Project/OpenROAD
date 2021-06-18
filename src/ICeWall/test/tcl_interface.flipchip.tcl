@@ -110,7 +110,7 @@ set_bump_options \
   -pitch 160 \
   -bump_pin_name PAD \
   -spacing_to_edge 165 \
-  -cell_name {140 DUMMY_BUMP 150 DUMMY_BUMP 180 DUMMY_BUMP} \
+  -cell_name DUMMY_BUMP \
   -num_pads_per_tile 5 \
   -rdl_layer metal10 \
   -rdl_width 10 \
@@ -136,6 +136,8 @@ puts "No more errors expected"
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
 # 
 add_pad -edge bottom -inst_name u_cbrk0                 -type cbk   -location {origin {x  140 y   35}}
+catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 23 col 1}}
+catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 0}}
 add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 1}
 add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  335 y   35}} -bump {row 16 col 2}
 add_pad -edge bottom -inst_name u_vzz_0 -signal DVSS_0  -type vssio -location {origin {x  365 y   35}} -bump {row 17 col 2}

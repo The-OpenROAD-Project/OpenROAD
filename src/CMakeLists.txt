@@ -79,7 +79,6 @@ swig_lib(NAME      openroad_swig
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    ${ICEWALL_HOME}/src/ICeWall.tcl
-                   ${ICEWALL_HOME}/src/place_cell.tcl
                    ${OPENDB_HOME}/src/db/OpenDB.tcl
 )
 

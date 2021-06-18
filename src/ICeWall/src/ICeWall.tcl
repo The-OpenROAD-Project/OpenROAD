@@ -30,12 +30,17 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-connect_by_abutment signal_list]}
 
 proc set_padring_options {args} {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PAD 226 "Design must be loaded before calling set_padring_options"
+  }
+
   sta::parse_key_args "set_padring_options" args \
     keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -connect_by_abutment}
 
   if {[llength $args] > 0} {
     utl::error PAD 219 "Unrecognized arguments ([lindex $args 0]) specified for set_padring_options"
   }
+
   if {[info exists keys(-type)]} {
     ICeWall::set_type $keys(-type)
   }
@@ -90,6 +95,10 @@ proc define_pad_cell {args} {
     keys {-name -type -cell_name -orient -pad_pin_name -break_signals} \
     flags {-fill -corner -bondpad -bump -physical_only}
 
+  if {![ord::db_has_tech]} {
+    utl::error PAD 225 "Library must be loaded before calling define_pad_cell"
+  }
+
   if {[llength $args] > 0} {
     utl::error PAD 220 "Unrecognized arguments ([lindex $args 0]) specified for define_pad_cell"
   }
@@ -124,6 +133,10 @@ proc add_pad {args} {
   sta::parse_key_args "add_pad" args \
     keys {-name -type -cell -signal -edge -location -bump -bondpad -inst_name}
 
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PAD 224 "Design must be loaded before calling add_pad"
+  }
+
   if {[llength $args] > 0} {
     utl::error PAD 221 "Unrecognized arguments ([lindex $args 0]) specified for add_pad"
   }
@@ -132,13 +145,17 @@ proc add_pad {args} {
 
 sta::define_cmd_args "initialize_padring" {[-signal_assignment_file signal_assigment_file]}
 proc initialize_padring {args} {
-  # sta::parse_key_args "initialize_padring" args \
-  #  keys {-signal_assignment_file}
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PAD 227 "Design must be loaded before calling initialize_padring"
+  }
+
+  sta::parse_key_args "initialize_padring" args \
+    keys {-signal_assignment_file}
 
   if {[llength $args] > 0} {
     utl::error PAD 222 "Unrecognized arguments ([lindex $args 0]) specified for initialize_padring"
   }
-  ICeWall::init_footprint {*}$args
+  ICeWall::init_footprint {*}[array get keys]
 }
 
 namespace eval ICeWall {
@@ -2539,7 +2556,11 @@ namespace eval ICeWall {
         dict set library scaled bump_width [ord::microns_to_dbu [dict get $library bump width]]
       } else {
         if {[dict exists $library bump cell_name]} {
-          set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
+          if {[llength [dict get $library bump cell_name]] == 1} {
+            set cell_name [dict get $library bump cell_name]
+          } else {
+            set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
+          }
           # debug "$cell_name, [$db findMaster $cell_name]"
           if {[set master [$db findMaster $cell_name]] != "NULL"} {
             dict set library scaled bump_width [$master getWidth]
@@ -4653,11 +4674,21 @@ namespace eval ICeWall {
     
     # Verify bump 
     if {[dict exists $padcell bump]} {
+      variable num_bumps_x
+      variable num_bumps_y
+
       dict set padcell bump [check_bump [dict get $padcell bump]]
 
       set row [dict get $padcell bump row]
       set col [dict get $padcell bump col]
-      
+    
+      if {$row < 1 || $row > $num_bumps_y} {
+        utl::error PAD 229 "The value for row is $row, but must be in the range 1 - $num_bumps_y"
+      }
+      if {$col < 1 || $col > $num_bumps_x} {
+        utl::error PAD 230 "The value for col is $col, but must be in the range 1 - $num_bumps_x"
+      }
+
       set pitch [get_footprint_bump_pitch]
       set origin [get_bump_origin $row $col]
       
@@ -5116,3 +5147,93 @@ namespace eval Footprint {
 }
 
 package provide ICeWall 0.1.0
+
+
+sta::define_cmd_args "place_cell" {-inst_name inst_name \
+                                     [-cell library_cell] \
+                                     -origin xy_origin \
+                                     -orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90) \
+                                     [-status (PLACED|FIRM)]}
+proc place_cell {args} {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PAD 228 "Design must be loaded before calling place_cell"
+  }
+
+  set db [ord::get_db]
+  set block [ord::get_db_block]
+
+  sta::parse_key_args "place_cell" args \
+    keys {-cell -origin -orient -inst_name -status}
+
+  if {[info exists keys(-status)]} {
+    set placement_status $keys(-status)
+    if {[lsearch {PLACED FIRM} $placement_status] == -1} {
+      utl::error PAD 188 "Invalid placement status $placement_status, must be one of either PLACED or FIRM"
+    }
+  } else {
+    set placement_status "PLACED"
+  }
+
+  if {[info exists keys(-cell)]} {
+    set cell_name $keys(-cell)
+    if {[set cell_master [$db findMaster $cell_name]] == "NULL"} {
+      utl::error PAD 189 "Cell $cell_name not loaded into design"
+    }
+  }
+
+  if {[info exists keys(-inst_name)]} {
+    set inst_name [lindex $keys(-inst_name) 0]
+  } else {
+    utl::err PAD 190 "-inst_name is a required argument to the place_cell command"
+  }
+
+  # Verify cell orientation
+  set valid_orientation {R0 R90 R180 R270 MX MY MXR90 MYR90}
+  if {[info exists keys(-orient)]} {
+    set orient $keys(-orient)
+    if {[lsearch $valid_orientation $orient] == -1} {
+      utl::error PAD 191 "Invalid orientation $orient specified, must be one of [join $valid_orientation {, }]"
+    }
+  } else {
+    utl::error PAD 192 "No orientation specified for $inst_name"
+  }
+
+  # Verify centre/origin
+  if {[info exists keys(-origin)]} {
+    set origin $keys(-origin) 
+    if {[llength $origin] != 2} {
+      utl::error PAD 193 "Origin is $origin, but must be a list of 2 numbers"
+    }
+    if {[catch {set x [ord::microns_to_dbu [lindex $origin 0]]} msg]} {
+      utl::error PAD 194 "Invalid value specified for x value, [lindex $origin 0], $msg"
+    }
+    if {[catch {set y [ord::microns_to_dbu [lindex $origin 1]]} msg]} {
+      utl::error PAD 195 "Invalid value specified for y value, [lindex $origin 1], $msg"
+    }
+  } else {
+    utl::error PAD 196 "No origin specified for $inst_name"
+  }
+
+  if {[set inst [$block findInst $inst_name]] == "NULL"} {
+    if {[info exists keys(-cell)]} {
+      set inst [odb::dbInst_create $block $cell_master $inst_name]
+    } else {
+      utl::error PAD 197 "Instance $inst_name no in the design, -cell must be specified to create a new instance"
+    }
+  } else {
+    if {[info exists keys(-cell)]} {
+      if {[[$inst getMaster] getName] != $cell_name} {
+        utl::error PAD 198 "Instance $inst_name expected to be $cell_name, but is actually [[$inst getMaster] getName]"
+      }
+    }
+  }
+
+  if {$inst == "NULL"} {
+    utl::error PAD 199 "Cannot create instance $inst_name of $cell_name"
+  }
+
+  $inst setOrigin $x $y
+  $inst setOrient $orient
+  $inst setPlacementStatus $placement_status
+}
+
