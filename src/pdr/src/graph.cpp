@@ -1823,51 +1823,51 @@ void Graph::buildNearestNeighborsForSPT()
 
   // collect neighbor
   for (int idx = 0; idx < node_count; ++idx) {
-    debugPrint(logger_, PDR, "pdrev", 3, "sorted idx: {}", sorted[idx]);
     Node& cNode = nodes[sorted[idx]];
+    debugPrint(logger_, PDR, "pdrev", 3, "sorted {} {} {}", cNode.idx, cNode.x, cNode.y);
     // update idx to neighbors
     // Note: nNode.y <= cNode.y
-    // cNode.y > nNode.y => neighbors of nNode have y >
     for (int i = 0; i < idx; ++i) {
       Node& nNode = nodes[sorted[i]];
+      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} {} {}", nNode.idx, nNode.x, nNode.y);
       if (urlx[nNode.idx] == cNode.x) {
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} above",
+                   nNode.idx,
+                   cNode.idx);
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
         ullx[nNode.idx] = cNode.x;
       } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "right for nNode cNode idx: {} nNode idx: {}",
-                   cNode.idx,
-                   nNode.idx);
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper right",
+                   nNode.idx,
+                   cNode.idx);
         // right
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "added to nNode right: {}",
-                   cNode.idx);
       } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "left for nNode cNode idx: {} nNode idx: {}",
-                   cNode.idx,
-                   nNode.idx);
         if (idx == node_count - 1) {
           // left
+          debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
+                     nNode.idx,
+                     cNode.idx);
           nn[nNode.idx].push_back(cNode.idx);
           ullx[nNode.idx] = cNode.x;
-          debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}", cNode.idx);
         } else {
           if (nodes[sorted[idx + 1]].y != cNode.y
               || nodes[sorted[idx + 1]].x > nNode.x) {
+            debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
+                       nNode.idx,
+                       cNode.idx);
             nn[nNode.idx].push_back(cNode.idx);
             ullx[nNode.idx] = cNode.x;
-            debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}", cNode.idx);
           }
         }
       }
     }
 
     int tIdx = idx;
-    while (nodes[sorted[tIdx]].x == nodes[sorted[idx]].x) {
+    int node_x = nodes[sorted[idx]].x;
+    while (nodes[sorted[tIdx]].x == node_x) {
       tIdx++;
       if (tIdx == node_count)
         break;
@@ -1879,22 +1879,29 @@ void Graph::buildNearestNeighborsForSPT()
       if (idx == i)
         continue;
       Node& nNode = nodes[sorted[i]];
+      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} {} {}", cNode.idx, cNode.x, cNode.y);
       if (i >= 1) {
         if (nodes[sorted[i]].y == nodes[sorted[i - 1]].y)
           continue;
       }
       if (lrlx[cNode.idx] == nNode.x) {
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} below",
+                   cNode.idx,
+                   nNode.idx);
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-        debugPrint(logger_, PDR, "pdrev", 3, "added cNode center: {}", nNode.idx);
       } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
         // right
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower right",
+                   cNode.idx,
+                   nNode.idx);
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-        debugPrint(logger_, PDR, "pdrev", 3, "added cNode right: {}", nNode.idx);
       } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
         // left
-        debugPrint(logger_, PDR, "pdrev", 3, "added cNode left: {}", nNode.idx);
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower left",
+                   cNode.idx,
+                   nNode.idx);
         nn[cNode.idx].push_back(nNode.idx);
         lllx[cNode.idx] = nNode.x;
         if (cNode.y == nNode.y) {
