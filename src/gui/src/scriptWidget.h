@@ -100,8 +100,10 @@ class ScriptWidget : public QDockWidget
 
  private:
   void setupTcl();
-  void updateOutput(int return_code, bool command_finished);
   void addToOutput(const QString& text, const QColor& color);
+  void addCommandToOutput(const QString& cmd);
+  void addTclResultToOutput(int return_code);
+  void addBufferToOutput();
   static int channelOutput(ClientData instanceData,
                            const char* buf,
                            int toWrite,

@@ -168,7 +168,7 @@ void ScriptWidget::setupTcl()
 
   // TODO: tclAppInit should return the status which we could
   // pass to updateOutput
-  updateOutput(TCL_OK, /* command_finished */ true);
+  addTclResultToOutput(TCL_OK);
 
   input_->init(interp_);
 }
@@ -180,12 +180,12 @@ void ScriptWidget::executeCommand()
   QString command = input_->text();
 
   // Show the command that we executed
-  addToOutput("> " + command, command);
+  addCommandToOutput(command);
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   // Show its output
-  updateOutput(return_code, /* command_finished */ true);
+  addTclResultToOutput(return_code);
 
   if (return_code == TCL_OK) {
     // Update history; ignore repeated commands and keep last 100
@@ -202,10 +202,31 @@ void ScriptWidget::executeCommand()
 
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
+
   emit commandExecuted(return_code);
 }
 
-void ScriptWidget::updateOutput(int return_code, bool command_finished)
+void ScriptWidget::addCommandToOutput(const QString& cmd)
+{
+  const QString first_line_prefix    = ">>> ";
+  const QString continue_line_prefix = "... ";
+
+  QString command = first_line_prefix + cmd;
+  command.replace("\n", "\n" + continue_line_prefix);
+
+  addToOutput(command, cmd_msg_);
+}
+
+void ScriptWidget::addTclResultToOutput(int return_code)
+{
+  // Show the return value color-coded by ok/err.
+  const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
+  if (result[0] != '\0') {
+    addToOutput(result, (return_code == TCL_OK) ? tcl_ok_msg_ : tcl_error_msg_);
+  }
+}
+
+void ScriptWidget::addBufferToOutput()
 {
   // Show whatever we captured from the output channel in grey
   for (auto& out : outputBuffer_) {
@@ -214,14 +235,6 @@ void ScriptWidget::updateOutput(int return_code, bool command_finished)
     }
   }
   outputBuffer_.clear();
-
-  if (command_finished) {
-    // Show the return value color-coded by ok/err.
-    const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
-    if (result[0] != '\0') {
-      addToOutput(result, (return_code == TCL_OK) ? tcl_ok_msg_ : tcl_error_msg_);
-    }
-  }
 }
 
 void ScriptWidget::addToOutput(const QString& text, const QColor& color)
@@ -363,7 +376,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     widget_->outputBuffer_.append(str);
 
     // Make it appear now
-    widget_->updateOutput(0, /* command_finished */ false);
+    widget_->addBufferToOutput();
   }
 
   void flush_() override {}
