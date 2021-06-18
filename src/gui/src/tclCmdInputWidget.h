@@ -98,8 +98,8 @@ class TclCmdInputWidget: public QPlainTextEdit {
 
     int max_height_;
 
-    QMenu* context_menu_;
-    QAction* enable_highlighting_;
+    std::unique_ptr<QMenu> context_menu_;
+    std::unique_ptr<QAction> enable_highlighting_;
 
     static constexpr const char* enable_highlighting_keyword_ = "highlighting";
 

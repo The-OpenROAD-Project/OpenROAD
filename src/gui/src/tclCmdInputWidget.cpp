@@ -53,13 +53,13 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
   highlighter_ = nullptr;
 
   // add option to default context menu to enable or disable syntax highlighting
-  context_menu_ = createStandardContextMenu();
+  context_menu_.reset(createStandardContextMenu());
   context_menu_->addSeparator();
-  enable_highlighting_ = new QAction("Syntax highlighting", this);
+  enable_highlighting_ = std::make_unique<QAction>("Syntax highlighting", this);
   enable_highlighting_->setCheckable(true);
   enable_highlighting_->setChecked(true);
-  context_menu_->addAction(enable_highlighting_);
-  connect(enable_highlighting_, SIGNAL(triggered()), this, SLOT(updateHighlighting()));
+  context_menu_->addAction(enable_highlighting_.get());
+  connect(enable_highlighting_.get(), SIGNAL(triggered()), this, SLOT(updateHighlighting()));
 
   // precompute size for updating text box size
   document_margins_ = 2 * (document()->documentMargin() + 3);
@@ -70,8 +70,6 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent) :
 
 TclCmdInputWidget::~TclCmdInputWidget()
 {
-  delete enable_highlighting_;
-  delete context_menu_;
 }
 
 void TclCmdInputWidget::setFont(const QFont& font)
