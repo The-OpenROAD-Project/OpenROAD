@@ -1731,41 +1731,41 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
     }
 
   // collect neighbor
-  Node& cNode = nodes[node_idx];
+  Node& node = nodes[node_idx];
   // update idx to neighbors
-  // Note: nNode.y <= cNode.y
+  // Note: below.y <= node.y
   for (int i = 0; i < idx; ++i) {
-    Node& nNode = nodes[sorted[i]];
-    if (urlx[nNode.idx] == cNode.x) {
-      nn[nNode.idx].push_back(cNode.idx);
-      urux[nNode.idx] = cNode.x;
-      ullx[nNode.idx] = cNode.x;
-    } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
+    Node& below = nodes[sorted[i]];
+    if (urlx[below.idx] == node.x) {
+      nn[below.idx].push_back(node.idx);
+      urux[below.idx] = node.x;
+      ullx[below.idx] = node.x;
+    } else if (urux[below.idx] > node.x && urlx[below.idx] < node.x) {
       // right
-      nn[nNode.idx].push_back(cNode.idx);
-      urux[nNode.idx] = cNode.x;
-    } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
+      nn[below.idx].push_back(node.idx);
+      urux[below.idx] = node.x;
+    } else if (ullx[below.idx] < node.x && ulux[below.idx] > node.x) {
       // left
-      nn[nNode.idx].push_back(cNode.idx);
-      ullx[nNode.idx] = cNode.x;
+      nn[below.idx].push_back(node.idx);
+      ullx[below.idx] = node.x;
     }
   }
 
   // update neighbor to idx
-  // Note: nNode.y <= cNode.y
+  // Note: below.y <= node.y
   for (int i = idx - 1; i >= 0; --i) {
-    Node& nNode = nodes[sorted[i]];
-    if (lrlx[cNode.idx] == nNode.x) {
-      nn[cNode.idx].push_back(nNode.idx);
-      lrux[cNode.idx] = nNode.x;
-    } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
+    Node& below = nodes[sorted[i]];
+    if (lrlx[node.idx] == below.x) {
+      nn[node.idx].push_back(below.idx);
+      lrux[node.idx] = below.x;
+    } else if (lrux[node.idx] > below.x && lrlx[node.idx] < below.x) {
       // right
-      nn[cNode.idx].push_back(nNode.idx);
-      lrux[cNode.idx] = nNode.x;
-    } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
+      nn[node.idx].push_back(below.idx);
+      lrux[node.idx] = below.x;
+    } else if (lllx[node.idx] < below.x && llux[node.idx] > below.x) {
       // left
-      nn[cNode.idx].push_back(nNode.idx);
-      lllx[cNode.idx] = nNode.x;
+      nn[node.idx].push_back(below.idx);
+      lllx[node.idx] = below.x;
     }
   }
 
@@ -1821,43 +1821,43 @@ void Graph::buildNearestNeighborsForSPT()
 
   // collect neighbor
   for (int idx = 0; idx < node_count; ++idx) {
-    Node& cNode = nodes[sorted[idx]];
-    debugPrint(logger_, PDR, "pdrev", 3, "sorted by y {} ({} {})", cNode.idx, cNode.x, cNode.y);
-    // Consider all nodes below cNode
+    Node& node = nodes[sorted[idx]];
+    debugPrint(logger_, PDR, "pdrev", 3, "sorted by y {} ({} {})", node.idx, node.x, node.y);
+    // Consider all nodes below node
     for (int i = 0; i < idx; ++i) {
-      Node& nNode = nodes[sorted[i]];
-      // nNode.y <= cNode.y
-      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", nNode.idx, nNode.x, nNode.y);
-      if (urlx[nNode.idx] == cNode.x) {
+      Node& below = nodes[sorted[i]];
+      // below.y <= node.y
+      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", below.idx, below.x, below.y);
+      if (urlx[below.idx] == node.x) {
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} above",
-                   nNode.idx,
-                   cNode.idx);
-        nn[nNode.idx].push_back(cNode.idx);
-        urux[nNode.idx] = cNode.x;
-        ullx[nNode.idx] = cNode.x;
-      } else if (cNode.x < urux[nNode.idx] && cNode.x > urlx[nNode.idx]) {
+                   below.idx,
+                   node.idx);
+        nn[below.idx].push_back(node.idx);
+        urux[below.idx] = node.x;
+        ullx[below.idx] = node.x;
+      } else if (node.x > urlx[below.idx] && node.x < urux[below.idx]) {
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper right",
-                   nNode.idx,
-                   cNode.idx);
+                   below.idx,
+                   node.idx);
         // right
-        nn[nNode.idx].push_back(cNode.idx);
-        urux[nNode.idx] = cNode.x;
-      } else if (cNode.x > ullx[nNode.idx] && cNode.x < ulux[nNode.idx] ) {
+        nn[below.idx].push_back(node.idx);
+        urux[below.idx] = node.x;
+      } else if (node.x > ullx[below.idx] && node.x < ulux[below.idx] ) {
         if (idx == node_count - 1) {
           // left
           debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
-                     nNode.idx,
-                     cNode.idx);
-          nn[nNode.idx].push_back(cNode.idx);
-          ullx[nNode.idx] = cNode.x;
+                     below.idx,
+                     node.idx);
+          nn[below.idx].push_back(node.idx);
+          ullx[below.idx] = node.x;
         } else {
-          if (nodes[sorted[idx + 1]].y != cNode.y
-              || nodes[sorted[idx + 1]].x > nNode.x) {
+          if (nodes[sorted[idx + 1]].y != node.y
+              || nodes[sorted[idx + 1]].x > below.x) {
             debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
-                       nNode.idx,
-                       cNode.idx);
-            nn[nNode.idx].push_back(cNode.idx);
-            ullx[nNode.idx] = cNode.x;
+                       below.idx,
+                       node.idx);
+            nn[below.idx].push_back(node.idx);
+            ullx[below.idx] = node.x;
           }
         }
       }
@@ -1872,38 +1872,38 @@ void Graph::buildNearestNeighborsForSPT()
     }
     tIdx = tIdx - 1;
     // update neighbor to idx
-    // Note: nNode.y <= cNode.y
+    // Note: below.y <= node.y
     for (int i = tIdx; i >= 0; --i) {
       if (idx == i)
         continue;
-      Node& nNode = nodes[sorted[i]];
-      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", cNode.idx, cNode.x, cNode.y);
+      Node& below = nodes[sorted[i]];
+      debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", node.idx, node.x, node.y);
       if (i >= 1) {
         if (nodes[sorted[i]].y == nodes[sorted[i - 1]].y)
           continue;
       }
-      if (lrlx[cNode.idx] == nNode.x) {
+      if (lrlx[node.idx] == below.x) {
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} below",
-                   cNode.idx,
-                   nNode.idx);
-        nn[cNode.idx].push_back(nNode.idx);
-        lrux[cNode.idx] = nNode.x;
-      } else if (nNode.x < lrux[cNode.idx] && nNode.x > lrlx[cNode.idx]) {
+                   node.idx,
+                   below.idx);
+        nn[node.idx].push_back(below.idx);
+        lrux[node.idx] = below.x;
+      } else if (below.x > lrlx[node.idx] && below.x < lrux[node.idx]) {
         // right
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower right",
-                   cNode.idx,
-                   nNode.idx);
-        nn[cNode.idx].push_back(nNode.idx);
-        lrux[cNode.idx] = nNode.x;
-      } else if (nNode.x > lllx[cNode.idx] && nNode.x < llux[cNode.idx]) {
+                   node.idx,
+                   below.idx);
+        nn[node.idx].push_back(below.idx);
+        lrux[node.idx] = below.x;
+      } else if (below.x > lllx[node.idx] && below.x < llux[node.idx]) {
         // left
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower left",
-                   cNode.idx,
-                   nNode.idx);
-        nn[cNode.idx].push_back(nNode.idx);
-        lllx[cNode.idx] = nNode.x;
-        if (cNode.y == nNode.y) {
-          ullx[cNode.idx] = nNode.x;
+                   node.idx,
+                   below.idx);
+        nn[node.idx].push_back(below.idx);
+        lllx[node.idx] = below.x;
+        if (node.y == below.y) {
+          ullx[node.idx] = below.x;
         }
       }
     }
