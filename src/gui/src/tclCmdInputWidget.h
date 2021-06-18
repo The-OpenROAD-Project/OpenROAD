@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,78 +29,81 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
 
-#include "node.h"
+#pragma once
 
-namespace pdr {
+#include <tcl.h>
+#include <memory>
 
-Node::Node(int _idx, int _x, int _y) :
-  idx(_idx),
-  x(_x),
-  y(_y),
-  // magic number alert -cherry
-  nn_edge_detcost(8, 10000),
-  nn_sw_cost(8, 10000),
-  maxPLToChild(0)
-{
-  parent = 0;
-  min_dist = 0;
-  path_length = 0;
-  detcost_edgePToNode = -1;
-  detcost_edgeNodeToP = -1;
-  src_to_sink_dist = 0;
-  K_t = 1;
-  level = 0;
-  conn_to_par = false;
-  // magic number alert -cherry
-  idx_of_cn_x = 105;
-  idx_of_cn_y = 105;
+#include <QMenu>
+#include <QPlainTextEdit>
+#include <QSettings>
+
+#include "tclCmdHighlighter.h"
+
+namespace gui {
+
+class TclCmdInputWidget: public QPlainTextEdit {
+    Q_OBJECT
+
+  public:
+    TclCmdInputWidget(QWidget* parent = nullptr);
+    ~TclCmdInputWidget();
+
+    void init(Tcl_Interp* interp);
+
+    void setFont(const QFont& font);
+
+    QString text();
+    void setText(const QString& text);
+
+    void setMaximumHeight(int height);
+
+    void readSettings(QSettings* settings);
+    void writeSettings(QSettings* settings);
+
+  public slots:
+    void commandExecuted(int return_code);
+
+  signals:
+    // complete TCL command available
+    void completeCommand();
+
+    // back in history
+    void historyGoBack();
+
+    // forward in history
+    void historyGoForward();
+
+  private slots:
+    void updateSize();
+
+    void updateHighlighting();
+
+  protected:
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+    void contextMenuEvent(QContextMenuEvent* event) override;
+
+  private:
+    void keyPressEvent(QKeyEvent* e) override;
+    void keyReleaseEvent(QKeyEvent* e) override;
+
+    bool isCommandComplete(const std::string& cmd);
+
+    void determineLineHeight();
+
+    int line_height_;
+    int document_margins_;
+
+    int max_height_;
+
+    std::unique_ptr<QMenu> context_menu_;
+    std::unique_ptr<QAction> enable_highlighting_;
+
+    static constexpr const char* enable_highlighting_keyword_ = "highlighting";
+
+    std::unique_ptr<TclCmdHighlighter> highlighter_;
 };
 
-void Node::report(ostream& os,
-                  int level) const
-{
-  os << idx << " (" << x << ", " << y << ")";
-  if (level > 1) {
-    os << " parent: " << parent << " children: ";
-    for (int i = 0; i < children.size(); ++i) {
-      os << children[i] << " ";
-    }
-  }
-  if (level > 2) {
-    os << " N: ";
-    for (int i = 0; i < N.size(); ++i) {
-      os << N[i] << " ";
-    }
-    os << " S: ";
-    for (int i = 0; i < S.size(); ++i) {
-      os << S[i] << " ";
-    }
-    os << " E: ";
-    for (int i = 0; i < E.size(); ++i) {
-      os << E[i] << " ";
-    }
-    os << " W: ";
-    for (int i = 0; i < W.size(); ++i) {
-      os << W[i] << " ";
-    }
-    os << "PL: " << src_to_sink_dist << " MaxPLToChild: " << maxPLToChild;
-  }
-}
-
-ostream& operator<<(ostream& os, const Node& n)
-{
-  n.report(os, 1);
-  return os;
-}
-
-Node1::Node1(int _idx, int _x, int _y)
-{
-  idx = _idx;
-  x = _x;
-  y = _y;
-  parent = 0;
-}
-
-} // namespace
+}  // namespace gui
