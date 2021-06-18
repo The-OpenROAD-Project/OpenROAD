@@ -1248,9 +1248,9 @@ void FlexDR::checkConnectivity(int iter)
       if (!status[i]) {
         cout << "Error: checkConnectivity break, net " << net->getName() << endl
              << "Objs not visited:\n";
-        for (int idx = 0; idx < adjVisited.size(); idx++) {
+        for (int idx = 0; idx < (int)adjVisited.size(); idx++) {
           if (!adjVisited[idx]) {
-            if (idx < netDRObjs.size())
+            if (idx < (int)netDRObjs.size())
               cout << *(netDRObjs[idx]) << "\n";
             else
               cout << *(netPins[idx - netDRObjs.size()]) << "\n";
