@@ -1823,10 +1823,10 @@ void Graph::buildNearestNeighborsForSPT()
   for (int idx = 0; idx < node_count; ++idx) {
     Node& cNode = nodes[sorted[idx]];
     debugPrint(logger_, PDR, "pdrev", 3, "sorted by y {} ({} {})", cNode.idx, cNode.x, cNode.y);
-    // update idx to neighbors
-    // Note: nNode.y <= cNode.y
+    // Consider all nodes below cNode
     for (int i = 0; i < idx; ++i) {
       Node& nNode = nodes[sorted[i]];
+      // nNode.y <= cNode.y
       debugPrint(logger_, PDR, "pdrev", 3, " candidate {} ({} {})", nNode.idx, nNode.x, nNode.y);
       if (urlx[nNode.idx] == cNode.x) {
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} above",
@@ -1835,14 +1835,14 @@ void Graph::buildNearestNeighborsForSPT()
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
         ullx[nNode.idx] = cNode.x;
-      } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
+      } else if (cNode.x < urux[nNode.idx] && cNode.x > urlx[nNode.idx]) {
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper right",
                    nNode.idx,
                    cNode.idx);
         // right
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
-      } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
+      } else if (cNode.x > ullx[nNode.idx] && cNode.x < ulux[nNode.idx] ) {
         if (idx == node_count - 1) {
           // left
           debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
@@ -1888,14 +1888,14 @@ void Graph::buildNearestNeighborsForSPT()
                    nNode.idx);
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-      } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
+      } else if (nNode.x < lrux[cNode.idx] && nNode.x > lrlx[cNode.idx]) {
         // right
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower right",
                    cNode.idx,
                    nNode.idx);
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-      } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
+      } else if (nNode.x > lllx[cNode.idx] && nNode.x < llux[cNode.idx]) {
         // left
         debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower left",
                    cNode.idx,
