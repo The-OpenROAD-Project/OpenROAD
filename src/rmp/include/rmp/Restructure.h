@@ -71,7 +71,7 @@ typedef enum {
   DELAY_2_MODE,
   DELAY_3_MODE,
   DELAY_4_MODE
-} mode ;
+} Mode ;
 
 class Restructure
 {
@@ -81,10 +81,10 @@ class Restructure
 
   void init(ord::OpenRoad* openroad);
   void reset();
-  void run(const char* libertyFileName, float slack_threshold, unsigned max_depth);
+  void run(const char* liberty_file_name, float slack_threshold, unsigned max_depth);
 
-  void setMode(const char* modeName);
-  void setLogfile(const char* fileName);
+  void setMode(const char* mode_name);
+  void setLogfile(const char* file_name);
   void setLoCell(const char* locell);
   void setLoPort(const char* loport);
   void setHiCell(const char* hicell);
@@ -96,11 +96,11 @@ class Restructure
   void getBlob(unsigned max_depth);
   void runABC();
   void postABC(float worst_slack);
-  bool writeAbcScript(std::string fileName);
+  bool writeAbcScript(std::string file_name);
   void writeOptCommands(std::ofstream &script);
   void initDB();
-  void getEndPoints(sta::PinSet &ends, bool areaMode, unsigned max_depth);
-  int  countConsts(odb::dbBlock* topBlock);
+  void getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_depth);
+  int  countConsts(odb::dbBlock* top_block);
 
   ord::OpenRoad* openroad_;
   Logger* logger_;
@@ -111,16 +111,16 @@ class Restructure
   std::string hiport_ = "";
 
   // db vars
-  sta::dbSta* openSta_ = nullptr;
+  sta::dbSta* open_sta_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
 
-  std::string inputBlifFileName_;
-  std::string outputBlifFileName_;
-  std::vector<std::string> libFileNames_;
-  std::set<odb::dbInst*> pathInsts_;
+  std::string input_blif_file_name_;
+  std::string output_blif_file_name_;
+  std::vector<std::string> lib_file_names_;
+  std::set<odb::dbInst*> path_insts_;
 
-  mode optMode_ = DELAY_1_MODE;
+  Mode opt_mode_ = DELAY_1_MODE;
 };
 
 }  // namespace rmp

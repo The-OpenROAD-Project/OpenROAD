@@ -88,23 +88,23 @@ Restructure::~Restructure()
 
 void Restructure::reset()
 {
-  libFileNames_.clear();
-  pathInsts_.clear();
+  lib_file_names_.clear();
+  path_insts_.clear();
 }
 
-void Restructure::run(const char* libertyFileName, float slack_threshold, unsigned max_depth)
+void Restructure::run(const char* liberty_file_name, float slack_threshold, unsigned max_depth)
 {
   reset();
   block_ = openroad_->getDb()->getChip()->getBlock();
   if (!block_)
     return;
 
-  libFileNames_.emplace_back(std::string(libertyFileName));
+  lib_file_names_.emplace_back(std::string(liberty_file_name));
   sta::Slack worst_slack = slack_threshold;
-  openSta_ = openroad_->getSta();
-  openSta_->ensureGraph();
-  openSta_->ensureLevelized();
-  openSta_->searchPreamble();
+  open_sta_ = openroad_->getSta();
+  open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
 
   getBlob(max_depth);
 
@@ -120,7 +120,7 @@ void Restructure::getBlob(unsigned max_depth)
 
   sta::PinSet ends;
   
-  getEndPoints(ends, optMode_ <= AREA_3_MODE, max_depth);
+  getEndPoints(ends, opt_mode_ <= AREA_3_MODE, max_depth);
   if (ends.size()) {
       sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
       //fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
@@ -128,63 +128,63 @@ void Restructure::getBlob(unsigned max_depth)
       for (sta::Pin *pin : fanin_fanouts) {
         odb::dbITerm* term = nullptr;
         odb::dbBTerm* port = nullptr;
-        openSta_->getDbNetwork()->staToDb(pin, term, port);
+        open_sta_->getDbNetwork()->staToDb(pin, term, port);
         if (term && term->getInst()->getITerms().size() < 10)
-          pathInsts_.insert(term->getInst());
+          path_insts_.insert(term->getInst());
       }
-      logger_->report("Fount {} Insts for restructuring ...", pathInsts_.size());
+      logger_->report("Fount {} Insts for restructuring ...", path_insts_.size());
   }
 }
 
 void Restructure::runABC()
 {
-  inputBlifFileName_ = std::string(block_->getConstName()) + "_crit_path.blif";
-  std::vector<std::string> filesToRemove;
+  input_blif_file_name_ = std::string(block_->getConstName()) + "_crit_path.blif";
+  std::vector<std::string> files_to_remove;
 
   debugPrint(logger_, utl::RMP, "remap", 1, "Constants before remap {}", countConsts(block_));
 
   blif blif_(openroad_, locell_, loport_, hicell_, hiport_);
-  blif_.setReplaceableInstances(pathInsts_);
-  blif_.writeBlif(inputBlifFileName_.c_str());
-  debugPrint(logger_, RMP, "remap", 1, "Writing blif file {}", inputBlifFileName_);
-  filesToRemove.emplace_back(inputBlifFileName_);
+  blif_.setReplaceableInstances(path_insts_);
+  blif_.writeBlif(input_blif_file_name_.c_str());
+  debugPrint(logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
+  files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
-  bool areaMode = optMode_ <= AREA_3_MODE;
-  std::string abcScriptFile = "ord_abc_script.tcl";
-  std::string bestBlif;
-  int bestInstCount = std::numeric_limits<int>::max();
-  for (int optMode = areaMode ? AREA_1_MODE : DELAY_1_MODE;
-            optMode <= (areaMode ? AREA_3_MODE : DELAY_4_MODE); optMode += 1) {
-    optMode_ = (mode) optMode;
-    outputBlifFileName_ = std::string(block_->getConstName()) + std::to_string(optMode) + "_crit_path_out.blif";
-    debugPrint(logger_, RMP, "remap", 1, "Writing ABC script file {}", abcScriptFile);
-    if (writeAbcScript(abcScriptFile)) {
-      std::string abc_command = std::string("yosys-abc < ") + abcScriptFile;
+  bool area_mode = opt_mode_ <= AREA_3_MODE;
+  std::string abc_script_file = "ord_abc_script.tcl";
+  std::string best_blif;
+  int best_inst_count = std::numeric_limits<int>::max();
+  for (int opt_mode = area_mode ? AREA_1_MODE : DELAY_1_MODE;
+            opt_mode <= (area_mode ? AREA_3_MODE : DELAY_4_MODE); opt_mode += 1) {
+    opt_mode_ = (Mode) opt_mode;
+    output_blif_file_name_ = std::string(block_->getConstName()) + std::to_string(opt_mode) + "_crit_path_out.blif";
+    debugPrint(logger_, RMP, "remap", 1, "Writing ABC script file {}", abc_script_file);
+    if (writeAbcScript(abc_script_file)) {
+      std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
       if (logfile_ != "")
         abc_command = abc_command + " > " + logfile_;
       std::system(abc_command.c_str());
     }
-    int numInstances = 0;
-    bool status = blif_.inspectBlif(outputBlifFileName_.c_str(), numInstances);
-    logger_->report("Optimized to {} instance in iter {}", numInstances, optMode);
-    if (status && numInstances < bestInstCount) {
-      bestInstCount = numInstances;
-      bestBlif = outputBlifFileName_;
+    int num_instances = 0;
+    bool status = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
+    logger_->report("Optimized to {} instance in iter {}", num_instances, opt_mode);
+    if (status && num_instances < best_inst_count) {
+      best_inst_count = num_instances;
+      best_blif = output_blif_file_name_;
     }
-    filesToRemove.emplace_back(outputBlifFileName_);
+    files_to_remove.emplace_back(output_blif_file_name_);
   }
-  filesToRemove.emplace_back(abcScriptFile);
-  if (bestInstCount < std::numeric_limits<int>::max()) {
+  files_to_remove.emplace_back(abc_script_file);
+  if (best_inst_count < std::numeric_limits<int>::max()) {
     // read back netlist
-    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", bestBlif);
-    blif_.readBlif(bestBlif.c_str(), block_);
+    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
+    blif_.readBlif(best_blif.c_str(), block_);
     debugPrint(logger_, utl::RMP, "remap", 1, "Number constants after restructure {}", countConsts(block_));
   }
 
-  for (auto fileToRemove : filesToRemove) {
+  for (auto file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1))
-      std::remove(fileToRemove.c_str());
+      std::remove(file_to_remove.c_str());
   }
 }
 
@@ -192,15 +192,15 @@ void Restructure::postABC(float worst_slack)
 {
 
   rsz::Resizer* resizer = openroad_->getResizer();
-  bool areaMode = optMode_ <= AREA_3_MODE;
-  if (!areaMode) {
+  bool area_mode = opt_mode_ <= AREA_3_MODE;
+  if (!area_mode) {
       // Recompute timing
     resizer->estimateWireParasitics();
-    openSta_->findRequireds();
+    open_sta_->findRequireds();
     float new_slack;
     sta::Vertex *worst_vertex;
-    openSta_->worstSlack(sta::MinMax::max(), new_slack, worst_vertex);
-    if (!areaMode && new_slack < worst_slack) {
+    open_sta_->worstSlack(sta::MinMax::max(), new_slack, worst_vertex);
+    if (!area_mode && new_slack < worst_slack) {
       // failed, revert
       
     }
@@ -212,14 +212,14 @@ void Restructure::postABC(float worst_slack)
   // Leave the parasitices up to date.
   resizer->estimateWireParasitics();
 }
-void Restructure::getEndPoints(sta::PinSet &ends, bool areaMode, unsigned max_depth)
+void Restructure::getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_depth)
 {
-  openSta_->ensureGraph();
-  openSta_->searchPreamble();
-  auto sta_state = openSta_->search();
+  open_sta_->ensureGraph();
+  open_sta_->searchPreamble();
+  auto sta_state = open_sta_->search();
   int path_count = 100000;
-  float min_slack = areaMode ? -sta::INF : -sta::INF;
-  float max_slack = areaMode ? sta::INF : 0;
+  float min_slack = area_mode ? -sta::INF : -sta::INF;
+  float max_slack = area_mode ? sta::INF : 0;
 
   sta::PathEndSeq* path_ends
       = sta_state->findPathEnds(  // from, thrus, to, unconstrained
@@ -228,7 +228,7 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool areaMode, unsigned max_de
           nullptr,
           false,
           // corner, min_max,
-          openSta_->findCorner("default"),
+          open_sta_->findCorner("default"),
           sta::MinMaxAll::max(),
           // group_count, endpoint_count, unique_pins
           path_count,
@@ -254,8 +254,8 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool areaMode, unsigned max_de
   logger_->report("Number of paths for restructure {}", path_found);
   int end_count = 0;
   for (auto& path_end : *path_ends) {
-    if (optMode_ >= DELAY_1_MODE) {
-      sta::PathExpanded expanded(path_end->path(), openSta_);
+    if (opt_mode_ >= DELAY_1_MODE) {
+      sta::PathExpanded expanded(path_end->path(), open_sta_);
       logger_->report("Got path of depth {}", expanded.size()/2);
       if (expanded.size()/2 > max_depth) {
         ends.insert(path_end->vertex(sta_state)->pin());
@@ -269,15 +269,15 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool areaMode, unsigned max_de
   }
 
   // unconstrained end points
-  auto errors = openSta_->checkTiming(false, false, false, true, true, false, false);
+  auto errors = open_sta_->checkTiming(false, false, false, true, true, false, false);
   debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
   if (errors.size() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
     bool first = true;
     for (auto pinName : *error) {
       debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
-      if (!first && openSta_->getDbNetwork()->findPin(pinName)) {
-        ends.insert(openSta_->getDbNetwork()->findPin(pinName));
+      if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
+        ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
       }
     }
   }
@@ -286,71 +286,51 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool areaMode, unsigned max_de
     bool first = true;
     for (auto pinName : *error) {
       debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
-      if (!first && openSta_->getDbNetwork()->findPin(pinName)) {
-        ends.insert(openSta_->getDbNetwork()->findPin(pinName));
+      if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
+        ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
       }
     }
   }
   logger_->report("Number of end points for restructure {}", ends.size());
 }
 
-int Restructure::countConsts(odb::dbBlock* topBlock)
+int Restructure::countConsts(odb::dbBlock* top_block)
 {
-  int constNets = 0;
-  int constPins = 0;
-  int constVertices = 0;
-  for (auto blockNet : topBlock->getNets()) {
-    if (blockNet->getSigType() == odb::dbSigType::GROUND
-                    || blockNet->getSigType() == odb::dbSigType::POWER)
-      constNets++;
-
-#if 0 // Wait till STA exposes sim.hh
-    for (auto iterm : blockNet->getITerms()) {
-      if (iterm->getIoType() != odb::dbIoType::OUTPUT)
-        continue;
-      sta::Pin* p = openSta_->getDbNetwork()->dbToSta(iterm);
-      if (p && openSta_->sim()->logicZeroOne(p)) {
-        constPins++;
-        //if (openSta_->graph()->pinLoadVertex(p))
-        odb::dbInst* dbFF = iterm->getInst();
-        sta::LibertyCell* libCell = openSta_->getDbNetwork()->libertyCell(dbFF);
-        odb::dbITerm* output = dbFF->getFirstOutput();
-        if (output && libCell->hasSequentials())
-          constVertices++;
-      }
-    }
-#endif
+  int const_nets = 0;
+  for (auto block_net : top_block->getNets()) {
+    if (block_net->getSigType() == odb::dbSigType::GROUND
+                    || block_net->getSigType() == odb::dbSigType::POWER)
+      const_nets++;
   }
-  //logger_->report("Const pins = {}, Const Vertices = {}", constPins, constVertices);
 
-  return constNets;
+  return const_nets;
 }
 
-bool Restructure::writeAbcScript(std::string fileName)
+bool Restructure::writeAbcScript(std::string file_name)
 {
-  std::ofstream script(fileName.c_str());
+  std::ofstream script(file_name.c_str());
 
   if (!script.is_open()) {
-    logger_->error(RMP, 2, "Cannot open file %s for writing.", fileName);
+    logger_->error(RMP, 2, "Cannot open file %s for writing.", file_name);
     return false;
   }
 
-  for (auto libName : libFileNames_) {
-    std::string readLibStr = "read_lib " + libName + "\n";
-    script << readLibStr;
+  for (auto lib_name : lib_file_names_) {
+    std::string read_lib_str = "read_lib " + lib_name + "\n";
+    script << read_lib_str;
   }
   
-  script << "read_blif " << inputBlifFileName_ << std::endl;
+  script << "read_blif " << input_blif_file_name_ << std::endl;
 
   if (logger_->debugCheck(RMP, "remap", 1))
-    script << "write_verilog " << inputBlifFileName_ + std::string(".v") << std::endl;
+    script << "write_verilog " << input_blif_file_name_ + std::string(".v") << std::endl;
 
   writeOptCommands(script);
 
-  script << "write_blif " << outputBlifFileName_ << std:: endl;
+  script << "write_blif " << output_blif_file_name_ << std:: endl;
 
   if (logger_->debugCheck(RMP, "remap", 1))
-    script << "write_verilog " << outputBlifFileName_ + std::string(".v") << std:: endl;
+    script << "write_verilog " << output_blif_file_name_ + std::string(".v") << std:: endl;
 
   script.close();
   
@@ -367,12 +347,12 @@ void Restructure::writeOptCommands(std::ofstream &script)
   script << choice << std::endl;
   script << choice2 << std::endl;
 
-  if (optMode_ == AREA_3_MODE)
+  if (opt_mode_ == AREA_3_MODE)
     script << "choice2" << std::endl;// << "scleanup" << std::endl;
   else
     script << "resyn2" << std::endl;// << "scleanup" << std::endl;
 
-  switch (optMode_) {
+  switch (opt_mode_) {
     case DELAY_1_MODE:
     {
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
@@ -427,24 +407,24 @@ void Restructure::writeOptCommands(std::ofstream &script)
 
 }
 
-void Restructure::setMode(const char* modeName)
+void Restructure::setMode(const char* mode_name)
 {
-  if (!strcmp(modeName, "delay1") || !strcmp(modeName, "delay"))
-    optMode_ = DELAY_1_MODE;
-  else if (!strcmp(modeName, "delay2"))
-    optMode_ = DELAY_2_MODE;
-  else if (!strcmp(modeName, "delay3"))
-    optMode_ = DELAY_3_MODE;
-  else if (!strcmp(modeName, "delay4"))
-    optMode_ = DELAY_4_MODE;
-  else if (!strcmp(modeName, "area1") || !strcmp(modeName, "area"))
-    optMode_ = AREA_1_MODE;
-  else if (!strcmp(modeName, "area2"))
-    optMode_ = AREA_2_MODE;
-  else if (!strcmp(modeName, "area3"))
-    optMode_ = AREA_3_MODE;
+  if (!strcmp(mode_name, "delay1") || !strcmp(mode_name, "delay"))
+    opt_mode_ = DELAY_1_MODE;
+  else if (!strcmp(mode_name, "delay2"))
+    opt_mode_ = DELAY_2_MODE;
+  else if (!strcmp(mode_name, "delay3"))
+    opt_mode_ = DELAY_3_MODE;
+  else if (!strcmp(mode_name, "delay4"))
+    opt_mode_ = DELAY_4_MODE;
+  else if (!strcmp(mode_name, "area1") || !strcmp(mode_name, "area"))
+    opt_mode_ = AREA_1_MODE;
+  else if (!strcmp(mode_name, "area2"))
+    opt_mode_ = AREA_2_MODE;
+  else if (!strcmp(mode_name, "area3"))
+    opt_mode_ = AREA_3_MODE;
   else {
-    logger_->report("Mode {} note recognized.", modeName);
+    logger_->report("Mode {} note recognized.", mode_name);
   }
 }
 
