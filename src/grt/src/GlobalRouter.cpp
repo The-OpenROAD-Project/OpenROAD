@@ -178,6 +178,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
   getNetsByType(type, nets);
   initializeNets(nets);
   applyAdjustments(minRoutingLayer, maxRoutingLayer);
+  perturbCapacities();
 
   return nets;
 }
@@ -1362,6 +1363,45 @@ void GlobalRouter::setMacroExtension(int macroExtension)
 void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
 {
   caps_perturbation_percentage_ = percentage;
+}
+
+void GlobalRouter::perturbCapacities()
+{
+  int xGrids = _grid->getXGrids();
+  int yGrids = _grid->getYGrids();
+
+  int num_2d_grids = xGrids*yGrids;
+  int num_perturbations = caps_perturbation_percentage_*num_2d_grids;
+
+  for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
+    std::mt19937 g;
+    g.seed(seed_);
+
+    std::uniform_int_distribution<int> uni_x(1, xGrids-1);
+    std::uniform_int_distribution<int> uni_y(1, yGrids-1);
+
+    for (int i = 0; i < num_perturbations; i++) {
+      int x = uni_x(g);
+      int y = uni_y(g);
+      if (_hCapacities[layer - 1] != 0) {
+        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] - 1;
+        _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
+        int edgeCap = _fastRoute->getEdgeCapacity(
+            x - 1, y - 1, layer, x, y - 1, layer);
+        int newHCapacity = (edgeCap - 1) < 0 ? 0 : (edgeCap - 1);
+        _fastRoute->addAdjustment(
+            x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
+      } else if (_vCapacities[layer - 1] != 0) {
+        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] - 1;
+        _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
+        int edgeCap = _fastRoute->getEdgeCapacity(
+            x - 1, y - 1, layer, x - 1, y, layer);
+        int newVCapacity = (edgeCap - 1) < 0 ? 0 : (edgeCap - 1);
+        _fastRoute->addAdjustment(
+            x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
+      }
+    }
+  }
 }
 
 void GlobalRouter::writeGuides(const char* fileName)

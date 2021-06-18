@@ -178,6 +178,7 @@ class GlobalRouter
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
   void setCapacitiesPerturbationPercentage(float percentage);
+  void perturbCapacities();
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet *net);
