@@ -52,19 +52,19 @@ namespace gui {
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
       output_(new QTextEdit),
-      input_(new QLineEdit),
+      input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
-  output_->setFont(QFont("Monospace"));
 
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
+  pauser_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
 
   QHBoxLayout* inner_layout = new QHBoxLayout;
   inner_layout->addWidget(pauser_);
-  inner_layout->addWidget(input_, /* stretch */ 1);
+  inner_layout->addWidget(input_);
 
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(output_, /* stretch */ 1);
@@ -75,7 +75,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
   QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
-  connect(input_, SIGNAL(returnPressed()), this, SLOT(executeCommand()));
+  connect(input_, SIGNAL(completeCommand()), this, SLOT(executeCommand()));
+  connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
+  connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
+  connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
+  connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
 
   setWidget(container);
@@ -163,7 +168,9 @@ void ScriptWidget::setupTcl()
 
   // TODO: tclAppInit should return the status which we could
   // pass to updateOutput
-  updateOutput(TCL_OK, /* command_finished */ true);
+  addTclResultToOutput(TCL_OK);
+
+  input_->init(interp_);
 }
 
 void ScriptWidget::executeCommand()
@@ -171,54 +178,83 @@ void ScriptWidget::executeCommand()
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
   QString command = input_->text();
-  input_->clear();
 
   // Show the command that we executed
-  output_->setTextColor(Qt::black);
-  output_->append("> " + command);
-
-  // Make changes visible while command runs
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  addCommandToOutput(command);
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   // Show its output
-  updateOutput(return_code, /* command_finished */ true);
+  addTclResultToOutput(return_code);
 
-  // Update history; ignore repeated commands and keep last 100
-  const int history_limit = 100;
-  if (history_.empty() || command != history_.last()) {
-    if (history_.size() == history_limit) {
-      history_.pop_front();
+  if (return_code == TCL_OK) {
+    // Update history; ignore repeated commands and keep last 100
+    const int history_limit = 100;
+    if (history_.empty() || command != history_.last()) {
+      if (history_.size() == history_limit) {
+        history_.pop_front();
+      }
+
+      history_.append(command);
     }
-
-    history_.append(command);
+    historyPosition_ = history_.size();
   }
-  historyPosition_ = history_.size();
+
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
-  emit commandExecuted();
+
+  emit commandExecuted(return_code);
 }
 
-void ScriptWidget::updateOutput(int return_code, bool command_finished)
+void ScriptWidget::addCommandToOutput(const QString& cmd)
+{
+  const QString first_line_prefix    = ">>> ";
+  const QString continue_line_prefix = "... ";
+
+  QString command = first_line_prefix + cmd;
+  command.replace("\n", "\n" + continue_line_prefix);
+
+  addToOutput(command, cmd_msg_);
+}
+
+void ScriptWidget::addTclResultToOutput(int return_code)
+{
+  // Show the return value color-coded by ok/err.
+  const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
+  if (result[0] != '\0') {
+    addToOutput(result, (return_code == TCL_OK) ? tcl_ok_msg_ : tcl_error_msg_);
+  }
+}
+
+void ScriptWidget::addBufferToOutput()
 {
   // Show whatever we captured from the output channel in grey
-  output_->setTextColor(QColor(0x30, 0x30, 0x30));
   for (auto& out : outputBuffer_) {
     if (!out.isEmpty()) {
-      output_->append(out);
+      addToOutput(out, buffer_msg_);
     }
   }
   outputBuffer_.clear();
+}
 
-  if (command_finished) {
-    // Show the return value color-coded by ok/err.
-    const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
-    if (result[0] != '\0') {
-      output_->setTextColor((return_code == TCL_OK) ? Qt::blue : Qt::red);
-      output_->append(result);
+void ScriptWidget::addToOutput(const QString& text, const QColor& color)
+{
+  // make sure cursor is at the end of the document
+  QTextCursor cursor = output_->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  output_->setTextCursor(cursor);
+
+  output_->setTextColor(color);
+  for (QString& text_line : text.split('\n')) {
+    if (text_line.size() > max_output_line_length_) {
+      text_line = text_line.left(max_output_line_length_-3);
+      text_line += "...";
     }
+    output_->append(text_line);
   }
+
+  // ensure changes are updated
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 ScriptWidget::~ScriptWidget()
@@ -227,27 +263,27 @@ ScriptWidget::~ScriptWidget()
   // We are likely exiting anyways
 }
 
-void ScriptWidget::keyPressEvent(QKeyEvent* e)
+void ScriptWidget::goForwardHistory()
 {
-  // Handle up/down through history
-  int key = e->key();
-  if (key == Qt::Key_Down) {
-    if (historyPosition_ < history_.size() - 1) {
-      ++historyPosition_;
-      input_->setText(history_[historyPosition_]);
-    } else if (historyPosition_ == history_.size() - 1) {
-      ++historyPosition_;
-      input_->clear();
-    }
-    return;
-  } else if (key == Qt::Key_Up) {
-    if (historyPosition_ > 0) {
-      --historyPosition_;
-      input_->setText(history_[historyPosition_]);
-    }
-    return;
+  if (historyPosition_ < history_.size() - 1) {
+    ++historyPosition_;
+    input_->setText(history_[historyPosition_]);
+  } else if (historyPosition_ == history_.size() - 1) {
+    ++historyPosition_;
+    input_->setText(history_buffer_last_);
   }
-  QDockWidget::keyPressEvent(e);
+}
+
+void ScriptWidget::goBackHistory()
+{
+  if (historyPosition_ > 0) {
+    if (historyPosition_ == history_.size()) {
+      // whats in the buffer is the last thing the user was editing
+      history_buffer_last_ = input_->text();
+    }
+    --historyPosition_;
+    input_->setText(history_[historyPosition_]);
+  }
 }
 
 void ScriptWidget::readSettings(QSettings* settings)
@@ -255,6 +291,9 @@ void ScriptWidget::readSettings(QSettings* settings)
   settings->beginGroup("scripting");
   history_ = settings->value("history").toStringList();
   historyPosition_ = history_.size();
+
+  input_->readSettings(settings);
+
   settings->endGroup();
 }
 
@@ -262,6 +301,9 @@ void ScriptWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup("scripting");
   settings->setValue("history", history_);
+
+  input_->writeSettings(settings);
+
   settings->endGroup();
 }
 
@@ -293,6 +335,27 @@ void ScriptWidget::pauserClicked()
   paused_ = false;
 }
 
+void ScriptWidget::outputChanged()
+{
+  // ensure the new output is visible
+  output_->ensureCursorVisible();
+  // Make changes visible
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+void ScriptWidget::resizeEvent(QResizeEvent* event)
+{
+  input_->setMaximumHeight(event->size().height() - output_->sizeHint().height());
+  QDockWidget::resizeEvent(event);
+}
+
+void ScriptWidget::setFont(const QFont& font)
+{
+  QDockWidget::setFont(font);
+  output_->setFont(font);
+  input_->setFont(font);
+}
+
 // This class is an spdlog sink that writes the messages into the output
 // area.
 template <typename Mutex>
@@ -313,9 +376,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     widget_->outputBuffer_.append(str);
 
     // Make it appear now
-    widget_->updateOutput(0, /* command_finished */ false);
-    widget_->output_->update();
-    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    widget_->addBufferToOutput();
   }
 
   void flush_() override {}
