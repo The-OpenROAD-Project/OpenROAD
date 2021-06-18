@@ -1380,28 +1380,31 @@ void GlobalRouter::perturbCapacities()
 
     std::uniform_int_distribution<int> uni_x(1, xGrids-1);
     std::uniform_int_distribution<int> uni_y(1, yGrids-1);
+    std::uniform_int_distribution<bool> sum_or_subtract;
 
     for (int i = 0; i < num_perturbations; i++) {
       int x = uni_x(g);
       int y = uni_y(g);
+      bool subtract = sum_or_subtract(g);
+      int perturbation = subtract ? -perturbation_amount_ : perturbation_amount_;
       if (_hCapacities[layer - 1] != 0) {
-        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] - perturbation_amount_;
+        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] + perturbation;
         _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
         int edgeCap = _fastRoute->getEdgeCapacity(
             x - 1, y - 1, layer, x, y - 1, layer);
-        int newHCapacity = (edgeCap - perturbation_amount_);
+        int newHCapacity = (edgeCap + perturbation);
         newHCapacity = newHCapacity < 0 ? 0 : newHCapacity;
         _fastRoute->addAdjustment(
-            x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
+            x - 1, y - 1, layer, x, y - 1, layer, newHCapacity, subtract);
       } else if (_vCapacities[layer - 1] != 0) {
-        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] - perturbation_amount_;
+        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] + perturbation;
         _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
         int edgeCap = _fastRoute->getEdgeCapacity(
             x - 1, y - 1, layer, x - 1, y, layer);
-        int newVCapacity = (edgeCap - perturbation_amount_);
+        int newVCapacity = (edgeCap + perturbation);
         newVCapacity = newVCapacity < 0 ? 0 : newVCapacity;
         _fastRoute->addAdjustment(
-            x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
+            x - 1, y - 1, layer, x - 1, y, layer, newVCapacity, subtract);
       }
     }
   }
