@@ -3,7 +3,7 @@ User Guide
 
 OpenROAD is divided into a number of tools that are orchestrated
 together to achieve RTL-to-GDS. As of the current implementation, the
-flow is divided into four stages:
+flow is divided into three stages:
 
 1. Logic Synthesis: is performed by `yosys`_.
 2. Floorplanning through Detailed Routing: are performed by `OpenROAD App`_.
@@ -12,11 +12,7 @@ flow is divided into four stages:
 To Run OpenROAD flow, we provide scripts to automate the RTL-to-GDS
 stages. Alternatively, you can run the individual steps manually.
 
-[OPTION 1] RTL-to-GDS Flow
---------------------------
-
-**GitHub:**
-`OpenROAD-flow-scripts`_
+**GitHub:** `OpenROAD-flow-scripts`_
 
 Code Organization
 ~~~~~~~~~~~~~~~~~
@@ -47,92 +43,13 @@ The dependencies can either be obtained from a pre-compiled build export
 or built manually. See the `KLayout website <https://www.klayout.de/>`__
 for installation instructions.
 
-Option 1: Installing build exports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-1. Clone the OpenROAD-flow-scripts repository
-
-   ::
-
-      git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git
-
-2. Navigate to the “Releases” tab and download the latest release
-
-3. Extract the tar to ``OpenROAD-flow-scripts/tools/OpenROAD``
-
-4. Update your shell environment
-
-   ::
-
-      source setup_env.sh
-
-Option 2: Building the tools using docker
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This build option leverages a multi-step docker flow to install the
-tools and dependencies to a runner image. To follow these instructions,
-you must have docker installed, permissions to run docker, and docker
-container network access enabled. This step will create a runner image
-tagged as ``openroad/flow-scripts``.
-
-1. Clone the OpenROAD-flow-scripts repository
-
-   ::
-
-      git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git
-
-2. Ensure your docker daemon is running and ``docker`` is in your PATH,
-   then run the docker build.
-
-   ::
-
-      ./build_openroad.sh
-
-3. Start an interactive shell in a docker container using your user
-   credentials
-
-   ::
-
-      docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow-scripts bash
-
-Option 3: Building the tools locally
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-1. Reference the Dockerfiles and READMEs for the separate tools on the
-   build steps and dependencies.
-
-   ::
-
-      OpenROAD-flow-scripts/tools/OpenROAD/Dockerfile
-      OpenROAD-flow-scripts/tools/yosys/Dockerfile
-
-See the `KLayout <https://www.klayout.de/>`__ instructions for
-installing KLayout from source.
-
-2. Run the build script
-
-   ::
-
-      ./build_openroad.sh
-
-3. Update your shell environment
-
-   ::
-
-      source setup_env.sh
-
-   ``klayout`` must be added to the path manually.
-
 Using the flow
 ~~~~~~~~~~~~~~
 
 See the flow `README`_ for details about the flow and how to run designs through the flow.
 
-[OPTION 2] Individual Flow Steps
---------------------------------
-
 Logic Synthesis
-~~~~~~~~~~~~~~~
+---------------
 
 GitHub: https://github.com/The-OpenROAD-Project/yosys
 
@@ -279,7 +196,7 @@ To build Yosys simply type ‘make’ in this directory.
    write_verilog -noattr -noexpr -nohex -nodec $::env(RESULTS_DIR)/1_1_yosys.v
 
 Initialize Floorplan
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 ::
 
@@ -315,7 +232,7 @@ Place pins around core boundary.
    auto_place_pins pin_layer
 
 Gate Resizer
-~~~~~~~~~~~~
+------------
 
 Gate resizer commands are described below. The resizer commands stop
 when the design area is ``-max_utilization util`` percent of the core
@@ -464,7 +381,7 @@ or after resizing the design.
    report_wns
 
 Timing Analysis
-~~~~~~~~~~~~~~~
+---------------
 
 Timing analysis commands are documented in src/OpenSTA/doc/OpenSTA.pdf.
 
@@ -484,7 +401,7 @@ The example script below timing analyzes a database.
    report_checks
 
 MacroPlace
-~~~~~~~~~~
+----------
 
 TritonMacroPlace
 https://github.com/The-OpenROAD-Project/TritonMacroPlace
@@ -513,7 +430,7 @@ Global Config Example
    unit: micron]
 
 Tapcell
-~~~~~~~
+-------
 
 Tapcell and endcap insertion.
 
@@ -543,7 +460,7 @@ You can find script examples for supported technologies
 ``tap/etc/scripts``
 
 Global Placement
-~~~~~~~~~~~~~~~~
+----------------
 
 RePlAce global placement.
 https://github.com/The-OpenROAD-Project/RePlAce
@@ -602,7 +519,7 @@ Other Options
    int]
 
 Detailed Placement
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Legalize a design that has been globally placed.
 
@@ -611,7 +528,7 @@ Legalize a design that has been globally placed.
    legalize_placement [-constraints constraints_file]
 
 Clock Tree Synthesis
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 Create clock tree subnets.
 
@@ -629,7 +546,7 @@ Create clock tree subnets.
    automatically.
 
 Global Routing
-~~~~~~~~~~~~~~
+--------------
 
 FastRoute global route. Generate routing guides given a placed design.
 
@@ -686,7 +603,7 @@ Options description:
    clock nets will be generated
 
 Detailed Routing
-~~~~~~~~~~~~~~~~
+----------------
 
 **Run**
 
