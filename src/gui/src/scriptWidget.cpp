@@ -180,7 +180,7 @@ void ScriptWidget::executeCommand()
   QString command = input_->text();
 
   // Show the command that we executed
-  addToOutput(command, command, "> ");
+  addToOutput("> " + command, command);
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
@@ -224,7 +224,7 @@ void ScriptWidget::updateOutput(int return_code, bool command_finished)
   }
 }
 
-void ScriptWidget::addToOutput(const QString& text, const QColor& color, const QString& prefix)
+void ScriptWidget::addToOutput(const QString& text, const QColor& color)
 {
   // make sure cursor is at the end of the document
   QTextCursor cursor = output_->textCursor();
@@ -232,13 +232,12 @@ void ScriptWidget::addToOutput(const QString& text, const QColor& color, const Q
   output_->setTextCursor(cursor);
 
   output_->setTextColor(color);
-  for (const QString& text_line : text.split('\n')) {
-    QString new_text_line = prefix + text_line;
-    if (new_text_line.size() > max_output_line_length_) {
-      new_text_line = new_text_line.left(max_output_line_length_-3);
-      new_text_line += "...";
+  for (QString& text_line : text.split('\n')) {
+    if (text_line.size() > max_output_line_length_) {
+      text_line = text_line.left(max_output_line_length_-3);
+      text_line += "...";
     }
-    output_->append(new_text_line);
+    output_->append(text_line);
   }
 
   // ensure changes are updated
