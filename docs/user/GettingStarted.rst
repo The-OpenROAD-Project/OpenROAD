@@ -52,10 +52,12 @@ environment.
 
 .. code-block:: shell
 
-   $ docker run --rm -it openroad/flow-scripts
+   $ docker run -it -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd)/flow/platforms:/OpenROAD-flow-scripts/flow/platforms:ro openroad/flow-scripts
    [inside docker] $ source ./setup_env.sh
    [inside docker] $ yosys -help
    [inside docker] $ openroad -help
+   [inside docker] $ cd flow
+   [inside docker] $ make
    [inside docker] $ exit
 
 Option 3: build from sources locally
