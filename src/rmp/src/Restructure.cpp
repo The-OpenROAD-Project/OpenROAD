@@ -141,7 +141,7 @@ void Restructure::runABC()
   debugPrint(logger_,
              utl::RMP,
              "remap",
-             1,
+             11,
              "Constants before remap {}",
              countConsts(block_));
 
@@ -149,7 +149,7 @@ void Restructure::runABC()
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str());
   debugPrint(
-      logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
+      logger_, RMP, "remap", 12, "Writing blif file {}", input_blif_file_name_);
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
@@ -166,7 +166,7 @@ void Restructure::runABC()
     debugPrint(logger_,
                RMP,
                "remap",
-               1,
+               13,
                "Writing ABC script file {}",
                abc_script_file);
     if (writeAbcScript(abc_script_file)) {
@@ -189,18 +189,18 @@ void Restructure::runABC()
   files_to_remove.emplace_back(abc_script_file);
   if (best_inst_count < std::numeric_limits<int>::max()) {
     // read back netlist
-    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
+    debugPrint(logger_, RMP, "remap", 14, "Reading blif file {}", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);
     debugPrint(logger_,
                utl::RMP,
                "remap",
-               1,
+               15,
                "Number constants after restructure {}",
                countConsts(block_));
   }
 
   for (auto file_to_remove : files_to_remove) {
-    if (!logger_->debugCheck(RMP, "remap", 1))
+    if (!logger_->debugCheck(RMP, "remap", 16))
       std::remove(file_to_remove.c_str());
   }
 }
@@ -288,12 +288,12 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   // unconstrained end points
   auto errors
       = open_sta_->checkTiming(false, false, false, true, true, false, false);
-  debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
+  debugPrint(logger_, RMP, "remap", 17, "Size of errors = {}", errors.size());
   if (errors.size() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
     bool first = true;
     for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
+      debugPrint(logger_, RMP, "remap", 18, "Unconstrained pin: {}", pinName);
       if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
         ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
       }
@@ -303,7 +303,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
     sta::CheckError* error = errors[1];
     bool first = true;
     for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
+      debugPrint(logger_, RMP, "remap", 19, "Unclocked pin: {}", pinName);
       if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
         ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
       }
@@ -329,7 +329,7 @@ bool Restructure::writeAbcScript(std::string file_name)
   std::ofstream script(file_name.c_str());
 
   if (!script.is_open()) {
-    logger_->error(RMP, 2, "Cannot open file %s for writing.", file_name);
+    logger_->error(RMP, 20, "Cannot open file {} for writing.", file_name);
     return false;
   }
 
@@ -340,7 +340,7 @@ bool Restructure::writeAbcScript(std::string file_name)
 
   script << "read_blif " << input_blif_file_name_ << std::endl;
 
-  if (logger_->debugCheck(RMP, "remap", 1))
+  if (logger_->debugCheck(RMP, "remap", 21))
     script << "write_verilog " << input_blif_file_name_ + std::string(".v")
            << std::endl;
 
@@ -348,7 +348,7 @@ bool Restructure::writeAbcScript(std::string file_name)
 
   script << "write_blif " << output_blif_file_name_ << std::endl;
 
-  if (logger_->debugCheck(RMP, "remap", 1))
+  if (logger_->debugCheck(RMP, "remap", 22))
     script << "write_verilog " << output_blif_file_name_ + std::string(".v")
            << std::endl;
 

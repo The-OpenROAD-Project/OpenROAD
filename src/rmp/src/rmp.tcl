@@ -75,7 +75,7 @@ proc restructure { args } {
   if { [info exists keys(-liberty_file)] } {
     set liberty_file_name $keys(-liberty_file)
   } else {
-    utl::error RMP 2 "Missing argument -liberty_file"
+    utl::error RMP 31 "Missing argument -liberty_file"
   }
 
   if { [info exists keys(-mode)] } {
@@ -92,7 +92,7 @@ proc restructure { args } {
       rmp::set_locell_cmd $keys(-locell)
       rmp::set_loport_cmd $keys(-loport)
     } else {
-      utl::warn RMP 1 "-loport not specified, skipping locell"
+      utl::warn RMP 32 "-loport not specified, skipping locell"
     }
   }
 
@@ -101,7 +101,7 @@ proc restructure { args } {
       rmp::set_hicell_cmd $keys(-hicell)
       rmp::set_hiport_cmd $keys(-hiport)
     } else {
-      utl::warn RMP 1 "-loport not specified, skipping locell"
+      utl::warn RMP 33 "-loport not specified, skipping locell"
     }
   }
 

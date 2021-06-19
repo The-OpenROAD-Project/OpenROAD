@@ -51,6 +51,11 @@ target_sources(rmp
     MakeRestructure.cpp
 )
 
+messages(
+TARGET rmp
+OUTPUT_DIR ..
+)
+
 target_include_directories(rmp
   PUBLIC
     ../include
