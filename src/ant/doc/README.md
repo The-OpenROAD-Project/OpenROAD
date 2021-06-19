@@ -3,7 +3,7 @@
 This tool checks antenna violations based on an input LEF and DEF file, a report
 will be generated to indicate violated nets. 4 APIs are provided as an interface with FastRoute to preemptively fix antenna violation as well as used for the diode insertion flow:
 
-## Antenna check Commands
+## Antenna Check Commands
 
 ---
 
@@ -11,29 +11,41 @@ will be generated to indicate violated nets. 4 APIs are provided as an interface
  - `check_antennas`: check antenna violations on all nets and generate a report
    - -path: specify the path to save the report
    - -simple_report: provides a summary of the violated nets 
-## Antenna fix Commands
+
+## Antenna Report Example
+---
+
+This is an example of the detailed and simple reports of the antenna checker:
+
+| <img src="./doc/images/ant_report_print.png" width=400px> |  
+|:--:|
+
+Abbreviations Index:
+  - `PAR`: Partial Area Ratio
+  - `CAR`: Cumulative Area Ratio
+  - `Area`: Gate Area
+  - `S. Area`: Side Diffusion Area
+  - `C. Area`: Cumulative Gate Area
+  - `C. S. Area`: Cumulative Side (Diffusion) Area
+
+## Antenna Repair Commands
 
 ---
 
-### Tcl commands
+### Tcl Commands
 
  - `check_net_violation`: check if an input net is violated, return 1 if the net is violated
    - -net_name: set the net name for checking
  - `find_max_wire_length`: print the longest wire in the design
 
-### C++ commands
 
- - `PAR_max_wire_length(dbNet * net, int layer)`
-
-   - dbNet * net: target net
-   - layer: target layer of the given net will be calculated
-
-   This function returns the max wire length allowed to add for a given net in a selected layer.
-
- - `get_net_antenna_violations( dbNet * net, std::string antenna_cell_name, std::string cell_pin )`
-
-   - dbNet * net: target net
-   - std::string antenna_cell_name: name of the antenna cell in the library, default is an empty string
-   - std::string cell_pin: the pin name of the antenna cell that will be connected to nets, default is an empty string
-
-   This function checks if the target net has antenna violations. The return value contains the violated ITerms at each layer of the net, the required antenna cells will be calculated if arguments **antenna_cell_name** and **cell_pin** are given.
+| <img src="./doc/images/example_ant.png" width=400px> | <img src="./doc/images/step1.png" width=400px> | 
+|:--:|:--:|
+| <img src="./doc/images/step2.png" width=400px> | <img src="./doc/images/step3.png" width=400px> | 
+|:--:|:--:|
+| <img src="./doc/images/step4.png" width=400px> | <img src="./doc/images/step5.png" width=400px> | 
+|:--:|:--:|
+| <img src="./doc/images/step6.png" width=400px> | <img src="./doc/images/step7.png" width=400px> | 
+|:--:|:--:|
+| <img src="./doc/images/step8.png" width=400px> |  
+|:--:|
