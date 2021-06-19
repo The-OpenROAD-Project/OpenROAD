@@ -124,7 +124,6 @@ Graph::Graph(vector<int>& x,
   }
 
   num_terminals = nodes.size();
-  orig_num_terminals = nodes.size();
   aux.resize(num_terminals);
 
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
@@ -2217,7 +2216,7 @@ int Graph::calc_tree_wl_pd()
 int Graph::calc_tree_pl()
 {
   int pl = 0;
-  for (int j = 0; j < orig_num_terminals; ++j) {
+  for (int j = 0; j < num_terminals; ++j) {
     int child = j;
     int par = nodes[j].parent;
     while (par != child) {

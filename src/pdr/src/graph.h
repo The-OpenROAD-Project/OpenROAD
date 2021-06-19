@@ -151,7 +151,7 @@ public:
                            std::pair<double, double>& out);
 
   vector<Node> nodes;
-  int orig_num_terminals;
+  int num_terminals;
 
 private:
   bool nodeLessY(const int i, const int j);
@@ -169,7 +169,6 @@ private:
   float maxPLRatio;
   vector<vector<int>> ManhDist;
   float PLmargin;
-  int num_terminals;
   int root_idx;
 
   // All of these should be local variables to buildNearestNeighborsForSPT -cherry 06/16/2021

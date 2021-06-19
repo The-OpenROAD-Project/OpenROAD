@@ -216,17 +216,17 @@ void PdRev::transferChildren(int originalNode)
 
 Tree PdRev::translateTree()
 {
-  if (graph_->orig_num_terminals > 2) {
-    for (int i = 0; i < graph_->orig_num_terminals; ++i) {
+  if (graph_->num_terminals > 2) {
+    for (int i = 0; i < graph_->num_terminals; ++i) {
       Node& child = graph_->nodes[i];
       if (child.children.size() == 0
           || (child.parent == i && child.children.size() == 1
-              && child.children[0] >= graph_->orig_num_terminals))
+              && child.children[0] >= graph_->num_terminals))
         continue;
       replaceNode(graph_, i);
     }
     int nNodes = graph_->nodes.size();
-    for (int i = graph_->orig_num_terminals; i < nNodes; ++i) {
+    for (int i = graph_->num_terminals; i < nNodes; ++i) {
       Node& child = graph_->nodes[i];
       while (graph_->nodes[i].children.size() > 3
              || (graph_->nodes[i].parent != i
@@ -238,7 +238,7 @@ Tree PdRev::translateTree()
   }
 
   Tree tree;
-  tree.deg = graph_->orig_num_terminals;
+  tree.deg = graph_->num_terminals;
   int branch_count = stt::branch_count(tree);
   if (graph_->nodes.size() != branch_count)
     logger_->error(PDR, 666, "steiner branch count inconsistent");
