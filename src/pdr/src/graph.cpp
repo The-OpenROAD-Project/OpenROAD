@@ -58,6 +58,7 @@ using utl::PDR;
 
 // Don't add odb::Point as a dependent here.
 typedef pair<int, int> Pt;
+
 class PtHash
 {
 public:
@@ -82,7 +83,7 @@ public:
   }
 };
 
-typedef std::unordered_set<Pt, PtHash, PtEqual> PtSet;
+typedef std::unordered_map<Pt, int, PtHash, PtEqual> PtMap;
 
 Graph::Graph(vector<int>& x,
              vector<int>& y,
@@ -91,14 +92,15 @@ Graph::Graph(vector<int>& x,
   root_idx(root_index),
   logger_(logger)
 {
-  PtSet pts;
+  PtMap pts;
   for (int i = 0; i < x.size(); ++i) {
     int x1 = x[i];
     int y1 = y[i];
     Pt pt(x1, y1);
-    if (pts.find(pt) == pts.end()) {
-      pts.insert(pt);
-      int idx = nodes.size();
+    int idx = nodes.size();
+    auto pt_itr = pts.find(pt);
+    if (pt_itr == pts.end()) {
+      pts[pt] = idx;
       nodes.push_back(Node(idx, x[i], y[i]));
       edges.push_back(Edge(idx, 0, 0));
       sheared.push_back(Node(idx, 0, 0));
@@ -116,7 +118,11 @@ Graph::Graph(vector<int>& x,
       vector<int> newColumn;
       nn.push_back(newColumn);
     } 
-    else if (root_idx > i)
+    else if (root_idx == idx)
+      // Root is a duplicate location.
+      root_idx = pt_itr->second;
+    else if (idx < root_idx)
+      // Deleting duplicate before root.
       root_idx--;
   }
 
@@ -2734,7 +2740,6 @@ void Graph::constructSteiner()
 
 void Graph::doSteiner_HoVW()
 {
-  // int orig_num_terminals = num_terminals;
   // Tree preparation
   updateMinDist();
   for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {

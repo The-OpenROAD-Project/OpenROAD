@@ -252,6 +252,8 @@ reportXY(std::vector<int> x,
     logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
 }
 
+#define PDREV_USE_ROOT_INDEX 1
+
 // Used by regressions.
 void
 reportPdrevTree(bool use_pd,
@@ -263,10 +265,12 @@ reportPdrevTree(bool use_pd,
 {
   std::vector<int> x1(x);
   std::vector<int> y1(y);
+#if !PDREV_USE_ROOT_INDEX
   // Move driver to pole position until drvr_index arg works.
   std::swap(x1[0], x1[drvr_index]);
   std::swap(y1[0], y1[drvr_index]);
   drvr_index = 0;
+#endif
   stt::Tree tree = use_pd
     ? pdr::primDijkstra(x1, y1, drvr_index, alpha, logger)
     : pdr::primDijkstraRevII(x1, y1, drvr_index, alpha, logger);
