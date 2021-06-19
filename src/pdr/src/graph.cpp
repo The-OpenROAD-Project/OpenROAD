@@ -1742,16 +1742,18 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   // Note: below.y <= node.y
   for (int i = 0; i < idx; ++i) {
     Node& below = nodes[sorted[i]];
-    if (urlx[below.idx] == node.x) {
-      nn[below.idx].push_back(node.idx);
-      urux[below.idx] = node.x;
-      ullx[below.idx] = node.x;
-    } else if (urux[below.idx] > node.x && urlx[below.idx] < node.x) {
+    if (node.x >= urlx[below.idx] && node.x < urux[below.idx]) {
+      debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper right",
+                 below.idx,
+                 node.idx);
       // right
       nn[below.idx].push_back(node.idx);
       urux[below.idx] = node.x;
-    } else if (ullx[below.idx] < node.x && ulux[below.idx] > node.x) {
+    } else if (node.x > ullx[below.idx] && node.x < ulux[below.idx] ) {
       // left
+      debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
+                 below.idx,
+                 node.idx);
       nn[below.idx].push_back(node.idx);
       ullx[below.idx] = node.x;
     }
@@ -1761,14 +1763,11 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   // Note: below.y <= node.y
   for (int i = idx - 1; i >= 0; --i) {
     Node& below = nodes[sorted[i]];
-    if (lrlx[node.idx] == below.x) {
-      nn[node.idx].push_back(below.idx);
-      lrux[node.idx] = below.x;
-    } else if (lrux[node.idx] > below.x && lrlx[node.idx] < below.x) {
+    if (below.x >= lrlx[node.idx] && below.x < lrux[node.idx]) {
       // right
       nn[node.idx].push_back(below.idx);
       lrux[node.idx] = below.x;
-    } else if (lllx[node.idx] < below.x && llux[node.idx] > below.x) {
+    } else if (below.x > lllx[node.idx] && below.x < llux[node.idx]) {
       // left
       nn[node.idx].push_back(below.idx);
       lllx[node.idx] = below.x;
