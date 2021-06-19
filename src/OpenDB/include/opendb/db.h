@@ -2634,12 +2634,6 @@ class dbNet : public dbObject
   /// Translate a valid database-id back to a pointer.
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
-
-  ///
-  /// Translate a valid net name back to net pointer.
-  ///
-  static dbNet* getValidNet(dbBlock* block, const char * name);
-
 };
 
 ///////////////////////////////////////////////////////////////////////////////
