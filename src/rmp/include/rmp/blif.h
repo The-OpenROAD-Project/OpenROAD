@@ -37,17 +37,17 @@
 
 #include <stdio.h>
 #include <unistd.h>
+
 #include <set>
 
 namespace ord {
 class OpenRoad;
-} // namespace ord
-
+}  // namespace ord
 
 namespace odb {
 class dbInst;
 class dbBlock;
-}
+}  // namespace odb
 
 namespace utl {
 class Logger;
@@ -59,29 +59,33 @@ class dbSta;
 
 using utl::Logger;
 
-
 namespace rmp {
 
-class blif
+class Blif
 {
-public:
-    blif(ord::OpenRoad* openroad, std::string const0Cell, std::string const0CellPort,
-                                    std::string const1Cell, std::string const1CellPort);
-    void setReplaceableInstances(std::set<odb::dbInst*>& insts){
-        instancesToOptimize = insts;
-    }
-    bool writeBlif(const char* fileName);
-    bool readBlif(const char* fileName, odb::dbBlock* block);
-    bool inspectBlif(const char* fileName, int& numInstances);
-private:
-    std::set<odb::dbInst*> instancesToOptimize;
-    ord::OpenRoad* openroad_;
-    Logger* logger_;
-    sta::dbSta* openSta_ = nullptr;
-    std::string const0Cell_;
-    std::string const0CellPort_;
-    std::string const1Cell_;
-    std::string const1CellPort_;
+ public:
+  Blif(ord::OpenRoad* openroad,
+       std::string const0_cell_,
+       std::string const0_cell_port_,
+       std::string const1_cell_,
+       std::string const1_cell_port_);
+  void setReplaceableInstances(std::set<odb::dbInst*>& insts)
+  {
+    instances_to_optimize = insts;
+  }
+  bool writeBlif(const char* file_name);
+  bool readBlif(const char* file_name, odb::dbBlock* block);
+  bool inspectBlif(const char* file_name, int& num_instances);
+
+ private:
+  std::set<odb::dbInst*> instances_to_optimize;
+  ord::OpenRoad* openroad_;
+  Logger* logger_;
+  sta::dbSta* open_sta_ = nullptr;
+  std::string const0_cell_;
+  std::string const0_cell_port_;
+  std::string const1_cell_;
+  std::string const1_cell_port_;
 };
 
-} // namespace rmp
+}  // namespace rmp

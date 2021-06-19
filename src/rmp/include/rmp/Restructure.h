@@ -35,13 +35,14 @@
 
 #pragma once
 
-#include <string>
 #include <functional>
+#include <string>
+
 #include "db_sta/dbSta.hh"
 
 namespace ord {
 class OpenRoad;
-} // namespace ord
+}  // namespace ord
 
 namespace utl {
 class Logger;
@@ -53,7 +54,7 @@ class dbBlock;
 class dbInst;
 class dbNet;
 class dbITerm;
-} // namespace odb
+}  // namespace odb
 
 namespace sta {
 class dbSta;
@@ -63,7 +64,8 @@ namespace rmp {
 
 using utl::Logger;
 
-typedef enum {
+typedef enum
+{
   AREA_1_MODE = 0,
   AREA_2_MODE,
   AREA_3_MODE,
@@ -71,7 +73,7 @@ typedef enum {
   DELAY_2_MODE,
   DELAY_3_MODE,
   DELAY_4_MODE
-} Mode ;
+} Mode;
 
 class Restructure
 {
@@ -81,7 +83,9 @@ class Restructure
 
   void init(ord::OpenRoad* openroad);
   void reset();
-  void run(const char* liberty_file_name, float slack_threshold, unsigned max_depth);
+  void run(const char* liberty_file_name,
+           float slack_threshold,
+           unsigned max_depth);
 
   void setMode(const char* mode_name);
   void setLogfile(const char* file_name);
@@ -97,10 +101,10 @@ class Restructure
   void runABC();
   void postABC(float worst_slack);
   bool writeAbcScript(std::string file_name);
-  void writeOptCommands(std::ofstream &script);
+  void writeOptCommands(std::ofstream& script);
   void initDB();
-  void getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_depth);
-  int  countConsts(odb::dbBlock* top_block);
+  void getEndPoints(sta::PinSet& ends, bool area_mode, unsigned max_depth);
+  int countConsts(odb::dbBlock* top_block);
 
   ord::OpenRoad* openroad_;
   Logger* logger_;

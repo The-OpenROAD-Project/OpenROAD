@@ -34,20 +34,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rmp/Restructure.h"
-#include "rmp/blif.h"
 
-#include "opendb/db.h"
-#include "utl/Logger.h"
+#include <fstream>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "opendb/db.h"
 #include "ord/OpenRoad.hh"
-
-#include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/Sta.hh"
+#include "rmp/blif.h"
+#include "rsz/Resizer.hh"
+#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
-#include "sta/Graph.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
@@ -56,10 +54,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
-#include "rsz/Resizer.hh"
 #include "utl/Logger.h"
-
-#include <fstream>
 
 using utl::RMP;
 
@@ -92,7 +87,9 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::run(const char* liberty_file_name, float slack_threshold, unsigned max_depth)
+void Restructure::run(const char* liberty_file_name,
+                      float slack_threshold,
+                      unsigned max_depth)
 {
   reset();
   block_ = openroad_->getDb()->getChip()->getBlock();
@@ -115,38 +112,44 @@ void Restructure::run(const char* liberty_file_name, float slack_threshold, unsi
 
 void Restructure::getBlob(unsigned max_depth)
 {
-
   rsz::Resizer* resizer = openroad_->getResizer();
 
   sta::PinSet ends;
-  
+
   getEndPoints(ends, opt_mode_ <= AREA_3_MODE, max_depth);
   if (ends.size()) {
-      sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
-      //fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
-      logger_->report("Got {} pins in cloud extraction", fanin_fanouts.size());
-      for (sta::Pin *pin : fanin_fanouts) {
-        odb::dbITerm* term = nullptr;
-        odb::dbBTerm* port = nullptr;
-        open_sta_->getDbNetwork()->staToDb(pin, term, port);
-        if (term && term->getInst()->getITerms().size() < 10)
-          path_insts_.insert(term->getInst());
-      }
-      logger_->report("Fount {} Insts for restructuring ...", path_insts_.size());
+    sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
+    // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
+    logger_->report("Got {} pins in cloud extraction", fanin_fanouts.size());
+    for (sta::Pin* pin : fanin_fanouts) {
+      odb::dbITerm* term = nullptr;
+      odb::dbBTerm* port = nullptr;
+      open_sta_->getDbNetwork()->staToDb(pin, term, port);
+      if (term && term->getInst()->getITerms().size() < 10)
+        path_insts_.insert(term->getInst());
+    }
+    logger_->report("Fount {} Insts for restructuring ...", path_insts_.size());
   }
 }
 
 void Restructure::runABC()
 {
-  input_blif_file_name_ = std::string(block_->getConstName()) + "_crit_path.blif";
+  input_blif_file_name_
+      = std::string(block_->getConstName()) + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
-  debugPrint(logger_, utl::RMP, "remap", 1, "Constants before remap {}", countConsts(block_));
+  debugPrint(logger_,
+             utl::RMP,
+             "remap",
+             1,
+             "Constants before remap {}",
+             countConsts(block_));
 
-  blif blif_(openroad_, locell_, loport_, hicell_, hiport_);
+  Blif blif_(openroad_, locell_, loport_, hicell_, hiport_);
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str());
-  debugPrint(logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
+  debugPrint(
+      logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
@@ -155,10 +158,17 @@ void Restructure::runABC()
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
   for (int opt_mode = area_mode ? AREA_1_MODE : DELAY_1_MODE;
-            opt_mode <= (area_mode ? AREA_3_MODE : DELAY_4_MODE); opt_mode += 1) {
+       opt_mode <= (area_mode ? AREA_3_MODE : DELAY_4_MODE);
+       opt_mode += 1) {
     opt_mode_ = (Mode) opt_mode;
-    output_blif_file_name_ = std::string(block_->getConstName()) + std::to_string(opt_mode) + "_crit_path_out.blif";
-    debugPrint(logger_, RMP, "remap", 1, "Writing ABC script file {}", abc_script_file);
+    output_blif_file_name_ = std::string(block_->getConstName())
+                             + std::to_string(opt_mode) + "_crit_path_out.blif";
+    debugPrint(logger_,
+               RMP,
+               "remap",
+               1,
+               "Writing ABC script file {}",
+               abc_script_file);
     if (writeAbcScript(abc_script_file)) {
       std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
       if (logfile_ != "")
@@ -166,8 +176,10 @@ void Restructure::runABC()
       std::system(abc_command.c_str());
     }
     int num_instances = 0;
-    bool status = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
-    logger_->report("Optimized to {} instance in iter {}", num_instances, opt_mode);
+    bool status
+        = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
+    logger_->report(
+        "Optimized to {} instance in iter {}", num_instances, opt_mode);
     if (status && num_instances < best_inst_count) {
       best_inst_count = num_instances;
       best_blif = output_blif_file_name_;
@@ -179,7 +191,12 @@ void Restructure::runABC()
     // read back netlist
     debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);
-    debugPrint(logger_, utl::RMP, "remap", 1, "Number constants after restructure {}", countConsts(block_));
+    debugPrint(logger_,
+               utl::RMP,
+               "remap",
+               1,
+               "Number constants after restructure {}",
+               countConsts(block_));
   }
 
   for (auto file_to_remove : files_to_remove) {
@@ -190,21 +207,19 @@ void Restructure::runABC()
 
 void Restructure::postABC(float worst_slack)
 {
-
   rsz::Resizer* resizer = openroad_->getResizer();
   bool area_mode = opt_mode_ <= AREA_3_MODE;
   if (!area_mode) {
-      // Recompute timing
+    // Recompute timing
     resizer->estimateWireParasitics();
     open_sta_->findRequireds();
     float new_slack;
-    sta::Vertex *worst_vertex;
+    sta::Vertex* worst_vertex;
     open_sta_->worstSlack(sta::MinMax::max(), new_slack, worst_vertex);
     if (!area_mode && new_slack < worst_slack) {
       // failed, revert
-      
-    }
-    else {
+
+    } else {
       // slack improved, accept
     }
   }
@@ -212,7 +227,9 @@ void Restructure::postABC(float worst_slack)
   // Leave the parasitices up to date.
   resizer->estimateWireParasitics();
 }
-void Restructure::getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_depth)
+void Restructure::getEndPoints(sta::PinSet& ends,
+                               bool area_mode,
+                               unsigned max_depth)
 {
   open_sta_->ensureGraph();
   open_sta_->searchPreamble();
@@ -236,8 +253,8 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_d
           true,
           min_slack,
           max_slack,  // slack_min, slack_max,
-          true,      // sort_by_slack
-          nullptr,   // group_names
+          true,       // sort_by_slack
+          nullptr,    // group_names
           // setup, hold, recovery, removal,
           true,
           true,
@@ -256,12 +273,12 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_d
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= DELAY_1_MODE) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
-      logger_->report("Got path of depth {}", expanded.size()/2);
-      if (expanded.size()/2 > max_depth) {
+      logger_->report("Got path of depth {}", expanded.size() / 2);
+      if (expanded.size() / 2 > max_depth) {
         ends.insert(path_end->vertex(sta_state)->pin());
         end_count++;
       }
-      if (end_count > 5) // limit blob size for timing
+      if (end_count > 5)  // limit blob size for timing
         break;
     } else {
       ends.insert(path_end->vertex(sta_state)->pin());
@@ -269,7 +286,8 @@ void Restructure::getEndPoints(sta::PinSet &ends, bool area_mode, unsigned max_d
   }
 
   // unconstrained end points
-  auto errors = open_sta_->checkTiming(false, false, false, true, true, false, false);
+  auto errors
+      = open_sta_->checkTiming(false, false, false, true, true, false, false);
   debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
   if (errors.size() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
@@ -299,7 +317,7 @@ int Restructure::countConsts(odb::dbBlock* top_block)
   int const_nets = 0;
   for (auto block_net : top_block->getNets()) {
     if (block_net->getSigType() == odb::dbSigType::GROUND
-                    || block_net->getSigType() == odb::dbSigType::POWER)
+        || block_net->getSigType() == odb::dbSigType::POWER)
       const_nets++;
   }
 
@@ -319,64 +337,68 @@ bool Restructure::writeAbcScript(std::string file_name)
     std::string read_lib_str = "read_lib " + lib_name + "\n";
     script << read_lib_str;
   }
-  
+
   script << "read_blif " << input_blif_file_name_ << std::endl;
 
   if (logger_->debugCheck(RMP, "remap", 1))
-    script << "write_verilog " << input_blif_file_name_ + std::string(".v") << std::endl;
+    script << "write_verilog " << input_blif_file_name_ + std::string(".v")
+           << std::endl;
 
   writeOptCommands(script);
 
-  script << "write_blif " << output_blif_file_name_ << std:: endl;
+  script << "write_blif " << output_blif_file_name_ << std::endl;
 
   if (logger_->debugCheck(RMP, "remap", 1))
-    script << "write_verilog " << output_blif_file_name_ + std::string(".v") << std:: endl;
+    script << "write_verilog " << output_blif_file_name_ + std::string(".v")
+           << std::endl;
 
   script.close();
-  
+
   return true;
 }
 
-void Restructure::writeOptCommands(std::ofstream &script)
+void Restructure::writeOptCommands(std::ofstream& script)
 {
-  std::string choice = "alias choice \"fraig_store; resyn2; fraig_store; resyn2; fraig_store; fraig_restore\"";
-  std::string choice2 = "alias choice2 \"fraig_store; balance; fraig_store; resyn2; fraig_store; resyn2; fraig_store; resyn2; fraig_store; fraig_restore\"";
+  std::string choice
+      = "alias choice \"fraig_store; resyn2; fraig_store; resyn2; fraig_store; "
+        "fraig_restore\"";
+  std::string choice2
+      = "alias choice2 \"fraig_store; balance; fraig_store; resyn2; "
+        "fraig_store; resyn2; fraig_store; resyn2; fraig_store; "
+        "fraig_restore\"";
   script << "bdd; sop" << std::endl;
 
-  script << "alias resyn2 \"balance; rewrite; refactor; balance; rewrite; rewrite -z; balance; refactor -z; rewrite -z; balance\"" << std::endl;
+  script << "alias resyn2 \"balance; rewrite; refactor; balance; rewrite; "
+            "rewrite -z; balance; refactor -z; rewrite -z; balance\""
+         << std::endl;
   script << choice << std::endl;
   script << choice2 << std::endl;
 
   if (opt_mode_ == AREA_3_MODE)
-    script << "choice2" << std::endl;// << "scleanup" << std::endl;
+    script << "choice2" << std::endl;  // << "scleanup" << std::endl;
   else
-    script << "resyn2" << std::endl;// << "scleanup" << std::endl;
+    script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
 
   switch (opt_mode_) {
-    case DELAY_1_MODE:
-    {
+    case DELAY_1_MODE: {
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
-    case DELAY_2_MODE:
-    {
+    case DELAY_2_MODE: {
       script << choice << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       script << choice << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
-    case DELAY_3_MODE:
-    {
+    case DELAY_3_MODE: {
       script << choice2 << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       script << choice2 << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
-
     }
-    case DELAY_4_MODE:
-    {
+    case DELAY_4_MODE: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       script << choice2 << std::endl;
@@ -384,18 +406,15 @@ void Restructure::writeOptCommands(std::ofstream &script)
       break;
     }
     case AREA_2_MODE:
-    case AREA_3_MODE:
-    {
+    case AREA_3_MODE: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
-
     }
     case AREA_1_MODE:
-    default:
-    {
+    default: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
@@ -404,7 +423,6 @@ void Restructure::writeOptCommands(std::ofstream &script)
 
   script << "upsize {D}" << std::endl << "dnsize {D}" << std::endl;
   script << "stime -p -c" << std::endl << "print_stats -m" << std::endl;
-
 }
 
 void Restructure::setMode(const char* mode_name)
@@ -430,27 +448,27 @@ void Restructure::setMode(const char* mode_name)
 
 void Restructure::setLogfile(const char* logfile)
 {
-   logfile_ = logfile;
+  logfile_ = logfile;
 }
 
 void Restructure::setLoCell(const char* locell)
 {
-   locell_ = locell;
+  locell_ = locell;
 }
 
 void Restructure::setLoPort(const char* loport)
 {
-   loport_ = loport;
+  loport_ = loport;
 }
 
 void Restructure::setHiCell(const char* hicell)
 {
-   hicell_ = hicell;
+  hicell_ = hicell;
 }
 
 void Restructure::setHiPort(const char* hiport)
 {
-   hiport_ = hiport;
+  hiport_ = hiport;
 }
 
 }  // namespace rmp

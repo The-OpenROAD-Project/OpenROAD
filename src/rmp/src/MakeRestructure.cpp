@@ -34,13 +34,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rmp/MakeRestructure.h"
-#include "rmp/Restructure.h"
+
 #include "db.h"
-#include "sta/StaMain.hh"
 #include "ord/OpenRoad.hh"
+#include "rmp/Restructure.h"
+#include "sta/StaMain.hh"
 
 namespace sta {
-extern const char *rmp_tcl_inits[];
+extern const char* rmp_tcl_inits[];
 }
 
 extern "C" {
@@ -65,7 +66,7 @@ void initRestructure(OpenRoad* openroad)
 
 void deleteRestructure(rmp::Restructure* restructure)
 {
-	delete restructure;
+  delete restructure;
 }
 
 }  // namespace ord
