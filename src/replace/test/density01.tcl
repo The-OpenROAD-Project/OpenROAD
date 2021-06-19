@@ -5,7 +5,7 @@ read_def ./$test_name.def
 
 # test scripts
 foreach val {0 1 2} {
-  set density [get_global_placement_uniform_density -pad_left $val -pad_right $val]
+  set density [gpl::get_global_placement_uniform_density -pad_left $val -pad_right $val]
   puts "pad : $val -> [format {%.3f} $density]"
 }
 

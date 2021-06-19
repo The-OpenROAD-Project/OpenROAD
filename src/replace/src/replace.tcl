@@ -262,16 +262,12 @@ proc global_placement { args } {
     gpl::replace_nesterov_place_cmd
     gpl::replace_reset_cmd
   } else {
-    puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+    utl::error GPL 130 "No rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
-sta::define_cmd_args "global_placement_debug" {
-    [-pause iterations] \
-    [-update iterations] \
-    [-draw_bins]
-}
 
+namespace eval gpl {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
       keys {-pause -update} \
@@ -295,8 +291,6 @@ proc global_placement_debug { args } {
 
   gpl::set_debug_cmd $pause $update $draw_bins $initial
 }
-
-sta::define_cmd_args "global_placement_plot" {}
 
 proc global_placement_plot { args } {
   sta::parse_key_args "global_placement_plot" args \
@@ -338,7 +332,8 @@ proc get_global_placement_uniform_density { args } {
     gpl::replace_reset_cmd
 
   } else {
-    puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+    utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."
   }
   return $uniform_density
+}
 }

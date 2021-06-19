@@ -74,6 +74,8 @@ GPL 0118 placerBase.cpp:709        core area outside of die.
 GPL 0119 placerBase.cpp:735        instance {} height is larger than core.
 GPL 0120 placerBase.cpp:737        instance {} width is larger than core.
 GPL 0121 replace.tcl:95            No liberty libraries found.
+GPL 0130 replace.tcl:265           No rows defined in design. Use initialize_floorplan to add rows.
+GPL 0131 replace.tcl:335           No rows defined in design. Use initialize_floorplan to add rows.
 GPL 0200 plot.cpp:619              {} image has been saved
 GPL 0201 plot.cpp:638              {} image has been saved
 GPL 0202 plot.cpp:656              {} image has been saved
