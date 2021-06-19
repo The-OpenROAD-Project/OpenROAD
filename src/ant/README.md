@@ -39,10 +39,7 @@ Abbreviations Index:
 | <img src="./doc/images/example_ant.png" width=400px> | <img src="./doc/images/step1.png" width=400px> | 
 |:--:|:--:|
 | <img src="./doc/images/step2.png" width=400px> | <img src="./doc/images/step3.png" width=400px> | 
-|:--:|:--:|
 | <img src="./doc/images/step4.png" width=400px> | <img src="./doc/images/step5.png" width=400px> | 
-|:--:|:--:|
 | <img src="./doc/images/step6.png" width=400px> | <img src="./doc/images/step7.png" width=400px> | 
-|:--:|:--:|
 | <img src="./doc/images/step8.png" width=400px> |  
-|:--:|
+
