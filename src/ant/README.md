@@ -1,7 +1,7 @@
 # Antenna Rule Checker
 
-This tool checks antenna violations based on an input LEF and DEF file, a report
-will be generated to indicate violated nets. 4 APIs are provided as an interface with FastRoute to preemptively fix antenna violation as well as used for the diode insertion flow:
+This tool checks antenna violations based on an input LEF and DEF file loaded in opendb, a report
+will be generated to indicate violated nets. APIs are provided to help fix antenna violation during the diode insertion flow in globalroute:
 
 ## Antenna Check Commands
 
@@ -9,7 +9,7 @@ will be generated to indicate violated nets. 4 APIs are provided as an interface
 
  - `load_antenna_rules`: import antenna rules to ARC, must be called before other commands
  - `check_antennas`: check antenna violations on all nets and generate a report
-   - -path: specify the path to save the report
+   - -report_filename: specify the file name path where to save the report
    - -simple_report: provides a summary of the violated nets 
 
 ## Antenna Report Example
@@ -28,11 +28,8 @@ Abbreviations Index:
   - `C. Area`: Cumulative Gate Area
   - `C. S. Area`: Cumulative Side (Diffusion) Area
 
-## Antenna Repair Commands
 
----
-
-### Tcl Commands
+### Commands
 
  - `check_net_violation`: check if an input net is violated, return 1 if the net is violated
    - -net_name: set the net name for checking
