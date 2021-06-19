@@ -774,7 +774,7 @@ void gen_brk_RSMT(Bool congestionDriven,
         && nets[i]->isClock) {
       std::vector<int> vecX(x, x + d);
       std::vector<int> vecY(y, y + d);
-      stt::Tree tree = pdr::primDijkstraRevII(vecX, vecY, 0, nets[i]->alpha, logger);
+      stt::Tree tree = pdr::primDijkstraRevII(vecX, vecY, nets[i]->alpha, logger);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {

@@ -131,9 +131,9 @@ makeSteinerTree(const Pin *drvr_pin,
         std::swap(y1[0], y1[drvr_idx]);
         float alpha = 0.4;
         if (use_pd)
-          ftree = pdr::primDijkstra(x1, y1, 0, alpha, logger);
+          ftree = pdr::primDijkstra(x1, y1, alpha, logger);
         else
-          ftree = pdr::primDijkstraRevII(x1, y1, 0, alpha, logger);
+          ftree = pdr::primDijkstraRevII(x1, y1, alpha, logger);
         if (pin_count > notify_pin_count)
           debugPrint(debug, "pdrev", 3, "pdrev done");
       } else {

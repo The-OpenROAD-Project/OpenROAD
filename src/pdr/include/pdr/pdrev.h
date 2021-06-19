@@ -43,17 +43,17 @@ namespace pdr {
 using utl::Logger;
 using stt::Tree;
 
+// Driver/source must be in index 0.
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
-             int root_index,
              float alpha,
              Logger* logger);
 
+// Driver/source must be in index 0.
 Tree
 primDijkstraRevII(std::vector<int> x,
                   std::vector<int> y,
-                  int root_index,
                   float alpha,
                   Logger* logger);
 

@@ -45,6 +45,9 @@ using stt::Tree;
 using stt::Branch;
 using utl::PDR;
 
+// pdrev fails with non-zero root index despite showing signs of supporting it.
+#define PDREV_USE_ROOT_INDEX 0
+
 class PdRev
 {
 public:
@@ -72,6 +75,19 @@ private:
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
+             float alpha,
+             Logger* logger)
+{
+  pdr::PdRev pd(x, y, 0, logger);
+  pd.runPD(alpha);
+  Tree tree = pd.translateTree();
+  pd.highlightSteinerTree(tree);
+  return tree;
+}
+
+Tree
+primDijkstra(std::vector<int> x,
+             std::vector<int> y,
              int root_index,
              float alpha,
              Logger* logger)
@@ -80,6 +96,18 @@ primDijkstra(std::vector<int> x,
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
   pd.highlightSteinerTree(tree);
+  return tree;
+}
+
+Tree
+primDijkstraRevII(std::vector<int> x,
+                  std::vector<int> y,
+                  float alpha,
+                  Logger* logger)
+{
+  pdr::PdRev pd(x, y, 0, logger);
+  pd.runPDII(alpha);
+  Tree tree = pd.translateTree();
   return tree;
 }
 
@@ -251,8 +279,6 @@ reportXY(std::vector<int> x,
   for (int i = 0; i < x.size(); i++)
     logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
 }
-
-#define PDREV_USE_ROOT_INDEX 1
 
 // Used by regressions.
 void
