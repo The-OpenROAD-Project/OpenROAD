@@ -154,6 +154,8 @@ public:
   int orig_num_terminals;
 
 private:
+  bool nodeLessY(const int i, const int j);
+
   float alpha2;
   float alpha3;
   float alpha4;

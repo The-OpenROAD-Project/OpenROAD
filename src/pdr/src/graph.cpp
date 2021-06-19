@@ -114,9 +114,6 @@ Graph::Graph(vector<int>& x,
       lrlx.push_back(x[i]);
       llux.push_back(x[i]);
       lllx.push_back(std::numeric_limits<int>::min());
-
-      vector<int> newColumn;
-      nn.push_back(newColumn);
     } 
     else if (root_idx == idx)
       // Root is a duplicate location.
@@ -1717,17 +1714,22 @@ static bool comp_det_cost(const Node& i, const Node& j)
   return (i.det_cost_node > j.det_cost_node);
 }
 
+bool
+Graph::nodeLessY(int i, int j)
+{
+  int y1 = nodes[i].y;
+  int y2 = nodes[j].y;
+  if (y1 == y2)
+    return nodes[i].x < nodes[j].x;
+  else
+    return y1 < y2;
+}
+
 void Graph::buildNearestNeighbors_single_node(int node_idx)
 {
   int node_count = nodes.size();
-  vector<Node> tmp = nodes;
-  sorted.resize(node_count);
-  nn.resize(node_count);
   // sort in y-axis
-  sort(tmp.begin(), tmp.end(), comp_y);
-  for (int i = 0; i < node_count; ++i) {
-    sorted[i] = tmp[i].idx;
-  }
+  sort(sorted.begin(), sorted.end(), [=] (int i, int j) { return nodeLessY(i, j); });
 
   int idx = 0;
   for (int abc = 0; abc < sorted.size(); abc++)
@@ -1785,6 +1787,7 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
 }
 
 // Guibas-Stolfi algorithm for computing nearest NE (north-east) neighbors
+// This has no resemblance to any Guibas-Stolfi algorithm -cherry 06/18/2021
 void Graph::buildNearestNeighborsForSPT()
 {
   nn.clear();
@@ -1813,15 +1816,8 @@ void Graph::buildNearestNeighborsForSPT()
     lllx.push_back(std::numeric_limits<int>::min());
   }
 
-  // This is super stupid - copies node structures to sort them and then
-  // gets the indexes out of the sorted node copies and puts them in 'sorted' below.-cherry 06/15/2021
-  // sorted should be a local inited with size node_count -cherry 06/15/2021
   // sort in y-axis
-  vector<Node> tmp = nodes;
-  sort(tmp.begin(), tmp.end(), comp_y);
-  for (int i = 0; i < node_count; ++i) {
-    sorted[i] = tmp[i].idx;
-  }
+  sort(sorted.begin(), sorted.end(), [=] (int i, int j) { return nodeLessY(i, j); });
   // sorted now has indicies of nodes sorted by y
 
   // collect neighbor
@@ -3027,12 +3023,9 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (int i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
-  // This "counts" from 0 to list.size() using each index in the array as one bit, so it
+  // This "counts" from 0 to list.size() using each index in the array as one bit, so
   // result is 2^lists.size() - exponential.
-  // Horrifically inefficient in both memory and time.
-  // This is is the kiss of death -cherry 05/03/2021
-  //if (lists.size() > 10)
-  // logger_->error(PDR, 1, "pdrev steiner conversion failure");
+  // Horrifically inefficient in both memory and time. -cherry 06/18/2021
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
   // For each combination, calc overlap
