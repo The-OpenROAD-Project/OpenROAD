@@ -30,113 +30,136 @@
 ***
 ***************************************************************************/
 
-
 #ifndef BASEANNEALER_H
 #define BASEANNEALER_H
 
+#include <random>
+#include <string>
+
+#include "AnalytSolve.h"
 #include "CommandLine.h"
 #include "DB.h"
-#include "AnalytSolve.h"
 #include "basepacking.h"
-#include <string>
-#include <random>
 
 // --------------------------------------------------------
 class BaseAnnealer
 {
-public:
-   BaseAnnealer(const parquetfp::Command_Line *const params,
-                parquetfp::DB *const db);
-   virtual ~BaseAnnealer();
-   
-   virtual bool go() = 0;           // go() == entire annealing process
-   virtual bool packOneBlock() = 0; // floorplan only one block 
-   
-   virtual void takePlfromDB() = 0; // get init soln from *db
-   virtual void solveQP();          // get a quad-minimum soln and update *db
-   virtual void compactSoln(bool minWL, bool fixedOutline, float reqdH, float reqdW) = 0;
-   void postHPWLOpt();
+ public:
+  BaseAnnealer(const parquetfp::Command_Line* const params,
+               parquetfp::DB* const db);
+  virtual ~BaseAnnealer();
 
-   inline float isFixedOutline() const;
-   inline float outlineDeadspaceRatio() const;
-   inline float outlineArea() const;
-   inline float outlineWidth() const;
-   inline float outlineHeight() const;
+  virtual bool go() = 0;            // go() == entire annealing process
+  virtual bool packOneBlock() = 0;  // floorplan only one block
 
-   // basic constants for readability
-   static const int UNINITIALIZED;
-   static const unsigned int UNSIGNED_UNINITIALIZED;
-   static const int FREE_OUTLINE;
-   static const int NOT_FOUND;
+  virtual void takePlfromDB() = 0;  // get init soln from *db
+  virtual void solveQP();           // get a quad-minimum soln and update *db
+  virtual void compactSoln(bool minWL,
+                           bool fixedOutline,
+                           float reqdH,
+                           float reqdW)
+      = 0;
+  void postHPWLOpt();
 
-   enum MOVE_TYPES {MISC = -1,
-                    NOOP = 0,
-                    REP_SPEC_MIN = 1, // representation-specific
-                    REP_SPEC_ORIENT = 2, 
-                    REP_SPEC_MAX = 5,
-                    SLACKS_MOVE = 6,
-                    AR_MOVE = 7,
-                    ORIENT = 10,
-                    SOFT_BL = 11,
-                    HPWL = 12,
-                    ARWL = 13};
+  inline float isFixedOutline() const;
+  inline float outlineDeadspaceRatio() const;
+  inline float outlineArea() const;
+  inline float outlineWidth() const;
+  inline float outlineHeight() const;
 
-   class SolutionInfo
-   {
+  // basic constants for readability
+  static const int UNINITIALIZED;
+  static const unsigned int UNSIGNED_UNINITIALIZED;
+  static const int FREE_OUTLINE;
+  static const int NOT_FOUND;
+
+  enum MOVE_TYPES
+  {
+    MISC = -1,
+    NOOP = 0,
+    REP_SPEC_MIN = 1,  // representation-specific
+    REP_SPEC_ORIENT = 2,
+    REP_SPEC_MAX = 5,
+    SLACKS_MOVE = 6,
+    AR_MOVE = 7,
+    ORIENT = 10,
+    SOFT_BL = 11,
+    HPWL = 12,
+    ARWL = 13
+  };
+
+  class SolutionInfo
+  {
    public:
-      SolutionInfo() 
-         : area(UNINITIALIZED),
-           width(UNINITIALIZED),
-           height(UNINITIALIZED),
-           HPWL(UNINITIALIZED) {}
+    SolutionInfo()
+        : area(UNINITIALIZED),
+          width(UNINITIALIZED),
+          height(UNINITIALIZED),
+          HPWL(UNINITIALIZED)
+    {
+    }
 
-      float area;
-      float width;
-      float height;
-      float HPWL;
-   };      
-   void printResults(const SolutionInfo& curr) const;
-   float annealTime;
+    float area;
+    float width;
+    float height;
+    float HPWL;
+  };
+  void printResults(const SolutionInfo& curr) const;
+  float annealTime;
 
-protected:
-   parquetfp::DB *const _db;                     // _db, _params behaves like
-   const parquetfp::Command_Line *const _params; // references, use ptrs for
-   parquetfp::AnalytSolve *const _analSolve;       // code backwd compatibility
-   std::string _baseFileName;
+ protected:
+  parquetfp::DB* const _db;                      // _db, _params behaves like
+  const parquetfp::Command_Line* const _params;  // references, use ptrs for
+  parquetfp::AnalytSolve* const _analSolve;      // code backwd compatibility
+  std::string _baseFileName;
 
-   const bool _isFixedOutline;
-   const float _outlineDeadspaceRatio;
-   const float _outlineArea;
-   const float _outlineWidth;
-   const float _outlineHeight;
-   std::random_device _rd;
-   std::mt19937 _random_gen;
+  const bool _isFixedOutline;
+  const float _outlineDeadspaceRatio;
+  const float _outlineArea;
+  const float _outlineWidth;
+  const float _outlineHeight;
+  std::random_device _rd;
+  std::mt19937 _random_gen;
 
-   BaseAnnealer()
-      : annealTime(0), _db(NULL), _params(NULL), _analSolve(NULL),
+  BaseAnnealer()
+      : annealTime(0),
+        _db(NULL),
+        _params(NULL),
+        _analSolve(NULL),
         _isFixedOutline(false),
-        _outlineDeadspaceRatio(basepacking_h::Dimension::Infty),     
-        _outlineArea(basepacking_h::Dimension::Infty),     
-        _outlineWidth(basepacking_h::Dimension::Infty),     
+        _outlineDeadspaceRatio(basepacking_h::Dimension::Infty),
+        _outlineArea(basepacking_h::Dimension::Infty),
+        _outlineWidth(basepacking_h::Dimension::Infty),
         _outlineHeight(basepacking_h::Dimension::Infty)
-      { /* compilerCheck(); */ }
+  { /* compilerCheck(); */
+  }
 };
 // --------------------------------------------------------
 
 inline float BaseAnnealer::isFixedOutline() const
-{   return _isFixedOutline; }
+{
+  return _isFixedOutline;
+}
 // --------------------------------------------------------
 inline float BaseAnnealer::outlineDeadspaceRatio() const
-{   return _outlineDeadspaceRatio; }
+{
+  return _outlineDeadspaceRatio;
+}
 // --------------------------------------------------------
 inline float BaseAnnealer::outlineArea() const
-{   return _outlineArea; }
+{
+  return _outlineArea;
+}
 // --------------------------------------------------------
 inline float BaseAnnealer::outlineWidth() const
-{   return _outlineWidth; }
+{
+  return _outlineWidth;
+}
 // --------------------------------------------------------
 inline float BaseAnnealer::outlineHeight() const
-{   return _outlineHeight; }
+{
+  return _outlineHeight;
+}
 // --------------------------------------------------------
 
 #endif
