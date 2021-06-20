@@ -41,7 +41,7 @@ RSZ 0039 Resizer.cc:595            Resized {} instances.
 RSZ 0040 Resizer.cc:2052           Inserted {} buffers.
 RSZ 0041 Resizer.cc:2054           Resized {} instances.
 RSZ 0042 Resizer.cc:1935           Inserted {} tie {} instances.
-RSZ 0045 SteinerTree.cc:386        steiner left/right failed.
+RSZ 0045 SteinerTree.cc:382        steiner left/right failed.
 RSZ 0046 Resizer.cc:2416           Found {} endpoints with hold violations.
 RSZ 0047 Resizer.cc:675            Found {} long wires.
 RSZ 0048 Resizer.cc:677            Inserted {} buffers in {} nets.

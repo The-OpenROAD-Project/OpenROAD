@@ -45,9 +45,6 @@ using stt::Tree;
 using stt::Branch;
 using utl::PDR;
 
-// pdrev fails with non-zero root index despite showing signs of supporting it.
-#define PDREV_USE_ROOT_INDEX 0
-
 class PdRev
 {
 public:
@@ -75,19 +72,6 @@ private:
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
-             float alpha,
-             Logger* logger)
-{
-  pdr::PdRev pd(x, y, 0, logger);
-  pd.runPD(alpha);
-  Tree tree = pd.translateTree();
-  pd.highlightSteinerTree(tree);
-  return tree;
-}
-
-Tree
-primDijkstra(std::vector<int> x,
-             std::vector<int> y,
              int root_index,
              float alpha,
              Logger* logger)
@@ -95,7 +79,7 @@ primDijkstra(std::vector<int> x,
   pdr::PdRev pd(x, y, root_index, logger);
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
-  pd.highlightSteinerTree(tree);
+  //pd.highlightSteinerTree(tree);
   return tree;
 }
 
@@ -105,19 +89,7 @@ primDijkstraRevII(std::vector<int> x,
                   float alpha,
                   Logger* logger)
 {
-  pdr::PdRev pd(x, y, 0, logger);
-  pd.runPDII(alpha);
-  Tree tree = pd.translateTree();
-  return tree;
-}
-
-Tree
-primDijkstraRevII(std::vector<int> x,
-                  std::vector<int> y,
-                  int root_index,
-                  float alpha,
-                  Logger* logger)
-{
+  int root_index = 0;
   pdr::PdRev pd(x, y, root_index, logger);
   pd.runPDII(alpha);
   Tree tree = pd.translateTree();
@@ -289,17 +261,18 @@ reportPdrevTree(bool use_pd,
                 float alpha,
                 Logger *logger)
 {
-  std::vector<int> x1(x);
-  std::vector<int> y1(y);
-#if !PDREV_USE_ROOT_INDEX
-  // Move driver to pole position until drvr_index arg works.
-  std::swap(x1[0], x1[drvr_index]);
-  std::swap(y1[0], y1[drvr_index]);
-  drvr_index = 0;
-#endif
-  stt::Tree tree = use_pd
-    ? pdr::primDijkstra(x1, y1, drvr_index, alpha, logger)
-    : pdr::primDijkstraRevII(x1, y1, drvr_index, alpha, logger);
+  stt::Tree tree;
+  if (use_pd)
+    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  else {
+    // pdrev fails with non-zero root index despite showing signs of supporting it.
+    std::vector<int> x1(x);
+    std::vector<int> y1(y);
+    // Move driver to pole position until drvr_index arg works.
+    std::swap(x1[0], x1[drvr_index]);
+    std::swap(y1[0], y1[drvr_index]);
+    tree = pdr::primDijkstraRevII(x1, y1, alpha, logger);
+  }
   printf("WL = %d\n", tree.length);
   for (int i = 0; i < stt::branch_count(tree); i++) {
     int x1 = tree.branch[i].x;
