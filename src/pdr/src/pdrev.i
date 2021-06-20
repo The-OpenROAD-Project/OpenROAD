@@ -37,6 +37,7 @@
 
 #include <vector>
 #include "pdr/pdrev.h"
+#include "gui/gui.h"
 
 namespace ord {
 utl::Logger *
@@ -61,7 +62,20 @@ report_pd_tree(const std::vector<int> &x,
                float alpha)
 {
   utl::Logger *logger = ord::getLogger();
-  pdr::reportPdrevTree(true, x, y, drvr_index, alpha, logger);
+  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  pdr::reportSteinerTree(tree, logger);
+}
+
+void
+highlight_pd_tree(const std::vector<int> &x,
+                  const std::vector<int> &y,
+                  int drvr_index,
+                  float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  gui::Gui *gui = gui::Gui::get();
+  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  pdr::highlightSteinerTree(tree, gui);
 }
 
 void
@@ -71,7 +85,14 @@ report_pdII_tree(const std::vector<int> &x,
                  float alpha)
 {
   utl::Logger *logger = ord::getLogger();
-  pdr::reportPdrevTree(false, x, y, drvr_index, alpha, logger);
+  // pdrev fails with non-zero root index despite showing signs of supporting it.
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  stt::Tree tree = pdr::primDijkstraRevII(x1, y1, alpha, logger);
+  pdr::reportSteinerTree(tree, logger);
 }
 
 %} // inline

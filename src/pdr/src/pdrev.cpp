@@ -58,7 +58,6 @@ public:
   Tree translateTree();
   void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
   void highlightGraph();
-  void highlightSteinerTree(Tree &tree);
 
 private:
   void replaceNode(Graph* graph, int originalNode);
@@ -254,25 +253,9 @@ reportXY(std::vector<int> x,
 
 // Used by regressions.
 void
-reportPdrevTree(bool use_pd,
-                const std::vector<int> &x,
-                const std::vector<int> &y,
-                int drvr_index,
-                float alpha,
-                Logger *logger)
+reportSteinerTree(stt::Tree &tree,
+                  Logger *logger)
 {
-  stt::Tree tree;
-  if (use_pd)
-    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
-  else {
-    // pdrev fails with non-zero root index despite showing signs of supporting it.
-    std::vector<int> x1(x);
-    std::vector<int> y1(y);
-    // Move driver to pole position until drvr_index arg works.
-    std::swap(x1[0], x1[drvr_index]);
-    std::swap(y1[0], y1[drvr_index]);
-    tree = pdr::primDijkstraRevII(x1, y1, alpha, logger);
-  }
   printf("WL = %d\n", tree.length);
   for (int i = 0; i < stt::branch_count(tree); i++) {
     int x1 = tree.branch[i].x;
@@ -343,16 +326,14 @@ PdRev::highlightGraph()
 }
 
 void
-PdRev::highlightSteinerTree(Tree &tree)
+highlightSteinerTree(Tree &tree,
+                     gui::Gui *gui)
 {
-  gui::Gui *gui = gui::Gui::get();
   if (gui) {
     if (lines_renderer == nullptr) {
       lines_renderer = new LinesRenderer();
       gui->registerRenderer(lines_renderer);
     }
-    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> xy_lines;
-    graphLines(xy_lines);
     std::vector<std::pair<odb::Point, odb::Point>> lines;
     for (int i = 0; i < branch_count(tree); i++) {
       stt::Branch &branch = tree.branch[i];

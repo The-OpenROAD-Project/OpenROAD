@@ -12,7 +12,7 @@ WL = 30
 3 (10 10) parent 0 length 20
 Net dup2
 WL = 3
-0 (28 44) parent 3 length 0
+0 (29 43) parent 3 length 2
 1 (28 45) parent 3 length 1
-2 (29 43) parent 3 length 2
+2 (28 44) parent 3 length 0
 3 (28 44) parent 3 length 0
