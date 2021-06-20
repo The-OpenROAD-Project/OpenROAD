@@ -50,7 +50,7 @@ getLogger();
 
 %import <std_vector.i>
 namespace std {
-  %template(pdrev_xy) vector<int>;
+%template(pdrev_xy) vector<int>;
 }
 
 %inline %{
@@ -85,13 +85,7 @@ report_pdII_tree(const std::vector<int> &x,
                  float alpha)
 {
   utl::Logger *logger = ord::getLogger();
-  // pdrev fails with non-zero root index despite showing signs of supporting it.
-  std::vector<int> x1(x);
-  std::vector<int> y1(y);
-  // Move driver to pole position until drvr_index arg works.
-  std::swap(x1[0], x1[drvr_index]);
-  std::swap(y1[0], y1[drvr_index]);
-  stt::Tree tree = pdr::primDijkstraRevII(x1, y1, alpha, logger);
+  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
   pdr::reportSteinerTree(tree, logger);
 }
 

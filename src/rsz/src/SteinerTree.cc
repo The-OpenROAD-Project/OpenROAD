@@ -118,19 +118,14 @@ makeSteinerTree(const Pin *drvr_pin,
       bool use_pd = false;
       bool use_pdrevII = false;
       float alpha = 0.4;
-      if (use_pd) {
+      if (use_pd || use_pdrevII) {
         std::vector<int> x1(x, x + pin_count);
         std::vector<int> y1(y, y + pin_count);
-        ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
-      }
-      else if (use_pdrevII) {
-        std::vector<int> x1(x, x + pin_count);
-        std::vector<int> y1(y, y + pin_count);
-        // Move the driver to the pole position.
-        std::swap(pins[0], pins[drvr_idx]);
-        std::swap(x1[0], x1[drvr_idx]);
-        std::swap(y1[0], y1[drvr_idx]);
-        ftree = pdr::primDijkstraRevII(x1, y1, alpha, logger);
+        float alpha = 0.4;
+        if (use_pd)
+          ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
+        else
+          ftree = pdr::primDijkstraRevII(x1, y1, drvr_idx, alpha, logger);
       }
       else {
         int flute_accuracy = 3;

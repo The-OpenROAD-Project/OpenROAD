@@ -71,11 +71,19 @@ private:
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
-             int root_index,
+             int drvr_index,
              float alpha,
              Logger* logger)
 {
-  pdr::PdRev pd(x, y, root_index, logger);
+  // pdrev fails with non-zero root index despite showing signs of supporting it.
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
+
+  pdr::PdRev pd(x1, y1, drvr_index, logger);
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
   //pd.highlightSteinerTree(tree);
@@ -85,11 +93,19 @@ primDijkstra(std::vector<int> x,
 Tree
 primDijkstraRevII(std::vector<int> x,
                   std::vector<int> y,
+                  int drvr_index,
                   float alpha,
                   Logger* logger)
 {
-  int root_index = 0;
-  pdr::PdRev pd(x, y, root_index, logger);
+  // pdrev fails with non-zero root index despite showing signs of supporting it.
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
+
+  pdr::PdRev pd(x1, y1, drvr_index, logger);
   pd.runPDII(alpha);
   Tree tree = pd.translateTree();
   return tree;
@@ -113,9 +129,7 @@ void PdRev::runPD(float alpha)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
-  //highlightGraph();
   graph_->doSteiner_HoVW();
-  graph_->print_tree();
 }
 
 void PdRev::runPDII(float alpha)
