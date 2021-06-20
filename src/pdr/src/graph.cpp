@@ -2820,7 +2820,7 @@ void Graph::doSteiner_HoVW()
 
 void Graph::fix_max_dc()
 {
-  // ever heard of functions? -cherry 06/07/2020
+  // This desparately needs to be factored -cherry 06/07/2020
   // DAG traversal
   BuildDAG();
 
@@ -3022,9 +3022,9 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (int i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
-  // This "counts" from 0 to list.size() using each index in the array as one bit, so
-  // result is 2^lists.size() - exponential.
-  // Horrifically inefficient in both memory and time. -cherry 06/18/2021
+  // This is horrifically inefficient in both memory and time.
+  // It "counts" from 0 to list.size() using each index in the array as one bit, so
+  // the result size is 2^lists.size() - exponential.  -cherry 06/18/2021
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
   // For each combination, calc overlap
@@ -3625,6 +3625,7 @@ void Graph::update_node_detcost_Kt(int j)
     child = par;
     par = nodes[par].parent;
     count++;
+    // WTF? -cherry 06/20/2021
     if (count > 1000)
       break;
   }
@@ -3632,18 +3633,17 @@ void Graph::update_node_detcost_Kt(int j)
 
 void Graph::get_level_in_tree()
 {
+  // This needlessly copies vectors in many places -cherry 06/20/2021
   tree_struct.clear();
   int iter = 0;
   vector<int> tmp1;
   tree_struct.push_back(tmp1);
-  tmp1.clear();
   tree_struct[iter].push_back(0);
   iter++;
   int j = 0, level_count = 0;
   vector<int> set_of_chi = nodes[j].children, tmp;
   vector<int> tmp2;
   tree_struct.push_back(tmp2);
-  tmp2.clear();
   tree_struct[iter].insert(
       tree_struct[iter].end(), set_of_chi.begin(), set_of_chi.end());
   int size_of_chi = set_of_chi.size();

@@ -126,8 +126,10 @@ proc highlight_pd_net { net alpha } {
   set ys {}
   foreach pin $pins {
     lassign $pin pin_name x y
-    lappend xs [ord::microns_to_dbu $x]
-    lappend ys [ord::microns_to_dbu $y]
+    #set x [ord::microns_to_dbu $x]
+    #set y [ord::microns_to_dbu $y]
+    lappend xs $x
+    lappend ys $y
   }
   pdr::highlight_pd_tree $xs $ys $drvr_index $alpha
 }

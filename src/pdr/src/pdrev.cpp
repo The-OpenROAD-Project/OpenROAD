@@ -113,8 +113,9 @@ void PdRev::runPD(float alpha)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
-  highlightGraph();
+  //highlightGraph();
   graph_->doSteiner_HoVW();
+  graph_->print_tree();
 }
 
 void PdRev::runPDII(float alpha)
@@ -264,7 +265,7 @@ reportSteinerTree(stt::Tree &tree,
     int x2 = tree.branch[parent].x;
     int y2 = tree.branch[parent].y;
     int length = abs(x1-x2)+abs(y1-y2);
-    printf("%d (%d %d) parent %d length %d\n",
+    printf("%d (%d %d) neighbor %d length %d\n",
            i, x1, y1, parent, length);
   }
 }
