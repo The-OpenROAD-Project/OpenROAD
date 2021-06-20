@@ -107,7 +107,7 @@ bool Blif::writeBlif(const char* file_name)
     std::string currentGate
         = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
     std::string currentConnections = "", currentClock = "";
-    std::set<std::string> currentClocks;
+    std::set<std::string> currentClocks, currentConst0, currentConst1;
 
     auto iterms = inst->getITerms();
     bool isConstInstance = false;
@@ -146,13 +146,15 @@ bool Blif::writeBlif(const char* file_name)
         isConstInstance = true;
 
         if (pinVal == sta::LogicValue::one)
-          const1.insert(net->getName());
+          currentConst1.insert(net->getName());
         else
-          const0.insert(net->getName());
+          currentConst0.insert(net->getName());
 
         constOptimizedInstances++;
 
         break;
+      }else{
+        isConstInstance = false;
       }
 
       auto mtermName = mterm->getName();
@@ -271,8 +273,19 @@ bool Blif::writeBlif(const char* file_name)
     else if (cell->hasSequentials())
       currentGate += " " + currentClock;
 
-    if (!isConstInstance)
+    if (!isConstInstance){
       subckts[instIndex++] = currentGate;
+    } else {
+      // Commit tie cells to blif constants
+      for (auto &&c0 : currentConst0){
+        const0.insert(c0);
+      }
+
+      for (auto &&c1 : currentConst1){
+        const1.insert(c1);
+      }
+    }
+      
   }
 
   // remove drivers from input list

@@ -1,13 +1,13 @@
 RMP 0001 blif.cpp:84               cannot open file {}
-RMP 0002 blif.cpp:341              Blif writer successfully dumped file with {} instances after 
-RMP 0003 blif.cpp:366              cannot open file {}
-RMP 0004 blif.cpp:389              cannot open file {}
-RMP 0005 blif.cpp:405              blif parsed successfully, destroying {} existing instances...
-RMP 0006 blif.cpp:410              Found {} Inputs, {} Outputs, {} Clocks, {} Combinational 
-RMP 0007 blif.cpp:426              inserting {} new instances...
-RMP 0008 blif.cpp:447              Const driver {} doesn't have any connected nets\n
-RMP 0009 blif.cpp:482              Master ({}) not found while stitching back instances\n
-RMP 0010 blif.cpp:517              {} connection parsing failed for {} instance
+RMP 0002 blif.cpp:354              Blif writer successfully dumped file with {} instances after 
+RMP 0003 blif.cpp:379              cannot open file {}
+RMP 0004 blif.cpp:402              cannot open file {}
+RMP 0005 blif.cpp:418              blif parsed successfully, destroying {} existing instances...
+RMP 0006 blif.cpp:423              Found {} Inputs, {} Outputs, {} Clocks, {} Combinational 
+RMP 0007 blif.cpp:439              inserting {} new instances...
+RMP 0008 blif.cpp:460              Const driver {} doesn't have any connected nets\n
+RMP 0009 blif.cpp:495              Master ({}) not found while stitching back instances\n
+RMP 0010 blif.cpp:530              {} connection parsing failed for {} instance
 RMP 0020 Restructure.cpp:332       Cannot open file {} for writing.
 RMP 0031 rmp.tcl:78                Missing argument -liberty_file
 RMP 0032 rmp.tcl:95                -loport not specified, skipping locell
