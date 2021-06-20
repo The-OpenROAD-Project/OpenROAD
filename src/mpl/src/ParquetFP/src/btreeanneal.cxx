@@ -1292,7 +1292,6 @@ int BTreeAreaWireAnnealer::makeSoftBlMove(int& index,
     float& newWidth,
     float& newHeight)
 {
-  static const int NOT_FOUND = NOT_FOUND;
   _slackEval->evaluateSlacks(in_curr_solution);
 
   int moveDir = rand() % 2;
@@ -1316,7 +1315,6 @@ int BTreeAreaWireAnnealer::makeSoftBlMove(int& index,
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::getSoftBlIndex(bool horizontal) const
 {
-  static const int NOT_FOUND = NOT_FOUND;
   const int blocknum = in_curr_solution.NUM_BLOCKS;
   const vector<float>& slacks = (horizontal)?
     _slackEval->xSlack() : _slackEval->ySlack();
@@ -1384,7 +1382,7 @@ int BTreeAreaWireAnnealer::getSoftBlNewDimensions(int index,
     float maxAR = blockinfo.blockARinfo[index].maxAR[theta];
     if (_isFixedOutline)
     {
-      bool agressiveAR = false;
+      const bool agressiveAR = false;
       // ((in_curr_solution.totalArea() / _outlineArea - 1)
       //                              < _params->startSoftMovePercent / 100.0);
       minAR = (agressiveAR)? minAR : max(minAR, float(1.0/3.0));

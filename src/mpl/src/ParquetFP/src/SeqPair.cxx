@@ -41,7 +41,7 @@ using std::vector;
 
 //ctor randomly generates the seqPair
 SeqPair::SeqPair(unsigned size,
-                 std::mt19937 random_gen)
+                 std::mt19937& random_gen)
 {
    _XX.resize(size);
    _YY.resize(size);

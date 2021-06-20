@@ -54,7 +54,7 @@ namespace parquetfp
       SeqPair(){}
 
       // random sequence-pair of length "size"
-      SeqPair(unsigned size, std::mt19937 random_gen);
+      SeqPair(unsigned size, std::mt19937& random_gen);
 
       // sequence-pair (X, Y)
       SeqPair(const std::vector<unsigned>& X, const std::vector<unsigned>& Y);

@@ -120,6 +120,12 @@ void HardBlockInfoType::ParseTxt(ifstream& ins)
       exit(1);
    }
 
+   if (blocknum < 0)
+   {
+      cout << "ERROR: invalid blocknum" << blocknum << endl;
+      exit(1);
+   }
+
    in_blocks.resize(blocknum+2);
    in_block_names.resize(blocknum+2);
    for (int i = 0; i < blocknum; i++)

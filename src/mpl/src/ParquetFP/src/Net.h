@@ -63,7 +63,7 @@ namespace parquetfp
    public:
   
       pin(const std::string name, bool type, float xoffset, float yoffset, int netIndex)
-         :_type(type)
+        :_type(type), _nodeIndex(0)
          {
 	   //strncpy(_name,name,199);
 	   //_name[199] = '\0';
@@ -126,6 +126,7 @@ namespace parquetfp
    public:
       Net()
          {
+            _index = 0;
             _weight = 1.0;
          }
 
@@ -134,7 +135,7 @@ namespace parquetfp
 	   _name = name;
          }
 
-      void addNode(pin node)
+      void addNode(const pin& node)
          {
             _pins.push_back(node);
          }

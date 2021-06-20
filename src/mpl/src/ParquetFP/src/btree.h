@@ -188,6 +188,9 @@ inline BTree::BTree(const BTree& newBtree)
      in_blockinfo(newBtree.in_blockinfo),
      in_tree(newBtree.in_tree),
      in_contour(newBtree.in_contour),
+     seen_obstacles(newBtree.seen_obstacles),
+     new_block_x_shift(newBtree.new_block_x_shift),
+     new_block_y_shift(newBtree.new_block_y_shift),
      
      in_xloc(newBtree.in_xloc),
      in_yloc(newBtree.in_yloc),
