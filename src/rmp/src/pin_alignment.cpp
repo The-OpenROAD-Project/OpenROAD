@@ -1,4 +1,4 @@
-#include "rtlmp/pin_alignment.h"
+#include "rmp/pin_alignment.h"
 
 #include <vector>
 #include <random>
@@ -8,10 +8,11 @@
 #include <thread>
 #include <fstream>
 #include <cfloat>
+#include <string>
 
-#include "rtlmp/shape_engine.h"
-#include "rtlmp/block_placement.h"
-#include "rtlmp/util.h"
+#include "rmp/shape_engine.h"
+#include "rmp/block_placement.h"
+#include "rmp/util.h"
 
 
 
@@ -35,7 +36,7 @@ namespace pin_alignment {
     using std::abs;
     using std::max;
     using std::min;
-
+    using std::to_string;
 
     using shape_engine::Cluster;
     using shape_engine::Macro;
@@ -395,10 +396,12 @@ namespace pin_alignment {
             }
 
             step++;
-            if(step <= k_)
-                T = init_T_ / (step * c_);
-            else
-                T = init_T_ / step;
+            
+            //if(step <= k_)
+            //    T = init_T_ / (step * c_);
+            //else
+            //    T = init_T_ / step;
+            T = T * 0.99;
         }
         
         macros_ = best_macros;
@@ -448,7 +451,7 @@ namespace pin_alignment {
         // parameterse related to fastSA
         float init_prob = 0.95;
         float rej_ratio = 0.99;
-        int max_num_step = 1000;
+        int max_num_step = 5000;
         int k = 5;
         float c = 100.0;
         float alpha = 0.3;
@@ -546,6 +549,13 @@ namespace pin_alignment {
                 cout << "Finish SA" << endl;
                 int min_id = -1;
                 float wirelength = FLT_MAX;
+                
+                for(int j = 0; j < sa_vector.size(); j++) {
+                    string file_name = string("./rtl_mp/") + name + string("_") + to_string(j) + string("_final.txt");
+                    sa_vector[j]->WriteFloorplan(file_name);
+                }       
+                
+                
                 for(int j = 0; j < sa_vector.size(); j++) 
                     if(sa_vector[j]->IsFeasible()) 
                         if(wirelength > sa_vector[j]->GetWirelength()) 

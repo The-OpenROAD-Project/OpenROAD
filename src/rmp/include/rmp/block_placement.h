@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <random>
 
-#include "rtlmp/shape_engine.h"
+#include "rmp/shape_engine.h"
 
 namespace block_placement {
     // definition of blocks:  include semi-soft blocks and soft blocks

@@ -1,4 +1,4 @@
-#include "rtlmp/block_placement.h"
+#include "rmp/block_placement.h"
 
 #include <vector>
 #include <random>
@@ -9,8 +9,8 @@
 #include <fstream>
 #include <float.h>
 
-#include "rtlmp/shape_engine.h"
-#include "rtlmp/util.h"
+#include "rmp/shape_engine.h"
+#include "rmp/util.h"
 
 namespace block_placement {
     using std::unordered_map;
@@ -800,8 +800,8 @@ namespace block_placement {
                     Restore();
                 }
             }
-            cout << "best_cost:   " << best_cost << "   ";
-            cout << "cost:   " << cost << endl; 
+            //cout << "best_cost:   " << best_cost << "   ";
+            //cout << "cost:   " << cost << endl; 
             /*
             cout << "Step:  " << step << "   " << "rej_num:   " << rej_num << "   ";
             cout << "T:  " << T << "   ";
@@ -830,11 +830,13 @@ namespace block_placement {
 
             step++;
             
-            if(step <= k_)
-                T = init_T_ / (step * c_) ;
-            else
-                T = init_T_ / step;
+            //if(step <= k_)
+            //    T = init_T_ / (step * c_) ;
+            //else
+            //    T = init_T_ / step;
+            T = T * 0.995;
             
+
             //T = T * 0.99;
             //if(step == 2) {
             //    T = init_T_ * 0.99;
@@ -878,6 +880,7 @@ namespace block_placement {
                 if(IsFeasible() == false) {
                     if(FitFloorplan() == false && num_restart < max_num_restart) {
                         step = int(max_num_step_ / 2.0);
+                        T = init_T_ * pow(0.995, step);
                         num_restart += 1;
                         cout << num_restart << "th Restart Begin" << endl;
                     } else {

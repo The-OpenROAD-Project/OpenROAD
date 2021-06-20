@@ -1,4 +1,5 @@
-#include "rtlmp/rtl_mp.h"
+#include "rmp/rtl_mp.h"
+#include "utl/Logger.h"
 
 #include<iostream>
 #include<string>
@@ -9,10 +10,13 @@
 #include<fstream>
 #include<map>
 
-#include "rtlmp/pin_alignment.h"
-#include "rtlmp/shape_engine.h"
-#include "rtlmp/block_placement.h"
-#include "rtlmp/util.h"
+#include "rmp/pin_alignment.h"
+#include "rmp/shape_engine.h"
+#include "rmp/block_placement.h"
+#include "rmp/util.h"
+
+
+using utl::PAR;
 
 namespace shape_engine {
     std::map<Orientation, Orientation> Macro::FLIP_X_TABLE {
@@ -56,9 +60,16 @@ namespace ord {
     using std::endl;
     using std::stoi;
     using std::stof;
+    using utl::Logger;
 
 
-    void RTLMP(const char* config_file) {
+#define DUMP_INFO_PARAM(param, value)   logger->info(RMP,0001, "RTL_MP  Param: {}: {}", param, value)
+
+
+    void RTLMP(const char* config_file, Logger*  logger) {
+
+        logger->report("*** In RTLMP ***");
+
         const char* block_file = "./rtl_mp/partition.txt.block";
         const char* net_file = "./rtl_mp/partition.txt.net";
         
@@ -111,21 +122,21 @@ namespace ord {
         param_iter = params.find(param);
         if(param_iter != params.end())
             min_aspect_ratio = stof(param_iter->second);
-        cout << "min_aspect_ratio:  " << min_aspect_ratio << endl;
+        DUMP_INFO_PARAM("min_aspect_ratio", min_aspect_ratio);
         
 
         param = "dead_space";
         param_iter = params.find(param);
         if(param_iter != params.end())
             dead_space = stof(param_iter->second);
-        cout << "dead_space:  " << dead_space << endl;
+        DUMP_INFO_PARAM("dead_space", dead_space);
 
 
         param = "halo_width";
         param_iter = params.find(param);
         if(param_iter != params.end())
             halo_width = stof(param_iter->second);
-        cout << "halo_width:  " << halo_width << endl; 
+        DUMP_INFO_PARAM("halo_width", halo_width);
 
 
         param = "region_file";
@@ -137,128 +148,128 @@ namespace ord {
         param_iter = params.find(param);
         if(param_iter != params.end())
             num_thread = stoi(param_iter->second);
-        cout << "num_thread:  " << num_thread << endl;
+        DUMP_INFO_PARAM("num_threads", num_thread);
 
 
         param = "num_run";
         param_iter = params.find(param);
         if(param_iter != params.end())
             num_run = stoi(param_iter->second);
-        cout << "num_run:  " << num_run << endl;
+        DUMP_INFO_PARAM("num_run", num_run);
 
         param = "heat_rate";
         param_iter = params.find(param);
         if(param_iter != params.end())
             heat_rate = stof(param_iter->second);
-        cout <<  "heat_rate:  " << heat_rate << endl;
+        DUMP_INFO_PARAM("heat_rate", heat_rate);
 
         param = "num_level";
         param_iter = params.find(param);
         if(param_iter != params.end())
             num_level = stoi(param_iter->second);
-        cout << "num_level:  " << num_level << endl;
+        DUMP_INFO_PARAM("num_level", num_level);
 
         param = "num_worker";
         param_iter = params.find(param);
         if(param_iter != params.end())
             num_worker = stoi(param_iter->second);
-        cout << "num_worker:  " << num_worker << endl;
+        DUMP_INFO_PARAM("num_workers", num_worker);
 
         param = "alpha";
         param_iter = params.find(param);
         if(param_iter != params.end())
             alpha = stof(param_iter->second);
-        cout << "alpha:  " << alpha << endl;
+        DUMP_INFO_PARAM("alpha", alpha);
 
         param = "beta";
         param_iter = params.find(param);
         if(param_iter != params.end())
             beta = stof(param_iter->second);
-        cout << "beta:  " << beta << endl;
+        DUMP_INFO_PARAM("beta", beta);
 
         param = "gamma";
         param_iter = params.find(param);
         if(param_iter != params.end())
             gamma = stof(param_iter->second);
-        cout << "gamma:  " << gamma << endl;
+        DUMP_INFO_PARAM("gamma", gamma);
 
         param = "boundary_weight";
         param_iter = params.find(param);
         if(param_iter != params.end())
             boundary_weight = stof(param_iter->second);
-        cout << "boundary_weight:  " << boundary_weight << endl;
+        DUMP_INFO_PARAM("boundary_weight", boundary_weight);
 
         param = "macro_blockage_weight";
         param_iter = params.find(param);
         if(param_iter != params.end())
             macro_blockage_weight = stof(param_iter->second);
-        cout << "macro_blockage_weight:  " << macro_blockage_weight << endl;
+        DUMP_INFO_PARAM("macro_blockage_weight", macro_blockage_weight);
 
         param = "resize_prob";
         param_iter = params.find(param);
         if(param_iter != params.end())
             resize_prob = stof(param_iter->second);
-        cout << "resize_prob:  " << resize_prob << endl;
+        DUMP_INFO_PARAM("resize_probability", resize_prob);
 
         param = "pos_swap_prob";
         param_iter = params.find(param);
         if(param_iter != params.end())
             pos_swap_prob = stof(param_iter->second);
-        cout << "pos_swap_prob:  " << pos_swap_prob << endl;
+        DUMP_INFO_PARAM("pos_swap_probability", pos_swap_prob);
 
         param = "neg_swap_prob";
         param_iter = params.find(param);
         if(param_iter != params.end())
             neg_swap_prob = stof(param_iter->second);
-        cout << "neg_swap_prob:   " << neg_swap_prob << endl;
+        DUMP_INFO_PARAM("neg_swap_probability", neg_swap_prob);
 
         param = "double_swap_prob";
         param_iter = params.find(param);
         if(param_iter != params.end())
             double_swap_prob = stof(param_iter->second);
-        cout << "double_swap_prob:  " << double_swap_prob << endl;
+        DUMP_INFO_PARAM("double_swap_probability", double_swap_prob);
 
         param = "init_prob";
         param_iter = params.find(param);
         if(param_iter != params.end())
             init_prob = stof(param_iter->second);
-        cout << "init_prob:  " << init_prob << endl;
+        DUMP_INFO_PARAM("init_prob", init_prob);
 
         param = "rej_ratio";
         param_iter = params.find(param);
         if(param_iter != params.end())
             rej_ratio = stof(param_iter->second);
-        cout << "rej_ratio:  " << rej_ratio << endl;
+        DUMP_INFO_PARAM("rejection_ratio", rej_ratio);
 
         param = "k";
         param_iter = params.find(param);
         if(param_iter != params.end())
             k = stoi(param_iter->second);
-        cout << "k:   " << k << endl;
+        DUMP_INFO_PARAM("k", k);
 
         param = "c";
         param_iter = params.find(param);
         if(param_iter != params.end())
             c = stof(param_iter->second);
-        cout << "c:  " << c << endl;
+        DUMP_INFO_PARAM("c", c);
 
         param = "max_num_step";
         param_iter = params.find(param);
         if(param_iter != params.end())
             max_num_step = stoi(param_iter->second);
-        cout << "max_num_step:  " << max_num_step << endl;
+        DUMP_INFO_PARAM("max_num_step", max_num_step);
  
         param = "perturb_per_step";
         param_iter = params.find(param);
         if(param_iter != params.end())
             perturb_per_step = stoi(param_iter->second);
-        cout << "perturb_per_step:  " << perturb_per_step << endl;
+        DUMP_INFO_PARAM("perturb_per_step", perturb_per_step);
 
         param = "seed";
         param_iter = params.find(param);
         if(param_iter != params.end())
             seed = stoi(param_iter->second);
-        cout << "seed:  " << seed << endl;
+        DUMP_INFO_PARAM("seed", seed);
 
 
         float outline_width = 0.0;

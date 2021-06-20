@@ -67,3 +67,7 @@ PAR 0069 partitionmgr.tcl:557      argument -clique_threshold should be an integ
 PAR 0100 PartitionMgr.cpp:535      Invalid partitioning id: {}
 PAR 0101 PartitionMgr.cpp:810      Property not found for inst {}
 PAR 0102 partitionmgr.tcl:340      missing mandatory argument -partitioning_id
+PAR 0400 autocluster.cpp:325       Floorplan has not been initialized? Pin location error.
+PAR 0401 autocluster.cpp:238       Buffer Net has more than two net connection...
+PAR 0402 autocluster.cpp:1443      Traversed Logical Hierarchy \n\t Number of std cell instances: {}\n\t Total Area: {}\n\t Number of Hard Macros: {}\n\t 
+PAR 0403 autocluster.cpp:1611      Number of Clusters created: {}

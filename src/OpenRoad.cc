@@ -81,7 +81,7 @@
 #include "PartitionMgr/src/MakePartitionMgr.h"
 #include "PartitionMgr/include/autocluster.h"
 #include "pdn/MakePdnGen.hh"
-#include "rtlmp/rtl_mp.h"
+#include "rmp/rtl_mp.h"
 #include "pdr/MakePdrev.h"
 
 namespace sta {
@@ -414,7 +414,7 @@ OpenRoad::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro
 void 
 OpenRoad::rtlMacroPlacer(const char* config_file) 
 {
-    RTLMP(config_file);
+    RTLMP(config_file, logger_);
 }
 
 

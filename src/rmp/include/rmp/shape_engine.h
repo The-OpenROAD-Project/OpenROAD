@@ -8,6 +8,8 @@
 #include <random>
 #include <algorithm>
 #include <map>
+#include <fstream>
+
 
 namespace shape_engine {
     // definition of Orientation
@@ -335,6 +337,22 @@ namespace shape_engine {
                 std::cout << std::endl;
                 return area_;
             }
+
+            void WriteFloorplan(std::string file_name) {
+                std::cout << "file_name:  " << file_name << std::endl;
+                std::ofstream file;
+                file.open(file_name);
+                for(int i = 0; i < macros_.size(); i++) {
+                    file << macros_[i]->GetX() << "   ";
+                    file << macros_[i]->GetY() << "   ";
+                    file << macros_[i]->GetX() + macros_[i]->GetWidth() << "   ";
+                    file << macros_[i]->GetY() + macros_[i]->GetHeight() << "   ";
+                    file << std::endl;
+                }    
+                
+                file.close();
+            }
+
     };
 
     // wrapper for run function of SimulatedAnnealingCore
@@ -342,8 +360,8 @@ namespace shape_engine {
 
 
     // Macro Tile Engine
-    std::vector<std::pair<float, float> > TileMacro(std::vector<Macro> macros,  float outline_width,
-        float outline_height, int num_thread = 10, int num_run = 20, unsigned seed = 0);
+    std::vector<std::pair<float, float> > TileMacro(std::vector<Macro> macros, std::string cluster_name, 
+            float outline_width, float outline_height, int num_thread = 10, int num_run = 20, unsigned seed = 0);
 
 
     // Parse Block File

@@ -691,6 +691,10 @@ namespace par {
         return num_inst;
     }
     
+    //
+    // Merge target cluster into src
+    // RV -- del targe cluster?
+    //
     void autoclusterMgr::mergeCluster(Cluster* src, Cluster* target)
     {
         int src_id = src->getId();
@@ -793,6 +797,9 @@ namespace par {
         updateConnection();
     }
 
+    //
+    // Break a cluser (logical module) into its child modules and create a cluster each of the child modules
+    //
     void autoclusterMgr::breakCluster(Cluster* cluster_old, int& cluster_id)
     {
         Instance* inst = cluster_old->getTopInstance();
@@ -833,6 +840,9 @@ namespace par {
             }
             _cluster_map[cluster_id] = cluster;
                 
+            //
+            // Check cluster size. If it is smaller than min_inst threshold, add it to merge_cluster list
+            // 
             if(cluster->getNumInst() >= _min_num_inst || cluster->getNumMacro() >= _min_num_macro) {
                 _cluster_list.push_back(cluster);
             } else { 
@@ -849,6 +859,9 @@ namespace par {
         merge(string(_network->pathName(inst)));
     }
     
+    //
+    // For clusters that are greater than max_inst threshold, use MLPart to break the cluster into smaller clusters
+    //
     void autoclusterMgr::MLPart(Cluster* cluster, int &cluster_id)
     {
         int num_inst = cluster->getNumInst();
@@ -1111,6 +1124,10 @@ namespace par {
     }
  
     
+    //
+    //  For a cluster that contains macros, further split groups based on macro size.
+    //  Identical size macros are grouped together
+    //
     void autoclusterMgr::MacroPart(Cluster* cluster_old, int &cluster_id)
     {
         //cout << "Enter macro part:  " << endl;
@@ -1378,13 +1395,11 @@ namespace par {
     //  Auto clustering by traversing the design hierarchy
     //
     //  Parameters:
-    //     max_num_inst, min_num_inst:  maximum and minimum number of instances in a cluster. If
-    //     a logical module has greater greater than the high threshold of instances, we descend down
-    //     the hierarchy to examine the children. If multiple clusters are created for child modules that
+    //     max_num_macro, min_num_macro:   max and min number of marcos in a macro cluster.
+    //     max_num_inst min_num_inst:  max and min number of std cell instances in a soft cluster. If
+    //     a logical module has greater than the max threshold of instances, we descend down
+    //     the hierarchy to examine the children. If multiple clusters are created for child modules that are
     //     smaller than the min threshold value, we merge them based on connectivity signatures
-    //
-    //     max_num_macros, min_num_macros:  are used to guide the break up of macro clusters based on
-    //     nummber of macros.
     //
     void autoclusterMgr::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
                                          unsigned int max_num_inst,  unsigned int min_num_inst,
@@ -1408,6 +1423,7 @@ namespace par {
         int cluster_id = 0;
         
             
+        //
         // Map each boundled IO to cluster with zero area
         // Create a cluster for each budled io
         //
@@ -1424,7 +1440,9 @@ namespace par {
         }
 
         Metric metric = traverseLogicalHierarchy(_network->topInstance());
-        _logger->info(PAR, 402, "Traversed Logical Hierarchy\n\t Number of std cell instances: {}\n\t Total Area: {}\n\t Number of Hard Macros: {}\n\t ", metric.num_inst, metric.area, metric.num_macro);
+        _logger->info(PAR, 402, 
+            "Traversed Logical Hierarchy \n\t Number of std cell instances: {}\n\t Total Area: {}\n\t Number of Hard Macros: {}\n\t ", 
+            metric.num_inst, metric.area, metric.num_macro);
        
         // get all the nets with buffers
         getBufferNet();
@@ -1434,8 +1452,9 @@ namespace par {
         updateConnection(); 
         merge("top");
         
+        //
         // Break down clusters
-        // Recursive -- Walk down the tree and create clusters for logical modules
+        // Walk down the tree and create clusters for logical modules
         // Stop when the clusters are smaller than the max size threshold
         //
         while(!_break_cluster_list.empty()) {
@@ -1444,6 +1463,7 @@ namespace par {
             breakCluster(cluster, cluster_id);
         }
 
+        //
         // Use MLPart to partition large clusters
         // For clusters that are larger than max threshold size (flat insts) break down the cluster
         // by netlist partitioning using MLPart
@@ -1460,6 +1480,7 @@ namespace par {
             MLPart(cluster, cluster_id);
         }
 
+        //
         // split the macros and std cells
         // For clusters that contains HM and std cell -- split the cluster into two
         // a HM part and a std cell part
@@ -1491,6 +1512,7 @@ namespace par {
         updateConnection();
 
 
+        //
         // group macros based on connection signature
         // Use connection signatures to group and split macros
         //
@@ -1523,7 +1545,10 @@ namespace par {
         }
        
     
-        // group macros based on footprint
+        //
+        // group macros based on area footprint, This will allow for more efficient tiling with
+        // limited wasted space between the macros
+        //
         for(int i = 0; i < _cluster_list.size(); i++)
             if(_cluster_list[i]->getNumMacro() > _min_num_macro)
                 par_cluster_queue.push(_cluster_list[i]);
@@ -1537,9 +1562,9 @@ namespace par {
         updateConnection();
     
 
-        // add virtual weight
-        //cout << "Add final virtual weights between clusters" << endl;
-        //cout << "_virtual_weight:  " << _virtual_weight << endl;
+        //
+        // add virtual weights between std cell and hard macro portion of the cluster
+        //
         unordered_map<int, int>::iterator weight_it = _virtual_map.begin();
         while(weight_it != _virtual_map.end())
         {
@@ -1549,8 +1574,6 @@ namespace par {
             int num_macro_target_id = _cluster_map[target_id]->getNumMacro();
             if(num_macro_id > 0 && num_macro_target_id > 0) {
                 _cluster_map[id]->addOutputConnection(target_id, _virtual_weight);
-                //cout << "Source:  " << _cluster_map[id]->getName() << "   ";
-                //cout << "Target:  " << _cluster_map[target_id]->getName() << endl;
             }
             
             weight_it++;
@@ -1565,6 +1588,7 @@ namespace par {
         
         
 
+        //
         // generate block file
         // Generates the output files needed by the macro placer
         //
@@ -1669,6 +1693,7 @@ namespace ord {
                          unsigned int net_threshold, unsigned int virtual_weight,
                          const char* file_name, Logger* logger)
     {
+        logger->report("IN dbPartitionDesign");
         par::autoclusterMgr* engine = new par::autoclusterMgr(network, db, logger);
         engine->partitionDesign(max_num_macro, min_num_macro, 
                                 max_num_inst,  min_num_inst,

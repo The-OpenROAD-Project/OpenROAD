@@ -33,9 +33,9 @@
 
 include("openroad")
 
-add_library(rtlmp)
+add_library(rmp)
 
-target_sources(rtlmp
+target_sources(rmp
   PRIVATE
     src/rtl_mp.cpp
     src/pin_alignment.cpp
@@ -44,16 +44,19 @@ target_sources(rtlmp
     src/util.cpp
 )
 
-target_include_directories(rtlmp
+messages(
+  TARGET rmp
+)
+
+target_include_directories(rmp
   PUBLIC
     include
 )
 
-target_link_libraries(rtlmp
-  PRIVATE
+target_link_libraries(rmp
+    utl
     dbSta
     OpenSTA
     opendb
-    utl
     gui
 )

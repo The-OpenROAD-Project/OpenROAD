@@ -8,8 +8,8 @@
 #include <random>
 #include <algorithm>
 
-#include "rtlmp/block_placement.h"
-#include "rtlmp/shape_engine.h"
+#include "rmp/block_placement.h"
+#include "rmp/shape_engine.h"
 
 
 namespace pin_alignment {
@@ -165,7 +165,24 @@ namespace pin_alignment {
                 else
                     return false;
             }
-            
+
+
+            void WriteFloorplan(std::string file_name) {
+                 std::cout << "file_name:  " << file_name << std::endl;
+                 std::ofstream file;
+                 file.open(file_name);
+                 for(int i = 0; i < macros_.size(); i++) {
+                     file << macros_[i].GetX() << "   ";
+                     file << macros_[i].GetY() << "   ";
+                     file << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
+                     file << macros_[i].GetY() + macros_[i].GetHeight() << "   ";
+                     file << std::endl;
+                 }
+ 
+                 file.close();
+             }
+
+
             std::vector<shape_engine::Macro> GetMacros() { 
                 std::cout << "outline_width:   " << outline_width_ << "  ";
                 std::cout << "outline_height:  " << outline_height_ << "    ";

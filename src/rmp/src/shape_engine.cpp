@@ -1,4 +1,4 @@
-#include "rtlmp/shape_engine.h"
+#include "rmp/shape_engine.h"
 
 #include <vector>
 #include <random>
@@ -7,8 +7,9 @@
 #include <cmath>
 #include <thread>
 #include <fstream>
+#include <string>
 
-#include "rtlmp/util.h"
+#include "rmp/util.h"
 
 namespace shape_engine {
     using std::unordered_map;
@@ -28,7 +29,8 @@ namespace shape_engine {
     using std::endl;
     using std::thread;
     using std::abs;
-
+    using std::string;
+    using std::to_string;
 
 
     void SimulatedAnnealingCore::PackFloorplan() {       
@@ -242,6 +244,7 @@ namespace shape_engine {
         float rej_threshold = rej_ratio_ * perturb_per_step_;
     
 
+        //while(step <= max_num_step_ && rej_num <= rej_threshold) {
         while(step <= max_num_step_ && rej_num <= rej_threshold) {
             rej_num = 0.0;
             for(int i = 0; i < perturb_per_step_; i++) {
@@ -268,10 +271,11 @@ namespace shape_engine {
                 }
             }
             step++;
-            if(step <= k_)
-                T = init_T_ / (step * c_);
-            else
-                T = init_T_ / step;
+            //if(step <= k_)
+            //    T = init_T_ / (step * c_);
+            //else
+            //    T = init_T_ / step;
+            T = T * 0.99;
         }
         
         pos_seq_ = best_pos_seq;
@@ -284,8 +288,8 @@ namespace shape_engine {
 
 
     // Macro Tile Engine
-    vector<pair<float, float> > TileMacro(vector<Macro> macros, float outline_width,
-        float outline_height, int num_thread, int num_run, unsigned seed) {
+    vector<pair<float, float> > TileMacro(vector<Macro> macros,  string cluster_name, 
+            float outline_width, float outline_height, int num_thread, int num_run, unsigned seed) {
         
         cout << "Begin TileMacro" << endl;
         vector<pair<float, float> > aspect_ratio;
@@ -299,16 +303,14 @@ namespace shape_engine {
         }
 
 
-
-
         // parameterse related to fastSA
         float init_prob = 0.95;
         float rej_ratio = 0.99;
-        int max_num_step = 1000;
+        int max_num_step = 5000;
         int k = 5000;
         float c = 1.0;
         int perturb_per_step = 20 * macros.size();
-        float alpha = 0.8;
+        float alpha = 0.5;
         float pos_swap_prob = 0.4;
         float neg_swap_prob = 0.4;
         float double_swap_prob = 0.2;
@@ -366,6 +368,19 @@ namespace shape_engine {
         vector<pair<int, float> > rank;
         for(int i = 0; i < sa_vector.size(); i++)
             rank.push_back(pair<int, float>(i, sa_vector[i]->GetArea()));
+
+
+        for(int i = 0; i < cluster_name.size(); i++) {
+            if(cluster_name[i] == '/') {
+                cluster_name[i] = '*';
+            }
+        }
+
+        for(int i = 0; i < sa_vector.size(); i++) {
+            string file_name = string("./rtl_mp/") + cluster_name + string("_") + to_string(i) + string(".txt");
+            sa_vector[i]->WriteFloorplan(file_name);
+        }
+
 
         sort(rank.begin(), rank.end(), SortBySecond);
 
@@ -596,7 +611,7 @@ namespace shape_engine {
         for(int i = 0; i < clusters.size(); i++) {
             if(clusters[i]->GetNumMacro() != 0 && class_list[i] == i) {
                 cout << "Cluster name:  " << clusters[i]->GetName() << endl;
-                vector<pair<float, float> > aspect_ratio = TileMacro(clusters[i]->GetMacros(), 
+                vector<pair<float, float> > aspect_ratio = TileMacro(clusters[i]->GetMacros(), clusters[i]->GetName(), 
                     outline_width, outline_height, num_thread, num_run, seed);
                 clusters[i]->SpecifyAspectRatio(aspect_ratio);
             } 
