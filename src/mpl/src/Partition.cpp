@@ -34,15 +34,15 @@
 #include "mpl/Partition.h"
 
 #include "btreeanneal.h"
-#include "mpl/MacroPlacer.h"
 #include "mixedpackingfromdb.h"
+#include "mpl/MacroPlacer.h"
 #include "utl/Logger.h"
 
 namespace mpl {
 
-using std::min;
-using std::max;
 using std::make_pair;
+using std::max;
+using std::min;
 using std::to_string;
 
 using utl::MPL;
@@ -52,7 +52,7 @@ Partition::Partition(PartClass _partClass,
                      double _ly,
                      double _width,
                      double _height,
-                     MacroPlacer *macro_placer,
+                     MacroPlacer* macro_placer,
                      utl::Logger* log)
     : partClass(_partClass),
       lx(_lx),
@@ -71,10 +71,14 @@ Partition::Partition(PartClass _partClass,
 #define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
 #define SOUTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::South))
 
-#define GLOBAL_EAST_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::East))
-#define GLOBAL_WEST_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::West))
-#define GLOBAL_NORTH_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::North))
-#define GLOBAL_SOUTH_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::South))
+#define GLOBAL_EAST_IDX \
+  (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::East))
+#define GLOBAL_WEST_IDX \
+  (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::West))
+#define GLOBAL_NORTH_IDX \
+  (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::North))
+#define GLOBAL_SOUTH_IDX \
+  (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::South))
 
 string Partition::getName(int macroIdx)
 {
@@ -85,7 +89,7 @@ string Partition::getName(int macroIdx)
   }
 }
 
-void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
+void Partition::fillNetlistTable(MacroPartMap& macroPartMap)
 {
   int macro_edge_count = macros_.size() + core_edge_count;
   net_tbl_.resize(macro_edge_count * macro_edge_count);
@@ -97,8 +101,7 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
         net_tbl_[i * macro_edge_count + j] = macro_placer_->weight(i, j);
       }
     }
-  }
-  else {
+  } else {
     for (size_t i = 0; i < net_tbl_.size(); i++) {
       net_tbl_[i] = 0.0;
     }
@@ -116,7 +119,7 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
           if (j < macros_.size()) {
             int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(global_idx1, global_idx2);
+                = macro_placer_->weight(global_idx1, global_idx2);
           }
           // to IO-west case
           else if (j == WEST_IDX) {
@@ -188,28 +191,28 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
           if (j < macros_.size()) {
             int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_WEST_IDX, global_idx2);
+                = macro_placer_->weight(GLOBAL_WEST_IDX, global_idx2);
           }
         } else if (i == EAST_IDX) {
           // to Macro
           if (j < macros_.size()) {
             int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_EAST_IDX, global_idx2);
+                = macro_placer_->weight(GLOBAL_EAST_IDX, global_idx2);
           }
         } else if (i == NORTH_IDX) {
           // to Macro
           if (j < macros_.size()) {
             int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_NORTH_IDX, global_idx2);
+                = macro_placer_->weight(GLOBAL_NORTH_IDX, global_idx2);
           }
         } else if (i == SOUTH_IDX) {
           // to Macro
           if (j < macros_.size()) {
             int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_SOUTH_IDX, global_idx2);
+                = macro_placer_->weight(GLOBAL_SOUTH_IDX, global_idx2);
           }
         }
       }
@@ -260,22 +263,22 @@ bool Partition::anneal()
       pfp::Node pin(coreEdgeString(core_edge), 0, 1, 1, indexTerm++, true);
       double x, y;
       switch (core_edge) {
-      case CoreEdge::West:
-        x = 0.0;
-        y = height / 2.0;
-        break;
-      case CoreEdge::East:
-        x = width;
-        y = height / 2.0;
-        break;
-      case CoreEdge::North:
-        x = width / 2.0;
-        y = height;
-        break;
-      case CoreEdge::South:
-        x = width / 2.0;
-        y = 0.0;
-        break;
+        case CoreEdge::West:
+          x = 0.0;
+          y = height / 2.0;
+          break;
+        case CoreEdge::East:
+          x = width;
+          y = height / 2.0;
+          break;
+        case CoreEdge::North:
+          x = width / 2.0;
+          y = height;
+          break;
+        case CoreEdge::South:
+          x = width / 2.0;
+          y = 0.0;
+          break;
       }
       pin.putX(x);
       pin.putY(y);
@@ -294,9 +297,10 @@ bool Partition::anneal()
         int cost = 0;
         if (!net_tbl_.empty()) {
           // Note that net_tbl only has entries for i < j.
-          // This looks stupid because it is looking at ij and ji entries -cherry
+          // This looks stupid because it is looking at ij and ji entries
+          // -cherry
           cost = net_tbl_[i * macro_edge_count + j]
-            + net_tbl_[j * macro_edge_count + i];
+                 + net_tbl_[j * macro_edge_count + i];
         }
         if (cost != 0) {
           makePins(min(i, j), max(i, j), cost, pnet_idx, pfp_nets);
@@ -337,8 +341,8 @@ bool Partition::anneal()
     param.verb = 0;
 
     // Instantiate BTreeAnnealer Object
-    pfp::BTreeAreaWireAnnealer* annealer =
-      new pfp::BTreeAreaWireAnnealer(*blockInfo, &param, &db);
+    pfp::BTreeAreaWireAnnealer* annealer
+        = new pfp::BTreeAreaWireAnnealer(*blockInfo, &param, &db);
     annealer->go();
 
     const pfp::BTree& sol = annealer->currSolution();
@@ -351,37 +355,35 @@ bool Partition::anneal()
     // flip info initialization for each partition
     bool isFlipX = false, isFlipY = false;
     switch (partClass) {
-      // y flip
-    case NW:
-      isFlipY = true;
-      break;
-      // x, y flip
-    case NE:
-      isFlipX = isFlipY = true;
-      break;
-      // NonFlip
-    case SW:
-      break;
-      // x flip
-    case SE:
-      isFlipX = true;
-      break;
-      // very weird
-    default:
-      break;
+        // y flip
+      case NW:
+        isFlipY = true;
+        break;
+        // x, y flip
+      case NE:
+        isFlipX = isFlipY = true;
+        break;
+        // NonFlip
+      case SW:
+        break;
+        // x flip
+      case SE:
+        isFlipX = true;
+        break;
+        // very weird
+      default:
+        break;
     }
 
     // update partition macro locations
     for (size_t i = 0; i < pfp_nodes->getNumNodes(); i++) {
       pfp::Node& node = pfp_nodes->getNode(i);
-      Macro &macro = macros_[i];
-      macro.lx = (isFlipX)
-        ? width - node.getX() - node.getWidth() + lx
-        : node.getX() + lx;
-      macro.ly = (isFlipY)
-        ? height - node.getY() - node.getHeight() + ly
-        : node.getY() + ly;
-      MacroSpacings &spacings = macro_placer_->getSpacings(macro);
+      Macro& macro = macros_[i];
+      macro.lx = (isFlipX) ? width - node.getX() - node.getWidth() + lx
+                           : node.getX() + lx;
+      macro.ly = (isFlipY) ? height - node.getY() - node.getHeight() + ly
+                           : node.getY() + ly;
+      MacroSpacings& spacings = macro_placer_->getSpacings(macro);
       // Remove halo/channel origin offset.
       macro.lx += spacings.getSpacingX();
       macro.ly += spacings.getSpacingY();
