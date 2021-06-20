@@ -30,69 +30,67 @@
  ***
  ***************************************************************************/
 
-
-#include "FPcommon.h"
 #include "btreeanneal.h"
+
 #include <algorithm>
 #include <random>
-#include "btreecompact.h"
+
+#include "FPcommon.h"
 #include "basepacking.h"
+#include "btreecompact.h"
+#include "debugflags.h"
 #include "mixedpacking.h"
 #include "mixedpackingfromdb.h"
 #include "pltobtree.h"
-#include "debugflags.h"
 
 // parquet data-structures, commented out in order to compile
 // #include "FPcommon.h"
 // #include "DB.h"
 // #include "AnalytSolve.h"
 // #include "CommandLine.h"
-#include "allparquet.h"
-
-#include "skyline.h"
-
-#include <cmath>
-#include <cfloat>
 #include <algorithm>
-#include <iterator>
+#include <cfloat>
+#include <cmath>
 #include <deque>
+#include <iterator>
+
+#include "allparquet.h"
+#include "skyline.h"
 
 namespace parquetfp {
 
+using std::cin;
 using std::cout;
 using std::endl;
-using std::min;
 using std::max;
-using std::cin;
+using std::min;
 using std::vector;
 
-
-static void getObstaclesFromDB(DB *const db, BasePacking &out);
+static void getObstaclesFromDB(DB* const db, BasePacking& out);
 
 // ========================================================
-BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(
-    MixedBlockInfoType& nBlockinfo)
-: BaseAnnealer(),
-  _blockinfo_cleaner(NULL),
-  _blockinfo(nBlockinfo),
-  blockinfo(nBlockinfo),
-  in_curr_solution(_blockinfo.currDimensions),
-  in_next_solution(_blockinfo.currDimensions),
-  in_best_solution(_blockinfo.currDimensions),
-  _slackEval(NULL)
-{}
+BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(MixedBlockInfoType& nBlockinfo)
+    : BaseAnnealer(),
+      _blockinfo_cleaner(NULL),
+      _blockinfo(nBlockinfo),
+      blockinfo(nBlockinfo),
+      in_curr_solution(_blockinfo.currDimensions),
+      in_next_solution(_blockinfo.currDimensions),
+      in_best_solution(_blockinfo.currDimensions),
+      _slackEval(NULL)
+{
+}
 // --------------------------------------------------------
-BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(
-    MixedBlockInfoType& nBlockinfo,
-    const Command_Line *const params,
-    DB *const db)
-: BaseAnnealer(params, db),
-  _blockinfo_cleaner(NULL),
-  _blockinfo(nBlockinfo),
-  blockinfo(nBlockinfo),
-  in_curr_solution(_blockinfo.currDimensions),
-  in_next_solution(_blockinfo.currDimensions),
-  in_best_solution(_blockinfo.currDimensions)
+BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(MixedBlockInfoType& nBlockinfo,
+                                             const Command_Line* const params,
+                                             DB* const db)
+    : BaseAnnealer(params, db),
+      _blockinfo_cleaner(NULL),
+      _blockinfo(nBlockinfo),
+      blockinfo(nBlockinfo),
+      in_curr_solution(_blockinfo.currDimensions),
+      in_next_solution(_blockinfo.currDimensions),
+      in_best_solution(_blockinfo.currDimensions)
 {
   getObstaclesFromDB(db, _obstacleinfo);
   _obstacleFrame[0] = db->getObstacleFrame()[0];
@@ -102,21 +100,20 @@ BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(
   in_best_solution.addObstacles(_obstacleinfo, _obstacleFrame);
   // NOTE: must construct slackEval after trees have been filled with
   // obstacles, or btreeslackeval won't get obstacles
-  _slackEval = new BTreeSlackEval(in_curr_solution); 
+  _slackEval = new BTreeSlackEval(in_curr_solution);
   constructor_core();
 }
 // --------------------------------------------------------
-BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(
-    const Command_Line *const params,
-    DB *const db)
-  : BaseAnnealer(params, db),
-  _blockinfo_cleaner(static_cast<MixedBlockInfoType*>
-      (new MixedBlockInfoTypeFromDB(*db))),
-  _blockinfo(*_blockinfo_cleaner),
-  blockinfo(_blockinfo),
-  in_curr_solution(_blockinfo.currDimensions),
-  in_next_solution(_blockinfo.currDimensions),
-  in_best_solution(_blockinfo.currDimensions)
+BTreeAreaWireAnnealer::BTreeAreaWireAnnealer(const Command_Line* const params,
+                                             DB* const db)
+    : BaseAnnealer(params, db),
+      _blockinfo_cleaner(
+          static_cast<MixedBlockInfoType*>(new MixedBlockInfoTypeFromDB(*db))),
+      _blockinfo(*_blockinfo_cleaner),
+      blockinfo(_blockinfo),
+      in_curr_solution(_blockinfo.currDimensions),
+      in_next_solution(_blockinfo.currDimensions),
+      in_best_solution(_blockinfo.currDimensions)
 {
   getObstaclesFromDB(db, _obstacleinfo);
   _obstacleFrame[0] = db->getObstacleFrame()[0];
@@ -135,46 +132,39 @@ void BTreeAreaWireAnnealer::constructor_core()
   // mgwoo: -noRotation bug fixed here
   Nodes* theNodes = _db->getNodes();
   unsigned numNodes = _db->getNumNodes();
-  for(unsigned i = 0; i < numNodes; ++i)
-  {
-    Node &node = theNodes->getNode(i);
-    if(_params->noRotation ||
-       (!node.isOrientFixed() && node.isHard() &&
-        equalFloat(node.getminAR(), 1.f) && node.allPinsAtCenter))
-    {
+  for (unsigned i = 0; i < numNodes; ++i) {
+    Node& node = theNodes->getNode(i);
+    if (_params->noRotation
+        || (!node.isOrientFixed() && node.isHard()
+            && equalFloat(node.getminAR(), 1.f) && node.allPinsAtCenter)) {
       node.putIsOrientFixed(true);
     }
   }
   // initialize the orientation map
   _physicalOrient.resize(in_curr_solution.NUM_BLOCKS);
-  for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++)
-  {      
+  for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++) {
     _physicalOrient[i].resize(blockinfo.Orient_Num);
-    for (int theta = 0; theta < blockinfo.Orient_Num; theta++)
-    {
+    for (int theta = 0; theta < blockinfo.Orient_Num; theta++) {
       parquetfp::Node& currBlock = _db->getNodes()->getNode(i);
       if (currBlock.isOrientFixed()) {
         _physicalOrient[i][theta] = parquetfp::N;
-      }
-      else {
+      } else {
         _physicalOrient[i][theta] = parquetfp::ORIENT(theta);
         //            _physicalOrient[i][theta] = parquetfp::N;
-        //            cout << "currentOrient: " << _physicalOrient[i][theta] << endl;
+        //            cout << "currentOrient: " << _physicalOrient[i][theta] <<
+        //            endl;
       }
     }
   }
 
   // initialize the dimensions of soft blocks
   for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++)
-    if (blockinfo.blockARinfo[i].isSoft)
-    {
-      float blockAR =
-        max(blockinfo.blockARinfo[i].minAR[0],
-            min(blockinfo.blockARinfo[i].maxAR[0], float(1.0))); // minAR <= AR <= maxAR
-      float blockWidth =
-        sqrt(blockinfo.blockARinfo[i].area * blockAR);
-      float blockHeight =
-        sqrt(blockinfo.blockARinfo[i].area / blockAR);
+    if (blockinfo.blockARinfo[i].isSoft) {
+      float blockAR = max(blockinfo.blockARinfo[i].minAR[0],
+                          min(blockinfo.blockARinfo[i].maxAR[0],
+                              float(1.0)));  // minAR <= AR <= maxAR
+      float blockWidth = sqrt(blockinfo.blockARinfo[i].area * blockAR);
+      float blockHeight = sqrt(blockinfo.blockARinfo[i].area / blockAR);
 
       _blockinfo.setBlockDimensions(i, blockWidth, blockHeight, 0);
     }
@@ -185,83 +175,93 @@ void BTreeAreaWireAnnealer::constructor_core()
   in_next_solution = in_curr_solution;
 
   // initialize the orientations of nodes in *_db if necessary
-  for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++)
-  {
+  for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++) {
     int initOrient = int(in_curr_solution.tree[i].orient);
     initOrient = _physicalOrient[i][initOrient];
 
     float initWidth = in_curr_solution.width(i);
     float initHeight = in_curr_solution.height(i);
 
-    _db->getNodes()->changeOrient(i, parquetfp::ORIENT(initOrient),
-        *(_db->getNets()));
+    _db->getNodes()->changeOrient(
+        i, parquetfp::ORIENT(initOrient), *(_db->getNets()));
     _db->getNodes()->putNodeWidth(i, initWidth);
     _db->getNodes()->putNodeHeight(i, initHeight);
   }
 
-
   // -----debug messages-----
-  for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++)
-  {
+  for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++) {
     for (int thetaIt = 0; thetaIt < blockinfo.Orient_Num; thetaIt++)
-      if ((_db->getNodes()->getNode(i)).isOrientFixed() &&
-          int(in_curr_solution.tree[i].orient) != 0)
-      {
+      if ((_db->getNodes()->getNode(i)).isOrientFixed()
+          && int(in_curr_solution.tree[i].orient) != 0) {
         cout << "ctor: orient of block[" << i << "] should be \"n\"" << endl;
         printf("in_curr_solution:orient %d\n",
-            int(in_curr_solution.tree[i].orient));
+               int(in_curr_solution.tree[i].orient));
         cin.get();
       }
 
-    if (_params->minWL && (int(in_curr_solution.tree[i].orient) !=
-          int(_db->getNodes()->getNode(i).getOrient())))
-    {
+    if (_params->minWL
+        && (int(in_curr_solution.tree[i].orient)
+            != int(_db->getNodes()->getNode(i).getOrient()))) {
       cout << "ctor: orient of block[" << i << "] is not consistent" << endl;
       printf("in_curr_solution:orient %d vs. _db->orient: %d\n",
-          int(in_curr_solution.tree[i].orient),
-          int(_db->getNodes()->getNode(i).getOrient()));
+             int(in_curr_solution.tree[i].orient),
+             int(_db->getNodes()->getNode(i).getOrient()));
       cin.get();
     }
 
     int theta = in_curr_solution.tree[i].orient;
-    if (std::abs(in_curr_solution.width(i) - blockinfo.currDimensions[i].width[theta]) > 1e-6)
-    {
-      printf("ctor: width of block[%d] is not consistent.  in_curr_soln: %.2f vs. blockinfo: %.2f\n",
-          i, in_curr_solution.width(i), blockinfo.currDimensions[i].width[theta]);
+    if (std::abs(in_curr_solution.width(i)
+                 - blockinfo.currDimensions[i].width[theta])
+        > 1e-6) {
+      printf(
+          "ctor: width of block[%d] is not consistent.  in_curr_soln: %.2f vs. "
+          "blockinfo: %.2f\n",
+          i,
+          in_curr_solution.width(i),
+          blockinfo.currDimensions[i].width[theta]);
       cin.get();
     }
 
-    if (std::abs(in_curr_solution.height(i) - blockinfo.currDimensions[i].height[theta]) > 1e-6)
-    {
-      printf("ctor: height of block[%d] is not consistent.  in_curr_soln: %.2f vs. blockinfo: %.2f\n",
-          i, in_curr_solution.height(i), blockinfo.currDimensions[i].height[theta]);
+    if (std::abs(in_curr_solution.height(i)
+                 - blockinfo.currDimensions[i].height[theta])
+        > 1e-6) {
+      printf(
+          "ctor: height of block[%d] is not consistent.  in_curr_soln: %.2f "
+          "vs. blockinfo: %.2f\n",
+          i,
+          in_curr_solution.height(i),
+          blockinfo.currDimensions[i].height[theta]);
       cin.get();
     }
 
-    if (_params->minWL && std::abs(in_curr_solution.width(i) - _db->getNodes()->getNodeWidth(i)) > 1e-6)
-    {
-      printf("ctor: width of block[%d] is not consistent.  in_curr_solution: %.2f vs._db: %.2f\n",
-          i, in_curr_solution.width(i), _db->getNodes()->getNodeWidth(i));
+    if (_params->minWL
+        && std::abs(in_curr_solution.width(i)
+                    - _db->getNodes()->getNodeWidth(i))
+               > 1e-6) {
+      printf(
+          "ctor: width of block[%d] is not consistent.  in_curr_solution: %.2f "
+          "vs._db: %.2f\n",
+          i,
+          in_curr_solution.width(i),
+          _db->getNodes()->getNodeWidth(i));
       cin.get();
     }
   }
 }
 // --------------------------------------------------------
 bool BTreeAreaWireAnnealer::go()
-{      
+{
   DBfromSoln(in_curr_solution);
 
-  //turn off rotation for hard square macros
-  //with pins in the center
+  // turn off rotation for hard square macros
+  // with pins in the center
   Nodes* theNodes = _db->getNodes();
   unsigned numNodes = _db->getNumNodes();
-  for(unsigned i = 0; i < numNodes; ++i)
-  {
-    Node &node = theNodes->getNode(i);
-    if(_params->noRotation ||
-       (!node.isOrientFixed() && node.isHard() &&
-        equalFloat(node.getminAR(), 1.f) && node.allPinsAtCenter))
-    {
+  for (unsigned i = 0; i < numNodes; ++i) {
+    Node& node = theNodes->getNode(i);
+    if (_params->noRotation
+        || (!node.isOrientFixed() && node.isHard()
+            && equalFloat(node.getminAR(), 1.f) && node.allPinsAtCenter)) {
       node.putIsOrientFixed(true);
     }
   }
@@ -269,7 +269,8 @@ bool BTreeAreaWireAnnealer::go()
   //   for(int i=0; i<numNodes; i++) {
   //      Node &node = theNodes->getNode(i);
   //      cout << "i: " << node.isOrientFixed() << endl;
-  //      cout << node.getName() << " " << node.getWidth() << " " << node.getHeight () << endl;
+  //      cout << node.getName() << " " << node.getWidth() << " " <<
+  //      node.getHeight () << endl;
   //   }
 
   bool success = false;
@@ -281,11 +282,12 @@ bool BTreeAreaWireAnnealer::go()
   //  cout << "before DB from soln" << endl;
   // update *_db for locs, dimensions and slacks
   DBfromSoln(in_curr_solution);
-//  cout << "after DB from soln" << endl;
+  //  cout << "after DB from soln" << endl;
 
-//  for(int i=0; i<in_curr_solution.xloc().size(); i++) {
-//    cout << i << " " << in_curr_solution.xloc()[i] << " " << in_curr_solution.yloc()[i] << endl;
-//  }
+  //  for(int i=0; i<in_curr_solution.xloc().size(); i++) {
+  //    cout << i << " " << in_curr_solution.xloc()[i] << " " <<
+  //    in_curr_solution.yloc()[i] << endl;
+  //  }
 
   in_best_solution = in_curr_solution;
 
@@ -296,9 +298,10 @@ bool BTreeAreaWireAnnealer::go()
   currSoln.height = in_curr_solution.totalHeight();
   bool useWts = true;
 #ifdef USEFLUTE
-  currSoln.HPWL = _db->evalHPWL(useWts,_params->scaleTerms,_params->useSteiner);
+  currSoln.HPWL
+      = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
 #else
-  currSoln.HPWL = _db->evalHPWL(useWts,_params->scaleTerms);
+  currSoln.HPWL = _db->evalHPWL(useWts, _params->scaleTerms);
 #endif
   printResults(currSoln);
 
@@ -308,52 +311,48 @@ bool BTreeAreaWireAnnealer::go()
 void BTreeAreaWireAnnealer::DBfromSoln(const BTree& soln)
 {
   _db->updatePlacement(const_cast<vector<float>&>(soln.xloc()),
-      const_cast<vector<float>&>(soln.yloc()));
-  for (int i = 0; i < soln.NUM_BLOCKS; i++)
-  {
-    parquetfp::ORIENT newOrient =
-      parquetfp::ORIENT(soln.tree[i].orient);
+                       const_cast<vector<float>&>(soln.yloc()));
+  for (int i = 0; i < soln.NUM_BLOCKS; i++) {
+    parquetfp::ORIENT newOrient = parquetfp::ORIENT(soln.tree[i].orient);
     _db->getNodes()->changeOrient(i, newOrient, *(_db->getNets()));
     _db->getNodes()->putNodeWidth(i, soln.width(i));
     _db->getNodes()->putNodeHeight(i, soln.height(i));
   }
 
-//  cout << "Before evaluate Slacks: " << endl;
-//  for(int i=0; i<soln.xloc().size(); i++) {
-//    cout << i << " " << soln.xloc()[i] << " " << soln.yloc()[i] << endl;
-//  }
+  //  cout << "Before evaluate Slacks: " << endl;
+  //  for(int i=0; i<soln.xloc().size(); i++) {
+  //    cout << i << " " << soln.xloc()[i] << " " << soln.yloc()[i] << endl;
+  //  }
 
   _slackEval->evaluateSlacks(soln);
 
-//  cout << "After evaluate Slacks: " << endl;
-//  for(int i=0; i<soln.xloc().size(); i++) {
-//    cout << i << " " << soln.xloc()[i] << " " << soln.yloc()[i] << endl;
-//  }
-
+  //  cout << "After evaluate Slacks: " << endl;
+  //  for(int i=0; i<soln.xloc().size(); i++) {
+  //    cout << i << " " << soln.xloc()[i] << " " << soln.yloc()[i] << endl;
+  //  }
 
   int blocknum = soln.NUM_BLOCKS;
-  vector<float> xSlacks(blocknum); // % x-slacks
-  vector<float> ySlacks(blocknum); // % y-slacks
+  vector<float> xSlacks(blocknum);  // % x-slacks
+  vector<float> ySlacks(blocknum);  // % y-slacks
   float totalWidth = soln.totalWidth();
   float totalHeight = soln.totalHeight();
-  for (int i = 0; i < blocknum; i++)
-  {
+  for (int i = 0; i < blocknum; i++) {
     xSlacks[i] = (_slackEval->xSlack()[i] / totalWidth) * 100;
     ySlacks[i] = (_slackEval->ySlack()[i] / totalHeight) * 100;
-  }      
+  }
   _db->updateSlacks(xSlacks, ySlacks);
 
 #ifdef PARQUET_DEBUG_HAYWARD_ASSERT_BTREEANNEAL
-  for (int i = 0; i < blocknum; i++)
-  {
+  for (int i = 0; i < blocknum; i++) {
     int theta = soln.tree[i].orient;
-    if (theta != _physicalOrient[i][theta])
-    {
+    if (theta != _physicalOrient[i][theta]) {
       printf("block: %d theta: %d physicalOrient: %d\n",
-          i, theta, _physicalOrient[i][theta]);
+             i,
+             theta,
+             _physicalOrient[i][theta]);
       cin.get();
     }
-  }   
+  }
 #endif
 }
 // --------------------------------------------------------
@@ -361,67 +360,63 @@ bool BTreeAreaWireAnnealer::packOneBlock()
 {
   const float blocksArea = in_curr_solution.blockArea();
   const float reqdAR = _params->reqdAR;
-  const float reqdArea = blocksArea * (1+(_params->maxWS/100.0));
+  const float reqdArea = blocksArea * (1 + (_params->maxWS / 100.0));
   const float reqdWidth = sqrt(reqdArea * reqdAR);
   const float reqdHeight = reqdWidth / reqdAR;
 
-  const vector<float> defaultXloc(1, 0); // 1 copy of "0"
+  const vector<float> defaultXloc(1, 0);  // 1 copy of "0"
   const vector<float> defaultYloc(1, 0);
   const int defaultOrient = 0;
 
-  if(_params->verb > 0)
+  if (_params->verb > 0)
     cout << "Only one block is detected, deterministic algo used." << endl;
 
   if (_params->reqdAR != FREE_OUTLINE && _params->verb > 0)
-    cout << "outline width: " << reqdWidth
-      << " outline height: " << reqdHeight << endl;
+    cout << "outline width: " << reqdWidth << " outline height: " << reqdHeight
+         << endl;
 
-  int bestOrient = defaultOrient; 
+  int bestOrient = defaultOrient;
 
   float bestHPWL = basepacking_h::Dimension::Infty;
   bool success = false;
-  for (int theta = 0;
-      theta < basepacking_h::Dimension::Orient_Num; theta++) 
-  {
-    if(_db->getNodes()->getNode(0).isOrientFixed() && theta > 0) break;
+  for (int theta = 0; theta < basepacking_h::Dimension::Orient_Num; theta++) {
+    if (_db->getNodes()->getNode(0).isOrientFixed() && theta > 0)
+      break;
 
     in_curr_solution.rotate(0, theta);
 
     float blockWidth = in_curr_solution.width(0);
     float blockHeight = in_curr_solution.height(0);
-    bool fitsInside = ((_params->reqdAR == FREE_OUTLINE) ||
-        ((blockWidth <= reqdWidth) &&
-         (blockHeight <= reqdHeight)));
+    bool fitsInside
+        = ((_params->reqdAR == FREE_OUTLINE)
+           || ((blockWidth <= reqdWidth) && (blockHeight <= reqdHeight)));
 
-    if(_params->verb > 0)
-      cout << "orient: " << theta
-        << " width: " << blockWidth
-        << " height: " << blockHeight
-        << " inside: " << ((fitsInside)? "T" : "F");
+    if (_params->verb > 0)
+      cout << "orient: " << theta << " width: " << blockWidth
+           << " height: " << blockHeight
+           << " inside: " << ((fitsInside) ? "T" : "F");
 
     success = success || fitsInside;
-    if (fitsInside && _params->minWL)
-    {
+    if (fitsInside && _params->minWL) {
       DBfromSoln(in_curr_solution);
       bool useWts = true;
 #ifdef USEFLUTE
-      float currHPWL = _db->evalHPWL(useWts,_params->scaleTerms,_params->useSteiner);
+      float currHPWL
+          = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
 #else
-      float currHPWL = _db->evalHPWL(useWts,_params->scaleTerms);
+      float currHPWL = _db->evalHPWL(useWts, _params->scaleTerms);
 #endif
 
-      if(_params->verb > 0)
+      if (_params->verb > 0)
         cout << " HPWL: " << currHPWL;
-      if (currHPWL < bestHPWL)
-      {
+      if (currHPWL < bestHPWL) {
         bestOrient = theta;
         bestHPWL = currHPWL;
       }
-    }
-    else if (fitsInside)
+    } else if (fitsInside)
       bestOrient = theta;
 
-    if(_params->verb > 0)
+    if (_params->verb > 0)
       cout << endl;
   }
 
@@ -436,7 +431,7 @@ bool BTreeAreaWireAnnealer::anneal()
 {
   // options
   const bool budgetTime = _params->budgetTime;
-  float seconds = _params->seconds;  
+  float seconds = _params->seconds;
   const bool minWL = _params->minWL;
 
   // input params
@@ -457,12 +452,11 @@ bool BTreeAreaWireAnnealer::anneal()
   //   const float reqdHeight = reqdWidth/reqdAR;
 
   // const float real_reqdAR = _params->reqdAR;
-  const float real_reqdArea = blocksArea * (1+(_params->maxWS/100.0));
-  const float real_reqdWidth = sqrt(real_reqdArea*reqdAR);
+  const float real_reqdArea = blocksArea * (1 + (_params->maxWS / 100.0));
+  const float real_reqdWidth = sqrt(real_reqdArea * reqdAR);
   const float real_reqdHeight = real_reqdWidth / reqdAR;
-//  const float maxDist = sqrt(real_reqdWidth * real_reqdWidth * 
-//      real_reqdHeight * real_reqdHeight);
-  
+  //  const float maxDist = sqrt(real_reqdWidth * real_reqdWidth *
+  //      real_reqdHeight * real_reqdHeight);
 
   // save attributes of the best solution
   // float bestArea = FLT_MAX;
@@ -478,60 +472,55 @@ bool BTreeAreaWireAnnealer::anneal()
   unsigned int iter = UNSIGNED_UNINITIALIZED;
   unsigned int masterMoveSel = 0;
 
-  bool moveAccepted = false; 
+  bool moveAccepted = false;
   bool brokeFromLoop = false;
 
-  float total=seconds, percent=1;
+  float total = seconds, percent = 1;
   unsigned int moves = 1000;
 
-  //Added by DAP to support terminate on 
-  //acceptence ratio less than 0.5%
-  //unsigned accept_ct = 0;
-  bool saved_best=false;
-
+  // Added by DAP to support terminate on
+  // acceptence ratio less than 0.5%
+  // unsigned accept_ct = 0;
+  bool saved_best = false;
 
   _db->updatePlacement(const_cast<vector<float>&>(in_curr_solution.xloc()),
-      const_cast<vector<float>&>(in_curr_solution.yloc()));
+                       const_cast<vector<float>&>(in_curr_solution.yloc()));
   bool useWts = true;
 #ifdef USEFLUTE
-  float currHPWL = _db->evalHPWL(useWts,_params->scaleTerms,_params->useSteiner);
+  float currHPWL
+      = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
 #else
-  float currHPWL = _db->evalHPWL(useWts,_params->scaleTerms);
+  float currHPWL = _db->evalHPWL(useWts, _params->scaleTerms);
 #endif
 
-//  float currDist = in_curr_solution.getDistance(real_reqdWidth, real_reqdHeight);
+  //  float currDist = in_curr_solution.getDistance(real_reqdWidth,
+  //  real_reqdHeight);
 
   SkylineContour mapY(in_curr_solution, true);
-  float currWastedArea = 
-    in_curr_solution.totalContourArea()
-    + mapY.GetContourArea() 
-    - 2.0 * in_curr_solution.blockArea();
+  float currWastedArea = in_curr_solution.totalContourArea()
+                         + mapY.GetContourArea()
+                         - 2.0 * in_curr_solution.blockArea();
 
-
-
-  // calculate wastedArea 
-//  SkylineContour mapX(in_curr_solution), mapY(in_curr_solution, true);
-//  float currWastedContArea 
-//        = mapX.GetContourArea() 
-//        + mapY.GetContourArea() 
-//        - 2.0 * in_curr_solution.blockArea();
-
+  // calculate wastedArea
+  //  SkylineContour mapX(in_curr_solution), mapY(in_curr_solution, true);
+  //  float currWastedContArea
+  //        = mapX.GetContourArea()
+  //        + mapY.GetContourArea()
+  //        - 2.0 * in_curr_solution.blockArea();
 
   float bestHPWL = currHPWL;
   float bestArea = std::numeric_limits<float>::max();
-//  float bestDist = std::numeric_limits<float>::min();
+  //  float bestDist = std::numeric_limits<float>::min();
   float bestWastedArea = std::numeric_limits<float>::max();
 
-  while(currTime > _params->timeCool || budgetTime)
-  {
+  while (currTime > _params->timeCool || budgetTime) {
     brokeFromLoop = false;
     iter = 0;
 
     // ----------------------------------------
     // an iteration under the same termperature
     // ----------------------------------------
-    do
-    {
+    do {
       // -----------------------
       // select and apply a move
       // -----------------------
@@ -543,7 +532,7 @@ bool BTreeAreaWireAnnealer::anneal()
       float currWidth = in_curr_solution.totalWidth();
       float currAR = currWidth / currHeight;
 
-      ++count; 
+      ++count;
       ++iter;
       prev_move = move;
 
@@ -562,39 +551,37 @@ bool BTreeAreaWireAnnealer::anneal()
       float newHeight = UNINITIALIZED;
 
       //         float deadspacePercent = (currArea / blocksArea - 1) * 100;
-      if(_params->softBlocks &&
+      if (_params->softBlocks &&
           //            deadspacePercent < _params->startSoftMovePercent &&
           masterMoveSel == 1)
-        move = packSoftBlocks(2); // needs its return-value (-1)!!!
+        move = packSoftBlocks(2);  // needs its return-value (-1)!!!
 
-      else if(_params->softBlocks &&
-          //                 deadspacePercent < _params->startSoftMovePercent &&
-          masterMoveSel > 950)
+      else if (_params->softBlocks &&
+               //                 deadspacePercent <
+               //                 _params->startSoftMovePercent &&
+               masterMoveSel > 950)
         move = makeSoftBlMove(index, newWidth, newHeight);
 
-      else if (((reqdAR-currAR)/reqdAR > 0.00005 || 
-            (currAR-reqdAR)/reqdAR > 0.00005) && 
-          (timeChangeCtr % 4) == 0 && reqdAR != FREE_OUTLINE)
-      {            
+      else if (((reqdAR - currAR) / reqdAR > 0.00005
+                || (currAR - reqdAR) / reqdAR > 0.00005)
+               && (timeChangeCtr % 4) == 0 && reqdAR != FREE_OUTLINE) {
         //             move = makeMove(indexOrient, newOrient, oldOrient);
         move = makeARMove();
       }
 
       else if (/*false && !minWL &&*/
-          currTime < 30 && (timeChangeCtr % 5) == 0) {
-//        move = compactBlocks();  
+               currTime < 30 && (timeChangeCtr % 5) == 0) {
+        //        move = compactBlocks();
       }
 
-      else if (moveSelect < 150)
-      {
+      else if (moveSelect < 150) {
         if (reqdAR != FREE_OUTLINE)
           move = makeARMove();
-        else 
+        else
           move = makeMove(indexOrient, newOrient, oldOrient);
       }
 
-      else if (moveSelect < 300 && minWL)
-      {
+      else if (moveSelect < 300 && minWL) {
         if (reqdAR != FREE_OUTLINE)
           move = makeARWLMove();
         else
@@ -606,102 +593,105 @@ bool BTreeAreaWireAnnealer::anneal()
 
       // -----additional book-keeping for special moves-----
       // for orientation moves
-      if (move == REP_SPEC_ORIENT || move == ORIENT)
-      {
+      if (move == REP_SPEC_ORIENT || move == ORIENT) {
         // temp values
-        if (minWL)
-        {
-          _db->getNodes()->changeOrient(indexOrient, newOrient,
-              *(_db->getNets()));
+        if (minWL) {
+          _db->getNodes()->changeOrient(
+              indexOrient, newOrient, *(_db->getNets()));
         }
       }
 
       // for soft-block moves
-      if (move == SOFT_BL)
-      {
+      if (move == SOFT_BL) {
         int indexTheta = in_curr_solution.tree[index].orient;
-        _blockinfo.setBlockDimensions(index,
-            newWidth, newHeight, indexTheta);
-//        cout << "Next Solution Evaluate" << endl;
+        _blockinfo.setBlockDimensions(index, newWidth, newHeight, indexTheta);
+        //        cout << "Next Solution Evaluate" << endl;
         in_next_solution.evaluate(in_curr_solution.tree);
 
-        if (minWL)
-        {
+        if (minWL) {
           _db->getNodes()->putNodeWidth(index, newWidth);
           _db->getNodes()->putNodeHeight(index, newHeight);
         }
-      }            
+      }
 
       // attributes of "in_next_solution"
-      float tempHeight = in_next_solution.totalHeight(); 
-      float tempWidth = in_next_solution.totalWidth();  
+      float tempHeight = in_next_solution.totalHeight();
+      float tempWidth = in_next_solution.totalWidth();
       float tempArea = in_next_solution.totalArea();
       float tempAR = tempWidth / tempHeight;
       float tempHPWL = UNINITIALIZED;
-//      float tempDist = in_next_solution.getDistance( real_reqdWidth, real_reqdHeight);
+      //      float tempDist = in_next_solution.getDistance( real_reqdWidth,
+      //      real_reqdHeight);
 
       SkylineContour mapY(in_next_solution, true);
 
-      float tempWastedArea = 
-        in_next_solution.totalContourArea()
-        + mapY.GetContourArea()
-        - 2.0 * in_next_solution.blockArea();
-      
+      float tempWastedArea = in_next_solution.totalContourArea()
+                             + mapY.GetContourArea()
+                             - 2.0 * in_next_solution.blockArea();
 
       // -----------------------------------------------------
       // evaulate the temporary solution and calculate "delta"
       // -----------------------------------------------------
 
       float deltaArea = 0;
-      float deltaHPWL = 0;  
+      float deltaHPWL = 0;
       float deltaAR = UNINITIALIZED;
       float delta = UNINITIALIZED;
-//      float deltaDist = UNINITIALIZED;
-      float deltaWastedArea= UNINITIALIZED;
+      //      float deltaDist = UNINITIALIZED;
+      float deltaWastedArea = UNINITIALIZED;
 
       /* area objective */
       if (currTime > 30)
-        deltaArea = ((tempArea-currArea)*1.2*_params->timeInit) / blocksArea;
+        deltaArea
+            = ((tempArea - currArea) * 1.2 * _params->timeInit) / blocksArea;
       else
-        deltaArea = ((tempArea-currArea)*1.5*_params->timeInit) / blocksArea;
-
+        deltaArea
+            = ((tempArea - currArea) * 1.5 * _params->timeInit) / blocksArea;
 
       /* area objective */
       if (currTime > 30)
-        deltaWastedArea= ((tempWastedArea-currWastedArea)*1.2*_params->timeInit) / blocksArea;
+        deltaWastedArea
+            = ((tempWastedArea - currWastedArea) * 1.2 * _params->timeInit)
+              / blocksArea;
       else
-        deltaWastedArea= ((tempWastedArea-currWastedArea)*1.5*_params->timeInit) / blocksArea;
+        deltaWastedArea
+            = ((tempWastedArea - currWastedArea) * 1.5 * _params->timeInit)
+              / blocksArea;
 
-      
-//      deltaDist = -1 * ((tempDist-currDist) * _params->timeInit) / maxDist;
+      //      deltaDist = -1 * ((tempDist-currDist) * _params->timeInit) /
+      //      maxDist;
 
-      /* HPWL objective if applicable */ 
-      if (minWL)
-      {
-        _db->updatePlacement(const_cast<vector<float>&>(in_next_solution.xloc()),
+      /* HPWL objective if applicable */
+      if (minWL) {
+        _db->updatePlacement(
+            const_cast<vector<float>&>(in_next_solution.xloc()),
             const_cast<vector<float>&>(in_next_solution.yloc()));
-//        cout << "placement Info Updated! curr" << endl;
-//        for(int i=0; i<in_curr_solution.xloc().size(); i++) {
-//          cout << i << " " << in_curr_solution.xloc(i) << " " << in_curr_solution.yloc(i) << endl;
-//        }
-//        cout << "placement Info Updated! next" << endl;
-//        for(int i=0; i<in_next_solution.xloc().size(); i++) {
-//          cout << i << " " << in_next_solution.xloc(i) << " " << in_next_solution.yloc(i) << endl;
-//        }
+        //        cout << "placement Info Updated! curr" << endl;
+        //        for(int i=0; i<in_curr_solution.xloc().size(); i++) {
+        //          cout << i << " " << in_curr_solution.xloc(i) << " " <<
+        //          in_curr_solution.yloc(i) << endl;
+        //        }
+        //        cout << "placement Info Updated! next" << endl;
+        //        for(int i=0; i<in_next_solution.xloc().size(); i++) {
+        //          cout << i << " " << in_next_solution.xloc(i) << " " <<
+        //          in_next_solution.yloc(i) << endl;
+        //        }
 
 #ifdef USEFLUTE
-        tempHPWL = _db->evalHPWL(useWts,_params->scaleTerms,_params->useSteiner);
+        tempHPWL
+            = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
 #else
-        tempHPWL = _db->evalHPWL(useWts,_params->scaleTerms);
+        tempHPWL = _db->evalHPWL(useWts, _params->scaleTerms);
 #endif
-        if(currHPWL == 0)
+        if (currHPWL == 0)
           deltaHPWL = 0;
-        else
-        {
-          if(currTime>30)
-            deltaHPWL = ((tempHPWL-currHPWL)*1.2*_params->timeInit)/currHPWL; // 1.2
+        else {
+          if (currTime > 30)
+            deltaHPWL = ((tempHPWL - currHPWL) * 1.2 * _params->timeInit)
+                        / currHPWL;  // 1.2
           else
-            deltaHPWL = ((tempHPWL-currHPWL)*1.5*_params->timeInit)/currHPWL; // 1.5
+            deltaHPWL = ((tempHPWL - currHPWL) * 1.5 * _params->timeInit)
+                        / currHPWL;  // 1.5
         }
       }
 
@@ -716,121 +706,114 @@ bool BTreeAreaWireAnnealer::anneal()
       // //          /* x-viol + y-viol objective */
       // //          deltaArea=0.5*1.3*_params->timeInit*
       // //             (abs(tempHeight-currHeight) / (reqdHeight) +
-      // //              abs(tempWidth-currWidth) / (reqdWidth));         
+      // //              abs(tempWidth-currWidth) / (reqdWidth));
       //          }
 
-      //if (_isFixedOutline && getNumObstacles())
+      // if (_isFixedOutline && getNumObstacles())
       //{ // XXX <aaronnn> compute cost using outline violations, rather than AR
-      //  // when obstacles are present (because AR is meaningless when there are obstacles)
-      //  // max(x-viol, y-viol) objective
+      //   // when obstacles are present (because AR is meaningless when there
+      //   are obstacles)
+      //   // max(x-viol, y-viol) objective
 
-      //    float deltaHeight = ((tempHeight-currHeight)*1.3*_params->timeInit)/(real_reqdHeight);
-      //    float deltaWidth = ((tempWidth-currWidth)*1.3*_params->timeInit)/(real_reqdWidth);
+      //    float deltaHeight =
+      //    ((tempHeight-currHeight)*1.3*_params->timeInit)/(real_reqdHeight);
+      //    float deltaWidth =
+      //    ((tempWidth-currWidth)*1.3*_params->timeInit)/(real_reqdWidth);
 
-      //    if (deltaHeight > 0 && deltaWidth > 0) 
+      //    if (deltaHeight > 0 && deltaWidth > 0)
       //   	 deltaArea = deltaHeight + deltaWidth;
       //    else if (deltaHeight > 0)
       //   	 deltaArea = deltaHeight;
       //    else if (deltaWidth > 0)
       //   	 deltaArea = deltaWidth;
-      //    else 
+      //    else
       //   	 deltaArea = deltaHeight + deltaWidth;
       //}
 
       /* AR and overall objective */
       delta = deltaArea;
-      if(reqdAR != FREE_OUTLINE)
-      {            
-        deltaAR = ((tempAR - reqdAR)*(tempAR - reqdAR) -
-            (currAR - reqdAR)*(currAR - reqdAR)) * 20 * _params->timeInit; // 10 // 1.2
+      if (reqdAR != FREE_OUTLINE) {
+        deltaAR = ((tempAR - reqdAR) * (tempAR - reqdAR)
+                   - (currAR - reqdAR) * (currAR - reqdAR))
+                  * 20 * _params->timeInit;  // 10 // 1.2
 
         // This Function !!!
-        if(minWL) {
-//          delta = (areaWeight * deltaArea +
-//              wireWeight * deltaHPWL +
-//              ARWeight * deltaAR);
-//          delta = 0.2 * deltaHPWL +
-//                  0.6 * deltaWastedContArea;        
-//          delta = 0.2 * deltaHPWL + 0.4 * deltaAR + 0.4 * deltaDist;
+        if (minWL) {
+          //          delta = (areaWeight * deltaArea +
+          //              wireWeight * deltaHPWL +
+          //              ARWeight * deltaAR);
+          //          delta = 0.2 * deltaHPWL +
+          //                  0.6 * deltaWastedContArea;
+          //          delta = 0.2 * deltaHPWL + 0.4 * deltaAR + 0.4 * deltaDist;
           delta = 0.2 * deltaHPWL + 0.4 * deltaAR + 0.4 * deltaWastedArea;
-//          delta = 0.4 * deltaAR + 0.8 * deltaWastedArea;
-//          cout << "c: " << count << " dHpwl: " << deltaHPWL 
-//            << " dAR:" << deltaAR << " dWArea:" << deltaWastedArea<< endl;
-  
-        }
-        else
-          delta = ((areaWeight + wireWeight/2.0) * deltaArea + 
-              (ARWeight + wireWeight/2.0) * deltaAR);
+          //          delta = 0.4 * deltaAR + 0.8 * deltaWastedArea;
+          //          cout << "c: " << count << " dHpwl: " << deltaHPWL
+          //            << " dAR:" << deltaAR << " dWArea:" << deltaWastedArea<<
+          //            endl;
 
-      }
-      else if(minWL)
-      {
-        delta = ((areaWeight + ARWeight/2.0)*deltaArea + 
-            (wireWeight + ARWeight/2.0)*deltaHPWL);
-      }
-      else
+        } else
+          delta = ((areaWeight + wireWeight / 2.0) * deltaArea
+                   + (ARWeight + wireWeight / 2.0) * deltaAR);
+
+      } else if (minWL) {
+        delta = ((areaWeight + ARWeight / 2.0) * deltaArea
+                 + (wireWeight + ARWeight / 2.0) * deltaHPWL);
+      } else
         delta = deltaArea;
-      // finish calculating "delta"        
+      // finish calculating "delta"
 
       // --------------------------------------------------
       // decide whether a move is accepted based on "delta"
       // --------------------------------------------------
 
-//      cout << "Iter: " << iter << " Delta: " << delta << endl;
+      //      cout << "Iter: " << iter << " Delta: " << delta << endl;
 
       if (delta < 0 || move == MISC)
-        moveAccepted = true;         
-      else if (currTime > _params->timeCool) 
-        // become greedy below time > timeCool
+        moveAccepted = true;
+      else if (currTime > _params->timeCool)
+      // become greedy below time > timeCool
       {
         float ran = rand() % 10000;
         float r = float(ran) / 9999;
-        if (r < exp(-1*delta/currTime))
+        if (r < exp(-1 * delta / currTime))
           moveAccepted = true;
         else
           moveAccepted = false;
-      }
-      else
+      } else
         moveAccepted = false;
 
-
       // -----update current solution if accept-----
-      if (moveAccepted && move != MISC)
-      {
-//        cout << "Move Accepted!!" << endl;
+      if (moveAccepted && move != MISC) {
+        //        cout << "Move Accepted!!" << endl;
         in_curr_solution = in_next_solution;
         currHPWL = tempHPWL;
-//        currDist = tempDist;
+        //        currDist = tempDist;
         currWastedArea = tempWastedArea;
       }
 
       // -----additional book-keeping for special moves-----
-      if (move == REP_SPEC_ORIENT || move == ORIENT)
-      {
+      if (move == REP_SPEC_ORIENT || move == ORIENT) {
         // if move not accepted, then put back "oldOrient"
-        parquetfp::ORIENT actualOrient =
-          parquetfp::ORIENT(in_curr_solution.tree[indexOrient].orient);
+        parquetfp::ORIENT actualOrient
+            = parquetfp::ORIENT(in_curr_solution.tree[indexOrient].orient);
 
         if (minWL) {
-          _db->getNodes()->changeOrient(indexOrient, actualOrient,
-              *(_db->getNets()));
-//          cout << "After Changing Orient" << endl;
-//          cout << ""
+          _db->getNodes()->changeOrient(
+              indexOrient, actualOrient, *(_db->getNets()));
+          //          cout << "After Changing Orient" << endl;
+          //          cout << ""
         }
       }
 
-      if (move == SOFT_BL)
-      {
+      if (move == SOFT_BL) {
         // if move not accepted, then put back "oldWidth/Height"
         float actualWidth = in_curr_solution.width(index);
         float actualHeight = in_curr_solution.height(index);
         int actualTheta = in_curr_solution.tree[index].orient;
-        _blockinfo.setBlockDimensions(index,
-            actualWidth, actualHeight,
-            actualTheta);
+        _blockinfo.setBlockDimensions(
+            index, actualWidth, actualHeight, actualTheta);
 
-        if (minWL)
-        {
+        if (minWL) {
           _db->getNodes()->putNodeWidth(index, actualWidth);
           _db->getNodes()->putNodeHeight(index, actualHeight);
         }
@@ -838,42 +821,31 @@ bool BTreeAreaWireAnnealer::anneal()
 
       // check the best updates
       bool updateBest = false;
-      if (_params->reqdAR != FREE_OUTLINE)
-      {
-        if (minWL)
-        {
-          updateBest = (currWidth <= real_reqdWidth &&
-              currHeight <= real_reqdHeight &&
-              currHPWL < bestHPWL &&
-              currWastedArea < bestWastedArea );
-//              currDist > bestDist);
-//          cout << "HPWL: " << currHPWL << " " << bestHPWL << endl;
+      if (_params->reqdAR != FREE_OUTLINE) {
+        if (minWL) {
+          updateBest
+              = (currWidth <= real_reqdWidth && currHeight <= real_reqdHeight
+                 && currHPWL < bestHPWL && currWastedArea < bestWastedArea);
+          //              currDist > bestDist);
+          //          cout << "HPWL: " << currHPWL << " " << bestHPWL << endl;
+        } else {
+          updateBest
+              = (currWidth <= real_reqdWidth && currHeight <= real_reqdHeight
+                 && currArea < bestArea);
         }
-        else
-        {
-          updateBest = (currWidth <= real_reqdWidth &&
-              currHeight <= real_reqdHeight &&
-              currArea < bestArea);
-        }
-      }
-      else if (minWL)
-      {
-        float currCost =
-          areaWeight * currArea + wireWeight * currHPWL;
-        float bestCost =
-          areaWeight * bestArea + wireWeight * bestHPWL;
+      } else if (minWL) {
+        float currCost = areaWeight * currArea + wireWeight * currHPWL;
+        float bestCost = areaWeight * bestArea + wireWeight * bestHPWL;
 
         updateBest = (currCost < bestCost);
-      }
-      else
+      } else
         updateBest = (currArea < bestArea);
 
-      if (updateBest) 
-      {
-        saved_best=true;
+      if (updateBest) {
+        saved_best = true;
         bestHPWL = currHPWL;
         bestArea = currArea;
-//        bestDist = currDist;
+        //        bestDist = currDist;
         bestWastedArea = currWastedArea;
         in_best_solution = in_curr_solution;
       }
@@ -884,34 +856,32 @@ bool BTreeAreaWireAnnealer::anneal()
       // ------------------------------
 
       // Final Termination!!
-      if (minWL/* && _params->startTime > 100*/)//for lowT anneal don't have this condition
+      if (minWL /* && _params->startTime > 100*/)  // for lowT anneal don't have
+                                                   // this condition
       {
-        // hhchan TODO:  clean-up this code mess 
-        if(currArea <= real_reqdArea && currHeight <= real_reqdHeight && 
-            currWidth <= real_reqdWidth && reqdAR != FREE_OUTLINE && currTime < 5) {
-//          cout << "case1 !!!" << endl;
+        // hhchan TODO:  clean-up this code mess
+        if (currArea <= real_reqdArea && currHeight <= real_reqdHeight
+            && currWidth <= real_reqdWidth && reqdAR != FREE_OUTLINE
+            && currTime < 5) {
+          //          cout << "case1 !!!" << endl;
           return true;
         }
 
-        if (reqdAR != FREE_OUTLINE && currTime < 5 && 
-            _params->dontClusterMacros && _params->solveTop)
-        {
+        if (reqdAR != FREE_OUTLINE && currTime < 5 && _params->dontClusterMacros
+            && _params->solveTop) {
           float widthWMacroOnly = _db->getXSizeWMacroOnly();
           float heightWMacroOnly = _db->getYSizeWMacroOnly();
 
-          if (widthWMacroOnly <= real_reqdWidth &&
-              heightWMacroOnly <= real_reqdHeight) {
-//            cout << "case2 !!!" << endl;
+          if (widthWMacroOnly <= real_reqdWidth
+              && heightWMacroOnly <= real_reqdHeight) {
+            //            cout << "case2 !!!" << endl;
             return true;
           }
         }
-      }
-      else
-      {
-        if(currArea <= real_reqdArea && currHeight <= real_reqdHeight && 
-            currWidth <= real_reqdWidth && reqdAR != FREE_OUTLINE) 
-        {
-//          cout << "case3 !!!" << endl;
+      } else {
+        if (currArea <= real_reqdArea && currHeight <= real_reqdHeight
+            && currWidth <= real_reqdWidth && reqdAR != FREE_OUTLINE) {
+          //          cout << "case3 !!!" << endl;
           return true;
         }
       }
@@ -922,67 +892,115 @@ bool BTreeAreaWireAnnealer::anneal()
 
 #ifdef PARQUET_DEBUG_HAYWARD_ASSERT_BTREEANNEAL
       // -----debugging messages-----
-      for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++)
-      {
-        if (minWL && (int(in_curr_solution.tree[i].orient) !=
-              int(_db->getNodes()->getNode(i).getOrient())))
-        {
-          cout << "round [" << count << "]: orient of block[" << i << "] is not consistent" << endl;
+      for (int i = 0; i < in_curr_solution.NUM_BLOCKS; i++) {
+        if (minWL
+            && (int(in_curr_solution.tree[i].orient)
+                != int(_db->getNodes()->getNode(i).getOrient()))) {
+          cout << "round [" << count << "]: orient of block[" << i
+               << "] is not consistent" << endl;
           printf("in_curr_solution:orient %d vs. _db->orient: %d, move: %d",
-              int(in_curr_solution.tree[i].orient),
-              int(_db->getNodes()->getNode(i).getOrient()), move);
+                 int(in_curr_solution.tree[i].orient),
+                 int(_db->getNodes()->getNode(i).getOrient()),
+                 move);
           cin.get();
         }
 
         int theta = in_curr_solution.tree[i].orient;
-        if (theta != int(_physicalOrient[i][theta]))
-        {
-          printf("round[%d]: orient of block[%d] is not consistent, in_curr_soln: %d vs phyOrient: %d move: %d\n",
-              count, i, theta, _physicalOrient[i][theta], move);
+        if (theta != int(_physicalOrient[i][theta])) {
+          printf(
+              "round[%d]: orient of block[%d] is not consistent, in_curr_soln: "
+              "%d vs phyOrient: %d move: %d\n",
+              count,
+              i,
+              theta,
+              _physicalOrient[i][theta],
+              move);
           cin.get();
         }
 
-        if (std::abs(in_curr_solution.width(i) - blockinfo.currDimensions[i].width[theta]) > 1e-6)
-        {
-          printf("round[%d]: width of block[%d] is not consistent.  in_curr_soln: %.2f vs. blockinfo: %.2f move: %d prevMove: %d\n",
-              count, i, in_curr_solution.width(i), blockinfo.currDimensions[i].width[theta], move, prev_move);
-          printf("round[%d]: oldWidth: %.2f oldHeight: %.2f newWidth: %.2f newHeight: %.2f moveAccepted: %s\n",
-              count, -1.0, -1.0, newWidth, newHeight, (moveAccepted)? "T" : "F");
+        if (std::abs(in_curr_solution.width(i)
+                     - blockinfo.currDimensions[i].width[theta])
+            > 1e-6) {
+          printf(
+              "round[%d]: width of block[%d] is not consistent.  in_curr_soln: "
+              "%.2f vs. blockinfo: %.2f move: %d prevMove: %d\n",
+              count,
+              i,
+              in_curr_solution.width(i),
+              blockinfo.currDimensions[i].width[theta],
+              move,
+              prev_move);
+          printf(
+              "round[%d]: oldWidth: %.2f oldHeight: %.2f newWidth: %.2f "
+              "newHeight: %.2f moveAccepted: %s\n",
+              count,
+              -1.0,
+              -1.0,
+              newWidth,
+              newHeight,
+              (moveAccepted) ? "T" : "F");
           cin.get();
         }
 
-        if (std::abs(in_curr_solution.height(i) - blockinfo.currDimensions[i].height[theta]) > 1e-6)
-        {
-          printf("round[%d]: height of block[%d] is not consistent.  in_curr_soln: %.2f vs. blockinfo: %.2f move: %d prevMove: %d\n",
-              count, i, in_curr_solution.height(i), blockinfo.currDimensions[i].height[theta], move, prev_move);
-          printf("round[%d]: oldWidth: %.2f oldHeight: %.2f newWidth: %.2f newHeight: %.2f moveAccepted: %s\n",
-              count, -1.0, -1.0, newWidth, newHeight, (moveAccepted)? "T" : "F");
+        if (std::abs(in_curr_solution.height(i)
+                     - blockinfo.currDimensions[i].height[theta])
+            > 1e-6) {
+          printf(
+              "round[%d]: height of block[%d] is not consistent.  "
+              "in_curr_soln: %.2f vs. blockinfo: %.2f move: %d prevMove: %d\n",
+              count,
+              i,
+              in_curr_solution.height(i),
+              blockinfo.currDimensions[i].height[theta],
+              move,
+              prev_move);
+          printf(
+              "round[%d]: oldWidth: %.2f oldHeight: %.2f newWidth: %.2f "
+              "newHeight: %.2f moveAccepted: %s\n",
+              count,
+              -1.0,
+              -1.0,
+              newWidth,
+              newHeight,
+              (moveAccepted) ? "T" : "F");
           cin.get();
         }
 
-        if (minWL && std::abs(in_curr_solution.width(i) - _db->getNodes()->getNodeWidth(i)) > 1e-6)
-        {
-          printf("round[%d]: width of block[%d] is not consistent.  in_curr_solution: %.2f vs._db: %.2f move: %d\n",
-              count, i, in_curr_solution.width(i), _db->getNodes()->getNodeWidth(i), move);
+        if (minWL
+            && std::abs(in_curr_solution.width(i)
+                        - _db->getNodes()->getNodeWidth(i))
+                   > 1e-6) {
+          printf(
+              "round[%d]: width of block[%d] is not consistent.  "
+              "in_curr_solution: %.2f vs._db: %.2f move: %d\n",
+              count,
+              i,
+              in_curr_solution.width(i),
+              _db->getNodes()->getNodeWidth(i),
+              move);
           cin.get();
         }
 
-        if (in_curr_solution.width(i) < 1e-10 ||
-            in_curr_solution.height(i) < 1e-10)
-        {
+        if (in_curr_solution.width(i) < 1e-10
+            || in_curr_solution.height(i) < 1e-10) {
           printf("round[%d]: width of block[%d]: %f height: %f move: %d\n",
-              count, i, in_curr_solution.width(i), in_curr_solution.height(i), move);
+                 count,
+                 i,
+                 in_curr_solution.width(i),
+                 in_curr_solution.height(i),
+                 move);
           cin.get();
         }
       }
       // -----end of debugging messages-----
-#endif        
-//      cout << "iter: " << iter << " size: " << 4*size << " bTime: " << budgetTime << endl;
+#endif
+      //      cout << "iter: " << iter << " size: " << 4*size << " bTime: " <<
+      //      budgetTime << endl;
     }
-//    while (iter < 4*size || budgetTime);
-    while (iter < 10*size || budgetTime);
+    //    while (iter < 4*size || budgetTime);
+    while (iter < 10 * size || budgetTime);
 
-//    cout << "whileBreak Iter: " << iter << endl;
+    //    cout << "whileBreak Iter: " << iter << endl;
     // finish the loop under constant temperature
 
     // -----------------------------
@@ -991,9 +1009,8 @@ bool BTreeAreaWireAnnealer::anneal()
 
     float alpha = UNINITIALIZED;
     ++timeChangeCtr;
-    if (budgetTime)
-    {
-      percent = seconds/total;
+    if (budgetTime) {
+      percent = seconds / total;
 
       if (percent < 0.66666 && percent > 0.33333)
         alpha = 0.9f;
@@ -1001,15 +1018,13 @@ bool BTreeAreaWireAnnealer::anneal()
         alpha = 0.95f;
       else if (percent < 0.16666 && percent > 0.06666)
         alpha = 0.96f;
-      else if(percent <.06666 && percent >.00333)
+      else if (percent < .06666 && percent > .00333)
         alpha = 0.8f;
-      else if(percent <.00333 && percent >.00003)
+      else if (percent < .00333 && percent > .00003)
         alpha = 0.98f;
       else
         alpha = 0.85f;
-    }
-    else
-    {
+    } else {
       if (currTime < 2000 && currTime > 1000)
         alpha = 0.9f;
       else if (currTime < 1000 && currTime > 500)
@@ -1023,16 +1038,16 @@ bool BTreeAreaWireAnnealer::anneal()
       else
         alpha = 0.85f;
     }
-//    cout << "currTime: " << currTime << " -> ";
+    //    cout << "currTime: " << currTime << " -> ";
     currTime *= alpha;
-//    cout << currTime << endl;
+    //    cout << currTime << endl;
     if (brokeFromLoop)
       break;
   }
-  if(saved_best)
+  if (saved_best)
     in_curr_solution = in_best_solution;
-    //   if(_params->verb.getForActions() > 0)
-//  cout << "NumMoves attempted: " << count << endl;
+  //   if(_params->verb.getForActions() > 0)
+  //  cout << "NumMoves attempted: " << count << endl;
   if (reqdAR != FREE_OUTLINE)
     return false;
   else
@@ -1043,64 +1058,71 @@ bool BTreeAreaWireAnnealer::anneal()
 void BTreeAreaWireAnnealer::takePlfromDB()
 {
   Pl2BTree converter(_db->getXLocs(),
-      _db->getYLocs(),
-      _db->getNodeWidths(),
-      _db->getNodeHeights(),
-      Pl2BTree::TCG);
+                     _db->getYLocs(),
+                     _db->getNodeWidths(),
+                     _db->getNodeHeights(),
+                     Pl2BTree::TCG);
   in_curr_solution.evaluate(converter.btree());
   in_next_solution = in_curr_solution;
 }
 // --------------------------------------------------------
-void BTreeAreaWireAnnealer::compactSoln(bool minWL, bool fixedOutline, float reqdH, float reqdW)
+void BTreeAreaWireAnnealer::compactSoln(bool minWL,
+                                        bool fixedOutline,
+                                        float reqdH,
+                                        float reqdW)
 {
-  //TO DO: have this function check for WL and fixedOutline
+  // TO DO: have this function check for WL and fixedOutline
   BTreeCompactor compactor(in_curr_solution);
 
   int round = 0;
   int numBlkChange = compactor.compact();
   float lastArea = in_curr_solution.totalArea();
   float currArea = compactor.totalArea();
-  while (numBlkChange > 0)
-  {
-    if(_params->verb)
+  while (numBlkChange > 0) {
+    if (_params->verb)
       printf("round[%d] %d blks moved, area: %.2f -> %.2f\n",
-          round, numBlkChange, lastArea, currArea);
+             round,
+             numBlkChange,
+             lastArea,
+             currArea);
 
     numBlkChange = compactor.compact();
     round++;
     lastArea = currArea;
     currArea = compactor.totalArea();
   }
-  if(_params->verb > 0)
+  if (_params->verb > 0)
     printf("round[%d] %d blks moved, area: %.2f -> %.2f\n",
-        round, numBlkChange, lastArea, currArea);
+           round,
+           numBlkChange,
+           lastArea,
+           currArea);
 
   in_curr_solution = compactor;
   DBfromSoln(in_curr_solution);
 }
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeMove(int& indexOrient,
-    parquetfp::ORIENT& newOrient,
-    parquetfp::ORIENT& oldOrient)
+                                    parquetfp::ORIENT& newOrient,
+                                    parquetfp::ORIENT& oldOrient)
 {
   BTree::MoveType move = get_move();
   indexOrient = UNSIGNED_UNINITIALIZED;
   newOrient = parquetfp::N;
   oldOrient = parquetfp::N;
-  switch(move)
-  {
+  switch (move) {
     case BTree::SWAP:
-//      cout << "makeMoveSwap" << endl;
+      //      cout << "makeMoveSwap" << endl;
       perform_swap();
       return 1;
 
     case BTree::ROTATE:
-//      cout << "makeMoveRotate" << endl;
+      //      cout << "makeMoveRotate" << endl;
       perform_rotate(indexOrient, newOrient, oldOrient);
       return int(REP_SPEC_ORIENT);
 
     case BTree::MOVE:
-//      cout << "makeMoveSimple" << endl;
+      //      cout << "makeMoveSimple" << endl;
       perform_move();
       return 3;
 
@@ -1113,7 +1135,7 @@ int BTreeAreaWireAnnealer::makeMove(int& indexOrient,
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeMoveSlacks()
 {
-//  cout << "makeMoveSlacks" << endl;
+  //  cout << "makeMoveSlacks" << endl;
   int movedir = rand() % 100;
   int threshold = 50;
   bool horizontal = (movedir < threshold);
@@ -1124,7 +1146,7 @@ int BTreeAreaWireAnnealer::makeMoveSlacks()
   static int numHoriz = 0;
 
   total++;
-  numHoriz += ((horizontal)? 1 : 0);
+  numHoriz += ((horizontal) ? 1 : 0);
 
   if (total % 1000 == 0 && _params->verb > 0)
     cout << "total: " << total << "horiz: " << numHoriz << endl;
@@ -1133,7 +1155,7 @@ int BTreeAreaWireAnnealer::makeMoveSlacks()
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeARMove()
 {
-//  cout << "makeARMove" << endl;
+  //  cout << "makeARMove" << endl;
   float currWidth = in_curr_solution.totalWidth();
   float currHeight = in_curr_solution.totalHeight();
   float currAR = currWidth / currHeight;
@@ -1147,13 +1169,13 @@ int BTreeAreaWireAnnealer::makeARMove()
 // --------------------------------------------------------
 void BTreeAreaWireAnnealer::makeMoveSlacksCore(bool horizontal)
 {
-//  cout << "makeMoveSlacksCore" << endl;
+  //  cout << "makeMoveSlacksCore" << endl;
   _slackEval->evaluateSlacks(in_curr_solution);
-//  cout << "End SlackEval!!" << endl;
+  //  cout << "End SlackEval!!" << endl;
 
   vector<int> indices_sorted;
-  const vector<float>& slacks = (horizontal)?
-    _slackEval->xSlack() : _slackEval->ySlack();
+  const vector<float>& slacks
+      = (horizontal) ? _slackEval->xSlack() : _slackEval->ySlack();
 
   sort_slacks(slacks, indices_sorted);
 
@@ -1162,22 +1184,19 @@ void BTreeAreaWireAnnealer::makeMoveSlacksCore(bool horizontal)
 
   int operand_ptr = rand() % range;
   int operand = indices_sorted[operand_ptr];
-  while (operand_ptr > 0 && slacks[operand] > 0)
-  {
+  while (operand_ptr > 0 && slacks[operand] > 0) {
     operand_ptr--;
     operand = indices_sorted[operand_ptr];
   }
 
   int target_ptr = blocknum - 1 - (rand() % range);
   int target = indices_sorted[target_ptr];
-  while (target_ptr < (blocknum-1) && slacks[target] <= 0)
-  {
+  while (target_ptr < (blocknum - 1) && slacks[target] <= 0) {
     target_ptr++;
     target = indices_sorted[target_ptr];
   }
 
-  if (target == operand 
-      || slacks[operand] < 0 || slacks[target] < 0)
+  if (target == operand || slacks[operand] < 0 || slacks[target] < 0)
     return;
 
   in_next_solution = in_curr_solution;
@@ -1186,7 +1205,7 @@ void BTreeAreaWireAnnealer::makeMoveSlacksCore(bool horizontal)
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeHPWLMove()
 {
-//  cout << "makeHPWLMove" << endl;
+  //  cout << "makeHPWLMove" << endl;
   int size = in_curr_solution.NUM_BLOCKS;
   int operand = rand() % size;
   int target = UNSIGNED_UNINITIALIZED;
@@ -1194,16 +1213,13 @@ int BTreeAreaWireAnnealer::makeHPWLMove()
   vector<int> searchBlocks;
   locateSearchBlocks(operand, searchBlocks);
 
-  if (searchBlocks.size() > 0)
-  {
+  if (searchBlocks.size() > 0) {
     int temp = rand() % searchBlocks.size();
     target = searchBlocks[temp];
-  }
-  else
-  {
+  } else {
     do
       target = rand() % size;
-    while(target == operand);
+    while (target == operand);
   }
 
   bool leftChild = bool(rand() % 2);
@@ -1214,24 +1230,26 @@ int BTreeAreaWireAnnealer::makeHPWLMove()
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeARWLMove()
 {
-//  cout << "makeARWLMove" << endl;
-//  cout << "before EvalSlack xloc yloc" << endl;
-//  for(int i=0; i<in_curr_solution.NUM_BLOCKS; i++) {
-//    cout << i << " " << in_curr_solution.xloc(i) << "  " << in_curr_solution.yloc(i) << endl;
-//  }
+  //  cout << "makeARWLMove" << endl;
+  //  cout << "before EvalSlack xloc yloc" << endl;
+  //  for(int i=0; i<in_curr_solution.NUM_BLOCKS; i++) {
+  //    cout << i << " " << in_curr_solution.xloc(i) << "  " <<
+  //    in_curr_solution.yloc(i) << endl;
+  //  }
   _slackEval->evaluateSlacks(in_curr_solution);
-  
-//  cout << "End SlackEval!!" << endl;
-//  for(int i=0; i<in_curr_solution.NUM_BLOCKS; i++) {
-//    cout << i << " " << in_curr_solution.xloc(i) << "  " << in_curr_solution.yloc(i) << endl;
-//  }
+
+  //  cout << "End SlackEval!!" << endl;
+  //  for(int i=0; i<in_curr_solution.NUM_BLOCKS; i++) {
+  //    cout << i << " " << in_curr_solution.xloc(i) << "  " <<
+  //    in_curr_solution.yloc(i) << endl;
+  //  }
 
   const float reqdAR = _params->reqdAR;
-  const float currAR =
-    in_curr_solution.totalWidth() / in_curr_solution.totalHeight();
+  const float currAR
+      = in_curr_solution.totalWidth() / in_curr_solution.totalHeight();
   const bool horizontal = currAR > reqdAR;
-  const vector<float>& slacks = (horizontal)?
-    _slackEval->xSlack() : _slackEval->ySlack(); 
+  const vector<float>& slacks
+      = (horizontal) ? _slackEval->xSlack() : _slackEval->ySlack();
 
   vector<int> indices_sorted;
   sort_slacks(slacks, indices_sorted);
@@ -1241,8 +1259,7 @@ int BTreeAreaWireAnnealer::makeARWLMove()
 
   int operand_ptr = rand() % range;
   int operand = indices_sorted[operand_ptr];
-  while (operand_ptr > 0 && slacks[operand] > 0)
-  {
+  while (operand_ptr > 0 && slacks[operand] > 0) {
     operand_ptr--;
     operand = indices_sorted[operand_ptr];
   }
@@ -1252,19 +1269,14 @@ int BTreeAreaWireAnnealer::makeARWLMove()
 
   int target = UNSIGNED_UNINITIALIZED;
   float maxSlack = -1;
-  if (searchBlocks.size() == 0)
-  {
+  if (searchBlocks.size() == 0) {
     do
       target = rand() % blocknum;
-    while(target == operand);
-  }
-  else
-  {
-    for (unsigned int i = 0; i < searchBlocks.size(); i++)
-    {
+    while (target == operand);
+  } else {
+    for (unsigned int i = 0; i < searchBlocks.size(); i++) {
       int thisBlk = searchBlocks[i];
-      if (slacks[thisBlk] > maxSlack)
-      {
+      if (slacks[thisBlk] > maxSlack) {
         maxSlack = slacks[thisBlk];
         target = thisBlk;
       }
@@ -1277,36 +1289,34 @@ int BTreeAreaWireAnnealer::makeARWLMove()
     return ARWL;
   }
 
-//  cout << "REVERT!!! xloc yloc" << endl;
-//  for(int i=0; i<in_curr_solution.NUM_BLOCKS; i++) {
-//    cout << i << " " << in_curr_solution.xloc(i) << "  " << in_curr_solution.yloc(i) << endl;
-//  }
+  //  cout << "REVERT!!! xloc yloc" << endl;
+  //  for(int i=0; i<in_curr_solution.NUM_BLOCKS; i++) {
+  //    cout << i << " " << in_curr_solution.xloc(i) << "  " <<
+  //    in_curr_solution.yloc(i) << endl;
+  //  }
   in_next_solution = in_curr_solution;
-//  cout << "next solution move!!!" << endl;
-//  in_curr_solution.move(operand, target, horizontal);
+  //  cout << "next solution move!!!" << endl;
+  //  in_curr_solution.move(operand, target, horizontal);
   in_next_solution.move(operand, target, horizontal);
-  return ARWL; 
+  return ARWL;
 }
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeSoftBlMove(int& index,
-    float& newWidth,
-    float& newHeight)
+                                          float& newWidth,
+                                          float& newHeight)
 {
   _slackEval->evaluateSlacks(in_curr_solution);
 
   int moveDir = rand() % 2;
-  bool horizontal = (moveDir%2 == 0);
+  bool horizontal = (moveDir % 2 == 0);
   index = getSoftBlIndex(horizontal);
 
   if (index == NOT_FOUND)
     index = getSoftBlIndex(!horizontal);
 
-  if (index != NOT_FOUND)
-  {
+  if (index != NOT_FOUND) {
     return getSoftBlNewDimensions(index, newWidth, newHeight);
-  }
-  else
-  {
+  } else {
     newWidth = NOT_FOUND;
     newHeight = NOT_FOUND;
     return MISC;
@@ -1316,27 +1326,24 @@ int BTreeAreaWireAnnealer::makeSoftBlMove(int& index,
 int BTreeAreaWireAnnealer::getSoftBlIndex(bool horizontal) const
 {
   const int blocknum = in_curr_solution.NUM_BLOCKS;
-  const vector<float>& slacks = (horizontal)?
-    _slackEval->xSlack() : _slackEval->ySlack();
+  const vector<float>& slacks
+      = (horizontal) ? _slackEval->xSlack() : _slackEval->ySlack();
 
-  const vector<float>& orth_slacks = (horizontal)?
-    _slackEval->ySlack() : _slackEval->xSlack();
+  const vector<float>& orth_slacks
+      = (horizontal) ? _slackEval->ySlack() : _slackEval->xSlack();
 
   vector<int> indices_sorted;
   sort_slacks(slacks, indices_sorted);
 
-  int operand = NOT_FOUND; // "-1" stands for not found
-  for (int i = 0; (i < blocknum) && (operand == NOT_FOUND); i++)
-  {
+  int operand = NOT_FOUND;  // "-1" stands for not found
+  for (int i = 0; (i < blocknum) && (operand == NOT_FOUND); i++) {
     int index = indices_sorted[i];
-    if (slacks[index] < 0 || orth_slacks[index] < 0) 
-    {
+    if (slacks[index] < 0 || orth_slacks[index] < 0) {
       // <aaronnn> skip these blocks affected by obstacles
       continue;
     }
 
-    if (blockinfo.blockARinfo[index].isSoft)
-    {
+    if (blockinfo.blockARinfo[index].isSoft) {
       int theta = in_curr_solution.tree[index].orient;
       float minAR = blockinfo.blockARinfo[index].minAR[theta];
       float maxAR = blockinfo.blockARinfo[index].maxAR[theta];
@@ -1345,34 +1352,30 @@ int BTreeAreaWireAnnealer::getSoftBlIndex(bool horizontal) const
       float currHeight = in_curr_solution.height(index);
       float currAR = currWidth / currHeight;
 
-      bool adjustable = (horizontal)?
-        (currAR > minAR) : (currAR < maxAR);
+      bool adjustable = (horizontal) ? (currAR > minAR) : (currAR < maxAR);
 
-      float reqdLength = (horizontal)? _outlineHeight : _outlineWidth;
-      float currLength = (horizontal)? currHeight : currWidth; 
-      float slackAdjustment = ((_isFixedOutline)
-          ? currLength - reqdLength : 0.0);
+      float reqdLength = (horizontal) ? _outlineHeight : _outlineWidth;
+      float currLength = (horizontal) ? currHeight : currWidth;
+      float slackAdjustment
+          = ((_isFixedOutline) ? currLength - reqdLength : 0.0);
       float normalizedSlack = orth_slacks[index] - slackAdjustment;
       if (normalizedSlack > 0 && adjustable)
         operand = index;
     }
   }
   return operand;
-}   
+}
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::getSoftBlNewDimensions(int index,
-    float& newWidth,
-    float& newHeight) const
+                                                  float& newWidth,
+                                                  float& newHeight) const
 {
-  if (_slackEval->xSlack()[index] < 0
-      || _slackEval->ySlack()[index] < 0) 
-  {
+  if (_slackEval->xSlack()[index] < 0 || _slackEval->ySlack()[index] < 0) {
     // don't touch nodes around obstacles
     return NOOP;
   }
 
-  if (blockinfo.blockARinfo[index].isSoft)
-  {
+  if (blockinfo.blockARinfo[index].isSoft) {
     float origWidth = in_curr_solution.width(index);
     float origHeight = in_curr_solution.height(index);
     float indexArea = blockinfo.blockARinfo[index].area;
@@ -1380,14 +1383,13 @@ int BTreeAreaWireAnnealer::getSoftBlNewDimensions(int index,
     int theta = in_curr_solution.tree[index].orient;
     float minAR = blockinfo.blockARinfo[index].minAR[theta];
     float maxAR = blockinfo.blockARinfo[index].maxAR[theta];
-    if (_isFixedOutline)
-    {
+    if (_isFixedOutline) {
       const bool agressiveAR = false;
       // ((in_curr_solution.totalArea() / _outlineArea - 1)
       //                              < _params->startSoftMovePercent / 100.0);
-      minAR = (agressiveAR)? minAR : max(minAR, float(1.0/3.0));
-      maxAR = (agressiveAR)? maxAR : min(maxAR, float(3.0));
-    }            
+      minAR = (agressiveAR) ? minAR : max(minAR, float(1.0 / 3.0));
+      maxAR = (agressiveAR) ? maxAR : min(maxAR, float(3.0));
+    }
 
     float maxWidth = sqrt(indexArea * maxAR);
     float minWidth = sqrt(indexArea * minAR);
@@ -1395,60 +1397,55 @@ int BTreeAreaWireAnnealer::getSoftBlNewDimensions(int index,
     float maxHeight = sqrt(indexArea / minAR);
     float minHeight = sqrt(indexArea / maxAR);
 
-    float indexSlackX = _slackEval->xSlack()[index];         
+    float indexSlackX = _slackEval->xSlack()[index];
     float indexSlackY = _slackEval->ySlack()[index];
 
     // adjustment <= 0.75 * actual slack
-    float slackAdjustmentX = (_isFixedOutline)
-      ? (in_curr_solution.totalWidth() - _outlineWidth) : 0.0;
+    float slackAdjustmentX
+        = (_isFixedOutline) ? (in_curr_solution.totalWidth() - _outlineWidth)
+                            : 0.0;
     //      slackAdjustmentX = max(slackAdjustmentX, 0.0);
     //      slackAdjustmentX = min(slackAdjustmentX, 0.75 * indexSlackX);
 
-    float slackAdjustmentY = (_isFixedOutline)
-      ? (in_curr_solution.totalHeight() - _outlineHeight) : 0.0;
+    float slackAdjustmentY
+        = (_isFixedOutline) ? (in_curr_solution.totalHeight() - _outlineHeight)
+                            : 0.0;
     //      slackAdjustmentY = max(slackAdjustmentY, 0.0);
     //      slackAdjustmentY = min(slackAdjustmentY, 0.75 * indexSlackY);
 
     float normalizedSlackX = indexSlackX - slackAdjustmentX;
     float normalizedSlackY = indexSlackY - slackAdjustmentY;
-    if (normalizedSlackX > normalizedSlackY)
-    {
-      newWidth = min(origWidth+normalizedSlackX, maxWidth);
+    if (normalizedSlackX > normalizedSlackY) {
+      newWidth = min(origWidth + normalizedSlackX, maxWidth);
       newWidth = max(newWidth, minWidth);
 
       newHeight = indexArea / newWidth;
-    }
-    else
-    {
-      newHeight = min(origHeight+normalizedSlackY, maxHeight);
+    } else {
+      newHeight = min(origHeight + normalizedSlackY, maxHeight);
       newHeight = max(newHeight, minHeight);
 
       newWidth = indexArea / newHeight;
     }
     return SOFT_BL;
-  }
-  else
+  } else
     return NOOP;
 }
 // --------------------------------------------------------
 int BTreeAreaWireAnnealer::packSoftBlocks(int numIter)
 {
   const int NUM_BLOCKS = in_curr_solution.NUM_BLOCKS;
-  for (int iter = 0; iter < numIter; iter++)
-  {
+  for (int iter = 0; iter < numIter; iter++) {
     bool horizontal = (iter % 2 == 0);
     _slackEval->evaluateSlacks(in_curr_solution);
 
-    const vector<float>& slacks = (horizontal)?
-      _slackEval->xSlack() : _slackEval->ySlack();
+    const vector<float>& slacks
+        = (horizontal) ? _slackEval->xSlack() : _slackEval->ySlack();
 
     vector<int> indices_sorted;
     sort_slacks(slacks, indices_sorted);
-    for (int i = 0; i < NUM_BLOCKS; i++)
-    {
+    for (int i = 0; i < NUM_BLOCKS; i++) {
       int index = indices_sorted[i];
-      if (slacks[index] < 0) 
-      {
+      if (slacks[index] < 0) {
         // <aaronnn> skip these blocks affected by obstacles
         continue;
       }
@@ -1459,8 +1456,7 @@ int BTreeAreaWireAnnealer::packSoftBlocks(int numIter)
       float newWidth, newHeight;
       int softDecision = makeIndexSoftBlMove(index, newWidth, newHeight);
 
-      if (softDecision == SOFT_BL)
-      {
+      if (softDecision == SOFT_BL) {
         // change dimensions only when needed
         int theta = in_curr_solution.tree[index].orient;
         _blockinfo.setBlockDimensions(index, newWidth, newHeight, theta);
@@ -1469,17 +1465,13 @@ int BTreeAreaWireAnnealer::packSoftBlocks(int numIter)
 
         float origTotalArea = in_curr_solution.totalArea();
         float newTotalArea = in_next_solution.totalArea();
-        if (newTotalArea < origTotalArea)
-        {
+        if (newTotalArea < origTotalArea) {
           in_curr_solution = in_next_solution;
-          if (_params->minWL)
-          {
+          if (_params->minWL) {
             _db->getNodes()->putNodeWidth(index, newWidth);
             _db->getNodes()->putNodeHeight(index, newHeight);
           }
-        }
-        else
-        {
+        } else {
           _blockinfo.setBlockDimensions(index, origWidth, origHeight, theta);
         }
       }
@@ -1489,13 +1481,13 @@ int BTreeAreaWireAnnealer::packSoftBlocks(int numIter)
 }
 // --------------------------------------------------------
 void BTreeAreaWireAnnealer::locateSearchBlocks(int operand,
-    vector<int>& searchBlocks)
+                                               vector<int>& searchBlocks)
 {
   int size = in_curr_solution.NUM_BLOCKS;
   vector<bool> seenBlocks(size, false);
   seenBlocks[operand] = true;
-  float unitRadiusSize = max(in_curr_solution.totalWidth(),
-      in_curr_solution.totalHeight());
+  float unitRadiusSize
+      = max(in_curr_solution.totalWidth(), in_curr_solution.totalHeight());
   unitRadiusSize /= sqrt(float(size));
 
   vector<float>& xloc = const_cast<vector<float>&>(in_curr_solution.xloc());
@@ -1505,21 +1497,19 @@ void BTreeAreaWireAnnealer::locateSearchBlocks(int operand,
 
   int searchRadiusNum = int(ceil(size / 5.0));
   float searchRadius = 0;
-  for(int i = 0; ((i < searchRadiusNum) &&
-        (searchBlocks.size() < unsigned(searchRadiusNum))); ++i)
-  {
+  for (int i = 0; ((i < searchRadiusNum)
+                   && (searchBlocks.size() < unsigned(searchRadiusNum)));
+       ++i) {
     searchRadius += unitRadiusSize;
-    for(int j = 0; ((j < size) &&
-          (searchBlocks.size() < unsigned(searchRadiusNum))); ++j)
-    {
-      if (!seenBlocks[j])
-      {
+    for (int j = 0;
+         ((j < size) && (searchBlocks.size() < unsigned(searchRadiusNum)));
+         ++j) {
+      if (!seenBlocks[j]) {
         float xDist = xloc[j] - idealLoc.x;
         float yDist = yloc[j] - idealLoc.y;
-        float distance = sqrt(xDist*xDist + yDist*yDist);
-        if(distance < searchRadius)
-        {
-          seenBlocks[j] = true; 
+        float distance = sqrt(xDist * xDist + yDist * yDist);
+        if (distance < searchRadius) {
+          seenBlocks[j] = true;
           searchBlocks.push_back(j);
         }
       }
@@ -1527,31 +1517,26 @@ void BTreeAreaWireAnnealer::locateSearchBlocks(int operand,
   }
 }
 // --------------------------------------------------------
-void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
-    int blocknum)
+void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln, int blocknum)
 {
   vector<int> tree_bits;
   int balance = 0;
   int num_zeros = 0;
-  for (int i = 0; i < 2*blocknum; i++)
-  {
-    float rand_num = float(rand()) / (RAND_MAX+1.0);
+  for (int i = 0; i < 2 * blocknum; i++) {
+    float rand_num = float(rand()) / (RAND_MAX + 1.0);
     float threshold;
 
     if (balance == 0)
-      threshold = 1; // push_back "0" for sure
-    else if (num_zeros == blocknum) 
-      threshold = 0; // push_back "1" for sure
+      threshold = 1;  // push_back "0" for sure
+    else if (num_zeros == blocknum)
+      threshold = 0;  // push_back "1" for sure
     else
-      threshold = 1; // (rand_num * (balance - rand_num));
+      threshold = 1;  // (rand_num * (balance - rand_num));
 
-    if (rand_num >= threshold)
-    {
+    if (rand_num >= threshold) {
       tree_bits.push_back(1);
       balance--;
-    }
-    else
-    {
+    } else {
       tree_bits.push_back(0);
       balance++;
       num_zeros++;
@@ -1569,8 +1554,7 @@ void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
     tree_perm_inverse[tree_perm[i]] = i;
 
   vector<int> tree_orient(blocknum);
-  for (int i = 0; i < blocknum; i++)
-  {
+  for (int i = 0; i < blocknum; i++) {
     int rand_num = int(8 * (float(rand()) / (RAND_MAX + 1.0)));
     rand_num = _physicalOrient[i][rand_num];
 
@@ -1580,34 +1564,33 @@ void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
   soln.evaluate(tree_bits, tree_perm, tree_orient);
 }
 // --------------------------------------------------------
-void getObstaclesFromDB(DB *const db, BasePacking &out)
-  // <aaronnn> massage db obstacles from Node into BlockPacking
+void getObstaclesFromDB(DB* const db, BasePacking& out)
+// <aaronnn> massage db obstacles from Node into BlockPacking
 {
   out.xloc.clear();
   out.yloc.clear();
   out.width.clear();
   out.height.clear();
 
-  Nodes *nodes = db->getObstacles();
-//   Node tmp1("obs1", 400*300, 400/300, 400/300, 0, false);
-//   tmp1.putX( 200 );
-//   tmp1.putY( 200 ); 
-//   tmp1.putWidth( 100 );
-//   tmp1.putHeight( 100 );
-// 
-//   nodes->putNewNode(tmp1 );
-// 
-//   Node tmp2("obs2", 50*50, 50/50, 50/50, 0, false);
-//   tmp2.putX( 100 );
-//   tmp2.putY( 100 ); 
-//   tmp2.putWidth( 50 );
-//   tmp2.putHeight( 50 );
-// 
-//   nodes->putNewNode(tmp2 );
+  Nodes* nodes = db->getObstacles();
+  //   Node tmp1("obs1", 400*300, 400/300, 400/300, 0, false);
+  //   tmp1.putX( 200 );
+  //   tmp1.putY( 200 );
+  //   tmp1.putWidth( 100 );
+  //   tmp1.putHeight( 100 );
+  //
+  //   nodes->putNewNode(tmp1 );
+  //
+  //   Node tmp2("obs2", 50*50, 50/50, 50/50, 0, false);
+  //   tmp2.putX( 100 );
+  //   tmp2.putY( 100 );
+  //   tmp2.putWidth( 50 );
+  //   tmp2.putHeight( 50 );
+  //
+  //   nodes->putNewNode(tmp2 );
 
-  for(unsigned i = 0; i < nodes->getNumNodes(); ++i)
-  {
-    Node &node = nodes->getNode(i);
+  for (unsigned i = 0; i < nodes->getNumNodes(); ++i) {
+    Node& node = nodes->getNode(i);
 
     out.xloc.push_back(node.getX());
     out.yloc.push_back(node.getY());
@@ -1626,4 +1609,4 @@ void getObstaclesFromDB(DB *const db, BasePacking &out)
 }
 // --------------------------------------------------------
 
-} // namespace
+}  // namespace parquetfp
