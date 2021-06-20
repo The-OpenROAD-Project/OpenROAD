@@ -1,23 +1,23 @@
-MPL 0002 MacroPlacer.cpp:162       Some instances do not have liberty models. TritonMP will place macros without connection information.
-MPL 0003 MacroPlacer.cpp:786       Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.
-MPL 0004 MacroPlacer.cpp:806       No macros found.
-MPL 0005 MacroPlacer.cpp:809       Found {} macros
-MPL 0009 MacroPlacer.cpp:190       {} pins {}
-MPL 0011 MacroPlacer.cpp:1255      pin {} is not placed. Using west.
-MPL 0012 MacroPlacer.cpp:688       unhandled partition class
-MPL 0061 MacroPlacer.cpp:421       Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.
-MPL 0066 MacroPlacer.cpp:226       Partitioning failed.
-MPL 0067 MacroPlacer.cpp:202       Initial weighted wire length {:g}
-MPL 0068 MacroPlacer.cpp:223       Placed weighted wire length {:g}
-MPL 0069 MacroPlacer.cpp:271       Initial weighted wire length {:g}
-MPL 0070 MacroPlacer.cpp:393       Using {} partition sets
-MPL 0071 MacroPlacer.cpp:438       Solution {} weighted wire length {:g}
-MPL 0072 MacroPlacer.cpp:474       No partition solutions found.
-MPL 0073 MacroPlacer.cpp:466       Best weighted wire length {:g}
-MPL 0076 MacroPlacer.cpp:553       Partition {} macros
-MPL 0077 MacroPlacer.cpp:607       Using {} cut lines
-MPL 0079 MacroPlacer.cpp:619       Cut line {:.2f}
-MPL 0080 MacroPlacer.cpp:755       Impossible partiton found.
+MPL 0002 MacroPlacer.cpp:162       Some instances do not have liberty models. TritonMP will 
+MPL 0003 MacroPlacer.cpp:793       Macro {} is unplaced. Use global_placement to get an 
+MPL 0004 MacroPlacer.cpp:814       No macros found.
+MPL 0005 MacroPlacer.cpp:817       Found {} macros
+MPL 0009 MacroPlacer.cpp:193       {} pins {}
+MPL 0011 MacroPlacer.cpp:1274      pin {} is not placed. Using west.
+MPL 0012 MacroPlacer.cpp:694       unhandled partition class
+MPL 0061 MacroPlacer.cpp:425       Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.
+MPL 0066 MacroPlacer.cpp:227       Partitioning failed.
+MPL 0067 MacroPlacer.cpp:203       Initial weighted wire length {:g}
+MPL 0068 MacroPlacer.cpp:225       Placed weighted wire length {:g}
+MPL 0069 MacroPlacer.cpp:272       Initial weighted wire length {:g}
+MPL 0070 MacroPlacer.cpp:397       Using {} partition sets
+MPL 0071 MacroPlacer.cpp:445       Solution {} weighted wire length {:g}
+MPL 0072 MacroPlacer.cpp:482       No partition solutions found.
+MPL 0073 MacroPlacer.cpp:475       Best weighted wire length {:g}
+MPL 0076 MacroPlacer.cpp:560       Partition {} macros
+MPL 0077 MacroPlacer.cpp:613       Using {} cut lines
+MPL 0079 MacroPlacer.cpp:625       Cut line {:.2f}
+MPL 0080 MacroPlacer.cpp:761       Impossible partiton found.
 MPL 0085 MacroPlacer.tcl:85        fence_region outside of core area. Using core area.
 MPL 0089 MacroPlacer.tcl:69        No rows found. Use initialize_floorplan to add rows.
 MPL 0092 MacroPlacer.tcl:49        -halo is not a list of 2 values.
