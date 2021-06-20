@@ -192,7 +192,7 @@ DRT 0201 FlexGR.cpp:636            design isn't loaded before global routing
 DRT 0202 FlexGR.cpp:665            skipping layer {} not found in db for congestion map
 DRT 0203 FlexGR.cpp:643            dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 DRT 0205 TritonRoute.cpp:276       deprecated output param in params file
-DRT 0206 FlexDR_conn.cpp:1272      checkConnectivity error
+DRT 0206 FlexDR_conn.cpp:1276      checkConnectivity error
 DRT 0207 FlexDR_graphics.cpp:661   Setting MAX_THREADS=1 for use with the DR GUI.
 DRT 0210 io.cpp:1413               layer {} minWidth is larger than width. Using width as minWidth
 DRT 0214 io_guide.cpp:639          genGuides empty pin2GCellMap
@@ -234,7 +234,7 @@ DRT 0250 FlexDR_graphics.cpp:604     Pin {}
 DRT 0251 TritonRoute.tcl:64        -param cannot be used with other arguments
 DRT 0252 TritonRoute.cpp:251       params file is deprecated. Use tcl arguments.
 DRT 0253 FlexGC_init.cpp:157       Design and tech mismatch
-DRT 0254 FlexDR_init.cpp:3457      Design and tech mismatch
+DRT 0254 FlexDR_init.cpp:3455      Design and tech mismatch
 DRT 0255 FlexDR_maze.cpp:1897      Fatal error: Maze Route cannot find path of net {} in 
 DRT 0256 io.cpp:362                Skipping NDR { } because another rule with the same name 
 DRT 0257 FlexPA_graphics.cpp:251   marker {} at ({}, {}) ({}, {})
