@@ -48,6 +48,8 @@ SPeval::SPeval(const vector<float>& heights,
 {
    _heights=heights;
    _widths=widths;
+   xSize = 0;
+   ySize = 0;
   
    unsigned size = heights.size();
    _match.resize(size);

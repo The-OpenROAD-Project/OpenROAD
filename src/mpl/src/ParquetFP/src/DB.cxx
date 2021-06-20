@@ -123,6 +123,7 @@ DB::DB(const std::string &baseName)
    //_nodesBestCopy = new Nodes(baseName);
    //_nodesBestCopy->updatePinsInfo(*_nets);
 
+   _area = 0;
    _initArea = 0;
    successAR = 0;
    _rowHeight = 0;
@@ -138,6 +139,7 @@ DB::DB(void)
    _nodesBestCopy = new Nodes();
    _obstacles = new Nodes();
 
+   _area = 0;
    _initArea = 0;
    successAR = 0;
    _rowHeight = 0;
@@ -152,6 +154,7 @@ DB::DB(DB * db, vector<int>& subBlocksIndices, parquetfp::Point& dbLoc, float re
    _nets =  new Nets();
    _nodesBestCopy = new Nodes();
    _obstacles = new Nodes();
+   _area = 0;
    _initArea = 0;
    successAR = 0;
    _rowHeight = 0;
@@ -371,6 +374,7 @@ DB::DB(DB& db2, bool compressDB)
           if(_nets) delete _nets;
           if(_nodesBestCopy) delete _nodesBestCopy;
         */
+       successAR = db2.successAR;
        _nodes = new Nodes();
        _nets = new Nets();
        _nodesBestCopy = new Nodes();
@@ -2442,10 +2446,7 @@ void DB::saveCapo(const char* baseFileName, const BBox &nonTrivialBBox,
    if(anySoft) { _nodes->saveNodes(baseFileName); }
 
    //save the aux file now
-   char fileName[1024];
-   strcpy(fileName, baseFileName);
-   strcat(fileName, ".aux");
-   ofstream aux(fileName);
+   ofstream aux(string(baseFileName) + ".aux");
    aux<<"RowBasedPlacement : "<<baseFileName<<".nodes "<<baseFileName<<".nets ";
    if(anySoft) { aux<<baseFileName<<".blocks "; }
    aux<<baseFileName<<".pl "<<baseFileName<<".scl ";
@@ -2473,10 +2474,7 @@ void DB::saveCapoNets(const char* baseFileName) const
    float temp;
    int nodeIndex;
   
-   char fileName[1024];
-   strcpy(fileName, baseFileName);
-   strcat(fileName, ".nets");
-   ofstream file(fileName);
+   ofstream file(string(baseFileName) + ".nets");
 
    file<<"UCLA nets   1.0"<<endl<<endl<<endl;
    file<<"NumNets : "<<nets->getNumNets()<<endl;
@@ -2522,10 +2520,7 @@ void DB::saveNets(const char* baseFileName) const
    Nets* nets;
    nets = const_cast<DB*>(this)->getNets();
 
-   char fileName[1024];
-   strcpy(fileName, baseFileName);
-   strcat(fileName, ".nets");
-   ofstream file(fileName);
+   ofstream file(string(baseFileName) + ".nets");
 
    file<<"UCLA nets   1.0"<<endl<<endl<<endl;
    file<<"NumNets : "<<nets->getNumNets()<<endl;
@@ -2550,10 +2545,7 @@ void DB::saveWts(const char* baseFileName) const
    Nets* nets;
    nets = const_cast<DB*>(this)->getNets();
 
-   char fileName[1024];
-   strcpy(fileName, baseFileName);
-   strcat(fileName, ".wts");
-   ofstream file(fileName);
+   ofstream file(string(baseFileName) + ".wts");
 
    file<<"UCLA wts   1.0"<<endl<<endl<<endl;
   

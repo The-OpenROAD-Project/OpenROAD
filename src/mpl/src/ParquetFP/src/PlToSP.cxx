@@ -42,7 +42,7 @@ using std::vector;
 Pl2SP::Pl2SP(vector<float>& xloc, vector<float>& yloc, 
 	     vector<float>& widths, vector<float>& heights, 
 	     PL2SP_ALGO whichAlgo) : _xloc(xloc), _yloc(yloc), 
-	       _widths(widths), _heights(heights)
+             _widths(widths), _heights(heights), _cnt(0)
 {
   unsigned size = _xloc.size();
   if(_yloc.size() != size || _widths.size() != size || _heights.size() != size)

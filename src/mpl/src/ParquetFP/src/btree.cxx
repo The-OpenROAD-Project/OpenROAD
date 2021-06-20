@@ -62,6 +62,10 @@ BTree::BTree(const HardBlockInfoType& blockinfo)
      in_blockinfo(blockinfo),
      in_tree(blockinfo.blocknum()+2),
      in_contour(blockinfo.blocknum()+2),
+     in_obstacleframe{0, 0},
+     seen_obstacles(false),
+     new_block_x_shift(0),
+     new_block_y_shift(0),
      
      in_xloc(blockinfo.blocknum()+2, Undefined),
      in_yloc(blockinfo.blocknum()+2, Undefined),
@@ -72,6 +76,7 @@ BTree::BTree(const HardBlockInfoType& blockinfo)
      in_totalArea(0),
      in_totalWidth(0),
      in_totalHeight(0),
+     in_totalContourArea(0),
 
      TOLERANCE(0),
 
@@ -124,6 +129,10 @@ BTree::BTree(const HardBlockInfoType& blockinfo,
      in_blockinfo(blockinfo),
      in_tree(blockinfo.blocknum()+2),
      in_contour(blockinfo.blocknum()+2),
+     in_obstacleframe{0, 0},
+     seen_obstacles(false),
+     new_block_x_shift(0),
+     new_block_y_shift(0),
      
      in_xloc(blockinfo.blocknum()+2, Undefined),
      in_yloc(blockinfo.blocknum()+2, Undefined),
@@ -134,6 +143,7 @@ BTree::BTree(const HardBlockInfoType& blockinfo,
      in_totalArea(0),
      in_totalWidth(0),
      in_totalHeight(0),
+     in_totalContourArea(0),
 
      TOLERANCE(nTolerance),
 

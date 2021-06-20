@@ -113,7 +113,7 @@ protected:
    std::mt19937 _random_gen;
 
    BaseAnnealer()
-      : _db(NULL), _params(NULL), _analSolve(NULL),
+      : annealTime(0), _db(NULL), _params(NULL), _analSolve(NULL),
         _isFixedOutline(false),
         _outlineDeadspaceRatio(basepacking_h::Dimension::Infty),     
         _outlineArea(basepacking_h::Dimension::Infty),     

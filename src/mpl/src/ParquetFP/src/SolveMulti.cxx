@@ -382,25 +382,24 @@ void SolveMulti::placeSubBlocks(void)
          cout << node->getName() << "  numSubBlks : " << node->numSubBlocks()
               << "reqdAR " << params->reqdAR << endl;
 
-      BaseAnnealer *annealer = NULL;
+      std::unique_ptr<BaseAnnealer> annealer;
       if (params->FPrep == "BTree")
       {
-         annealer =
-            new BTreeAreaWireAnnealer(params, tempDB);
+        annealer.reset(new BTreeAreaWireAnnealer(params, tempDB));
       }
       else if (params->FPrep == "SeqPair")
       {
-         annealer = new Annealer(params, tempDB);
+        annealer.reset(new Annealer(params, tempDB));
       }
       else if (_params->FPrep == "Best")
       {
          if(tempDB->getNumNodes() < 100 && _params->maxWS > 10.)
          {
-           annealer = new Annealer(_params, tempDB);
+           annealer.reset(new Annealer(_params, tempDB));
          }
          else
          {
-           annealer = new BTreeAreaWireAnnealer(_params, tempDB);
+           annealer.reset(new BTreeAreaWireAnnealer(_params, tempDB));
          }
       }
       else
@@ -477,8 +476,6 @@ void SolveMulti::placeSubBlocks(void)
          }
          while(1);
 
-         delete annealer;
-
          if(!satisfied)//failed to satisfy constraints. save best soln
          {
             unsigned nodeId=0;
@@ -539,6 +536,7 @@ void SolveMulti::placeSubBlocks(void)
       }
       delete tempDB;
    } // end for each node
+   delete params;
 }
 
 void SolveMulti::updatePlaceUnCluster(DB * clusterDB)

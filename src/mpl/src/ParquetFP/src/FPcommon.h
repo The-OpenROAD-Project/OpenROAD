@@ -99,7 +99,8 @@ namespace parquetfp
       BBox(float minX, float minY,
            float maxX, float maxY)
          : _minX(minX), _maxX(maxX),
-           _minY(minY), _maxY(maxY) {}
+           _minY(minY), _maxY(maxY),
+           _valid(maxX >= minX && maxY >= minY) {}
 
       void put(const Point& point);
       void clear(void);  

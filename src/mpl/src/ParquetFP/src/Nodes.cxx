@@ -550,16 +550,12 @@ void Nodes::updatePinsInfo(Nets& nets)
 
 void Nodes::savePl(const char* baseFileName)
 {
-  char fileName[1024];
-  strcpy(fileName, baseFileName);
-  strcat(fileName, ".pl");
-  ofstream outPl(fileName);
+  ofstream outPl(string(baseFileName) + ".pl");
   if(!outPl)
     {
       cout<<"ERROR in saving .pl file"<<endl;
       return;
     }
-  cout<<"Saving "<<fileName<<" as output .pl file"<<endl;
   outPl<<"UMICH blocks 1.0"<<endl<<endl<<endl<<endl;
   
   itNode node;
@@ -584,10 +580,7 @@ void Nodes::savePl(const char* baseFileName)
 void Nodes::saveCapoNodes(const char* baseFileName)
 {
   
-  char fileName[1024];
-  strcpy(fileName, baseFileName);
-  strcat(fileName, ".nodes");
-  ofstream file(fileName);
+  ofstream file(string(baseFileName) + ".nodes");
   file<<"UCLA nodes  1.0"<<endl<<endl<<endl;
   
   file<<"NumNodes : \t"<<_nodes.size()+_terminals.size()<<endl;
@@ -627,10 +620,7 @@ void Nodes::saveCapoNodes(const char* baseFileName)
 
 void Nodes::saveNodes(const char* baseFileName)
 {
-  char fileName[1024];
-  strcpy(fileName, baseFileName);
-  strcat(fileName, ".blocks");
-  ofstream file(fileName);
+  ofstream file(string(baseFileName) + ".blocks");
   file<<"UCSC blocks  1.0"<<endl<<endl<<endl;
   
   file<<"NumSoftRectangularBlocks : \t"<<_nodes.size()<<endl;
@@ -653,10 +643,7 @@ void Nodes::saveNodes(const char* baseFileName)
 
 void Nodes::saveCapoPl(const char* baseFileName)
 {
-  char fileName[1024];
-  strcpy(fileName, baseFileName);
-  strcat(fileName, ".pl");
-  ofstream file(fileName);
+  ofstream file(string(baseFileName) + ".pl");
 
   file<<"UCLA pl   1.0"<<endl<<endl<<endl;
   

@@ -89,6 +89,7 @@ MacroPlacer::MacroPlacer()
     : db_(nullptr),
       sta_(nullptr),
       logger_(nullptr),
+      snap_layer_(nullptr),
       connection_driven_(false),
       lx_(0),
       ly_(0),
