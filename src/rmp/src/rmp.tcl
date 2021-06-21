@@ -37,7 +37,7 @@
 # 
 # Argument Description
 # liberty_file:    Liberty file with description of cells used in design. This would be passed to ABC.
-# mode:            Could be area or delay. In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
+# mode:            "area"|"delay". In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
 # slack_threshold: specifies slack value below which timing paths need to be analyzed for restructuring
 # depth_threshold: specifies the path depth above which a timing path would be considered for restructuring
 # locell:          specifies tie cell which can drive constant zero

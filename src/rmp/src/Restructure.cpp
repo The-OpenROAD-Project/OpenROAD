@@ -116,7 +116,7 @@ void Restructure::getBlob(unsigned max_depth)
 
   sta::PinSet ends;
 
-  getEndPoints(ends, opt_mode_ <= AREA_3_MODE, max_depth);
+  getEndPoints(ends, opt_mode_ <= AREA_3, max_depth);
   if (ends.size()) {
     sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
@@ -141,7 +141,7 @@ void Restructure::runABC()
   debugPrint(logger_,
              utl::RMP,
              "remap",
-             11,
+             1,
              "Constants before remap {}",
              countConsts(block_));
 
@@ -149,16 +149,16 @@ void Restructure::runABC()
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str());
   debugPrint(
-      logger_, RMP, "remap", 12, "Writing blif file {}", input_blif_file_name_);
+      logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
-  bool area_mode = opt_mode_ <= AREA_3_MODE;
+  bool area_mode = opt_mode_ <= AREA_3;
   std::string abc_script_file = "ord_abc_script.tcl";
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  for (int opt_mode = area_mode ? AREA_1_MODE : DELAY_1_MODE;
-       opt_mode <= (area_mode ? AREA_3_MODE : DELAY_4_MODE);
+  for (int opt_mode = area_mode ? AREA_1 : DELAY_1;
+       opt_mode <= (area_mode ? AREA_3 : DELAY_4);
        opt_mode += 1) {
     opt_mode_ = (Mode) opt_mode;
     output_blif_file_name_ = std::string(block_->getConstName())
@@ -166,7 +166,7 @@ void Restructure::runABC()
     debugPrint(logger_,
                RMP,
                "remap",
-               13,
+               1,
                "Writing ABC script file {}",
                abc_script_file);
     if (writeAbcScript(abc_script_file)) {
@@ -189,12 +189,12 @@ void Restructure::runABC()
   files_to_remove.emplace_back(abc_script_file);
   if (best_inst_count < std::numeric_limits<int>::max()) {
     // read back netlist
-    debugPrint(logger_, RMP, "remap", 14, "Reading blif file {}", best_blif);
+    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);
     debugPrint(logger_,
                utl::RMP,
                "remap",
-               15,
+               1,
                "Number constants after restructure {}",
                countConsts(block_));
   }
@@ -208,7 +208,7 @@ void Restructure::runABC()
 void Restructure::postABC(float worst_slack)
 {
   rsz::Resizer* resizer = openroad_->getResizer();
-  bool area_mode = opt_mode_ <= AREA_3_MODE;
+  bool area_mode = opt_mode_ <= AREA_3;
   if (!area_mode) {
     // Recompute timing
     resizer->estimateWireParasitics();
@@ -271,7 +271,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   logger_->report("Number of paths for restructure {}", path_found);
   int end_count = 0;
   for (auto& path_end : *path_ends) {
-    if (opt_mode_ >= DELAY_1_MODE) {
+    if (opt_mode_ >= DELAY_1) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
       logger_->report("Got path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
@@ -288,12 +288,12 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   // unconstrained end points
   auto errors
       = open_sta_->checkTiming(false, false, false, true, true, false, false);
-  debugPrint(logger_, RMP, "remap", 17, "Size of errors = {}", errors.size());
+  debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
   if (errors.size() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
     bool first = true;
     for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 18, "Unconstrained pin: {}", pinName);
+      debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
       if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
         ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
       }
@@ -303,7 +303,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
     sta::CheckError* error = errors[1];
     bool first = true;
     for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 19, "Unclocked pin: {}", pinName);
+      debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
       if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
         ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
       }
@@ -340,7 +340,7 @@ bool Restructure::writeAbcScript(std::string file_name)
 
   script << "read_blif " << input_blif_file_name_ << std::endl;
 
-  if (logger_->debugCheck(RMP, "remap", 21))
+  if (logger_->debugCheck(RMP, "remap", 1))
     script << "write_verilog " << input_blif_file_name_ + std::string(".v")
            << std::endl;
 
@@ -348,7 +348,7 @@ bool Restructure::writeAbcScript(std::string file_name)
 
   script << "write_blif " << output_blif_file_name_ << std::endl;
 
-  if (logger_->debugCheck(RMP, "remap", 22))
+  if (logger_->debugCheck(RMP, "remap", 1))
     script << "write_verilog " << output_blif_file_name_ + std::string(".v")
            << std::endl;
 
@@ -374,46 +374,46 @@ void Restructure::writeOptCommands(std::ofstream& script)
   script << choice << std::endl;
   script << choice2 << std::endl;
 
-  if (opt_mode_ == AREA_3_MODE)
+  if (opt_mode_ == AREA_3)
     script << "choice2" << std::endl;  // << "scleanup" << std::endl;
   else
     script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
 
   switch (opt_mode_) {
-    case DELAY_1_MODE: {
+    case DELAY_1: {
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
-    case DELAY_2_MODE: {
+    case DELAY_2: {
       script << choice << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       script << choice << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
-    case DELAY_3_MODE: {
+    case DELAY_3: {
       script << choice2 << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       script << choice2 << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
-    case DELAY_4_MODE: {
+    case DELAY_4: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       script << choice2 << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
-    case AREA_2_MODE:
-    case AREA_3_MODE: {
+    case AREA_2:
+    case AREA_3: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
     }
-    case AREA_1_MODE:
+    case AREA_1:
     default: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
@@ -428,19 +428,19 @@ void Restructure::writeOptCommands(std::ofstream& script)
 void Restructure::setMode(const char* mode_name)
 {
   if (!strcmp(mode_name, "delay1") || !strcmp(mode_name, "delay"))
-    opt_mode_ = DELAY_1_MODE;
+    opt_mode_ = DELAY_1;
   else if (!strcmp(mode_name, "delay2"))
-    opt_mode_ = DELAY_2_MODE;
+    opt_mode_ = DELAY_2;
   else if (!strcmp(mode_name, "delay3"))
-    opt_mode_ = DELAY_3_MODE;
+    opt_mode_ = DELAY_3;
   else if (!strcmp(mode_name, "delay4"))
-    opt_mode_ = DELAY_4_MODE;
+    opt_mode_ = DELAY_4;
   else if (!strcmp(mode_name, "area1") || !strcmp(mode_name, "area"))
-    opt_mode_ = AREA_1_MODE;
+    opt_mode_ = AREA_1;
   else if (!strcmp(mode_name, "area2"))
-    opt_mode_ = AREA_2_MODE;
+    opt_mode_ = AREA_2;
   else if (!strcmp(mode_name, "area3"))
-    opt_mode_ = AREA_3_MODE;
+    opt_mode_ = AREA_3;
   else {
     logger_->report("Mode {} note recognized.", mode_name);
   }

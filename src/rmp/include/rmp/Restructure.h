@@ -66,13 +66,13 @@ using utl::Logger;
 
 typedef enum
 {
-  AREA_1_MODE = 0,
-  AREA_2_MODE,
-  AREA_3_MODE,
-  DELAY_1_MODE,
-  DELAY_2_MODE,
-  DELAY_3_MODE,
-  DELAY_4_MODE
+  AREA_1 = 0,
+  AREA_2,
+  AREA_3,
+  DELAY_1,
+  DELAY_2,
+  DELAY_3,
+  DELAY_4
 } Mode;
 
 class Restructure
@@ -108,15 +108,15 @@ class Restructure
 
   ord::OpenRoad* openroad_;
   Logger* logger_;
-  std::string logfile_ = "";
-  std::string locell_ = "";
-  std::string loport_ = "";
-  std::string hicell_ = "";
-  std::string hiport_ = "";
+  std::string logfile_;
+  std::string locell_;
+  std::string loport_;
+  std::string hicell_;
+  std::string hiport_;
 
   // db vars
-  sta::dbSta* open_sta_ = nullptr;
-  odb::dbDatabase* db_ = nullptr;
+  sta::dbSta* open_sta_;
+  odb::dbDatabase* db_;
   odb::dbBlock* block_ = nullptr;
 
   std::string input_blif_file_name_;
@@ -124,7 +124,7 @@ class Restructure
   std::vector<std::string> lib_file_names_;
   std::set<odb::dbInst*> path_insts_;
 
-  Mode opt_mode_ = DELAY_1_MODE;
+  Mode opt_mode_;
 };
 
 }  // namespace rmp
