@@ -49,8 +49,8 @@ met4       Vertical        10086          8168          19.02%
 met5       Horizontal       3362          1680          50.03%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 2039
-[INFO GRT-0112] Final usage 3D: 9049
+[INFO GRT-0111] Final number of vias: 2038
+[INFO GRT-0112] Final usage 3D: 9046
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -64,7 +64,7 @@ met5              1680             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            69855          2932            4.20%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30196 um
+[INFO GRT-0018] Total wirelength: 30189 um
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
 [INFO GRT-0224] Chose via M1M2_PR as default.
