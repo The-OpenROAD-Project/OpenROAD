@@ -856,8 +856,9 @@ set_clock_routing [-pdrev_fanout fanout] \
 The `set_clock_routing` command sets specific configurations for clock nets.
 Options description:
 - **pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -pdrev_fanout 5)
-- **pdrev_alpha**: Set the PDRev routing topology construction trade-off for clock nets.
-See `set_pdrev_alpha` command description for more details about PDRev and topology trade-off (e.g.: -clock_pdrev_alpha 0.6)
+- **pdrev_alpha**: Set the PDRev routing topology construction trade-off for clock nets. See `set_pdrev_alpha` command description for
+more details about PDRev and topology trade-off.
+Example: `set_clock_routing -pdrev_fanout 5 -pdrev_alpha 0.6`
 
 ```
 set_pdrev_alpha [-net net_name] alpha
@@ -869,7 +870,7 @@ Alpha is between 0.0 and 1.0. When alpha is 0.0 the net topology minimizes total
 When alpha is 1.0 it minimizes longest path between the driver and loads (i.e., maximum resistance).
 Typical values are 0.4-0.8. For more information about PDRev, check the paper in `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_alpha -net clk 0.3` sets an alpha value of 0.3 for net *clk*.
+Example: `set_pdrev_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
