@@ -678,7 +678,7 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
   auto net2 = rect2->getNet();
   if (net1 == net2) {
     // skip if good
-    auto minWidth = getTech()->getLayer(layerNum)->getMinWidth();
+    int64_t minWidth = getTech()->getLayer(layerNum)->getMinWidth();
     auto xLen = gtl::delta(markerRect, gtl::HORIZONTAL);
     auto yLen = gtl::delta(markerRect, gtl::VERTICAL);
     if (xLen * xLen + yLen * yLen >= minWidth * minWidth) {

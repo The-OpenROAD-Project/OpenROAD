@@ -774,7 +774,7 @@ void gen_brk_RSMT(Bool congestionDriven,
         nets[i]->deg >= pdrev_min_fanout &&
         nets[i]->deg <= max_fanout_for_pdrev &&
         nets[i]->isClock) {
-      stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, nets[i]->alpha, logger);
+      stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, 0, nets[i]->alpha, logger);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {

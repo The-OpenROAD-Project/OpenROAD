@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,43 +29,81 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
-#include "flute.h"
+#pragma once
 
-namespace utl {
-class Logger;
-}
+#include <tcl.h>
+#include <memory>
+
+#include <QMenu>
+#include <QPlainTextEdit>
+#include <QSettings>
+
+#include "tclCmdHighlighter.h"
+
 namespace gui {
-class Gui;
-}
 
-namespace pdr {
+class TclCmdInputWidget: public QPlainTextEdit {
+    Q_OBJECT
 
-using utl::Logger;
-using stt::Tree;
+  public:
+    TclCmdInputWidget(QWidget* parent = nullptr);
+    ~TclCmdInputWidget();
 
-Tree
-primDijkstra(std::vector<int> x,
-             std::vector<int> y,
-             int drvr_index,
-             float alpha,
-             Logger* logger);
+    void init(Tcl_Interp* interp);
 
-Tree
-primDijkstraRevII(std::vector<int> x,
-                  std::vector<int> y,
-                  int drvr_index,
-                  float alpha,
-                  Logger* logger);
+    void setFont(const QFont& font);
 
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger);
-void
-highlightSteinerTree(stt::Tree &tree,
-                     gui::Gui *gui);
+    QString text();
+    void setText(const QString& text);
 
-}  // namespace PD
+    void setMaximumHeight(int height);
+
+    void readSettings(QSettings* settings);
+    void writeSettings(QSettings* settings);
+
+  public slots:
+    void commandExecuted(int return_code);
+
+  signals:
+    // complete TCL command available
+    void completeCommand();
+
+    // back in history
+    void historyGoBack();
+
+    // forward in history
+    void historyGoForward();
+
+  private slots:
+    void updateSize();
+
+    void updateHighlighting();
+
+  protected:
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+    void contextMenuEvent(QContextMenuEvent* event) override;
+
+  private:
+    void keyPressEvent(QKeyEvent* e) override;
+    void keyReleaseEvent(QKeyEvent* e) override;
+
+    bool isCommandComplete(const std::string& cmd);
+
+    void determineLineHeight();
+
+    int line_height_;
+    int document_margins_;
+
+    int max_height_;
+
+    std::unique_ptr<QMenu> context_menu_;
+    std::unique_ptr<QAction> enable_highlighting_;
+
+    static constexpr const char* enable_highlighting_keyword_ = "highlighting";
+
+    std::unique_ptr<TclCmdHighlighter> highlighter_;
+};
+
+}  // namespace gui
