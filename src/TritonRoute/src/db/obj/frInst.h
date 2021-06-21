@@ -33,12 +33,13 @@
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
-#include "db/obj/frInstTerm.h"
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 
 namespace fr {
 class frBlock;
+class frInstTerm;
+
 class frInst : public frRef
 {
  public:
@@ -146,10 +147,13 @@ class frInst : public frRef
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
+    // instTerms_ are intentionally NOT serialized.  This cuts
+    // the serializer from recursing across the whole design.  Any
+    // instTerm must attach itself to a instance on deserialization.
+
     (ar) & boost::serialization::base_object<frRef>(*this);
     (ar) & name_;
     (ar) & refBlock_;
-    (ar) & instTerms_;
     (ar) & instBlockages_;
     (ar) & xform_;
     (ar) & pinAccessIdx_;

@@ -35,7 +35,7 @@
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frGCellPattern.h"
-#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
 #include "db/obj/frTerm.h"

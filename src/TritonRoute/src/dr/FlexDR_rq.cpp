@@ -286,10 +286,10 @@ void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void FlexDRWorkerRegionQuery::serialize<
-    boost::archive::binary_iarchive>(boost::archive::binary_iarchive& ar,
-                                     const unsigned int file_version);
+template void FlexDRWorkerRegionQuery::serialize<InputArchive>(
+    InputArchive& ar,
+    const unsigned int file_version);
 
-template void FlexDRWorkerRegionQuery::serialize<
-    boost::archive::binary_oarchive>(boost::archive::binary_oarchive& ar,
-                                     const unsigned int file_version);
+template void FlexDRWorkerRegionQuery::serialize<OutputArchive>(
+    OutputArchive& ar,
+    const unsigned int file_version);

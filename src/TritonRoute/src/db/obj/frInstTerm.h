@@ -32,10 +32,10 @@
 #include <memory>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInst.h"
 #include "db/obj/frNet.h"
 #include "db/obj/frTerm.h"
 #include "frBaseTypes.h"
-#include "frInst.h"
 
 namespace fr {
 class frNet;
@@ -84,6 +84,11 @@ class frInstTerm : public frBlockObject
     (ar) & term_;
     (ar) & net_;
     (ar) & ap_;
+
+    if (inst_) {
+      std::unique_ptr<frInstTerm> ptr(this);
+      inst_->addInstTerm(std::move(ptr));
+    }
 
     if (net_) {
       net_->addInstTerm(this);

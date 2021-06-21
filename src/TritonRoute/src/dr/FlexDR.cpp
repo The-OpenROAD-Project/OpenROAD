@@ -55,13 +55,13 @@ static void serialize_worker(SerializationType type,
 {
   if (type == SerializationType::READ) {
     std::ifstream file(name);
-    boost::archive::binary_iarchive ar(file);
+    InputArchive ar(file);
     register_types(ar);
     serialize_globals(ar);
     ar >> *worker;
   } else {
     std::ofstream file(name);
-    boost::archive::binary_oarchive ar(file);
+    OutputArchive ar(file);
     register_types(ar);
     serialize_globals(ar);
     ar << *worker;

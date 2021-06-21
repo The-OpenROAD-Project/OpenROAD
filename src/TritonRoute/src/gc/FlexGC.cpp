@@ -226,10 +226,10 @@ void FlexGCWorker::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void FlexGCWorker::serialize<boost::archive::binary_iarchive>(
-    boost::archive::binary_iarchive& ar,
+template void FlexGCWorker::serialize<InputArchive>(
+    InputArchive& ar,
     const unsigned int file_version);
 
-template void FlexGCWorker::serialize<boost::archive::binary_oarchive>(
-    boost::archive::binary_oarchive& ar,
+template void FlexGCWorker::serialize<OutputArchive>(
+    OutputArchive& ar,
     const unsigned int file_version);
