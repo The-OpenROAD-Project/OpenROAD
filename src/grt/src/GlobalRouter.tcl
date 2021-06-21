@@ -74,10 +74,11 @@ proc set_pdrev_alpha { args } {
     set net_name $keys(-net)
     
     grt::check_pdrev_alpha $alpha
+    grt::set_alpha_for_net $net_name $alpha
   } elseif { [llength $args] == 1 } {
     set alpha [lindex $args 0]
 
-    sta::check_positive_float "alpha" $alpha
+    grt::check_pdrev_alpha $alpha
     grt::set_pdrev_alpha_cmd $alpha
   } else {
     utl::error GRT 46 "set_pdrev_alpha: Wrong number of arguments."
@@ -398,9 +399,7 @@ proc define_clock_layer_range { layers } {
 
 proc check_pdrev_alpha { alpha } {
   sta::check_positive_float "check_pdrev_alpha" $alpha
-  if {$alpha <= 1.0} {
-    grt::set_alpha_for_net $net_name $alpha
-  } else {
+  if {$alpha > 1.0} {
     utl::error GRT 54 "The alpha value must be greater or equal to 0.0 and lesser or equal to 1.0."
   }
 }
