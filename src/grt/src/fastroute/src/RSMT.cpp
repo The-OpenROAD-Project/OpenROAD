@@ -720,8 +720,9 @@ void gen_brk_RSMT(Bool congestionDriven,
   totalNumSeg = 0;
 
   for (i = 0; i < numValidNets; i++) {
+    FrNet* net = nets[i];
     coeffV = 1.36;
-    int sizeV = nets[i]->numPins;
+    int sizeV = net->numPins;
     int x[sizeV];
     int y[sizeV];
 
@@ -735,10 +736,10 @@ void gen_brk_RSMT(Bool congestionDriven,
       }
     }
 
-    d = nets[i]->deg;
+    d = net->deg;
     for (j = 0; j < d; j++) {
-      x[j] = nets[i]->pinX[j];
-      y[j] = nets[i]->pinY[j];
+      x[j] = net->pinX[j];
+      y[j] = net->pinY[j];
     }
 
     if (reRoute) {
@@ -771,10 +772,10 @@ void gen_brk_RSMT(Bool congestionDriven,
       coeffV = 1.2;
     }
     if (pdrev_min_fanout > 0 &&
-        nets[i]->deg >= pdrev_min_fanout &&
-        nets[i]->deg <= max_fanout_for_pdrev &&
-        nets[i]->is_clock) {
-      stt::Tree tree = pdr::primDijkstraRevII(nets[i]->pinX, nets[i]->pinY, nets[i]->driver_idx, nets[i]->alpha, logger);
+        net->deg >= pdrev_min_fanout &&
+        net->deg <= max_fanout_for_pdrev &&
+        net->is_clock) {
+      stt::Tree tree = pdr::primDijkstraRevII(net->pinX, net->pinY, net->driver_idx, net->alpha, logger);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
@@ -797,7 +798,7 @@ void gen_brk_RSMT(Bool congestionDriven,
       copyStTree(i, rsmt);
     }
 
-    if (nets[i]->deg != rsmt.deg) {
+    if (net->deg != rsmt.deg) {
       d = rsmt.deg;
     }
 
