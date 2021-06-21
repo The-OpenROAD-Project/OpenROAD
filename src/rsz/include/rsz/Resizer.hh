@@ -155,6 +155,8 @@ public:
   double wireClkCapacitance(const Corner *corner);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
+  void estimateWireParasitic(const Pin *drvr_pin,
+                             const Net *net);
   bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
   void parasiticsInvalid(const Net *net);
   void parasiticsInvalid(const dbNet *net);
@@ -483,8 +485,8 @@ protected:
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
-  void estimateWireParasiticSteiner(const Net *net);
-  void ensureWireParasitic(const Net *net);
+  void estimateWireParasiticSteiner(const Pin *drvr_pin,
+                                    const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);

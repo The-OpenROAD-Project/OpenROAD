@@ -34,6 +34,7 @@
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
@@ -47,7 +48,6 @@ class Logger;
 
 namespace fr {
 
-class FlexDRGraphics;
 class frConstraint;
 
 struct FlexDRViaData
