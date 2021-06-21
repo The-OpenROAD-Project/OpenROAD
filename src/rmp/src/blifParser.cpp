@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-namespace blifParserClass {
+namespace blif_parser {
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
@@ -41,23 +41,20 @@ using qi::int_;
 
 void setNewInput(std::string input, rmp::BlifParser* parser)
 {
-  if (input == "\\")
-    return;
-  parser->addInput(input);
+  if (input != "\\")
+    parser->addInput(input);
 }
 
 void setNewOutput(std::string output, rmp::BlifParser* parser)
 {
-  if (output == "\\")
-    return;
-  parser->addOutput(output);
+  if (output != "\\")
+    parser->addOutput(output);
 }
 
 void setNewClock(std::string clock, rmp::BlifParser* parser)
 {
-  if (clock == "\\")
-    return;
-  parser->addClock(clock);
+  if (clock != "\\")
+    parser->addClock(clock);
 }
 
 void setNewInstanceType(std::string type, rmp::BlifParser* parser)
@@ -108,13 +105,85 @@ bool parse(Iterator first, Iterator last, rmp::BlifParser* parser)
   return valid;
 }
 
-}  // namespace blifParserClass
+}  // namespace blif_parser
 
 namespace rmp {
 
+BlifParser::BlifParser()
+{
+  combCount = 0;
+  flopCount = 0;
+  currentInstanceType = "";
+  currentGate = "";
+}
+void BlifParser::addInput(std::string& input)
+{
+  inputs.push_back(input);
+}
+void BlifParser::addOutput(std::string& output)
+{
+  outputs.push_back(output);
+}
+void BlifParser::addClock(std::string& clock)
+{
+  clocks.push_back(clock);
+}
+void BlifParser::addNewInstanceType(std::string& type)
+{
+  if (currentInstanceType != "") {
+    gates.push_back(
+        std::make_tuple(currentInstanceType, currentGate, currentConnections));
+  }
+  currentInstanceType = type;
+  if (currentInstanceType == "mlatch")
+    flopCount++;
+  else if (currentInstanceType == "gate")
+    combCount++;
+  currentConnections.clear();
+}
+void BlifParser::addNewGate(std::string& cell_name)
+{
+  currentGate = cell_name;
+}
+void BlifParser::addConnection(std::string& connection)
+{
+  currentConnections.push_back(connection);
+}
+void BlifParser::endParser()
+{
+  if (currentInstanceType != "") {
+    gates.push_back(
+        std::make_tuple(currentInstanceType, currentGate, currentConnections));
+  }
+}
+
+std::vector<std::string>& BlifParser::getInputs()
+{
+  return inputs;
+}
+std::vector<std::string>& BlifParser::getOutputs()
+{
+  return outputs;
+}
+std::vector<std::string>& BlifParser::getClocks()
+{
+  return clocks;
+}
+std::vector<gate_>& BlifParser::getGates()
+{
+  return gates;
+}
+int BlifParser::getCombGateCount()
+{
+  return combCount;
+}
+int BlifParser::getFlopCount()
+{
+  return flopCount;
+}
+
 bool BlifParser::parse(std::string& file_contents)
 {
-  return blifParserClass::parse(
-      file_contents.begin(), file_contents.end(), this);
+  return blif_parser::parse(file_contents.begin(), file_contents.end(), this);
 }
 }  // namespace rmp
