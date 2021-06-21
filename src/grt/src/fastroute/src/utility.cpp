@@ -713,19 +713,19 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
   }
   treeedge->assigned = TRUE;
 
-  std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
+  std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
 
   for (k = 0; k < routelen; k++) {
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       grid = gridsL[k] * gridV + min_y * xGrid + gridsX[k];
 
-      v_edges3D[grid].usage += edgeCostPerLayer[gridsL[k]];
+      v_edges3D[grid].usage += edge_cost_per_layer[gridsL[k]];
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
       grid = gridsL[k] * gridH + gridsY[k] * (xGrid - 1) + min_x;
 
-      h_edges3D[grid].usage += edgeCostPerLayer[gridsL[k]];
+      h_edges3D[grid].usage += edge_cost_per_layer[gridsL[k]];
     }
   }
 }
@@ -1248,7 +1248,7 @@ void recoverEdge(int netID, int edgeID)
 
   treenodes[n2a].assigned = TRUE;
 
-  std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
+  std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
 
   for (i = 0; i < treeedge->route.routelen; i++) {
     if (gridsL[i] == gridsL[i + 1]) {
@@ -1256,12 +1256,12 @@ void recoverEdge(int netID, int edgeID)
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage += edgeCostPerLayer[gridsL[i]];
+        v_edges3D[grid].usage += edge_cost_per_layer[gridsL[i]];
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage += edgeCostPerLayer[gridsL[i]];
+        h_edges3D[grid].usage += edge_cost_per_layer[gridsL[i]];
       }
     }
   }

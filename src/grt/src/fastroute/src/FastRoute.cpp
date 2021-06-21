@@ -520,33 +520,35 @@ void FastRouteCore::setLayerOrientation(int x)
 
 void FastRouteCore::addPin(int netID, int x, int y, int layer)
 {
-  nets[netID]->pinX.push_back(x);
-  nets[netID]->pinY.push_back(y);
-  nets[netID]->pinL.push_back(layer);
+  FrNet* net = nets[netID];
+  net->pinX.push_back(x);
+  net->pinY.push_back(y);
+  net->pinL.push_back(layer);
 }
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
-                          int nPins,
-                          int validPins,
+                          int num_pins,
                           float alpha,
-                          bool isClock,
+                          bool is_clock,
+                          int driver_idx,
                           int cost,
-                          std::vector<int> edgeCostPerLayer)
+                          std::vector<int> edge_cost_per_layer)
 {
   int netID = newnetID;
-  pinInd = validPins;
+  pinInd = num_pins;
   MD = std::max(MD, pinInd);
   nets[newnetID]->db_net = db_net;
-  nets[newnetID]->numPins = nPins;
+  nets[newnetID]->numPins = num_pins;
   nets[newnetID]->deg = pinInd;
   nets[newnetID]->alpha = alpha;
-  nets[newnetID]->isClock = isClock;
+  nets[newnetID]->is_clock = is_clock;
+  nets[newnetID]->driver_idx = driver_idx;
   nets[newnetID]->edgeCost = cost;
-  nets[newnetID]->edgeCostPerLayer = edgeCostPerLayer;
+  nets[newnetID]->edge_cost_per_layer = edge_cost_per_layer;
 
   seglistIndex[newnetID] = segcount;
   newnetID++;
-  // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
+  // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs for a net
   segcount += 2 * pinInd - 3;
   return netID;
 }
