@@ -707,23 +707,21 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
           net_alpha = _netsAlpha[net->getName()];
         }
-        bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
+        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int numLayers = _grid->getNumLayers();
-        std::vector<int> edgeCostsPerLayer(numLayers + 1, 1);
-        int edgeCostForNet = computeTrackConsumption(net, edgeCostsPerLayer);
+        std::vector<int> edge_cost_per_layer(numLayers + 1, 1);
+        int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
-                                       pinsOnGrid.size(),
                                        net_alpha,
-                                       isClock,
-                                       edgeCostForNet,
-                                       edgeCostsPerLayer);
-        int pin_idx = 0;
+                                       is_clock,
+                                       root_idx,
+                                       edge_cost_for_net,
+                                       edge_cost_per_layer);
         for (RoutePt& pinPos : pinsOnGrid) {
-          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer()-1, pin_idx == root_idx);
-          pin_idx++;
+          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer()-1);
         }
       }
     }
