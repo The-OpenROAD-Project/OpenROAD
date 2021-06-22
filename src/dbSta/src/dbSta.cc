@@ -435,19 +435,20 @@ size_t
 dbStaReport::printString(const char *buffer,
                          size_t length)
 {
-  if (buffer[length - 1] == '\n') {
-    string buf(buffer);
-    // Trim trailing \r\n.
-    buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report(buf.c_str());
+  string buf(buffer, length);
+
+  size_t last_new_line = 0;
+  size_t next_new_line = buf.find_first_of("\n");
+  while (next_new_line != string::npos) {
+    size_t length = next_new_line - last_new_line;
+    logger_->report(buf.substr(last_new_line, length));
+
+    last_new_line = next_new_line + 1;
+    next_new_line = buf.find_first_of("\n", last_new_line);
   }
-  else
-    // puts without a trailing \n in the string.
-    // Tcl command prompts get here.
-    // puts "xyz" makes a separate call for the '\n '.
-    // This seems to be the only way to get the output.
-    // It will not be logged.
-    printConsole(buffer, length);
+  if (last_new_line < buf.length()) {
+    logger_->reportNoNewLine(buf.substr(last_new_line).c_str());
+  }
   return length;
 }
 
