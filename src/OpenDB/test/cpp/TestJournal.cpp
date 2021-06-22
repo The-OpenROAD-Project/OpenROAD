@@ -1,29 +1,29 @@
 #define BOOST_TEST_MODULE TestJournal
 #include <boost/test/included/unit_test.hpp>
 #include <iostream>
+#include <string>
+
 #include "db.h"
 #include "helper.cpp"
-#include <string>
 
 using namespace odb;
 using namespace std;
 BOOST_AUTO_TEST_SUITE(test_suite)
 
-struct F_DEFAULT {
+struct F_DEFAULT
+{
   F_DEFAULT()
   {
-    db        = createSimpleDB();
-    block     = db->getChip()->getBlock();
-    lib       = db->findLib("lib1");
+    db = createSimpleDB();
+    block = db->getChip()->getBlock();
+    lib = db->findLib("lib1");
   }
-  ~F_DEFAULT()
-  {
-    dbDatabase::destroy(db);
-  }
+  ~F_DEFAULT() { dbDatabase::destroy(db); }
   dbDatabase* db;
-  dbLib*      lib;
-  dbBlock*    block;
-  std::string journal_path = std::string(std::getenv("BASE_DIR")) + "/results/db_jounal.eco";
+  dbLib* lib;
+  dbBlock* block;
+  std::string journal_path
+      = std::string(std::getenv("BASE_DIR")) + "/results/db_jounal.eco";
 };
 BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
 {
@@ -32,7 +32,7 @@ BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
   auto i2 = odb::dbInst::create(block, lib->findMaster("and2"), "i2");
   auto n1 = odb::dbNet::create(block, "n1");
   auto n2 = odb::dbNet::create(block, "n2");
-  auto b1 = odb::dbBTerm::create(n1, "b1");
+  odb::dbBTerm::create(n1, "b1");
   auto b2 = odb::dbBTerm::create(n1, "b2");
   auto b3 = odb::dbBTerm::create(n1, "b3");
   odb::dbITerm::connect(i1->findITerm("a"), n1);
@@ -48,7 +48,7 @@ BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
 BOOST_FIXTURE_TEST_CASE(test_read, F_DEFAULT)
 {
   db->beginEco(block);
-  db->readEco(block,journal_path.c_str());
+  db->readEco(block, journal_path.c_str());
   db->commitEco(block);
   auto i1 = block->findInst("i1");
   auto n1 = block->findNet("n1");

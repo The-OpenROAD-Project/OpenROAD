@@ -1302,10 +1302,10 @@
 %typemap(out) odb::dbGroup::dbGroupType, dbGroupType {
 	Tcl_Obj *obj = nullptr;
 	switch ($1) {
-		case odb::dbGroup::dbGroupType::PHYSICAL_CLUSTER:
+                case odb::dbGroupType::PHYSICAL_CLUSTER:
 			obj = Tcl_NewStringObj("PHYSICAL_CLUSTER", -1);
 			break;
-	 	case odb::dbGroup::dbGroupType::VOLTAGE_DOMAIN:
+                case odb::dbGroupType::VOLTAGE_DOMAIN:
 			obj = Tcl_NewStringObj("VOLTAGE_DOMAIN", -1);
 			break;
 	}
@@ -1314,9 +1314,9 @@
 %typemap(in) odb::dbGroup::dbGroupType, dbGroupType {
 	char *str = Tcl_GetStringFromObj($input, 0);
 	if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
-		$1 = odb::dbGroup::dbGroupType::PHYSICAL_CLUSTER;
+                $1 = odb::dbGroupType::PHYSICAL_CLUSTER;
 	} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
-		$1 = odb::dbGroup::dbGroupType::VOLTAGE_DOMAIN;
+                $1 = odb::dbGroupType::VOLTAGE_DOMAIN;
 	}
 }
 %typemap(typecheck) odb::dbGroup::dbGroupType, dbGroupType {

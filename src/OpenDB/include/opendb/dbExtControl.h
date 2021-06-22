@@ -61,16 +61,15 @@ class dbExtControl : public dbObject
   uint _CCnoPowerSource;
   uint _CCnoPowerTarget;
   bool _usingMetalPlanes;
-  char* _ruleFileName;
-  char* _extractedCornerList;
-  char* _derivedCornerList;
-  char* _cornerIndexList;
-  char* _resFactorList;
-  char* _gndcFactorList;
-  char* _ccFactorList;
+  std::string _ruleFileName;
+  std::string _extractedCornerList;
+  std::string _derivedCornerList;
+  std::string _cornerIndexList;
+  std::string _resFactorList;
+  std::string _gndcFactorList;
+  std::string _ccFactorList;
 
   dbExtControl();
-  ~dbExtControl();
 };
 
 dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl);

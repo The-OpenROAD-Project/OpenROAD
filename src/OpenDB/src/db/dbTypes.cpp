@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbTypes.h"
+
 #include <ctype.h>
 #include <string.h>
 
 #include "dbId.h"
-#include "dbTypes.h"
 
 namespace odb {
 
@@ -134,6 +135,50 @@ const char* dbOrientType::getString() const
 
     case MXR90:
       value = "MXR90";
+      break;
+  }
+
+  return value;
+}
+
+dbGroupType::dbGroupType(const char* orient)
+{
+  if (strcasecmp(orient, "PHYSICAL_CLUSTER") == 0)
+    _value = PHYSICAL_CLUSTER;
+
+  else if (strcasecmp(orient, "VOLTAGE_DOMAIN") == 0)
+    _value = VOLTAGE_DOMAIN;
+
+  else
+    _value = PHYSICAL_CLUSTER;
+}
+
+dbGroupType::dbGroupType(Value orient)
+{
+  _value = orient;
+}
+
+dbGroupType::dbGroupType()
+{
+  _value = PHYSICAL_CLUSTER;
+}
+
+dbGroupType::dbGroupType(const dbGroupType& type)
+{
+  _value = type._value;
+}
+
+const char* dbGroupType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case PHYSICAL_CLUSTER:
+      value = "PHYSICAL_CLUSTER";
+      break;
+
+    case VOLTAGE_DOMAIN:
+      value = "VOLTAGE_DOMAIN";
       break;
   }
 

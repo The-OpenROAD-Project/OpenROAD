@@ -2416,7 +2416,7 @@ char* dbBlock::getCornerNameList()
 
   return block->_corner_name_list;
 }
-void dbBlock::setCornerNameList(char* name_list)
+void dbBlock::setCornerNameList(const char* name_list)
 {
   _dbBlock* block = (_dbBlock*) this;
 

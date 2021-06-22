@@ -1,13 +1,13 @@
 #include <stdio.h>
-#include "utl/Logger.h"
 
 #include "db.h"
+#include "utl/Logger.h"
 using namespace odb;
 
-dbMaster* createMaster2X1(dbLib*      lib,
+dbMaster* createMaster2X1(dbLib* lib,
                           const char* name,
-                          uint        width,
-                          uint        height,
+                          uint width,
+                          uint height,
                           const char* in1,
                           const char* in2,
                           const char* out)
@@ -26,16 +26,15 @@ dbMaster* createMaster2X1(dbLib*      lib,
 dbDatabase* createSimpleDB()
 {
   utl::Logger* logger = new utl::Logger();
-  dbDatabase*  db   = dbDatabase::create();
+  dbDatabase* db = dbDatabase::create();
   db->setLogger(logger);
-  dbTech*      tech = dbTech::create(db);
-  dbTechLayer* layer
-      = dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
-  dbLib*    lib   = dbLib::create(db, "lib1", ',');
-  dbChip*   chip  = dbChip::create(db);
-  dbBlock*  block = dbBlock::create(chip, "simple_block");
-  dbMaster* and2  = createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
-  dbMaster* or2   = createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
+  dbTech* tech = dbTech::create(db);
+  dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
+  dbLib* lib = dbLib::create(db, "lib1", ',');
+  dbChip* chip = dbChip::create(db);
+  dbBlock::create(chip, "simple_block");
+  createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
+  createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
   return db;
 }
 
@@ -52,22 +51,22 @@ dbDatabase* createSimpleDB()
 // #            +-----
 dbDatabase* create2LevetDbNoBTerms()
 {
-  dbDatabase* db    = createSimpleDB();
-  dbLib*      lib   = db->findLib("lib1");
-  dbChip*     chip  = db->getChip();
-  dbBlock*    block = chip->getBlock();
-  auto        and2  = lib->findMaster("and2");
-  auto        or2   = lib->findMaster("or2");
-  dbInst*     i1    = dbInst::create(block, and2, "i1");
-  dbInst*     i2    = dbInst::create(block, and2, "i2");
-  dbInst*     i3    = dbInst::create(block, or2, "i3");
-  dbNet*      n1    = dbNet::create(block, "n1");
-  dbNet*      n2    = dbNet::create(block, "n2");
-  dbNet*      n3    = dbNet::create(block, "n3");
-  dbNet*      n4    = dbNet::create(block, "n4");
-  dbNet*      n5    = dbNet::create(block, "n5");
-  dbNet*      n6    = dbNet::create(block, "n6");
-  dbNet*      n7    = dbNet::create(block, "n7");
+  dbDatabase* db = createSimpleDB();
+  dbLib* lib = db->findLib("lib1");
+  dbChip* chip = db->getChip();
+  dbBlock* block = chip->getBlock();
+  auto and2 = lib->findMaster("and2");
+  auto or2 = lib->findMaster("or2");
+  dbInst* i1 = dbInst::create(block, and2, "i1");
+  dbInst* i2 = dbInst::create(block, and2, "i2");
+  dbInst* i3 = dbInst::create(block, or2, "i3");
+  dbNet* n1 = dbNet::create(block, "n1");
+  dbNet* n2 = dbNet::create(block, "n2");
+  dbNet* n3 = dbNet::create(block, "n3");
+  dbNet* n4 = dbNet::create(block, "n4");
+  dbNet* n5 = dbNet::create(block, "n5");
+  dbNet* n6 = dbNet::create(block, "n6");
+  dbNet* n7 = dbNet::create(block, "n7");
   dbITerm::connect(i1->findITerm("a"), n1);
   dbITerm::connect(i1->findITerm("b"), n2);
   dbITerm::connect(i2->findITerm("a"), n3);
@@ -81,16 +80,16 @@ dbDatabase* create2LevetDbNoBTerms()
 }
 dbDatabase* create2LevetDbWithBTerms()
 {
-  dbDatabase* db    = create2LevetDbNoBTerms();
-  dbBlock*    block = db->getChip()->getBlock();
-  auto        n1    = block->findNet("n1");
-  auto        n2    = block->findNet("n2");
-  auto        n7    = block->findNet("n7");
-  dbBTerm*    IN1   = dbBTerm::create(n1, "IN1");
+  dbDatabase* db = create2LevetDbNoBTerms();
+  dbBlock* block = db->getChip()->getBlock();
+  auto n1 = block->findNet("n1");
+  auto n2 = block->findNet("n2");
+  auto n7 = block->findNet("n7");
+  dbBTerm* IN1 = dbBTerm::create(n1, "IN1");
   IN1->setIoType(dbIoType::INPUT);
   dbBTerm* IN2 = dbBTerm::create(n2, "IN2");
-  IN1->setIoType(dbIoType::INPUT);
+  IN2->setIoType(dbIoType::INPUT);
   dbBTerm* OUT = dbBTerm::create(n7, "IN3");
-  IN1->setIoType(dbIoType::OUTPUT);
+  OUT->setIoType(dbIoType::OUTPUT);
   return db;
 }

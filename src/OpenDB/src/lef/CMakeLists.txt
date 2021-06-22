@@ -64,3 +64,8 @@ target_link_libraries(lefzlib
     PUBLIC
         ZLIB::ZLIB
 )
+
+target_compile_options(lef
+  PRIVATE
+    -Wno-class-memaccess
+  )
