@@ -40,7 +40,8 @@ using odb::ISdb;
 using odb::Rect;
 using odb::ZPtr;
 
-extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt) {
+extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
+{
   createModelTable(1, layerCnt);
   for (uint kk = 0; kk < _modelCnt; kk++)
     _dataRateTable->add(0.0);
@@ -49,8 +50,12 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt) {
   _modelTable[0]->allocateInitialTables(layerCnt, widthCnt, true, true, true);
   return _modelTable[0];
 }
-AthPool<extDistRC>* extMetRCTable::getRCPool() { return _rcPoolPtr; }
-uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
+AthPool<extDistRC>* extMetRCTable::getRCPool()
+{
+  return _rcPoolPtr;
+}
+uint extMain::GenExtRules(const char* rulesFileName, int pattern)
+{
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
 
@@ -114,9 +119,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
       continue;
 
     // fprintf(logFP, "%s\n", netName);
-    bool over = false;
-    bool overUnder = false;
-    bool under = false;
     bool diag = false;
     bool ResModel = false;
 
@@ -140,7 +142,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
       underMet = w->getInt(2, 1);
-      overUnder = true;
 
       m._overMet = underMet;
       m._underMet = overMet;
@@ -150,7 +151,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
     } else if (strstr(overUnderToken, "o") != NULL) {
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
-      over = true;
       if (p->getFirstChar() == 'R') {
         ResModel = true;
         m._res = ResModel;
@@ -162,7 +162,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
     } else if (strstr(overUnderToken, "uu") != NULL) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
-      under = false;
       diag = true;
       m._diag = true;
       m._overMet = underMet;
@@ -172,7 +171,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
     } else if (strstr(overUnderToken, "u") != NULL) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
-      under = true;
 
       m._overMet = underMet;
       m._underMet = -1;
@@ -186,7 +184,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
       continue;
 
     double w1 = w->getDouble(0) / 1000;
-    double w2 = w->getDouble(1) / 1000;
 
     m._w_m = w1;
     m._w_nm = Ath__double2int(m._w_m * 1000);
@@ -240,25 +237,46 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
       fprintf(
           logFP,
           "M%2d OVER %2d UNDER %2d W %.3f S1 %.3f S2 %.3f R %g LEN %g %g  %s\n",
-          met, overMet, underMet, w1, s1, s2, res, wLen, R, netName);
+          met,
+          overMet,
+          underMet,
+          w1,
+          s1,
+          s2,
+          res,
+          wLen,
+          R,
+          netName);
     } else {
       fprintf(
           logFP,
           "M%2d OVER %2d UNDER %2d W %.3f S %.3f CC %.6f GND %.6f TC %.6f x "
           "%.6f R %g LEN %g  %s\n",
-          met, overMet, underMet, w1, s1, totCC, totGnd, totCC + totGnd,
-          contextCoupling, res, wLen, netName);
+          met,
+          overMet,
+          underMet,
+          w1,
+          s1,
+          totCC,
+          totGnd,
+          totCC + totGnd,
+          contextCoupling,
+          res,
+          wLen,
+          netName);
     }
   }
   rcModel->mkWidthAndSpaceMappings();
-  extRulesModel->writeRules((char*)rulesFileName, false);
+  extRulesModel->writeRules((char*) rulesFileName, false);
 
   fclose(logFP);
   return n;
 }
 
-double extMain::getTotalCouplingCap(dbNet* net, const char* filterNet,
-                                    uint corner) {
+double extMain::getTotalCouplingCap(dbNet* net,
+                                    const char* filterNet,
+                                    uint corner)
+{
   double cap = 0.0;
   dbSet<dbCapNode> capNodes = net->getCapNodes();
   dbSet<dbCapNode>::iterator citr;
@@ -272,8 +290,8 @@ double extMain::getTotalCouplingCap(dbNet* net, const char* filterNet,
       dbCCSeg* cc = *ccitr;
       dbNet* srcNet = cc->getSourceCapNode()->getNet();
       dbNet* tgtNet = cc->getTargetCapNode()->getNet();
-      if ((strstr(srcNet->getConstName(), filterNet) == NULL) &&
-          (strstr(tgtNet->getConstName(), filterNet) == NULL))
+      if ((strstr(srcNet->getConstName(), filterNet) == NULL)
+          && (strstr(tgtNet->getConstName(), filterNet) == NULL))
         continue;
 
       cap += cc->getCapacitance(corner);
@@ -282,10 +300,11 @@ double extMain::getTotalCouplingCap(dbNet* net, const char* filterNet,
   return cap;
 }
 
-uint extMain::benchVerilog(FILE* fp) {
+uint extMain::benchVerilog(FILE* fp)
+{
   fprintf(fp, "module %s (\n", _block->getConstName());
-  int outCnt = benchVerilog_bterms(fp, dbIoType::OUTPUT, "  ", ",");
-  int inCnt = benchVerilog_bterms(fp, dbIoType::INPUT, "  ", ",", true);
+  benchVerilog_bterms(fp, dbIoType::OUTPUT, "  ", ",");
+  benchVerilog_bterms(fp, dbIoType::INPUT, "  ", ",", true);
   fprintf(fp, ");\n\n");
   benchVerilog_bterms(fp, dbIoType::OUTPUT, "  output ", " ;");
   fprintf(fp, "\n");
@@ -302,14 +321,17 @@ uint extMain::benchVerilog(FILE* fp) {
   fclose(fp);
   return 0;
 }
-uint extMain::benchVerilog_bterms(FILE* fp, dbIoType iotype, const char* prefix,
-                                  const char* postfix, bool skip_postfix_last) {
+uint extMain::benchVerilog_bterms(FILE* fp,
+                                  dbIoType iotype,
+                                  const char* prefix,
+                                  const char* postfix,
+                                  bool skip_postfix_last)
+{
   int n = 0;
   dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator itr;
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
-    const char* netName = net->getConstName();
 
     dbSet<dbBTerm> bterms = net->getBTerms();
     dbSet<dbBTerm>::iterator itr;
@@ -328,13 +350,13 @@ uint extMain::benchVerilog_bterms(FILE* fp, dbIoType iotype, const char* prefix,
   }
   return n;
 }
-uint extMain::benchVerilog_assign(FILE* fp) {
+uint extMain::benchVerilog_assign(FILE* fp)
+{
   int n = 0;
   dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator itr;
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
-    const char* netName = net->getConstName();
 
     const char* bterm1 = NULL;
     const char* bterm2 = NULL;
@@ -342,7 +364,6 @@ uint extMain::benchVerilog_assign(FILE* fp) {
     dbSet<dbBTerm>::iterator itr;
     for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
       dbBTerm* bterm = *itr;
-      const char* btermName = bterm->getConstName();
 
       if (bterm->getIoType() == dbIoType::OUTPUT) {
         bterm1 = bterm->getConstName();
@@ -351,7 +372,6 @@ uint extMain::benchVerilog_assign(FILE* fp) {
     }
     for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
       dbBTerm* bterm = *itr;
-      const char* btermName = bterm->getConstName();
 
       if (bterm->getIoType() == dbIoType::INPUT) {
         bterm2 = bterm->getConstName();
@@ -362,7 +382,8 @@ uint extMain::benchVerilog_assign(FILE* fp) {
   }
   return n;
 }
-uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure) {
+uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
+{
   Ath__array1D<double>* widthTable = new Ath__array1D<double>(4);
   Ath__array1D<double>* spaceTable = new Ath__array1D<double>(4);
   Ath__array1D<double>* wTable = &opt->_widthTable;
@@ -527,8 +548,8 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure) {
  *
  * @return number of wires in the pattern geometries
  */
-int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
-  bool debug = true;
+void extRCModel::writeBenchWires_DB_res(extMeasure* measure)
+{
   // mkFileNames(measure, "");
   mkNet_prefix(measure, "");
   measure->_skip_delims = true;
@@ -537,12 +558,9 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
   int gap = grid_gap_cnt * (measure->_minWidth + measure->_minSpace);
   // does NOT work measure->_ll[!measure->_dir] += gap;
   // measure->_ur[1] += gap;
-  int bboxLL[2];
-  bboxLL[measure->_dir] = measure->_ur[measure->_dir];
-  bboxLL[!measure->_dir] = measure->_ll[!measure->_dir];
 
-  int n =
-      measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
+  int n
+      = measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
 
   double pitchUp_print = measure->_topWidth;
   double pitch_print = 0.001 * (measure->_minWidth + measure->_minSpace);
@@ -552,8 +570,6 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
 
   double x = -(measure->_topWidth * 0.5 + pitchUp_print + pitch_print);
 
-  int x1 = bboxLL[0];
-  int y1 = bboxLL[1];
   uint WW = measure->_w_nm;
   uint SS1 = measure->_s_nm;
   uint WW2 = measure->_w2_nm;
@@ -567,81 +583,57 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
       measure->_ll[measure->_dir] += gap;
       measure->_ur[measure->_dir] += gap;
 
-      return 1;
+      return;
     }
     measure->createNetSingleWire(_wireDirName, 4, WW, SS2);
     measure->_ll[measure->_dir] += gap;
     measure->_ur[measure->_dir] += gap;
 
-    return 2;
+    return;
   }
 
-  double x_tmp[50];
-  uint netIdTable[50];
   uint idCnt = 1;
   int ii;
   if (s_layout > 0) {
     for (ii = 0; ii < n - 1; ii++) {
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
+      measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
-      x_tmp[ii] = x;
       x -= pitch_print;
     }
   }
 
-  double X[50];
-  ii--;
-  int cnt = 0;
-  for (; ii >= 0; ii--)
-    X[cnt++] = x_tmp[ii];
-
-  uint base;
   if (n > 1) {
-    X[cnt++] = -pitchUp_print;
-    int mid = cnt;
-    netIdTable[idCnt] =
-        measure->createNetSingleWire(_wireDirName, idCnt, WW, s_layout);
+    measure->createNetSingleWire(_wireDirName, idCnt, WW, s_layout);
     idCnt++;
 
-    X[cnt++] = 0.0;
     if (!measure->_diag) {
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, WW, SS1);
-      base = measure->_ll[measure->_dir] + WW / 2;
+      measure->createNetSingleWire(_wireDirName, idCnt, WW, SS1);
       idCnt++;
-      X[cnt++] = (SS2 + WW * 0.5) * 0.001;
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
+      measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
       idCnt++;
     }
 
     //	x= measure->_topWidth*0.5+pitchUp_print+0.001*measure->_minSpace;
     x = measure->_topWidth * 0.5 + 0.001 * (WW2 + SS2 + measure->_minSpace);
     for (int jj = 0; jj < n - 1; jj++) {
-      X[cnt++] = x;
       x += pitch_print;
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
+      measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
     }
   } else {
-    base = measure->_ll[measure->_dir] + WW / 2;
-    X[cnt++] = (SS2 + WW * 0.5) * 0.001;
-    netIdTable[idCnt] =
-        measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
+    measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
     idCnt++;
   }
   measure->_ll[measure->_dir] += gap;
   measure->_ur[measure->_dir] += gap;
-
-  return cnt;
 }
-int extRCModel::writeBenchWires_DB(extMeasure* measure) {
-  if (measure->_diag)
-    return writeBenchWires_DB_diag(measure);
+void extRCModel::writeBenchWires_DB(extMeasure* measure)
+{
+  if (measure->_diag) {
+    writeBenchWires_DB_diag(measure);
+    return;
+  }
 
-  bool debug = true;
   // mkFileNames(measure, "");
   mkNet_prefix(measure, "");
   measure->_skip_delims = true;
@@ -654,8 +646,8 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
   bboxLL[measure->_dir] = measure->_ur[measure->_dir];
   bboxLL[!measure->_dir] = measure->_ll[!measure->_dir];
 
-  int n =
-      measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
+  int n
+      = measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
 
   if (measure->_s_nm == 0 && !measure->_diag)
     n = 1;
@@ -668,28 +660,14 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
 
   double x = -(measure->_topWidth * 0.5 + pitchUp_print + pitch_print);
 
-  int x1 = bboxLL[0];
-  int y1 = bboxLL[1];
-
   measure->clean2dBoxTable(measure->_met, false);
 
-  double x_tmp[50];
-  uint netIdTable[50];
   uint idCnt = 1;
-  int ii;
-  for (ii = 0; ii < n - 1; ii++) {
-    netIdTable[idCnt] =
-        measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
+  for (int ii = 0; ii < n - 1; ii++) {
+    measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
     idCnt++;
-    x_tmp[ii] = x;
     x -= pitch_print;
   }
-
-  double X[50];
-  ii--;
-  int cnt = 0;
-  for (; ii >= 0; ii--)
-    X[cnt++] = x_tmp[ii];
 
   uint WW = measure->_w_nm;
   uint SS1;
@@ -702,21 +680,14 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
 
   uint base;
   if (n > 1) {
-    X[cnt++] = -pitchUp_print;
-    int mid = cnt;
-    netIdTable[idCnt] =
-        measure->createNetSingleWire(_wireDirName, idCnt, WW, s_layout);
+    measure->createNetSingleWire(_wireDirName, idCnt, WW, s_layout);
     idCnt++;
 
-    X[cnt++] = 0.0;
     if (!measure->_diag) {
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, WW, SS1);
+      measure->createNetSingleWire(_wireDirName, idCnt, WW, SS1);
       base = measure->_ll[measure->_dir] + WW / 2;
       idCnt++;
-      X[cnt++] = (SS2 + WW * 0.5) * 0.001;
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
+      measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
       idCnt++;
     } else {
       uint met_tmp = measure->_met;
@@ -725,35 +696,29 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
       if (measure->_s_nm == 0)
         ss2 = measure->_s_nm;
 
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, 0, ss2);
+      measure->createNetSingleWire(_wireDirName, idCnt, 0, ss2);
       idCnt++;
 
       measure->_met = met_tmp;
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
+      measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
     }
 
     //	x= measure->_topWidth*0.5+pitchUp_print+0.001*measure->_minSpace;
     x = measure->_topWidth * 0.5 + 0.001 * (WW2 + SS2 + measure->_minSpace);
     for (int jj = 0; jj < n - 1; jj++) {
-      X[cnt++] = x;
       x += pitch_print;
-      netIdTable[idCnt] =
-          measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
+      measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
     }
   } else {
     base = measure->_ll[measure->_dir] + WW / 2;
-    X[cnt++] = (SS2 + WW * 0.5) * 0.001;
-    netIdTable[idCnt] =
-        measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
+    measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
     idCnt++;
   }
 
   if (measure->_diag) {
-    return cnt;
+    return;
 
     int met;
     if (measure->_overMet > 0)
@@ -766,17 +731,20 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
     double min_pitch = minWidth + minSpace;
     measure->clean2dBoxTable(met, false);
     int i;
-    uint begin = base - Ath__double2int(measure->_seff * 1000) +
-                 Ath__double2int(minWidth * 1000) / 2;
+    uint begin = base - Ath__double2int(measure->_seff * 1000)
+                 + Ath__double2int(minWidth * 1000) / 2;
     for (i = 0; i < n + 1; i++) {
-      netIdTable[idCnt] = measure->createDiagNetSingleWire(
-          _wireDirName, idCnt, begin, Ath__double2int(1000 * minWidth),
-          Ath__double2int(1000 * minSpace), measure->_dir);
+      measure->createDiagNetSingleWire(_wireDirName,
+                                       idCnt,
+                                       begin,
+                                       Ath__double2int(1000 * minWidth),
+                                       Ath__double2int(1000 * minSpace),
+                                       measure->_dir);
       begin -= Ath__double2int(min_pitch * 1000);
       idCnt++;
     }
     measure->_ur[measure->_dir] += grid_gap_cnt * (w_layout + s_layout);
-    return cnt;
+    return;
   }
   bool grid_context = true;
   bool grid_context_same_dir = false;
@@ -786,22 +754,22 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
   int extend_blockage = (measure->_minWidth + measure->_minSpace);
   int extend_blockage_gap = measure->getPatternExtend();
 
-  int bboxUR[2] = {measure->_ur[0] + extend_blockage,
-                   measure->_ur[1] + extend_blockage};
+  int bboxUR[2]
+      = {measure->_ur[0] + extend_blockage, measure->_ur[1] + extend_blockage};
   bboxLL[0] -= extend_blockage;
   bboxLL[1] -= extend_blockage;
 
   if (grid_context && (measure->_underMet > 0 || measure->_overMet > 0)) {
     if (!grid_context_same_dir) {
-      measure->createContextGrid(_wireDirName, bboxLL, bboxUR,
-                                 measure->_underMet, cntx_dist);
-      measure->createContextGrid(_wireDirName, bboxLL, bboxUR,
-                                 measure->_overMet, cntx_dist);
+      measure->createContextGrid(
+          _wireDirName, bboxLL, bboxUR, measure->_underMet, cntx_dist);
+      measure->createContextGrid(
+          _wireDirName, bboxLL, bboxUR, measure->_overMet, cntx_dist);
     } else {
-      measure->createContextGrid_dir(_wireDirName, bboxLL, bboxUR,
-                                     measure->_underMet);
-      measure->createContextGrid_dir(_wireDirName, bboxLL, bboxUR,
-                                     measure->_overMet);
+      measure->createContextGrid_dir(
+          _wireDirName, bboxLL, bboxUR, measure->_underMet);
+      measure->createContextGrid_dir(
+          _wireDirName, bboxLL, bboxUR, measure->_overMet);
     }
   } else {
     double pitchMult = 1.0;
@@ -809,26 +777,33 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
     measure->clean2dBoxTable(measure->_underMet, true);
     // measure->createContextNets(_wireDirName, bboxLL, bboxUR,
     // measure->_underMet, pitchMult);
-    measure->createContextObstruction(_wireDirName, bboxLL[0], bboxLL[1],
-                                      bboxUR, measure->_underMet, pitchMult);
+    measure->createContextObstruction(_wireDirName,
+                                      bboxLL[0],
+                                      bboxLL[1],
+                                      bboxUR,
+                                      measure->_underMet,
+                                      pitchMult);
 
     measure->clean2dBoxTable(measure->_overMet, true);
     // measure->createContextNets(_wireDirName, bboxLL, bboxUR,
     // measure->_overMet, pitchMult);
-    measure->createContextObstruction(_wireDirName, bboxLL[0], bboxLL[1],
-                                      bboxUR, measure->_overMet, pitchMult);
+    measure->createContextObstruction(_wireDirName,
+                                      bboxLL[0],
+                                      bboxLL[1],
+                                      bboxUR,
+                                      measure->_overMet,
+                                      pitchMult);
   }
 
   measure->_ur[measure->_dir] += gap + extend_blockage_gap;
 
   //	double mainNetStart= X[0];
-  int main_xlo, main_ylo, main_xhi, main_yhi, low;
-  measure->getBox(measure->_met, false, main_xlo, main_ylo, main_xhi, main_yhi);
-  if (!measure->_dir)
-    low = main_ylo - measure->_minWidth / 2;
-  else
-    low = main_xlo - measure->_minWidth / 2;
-  uint contextRaphaelCnt = 0;
+  // int main_xlo, main_ylo, main_xhi, main_yhi, low;
+  // measure->getBox(measure->_met, false, main_xlo, main_ylo, main_xhi,
+  // main_yhi); if (!measure->_dir)
+  //   low = main_ylo - measure->_minWidth / 2;
+  // else
+  //   low = main_xlo - measure->_minWidth / 2;
   if (measure->_underMet > 0) {
     // double h = _process->getConductor(measure->_underMet)->_height;
     // double t = _process->getConductor(measure->_underMet)->_thickness;
@@ -863,14 +838,14 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
   // fprintf(stdout, "\nOBS %d %d %d %d %d\n", met, x, y, bboxUR[0], bboxUR[1]);
   // dbTechLayer* layer = _tech->findRoutingLayer(met);
   // dbObstruction::create(_block, layer, x, y, bboxUR[0], bboxUR[1]);
-  return 1;
 }
-uint extMeasure::getPatternExtend() {
+uint extMeasure::getPatternExtend()
+{
   int extend_blockage = (this->_minWidth + this->_minSpace);
 
   if (this->_overMet > 0) {
-    dbTechLayer* layer =
-        this->_create_net_util.getRoutingLayer()[this->_overMet];
+    dbTechLayer* layer
+        = this->_create_net_util.getRoutingLayer()[this->_overMet];
     uint ww = layer->getWidth();
     uint sp = layer->getSpacing();
     if (sp == 0)
@@ -879,8 +854,8 @@ uint extMeasure::getPatternExtend() {
     extend_blockage = sp;
   }
   if (this->_underMet > 0) {
-    dbTechLayer* layer =
-        this->_create_net_util.getRoutingLayer()[this->_underMet];
+    dbTechLayer* layer
+        = this->_create_net_util.getRoutingLayer()[this->_underMet];
     uint ww = layer->getWidth();
     uint sp = layer->getSpacing();
     if (sp == 0)
@@ -891,9 +866,13 @@ uint extMeasure::getPatternExtend() {
   }
   return extend_blockage;
 }
-uint extMeasure::createContextObstruction(const char* dirName, int x, int y,
-                                          int bboxUR[2], int met,
-                                          double pitchMult) {
+uint extMeasure::createContextObstruction(const char* dirName,
+                                          int x,
+                                          int y,
+                                          int bboxUR[2],
+                                          int met,
+                                          double pitchMult)
+{
   if (met <= 0)
     return 0;
 
@@ -922,8 +901,12 @@ int met, int s_layout)
                 return xcnt;
 }
 */
-uint extMeasure::createContextGrid(char* dirName, int bboxLL[2], int bboxUR[2],
-                                   int met, int s_layout) {
+uint extMeasure::createContextGrid(char* dirName,
+                                   int bboxLL[2],
+                                   int bboxUR[2],
+                                   int met,
+                                   int s_layout)
+{
   if (met <= 0)
     return 0;
   dbTechLayer* layer = this->_create_net_util.getRoutingLayer()[met];
@@ -945,8 +928,8 @@ uint extMeasure::createContextGrid(char* dirName, int bboxLL[2], int bboxUR[2],
 
   int xcnt = 1;
   while (ll[!this->_dir] <= bboxUR[!this->_dir]) {
-    this->createNetSingleWire_cntx(met, dirName, xcnt++, !this->_dir, ll, ur,
-                                   s_layout);
+    this->createNetSingleWire_cntx(
+        met, dirName, xcnt++, !this->_dir, ll, ur, s_layout);
     uint d = !_dir;
     ll[d] = ur[d] + sp;
     ur[d] = ll[d] + ww;
@@ -954,8 +937,11 @@ uint extMeasure::createContextGrid(char* dirName, int bboxLL[2], int bboxUR[2],
   return xcnt;
 }
 
-uint extMeasure::createContextGrid_dir(char* dirName, int bboxLL[2],
-                                       int bboxUR[2], int met) {
+uint extMeasure::createContextGrid_dir(char* dirName,
+                                       int bboxLL[2],
+                                       int bboxUR[2],
+                                       int met)
+{
   if (met <= 0)
     return 0;
 
@@ -982,13 +968,14 @@ uint extMeasure::createContextGrid_dir(char* dirName, int bboxLL[2],
   }
   return xcnt;
 }
-int extRCModel::writeBenchWires_DB_diag(extMeasure* measure) {
+void extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
+{
   bool lines_3 = true;
   bool lines_2 = true;
   int diag_width = 0;
   int diag_space = 0;
-  dbTechLayer* layer =
-      measure->_create_net_util.getRoutingLayer()[measure->_overMet];
+  dbTechLayer* layer
+      = measure->_create_net_util.getRoutingLayer()[measure->_overMet];
   diag_width = layer->getWidth();
   diag_space = layer->getSpacing();
   if (diag_space == 0)
@@ -1000,7 +987,6 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure) {
   uint munder = measure->_met;
   measure->_met = mover;
 
-  bool debug = true;
   // mkFileNames(measure, "");
   measure->_skip_delims = true;
   uint grid_gap_cnt = 20;
@@ -1012,40 +998,27 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure) {
   bboxLL[measure->_dir] = measure->_ur[measure->_dir];
   bboxLL[!measure->_dir] = measure->_ll[!measure->_dir];
 
-  int n = measure->_wireCnt / 2;
-
-  double pitchUp_print = measure->_topWidth;
-  double pitch_print = 0.001 * (measure->_minWidth + measure->_minSpace);
-
-  uint w_layout = measure->_minWidth;
-  uint s_layout = measure->_minSpace;
-
-  double x = -(measure->_topWidth * 0.5 + pitchUp_print + pitch_print);
-
-  int x1 = bboxLL[0];
-  int y1 = bboxLL[1];
-
   measure->clean2dBoxTable(measure->_met, false);
 
   uint idCnt = 1;
   if (!lines_3) {
     measure->createNetSingleWire(
-        _wireDirName, idCnt, diag_width, diag_space,
+        _wireDirName,
+        idCnt,
+        diag_width,
+        diag_space,
         measure->_dir);  // 0 to force min width and spacing
   }
   idCnt++;
 
-  uint WW = measure->_w_nm;
   uint SS1;
   //	if (measure->_diag)
   //		SS1= 2*measure->_minSpace;
   //	else
   SS1 = measure->_s_nm;
-  uint WW2 = measure->_w2_nm;
-  uint SS2 = measure->_s2_nm;
 
-  measure->createNetSingleWire(_wireDirName, idCnt, diag_width, diag_space,
-                               measure->_dir);
+  measure->createNetSingleWire(
+      _wireDirName, idCnt, diag_width, diag_space, measure->_dir);
   idCnt++;
 
   uint ss2 = SS1;
@@ -1056,19 +1029,19 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure) {
   }
 
   measure->_met = munder;
-  measure->createNetSingleWire(_wireDirName, idCnt, measure->_w_nm, ss2,
-                               measure->_dir);
+  measure->createNetSingleWire(
+      _wireDirName, idCnt, measure->_w_nm, ss2, measure->_dir);
   idCnt++;
   measure->_met = mover;
 
   if (!lines_2) {
-    measure->createNetSingleWire(_wireDirName, idCnt, diag_width, SS4,
-                                 measure->_dir);
+    measure->createNetSingleWire(
+        _wireDirName, idCnt, diag_width, SS4, measure->_dir);
     idCnt++;
   }
   if (!lines_3) {
-    measure->createNetSingleWire(_wireDirName, idCnt, diag_width, diag_space,
-                                 measure->_dir);
+    measure->createNetSingleWire(
+        _wireDirName, idCnt, diag_width, diag_space, measure->_dir);
     idCnt++;
   }
 
@@ -1078,38 +1051,46 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure) {
   bool grid_context = false;
 
   int extend_blockage = (measure->_minWidth + measure->_minSpace);
-  int bboxUR[2] = {measure->_ur[0] + extend_blockage,
-                   measure->_ur[1] + extend_blockage};
+  int bboxUR[2]
+      = {measure->_ur[0] + extend_blockage, measure->_ur[1] + extend_blockage};
   bboxLL[0] -= extend_blockage;
   bboxLL[1] -= extend_blockage;
 
   if (grid_context) {
     if (grid_context && (measure->_underMet > 0 || measure->_overMet > 0)) {
-      measure->createContextGrid(_wireDirName, bboxLL, bboxUR,
-                                 measure->_underMet);
-      measure->createContextGrid(_wireDirName, bboxLL, bboxUR,
-                                 measure->_overMet);
+      measure->createContextGrid(
+          _wireDirName, bboxLL, bboxUR, measure->_underMet);
+      measure->createContextGrid(
+          _wireDirName, bboxLL, bboxUR, measure->_overMet);
     } else {
       double pitchMult = 1.0;
 
       measure->clean2dBoxTable(measure->_underMet, true);
-      measure->createContextObstruction(_wireDirName, bboxLL[0], bboxLL[1],
-                                        bboxUR, measure->_underMet, pitchMult);
+      measure->createContextObstruction(_wireDirName,
+                                        bboxLL[0],
+                                        bboxLL[1],
+                                        bboxUR,
+                                        measure->_underMet,
+                                        pitchMult);
 
       measure->clean2dBoxTable(measure->_overMet, true);
-      measure->createContextObstruction(_wireDirName, bboxLL[0], bboxLL[1],
-                                        bboxUR, measure->_overMet, pitchMult);
+      measure->createContextObstruction(_wireDirName,
+                                        bboxLL[0],
+                                        bboxLL[1],
+                                        bboxUR,
+                                        measure->_overMet,
+                                        pitchMult);
     }
   }
   measure->_ur[measure->_dir] += gap;
 
-  int main_xlo, main_ylo, main_xhi, main_yhi, low;
-  measure->getBox(measure->_met, false, main_xlo, main_ylo, main_xhi, main_yhi);
-  if (!measure->_dir)
-    low = main_ylo - measure->_minWidth / 2;
-  else
-    low = main_xlo - measure->_minWidth / 2;
-  uint contextRaphaelCnt = 0;
+  // int main_xlo, main_ylo, main_xhi, main_yhi, low;
+  // measure->getBox(measure->_met, false, main_xlo, main_ylo, main_xhi,
+  // main_yhi); if (!measure->_dir)
+  //   low = main_ylo - measure->_minWidth / 2;
+  // else
+  //   low = main_xlo - measure->_minWidth / 2;
+  // uint contextRaphaelCnt = 0;
   if (measure->_underMet > 0) {
     // double h = _process->getConductor(measure->_underMet)->_height;
     // double t = _process->getConductor(measure->_underMet)->_thickness;
@@ -1144,7 +1125,6 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure) {
   // fprintf(stdout, "\nOBS %d %d %d %d %d\n", met, x, y, bboxUR[0], bboxUR[1]);
   // dbTechLayer* layer = _tech->findRoutingLayer(met);
   // dbObstruction::create(_block, layer, x, y, bboxUR[0], bboxUR[1]);
-  return 1;
 }
 
 }  // namespace rcx

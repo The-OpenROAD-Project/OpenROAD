@@ -66,22 +66,25 @@ using odb::Rect;
 using odb::SEQ;
 using odb::ZPtr;
 
-void extMain::init(odb::dbDatabase* db, Logger* logger) {
+void extMain::init(odb::dbDatabase* db, Logger* logger)
+{
   _db = db;
   _block = NULL;
   _blockId = 0;
   logger_ = logger;
 }
 
-void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext) {
+void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext)
+{
   if (_ext == NULL)
     return;
-  extMain* ext = (extMain*)_ext;
+  extMain* ext = (extMain*) _ext;
   ext->removeSdb(nets);
 }
 
-void extMain::addDummyCorners(dbBlock* block, uint cnt, Logger* logger) {
-  extMain* tmiExt = (extMain*)block->getExtmi();
+void extMain::addDummyCorners(dbBlock* block, uint cnt, Logger* logger)
+{
+  extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     logger->error(RCX, 252, "Ext object on dbBlock is NULL!");
     return;
@@ -89,11 +92,12 @@ void extMain::addDummyCorners(dbBlock* block, uint cnt, Logger* logger) {
   tmiExt->addDummyCorners(cnt);
 }
 
-void extMain::initExtractedCorners(dbBlock* block) {
-  extMain* tmiExt = (extMain*)block->getExtmi();
+void extMain::initExtractedCorners(dbBlock* block)
+{
+  extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->init((dbDatabase*)block->getDataBase(), logger_);
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   if (tmiExt->_processCornerTable)
     return;
@@ -101,20 +105,24 @@ void extMain::initExtractedCorners(dbBlock* block) {
   tmiExt->getExtractedCorners();
 }
 
-int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName) {
-  extMain* tmiExt = (extMain*)block->getExtmi();
+int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName)
+{
+  extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->init((dbDatabase*)block->getDataBase(), logger_);
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   int idx = tmiExt->getDbCornerIndex(cornerName);
   return idx;
 }
 
 // wis 1
-void extMain::writeIncrementalSpef(Darr<dbNet*>& buf_nets, dbBlock* block,
-                                   INCR_SPEF_TYPE isftype, bool coupled_rc,
-                                   bool dual_incr_spef) {
+void extMain::writeIncrementalSpef(Darr<dbNet*>& buf_nets,
+                                   dbBlock* block,
+                                   INCR_SPEF_TYPE isftype,
+                                   bool coupled_rc,
+                                   bool dual_incr_spef)
+{
   std::vector<dbNet*> bnets;
   int nn;
   for (nn = 0; nn < buf_nets.n(); nn++)
@@ -122,20 +130,30 @@ void extMain::writeIncrementalSpef(Darr<dbNet*>& buf_nets, dbBlock* block,
   if (isftype == ISPEF_ORIGINAL_PLUS_HALO || isftype == ISPEF_NEW_PLUS_HALO) {
     std::vector<dbNet*> ccHaloNets;
     block->getCcHaloNets(bnets, ccHaloNets);
-    INCR_SPEF_TYPE type =
-        isftype == ISPEF_ORIGINAL_PLUS_HALO ? ISPEF_ORIGINAL : ISPEF_NEW;
-    writeIncrementalSpef(bnets, ccHaloNets, block, type, coupled_rc,
+    INCR_SPEF_TYPE type
+        = isftype == ISPEF_ORIGINAL_PLUS_HALO ? ISPEF_ORIGINAL : ISPEF_NEW;
+    writeIncrementalSpef(bnets,
+                         ccHaloNets,
+                         block,
+                         type,
+                         coupled_rc,
                          dual_incr_spef);  // wis 3
   } else
-    writeIncrementalSpef(bnets, block, isftype, coupled_rc,
+    writeIncrementalSpef(bnets,
+                         block,
+                         isftype,
+                         coupled_rc,
                          dual_incr_spef);  // wis 4
 }
 
 // wis 2
 void extMain::writeIncrementalSpef(Darr<dbNet*>& buf_nets,
                                    std::vector<dbNet*>& ccHaloNets,
-                                   dbBlock* block, INCR_SPEF_TYPE isftype,
-                                   bool coupled_rc, bool dual_incr_spef) {
+                                   dbBlock* block,
+                                   INCR_SPEF_TYPE isftype,
+                                   bool coupled_rc,
+                                   bool dual_incr_spef)
+{
   std::vector<dbNet*> bnets;
   int nn;
   for (nn = 0; nn < buf_nets.n(); nn++)
@@ -143,50 +161,66 @@ void extMain::writeIncrementalSpef(Darr<dbNet*>& buf_nets,
   uint jj;
   for (jj = 0; jj < ccHaloNets.size(); jj++)
     bnets.push_back(ccHaloNets[jj]);
-  writeIncrementalSpef(bnets, block, isftype, coupled_rc,
+  writeIncrementalSpef(bnets,
+                       block,
+                       isftype,
+                       coupled_rc,
                        dual_incr_spef);  // wis 4
 }
 
 // wis 3
 void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
                                    std::vector<dbNet*>& ccHaloNets,
-                                   dbBlock* block, INCR_SPEF_TYPE isftype,
-                                   bool coupled_rc, bool dual_incr_spef) {
+                                   dbBlock* block,
+                                   INCR_SPEF_TYPE isftype,
+                                   bool coupled_rc,
+                                   bool dual_incr_spef)
+{
   std::vector<dbNet*> bnets;
   uint jj;
   for (jj = 0; jj < buf_nets.size(); jj++)
     bnets.push_back(buf_nets[jj]);
   for (jj = 0; jj < ccHaloNets.size(); jj++)
     bnets.push_back(ccHaloNets[jj]);
-  writeIncrementalSpef(bnets, block, isftype, coupled_rc,
+  writeIncrementalSpef(bnets,
+                       block,
+                       isftype,
+                       coupled_rc,
                        dual_incr_spef);  // wis 4
 }
 
 // wis 4
 void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
-                                   dbBlock* block, INCR_SPEF_TYPE isftype,
-                                   bool coupled_rc, bool dual_incr_spef) {
-  extMain* tmiExt = (extMain*)block->getExtmi();
+                                   dbBlock* block,
+                                   INCR_SPEF_TYPE isftype,
+                                   bool coupled_rc,
+                                   bool dual_incr_spef)
+{
+  extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
-    tmiExt->init((dbDatabase*)block->getDataBase(), logger_);
+    tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
     // tmiExt -> setDesign((char *)block->getConstName());
   }
-  tmiExt->writeIncrementalSpef(buf_nets, isftype, coupled_rc,
+  tmiExt->writeIncrementalSpef(buf_nets,
+                               isftype,
+                               coupled_rc,
                                dual_incr_spef);  // wis 5
 }
 
 // wis 5
 void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
-                                   INCR_SPEF_TYPE isftype, bool coupled_rc,
-                                   bool dual_incr_spef) {
+                                   INCR_SPEF_TYPE isftype,
+                                   bool coupled_rc,
+                                   bool dual_incr_spef)
+{
   if (isftype == ISPEF_ORIGINAL && !_origSpefFilePrefix)
     return;
   if (isftype == ISPEF_NEW && !_newSpefFilePrefix)
     return;
   std::vector<dbNet*> dumnet;
-  bool fullIncrSpef =
-      coupled_rc && !dual_incr_spef && !_noFullIncrSpef ? true : false;
+  bool fullIncrSpef
+      = coupled_rc && !dual_incr_spef && !_noFullIncrSpef ? true : false;
   std::vector<dbNet*>* pbnets = fullIncrSpef ? &dumnet : &bnets;
   if (!_spef || _spef->getBlock() != _block) {
     if (_spef)
@@ -194,14 +228,14 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
     _spef = new extSpef(_tech, _block, logger_, this);
     // copy block name for incremental spef - needed for magma
     // Mattias - Nov 19/07
-    _spef->setDesign((char*)_block->getName().c_str());
+    _spef->setDesign((char*) _block->getName().c_str());
   }
   _spef->_writeNameMap = _writeNameMap;
   _spef->preserveFlag(_prevControl->_foreign);
   _spef->_independentExtCorners = _prevControl->_independentExtCorners;
   char filename[1024];
   char cName[128];
-  char seqName[64];
+  char seqName[128];
   const char* newp = "/tmp/new";
   if (_newSpefFilePrefix)
     newp = _newSpefFilePrefix;
@@ -232,27 +266,42 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
 }
 
 // wis 6
-void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
-                                   uint nn, bool dual_incr_spef) {
-  uint cnt;
+void extMain::writeIncrementalSpef(char* filename,
+                                   std::vector<dbNet*>& bnets,
+                                   uint nn,
+                                   bool dual_incr_spef)
+{
   char fname[1200];
   if (!dual_incr_spef) {
-    debugPrint(logger_, RCX, "spef_out", 1,
+    debugPrint(logger_,
+               RCX,
+               "spef_out",
+               1,
                "EXT_SPEF:"
                "I "
                "Writing Spef to File {}",
                filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(RCX, 483, "Can't open file \"{}\" to write spef.", filename);
+      logger_->info(
+          RCX, 483, "Can't open file \"{}\" to write spef.", filename);
     else
-      cnt = _spef->writeBlock(
-          NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/,
-          "OHM" /*resUnit*/, false /*stopAfterMap*/, bnets /*tnets*/,
-          false /*wClock*/, false /*wConn*/, false /*wCap*/,
-          false /*wOnlyCCcap*/, false /*wRes*/, false /*noCnum*/,
-          false /*initOnly*/, _incrNoBackSlash /*noBackSlash*/,
-          false /*flatten*/, false /*parallel*/);
+      _spef->writeBlock(NULL /*nodeCoord*/,
+                        _excludeCells,
+                        "PF" /*capUnit*/,
+                        "OHM" /*resUnit*/,
+                        false /*stopAfterMap*/,
+                        bnets /*tnets*/,
+                        false /*wClock*/,
+                        false /*wConn*/,
+                        false /*wCap*/,
+                        false /*wOnlyCCcap*/,
+                        false /*wRes*/,
+                        false /*noCnum*/,
+                        false /*initOnly*/,
+                        _incrNoBackSlash /*noBackSlash*/,
+                        false /*flatten*/,
+                        false /*parallel*/);
     return;
   }
   std::vector<uint> oldNetCap;
@@ -262,33 +311,56 @@ void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
   if (openSpefFile(fname, 1) > 0)
     logger_->info(RCX, 59, "Can't open file \"{}\" to write spef.", fname);
   else
-    cnt = _spef->writeBlock(
-        NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/, "OHM" /*resUnit*/,
-        false /*stopAfterMap*/, bnets /*tnets*/, false /*wClock*/,
-        false /*wConn*/, false /*wCap*/, false /*wOnlyCCcap*/, false /*wRes*/,
-        false /*noCnum*/, false /*initOnly*/, _incrNoBackSlash /*noBackSlash*/,
-        false /*flatten*/, false /*parallel*/);
+    _spef->writeBlock(NULL /*nodeCoord*/,
+                      _excludeCells,
+                      "PF" /*capUnit*/,
+                      "OHM" /*resUnit*/,
+                      false /*stopAfterMap*/,
+                      bnets /*tnets*/,
+                      false /*wClock*/,
+                      false /*wConn*/,
+                      false /*wCap*/,
+                      false /*wOnlyCCcap*/,
+                      false /*wRes*/,
+                      false /*noCnum*/,
+                      false /*initOnly*/,
+                      _incrNoBackSlash /*noBackSlash*/,
+                      false /*flatten*/,
+                      false /*parallel*/);
   _block->restoreOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.2.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
     logger_->info(RCX, 61, "Can't open file \"{}\" to write spef.", fname);
   else
-    cnt = _spef->writeBlock(
-        NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/, "OHM" /*resUnit*/,
-        false /*stopAfterMap*/, bnets /*tnets*/, false /*wClock*/,
-        false /*wConn*/, false /*wCap*/, false /*wOnlyCCcap*/, false /*wRes*/,
-        false /*noCnum*/, false /*initOnly*/, _incrNoBackSlash /*noBackSlash*/,
-        false /*flatten*/, false /*parallel*/);
+    _spef->writeBlock(NULL /*nodeCoord*/,
+                      _excludeCells,
+                      "PF" /*capUnit*/,
+                      "OHM" /*resUnit*/,
+                      false /*stopAfterMap*/,
+                      bnets /*tnets*/,
+                      false /*wClock*/,
+                      false /*wConn*/,
+                      false /*wCap*/,
+                      false /*wOnlyCCcap*/,
+                      false /*wRes*/,
+                      false /*noCnum*/,
+                      false /*initOnly*/,
+                      _incrNoBackSlash /*noBackSlash*/,
+                      false /*flatten*/,
+                      false /*parallel*/);
 }
 
-void extMain::writeSpef(char* filename, std::vector<dbNet*>& tnets, int corner,
-                        char* coord) {
+void extMain::writeSpef(char* filename,
+                        std::vector<dbNet*>& tnets,
+                        int corner,
+                        char* coord)
+{
   if (!_spef || _spef->getBlock() != _block) {
     if (_spef)
       delete _spef;
     _spef = new extSpef(_tech, _block, logger_, this);
   }
-  _spef->setDesign((char*)_block->getConstName());
+  _spef->setDesign((char*) _block->getConstName());
   uint cCnt = _block->getCornerCount();
   if (corner >= 0) {
     _spef->_active_corner_cnt = 1;
@@ -298,22 +370,32 @@ void extMain::writeSpef(char* filename, std::vector<dbNet*>& tnets, int corner,
     for (uint nn = 0; nn < cCnt; nn++)
       _spef->_active_corner_number[nn] = nn;
   }
-  uint cnt;
   if (openSpefFile(filename, 1) > 0) {
     logger_->info(RCX, 62, "Can't open file \"{}\" to write spef.", filename);
     return;
   } else
-    cnt = _spef->writeBlock(
-        coord /*nodeCoord*/, NULL /*excludeCell*/, "PF" /*capUnit*/,
-        "OHM" /*resUnit*/, false /*stopAfterMap*/, tnets /*tnets*/,
-        false /*wClock*/, false /*wConn*/, false /*wCap*/, false /*wOnlyCCcap*/,
-        false /*wRes*/, false /*noCnum*/, false /*initOnly*/,
-        false /*noBackSlash*/, false /*flatten*/, false /*parallel*/);
+    _spef->writeBlock(coord /*nodeCoord*/,
+                      NULL /*excludeCell*/,
+                      "PF" /*capUnit*/,
+                      "OHM" /*resUnit*/,
+                      false /*stopAfterMap*/,
+                      tnets /*tnets*/,
+                      false /*wClock*/,
+                      false /*wConn*/,
+                      false /*wCap*/,
+                      false /*wOnlyCCcap*/,
+                      false /*wRes*/,
+                      false /*noCnum*/,
+                      false /*initOnly*/,
+                      false /*noBackSlash*/,
+                      false /*flatten*/,
+                      false /*parallel*/);
   delete _spef;
   _spef = NULL;
 }
 
-void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor) {
+void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor)
+{
   double res_factor = resFactor / _resFactor;
   _resFactor = resFactor;
   _resModify = resFactor == 1.0 ? false : true;
@@ -326,10 +408,12 @@ void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor) {
   _block->adjustRC(res_factor, cc_factor, gndc_factor);
 }
 
-uint extMain::getMultiples(uint cnt, uint base) {
+uint extMain::getMultiples(uint cnt, uint base)
+{
   return ((cnt / base) + 1) * base;
 }
-void extMain::setupMapping(uint itermCnt) {
+void extMain::setupMapping(uint itermCnt)
+{
   if (_btermTable)
     return;
   uint btermCnt = 0;
@@ -401,7 +485,8 @@ extMain::extMain(uint menuId)
       _coordsGND(nullptr),
       _coordsVDD(nullptr),
       _subCktNodeFP{{nullptr, nullptr}, {nullptr, nullptr}},
-      _junct2iterm(nullptr) {
+      _junct2iterm(nullptr)
+{
   _previous_percent_extracted = 0;
   _power_extract_only = false;
   _skip_power_stubs = false;
@@ -502,14 +587,15 @@ extMain::extMain(uint menuId)
   _power_source_file = NULL;
 }
 
-void extMain::initDgContextArray() {
+void extMain::initDgContextArray()
+{
   _dgContextDepth = 3;
   _dgContextPlanes = _dgContextDepth * 2 + 1;
-  _dgContextArray = new Ath__array1D<SEQ*>** [_dgContextPlanes];
+  _dgContextArray = new Ath__array1D<SEQ*>**[_dgContextPlanes];
   _dgContextBaseTrack = new uint[_dgContextPlanes];
   _dgContextLowTrack = new int[_dgContextPlanes];
   _dgContextHiTrack = new int[_dgContextPlanes];
-  _dgContextTrackBase = new int* [_dgContextPlanes];
+  _dgContextTrackBase = new int*[_dgContextPlanes];
   if (_diagFlow)
     //		_dgContextTracks = (_couplingFlag%10)*2 + 1;
     _dgContextTracks = _couplingFlag * 2 + 1;
@@ -517,14 +603,15 @@ void extMain::initDgContextArray() {
     _dgContextTracks = _couplingFlag * 2 + 1;
   for (uint jj = 0; jj < _dgContextPlanes; jj++) {
     _dgContextTrackBase[jj] = new int[1024];
-    _dgContextArray[jj] = new Ath__array1D<SEQ*>* [_dgContextTracks];
+    _dgContextArray[jj] = new Ath__array1D<SEQ*>*[_dgContextTracks];
     for (uint tt = 0; tt < _dgContextTracks; tt++) {
       _dgContextArray[jj][tt] = new Ath__array1D<SEQ*>(1024);
     }
   }
 }
 
-void extMain::removeDgContextArray() {
+void extMain::removeDgContextArray()
+{
   if (!_dgContextPlanes || !_dgContextArray)
     return;
   delete[] _dgContextBaseTrack;
@@ -541,25 +628,27 @@ void extMain::removeDgContextArray() {
   _dgContextArray = NULL;
 }
 
-void extMain::initContextArray() {
+void extMain::initContextArray()
+{
   if (_ccContextArray)
     return;
   uint layerCnt = getExtLayerCnt(_tech);
-  _ccContextLength = (uint*)calloc(sizeof(uint), layerCnt + 1);
-  _ccContextArray = new Ath__array1D<int>* [layerCnt + 1];
+  _ccContextLength = (uint*) calloc(sizeof(uint), layerCnt + 1);
+  _ccContextArray = new Ath__array1D<int>*[layerCnt + 1];
   _ccContextArray[0] = NULL;
   uint ii;
   for (ii = 1; ii <= layerCnt; ii++)
     _ccContextArray[ii] = new Ath__array1D<int>(1024);
-  _ccMergedContextLength = (uint*)calloc(sizeof(uint), layerCnt + 1);
-  _ccMergedContextArray = new Ath__array1D<int>* [layerCnt + 1];
+  _ccMergedContextLength = (uint*) calloc(sizeof(uint), layerCnt + 1);
+  _ccMergedContextArray = new Ath__array1D<int>*[layerCnt + 1];
   _ccMergedContextArray[0] = NULL;
   for (ii = 1; ii <= layerCnt; ii++)
     _ccMergedContextArray[ii] = new Ath__array1D<int>(1024);
   _tContextArray = new Ath__array1D<int>(1024);
 }
 
-uint extMain::getExtLayerCnt(dbTech* tech) {
+uint extMain::getExtLayerCnt(dbTech* tech)
+{
   dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
@@ -575,7 +664,8 @@ uint extMain::getExtLayerCnt(dbTech* tech) {
   }
   return n;
 }
-uint extMain::addExtModel(dbTech* tech) {
+uint extMain::addExtModel(dbTech* tech)
+{
   _lefRC = true;
 
   if (tech == NULL)
@@ -595,10 +685,9 @@ uint extMain::addExtModel(dbTech* tech) {
     _modelTable->add(m);
   }
 
-  int dbunit = _block->getDbUnitsPerMicron();
-  double dbFactor = 1;
-  if (dbunit > 1000)
-    dbFactor = dbunit * 0.001;
+  // int dbunit = _block->getDbUnitsPerMicron();
+  // if (dbunit > 1000)
+  //   dbFactor = dbunit * 0.001;
 
   dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
@@ -615,7 +704,6 @@ uint extMain::addExtModel(dbTech* tech) {
 
     uint w = layer->getWidth();  // nm
 
-    double areacap = layer->getCapacitance() / (dbFactor * dbFactor);
     double cap = layer->getCapacitance();
 
     // double cap
@@ -639,13 +727,15 @@ uint extMain::addExtModel(dbTech* tech) {
   }
   return layerCnt;
 }
-extRCModel* extMain::getRCmodel(uint n) {
+extRCModel* extMain::getRCmodel(uint n)
+{
   if (_modelTable->getCnt() <= 0)
     return NULL;
 
   return _modelTable->get(n);
 }
-uint extMain::getResCapTable(bool lefRC) {
+uint extMain::getResCapTable(bool lefRC)
+{
   calcMinMaxRC();
   _currentModel = getRCmodel(0);
 
@@ -658,7 +748,6 @@ uint extMain::getResCapTable(bool lefRC) {
 
   uint cnt = 0;
   uint n = 0;
-  bool allRzero = true;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
     dbTechLayerType type = layer->getType();
@@ -694,8 +783,6 @@ uint extMain::getResCapTable(bool lefRC) {
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
 
       double res = layer->getResistance();  // OHMS per square
-      if (res != 0.0)
-        allRzero = false;
       _resistanceTable[jj][n] = res;
 
       _capacitanceTable[jj][n] = 0.0;
@@ -705,13 +792,22 @@ uint extMain::getResCapTable(bool lefRC) {
       if (rc != NULL) {
         double r1 = rc->getRes();
         _capacitanceTable[jj][n] = rc->getFringe();
-        debugPrint(logger_, RCX, "extrules", 1,
+        debugPrint(logger_,
+                   RCX,
+                   "extrules",
+                   1,
                    "EXT_RES: "
                    "R "
                    "Layer= {} met= {}   w= {} cc= {:g} fr= {:g} res= {:g} "
                    "model_res= {:g} new_model_res= {:g} ",
-                   layer->getConstName(), n, w, rc->getCoupling(),
-                   rc->getFringe(), res, r1, resTable[jj]);
+                   layer->getConstName(),
+                   n,
+                   w,
+                   rc->getCoupling(),
+                   rc->getFringe(),
+                   res,
+                   r1,
+                   resTable[jj]);
       }
 
       extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
@@ -726,18 +822,24 @@ uint extMain::getResCapTable(bool lefRC) {
           }
         }
       } else {
-        debugPrint(logger_, RCX, "extrules", 1,
+        debugPrint(logger_,
+                   RCX,
+                   "extrules",
+                   1,
                    "EXT_RES_LEF: "
                    "R "
                    "Layer= {} met= {}  lef_res= {:g}\n",
-                   layer->getConstName(), n, res);
+                   layer->getConstName(),
+                   n,
+                   res);
       }
     }
     cnt++;
   }
   return cnt;
 }
-bool extMain::checkLayerResistance() {
+bool extMain::checkLayerResistance()
+{
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
@@ -752,13 +854,16 @@ bool extMain::checkLayerResistance() {
     double res = layer->getResistance();  // OHMS per square
 
     if (res <= 0.0) {
-      logger_->warn(RCX, 139, "Missing Resistance value for layer {}",
+      logger_->warn(RCX,
+                    139,
+                    "Missing Resistance value for layer {}",
                     layer->getConstName());
       cnt++;
     }
   }
   if (cnt > 0) {
-    logger_->warn(RCX, 138,
+    logger_->warn(RCX,
+                  138,
                   "{} layers are missing resistance value; Check LEF file. "
                   "Extraction cannot proceed! Exiting",
                   cnt);
@@ -766,7 +871,8 @@ bool extMain::checkLayerResistance() {
   }
   return true;
 }
-double extMain::getLefResistance(uint level, uint width, uint len, uint model) {
+double extMain::getLefResistance(uint level, uint width, uint len, uint model)
+{
   double res = _resistanceTable[model][level];
   double n = 1.0 * len;
 
@@ -777,7 +883,8 @@ double extMain::getLefResistance(uint level, uint width, uint len, uint model) {
 
   return r;
 }
-double extMain::getResistance(uint level, uint width, uint len, uint model) {
+double extMain::getResistance(uint level, uint width, uint len, uint model)
+{
   /*
           if (_lefRC) {
           double res= _resistanceTable[0][level];
@@ -813,7 +920,8 @@ double extMain::getResistance(uint level, uint width, uint len, uint model) {
           }
   */
 }
-void extMain::setBlockFromChip() {
+void extMain::setBlockFromChip()
+{
   _tech = _db->getTech();
   _block = _db->getChip()->getBlock();
   _blockId = _block->getId();
@@ -822,7 +930,7 @@ void extMain::setBlockFromChip() {
   _block->setExtmi(this);
 #endif
 
-  if(_spef != nullptr) {
+  if (_spef != nullptr) {
     _spef = nullptr;
     _extracted = false;
   }
@@ -833,7 +941,8 @@ void extMain::setBlockFromChip() {
   _excludeCells = nullptr;
 }
 
-void extMain::setBlock(dbBlock* block) {
+void extMain::setBlock(dbBlock* block)
+{
   _block = block;
   _prevControl = _block->getExtControl();
 #ifndef _WIN32
@@ -849,12 +958,14 @@ void extMain::setBlock(dbBlock* block) {
   _newSpefFilePrefix = NULL;
   _excludeCells = NULL;
 }
-uint extMain::makeGuiBoxes(uint extGuiBoxType) {
+uint extMain::makeGuiBoxes(uint extGuiBoxType)
+{
   uint cnt = 0;
   return cnt;
 }
 
-uint extMain::computeXcaps(uint boxType) {
+uint extMain::computeXcaps(uint boxType)
+{
   ZPtr<ISdb> ccCapSdb = _reExtract ? _reExtCcapSDB : _extCcapSDB;
   if (ccCapSdb == NULL)
     return 0;
@@ -895,9 +1006,10 @@ uint extMain::computeXcaps(uint boxType) {
 
     // dbCCSeg *ccap= dbCCSeg::create(srcNet, rseg1->getTargetNode(),
     //		tgtNet, rseg2->getTargetNode(), mergeParallel);
-    dbCCSeg* ccap = dbCCSeg::create(
-        dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
-        dbCapNode::getCapNode(_block, rseg2->getTargetNode()), mergeParallel);
+    dbCCSeg* ccap
+        = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
+                          dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
+                          mergeParallel);
 
     uint lcnt = _block->getCornerCount();
     for (uint ii = 0; ii < lcnt; ii++) {
@@ -912,10 +1024,16 @@ uint extMain::computeXcaps(uint boxType) {
   return cnt;
 }
 
-double extMain::getLoCoupling() { return _coupleThreshold; }
+double extMain::getLoCoupling()
+{
+  return _coupleThreshold;
+}
 
-double extMain::getFringe(uint met, uint width, uint modelIndex,
-                          double& areaCap) {
+double extMain::getFringe(uint met,
+                          uint width,
+                          uint modelIndex,
+                          double& areaCap)
+{
   areaCap = 0.0;
   if (_noModelRC)
     return 0.0;
@@ -951,8 +1069,12 @@ double extMain::getFringe(uint met, uint width, uint modelIndex,
     return 0.0;
   return rc->getFringe();
 }
-void extMain::updateTotalCap(dbRSeg* rseg, double frCap, double ccCap,
-                             double deltaFr, uint modelIndex) {
+void extMain::updateTotalCap(dbRSeg* rseg,
+                             double frCap,
+                             double ccCap,
+                             double deltaFr,
+                             uint modelIndex)
+{
   if (_eco && !rseg->getNet()->isWireAltered())
     return;
 
@@ -964,8 +1086,12 @@ void extMain::updateTotalCap(dbRSeg* rseg, double frCap, double ccCap,
   rseg->setCapacitance(tot, modelIndex);
   //	double T= rseg->getCapacitance(modelIndex);
 }
-void extMain::updateTotalRes(dbRSeg* rseg1, dbRSeg* rseg2, extMeasure* m,
-                             double* delta, uint modelCnt) {
+void extMain::updateTotalRes(dbRSeg* rseg1,
+                             dbRSeg* rseg2,
+                             extMeasure* m,
+                             double* delta,
+                             uint modelCnt)
+{
   for (uint modelIndex = 0; modelIndex < modelCnt; modelIndex++) {
     extDistRC* rc = m->_rc[modelIndex];
 
@@ -1012,9 +1138,13 @@ void extMain::updateTotalRes(dbRSeg* rseg1, dbRSeg* rseg2, extMeasure* m,
   }
 }
 
-void extMain::updateTotalCap(dbRSeg* rseg, extMeasure* m, double* deltaFr,
-                             uint modelCnt, bool includeCoupling,
-                             bool includeDiag) {
+void extMain::updateTotalCap(dbRSeg* rseg,
+                             extMeasure* m,
+                             double* deltaFr,
+                             uint modelCnt,
+                             bool includeCoupling,
+                             bool includeDiag)
+{
   if (_eco && !rseg->getNet()->isWireAltered())
     return;
 
@@ -1048,7 +1178,11 @@ void extMain::updateTotalCap(dbRSeg* rseg, extMeasure* m, double* deltaFr,
       if (_printFile == NULL)
         _printFile = fopen("updateCap.1", "w");
       _updateTotalCcnt++;
-      fprintf(_printFile, "%d %d %g %g\n", _updateTotalCcnt, rseg->getId(), tot,
+      fprintf(_printFile,
+              "%d %d %g %g\n",
+              _updateTotalCcnt,
+              rseg->getId(),
+              tot,
               cap);
     }
 
@@ -1064,10 +1198,12 @@ void extMain::updateTotalCap(dbRSeg* rseg, extMeasure* m, double* deltaFr,
   }
 }
 
-void extMain::updateCCCap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap) {
-  dbCCSeg* ccap = dbCCSeg::create(
-      dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
-      dbCapNode::getCapNode(_block, rseg2->getTargetNode()), true);
+void extMain::updateCCCap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
+{
+  dbCCSeg* ccap
+      = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
+                        dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
+                        true);
   /*
 dbCCSeg *ccap= dbCCSeg::create(rseg1->getNet(),
 rseg1->getTargetNode(), rseg2->getNet(), rseg2->getTargetNode(), true);
@@ -1083,19 +1219,21 @@ rseg1->getTargetNode(), rseg2->getNet(), rseg2->getTargetNode(), true);
       ccap->setCapacitance(ccCap, ii);
   }
 }
-int extGeoThickTable::getRowCol(int xy, int base, uint bucket, uint bound) {
+int extGeoThickTable::getRowCol(int xy, int base, uint bucket, uint bound)
+{
   int delta = (xy - base);
   if (delta <= 0)
     return delta;
 
   int rowCol = delta / bucket;
-  if (rowCol >= (int)bound)
+  if (rowCol >= (int) bound)
     return -1;
 
   return rowCol;
 }
 
-extGeoVarTable* extGeoThickTable::getSquare(int x, int y, uint* rowCol) {
+extGeoVarTable* extGeoThickTable::getSquare(int x, int y, uint* rowCol)
+{
   int row = getRowCol(y, _ll[1], _tileSize, _rowCnt);
   if (row < 0)
     return NULL;
@@ -1109,33 +1247,44 @@ extGeoVarTable* extGeoThickTable::getSquare(int x, int y, uint* rowCol) {
 
   return _thickTable[row][col];
 }
-int extGeoThickTable::getLowerBound(uint dir, uint* rowCol) {
+int extGeoThickTable::getLowerBound(uint dir, uint* rowCol)
+{
   return _thickTable[rowCol[0]][rowCol[1]]->getLowerBound(dir);
 }
-int extGeoThickTable::getUpperBound(uint dir, uint* rowCol) {
+int extGeoThickTable::getUpperBound(uint dir, uint* rowCol)
+{
   return _thickTable[rowCol[1]][rowCol[0]]->getLowerBound(dir) + _tileSize;
 }
-extGeoVarTable* extGeoThickTable::addVarTable(int x, int y, double nom,
-                                              double e, Ath__array1D<double>* A,
+extGeoVarTable* extGeoThickTable::addVarTable(int x,
+                                              int y,
+                                              double nom,
+                                              double e,
+                                              Ath__array1D<double>* A,
                                               bool simpleVersion,
-                                              bool calcDiff) {
+                                              bool calcDiff)
+{
   uint row = (y - _ll[1]) / _tileSize;
   assert((row >= 0) && (row < _rowCnt));
 
   uint col = (x - _ll[0]) / _tileSize;
   assert((col >= 0) && (col < _colCnt));
 
-  extGeoVarTable* b =
-      new extGeoVarTable(x, y, nom, e, A, simpleVersion, calcDiff);
+  extGeoVarTable* b
+      = new extGeoVarTable(x, y, nom, e, A, simpleVersion, calcDiff);
 
   _thickTable[row][col] = b;
 
   return b;
 }
 
-extGeoThickTable::extGeoThickTable(int x1, int y1, int x2, int y2,
-                                   uint tileSize, Ath__array1D<double>* A,
-                                   uint units) {
+extGeoThickTable::extGeoThickTable(int x1,
+                                   int y1,
+                                   int x2,
+                                   int y2,
+                                   uint tileSize,
+                                   Ath__array1D<double>* A,
+                                   uint units)
+{
   _tileSize = tileSize;
   // char *_layerName;
 
@@ -1147,9 +1296,9 @@ extGeoThickTable::extGeoThickTable(int x1, int y1, int x2, int y2,
   _rowCnt = (_ur[1] - _ll[1]) / tileSize + 1;
   _colCnt = (_ur[0] - _ll[0]) / tileSize + 1;
 
-  _thickTable = new extGeoVarTable** [_rowCnt];
+  _thickTable = new extGeoVarTable**[_rowCnt];
   for (uint ii = 0; ii < _rowCnt; ii++) {
-    _thickTable[ii] = new extGeoVarTable* [_colCnt];
+    _thickTable[ii] = new extGeoVarTable*[_colCnt];
     for (uint jj = 0; jj < _colCnt; jj++) {
       _thickTable[ii][jj] = NULL;
     }
@@ -1168,7 +1317,8 @@ extGeoThickTable::extGeoThickTable(int x1, int y1, int x2, int y2,
     _widthTable->add(w);
   }
 }
-extGeoThickTable::~extGeoThickTable() {
+extGeoThickTable::~extGeoThickTable()
+{
   if (_widthTable != NULL)
     delete _widthTable;
 
@@ -1184,11 +1334,13 @@ extGeoThickTable::~extGeoThickTable() {
   }
   delete[] _thickTable;
 }
-double extGeoVarTable::getVal(uint n, double& nom) {
+double extGeoVarTable::getVal(uint n, double& nom)
+{
   nom = _nominal;
   return _diffTable->get(n);
 }
-bool extGeoVarTable::getThicknessDiff(int n, double& delta_th) {
+bool extGeoVarTable::getThicknessDiff(int n, double& delta_th)
+{
   if (_fractionDiff) {
     if (n < 0)
       n = 0;
@@ -1206,8 +1358,8 @@ bool extGeoVarTable::getThicknessDiff(int n, double& delta_th) {
     // double diff= (th-thRef)/thRef;
   }
 }
-bool extGeoThickTable::getThicknessDiff(int x, int y, uint w,
-                                        double& delta_th) {
+bool extGeoThickTable::getThicknessDiff(int x, int y, uint w, double& delta_th)
+{
   uint rowCol[2];
 
   extGeoVarTable* sq1 = getSquare(x, y, rowCol);
@@ -1220,16 +1372,22 @@ bool extGeoThickTable::getThicknessDiff(int x, int y, uint w,
 
   return sq1->getThicknessDiff(n, delta_th);
 }
-int extGeoVarTable::getLowerBound(uint dir) {
+int extGeoVarTable::getLowerBound(uint dir)
+{
   if (dir > 0)
     return _y;
   else
     return _x;
 }
 
-extGeoVarTable::extGeoVarTable(int x, int y, double nom, double e,
-                               Ath__array1D<double>* A, bool simpleVersion,
-                               bool calcDiff) {
+extGeoVarTable::extGeoVarTable(int x,
+                               int y,
+                               double nom,
+                               double e,
+                               Ath__array1D<double>* A,
+                               bool simpleVersion,
+                               bool calcDiff)
+{
   _x = x;
   _y = y;
   _nominal = nom;
@@ -1262,41 +1420,41 @@ extGeoVarTable::extGeoVarTable(int x, int y, double nom, double e,
   for (uint ii = 0; ii < n; ii++)
     _varCoeffTable->add(A->get(ii));
 }
-extGeoVarTable::~extGeoVarTable() {
+extGeoVarTable::~extGeoVarTable()
+{
   if (_diffTable != NULL)
     delete _diffTable;
   if (_varCoeffTable != NULL)
     delete _varCoeffTable;
 }
-void extMain::ccReportProgress() {
+void extMain::ccReportProgress()
+{
   uint repChunk = 1000000;
   if ((_totSegCnt > 0) && (_totSegCnt % repChunk == 0)) {
     // if ((_totSignalSegCnt>0)&&(_totSignalSegCnt%5000000==0))
     //		fprintf(stdout, "Have processed %d total segments, %d signal
     // segments, %d CC caps, and stored %d CC caps\n", _totSegCnt,
     //_totSignalSegCnt, _totCCcnt, _totBigCCcnt);
-    logger_->info(RCX, 140,
+    logger_->info(RCX,
+                  140,
                   "Have processed {} total segments, {} signal segments, {} CC "
                   "caps, and stored {} CC caps",
-                  _totSegCnt, _totSignalSegCnt, _totCCcnt, _totBigCCcnt);
+                  _totSegCnt,
+                  _totSignalSegCnt,
+                  _totCCcnt,
+                  _totBigCCcnt);
   }
 }
 int ttttsrcnet = 66;
 int tttttgtnet = 66;
 int ttttm = 0;
-void extMain::printNet(dbNet* net, uint netId) {
+void extMain::printNet(dbNet* net, uint netId)
+{
   if (netId == net->getId())
     net->printNetName(stdout);
 }
-bool IsDebugNets(dbNet* srcNet, dbNet* tgtNet, uint debugNetId) {
-  if (srcNet != NULL && srcNet->getId() == debugNetId)
-    return true;
-  if (tgtNet != NULL && tgtNet->getId() == debugNetId)
-    return true;
-
-  return false;
-}
-void extMain::measureRC(CoupleOptions& options) {
+void extMain::measureRC(CoupleOptions& options)
+{
   _totSegCnt++;
   int rsegId1 = options[1];  // dbRSeg id for SRC segment
   int rsegId2 = options[2];  // dbRSeg id for Target segment
@@ -1335,7 +1493,6 @@ void extMain::measureRC(CoupleOptions& options) {
   if (_lefRC)
     return;
 
-  bool watchNets = IsDebugNets(srcNet, tgtNet, debugNetId);
   m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
   m._pixelTable = _geomSeq;
 
@@ -1363,29 +1520,41 @@ void extMain::measureRC(CoupleOptions& options) {
 
   uint totLenCovered = 0;
   if (_usingMetalPlanes) {
-    if (_ccContextArray && ((!srcNet || (int)srcNet->getId() == ttttsrcnet) ||
-                            (!tgtNet || (int)tgtNet->getId() == tttttgtnet)) &&
-        (!ttttm || m._met == ttttm)) {
+    if (_ccContextArray
+        && ((!srcNet || (int) srcNet->getId() == ttttsrcnet)
+            || (!tgtNet || (int) tgtNet->getId() == tttttgtnet))
+        && (!ttttm || m._met == ttttm)) {
       int pxy = m._dir ? m._ll[0] : m._ll[1];
       int pbase = m._dir ? m._ur[1] : m._ur[0];
       //		  fprintf(stdout, "Context of layer %d, xy=%d len=%d
       // base=%d width=%d :\n", m._met, pxy, m._len, pbase, m._s_nm);
-      logger_->info(RCX, 141,
-                    "Context of layer {} xy={} len={} base={} width={}", m._met,
-                    pxy, m._len, pbase, m._s_nm);
+      logger_->info(RCX,
+                    141,
+                    "Context of layer {} xy={} len={} base={} width={}",
+                    m._met,
+                    pxy,
+                    m._len,
+                    pbase,
+                    m._s_nm);
       uint ii, jj;
-      for (ii = 1; ii <= _ccContextDepth &&
-                       (int)ii + m._met < _currentModel->getLayerCnt();
+      for (ii = 1; ii <= _ccContextDepth
+                   && (int) ii + m._met < _currentModel->getLayerCnt();
            ii++) {
         logger_->info(RCX, 142, "  layer {}", ii + m._met);
         for (jj = 0; jj < _ccContextArray[ii + m._met]->getCnt(); jj++)
-          logger_->info(RCX, 476, "    {}: {}", jj,
+          logger_->info(RCX,
+                        476,
+                        "    {}: {}",
+                        jj,
                         _ccContextArray[ii + m._met]->get(jj));
       }
       for (ii = 1; ii <= _ccContextDepth && m._met - ii > 0; ii++) {
         logger_->info(RCX, 65, "  layer {}", m._met - ii);
         for (jj = 0; jj < _ccContextArray[m._met - ii]->getCnt(); jj++)
-          logger_->info(RCX, 143, "    {}: {}", jj,
+          logger_->info(RCX,
+                        143,
+                        "    {}: {}",
+                        jj,
                         _ccContextArray[m._met - ii]->get(jj));
       }
     }
@@ -1433,7 +1602,8 @@ void extMain::measureRC(CoupleOptions& options) {
 
       dbCCSeg* ccap = dbCCSeg::create(
           dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
-          dbCapNode::getCapNode(_block, rseg2->getTargetNode()), true);
+          dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
+          true);
       // dbCCSeg *ccap= dbCCSeg::create(srcNet,
       // rseg1->getTargetNode(), tgtNet, rseg2->getTargetNode(), true);
 
@@ -1458,14 +1628,16 @@ void extMain::measureRC(CoupleOptions& options) {
   }
   ccReportProgress();
 }
-void extCompute(CoupleOptions& options, void* computePtr) {
-  extMain* mmm = (extMain*)computePtr;
+void extCompute(CoupleOptions& options, void* computePtr)
+{
+  extMain* mmm = (extMain*) computePtr;
   mmm->measureRC(options);
 }
 extern CoupleOptions coupleOptionsNull;
 
-void extCompute1(CoupleOptions& options, void* computePtr) {
-  extMeasure* mmm = (extMeasure*)computePtr;
+void extCompute1(CoupleOptions& options, void* computePtr)
+{
+  extMeasure* mmm = (extMeasure*) computePtr;
   if (options != coupleOptionsNull && options[0] < 0) {
     if (options[5] == 1)
       mmm->initTargetSeq();
@@ -1477,7 +1649,8 @@ void extCompute1(CoupleOptions& options, void* computePtr) {
     mmm->printDgContext();
 }
 
-uint extMain::makeTree(uint netId) {
+uint extMain::makeTree(uint netId)
+{
   if (netId == 0)
     return 0;
 
@@ -1485,7 +1658,12 @@ uint extMain::makeTree(uint netId) {
 
   uint test = 0;
   double max_cap = 10.00;
-  tree->makeTree(dbNet::getNet(_block, netId), max_cap, test, true, true, 1.0,
+  tree->makeTree(dbNet::getNet(_block, netId),
+                 max_cap,
+                 test,
+                 true,
+                 true,
+                 1.0,
                  _block->getSearchDb());
   return 0;
 }

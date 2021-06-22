@@ -43,10 +43,10 @@
 #include "ISdb.h"
 #include "ZObject.h"
 #include "db.h"
-#include "wire.h"
 #include "extprocess.h"
 #include "gseq.h"
 #include "odb.h"
+#include "wire.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)
@@ -345,10 +345,7 @@ class extDistWidthRCTable
   extDistRC* _rc31;
 
  public:
-  extDistWidthRCTable(bool dummy,
-                      uint met,
-                      uint layerCnt,
-                      uint width);
+  extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
@@ -836,10 +833,10 @@ class extRCModel
     return _modelTable[_tmpDataRate]->_capOverUnder[met]->_metCnt;
   }
   uint benchDB_WS(extMainOptions* opt, extMeasure* measure);
-  int writeBenchWires_DB(extMeasure* measure);
-  int writeBenchWires_DB_res(extMeasure* measure);
+  void writeBenchWires_DB(extMeasure* measure);
+  void writeBenchWires_DB_res(extMeasure* measure);
 
-  int writeBenchWires_DB_diag(extMeasure* measure);
+  void writeBenchWires_DB_diag(extMeasure* measure);
   extMetRCTable* initCapTables(uint layerCnt, uint widthCnt);
 
   extDistRC* getMinRC(int met, int width);
@@ -1278,7 +1275,7 @@ class extMeasure
                     Ath__array1D<odb::SEQ*>* residueSeq);
   void printDgContext();
   void initTargetSeq();
-  void getDgOverlap(CoupleOptions &options);
+  void getDgOverlap(CoupleOptions& options);
   void getDgOverlap(odb::SEQ* sseq,
                     uint dir,
                     Ath__array1D<odb::SEQ*>* dgContext,
@@ -1983,7 +1980,7 @@ class extMain
                    double& max_res,
                    double& via_res,
                    uint& via_cnt);
-  char _tmpLenStats[1024000];
+  std::string _tmpLenStats;
 
   enum INCR_SPEF_TYPE
   {

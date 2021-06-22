@@ -53,8 +53,13 @@ using utl::RCX;
 
 class extMain;
 
-extSpef::extSpef(odb::dbTech* tech, odb::dbBlock* blk, Logger* logger,
-                 extMain* extmain, uint btermCnt, uint itermCnt) {
+extSpef::extSpef(odb::dbTech* tech,
+                 odb::dbBlock* blk,
+                 Logger* logger,
+                 extMain* extmain,
+                 uint btermCnt,
+                 uint itermCnt)
+{
   logger_ = logger;
   _ext = extmain;
   _tech = tech;
@@ -199,8 +204,8 @@ extSpef::extSpef(odb::dbTech* tech, odb::dbBlock* blk, Logger* logger,
   _incrPlusCcNets = false;
 
   _bufString = NULL;
-  _msgBuf1 = (char*)malloc(sizeof(char) * 2048);
-  _msgBuf2 = (char*)malloc(sizeof(char) * 2048);
+  _msgBuf1 = (char*) malloc(sizeof(char) * 2048);
+  _msgBuf2 = (char*) malloc(sizeof(char) * 2048);
 
   // 021810D BEGIN
   _childBlockInstBaseMap = 0;
@@ -208,7 +213,8 @@ extSpef::extSpef(odb::dbTech* tech, odb::dbBlock* blk, Logger* logger,
   // 021810D END
 }
 
-extSpef::~extSpef() {
+extSpef::~extSpef()
+{
   delete _idMapTable;
   if (_nodeParser)
     delete _nodeParser;
@@ -249,11 +255,24 @@ extSpef::~extSpef() {
   free(_msgBuf1);
   free(_msgBuf2);
 }
-void extSpef::setBlock(odb::dbBlock* blk) { _block = blk; }
-void extSpef::set_single_pi(bool v) { _singleP = v; }
-void extSpef::setLogger(Logger* logger) { logger_ = logger; }
-char* extSpef::getDelimeter() { return _delimiter; }
-void extSpef::setupMappingForWrite(uint btermCnt, uint itermCnt) {
+void extSpef::setBlock(odb::dbBlock* blk)
+{
+  _block = blk;
+}
+void extSpef::set_single_pi(bool v)
+{
+  _singleP = v;
+}
+void extSpef::setLogger(Logger* logger)
+{
+  logger_ = logger;
+}
+char* extSpef::getDelimeter()
+{
+  return _delimiter;
+}
+void extSpef::setupMappingForWrite(uint btermCnt, uint itermCnt)
+{
   if (_btermTable) {
     resetTermTables();
     if (!_nodeCapTable) {
@@ -287,10 +306,12 @@ void extSpef::setupMappingForWrite(uint btermCnt, uint itermCnt) {
   initCapTable(_itermCapTable);
   initCapTable(_nodeCapTable);
 }
-uint extSpef::getMultiples(uint cnt, uint base) {
+uint extSpef::getMultiples(uint cnt, uint base)
+{
   return ((cnt / base) + 1) * base;
 }
-void extSpef::setCalibLimit(float upperLimit, float lowerLimit) {
+void extSpef::setCalibLimit(float upperLimit, float lowerLimit)
+{
   _upperCalibLimit = upperLimit;
   _lowerCalibLimit = lowerLimit;
   if (_upperCalibLimit == 0.0 && _lowerCalibLimit == 0.0)
@@ -299,7 +320,8 @@ void extSpef::setCalibLimit(float upperLimit, float lowerLimit) {
     _match = false;
 }
 
-void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib) {
+void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib)
+{
   _useIds = useIds;
   _diff = diff;
   _calib = calib;
@@ -310,34 +332,49 @@ void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib) {
           RCX, 171, "Can't open log file diff_spef.log for writing!");
     _diffOutFP = ATH__fopen("diff_spef.out", "w");
     if (_diffOutFP == nullptr)
-      logger_->error(RCX, 172, "Can't open output file diff_spef.out for writing!");
+      logger_->error(
+          RCX, 172, "Can't open output file diff_spef.out for writing!");
   }
 }
-void extSpef::preserveFlag(bool v) { _preserveCapValues = v; }
-void extSpef::setCornerCnt(uint n) { _cornerCnt = n; }
-void extSpef::setGzipFlag(bool gzFlag) { _gzipFlag = gzFlag; }
-void extSpef::resetTermTables() {
+void extSpef::preserveFlag(bool v)
+{
+  _preserveCapValues = v;
+}
+void extSpef::setCornerCnt(uint n)
+{
+  _cornerCnt = n;
+}
+void extSpef::setGzipFlag(bool gzFlag)
+{
+  _gzipFlag = gzFlag;
+}
+void extSpef::resetTermTables()
+{
   _btermTable->resetCnt(1);
   _itermTable->resetCnt(1);
 }
-void extSpef::resetCapTables(uint maxNode) {
+void extSpef::resetCapTables(uint maxNode)
+{
   reinitCapTable(_nodeCapTable, maxNode);
   reinitCapTable(_itermCapTable, _itermTable->getCnt() + 1);
   reinitCapTable(_btermCapTable, _btermTable->getCnt() + 1);
 }
-void extSpef::initCapTable(Ath__array1D<double*>* table) {
+void extSpef::initCapTable(Ath__array1D<double*>* table)
+{
   for (uint ii = 0; ii < table->getSize(); ii++) {
     double* a = new double[_cornerCnt];
     table->add(a);
   }
 }
-void extSpef::deleteTableCap(Ath__array1D<double*>* table) {
+void extSpef::deleteTableCap(Ath__array1D<double*>* table)
+{
   for (uint ii = 0; ii < table->getSize(); ii++) {
     double* a = table->geti(ii);
     delete a;
   }
 }
-void extSpef::reinitCapTable(Ath__array1D<double*>* table, uint n) {
+void extSpef::reinitCapTable(Ath__array1D<double*>* table, uint n)
+{
   if (n > table->getSize()) {
     uint prevCnt = table->getSize();
     table->reSize(n);  // wfs
@@ -357,8 +394,12 @@ void extSpef::reinitCapTable(Ath__array1D<double*>* table, uint n) {
       a[jj] = 0.0;
   }
 }
-void extSpef::setDesign(char* name) { strcpy(_design, name); }
-uint extSpef::getInstMapId(uint id) {
+void extSpef::setDesign(char* name)
+{
+  strcpy(_design, name);
+}
+uint extSpef::getInstMapId(uint id)
+{
   // 021810D BEGIN
   if (_childBlockInstBaseMap > 0)
     return _childBlockInstBaseMap + id;
@@ -366,7 +407,8 @@ uint extSpef::getInstMapId(uint id) {
 
   return _baseNameMap + id;
 }
-void extSpef::writeNameNode(odb::dbCapNode* node) {
+void extSpef::writeNameNode(odb::dbCapNode* node)
+{
   odb::dbStringProperty* p = odb::dbStringProperty::find(node, "_inode");
 
   if (_bufString) {
@@ -376,7 +418,8 @@ void extSpef::writeNameNode(odb::dbCapNode* node) {
     ATH__fprintf(_outFP, "%s ", p->getValue().c_str());
   }
 }
-void extSpef::writeITermNode(uint node) {
+void extSpef::writeITermNode(uint node)
+{
   char ttname[256];
   odb::dbITerm* iterm = odb::dbITerm::getITerm(_block, node);
   odb::dbInst* inst = iterm->getInst();
@@ -385,23 +428,31 @@ void extSpef::writeITermNode(uint node) {
 
   if (_bufString) {
     if (_writeNameMap)
-      sprintf(_msgBuf1, "*%d%s%s ", getInstMapId(inst->getId()), _delimiter,
+      sprintf(_msgBuf1,
+              "*%d%s%s ",
+              getInstMapId(inst->getId()),
+              _delimiter,
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     else
-      sprintf(_msgBuf1, "%s%s%s ",
-              addEscChar(tinkerSpefName((char*)inst->getConstName()), true),
+      sprintf(_msgBuf1,
+              "%s%s%s ",
+              addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
               _delimiter,
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap)
       ATH__fprintf(
-          _outFP, "*%d%s%s ", getInstMapId(inst->getId()), _delimiter,
+          _outFP,
+          "*%d%s%s ",
+          getInstMapId(inst->getId()),
+          _delimiter,
           addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     else
       ATH__fprintf(
-          _outFP, "%s%s%s ",
-          addEscChar(tinkerSpefName((char*)inst->getConstName()), true),
+          _outFP,
+          "%s%s%s ",
+          addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
           _delimiter,
           addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
   }
@@ -416,7 +467,8 @@ void extSpef::writeITermNode(uint node) {
              iterm->getMTerm()->getName(inst, &ttname[0]),
              inst->getConstName()); */
 }
-bool extSpef::writeITerm(uint node) {
+bool extSpef::writeITerm(uint node)
+{
   odb::dbITerm* iterm = odb::dbITerm::getITerm(_block, node);
   if (iterm->getInst()->getMaster()->isMarked())
     return false;
@@ -439,7 +491,7 @@ bool extSpef::writeITerm(uint node) {
   ATH__fprintf(_outFP, "%c ", io);
   // double db2nm= 0.001; // TODO: make it defunits driven
   int dbunit = _block->getDbUnitsPerMicron();
-  double db2nm = 1.0 / ((double)dbunit);
+  double db2nm = 1.0 / ((double) dbunit);
   int x1 = 0;
   int y1 = 0;
   int jid = 0;
@@ -454,11 +506,13 @@ bool extSpef::writeITerm(uint node) {
     ATH__fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
   }
   ATH__fprintf(
-      _outFP, "*D %s\n",
+      _outFP,
+      "*D %s\n",
       addEscChar(iterm->getMTerm()->getMaster()->getName().c_str(), false));
   return true;
 }
-bool extSpef::writeBTerm(uint node) {
+bool extSpef::writeBTerm(uint node)
+{
   odb::dbBTerm* bterm = odb::dbBTerm::getBTerm(_block, node);
   if (_bufString) {
     if (_useIds)
@@ -475,33 +529,40 @@ bool extSpef::writeBTerm(uint node) {
 
   return true;
 }
-bool extSpef::writeNode(uint netId, uint node) {
+bool extSpef::writeNode(uint netId, uint node)
+{
   // 022210D odb::dbNet *tnet = odb::dbNet::getNet(_block, netId);
   odb::dbNet* tnet = _d_net;
   if (_bufString) {
     if (_writeNameMap)
       sprintf(_msgBuf1, "*%d%s%d ", netId, _delimiter, node);
     else
-      sprintf(_msgBuf1, "%s%s%d ",
-              addEscChar(tinkerSpefName((char*)tnet->getConstName()), false),
-              _delimiter, node);
+      sprintf(_msgBuf1,
+              "%s%s%d ",
+              addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
+              _delimiter,
+              node);
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap)
       ATH__fprintf(_outFP, "*%d%s%d ", netId, _delimiter, node);
     else
       ATH__fprintf(
-          _outFP, "%s%s%d ",
-          addEscChar(tinkerSpefName((char*)tnet->getConstName()), false),
-          _delimiter, node);
+          _outFP,
+          "%s%s%d ",
+          addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
+          _delimiter,
+          node);
   }
   return true;
 }
-bool extSpef::writeCapNode(uint capNodeId, uint netId) {
+bool extSpef::writeCapNode(uint capNodeId, uint netId)
+{
   odb::dbCapNode* capNode = odb::dbCapNode::getCapNode(_block, capNodeId);
   return writeCapNode(capNode, netId);
 }
-bool extSpef::writeCapNode(odb::dbCapNode* capNode, uint netId) {
+bool extSpef::writeCapNode(odb::dbCapNode* capNode, uint netId)
+{
   if (netId == 0)
     netId = capNode->getNet()->getId();
 
@@ -520,7 +581,8 @@ bool extSpef::writeCapNode(odb::dbCapNode* capNode, uint netId) {
 
   return true;
 }
-uint extSpef::writeCapITerm(uint node, uint capIndex) {
+uint extSpef::writeCapITerm(uint node, uint capIndex)
+{
   if ((odb::dbITerm::getITerm(_block, node))
           ->getInst()
           ->getMaster()
@@ -535,7 +597,8 @@ uint extSpef::writeCapITerm(uint node, uint capIndex) {
 
   return 1;
 }
-uint extSpef::writeCapName(odb::dbCapNode* capNode, uint capIndex) {
+uint extSpef::writeCapName(odb::dbCapNode* capNode, uint capIndex)
+{
   writeCNodeNumber();
 
   writeNameNode(capNode);
@@ -545,7 +608,8 @@ uint extSpef::writeCapName(odb::dbCapNode* capNode, uint capIndex) {
 
   return 1;
 }
-uint extSpef::writeCapPort(uint node, uint capIndex) {
+uint extSpef::writeCapPort(uint node, uint capIndex)
+{
   writeCNodeNumber();
 
   writeBTerm(node);
@@ -555,13 +619,15 @@ uint extSpef::writeCapPort(uint node, uint capIndex) {
 
   return 1;
 }
-uint extSpef::writePort(uint node) {
+uint extSpef::writePort(uint node)
+{
   odb::dbBTerm* bterm = odb::dbBTerm::getBTerm(_block, node);
   if (_useIds) {
-    ATH__fprintf(_outFP, "*P B%d %c", bterm->getId(),
-                 bterm->getIoType().getString()[0]);
+    ATH__fprintf(
+        _outFP, "*P B%d %c", bterm->getId(), bterm->getIoType().getString()[0]);
   } else {
-    ATH__fprintf(_outFP, "*P %s %c",
+    ATH__fprintf(_outFP,
+                 "*P %s %c",
                  addEscChar(bterm->getName().c_str(), false),
                  bterm->getIoType().getString()[0]);
   }
@@ -571,7 +637,7 @@ uint extSpef::writePort(uint node) {
   }
   // double db2nm= 0.001; // TODO: make it defunits driven
   int dbunit = _block->getDbUnitsPerMicron();
-  double db2nm = 1.0 / ((double)dbunit);
+  double db2nm = 1.0 / ((double) dbunit);
   int x1 = 0;
   int y1 = 0;
   int jid = 0;
@@ -585,76 +651,97 @@ uint extSpef::writePort(uint node) {
   ATH__fprintf(_outFP, " *C %f %f\n", db2nm * x1, db2nm * y1);
   return 1;
 }
-void extSpef::writeSingleRC(double val, bool delimeter) {
+void extSpef::writeSingleRC(double val, bool delimeter)
+{
   if (delimeter)
     ATH__fprintf(_outFP, "%s%g", _delimiter, val * _cap_unit);
   else
     ATH__fprintf(_outFP, "%g", val * _cap_unit);
 }
-void extSpef::writeRCvalue(double* totCap, double units) {
+void extSpef::writeRCvalue(double* totCap, double units)
+{
   ATH__fprintf(_outFP, "%g", totCap[_active_corner_number[0]] * units);
   for (int ii = 1; ii < _active_corner_cnt; ii++)
-    ATH__fprintf(_outFP, "%s%g", _delimiter,
-                 totCap[_active_corner_number[ii]] * units);
+    ATH__fprintf(
+        _outFP, "%s%g", _delimiter, totCap[_active_corner_number[ii]] * units);
 }
-void extSpef::writeDnet(uint netId, double* totCap) {
+void extSpef::writeDnet(uint netId, double* totCap)
+{
   netId = getNetMapId(netId);
 
   if (_writeNameMap)
     ATH__fprintf(_outFP, "\n*D_NET *%d ", netId);
   else
     ATH__fprintf(
-        _outFP, "\n*D_NET %s ",
-        addEscChar(tinkerSpefName((char*)_d_net->getConstName()), false));
+        _outFP,
+        "\n*D_NET %s ",
+        addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
 
   writeRCvalue(totCap, _cap_unit);
   ATH__fprintf(_outFP, "\n");
 }
-void extSpef::writeKeyword(const char* keyword) {
+void extSpef::writeKeyword(const char* keyword)
+{
   ATH__fprintf(_outFP, "%s\n", keyword);
 }
-void extSpef::addCap(double* cap, double* totCap, uint n) {
+void extSpef::addCap(double* cap, double* totCap, uint n)
+{
   for (uint ii = 0; ii < n; ii++)
     totCap[ii] += cap[ii];
 }
-void extSpef::incrementCounter(double* cap, uint n) { cap[n] += 1.0; }
-void extSpef::setCap(double* cap, uint n, double* totCap, uint startIndex) {
+void extSpef::incrementCounter(double* cap, uint n)
+{
+  cap[n] += 1.0;
+}
+void extSpef::setCap(double* cap, uint n, double* totCap, uint startIndex)
+{
   for (uint jj = 0; jj < startIndex; jj++)
     totCap[jj] = 0.0;
 
   for (uint ii = 0; ii < n; ii++)
     totCap[startIndex++] = cap[ii];
 }
-void extSpef::resetCap(double* cap) { resetCap(cap, _cornerCnt); }
+void extSpef::resetCap(double* cap)
+{
+  resetCap(cap, _cornerCnt);
+}
 
-void extSpef::resetCap(double* cap, uint cnt) {
+void extSpef::resetCap(double* cap, uint cnt)
+{
   for (uint ii = 0; ii < cnt; ii++)
     cap[ii] = 0.0;
 }
-void extSpef::copyCap(double* totCap, double* cap, uint n) {
+void extSpef::copyCap(double* totCap, double* cap, uint n)
+{
   if (n == 0)
     n = _cornerCnt;
 
   for (uint ii = 0; ii < n; ii++)
     totCap[ii] = cap[ii];
 }
-void extSpef::adjustCap(double* totCap, double* cap, uint n) {
+void extSpef::adjustCap(double* totCap, double* cap, uint n)
+{
   if (n == 0)
     n = _cornerCnt;
 
   for (uint ii = 0; ii < n; ii++)
     totCap[ii] += cap[ii];
 }
-void extSpef::addHalfCap(double* totCap, double* cap, uint n) {
+void extSpef::addHalfCap(double* totCap, double* cap, uint n)
+{
   if (n == 0)
     n = _cornerCnt;
 
   for (uint ii = 0; ii < n; ii++)
     totCap[ii] += cap[ii] / 2;
 }
-uint extSpef::getMappedCapNode(uint nodeId) { return nodeId - _firstCapNode; }
+uint extSpef::getMappedCapNode(uint nodeId)
+{
+  return nodeId - _firstCapNode;
+}
 
-uint extSpef::computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap) {
+uint extSpef::computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap)
+{
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
 
   uint cnt = 0;
@@ -673,13 +760,13 @@ uint extSpef::computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap) {
     odb::dbCapNode *capNode= odb::dbCapNode::getCapNode(_cornerBlock,
     trgNodeId); capNode->getCapTable(cap);
     */
-    uint trgMappedNode =
-        odb::dbCapNode::getCapNode(_cornerBlock, trgNodeId)->getSortIndex();
+    uint trgMappedNode
+        = odb::dbCapNode::getCapNode(_cornerBlock, trgNodeId)->getSortIndex();
     addHalfCap(_nodeCapTable->geti(trgMappedNode), cap);
 
     uint srcNodeId = rc->getSourceNode();
-    uint srcMappedNode =
-        odb::dbCapNode::getCapNode(_cornerBlock, srcNodeId)->getSortIndex();
+    uint srcMappedNode
+        = odb::dbCapNode::getCapNode(_cornerBlock, srcNodeId)->getSortIndex();
     addHalfCap(_nodeCapTable->geti(srcMappedNode), cap);
 
     cnt++;
@@ -688,7 +775,8 @@ uint extSpef::computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap) {
   return cnt;
 }
 uint extSpef::computeCapsAdd2Target(odb::dbSet<odb::dbRSeg>& rcSet,
-                                    double* totCap) {
+                                    double* totCap)
+{
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
 
   uint cnt = 0;
@@ -703,15 +791,16 @@ uint extSpef::computeCapsAdd2Target(odb::dbSet<odb::dbRSeg>& rcSet,
     addCap(cap, totCap, this->_cornerCnt);
 
     uint trgNodeId = rc->getTargetNode();
-    uint trgMappedNode =
-        odb::dbCapNode::getCapNode(_block, trgNodeId)->getSortIndex();
+    uint trgMappedNode
+        = odb::dbCapNode::getCapNode(_block, trgNodeId)->getSortIndex();
     adjustCap(_nodeCapTable->geti(trgMappedNode), cap);
 
     cnt++;
   }
   return cnt;
 }
-void extSpef::getCaps(odb::dbNet* net, double* totCap) {
+void extSpef::getCaps(odb::dbNet* net, double* totCap)
+{
   odb::dbSet<odb::dbCapNode> nodeSet = net->getCapNodes();
 
   odb::dbSet<odb::dbCapNode>::iterator rc_itr;
@@ -726,15 +815,16 @@ void extSpef::getCaps(odb::dbNet* net, double* totCap) {
     addCap(cap, totCap, _cornersPerBlock);
   }
 }
-void extSpef::addCouplingCaps(odb::dbNet* net, double* totCap) {
+void extSpef::addCouplingCaps(odb::dbNet* net, double* totCap)
+{
   double cap[16];
   for (uint ii = 0; ii < _cornersPerBlock; ii++)
     cap[ii] = net->getTotalCouplingCap(ii);
 
   addCap(cap, totCap, _cornersPerBlock);
 }
-void extSpef::addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet,
-                              double* totCap) {
+void extSpef::addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, double* totCap)
+{
   odb::dbSet<odb::dbCCSeg>::iterator cap_itr;
   for (cap_itr = capSet.begin(); cap_itr != capSet.end(); ++cap_itr) {
     odb::dbCCSeg* cc = *cap_itr;
@@ -746,7 +836,8 @@ void extSpef::addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet,
     addCap(cap, totCap, _cornerCnt);
   }
 }
-uint extSpef::getMinCapNode(odb::dbNet* net, uint* minNode) {
+uint extSpef::getMinCapNode(odb::dbNet* net, uint* minNode)
+{
   odb::dbSet<odb::dbCapNode> nodeSet = net->getCapNodes();
   // nodeSet.reverse();
 
@@ -771,7 +862,8 @@ uint extSpef::getMinCapNode(odb::dbNet* net, uint* minNode) {
     return cnt + 1;
   }
 }
-void extSpef::writeCNodeNumber() {
+void extSpef::writeCNodeNumber()
+{
   if (_noCnum)
     return;
   ATH__fprintf(_outFP, "%d ", _cCnt++);
@@ -786,13 +878,15 @@ void extSpef::writeCNodeNumber() {
 //		ATH__fprintf(_outFP, "\n");
 //	}
 //}
-void extSpef::writeNodeCap(uint netId, uint capIndex, uint ii) {
+void extSpef::writeNodeCap(uint netId, uint capIndex, uint ii)
+{
   writeCNodeNumber();
   writeNode(netId, ii);
   writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
   ATH__fprintf(_outFP, "\n");
 }
-uint extSpef::writePorts(odb::dbNet* net) {
+uint extSpef::writePorts(odb::dbNet* net)
+{
   uint cnt = 0;
   odb::dbSet<odb::dbCapNode> capSet = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator cap_itr;
@@ -808,7 +902,8 @@ uint extSpef::writePorts(odb::dbNet* net) {
   return cnt;
 }
 uint extSpef::writeInternalCaps(odb::dbNet* net,
-                                odb::dbSet<odb::dbCapNode>& capSet) {
+                                odb::dbSet<odb::dbCapNode>& capSet)
+{
   odb::dbSet<odb::dbCapNode>::iterator cap_itr;
   for (cap_itr = capSet.begin(); cap_itr != capSet.end(); ++cap_itr) {
     odb::dbCapNode* capNode = *cap_itr;
@@ -828,7 +923,8 @@ uint extSpef::writeInternalCaps(odb::dbNet* net,
   return _cCnt;
 }
 uint extSpef::writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet,
-                                     bool bterms) {
+                                     bool bterms)
+{
   odb::dbSet<odb::dbCapNode>::iterator cap_itr;
   for (cap_itr = capSet.begin(); cap_itr != capSet.end(); ++cap_itr) {
     odb::dbCapNode* capNode = *cap_itr;
@@ -859,7 +955,8 @@ uint extSpef::writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet,
   }
   return _cCnt;
 }
-uint extSpef::writeCapPorts(odb::dbNet* net) {
+uint extSpef::writeCapPorts(odb::dbNet* net)
+{
   odb::dbSet<odb::dbCapNode> capSet = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator cap_itr;
   for (cap_itr = capSet.begin(); cap_itr != capSet.end(); ++cap_itr) {
@@ -872,7 +969,8 @@ uint extSpef::writeCapPorts(odb::dbNet* net) {
   }
   return _cCnt;
 }
-uint extSpef::writeITerms(odb::dbNet* net) {
+uint extSpef::writeITerms(odb::dbNet* net)
+{
   uint cnt = 0;
   odb::dbSet<odb::dbCapNode> capSet = net->getCapNodes();
 
@@ -892,7 +990,8 @@ uint extSpef::writeITerms(odb::dbNet* net) {
   }
   return cnt;
 }
-uint extSpef::writeCapITerms(odb::dbNet* net) {
+uint extSpef::writeCapITerms(odb::dbNet* net)
+{
   odb::dbSet<odb::dbCapNode> capSet = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator cap_itr;
   for (cap_itr = capSet.begin(); cap_itr != capSet.end(); ++cap_itr) {
@@ -905,7 +1004,8 @@ uint extSpef::writeCapITerms(odb::dbNet* net) {
   }
   return _cCnt;
 }
-uint extSpef::writeNodeCaps(odb::dbNet* net, uint netId) {
+uint extSpef::writeNodeCaps(odb::dbNet* net, uint netId)
+{
   if (netId == 0)
     netId = net->getId();
 
@@ -930,25 +1030,18 @@ uint extSpef::writeNodeCaps(odb::dbNet* net, uint netId) {
   }
   return _cCnt;
 }
-class compareCC {
+class compareCC
+{
  public:
-  bool operator()(odb::dbCCSeg* cc1, odb::dbCCSeg* cc2) {
+  bool operator()(odb::dbCCSeg* cc1, odb::dbCCSeg* cc2)
+  {
     odb::dbBlock* block = cc1->getSourceNet()->getBlock();
-    uint cn1, cn2;
     uint net1, net2;
     uint id1, id2;
-    odb::dbCapNode* cp1, *cp2;
+    odb::dbCapNode *cp1, *cp2;
     int rc;
-    /*
-                    cn1 = cc1->getSourceNode();
-                    cn2 = cc2->getSourceNode();
-                    cp1 = odb::dbCapNode::getCapNode(block, cn1);
-                    cp2 = odb::dbCapNode::getCapNode(block, cn2);
-    */
     cp1 = cc1->getSourceCapNode();
     cp2 = cc2->getSourceCapNode();
-    cn1 = cp1->getId();
-    cn2 = cp2->getId();
 
     net1 = cp1->getNet()->getId();
     id1 = cp1->getNode();
@@ -976,16 +1069,8 @@ class compareCC {
       return (net1 < net2 ? true : false);
     if (id1 != id2)
       return (id1 < id2 ? true : false);
-    /*
-                    cp1 = odb::dbCapNode::getCapNode(block, cn1);
-                    cp2 = odb::dbCapNode::getCapNode(block, cn2);
-                    cn1 = cc1->getTargetNode();
-                    cn2 = cc2->getTargetNode();
-    */
     cp1 = cc1->getTargetCapNode();
     cp2 = cc2->getTargetCapNode();
-    cn1 = cp1->getId();
-    cn2 = cp2->getId();
 
     net1 = cp1->getNet()->getId();
     id1 = cp1->getNode();
@@ -1015,7 +1100,8 @@ class compareCC {
   }
 };
 uint extSpef::writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet,
-                                      uint netId) {
+                                      uint netId)
+{
   std::vector<odb::dbCCSeg*> vec_cc;
   odb::dbSet<odb::dbCCSeg>::iterator cap_itr;
   odb::dbCCSeg* cc = NULL;
@@ -1027,17 +1113,20 @@ uint extSpef::writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet,
     writeCapNode(cc->getSourceCapNode()->getId(), netId);
     writeCapNode(cc->getTargetCapNode()->getId(), netId);
 
-    ATH__fprintf(_outFP, "%g",
-                 cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+    ATH__fprintf(
+        _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP, "%s%g", _delimiter,
+      ATH__fprintf(_outFP,
+                   "%s%g",
+                   _delimiter,
                    cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
 
     ATH__fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
-uint extSpef::writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId) {
+uint extSpef::writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId)
+{
   if (_preserveCapValues)
     return writeCouplingCapsNoSort(capSet, netId);
 
@@ -1058,17 +1147,20 @@ uint extSpef::writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId) {
     writeCapNode(cc->getSourceCapNode()->getId(), netId);
     writeCapNode(cc->getTargetCapNode()->getId(), netId);
 
-    ATH__fprintf(_outFP, "%g",
-                 cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+    ATH__fprintf(
+        _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP, "%s%g", _delimiter,
+      ATH__fprintf(_outFP,
+                   "%s%g",
+                   _delimiter,
                    cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
 
     ATH__fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
-uint extSpef::writeTgtCouplingCaps(odb::dbNet* net, uint netId) {
+uint extSpef::writeTgtCouplingCaps(odb::dbNet* net, uint netId)
+{
   std::vector<odb::dbCCSeg*> vec_cc;
   net->getTgtCCSegs(vec_cc);
 
@@ -1077,7 +1169,8 @@ uint extSpef::writeTgtCouplingCaps(odb::dbNet* net, uint netId) {
 
   return writeCouplingCaps(vec_cc, netId);
 }
-uint extSpef::writeSrcCouplingCaps(odb::dbNet* net, uint netId) {
+uint extSpef::writeSrcCouplingCaps(odb::dbNet* net, uint netId)
+{
   std::vector<odb::dbCCSeg*> vec_cc;
   net->getSrcCCSegs(vec_cc);
 
@@ -1086,8 +1179,8 @@ uint extSpef::writeSrcCouplingCaps(odb::dbNet* net, uint netId) {
 
   return writeCouplingCaps(vec_cc, netId);
 }
-uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc,
-                                uint netId) {
+uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId)
+{
   uint j;
   char msg1[2048];
   for (j = 0; j < vec_cc.size(); j++) {
@@ -1099,11 +1192,15 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc,
     odb::dbCapNode* tcnode = cc->getTargetCapNode();
     if (scnode->getNet() == tcnode->getNet()) {
       _bufString = _msgBuf2;
-      sprintf(_bufString, "CC of net %d %s with capacitance %g",
-              _d_net->getId(), _d_net->getConstName(),
+      sprintf(_bufString,
+              "CC of net %d %s with capacitance %g",
+              _d_net->getId(),
+              _d_net->getConstName(),
               cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
       for (int ii = 1; ii < _active_corner_cnt; ii++) {
-        sprintf(&msg1[0], "%s%g", _delimiter,
+        sprintf(&msg1[0],
+                "%s%g",
+                _delimiter,
                 cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
         strcat(_bufString, &msg1[0]);
       }
@@ -1117,18 +1214,26 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc,
     writeCapNode(cc->getSourceCapNode(), netId);
     writeCapNode(cc->getTargetCapNode(), netId);
 
-    ATH__fprintf(_outFP, "%g",
-                 cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
+    ATH__fprintf(
+        _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP, "%s%g", _delimiter,
+      ATH__fprintf(_outFP,
+                   "%s%g",
+                   _delimiter,
                    cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
 
     ATH__fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
-void extSpef::getAnchorCoords(odb::dbNet* net, uint shapeId, int* x1, int* y1,
-                              int* x2, int* y2, odb::dbTechLayer** layer) {
+void extSpef::getAnchorCoords(odb::dbNet* net,
+                              uint shapeId,
+                              int* x1,
+                              int* y1,
+                              int* x2,
+                              int* y2,
+                              odb::dbTechLayer** layer)
+{
   odb::dbShape s;
   odb::dbWire* w = net->getWire();
   w->getShape(shapeId, s);
@@ -1145,10 +1250,11 @@ void extSpef::getAnchorCoords(odb::dbNet* net, uint shapeId, int* x1, int* y1,
   else
     *layer = s.getTechLayer();
 }
-uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet) {
+uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
+{
   // double db2nm= 0.001; // TODO: make it defunits driven
   int dbunit = _block->getDbUnitsPerMicron();
-  double db2nm = 1.0 / ((double)dbunit);
+  double db2nm = 1.0 / ((double) dbunit);
   // rSet.reverse();
 
   //*N *1:2 *C 3.06500 125.815
@@ -1169,8 +1275,8 @@ uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet) {
     if (!_foreign && shapeId == 0)
       continue;
 
-    odb::dbCapNode* capNode =
-        odb::dbCapNode::getCapNode(_block, rc->getTargetNode());
+    odb::dbCapNode* capNode
+        = odb::dbCapNode::getCapNode(_block, rc->getTargetNode());
 
     if (capNode->isITerm() || capNode->isBTerm())
       continue;
@@ -1200,7 +1306,8 @@ uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet) {
   }
   return cnt;
 }
-bool extSpef::isCapNodeExcluded(odb::dbCapNode* node) {
+bool extSpef::isCapNodeExcluded(odb::dbCapNode* node)
+{
   if (node == NULL || node->getITerm(_block) == NULL)
     return false;
   if (node->getITerm(_block)->getInst()->getMaster()->isMarked())
@@ -1208,7 +1315,8 @@ bool extSpef::isCapNodeExcluded(odb::dbCapNode* node) {
   return false;
 }
 
-uint extSpef::writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet) {
+uint extSpef::writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
+{
   // rSet.reverse();
 
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
@@ -1229,22 +1337,26 @@ uint extSpef::writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet) {
     writeCapNode(rc->getSourceNode(), netId);
     writeCapNode(rc->getTargetNode(), netId);
 
-    ATH__fprintf(_outFP, "%g",
-                 rc->getResistance(_active_corner_number[0]) * _res_unit);
+    ATH__fprintf(
+        _outFP, "%g", rc->getResistance(_active_corner_number[0]) * _res_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP, "%s%g", _delimiter,
+      ATH__fprintf(_outFP,
+                   "%s%g",
+                   _delimiter,
                    rc->getResistance(_active_corner_number[ii]) * _res_unit);
 
     ATH__fprintf(_outFP, " \n");
   }
   return cnt;
 }
-void getjxy(odb::dbNet* net, uint jid, Logger* logger) {
+void getjxy(odb::dbNet* net, uint jid, Logger* logger)
+{
   int jx, jy;
-  net->getWire()->getCoord((int)jid, jx, jy);
+  net->getWire()->getCoord((int) jid, jx, jy);
   logger->info(RCX, 174, "{}:{} {} {}", net->getId(), jid, jx, jy);
 }
-uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug) {
+uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug)
+{
   _d_net = net;
   uint netId = net->getId();
 
@@ -1349,7 +1461,8 @@ uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug) {
   }
   return 1;
 }
-bool extSpef::setInSpef(char* filename, bool onlyOpen) {
+bool extSpef::setInSpef(char* filename, bool onlyOpen)
+{
   if (filename == NULL) {
     _inFP = stdin;
     return true;
@@ -1365,7 +1478,8 @@ bool extSpef::setInSpef(char* filename, bool onlyOpen) {
 
   return true;
 }
-bool extSpef::setOutSpef(char* filename) {
+bool extSpef::setOutSpef(char* filename)
+{
   if (filename == NULL) {
 #ifdef _WIN32
     _outFP = stdout;
@@ -1395,7 +1509,8 @@ bool extSpef::setOutSpef(char* filename) {
   }
   return true;
 }
-bool extSpef::closeOutFile() {
+bool extSpef::closeOutFile()
+{
   if (_outFP == NULL)
     return false;
 
@@ -1409,7 +1524,8 @@ bool extSpef::closeOutFile() {
 
   return true;
 }
-uint extSpef::writeBlockPorts() {
+uint extSpef::writeBlockPorts()
+{
   if (_partial && !_btermFound)
     return 0;
   writeKeyword("\n*PORTS");
@@ -1432,14 +1548,16 @@ uint extSpef::writeBlockPorts() {
     if (_useIds) {
       ATH__fprintf(_outFP, "B%d %c\n", id, bterm->getIoType().getString()[0]);
     } else {
-      ATH__fprintf(_outFP, "%s %c\n",
+      ATH__fprintf(_outFP,
+                   "%s %c\n",
                    addEscChar(bterm->getName().c_str(), false),
                    bterm->getIoType().getString()[0]);
     }
   }
   return cnt;
 }
-uint extSpef::getNetMapId(uint netId) {
+uint extSpef::getNetMapId(uint netId)
+{
   _baseNameMap = MAX(_baseNameMap, netId);
 
   return netId;
@@ -1454,17 +1572,17 @@ uint extSpef::getNetMapId(uint netId) {
 //   For block spef hierarchy dividers SHOULD be escaped
 //   bus brackets should NOT be escaped.
 // -cherry 04/30/2021
-char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts) {
+char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts)
+{
   uint ii = 0;
   uint jj = 0;
   while (iname[ii] != '\0') {
     char ch = iname[ii];
-    if (!std::isalnum(ch) && ch != '_' && ch != '\\' &&
-        (esc_bus_brkts || (ch != '[' && ch != ']'))
+    if (!std::isalnum(ch) && ch != '_' && ch != '\\'
+        && (esc_bus_brkts || (ch != '[' && ch != ']'))
         // Check if there is an escape char before
         // the non-alphanumeric character
-        &&
-        (ii == 0 || iname[ii - 1] != '\\'))
+        && (ii == 0 || iname[ii - 1] != '\\'))
       _mMapName[jj++] = '\\';
     _mMapName[jj++] = iname[ii++];
   }
@@ -1472,7 +1590,8 @@ char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts) {
   _mMapName[jj] = '\0';
   return _mMapName;
 }
-char* extSpef::tinkerSpefName(char* iname) {
+char* extSpef::tinkerSpefName(char* iname)
+{
   if (!_noBackSlash)
     return iname;
   uint ii = 0;
@@ -1491,9 +1610,10 @@ char* extSpef::tinkerSpefName(char* iname) {
   return (&_mMapName[0]);
 }
 
-uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets) {
+uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
+{
   uint cnt = 0;
-  char* nname, *nname1;
+  char *nname, *nname1;
   odb::dbSet<odb::dbNet>::iterator net_itr;
   _btermFound = false;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -1550,7 +1670,7 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets) {
     if (_useIds)
       ATH__fprintf(_outFP, "*%d N%d\n", netMapId, netMapId);
     else {
-      nname = (char*)net->getConstName();
+      nname = (char*) net->getConstName();
       nname1 = tinkerSpefName(nname);
       nname1 = addEscChar(nname1, false);
       ATH__fprintf(_outFP, "*%d %s\n", netMapId, nname1);
@@ -1560,9 +1680,10 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets) {
   }
   return cnt;
 }
-uint extSpef::writeInstMap() {
+uint extSpef::writeInstMap()
+{
   uint cnt = 0;
-  char* nname, *nname1;
+  char *nname, *nname1;
   uint instMapId = 0;
 
   odb::dbSet<odb::dbInst> insts = _block->getInsts();
@@ -1579,10 +1700,15 @@ uint extSpef::writeInstMap() {
     if (inst->getMaster()->getMTermCount() <= 0)
       continue;
     if (inst->getMaster()->isMarked()) {
-      logger_->info(RCX, 176, "Skip instance {} for cell {} is excluded",
-                    inst->getConstName(), inst->getMaster()->getConstName());
-      odb::verbose(0, "Skip instance %s for cell %s is excluded\n",
-                   inst->getConstName(), inst->getMaster()->getConstName());
+      logger_->info(RCX,
+                    176,
+                    "Skip instance {} for cell {} is excluded",
+                    inst->getConstName(),
+                    inst->getMaster()->getConstName());
+      odb::verbose(0,
+                   "Skip instance %s for cell %s is excluded\n",
+                   inst->getConstName(),
+                   inst->getMaster()->getConstName());
       continue;
     }
     if (_partial && !inst->getUserFlag1())
@@ -1594,7 +1720,7 @@ uint extSpef::writeInstMap() {
     if (_useIds)
       ATH__fprintf(_outFP, "*%d I%d\n", instMapId, inst->getId());
     else {
-      nname = (char*)inst->getConstName();
+      nname = (char*) inst->getConstName();
       nname1 = tinkerSpefName(nname);
       nname1 = addEscChar(nname1, true);
       ATH__fprintf(_outFP, "*%d %s\n", instMapId, nname1);
@@ -1604,29 +1730,64 @@ uint extSpef::writeInstMap() {
   }
   return instMapId;
 }
-uint extSpef::stopWrite() {
+uint extSpef::stopWrite()
+{
   closeOutFile();
   return 0;
 }
-uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
-                         const char* capUnit, const char* resUnit,
-                         bool stopAfterNameMap, std::vector<odb::dbNet*>* tnets,
-                         bool wClock, bool wConn, bool wCap, bool wOnlyCCcap,
-                         bool wRes, bool noCnum, bool stopBeforeDnets,
-                         bool noBackSlash, bool flatten, bool parallel) {
-  uint rtc =
-      writeBlock(nodeCoord, excludeCell, capUnit, resUnit, stopAfterNameMap,
-                 *tnets, wClock, wConn, wCap, wOnlyCCcap, wRes, noCnum,
-                 stopBeforeDnets, noBackSlash, flatten, parallel);
+uint extSpef::writeBlock(char* nodeCoord,
+                         const char* excludeCell,
+                         const char* capUnit,
+                         const char* resUnit,
+                         bool stopAfterNameMap,
+                         std::vector<odb::dbNet*>* tnets,
+                         bool wClock,
+                         bool wConn,
+                         bool wCap,
+                         bool wOnlyCCcap,
+                         bool wRes,
+                         bool noCnum,
+                         bool stopBeforeDnets,
+                         bool noBackSlash,
+                         bool flatten,
+                         bool parallel)
+{
+  uint rtc = writeBlock(nodeCoord,
+                        excludeCell,
+                        capUnit,
+                        resUnit,
+                        stopAfterNameMap,
+                        *tnets,
+                        wClock,
+                        wConn,
+                        wCap,
+                        wOnlyCCcap,
+                        wRes,
+                        noCnum,
+                        stopBeforeDnets,
+                        noBackSlash,
+                        flatten,
+                        parallel);
   return rtc;
 }
 
-uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
-                         const char* capUnit, const char* resUnit,
-                         bool stopAfterNameMap, std::vector<odb::dbNet*> tnets,
-                         bool wClock, bool wConn, bool wCap, bool wOnlyCCcap,
-                         bool wRes, bool noCnum, bool stopBeforeDnets,
-                         bool noBackSlash, bool flatten, bool parallel) {
+uint extSpef::writeBlock(char* nodeCoord,
+                         const char* excludeCell,
+                         const char* capUnit,
+                         const char* resUnit,
+                         bool stopAfterNameMap,
+                         std::vector<odb::dbNet*> tnets,
+                         bool wClock,
+                         bool wConn,
+                         bool wCap,
+                         bool wOnlyCCcap,
+                         bool wRes,
+                         bool noCnum,
+                         bool stopBeforeDnets,
+                         bool noBackSlash,
+                         bool flatten,
+                         bool parallel)
+{
   // _block is always the original block! even when #NEW_EXTRACTION_CORNER_DB
   _wOnlyClock = wClock;
   _wConn = wConn;
@@ -1678,8 +1839,8 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
     }
   }
   if (excmaster.size())
-    logger_->info(RCX, 180, "{} cells are excluded from write_spef",
-                  excmaster.size());
+    logger_->info(
+        RCX, 180, "{} cells are excluded from write_spef", excmaster.size());
   if (!_stopBeforeDnets && !_stopAfterNameMap) {
     if (strcmp("PF", capUnit) == 0) {
       _cap_unit = 0.001;
@@ -1726,8 +1887,8 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
 
   if (stopAfterNameMap) {
     _stopAfterNameMap = true;
-    for (ii = 0; ii < (int)excmaster.size(); ii++)
-      ((odb::dbMaster*)excmaster[ii])->setMark(0);
+    for (ii = 0; ii < (int) excmaster.size(); ii++)
+      ((odb::dbMaster*) excmaster[ii])->setMark(0);
     return 0;
   }
   uint repChunk = 100000;
@@ -1735,8 +1896,8 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
   if (stopBeforeDnets) {
     _stopBeforeDnets = true;
     writeBlockPorts();
-    for (ii = 0; ii < (int)excmaster.size(); ii++)
-      ((odb::dbMaster*)excmaster[ii])->setMark(0);
+    for (ii = 0; ii < (int) excmaster.size(); ii++)
+      ((odb::dbMaster*) excmaster[ii])->setMark(0);
     return 0;
   }
   if (!_stopBeforeDnets)
@@ -1746,7 +1907,10 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
 
   if (_independentExtCorners) {
     if (_active_corner_cnt != 1) {
-      logger_->warn(RCX, 181, "Can only write one corner at a time when write_spef for independent_spef_corner.");
+      logger_->warn(RCX,
+                    181,
+                    "Can only write one corner at a time when write_spef for "
+                    "independent_spef_corner.");
       return 0;
     }
     _cornersPerBlock = 1;
@@ -1758,7 +1922,9 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
                        ? _block
                        : _block->findExtCornerBlock(_active_corner_number[0]);
     if (_cornerBlock == NULL) {
-      logger_->warn(RCX, 182, "Can't find extBlock for corner {}.",
+      logger_->warn(RCX,
+                    182,
+                    "Can't find extBlock for corner {}.",
                     _active_corner_number[0]);
       return 0;
     }
@@ -1789,8 +1955,8 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
     if (cnt % repChunk == 0)
       logger_->info(RCX, 42, "{} nets finished", cnt);
   }
-  for (ii = 0; ii < (int)excmaster.size(); ii++)
-    ((odb::dbMaster*)excmaster[ii])->setMark(0);
+  for (ii = 0; ii < (int) excmaster.size(); ii++)
+    ((odb::dbMaster*) excmaster[ii])->setMark(0);
   for (j = 0; j < tnets.size(); j++)
     tnets[j]->setMark(false);
   logger_->info(RCX, 443, "{} nets finished", cnt);
@@ -1799,7 +1965,8 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
 
   return cnt;
 }
-uint extSpef::write_spef_nets(bool flatten, bool parallel) {
+uint extSpef::write_spef_nets(bool flatten, bool parallel)
+{
   _childBlockNetBaseMap = 0;
   _childBlockInstBaseMap = 0;
   _cornerBlock = _block;
@@ -1846,7 +2013,8 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel) {
 
   return cnt;
 }
-uint extSpef::getMappedBTermId(uint spefId) {
+uint extSpef::getMappedBTermId(uint spefId)
+{
   //	uint btermId= 0;
   odb::dbBTerm* bterm = NULL;
   if (_testParsing || _statsOnly)
@@ -1861,7 +2029,8 @@ uint extSpef::getMappedBTermId(uint spefId) {
   }
   return bterm->getId();
 }
-bool extSpef::writeHeaderInfo(uint debug) {
+bool extSpef::writeHeaderInfo(uint debug)
+{
   /*
           if (debug>0)
                   _outFP= stdout;
