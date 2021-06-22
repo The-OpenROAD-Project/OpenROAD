@@ -2898,7 +2898,6 @@ int GlobalRouter::findInstancesObstructions(
     odb::Rect& dieArea,
     const std::vector<int>& layerExtensions)
 {
-  const int max_out_of_die_warn = 25;
   int macrosCnt = 0;
   int obstructionsCnt = 0;
   int pin_out_of_die_count = 0;
@@ -2969,10 +2968,8 @@ int GlobalRouter::findInstancesObstructions(
           upperBound = odb::Point(rect.xMax(), rect.yMax());
           pinBox = odb::Rect(lowerBound, upperBound);
           if (!dieArea.contains(pinBox)) {
-            if (pin_out_of_die_count < max_out_of_die_warn) {
               _logger->warn(GRT, 39, "Found pin outside die area in instance {}.",
                             currInst->getConstName());
-            }
             pin_out_of_die_count++;
           }
           _grid->addObstruction(pinLayer, pinBox);
