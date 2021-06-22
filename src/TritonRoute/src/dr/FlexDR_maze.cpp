@@ -1840,9 +1840,9 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
     net->setBestRouteConnFigs();
   }
   setBestMarkers();
-//  if (graphics_) {
-//    graphics_->show();
-//  }
+  if (graphics_) {
+    graphics_->show();
+  }
 }
 
 void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)

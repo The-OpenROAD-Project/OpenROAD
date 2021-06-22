@@ -461,7 +461,7 @@ void FlexDRGraphics::drawMarker(int xl,
 }
 
 void FlexDRGraphics::show() {
-    if (!worker_ || current_iter_ < settings_->iter) {
+    if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
         return;
     }
     frBox gcellBox = worker_->getGCellBox();
