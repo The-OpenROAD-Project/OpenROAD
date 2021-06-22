@@ -1,16 +1,15 @@
 # Antenna Rule Checker
 
-This tool checks antenna violations based on an input LEF and DEF file loaded in opendb, a report
+This tool checks antenna violations of a design in opendb, a report
 will be generated to indicate violated nets. APIs are provided to help fix antenna violation during the diode insertion flow in globalroute:
 
 ## Antenna Check Commands
 
 ---
 
- - `load_antenna_rules`: import antenna rules to ARC, must be called before other commands
  - `check_antennas`: check antenna violations on all nets and generate a report
    - -report_filename: specify the file name path where to save the report
-   - -simple_report: provides a summary of the violated nets 
+   - -report_violating_nets: provides a summary of the violated nets 
 
 ## Antenna Report Example
 ---
