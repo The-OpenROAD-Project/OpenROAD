@@ -45,9 +45,9 @@ extern "C" {
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iostream>
-#include <cmath>
 
 #include "opendb/db.h"
 #include "utl/Logger.h"
@@ -56,7 +56,8 @@ using utl::PAR;
 
 namespace par {
 
-void PartitionMgr::init(unsigned dbId, Logger* logger){
+void PartitionMgr::init(unsigned dbId, Logger* logger)
+{
   _dbId = dbId;
   _logger = logger;
 }
@@ -78,7 +79,7 @@ void PartitionMgr::runPartitioning()
 void PartitionMgr::runChaco()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running Chaco..."); 
+  _logger->report("Running Chaco...");
 
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
@@ -196,12 +197,17 @@ void PartitionMgr::runChaco()
         kWay = hypercubeDims;
         if (kWay > 3 || architectureDims < oldTargetPartitions
             || architectureDims % 2 == 1) {
-
-          _logger->error(PAR, 1, "Graph has too many sets (>8), the number of target partitions changed or the architecture is invalid.");
+          _logger->error(PAR,
+                         1,
+                         "Graph has too many sets (>8), the number of target "
+                         "partitions changed or the architecture is invalid.");
         }
       } else {
         if (kWay > 3 || _options.getTargetPartitions() < oldTargetPartitions) {
-          _logger->error(PAR, 2, "Graph has too many sets (>8) or the number of target partitions changed.");
+          _logger->error(PAR,
+                         2,
+                         "Graph has too many sets (>8) or the number of target "
+                         "partitions changed.");
         }
       }
     }
@@ -261,13 +267,21 @@ void PartitionMgr::runChaco()
     currentResults.addAssignment(chacoResult, runtime, seed);
     free(assigment);
 
-    _logger->info(PAR, 4, "[Chaco] Partitioned graph for seed {} in {} ms.", seed, runtime);
+    _logger->info(PAR,
+                  4,
+                  "[Chaco] Partitioned graph for seed {} in {} ms.",
+                  seed,
+                  runtime);
   }
 
   _results.push_back(currentResults);
   free(mesh_dims);
 
-  _logger->info(PAR, 5, "[Chaco] Run completed. Partition ID = {}. Total runs = {}.", partitionId, _options.getSeeds().size());
+  _logger->info(PAR,
+                5,
+                "[Chaco] Run completed. Partition ID = {}. Total runs = {}.",
+                partitionId,
+                _options.getSeeds().size());
 #endif
 }
 
@@ -344,7 +358,11 @@ void PartitionMgr::runGpMetis()
     currentResults.addAssignment(gpmetisResults, runtime, seed);
     free(parts);
 
-    _logger->info(PAR, 56, "[GPMetis] Partitioned graph for seed {} in {} ms.", seed, runtime);
+    _logger->info(PAR,
+                  56,
+                  "[GPMetis] Partitioned graph for seed {} in {} ms.",
+                  seed,
+                  runtime);
   }
   free(vertexWeights);
   free(rowPtr);
@@ -353,7 +371,11 @@ void PartitionMgr::runGpMetis()
 
   _results.push_back(currentResults);
 
-  _logger->info(PAR, 57, "[GPMetis] Run completed. Partition ID = {}. Total runs = {}.", partitionId, _options.getSeeds().size());
+  _logger->info(PAR,
+                57,
+                "[GPMetis] Run completed. Partition ID = {}. Total runs = {}.",
+                partitionId,
+                _options.getSeeds().size());
 #endif
 }
 
@@ -469,14 +491,22 @@ void PartitionMgr::runMlPart()
               .count();
 
     currentResults.addAssignment(clusters, runtime, seed);
-    _logger->info(PAR, 59, "[MLPart] Partitioned graph for seed {} in {} ms.", seed, runtime);
+    _logger->info(PAR,
+                  59,
+                  "[MLPart] Partitioned graph for seed {} in {} ms.",
+                  seed,
+                  runtime);
 
     std::fill(clusters.begin(), clusters.end(), 0);
   }
 
   _results.push_back(currentResults);
 
-  _logger->info(PAR, 60, "[MLPart] Run completed. Partition ID = {}. Total runs = {}.", partitionId, _options.getSeeds().size());
+  _logger->info(PAR,
+                60,
+                "[MLPart] Run completed. Partition ID = {}. Total runs = {}.",
+                partitionId,
+                _options.getSeeds().size());
 #endif
 }
 
@@ -562,9 +592,6 @@ void PartitionMgr::evaluatePartitioning()
 void PartitionMgr::computePartitionResult(unsigned partitionId,
                                           std::string function)
 {
-  odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
-  odb::dbChip* chip = db->getChip();
-  odb::dbBlock* block = chip->getBlock();
   std::vector<unsigned long> setSizes;
   std::vector<unsigned long> setAreas;
   int weightModel = _options.getWeightModel();
@@ -580,7 +607,6 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
     std::vector<unsigned long> currentAssignment
         = currentResults.getAssignment(idx);
     unsigned long currentRuntime = currentResults.getRuntime(idx);
-    int currentSeed = currentResults.getSeed(idx);
 
     unsigned long terminalCounter = 0;
     unsigned long cutCounter = 0;
@@ -604,7 +630,6 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
           int currentVertex = hyperedgeNets[currentIndex];
           unsigned long currentPartition = currentAssignment[currentVertex];
           netPartitions.insert(currentPartition);
-          unsigned long currentVertexWeight = _hypergraph.getVertexWeight(idx);
           netVertices.push_back(currentVertex);
           if (computedVertices.find(currentVertex)
               == computedVertices
@@ -617,9 +642,10 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
       }
       if (netPartitions.size() > 1) {  // Net was cut.
         cutCounter++;  // If the net was cut, a hyperedge cut happened.
-        terminalCounter += netPartitions.size();  // The number of different partitions
-                                       // present in the net is the number of
-                                       // terminals. (Pathways to another set.)
+        terminalCounter
+            += netPartitions.size();  // The number of different partitions
+                                      // present in the net is the number of
+                                      // terminals. (Pathways to another set.)
         // Computations for hop weight:
         float currentNetWeight = 0;
         int netSize = netVertices.size();
@@ -748,16 +774,30 @@ bool PartitionMgr::comparePartitionings(PartSolutions oldPartition,
 void PartitionMgr::reportPartitionResult(unsigned partitionId)
 {
   PartSolutions currentResults = _results[partitionId];
-  _logger->info(PAR, 6, "Partitioning Results for ID = {} and Tool = {}.", partitionId, currentResults.getToolName());
+  _logger->info(PAR,
+                6,
+                "Partitioning Results for ID = {} and Tool = {}.",
+                partitionId,
+                currentResults.getToolName());
   unsigned bestIdx = currentResults.getBestSolutionIdx();
   int seed = currentResults.getSeed(bestIdx);
   _logger->info(PAR, 7, "Best results used seed {}.", seed);
-  _logger->info(PAR, 8, "Number of Hyperedge Cuts = {}.", currentResults.getBestNumHyperedgeCuts());
-  _logger->info(PAR, 9,"Number of Terminals = {}.", currentResults.getBestNumTerminals());
-  _logger->info(PAR, 10,"Cluster Size SD = {}.", currentResults.getBestSetSize());
-  _logger->info(PAR, 11,"Cluster Area SD = {}.", currentResults.getBestSetArea());
-  _logger->info(PAR, 12,"Total Hop Weigth = {}.", currentResults.getBestHopWeigth());
-  _logger->info(PAR, 13,"Total Runtime = {}.", currentResults.getBestRuntime());
+  _logger->info(PAR,
+                8,
+                "Number of Hyperedge Cuts = {}.",
+                currentResults.getBestNumHyperedgeCuts());
+  _logger->info(PAR,
+                9,
+                "Number of Terminals = {}.",
+                currentResults.getBestNumTerminals());
+  _logger->info(
+      PAR, 10, "Cluster Size SD = {}.", currentResults.getBestSetSize());
+  _logger->info(
+      PAR, 11, "Cluster Area SD = {}.", currentResults.getBestSetArea());
+  _logger->info(
+      PAR, 12, "Total Hop Weigth = {}.", currentResults.getBestHopWeigth());
+  _logger->info(
+      PAR, 13, "Total Runtime = {}.", currentResults.getBestRuntime());
 }
 
 // Write Partitioning To DB
@@ -774,7 +814,7 @@ void PartitionMgr::writePartitioningToDb(unsigned partitioningId)
 {
   _logger->report("Writing partition id's to DB.");
   if (partitioningId >= getNumPartitioningResults()) {
-    _logger->error(PAR, 14, "Partition id out of range ({}).",partitioningId);
+    _logger->error(PAR, 14, "Partition id out of range ({}).", partitioningId);
   }
 
   PartSolutions& results = getPartitioningResult(partitioningId);
@@ -833,7 +873,7 @@ void PartitionMgr::run3PClustering()
 void PartitionMgr::runChacoClustering()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running Chaco..."); 
+  _logger->report("Running Chaco...");
 
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
@@ -1039,7 +1079,8 @@ void PartitionMgr::runGpMetisClustering()
   free(colIdx);
   free(edgeWeights);
 
-  _logger->info(PAR, 62, "[GPMetis] Run completed. Cluster ID = {}.", clusterId);
+  _logger->info(
+      PAR, 62, "[GPMetis] Run completed. Cluster ID = {}.", clusterId);
 #endif
 }
 
@@ -1211,7 +1252,8 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
     }
     partitions.insert(currentPartition);
   }
-  _logger->info(PAR, 19,"The netlist has {} partitions.", (numberOfPartitions + 1));
+  _logger->info(
+      PAR, 19, "The netlist has {} partitions.", (numberOfPartitions + 1));
   unsigned long totalVertices = 0;
   for (unsigned long partIdx : partitions) {
     unsigned long partSize = setSizes[partIdx];

@@ -37,6 +37,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opendb/db.h"
 #include "utl/Logger.h"
 
+namespace sta {
+class dbSta;
+}
+
 namespace psm {
 
 //! Class for IR solver
@@ -52,30 +56,30 @@ class IRSolver
    * This constructor creates an instance of the class using
    * the given inputs.
    */
-  IRSolver(odb::dbDatabase*             t_db,
-           sta::dbSta*                  t_sta,
-           utl::Logger*                 t_logger,
-           std::string                  vsrc_loc,
-           std::string                  power_net,
-           std::string                  out_file,
-           std::string                  em_out_file,
-           std::string                  spice_out_file,
-           int                          em_analyze,
-           int                          bump_pitch_x,
-           int                          bump_pitch_y,
+  IRSolver(odb::dbDatabase* t_db,
+           sta::dbSta* t_sta,
+           utl::Logger* t_logger,
+           std::string vsrc_loc,
+           std::string power_net,
+           std::string out_file,
+           std::string em_out_file,
+           std::string spice_out_file,
+           int em_analyze,
+           int bump_pitch_x,
+           int bump_pitch_y,
            std::map<std::string, float> net_voltage_map)
   {
-    m_db              = t_db;
-    m_sta             = t_sta;
-    m_logger          = t_logger;
-    m_vsrc_file       = vsrc_loc;
-    m_power_net       = power_net;
-    m_out_file        = out_file;
-    m_em_out_file     = em_out_file;
-    m_em_flag         = em_analyze;
-    m_spice_out_file  = spice_out_file;
-    m_bump_pitch_x    = bump_pitch_x;
-    m_bump_pitch_y    = bump_pitch_y;
+    m_db = t_db;
+    m_sta = t_sta;
+    m_logger = t_logger;
+    m_vsrc_file = vsrc_loc;
+    m_power_net = power_net;
+    m_out_file = out_file;
+    m_em_out_file = em_out_file;
+    m_em_flag = em_analyze;
+    m_spice_out_file = spice_out_file;
+    m_bump_pitch_x = bump_pitch_x;
+    m_bump_pitch_y = bump_pitch_y;
     m_net_voltage_map = net_voltage_map;
   }
   //! IRSolver destructor
@@ -100,7 +104,7 @@ class IRSolver
   void SolveIR();
   //! Function to get the power value from OpenSTA
   std::vector<std::pair<std::string, double>> GetPower();
-  std::pair<double, double>                   GetSupplyVoltage();
+  std::pair<double, double> GetSupplyVoltage();
 
   bool CheckConnectivity();
   bool CheckValidR(double R);
@@ -113,7 +117,7 @@ class IRSolver
 
   bool Build();
 
-  bool  BuildConnection();
+  bool BuildConnection();
   float supply_voltage_src;
 
  private:
@@ -129,7 +133,7 @@ class IRSolver
   //! Resistance configuration file
   std::string m_out_file;
   std::string m_em_out_file;
-  int         m_em_flag;
+  int m_em_flag;
   std::string m_spice_out_file;
   //! G matrix for voltage
   GMat* m_Gmat;
@@ -149,8 +153,8 @@ class IRSolver
   //! Direction of the top layer
   odb::dbTechLayerDir::Value m_top_layer_dir;
 
-  odb::dbTechLayerDir::Value   m_bottom_layer_dir;
-  odb::dbSigType               m_power_net_type;
+  odb::dbTechLayerDir::Value m_bottom_layer_dir;
+  odb::dbSigType m_power_net_type;
   std::map<std::string, float> m_net_voltage_map;
   //! Current vector 1D
   std::vector<double> m_J;

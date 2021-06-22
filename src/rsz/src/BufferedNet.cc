@@ -38,9 +38,8 @@
 #include <algorithm>
 
 #include "rsz/Resizer.hh"
-
-#include "sta/Units.hh"
 #include "sta/Liberty.hh"
+#include "sta/Units.hh"
 
 namespace rsz {
 
@@ -51,115 +50,119 @@ using sta::INF;
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
                          float cap,
-                         Pin *load_pin,
+                         Pin* load_pin,
                          PathRef required_path,
                          Delay required_delay,
-                         LibertyCell *buffer,
-                         BufferedNet *ref,
-                         BufferedNet *ref2) :
-  type_(type),
-  cap_(cap),
-  load_pin_(load_pin),
-  required_path_(required_path),
-  required_delay_(required_delay),
-  location_(location),
-  buffer_cell_(buffer),
-  ref_(ref),
-  ref2_(ref2)
+                         LibertyCell* buffer,
+                         BufferedNet* ref,
+                         BufferedNet* ref2)
+    : type_(type),
+      cap_(cap),
+      location_(location),
+      required_path_(required_path),
+      required_delay_(required_delay),
+      load_pin_(load_pin),
+      buffer_cell_(buffer),
+      ref_(ref),
+      ref2_(ref2)
 {
 }
 
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
                          float cap,
-                         Pin *load_pin,
-                         BufferedNet *ref,
-                         BufferedNet *ref2) :
-  type_(type),
-  cap_(cap),
-  load_pin_(load_pin),
-  location_(location),
-  buffer_cell_(nullptr),
-  ref_(ref),
-  ref2_(ref2)
+                         Pin* load_pin,
+                         BufferedNet* ref,
+                         BufferedNet* ref2)
+    : type_(type),
+      cap_(cap),
+      location_(location),
+      load_pin_(load_pin),
+      buffer_cell_(nullptr),
+      ref_(ref),
+      ref2_(ref2)
 {
-
 }
 
 BufferedNet::~BufferedNet()
 {
 }
 
-void
-BufferedNet::reportTree(Resizer *resizer)
+void BufferedNet::reportTree(Resizer* resizer)
 {
   reportTree(0, resizer);
 }
 
-void
-BufferedNet::reportTree(int level,
-                        Resizer *resizer)
+void BufferedNet::reportTree(int level, Resizer* resizer)
 {
   report(level, resizer);
   switch (type_) {
-  case BufferedNetType::load:
-    break;
-  case BufferedNetType::buffer:
-  case BufferedNetType::wire:
-    ref_->reportTree(level + 1, resizer);
-    break;
-  case BufferedNetType::junction:
-    ref_->reportTree(level + 1, resizer);
-    ref2_->reportTree(level + 1, resizer);
-    break;
+    case BufferedNetType::load:
+      break;
+    case BufferedNetType::buffer:
+    case BufferedNetType::wire:
+      ref_->reportTree(level + 1, resizer);
+      break;
+    case BufferedNetType::junction:
+      ref_->reportTree(level + 1, resizer);
+      ref2_->reportTree(level + 1, resizer);
+      break;
   }
 }
 
-void
-BufferedNet::report(int level,
-                    Resizer *resizer)
+void BufferedNet::report(int level, Resizer* resizer)
 {
-  Network *sdc_network = resizer->sdcNetwork();
-  Units *units = resizer->units();
-  Unit *dist_unit = units->distanceUnit();
-  const char *x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 1);
-  const char *y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 1);
-  const char *cap = units->capacitanceUnit()->asString(cap_);
-  
+  Network* sdc_network = resizer->sdcNetwork();
+  Units* units = resizer->units();
+  Unit* dist_unit = units->distanceUnit();
+  const char* x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 1);
+  const char* y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 1);
+  const char* cap = units->capacitanceUnit()->asString(cap_);
+
   switch (type_) {
-  case BufferedNetType::load:
-    // %*s format indents level spaces.
-    printf("%*sload %s (%s, %s) cap %s req %s\n",
-           level, "",
-           sdc_network->pathName(load_pin_),
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
-    break;
-  case BufferedNetType::wire:
-    printf("%*swire (%s, %s) cap %s req %s\n",
-           level, "",
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
-    break;
-  case BufferedNetType::buffer:
-    printf("%*sbuffer (%s, %s) %s cap %s req %s\n",
-           level, "",
-           x, y,
-           buffer_cell_->name(),
-           cap,
-           delayAsString(required(resizer), resizer));
-    break;
-  case BufferedNetType::junction:
-    printf("%*sjunction (%s, %s) cap %s req %s\n",
-           level, "",
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
-    break;
+    case BufferedNetType::load:
+      // %*s format indents level spaces.
+      printf("%*sload %s (%s, %s) cap %s req %s\n",
+             level,
+             "",
+             sdc_network->pathName(load_pin_),
+             x,
+             y,
+             cap,
+             delayAsString(required(resizer), resizer));
+      break;
+    case BufferedNetType::wire:
+      printf("%*swire (%s, %s) cap %s req %s\n",
+             level,
+             "",
+             x,
+             y,
+             cap,
+             delayAsString(required(resizer), resizer));
+      break;
+    case BufferedNetType::buffer:
+      printf("%*sbuffer (%s, %s) %s cap %s req %s\n",
+             level,
+             "",
+             x,
+             y,
+             buffer_cell_->name(),
+             cap,
+             delayAsString(required(resizer), resizer));
+      break;
+    case BufferedNetType::junction:
+      printf("%*sjunction (%s, %s) cap %s req %s\n",
+             level,
+             "",
+             x,
+             y,
+             cap,
+             delayAsString(required(resizer), resizer));
+      break;
   }
 }
 
-Required
-BufferedNet::required(StaState *sta)
+Required BufferedNet::required(StaState* sta)
 {
   if (required_path_.isNull())
     return INF;
@@ -167,20 +170,19 @@ BufferedNet::required(StaState *sta)
     return required_path_.required(sta) - required_delay_;
 }
 
-int
-BufferedNet::bufferCount() const
+int BufferedNet::bufferCount() const
 {
   switch (type_) {
-  case BufferedNetType::buffer:
-    return ref_->bufferCount() + 1;
-  case BufferedNetType::wire:
-    return ref_->bufferCount();
-  case BufferedNetType::junction:
-    return ref_->bufferCount() + ref2_->bufferCount();
-  case BufferedNetType::load:
-    return 0;
+    case BufferedNetType::buffer:
+      return ref_->bufferCount() + 1;
+    case BufferedNetType::wire:
+      return ref_->bufferCount();
+    case BufferedNetType::junction:
+      return ref_->bufferCount() + ref2_->bufferCount();
+    case BufferedNetType::load:
+      return 0;
   }
   return 0;
 }
 
-}
+}  // namespace rsz

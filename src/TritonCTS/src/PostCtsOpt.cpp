@@ -35,9 +35,9 @@
 
 #include "PostCtsOpt.h"
 
-#include "utl/Logger.h"
-
 #include <iostream>
+
+#include "utl/Logger.h"
 
 namespace cts {
 
@@ -60,7 +60,8 @@ void PostCtsOpt::initSourceSinkDists()
   });
 
   _avgSourceSinkDist /= _clock->getNumSinks();
-  _logger->info(CTS, 36, " Avg. source sink dist: {:.2f} dbu.", _avgSourceSinkDist);
+  _logger->info(
+      CTS, 36, " Avg. source sink dist: {:.2f} dbu.", _avgSourceSinkDist);
 }
 
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
@@ -101,25 +102,25 @@ void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
       fixLongWire(subNet, driver, sink);
       ++_numViolatingSinks;
       if (_logger->debugCheck(utl::CTS, "HTree", 3)) {
-        _logger->report("Fixing Sink off by dist {}, Name = {}", dist, sinkName);
+        _logger->report(
+            "Fixing Sink off by dist {}, Name = {}", dist, sinkName);
       }
     }
   });
 }
 
 void PostCtsOpt::fixLongWire(Clock::SubNet& net,
-                                   ClockInst* driver,
-                                   ClockInst* sink)
+                             ClockInst* driver,
+                             ClockInst* sink)
 {
   unsigned inputCap = _techChar->getActualMinInputCap();
-  unsigned inputSlew = _techChar->getMaxSlew()/2;
+  unsigned inputSlew = _techChar->getMaxSlew() / 2;
   DBU wireSegmentUnit = _techChar->getLengthUnit() * _options->getDbUnits();
   Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
                           (float) driver->getY() / wireSegmentUnit);
   Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
                         (float) sink->getY() / wireSegmentUnit);
   unsigned wireLength = driverLoc.computeDist(sinkLoc);
-  unsigned remainingLength = wireLength;
   const unsigned slewThreshold = _options->getMaxSlew();
   const unsigned tolerance = 1;
   std::vector<unsigned> segments;
@@ -130,12 +131,12 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
     for (int wireCount = 0; wireCount < numWires; ++wireCount) {
       unsigned outCap = 0, outSlew = 0;
       unsigned key = _builder->computeMinDelaySegment(charSegLength,
-                                      inputSlew,
-                                      inputCap,
-                                      slewThreshold,
-                                      tolerance,
-                                      outSlew,
-                                      outCap);
+                                                      inputSlew,
+                                                      inputCap,
+                                                      slewThreshold,
+                                                      tolerance,
+                                                      outSlew,
+                                                      outCap);
       if (_logger->debugCheck(utl::CTS, "HTree", 3)) {
         _techChar->reportSegment(key);
       }
@@ -145,9 +146,14 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
     }
   }
   SegmentBuilder builder("clkbuf_opt_" + std::to_string(bufIndex) + "_",
-                      "clknet_opt_" + std::to_string(bufIndex) + "_",
-                      driverLoc, sinkLoc, segments, *_clock,
-                      net, *_techChar, wireSegmentUnit);
+                         "clknet_opt_" + std::to_string(bufIndex) + "_",
+                         driverLoc,
+                         sinkLoc,
+                         segments,
+                         *_clock,
+                         net,
+                         *_techChar,
+                         wireSegmentUnit);
   bufIndex++;
   builder.build(_options->getRootBuffer(), sink);
 }

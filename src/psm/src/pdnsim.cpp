@@ -31,17 +31,20 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "psm/pdnsim.h"
+
 #include <tcl.h>
+
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
-#include "opendb/db.h"
-#include "ir_solver.h"
 #include <string>
 #include <vector>
+
 #include "gmat.h"
+#include "ir_solver.h"
 #include "node.h"
+#include "opendb/db.h"
 #include "utl/Logger.h"
 
 namespace psm {
@@ -49,36 +52,35 @@ namespace psm {
 PDNSim::PDNSim()
     : _db(nullptr),
       _sta(nullptr),
+      _logger(nullptr),
       _vsrc_loc(""),
-      _power_net(""),
       _out_file(""),
       _em_out_file(""),
       _enable_em(0),
-      _spice_out_file(""),
       _bump_pitch_x(0),
-      _bump_pitch_y(0)
-      //_net_voltage_map(nullptr)
-      {};
+      _bump_pitch_y(0),
+      _spice_out_file(""),
+      _power_net(""){};
 
 PDNSim::~PDNSim()
 {
-  _db             = nullptr;
-  _sta            = nullptr;
-  _vsrc_loc       = "";
-  _power_net      = "";
-  _out_file       = "";
-  _em_out_file    = "";
-  _enable_em      = 0;
+  _db = nullptr;
+  _sta = nullptr;
+  _vsrc_loc = "";
+  _power_net = "";
+  _out_file = "";
+  _em_out_file = "";
+  _enable_em = 0;
   _spice_out_file = "";
-  _bump_pitch_x   = 0;
-  _bump_pitch_y   = 0;
+  _bump_pitch_x = 0;
+  _bump_pitch_y = 0;
   //_net_voltage_map = nullptr;
 }
 
 void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
 {
-  _db     = db;
-  _sta    = sta;
+  _db = db;
+  _sta = sta;
   _logger = logger;
 }
 
@@ -166,7 +168,7 @@ void PDNSim::write_pg_spice()
 
 int PDNSim::analyze_power_grid()
 {
-  GMat*     gmat_obj;
+  GMat* gmat_obj;
   IRSolver* irsolve_h = new IRSolver(_db,
                                      _sta,
                                      _logger,
@@ -186,16 +188,7 @@ int PDNSim::analyze_power_grid()
   }
   gmat_obj = irsolve_h->GetGMat();
   irsolve_h->SolveIR();
-  std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
-  int                unit_micron = (_db->getTech())->getDbUnitsPerMicron();
-  int                vsize;
-  vsize = nodes.size();
-  for (int n = 0; n < vsize; n++) {
-    Node* node = nodes[n];
-    if (node->GetLayerNum() != 1)
-      continue;
-    NodeLoc loc = node->GetLoc();
-  }
+  std::vector<Node*> nodes = gmat_obj->GetAllNodes();
   _logger->report("########## IR report #################");
   _logger->report("Worstcase voltage: {:3.2e} V", irsolve_h->wc_voltage);
   _logger->report("Average IR drop  : {:3.2e} V",

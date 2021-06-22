@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "get_voltage.h"
+
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
@@ -44,16 +45,15 @@ namespace psm {
 std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta)
 {
   std::pair<double, double> supply_voltage;
-  sta::LibertyLibrary*      default_library;
-  _sta                                 = sta;
-  sta::dbNetwork*             network  = _sta->getDbNetwork();
-  sta::Corner*                corner   = _sta->cmdCorner();
-  sta::MinMax*                mm       = sta::MinMax::max();
+  sta::LibertyLibrary* default_library;
+  _sta = sta;
+  sta::dbNetwork* network = _sta->getDbNetwork();
+  sta::Corner* corner = _sta->cmdCorner();
+  sta::MinMax* mm = sta::MinMax::max();
   const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(mm);
-  float                       power_voltage_;
-  float                       gnd_voltage_;
+  float power_voltage_;
+  float gnd_voltage_;
   default_library = network->defaultLibertyLibrary();
-  bool exists;
 
   const sta::Pvt* pvt = dcalc_ap->operatingConditions();
   if (pvt == nullptr)
@@ -75,7 +75,7 @@ std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta)
   // default_library_->supplyVoltage(gnd_name_, gnd_voltage_, exists);
   // if (!exists)
   //  gnd_voltage_ = 0.0;
-  supply_voltage.first  = power_voltage_;
+  supply_voltage.first = power_voltage_;
   supply_voltage.second = gnd_voltage_;
   return supply_voltage;
 }

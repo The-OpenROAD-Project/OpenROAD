@@ -41,7 +41,7 @@
 
 namespace par {
 
-void HypergraphDecomposition::init(int dbId, Logger * logger)
+void HypergraphDecomposition::init(int dbId, Logger* logger)
 {
   _db = odb::dbDatabase::getDatabase(dbId);
   _chip = _db->getChip();
@@ -154,7 +154,6 @@ void HypergraphDecomposition::updateHypergraph(
   std::vector<int> rowPtr = hypergraph.getRowPtr();
   std::vector<int> vertexWeights = hypergraph.getVertexWeight();
   std::vector<int> edgeWeights = hypergraph.getEdgeWeight();
-  int prevPtr = 0;
 
   for (int i = 0; i < rowPtr.size() - 1; i++) {
     int instInNet = 0;

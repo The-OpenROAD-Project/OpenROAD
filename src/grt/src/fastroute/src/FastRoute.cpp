@@ -55,12 +55,11 @@
 #include "flute.h"
 #include "maze.h"
 #include "maze3D.h"
-#include "utl/Logger.h"
-#include "pdr/pdrev.h"
 #include "opendb/db.h"
-
+#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
@@ -108,7 +107,7 @@ void FastRouteCore::deleteComponents()
         delete nets[i];
       nets[i] = nullptr;
     }
-  
+
     delete[] nets;
     nets = nullptr;
   }
@@ -190,7 +189,7 @@ void FastRouteCore::deleteComponents()
     delete[] sttrees;
     sttrees = nullptr;
   }
-  
+
   parentX1.resize(boost::extents[0][0]);
   parentY1.resize(boost::extents[0][0]);
   parentX3.resize(boost::extents[0][0]);
@@ -644,9 +643,11 @@ int FastRouteCore::getEdgeCurrentResource(long x1,
   } else if (x1 == x2) {
     grid = y1 * xGrid + x1 + k * xGrid * (yGrid - 1);
     resource = v_edges3D[grid].cap - v_edges3D[grid].usage;
-  } else
-  {
-    logger->error(GRT, 212, "Cannot get edge resource: edge is not vertical or horizontal.");
+  } else {
+    logger->error(
+        GRT,
+        212,
+        "Cannot get edge resource: edge is not vertical or horizontal.");
   }
 
   return resource;
@@ -669,9 +670,9 @@ int FastRouteCore::getEdgeCurrentUsage(long x1,
   } else if (x1 == x2) {
     grid = y1 * xGrid + x1 + k * xGrid * (yGrid - 1);
     usage = v_edges3D[grid].usage;
-  } else
-  {
-    logger->error(GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
+  } else {
+    logger->error(
+        GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
   }
 
   return usage;
@@ -701,7 +702,11 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger->warn(GRT,
+                     113,
+                     "Underflow in reduce: cap, reducedCap: {}, {}",
+                     cap,
+                     reducedCap);
       }
       reduce = 0;
     } else {
@@ -728,7 +733,11 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger->warn(GRT,
+                     114,
+                     "Underflow in reduce: cap, reducedCap: {}, {}",
+                     cap,
+                     reducedCap);
       }
       reduce = 0;
     } else {
@@ -768,9 +777,11 @@ int FastRouteCore::getEdgeCapacity(long x1,
   {
     int grid = y1 * xGrid + x1 + k * xGrid * (yGrid - 1);
     cap = v_edges3D[grid].cap;
-  } else
-  {
-    logger->error(GRT, 214, "Cannot get edge capacity: edge is not vertical or horizontal.");
+  } else {
+    logger->error(
+        GRT,
+        214,
+        "Cannot get edge capacity: edge is not vertical or horizontal.");
   }
 
   return cap;
@@ -916,19 +927,20 @@ void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
   auto db_gcell = odb::dbGCellGrid::create(block);
-  if(db_gcell == nullptr)
-  {
+  if (db_gcell == nullptr) {
     db_gcell = block->getGCellGrid();
-    logger->warn(utl::GRT, 211, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+    logger->warn(
+        utl::GRT,
+        211,
+        "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
   db_gcell->addGridPatternY(ycorner, yGrid + 1, hTile);
   for (int k = 0; k < numLayers; k++) {
-    auto layer = db_->getTech()->findRoutingLayer(k+1);
-    if(layer == nullptr)
-    {
-      logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
+    auto layer = db_->getTech()->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k + 1);
       continue;
     }
 
@@ -1063,7 +1075,6 @@ NetRouteMap FastRouteCore::run()
 
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
-  clock_t t3 = clock();
   InitEstUsage();
 
   int i = 1;
@@ -1160,21 +1171,23 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
-    logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
-                  " threshold {} via cost {}. \n"
-                  "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
-                  " {} updatetype {}.",
-        i,
-        enlarge,
-        costheight,
-        mazeedge_Threshold,
-        VIA,
-        LOGIS_COF,
-        healingTrigger,
-        cost_step,
-        L,
-        cost_type,
-        upType);
+    logger->info(GRT,
+                 102,
+                 "iteration {}, enlarge {}, costheight {},"
+                 " threshold {} via cost {}. \n"
+                 "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
+                 " {} updatetype {}.",
+                 i,
+                 enlarge,
+                 costheight,
+                 mazeedge_Threshold,
+                 VIA,
+                 LOGIS_COF,
+                 healingTrigger,
+                 cost_step,
+                 L,
+                 cost_type,
+                 upType);
     mazeRouteMSMD(i,
                   enlarge,
                   costheight,
@@ -1302,7 +1315,11 @@ NetRouteMap FastRouteCore::run()
   bool has_2D_overflow = totalOverflow > 0;
 
   if (minofl > 0) {
-    logger->info(GRT, 104, "Minimal overflow {} occuring at round {}.", minofl, minoflrnd);
+    logger->info(GRT,
+                 104,
+                 "Minimal overflow {} occuring at round {}.",
+                 minofl,
+                 minoflrnd);
     copyBR();
   }
 
@@ -1348,7 +1365,8 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge, 0, 12);
     }
     if (verbose > 1)
-      logger->info(GRT, 109, "Post-processsing finished.\n Starting via filling.");
+      logger->info(
+          GRT, 109, "Post-processsing finished.\n Starting via filling.");
   }
 
   fillVIA();
@@ -1406,7 +1424,7 @@ std::vector<int> FastRouteCore::getOriginalResources()
   std::vector<int> original_resources;
   original_resources.resize(numLayers);
   for (int l = 0; l < numLayers; l++) {
-    original_resources[l] += (vCapacity3D[l]+hCapacity3D[l])*yGrid*xGrid;
+    original_resources[l] += (vCapacity3D[l] + hCapacity3D[l]) * yGrid * xGrid;
   }
 
   return original_resources;

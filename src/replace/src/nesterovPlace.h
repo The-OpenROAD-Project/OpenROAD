@@ -34,17 +34,17 @@
 #ifndef __REPLACE_NESTEROV_PLACE__
 #define __REPLACE_NESTEROV_PLACE__
 
-#include "point.h"
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "point.h"
 
 namespace utl {
 class Logger;
 }
 
-namespace gpl 
-{
+namespace gpl {
 
 class PlacerBase;
 class Instance;
@@ -53,18 +53,19 @@ class RouteBase;
 class TimingBase;
 class Graphics;
 
-class NesterovPlaceVars {
-  public:
+class NesterovPlaceVars
+{
+ public:
   int maxNesterovIter;
   int maxBackTrack;
-  float initDensityPenalty; // INIT_LAMBDA
-  float initWireLengthCoef; // base_wcof
-  float targetOverflow; // overflow
-  float minPhiCoef; // pcof_min
-  float maxPhiCoef; // pcof_max
-  float minPreconditioner; // MIN_PRE
-  float initialPrevCoordiUpdateCoef; // z_ref_alpha
-  float referenceHpwl; // refDeltaHpwl
+  float initDensityPenalty;           // INIT_LAMBDA
+  float initWireLengthCoef;           // base_wcof
+  float targetOverflow;               // overflow
+  float minPhiCoef;                   // pcof_min
+  float maxPhiCoef;                   // pcof_max
+  float minPreconditioner;            // MIN_PRE
+  float initialPrevCoordiUpdateCoef;  // z_ref_alpha
+  float referenceHpwl;                // refDeltaHpwl
   float routabilityCheckOverflow;
 
   int routabilityMaxBloatIter;
@@ -81,33 +82,32 @@ class NesterovPlaceVars {
   void reset();
 };
 
-class NesterovPlace {
-public:
+class NesterovPlace
+{
+ public:
   NesterovPlace();
   NesterovPlace(NesterovPlaceVars npVars,
-      std::shared_ptr<PlacerBase> pb,
-      std::shared_ptr<NesterovBase> nb,
-      std::shared_ptr<RouteBase> rb,
-      std::shared_ptr<TimingBase> tb,
-      utl::Logger* log);
+                std::shared_ptr<PlacerBase> pb,
+                std::shared_ptr<NesterovBase> nb,
+                std::shared_ptr<RouteBase> rb,
+                std::shared_ptr<TimingBase> tb,
+                utl::Logger* log);
   ~NesterovPlace();
 
   void doNesterovPlace();
 
-  void updateGradients(
-      std::vector<FloatPoint>& sumGrads,
-      std::vector<FloatPoint>& wireLengthGrads,
-      std::vector<FloatPoint>& densityGrads );
+  void updateGradients(std::vector<FloatPoint>& sumGrads,
+                       std::vector<FloatPoint>& wireLengthGrads,
+                       std::vector<FloatPoint>& densityGrads);
 
   void updateWireLengthCoef(float overflow);
 
   void updateInitialPrevSLPCoordi();
 
-  float getStepLength(
-      const std::vector<FloatPoint>& prevCoordi_,
-      const std::vector<FloatPoint>& prevSumGrads_,
-      const std::vector<FloatPoint>& curCoordi_,
-      const std::vector<FloatPoint>& curSumGrads_ );
+  float getStepLength(const std::vector<FloatPoint>& prevCoordi_,
+                      const std::vector<FloatPoint>& prevSumGrads_,
+                      const std::vector<FloatPoint>& curCoordi_,
+                      const std::vector<FloatPoint>& curSumGrads_);
 
   void updateNextIter();
   float getPhiCoef(float scaledDiffHpwl) const;
@@ -118,15 +118,15 @@ public:
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   float getDensityPenalty() const { return densityPenalty_; }
 
-private:
+ private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
-  utl::Logger* log_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
+  utl::Logger* log_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;
-  
+
   // SLP is Step Length Prediction.
   //
   // y_st, y_dst, y_wdst, w_pdst
@@ -184,14 +184,13 @@ private:
   float isRoutabilityNeed_;
 
   std::string divergeMsg_;
-  int divergeCode_; 
+  int divergeCode_;
 
   void cutFillerCoordinates();
 
   void init();
   void reset();
-
 };
-}
+}  // namespace gpl
 
 #endif

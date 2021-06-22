@@ -240,15 +240,11 @@ void ClusterDB::cluster1Layer(unsigned layerNum,
           float largeNodeMinAR = nextNode.getminAR();
           float largeNodeMaxAR = nextNode.getmaxAR();
           float smallNodeArea = currNodeArea;
-          float smallNodeMinAR = currNode.getminAR();
-          float smallNodeMaxAR = currNode.getmaxAR();
           if (currNodeArea > nextNodeArea) {
             largeNodeArea = currNodeArea;
             largeNodeMinAR = currNode.getminAR();
             largeNodeMaxAR = currNode.getmaxAR();
             smallNodeArea = nextNodeArea;
-            smallNodeMinAR = nextNode.getminAR();
-            smallNodeMaxAR = nextNode.getmaxAR();
           }
 
           // float newNodeMinAR = 0.75;
@@ -276,9 +272,10 @@ void ClusterDB::cluster1Layer(unsigned layerNum,
           // else {
           //	// get weighted average of ARs
           //	newNodeMinAR = ((largeNodeArea*largeNodeMinAR) +
-          //(smallNodeArea*smallNodeMinAR)) 		/ (largeNodeArea + smallNodeArea);
-          //	newNodeMaxAR = ((largeNodeArea*largeNodeMaxAR) +
-          //(largeNodeArea*smallNodeMaxAR)) 		/ (largeNodeArea + smallNodeArea);
+          //(smallNodeArea*smallNodeMinAR)) 		/ (largeNodeArea +
+          //smallNodeArea); 	newNodeMaxAR = ((largeNodeArea*largeNodeMaxAR) +
+          //(largeNodeArea*smallNodeMaxAR)) 		/ (largeNodeArea +
+          //smallNodeArea);
           // }
 
           sprintf(blockName, "Block_%d_%d", layerNum, blkCtr);

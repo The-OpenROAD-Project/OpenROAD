@@ -155,9 +155,6 @@ void newRipup(TreeEdge* treeedge,
     return;  // not ripup for degraded edge
   }
 
-  int n1 = treeedge->n1;
-  int n2 = treeedge->n2;
-
   ripuptype = treeedge->route.type;
   if (y1 < y2) {
     ymin = y1;
@@ -397,8 +394,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
 Bool newRipup3DType3(int netID, int edgeID)
 {
   short *gridsX, *gridsY, *gridsL;
-  int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid,
-      deg;
+  int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid, deg;
   std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
 
   TreeEdge *treeedges, *treeedge;
@@ -618,7 +614,9 @@ void newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
           } else {
-            logger->error(GRT, 123, "Maze ripup wrong in newRipupNet for net {}.",
+            logger->error(GRT,
+                          123,
+                          "Maze ripup wrong in newRipupNet for net {}.",
                           netName(nets[netID]));
           }
         }

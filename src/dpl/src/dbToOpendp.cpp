@@ -38,8 +38,8 @@
 #include <cfloat>
 #include <limits>
 
-#include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -124,8 +124,7 @@ Opendp::defineTopPower(Macro *macro, dbMaster *master)
 
   if (power && gnd) {
     int master_height = master->getHeight();
-    bool is_multi_row = master_height != row_height_
-                        && master_height % row_height_ == 0;
+    bool is_multi_row = master_height != row_height_ && master_height % row_height_ == 0;
 
     macro->is_multi_row_ = is_multi_row;
 
@@ -186,7 +185,6 @@ Opendp::makeCells()
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
-    dbMasterType type = master->getType();
     if (master->isCoreAutoPlaceable()) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
@@ -223,7 +221,7 @@ Opendp::getBbox(dbInst *inst)
   int height = master->getHeight();
   if (swapWidthHeight(inst->getOrient()))
     std::swap(width, height);
-  
+
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
 
@@ -293,8 +291,7 @@ Opendp::findRowPower()
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
   for (dbNet *net : block_->getNets()) {
-    if (net->isSpecial()
-        && net->getSigType() == dbSigType::POWER) {
+    if (net->isSpecial() && net->getSigType() == dbSigType::POWER) {
       for (dbSWire *swire : net->getSWires()) {
         for (dbSBox *sbox : swire->getWires()) {
           min_vdd_y = min(min_vdd_y, sbox->yMin());
@@ -318,4 +315,4 @@ Opendp::reportImportWarnings()
     logger_->warn(DPL, 11, "Could not find power special net.");
 }
 
-}  // namespace
+}  // namespace dpl

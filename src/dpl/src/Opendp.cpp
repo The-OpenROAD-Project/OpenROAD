@@ -44,8 +44,8 @@
 #include <limits>
 #include <map>
 
-#include "utl/Logger.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -63,8 +63,8 @@ using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbPlacementStatus;
-using odb::Rect;
 using odb::dbSigType;
+using odb::Rect;
 
 Cell::Cell() :
   db_inst_(nullptr),
@@ -124,8 +124,8 @@ Group::Group() :
 }
 
 Opendp::Opendp() :
-  pad_right_(0),
   pad_left_(0),
+  pad_right_(0),
   grid_(nullptr)
 {
   dummy_cell_.is_placed_ = true;
@@ -175,9 +175,7 @@ Opendp::setPadding(dbMaster *master,
 bool
 Opendp::havePadding() const
 {
-  return pad_left_ > 0 || pad_right_ > 0
-    || !master_padding_map_.empty()
-    || !inst_padding_map_.empty();
+  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty() || !inst_padding_map_.empty();
 }
 
 void
@@ -224,8 +222,8 @@ Opendp::reportLegalizationStats() const
   double hpwl_legal = hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
   int hpwl_delta = (hpwl_before_ == 0.0)
-    ? 0.0
-    : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
+      ? 0.0
+      : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
 }
@@ -277,8 +275,7 @@ bool
 Opendp::isSupply(dbNet *net) const
 {
   dbSigType sig_type = net->getSigType();
-  return sig_type == dbSigType::POWER
-    || sig_type == dbSigType::GROUND;
+  return sig_type == dbSigType::POWER || sig_type == dbSigType::GROUND;
 }
 
 Rect
@@ -646,4 +643,4 @@ divFloor(int dividend, int divisor)
   return dividend / divisor;
 }
 
-}  // namespace opendp
+}  // namespace dpl

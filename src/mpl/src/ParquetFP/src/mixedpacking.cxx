@@ -243,10 +243,7 @@ void MixedBlockInfoType::ParseBlocks(std::ifstream& input)
 void MixedBlockInfoType::ParseTxt(std::ifstream& input)
 {
   char block_name[1024];
-  char block_type[1024];
-  char tempWord1[1024];
 
-  int numVertices;
   float width, height;
   float snapX, snapY;
   float haloX, haloY;

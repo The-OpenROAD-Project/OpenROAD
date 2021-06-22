@@ -39,7 +39,7 @@
 
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace CKMeans {
 
@@ -56,7 +56,8 @@ class flop
   std::vector<std::pair<int, int>> match_idx;
   std::vector<float> silhs;
   unsigned sinkIdx;
-  flop(const float x, const float y, unsigned idx) : x(x), y(y), sinkIdx(idx){};
+  flop(const float x, const float y, unsigned idx)
+      : x(x), y(y), x_idx(0), y_idx(0), idx(0), sinkIdx(idx){};
 };
 
 class clustering
@@ -74,7 +75,10 @@ class clustering
   std::pair<float, float> branchingPoint;
 
  public:
-  clustering(const std::vector<std::pair<float, float>>&, float, float, Logger*);
+  clustering(const std::vector<std::pair<float, float>>&,
+             float,
+             float,
+             Logger*);
   ~clustering();
   float Kmeans(unsigned,
                unsigned,
@@ -89,7 +93,9 @@ class clustering
                   std::vector<std::pair<float, float>>&,
                   unsigned MAX = 15,
                   unsigned power = 4);
-  float calcSilh(const std::vector<std::pair<float, float>>&, unsigned, unsigned);
+  float calcSilh(const std::vector<std::pair<float, float>>&,
+                 unsigned,
+                 unsigned);
   void minCostFlow(const std::vector<std::pair<float, float>>&,
                    unsigned,
                    unsigned,
