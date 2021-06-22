@@ -33,7 +33,7 @@
 ##
 ############################################################################
 
-# Restructuring could be done in various targets targeting area or timing.
+# Restructuring could be done targeting area or timing.
 # 
 # Argument Description
 # liberty_file:    Liberty file with description of cells used in design. This would be passed to ABC.
