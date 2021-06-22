@@ -52,10 +52,6 @@ proc genFiles { run_dir ispd_year design drv } {
     puts  $runFile "echo"
     close $runFile
     exec chmod +x "$run_dir/$design/run.sh"
-    set fileName "$run_dir/$design/run.log"
-    set f [open $fileName]
-    fcopy $f stdout
-    close $f
 }
 
 set design_list_ispd18 " \
@@ -119,6 +115,10 @@ cd $run_dir
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
 set status [catch { eval exec -ignorestderr parallel -j $parallel_jobs --halt never --joblog $run_dir/log ./{}/run.sh ::: $design_list >@stdout } ]
 foreach design $design_list {
+    set fileName "$run_dir/$design/run.log"
+    set f [open $fileName]
+    fcopy $f stdout
+    close $f
     exec tar czvf "${design}.tar.gz" "${design}"
 }
 puts "======================="
