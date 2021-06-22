@@ -33,10 +33,10 @@
 
 #pragma once
 
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <array>
 
 namespace utl {
 class Logger;
@@ -48,10 +48,10 @@ class Nets;
 
 namespace mpl {
 
-using std::vector;
 using std::array;
 using std::pair;
 using std::string;
+using std::vector;
 
 namespace pfp = parquetfp;
 
@@ -85,7 +85,7 @@ class Partition
             double _ly,
             double _width,
             double _height,
-            MacroPlacer *macro_placer,
+            MacroPlacer* macro_placer,
             utl::Logger* log);
   Partition(const Partition& prev) = default;
 
@@ -110,7 +110,7 @@ class Partition
                 pfp::Nets* pfp_nets);
 
   utl::Logger* logger_;
-  MacroPlacer *macro_placer_;
+  MacroPlacer* macro_placer_;
 };
 
 }  // namespace mpl

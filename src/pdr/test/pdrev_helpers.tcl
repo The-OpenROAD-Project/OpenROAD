@@ -108,3 +108,28 @@ proc report_pdrev_nets { nets alpha use_pd } {
     report_pdrev_net $net $alpha $use_pd
   }
 }
+
+proc find_pdrev_net { nets net_name } {
+  foreach net $nets {
+  set pins [lassign $net name drvr_index]
+    if { $name == $net_name } {
+      return $net
+    }
+  }
+  return {}
+}
+
+proc highlight_pd_net { net alpha } {
+  set pins [lassign $net net_name drvr_index]
+  puts "Net $net_name"
+  set xs {}
+  set ys {}
+  foreach pin $pins {
+    lassign $pin pin_name x y
+    #set x [ord::microns_to_dbu $x]
+    #set y [ord::microns_to_dbu $y]
+    lappend xs $x
+    lappend ys $y
+  }
+  pdr::highlight_pd_tree $xs $ys $drvr_index $alpha
+}
