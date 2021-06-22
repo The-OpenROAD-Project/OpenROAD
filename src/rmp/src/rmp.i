@@ -36,6 +36,7 @@
 %{
 #include "rmp/Restructure.h"
 #include "ord/OpenRoad.hh"
+#include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -45,44 +46,33 @@ getRestructure();
 
 using namespace rmp;
 using ord::getRestructure;
+using sta::LibertyPort;
 %}
 
 %include "../../Exception.i"
 
 %inline %{
 
-void set_mode_cmd(const char* modeName)
-{
-  getRestructure()->setMode(modeName);
-}
 
 void set_logfile_cmd(const char* logfile)
 {
   getRestructure()->setLogfile(logfile);
 }
 
-void set_locell_cmd(const char* val)
+void set_tielo_pin_cmd(LibertyPort* tieLoPin)
 {
-  getRestructure()->setLoCell(val);
+  getRestructure()->setTieLoPin(tieLoPin);
 }
 
-void set_loport_cmd(const char* val)
+void set_tiehi_pin_cmd(LibertyPort* tieHiPin)
 {
-  getRestructure()->setLoPort(val);
+  getRestructure()->setTieHiPin(tieHiPin);
 }
 
-void set_hicell_cmd(const char* val)
-{
-  getRestructure()->setHiCell(val);
-}
-
-void set_hiport_cmd(const char* val)
-{
-  getRestructure()->setHiPort(val);
-}
 void
-restructure_cmd(const char* libertyFileName, float slack_threshold, int depth_threshold)
+restructure_cmd(const char* libertyFileName, char* target, float slack_threshold, int depth_threshold)
 {
+  getRestructure()->setMode(target);
   getRestructure()->run(libertyFileName, slack_threshold, depth_threshold);
 }
 

@@ -9,6 +9,6 @@ RMP 0008 blif.cpp:451              Const driver {} doesn't have any connected ne
 RMP 0009 blif.cpp:486              Master ({}) not found while stitching back instances\n
 RMP 0010 blif.cpp:521              {} connection parsing failed for {} instance
 RMP 0020 Restructure.cpp:332       Cannot open file {} for writing.
-RMP 0031 rmp.tcl:78                Missing argument -liberty_file
-RMP 0032 rmp.tcl:95                -loport not specified, skipping locell
-RMP 0033 rmp.tcl:104               -loport not specified, skipping locell
+RMP 0031 rmp.tcl:81                Missing argument -liberty_file
+RMP 0032 rmp.tcl:106               -tielo_pin not specified
+RMP 0033 rmp.tcl:122               -tiehi_pin not specified

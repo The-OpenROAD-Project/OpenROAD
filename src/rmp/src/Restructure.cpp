@@ -451,24 +451,20 @@ void Restructure::setLogfile(const char* logfile)
   logfile_ = logfile;
 }
 
-void Restructure::setLoCell(const char* locell)
+void Restructure::setTieHiPin(sta::LibertyPort* tieHiPort)
 {
-  locell_ = locell;
+  if (tieHiPort) {
+    hicell_ = tieHiPort->libertyCell()->name();
+    hiport_ = tieHiPort->name();
+  }
 }
 
-void Restructure::setLoPort(const char* loport)
+void Restructure::setTieLoPin(sta::LibertyPort* tieLoPort)
 {
-  loport_ = loport;
-}
-
-void Restructure::setHiCell(const char* hicell)
-{
-  hicell_ = hicell;
-}
-
-void Restructure::setHiPort(const char* hiport)
-{
-  hiport_ = hiport;
+  if (tieLoPort) {
+    locell_ = tieLoPort->libertyCell()->name();
+    loport_ = tieLoPort->name();
+  }
 }
 
 }  // namespace rmp

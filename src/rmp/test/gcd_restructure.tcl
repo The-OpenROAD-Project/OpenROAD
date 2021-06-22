@@ -10,7 +10,7 @@ report_worst_slack
 
 report_design_area
 
-restructure -liberty_file Nangate45/Nangate45_typ.lib -mode area -logfile abc.log
+restructure -liberty_file Nangate45/Nangate45_typ.lib -target area -logfile abc.log
 file delete abc.log
 
 report_design_area

@@ -33,36 +33,39 @@
 ##
 ############################################################################
 
-# Restructuring could be done in various modes targeting area or timing.
+# Restructuring could be done in various targets targeting area or timing.
 # 
 # Argument Description
 # liberty_file:    Liberty file with description of cells used in design. This would be passed to ABC.
-# mode:            "area"|"delay". In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
+# target:            "area"|"delay". In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
 # slack_threshold: specifies slack value below which timing paths need to be analyzed for restructuring
 # depth_threshold: specifies the path depth above which a timing path would be considered for restructuring
 # locell:          specifies tie cell which can drive constant zero
 # loport:          specifies port name of tie low cell
 # hicell:          specifies tie cell which can drive constant one
 # hiport:          specifies port name of tie high cell
+#
+# Note that for delay mode slack_threshold and depth_threshold are both considered together.
+# Even if slack_threshold is violated, path may not be considered for re-synthesis unless
+# depth_threshold is violated as well.
 
 sta::define_cmd_args "restructure" { \
                                       [-slack_threshold slack]\
                                       [-depth_threshold depth]\
                                       [-liberty_file liberty_file]\
-                                      [-mode mode_name]\
-                                      [-locell tielow_cell]\
-                                      [-loport tielow_port]\
-                                      [-hiport tiehigh_port]\
-                                      [-hicell tiehigh_cell]
+                                      [-target area|timing]\
+                                      [-tielo_pin tielow_pin]\
+                                      [-tiehi_pin tiehigh_pin]
                                     }
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
-    keys {-slack_threshold -depth_threshold -liberty_file -mode -logfile -locell -loport -hicell -hiport} flags {}
+    keys {-slack_threshold -depth_threshold -liberty_file -target -logfile -tielo_pin -tiehi_pin} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
   set liberty_file_name ""
+  set target "area"
 
   if { [info exists keys(-slack_threshold)] } {
     set slack_threshold_value $keys(-slack_threshold)
@@ -77,9 +80,9 @@ proc restructure { args } {
   } else {
     utl::error RMP 31 "Missing argument -liberty_file"
   }
-
-  if { [info exists keys(-mode)] } {
-    rmp::set_mode_cmd $keys(-mode)
+  
+  if { [info exists keys(-target)] } {
+    set target $keys(-target)
   }
 
   if { [info exists keys(-logfile)] } {
@@ -87,23 +90,37 @@ proc restructure { args } {
   }
 
 
-  if { [info exists keys(-locell)] } {
-    if { [info exists keys(-loport)] } {
-      rmp::set_locell_cmd $keys(-locell)
-      rmp::set_loport_cmd $keys(-loport)
-    } else {
-      utl::warn RMP 32 "-loport not specified, skipping locell"
-    }
+  if { [info exists keys(-tielo_pin)] } {
+      set lopin $keys(-tielo_pin)
+      if { ![sta::is_object $lopin] } {
+        set lopin [sta::get_lib_pins $keys(-tielo_pin)]
+        if { [llength $lopin] > 1 } {
+          # multiple libraries match the lib port arg; use any
+          set lopin [lindex $lopin 0]
+        }
+      }
+      if { $lopin != "" } {
+        rmp::set_tielo_pin_cmd $lopin
+      }
+  } else {
+      utl::warn RMP 32 "-tielo_pin not specified"
   }
 
-  if { [info exists keys(-hicell)] } {
-    if { [info exists keys(-hiport)] } {
-      rmp::set_hicell_cmd $keys(-hicell)
-      rmp::set_hiport_cmd $keys(-hiport)
-    } else {
-      utl::warn RMP 33 "-loport not specified, skipping locell"
-    }
+  if { [info exists keys(-tiehi_pin)] } {
+      set hipin $keys(-tiehi_pin)
+      if { ![sta::is_object $hipin] } {
+        set hipin [sta::get_lib_pins $keys(-tiehi_pin)]
+        if { [llength $hipin] > 1 } {
+          # multiple libraries match the lib port arg; use any
+          set hipin [lindex $hipin 0]
+        }
+      }
+      if { $hipin != "" } {
+        rmp::set_tiehi_pin_cmd $hipin
+      }
+  } else {
+      utl::warn RMP 33 "-tiehi_pin not specified"
   }
 
-  rmp::restructure_cmd $liberty_file_name $slack_threshold_value $depth_threshold_value
+  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value
 }

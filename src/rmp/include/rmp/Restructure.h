@@ -89,10 +89,8 @@ class Restructure
 
   void setMode(const char* mode_name);
   void setLogfile(const char* file_name);
-  void setLoCell(const char* locell);
-  void setLoPort(const char* loport);
-  void setHiCell(const char* hicell);
-  void setHiPort(const char* hiport);
+  void setTieLoPin(sta::LibertyPort* loport);
+  void setTieHiPin(sta::LibertyPort* hiport);
 
  private:
   void makeComponents();
