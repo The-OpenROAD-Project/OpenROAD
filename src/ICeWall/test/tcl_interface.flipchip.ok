@@ -12,6 +12,7 @@ Trigger errors
 No more errors expected
 [ERROR PAD-0229] The value for row is 23, but must be in the range 1 - 17
 [ERROR PAD-0230] The value for col is 0, but must be in the range 1 - 17
+[ERROR PAD-0217] Attribute row_col row=17, col=1 for padcell sig_4 has already been used for padcell sig_3
 Trigger errors for incorrect bump options
 [ERROR PAD-0212] Width set for RDL layer metal10 (0.5) is less than the minimum width of the layer in this technology (0.8)
 [ERROR PAD-0214] Spacing set for RDL layer metal10 (0.5) is less than the required spacing for the layer in this technology (0.8)
@@ -19,8 +20,8 @@ Reset bump options
 [INFO PAD-0053] Creating pad ring nets: SNS_17, SNS_0, SNS_1, SNS_2, SNS_3, SNS_4, SNS_5, SNS_6, SNS_7, SNS_8, SNS_10, SNS_9, SNS_11, SNS_12, SNS_13, SNS_14, SNS_15, SNS_16, DVDD_0, DVDD_1, DVSS_0, DVSS_1, RETN_0, RETN_10, RETN_1, RETN_11, RETN_2, RETN_12, RETN_3, RETN_13, RETN_4, RETN_14, RETN_5, RETN_15, RETN_6, RETN_16, RETN_7, RETN_17, RETN_8, RETN_9
 [INFO PAD-0051] Creating pad ring net: VSS
 [INFO PAD-0051] Creating pad ring net: VDD
-[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_1 for sig_139 to associate with bondpad bump_15_1_UNASSIGNED_1
-[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_0 for sig_138 to associate with bondpad bump_15_2_UNASSIGNED_0
-[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_2 for sig_140 to associate with bondpad bump_16_1_UNASSIGNED_2
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_1 for sig_140 to associate with bondpad bump_15_1_UNASSIGNED_1
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_0 for sig_139 to associate with bondpad bump_15_2_UNASSIGNED_0
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_2 for sig_141 to associate with bondpad bump_16_1_UNASSIGNED_2
 [INFO PDN-0015] Writing to database
 No differences found.

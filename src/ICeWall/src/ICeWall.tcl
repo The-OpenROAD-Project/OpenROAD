@@ -2178,9 +2178,13 @@ namespace eval ICeWall {
 
     if {[dict exists $checks $attribute $value]} {
       utl::error PAD 217 "Attribute $attribute $value for padcell $name has already been used for padcell [dict get $checks $attribute $value]"
-    } else {
-      dict set checks $attribute $value $name
     }
+  }
+
+  proc register_check {name attribute value} {
+    variable checks
+
+    dict set checks $attribute $value $name
   }
 
   proc check_footprint {} {
@@ -3026,7 +3030,7 @@ namespace eval ICeWall {
         
         set padcell [get_padcell_at_row_col $row $col]
         if {$padcell != ""} {
-          connect_to_bondpad_or_bump $inst $origin $padcell
+          connect_to_bondpad_or_bump $inst [get_bump_centre $row $col] $padcell
         }
       }
     }
@@ -4690,21 +4694,21 @@ namespace eval ICeWall {
       }
 
       set pitch [get_footprint_bump_pitch]
-      set origin [get_bump_origin $row $col]
+      set centre [get_bump_centre $row $col]
       
       lassign [get_scaled_die_area] xMin yMin xMax yMax
-      switch {[dict get padcell side]} {
-        "bottom" {set xMin [expr [dict get $origin x] - $pitch / 2]]; set xMax [expr [dict get $origin x] + $pitch / 2]]}
-        "right"  {set yMin [expr [dict get $origin y] - $pitch / 2]]; set yMax [expr [dict get $origin y] + $pitch / 2]]}
-        "top"    {set xMin [expr [dict get $origin x] - $pitch / 2]]; set xMax [expr [dict get $origin x] + $pitch / 2]]}
-        "left"   {set yMin [expr [dict get $origin y] - $pitch / 2]]; set yMax [expr [dict get $origin y] + $pitch / 2]]}
+      switch [dict get $padcell side] {
+        "bottom" {set xMin [expr [dict get $centre x] - $pitch / 2]; set xMax [expr [dict get $centre x] + $pitch / 2]}
+        "right"  {set yMin [expr [dict get $centre y] - $pitch / 2]; set yMax [expr [dict get $centre y] + $pitch / 2]}
+        "top"    {set xMin [expr [dict get $centre x] - $pitch / 2]; set xMax [expr [dict get $centre x] + $pitch / 2]}
+        "left"   {set yMin [expr [dict get $centre y] - $pitch / 2]; set yMax [expr [dict get $centre y] + $pitch / 2]}
       }
 
       if {[dict get $padcell cell scaled_centre x] < $xMin || [dict get $padcell cell scaled_centre x] > $xMax} {
-        utl::error PAD 163 "The padcell x location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre x]], but for bump $row,$col to connect to a pad on the $side_name edge, $xMin <= x <= $xMax"
+        utl::error PAD 163 "The padcell x location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre x]], but for bump $row,$col to connect to a pad on the $side_name edge, [ord::dbu_to_microns $xMin] <= x <= [ord::dbu_to_microns $xMax]"
       }
       if {[dict get $padcell cell scaled_centre y] < $yMin || [dict get $padcell cell scaled_centre y] > $yMax} {
-        utl::error PAD 164 "The padcell y location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre y]], but for bump $row,$col to connect to a pad on the $side_name edge, $yMin <= y <= $yMax"
+        utl::error PAD 164 "The padcell y location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre y]], but for bump $row,$col to connect to a pad on the $side_name edge, [ord::dbu_to_microns $yMin] <= y <= [ord::dbu_to_microns $yMax]"
       }
     }
 
@@ -4714,6 +4718,19 @@ namespace eval ICeWall {
       }
     }
     consistency_check $padcell_name instance $inst_name
+    if {[dict exists $padcell bump]} {
+      consistency_check $padcell_name row_col "row=$row, col=$col"
+    }
+
+    if {[dict exists $padcell use_signal_name]} {
+      if {![is_power_net $signal_name] && ![is_ground_net $signal_name]} {
+        register_check $padcell_name signal [dict get $padcell use_signal_name]
+      }
+    }
+    register_check $padcell_name instance $inst_name
+    if {[dict exists $padcell bump]} {
+      register_check $padcell_name row_col "row=$row, col=$col"
+    }
 
     # debug $padcell
     # debug [dict get $ICeWall::footprint padcell $padcell_name]

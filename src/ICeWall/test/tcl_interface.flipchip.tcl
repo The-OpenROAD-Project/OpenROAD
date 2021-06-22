@@ -139,6 +139,10 @@ add_pad -edge bottom -inst_name u_cbrk0                 -type cbk   -location {o
 catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 23 col 1}}
 catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 0}}
 add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 1}
+if {![catch {add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  206 y   35}} -bump {row 17 col 1}}]} {
+  puts "Expected error not triggered"
+  exit
+}
 add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  335 y   35}} -bump {row 16 col 2}
 add_pad -edge bottom -inst_name u_vzz_0 -signal DVSS_0  -type vssio -location {origin {x  365 y   35}} -bump {row 17 col 2}
 add_pad -edge bottom -inst_name u_v18_0 -signal DVDD_0  -type vddio -location {origin {x  495 y   35}} -bump {row 16 col 3}
