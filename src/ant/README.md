@@ -28,13 +28,6 @@ Abbreviations Index:
   - `C. S. Area`: Cumulative Side (Diffusion) Area
 
 
-### Commands
-
- - `check_net_violation`: check if an input net is violated, return 1 if the net is violated
-   - -net_name: set the net name for checking
- - `find_max_wire_length`: print the longest wire in the design
-
-
 | <img src="./doc/images/example_ant.png" width=400px> | <img src="./doc/images/step1.png" width=400px> | 
 |:--:|:--:|
 | <img src="./doc/images/step2.png" width=400px> | <img src="./doc/images/step3.png" width=400px> | 
