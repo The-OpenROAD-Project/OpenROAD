@@ -324,8 +324,10 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
   vector<frBlockObject*> drObjs;
   vector<frPathSeg*> horzPathSegs;
   vector<frPathSeg*> vertPathSegs;
+  int nVert = 0, nHorz = 0;
   bool hasPatchMetal = false;
   auto regionQuery = design->getRegionQuery();
+  cout << "NEW CHANGE\n";
   for (auto& [pt, lNum] : boundPts) {
     hasPatchMetal = false;
     bool skip = false;
@@ -376,6 +378,10 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
           } else {
             horzPathSegs.push_back(ps);
           }
+        }else if (bp.x() == ep.x()) {
+            nVert++;
+        } else {
+            nHorz++;
         }
       } else if (obj->typeId() == frcPatchWire) {
         auto pwire = static_cast<frPatchWire*>(obj);
@@ -390,8 +396,10 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
         }
       }
     }
+    nVert += vertPathSegs.size();
+    nHorz += horzPathSegs.size();
     // merge horz pathseg
-    if ((int) horzPathSegs.size() == 2 && vertPathSegs.empty() && !hasPatchMetal
+    if ((int) horzPathSegs.size() == 2 && nVert == 0 && !hasPatchMetal
         && horzPathSegs[0]->isTapered() == horzPathSegs[1]->isTapered()) {
       unique_ptr<frShape> uShape = make_unique<frPathSeg>(*horzPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
@@ -420,7 +428,7 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
       net->addShape(std::move(uShape));
       regionQuery->addDRObj(rptr);
     }
-    if ((int) vertPathSegs.size() == 2 && horzPathSegs.empty() && !hasPatchMetal
+    if ((int) vertPathSegs.size() == 2 && nHorz == 0 && !hasPatchMetal
         && vertPathSegs[0]->isTapered() == vertPathSegs[1]->isTapered()) {
       unique_ptr<frShape> uShape = make_unique<frPathSeg>(*vertPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
