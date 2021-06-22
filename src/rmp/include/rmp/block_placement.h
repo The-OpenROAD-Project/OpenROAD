@@ -298,6 +298,12 @@ namespace block_placement {
             float outline_width_;
             float outline_height_;
             
+            // learning rate for dynamic weight
+            float learning_rate_ = 0.01;
+
+            // shrink_factor for dynamic weight
+            float shrink_factor_ = 0.995;
+            float shrink_freq_ = 0.01;
 
             float height_;
             float width_;
@@ -327,6 +333,14 @@ namespace block_placement {
             float gamma_; // weight for outline penalty
             float boundary_weight_; // weight for boundary penalty
             float macro_blockage_weight_; // weight for macro blockage weight
+
+
+            float alpha_base_; 
+            float beta_base_;
+            float gamma_base_;
+            float boundary_weight_base_;
+            float macro_blockage_weight_base_;
+
 
             // These parameters are related to action probabilities
             float resize_prob_ = 0.4;
@@ -367,6 +381,9 @@ namespace block_placement {
             float NormCost(float area, float wirelength, float outline_penalty,
                          float boundary_penalty, float macro_blockage_penalty);
 
+            void UpdateWeight(float avg_area, float avg_wirelength, float avg_outline_penalty,       
+                         float avg_boundary_penalty, float avg_macro_blockage_penalty);
+
         public:
             // Constructor
             SimulatedAnnealingCore(float outline_width, float outline_height, 
@@ -375,15 +392,28 @@ namespace block_placement {
                 float alpha, float beta, float gamma, float boundary_weight, float macro_blockage_weight,
                 float resize_prob, float pos_swap_prob, float neg_swap_prob, float double_swap_prob,
                 float init_prob, float rej_ratio, int max_num_step, int k, float c, int perturb_per_step,
+                float learning_rate, float shrink_factor, float shrink_freq,
                 unsigned seed = 0) {
                 outline_width_ = outline_width;
                 outline_height_ = outline_height;
-                
+              
+                learning_rate_ = learning_rate;
+                shrink_factor_ = shrink_factor;
+                shrink_freq_ = shrink_freq;
+
                 alpha_ = alpha;
                 beta_ = beta;
                 gamma_ = gamma;
                 boundary_weight_ = boundary_weight;
                 macro_blockage_weight_ = macro_blockage_weight;
+
+
+                alpha_base_ = alpha_;
+                beta_base_ = beta_;
+                gamma_base_ = gamma_;
+                boundary_weight_base_ = boundary_weight_;
+                macro_blockage_weight_base_ = macro_blockage_weight_;
+
 
                 resize_prob_ = resize_prob;
                 pos_swap_prob_ = resize_prob_ + pos_swap_prob;
@@ -515,6 +545,7 @@ namespace block_placement {
         float alpha, float beta, float gamma, float boundary_weight, float macro_blockage_weight, 
         float resize_prob, float pos_swap_prob, float neg_swap_prob, float double_swap_prob, 
         float init_prob, float rej_ratio, int max_num_step, int k, float c, int perturb_per_step,
+        float learning_rate, float shrink_factor, float shrink_freq,
         unsigned seed = 0);
 
 

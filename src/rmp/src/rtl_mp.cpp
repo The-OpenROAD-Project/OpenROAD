@@ -40,12 +40,7 @@ namespace shape_engine {
         {R270, MY90},
         {MY90, R270}
     };
-
-
 }
-
-
-
 
 namespace ord {
     using std::vector;
@@ -99,6 +94,10 @@ namespace ord {
         float boundary_weight = 0.06; // weight for pushing macros to boundary
         float macro_blockage_weight = 0.08; // weight for macro blockage
 
+        float learning_rate = 0.01;  // learning rate for dynamic weight in cost function
+        float shrink_factor = 0.995; // shrink factor for soft blocks in simulated annealing
+        float shrink_freq = 0.01;  // shrink frequency for soft blocks in simulated annealing
+
         // These parameters are related to action probabilities in each step
         float resize_prob = 0.4;
         float pos_swap_prob = 0.2;
@@ -131,6 +130,23 @@ namespace ord {
             dead_space = stof(param_iter->second);
         DUMP_INFO_PARAM("dead_space", dead_space);
 
+        param = "learning_rate";
+        param_iter = params.find(param);
+        if(param_iter != params.end())
+            learning_rate = stof(param_iter->second);
+        DUMP_INFO_PARAM("learning_rate", learning_rate);
+
+        param = "shrink_factor";
+        param_iter = params.find(param);
+        if(param_iter != params.end())
+            shrink_factor = stof(param_iter->second);
+        DUMP_INFO_PARAM("shrink_factor", shrink_factor);
+
+        param = "shrink_freq";
+        param_iter = params.find(param);
+        if(param_iter != params.end())
+            shrink_freq = stof(param_iter->second);
+        DUMP_INFO_PARAM("shrink_freq", shrink_freq);
 
         param = "halo_width";
         param_iter = params.find(param);
@@ -284,9 +300,12 @@ namespace ord {
 
         vector<Block> blocks =  block_placement::Floorplan(clusters, outline_width, outline_height, 
                              net_file, region_file.c_str(), 
-                             num_level, num_worker, heat_rate,  alpha, beta,  gamma, boundary_weight, macro_blockage_weight,
+                             num_level, num_worker, heat_rate,
+                             alpha, beta,  gamma, boundary_weight, macro_blockage_weight,
                              resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
-                             init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, seed);
+                             init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
+                             learning_rate, shrink_factor, shrink_freq,
+                             seed);
 
         
         unordered_map<string, int> block_map;
@@ -422,30 +441,6 @@ namespace ord {
         }
         
         file.close();
-
-
-
-
-
-
-
-
-
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

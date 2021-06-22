@@ -360,7 +360,7 @@ namespace shape_engine {
 
 
     // Macro Tile Engine
-    std::vector<std::pair<float, float> > TileMacro(std::vector<Macro> macros, std::string cluster_name, 
+    std::vector<std::pair<float, float> > TileMacro(std::vector<Macro> macros, std::string cluster_name, float& final_area, 
             float outline_width, float outline_height, int num_thread = 10, int num_run = 20, unsigned seed = 0);
 
 

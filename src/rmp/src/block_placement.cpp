@@ -123,7 +123,27 @@ namespace block_placement {
 
 
     void SimulatedAnnealingCore::Resize() {
-        int index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
+        vector<int> hard_block_list;
+        vector<int> soft_block_list;
+
+
+        for(int i = 0; i < blocks_.size(); i++) {
+            if(blocks_[i].GetNumMacro() > 0) {
+                hard_block_list.push_back(i);
+            } else {
+                soft_block_list.push_back(i);
+            }
+        }
+        
+        int index1 = -1;
+        float prob = (distribution_)(generator_);
+        if(prob <= 0.5) {
+            index1 = hard_block_list[floor((distribution_)(generator_) * hard_block_list.size())];
+        } else {
+            index1 = soft_block_list[floor((distribution_)(generator_) * soft_block_list.size())];
+        }
+
+        //int index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
 
         while(blocks_[index1].IsResize() == false) {
             index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
@@ -456,10 +476,9 @@ namespace block_placement {
     
 
     void SimulatedAnnealingCore::ShrinkBlocks() {
-        float factor = sqrt(0.999);
         for(int i = 0; i < blocks_.size(); i++) {
             if(blocks_[i].GetNumMacro() == 0) {
-                blocks_[i].ShrinkSoftBlock(factor, factor);
+                blocks_[i].ShrinkSoftBlock(shrink_factor_, shrink_factor_);
             }
         }
     }
@@ -574,9 +593,13 @@ namespace block_placement {
             }
         }
 
-        cout  << "Overlap:  " << overlap << endl;
+        
+        // We don't allow the overlap between macros and macro blockages
+        CalculateMacroBlockagePenalty();
+        cout << "Overlap:  " << overlap << "   ";
+        cout << "MacroBlockagePenalty_:  " << macro_blockage_penalty_ << endl;
 
-        if(overlap > 0.0) {
+        if(overlap + macro_blockage_penalty_> 0.0) {
             blocks_ = pre_blocks;
             cout << "This Floorplan Cannot be shrunk. Will restart!!!" << endl;
             PackFloorplan();
@@ -715,6 +738,90 @@ namespace block_placement {
         return true;
     }
     */
+   
+    /*
+    void SimulatedAnnealingCore::UpdateWeight(float avg_area, float avg_wirelength,
+        float avg_outline_penalty, float avg_boundary_penalty, float avg_macro_blockage_penalty) {
+        avg_area = avg_area / (perturb_per_step_ * norm_area_);
+
+        if(norm_wirelength_ != 0.0) {
+            avg_wirelength = avg_wirelength / (perturb_per_step_ * norm_wirelength_);
+        }
+
+        if(norm_outline_penalty_ != 0.0) {
+            avg_outline_penalty = avg_outline_penalty / (perturb_per_step_ * norm_outline_penalty_);
+        }
+        
+        if(norm_boundary_penalty_ != 0.0) {
+            avg_boundary_penalty = avg_boundary_penalty / (perturb_per_step_ * norm_boundary_penalty_);
+        }
+
+        if(norm_macro_blockage_penalty_ != 0.0) {
+            avg_macro_blockage_penalty = avg_macro_blockage_penalty / (perturb_per_step_ * norm_macro_blockage_penalty_);
+        }
+
+        cout << "avg_area:   " << avg_area << "   ";
+        cout << "avg_wirelength:   " << avg_wirelength << "   ";
+        cout << "avg_outline_penalty:  " << avg_outline_penalty << "   ";
+        cout << "avg_boundary_penalty:  " << avg_boundary_penalty << "   ";
+        cout << "avg_macro_blockage_penalty:  " << avg_macro_blockage_penalty << "    ";
+        cout << endl;
+
+        float sum_cost = avg_area + avg_wirelength + avg_outline_penalty + avg_boundary_penalty + avg_macro_blockage_penalty;
+        float new_alpha = avg_area / sum_cost;
+        float new_beta = avg_wirelength / sum_cost;
+        float new_gamma = avg_outline_penalty / sum_cost;
+        float new_boundary_weight = avg_boundary_penalty / sum_cost;
+        float new_macro_blockage_weight = avg_macro_blockage_penalty / sum_cost;
+        
+        alpha_ = alpha_ + (new_alpha - alpha_) * learning_rate_;
+        beta_ = beta_ + (new_beta - beta_) * learning_rate_;
+        gamma_ = gamma_ + (new_gamma - gamma_) * learning_rate_;
+        boundary_weight_ = boundary_weight_ + (new_boundary_weight - boundary_weight_) * learning_rate_;
+        macro_blockage_weight_ = macro_blockage_weight_ + (new_macro_blockage_weight - macro_blockage_weight_) * learning_rate_;
+    }
+    */
+
+    void SimulatedAnnealingCore::UpdateWeight(float avg_area, float avg_wirelength,
+        float avg_outline_penalty, float avg_boundary_penalty, float avg_macro_blockage_penalty) {
+        avg_area = avg_area / (perturb_per_step_ * norm_area_);
+
+        if(norm_wirelength_ != 0.0) {
+            avg_wirelength = avg_wirelength / (perturb_per_step_ * norm_wirelength_);
+        }
+
+        if(norm_outline_penalty_ != 0.0) {
+            avg_outline_penalty = avg_outline_penalty / (perturb_per_step_ * norm_outline_penalty_);
+        }
+        
+        if(norm_boundary_penalty_ != 0.0) {
+            avg_boundary_penalty = avg_boundary_penalty / (perturb_per_step_ * norm_boundary_penalty_);
+        }
+
+        if(norm_macro_blockage_penalty_ != 0.0) {
+            avg_macro_blockage_penalty = avg_macro_blockage_penalty / (perturb_per_step_ * norm_macro_blockage_penalty_);
+        }
+
+        //cout << "avg_area:   " << avg_area << "   ";
+        //cout << "avg_wirelength:   " << avg_wirelength << "   ";
+        //cout << "avg_outline_penalty:  " << avg_outline_penalty << "   ";
+        //cout << "avg_boundary_penalty:  " << avg_boundary_penalty << "   ";
+        //cout << "avg_macro_blockage_penalty:  " << avg_macro_blockage_penalty << "    ";
+        //cout << endl;
+
+        float sum_cost = avg_area + avg_wirelength + avg_outline_penalty + avg_boundary_penalty + avg_macro_blockage_penalty;
+        float new_alpha = avg_area / sum_cost;
+        float new_beta = avg_wirelength / sum_cost;
+        float new_gamma = avg_outline_penalty / sum_cost;
+        float new_boundary_weight = avg_boundary_penalty / sum_cost;
+        float new_macro_blockage_weight = avg_macro_blockage_penalty / sum_cost;
+       
+        alpha_ = alpha_base_ * (1 - new_alpha * learning_rate_);
+        beta_ = beta_base_ * (1 - new_beta * learning_rate_);
+        gamma_ = gamma_base_ * ( 1 - new_gamma * learning_rate_);
+        boundary_weight_ = boundary_weight_base_ * (1 - new_boundary_weight * learning_rate_);
+        macro_blockage_weight_ = macro_blockage_weight_base_ * (1 - new_macro_blockage_weight * learning_rate_);
+    }
 
 
 
@@ -734,6 +841,13 @@ namespace block_placement {
         float chip_area = outline_width_ * outline_height_;
         cout << "utilization:  " << std_cell_area / (chip_area - macro_area) << endl;
         cout << "dead_space:  " << 1.0 - std_cell_area / (chip_area - macro_area) << endl;
+        
+        for(int i = 0; i < blocks_.size(); i++) {
+            cout << blocks_[i].GetName() << "   ";
+            cout << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
+            cout << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
+            cout << endl;
+        }
 
         float pre_cost = NormCost(area_, wirelength_, outline_penalty_, boundary_penalty_, macro_blockage_penalty_);
         float cost = pre_cost;
@@ -743,6 +857,12 @@ namespace block_placement {
         vector<Block> best_blocks = blocks_;
         vector<int> best_pos_seq = pos_seq_;
         vector<int> best_neg_seq = neg_seq_;
+        
+        float avg_area = 0.0;
+        float avg_wirelength = 0.0;
+        float avg_outline_penalty = 0.0;
+        float avg_boundary_penalty = 0.0;
+        float avg_macro_blockage_penalty = 0.0;
 
 
         int step = 1;
@@ -754,9 +874,16 @@ namespace block_placement {
         int num_restart = 0;
         int max_num_shrink = 5;
         int num_shrink = 0;
-        int modulo_base = int(max_num_step_ / 100.0);
+        //int modulo_base = int(max_num_step_ / 100.0);
+        int modulo_base = int(max_num_step_ * shrink_freq_);
 
         while(step < max_num_step_) {
+            avg_area = 0.0;
+            avg_wirelength = 0.0;
+            avg_outline_penalty = 0.0;
+            avg_boundary_penalty = 0.0;
+            avg_macro_blockage_penalty = 0.0;
+
             rej_num = 0.0;
             float accept_rate = 0.0;
             float avg_delta_cost = 0.0;
@@ -799,7 +926,20 @@ namespace block_placement {
                     rej_num += 1.0;
                     Restore();
                 }
+                
+                avg_area += area_;
+                avg_wirelength += wirelength_;
+                avg_outline_penalty += outline_penalty_;
+                avg_boundary_penalty += boundary_penalty_;
+                avg_macro_blockage_penalty += macro_blockage_penalty_;
             }
+            
+            UpdateWeight(avg_area, avg_wirelength, avg_outline_penalty, avg_boundary_penalty, avg_macro_blockage_penalty);
+            //cout << "alpha:  " << alpha_ << "   ";
+            //cout << "beta:   " << beta_  << "   ";
+            //cout << "gamma:  " << gamma_ << "   ";
+            //cout << "boundary_weight_:  " << boundary_weight_ << "   ";
+            //cout << "macro_blockage_weight_:  " << macro_blockage_weight_ << "   ";
             //cout << "best_cost:   " << best_cost << "   ";
             //cout << "cost:   " << cost << endl; 
             /*
@@ -834,8 +974,13 @@ namespace block_placement {
             //    T = init_T_ / (step * c_) ;
             //else
             //    T = init_T_ / step;
-            T = T * 0.995;
-            
+            //T = T * 0.995;
+                
+
+            if(step <= k_)
+                T = init_T_ / (step * c_ * avg_delta_cost / perturb_per_step_);
+            else
+                T = init_T_ / (step * avg_delta_cost / perturb_per_step_);
 
             //T = T * 0.99;
             //if(step == 2) {
@@ -879,8 +1024,9 @@ namespace block_placement {
                 CalculateMacroBlockagePenalty();
                 if(IsFeasible() == false) {
                     if(FitFloorplan() == false && num_restart < max_num_restart) {
-                        step = int(max_num_step_ / 2.0);
-                        T = init_T_ * pow(0.995, step);
+                        step = int(max_num_step_  * 0.9);
+                        //T = init_T_ * pow(0.995, step);
+                        T = init_T_;
                         num_restart += 1;
                         cout << num_restart << "th Restart Begin" << endl;
                     } else {
@@ -907,6 +1053,20 @@ namespace block_placement {
         //if(IsFeasible() == false) {
         //    ShrinkBlocks();
         //}
+        
+        const char* file_name = "rtl_mp/floorplan_temp.txt";
+        ofstream file;
+        file.open(file_name);
+        for(int i = 0; i < blocks_.size(); i++) {
+            file << blocks_[i].GetName() << "   ";
+            file << blocks_[i].GetX() << "   ";
+            file << blocks_[i].GetY() << "   ";
+            file << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
+            file << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
+            file << endl;
+        }
+
+        file.close();
     }
   
     void Run(SimulatedAnnealingCore* sa) { sa->FastSA(); }
@@ -1005,6 +1165,7 @@ namespace block_placement {
         float alpha, float beta, float gamma, float boundary_weight, float macro_blockage_weight, 
         float resize_prob, float pos_swap_prob, float neg_swap_prob, float double_swap_prob, 
         float init_prob, float rej_ratio, int max_num_step, int k, float c, int perturb_per_step,
+        float learning_rate, float shrink_factor, float shrink_freq,
         unsigned seed) {
        
         cout << "Enter Floorplan" << endl;
@@ -1016,6 +1177,7 @@ namespace block_placement {
             int num_macro = clusters[i]->GetNumMacro();
             vector<pair<float, float> > aspect_ratio = clusters[i]->GetAspectRatio();
             blocks.push_back(Block(name, area, num_macro, aspect_ratio));
+            cout << "name:  " << name << "  area:  " << area << endl;
         }
 
         cout << "Finish Creating Blcosks" << endl;
@@ -1068,7 +1230,9 @@ namespace block_placement {
                                      nets, regions, terminal_position,
                                      alpha, beta, gamma, boundary_weight, macro_blockage_weight,
                                      resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
-                                     init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, seed_list[seed_id++]);
+                                     init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
+                                     learning_rate, shrink_factor, shrink_freq,
+                                     seed_list[seed_id++]);
 
         sa->Initialize();
 
@@ -1101,7 +1265,9 @@ namespace block_placement {
                                              nets, regions, terminal_position,
                                              alpha, beta, gamma, boundary_weight, macro_blockage_weight,
                                              resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
-                                             init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, seed_list[seed_id++]);
+                                             init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
+                                             learning_rate, shrink_factor, shrink_freq,
+                                             seed_list[seed_id++]);
                 
                 sa->Initialize(init_T, norm_area, norm_wirelength, norm_outline_penalty, 
                                norm_boundary_penalty, norm_macro_blockage_penalty);

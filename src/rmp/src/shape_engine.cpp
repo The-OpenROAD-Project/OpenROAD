@@ -288,7 +288,7 @@ namespace shape_engine {
 
 
     // Macro Tile Engine
-    vector<pair<float, float> > TileMacro(vector<Macro> macros,  string cluster_name, 
+    vector<pair<float, float> > TileMacro(vector<Macro> macros,  string cluster_name, float& final_area,
             float outline_width, float outline_height, int num_thread, int num_run, unsigned seed) {
         
         cout << "Begin TileMacro" << endl;
@@ -298,6 +298,7 @@ namespace shape_engine {
             float width = macros[0].GetWidth();
             float height = macros[0].GetHeight();
             float ar = height / width;
+            final_area = height * width;
             aspect_ratio.push_back(pair<float, float>(ar, ar));
             return aspect_ratio;
         }
@@ -407,6 +408,7 @@ namespace shape_engine {
             throw std::invalid_argument(std::string("Invalid Floorplan.  Please increase the size of floorplan"));
 
         float base_area = footprints[0].first * footprints[0].second;
+        final_area = base_area;
         //vector<pair<float, float> > aspect_ratio;
         vector<float> ar_list;
         for(int i = 0; i < footprints.size(); i++) {
@@ -611,9 +613,11 @@ namespace shape_engine {
         for(int i = 0; i < clusters.size(); i++) {
             if(clusters[i]->GetNumMacro() != 0 && class_list[i] == i) {
                 cout << "Cluster name:  " << clusters[i]->GetName() << endl;
+                float final_area = 0.0;
                 vector<pair<float, float> > aspect_ratio = TileMacro(clusters[i]->GetMacros(), clusters[i]->GetName(), 
-                    outline_width, outline_height, num_thread, num_run, seed);
+                    final_area, outline_width, outline_height, num_thread, num_run, seed);
                 clusters[i]->SpecifyAspectRatio(aspect_ratio);
+                clusters[i]->SpecifyArea(final_area);
             } 
         }
 
@@ -623,8 +627,10 @@ namespace shape_engine {
             if(clusters[i]->GetNumMacro() == 0) {
                 clusters[i]->AddAspectRatio(pair<float, float>(min_aspect_ratio, max_aspect_ratio));
             } else if(class_list[i] != i) {
+                float area = clusters[class_list[i]]->GetArea();
                 vector<pair<float, float> > aspect_ratio = clusters[class_list[i]]->GetAspectRatio();
                 clusters[i]->SpecifyAspectRatio(aspect_ratio);
+                clusters[i]->SpecifyArea(area);
                 cout << "regular pattern with  " << clusters[class_list[i]]->GetName() << endl;
             } else {
                 ;

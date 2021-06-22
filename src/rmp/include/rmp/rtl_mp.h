@@ -18,14 +18,4 @@ namespace ord {
     void RTLMP(const char* config_file, utl::Logger*  logger);
 }
 
-
-
-
-
-
-
-
 #endif
-
-
-

@@ -349,6 +349,7 @@ namespace pin_alignment {
 
         delta_cost = delta_cost / (norm_cost_list.size() - 1);
         init_T_ = (-1) * delta_cost / log(init_prob_);
+        cout << "Finish Initialization" << endl;
     }
     
     void SimulatedAnnealingCore::FastSA()
@@ -362,7 +363,7 @@ namespace pin_alignment {
         float best_cost = cost;
         vector<int> best_pos_seq = pos_seq_;
         vector<int> best_neg_seq = neg_seq_;
-
+        cout << "Enter FastSA stage" << endl;
 
         float rej_num = 0.0;
         float T = init_T_;
@@ -374,7 +375,10 @@ namespace pin_alignment {
             for(int i = 0; i < perturb_per_step_; i++) {
                 Perturb();
                 CalculateWirelength();
+                //cout << "wirelength_   " << wirelength_ << "   ";
                 CalculateOutlinePenalty();
+                //cout << "outline_penalty_   " << outline_penalty_ << "   ";
+                //cout << endl;
                 cost = NormCost(area_, wirelength_, outline_penalty_);
         
                 delta_cost = cost - pre_cost;
@@ -403,6 +407,7 @@ namespace pin_alignment {
             //    T = init_T_ / step;
             T = T * 0.99;
         }
+       
         
         macros_ = best_macros;
         pos_seq_ = best_pos_seq;
@@ -537,7 +542,11 @@ namespace pin_alignment {
                     vector<thread> threads;
                     for(int j = 0; j < run_thread; j++)
                         threads.push_back(thread(Run, sa_vector[sa_id++]));
-                    
+                   
+                    cout << "outline_width:   " << outline_width << "    ";
+                    cout << "outline_height:  " << outline_height << "   ";
+                    cout << endl;
+
                     cout << "begin running SA" << endl;
                     for(auto &th : threads)
                         th.join();

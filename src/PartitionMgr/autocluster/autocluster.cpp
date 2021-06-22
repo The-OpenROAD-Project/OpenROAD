@@ -1646,19 +1646,28 @@ namespace par {
             int src_id = map_iter->first;
             unordered_map<int, unsigned int> connection_map = map_iter->second->getOutputConnectionMap();
             unordered_map<int, unsigned int>::iterator iter = connection_map.begin();
-            bool flag = true;
-            while(iter != connection_map.end()) {
-                if(iter->first != src_id) {
-                    if(flag == true) {
-                        output_file << endl;
-                        output_file << "Net_" << ++net_id << ":  " << endl;
-                        output_file << "source: " << map_iter->second->getName() << "   ";
-                        flag = false;
+
+            if(!(connection_map.size() == 0 || (connection_map.size() == 1 && iter->first == src_id))) {
+                bool flag = (src_id >= 1 && src_id <= 12) || (_cluster_map[src_id]->getNumMacro() > 0);
+                output_file << "Net_" << ++net_id << ":  " << endl;
+                output_file << "source: " << map_iter->second->getName() << "   ";
+                while(iter != connection_map.end()) {
+                    if(iter->first != src_id) {
+                        int weight = iter->second;
+                        if(flag || (iter->first >= 1 && iter->first <= 12) || _cluster_map[iter->first]->getNumMacro() > 0) {
+                            weight += _virtual_weight;
+                        }
+                        
+                        output_file << _cluster_map[iter->first]->getName() << "   " << weight << "   ";
                     }
-                    output_file << _cluster_map[iter->first]->getName() << "   " << iter->second << "   ";
+
+                    iter++;
                 }
-                iter++;
+
+                output_file << endl;
             }
+            
+            
             //output_file << endl;
             map_iter++;
         }
