@@ -100,9 +100,10 @@ void TclCmdHighlighter::initOpenRoad(Tcl_Interp* interp)
 
     int cmd_size;
     Tcl_Obj** cmds_objs;
-    Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs);
-    for (int i = 0; i < cmd_size; i++) {
-      cmds.insert(Tcl_GetString(cmds_objs[i]));
+    if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs) == TCL_OK) {
+      for (int i = 0; i < cmd_size; i++) {
+        cmds.insert(Tcl_GetString(cmds_objs[i]));
+      }
     }
   }
 
@@ -130,10 +131,11 @@ void TclCmdHighlighter::initOpenRoad(Tcl_Interp* interp)
       Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
       int cmd_size;
       Tcl_Obj** cmds_objs;
-      Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs);
-      for (int i = 0; i < cmd_size; i++) {
-        std::string cmd = Tcl_GetString(cmds_objs[i]);
-        cmd_regexes.push_back(buildRule(start_of_command_ + "((::)?" + escape(cmd.substr(2)) + ")" + end_of_command_));
+      if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs) == TCL_OK) {
+        for (int i = 0; i < cmd_size; i++) {
+          std::string cmd = Tcl_GetString(cmds_objs[i]);
+          cmd_regexes.push_back(buildRule(start_of_command_ + "((::)?" + escape(cmd.substr(2)) + ")" + end_of_command_));
+        }
       }
     }
   }
