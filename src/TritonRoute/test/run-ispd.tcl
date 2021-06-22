@@ -52,6 +52,10 @@ proc genFiles { run_dir ispd_year design drv } {
     puts  $runFile "echo"
     close $runFile
     exec chmod +x "$run_dir/$design/run.sh"
+    set fileName "$run_dir/$design/run.log"
+    set f [open $fileName]
+    fcopy $f stdout
+    close $f
 }
 
 set design_list_ispd18 " \
@@ -73,8 +77,8 @@ set drvs_ispd18 { \
     0 \
     0 \
     0 \
-    17 \
-    3 \
+    9 \
+    0 \
     0 \
     0 \
     }
@@ -91,7 +95,7 @@ set design_list_ispd19 " \
     ispd19_test1 \
     "
 set drvs_ispd19 { \
-    27 \
+    28 \
     1 \
     0 \
     0 \

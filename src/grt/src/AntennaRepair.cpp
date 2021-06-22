@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -326,7 +326,8 @@ AntennaCbk::AntennaCbk(GlobalRouter* grouter) : _grouter(grouter)
 void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getNet() != nullptr)
+    odb::dbNet* db_net = iterm->getNet();
+    if (db_net != nullptr && !db_net->isSpecial())
       _grouter->addDirtyNet(iterm->getNet());
   }
 }

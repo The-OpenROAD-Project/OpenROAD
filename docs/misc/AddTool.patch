@@ -110,7 +110,7 @@ index 00000000..9fe88f75
 --- /dev/null
 +++ b/src/tool/CMakeLists.txt
 @@ -0,0 +1,17 @@
-+# Copyright (c) 2020, OpenROAD
++# Copyright (c) 2020, The Regents of the University of California
 +# All rights reserved.
 +# 
 +# This program is free software: you can redistribute it and/or modify
@@ -133,7 +133,7 @@ index 00000000..d8e4b6dc
 --- /dev/null
 +++ b/src/tool/include/tool/MakeTool.hh
 @@ -0,0 +1,38 @@
-+// Copyright (c) 2020, OpenROAD
++// Copyright (c) 2020, The Regents of the University of California
 +// All rights reserved.
 +//
 +// This program is free software: you can redistribute it and/or modify
@@ -177,7 +177,7 @@ index 00000000..3aa04be5
 --- /dev/null
 +++ b/src/tool/include/tool/Tool.hh
 @@ -0,0 +1,39 @@
-+// Copyright (c) 2020, OpenROAD
++// Copyright (c) 2020, The Regents of the University of California
 +// All rights reserved.
 +// 
 +// This program is free software: you can redistribute it and/or modify
@@ -222,7 +222,7 @@ index 00000000..dccb8cf4
 --- /dev/null
 +++ b/src/tool/src/CMakeLists.txt
 @@ -0,0 +1,46 @@
-+# Copyright (c) 2020, OpenROAD
++# Copyright (c) 2020, The Regents of the University of California
 +# All rights reserved.
 +# 
 +# This program is free software: you can redistribute it and/or modify
@@ -274,7 +274,7 @@ index 00000000..637332c8
 --- /dev/null
 +++ b/src/tool/src/MakeTool.cc
 @@ -0,0 +1,42 @@
-+// Copyright (c) 2020, OpenROAD
++// Copyright (c) 2020, The Regents of the University of California
 +// All rights reserved.
 +// 
 +// This program is free software: you can redistribute it and/or modify
@@ -322,7 +322,7 @@ index 00000000..251003c3
 --- /dev/null
 +++ b/src/tool/src/Tool.cc
 @@ -0,0 +1,73 @@
-+// Copyright (c) 2020, OpenROAD
++// Copyright (c) 2020, The Regents of the University of California
 +// All rights reserved.
 +// 
 +// This program is free software: you can redistribute it and/or modify
@@ -401,7 +401,7 @@ index 00000000..cc67558b
 --- /dev/null
 +++ b/src/tool/src/Tool.i
 @@ -0,0 +1,52 @@
-+// Copyright (c) 2020, OpenROAD
++// Copyright (c) 2020, The Regents of the University of California
 +// All rights reserved.
 +// 
 +// This program is free software: you can redistribute it and/or modify
@@ -459,7 +459,7 @@ index 00000000..9ef81cb1
 --- /dev/null
 +++ b/src/tool/src/Tool.tcl
 @@ -0,0 +1,48 @@
-+# Copyright (c) 2020, OpenROAD
++# Copyright (c) 2020, The Regents of the University of California
 +# All rights reserved.
 +# 
 +# This program is free software: you can redistribute it and/or modify
@@ -517,7 +517,7 @@ index 00000000..1303225f
 +# The next line is executed by /bin/sh, but not Tcl \
 +exec tclsh $0 ${1+"$@"}
 +
-+# Copyright (c) 2020, OpenROAD
++# Copyright (c) 2020, The Regents of the University of California
 +# All rights reserved.
 +#
 +# This program is free software: you can redistribute it and/or modify
@@ -576,7 +576,7 @@ index 00000000..19e9de4b
 +# The next line is executed by /bin/sh, but not Tcl \
 +exec tclsh $0 ${1+"$@"}
 +
-+# Copyright (c) 2020, OpenROAD
++# Copyright (c) 2020, The Regents of the University of California
 +# All rights reserved.
 +# 
 +# This program is free software: you can redistribute it and/or modify

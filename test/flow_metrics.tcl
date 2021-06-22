@@ -1,6 +1,6 @@
 ############################################################################
 ##
-## Copyright (c) 2019, OpenROAD
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -156,7 +156,7 @@ proc check_test_metrics { test } {
 ################################################################
 
 proc report_flow_metrics_main {} {
-  global arc argv
+  global argc argv test_groups
   if { $argc == 0 } {
     set tests $test_groups(flow)
   } else {
@@ -211,21 +211,31 @@ proc report_test_metrics { test } {
 
 ################################################################
 
-proc compare_test_metrics_main {} {
-  global arc argv
-  if { $argc == 0 } {
-    set tests $test_groups(flow)
+proc compare_flow_metrics_main {} {
+  global argc argv test_groups
+  if { $argv == "help" || $argv == "-help" } {
+    puts {Usage: save_flow_metrics [test1]...}
   } else {
-    set tests [expand_tests $argv]
-  }
+    set relative 0
+    if { $argc >= 1 && [lindex $argv 0] == "-relative" } {
+      set relative 1
+      set argc [expr $argc - 1]
+      set argv [lrange $argv 1 end]
+    }
+    if { $argc == 0 } {
+      set tests $test_groups(flow)
+    } else {
+      set tests [expand_tests $argv]
+    }
 
-  report_metrics_header
-  foreach test $tests {
-    compare_test_metrics $test
+    report_metrics_header
+    foreach test $tests {
+      compare_test_metrics $test $relative
+    }
   }
 }
 
-proc compare_test_metrics { test } {
+proc compare_test_metrics { test relative } {
   # Don't require json until it is really needed.
   package require json
 
@@ -234,14 +244,14 @@ proc compare_test_metrics { test } {
   if { [file exists $metrics_file] \
          && [file exists $result_file] } {
     set metrics_stream [open $metrics_file r]
-    set results_stream [open $metrics_result_file r]
+    set results_stream [open $result_file r]
     set metrics_json [read $metrics_stream]
     set results_json [read $results_stream]
     close $metrics_stream
     close $results_stream
     puts -nonewline [format "%-20s" $test]
-    if { ![catch {json::json2dict $metrics_string} metrics_dict] \
-         && ![catch {json::json2dict $result_string} results_dict]} {
+    if { ![catch {json::json2dict $metrics_json} metrics_dict] \
+         && ![catch {json::json2dict $results_json} results_dict]} {
       foreach name [metric_names] {
         set short_name [metric_short_name $name]
         if { $short_name != "" } {
@@ -249,13 +259,15 @@ proc compare_test_metrics { test } {
           if { [dict exists $metrics_dict $key] \
                && [dict exists $results_dict $key]} {
             set metrics_value [dict get $metrics_dict $key]
-            set result_value [dict get $result_dict $key]
-            if ($metrics_value != 0) {
-              set delta [expr ($result_value - $metrics_value) / $metrics_value]
+            set result_value [dict get $results_dict $key]
+            if { $metrics_value != 0 && $relative } {
+              set delta [expr ($result_value - $metrics_value) * 100.0 / abs($metrics_value)]
+              set field [format "%+.1f%%" $delta]
+              set field [format "%[string length $short_name]s" $field]
             } else {
               set delta [expr $result_value - $metrics_value]
+              set field [format [metric_format $name] $delta]
             }
-            set field [format [metric_format $name] $delta]
           } else {
             set field [format "%[string length $short_name]s" "N/A"]
           }
@@ -271,11 +283,16 @@ proc compare_test_metrics { test } {
 
 # Copy result metrics to test results saved in the repository.
 proc save_flow_metrics_main {} {
-  global argv
+  global argv argc
+
   if { $argv == "help" || $argv == "-help" } {
-    puts {Usage: save_flow_metrics test1 [test2]...}
+    puts {Usage: save_flow_metrics [test1]...}
   } else {
-    set tests [expand_tests $argv]
+    if { $argc == 0 } {
+      set tests [expand_tests "flow"]
+    } else {
+      set tests [expand_tests $argv]
+    }
     foreach test $tests {
       save_metrics $test
     }
@@ -288,7 +305,7 @@ proc save_metrics { test } {
   } else {
     set metrics_result_file [test_metrics_result_file $test]
     set metrics_file [test_metrics_file $test]
-    file copy $metrics_result_file $metrics_file
+    file copy -force $metrics_result_file $metrics_file
   }
 }
 
