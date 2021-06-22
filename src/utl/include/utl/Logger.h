@@ -35,6 +35,9 @@
 
 #pragma once
 
+// disable the newline in spdlog and handle via pattern, so partial lines can be printed
+#define SPDLOG_EOL ""
+
 #include <string>
 #include <vector>
 #include <array>
@@ -99,6 +102,16 @@ class Logger
                        const Args&... args)
     {
       logger_->log(spdlog::level::level_enum::off, message, args...);
+    }
+
+  template <typename... Args>
+    inline void reportNoNewLine(const std::string& message,
+                                const Args&... args)
+    {
+      logger_->set_pattern(pattern_no_new_line_);
+      report(message, args...);
+      logger_->flush();
+      logger_->set_pattern(pattern_);
     }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined below)
@@ -270,7 +283,8 @@ class Logger
                                                 "ERROR",
                                                 "CRITICAL",
                                                 "OFF"};
-  static constexpr const char *pattern_ = "%v";
+  static constexpr const char *pattern_no_new_line_ = "%v";
+  static constexpr const char *pattern_ = "%v\n";
   static constexpr const char* tool_names_[] = { FOREACH_TOOL(GENERATE_STRING) };
 };
 

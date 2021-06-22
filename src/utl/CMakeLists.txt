@@ -33,5 +33,5 @@ target_include_directories(utl
 
 target_link_libraries(utl
   PUBLIC
-    spdlog::spdlog
+    spdlog::spdlog_header_only
 )
