@@ -116,7 +116,7 @@ void Restructure::getBlob(unsigned max_depth)
 
   sta::PinSet ends;
 
-  getEndPoints(ends, opt_mode_ <= AREA_3, max_depth);
+  getEndPoints(ends, opt_mode_ <= Mode::AREA_3, max_depth);
   if (ends.size()) {
     sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
@@ -153,12 +153,12 @@ void Restructure::runABC()
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
-  bool area_mode = opt_mode_ <= AREA_3;
+  bool area_mode = opt_mode_ <= Mode::AREA_3;
   std::string abc_script_file = "ord_abc_script.tcl";
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  for (int opt_mode = area_mode ? AREA_1 : DELAY_1;
-       opt_mode <= (area_mode ? AREA_3 : DELAY_4);
+  for (int opt_mode = static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_1) : static_cast<int>(Mode::DELAY_1);
+       opt_mode <= (static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_3) : static_cast<int>(Mode::DELAY_4));
        opt_mode += 1) {
     opt_mode_ = (Mode) opt_mode;
     output_blif_file_name_ = std::string(block_->getConstName())
@@ -208,7 +208,7 @@ void Restructure::runABC()
 void Restructure::postABC(float worst_slack)
 {
   rsz::Resizer* resizer = openroad_->getResizer();
-  bool area_mode = opt_mode_ <= AREA_3;
+  bool area_mode = opt_mode_ <= Mode::AREA_3;
   if (!area_mode) {
     // Recompute timing
     resizer->estimateWireParasitics();
@@ -271,7 +271,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   logger_->report("Number of paths for restructure {}", path_found);
   int end_count = 0;
   for (auto& path_end : *path_ends) {
-    if (opt_mode_ >= DELAY_1) {
+    if (opt_mode_ >= Mode::DELAY_1) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
       logger_->report("Got path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
@@ -374,46 +374,46 @@ void Restructure::writeOptCommands(std::ofstream& script)
   script << choice << std::endl;
   script << choice2 << std::endl;
 
-  if (opt_mode_ == AREA_3)
+  if (opt_mode_ == Mode::AREA_3)
     script << "choice2" << std::endl;  // << "scleanup" << std::endl;
   else
     script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
 
   switch (opt_mode_) {
-    case DELAY_1: {
+    case Mode::DELAY_1: {
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
-    case DELAY_2: {
+    case Mode::DELAY_2: {
       script << choice << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       script << choice << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
-    case DELAY_3: {
+    case Mode::DELAY_3: {
       script << choice2 << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       script << choice2 << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
-    case DELAY_4: {
+    case Mode::DELAY_4: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       script << choice2 << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
-    case AREA_2:
-    case AREA_3: {
+    case Mode::AREA_2:
+    case Mode::AREA_3: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
     }
-    case AREA_1:
+    case Mode::AREA_1:
     default: {
       script << choice2 << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
@@ -428,19 +428,19 @@ void Restructure::writeOptCommands(std::ofstream& script)
 void Restructure::setMode(const char* mode_name)
 {
   if (!strcmp(mode_name, "delay1") || !strcmp(mode_name, "delay"))
-    opt_mode_ = DELAY_1;
+    opt_mode_ = Mode::DELAY_1;
   else if (!strcmp(mode_name, "delay2"))
-    opt_mode_ = DELAY_2;
+    opt_mode_ = Mode::DELAY_2;
   else if (!strcmp(mode_name, "delay3"))
-    opt_mode_ = DELAY_3;
+    opt_mode_ = Mode::DELAY_3;
   else if (!strcmp(mode_name, "delay4"))
-    opt_mode_ = DELAY_4;
+    opt_mode_ = Mode::DELAY_4;
   else if (!strcmp(mode_name, "area1") || !strcmp(mode_name, "area"))
-    opt_mode_ = AREA_1;
+    opt_mode_ = Mode::AREA_1;
   else if (!strcmp(mode_name, "area2"))
-    opt_mode_ = AREA_2;
+    opt_mode_ = Mode::AREA_2;
   else if (!strcmp(mode_name, "area3"))
-    opt_mode_ = AREA_3;
+    opt_mode_ = Mode::AREA_3;
   else {
     logger_->report("Mode {} note recognized.", mode_name);
   }

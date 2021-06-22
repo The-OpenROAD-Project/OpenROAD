@@ -64,7 +64,7 @@ namespace rmp {
 
 using utl::Logger;
 
-typedef enum
+enum class Mode
 {
   AREA_1 = 0,
   AREA_2,
@@ -73,7 +73,7 @@ typedef enum
   DELAY_2,
   DELAY_3,
   DELAY_4
-} Mode;
+};
 
 class Restructure
 {
