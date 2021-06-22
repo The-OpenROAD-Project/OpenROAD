@@ -69,10 +69,8 @@ class Blif
        std::string const0_cell_port_,
        std::string const1_cell_,
        std::string const1_cell_port_);
-  void setReplaceableInstances(std::set<odb::dbInst*>& insts)
-  {
-    instances_to_optimize = insts;
-  }
+  void setReplaceableInstances(std::set<odb::dbInst*>& insts);
+  void addReplaceableInstance(odb::dbInst* inst);
   bool writeBlif(const char* file_name);
   bool readBlif(const char* file_name, odb::dbBlock* block);
   bool inspectBlif(const char* file_name, int& num_instances);
