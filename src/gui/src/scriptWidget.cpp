@@ -43,9 +43,9 @@
 #include <QVBoxLayout>
 
 #include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
-#include "utl/Logger.h"
 
 namespace gui {
 
@@ -54,6 +54,8 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       output_(new QTextEdit),
       input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
+      last_output_line_(""),
+      additional_outputs_added_(false),
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
@@ -86,49 +88,6 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   setWidget(container);
 }
 
-int channelClose(ClientData instance_data, Tcl_Interp* interp)
-{
-  // This channel should never be closed
-  return EINVAL;
-}
-
-int ScriptWidget::channelOutput(ClientData instance_data,
-                                const char* buf,
-                                int to_write,
-                                int* error_code)
-{
-  // Buffer up the output
-  ScriptWidget* widget = (ScriptWidget*) instance_data;
-  widget->logger_->report(std::string(buf, to_write));
-  return to_write;
-}
-
-void channelWatch(ClientData instance_data, int mask)
-{
-  // watch is not supported inside OpenROAD GUI
-}
-
-Tcl_ChannelType ScriptWidget::stdout_channel_type_ = {
-    // Tcl stupidly defines this a non-cost char*
-    ((char*) "stdout_channel"),  /* typeName */
-    TCL_CHANNEL_VERSION_2,       /* version */
-    channelClose,                /* closeProc */
-    nullptr,                     /* inputProc */
-    ScriptWidget::channelOutput, /* outputProc */
-    nullptr,                     /* seekProc */
-    nullptr,                     /* setOptionProc */
-    nullptr,                     /* getOptionProc */
-    channelWatch,                /* watchProc */
-    nullptr,                     /* getHandleProc */
-    nullptr,                     /* close2Proc */
-    nullptr,                     /* blockModeProc */
-    nullptr,                     /* flushProc */
-    nullptr,                     /* handlerProc */
-    nullptr,                     /* wideSeekProc */
-    nullptr,                     /* threadActionProc */
-    nullptr                      /* truncateProc */
-};
-
 int ScriptWidget::tclExitHandler(ClientData instance_data,
                                  Tcl_Interp *interp,
                                  int argc,
@@ -144,21 +103,12 @@ void ScriptWidget::setupTcl()
 {
   interp_ = Tcl_CreateInterp();
 
-  Tcl_Channel stdout_channel = Tcl_CreateChannel(
-      &stdout_channel_type_, "stdout", (ClientData) this, TCL_WRITABLE);
-  if (stdout_channel) {
-    Tcl_SetChannelOption(nullptr, stdout_channel, "-translation", "lf");
-    Tcl_SetChannelOption(nullptr, stdout_channel, "-buffering", "none");
-    Tcl_RegisterChannel(interp_, stdout_channel);  // per man page: some tcl bug
-    Tcl_SetStdChannel(stdout_channel, TCL_STDOUT);
-  }
+  Tcl_Channel stdout_channel = Tcl_GetStdChannel(TCL_STDOUT);
+  Tcl_SetChannelOption(nullptr, stdout_channel, "-translation", "lf");
+  Tcl_SetChannelOption(nullptr, stdout_channel, "-buffering", "none");
 
   // Overwrite exit to allow Qt to handle exit
   Tcl_CreateCommand(interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
-
-  // Ensures no newlines are present in stdout stream when using logger, but normal behavior in file writing
-  Tcl_Eval(interp_, "rename puts ::tcl::openroad::puts");
-  Tcl_Eval(interp_, "proc puts { args } { if {[llength $args] == 1} { ::tcl::openroad::puts -nonewline {*}$args } else { ::tcl::openroad::puts {*}$args } }");
 
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
@@ -226,35 +176,72 @@ void ScriptWidget::addTclResultToOutput(int return_code)
   }
 }
 
-void ScriptWidget::addBufferToOutput()
+void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
 {
-  // Show whatever we captured from the output channel in grey
-  for (auto& out : outputBuffer_) {
-    if (!out.isEmpty()) {
-      addToOutput(out, buffer_msg_);
-    }
-  }
-  outputBuffer_.clear();
+  addToOutput(text, color);
 }
 
-void ScriptWidget::addToOutput(const QString& text, const QColor& color)
+void ScriptWidget::addReportToOutput(const QString& text)
+{
+  last_output_line_ = addToOutput(text, buffer_msg_, true);
+}
+
+const QString ScriptWidget::addToOutput(const QString& text, const QColor& color, bool appendable)
 {
   // make sure cursor is at the end of the document
-  QTextCursor cursor = output_->textCursor();
-  cursor.movePosition(QTextCursor::End);
-  output_->setTextCursor(cursor);
+  output_->moveCursor(QTextCursor::End);
+
+  bool ends_with_newline = !text.isEmpty() && text[text.size() - 1] == '\n';
+
+  QString output_text;
+  if (appendable) {
+    if (!last_output_line_.isEmpty() && !additional_outputs_added_) {
+      // new lines have not appeared, so we can delete the old line and print over it
+      // otherwise, re-add the incomplete line so we see the correct output
+      output_->moveCursor(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+      output_->moveCursor(QTextCursor::End, QTextCursor::KeepAnchor);
+      output_->textCursor().removeSelectedText();
+      output_->textCursor().deletePreviousChar();
+    }
+    output_text = last_output_line_ + text;
+  }
+  else {
+    output_text = text;
+  }
+
+  if (ends_with_newline) {
+    // remove last new line
+    output_text.chop(1);
+  }
+
+  QString last_line;
 
   output_->setTextColor(color);
-  for (QString& text_line : text.split('\n')) {
+  for (QString& text_line : output_text.split('\n')) {
     if (text_line.size() > max_output_line_length_) {
       text_line = text_line.left(max_output_line_length_-3);
       text_line += "...";
     }
     output_->append(text_line);
+
+    last_line = text_line;
+  }
+
+  if (ends_with_newline) {
+    last_line.clear();
   }
 
   // ensure changes are updated
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+  if (appendable) {
+    additional_outputs_added_ = false;
+  }
+  else {
+    additional_outputs_added_ = true;
+  }
+
+  return last_line;
 }
 
 ScriptWidget::~ScriptWidget()
@@ -370,13 +357,17 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
     this->formatter_->format(msg, formatted);
-    // -1 is to drop the final '\n' character
-    auto str
-        = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
-    widget_->outputBuffer_.append(str);
+    std::string formatted_msg = std::string(formatted.data(), formatted.size());
 
-    // Make it appear now
-    widget_->addBufferToOutput();
+    if (msg.level == spdlog::level::level_enum::off) {
+      // this comes from a ->report*
+      widget_->addReportToOutput(formatted_msg.c_str());
+    }
+    else {
+      const QColor& msg_color = msg.level >= spdlog::level::level_enum::err ? widget_->tcl_error_msg_ : widget_->buffer_msg_;
+
+      widget_->addLogToOutput(formatted_msg.c_str(), msg_color);
+    }
   }
 
   void flush_() override {}

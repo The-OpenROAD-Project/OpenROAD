@@ -100,14 +100,11 @@ class ScriptWidget : public QDockWidget
 
  private:
   void setupTcl();
-  void addToOutput(const QString& text, const QColor& color);
+  const QString addToOutput(const QString& text, const QColor& color, bool appendable = false);
   void addCommandToOutput(const QString& cmd);
   void addTclResultToOutput(int return_code);
-  void addBufferToOutput();
-  static int channelOutput(ClientData instanceData,
-                           const char* buf,
-                           int toWrite,
-                           int* errorCodePtr);
+  void addReportToOutput(const QString& text);
+  void addLogToOutput(const QString& text, const QColor& color);
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp *interp,
                             int argc,
@@ -117,7 +114,12 @@ class ScriptWidget : public QDockWidget
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
   Tcl_Interp* interp_;
-  QStringList outputBuffer_;
+
+  // hold the last line from logger->report*
+  QString last_output_line_;
+  // flag to indicate new lines have been added the the output not from logger->report*
+  bool additional_outputs_added_;
+
   QStringList history_;
   QString history_buffer_last_;
   int historyPosition_;
