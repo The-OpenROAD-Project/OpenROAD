@@ -119,6 +119,7 @@ class AntennaRepair
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
   void setInstsPlacementStatus(odb::dbPlacementStatus placementStatus);
+  odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
 
   GlobalRouter* _grouter;
   ant::AntennaChecker* _arc;

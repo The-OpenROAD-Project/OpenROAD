@@ -43,6 +43,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <limits>
 
 #include "Net.h"
 #include "Pin.h"
@@ -225,10 +226,10 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::dbMaster* antennaMaster = diodeMTerm->getMaster();
 
   int instLocX, instLocY, instWidth;
-  odb::dbBox* sinkBBox = sinkInst->getBBox();
-  instLocX = sinkBBox->xMin();
-  instLocY = sinkBBox->yMin();
-  instWidth = sinkBBox->xMax() - sinkBBox->xMin();
+  odb::Rect sinkBBox = getInstRect(sinkInst, sinkITerm);
+  instLocX = sinkBBox.xMin();
+  instLocY = sinkBBox.yMin();
+  instWidth = sinkBBox.xMax() - sinkBBox.xMin();
   odb::dbOrientType instOrient = sinkInst->getOrient();
 
   odb::dbInst* antennaInst
@@ -317,6 +318,39 @@ void AntennaRepair::setInstsPlacementStatus(
   for (odb::dbInst* diodeInst : _diodeInsts) {
     diodeInst->setPlacementStatus(placementStatus);
   }
+}
+
+odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
+{
+  int min = std::numeric_limits<int>::min();
+  int max = std::numeric_limits<int>::max();
+
+  int pX, pY;
+  inst->getOrigin(pX, pY);
+  odb::Point origin = odb::Point(pX, pY);
+  odb::dbTransform transform(inst->getOrient(), origin);
+
+  odb::Rect instRect;
+
+  if (inst->getMaster()->isBlock()) {
+    instRect = odb::Rect(max, max, min, min);
+    odb::dbMTerm* mterm = iterm->getMTerm();
+    if (mterm != nullptr) {
+      for (odb::dbMPin* mterm_pin : mterm->getMPins()) {
+        for (odb::dbBox* mterm_box : mterm_pin->getGeometry()) {
+          odb::Rect rect;
+          mterm_box->getBox(rect);
+          transform.apply(rect);
+
+          instRect = rect;
+        }
+      }
+    }
+  } else {
+    inst->getBBox()->getBox(instRect);
+  }
+
+  return instRect;
 }
 
 AntennaCbk::AntennaCbk(GlobalRouter* grouter) : _grouter(grouter)
