@@ -454,7 +454,7 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
                                      int previousMinLayer,
                                      int previousMaxLayer)
 {
-  int oldCap;
+  int oldCap, currCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
@@ -465,16 +465,22 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = h_caps[layer - 1][y - 1][x - 1];
-        _fastRoute->addAdjustment(
-            x - 1, y - 1, layer, x, y - 1, layer, oldCap, true);
+        currCap = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+        if (oldCap <= currCap) {
+          _fastRoute->addAdjustment(
+              x - 1, y - 1, layer, x, y - 1, layer, oldCap, true);
+        }
       }
     }
 
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
         oldCap = v_caps[layer - 1][x - 1][y - 1];
-        _fastRoute->addAdjustment(
-            x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
+        currCap = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
+        if (oldCap <= currCap) {
+          _fastRoute->addAdjustment(
+              x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
+        }
       }
     }
   }
