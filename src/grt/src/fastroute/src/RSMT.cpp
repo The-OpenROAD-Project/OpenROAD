@@ -772,7 +772,7 @@ void gen_brk_RSMT(Bool congestionDriven,
       coeffV = 1.2;
     }
     if (net->alpha > 0) {
-      stt::Tree tree = pdr::primDijkstraRevII(net->pinX, net->pinY, net->driver_idx, net->alpha, logger);
+      stt::Tree tree = pdr::primDijkstra(net->pinX, net->pinY, net->driver_idx, net->alpha, logger);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
