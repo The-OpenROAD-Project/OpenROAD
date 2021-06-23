@@ -266,11 +266,6 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
                                               _logger);
 
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
-  if (diodeMTerm == nullptr) {
-    _logger->error(GRT, 69, "Liberty port for {}/{} not found.",
-                   diodePort->libertyCell()->name(),
-                   diodePort->name());
-  }
 
   int violationsCnt = -1;
   int itr = 0;

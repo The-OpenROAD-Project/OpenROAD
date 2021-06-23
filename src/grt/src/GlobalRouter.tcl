@@ -248,21 +248,27 @@ sta::define_cmd_args "repair_antennas" { lib_port \
                                          [-iterations iterations]}
 
 proc repair_antennas { args } {
-  sta::check_argc_eq1 "repair_antennas" $args
-  set lib_port [lindex $args 0]
-  if { ![sta::is_object $lib_port] } {
-    set lib_port [sta::get_lib_pins [lindex $args 0]]
-  }
+  if { [grt::have_routes] } {
+    sta::check_argc_eq1 "repair_antennas" $args
+    set lib_port [lindex $args 0]
+    if { ![sta::is_object $lib_port] } {
+      set lib_port [sta::get_lib_pins [lindex $args 0]]
+    }
 
-  if { [info exists keys(-iterations)] } {
-    set iterations $keys(-iterations)
-    sta::check_positive_integer "-repair_antennas_iterations" $iterations
+    if { [info exists keys(-iterations)] } {
+      set iterations $keys(-iterations)
+      sta::check_positive_integer "-repair_antennas_iterations" $iterations
+    } else {
+      set iterations 1
+    }
+
+    if { $lib_port != "" } {
+      grt::repair_antennas $lib_port $iterations
+    } else {
+      utl::error GRT 69 "Diode not found."
+    }
   } else {
-    set iterations 1
-  }
-
-  if { $lib_port != "" } {
-    grt::repair_antennas $lib_port $iterations
+    utl::error GRT 45 "Run global_route before repair_antennas."
   }
 }
 
