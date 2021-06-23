@@ -126,7 +126,7 @@ OpenRoad::OpenRoad()
     opendp_(nullptr),
     finale_(nullptr),
     macro_placer_(nullptr),
-    fastRoute_(nullptr),
+    global_router_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
     extractor_(nullptr),
@@ -148,7 +148,7 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deleteFastRoute(fastRoute_);
+  deleteFastRoute(global_router_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
@@ -208,7 +208,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
   finale_ = makeFinale();
-  fastRoute_ = makeFastRoute();
+  global_router_ = makeFastRoute();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
