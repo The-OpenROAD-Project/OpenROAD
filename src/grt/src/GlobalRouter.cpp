@@ -454,7 +454,12 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
                                      int previousMinLayer,
                                      int previousMaxLayer)
 {
-  int oldCap, currCap;
+  int oldCap;
+  // check if current edge capacity is larger than the old edge capacity
+  // before applying adjustments.
+  // after inserting diodes, edges can have less capacity than before,
+  // and apply adjustment without a check leads to warns and wrong adjustments.
+  int currCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
