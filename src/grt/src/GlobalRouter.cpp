@@ -257,7 +257,7 @@ void GlobalRouter::run()
   computeWirelength();
 }
 
-void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
+void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
 {
   AntennaRepair antennaRepair = AntennaRepair(this,
                                               _openroad->getAntennaChecker(),
@@ -278,29 +278,34 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
                    diodePort->name());
   }
 
-  int violationsCnt = antennaRepair.checkAntennaViolations(
-      originalRoute, _maxRoutingLayer, diodeMTerm);
+  int violationsCnt = -1;
+  int itr = 0;
+  while (violationsCnt != 0 && itr < iterations) {
+    violationsCnt = antennaRepair.checkAntennaViolations(
+        originalRoute, _maxRoutingLayer, diodeMTerm);
 
-  if (violationsCnt > 0) {
-    clearObjects();
-    antennaRepair.fixAntennas(diodeMTerm);
-    antennaRepair.legalizePlacedCells();
+    if (violationsCnt > 0) {
+      clearObjects();
+      antennaRepair.fixAntennas(diodeMTerm);
+      antennaRepair.legalizePlacedCells();
 
-    _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
+      _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
-    updateDirtyNets();
-    std::vector<Net*> antennaNets
-        = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
+      updateDirtyNets();
+      std::vector<Net*> antennaNets
+          = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
 
-    _fastRoute->setVerbose(0);
-    _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
+      _fastRoute->setVerbose(0);
+      _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 
-    restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
-    removeDirtyNetsRouting();
+      restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
+      removeDirtyNetsRouting();
 
-    NetRouteMap newRoute
-        = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
-    mergeResults(newRoute);
+      NetRouteMap newRoute
+          = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
+      mergeResults(newRoute);
+    }
+    itr++;
   }
 }
 

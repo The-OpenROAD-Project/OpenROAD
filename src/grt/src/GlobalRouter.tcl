@@ -244,7 +244,8 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { lib_port }
+sta::define_cmd_args "repair_antennas" { lib_port \
+                                         [-iterations iterations]}
 
 proc repair_antennas { args } {
   sta::check_argc_eq1 "repair_antennas" $args
@@ -252,8 +253,16 @@ proc repair_antennas { args } {
   if { ![sta::is_object $lib_port] } {
     set lib_port [sta::get_lib_pins [lindex $args 0]]
   }
+
+  if { [info exists keys(-iterations)] } {
+    set iterations $keys(-iterations)
+    sta::check_positive_integer "-repair_antennas_iterations" $iterations
+  } else {
+    set iterations 1
+  }
+
   if { $lib_port != "" } {
-    grt::repair_antennas $lib_port
+    grt::repair_antennas $lib_port $iterations
   }
 }
 

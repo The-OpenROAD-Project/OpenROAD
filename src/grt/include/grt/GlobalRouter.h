@@ -167,7 +167,7 @@ class GlobalRouter
   bool haveRoutes() const { return !_routes.empty(); }
 
   // repair antenna public functions
-  void repairAntennas(sta::LibertyPort* diodePort);
+  void repairAntennas(sta::LibertyPort* diodePort, int iterations);
   void addDirtyNet(odb::dbNet* net);
 
   double dbuToMicrons(int64_t dbu);

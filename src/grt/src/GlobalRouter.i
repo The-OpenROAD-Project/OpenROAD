@@ -176,9 +176,9 @@ estimate_rc()
 }
 
 void
-repair_antennas(LibertyPort* diodePort)
+repair_antennas(LibertyPort* diodePort, int iterations)
 {
-  getFastRoute()->repairAntennas(diodePort);
+  getFastRoute()->repairAntennas(diodePort, iterations);
 }
 
 void
