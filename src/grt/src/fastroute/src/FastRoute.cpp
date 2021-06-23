@@ -56,7 +56,6 @@
 #include "maze.h"
 #include "maze3D.h"
 #include "utl/Logger.h"
-#include "pdr/pdrev.h"
 #include "opendb/db.h"
 
 #include "route.h"
@@ -1391,11 +1390,6 @@ void FastRouteCore::setVerbose(int v)
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflowIterations = iterations;
-}
-
-void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
-{
-  pdRevForHighFanout = pdRevHihgFanout;
 }
 
 void FastRouteCore::setAllowOverflow(bool allow)

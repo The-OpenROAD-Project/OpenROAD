@@ -68,7 +68,6 @@ int layerOrientation;
 float alpha;
 int verbose;
 int overflowIterations;
-int pdRevForHighFanout;
 bool allowOverflow;
 
 Bool** HV;

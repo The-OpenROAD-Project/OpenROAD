@@ -118,7 +118,6 @@ class FastRouteCore
   void setAlpha(float a);
   void setVerbose(int v);
   void setOverflowIterations(int iterations);
-  void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();

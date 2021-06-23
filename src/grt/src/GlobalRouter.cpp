@@ -89,9 +89,7 @@ void GlobalRouter::init()
   _allowOverflow = false;
   _macroExtension = 0;
   _verbose = 0;
-
-  // Clock net routing variables
-  pdrev_alpha_ = 0.3;
+  pdrev_alpha_ = 0;
 }
 
 void GlobalRouter::makeComponents()
