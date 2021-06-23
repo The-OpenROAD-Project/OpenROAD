@@ -265,12 +265,6 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
                                               _db,
                                               _logger);
 
-  // Copy first route result and make changes in this new vector
-  NetRouteMap originalRoute(_routes);
-
-  Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
-  addLocalConnections(originalRoute);
-
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
   if (diodeMTerm == nullptr) {
     _logger->error(GRT, 69, "Liberty port for {}/{} not found.",
@@ -281,12 +275,19 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
   int violationsCnt = -1;
   int itr = 0;
   while (violationsCnt != 0 && itr < iterations) {
+    _logger->info(GRT, 6, "Repairing antennas, iteration {}.", itr+1);
+    // Copy first route result and make changes in this new vector
+    NetRouteMap originalRoute(_routes);
+
+    Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
+    addLocalConnections(originalRoute);
+
     violationsCnt = antennaRepair.checkAntennaViolations(
         originalRoute, _maxRoutingLayer, diodeMTerm);
 
     if (violationsCnt > 0) {
       clearObjects();
-      antennaRepair.fixAntennas(diodeMTerm);
+      antennaRepair.repairAntennas(diodeMTerm);
       antennaRepair.legalizePlacedCells();
 
       _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
@@ -305,6 +306,9 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
           = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
       mergeResults(newRoute);
     }
+
+    antennaRepair.clearViolations();
+    _dirtyNets.clear();
     itr++;
   }
 }

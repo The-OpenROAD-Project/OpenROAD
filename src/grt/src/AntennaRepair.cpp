@@ -133,10 +133,10 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   return _antennaViolations.size();
 }
 
-void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
+void AntennaRepair::repairAntennas(odb::dbMTerm* diodeMTerm)
 {
   int siteWidth = -1;
-  int cnt = 0;
+  int cnt = _diodeInsts.size();
   r_tree fixedInsts;
 
   auto rows = _block->getRows();
