@@ -232,6 +232,13 @@ set_pad_right_cmd(int pad)
   replace->setPadRight(pad);
 }
 
+float
+get_global_placement_uniform_density_cmd() 
+{
+  Replace* replace = getReplace();
+  return replace->getUniformTargetDensity();
+}
+
 void
 set_debug_cmd(int pause_iterations,
               int update_iterations,
