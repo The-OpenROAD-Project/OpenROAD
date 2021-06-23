@@ -281,6 +281,10 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::Rect instRect;
   antennaInst->getBBox()->getBox(instRect);
 
+  if (!legallyPlaced) {
+    _logger->warn(GRT, 54, "Placement of diode {} will be legalized by detailed placement.", antennaInstName);
+  }
+
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
   if (coreArea.contains(instRect) &&
