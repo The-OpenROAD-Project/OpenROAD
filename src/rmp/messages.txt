@@ -8,8 +8,8 @@ RMP 0007 blif.cpp:419              inserting {} new instances...
 RMP 0008 blif.cpp:440              Const driver {} doesn't have any connected nets\n
 RMP 0009 blif.cpp:475              Master ({}) not found while stitching back instances\n
 RMP 0010 blif.cpp:510              {} connection parsing failed for {} instance
-RMP 0020 Restructure.cpp:412       Cannot open file {} for writing.
+RMP 0020 Restructure.cpp:417       Cannot open file {} for writing.
 RMP 0031 rmp.tcl:81                Missing argument -liberty_file
 RMP 0032 rmp.tcl:106               -tielo_pin not specified
 RMP 0033 rmp.tcl:122               -tiehi_pin not specified
-RMP 0035 Restructure.cpp:385       Could not create instance {}
+RMP 0035 Restructure.cpp:388       Could not create instance {}

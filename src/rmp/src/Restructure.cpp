@@ -373,16 +373,20 @@ void Restructure::removeConstCells()
                  : ((bidirect_drvr_vertex) ? bidirect_drvr_vertex->simValue()
                                            : sta::LogicValue::unknown));
       if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
-        odb::dbMaster* const_master = (pinVal == sta::LogicValue::one) ? hicell_master : locell_master;
-        std::string const_port = (pinVal == sta::LogicValue::one) ? hiport_ : loport_;
-        std::string inst_name = "rmp_const_" + std::to_string(const_cnt);
-        auto new_inst = odb::dbInst::create(block_, const_master, inst_name.c_str());
-        if (new_inst) {
-          odb::dbNet* net = iterm->getNet();
-          odb::dbITerm::disconnect(iterm);
-          odb::dbITerm::connect(new_inst->findITerm(const_port.c_str()), net);
-        } else
-          logger_->warn(RMP, 35, "Could not create instance {}", inst_name);
+        odb::dbNet* net = iterm->getNet();
+        if (net) {
+          odb::dbMaster* const_master = (pinVal == sta::LogicValue::one) ? hicell_master : locell_master;
+          std::string const_port = (pinVal == sta::LogicValue::one) ? hiport_ : loport_;
+          std::string inst_name = "rmp_const_" + std::to_string(const_cnt);
+          debugPrint(logger_, RMP, "remap", 2, "Adding cell {} inst {} for {}",
+                                      const_master->getName(), inst_name, inst->getName());
+          auto new_inst = odb::dbInst::create(block_, const_master, inst_name.c_str());
+          if (new_inst) {
+            odb::dbITerm::disconnect(iterm);
+            odb::dbITerm::connect(new_inst->findITerm(const_port.c_str()), net);
+          } else
+            logger_->warn(RMP, 35, "Could not create instance {}", inst_name);
+        }
         const_outputs++;
         const_cnt++;
       }
@@ -391,7 +395,8 @@ void Restructure::removeConstCells()
     if (outputs > 0 && outputs == const_outputs)
       constInsts.insert(inst);
   }
-  
+  debugPrint(logger_, RMP, "remap", 2, "Removing {} instances...", constInsts.size());
+
   for (auto inst : constInsts)
     removeConstCell(inst);
   logger_->report("Removed {} instances with constant outputs...", constInsts.size());
