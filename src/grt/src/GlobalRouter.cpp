@@ -887,7 +887,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (trackLocation >= _grid->getTileHeight()) {
           for (int x = 1; x < _grid->getXGrids(); x++) {
             _fastRoute->addAdjustment(
-                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           y++;
           trackLocation -= _grid->getTileHeight();
@@ -902,7 +902,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity, true);
           }
         }
 
@@ -910,7 +910,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (remainingFinalSpace >= _grid->getTileHeight() + extraSpace) {
           for (int x = 1; x < _grid->getXGrids(); x++) {
             _fastRoute->addAdjustment(
-                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           y--;
           remainingFinalSpace -= (_grid->getTileHeight() + extraSpace);
@@ -927,7 +927,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity, true);
           }
         }
       }
@@ -967,7 +967,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (trackLocation >= _grid->getTileWidth()) {
           for (int y = 1; y < _grid->getYGrids(); y++) {
             _fastRoute->addAdjustment(
-                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           x++;
           trackLocation -= _grid->getTileWidth();
@@ -982,7 +982,8 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity,
+                                      true);
           }
         }
 
@@ -990,7 +991,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (remainingFinalSpace >= _grid->getTileWidth() + extraSpace) {
           for (int y = 1; y < _grid->getYGrids(); y++) {
             _fastRoute->addAdjustment(
-                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           x--;
           remainingFinalSpace -= (_grid->getTileWidth() + extraSpace);
@@ -1007,7 +1008,8 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity,
+                                      true);
           }
         }
       }
@@ -1048,7 +1050,7 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
                 x - 1, y - 1, layer, x, y - 1, layer);
             int newHCapacity = std::floor((float) edgeCap * (1 - adjustment));
             _fastRoute->addAdjustment(
-                x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
+                x - 1, y - 1, layer, x, y - 1, layer, newHCapacity, true);
           }
         }
       }
@@ -1064,7 +1066,7 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
                 x - 1, y - 1, layer, x - 1, y, layer);
             int newVCapacity = std::floor((float) edgeCap * (1 - adjustment));
             _fastRoute->addAdjustment(
-                x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
+                x - 1, y - 1, layer, x - 1, y, layer, newVCapacity, true);
           }
         }
       }
@@ -1116,15 +1118,15 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
           edgeCap -= firstTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap, true);
         } else if (y == lastTile._y) {
           edgeCap -= lastTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap, true);
         } else {
           edgeCap -= edgeCap * reductionPercentage;
-          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0);
+          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0, true);
         }
       }
     }
@@ -1141,15 +1143,15 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
           edgeCap -= firstTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap, true);
         } else if (x == lastTile._x) {
           edgeCap -= lastTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap, true);
         } else {
           edgeCap -= edgeCap * reductionPercentage;
-          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0);
+          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0, true);
         }
       }
     }
@@ -1213,7 +1215,7 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x + 1, y, layer, edgeCap);
+                    x, y, layer, x + 1, y, layer, edgeCap, true);
               } else if (y == lastTile._y) {
                 int edgeCap
                     = _fastRoute->getEdgeCapacity(x, y, layer, x + 1, y, layer);
@@ -1221,9 +1223,9 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x + 1, y, layer, edgeCap);
+                    x, y, layer, x + 1, y, layer, edgeCap, true);
               } else {
-                _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0);
+                _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0, true);
               }
             }
           }
@@ -1237,7 +1239,7 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x, y + 1, layer, edgeCap);
+                    x, y, layer, x, y + 1, layer, edgeCap, true);
               } else if (x == lastTile._x) {
                 int edgeCap
                     = _fastRoute->getEdgeCapacity(x, y, layer, x, y + 1, layer);
@@ -1245,9 +1247,9 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x, y + 1, layer, edgeCap);
+                    x, y, layer, x, y + 1, layer, edgeCap, true);
               } else {
-                _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0);
+                _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0, true);
               }
             }
           }
