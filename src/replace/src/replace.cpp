@@ -322,6 +322,12 @@ Replace::setUniformTargetDensityMode(bool mode) {
   uniformTargetDensityMode_ = mode;
 }
 
+float
+Replace::getUniformTargetDensity() {
+  initNesterovPlace();
+  return nb_->uniformTargetDensity(); 
+}
+
 void
 Replace::setInitDensityPenalityFactor(float penaltyFactor) {
   initDensityPenalityFactor_ = penaltyFactor;

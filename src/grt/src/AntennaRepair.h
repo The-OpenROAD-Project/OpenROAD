@@ -92,7 +92,7 @@ class AntennaRepair
   int checkAntennaViolations(NetRouteMap& routing,
                              int maxRoutingLayer,
                              odb::dbMTerm* diodeMTerm);
-  void fixAntennas(odb::dbMTerm* diodeMTerm);
+  void repairAntennas(odb::dbMTerm* diodeMTerm);
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return _antennaViolations; }
   void setAntennaViolations(AntennaViolations antennaViolations)
@@ -100,6 +100,7 @@ class AntennaRepair
     _antennaViolations = antennaViolations;
   }
   int getDiodesCount() { return _diodeInsts.size(); }
+  void clearViolations() { _antennaViolations.clear(); }
 
  private:
   typedef int coord_type;
@@ -119,6 +120,7 @@ class AntennaRepair
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
   void setInstsPlacementStatus(odb::dbPlacementStatus placementStatus);
+  odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
 
   GlobalRouter* _grouter;
   ant::AntennaChecker* _arc;

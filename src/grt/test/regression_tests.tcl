@@ -12,4 +12,7 @@ record_tests {
   region_adjustment
   repair_antennas1
   repair_antennas2
+  repair_antennas3
+  repair_antennas_error1
+  repair_antennas_error2
 }
