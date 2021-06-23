@@ -257,7 +257,7 @@ void GlobalRouter::run()
   computeWirelength();
 }
 
-void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
+void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
 {
   AntennaRepair antennaRepair = AntennaRepair(this,
                                               _openroad->getAntennaChecker(),
@@ -265,42 +265,46 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
                                               _db,
                                               _logger);
 
-  // Copy first route result and make changes in this new vector
-  NetRouteMap originalRoute(_routes);
-
-  Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
-  addLocalConnections(originalRoute);
-
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
-  if (diodeMTerm == nullptr) {
-    _logger->error(GRT, 69, "Liberty port for {}/{} not found.",
-                   diodePort->libertyCell()->name(),
-                   diodePort->name());
-  }
 
-  int violationsCnt = antennaRepair.checkAntennaViolations(
-      originalRoute, _maxRoutingLayer, diodeMTerm);
+  int violationsCnt = -1;
+  int itr = 0;
+  while (violationsCnt != 0 && itr < iterations) {
+    _logger->info(GRT, 6, "Repairing antennas, iteration {}.", itr+1);
+    // Copy first route result and make changes in this new vector
+    NetRouteMap originalRoute(_routes);
 
-  if (violationsCnt > 0) {
-    clearObjects();
-    antennaRepair.fixAntennas(diodeMTerm);
-    antennaRepair.legalizePlacedCells();
+    Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
+    addLocalConnections(originalRoute);
 
-    _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
+    violationsCnt = antennaRepair.checkAntennaViolations(
+        originalRoute, _maxRoutingLayer, diodeMTerm);
 
-    updateDirtyNets();
-    std::vector<Net*> antennaNets
-        = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
+    if (violationsCnt > 0) {
+      clearObjects();
+      antennaRepair.repairAntennas(diodeMTerm);
+      antennaRepair.legalizePlacedCells();
 
-    _fastRoute->setVerbose(0);
-    _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
+      _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
-    restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
-    removeDirtyNetsRouting();
+      updateDirtyNets();
+      std::vector<Net*> antennaNets
+          = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
 
-    NetRouteMap newRoute
-        = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
-    mergeResults(newRoute);
+      _fastRoute->setVerbose(0);
+      _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
+
+      restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
+      removeDirtyNetsRouting();
+
+      NetRouteMap newRoute
+          = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
+      mergeResults(newRoute);
+    }
+
+    antennaRepair.clearViolations();
+    _dirtyNets.clear();
+    itr++;
   }
 }
 
