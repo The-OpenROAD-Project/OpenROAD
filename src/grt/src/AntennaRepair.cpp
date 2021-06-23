@@ -286,7 +286,6 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     antennaInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
-  antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   odb::dbITerm::connect(antennaITerm, net);
   _diodeInsts.push_back(antennaInst);
 
@@ -320,7 +319,9 @@ void AntennaRepair::setInstsPlacementStatus(
   for (auto const& violation : _antennaViolations) {
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
-        sinkITerm->getInst()->setPlacementStatus(placementStatus);
+        if (!sinkITerm->getMTerm()->getMaster()->isBlock()) {
+          sinkITerm->getInst()->setPlacementStatus(placementStatus);
+        }
       }
     }
   }
