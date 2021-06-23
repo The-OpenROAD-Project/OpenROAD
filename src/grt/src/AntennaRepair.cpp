@@ -278,7 +278,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::Rect instRect;
   antennaInst->getBBox()->getBox(instRect);
 
-  // allow detailed placement modifies diodes with geometry out of the core area
+  // allow detailed placement to move diodes with geometry out of the core area
   // or near macro pins (can be placed out of row)
   if (coreArea.contains(instRect) && !sinkInst->getMaster()->isBlock()) {
     antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
