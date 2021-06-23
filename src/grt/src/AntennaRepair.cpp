@@ -215,6 +215,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
                                 int siteWidth,
                                 r_tree& fixedInsts)
 {
+  const int max_legalize_itr = 50;
   bool legallyPlaced = false;
   bool placeAtLeft = true;
   int leftOffset = 0;
@@ -247,7 +248,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   int leftPad = _opendp->padGlobalLeft();
   int rightPad = _opendp->padGlobalRight();
   std::vector<value> overlapInsts;
-  while (!legallyPlaced) {
+  int legalize_itr = 0;
+  while (!legallyPlaced && legalize_itr < max_legalize_itr) {
     if (placeAtLeft) {
       offset = -(antennaWidth + leftOffset * siteWidth);
       leftOffset++;
@@ -273,6 +275,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       legallyPlaced = true;
     }
     overlapInsts.clear();
+    legalize_itr++;
   }
 
   odb::Rect instRect;
