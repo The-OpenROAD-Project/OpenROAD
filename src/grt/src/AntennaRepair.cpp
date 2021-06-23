@@ -238,6 +238,9 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       = antennaInst->findITerm(diodeMTerm->getConstName());
   odb::dbBox* antennaBBox = antennaInst->getBBox();
   int antennaWidth = antennaBBox->xMax() - antennaBBox->xMin();
+  
+  odb::Rect coreArea;
+  _block->getCoreArea(coreArea);
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
@@ -265,14 +268,22 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
                   instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
-    odb::Rect coreArea;
-    _block->getCoreArea(coreArea);
-
     if (overlapInsts.empty() && instBox->xMin() >= coreArea.xMin()
         && instBox->xMax() <= coreArea.xMax()) {
       legallyPlaced = true;
     }
     overlapInsts.clear();
+  }
+
+  odb::Rect instRect;
+  antennaInst->getBBox()->getBox(instRect);
+
+  // allow detailed placement modifies diodes with geometry out of the core area
+  // or near macro pins (can be placed out of row)
+  if (coreArea.contains(instRect) && !sinkInst->getMaster()->isBlock()) {
+    antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  } else {
+    antennaInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
   antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
@@ -281,9 +292,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   // Add diode to the R-tree of fixed instances
   int fixedInstId = fixedInsts.size();
-  odb::dbBox* instBox = antennaInst->getBBox();
-  box b(point(instBox->xMin(), instBox->yMin()),
-        point(instBox->xMax(), instBox->yMax()));
+  box b(point(instRect.xMin(), instRect.yMin()),
+        point(instRect.xMax(), instRect.yMax()));
   value v(b, fixedInstId);
   fixedInsts.insert(v);
   fixedInstId++;
