@@ -66,6 +66,8 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
+#include "grt/GlobalRouter.h"
+
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -179,7 +181,8 @@ Resizer::init(OpenRoad *openroad,
               Logger *logger,
               Gui *gui,
               dbDatabase *db,
-              dbSta *sta)
+              dbSta *sta,
+              GlobalRouter *grt)
 {
   openroad_ = openroad;
   logger_ = logger;
@@ -187,6 +190,7 @@ Resizer::init(OpenRoad *openroad,
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
+  grt_ = grt;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
@@ -746,7 +750,8 @@ Resizer::repairNet(Net *net,
                    int &length_violations)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+                                      db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
@@ -2843,7 +2848,8 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+                                      db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
     delete tree;
@@ -3523,7 +3529,7 @@ Resizer::cloneClkInverter(Instance *inv)
 void
 Resizer::journalBegin()
 {
-  debugPrint(logger_, RSZ, "resize_journal", 1, "begin");
+  debugPrint(logger_, RSZ, "journal", 1, "begin");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
 }
@@ -3532,7 +3538,7 @@ void
 Resizer::journalInstReplaceCellBefore(Instance *inst)
 {
   LibertyCell *lib_cell = network_->libertyCell(inst);
-  debugPrint(logger_, RSZ, "resize_journal", 1, "replace {} ({})",
+  debugPrint(logger_, RSZ, "journal", 1, "replace {} ({})",
              network_->pathName(inst),
              lib_cell->name());
   resized_inst_map_[inst] = lib_cell;
@@ -3541,7 +3547,7 @@ Resizer::journalInstReplaceCellBefore(Instance *inst)
 void
 Resizer::journalMakeBuffer(Instance *buffer)
 {
-  debugPrint(logger_, RSZ, "resize_journal", 1, "make_buffer {}",
+  debugPrint(logger_, RSZ, "journal", 1, "make_buffer {}",
              network_->pathName(buffer));
   inserted_buffers_.insert(buffer);
 }
@@ -3553,7 +3559,7 @@ Resizer::journalRestore()
     Instance *inst = inst_cell.first;
     if (!inserted_buffers_.hasKey(inst)) {
       LibertyCell *lib_cell = inst_cell.second;
-      debugPrint(logger_, RSZ, "resize_journal", 1, "restore {} ({})",
+      debugPrint(logger_, RSZ, "journal", 1, "restore {} ({})",
                  network_->pathName(inst),
                  lib_cell->name());
       replaceCell(inst, lib_cell, false);
@@ -3561,7 +3567,7 @@ Resizer::journalRestore()
     }
   }
   for (Instance *buffer : inserted_buffers_) {
-    debugPrint(logger_, RSZ, "resize_journal", 1, "remove {}",
+    debugPrint(logger_, RSZ, "journal", 1, "remove {}",
                network_->pathName(buffer));
     removeBuffer(buffer);
     inserted_buffer_count_--;
@@ -3592,7 +3598,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, false, db_network_, logger_);
+      tree = makeSteinerTree(drvr, grt_->getAlpha(), false, db_network_, logger_);
     steiner_renderer_->highlight(tree);
   }
 }

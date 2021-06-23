@@ -62,7 +62,8 @@ initResizer(OpenRoad *openroad)
                                // Broken gui api missing openroad accessor.
                                gui::Gui::get(),
                                openroad->getDb(),
-                               openroad->getSta());
+                               openroad->getSta(),
+                               openroad->getFastRoute());
 }
 
 }
