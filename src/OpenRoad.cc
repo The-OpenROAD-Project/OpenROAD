@@ -71,7 +71,7 @@
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
-#include "grt/MakeFastRoute.h"
+#include "grt/MakeGlobalRouter.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
 #include "rcx/MakeOpenRCX.h"
@@ -148,7 +148,7 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deleteFastRoute(global_router_);
+  deleteGlobalRouter(global_router_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
@@ -208,7 +208,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
   finale_ = makeFinale();
-  global_router_ = makeFastRoute();
+  global_router_ = makeGlobalRouter();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
@@ -237,7 +237,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initReplace(this);
   initOpendp(this);
   initFinale(this);
-  initFastRoute(this);
+  initGlobalRouter(this);
   initTritonCts(this);
   initTapcell(this);
   initMacroPlacer(this);

@@ -50,7 +50,7 @@ target_sources(grt
     src/AntennaRepair.cpp
     src/GlobalRouter.cpp
     src/Grid.cpp
-    src/MakeFastRoute.cpp
+    src/MakeGlobalRouter.cpp
     src/Net.cpp
     src/Pin.cpp
     src/MakeWireParasitics.cpp

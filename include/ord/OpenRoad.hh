@@ -157,7 +157,7 @@ public:
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
-  grt::GlobalRouter* getFastRoute() { return global_router_; }
+  grt::GlobalRouter* getGlobalRouter() { return global_router_; }
   par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
