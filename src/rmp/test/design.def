@@ -1,0 +1,35 @@
+VERSION 5.7 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN counter ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 0 0 ) ;
+
+
+COMPONENTS 12 ;
+- _g0_ AND2_X1 ;
+- _g1_ AND2_X1 ;
+- _g2_ OR2_X1 ;
+- _64017_ LOGIC1_X1 ;
+- _64018_ LOGIC0_X1 ;
+END COMPONENTS
+
+PINS 12 ;
+- inp0 + NET inp0 + DIRECTION INPUT ;
+- inp1 + NET inp1 + DIRECTION INPUT ;
+- inp2 + NET inp2 + DIRECTION INPUT ;
+END PINS
+
+NETS 24 ;
+- inp0 ( _g0_ A1 ) ( PIN inp0 ) ;
+- inp1 ( _g1_ A1 )  ( PIN inp1 ) ;
+- inp1 ( _g2_ A1 ) ( PIN inp2 ) ;
+- hinet ( _64017_ Z ) ;
+- lonet ( _64018_ Z ) ( _g0_ A2 ) ;
+- w1 ( _g1_ ZN ) ( _g2_ A2 ) ;
+- w0 ( _g0_ ZN ) ( _g1_ A2 ) ; 
+- w2 ( _g2_ ZN ) ;
+END NETS
+
+END DESIGN

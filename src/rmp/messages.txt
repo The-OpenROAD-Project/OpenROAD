@@ -1,13 +1,13 @@
-RMP 0001 blif.cpp:84               cannot open file {}
-RMP 0002 blif.cpp:325              Blif writer successfully dumped file with {} instances.
-RMP 0003 blif.cpp:349              cannot open file {}
-RMP 0004 blif.cpp:372              cannot open file {}
-RMP 0005 blif.cpp:388              blif parsed successfully, destroying {} existing instances...
-RMP 0006 blif.cpp:393              Found {} Inputs, {} Outputs, {} Clocks, {} Combinational 
-RMP 0007 blif.cpp:409              inserting {} new instances...
-RMP 0008 blif.cpp:430              Const driver {} doesn't have any connected nets\n
-RMP 0009 blif.cpp:465              Master ({}) not found while stitching back instances\n
-RMP 0010 blif.cpp:500              {} connection parsing failed for {} instance
+RMP 0001 blif.cpp:94               cannot open file {}
+RMP 0002 blif.cpp:335              Blif writer successfully dumped file with {} instances.
+RMP 0003 blif.cpp:359              cannot open file {}
+RMP 0004 blif.cpp:382              cannot open file {}
+RMP 0005 blif.cpp:398              blif parsed successfully, destroying {} existing instances...
+RMP 0006 blif.cpp:403              Found {} Inputs, {} Outputs, {} Clocks, {} Combinational 
+RMP 0007 blif.cpp:419              inserting {} new instances...
+RMP 0008 blif.cpp:440              Const driver {} doesn't have any connected nets\n
+RMP 0009 blif.cpp:475              Master ({}) not found while stitching back instances\n
+RMP 0010 blif.cpp:510              {} connection parsing failed for {} instance
 RMP 0020 Restructure.cpp:412       Cannot open file {} for writing.
 RMP 0031 rmp.tcl:81                Missing argument -liberty_file
 RMP 0032 rmp.tcl:106               -tielo_pin not specified

@@ -1,0 +1,8 @@
+.model tmp_circuit
+.inputs inp1 w0
+.outputs w2
+
+
+.gate AND2_X1 A1=inp1 A2=w0 ZN=w1
+.gate OR2_X1 A1=inp1 A2=w1 ZN=w2
+.end

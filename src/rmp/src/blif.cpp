@@ -74,6 +74,16 @@ Blif::Blif(ord::OpenRoad* openroad,
   logger_ = openroad->getLogger();
   open_sta_ = openroad_->getSta();
 }
+
+void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
+{
+    instances_to_optimize = insts;
+}
+
+void Blif::addReplaceableInstance(odb::dbInst* inst){
+    instances_to_optimize.insert(inst);
+}
+
 bool Blif::writeBlif(const char* file_name)
 {
   int dummy_nets = 0;

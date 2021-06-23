@@ -35,17 +35,25 @@
 
 %{
 #include "rmp/Restructure.h"
+#include "rmp/blif.h"
 #include "ord/OpenRoad.hh"
+#include "opendb/db.h"
 #include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
 rmp::Restructure *
 getRestructure();
+
+OpenRoad *
+getOpenRoad();
 }
+
 
 using namespace rmp;
 using ord::getRestructure;
+using ord::getOpenRoad;
+using odb::dbInst;
 using sta::LibertyPort;
 %}
 
@@ -74,6 +82,22 @@ restructure_cmd(const char* libertyFileName, char* target, float slack_threshold
 {
   getRestructure()->setMode(target);
   getRestructure()->run(libertyFileName, slack_threshold, depth_threshold);
+}
+
+// Locally Exposed for testing only..
+Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport){
+  return new rmp::Blif(getOpenRoad(), locell, loport, hicell, hiport);
+}
+
+void blif_add_instance(Blif* blif_, const char* inst_){
+  blif_->addReplaceableInstance(getOpenRoad()->getDb()->getChip()->getBlock()->findInst(inst_));
+}
+
+void blif_dump(Blif* blif_, const char* file_name){
+  getOpenRoad()->getSta()->ensureGraph();
+  getOpenRoad()->getSta()->ensureLevelized();
+  getOpenRoad()->getSta()->searchPreamble();
+  blif_->writeBlif(file_name);
 }
 
 %}
