@@ -105,6 +105,7 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
+  eol_width_ = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }

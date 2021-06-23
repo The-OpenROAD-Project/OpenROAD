@@ -201,6 +201,8 @@ namespace odb {
         ZALLOCATED({{field.name}});
       {% elif field.isHashTable %}
         {{field.name}}.setTable({{field.table_name}});
+      {% elif 'default' in field%}
+        {{field.name}} = {{field.default}};
       {% endif %}
     {% endfor %}
     // User Code Begin Constructor
