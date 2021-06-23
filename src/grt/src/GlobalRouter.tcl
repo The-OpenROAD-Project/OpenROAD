@@ -166,35 +166,6 @@ proc set_macro_extension { args } {
   }
 }
 
-sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_pdrev_alpha alpha]
-}
-
-proc set_clock_routing { args } {
-  sta::parse_key_args "global_route" args \
-    keys { -clock_pdrev_fanout \
-           -clock_pdrev_alpha
-         }
-
-  if { [info exists keys(-clock_pdrev_alpha) ] } {
-    set alpha $keys(-clock_pdrev_alpha)
-    sta::check_positive_float "-alpha" $alpha
-    grt::set_pdrev_alpha_cmd $alpha
-  } else {
-    # Default alpha as 0.3 prioritize wire length, but keeps
-    # aware of skew in the topology construction (see PDRev paper
-    # for more reference)
-    grt::set_pdrev_alpha_cmd 0.3
-  }
-
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
-    grt::set_pdrev_for_high_fanout $fanout
-  } else {
-    grt::set_pdrev_for_high_fanout -1
-  }
-}
-
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \

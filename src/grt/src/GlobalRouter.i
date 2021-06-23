@@ -127,12 +127,6 @@ set_grid_origin(long x, long y)
 }
 
 void
-set_pdrev_for_high_fanout(int pdRevForHighFanout)
-{
-  getFastRoute()->setPDRevForHighFanout(pdRevForHighFanout);
-}
-
-void
 set_allow_overflow(bool allowOverflow)
 {
   getFastRoute()->setAllowOverflow(allowOverflow);
