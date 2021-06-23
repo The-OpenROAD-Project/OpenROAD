@@ -248,6 +248,8 @@ sta::define_cmd_args "repair_antennas" { lib_port \
                                          [-iterations iterations]}
 
 proc repair_antennas { args } {
+  sta::parse_key_args "repair_antennas" args \
+                 keys {-iterations}
   if { [grt::have_routes] } {
     sta::check_argc_eq1 "repair_antennas" $args
     set lib_port [lindex $args 0]
