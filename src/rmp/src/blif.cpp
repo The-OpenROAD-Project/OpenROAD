@@ -89,7 +89,6 @@ bool Blif::writeBlif(const char* file_name)
   std::map<uint, odb::dbInst*> instMap;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
-  int constOptimizedInstances = 0;
 
   subckts.resize(insts.size());
   int instIndex = 0;
@@ -138,22 +137,6 @@ bool Blif::writeBlif(const char* file_name)
         currentClocks.insert(net->getName());
         currentClock = net->getName();
         continue;
-      }
-
-      if (port_->direction()->isOutput()) {
-        totalOutPins++;
-        if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
-          totalOutConstPins++;
-
-          if (pinVal == sta::LogicValue::one)
-            const1.insert(net->getName());
-          else
-            const0.insert(net->getName());
-
-          
-
-          continue;
-        }
       }
 
       auto mtermName = mterm->getName();
@@ -272,11 +255,8 @@ bool Blif::writeBlif(const char* file_name)
     else if (cell->hasSequentials())
       currentGate += " " + currentClock;
 
-    if (totalOutConstPins <= 0 || totalOutConstPins < totalOutPins) {
-      subckts[instIndex++] = currentGate;
-    } else {
-      constOptimizedInstances++;
-    }
+    subckts[instIndex++] = currentGate;
+
   }
 
   // remove drivers from input list
@@ -344,10 +324,9 @@ bool Blif::writeBlif(const char* file_name)
 
   logger_->info(RMP,
                 2,
-                "Blif writer successfully dumped file with {} instances after "
-                "removing {} due to constant optimization.",
-                instIndex,
-                constOptimizedInstances);
+                "Blif writer successfully dumped file with {} instances.",
+                instIndex);
+
   return true;
 }
 

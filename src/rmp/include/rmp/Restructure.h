@@ -103,6 +103,8 @@ class Restructure
   void initDB();
   void getEndPoints(sta::PinSet& ends, bool area_mode, unsigned max_depth);
   int countConsts(odb::dbBlock* top_block);
+  void removeConstCells();
+  void removeConstCell(odb::dbInst* inst);
 
   ord::OpenRoad* openroad_;
   Logger* logger_;

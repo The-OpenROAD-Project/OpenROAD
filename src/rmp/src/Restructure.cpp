@@ -99,9 +99,8 @@ void Restructure::run(const char* liberty_file_name,
   lib_file_names_.emplace_back(std::string(liberty_file_name));
   sta::Slack worst_slack = slack_threshold;
   open_sta_ = openroad_->getSta();
-  open_sta_->ensureGraph();
-  open_sta_->ensureLevelized();
-  open_sta_->searchPreamble();
+
+  removeConstCells();
 
   getBlob(max_depth);
 
@@ -113,6 +112,9 @@ void Restructure::run(const char* liberty_file_name,
 void Restructure::getBlob(unsigned max_depth)
 {
   rsz::Resizer* resizer = openroad_->getResizer();
+  open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
 
   sta::PinSet ends;
 
@@ -128,7 +130,7 @@ void Restructure::getBlob(unsigned max_depth)
       if (term && term->getInst()->getITerms().size() < 10)
         path_insts_.insert(term->getInst());
     }
-    logger_->report("Fount {} Insts for restructuring ...", path_insts_.size());
+    logger_->report("Found {} Insts for restructuring ...", path_insts_.size());
   }
 }
 
@@ -322,6 +324,84 @@ int Restructure::countConsts(odb::dbBlock* top_block)
   }
 
   return const_nets;
+}
+
+void Restructure::removeConstCells()
+{
+
+  if (!hicell_.size()  || !locell_.size())
+    return;
+
+  odb::dbMaster* hicell_master = nullptr;
+  odb::dbMaster* locell_master = nullptr;
+
+  for (auto&& lib : block_->getDb()->getLibs()) {
+    hicell_master = lib->findMaster(hicell_.c_str());
+
+    locell_master = lib->findMaster(locell_.c_str());
+    if (locell_master && hicell_master)
+      break;
+  }
+  if (!hicell_master || !locell_master)
+    return;
+
+  open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
+
+  std::set<odb::dbInst*> constInsts;
+  int const_cnt = 1;
+  for (auto inst : block_->getInsts()) {
+    int outputs = 0;
+    int const_outputs = 0;
+    for (auto&& iterm : inst->getITerms()) {
+      auto mterm = iterm->getMTerm();
+      auto net = iterm->getNet();
+
+      if (iterm->getSigType() == odb::dbSigType::POWER
+          || iterm->getSigType() == odb::dbSigType::GROUND)
+        continue;
+
+      if (iterm->getIoType() != odb::dbIoType::OUTPUT)
+        continue;
+      outputs++;
+      sta::Vertex *vertex, *bidirect_drvr_vertex;
+      auto pin_ = open_sta_->getDbNetwork()->dbToSta(iterm);
+      open_sta_->getDbNetwork()->graph()->pinVertices(pin_, vertex, bidirect_drvr_vertex);
+      sta::LogicValue pinVal = ((vertex)
+                 ? vertex->simValue()
+                 : ((bidirect_drvr_vertex) ? bidirect_drvr_vertex->simValue()
+                                           : sta::LogicValue::unknown));
+      if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
+        odb::dbMaster* const_master = (pinVal == sta::LogicValue::one) ? hicell_master : locell_master;
+        std::string const_port = (pinVal == sta::LogicValue::one) ? hiport_ : loport_;
+        std::string inst_name = "rmp_const_" + std::to_string(const_cnt);
+        auto new_inst = odb::dbInst::create(block_, const_master, inst_name.c_str());
+        if (new_inst) {
+          odb::dbNet* net = iterm->getNet();
+          odb::dbITerm::disconnect(iterm);
+          odb::dbITerm::connect(new_inst->findITerm(const_port.c_str()), net);
+        } else
+          logger_->warn(RMP, 35, "Could not create instance {}", inst_name);
+        const_outputs++;
+        const_cnt++;
+      }
+        
+    }
+    if (outputs > 0 && outputs == const_outputs)
+      constInsts.insert(inst);
+  }
+  
+  for (auto inst : constInsts)
+    removeConstCell(inst);
+  logger_->report("Removed {} instances with constant outputs...", constInsts.size());
+}
+
+void Restructure::removeConstCell(odb::dbInst* inst)
+{
+  for (auto iterm : inst->getITerms())
+    odb::dbITerm::disconnect(iterm);
+  odb::dbInst::destroy(inst);
 }
 
 bool Restructure::writeAbcScript(std::string file_name)

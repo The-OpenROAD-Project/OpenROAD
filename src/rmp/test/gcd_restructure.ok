@@ -17,8 +17,8 @@ Design area 700 u^2 11% utilization.
 Number of paths for restructure 70
 Number of end points for restructure 35
 Got 1290 pins in cloud extraction
-Fount 422 Insts for restructuring ...
-[INFO RMP-0002] Blif writer successfully dumped file with 422 instances after removing 0 due to constant optimization.
+Found 422 Insts for restructuring ...
+[INFO RMP-0002] Blif writer successfully dumped file with 422 instances.
 Optimized to 241 instance in iter 0
 Optimized to 257 instance in iter 1
 Optimized to 255 instance in iter 2
