@@ -850,26 +850,17 @@ You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
-set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_pdrev_alpha alpha]
-```
-The `set_clock_routing` command sets specific configurations for clock nets.
-Options description:
-- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_pdrev_alpha**: Set the PDRev routing topology construction trade-off for clock nets.
-See `set_pdrev_alpha` command description for more details about PDRev and topology trade-off (e.g.: -clock_pdrev_alpha 0.6)
-
-```
 set_pdrev_alpha [-net net_name] alpha
 ```
-FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
-trade-off between minimum wire length and path length between the driver and the loads, using the `alpha` parameter.
-The `set_pdrev_alpha` command sets the PDRev routing topology construction trade-off for all nets or for a specific with the `-net` option.
+By default the global router uses steiner trees to construct route guides. A steiner tree minimizes the total wire length.
+Prim/Dijkstra is an alternative net topology algorithm that supports a trade-off between total wire length and maximum path depth from
+the net driver to its loads.
+The `set_pdrev_alpha` command enables the Prim/Dijkstra algorithm and sets the alpha parameter used to trade-off wire length and path depth.
 Alpha is between 0.0 and 1.0. When alpha is 0.0 the net topology minimizes total wire length (i.e. capacitance).
 When alpha is 1.0 it minimizes longest path between the driver and loads (i.e., maximum resistance).
 Typical values are 0.4-0.8. For more information about PDRev, check the paper in `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_alpha -net clk 0.3` sets an alpha value of 0.3 for net *clk*.
+Example: `set_pdrev_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
