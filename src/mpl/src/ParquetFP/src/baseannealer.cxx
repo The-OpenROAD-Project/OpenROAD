@@ -30,12 +30,12 @@
 ***
 ***************************************************************************/
 
-
 #include "baseannealer.h"
-#include "basepacking.h"
+
+#include "AnalytSolve.h"
 #include "CommandLine.h"
 #include "DB.h"
-#include "AnalytSolve.h"
+#include "basepacking.h"
 
 #ifdef _MSC_VER
 #ifndef srand48
@@ -45,8 +45,8 @@
 
 #ifdef WIN32
 #define _X86_
-#include <windows.h>
 #include <process.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -54,150 +54,148 @@
 using std::cout;
 using std::endl;
 
-const int BaseAnnealer::UNINITIALIZED=-1;
-const unsigned int BaseAnnealer::UNSIGNED_UNINITIALIZED=0;
-const int BaseAnnealer::FREE_OUTLINE=-9999;
-const int BaseAnnealer::NOT_FOUND=-1;
-   
+const int BaseAnnealer::UNINITIALIZED = -1;
+const unsigned int BaseAnnealer::UNSIGNED_UNINITIALIZED = 0;
+const int BaseAnnealer::FREE_OUTLINE = -9999;
+const int BaseAnnealer::NOT_FOUND = -1;
+
 // --------------------------------------------------------
-BaseAnnealer::BaseAnnealer(const parquetfp::Command_Line *const params,
-                           parquetfp::DB *const db)
-   : _db(db),
-     _params(params),
-     _analSolve(new parquetfp::AnalytSolve(
-                   const_cast<parquetfp::Command_Line*>(params),
-                   const_cast<parquetfp::DB*>(db))),
-     
-     _isFixedOutline(_params->reqdAR != FREE_OUTLINE),
-     _outlineDeadspaceRatio((_isFixedOutline)
-                            ? (1 + (_params->maxWS/100.0))
-                            : basepacking_h::Dimension::Infty),
-     
-     _outlineArea((_isFixedOutline)
-                  ? (_db->getNodesArea() * _outlineDeadspaceRatio)
-                  : basepacking_h::Dimension::Infty),
-     
-     _outlineWidth((_isFixedOutline)
-                   ? sqrt(_outlineArea * _params->reqdAR)
-                   : basepacking_h::Dimension::Infty),
-     
-     _outlineHeight((_isFixedOutline)
-                    ? sqrt(_outlineArea / _params->reqdAR)
-                    : basepacking_h::Dimension::Infty),
-     _random_gen(_rd())
+BaseAnnealer::BaseAnnealer(const parquetfp::Command_Line* const params,
+                           parquetfp::DB* const db)
+    : _db(db),
+      _params(params),
+      _analSolve(new parquetfp::AnalytSolve(
+          const_cast<parquetfp::Command_Line*>(params),
+          const_cast<parquetfp::DB*>(db))),
+
+      _isFixedOutline(_params->reqdAR != FREE_OUTLINE),
+      _outlineDeadspaceRatio((_isFixedOutline)
+                                 ? (1 + (_params->maxWS / 100.0))
+                                 : basepacking_h::Dimension::Infty),
+
+      _outlineArea((_isFixedOutline)
+                       ? (_db->getNodesArea() * _outlineDeadspaceRatio)
+                       : basepacking_h::Dimension::Infty),
+
+      _outlineWidth((_isFixedOutline) ? sqrt(_outlineArea * _params->reqdAR)
+                                      : basepacking_h::Dimension::Infty),
+
+      _outlineHeight((_isFixedOutline) ? sqrt(_outlineArea / _params->reqdAR)
+                                       : basepacking_h::Dimension::Infty),
+      _random_gen(_rd())
 {
-   //compilerCheck();
+  // compilerCheck();
 
-   // set the random seed for each invokation of the Annealer
-   unsigned seed = _params->seed;
-   
-   srand(seed);        //seed for rand function
-   _random_gen.seed(seed); // seed for shuffle
+  // set the random seed for each invokation of the Annealer
+  unsigned seed = _params->seed;
 
-   _baseFileName = _params->inFileName;
-   annealTime = 0.0;
+  srand(seed);             // seed for rand function
+  _random_gen.seed(seed);  // seed for shuffle
+
+  _baseFileName = _params->inFileName;
+  annealTime = 0.0;
 }
 // --------------------------------------------------------
 BaseAnnealer::~BaseAnnealer()
 {
-   if (_analSolve != NULL)
-      delete _analSolve;
+  if (_analSolve != NULL)
+    delete _analSolve;
 }
 // --------------------------------------------------------
-void BaseAnnealer::solveQP()  
+void BaseAnnealer::solveQP()
 {
-   _analSolve->solveSOR();
-   _db->updatePlacement(_analSolve->getXLocs(), _analSolve->getYLocs());
+  _analSolve->solveSOR();
+  _db->updatePlacement(_analSolve->getXLocs(), _analSolve->getYLocs());
 }
 // --------------------------------------------------------
 void BaseAnnealer::postHPWLOpt()
 {
-//    parquetfp::Point offset = _analSolve->getDesignOptLoc();
-//    cout << "offset.x " << offset.x
-//         << " offset.y " << offset.y << endl;
-   
-//    float initHPWL = _db->evalHPWL();
-//    cout << "initHPWL: " << initHPWL << endl;
-//    _db->shiftDesign(offset);
-   
-//    float afterHPWL = _db->evalHPWL();
-//    cout << "afterHPWL: " << afterHPWL << endl;      
-//    if(afterHPWL > initHPWL)
-//    {
-//       cout << "shifting not done." << endl;
-//       offset.x *= -1;
-//       offset.y *= -1;
-//       _db->shiftDesign(offset);
-//    }
-//    else
-//       cout << "shifting is done." << endl;
+  //    parquetfp::Point offset = _analSolve->getDesignOptLoc();
+  //    cout << "offset.x " << offset.x
+  //         << " offset.y " << offset.y << endl;
 
-   // only shift in "fixed-outline" mode
-   if (_params->reqdAR != FREE_OUTLINE)
-   {
-      float blocksArea = _db->getNodesArea();
-      float reqdAR = _params->reqdAR;
-      float reqdArea = blocksArea * (1 + _params->maxWS/100.0);
-      float reqdWidth = sqrt(reqdArea * reqdAR);
-      float reqdHeight = sqrt(reqdArea / reqdAR);
-      
+  //    float initHPWL = _db->evalHPWL();
+  //    cout << "initHPWL: " << initHPWL << endl;
+  //    _db->shiftDesign(offset);
+
+  //    float afterHPWL = _db->evalHPWL();
+  //    cout << "afterHPWL: " << afterHPWL << endl;
+  //    if(afterHPWL > initHPWL)
+  //    {
+  //       cout << "shifting not done." << endl;
+  //       offset.x *= -1;
+  //       offset.y *= -1;
+  //       _db->shiftDesign(offset);
+  //    }
+  //    else
+  //       cout << "shifting is done." << endl;
+
+  // only shift in "fixed-outline" mode
+  if (_params->reqdAR != FREE_OUTLINE) {
+    float blocksArea = _db->getNodesArea();
+    float reqdAR = _params->reqdAR;
+    float reqdArea = blocksArea * (1 + _params->maxWS / 100.0);
+    float reqdWidth = sqrt(reqdArea * reqdAR);
+    float reqdHeight = sqrt(reqdArea / reqdAR);
+
 //       printf("blocksArea: %.2f reqdWidth: %.2f reqdHeight: %.2f\n",
 //              blocksArea, reqdWidth, reqdHeight);
 #ifdef USEFLUTE
-      _db->shiftOptimizeDesign(reqdWidth, reqdHeight, _params->scaleTerms, _params->useSteiner, _params->verb);
+    _db->shiftOptimizeDesign(reqdWidth,
+                             reqdHeight,
+                             _params->scaleTerms,
+                             _params->useSteiner,
+                             _params->verb);
 #else
-      _db->shiftOptimizeDesign(reqdWidth, reqdHeight, _params->scaleTerms, _params->verb);
+    _db->shiftOptimizeDesign(
+        reqdWidth, reqdHeight, _params->scaleTerms, _params->verb);
 #endif
-   }
+  }
 }
 // --------------------------------------------------------
 void BaseAnnealer::printResults(const SolutionInfo& curr) const
 {
-   float blocksArea = _db->getNodesArea();
-   float currArea = curr.area;
-   float currWidth = curr.width;
-   float currHeight = curr.height;
-   float currAR = currWidth / currHeight; 
-   float whiteSpace = 100 * (currArea - blocksArea) / blocksArea;
-   float HPWL = curr.HPWL;
-   float reqdAR = _params->reqdAR;
-   float reqdArea = blocksArea * (1 + _params->maxWS/100.0);
-   float reqdWidth = sqrt(reqdArea * reqdAR);
-   float reqdHeight = sqrt(reqdArea / reqdAR);
+  float blocksArea = _db->getNodesArea();
+  float currArea = curr.area;
+  float currWidth = curr.width;
+  float currHeight = curr.height;
+  float currAR = currWidth / currHeight;
+  float whiteSpace = 100 * (currArea - blocksArea) / blocksArea;
+  float HPWL = curr.HPWL;
+  float reqdAR = _params->reqdAR;
+  float reqdArea = blocksArea * (1 + _params->maxWS / 100.0);
+  float reqdWidth = sqrt(reqdArea * reqdAR);
+  float reqdHeight = sqrt(reqdArea / reqdAR);
 
-   cout.precision(6);
+  cout.precision(6);
 
-   if(_params->verb > 0)
-      cout << "Final Area: " << currArea << " WhiteSpace " << whiteSpace
-           << "%" << " AR " << currAR << " HPWL " << HPWL << endl;
+  if (_params->verb > 0)
+    cout << "Final Area: " << currArea << " WhiteSpace " << whiteSpace << "%"
+         << " AR " << currAR << " HPWL " << HPWL << endl;
 
-   if(_params->verb > 0)
-   {
-      if (_params->dontClusterMacros && _params->solveTop)
-         cout << "width w/ macros only: "
-              << _db->getXMaxWMacroOnly() << " ";
-      else
-         cout << "width:  " << currWidth << " ";
+  if (_params->verb > 0) {
+    if (_params->dontClusterMacros && _params->solveTop)
+      cout << "width w/ macros only: " << _db->getXMaxWMacroOnly() << " ";
+    else
+      cout << "width:  " << currWidth << " ";
 
-      if (_params->reqdAR != FREE_OUTLINE)
-         cout << "(outline width:  " << reqdWidth << ") ";
-      cout << endl;
-      
-      if (_params->dontClusterMacros && _params->solveTop)
-         cout << "height w/ macros only: "
-              << _db->getYMaxWMacroOnly() << " ";
-      else
-         cout << "height: " << currHeight << " ";
+    if (_params->reqdAR != FREE_OUTLINE)
+      cout << "(outline width:  " << reqdWidth << ") ";
+    cout << endl;
 
-      if (_params->reqdAR != FREE_OUTLINE)
-          cout << "(outline height: " << reqdHeight << ") ";
-      cout << endl;
-      
-      cout << "area utilization (wrt. total current area): "
-           << (blocksArea / currArea) * 100 << "%" << endl;
-      cout << "whitespace       (wrt. total current area): " 
-           << (1 - (blocksArea/currArea)) * 100 << "%" << endl;
-   }
+    if (_params->dontClusterMacros && _params->solveTop)
+      cout << "height w/ macros only: " << _db->getYMaxWMacroOnly() << " ";
+    else
+      cout << "height: " << currHeight << " ";
+
+    if (_params->reqdAR != FREE_OUTLINE)
+      cout << "(outline height: " << reqdHeight << ") ";
+    cout << endl;
+
+    cout << "area utilization (wrt. total current area): "
+         << (blocksArea / currArea) * 100 << "%" << endl;
+    cout << "whitespace       (wrt. total current area): "
+         << (1 - (blocksArea / currArea)) * 100 << "%" << endl;
+  }
 }
 // --------------------------------------------------------
-

@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -2900,6 +2900,7 @@ int GlobalRouter::findInstancesObstructions(
 {
   int macrosCnt = 0;
   int obstructionsCnt = 0;
+  int pin_out_of_die_count = 0;
   for (odb::dbInst* currInst : _block->getInsts()) {
     int pX, pY;
 
@@ -2967,13 +2968,18 @@ int GlobalRouter::findInstancesObstructions(
           upperBound = odb::Point(rect.xMax(), rect.yMax());
           pinBox = odb::Rect(lowerBound, upperBound);
           if (!dieArea.contains(pinBox)) {
-            _logger->warn(GRT, 39, "Found pin outside die area in instance {}.",
-                          currInst->getConstName());
+              _logger->warn(GRT, 39, "Found pin outside die area in instance {}.",
+                            currInst->getConstName());
+            pin_out_of_die_count++;
           }
           _grid->addObstruction(pinLayer, pinBox);
         }
       }
     }
+  }
+
+  if (pin_out_of_die_count > 0) {
+    _logger->warn(GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
   _logger->info(GRT, 3, "Macros: {}", macrosCnt);

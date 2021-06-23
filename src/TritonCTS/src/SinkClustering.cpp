@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -460,7 +460,7 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
   float alpha = 0.8;
-  stt::Tree pdTree = pdr::primDijkstraRevII(vecX, vecY, alpha, _logger);
+  stt::Tree pdTree = pdr::primDijkstraRevII(vecX, vecY, 0, alpha, _logger);
   int wl = pdTree.length;
   return wl/double(_options->getDbUnits());
 }

@@ -368,12 +368,14 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
         }
         frPoint bp, ep;
         ps->getPoints(bp, ep);
-        // vertical
-        if (bp.x() == ep.x()) {
-          vertPathSegs.push_back(ps);
-          // horizontal
-        } else {
-          horzPathSegs.push_back(ps);
+        if (ps->intersectsCenterLine(pt)) {
+          // vertical
+          if (bp.x() == ep.x()) {
+            vertPathSegs.push_back(ps);
+            // horizontal
+          } else {
+            horzPathSegs.push_back(ps);
+          }
         }
       } else if (obj->typeId() == frcPatchWire) {
         auto pwire = static_cast<frPatchWire*>(obj);
