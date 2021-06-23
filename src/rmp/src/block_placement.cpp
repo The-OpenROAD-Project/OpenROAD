@@ -1028,7 +1028,7 @@ namespace block_placement {
                         //T = init_T_ * pow(0.995, step);
                         T = init_T_;
                         num_restart += 1;
-                        cout << num_restart << "th Restart Begin" << endl;
+                        cout << "Restart iteration: " << num_restart << " begin" << endl;
                     } else {
                         cout << "Shrink the soft blocks to fix the floorplan" << endl;
                     }

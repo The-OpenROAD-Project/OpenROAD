@@ -240,16 +240,16 @@ namespace block_placement {
         
             void ShrinkSoftBlock(float width_factor, float height_factor) {
                 //if(num_macro_ == 0) {
-                    std::cout << "name:   " << name_ << "   ";
-                    std::cout << "pre_width:  " << width_ << "   ";
-                    std::cout << "pre_height:  " << height_ << "   ";
+                    //std::cout << "name:   " << name_ << "   ";
+                    //std::cout << "pre_width:  " << width_ << "   ";
+                    //std::cout << "pre_height:  " << height_ << "   ";
                     width_ = width_ * width_factor;
                     height_ = height_ * height_factor;
                     //area_ = width_ * height_;
                     area_ = width_ * height_;
-                    std::cout << "width:   " << width_ << "   ";
-                    std::cout << "height:  " << height_ << "   ";
-                    std::cout << std::endl;
+                    //std::cout << "width:   " << width_ << "   ";
+                    //std::cout << "height:  " << height_ << "   ";
+                    //std::cout << std::endl;
                 //}
             }
 
