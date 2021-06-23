@@ -70,7 +70,7 @@ proc set_routing_alpha { args } {
   if { [string is double $alpha] && $alpha >= 0.0 && $alpha <= 1.0 } {
     grt::set_alpha $alpha
   } else {
-    utl::error GRT 46 "alpha must be between 0.0 and 1.0"
+    utl::error GRT 227 "alpha must be between 0.0 and 1.0"
   }
 }
 
