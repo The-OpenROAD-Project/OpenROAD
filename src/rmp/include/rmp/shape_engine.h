@@ -1,6 +1,8 @@
 #ifndef SHAPE_ENGINE_H_
 #define SHAPE_ENGINE_H_
 
+#include "utl/Logger.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -118,9 +120,6 @@ namespace shape_engine {
             float GetPinX() {  return pin_x_; }
             float GetPinY() {  return pin_y_; }
             std::string GetOrientation() {  
-                std::cout << "pin_x:  " << pin_x_ << "   ";
-                std::cout << "Orientation:   " << OrientationToString(orientation_) << "   ";
-                std::cout << std::endl;
                 return OrientationToString(orientation_);  
             }
 
@@ -330,16 +329,10 @@ namespace shape_engine {
             float GetWidth() {  return width_; }
             float GetHeight() { return height_; }
             float GetArea() { 
-                std::cout << "outline_width:  " << outline_width_ << "    ";
-                std::cout << "outline_height:   " << outline_height_ << "   ";
-                std::cout << "width:  " << width_ << "   ";
-                std::cout << "height_:   " << height_ << "   ";
-                std::cout << std::endl;
                 return area_;
             }
 
             void WriteFloorplan(std::string file_name) {
-                std::cout << "file_name:  " << file_name << std::endl;
                 std::ofstream file;
                 file.open(file_name);
                 for(int i = 0; i < macros_.size(); i++) {
@@ -367,6 +360,7 @@ namespace shape_engine {
     // Parse Block File
     void ParseBlockFile(std::vector<Cluster*>& clusters, const char* file_name,
         float &outline_width, float &outline_height, float& outline_lx, float& outline_ly,
+        utl::Logger* logger,
         float dead_space, float halo_width);
 
 
@@ -374,6 +368,7 @@ namespace shape_engine {
     std::vector<Cluster*> ShapeEngine(float& outline_width,  float& outline_height,
         float& outline_lx, float& outline_ly,
         float min_aspect_ratio, float dead_space, float halo_width,
+        utl::Logger* logger,
         const char* block_file, int num_thread = 10, int num_run = 20, unsigned seed = 0
         );
 

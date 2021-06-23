@@ -13,8 +13,7 @@
 #include "rmp/shape_engine.h"
 #include "rmp/block_placement.h"
 #include "rmp/util.h"
-
-
+#include "utl/Logger.h"
 
 namespace pin_alignment {
     using std::unordered_map;
@@ -41,6 +40,9 @@ namespace pin_alignment {
     using shape_engine::Cluster;
     using shape_engine::Macro;
     using block_placement::Net;
+
+    using utl::RMP;
+    using utl::Logger;
 
     void SimulatedAnnealingCore::PackFloorplan() {       
         for(int i = 0; i < macros_.size(); i++) {
@@ -189,11 +191,7 @@ namespace pin_alignment {
     
     void SimulatedAnnealingCore::Perturb() {
         if(macros_.size() == 1) {
-            CalculateWirelength();
-            //cout << "Before Flip:  " << wirelength_ << "  ";
             Flip();
-            //CalculateWirelength();
-            //cout << "After Flip:  " << wirelength_ << endl;
             return;
         }
 
@@ -349,7 +347,6 @@ namespace pin_alignment {
 
         delta_cost = delta_cost / (norm_cost_list.size() - 1);
         init_T_ = (-1) * delta_cost / log(init_prob_);
-        cout << "Finish Initialization" << endl;
     }
     
     void SimulatedAnnealingCore::FastSA()
@@ -363,7 +360,6 @@ namespace pin_alignment {
         float best_cost = cost;
         vector<int> best_pos_seq = pos_seq_;
         vector<int> best_neg_seq = neg_seq_;
-        cout << "Enter FastSA stage" << endl;
 
         float rej_num = 0.0;
         float T = init_T_;
@@ -375,10 +371,7 @@ namespace pin_alignment {
             for(int i = 0; i < perturb_per_step_; i++) {
                 Perturb();
                 CalculateWirelength();
-                //cout << "wirelength_   " << wirelength_ << "   ";
                 CalculateOutlinePenalty();
-                //cout << "outline_penalty_   " << outline_penalty_ << "   ";
-                //cout << endl;
                 cost = NormCost(area_, wirelength_, outline_penalty_);
         
                 delta_cost = cost - pre_cost;
@@ -401,10 +394,6 @@ namespace pin_alignment {
 
             step++;
             
-            //if(step <= k_)
-            //    T = init_T_ / (step * c_);
-            //else
-            //    T = init_T_ / step;
             T = T * 0.99;
         }
        
@@ -420,7 +409,6 @@ namespace pin_alignment {
     void Run(SimulatedAnnealingCore* sa) { sa->Run(); }
 
     void ParseMacroFile(vector<Macro>& macros, float halo_width,  string file_name) {
-        cout << "Enter ParseMacroFile" << endl;
         unordered_map<string, pair<float, float> > pin_loc;
         fstream f;
         string line;
@@ -443,15 +431,13 @@ namespace pin_alignment {
             float pin_y = pin_loc[macros[i].GetName()].second;
             macros[i].SpecifyPinPosition(pin_x, pin_y);
         }
-
-        cout << "Finish ParseMacroFile" << endl;
     }
     
 
 
     // Pin Alignment Engine
-    void PinAlignment(vector<Cluster*>& clusters, float halo_width,  int num_thread, int num_run, unsigned seed) {
-        cout << "Begin Pin Alignment Engine" << endl;
+    void PinAlignment(vector<Cluster*>& clusters, Logger* logger, float halo_width,  int num_thread, int num_run, unsigned seed) {
+        logger->info(RMP, 3001, "Pin_Aligment Starts");
     
         // parameterse related to fastSA
         float init_prob = 0.95;
@@ -468,15 +454,15 @@ namespace pin_alignment {
         float double_swap_prob = 0.2;
                 
         
+        int info_id = 2;
         for(int i = 0; i < clusters.size(); i++) {
             if(clusters[i]->GetNumMacro() > 0) {
                 string name = clusters[i]->GetName();
                 for(int j = 0; j < name.size(); j++) 
                     if(name[j] == '/')
                         name[j] = '*';
-            
-
-                cout << "macro_cluster:   " << name << endl;
+                
+                logger->info(RMP, info_id++, "Pin_Aligment Working on macro_clutser: {}", name);
 
                 float lx = clusters[i]->GetX();
                 float ly = clusters[i]->GetY();
@@ -520,7 +506,6 @@ namespace pin_alignment {
                 int run_thread = num_thread;
                 int sa_id = 0;
         
-                cout << "Begin SA"  << endl;
                 vector<SimulatedAnnealingCore*> sa_vector;
                 while(remaining_run > 0) {
                     run_thread = num_thread;
@@ -543,19 +528,12 @@ namespace pin_alignment {
                     for(int j = 0; j < run_thread; j++)
                         threads.push_back(thread(Run, sa_vector[sa_id++]));
                    
-                    cout << "outline_width:   " << outline_width << "    ";
-                    cout << "outline_height:  " << outline_height << "   ";
-                    cout << endl;
-
-                    cout << "begin running SA" << endl;
                     for(auto &th : threads)
                         th.join();
 
-                    cout << "Finish running SA" << endl;
                     remaining_run = remaining_run - run_thread;
                 }
 
-                cout << "Finish SA" << endl;
                 int min_id = -1;
                 float wirelength = FLT_MAX;
                 
@@ -563,7 +541,6 @@ namespace pin_alignment {
                     string file_name = string("./rtl_mp/") + name + string("_") + to_string(j) + string("_final.txt");
                     sa_vector[j]->WriteFloorplan(file_name);
                 }       
-                
                 
                 for(int j = 0; j < sa_vector.size(); j++) 
                     if(sa_vector[j]->IsFeasible()) 
@@ -580,10 +557,7 @@ namespace pin_alignment {
                     delete sa_vector[j];
             }
         }
-        cout << "Finish Pin Alignment" << endl;
     }
-
-
 }
 
 

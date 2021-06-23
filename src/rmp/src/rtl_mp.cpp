@@ -295,10 +295,10 @@ namespace ord {
 
 
         vector<Cluster*> clusters = shape_engine::ShapeEngine(outline_width, outline_height, outline_lx, outline_ly,
-                min_aspect_ratio, dead_space, halo_width, block_file, num_thread, num_run, seed);
+                min_aspect_ratio, dead_space, halo_width, logger, block_file, num_thread, num_run, seed);
 
 
-        vector<Block> blocks =  block_placement::Floorplan(clusters, outline_width, outline_height, 
+        vector<Block> blocks =  block_placement::Floorplan(clusters, logger, outline_width, outline_height, 
                              net_file, region_file.c_str(), 
                              num_level, num_worker, heat_rate,
                              alpha, beta,  gamma, boundary_weight, macro_blockage_weight,
@@ -322,15 +322,7 @@ namespace ord {
             clusters[i]->SpecifyFootprint(width, height);
         }
 
-        pin_alignment::PinAlignment(clusters, halo_width, num_thread, num_run, seed);
-
-    
-        cout << "outline_width:   " << outline_width << "    ";
-        cout << "outline_height:  " << outline_height << "    ";
-        cout << endl;
-        cout << "outline_lx:  " << outline_lx << "   ";
-        cout << "outline_ly:  " << outline_ly << "   ";
-        cout << endl;
+        pin_alignment::PinAlignment(clusters, logger, halo_width, num_thread, num_run, seed);
 
         const char* openroad_filename = "./rtl_mp/macro_placement.cfg";
         ofstream file;
@@ -441,6 +433,7 @@ namespace ord {
         }
         
         file.close();
+        
+        logger->report("*** Exit RTLMP ***");
     }
-
 }

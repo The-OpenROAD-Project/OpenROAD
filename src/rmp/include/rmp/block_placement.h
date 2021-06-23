@@ -8,6 +8,7 @@
 #include <random>
 
 #include "rmp/shape_engine.h"
+#include "utl/Logger.h"
 
 namespace block_placement {
     // definition of blocks:  include semi-soft blocks and soft blocks
@@ -239,18 +240,9 @@ namespace block_placement {
             }
         
             void ShrinkSoftBlock(float width_factor, float height_factor) {
-                //if(num_macro_ == 0) {
-                    //std::cout << "name:   " << name_ << "   ";
-                    //std::cout << "pre_width:  " << width_ << "   ";
-                    //std::cout << "pre_height:  " << height_ << "   ";
-                    width_ = width_ * width_factor;
-                    height_ = height_ * height_factor;
-                    //area_ = width_ * height_;
-                    area_ = width_ * height_;
-                    //std::cout << "width:   " << width_ << "   ";
-                    //std::cout << "height:  " << height_ << "   ";
-                    //std::cout << std::endl;
-                //}
+                width_ = width_ * width_factor;
+                height_ = height_ * height_factor;
+                area_ = width_ * height_;
             }
 
     };
@@ -452,15 +444,6 @@ namespace block_placement {
                 }
                 
                 pre_blocks_ = blocks_;
-                
-                //for(int i = 0; i < blocks_.size(); i++) {
-                //    std::cout << "name:   " << blocks_[i].GetName() << "   ";
-                //    std::cout << "width:  " << blocks_[i].GetWidth() << "   ";
-                //    std::cout << "height:  " << blocks_[i].GetHeight() << "   ";
-                //    std::cout << std::endl;
-                //}
-                    
-            
             }
            
             void FastSA();
@@ -497,11 +480,6 @@ namespace block_placement {
             float GetNormMacroBlockagePenalty() { return norm_macro_blockage_penalty_; }
 
             float GetCost() {
-                //PackFloorplan();
-                //CalculateWirelength();
-                //CalculateOutlinePenalty();
-                //CalculateBoundaryPenalty();
-                //CalculateMacroBlockagePenalty();
                 return NormCost(area_, wirelength_,  outline_penalty_, boundary_penalty_, macro_blockage_penalty_); 
             }
 
@@ -540,7 +518,8 @@ namespace block_placement {
     void ParseRegionFile(std::vector<Region*>& regions, const char* region_file);
 
 
-    std::vector<Block> Floorplan(std::vector<shape_engine::Cluster*> clusters, float outline_width, float outline_height, 
+    std::vector<Block> Floorplan(std::vector<shape_engine::Cluster*> clusters, utl::Logger* logger,
+        float outline_width, float outline_height, 
         const char* net_file, const char* region_file, int num_level, int num_worker, float heat_rate,
         float alpha, float beta, float gamma, float boundary_weight, float macro_blockage_weight, 
         float resize_prob, float pos_swap_prob, float neg_swap_prob, float double_swap_prob, 

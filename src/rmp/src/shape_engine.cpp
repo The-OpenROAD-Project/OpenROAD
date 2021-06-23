@@ -10,6 +10,7 @@
 #include <string>
 
 #include "rmp/util.h"
+#include "utl/Logger.h"
 
 namespace shape_engine {
     using std::unordered_map;
@@ -31,6 +32,8 @@ namespace shape_engine {
     using std::abs;
     using std::string;
     using std::to_string;
+    using utl::Logger;
+    using utl::RMP;
 
 
     void SimulatedAnnealingCore::PackFloorplan() {       
@@ -291,7 +294,6 @@ namespace shape_engine {
     vector<pair<float, float> > TileMacro(vector<Macro> macros,  string cluster_name, float& final_area,
             float outline_width, float outline_height, int num_thread, int num_run, unsigned seed) {
         
-        cout << "Begin TileMacro" << endl;
         vector<pair<float, float> > aspect_ratio;
         
         if(macros.size() == 1) {
@@ -337,7 +339,6 @@ namespace shape_engine {
         }
 
 
-        cout << "Begin SA"  << endl;
         vector<SimulatedAnnealingCore*> sa_vector;
         while(remaining_run > 0) {
             run_thread = num_thread;
@@ -364,7 +365,6 @@ namespace shape_engine {
             remaining_run = remaining_run - run_thread;
         }
 
-        cout << "Finish SA" << endl;
 
         vector<pair<int, float> > rank;
         for(int i = 0; i < sa_vector.size(); i++)
@@ -390,12 +390,6 @@ namespace shape_engine {
             int index = rank[i].first;
             float width = sa_vector[index]->GetWidth();
             float height = sa_vector[index]->GetHeight();
-            cout << "area:   " << width * height << "   ";
-            cout << "width:  " << width << "   ";
-            cout << "height:  " << height << "   ";
-            cout << "outline_width:  " << outline_width << "   ";
-            cout << "outline_height:  " << outline_height << "   ";
-            cout << endl;
             if(width <= outline_width && height <= outline_height)
                 footprints.push_back(pair<float, float>(width, height));
         }
@@ -413,7 +407,6 @@ namespace shape_engine {
         vector<float> ar_list;
         for(int i = 0; i < footprints.size(); i++) {
             if(footprints[i].first * footprints[i].second <= base_area * 1.01) {
-                cout << "width:  " << footprints[i].first << "   height:   " << footprints[i].second << endl;
                 float ar = footprints[i].second / footprints[i].first;
                 ar_list.push_back(ar);
             }
@@ -436,8 +429,6 @@ namespace shape_engine {
             aspect_ratio.push_back(pair<float, float>(temp_ar_list[i], temp_ar_list[i]));
         }
         
-        cout << "Finish TileMacro" << endl;
-
         return aspect_ratio;
     }
     
@@ -445,10 +436,9 @@ namespace shape_engine {
     void ParseBlockFile(vector<Cluster*>& clusters,  const char* block_file,
         float& outline_width, float& outline_height,
         float& outline_lx, float& outline_ly, 
+        Logger* logger,
         float dead_space, float halo_width) {
-       
 
-        cout << "Begin ParseBlockFile" << endl;
         // Read block file
         fstream f;
         string line;
@@ -470,39 +460,7 @@ namespace shape_engine {
 
         words = Split(content[4]);
         outline_ly = stof(words[words.size() - 1]);
-
-        /*
-        int i = 0;
-        float std_cell_area = 0.0;
-        float macro_area = 0.0;
-        while(i < content.size()) {
-            words = Split(content[i]);
-            if(words.size() == 2 && words[0] == string("cluster:")) {
-                i++;
-                vector<string> temp_words = Split(content[i]);
-                float area = stof(temp_words[temp_words.size() - 1]);
-                i++;
-                if(i < content.size()) {
-                    temp_words = Split(content[i]);
-                    if(temp_words.size() == 0)
-                        std_cell_area += area;
-                    else
-                        macro_area += area;
-                }
-            } else {
-                i++;
-            }
-        }
-
-        float chip_area = outline_width * outline_height;
-        //float std_cell_util = std_cell_area / (chip_area * (1 - dead_space) - macro_area);
-        float std_cell_util = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
-        cout << "chip_area:   " << chip_area << "   ";
-        cout << "macro_area:   " << macro_area << "    ";
-        cout << "std_cell_area:   " << std_cell_area << "   ";
-        cout << "std_cell_util:   " << std_cell_util << "   ";
-        cout << endl;
-        */
+        
         float macro_area = 0.0;
         float std_cell_area = 0.0;
 
@@ -511,13 +469,6 @@ namespace shape_engine {
             words = Split(content[i]);
             if(words.size() == 2 && words[0] == string("cluster:")) {
                 string name = words[words.size() - 1];
-                    
-                //for(int j = 0; j < name.size(); j++) {
-                //    if(name[j] == '/')
-                //        name[j] = '*';
-                //}
-
-                cout << "name:   " << name << "   ";        
                 Cluster* cluster = new Cluster(name);
                 clusters.push_back(cluster);
                 i++;
@@ -545,7 +496,6 @@ namespace shape_engine {
                     std_cell_area += area;
                 }
                 
-                cout << "area:   " << area << endl;
                 cluster->SpecifyArea(area);
                 cluster->SortMacro();
             } else {
@@ -555,11 +505,14 @@ namespace shape_engine {
        
         float chip_area = outline_width * outline_height;
         float std_cell_util = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
-        cout << "chip_area:   " << chip_area << "   ";
-        cout << "macro_area:   " << macro_area << "    ";
-        cout << "std_cell_area:   " << std_cell_area << "   ";
-        cout << "std_cell_util:   " << std_cell_util << "   ";
-        cout << endl;
+        
+        
+        logger->info(RMP, 1001, "Shape_Engine Outline width:  {}", outline_width);
+        logger->info(RMP, 1002, "Shape_Engine Outline height: {}", outline_height);
+        logger->info(RMP, 1003, "Shape_Engine Chip area: {}", chip_area);
+        logger->info(RMP, 1004, "Shape_Engine Macro area:  {}", macro_area);
+        logger->info(RMP, 1005, "Shape_Engine Std cell area: {}", std_cell_area);
+        logger->info(RMP, 1006, "Shape_Engine Std cell util: {}", std_cell_util);
         
         for(int j = 0; j < clusters.size(); j++) {
             if(clusters[j]->GetNumMacro() == 0) {
@@ -567,15 +520,13 @@ namespace shape_engine {
                 clusters[j]->SpecifyArea(area);
             }
         }
-
-        cout << "Finish ParseBlockFile" << endl;
-
     }
 
     
     vector<Cluster*> ShapeEngine(float& outline_width, float& outline_height, 
         float& outline_lx, float& outline_ly,
         float min_aspect_ratio, float dead_space, float halo_width,
+        Logger* logger,
         const char* block_file, int num_thread, int num_run, unsigned seed) {
         // we assume min_aspect_ratio * max_aspect_ratio = 1.0;
         if(min_aspect_ratio >= 1.0)
@@ -584,13 +535,8 @@ namespace shape_engine {
         float max_aspect_ratio = 1.0 / min_aspect_ratio;
         vector<Cluster*> clusters;
 
-        ParseBlockFile(clusters, block_file, outline_width, outline_height, outline_lx, outline_ly, dead_space, halo_width);
-
-            
-        cout << "min_aspect_ratio:  " << min_aspect_ratio << endl;
-        cout << "max_aspect_ratio:  " << max_aspect_ratio << endl;
-        cout << "outline_width:  " << outline_width << endl;
-        cout << "outline_height:  " << outline_height << endl;
+        ParseBlockFile(clusters, block_file, outline_width, outline_height, outline_lx, outline_ly, logger, 
+                dead_space, halo_width);
 
 
         // Classify all the clusters into different types
@@ -612,7 +558,6 @@ namespace shape_engine {
         // Generate Aspect Ratio based on cluster types
         for(int i = 0; i < clusters.size(); i++) {
             if(clusters[i]->GetNumMacro() != 0 && class_list[i] == i) {
-                cout << "Cluster name:  " << clusters[i]->GetName() << endl;
                 float final_area = 0.0;
                 vector<pair<float, float> > aspect_ratio = TileMacro(clusters[i]->GetMacros(), clusters[i]->GetName(), 
                     final_area, outline_width, outline_height, num_thread, num_run, seed);
@@ -622,8 +567,6 @@ namespace shape_engine {
         }
 
         for(int i = 0; i < clusters.size(); i++) {
-            cout << "name:   " << clusters[i]->GetName() << endl;
-            cout << "numMacro:  " << clusters[i]->GetNumMacro() << endl;
             if(clusters[i]->GetNumMacro() == 0) {
                 clusters[i]->AddAspectRatio(pair<float, float>(min_aspect_ratio, max_aspect_ratio));
             } else if(class_list[i] != i) {
@@ -631,7 +574,6 @@ namespace shape_engine {
                 vector<pair<float, float> > aspect_ratio = clusters[class_list[i]]->GetAspectRatio();
                 clusters[i]->SpecifyAspectRatio(aspect_ratio);
                 clusters[i]->SpecifyArea(area);
-                cout << "regular pattern with  " << clusters[class_list[i]]->GetName() << endl;
             } else {
                 ;
             }
@@ -639,22 +581,25 @@ namespace shape_engine {
         
         // Verify the results
         for(int i = 0; i < clusters.size(); i++) {
-            cout << "cluster_name:  " << clusters[i]->GetName() << endl;
-            cout << "area:   " << clusters[i]->GetArea() << "   ";
-            cout << "aspect_ratio:  " << "  ";
+            string output_info = "cluster_name:  ";
+            output_info += clusters[i]->GetName() + "    ";
+            output_info += "area:   ";
+            output_info += to_string(clusters[i]->GetArea()) + "   ";
+            output_info += "aspect_ratio:    ";
             vector<pair<float, float> > aspect_ratio = clusters[i]->GetAspectRatio();
-            for(int j = 0; j < aspect_ratio.size(); j++)
-                cout << "(" << aspect_ratio[j].first << "," << aspect_ratio[j].second << ")    ";
-
-            cout << endl;
+            for(int j = 0; j < aspect_ratio.size(); j++) {
+                output_info += "(";
+                output_info += to_string(aspect_ratio[j].first);
+                output_info += ",";
+                output_info += to_string(aspect_ratio[j].second);
+                output_info += ") ";
+            }
+            
+            logger->info(RMP, i + 1007, "Shape_Engine {}", output_info);
         }
         
         return clusters;
     }
-
-
-
-
 
 }
 

@@ -11,6 +11,7 @@
 
 #include "rmp/shape_engine.h"
 #include "rmp/util.h"
+#include "utl/Logger.h"
 
 namespace block_placement {
     using std::unordered_map;
@@ -35,6 +36,9 @@ namespace block_placement {
     using std::stoi;
     using std::ofstream;
     using std::sqrt;
+    using utl::Logger;
+    using utl::RMP;
+    using std::to_string;
 
     void SimulatedAnnealingCore::PackFloorplan() {
         for(int i = 0; i < blocks_.size(); i++) {
@@ -349,14 +353,6 @@ namespace block_placement {
                 float ux = lx + blocks_[i].GetWidth();
                 float uy = ly + blocks_[i].GetHeight();
                 
-                /*
-                if(ux <= outline_width_ && uy <= outline_height_) {
-                    lx = min(lx, outline_width_ - ux);
-                    ly = min(ly, outline_height_ - uy);
-                    lx = min(lx, ly);
-                    boundary_penalty_ += lx;
-                }
-                */
                 lx = min(lx, abs(outline_width_ - ux));
                 ly = min(ly, abs(outline_height_ - uy));
                 lx = min(lx, ly);
@@ -467,11 +463,7 @@ namespace block_placement {
         for(int i = 1; i < cost_list.size(); i++) 
             delta_cost += abs(cost_list[i] - cost_list[i-1]);
         
-        cout << "init_prob_  " << init_prob_ << "   ";
-        cout << "delta_cost:   " << delta_cost << "    ";
-        cout << "perturb_per_step:  " << perturb_per_step_ <<  endl;
         init_T_ = (-1.0) * (delta_cost / (perturb_per_step_ - 1)) / log(init_prob_);
-        cout << "init_T_:  " << init_T_ << endl;
     }
     
 
@@ -485,59 +477,14 @@ namespace block_placement {
 
 
     bool SimulatedAnnealingCore::FitFloorplan() {
-        float macro_area =  0.0;
-        float std_cell_area = 0.0;
-
-        for(int i = 0; i < blocks_.size(); i++) {
-            if(blocks_[i].GetNumMacro() > 0) {
-                macro_area += blocks_[i].GetArea();
-            } else {
-                std_cell_area += blocks_[i].GetArea();
-            }
-        }
-
-        float chip_area = outline_width_ * outline_height_;
-        cout << "utilization:  " << std_cell_area / (chip_area - macro_area) << endl;
-        cout << "dead_space:  " << 1.0 - std_cell_area / (chip_area - macro_area) << endl;
-
-        
         float width_factor = outline_width_ / width_;
         float height_factor = outline_height_ / height_;
         vector<Block> pre_blocks = blocks_;
-        
-        const char* file_name1 = "rtl_mp/floorplan1.txt";
-        ofstream file;
-        file.open(file_name1);
-        for(int i = 0; i < blocks_.size(); i++) {
-            file << blocks_[i].GetName() << "   ";
-            file << blocks_[i].GetX() << "   ";
-            file << blocks_[i].GetY() << "   ";
-            file << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
-            file << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
-            file << endl;
-        }
-
-        file.close();
-     
         for(int i = 0; i < blocks_.size(); i++) {
             blocks_[i].ShrinkSoftBlock(width_factor, height_factor);
         }
 
         PackFloorplan();
-
-        const char* file_name2 = "rtl_mp/floorplan2.txt";
-        file.open(file_name2);
-        for(int i = 0; i < blocks_.size(); i++) {
-            file << blocks_[i].GetName() << "   ";
-            file << blocks_[i].GetX() << "   ";
-            file << blocks_[i].GetY() << "   ";
-            file << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
-            file << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
-            file << endl;
-        }
-
-        file.close();
-    
 
         for(int i = 0; i < blocks_.size(); i++) {
             if(blocks_[i].GetNumMacro() > 0 ) {
@@ -546,21 +493,15 @@ namespace block_placement {
                 float x = blocks_[i].GetX() + 1.0 * blocks_[i].GetWidth();
                 float y = blocks_[i].GetY() + 1.0 * blocks_[i].GetHeight();
                 blocks_[i].ShrinkSoftBlock(1.0 / width_factor, 1.0 / height_factor);
-                cout << blocks_[i].GetName() << "   ";
-                cout << "ux:  " << ux << "   ";
-                cout << "uy:  " << uy << "   ";
                 if(ux >= outline_width_ * 0.99) {
                     x -= blocks_[i].GetWidth();
                     blocks_[i].SpecifyX(x);
-                    cout << "x:   " << x << "   ";
                 }
                 
                 if(uy >= outline_height_ * 0.99) {
                     y -= blocks_[i].GetHeight();
                     blocks_[i].SpecifyY(y);
-                    cout << "y:  " << y << "   ";
                 }
-                cout << endl;
             } else {
                 blocks_[i].ShrinkSoftBlock(1.0 / width_factor, 1.0 / height_factor);
             }
@@ -596,191 +537,14 @@ namespace block_placement {
         
         // We don't allow the overlap between macros and macro blockages
         CalculateMacroBlockagePenalty();
-        cout << "Overlap:  " << overlap << "   ";
-        cout << "MacroBlockagePenalty_:  " << macro_blockage_penalty_ << endl;
-
         if(overlap + macro_blockage_penalty_> 0.0) {
             blocks_ = pre_blocks;
-            cout << "This Floorplan Cannot be shrunk. Will restart!!!" << endl;
-            PackFloorplan();
-            return false;
-        }
-       
-
-        cout << "width_:   " << width_ << "   ";
-        cout << "height_:  " << height_ << "    ";
-        cout << endl;
-        const char* file_name3 = "rtl_mp/floorplan3.txt";
-        file.open(file_name3);
-        for(int i = 0; i < blocks_.size(); i++) {
-            file << blocks_[i].GetName() << "   ";
-            file << blocks_[i].GetX() << "   ";
-            file << blocks_[i].GetY() << "   ";
-            file << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
-            file << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
-            file << endl;
-        }
-
-        file.close();
-     
-
-        cout << "We get a valid floorplan by shrink" << endl;
-        return true;
-    }
-
-
-    /*
-    bool SimulatedAnnealingCore::ShrinkBlocks() {
-
-        if(width_ <= outline_width_ && height_ <= outline_height_)
-            return true;
-
-        float pre_width = width_;
-        float pre_height = height_;
-
-        vector<Block> pre_blocks = blocks_;
-        for(int i = 0; i < blocks_.size(); i++) {
-            blocks_[i].RemoveSoftBlock();
-        }
-
-        PackFloorplan();
-
-        float macro_block_width_sum = width_;
-        float macro_block_height_sum = height_;
-
-        blocks_ = pre_blocks;
-        width_ = pre_width;
-        height_ = pre_height;
-
-        cout << "outline_width:  " << outline_width_ << "   ";
-        cout << "macro_block_width_sum:   " << macro_block_width_sum << "  ";
-        cout << "outline_height:  " << outline_height_ << "    ";
-        cout << "macro_block_height_sum:  " << macro_block_height_sum << "   ";
-        cout << "width:  " << width_ << "  ";
-        cout << "height:  " << height_ << "  ";
-        cout << endl;
-
-        if(macro_block_width_sum > outline_width_ || macro_block_height_sum > outline_height_) {
-            cout << "This Floorplan Cannot be shrunk. Will restart!!!" << endl;
             PackFloorplan();
             return false;
         }
 
-        float width_factor = (outline_width_ - macro_block_width_sum) / (width_ - macro_block_width_sum);
-        float height_factor = (outline_height_ - macro_block_height_sum) / (height_ - macro_block_height_sum);
-
-        cout << "width_factor:  " << width_factor << "   ";
-        cout << "height_factor:  " << height_factor << "   ";
-        cout << endl;
-
-        for(int i = 0; i < blocks_.size(); i++) {
-            blocks_[i].ShrinkSoftBlock(width_factor, height_factor);
-        }
-
-        PackFloorplan();
-        
-        for(int i = 0; i < blocks_.size(); i++) {
-            blocks_[i].ShrinkSoftBlock(1.0 / width_factor, 1.0 / height_factor);
-        }
-
         return true;
     }
-    */
-
-    /*
-    bool SimulatedAnnealingCore::ShrinkBlocks() {
-        float pre_width = width_;
-        float pre_height = height_;
-        vector<Block> pre_blocks = blocks_;
-        for(int i = 0; i < blocks_.size(); i++) {
-            blocks_[i].RemoveSoftBlock();
-        }
-
-        PackFloorplan();
-    
-        if(width_ > outline_width_  || height_ > outline_height_ )  {
-            blocks_ = pre_blocks;
-            return false;
-        }
-        
-        float width_factor = 1.0;
-        
-        //if(pre_width_ != width_ && (pre_width > outline_width_)) {
-        //    width_factor = (outline_width_ - width_) / (pre_width - width_);
-        //}
-        
-        if(pre_width_ > outline_width_) {
-            width_factor = outline_width_ / pre_width;
-            width_factor = 0.99;
-        }
-
-        float height_factor = 1.0;
-        //if(pre_height != height_ && (pre_height > outline_height_)) {
-        //    height_factor = (outline_height_ - height_) / (pre_height - height_);
-        //}
-
-        if(pre_height > outline_height_) {
-            height_factor = outline_height_ / pre_height;
-            height_factor = 0.99;
-        }
-        
-        cout << "width_factor:  " << width_factor << "   ";
-        cout << "height_factor:  " << height_factor << "   ";
-        cout << endl;
-       
-        blocks_ = pre_blocks;
-        for(int i = 0; i < blocks_.size(); i++) {
-            blocks_[i].ShrinkSoftBlock(width_factor, height_factor);
-        }
-
-        PackFloorplan();
-
-        return true;
-    }
-    */
-   
-    /*
-    void SimulatedAnnealingCore::UpdateWeight(float avg_area, float avg_wirelength,
-        float avg_outline_penalty, float avg_boundary_penalty, float avg_macro_blockage_penalty) {
-        avg_area = avg_area / (perturb_per_step_ * norm_area_);
-
-        if(norm_wirelength_ != 0.0) {
-            avg_wirelength = avg_wirelength / (perturb_per_step_ * norm_wirelength_);
-        }
-
-        if(norm_outline_penalty_ != 0.0) {
-            avg_outline_penalty = avg_outline_penalty / (perturb_per_step_ * norm_outline_penalty_);
-        }
-        
-        if(norm_boundary_penalty_ != 0.0) {
-            avg_boundary_penalty = avg_boundary_penalty / (perturb_per_step_ * norm_boundary_penalty_);
-        }
-
-        if(norm_macro_blockage_penalty_ != 0.0) {
-            avg_macro_blockage_penalty = avg_macro_blockage_penalty / (perturb_per_step_ * norm_macro_blockage_penalty_);
-        }
-
-        cout << "avg_area:   " << avg_area << "   ";
-        cout << "avg_wirelength:   " << avg_wirelength << "   ";
-        cout << "avg_outline_penalty:  " << avg_outline_penalty << "   ";
-        cout << "avg_boundary_penalty:  " << avg_boundary_penalty << "   ";
-        cout << "avg_macro_blockage_penalty:  " << avg_macro_blockage_penalty << "    ";
-        cout << endl;
-
-        float sum_cost = avg_area + avg_wirelength + avg_outline_penalty + avg_boundary_penalty + avg_macro_blockage_penalty;
-        float new_alpha = avg_area / sum_cost;
-        float new_beta = avg_wirelength / sum_cost;
-        float new_gamma = avg_outline_penalty / sum_cost;
-        float new_boundary_weight = avg_boundary_penalty / sum_cost;
-        float new_macro_blockage_weight = avg_macro_blockage_penalty / sum_cost;
-        
-        alpha_ = alpha_ + (new_alpha - alpha_) * learning_rate_;
-        beta_ = beta_ + (new_beta - beta_) * learning_rate_;
-        gamma_ = gamma_ + (new_gamma - gamma_) * learning_rate_;
-        boundary_weight_ = boundary_weight_ + (new_boundary_weight - boundary_weight_) * learning_rate_;
-        macro_blockage_weight_ = macro_blockage_weight_ + (new_macro_blockage_weight - macro_blockage_weight_) * learning_rate_;
-    }
-    */
 
     void SimulatedAnnealingCore::UpdateWeight(float avg_area, float avg_wirelength,
         float avg_outline_penalty, float avg_boundary_penalty, float avg_macro_blockage_penalty) {
@@ -801,13 +565,6 @@ namespace block_placement {
         if(norm_macro_blockage_penalty_ != 0.0) {
             avg_macro_blockage_penalty = avg_macro_blockage_penalty / (perturb_per_step_ * norm_macro_blockage_penalty_);
         }
-
-        //cout << "avg_area:   " << avg_area << "   ";
-        //cout << "avg_wirelength:   " << avg_wirelength << "   ";
-        //cout << "avg_outline_penalty:  " << avg_outline_penalty << "   ";
-        //cout << "avg_boundary_penalty:  " << avg_boundary_penalty << "   ";
-        //cout << "avg_macro_blockage_penalty:  " << avg_macro_blockage_penalty << "    ";
-        //cout << endl;
 
         float sum_cost = avg_area + avg_wirelength + avg_outline_penalty + avg_boundary_penalty + avg_macro_blockage_penalty;
         float new_alpha = avg_area / sum_cost;
@@ -826,29 +583,6 @@ namespace block_placement {
 
 
     void SimulatedAnnealingCore::FastSA() {
-        float macro_area =  0.0;
-        float std_cell_area = 0.0;
-
-        for(int i = 0; i < blocks_.size(); i++) {
-            if(blocks_[i].GetNumMacro() > 0) {
-                macro_area += blocks_[i].GetArea();
-                cout << blocks_[i].GetName() << "   " << blocks_[i].GetArea() << endl;
-            } else {
-                std_cell_area += blocks_[i].GetArea();
-            }
-        }
-
-        float chip_area = outline_width_ * outline_height_;
-        cout << "utilization:  " << std_cell_area / (chip_area - macro_area) << endl;
-        cout << "dead_space:  " << 1.0 - std_cell_area / (chip_area - macro_area) << endl;
-        
-        for(int i = 0; i < blocks_.size(); i++) {
-            cout << blocks_[i].GetName() << "   ";
-            cout << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
-            cout << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
-            cout << endl;
-        }
-
         float pre_cost = NormCost(area_, wirelength_, outline_penalty_, boundary_penalty_, macro_blockage_penalty_);
         float cost = pre_cost;
         float delta_cost = 0.0;
@@ -870,11 +604,10 @@ namespace block_placement {
         float T = init_T_;
         float rej_threshold = rej_ratio_ * perturb_per_step_;
 
-        int max_num_restart = 5;
+        int max_num_restart = 2;
         int num_restart = 0;
-        int max_num_shrink = 5;
+        int max_num_shrink = int(1.0 / shrink_freq_);
         int num_shrink = 0;
-        //int modulo_base = int(max_num_step_ / 100.0);
         int modulo_base = int(max_num_step_ * shrink_freq_);
 
         while(step < max_num_step_) {
@@ -908,9 +641,7 @@ namespace block_placement {
                         best_pos_seq = pos_seq_;
                         best_neg_seq = neg_seq_;
                         
-                        if((step > max_num_step_ / 2.0) && (num_shrink <= max_num_shrink) && 
-                            (step % modulo_base == 0) && (IsFeasible() == false)) {
-                            cout << "Begin Shrink Blocks" << endl;
+                        if((num_shrink <= max_num_shrink) && (step % modulo_base == 0) && (IsFeasible() == false)) {
                             num_shrink += 1;
                             ShrinkBlocks();
                             PackFloorplan();
@@ -935,82 +666,11 @@ namespace block_placement {
             }
             
             UpdateWeight(avg_area, avg_wirelength, avg_outline_penalty, avg_boundary_penalty, avg_macro_blockage_penalty);
-            //cout << "alpha:  " << alpha_ << "   ";
-            //cout << "beta:   " << beta_  << "   ";
-            //cout << "gamma:  " << gamma_ << "   ";
-            //cout << "boundary_weight_:  " << boundary_weight_ << "   ";
-            //cout << "macro_blockage_weight_:  " << macro_blockage_weight_ << "   ";
-            //cout << "best_cost:   " << best_cost << "   ";
-            //cout << "cost:   " << cost << endl; 
-            /*
-            cout << "Step:  " << step << "   " << "rej_num:   " << rej_num << "   ";
-            cout << "T:  " << T << "   ";
-            cout << "cost:  " << pre_cost << "    ";
-            cout << "accept_rate:  " << accept_rate / perturb_per_step_ << endl;
-            //if(accept_rate / perturb_per_step_ <= 0.05 && (T < 1e-6)) {
-            if(step % 1000 == 0 && T < 1e-6) { 
-                if(IsFeasible() == false && num_restart < max_num_restart) {
-                    if(ShrinkBlocks() == false && num_restart < max_num_restart) {
-                        step = 1;
-                        num_restart += 1;
-                        cout << num_restart << "th Restart Begin" << endl;
-                    } else {
-                        num_restart += 1;
-                        cout << "Shrink the soft blocks to fix the floorplan" << endl;
-                    }
-                } 
-                
-                CalculateWirelength();
-                CalculateOutlinePenalty();
-                CalculateBoundaryPenalty();
-                CalculateMacroBlockagePenalty();
-                pre_cost = NormCost(area_, wirelength_,  outline_penalty_, boundary_penalty_, macro_blockage_penalty_);
-            }
-            */
-
             step++;
-            
-            //if(step <= k_)
-            //    T = init_T_ / (step * c_) ;
-            //else
-            //    T = init_T_ / step;
-            //T = T * 0.995;
-                
-
             if(step <= k_)
                 T = init_T_ / (step * c_ * avg_delta_cost / perturb_per_step_);
             else
                 T = init_T_ / (step * avg_delta_cost / perturb_per_step_);
-
-            //T = T * 0.99;
-            //if(step == 2) {
-            //    T = init_T_ * 0.99;
-            //}
-
-            //T = T * 0.995;
-            //cout << "step:   " << step << "   ";
-            //cout << "T:   " << T << "   ";
-            //cout << "cost:  " << pre_cost << "   ";
-            //cout << endl;
-            
-            /*
-            if((step > max_num_step_ / 2.0) && (step % modulo_base == 0) && (IsFeasible() == false)) {
-                blocks_ = best_blocks;
-                pos_seq_ = best_pos_seq;
-                neg_seq_ = best_neg_seq
-                best_pos_seq = pos_seq_;
-                        best_neg_seq = neg_seq_;
-            
-                cout << "Begin Shrink Blocks" << endl;
-                ShrinkBlocks();
-                PackFloorplan();
-                CalculateWirelength();
-                CalculateOutlinePenalty();
-                CalculateBoundaryPenalty();
-                CalculateMacroBlockagePenalty();
-                pre_cost = NormCost(area_, wirelength_,  outline_penalty_, boundary_penalty_, macro_blockage_penalty_);
-            }
-            */
 
             if(step == max_num_step_) {
                 blocks_ = best_blocks;
@@ -1024,56 +684,25 @@ namespace block_placement {
                 CalculateMacroBlockagePenalty();
                 if(IsFeasible() == false) {
                     if(FitFloorplan() == false && num_restart < max_num_restart) {
-                        step = int(max_num_step_  * 0.9);
-                        //T = init_T_ * pow(0.995, step);
+                        //step = int(max_num_step_  * 0.5);
+                        step = 1;
                         T = init_T_;
                         num_restart += 1;
-                        cout << "Restart iteration: " << num_restart << " begin" << endl;
-                    } else {
-                        cout << "Shrink the soft blocks to fix the floorplan" << endl;
-                    }
+                    } 
                 } 
             } 
         }
 
-        //blocks_ = best_blocks;
-        //pos_seq_ = best_pos_seq;
-        //neg_seq_ = best_neg_seq;
-        //PackFloorplan();
         CalculateWirelength();
         CalculateOutlinePenalty();
         CalculateBoundaryPenalty();
         CalculateMacroBlockagePenalty();
-        cout << "width_:   " << width_ << "   ";
-        cout << "height_:  " << height_ << "    ";
-        cout << endl;
-             
-        //PackFloorplan();
-        //ShrinkBlocks();
-        //if(IsFeasible() == false) {
-        //    ShrinkBlocks();
-        //}
-        
-        const char* file_name = "rtl_mp/floorplan_temp.txt";
-        ofstream file;
-        file.open(file_name);
-        for(int i = 0; i < blocks_.size(); i++) {
-            file << blocks_[i].GetName() << "   ";
-            file << blocks_[i].GetX() << "   ";
-            file << blocks_[i].GetY() << "   ";
-            file << blocks_[i].GetX() + blocks_[i].GetWidth() << "   ";
-            file << blocks_[i].GetY() + blocks_[i].GetHeight() << "    ";
-            file << endl;
-        }
-
-        file.close();
     }
   
     void Run(SimulatedAnnealingCore* sa) { sa->FastSA(); }
 
     void ParseNetFile(vector<Net*>& nets, unordered_map<string, pair<float, float> >& terminal_position,
         const char* net_file) {
-        cout << "Begin ParseNetFile" << endl;
         fstream f;
         string line;
         vector<string> content;
@@ -1120,12 +749,10 @@ namespace block_placement {
                 i++;
             }
         }
-        cout << "Finish ParseNetFile" << endl;
     }    
 
     
     void ParseRegionFile(vector<Region*>& regions, const char* region_file) {
-        cout << "Begin ParseRegionFile" << endl;
         fstream f;
         string line;
         vector<string> content;
@@ -1140,10 +767,8 @@ namespace block_placement {
         
         f.close();
        
-        cout << "Finish reading macro blockage file" << endl;
         
         for(int i = 0; i < content.size(); i++) {
-            cout << "content[i]:  " << content[i] << endl;
             vector<string> words = Split(content[i]);
             float lx = stof(words[1]);
             float ly = stof(words[2]);
@@ -1152,23 +777,18 @@ namespace block_placement {
             Region* region = new Region(lx, ly, ux, uy);
             regions.push_back(region);
         }
-        cout << "Finish ParseRegionFile" << endl;
     }
 
-    
 
-
-
-
-    vector<Block> Floorplan(vector<shape_engine::Cluster*> clusters, float outline_width, float outline_height,
+    vector<Block> Floorplan(vector<shape_engine::Cluster*> clusters, Logger* logger,  float outline_width, float outline_height,
         const char* net_file, const char* region_file, int num_level, int num_worker, float heat_rate, 
         float alpha, float beta, float gamma, float boundary_weight, float macro_blockage_weight, 
         float resize_prob, float pos_swap_prob, float neg_swap_prob, float double_swap_prob, 
         float init_prob, float rej_ratio, int max_num_step, int k, float c, int perturb_per_step,
         float learning_rate, float shrink_factor, float shrink_freq,
         unsigned seed) {
-       
-        cout << "Enter Floorplan" << endl;
+      
+        logger->info(RMP, 2001, "Block_Placement Starts");
 
         vector<Block> blocks;
         for(int i = 0; i < clusters.size(); i++) {
@@ -1177,10 +797,7 @@ namespace block_placement {
             int num_macro = clusters[i]->GetNumMacro();
             vector<pair<float, float> > aspect_ratio = clusters[i]->GetAspectRatio();
             blocks.push_back(Block(name, area, num_macro, aspect_ratio));
-            cout << "name:  " << name << "  area:  " << area << endl;
         }
-
-        cout << "Finish Creating Blcosks" << endl;
 
         unordered_map<string, pair<float, float> > terminal_position;
         string word = string("L1");
@@ -1208,16 +825,11 @@ namespace block_placement {
         word = string("T");
         terminal_position[word] = pair<float, float>(outline_width / 2.0, outline_height);
 
-        cout << "Finish creating terminals" << endl;
-
         vector<Net*> nets;
         ParseNetFile(nets, terminal_position, net_file);
 
         vector<Region*> regions;
         ParseRegionFile(regions, region_file);
-        
-
-        cout << "return back to main runs" << endl;
 
         int num_seed = num_level * num_worker + 10;  // 10 is for guardband
         int seed_id = 0;
@@ -1235,8 +847,7 @@ namespace block_placement {
                                      seed_list[seed_id++]);
 
         sa->Initialize();
-
-        cout << "Finish Initialization" << endl;
+        logger->info(RMP, 2002, "Block_Placement  Finish Initialization");
 
         SimulatedAnnealingCore* best_sa = nullptr;
         float best_cost = FLT_MAX;
@@ -1247,7 +858,7 @@ namespace block_placement {
         float norm_macro_blockage_penalty = sa->GetNormMacroBlockagePenalty();
         float init_T = sa->GetInitT();
 
-        cout << "Init_T:  " << init_T << endl;
+        logger->info(RMP, 2003, "Block_Placement Init_T: {}", init_T);
 
         blocks = sa->GetBlocks();
         vector<int> pos_seq = sa->GetPosSeq();
@@ -1302,17 +913,23 @@ namespace block_placement {
             
 
             // verify the result
-            cout << "level:  " << i << "  ";
-            cout << "cost:  " << sa_vec[min_id]->GetCost() << "   ";
-            cout << "width:  " << sa_vec[min_id]->GetWidth() << "  ";
-            cout << "height:  " << sa_vec[min_id]->GetHeight() << "   ";
-            cout << "area:   " << sa_vec[min_id]->GetArea() << "   ";
-            cout << "wirelength:  " << sa_vec[min_id]->GetWirelength() << "   ";
-            cout << "outline_penalty:  " << sa_vec[min_id]->GetOutlinePenalty() << "  ";
-            cout << "boundary_penalty:  " << sa_vec[min_id]->GetBoundaryPenalty() << "   ";
-            cout << "macro_blockage_penalty:   " << sa_vec[min_id]->GetMacroBlockagePenalty() << "   ";
-            cout<< endl;
-            
+            string output_info = "level:  ";
+            output_info += to_string(i) + "   ";
+            output_info += "cost:  ";
+            output_info += to_string(sa_vec[min_id]->GetCost()) + "   ";
+            output_info += "area:   ";
+            output_info += to_string(sa_vec[min_id]->GetArea()) + "   ";
+            output_info += "wirelength:  ";
+            output_info += to_string(sa_vec[min_id]->GetWirelength()) + "   ";
+            output_info += "outline_penalty:  ";
+            output_info += to_string(sa_vec[min_id]->GetOutlinePenalty()) + "   ";
+            output_info += "boundary_penalty:  ";
+            output_info += to_string(sa_vec[min_id]->GetBoundaryPenalty()) + "   ";
+            output_info += "macro_blockage_penalty:  ";
+            output_info += to_string(sa_vec[min_id]->GetMacroBlockagePenalty());
+
+            logger->info(RMP, 2004 + i, "Block_Placement {}", output_info);
+
             for(int j = 0; j < num_worker; j++) {
                 if(best_cost < sa_vec[j]->GetCost()) {
                     delete sa_vec[j];
@@ -1322,36 +939,16 @@ namespace block_placement {
 
 
         blocks = best_sa->GetBlocks();
-        cout << "width:   " << best_sa->GetWidth() << "   ";
-        cout << "height:   " << best_sa->GetHeight() << "   ";
-        cout << "outline_width:  " << outline_width << "   ";
-        cout << "outline_height:  " << outline_height << "    ";
-        cout << endl;
-
+        logger->info(RMP, 2004 + num_level, "Block_Placement Floorplan width: {}", best_sa->GetWidth());
+        logger->info(RMP, 2005 + num_level, "Block_Placement Floorplan height: {}", best_sa->GetHeight());
+        logger->info(RMP, 2006 + num_level, "Block_Placement Outline width: {}", outline_width);
+        logger->info(RMP, 2007 + num_level, "Block_Placement Outline height: {}", outline_height);
+        
         if(!(best_sa->IsFeasible())) 
-            cout << "No Feasible Floorplan" << endl;
-
-        /*
-        // Verify the result
-        const char* file_name = "rtl_mp/floorplan.txt";
-        ofstream file;
-        file.open(file_name);
-        for(int i = 0; i < blocks.size(); i++) {
-            file << blocks[i].GetName() << "   ";
-            file << blocks[i].GetX() << "   ";
-            file << blocks[i].GetY() << "   ";
-            file << blocks[i].GetX() + blocks[i].GetWidth() << "   ";
-            file << blocks[i].GetY() + blocks[i].GetHeight() << "    ";
-            file << endl;
-        }
-
-        file.close();
-        */
+            logger->info(RMP, 2008 + num_level, "Block_Placement No Feasible Floorplan");
 
         return blocks;
     }
-
-
 
 }
 

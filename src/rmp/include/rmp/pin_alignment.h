@@ -10,7 +10,7 @@
 
 #include "rmp/block_placement.h"
 #include "rmp/shape_engine.h"
-
+#include "utl/Logger.h"
 
 namespace pin_alignment {
 
@@ -154,11 +154,6 @@ namespace pin_alignment {
             float GetArea() { return area_; }
             float GetWirelength() { return wirelength_; };
             bool IsFeasible() {
-                std::cout << "width_ " << width_ << "    ";
-                std::cout << "height_  " << height_ << "    ";
-                std::cout << "outline_width_  " << outline_width_ << "   ";
-                std::cout << "outline_height_  " << outline_height_ << "   ";
-                std::cout << std::endl;
                 float tolerance = 0.01;
                 if(width_ <= outline_width_ * (1 + tolerance) && height_ <= outline_height_ * (1 + tolerance))
                     return true;
@@ -166,42 +161,21 @@ namespace pin_alignment {
                     return false;
             }
 
-
             void WriteFloorplan(std::string file_name) {
-                 std::cout << "file_name:  " << file_name << std::endl;
-                 std::ofstream file;
-                 file.open(file_name);
-                 for(int i = 0; i < macros_.size(); i++) {
-                     file << macros_[i].GetX() << "   ";
-                     file << macros_[i].GetY() << "   ";
-                     file << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
-                     file << macros_[i].GetY() + macros_[i].GetHeight() << "   ";
-                     file << std::endl;
-                 }
- 
-                 file.close();
-             }
-
-
-            std::vector<shape_engine::Macro> GetMacros() { 
-                std::cout << "outline_width:   " << outline_width_ << "  ";
-                std::cout << "outline_height:  " << outline_height_ << "    ";
-                std::cout << std::endl;
-                
+                std::ofstream file;
+                file.open(file_name);
                 for(int i = 0; i < macros_.size(); i++) {
-                    std::cout << macros_[i].GetName() << "    ";
-                    std::cout << macros_[i].GetX() << "    ";
-                    std::cout << macros_[i].GetY() << "    ";
-                    std::cout << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
-                    std::cout << macros_[i].GetY() + macros_[i].GetHeight() << "    ";
-                    std::cout << std::endl;
+                    file << macros_[i].GetX() << "   ";
+                    file << macros_[i].GetY() << "   ";
+                    file << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
+                    file << macros_[i].GetY() + macros_[i].GetHeight() << "   ";
+                    file << std::endl;
                 }
-                std::cout << std::endl;
-                
-                return macros_; 
-            
+ 
+                file.close();
             }
 
+            std::vector<shape_engine::Macro> GetMacros() {  return macros_; }
 
     };
 
@@ -213,7 +187,8 @@ namespace pin_alignment {
     void ParseMacroFile(std::vector<shape_engine::Macro>& macros, float halo_width, std::string file_name);
 
     // Pin Alignment Engine
-    void PinAlignment(std::vector<shape_engine::Cluster*>& clusters, float halo_width,  int num_thread, int num_run, unsigned seed = 0);
+    void PinAlignment(std::vector<shape_engine::Cluster*>& clusters, utl::Logger* logger,
+        float halo_width,  int num_thread, int num_run, unsigned seed = 0);
 
 }
 
