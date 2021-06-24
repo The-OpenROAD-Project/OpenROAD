@@ -139,6 +139,8 @@ class GlobalRouter
   void setMinLayerForClock(const int minLayer);
   void setMaxLayerForClock(const int maxLayer);
   void setAlpha(const float alpha);
+  float getAlpha() const { return _alpha; }
+
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,

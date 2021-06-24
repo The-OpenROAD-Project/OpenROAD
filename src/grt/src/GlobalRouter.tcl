@@ -62,6 +62,18 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
+sta::define_cmd_args "set_routing_alpha" { alpha }
+
+proc set_routing_alpha { args } {
+  sta::check_argc1 "set_routing_alpha" $args
+  set alpha [lindex $args 0]
+  if { [string is double $alpha] && $alpha >= 0.0 && $alpha <= 1.0 } {
+    grt::set_alpha $alpha
+  } else {
+    utl::error GRT 227 "alpha must be between 0.0 and 1.0"
+  }
+}
+
 sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
 
 proc set_pdrev_topology_priority { args } {
