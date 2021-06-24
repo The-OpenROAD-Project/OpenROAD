@@ -712,7 +712,19 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       int root_idx;
       findPins(net, pinsOnGrid, root_idx);
 
-      if (pinsOnGrid.size() > 1) {
+      // check if net is local in the global routing grid position
+      // the (x,y) pin positions here may be different from the original
+      // (x,y) pin positions because of findFakePinPosition function
+      bool on_grid_local = true;
+      RoutePt position = pinsOnGrid[0];
+      for (RoutePt& pinPos : pinsOnGrid) {
+        if (pinPos.x() != position.x() ||
+            pinPos.y() != position.y()) {
+          on_grid_local = false;
+        }
+      }
+
+      if (pinsOnGrid.size() > 1 && !on_grid_local) {
         float net_alpha = _alpha;
         if (_nets_alpha.find(net->getName()) != _nets_alpha.end()) {
           net_alpha = _nets_alpha[net->getName()];
