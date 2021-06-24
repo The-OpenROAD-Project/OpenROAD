@@ -87,22 +87,21 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::run(const char* liberty_file_name,
-                      float slack_threshold,
-                      unsigned max_depth)
+void Restructure::run(float slack_threshold, unsigned max_depth)
 {
   reset();
   block_ = openroad_->getDb()->getChip()->getBlock();
   if (!block_)
     return;
 
-  sta::LibertyLibraryIterator *lib_iter = libertyLibraryIterator();
+  sta::Slack worst_slack = slack_threshold;
+
+  open_sta_ = openroad_->getSta();
+  sta::LibertyLibraryIterator *lib_iter = open_sta_->getDbNetwork()->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary *lib = lib_iter->next();
     lib_file_names_.emplace_back(lib->filename());
   }
-  sta::Slack worst_slack = slack_threshold;
-  open_sta_ = openroad_->getSta();
 
   removeConstCells();
 
@@ -179,13 +178,17 @@ void Restructure::runABC()
       std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
       if (logfile_ != "")
         abc_command = abc_command + " > " + logfile_;
-      std::system(abc_command.c_str());
+      int ret = std::system(abc_command.c_str());
+      if (ret) {
+        logger_->warn(RMP, 11, "ABC failed with code {}, please check messages for details.", ret);
+        continue;
+      }
     }
     int num_instances = 0;
     bool status
         = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
     logger_->report(
-        "Optimized to {} instance in iter {}", num_instances, opt_mode);
+        "Optimized to {} instances in iteration {}", num_instances, opt_mode);
     if (status && num_instances < best_inst_count) {
       best_inst_count = num_instances;
       best_blif = output_blif_file_name_;
@@ -214,21 +217,6 @@ void Restructure::runABC()
 void Restructure::postABC(float worst_slack)
 {
   rsz::Resizer* resizer = openroad_->getResizer();
-  bool area_mode = opt_mode_ <= Mode::AREA_3;
-  if (!area_mode) {
-    // Recompute timing
-    resizer->estimateWireParasitics();
-    open_sta_->findRequireds();
-    float new_slack;
-    sta::Vertex* worst_vertex;
-    open_sta_->worstSlack(sta::MinMax::max(), new_slack, worst_vertex);
-    if (!area_mode && new_slack < worst_slack) {
-      // failed, revert
-
-    } else {
-      // slack improved, accept
-    }
-  }
 
   // Leave the parasitices up to date.
   resizer->estimateWireParasitics();
@@ -274,7 +262,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   if (path_found > 1000) {
     skip_top_paths = true;
   }
-  logger_->report("Number of paths for restructure {}", path_found);
+  logger_->report("Number of paths for restructure are {}", path_found);
   int end_count = 0;
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
@@ -322,8 +310,7 @@ int Restructure::countConsts(odb::dbBlock* top_block)
 {
   int const_nets = 0;
   for (auto block_net : top_block->getNets()) {
-    if (block_net->getSigType() == odb::dbSigType::GROUND
-        || block_net->getSigType() == odb::dbSigType::POWER)
+    if (block_net->getSigType().isSupply())
       const_nets++;
   }
 

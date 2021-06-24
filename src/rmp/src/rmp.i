@@ -78,10 +78,10 @@ void set_tiehi_pin_cmd(LibertyPort* tieHiPin)
 }
 
 void
-restructure_cmd(const char* libertyFileName, char* target, float slack_threshold, int depth_threshold)
+restructure_cmd(char* target, float slack_threshold, int depth_threshold)
 {
   getRestructure()->setMode(target);
-  getRestructure()->run(libertyFileName, slack_threshold, depth_threshold);
+  getRestructure()->run(slack_threshold, depth_threshold);
 }
 
 // Locally Exposed for testing only..

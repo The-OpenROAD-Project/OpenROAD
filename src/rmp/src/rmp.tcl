@@ -36,7 +36,6 @@
 # Restructuring could be done targeting area or timing.
 # 
 # Argument Description
-# liberty_file:    Liberty file with description of cells used in design. This would be passed to ABC.
 # target:            "area"|"delay". In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
 # slack_threshold: specifies slack value below which timing paths need to be analyzed for restructuring
 # depth_threshold: specifies the path depth above which a timing path would be considered for restructuring
@@ -52,7 +51,6 @@
 sta::define_cmd_args "restructure" { \
                                       [-slack_threshold slack]\
                                       [-depth_threshold depth]\
-                                      [-liberty_file liberty_file]\
                                       [-target area|timing]\
                                       [-tielo_pin tielow_pin]\
                                       [-tiehi_pin tiehigh_pin]
@@ -60,11 +58,10 @@ sta::define_cmd_args "restructure" { \
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
-    keys {-slack_threshold -depth_threshold -liberty_file -target -logfile -tielo_pin -tiehi_pin} flags {}
+    keys {-slack_threshold -depth_threshold -target -abc_logfile -tielo_pin -tiehi_pin} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
-  set liberty_file_name ""
   set target "area"
 
   if { [info exists keys(-slack_threshold)] } {
@@ -75,18 +72,12 @@ proc restructure { args } {
     set depth_threshold_value $keys(-depth_threshold)
   }
 
-  if { [info exists keys(-liberty_file)] } {
-    set liberty_file_name $keys(-liberty_file)
-  } else {
-    utl::error RMP 31 "Missing argument -liberty_file"
-  }
-  
   if { [info exists keys(-target)] } {
     set target $keys(-target)
   }
 
-  if { [info exists keys(-logfile)] } {
-    rmp::set_logfile_cmd $keys(-logfile)
+  if { [info exists keys(-abc_logfile)] } {
+    rmp::set_logfile_cmd $keys(-abc_logfile)
   }
 
 
@@ -122,5 +113,5 @@ proc restructure { args } {
       utl::warn RMP 33 "-tiehi_pin not specified"
   }
 
-  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value
+  rmp::restructure_cmd $target $slack_threshold_value $depth_threshold_value
 }
