@@ -7,4 +7,4 @@ read_lef "sky130hs/sky130hs_std_cell.lef"
 read_def "gcd_sky130.def"
 
 catch {repair_antennas sky130_fd_sc_hs__diode_2/DIODE} error
-
+puts $error

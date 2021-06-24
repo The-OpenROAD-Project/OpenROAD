@@ -13,3 +13,4 @@
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO ODB-0134] Finished DEF file: gcd_sky130.def
 [ERROR GRT-0045] Run global_route before repair_antennas.
+GRT-0045
