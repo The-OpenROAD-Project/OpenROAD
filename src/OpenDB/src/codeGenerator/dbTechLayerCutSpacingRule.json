@@ -8,7 +8,8 @@
     },
     {
       "type": "int",
-      "name": "cut_spacing_"
+      "name": "cut_spacing_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -53,7 +54,8 @@
     },
     {
       "type": "int",
-      "name": "orthogonal_spacing_"
+      "name": "orthogonal_spacing_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -73,31 +75,38 @@
     },
     {
       "type": "int",
-      "name": "width_"
+      "name": "width_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "enclosure_"
+      "name": "enclosure_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "edge_length_"
+      "name": "edge_length_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "par_within_"
+      "name": "par_within_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "par_enclosure_"
+      "name": "par_enclosure_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "edge_enclosure_"
+      "name": "edge_enclosure_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "adj_enclosure_"
+      "name": "adj_enclosure_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -133,23 +142,28 @@
     },
     {
       "type": "int",
-      "name": "above_enclosure_"
+      "name": "above_enclosure_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "above_width_"
+      "name": "above_width_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "min_length_"
+      "name": "min_length_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "extension_"
+      "name": "extension_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "eol_width_"
+      "name": "eol_width_",
+      "default": 0
     },
     {
       "type": "uint",
@@ -163,17 +177,20 @@
     {
       "type": "uint",
       "name": "num_cuts_",
-      "comment": "// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts"
+      "comment": "// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts",
+      "default": 0
     },
     {
       "type": "int",
       "name": "within_",
-      "comment": "// WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin"
+      "comment": "// WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin",
+      "default": 0
     },
     {
       "type": "int",
       "name": "second_within_",
-      "comment": "// WITHIN cutWithin cutWithin2"
+      "comment": "// WITHIN cutWithin cutWithin2",
+      "default": 0
     },
     {
       "type": "bit",
@@ -253,19 +270,23 @@
     },
     {
       "type": "uint",
-      "name": "two_cuts_"
+      "name": "two_cuts_",
+      "default": 0
     },
     {
       "type": "uint",
-      "name": "prl_"
+      "name": "prl_",
+      "default": 0
     },
     {
       "type": "uint",
-      "name": "par_length_"
+      "name": "par_length_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "cut_area_"
+      "name": "cut_area_",
+      "default": 0
     }
   ],
   "constructors": [],

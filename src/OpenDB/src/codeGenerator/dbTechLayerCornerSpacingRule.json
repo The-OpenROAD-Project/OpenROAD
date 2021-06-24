@@ -22,7 +22,8 @@
     },
     {
       "type": "int",
-      "name": "within_"
+      "name": "within_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -31,7 +32,8 @@
     },
     {
       "type": "int",
-      "name": "eol_width_"
+      "name": "eol_width_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -40,7 +42,8 @@
     },
     {
       "type": "int",
-      "name": "jog_length_"
+      "name": "jog_length_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -49,7 +52,8 @@
     },
     {
       "type": "int",
-      "name": "edge_length_"
+      "name": "edge_length_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -63,7 +67,8 @@
     },
     {
       "type": "int",
-      "name": "min_length_"
+      "name": "min_length_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -77,7 +82,8 @@
     },
     {
       "type": "int",
-      "name": "except_notch_length_"
+      "name": "except_notch_length_",
+      "default": 0
     },
     {
       "type": "bool",

@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, University of California, San Diego.
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ target_sources(grt
     src/AntennaRepair.cpp
     src/GlobalRouter.cpp
     src/Grid.cpp
-    src/MakeFastRoute.cpp
+    src/MakeGlobalRouter.cpp
     src/Net.cpp
     src/Pin.cpp
     src/MakeWireParasitics.cpp

@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -263,7 +263,7 @@ void GlobalRouter::run()
   computeWirelength();
 }
 
-void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
+void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort, int iterations)
 {
   AntennaRepair antennaRepair = AntennaRepair(this,
                                               _openroad->getAntennaChecker(),
@@ -271,42 +271,46 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
                                               _db,
                                               _logger);
 
-  // Copy first route result and make changes in this new vector
-  NetRouteMap originalRoute(_routes);
-
-  Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
-  addLocalConnections(originalRoute);
-
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
-  if (diodeMTerm == nullptr) {
-    _logger->error(GRT, 69, "Liberty port for {}/{} not found.",
-                   diodePort->libertyCell()->name(),
-                   diodePort->name());
-  }
 
-  int violationsCnt = antennaRepair.checkAntennaViolations(
-      originalRoute, _maxRoutingLayer, diodeMTerm);
+  int violationsCnt = -1;
+  int itr = 0;
+  while (violationsCnt != 0 && itr < iterations) {
+    _logger->info(GRT, 6, "Repairing antennas, iteration {}.", itr+1);
+    // Copy first route result and make changes in this new vector
+    NetRouteMap originalRoute(_routes);
 
-  if (violationsCnt > 0) {
-    clearObjects();
-    antennaRepair.fixAntennas(diodeMTerm);
-    antennaRepair.legalizePlacedCells();
+    Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
+    addLocalConnections(originalRoute);
 
-    _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
+    violationsCnt = antennaRepair.checkAntennaViolations(
+        originalRoute, _maxRoutingLayer, diodeMTerm);
 
-    updateDirtyNets();
-    std::vector<Net*> antennaNets
-        = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
+    if (violationsCnt > 0) {
+      clearObjects();
+      antennaRepair.repairAntennas(diodeMTerm);
+      antennaRepair.legalizePlacedCells();
 
-    _fastRoute->setVerbose(0);
-    _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
+      _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
-    restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
-    removeDirtyNetsRouting();
+      updateDirtyNets();
+      std::vector<Net*> antennaNets
+          = startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
 
-    NetRouteMap newRoute
-        = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
-    mergeResults(newRoute);
+      _fastRoute->setVerbose(0);
+      _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
+
+      restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
+      removeDirtyNetsRouting();
+
+      NetRouteMap newRoute
+          = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
+      mergeResults(newRoute);
+    }
+
+    antennaRepair.clearViolations();
+    _dirtyNets.clear();
+    itr++;
   }
 }
 
@@ -457,6 +461,11 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
                                      int previousMaxLayer)
 {
   int oldCap;
+  // Check if current edge capacity is larger than the old edge capacity
+  // before applying adjustments.
+  // After inserting diodes, edges can have less capacity than before,
+  // and apply adjustment without a check leads to warns and wrong adjustments.
+  int currCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
@@ -467,16 +476,22 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = h_caps[layer - 1][y - 1][x - 1];
-        _fastRoute->addAdjustment(
-            x - 1, y - 1, layer, x, y - 1, layer, oldCap, true);
+        currCap = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+        if (oldCap <= currCap) {
+          _fastRoute->addAdjustment(
+              x - 1, y - 1, layer, x, y - 1, layer, oldCap, true);
+        }
       }
     }
 
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
         oldCap = v_caps[layer - 1][x - 1][y - 1];
-        _fastRoute->addAdjustment(
-            x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
+        currCap = _fastRoute->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
+        if (oldCap <= currCap) {
+          _fastRoute->addAdjustment(
+              x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
+        }
       }
     }
   }
@@ -898,7 +913,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (trackLocation >= _grid->getTileHeight()) {
           for (int x = 1; x < _grid->getXGrids(); x++) {
             _fastRoute->addAdjustment(
-                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           y++;
           trackLocation -= _grid->getTileHeight();
@@ -913,7 +928,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity, true);
           }
         }
 
@@ -921,7 +936,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (remainingFinalSpace >= _grid->getTileHeight() + extraSpace) {
           for (int x = 1; x < _grid->getXGrids(); x++) {
             _fastRoute->addAdjustment(
-                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x - 1, y, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           y--;
           remainingFinalSpace -= (_grid->getTileHeight() + extraSpace);
@@ -938,7 +953,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity, true);
           }
         }
       }
@@ -978,7 +993,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (trackLocation >= _grid->getTileWidth()) {
           for (int y = 1; y < _grid->getYGrids(); y++) {
             _fastRoute->addAdjustment(
-                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           x++;
           trackLocation -= _grid->getTileWidth();
@@ -993,7 +1008,8 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity,
+                                      true);
           }
         }
 
@@ -1001,7 +1017,7 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
         while (remainingFinalSpace >= _grid->getTileWidth() + extraSpace) {
           for (int y = 1; y < _grid->getYGrids(); y++) {
             _fastRoute->addAdjustment(
-                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0);
+                x, y - 1, layer.getIndex(), x, y, layer.getIndex(), 0, true);
           }
           x--;
           remainingFinalSpace -= (_grid->getTileWidth() + extraSpace);
@@ -1018,7 +1034,8 @@ void GlobalRouter::computeTrackAdjustments(int minRoutingLayer,
                                       x,
                                       y,
                                       layer.getIndex(),
-                                      newCapacity);
+                                      newCapacity,
+                                      true);
           }
         }
       }
@@ -1059,7 +1076,7 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
                 x - 1, y - 1, layer, x, y - 1, layer);
             int newHCapacity = std::floor((float) edgeCap * (1 - adjustment));
             _fastRoute->addAdjustment(
-                x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
+                x - 1, y - 1, layer, x, y - 1, layer, newHCapacity, true);
           }
         }
       }
@@ -1075,7 +1092,7 @@ void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
                 x - 1, y - 1, layer, x - 1, y, layer);
             int newVCapacity = std::floor((float) edgeCap * (1 - adjustment));
             _fastRoute->addAdjustment(
-                x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
+                x - 1, y - 1, layer, x - 1, y, layer, newVCapacity, true);
           }
         }
       }
@@ -1127,15 +1144,15 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
           edgeCap -= firstTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap, true);
         } else if (y == lastTile._y) {
           edgeCap -= lastTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, edgeCap, true);
         } else {
           edgeCap -= edgeCap * reductionPercentage;
-          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0);
+          _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0, true);
         }
       }
     }
@@ -1152,15 +1169,15 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
           edgeCap -= firstTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap, true);
         } else if (x == lastTile._x) {
           edgeCap -= lastTileReduce;
           if (edgeCap < 0)
             edgeCap = 0;
-          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap);
+          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, edgeCap, true);
         } else {
           edgeCap -= edgeCap * reductionPercentage;
-          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0);
+          _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0, true);
         }
       }
     }
@@ -1224,7 +1241,7 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x + 1, y, layer, edgeCap);
+                    x, y, layer, x + 1, y, layer, edgeCap, true);
               } else if (y == lastTile._y) {
                 int edgeCap
                     = _fastRoute->getEdgeCapacity(x, y, layer, x + 1, y, layer);
@@ -1232,9 +1249,9 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x + 1, y, layer, edgeCap);
+                    x, y, layer, x + 1, y, layer, edgeCap, true);
               } else {
-                _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0);
+                _fastRoute->addAdjustment(x, y, layer, x + 1, y, layer, 0, true);
               }
             }
           }
@@ -1248,7 +1265,7 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x, y + 1, layer, edgeCap);
+                    x, y, layer, x, y + 1, layer, edgeCap, true);
               } else if (x == lastTile._x) {
                 int edgeCap
                     = _fastRoute->getEdgeCapacity(x, y, layer, x, y + 1, layer);
@@ -1256,9 +1273,9 @@ void GlobalRouter::computeObstructionsAdjustments()
                 if (edgeCap < 0)
                   edgeCap = 0;
                 _fastRoute->addAdjustment(
-                    x, y, layer, x, y + 1, layer, edgeCap);
+                    x, y, layer, x, y + 1, layer, edgeCap, true);
               } else {
-                _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0);
+                _fastRoute->addAdjustment(x, y, layer, x, y + 1, layer, 0, true);
               }
             }
           }
@@ -2964,6 +2981,7 @@ int GlobalRouter::findInstancesObstructions(
 {
   int macrosCnt = 0;
   int obstructionsCnt = 0;
+  int pin_out_of_die_count = 0;
   for (odb::dbInst* currInst : _block->getInsts()) {
     int pX, pY;
 
@@ -3031,13 +3049,18 @@ int GlobalRouter::findInstancesObstructions(
           upperBound = odb::Point(rect.xMax(), rect.yMax());
           pinBox = odb::Rect(lowerBound, upperBound);
           if (!dieArea.contains(pinBox)) {
-            _logger->warn(GRT, 39, "Found pin outside die area in instance {}.",
-                          currInst->getConstName());
+              _logger->warn(GRT, 39, "Found pin outside die area in instance {}.",
+                            currInst->getConstName());
+            pin_out_of_die_count++;
           }
           _grid->addObstruction(pinLayer, pinBox);
         }
       }
     }
+  }
+
+  if (pin_out_of_die_count > 0) {
+    _logger->warn(GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
   _logger->info(GRT, 3, "Macros: {}", macrosCnt);

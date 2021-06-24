@@ -87,7 +87,7 @@ class FastRouteCore
                      long y2,
                      int l2,
                      int reducedCap,
-                     bool isReduce = true);
+                     bool isReduce);
   void initAuxVar();
   NetRouteMap run();
   void updateDbCongestion();

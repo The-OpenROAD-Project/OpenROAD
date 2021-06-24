@@ -65,6 +65,7 @@ met5              1443             0            0.00%             0 /  0 /  0
 Total            55327          2036            3.68%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 22327 um
+[INFO GRT-0006] Repairing antennas, iteration 1.
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
 [INFO GRT-0224] Chose via M1M2_PR as default.

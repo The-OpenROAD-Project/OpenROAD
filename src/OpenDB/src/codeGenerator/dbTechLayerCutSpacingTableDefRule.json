@@ -97,7 +97,8 @@
     {
       "name": "default_",
       "type": "int",
-      "argument":"spacing"
+      "argument":"spacing",
+      "default": 0
     },
     {
       "type": "dbId<_dbTechLayer>",
@@ -136,7 +137,8 @@
     },
     {
       "name": "prl_",
-      "type": "int"
+      "type": "int",
+      "default": 0
     },
     {
       "name": "prl_tbl_",
@@ -149,7 +151,8 @@
     },
     {
       "name": "extension_",
-      "type": "int"
+      "type": "int",
+      "default": 0
     },
     {
       "name": "end_extension_tbl_",

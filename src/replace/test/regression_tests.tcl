@@ -15,4 +15,5 @@ record_tests {
   diverge01
   diverge02
   macro04
+  density01
 }

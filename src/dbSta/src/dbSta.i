@@ -36,6 +36,15 @@ make_block_sta(odb::dbBlock *block)
   return sta::makeBlockSta(openroad, block);
 }
 
+// For testing
+void
+find_logic_constants()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->findLogicConstants();
+}
+
 void
 highlight_path_cmd(PathRef *path)
 {
