@@ -316,7 +316,7 @@ class GlobalRouter
 
   float _alpha;
   int _verbose;
-  std::map<std::string, float> _nets_alpha;
+  std::map<std::string, float> _net_alpha_map;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 
