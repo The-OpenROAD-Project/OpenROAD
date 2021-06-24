@@ -162,7 +162,7 @@ global_route -guide_file $route_guide \
   -overflow_iterations 100
 
 set antenna_report [make_result_file ${design}_${platform}_ant.log]
-set antenna_errors [check_antennas -simple_report -report_file $antenna_report]
+set antenna_errors [check_antennas -report_violating_nets -report_file $antenna_report]
 
 utl::metric "ANT::errors" $antenna_errors
 
