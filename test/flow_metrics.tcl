@@ -135,22 +135,39 @@ proc check_test_metrics { test } {
     return "error parsing metrics limits json"
   }
 
+  set failures ""
   foreach name [metric_names] {
     set json_key [metric_json_key $name]
     set cmp_op [metric_cmp_op $name]
-    if { ![dict exists $metrics_dict $json_key] } {
-      return "missing $name in metrics"
-    }
-    set value [dict get $metrics_dict $json_key]
-    if { ![dict exists $metrics_limits_dict $json_key] } {
-      return "missing $name in metric limits"
-    }
-    set limit [dict get $metrics_limits_dict $json_key]
-    if { ![expr $value $cmp_op $limit] } {
-      return "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+    if { [dict exists $metrics_dict $json_key] } {
+      set value [dict get $metrics_dict $json_key]
+      if { [dict exists $metrics_limits_dict $json_key] } {
+        set limit [dict get $metrics_limits_dict $json_key]
+        if { ![expr $value $cmp_op $limit] } {
+          fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+        }
+      } else {
+        fail "missing $name in metric limits"
+      }
+    } else {
+      fail "missing $name in metrics"
     }
   }
-  return "pass"
+  if { $failures == "" } {
+    return "pass"
+  } else {
+    return $failures
+  }
+}
+
+proc fail { msg } {
+  upvar 1 failures failures
+
+  if { $failures != "" } {
+    set failures [concat $failures "; $msg"]
+  } else {
+    set failures $msg
+  }
 }
 
 ################################################################
