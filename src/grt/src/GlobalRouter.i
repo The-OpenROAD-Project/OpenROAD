@@ -97,9 +97,9 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_pdrev_alpha_cmd(float alpha)
+set_routing_alpha_cmd(float alpha)
 {
-  getGlobalRouter()->setPdRevAlpha(alpha);
+  getGlobalRouter()->setRoutingAlpha(alpha);
 }
 
 void

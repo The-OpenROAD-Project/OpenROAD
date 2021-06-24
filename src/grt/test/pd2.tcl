@@ -12,7 +12,7 @@ set_propagated_clock [get_clocks {core_clock}]
 
 set guide_file [make_result_file pd2.guide]
 
-set_pdrev_alpha 0.8 -net clknet_2_3__leaf_clk
+set_routing_alpha 0.8 -net clknet_2_3__leaf_clk
 
 set_global_routing_layer_adjustment met1 0.8
 set_global_routing_layer_adjustment met2 0.7

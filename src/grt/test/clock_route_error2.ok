@@ -13,3 +13,4 @@
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO ODB-0134] Finished DEF file: clock_route.def
 [ERROR STA-0414] check_pdrev_alpha '-1' is not a positive float.
+STA-0414

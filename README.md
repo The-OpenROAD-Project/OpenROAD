@@ -850,17 +850,17 @@ You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
-set_pdrev_alpha [-net net_name] alpha
+set_routing_alpha [-net net_name] alpha
 ```
 By default the global router uses steiner trees to construct route guides. A steiner tree minimizes the total wire length.
 Prim/Dijkstra is an alternative net topology algorithm that supports a trade-off between total wire length and maximum path depth from
 the net driver to its loads.
-The `set_pdrev_alpha` command enables the Prim/Dijkstra algorithm and sets the alpha parameter used to trade-off wire length and path depth.
+The `set_routing_alpha` command enables the Prim/Dijkstra algorithm and sets the alpha parameter used to trade-off wire length and path depth.
 Alpha is between 0.0 and 1.0. When alpha is 0.0 the net topology minimizes total wire length (i.e. capacitance).
 When alpha is 1.0 it minimizes longest path between the driver and loads (i.e., maximum resistance).
 Typical values are 0.4-0.8. For more information about PDRev, check the paper in `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
+Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}

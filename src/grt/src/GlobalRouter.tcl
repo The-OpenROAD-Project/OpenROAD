@@ -62,11 +62,11 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_pdrev_alpha" { alpha \
+sta::define_cmd_args "set_routing_alpha" { alpha \
                                           [-net net_name] }
 
-proc set_pdrev_alpha { args } {
-  sta::parse_key_args "set_pdrev_alpha" args \
+proc set_routing_alpha { args } {
+  sta::parse_key_args "set_routing_alpha" args \
                  keys {-net}
 
   if { [info exists keys(-net)] } {
@@ -79,9 +79,9 @@ proc set_pdrev_alpha { args } {
     set alpha [lindex $args 0]
 
     grt::check_pdrev_alpha $alpha
-    grt::set_pdrev_alpha_cmd $alpha
+    grt::set_routing_alpha_cmd $alpha
   } else {
-    utl::error GRT 46 "set_pdrev_alpha: Wrong number of arguments."
+    utl::error GRT 46 "set_routing_alpha: Wrong number of arguments."
   }
 }
 

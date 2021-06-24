@@ -6,4 +6,5 @@ read_lef "sky130hs/sky130hs_std_cell.lef"
 
 read_def "clock_route.def"
 
-catch {set_pdrev_alpha 2} error
+catch {set_routing_alpha 2} error
+puts $error
