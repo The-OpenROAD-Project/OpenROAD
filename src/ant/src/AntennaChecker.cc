@@ -1031,7 +1031,7 @@ void AntennaChecker::build_VIA_CAR_table(
   }
 }
 
-std::pair<bool, bool> AntennaChecker::check_wire_PAR(ARinfo AntennaRatio, bool simple_report, bool print)
+std::pair<bool, bool> AntennaChecker::check_wire_PAR(ARinfo AntennaRatio, bool report_violating_nets, bool print)
 {
   dbTechLayer* layer = AntennaRatio.WirerootNode->layer();
   double par = AntennaRatio.PAR_value;
@@ -1093,11 +1093,11 @@ std::pair<bool, bool> AntennaChecker::check_wire_PAR(ARinfo AntennaRatio, bool s
     if (!print) {
       return {if_violated, checked};
     }
-    // generate final report, depnding on if simple_report is needed
-    if (!if_violated && simple_report)
+    // generate final report, depnding on if report_violating_nets is needed
+    if (!if_violated && report_violating_nets)
       return {if_violated, checked};
     else {
-      if (simple_report) {
+      if (report_violating_nets) {
         if (par_violation) {
           fprintf(_out, "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n", par, PAR_ratio);
         } else if (diff_par_violation) {
@@ -1152,7 +1152,7 @@ std::pair<bool, bool> AntennaChecker::check_wire_PAR(ARinfo AntennaRatio, bool s
 }
 
 std::pair<bool, bool> AntennaChecker::check_wire_CAR(ARinfo AntennaRatio,
-                                                     bool par_checked, bool simple_report, bool print)
+                                                     bool par_checked, bool report_violating_nets, bool print)
 {
   dbTechLayer* layer = AntennaRatio.WirerootNode->layer();
   double car = AntennaRatio.CAR_value;
@@ -1214,10 +1214,10 @@ std::pair<bool, bool> AntennaChecker::check_wire_CAR(ARinfo AntennaRatio,
       return {if_violated, checked};
     }
     
-    if (!if_violated && simple_report) {
+    if (!if_violated && report_violating_nets) {
       return {if_violated, checked};
     } else {
-      if (simple_report) {
+      if (report_violating_nets) {
         if (car_violation) {
           fprintf(_out, "  CAR: %7.2f*  Ratio: %7.2f       (Area)\n", car, CAR_ratio);
         } else if (diff_car_violation) {
@@ -1269,7 +1269,7 @@ std::pair<bool, bool> AntennaChecker::check_wire_CAR(ARinfo AntennaRatio,
   return {if_violated, checked};
 }
 
-bool AntennaChecker::check_VIA_PAR(ARinfo AntennaRatio, bool simple_report, bool print)
+bool AntennaChecker::check_VIA_PAR(ARinfo AntennaRatio, bool report_violating_nets, bool print)
 {
   dbTechLayer* layer = get_via_layer(
       find_via(AntennaRatio.WirerootNode,
@@ -1307,10 +1307,10 @@ bool AntennaChecker::check_VIA_PAR(ARinfo AntennaRatio, bool simple_report, bool
       return if_violated;
     }
     
-    if (!if_violated && simple_report) {
+    if (!if_violated && report_violating_nets) {
       return false;
     } else {
-      if (simple_report) {
+      if (report_violating_nets) {
         if (par_violation) {
           fprintf(_out, "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n", par, PAR_ratio);
         } else {
@@ -1340,7 +1340,7 @@ bool AntennaChecker::check_VIA_PAR(ARinfo AntennaRatio, bool simple_report, bool
   return if_violated;
 }
 
-bool AntennaChecker::check_VIA_CAR(ARinfo AntennaRatio, bool simple_report, bool print)
+bool AntennaChecker::check_VIA_CAR(ARinfo AntennaRatio, bool report_violating_nets, bool print)
 {
   dbTechLayer* layer = get_via_layer(
       find_via(AntennaRatio.WirerootNode,
@@ -1378,10 +1378,10 @@ bool AntennaChecker::check_VIA_CAR(ARinfo AntennaRatio, bool simple_report, bool
       return if_violated;
     }
     
-    if (!if_violated && simple_report) {
+    if (!if_violated && report_violating_nets) {
       return false;
     } else {
-      if (simple_report) {
+      if (report_violating_nets) {
         if (car_violation) {
           fprintf(_out, "  CAR: %7.2f*  Ratio: %7.2f       (C.Area)\n", car, CAR_ratio);
         } else {
@@ -1411,7 +1411,7 @@ bool AntennaChecker::check_VIA_CAR(ARinfo AntennaRatio, bool simple_report, bool
   return if_violated;
 }
 
-std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bool simple_report)
+std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bool report_violating_nets)
 {
   std::string bname = db_->getChip()->getBlock()->getName();
 
@@ -1515,9 +1515,9 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
         
         for (auto ar : CARtable) {
           if (ar.GateNode == gate) {
-            auto wire_PAR_violation = check_wire_PAR(ar, simple_report, false);
+            auto wire_PAR_violation = check_wire_PAR(ar, report_violating_nets, false);
             auto wire_CAR_violation
-                = check_wire_CAR(ar, wire_PAR_violation.second, simple_report, false);
+                = check_wire_CAR(ar, wire_PAR_violation.second, report_violating_nets, false);
             bool wire_violation = wire_PAR_violation.first || wire_CAR_violation.first;
             violation |= wire_violation;
             if (wire_violation) violated_gates.insert(gate);
@@ -1525,8 +1525,8 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
         }
         for (auto via_ar : VIA_CARtable) {
           if (via_ar.GateNode == gate) {
-            bool VIA_PAR_violation = check_VIA_PAR(via_ar, simple_report, false);
-            bool VIA_CAR_violation = check_VIA_CAR(via_ar, simple_report, false);
+            bool VIA_PAR_violation = check_VIA_PAR(via_ar, report_violating_nets, false);
+            bool VIA_CAR_violation = check_VIA_CAR(via_ar, report_violating_nets, false);
             bool via_violation = VIA_PAR_violation || VIA_CAR_violation;   
             violation |= via_violation;
             if (via_violation && (violated_gates.find(gate) == violated_gates.end()))
@@ -1534,13 +1534,13 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
           }
         }
         
-        if ((!simple_report || violation) && print_net) {
+        if ((!report_violating_nets || violation) && print_net) {
           fprintf(_out, "\nNet - %s\n", nname.c_str());
           print_net = false;
         }
 
 
-        if (!simple_report || (violated_gates.find(gate) != violated_gates.end())) {
+        if (!report_violating_nets || (violated_gates.find(gate) != violated_gates.end())) {
           fprintf(_out,
                   "  %s  (%s)  %s\n",
                   iterm->getInst()->getConstName(),
@@ -1550,21 +1550,21 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
 
         for (auto ar : CARtable) {
           if (ar.GateNode == gate) {
-            auto wire_PAR_violation = check_wire_PAR(ar, simple_report, false);
+            auto wire_PAR_violation = check_wire_PAR(ar, report_violating_nets, false);
             auto wire_CAR_violation
-                = check_wire_CAR(ar, wire_PAR_violation.second, simple_report, false);
-            if (wire_PAR_violation.first || wire_CAR_violation.first || !simple_report) {
+                = check_wire_CAR(ar, wire_PAR_violation.second, report_violating_nets, false);
+            if (wire_PAR_violation.first || wire_CAR_violation.first || !report_violating_nets) {
               fprintf(
                   _out, "[1]  %s:\n", ar.WirerootNode->layer()->getConstName());
             }
-            wire_PAR_violation = check_wire_PAR(ar, simple_report, true);
-            wire_CAR_violation = check_wire_CAR(ar, wire_PAR_violation.second, simple_report, true);
+            wire_PAR_violation = check_wire_PAR(ar, report_violating_nets, true);
+            wire_CAR_violation = check_wire_CAR(ar, wire_PAR_violation.second, report_violating_nets, true);
             if (wire_PAR_violation.first || wire_CAR_violation.first) {
               if_violated_wire = 1;
               if (violated_iterms.find(gate) == violated_iterms.end())
                 violated_iterms.insert(gate);
             }
-            if (wire_PAR_violation.first || wire_CAR_violation.first || !simple_report) {
+            if (wire_PAR_violation.first || wire_CAR_violation.first || !report_violating_nets) {
               fprintf(_out, "\n");
             }
           }
@@ -1576,19 +1576,19 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
                 = find_via(via_ar.WirerootNode,
                            via_ar.WirerootNode->layer()->getRoutingLevel());
             
-            bool VIA_PAR_violation = check_VIA_PAR(via_ar, simple_report, false);
-            bool VIA_CAR_violation = check_VIA_CAR(via_ar, simple_report, false);
-            if (VIA_PAR_violation || VIA_CAR_violation || !simple_report) {
+            bool VIA_PAR_violation = check_VIA_PAR(via_ar, report_violating_nets, false);
+            bool VIA_CAR_violation = check_VIA_CAR(via_ar, report_violating_nets, false);
+            if (VIA_PAR_violation || VIA_CAR_violation || !report_violating_nets) {
               fprintf(_out, "[1]  %s:\n", get_via_name(via).c_str());
             }
-            VIA_PAR_violation = check_VIA_PAR(via_ar, simple_report, true);
-            VIA_CAR_violation = check_VIA_CAR(via_ar, simple_report, true);
+            VIA_PAR_violation = check_VIA_PAR(via_ar, report_violating_nets, true);
+            VIA_CAR_violation = check_VIA_CAR(via_ar, report_violating_nets, true);
             if (VIA_PAR_violation || VIA_CAR_violation) {
               if_violated_VIA = 1;
               if (violated_iterms.find(gate) == violated_iterms.end())
                 violated_iterms.insert(gate);
             }
-            if (VIA_PAR_violation || VIA_CAR_violation || !simple_report) {
+            if (VIA_PAR_violation || VIA_CAR_violation || !report_violating_nets) {
               fprintf(_out, "\n");
             }
           }
@@ -1653,7 +1653,7 @@ void AntennaChecker::check_antenna_cell()
           "ignored if not in the antenna-avoid flow\n");
 }
 
-int AntennaChecker::check_antennas(std::string path, bool simple_report)
+int AntennaChecker::check_antennas(std::string path, bool report_violating_nets)
 {
   odb::dbBlock *block = db_->getChip()->getBlock();
   odb::orderWires(block,
@@ -1663,7 +1663,7 @@ int AntennaChecker::check_antennas(std::string path, bool simple_report)
                   true /* quiet */);
 
   std::string bname = block->getName();
-  std::vector<int> nets_info = GetAntennaRatio(path, simple_report);
+  std::vector<int> nets_info = GetAntennaRatio(path, report_violating_nets);
   if (nets_info[2] != 0) {
     logger_->info(ANT, 1, "Found {} pin violatations.", nets_info[0]);
     logger_->info(ANT, 2, "Found {} net violatations in {} nets.",

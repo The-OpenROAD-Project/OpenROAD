@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,10 +41,10 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-grt::GlobalRouter* getFastRoute();
+grt::GlobalRouter* getGlobalRouter();
 }  // namespace ord
 
-using ord::getFastRoute;
+using ord::getGlobalRouter;
 using sta::LibertyPort;
 %}
 
@@ -57,19 +57,19 @@ namespace grt {
 bool
 have_routes()
 {
-  return getFastRoute()->haveRoutes();
+  return getGlobalRouter()->haveRoutes();
 }
 
 void
 set_capacity_adjustment(float adjustment)
 {
-  getFastRoute()->setAdjustment(adjustment);
+  getGlobalRouter()->setAdjustment(adjustment);
 }
 
 void
 add_layer_adjustment(int layer, float reductionPercentage)
 {
-  getFastRoute()->addLayerAdjustment(layer, reductionPercentage);
+  getGlobalRouter()->addLayerAdjustment(layer, reductionPercentage);
 }
 
 void
@@ -80,75 +80,75 @@ add_region_adjustment(int minX,
                            int layer,
                            float reductionPercentage)
 {
-  getFastRoute()->addRegionAdjustment(
+  getGlobalRouter()->addRegionAdjustment(
       minX, minY, maxX, maxY, layer, reductionPercentage);
 }
 
 void
 set_min_layer(int minLayer)
 {
-  getFastRoute()->setMinRoutingLayer(minLayer);
+  getGlobalRouter()->setMinRoutingLayer(minLayer);
 }
 
 void
 set_max_layer(int maxLayer)
 {
-  getFastRoute()->setMaxRoutingLayer(maxLayer);
+  getGlobalRouter()->setMaxRoutingLayer(maxLayer);
 }
 
 void
 set_alpha(float alpha)
 {
-  getFastRoute()->setAlpha(alpha);
+  getGlobalRouter()->setAlpha(alpha);
 }
 
 void
 set_alpha_for_net(char* netName, float alpha)
 {
-  getFastRoute()->addAlphaForNet(netName, alpha);
+  getGlobalRouter()->addAlphaForNet(netName, alpha);
 }
 
 void
 set_verbose(int v)
 {
-  getFastRoute()->setVerbose(v);
+  getGlobalRouter()->setVerbose(v);
 }
 
 void
 set_overflow_iterations(int iterations)
 {
-  getFastRoute()->setOverflowIterations(iterations);
+  getGlobalRouter()->setOverflowIterations(iterations);
 }
 
 void
 set_grid_origin(long x, long y)
 {
-  getFastRoute()->setGridOrigin(x, y);
+  getGlobalRouter()->setGridOrigin(x, y);
 }
 
 void
 set_pdrev_for_high_fanout(int pdRevForHighFanout)
 {
-  getFastRoute()->setPDRevForHighFanout(pdRevForHighFanout);
+  getGlobalRouter()->setPDRevForHighFanout(pdRevForHighFanout);
 }
 
 void
 set_allow_overflow(bool allowOverflow)
 {
-  getFastRoute()->setAllowOverflow(allowOverflow);
+  getGlobalRouter()->setAllowOverflow(allowOverflow);
 }
 
 void
 set_clock_layer_range(int minLayer, int maxLayer)
 {
-  getFastRoute()->setMinLayerForClock(minLayer);
-  getFastRoute()->setMaxLayerForClock(maxLayer);
+  getGlobalRouter()->setMinLayerForClock(minLayer);
+  getGlobalRouter()->setMaxLayerForClock(maxLayer);
 }
 
 void
 set_macro_extension(int macroExtension)
 {
-  getFastRoute()->setMacroExtension(macroExtension);
+  getGlobalRouter()->setMacroExtension(macroExtension);
 }
 
 void
@@ -172,55 +172,55 @@ set_perturbation_amount(int perturbation)
 void
 global_route()
 {
-  getFastRoute()->globalRoute();
+  getGlobalRouter()->globalRoute();
 }
 
 void
 global_route_clocks_separately()
 {
-  getFastRoute()->globalRouteClocksSeparately();
+  getGlobalRouter()->globalRouteClocksSeparately();
 }
 
 void
 run()
 {
-  getFastRoute()->run();
+  getGlobalRouter()->run();
 }
 
 void
 estimate_rc()
 {
-  getFastRoute()->estimateRC();
+  getGlobalRouter()->estimateRC();
 }
 
 void
-repair_antennas(LibertyPort* diodePort)
+repair_antennas(LibertyPort* diodePort, int iterations)
 {
-  getFastRoute()->repairAntennas(diodePort);
+  getGlobalRouter()->repairAntennas(diodePort, iterations);
 }
 
 void
 clear()
 {
-  getFastRoute()->clear();
+  getGlobalRouter()->clear();
 }
 
 void
 write_guides(char* fileName)
 {
-  getFastRoute()->writeGuides(fileName);
+  getGlobalRouter()->writeGuides(fileName);
 }
 
 void
 highlight_net_route(const odb::dbNet *net)
 {
-  getFastRoute()->highlightRoute(net);
+  getGlobalRouter()->highlightRoute(net);
 }
 
 void
 report_layer_wire_lengths()
 {
-  getFastRoute()->reportLayerWireLengths();
+  getGlobalRouter()->reportLayerWireLengths();
 }
 
 } // namespace

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -45,6 +45,10 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 
+namespace grt {
+class GlobalRouter;
+}
+
 namespace rsz {
 
 using std::array;
@@ -54,6 +58,7 @@ using std::vector;
 using ord::OpenRoad;
 using utl::Logger;
 using gui::Gui;
+using grt::GlobalRouter;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -128,7 +133,8 @@ public:
             Logger *logger,
             Gui *gui,
             dbDatabase *db,
-            dbSta *sta);
+            dbSta *sta,
+            GlobalRouter *grt);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -589,6 +595,7 @@ protected:
   Logger *logger_;
   Gui *gui_;
   dbSta *sta_;
+  GlobalRouter *grt_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;

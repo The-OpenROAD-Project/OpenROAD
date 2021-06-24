@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <limits>
 
 #include "Net.h"
 #include "Pin.h"
@@ -132,10 +133,10 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   return _antennaViolations.size();
 }
 
-void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
+void AntennaRepair::repairAntennas(odb::dbMTerm* diodeMTerm)
 {
   int siteWidth = -1;
-  int cnt = 0;
+  int cnt = _diodeInsts.size();
   r_tree fixedInsts;
 
   auto rows = _block->getRows();
@@ -214,6 +215,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
                                 int siteWidth,
                                 r_tree& fixedInsts)
 {
+  const int max_legalize_itr = 50;
   bool legallyPlaced = false;
   bool placeAtLeft = true;
   int leftOffset = 0;
@@ -225,10 +227,10 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::dbMaster* antennaMaster = diodeMTerm->getMaster();
 
   int instLocX, instLocY, instWidth;
-  odb::dbBox* sinkBBox = sinkInst->getBBox();
-  instLocX = sinkBBox->xMin();
-  instLocY = sinkBBox->yMin();
-  instWidth = sinkBBox->xMax() - sinkBBox->xMin();
+  odb::Rect sinkBBox = getInstRect(sinkInst, sinkITerm);
+  instLocX = sinkBBox.xMin();
+  instLocY = sinkBBox.yMin();
+  instWidth = sinkBBox.xMax() - sinkBBox.xMin();
   odb::dbOrientType instOrient = sinkInst->getOrient();
 
   odb::dbInst* antennaInst
@@ -237,13 +239,17 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       = antennaInst->findITerm(diodeMTerm->getConstName());
   odb::dbBox* antennaBBox = antennaInst->getBBox();
   int antennaWidth = antennaBBox->xMax() - antennaBBox->xMin();
+  
+  odb::Rect coreArea;
+  _block->getCoreArea(coreArea);
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
   int leftPad = _opendp->padGlobalLeft();
   int rightPad = _opendp->padGlobalRight();
   std::vector<value> overlapInsts;
-  while (!legallyPlaced) {
+  int legalize_itr = 0;
+  while (!legallyPlaced && legalize_itr < max_legalize_itr) {
     if (placeAtLeft) {
       offset = -(antennaWidth + leftOffset * siteWidth);
       leftOffset++;
@@ -264,25 +270,38 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
                   instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
-    odb::Rect coreArea;
-    _block->getCoreArea(coreArea);
-
     if (overlapInsts.empty() && instBox->xMin() >= coreArea.xMin()
         && instBox->xMax() <= coreArea.xMax()) {
       legallyPlaced = true;
     }
     overlapInsts.clear();
+    legalize_itr++;
   }
 
-  antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  odb::Rect instRect;
+  antennaInst->getBBox()->getBox(instRect);
+
+  if (!legallyPlaced) {
+    _logger->warn(GRT, 54, "Placement of diode {} will be legalized by detailed placement.", antennaInstName);
+  }
+
+  // allow detailed placement to move diodes with geometry out of the core area,
+  // or near macro pins (can be placed out of row), or illegal placed diodes
+  if (coreArea.contains(instRect) &&
+      !sinkInst->getMaster()->isBlock() &&
+      legallyPlaced) {
+    antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  } else {
+    antennaInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
   odb::dbITerm::connect(antennaITerm, net);
   _diodeInsts.push_back(antennaInst);
 
   // Add diode to the R-tree of fixed instances
   int fixedInstId = fixedInsts.size();
-  odb::dbBox* instBox = antennaInst->getBBox();
-  box b(point(instBox->xMin(), instBox->yMin()),
-        point(instBox->xMax(), instBox->yMax()));
+  box b(point(instRect.xMin(), instRect.yMin()),
+        point(instRect.xMax(), instRect.yMax()));
   value v(b, fixedInstId);
   fixedInsts.insert(v);
   fixedInstId++;
@@ -309,7 +328,9 @@ void AntennaRepair::setInstsPlacementStatus(
   for (auto const& violation : _antennaViolations) {
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
-        sinkITerm->getInst()->setPlacementStatus(placementStatus);
+        if (!sinkITerm->getMTerm()->getMaster()->isBlock()) {
+          sinkITerm->getInst()->setPlacementStatus(placementStatus);
+        }
       }
     }
   }
@@ -317,6 +338,39 @@ void AntennaRepair::setInstsPlacementStatus(
   for (odb::dbInst* diodeInst : _diodeInsts) {
     diodeInst->setPlacementStatus(placementStatus);
   }
+}
+
+odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
+{
+  int min = std::numeric_limits<int>::min();
+  int max = std::numeric_limits<int>::max();
+
+  int pX, pY;
+  inst->getOrigin(pX, pY);
+  odb::Point origin = odb::Point(pX, pY);
+  odb::dbTransform transform(inst->getOrient(), origin);
+
+  odb::Rect instRect;
+
+  if (inst->getMaster()->isBlock()) {
+    instRect = odb::Rect(max, max, min, min);
+    odb::dbMTerm* mterm = iterm->getMTerm();
+    if (mterm != nullptr) {
+      for (odb::dbMPin* mterm_pin : mterm->getMPins()) {
+        for (odb::dbBox* mterm_box : mterm_pin->getGeometry()) {
+          odb::Rect rect;
+          mterm_box->getBox(rect);
+          transform.apply(rect);
+
+          instRect = rect;
+        }
+      }
+    }
+  } else {
+    inst->getBBox()->getBox(instRect);
+  }
+
+  return instRect;
 }
 
 AntennaCbk::AntennaCbk(GlobalRouter* grouter) : _grouter(grouter)

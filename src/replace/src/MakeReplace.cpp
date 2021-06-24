@@ -59,7 +59,7 @@ initReplace(OpenRoad* openroad) {
   sta::evalTclInit(tcl_interp, sta::replace_tcl_inits);
   openroad->getReplace()->setDb(openroad->getDb());
   openroad->getReplace()->setLogger(openroad->getLogger());
-  openroad->getReplace()->setFastRoute(openroad->getFastRoute());
+  openroad->getReplace()->setGlobalRouter(openroad->getGlobalRouter());
   openroad->getReplace()->setResizer(openroad->getResizer());
 }
 

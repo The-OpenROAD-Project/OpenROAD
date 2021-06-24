@@ -1,0 +1,15 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: gcd_sky130.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 411 nets and 1210 connections.
+[INFO ODB-0134] Finished DEF file: gcd_sky130.def
+[ERROR GRT-0045] Run global_route before repair_antennas.

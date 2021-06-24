@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -139,6 +139,8 @@ class GlobalRouter
   void setMinLayerForClock(const int minLayer);
   void setMaxLayerForClock(const int maxLayer);
   void setAlpha(const float alpha);
+  float getAlpha() const { return _alpha; }
+
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -167,7 +169,7 @@ class GlobalRouter
   bool haveRoutes() const { return !_routes.empty(); }
 
   // repair antenna public functions
-  void repairAntennas(sta::LibertyPort* diodePort);
+  void repairAntennas(sta::LibertyPort* diodePort, int iterations);
   void addDirtyNet(odb::dbNet* net);
 
   double dbuToMicrons(int64_t dbu);

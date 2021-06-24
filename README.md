@@ -374,6 +374,10 @@ clear_io_pin_constraints
 
 The `clear_io_pin_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
 
+##### Chip level connections
+
+At the top level of the chip, special padcells are use to connect signals to the external package. Additional commands are provided to [specify the placement of padcells, bondpads and bumps](src/ICeWall/doc/TCL_Interface.md)
+
 #### Tapcell
 
 Tapcell and endcap insertion.
@@ -881,10 +885,11 @@ Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
                                                -layer Metal4 -adjustment 0.7`
 
 ```
-repair_antennas diodeCellName/diodePinName
+repair_antennas diodeCellName/diodePinName [-iterations iterations]
 ```
 The repair_antenna command evaluates the global routing results looking for antenna violations, and repairs the violations
-by inserting diodes. The input for this command is the diode cell and pin names.
+by inserting diodes. The input for this command is the diode cell and pin names and the number of iterations. By default,
+the command runs only one iteration to repair antennas.
 It uses the  `antennachecker` tool to identify the antenna violations and return the exact number of diodes necessary to
 fix the antenna violation.
 Example: `repair_antenna sky130_fd_sc_hs__diode_2/DIODE`

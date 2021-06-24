@@ -835,6 +835,12 @@ public:
   // used in NesterovPlace
   float sumPhi() const;
 
+  // 
+  // return uniform (lower bound) target density
+  // LB of target density is required for massive runs.
+  //
+  float uniformTargetDensity() const;
+
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and 
   // would be changed dynamically in RD loop
@@ -922,6 +928,7 @@ private:
 
   float sumPhi_;
   float targetDensity_;
+  float uniformTargetDensity_;
 
   void init();
   void initFillerGCells();
