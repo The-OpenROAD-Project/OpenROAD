@@ -494,8 +494,8 @@ namespace pin_alignment {
                 vector<Net*> nets;
                 string net_file = string("./rtl_mp/") + name + string(".txt.net");
                 block_placement::ParseNetFile(nets, terminal_position, net_file.c_str());                
-                
-                int perturb_per_step = 50 * macros.size();
+              
+                int perturb_per_step = 2 * macros.size();
 
                 std::mt19937 rand_generator(seed);
                 vector<int> seed_list;
@@ -555,6 +555,8 @@ namespace pin_alignment {
                 
                 for(int j = 0; j < sa_vector.size(); j++) 
                     delete sa_vector[j];
+                
+                sa_vector.clear();
             }
         }
     }

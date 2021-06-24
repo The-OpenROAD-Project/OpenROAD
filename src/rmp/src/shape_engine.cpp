@@ -312,7 +312,7 @@ namespace shape_engine {
         int max_num_step = 5000;
         int k = 5000;
         float c = 1.0;
-        int perturb_per_step = 20 * macros.size();
+        int perturb_per_step = 2 * macros.size();
         float alpha = 0.5;
         float pos_swap_prob = 0.4;
         float neg_swap_prob = 0.4;
@@ -396,7 +396,8 @@ namespace shape_engine {
 
         for(int i = 0; i < sa_vector.size(); i++)
             delete sa_vector[i];
-
+        
+        sa_vector.clear();
 
         if(footprints.size() == 0)
             throw std::invalid_argument(std::string("Invalid Floorplan.  Please increase the size of floorplan"));

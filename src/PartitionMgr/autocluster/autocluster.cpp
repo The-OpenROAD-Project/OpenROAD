@@ -1686,6 +1686,12 @@ namespace par {
             par_cluster_queue.pop();
             printMacroCluster(cluster_old, cluster_id);
         }
+
+        // delete all the clusters
+        for(int i = 0; i < _cluster_list.size(); i++) {
+            delete _cluster_list[i];
+        }
+    
     }
 }
 
