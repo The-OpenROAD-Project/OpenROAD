@@ -16,7 +16,7 @@ will be generated to indicate violated nets. APIs are provided to help fix anten
 
 This is an example of the detailed and simple reports of the antenna checker:
 
-| <img src="./doc/images/ant_report_print.png" width=400px> |  
+| <img src="./doc/images/ant_report_print.png" width=500px> |  
 |:--:|
 
 Abbreviations Index:
