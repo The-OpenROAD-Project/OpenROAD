@@ -12,5 +12,5 @@
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO ODB-0134] Finished DEF file: clock_route.def
-[ERROR STA-0414] check_pdrev_alpha '-1' is not a positive float.
-STA-0414
+[ERROR GRT-0029] The alpha value must be greater or equal to 0.0 and lesser or equal to 1.0.
+GRT-0029
