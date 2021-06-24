@@ -110,6 +110,9 @@ define_metric "clock_period" "" "%d" "<=" {0}
 # Used by regression.tcl to check pass/fail metrics test.
 # Returns "pass" or failing metric comparison string.
 proc check_test_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_file [test_metrics_result_file $test]
   set metrics_limits_file [test_metrics_limits_file $test]
   if { ![file exists $metrics_file] } {
