@@ -404,6 +404,9 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
         pin2epMap,
     bool isPathSeg)
 {
+    bool enableOutput = false;
+    if (enableOutput)
+        cout << "initNets_searchRepair_pin2epMap_helper\nQuerying " << bp << "\n";
   auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
   // In PA we may have used NearbyGrid which puts a via outside the pin
@@ -416,16 +419,22 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
                   bp.y() + half_min_width);
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
+      if (enableOutput)
+          cout << "got " << bx << " obj: " << *rqObj << "\n";
     if (isPathSeg && !bx.contains(bp))
       continue;
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
       if (instTerm->getNet() == net) {
+          if (enableOutput)
+            cout << "inserting obj\n";
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     } else if (rqObj->typeId() == frcTerm) {
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
+          if (enableOutput)
+            cout << "inserting obj\n";
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     }
@@ -440,6 +449,9 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
         pin2epMap)
 {
   frPoint bp, ep;
+  bool enableOutput = false;;
+  if (enableOutput)
+      cout << "initNets_searchRepair_pin2epMap\n\n";
   // should not count extObjs in union find
   for (auto& uPtr : netRouteObjs) {
     auto connFig = uPtr.get();
@@ -449,6 +461,8 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       auto lNum = obj->getLayerNum();
       frSegStyle style;
       obj->getStyle(style);
+      if (enableOutput)
+          cout << "passing by " << *obj << "\n";
       if (getRouteBox().contains(bp)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, lNum, pin2epMap, true);
@@ -462,6 +476,8 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       obj->getOrigin(bp);
       auto l1Num = obj->getViaDef()->getLayer1Num();
       auto l2Num = obj->getViaDef()->getLayer2Num();
+      if (enableOutput)
+          cout << "passing by " << *obj << "\n";
       if (getRouteBox().contains(bp)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, l1Num, pin2epMap, false);
