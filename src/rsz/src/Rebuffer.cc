@@ -46,8 +46,6 @@
 #include "sta/Parasitics.hh"
 #include "sta/DcalcAnalysisPt.hh"
 
-#include "grt/GlobalRouter.h"
-
 namespace rsz {
 
 using std::min;
@@ -88,7 +86,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
                                         db_network_, logger_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
@@ -504,7 +502,7 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
                                         db_network_, logger_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);

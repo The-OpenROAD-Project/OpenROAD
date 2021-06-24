@@ -201,6 +201,13 @@ Resizer::init(OpenRoad *openroad,
 
 ////////////////////////////////////////////////////////////////
 
+float
+Resizer::routingAlpha() const
+{
+  //return grt_->getAlpha();
+  return 0.3;
+}
+
 double
 Resizer::coreArea() const
 {
@@ -750,7 +757,7 @@ Resizer::repairNet(Net *net,
                    int &length_violations)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
                                       db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
@@ -2850,7 +2857,7 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
                                       db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
@@ -3602,7 +3609,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, grt_->getAlpha(), false, db_network_, logger_);
+      tree = makeSteinerTree(drvr, routingAlpha(), false, db_network_, logger_);
     steiner_renderer_->highlight(tree);
   }
 }

@@ -295,6 +295,7 @@ public:
 protected:
   void init();
   void ensureBlock();
+  float routingAlpha() const;
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
   void bufferInput(Pin *top_pin,
