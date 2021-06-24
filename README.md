@@ -885,6 +885,16 @@ Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
                                                -layer Metal4 -adjustment 0.7`
 
 ```
+set_global_routing_random [-seed seed] \
+                          [-capacities_perturbation_percentage percent] \
+                          [-perturbation_amount value]
+```
+The `set_global_routing_random` command enables random global routing results. The random global routing shuffle
+the order of the nets and randomly subtract or add the capacities of a random set of edges.
+The `-seed` option sets the random seed, the `-capacities_perturbation_percentage` option sets the percentage of edges to
+perturb the capacities, and the `-perturbation_amount` option sets the value to perturbate the edge capacities.
+
+```
 repair_antennas diodeCellName/diodePinName [-iterations iterations]
 ```
 The repair_antenna command evaluates the global routing results looking for antenna violations, and repairs the violations
