@@ -889,10 +889,11 @@ set_global_routing_random [-seed seed] \
                           [-capacities_perturbation_percentage percent] \
                           [-perturbation_amount value]
 ```
-The `set_global_routing_random` command enables random global routing results. The random global routing shuffle
-the order of the nets and randomly subtract or add the capacities of a random set of edges.
+The `set_global_routing_random` command enables random global routing results. The random global routing shuffles the order
+of the nets and randomly subtracts or add the capacities of a random set of edges.
 The `-seed` option sets the random seed, the `-capacities_perturbation_percentage` option sets the percentage of edges to
-perturb the capacities, and the `-perturbation_amount` option sets the value to perturbate the edge capacities.
+perturb the capacities, and the `-perturbation_amount` option sets the perturbation value of the edge capacities.
+The random seed must be different from 0 to enable random global routing.
 
 ```
 repair_antennas diodeCellName/diodePinName [-iterations iterations]
