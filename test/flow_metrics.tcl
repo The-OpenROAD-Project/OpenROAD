@@ -339,12 +339,9 @@ proc save_flow_metric_limits_main {} {
 }
 
 proc save_metric_limits { test } {
-<<<<<<< HEAD
   # Don't require json until it is really needed.
   package require json
 
-=======
->>>>>>> master
   set metrics_file [test_metrics_result_file $test]
   set metrics_limits [test_metrics_limits_file $test]
   if { ! [file exists $metrics_file] } {
