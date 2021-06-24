@@ -71,7 +71,7 @@ proc set_routing_alpha { args } {
 
   set alpha [lindex $args 0]
   if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
-    utl::error GRT 29 "The alpha value must be greater or equal to 0.0 and lesser or equal to 1.0."
+    utl::error GRT 29 "The alpha value must be between 0.0 and 1.0."
   }
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)

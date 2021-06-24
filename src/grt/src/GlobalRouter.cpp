@@ -89,7 +89,7 @@ void GlobalRouter::init()
   _allowOverflow = false;
   _macroExtension = 0;
   _verbose = 0;
-  routing_alpha_ = 0;
+  _alpha = 0;
 }
 
 void GlobalRouter::makeComponents()
@@ -147,7 +147,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
     setSelectedMetal(maxRoutingLayer);
   }
 
-  _fastRoute->setAlpha(routing_alpha_);
+  _fastRoute->setAlpha(_alpha);
   _fastRoute->setVerbose(_verbose);
   _fastRoute->setOverflowIterations(_overflowIterations);
   _fastRoute->setAllowOverflow(_allowOverflow);
@@ -713,7 +713,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       findPins(net, pinsOnGrid, root_idx);
 
       if (pinsOnGrid.size() > 1) {
-        float net_alpha = routing_alpha_;
+        float net_alpha = _alpha;
         if (_nets_alpha.find(net->getName()) != _nets_alpha.end()) {
           net_alpha = _nets_alpha[net->getName()];
         }
@@ -1293,9 +1293,9 @@ void GlobalRouter::setMaxLayerForClock(const int maxLayer)
   _maxLayerForClock = maxLayer;
 }
 
-void GlobalRouter::setRoutingAlpha(const float alpha)
+void GlobalRouter::setAlpha(const float alpha)
 {
-  routing_alpha_ = alpha;
+  _alpha = alpha;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)

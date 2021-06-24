@@ -99,7 +99,7 @@ set_max_layer(int maxLayer)
 void
 set_routing_alpha_cmd(float alpha)
 {
-  getGlobalRouter()->setRoutingAlpha(alpha);
+  getGlobalRouter()->setAlpha(alpha);
 }
 
 void

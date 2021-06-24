@@ -24,8 +24,8 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Driver    length delay
 repeater1/Z manhtn 856.5 steiner 856.5 0.07
 repeater2/Z manhtn 855.2 steiner 855.2 0.07
+repeater3/Z manhtn 646.2 steiner 646.2 0.04
 u2/Z manhtn 646.1 steiner 646.1 0.04
-repeater3/Z manhtn 645.9 steiner 645.9 0.04
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
