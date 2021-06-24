@@ -534,16 +534,17 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           std::vector<int> edge_cost_per_layer)
 {
   int netID = newnetID;
+  FrNet* net = nets[newnetID];
   pinInd = num_pins;
   MD = std::max(MD, pinInd);
-  nets[newnetID]->db_net = db_net;
-  nets[newnetID]->numPins = num_pins;
-  nets[newnetID]->deg = pinInd;
-  nets[newnetID]->alpha = alpha;
-  nets[newnetID]->is_clock = is_clock;
-  nets[newnetID]->driver_idx = driver_idx;
-  nets[newnetID]->edgeCost = cost;
-  nets[newnetID]->edge_cost_per_layer = edge_cost_per_layer;
+  net->db_net = db_net;
+  net->numPins = num_pins;
+  net->deg = pinInd;
+  net->alpha = alpha;
+  net->is_clock = is_clock;
+  net->driver_idx = driver_idx;
+  net->edgeCost = cost;
+  net->edge_cost_per_layer = edge_cost_per_layer;
 
   seglistIndex[newnetID] = segcount;
   newnetID++;
