@@ -96,7 +96,11 @@ void Restructure::run(const char* liberty_file_name,
   if (!block_)
     return;
 
-  lib_file_names_.emplace_back(std::string(liberty_file_name));
+  sta::LibertyLibraryIterator *lib_iter = libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary *lib = lib_iter->next();
+    lib_file_names_.emplace_back(lib->filename());
+  }
   sta::Slack worst_slack = slack_threshold;
   open_sta_ = openroad_->getSta();
 
@@ -122,7 +126,7 @@ void Restructure::getBlob(unsigned max_depth)
   if (ends.size()) {
     sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
-    logger_->report("Got {} pins in cloud extraction", fanin_fanouts.size());
+    logger_->report("Found {} pins in extracted logic", fanin_fanouts.size());
     for (sta::Pin* pin : fanin_fanouts) {
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
@@ -130,7 +134,7 @@ void Restructure::getBlob(unsigned max_depth)
       if (term && term->getInst()->getITerms().size() < 10)
         path_insts_.insert(term->getInst());
     }
-    logger_->report("Found {} Insts for restructuring ...", path_insts_.size());
+    logger_->report("Found {} instances for restructuring ...", path_insts_.size());
   }
 }
 
@@ -311,7 +315,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       }
     }
   }
-  logger_->report("Number of end points for restructure {}", ends.size());
+  logger_->report("Found {} end points for restructure", ends.size());
 }
 
 int Restructure::countConsts(odb::dbBlock* top_block)
@@ -336,6 +340,7 @@ void Restructure::removeConstCells()
   odb::dbMaster* locell_master = nullptr;
 
   for (auto&& lib : block_->getDb()->getLibs()) {
+
     hicell_master = lib->findMaster(hicell_.c_str());
 
     locell_master = lib->findMaster(locell_.c_str());
