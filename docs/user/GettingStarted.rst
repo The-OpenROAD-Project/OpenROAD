@@ -8,7 +8,7 @@ flow is divided into two stages:
 1. Logic Synthesis: is performed by `yosys`_.
 2. Floorplanning through Detailed Routing: are performed by `OpenROAD App`_.
 
-In order to integrate the flow steps, `OpenROAD-flow`_ repository includes
+In order to integrate the flow steps, `OpenROAD-flow-scripts`_ repository includes
 the necessary scripts to build and test the flow.
 
 Prerequisites
@@ -16,23 +16,16 @@ Prerequisites
 
 Before proceeding to the next step:
 1. Install `Docker`_ on your machine, OR
-2. Make sure that build dependencies for all the tools are installed on your machine.
-
-Build and runtime dependencies can be installed with `DependencyInstaller.sh`_.
-and for yosys they are documented in the `yosys Dockerfile`_.
+2. Check that build dependencies for all tools are installed on your machine.
+   During initial Setup or if you have installed on a new machine, run this script:
+   run ./etc/DependencyInstaller.sh
 
 Get the tools
 -------------
 
-There are currently three options to get OpenROAD tools.
+There are currently two options to get OpenROAD tools.
 
-Option 1: download pre-build binaries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We currently support pre-built binaries on CentOS 7.
-Please, refer to the `releases page on GitHub`_.
-
-Option 2: build from sources using Docker
+Option 1: build from sources using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clone and Build
@@ -40,8 +33,8 @@ Clone and Build
 
 .. code-block:: shell
 
-   $ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow
-   $ cd OpenROAD-flow
+   $ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+   $ cd OpenROAD-flow-scripts
    $ ./build_openroad.sh
 
 Verify Installation
@@ -52,13 +45,15 @@ environment.
 
 .. code-block:: shell
 
-   $ docker run --rm -it openroad/flow
+   $ docker run -it -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd)/flow/platforms:/OpenROAD-flow-scripts/flow/platforms:ro openroad/flow-scripts
    [inside docker] $ source ./setup_env.sh
-   [inside docker] $ yosys -h
-   [inside docker] $ openroad -h
+   [inside docker] $ yosys -help
+   [inside docker] $ openroad -help
+   [inside docker] $ cd flow
+   [inside docker] $ make
    [inside docker] $ exit
 
-Option 3: build from sources locally
+Option 2: Build from sources locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clone and Build
@@ -66,8 +61,8 @@ Clone and Build
 
 .. code-block:: shell
 
-   $ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow
-   $ cd OpenROAD-flow
+   $ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+   $ cd OpenROAD-flow-scripts
    $ ./build_openroad.sh --local
 
 Verify Installation
@@ -79,8 +74,8 @@ environment.
 .. code-block:: shell
 
    $ source ./setup_env.sh
-   $ yosys -h
-   $ openroad -h
+   $ yosys -help
+   $ openroad -help
    $ exit
 
 Designs
@@ -107,14 +102,14 @@ examples of how to set one up.
 Platforms
 ---------
 
-OpenROAD-flow supports Verilog to GDS for the following open platforms:
+OpenROAD-flow-scripts supports Verilog to GDS for the following open platforms:
 Nangate45 / FreePDK45
 
 These platforms have a permissive license which allows us to
 redistribute the PDK and OpenROAD platform-specific files. The platform
 files and license(s) are located in ``platforms/{platform}``.
 
-OpenROAD-flow also supports the following commercial platforms: TSMC65LP /
+OpenROAD-flow-scripts also supports the following commercial platforms: TSMC65LP /
 GF14 (in progress)
 
 The PDKs and platform-specific files for these kits cannot be provided
@@ -130,7 +125,7 @@ Adding a New Platform
 ~~~~~~~~~~~~~~~~~~~~~
 
 At this time, we recommend looking at the `Nangate45`_ as an example of
-how to set up a new platform for OpenROAD-flow.
+how to set up a new platform for OpenROAD-flow-scripts.
 
 Implement the Design
 --------------------
@@ -147,7 +142,7 @@ tiny-tests - easy to add, single concern, single Verilog file
 The tiny-tests are have been designed with two design goals in mind:
 
 1. It should be trivial to add a new test: simply add a tiny standalone
-   Verilog file to ``OpenROAD-flow/flow/designs/src/tiny-tests``
+   Verilog file to ``OpenROAD-flow-scripts/flow/designs/src/tiny-tests``
 2. Each test should be as small and as standalone as possible and be a
    single concern test.
 
@@ -174,7 +169,7 @@ nangate45 smoke-test harness for top level Verilog designs
 .. _`yosys`: https://github.com/The-OpenROAD-Project/yosys
 .. _`releases page on GitHub`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/releases
 .. _`OpenROAD App`: https://github.com/The-OpenROAD-Project/OpenROAD
-.. _`OpenROAD-flow`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+.. _`OpenROAD-flow-scripts`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
 .. _`yosys Dockerfile`: https://github.com/The-OpenROAD-Project/yosys/blob/master/Dockerfile
 .. _`DependencyInstaller.sh`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/etc/DependencyInstaller.sh
 .. _`Docker`: https://docs.docker.com/engine/install

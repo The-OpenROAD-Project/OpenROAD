@@ -461,7 +461,7 @@ void FlexDRGraphics::drawMarker(int xl,
 }
 
 void FlexDRGraphics::show() {
-    if (!worker_ || current_iter_ < settings_->iter) {
+    if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
         return;
     }
     frBox gcellBox = worker_->getGCellBox();
@@ -494,8 +494,8 @@ void FlexDRGraphics::debugWholeDesign()
   if (!settings_->allowPause)
     return;
   drawWholeDesign_ = true;
-  gui_->pause();
   update();
+  gui_->pause();
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {

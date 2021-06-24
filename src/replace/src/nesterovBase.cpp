@@ -944,7 +944,8 @@ NesterovBase::NesterovBase()
   whiteSpaceArea_(0), 
   movableArea_(0), totalFillerArea_(0),
   stdInstsArea_(0), macroInstsArea_(0),
-  sumPhi_(0), targetDensity_(0) {}
+  sumPhi_(0), targetDensity_(0),
+  uniformTargetDensity_(0) {}
 
 NesterovBase::NesterovBase(
     NesterovBaseVars nbVars, 
@@ -1001,6 +1002,7 @@ NesterovBase::reset() {
 
   sumPhi_ = 0;
   targetDensity_ = 0;
+  uniformTargetDensity_ = 0;
 }
 
 
@@ -1194,6 +1196,8 @@ NesterovBase::initFillerGCells() {
   movableArea_ = whiteSpaceArea_ * targetDensity_;
   
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
+  uniformTargetDensity_ 
+    = static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_);
   if( totalFillerArea_ < 0 ) {
     log_->error(GPL, 302, 
         "Use a higher -density or "
@@ -1201,7 +1205,7 @@ NesterovBase::initFillerGCells() {
         "Given target density: {:.2f}\n"
         "Suggested target density: {:.2f}", 
         targetDensity_, 
-        static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_));
+        uniformTargetDensity_);
   }
 
   int fillerCnt = 
@@ -1400,6 +1404,11 @@ NesterovBase::sumPhi() const {
   return sumPhi_;
 }
 
+float 
+NesterovBase::uniformTargetDensity() const {
+  return uniformTargetDensity_;
+}
+
 float
 NesterovBase::initTargetDensity() const {
   return nbVars_.targetDensity;
@@ -1471,6 +1480,9 @@ NesterovBase::updateAreas() {
   movableArea_ = whiteSpaceArea_ * targetDensity_;
   
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
+  uniformTargetDensity_ = 
+    static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_);
+
   if( totalFillerArea_ < 0 ) {
     log_->error(GPL, 303, 
         "Use a higher -density or "
@@ -1478,7 +1490,7 @@ NesterovBase::updateAreas() {
         "Given target density: {:.2f}\n"
         "Suggested target density: {:.2f}", 
         targetDensity_, 
-        static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_));
+        uniformTargetDensity_);
   }
 }
 

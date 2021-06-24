@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -71,7 +71,7 @@
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
-#include "grt/MakeFastRoute.h"
+#include "grt/MakeGlobalRouter.h"
 #include "rmp/MakeRestructure.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
@@ -127,7 +127,7 @@ OpenRoad::OpenRoad()
     opendp_(nullptr),
     finale_(nullptr),
     macro_placer_(nullptr),
-    fastRoute_(nullptr),
+    global_router_(nullptr),
     restructure_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
@@ -150,7 +150,7 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deleteFastRoute(fastRoute_);
+  deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
@@ -211,7 +211,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
   finale_ = makeFinale();
-  fastRoute_ = makeFastRoute();
+  global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
@@ -241,7 +241,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initReplace(this);
   initOpendp(this);
   initFinale(this);
-  initFastRoute(this);
+  initGlobalRouter(this);
   initTritonCts(this);
   initTapcell(this);
   initMacroPlacer(this);

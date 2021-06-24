@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -65,6 +65,8 @@
 #include "sta/PathExpanded.hh"
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
+
+#include "grt/GlobalRouter.h"
 
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
@@ -179,7 +181,8 @@ Resizer::init(OpenRoad *openroad,
               Logger *logger,
               Gui *gui,
               dbDatabase *db,
-              dbSta *sta)
+              dbSta *sta,
+              GlobalRouter *grt)
 {
   openroad_ = openroad;
   logger_ = logger;
@@ -187,6 +190,7 @@ Resizer::init(OpenRoad *openroad,
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
+  grt_ = grt;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
@@ -746,7 +750,8 @@ Resizer::repairNet(Net *net,
                    int &length_violations)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+                                      db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
@@ -2017,21 +2022,22 @@ Resizer::repairSetup(float slack_margin)
     ensureWireParasitics();
     sta_->findRequireds();
     sta_->worstSlack(max_, worst_slack, worst_vertex);
-    debugPrint(logger_, RSZ, "repair_setup", 1, "pass {} worst_slack = {}",
+    bool decreasing_slack = fuzzyLessEqual(worst_slack, prev_worst_slack);
+    debugPrint(logger_, RSZ, "repair_setup", 1, "pass {} worst_slack = {} {}",
                pass,
-               delayAsString(worst_slack, sta_, 3));
-    if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
+               delayAsString(worst_slack, sta_, 3),
+               decreasing_slack ? "v" : "^");
+    if (decreasing_slack) {
       // Allow slack to increase a few passes to get out of local minima.
       // Do not update prev_worst_slack so it saves the high water mark.
       decreasing_slack_passes++;
       if (decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
         // Undo changes that reduced slack.
         journalRestore();
-        sta_->worstSlack(max_, worst_slack, worst_vertex);
         debugPrint(logger_, RSZ, "repair_setup", 1,
                    "decreasing slack for {} passes restoring worst_slack {}",
                    repair_setup_decreasing_slack_passes_allowed_,
-                   delayAsString(worst_slack, sta_, 3));
+                   delayAsString(prev_worst_slack, sta_, 3));
         break;
       }
     }
@@ -2176,8 +2182,9 @@ Resizer::repairSetup(PathRef &path,
                                        prev_drive, dcalc_ap);
       if (upsize) {
         Instance *drvr = network_->instance(drvr_pin);
-        debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} -> {}",
+        debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
                    network_->pathName(drvr_pin),
+                   drvr_port->libertyCell()->name(),
                    upsize->name());
         if (replaceCell(drvr, upsize, true))
           resize_count_++;
@@ -2843,7 +2850,8 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), true,
+                                      db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
     delete tree;
@@ -3523,7 +3531,7 @@ Resizer::cloneClkInverter(Instance *inv)
 void
 Resizer::journalBegin()
 {
-  debugPrint(logger_, RSZ, "resize_journal", 1, "begin");
+  debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
 }
@@ -3532,16 +3540,18 @@ void
 Resizer::journalInstReplaceCellBefore(Instance *inst)
 {
   LibertyCell *lib_cell = network_->libertyCell(inst);
-  debugPrint(logger_, RSZ, "resize_journal", 1, "replace {} ({})",
+  debugPrint(logger_, RSZ, "journal", 1, "journal replace {} ({})",
              network_->pathName(inst),
              lib_cell->name());
-  resized_inst_map_[inst] = lib_cell;
+  // Do not clobber an existing checkpoint cell.
+  if (!resized_inst_map_.hasKey(inst))
+    resized_inst_map_[inst] = lib_cell;
 }
 
 void
 Resizer::journalMakeBuffer(Instance *buffer)
 {
-  debugPrint(logger_, RSZ, "resize_journal", 1, "make_buffer {}",
+  debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}",
              network_->pathName(buffer));
   inserted_buffers_.insert(buffer);
 }
@@ -3553,7 +3563,7 @@ Resizer::journalRestore()
     Instance *inst = inst_cell.first;
     if (!inserted_buffers_.hasKey(inst)) {
       LibertyCell *lib_cell = inst_cell.second;
-      debugPrint(logger_, RSZ, "resize_journal", 1, "restore {} ({})",
+      debugPrint(logger_, RSZ, "journal", 1, "journal restore {} ({})",
                  network_->pathName(inst),
                  lib_cell->name());
       replaceCell(inst, lib_cell, false);
@@ -3561,7 +3571,7 @@ Resizer::journalRestore()
     }
   }
   for (Instance *buffer : inserted_buffers_) {
-    debugPrint(logger_, RSZ, "resize_journal", 1, "remove {}",
+    debugPrint(logger_, RSZ, "journal", 1, "journal remove {}",
                network_->pathName(buffer));
     removeBuffer(buffer);
     inserted_buffer_count_--;
@@ -3592,7 +3602,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, false, db_network_, logger_);
+      tree = makeSteinerTree(drvr, grt_->getAlpha(), false, db_network_, logger_);
     steiner_renderer_->highlight(tree);
   }
 }
