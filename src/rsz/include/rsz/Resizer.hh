@@ -634,7 +634,7 @@ protected:
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
+  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
 
