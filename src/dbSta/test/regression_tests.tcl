@@ -1,4 +1,5 @@
 record_tests {
+  constant1
   network_edit1
   sdc_names1
   sdc_names2

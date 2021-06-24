@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, OpenRoad Project
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -225,6 +225,9 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
+  default_ = 0;
+  prl_ = 0;
+  extension_ = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }

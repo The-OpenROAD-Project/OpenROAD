@@ -18,8 +18,7 @@ drvr/Q                                   10     35    -25 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 642um.
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack

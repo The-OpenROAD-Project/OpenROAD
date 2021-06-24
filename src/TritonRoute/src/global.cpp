@@ -109,10 +109,11 @@ ostream& operator<<(ostream& os, const frPoint& pIn)
 
 ostream& operator<<(ostream& os, const frRect& pinFigIn)
 {
-  if (pinFigIn.getPin()) {
-    os << "PINFIG (PINNAME/LAYER) " << pinFigIn.getPin()->getTerm()->getName()
-       << " " << pinFigIn.getLayerNum() << endl;
-  }
+  //  if (pinFigIn.getPin()) {
+  //    os << "PINFIG (PINNAME/LAYER) " <<
+  //    pinFigIn.getPin()->getTerm()->getName()
+  //       << " " << pinFigIn.getLayerNum() << endl;
+  //  }
   frBox tmpBox;
   pinFigIn.getBBox(tmpBox);
   os << "  RECT " << tmpBox.left() << " " << tmpBox.bottom() << " "
@@ -122,10 +123,10 @@ ostream& operator<<(ostream& os, const frRect& pinFigIn)
 
 ostream& operator<<(ostream& os, const frPolygon& pinFigIn)
 {
-  if (pinFigIn.getPin()) {
-    os << "PINFIG (NAME/LAYER) " << pinFigIn.getPin()->getTerm()->getName()
-       << " " << pinFigIn.getLayerNum() << endl;
-  }
+  //  if (pinFigIn.getPin()) {
+  //    os << "PINFIG (NAME/LAYER) " << pinFigIn.getPin()->getTerm()->getName()
+  //       << " " << pinFigIn.getLayerNum() << endl;
+  //  }
   os << "  POLYGON";
   for (auto& m : pinFigIn.getPoints()) {
     os << " ( " << m.x() << " " << m.y() << " )";
@@ -175,9 +176,9 @@ ostream& operator<<(ostream& os, const frInstTerm& instTermIn)
   if (instTermIn.getNet()) {
     netName = instTermIn.getNet()->getName();
   }
-  os << "INSTTERM (NAME/CELL/TERM/NET) " << name << " " << cellName << " "
+  os << "INSTTERM: (INST/CELL/TERM/NET) " << name << " " << cellName << " "
      << termName << " " << netName << endl;
-  os << *instTermIn.getTerm();
+  os << *instTermIn.getTerm() << "END_INSTTERM";
   return os;
 }
 
@@ -288,7 +289,7 @@ ostream& operator<<(ostream& os, const frPathSeg& p)
 {
   os << "frPathSeg: begin (" << p.getBeginPoint().x() << " "
      << p.getBeginPoint().y() << " ) end ( " << p.getEndPoint().x() << " "
-     << p.getEndPoint().y() << " )";
+     << p.getEndPoint().y() << " ) layerNum " << p.getLayerNum();
   return os;
 }
 
@@ -305,7 +306,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
   switch (fig.typeId()) {
     case frcPathSeg: {
       auto p = static_cast<const frPathSeg*>(&fig);
-      os << p;
+      os << *p;
       break;
     }
     case frcVia: {
@@ -333,7 +334,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
       break;
     }
     case frcPolygon: {
-      os << "frPolygon";
+      os << *static_cast<const frPolygon*>(&fig);
       break;
     }
     default:
@@ -342,4 +343,30 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
   return os;
 }
 
+ostream& operator<<(ostream& os, const frBlockObject& fig)
+{
+  switch (fig.typeId()) {
+    case frcInstTerm: {
+      os << *static_cast<const frInstTerm*>(&fig);
+      break;
+    }
+    case frcTerm: {
+      os << *static_cast<const frTerm*>(&fig);
+      break;
+    }
+    // case fig is a frConnFig
+    case frcPathSeg:
+    case frcVia:
+    case frcPatchWire:
+    case frcGuide:
+    case frcRect:
+    case frcPolygon: {
+      os << *static_cast<const frConnFig*>(&fig);
+      break;
+    }
+    default:
+      os << "UNKNOWN frShape, code " << fig.typeId();
+  }
+  return os;
+}
 }  // end namespace fr

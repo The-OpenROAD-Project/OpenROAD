@@ -38,8 +38,10 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <unordered_set>
 #include <queue>
 #include <string>
+#include <utility>
 
 #include "utl/Logger.h"
 
@@ -50,48 +52,78 @@ using std::max;
 using std::min;
 using std::queue;
 using std::swap;
+using std::pair;
+
 using utl::PDR;
+
+// Don't add odb::Point as a dependent here.
+typedef pair<int, int> Pt;
+
+class PtHash
+{
+public:
+  size_t operator()(const Pt &pt) const
+  {
+    size_t hash = 5381;
+    // hash * 31 ^ add
+    hash = ((hash << 5) + hash) ^ pt.first;
+    hash = ((hash << 5) + hash) ^ pt.second;
+    return hash;
+  }
+};
+
+class PtEqual
+{
+public:
+  bool operator()(const Pt &pt1,
+		  const Pt &pt2) const
+  {
+    return pt1.first == pt2.first
+      && pt1.second == pt2.second;
+  }
+};
+
+typedef std::unordered_map<Pt, int, PtHash, PtEqual> PtMap;
 
 Graph::Graph(vector<int>& x,
              vector<int>& y,
+             int root_index,
              Logger* logger) :
+  root_idx(root_index),
   logger_(logger)
 {
-  root_idx = 0;
-  aux.resize(x.size());
-
+  PtMap pts;
   for (int i = 0; i < x.size(); ++i) {
-    // This is N^2 stoopid. Use a set. -cherry 06/06/2021
-    bool flag = false;
-    for (int j = 0; j < nodes.size(); ++j) {
-      if (nodes[j].x == x[i] && nodes[j].y == y[i]) {
-        flag = true;
-        break;
-      }
-    }
-    if (flag)
-      continue;
-
+    int x1 = x[i];
+    int y1 = y[i];
+    Pt pt(x1, y1);
     int idx = nodes.size();
-    nodes.push_back(Node(idx, x[i], y[i]));
-    edges.push_back(Edge(idx, 0, 0));
-    sheared.push_back(Node(idx, 0, 0));
-    sorted.push_back(idx);
+    auto pt_itr = pts.find(pt);
+    if (pt_itr == pts.end()) {
+      pts[pt] = idx;
+      nodes.push_back(Node(idx, x[i], y[i]));
+      edges.push_back(Edge(idx, 0, 0));
+      sheared.push_back(Node(idx, 0, 0));
+      sorted.push_back(idx);
 
-    urux.push_back(std::numeric_limits<int>::max());
-    urlx.push_back(x[i]);
-    ulux.push_back(x[i]);
-    ullx.push_back(std::numeric_limits<int>::min());
-    lrux.push_back(std::numeric_limits<int>::max());
-    lrlx.push_back(x[i]);
-    llux.push_back(x[i]);
-    lllx.push_back(std::numeric_limits<int>::min());
-
-    vector<int> newColumn;
-    nn.push_back(newColumn);
+      urux.push_back(std::numeric_limits<int>::max());
+      urlx.push_back(x[i]);
+      ulux.push_back(x[i]);
+      ullx.push_back(std::numeric_limits<int>::min());
+      lrux.push_back(std::numeric_limits<int>::max());
+      lrlx.push_back(x[i]);
+      llux.push_back(x[i]);
+      lllx.push_back(std::numeric_limits<int>::min());
+    } 
+    else if (root_idx == idx)
+      // Root is a duplicate location.
+      root_idx = pt_itr->second;
+    else if (idx < root_idx)
+      // Deleting duplicate before root.
+      root_idx--;
   }
+
   num_terminals = nodes.size();
-  orig_num_terminals = nodes.size();
   aux.resize(num_terminals);
 
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
@@ -1681,17 +1713,22 @@ static bool comp_det_cost(const Node& i, const Node& j)
   return (i.det_cost_node > j.det_cost_node);
 }
 
+bool
+Graph::nodeLessY(int i, int j)
+{
+  int y1 = nodes[i].y;
+  int y2 = nodes[j].y;
+  if (y1 == y2)
+    return nodes[i].x < nodes[j].x;
+  else
+    return y1 < y2;
+}
+
 void Graph::buildNearestNeighbors_single_node(int node_idx)
 {
   int node_count = nodes.size();
-  vector<Node> tmp = nodes;
-  sorted.resize(node_count);
-  nn.resize(node_count);
   // sort in y-axis
-  sort(tmp.begin(), tmp.end(), comp_y);
-  for (int i = 0; i < node_count; ++i) {
-    sorted[i] = tmp[i].idx;
-  }
+  sort(sorted.begin(), sorted.end(), [=] (int i, int j) { return nodeLessY(i, j); });
 
   int idx = 0;
   for (int abc = 0; abc < sorted.size(); abc++)
@@ -1701,41 +1738,40 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
     }
 
   // collect neighbor
-  Node& cNode = nodes[node_idx];
+  Node& node = nodes[node_idx];
   // update idx to neighbors
-  // Note: nNode.y <= cNode.y
+  // Note: below.y <= node.y
   for (int i = 0; i < idx; ++i) {
-    Node& nNode = nodes[sorted[i]];
-    if (urlx[nNode.idx] == cNode.x) {
-      nn[nNode.idx].push_back(cNode.idx);
-      urux[nNode.idx] = cNode.x;
-      ullx[nNode.idx] = cNode.x;
-    } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
+    Node& below = nodes[sorted[i]];
+    if (node.x >= urlx[below.idx] && node.x < urux[below.idx]) {
+      debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper right",
+                 below.idx,
+                 node.idx);
       // right
-      nn[nNode.idx].push_back(cNode.idx);
-      urux[nNode.idx] = cNode.x;
-    } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
+      nn[below.idx].push_back(node.idx);
+      urux[below.idx] = node.x;
+    } else if (node.x > ullx[below.idx] && node.x < ulux[below.idx] ) {
       // left
-      nn[nNode.idx].push_back(cNode.idx);
-      ullx[nNode.idx] = cNode.x;
+      debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
+                 below.idx,
+                 node.idx);
+      nn[below.idx].push_back(node.idx);
+      ullx[below.idx] = node.x;
     }
   }
 
   // update neighbor to idx
-  // Note: nNode.y <= cNode.y
+  // Note: below.y <= node.y
   for (int i = idx - 1; i >= 0; --i) {
-    Node& nNode = nodes[sorted[i]];
-    if (lrlx[cNode.idx] == nNode.x) {
-      nn[cNode.idx].push_back(nNode.idx);
-      lrux[cNode.idx] = nNode.x;
-    } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
+    Node& below = nodes[sorted[i]];
+    if (below.x >= lrlx[node.idx] && below.x < lrux[node.idx]) {
       // right
-      nn[cNode.idx].push_back(nNode.idx);
-      lrux[cNode.idx] = nNode.x;
-    } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
+      nn[node.idx].push_back(below.idx);
+      lrux[node.idx] = below.x;
+    } else if (below.x > lllx[node.idx] && below.x < llux[node.idx]) {
       // left
-      nn[cNode.idx].push_back(nNode.idx);
-      lllx[cNode.idx] = nNode.x;
+      nn[node.idx].push_back(below.idx);
+      lllx[node.idx] = below.x;
     }
   }
 
@@ -1750,18 +1786,13 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
 }
 
 // Guibas-Stolfi algorithm for computing nearest NE (north-east) neighbors
+// This has no resemblance to any Guibas-Stolfi algorithm -cherry 06/18/2021
 void Graph::buildNearestNeighborsForSPT()
 {
-  int node_count = nodes.size();
-  for (int i = 0; i < nn.size(); ++i) {
-    nn[i].clear();
-  }
   nn.clear();
-  // This is super stupid - copies node structures to sort them and then
-  // gets the indexes out of the sorted node copies and puts them in 'sorted' below.-cherry 06/15/2021
-  vector<Node> tmp = nodes;
-  // sorted should be a local inited with size node_count -cherry 06/15/2021
-  sorted.clear();
+  int node_count = nodes.size();
+  nn.resize(node_count);
+
   urux.clear();
   urlx.clear();
   ulux.clear();
@@ -1770,6 +1801,8 @@ void Graph::buildNearestNeighborsForSPT()
   lrlx.clear();
   llux.clear();
   lllx.clear();
+
+  sorted.clear();
   for (int i = 0; i < node_count; ++i) {
     sorted.push_back(nodes[i].idx);
     urux.push_back(std::numeric_limits<int>::max());
@@ -1780,106 +1813,59 @@ void Graph::buildNearestNeighborsForSPT()
     lrlx.push_back(nodes[i].x);
     llux.push_back(nodes[i].x);
     lllx.push_back(std::numeric_limits<int>::min());
-    // should just reserve out of loop -cherry 06/15/2021
-    vector<int> tmp2;
-    nn.push_back(tmp2);
   }
+
   // sort in y-axis
-  sort(tmp.begin(), tmp.end(), comp_y);
-  for (int i = 0; i < node_count; ++i) {
-    sorted[i] = tmp[i].idx;
-  }
+  sort(sorted.begin(), sorted.end(), [=] (int i, int j) { return nodeLessY(i, j); });
   // sorted now has indicies of nodes sorted by y
 
   // collect neighbor
+  // Node uu/ur/ll/lr are named assbackward. -cherry 06/18/2021
   for (int idx = 0; idx < node_count; ++idx) {
-    debugPrint(logger_, PDR, "pdrev", 3, "sorted idx: {}", sorted[idx]);
-    Node& cNode = nodes[sorted[idx]];
-    // update idx to neighbors
-    // Note: nNode.y <= cNode.y
-    // cNode.y > nNode.y => neighbors of nNode have y >
+    Node& node = nodes[sorted[idx]];
+    debugPrint(logger_, PDR, "pdrev", 3, "sorted by y {} ({} {})", node.idx, node.x, node.y);
+    // Consider all nodes below node
     for (int i = 0; i < idx; ++i) {
-      Node& nNode = nodes[sorted[i]];
-      if (urlx[nNode.idx] == cNode.x) {
-        nn[nNode.idx].push_back(cNode.idx);
-        urux[nNode.idx] = cNode.x;
-        ullx[nNode.idx] = cNode.x;
-      } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "right for nNode cNode idx: {} nNode idx: {}",
-                   cNode.idx,
-                   nNode.idx);
+      Node& below = nodes[sorted[i]];
+      // below.y <= node.y
+      debugPrint(logger_, PDR, "pdrev", 3, " below {} ({} {})", below.idx, below.x, below.y);
+      if (node.x >= urlx[below.idx] && node.x < urux[below.idx]) {
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper right",
+                   below.idx,
+                   node.idx);
         // right
-        nn[nNode.idx].push_back(cNode.idx);
-        urux[nNode.idx] = cNode.x;
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "added to nNode right: {}",
-                   cNode.idx);
-      } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "left for nNode cNode idx: {} nNode idx: {}",
-                   cNode.idx,
-                   nNode.idx);
-        if (idx == node_count - 1) {
-          // left
-          nn[nNode.idx].push_back(cNode.idx);
-          ullx[nNode.idx] = cNode.x;
-          debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}", cNode.idx);
-        } else {
-          if (nodes[sorted[idx + 1]].y != cNode.y
-              || nodes[sorted[idx + 1]].x > nNode.x) {
-            nn[nNode.idx].push_back(cNode.idx);
-            ullx[nNode.idx] = cNode.x;
-            debugPrint(logger_, PDR, "pdrev", 3, "added to nNode left: {}", cNode.idx);
-          }
-        }
+        nn[below.idx].push_back(node.idx);
+        urux[below.idx] = node.x;
+      } else if (node.x > ullx[below.idx] && node.x < ulux[below.idx] ) {
+        // left
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} upper left",
+                   below.idx,
+                   node.idx);
+        nn[below.idx].push_back(node.idx);
+        ullx[below.idx] = node.x;
       }
     }
 
-    int tIdx = idx;
-    while (nodes[sorted[tIdx]].x == nodes[sorted[idx]].x) {
-      tIdx++;
-      if (tIdx == node_count)
-        break;
-    }
-    tIdx = tIdx - 1;
     // update neighbor to idx
-    // Note: nNode.y <= cNode.y
-    for (int i = tIdx; i >= 0; --i) {
-      if (idx == i)
-        continue;
-      Node& nNode = nodes[sorted[i]];
-      if (i >= 1) {
-        if (nodes[sorted[i]].y == nodes[sorted[i - 1]].y)
-          continue;
-      }
-      if (lrlx[cNode.idx] == nNode.x) {
-        nn[cNode.idx].push_back(nNode.idx);
-        lrux[cNode.idx] = nNode.x;
-        debugPrint(logger_, PDR, "pdrev", 3, "added cNode center: {}", nNode.idx);
-      } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
+    // Note: below.y <= node.y
+    for (int i = idx - 1 ; i >= 0; --i) {
+      Node& below = nodes[sorted[i]];
+      debugPrint(logger_, PDR, "pdrev", 3, " below {} ({} {})", node.idx, node.x, node.y);
+      if (below.x >= lrlx[node.idx] && below.x < lrux[node.idx]) {
         // right
-        nn[cNode.idx].push_back(nNode.idx);
-        lrux[cNode.idx] = nNode.x;
-        debugPrint(logger_, PDR, "pdrev", 3, "added cNode right: {}", nNode.idx);
-      } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower right",
+                   node.idx,
+                   below.idx);
+        nn[node.idx].push_back(below.idx);
+        lrux[node.idx] = below.x;
+      } else if (below.x > lllx[node.idx] && below.x < llux[node.idx]) {
         // left
-        debugPrint(logger_, PDR, "pdrev", 3, "added cNode left: {}", nNode.idx);
-        nn[cNode.idx].push_back(nNode.idx);
-        lllx[cNode.idx] = nNode.x;
-        if (cNode.y == nNode.y) {
-          ullx[cNode.idx] = nNode.x;
-        }
+        debugPrint(logger_, PDR, "pdrev", 3, " node {} neighbor {} lower left",
+                   node.idx,
+                   below.idx);
+        nn[node.idx].push_back(below.idx);
+        lllx[node.idx] = below.x;
       }
-    }
-  }
-  int total = 0, max = 0, size = 0, max_id = 0;
-  for (int i = 0; i < node_count; ++i) {
-    size = nn[i].size();
-    total += size;
-    if (size > max) {
-      max = size;
-      max_id = i;
     }
   }
   // Print neighbors.
@@ -2230,7 +2216,7 @@ int Graph::calc_tree_wl_pd()
 int Graph::calc_tree_pl()
 {
   int pl = 0;
-  for (int j = 0; j < orig_num_terminals; ++j) {
+  for (int j = 0; j < num_terminals; ++j) {
     int child = j;
     int par = nodes[j].parent;
     while (par != child) {
@@ -2748,7 +2734,6 @@ void Graph::constructSteiner()
 
 void Graph::doSteiner_HoVW()
 {
-  // int orig_num_terminals = num_terminals;
   // Tree preparation
   updateMinDist();
   for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
@@ -2835,7 +2820,7 @@ void Graph::doSteiner_HoVW()
 
 void Graph::fix_max_dc()
 {
-  // ever heard of functions? -cherry 06/07/2020
+  // This desparately needs to be factored -cherry 06/07/2020
   // DAG traversal
   BuildDAG();
 
@@ -3037,12 +3022,9 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   for (int i = 2; i < set_of_nodes.size(); i++)
     lists.push_back(tmp1);
 
-  // This "counts" from 0 to list.size() using each index in the array as one bit, so it
-  // result is 2^lists.size() - exponential.
-  // Horrifically inefficient in both memory and time.
-  // This is is the kiss of death -cherry 05/03/2021
-  //if (lists.size() > 10)
-  // logger_->error(PDR, 1, "pdrev steiner conversion failure");
+  // This is horrifically inefficient in both memory and time.
+  // It "counts" from 0 to list.size() using each index in the array as one bit, so
+  // the result size is 2^lists.size() - exponential.  -cherry 06/18/2021
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
   // For each combination, calc overlap
@@ -3643,6 +3625,7 @@ void Graph::update_node_detcost_Kt(int j)
     child = par;
     par = nodes[par].parent;
     count++;
+    // WTF? -cherry 06/20/2021
     if (count > 1000)
       break;
   }
@@ -3650,18 +3633,17 @@ void Graph::update_node_detcost_Kt(int j)
 
 void Graph::get_level_in_tree()
 {
+  // This needlessly copies vectors in many places -cherry 06/20/2021
   tree_struct.clear();
   int iter = 0;
   vector<int> tmp1;
   tree_struct.push_back(tmp1);
-  tmp1.clear();
   tree_struct[iter].push_back(0);
   iter++;
   int j = 0, level_count = 0;
   vector<int> set_of_chi = nodes[j].children, tmp;
   vector<int> tmp2;
   tree_struct.push_back(tmp2);
-  tmp2.clear();
   tree_struct[iter].insert(
       tree_struct[iter].end(), set_of_chi.begin(), set_of_chi.end());
   int size_of_chi = set_of_chi.size();

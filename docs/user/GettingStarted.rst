@@ -16,23 +16,16 @@ Prerequisites
 
 Before proceeding to the next step:
 1. Install `Docker`_ on your machine, OR
-2. Make sure that build dependencies for all the tools are installed on your machine.
-
-Build and runtime dependencies can be installed with `DependencyInstaller.sh`_.
-and for yosys they are documented in the `yosys Dockerfile`_.
+2. Check that build dependencies for all tools are installed on your machine.
+   During initial Setup or if you have installed on a new machine, run this script:
+   run ./etc/DependencyInstaller.sh
 
 Get the tools
 -------------
 
-There are currently three options to get OpenROAD tools.
+There are currently two options to get OpenROAD tools.
 
-Option 1: download pre-build binaries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We currently support pre-built binaries on CentOS 7.
-Please, refer to the `releases page on GitHub`_.
-
-Option 2: build from sources using Docker
+Option 1: build from sources using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clone and Build
@@ -52,13 +45,15 @@ environment.
 
 .. code-block:: shell
 
-   $ docker run --rm -it openroad/flow-scripts
+   $ docker run -it -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd)/flow/platforms:/OpenROAD-flow-scripts/flow/platforms:ro openroad/flow-scripts
    [inside docker] $ source ./setup_env.sh
    [inside docker] $ yosys -help
    [inside docker] $ openroad -help
+   [inside docker] $ cd flow
+   [inside docker] $ make
    [inside docker] $ exit
 
-Option 3: build from sources locally
+Option 2: Build from sources locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clone and Build

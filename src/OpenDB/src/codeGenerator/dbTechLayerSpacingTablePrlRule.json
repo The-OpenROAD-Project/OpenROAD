@@ -16,7 +16,8 @@
     },
     {
       "type": "int",
-      "name": "eol_width_"
+      "name": "eol_width_",
+      "default": 0
     },
     {
       "type": "dbVector<int>",

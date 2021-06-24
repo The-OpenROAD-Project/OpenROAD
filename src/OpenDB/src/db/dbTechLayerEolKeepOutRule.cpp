@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, OpenRoad Project
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -119,6 +119,11 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
+  eol_width_ = 0;
+  backward_ext_ = 0;
+  forward_ext_ = 0;
+  side_ext_ = 0;
+  class_name_ = "";
   // User Code Begin Constructor
   // User Code End Constructor
 }

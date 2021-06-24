@@ -1,6 +1,6 @@
 ############################################################################
 ##
-## Copyright (c) 2019, OpenROAD
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -39,6 +39,7 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
+utl::metric "ord_sha1" [ord::openroad_git_sha1]
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "instance_count" [sta::network_instance_count]
 

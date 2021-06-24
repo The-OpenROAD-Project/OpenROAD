@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, University of California, San Diego.
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,18 @@ proc set_global_routing_layer_adjustment { args } {
     }
   } else {
     utl::error GRT 44 "set_global_routing_layer_adjustment: Wrong number of arguments."
+  }
+}
+
+sta::define_cmd_args "set_routing_alpha" { alpha }
+
+proc set_routing_alpha { args } {
+  sta::check_argc1 "set_routing_alpha" $args
+  set alpha [lindex $args 0]
+  if { [string is double $alpha] && $alpha >= 0.0 && $alpha <= 1.0 } {
+    grt::set_alpha $alpha
+  } else {
+    utl::error GRT 227 "alpha must be between 0.0 and 1.0"
   }
 }
 
@@ -244,16 +256,33 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { lib_port }
+sta::define_cmd_args "repair_antennas" { lib_port \
+                                         [-iterations iterations]}
 
 proc repair_antennas { args } {
-  sta::check_argc_eq1 "repair_antennas" $args
-  set lib_port [lindex $args 0]
-  if { ![sta::is_object $lib_port] } {
-    set lib_port [sta::get_lib_pins [lindex $args 0]]
-  }
-  if { $lib_port != "" } {
-    grt::repair_antennas $lib_port
+  sta::parse_key_args "repair_antennas" args \
+                 keys {-iterations}
+  if { [grt::have_routes] } {
+    sta::check_argc_eq1 "repair_antennas" $args
+    set lib_port [lindex $args 0]
+    if { ![sta::is_object $lib_port] } {
+      set lib_port [sta::get_lib_pins [lindex $args 0]]
+    }
+
+    if { [info exists keys(-iterations)] } {
+      set iterations $keys(-iterations)
+      sta::check_positive_integer "-repair_antennas_iterations" $iterations
+    } else {
+      set iterations 1
+    }
+
+    if { $lib_port != "" } {
+      grt::repair_antennas $lib_port $iterations
+    } else {
+      utl::error GRT 69 "Diode not found."
+    }
+  } else {
+    utl::error GRT 45 "Run global_route before repair_antennas."
   }
 }
 

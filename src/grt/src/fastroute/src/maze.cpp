@@ -1044,7 +1044,6 @@ void reInitTree(int netID)
     if (treeedge->len > 0) {
       delete[] treeedge->route.gridsX;
       delete[] treeedge->route.gridsY;
-      delete[] treeedge->route.gridsL;
     }
   }
   delete[] sttrees[netID].nodes;

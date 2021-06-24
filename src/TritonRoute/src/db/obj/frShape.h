@@ -566,7 +566,11 @@ class frPathSeg : public frShape
   }
   void setTapered(bool t) { tapered_ = t; }
   bool isTapered() const { return tapered_; }
-
+  
+  bool intersectsCenterLine(const frPoint& pt) {
+      return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y() 
+              && pt.y() <= end_.y();
+  }
  protected:
   frPoint begin_;  // begin always smaller than end, assumed
   frPoint end_;

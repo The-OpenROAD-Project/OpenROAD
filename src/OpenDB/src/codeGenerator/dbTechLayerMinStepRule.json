@@ -4,11 +4,13 @@
   "fields": [
     {
       "type": "int",
-      "name": "min_step_length_"
+      "name": "min_step_length_",
+      "default": 0
     },
     {
       "type": "uint",
-      "name": "max_edges_"
+      "name": "max_edges_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -16,7 +18,8 @@
     },
     {
       "type": "int",
-      "name": "min_adj_length1_"
+      "name": "min_adj_length1_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -24,11 +27,13 @@
     },
     {
       "type": "int",
-      "name": "min_adj_length2_"
+      "name": "min_adj_length2_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "eol_width_"
+      "name": "eol_width_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -44,7 +49,8 @@
     },
     {
       "type": "int",
-      "name": "min_between_length_"
+      "name": "min_between_length_",
+      "default": 0
     },
     {
       "type": "bit",

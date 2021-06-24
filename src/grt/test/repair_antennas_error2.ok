@@ -1,0 +1,69 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: gcd_sky130.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 411 nets and 1210 connections.
+[INFO ODB-0134] Finished DEF file: gcd_sky130.def
+[INFO GRT-0020] Min routing layer: li1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 16951
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 22
+[INFO GRT-0017] Processing 13509 blockages on layer li1.
+[INFO GRT-0017] Processing 3926 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical        25215         24714          1.99%
+met1       Horizontal      31939         28047          12.19%
+met2       Vertical        25215         24920          1.17%
+met3       Horizontal      15129         15040          0.59%
+met4       Vertical        10086          9768          3.15%
+met5       Horizontal       3362          3280          2.44%
+---------------------------------------------------------------
+
+[INFO GRT-0111] Final number of vias: 940
+[INFO GRT-0112] Final usage 3D: 5754
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1              24714          1480            5.99%             0 /  0 /  0
+met1             28047          1454            5.18%             0 /  0 /  0
+met2             24920             0            0.00%             0 /  0 /  0
+met3             15040             0            0.00%             0 /  0 /  0
+met4              9768             0            0.00%             0 /  0 /  0
+met5              3280             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           105769          2934            2.77%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 30182 um
+[WARNING STA-0328] port 'DIOD' not found.
+[ERROR GRT-0069] Diode not found.

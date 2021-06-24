@@ -1468,7 +1468,7 @@ Bool checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        logger->warn(GRT, 167, "Checking failed {}.", netID);
+        logger->error(GRT, 167, "Invalid 2D tree for net {}.", netName(nets[netID]));
         return (TRUE);
       }
     }
