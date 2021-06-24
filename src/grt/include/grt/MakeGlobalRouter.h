@@ -43,10 +43,10 @@ namespace ord {
 
 class OpenRoad;
 
-grt::GlobalRouter* makeFastRoute();
+grt::GlobalRouter* makeGlobalRouter();
 
-void initFastRoute(OpenRoad* openroad);
+void initGlobalRouter(OpenRoad* openroad);
 
-void deleteFastRoute(grt::GlobalRouter* fastroute);
+void deleteGlobalRouter(grt::GlobalRouter* global_router);
 
 }  // namespace ord

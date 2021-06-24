@@ -78,7 +78,7 @@ class Replace
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
     void setResizer(rsz::Resizer* resizer);
-    void setFastRoute(grt::GlobalRouter* fr);
+    void setGlobalRouter(grt::GlobalRouter* fr);
     void setLogger(utl::Logger* log);
 
     void doInitialPlace();

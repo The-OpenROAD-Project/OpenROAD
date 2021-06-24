@@ -154,7 +154,7 @@ void Replace::reset() {
 void Replace::setDb(odb::dbDatabase* db) {
   db_ = db;
 }
-void Replace::setFastRoute(grt::GlobalRouter* fr) {
+void Replace::setGlobalRouter(grt::GlobalRouter* fr) {
   fr_ = fr;
 }
 void Replace::setResizer(rsz::Resizer* rs) {

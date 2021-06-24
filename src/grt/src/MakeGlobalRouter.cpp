@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "grt/MakeFastRoute.h"
+#include "grt/MakeGlobalRouter.h"
 
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
@@ -51,23 +51,23 @@ extern int Grt_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-grt::GlobalRouter* makeFastRoute()
+grt::GlobalRouter* makeGlobalRouter()
 {
   return new grt::GlobalRouter();
 }
 
-void deleteFastRoute(grt::GlobalRouter* fastroute)
+void deleteGlobalRouter(grt::GlobalRouter* global_router)
 {
-  delete fastroute;
+  delete global_router;
 }
 
-void initFastRoute(OpenRoad* openroad)
+void initGlobalRouter(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::grt_tcl_inits);
-  openroad->getFastRoute()->init(openroad);
+  openroad->getGlobalRouter()->init(openroad);
 }
 
 }  // namespace ord
