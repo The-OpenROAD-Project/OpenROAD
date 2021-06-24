@@ -43,7 +43,7 @@ void FlexDR::checkConnectivity_pin2epMap_helper(
     frLayerNum lNum,
     map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
         pin2epMap,
-    bool pathSeg)
+    bool isPathSeg)
 {
   bool enableOutput = false;
   // bool enableOutput = true;
@@ -60,12 +60,13 @@ void FlexDR::checkConnectivity_pin2epMap_helper(
                   bp.y() + half_min_width);
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
-    if (pathSeg && !bx.contains(bp))
+    if (isPathSeg && !bx.contains(bp))
       continue;
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
       if (instTerm->getNet() == net) {
-          if (!pathSeg && !bx.contains(bp) && lNum != 2)
+          if (!isPathSeg && !bx.contains(bp) && 
+              !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
               continue;
         if (enableOutput) {
           cout << "    found " << instTerm->getName() << "\n";
@@ -73,10 +74,10 @@ void FlexDR::checkConnectivity_pin2epMap_helper(
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     } else if (rqObj->typeId() == frcTerm) {
+      if (!isPathSeg && !bx.contains(bp)) //terms have aps created on the fly
+            continue;
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
-          if (!pathSeg && !bx.contains(bp) && lNum != 2)
-              continue;
         if (enableOutput) {
           cout << "    found PIN/" << term->getName() << endl;
         }
