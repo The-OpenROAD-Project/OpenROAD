@@ -45,8 +45,6 @@
 #include "sta/Parasitics.hh"
 #include "sta/ArcDelayCalc.hh"
 
-#include "grt/GlobalRouter.h"
-
 namespace rsz {
 
 using utl::RSZ;
@@ -284,7 +282,7 @@ void
 Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                                       const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(drvr_pin, grt_->getAlpha(), false,
+  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), false,
                                       db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
