@@ -7,16 +7,22 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [ERROR PAD-0220] Unrecognized arguments (type) specified for define_pad_cell
-define_pad_cell
-define_pad_cell   [-name name]  [-type cell_type|-fill|-corner|-bondpad|-bump]  [-cell_name cell_names_per_side]  [-orient orientation_per_side]  [-pad_pin_name pad_pin_name]  [-break_signals signal_list]  [-physical_only]
-set_bump_options
-set_bump_options   [-pitch pitch]  [-bump_pin_name pin_name]  [-spacing_to_edge spacing]  [-cell_name bump_cell_table]  [-num_pads_per_tile value]  [-rdl_layer name]  [-rdl_width value]  [-rdl_spacing value]  [-rdl_cover_file_name rdl_file_name]
-set_padring_options
-set_padring_options   [-type (flipchip|wirebond)]  [-power power_nets]  [-ground ground_nets]  [-core_area core_area]  [-die_area die_area]  [-offsets offsets]  [-pad_inst_name pad_inst_name]  [-pad_pin_name pad_pin_name]  [-pin_layer pin_layer_name]  [-connect_by_abutment signal_list]
-place_cell -inst_name inst_name
-place_cell -inst_name inst_name   [-cell library_cell]  -origin xy_origin  -orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)  [-status (PLACED|FIRM)]
-add_pad
-add_pad   [-name name]  [-type type]  [-cell library_cell]  [-signal signal_name]  [-edge edge]  [-location location]  [-bump rowcol]  [-bondpad bondpad]  [-inst_name inst_name]
+define_pad_cell [-name name] [-type cell_type|-fill|-corner|-bondpad|-bump]
+   [-cell_name cell_names_per_side] [-orient orientation_per_side]
+   [-pad_pin_name pad_pin_name] [-break_signals signal_list] [-physical_only]
+set_bump_options [-pitch pitch] [-bump_pin_name pin_name]
+   [-spacing_to_edge spacing] [-cell_name bump_cell_table]
+   [-num_pads_per_tile value] [-rdl_layer name] [-rdl_width value]
+   [-rdl_spacing value] [-rdl_cover_file_name rdl_file_name]
+set_padring_options [-type (flipchip|wirebond)] [-power power_nets]
+   [-ground ground_nets] [-core_area core_area] [-die_area die_area]
+   [-offsets offsets] [-pad_inst_name pad_inst_name]
+   [-pad_pin_name pad_pin_name] [-pin_layer pin_layer_name]
+   [-connect_by_abutment signal_list]
+place_cell -inst_name inst_name [-cell library_cell] -origin xy_origin -orient
+add_pad [-name name] [-type type] [-cell library_cell] [-signal signal_name]
+   [-edge edge] [-location location] [-bump rowcol] [-bondpad bondpad]
+   [-inst_name inst_name]
 initialize_padring [-signal_assignment_file signal_assigment_file]
 [ERROR STA-0402] set_padring_options -power_nets is not a known keyword or flag.
 [ERROR PAD-0205] Incorrect number of values specified for offsets (3), expected 1, 2 or 4
