@@ -137,16 +137,12 @@ Metric AutoClusterMgr::traverseLogicalHierarchy(sta::Instance* inst)
 bool isConnectedNet(pair<Net*, Net*>& p1, pair<Net*, Net*>& p2)
 {
   if (p1.first != nullptr) {
-    if (p1.first == p2.first)
-      return true;
-    else if (p1.first == p2.second)
+    if (p1.first == p2.first || p1.first == p2.second)
       return true;
   }
 
   if (p1.second != nullptr) {
-    if (p1.second == p2.first)
-      return true;
-    else if (p1.second == p2.second)
+    if (p1.second == p2.first || p1.second == p2.second)
       return true;
   }
 
