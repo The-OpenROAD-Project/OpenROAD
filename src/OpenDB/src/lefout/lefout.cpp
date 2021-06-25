@@ -1012,7 +1012,7 @@ bool lefout::writeTech(dbTech* tech, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    logger_->error(utl::ODB, 0274, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1015, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1030,7 +1030,7 @@ bool lefout::writeLib(dbLib* lib, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    logger_->error(utl::ODB, 0273, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1033, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1048,7 +1048,7 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    logger_->error(utl::ODB, 0272, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1051, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1069,7 +1069,7 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == nullptr) {
-    logger_->error(utl::ODB, 0271, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1072, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
