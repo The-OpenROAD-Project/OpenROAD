@@ -1,0 +1,443 @@
+VERSION 5.6 ;
+NAMESCASESENSITIVE ON ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+MACRO gcd
+  FOREIGN gcd 0 0 ;
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 200.26 201.6 ;
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  121.01 201.32 121.29 201.6 ;
+    END
+  END clk
+  PIN req_msg[31]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 148.96 200.26 149.24 ;
+    END
+  END req_msg[31]
+  PIN req_msg[30]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 133.28 0.28 133.56 ;
+    END
+  END req_msg[30]
+  PIN req_msg[29]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 45.92 0.28 46.2 ;
+    END
+  END req_msg[29]
+  PIN req_msg[28]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 32.48 200.26 32.76 ;
+    END
+  END req_msg[28]
+  PIN req_msg[27]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  131.09 0 131.37 0.28 ;
+    END
+  END req_msg[27]
+  PIN req_msg[26]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 61.6 200.26 61.88 ;
+    END
+  END req_msg[26]
+  PIN req_msg[25]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 104.16 0.28 104.44 ;
+    END
+  END req_msg[25]
+  PIN req_msg[24]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  29.17 0 29.45 0.28 ;
+    END
+  END req_msg[24]
+  PIN req_msg[23]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  43.73 0 44.01 0.28 ;
+    END
+  END req_msg[23]
+  PIN req_msg[22]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 60.48 0.28 60.76 ;
+    END
+  END req_msg[22]
+  PIN req_msg[21]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 191.52 0.28 191.8 ;
+    END
+  END req_msg[21]
+  PIN req_msg[20]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  189.33 0 189.61 0.28 ;
+    END
+  END req_msg[20]
+  PIN req_msg[19]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  164.69 201.32 164.97 201.6 ;
+    END
+  END req_msg[19]
+  PIN req_msg[18]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  19.09 201.32 19.37 201.6 ;
+    END
+  END req_msg[18]
+  PIN req_msg[17]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 176.96 0.28 177.24 ;
+    END
+  END req_msg[17]
+  PIN req_msg[16]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 75.04 0.28 75.32 ;
+    END
+  END req_msg[16]
+  PIN req_msg[15]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 134.4 200.26 134.68 ;
+    END
+  END req_msg[15]
+  PIN req_msg[14]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 3.36 200.26 3.64 ;
+    END
+  END req_msg[14]
+  PIN req_msg[13]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 119.84 200.26 120.12 ;
+    END
+  END req_msg[13]
+  PIN req_msg[12]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  116.53 0 116.81 0.28 ;
+    END
+  END req_msg[12]
+  PIN req_msg[11]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  62.77 201.32 63.05 201.6 ;
+    END
+  END req_msg[11]
+  PIN req_msg[10]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 89.6 0.28 89.88 ;
+    END
+  END req_msg[10]
+  PIN req_msg[9]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 17.92 200.26 18.2 ;
+    END
+  END req_msg[9]
+  PIN req_msg[8]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  33.65 201.32 33.93 201.6 ;
+    END
+  END req_msg[8]
+  PIN req_msg[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 118.72 0.28 119 ;
+    END
+  END req_msg[7]
+  PIN req_msg[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 47.04 200.26 47.32 ;
+    END
+  END req_msg[6]
+  PIN req_msg[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  160.21 0 160.49 0.28 ;
+    END
+  END req_msg[5]
+  PIN req_msg[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 162.4 0.28 162.68 ;
+    END
+  END req_msg[4]
+  PIN req_msg[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  77.33 201.32 77.61 201.6 ;
+    END
+  END req_msg[3]
+  PIN req_msg[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  48.21 201.32 48.49 201.6 ;
+    END
+  END req_msg[2]
+  PIN req_msg[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  101.97 0 102.25 0.28 ;
+    END
+  END req_msg[1]
+  PIN req_msg[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  91.89 201.32 92.17 201.6 ;
+    END
+  END req_msg[0]
+  PIN req_rdy
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  135.57 201.32 135.85 201.6 ;
+    END
+  END req_rdy
+  PIN req_val
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  106.45 201.32 106.73 201.6 ;
+    END
+  END req_val
+  PIN reset
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  14.61 0 14.89 0.28 ;
+    END
+  END reset
+  PIN resp_msg[15]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 163.52 200.26 163.8 ;
+    END
+  END resp_msg[15]
+  PIN resp_msg[14]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  87.41 0 87.69 0.28 ;
+    END
+  END resp_msg[14]
+  PIN resp_msg[13]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  193.81 201.32 194.09 201.6 ;
+    END
+  END resp_msg[13]
+  PIN resp_msg[12]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 192.64 200.26 192.92 ;
+    END
+  END resp_msg[12]
+  PIN resp_msg[11]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  179.25 201.32 179.53 201.6 ;
+    END
+  END resp_msg[11]
+  PIN resp_msg[10]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  0.05 0 0.33 0.28 ;
+    END
+  END resp_msg[10]
+  PIN resp_msg[9]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 105.28 200.26 105.56 ;
+    END
+  END resp_msg[9]
+  PIN resp_msg[8]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  4.53 201.32 4.81 201.6 ;
+    END
+  END resp_msg[8]
+  PIN resp_msg[7]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  72.85 0 73.13 0.28 ;
+    END
+  END resp_msg[7]
+  PIN resp_msg[6]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 90.72 200.26 91 ;
+    END
+  END resp_msg[6]
+  PIN resp_msg[5]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 76.16 200.26 76.44 ;
+    END
+  END resp_msg[5]
+  PIN resp_msg[4]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  58.29 0 58.57 0.28 ;
+    END
+  END resp_msg[4]
+  PIN resp_msg[3]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  150.13 201.32 150.41 201.6 ;
+    END
+  END resp_msg[3]
+  PIN resp_msg[2]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  145.65 0 145.93 0.28 ;
+    END
+  END resp_msg[2]
+  PIN resp_msg[1]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 147.84 0.28 148.12 ;
+    END
+  END resp_msg[1]
+  PIN resp_msg[0]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  174.77 0 175.05 0.28 ;
+    END
+  END resp_msg[0]
+  PIN resp_rdy
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  199.98 178.08 200.26 178.36 ;
+    END
+  END resp_rdy
+  PIN resp_val
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 31.36 0.28 31.64 ;
+    END
+  END resp_val
+END gcd
+END LIBRARY
