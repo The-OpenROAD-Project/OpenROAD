@@ -1330,6 +1330,37 @@ void checkUsage()
   }
 }
 
+void check2DEdgesUsage()
+{
+  // check maze.cpp:1105-1106 for these values
+  int max_h_edge_usage = 40 * hCapacity;
+  int max_v_edge_usage = 40 * vCapacity;
+
+  // check horizontal edges
+  for (int i = 0; i < yGrid; i++) {
+    for (int j = 0; j < xGrid - 1; j++) {
+      int grid = i * (xGrid - 1) + j;
+      if (h_edges[grid].usage >= max_h_edge_usage) {
+        logger->error(GRT,
+                      227,
+                      "Horizontal edge exceeds the maximum usage allowed.");
+      }
+    }
+  }
+
+  // check vertical edges
+  for (int i = 0; i < yGrid - 1; i++) {
+    for (int j = 0; j < xGrid; j++) {
+      int grid = i * xGrid + j;
+      if (h_edges[grid].usage >= max_v_edge_usage) {
+        logger->error(GRT,
+                      227,
+                      "Vertical edge exceeds the maximum usage allowed.");
+      }
+    }
+  }
+}
+
 static int compareEdgeLen(const OrderNetEdge a, const OrderNetEdge b)
 {
   return a.length > b.length;

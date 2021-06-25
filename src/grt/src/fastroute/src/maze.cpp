@@ -227,6 +227,9 @@ void convertToMazeroute()
       v_edges[grid].usage = v_edges[grid].est_usage;
     }
   }
+
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
 }
 
 // non recursive version of heapify
@@ -1858,6 +1861,9 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   int total_cap = 0;
   int total_usage = 0;
 
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
+
   total_usage = 0;
   total_cap = 0;
 
@@ -1921,6 +1927,9 @@ int getOverflow2D(int* maxOverflow)
   int i, j, grid, overflow, max_overflow, H_overflow, max_H_overflow,
       V_overflow, max_V_overflow, numedges;
   int total_usage, total_cap, hCap, vCap;
+
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
 
   // get overflow
   overflow = max_overflow = H_overflow = max_H_overflow = V_overflow
