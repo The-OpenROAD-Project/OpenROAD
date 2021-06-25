@@ -166,7 +166,7 @@ void Restructure::runABC()
   int best_inst_count = std::numeric_limits<int>::max();
   for (int opt_mode = static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_1) : static_cast<int>(Mode::DELAY_1);
        opt_mode <= (static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_3) : static_cast<int>(Mode::DELAY_4));
-       opt_mode += 1) {
+       opt_mode ++) {
     opt_mode_ = (Mode) opt_mode;
     output_blif_file_name_ = std::string(block_->getConstName())
                              + std::to_string(opt_mode) + "_crit_path_out.blif";
@@ -259,17 +259,14 @@ void Restructure::getEndPoints(sta::PinSet& ends,
           // clk_gating_setup, clk_gating_hold
           false,
           false);
-  bool skip_top_paths = false;
+
   std::size_t path_found = path_ends->size();
-  if (path_found > 1000) {
-    skip_top_paths = true;
-  }
   logger_->report("Number of paths for restructure are {}", path_found);
   int end_count = 0;
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
-      logger_->report("Got path of depth {}", expanded.size() / 2);
+      logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
         ends.insert(path_end->vertex(sta_state)->pin());
         end_count++;
@@ -326,7 +323,9 @@ void Restructure::removeConstCells()
     return;
 
   odb::dbMaster* hicell_master = nullptr;
+  odb::dbMTerm*  hiterm = nullptr;
   odb::dbMaster* locell_master = nullptr;
+  odb::dbMTerm*  loterm = nullptr;
 
   for (auto&& lib : block_->getDb()->getLibs()) {
 
@@ -339,9 +338,11 @@ void Restructure::removeConstCells()
   if (!hicell_master || !locell_master)
     return;
 
-  // open_sta_->ensureGraph();
-  // open_sta_->ensureLevelized();
-  // open_sta_->searchPreamble();
+  hiterm = hicell_master->findMTerm(hiport_.c_str());
+  loterm = locell_master->findMTerm(loport_.c_str());
+  if (!hiterm || !loterm)
+    return;
+  
   open_sta_->clear();
   open_sta_->clearLogicConstants();
   open_sta_->findLogicConstants();
@@ -373,14 +374,14 @@ void Restructure::removeConstCells()
         odb::dbNet* net = iterm->getNet();
         if (net) {
           odb::dbMaster* const_master = (pinVal == sta::LogicValue::one) ? hicell_master : locell_master;
-          std::string const_port = (pinVal == sta::LogicValue::one) ? hiport_ : loport_;
+          odb::dbMTerm*  const_port = (pinVal == sta::LogicValue::one) ? hiterm : loterm;
           std::string inst_name = "rmp_const_" + std::to_string(const_cnt);
           debugPrint(logger_, RMP, "remap", 2, "Adding cell {} inst {} for {}",
                                       const_master->getName(), inst_name, inst->getName());
           auto new_inst = odb::dbInst::create(block_, const_master, inst_name.c_str());
           if (new_inst) {
             odb::dbITerm::disconnect(iterm);
-            odb::dbITerm::connect(new_inst->findITerm(const_port.c_str()), net);
+            odb::dbITerm::connect(new_inst->getITerm(const_port), net);
           } else
             logger_->warn(RMP, 35, "Could not create instance {}", inst_name);
         }
