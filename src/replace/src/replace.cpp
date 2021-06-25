@@ -110,6 +110,7 @@ void Replace::reset() {
   pb_.reset();
   nb_.reset();
   tb_.reset();
+  rb_.reset();
 
   initialPlaceMaxIter_ = 20;
   initialPlaceMinDiffLength_ = 1500;
