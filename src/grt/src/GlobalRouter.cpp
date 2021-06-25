@@ -89,7 +89,7 @@ void GlobalRouter::init()
   _maxRoutingLayer = -1;
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
-  _allowOverflow = false;
+  _allowOverflow = true;
   _macroExtension = 0;
   _verbose = 0;
   seed_ = 0;
