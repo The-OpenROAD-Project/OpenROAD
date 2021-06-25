@@ -1389,23 +1389,24 @@ void GlobalRouter::perturbCapacities()
   int yGrids = _grid->getYGrids();
 
   int num_2d_grids = xGrids*yGrids;
-  int num_perturbations = caps_perturbation_percentage_*num_2d_grids;
+  int num_perturbations = (caps_perturbation_percentage_/100)*num_2d_grids;
+
+  std::mt19937 g;
+  g.seed(seed_);
 
   for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
-    std::mt19937 g;
-    g.seed(seed_);
-
     std::uniform_int_distribution<int> uni_x(1, xGrids-1);
     std::uniform_int_distribution<int> uni_y(1, yGrids-1);
-    std::bernoulli_distribution sum_or_subtract;
+    std::bernoulli_distribution add_or_subtract;
 
     for (int i = 0; i < num_perturbations; i++) {
       int x = uni_x(g);
       int y = uni_y(g);
-      bool subtract = sum_or_subtract(g);
+      bool subtract = add_or_subtract(g);
       int perturbation = subtract ? -perturbation_amount_ : perturbation_amount_;
       if (_hCapacities[layer - 1] != 0) {
         int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] + perturbation;
+        newCap = newCap < 0 ? 0 : newCap;
         _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
         int edgeCap = _fastRoute->getEdgeCapacity(
             x - 1, y - 1, layer, x, y - 1, layer);
@@ -1415,6 +1416,7 @@ void GlobalRouter::perturbCapacities()
             x - 1, y - 1, layer, x, y - 1, layer, newHCapacity, subtract);
       } else if (_vCapacities[layer - 1] != 0) {
         int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] + perturbation;
+        newCap = newCap < 0 ? 0 : newCap;
         _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
         int edgeCap = _fastRoute->getEdgeCapacity(
             x - 1, y - 1, layer, x - 1, y, layer);

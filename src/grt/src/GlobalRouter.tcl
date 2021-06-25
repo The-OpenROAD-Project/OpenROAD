@@ -213,7 +213,7 @@ proc set_global_routing_random { args } {
 
   if { [info exists keys(-capacities_perturbation_percentage)] } {
     set percentage $keys(-capacities_perturbation_percentage)
-    sta::check_positive_float "set_global_routing_random" $percentage
+    sta::check_percent "set_global_routing_random" $percentage
     grt::set_capacities_perturbation_percentage $percentage
   }
 
