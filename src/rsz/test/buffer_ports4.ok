@@ -21,11 +21,11 @@ input1/Z                                0.20    1.55   -1.35 (VIOLATED)
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-repeater2/Z                             0.20    0.05    0.15 (MET)
+repeater4/Z                             0.20    0.03    0.17 (MET)
 
