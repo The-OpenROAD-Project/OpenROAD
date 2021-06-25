@@ -137,6 +137,7 @@ class FastRouteCore
   std::vector<int> max_h_overflow;
   std::vector<int> max_v_overflow;
   odb::dbDatabase* db_;
+  const int max_overflow_increases_ = 15;
 };
 
 }  // namespace grt

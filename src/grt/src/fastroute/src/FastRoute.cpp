@@ -1083,7 +1083,12 @@ NetRouteMap FastRouteCore::run()
     logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
-  while (totalOverflow > 0 && i <= overflowIterations) {
+  // set overflow_increases as -1 since the first iteration always sum 1
+  int overflow_increases = -1;
+  int last_total_overflow = 0;
+  while (totalOverflow > 0 &&
+         i <= overflowIterations &&
+         overflow_increases <= max_overflow_increases_) {
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
     } else if (THRESH_M >= 2) {
@@ -1297,7 +1302,12 @@ NetRouteMap FastRouteCore::run()
       getOverflow2Dmaze(&maxOverflow, &tUsage);
       break;
     }
-  }
+
+    if (totalOverflow > last_total_overflow) {
+      last_total_overflow = maxOverflow;
+      overflow_increases++;
+    }
+  } // end overflow iterations
 
   bool has_2D_overflow = totalOverflow > 0;
 
