@@ -1,0 +1,40 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: congestion3.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 508 components and 2514 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO ODB-0134] Finished DEF file: congestion3.def
+[INFO GRT-0020] Min routing layer: metal3
+[INFO GRT-0021] Max routing layer: metal3
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via via1_4 as default.
+[INFO GRT-0224] Chose via via2_8 as default.
+[INFO GRT-0224] Chose via via3_2 as default.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: -0.0005
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0017] Processing 8133 blockages on layer metal1.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical            0             0          0.00%
+metal3     Horizontal      33840          2806          91.71%
+---------------------------------------------------------------
+
+[ERROR GRT-0229] Vertical edge exceeds the maximum usage allowed.
+GRT-0229

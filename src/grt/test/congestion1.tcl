@@ -3,7 +3,7 @@ source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
 read_def "gcd.def"
 
-set guide_file [make_result_file gcd_congestion1.guide]
+set guide_file [make_result_file congestion1.guide]
 
 set_global_routing_layer_adjustment metal2 0.9
 set_global_routing_layer_adjustment metal3 0.9
@@ -15,4 +15,4 @@ global_route
 
 write_guides $guide_file
 
-diff_file gcd_congestion1.guideok $guide_file
+diff_file congestion1.guideok $guide_file

@@ -1,9 +1,12 @@
 record_tests {
   clock_route
+  congestion1
+  congestion2
+  congestion3
+  congestion4
   est_rc1
   est_rc2
   gcd
-  gcd_congestion1
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
