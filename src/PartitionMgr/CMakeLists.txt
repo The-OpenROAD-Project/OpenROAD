@@ -58,7 +58,7 @@ target_sources(PartitionMgr
     src/HypergraphDecomposition.cpp
     src/PartitionNetwork.cpp
     src/PartOptions.cpp
-    src/autocluster.cpp
+    autocluster/autocluster.cpp
 )
 
 messages(
@@ -114,8 +114,8 @@ endif (LOAD_PARTITIONERS)
 
 target_include_directories(PartitionMgr
   PUBLIC
-    include
-    src # Yuck!
+    ./include
+    ./src # Yuck!
 )
 
 target_link_libraries(PartitionMgr

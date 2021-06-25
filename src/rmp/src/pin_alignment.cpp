@@ -394,7 +394,8 @@ namespace pin_alignment {
 
             step++;
             
-            T = T * 0.99;
+            //T = T * 0.99;
+            T = T * cooling_rate_;
         }
        
         
@@ -436,7 +437,7 @@ namespace pin_alignment {
 
 
     // Pin Alignment Engine
-    void PinAlignment(vector<Cluster*>& clusters, Logger* logger, float halo_width,  int num_thread, int num_run, unsigned seed) {
+    bool PinAlignment(vector<Cluster*>& clusters, Logger* logger, float halo_width,  int num_thread, int num_run, unsigned seed) {
         logger->info(RMP, 3001, "Pin_Aligment Starts");
     
         // parameterse related to fastSA
@@ -454,7 +455,7 @@ namespace pin_alignment {
         float double_swap_prob = 0.2;
                 
         
-        int info_id = 2;
+        //int info_id = 2;
         for(int i = 0; i < clusters.size(); i++) {
             if(clusters[i]->GetNumMacro() > 0) {
                 string name = clusters[i]->GetName();
@@ -462,7 +463,7 @@ namespace pin_alignment {
                     if(name[j] == '/')
                         name[j] = '*';
                 
-                logger->info(RMP, info_id++, "Pin_Aligment Working on macro_clutser: {}", name);
+                logger->info(RMP, 3002 , "Pin_Aligment Working on macro_clutser: {}", name);
 
                 float lx = clusters[i]->GetX();
                 float ly = clusters[i]->GetY();
@@ -513,7 +514,13 @@ namespace pin_alignment {
                         run_thread = remaining_run;
 
                     for(int j = 0; j < run_thread; j++) {
+                        float cooling_rate = 0.999;
+                        if(run_thread >= 2) {
+                            cooling_rate = 0.999 - j * (0.999 - 0.001) / (run_thread - 1);
+                        }
+                
                         SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(macros, nets, terminal_position,
+                                                         cooling_rate,
                                                          outline_width, outline_height, 
                                                          init_prob, rej_ratio, max_num_step, 
                                                          k, c, perturb_per_step,
@@ -548,7 +555,9 @@ namespace pin_alignment {
                             min_id = j;
 
                 if(min_id == -1) {
-                    throw std::invalid_argument(std::string("Invalid Floorplan.  Please increase the num_run!!!"));
+                    //throw std::invalid_argument(std::string("Invalid Floorplan.  Please increase the num_run!!!"));
+                    logger->info(RMP, 3003, "Pin_Alignment  Cannot generate valid floorplan for current cluster!!!");        
+                    return false;
                 } else {
                     clusters[i]->SpecifyMacros(sa_vector[min_id]->GetMacros());
                 }
@@ -559,6 +568,8 @@ namespace pin_alignment {
                 sa_vector.clear();
             }
         }
+        
+        return true;
     }
 }
 

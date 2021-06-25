@@ -5,7 +5,9 @@ RMP 1003 shape_engine.cpp:513      Shape_Engine Chip area: {}
 RMP 1004 shape_engine.cpp:514      Shape_Engine Macro area:  {}
 RMP 1005 shape_engine.cpp:515      Shape_Engine Std cell area: {}
 RMP 1006 shape_engine.cpp:516      Shape_Engine Std cell util: {}
-RMP 2001 block_placement.cpp:791   Block_Placement Starts
-RMP 2002 block_placement.cpp:850   Block_Placement  Finish Initialization
-RMP 2003 block_placement.cpp:861   Block_Placement Init_T: {}
-RMP 3001 pin_alignment.cpp:440     Pin_Aligment Starts
+RMP 2001 block_placement.cpp:794   Block_Placement Starts
+RMP 2002 block_placement.cpp:853   Block_Placement  Finish Initialization
+RMP 2003 block_placement.cpp:864   Block_Placement Init_T: {}
+RMP 3001 pin_alignment.cpp:441     Pin_Aligment Starts
+RMP 3002 pin_alignment.cpp:466     Pin_Aligment Working on macro_clutser: {}
+RMP 3003 pin_alignment.cpp:559     Pin_Alignment  Cannot generate valid floorplan for current cluster!!!

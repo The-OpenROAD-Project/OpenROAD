@@ -132,7 +132,7 @@ namespace block_placement {
 
 
         for(int i = 0; i < blocks_.size(); i++) {
-            if(blocks_[i].GetNumMacro() > 0) {
+            if(blocks_[i].GetNumMacro() > 1) {
                 hard_block_list.push_back(i);
             } else {
                 soft_block_list.push_back(i);
@@ -141,7 +141,7 @@ namespace block_placement {
         
         int index1 = -1;
         float prob = (distribution_)(generator_);
-        if(prob <= 0.5) {
+        if(prob <= 0.1 + 0.9 * hard_block_list.size() / blocks_.size()) {
             index1 = hard_block_list[floor((distribution_)(generator_) * hard_block_list.size())];
         } else {
             index1 = soft_block_list[floor((distribution_)(generator_) * soft_block_list.size())];
@@ -300,15 +300,10 @@ namespace block_placement {
     
     void SimulatedAnnealingCore::CalculateOutlinePenalty() {
         outline_penalty_ = 0.0;
-        
-        if(width_ > outline_width_ && height_ > outline_height_)
-            outline_penalty_ = width_ * height_ - outline_width_ * outline_height_;
-        else if(width_ > outline_width_ && height_ <= outline_height_)
-            outline_penalty_ = (width_ - outline_width_) * outline_height_;
-        else if(width_ <= outline_width_ && height_ > outline_height_)
-            outline_penalty_ = outline_width_ * (height_ - outline_height_);
-        else
-            outline_penalty_ = 0.0;
+       
+        float max_width = max(outline_width_, width_);
+        float max_height = max(outline_height_, height_);
+        outline_penalty_ = max(outline_penalty_, max_width * max_height - outline_width_ * outline_height_);
     }
 
     void SimulatedAnnealingCore::CalculateMacroBlockagePenalty() {
@@ -355,7 +350,8 @@ namespace block_placement {
                 
                 lx = min(lx, abs(outline_width_ - ux));
                 ly = min(ly, abs(outline_height_ - uy));
-                lx = min(lx, ly);
+                //lx = min(lx, ly);
+                lx = lx + ly;
                 boundary_penalty_ += lx;
             }
         }
@@ -666,11 +662,18 @@ namespace block_placement {
             }
             
             UpdateWeight(avg_area, avg_wirelength, avg_outline_penalty, avg_boundary_penalty, avg_macro_blockage_penalty);
+            //cout << "step:  " << step << "  T:  " << T << " cost:  " << cost << endl;
+            
             step++;
+            
+            /*
             if(step <= k_)
                 T = init_T_ / (step * c_ * avg_delta_cost / perturb_per_step_);
             else
                 T = init_T_ / (step * avg_delta_cost / perturb_per_step_);
+            */
+
+            T = T * cooling_rate_;
 
             if(step == max_num_step_) {
                 blocks_ = best_blocks;
@@ -839,7 +842,7 @@ namespace block_placement {
             seed_list[i] = (unsigned)rand_generator();
 
         SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width, outline_height, blocks, 
-                                     nets, regions, terminal_position,
+                                     nets, regions, terminal_position, 0.99,
                                      alpha, beta, gamma, boundary_weight, macro_blockage_weight,
                                      resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
                                      init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
@@ -871,9 +874,15 @@ namespace block_placement {
             heat_count = heat_count * heat_rate;
             vector<SimulatedAnnealingCore*> sa_vec;
             vector<thread> threads;
+            float cooling_rate_step = (0.999 - 0.001) / num_worker;
             for(int j = 0; j < num_worker; j++) {
+                float cooling_rate = 0.999;
+                if(num_worker >= 2) {
+                    cooling_rate = 0.999 - j * (0.999 - 0.001) / (num_worker - 1);
+                }
+
                 SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width, outline_height, blocks, 
-                                             nets, regions, terminal_position,
+                                             nets, regions, terminal_position, cooling_rate,
                                              alpha, beta, gamma, boundary_weight, macro_blockage_weight,
                                              resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
                                              init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
