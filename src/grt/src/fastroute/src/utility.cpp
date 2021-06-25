@@ -1342,7 +1342,7 @@ void check2DEdgesUsage()
       int grid = i * (xGrid - 1) + j;
       if (h_edges[grid].usage >= max_h_edge_usage) {
         logger->error(GRT,
-                      227,
+                      228,
                       "Horizontal edge exceeds the maximum usage allowed.");
       }
     }
@@ -1354,7 +1354,7 @@ void check2DEdgesUsage()
       int grid = i * xGrid + j;
       if (h_edges[grid].usage >= max_v_edge_usage) {
         logger->error(GRT,
-                      227,
+                      229,
                       "Vertical edge exceeds the maximum usage allowed.");
       }
     }
