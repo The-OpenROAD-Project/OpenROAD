@@ -175,6 +175,12 @@ class GlobalRouter
   // route clock nets public functions
   void routeClockNets();
 
+  // functions for random grt
+  void setSeed(int seed) { seed_ = seed; }
+  void setCapacitiesPerturbationPercentage(float percentage);
+  void setPerturbationAmount(int perturbation) { perturbation_amount_ = perturbation; };
+  void perturbCapacities();
+
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet *net);
   // Report the wire length on each layer.
@@ -320,8 +326,10 @@ class GlobalRouter
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 
-  // temporary for congestion driven replace
-  int _numAdjusts = 0;
+  // variables for random grt
+  int seed_;
+  float caps_perturbation_percentage_;
+  int perturbation_amount_;
 
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;

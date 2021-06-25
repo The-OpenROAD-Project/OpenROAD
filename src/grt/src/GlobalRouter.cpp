@@ -41,6 +41,7 @@
 #include <fstream>
 #include <iostream>
 #include <istream>
+#include <random>
 #include <set>
 #include <string>
 #include <utility>
@@ -64,6 +65,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace grt {
 
@@ -90,6 +92,9 @@ void GlobalRouter::init()
   _macroExtension = 0;
   _verbose = 0;
   _alpha = 0;
+  seed_ = 0;
+  caps_perturbation_percentage_ = 0;
+  perturbation_amount_ = 1;
 }
 
 void GlobalRouter::makeComponents()
@@ -166,6 +171,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
   getNetsByType(type, nets);
   initializeNets(nets);
   applyAdjustments(minRoutingLayer, maxRoutingLayer);
+  perturbCapacities();
 
   return nets;
 }
@@ -696,6 +702,15 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
   _fastRoute->setNumberNets(validNets);
   _fastRoute->setMaxNetDegree(getMaxNetDegree());
+
+  if (seed_ != 0) {
+    std::mt19937 g;
+    g.seed(seed_);
+
+    if (nets.size() > 1) {
+      utl::shuffle(nets.begin(), nets.end(), g);
+    }
+  }
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
@@ -1366,6 +1381,57 @@ void GlobalRouter::setAllowOverflow(bool allowOverflow)
 void GlobalRouter::setMacroExtension(int macroExtension)
 {
   _macroExtension = macroExtension;
+}
+
+void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
+{
+  caps_perturbation_percentage_ = percentage;
+}
+
+void GlobalRouter::perturbCapacities()
+{
+  int xGrids = _grid->getXGrids();
+  int yGrids = _grid->getYGrids();
+
+  int num_2d_grids = xGrids*yGrids;
+  int num_perturbations = (caps_perturbation_percentage_/100)*num_2d_grids;
+
+  std::mt19937 g;
+  g.seed(seed_);
+
+  for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
+    std::uniform_int_distribution<int> uni_x(1, xGrids-1);
+    std::uniform_int_distribution<int> uni_y(1, yGrids-1);
+    std::bernoulli_distribution add_or_subtract;
+
+    for (int i = 0; i < num_perturbations; i++) {
+      int x = uni_x(g);
+      int y = uni_y(g);
+      bool subtract = add_or_subtract(g);
+      int perturbation = subtract ? -perturbation_amount_ : perturbation_amount_;
+      if (_hCapacities[layer - 1] != 0) {
+        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] + perturbation;
+        newCap = newCap < 0 ? 0 : newCap;
+        _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
+        int edgeCap = _fastRoute->getEdgeCapacity(
+            x - 1, y - 1, layer, x, y - 1, layer);
+        int newHCapacity = (edgeCap + perturbation);
+        newHCapacity = newHCapacity < 0 ? 0 : newHCapacity;
+        _fastRoute->addAdjustment(
+            x - 1, y - 1, layer, x, y - 1, layer, newHCapacity, subtract);
+      } else if (_vCapacities[layer - 1] != 0) {
+        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] + perturbation;
+        newCap = newCap < 0 ? 0 : newCap;
+        _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
+        int edgeCap = _fastRoute->getEdgeCapacity(
+            x - 1, y - 1, layer, x - 1, y, layer);
+        int newVCapacity = (edgeCap + perturbation);
+        newVCapacity = newVCapacity < 0 ? 0 : newVCapacity;
+        _fastRoute->addAdjustment(
+            x - 1, y - 1, layer, x - 1, y, layer, newVCapacity, subtract);
+      }
+    }
+  }
 }
 
 void GlobalRouter::writeGuides(const char* fileName)

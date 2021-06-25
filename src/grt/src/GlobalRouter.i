@@ -146,6 +146,24 @@ set_macro_extension(int macroExtension)
 }
 
 void
+set_seed(int seed)
+{
+  getGlobalRouter()->setSeed(seed);
+}
+
+void
+set_capacities_perturbation_percentage(float percentage)
+{
+  getGlobalRouter()->setCapacitiesPerturbationPercentage(percentage);
+}
+
+void
+set_perturbation_amount(int perturbation)
+{
+  getGlobalRouter()->setPerturbationAmount(perturbation);
+}
+
+void
 global_route()
 {
   getGlobalRouter()->globalRoute();

@@ -163,6 +163,34 @@ proc set_macro_extension { args } {
   }
 }
 
+sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
+                                                   [-capacities_perturbation_percentage percent] \
+                                                   [-perturbation_amount value]
+                                                 }
+
+proc set_global_routing_random { args } {
+  sta::parse_key_args "set_global_routing_random" args \
+  keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+
+  if { [info exists keys(-seed)] } {
+    set seed $keys(-seed)
+    sta::check_integer "set_global_routing_random" $seed
+    grt::set_seed $seed
+  }
+
+  if { [info exists keys(-capacities_perturbation_percentage)] } {
+    set percentage $keys(-capacities_perturbation_percentage)
+    sta::check_percent "set_global_routing_random" $percentage
+    grt::set_capacities_perturbation_percentage $percentage
+  }
+
+  if { [info exists keys(-perturbation_amount)] } {
+    set perturbation $keys(-perturbation_amount)
+    sta::check_positive_integer "set_global_routing_random" $perturbation
+    grt::set_perturbation_amount $perturbation
+  }
+}
+
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
