@@ -97,7 +97,7 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_alpha(float alpha)
+set_routing_alpha_cmd(float alpha)
 {
   getGlobalRouter()->setAlpha(alpha);
 }
@@ -124,12 +124,6 @@ void
 set_grid_origin(long x, long y)
 {
   getGlobalRouter()->setGridOrigin(x, y);
-}
-
-void
-set_pdrev_for_high_fanout(int pdRevForHighFanout)
-{
-  getGlobalRouter()->setPDRevForHighFanout(pdRevForHighFanout);
 }
 
 void
