@@ -27,21 +27,21 @@ class Cluster
   int getId() const { return id_; }
   bool getType() const { return type_; }
   sta::Instance* getTopInstance() const { return top_inst_; }
-  std::string getName() { return name_; }
-  std::vector<std::string> getLogicalModuleVec() const
+  const std::string& getName() const { return name_; }
+  const std::vector<std::string>& getLogicalModuleVec() const
   {
     return logical_module_vec_;
   }
-  std::vector<sta::Instance*> getInstVec() const { return inst_vec_; }
-  std::vector<sta::Instance*> getMacroVec() const { return macro_vec_; }
+  const std::vector<sta::Instance*>& getInsts() const { return inst_vec_; }
+  const std::vector<sta::Instance*>& getMacros() const { return macro_vec_; }
   unsigned int getNumMacro() const { return macro_vec_.size(); }
   unsigned int getNumInst() const { return inst_vec_.size(); }
-  std::unordered_map<int, unsigned int> getInputConnectionMap() const
+  const std::unordered_map<int, unsigned int>& getInputConnections() const
   {
     return input_connection_map_;
   }
 
-  std::unordered_map<int, unsigned int> getOutputConnectionMap() const
+  const std::unordered_map<int, unsigned int>& getOutputConnections() const
   {
     return output_connection_map_;
   }
@@ -67,18 +67,18 @@ class Cluster
   // operations
   void removeMacro() { macro_vec_.clear(); }
 
-  float calculateArea(ord::dbVerilogNetwork* network);
+  float calculateArea(ord::dbVerilogNetwork* network) const;
 
   void addInst(sta::Instance* inst) { inst_vec_.push_back(inst); }
   void addMacro(sta::Instance* inst) { macro_vec_.push_back(inst); }
-  void specifyTopInst(sta::Instance* inst) { top_inst_ = inst; }
-  void specifyName(std::string name) { name_ = name; }
-  void addLogicalModule(std::string module_name)
+  void setTopInst(sta::Instance* inst) { top_inst_ = inst; }
+  void setName(const std::string& name) { name_ = name; }
+  void addLogicalModule(const std::string& module_name)
   {
     logical_module_vec_.push_back(module_name);
   }
 
-  void addLogicalModuleVec(std::vector<std::string> module_vec)
+  void addLogicalModuleVec(const std::vector<std::string>& module_vec)
   {
     for (auto& module : module_vec)
       logical_module_vec_.push_back(module);
@@ -92,8 +92,7 @@ class Cluster
 
   void addInputConnection(int cluster_id, unsigned int weight = 1)
   {
-    std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = input_connection_map_.find(cluster_id);
+    auto map_iter = input_connection_map_.find(cluster_id);
     if (map_iter == input_connection_map_.end())
       input_connection_map_[cluster_id] = weight;
     else
@@ -102,8 +101,7 @@ class Cluster
 
   void addOutputConnection(int cluster_id, unsigned int weight = 1)
   {
-    std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = output_connection_map_.find(cluster_id);
+    auto map_iter = output_connection_map_.find(cluster_id);
     if (map_iter == output_connection_map_.end())
       output_connection_map_[cluster_id] = weight;
     else
@@ -111,27 +109,21 @@ class Cluster
   }
 
   // These functions only for test
-  void printInputConnection()
+  void printInputConnections()
   {
-    std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = input_connection_map_.begin();
-    while (map_iter != input_connection_map_.end()) {
-      std::cout << "cluster_id:   " << map_iter->first << "   ";
-      std::cout << "num_connections:   " << map_iter->second << "   ";
+    for (auto [cluster_id, num_conn] : input_connection_map_) {
+      std::cout << "cluster_id:   " << cluster_id << "   ";
+      std::cout << "num_connections:   " << num_conn << "   ";
       std::cout << std::endl;
-      map_iter++;
     }
   }
 
-  void printOutputConnection()
+  void printOutputConnections()
   {
-    std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = output_connection_map_.begin();
-    while (map_iter != output_connection_map_.end()) {
-      std::cout << "cluster_id:   " << map_iter->first << "   ";
-      std::cout << "num_connections:   " << map_iter->second << "   ";
+    for (auto [cluster_id, num_conn] : output_connection_map_) {
+      std::cout << "cluster_id:   " << cluster_id << "   ";
+      std::cout << "num_connections:   " << num_conn << "   ";
       std::cout << std::endl;
-      map_iter++;
     }
   }
 
@@ -249,7 +241,7 @@ class AutoClusterMgr
   void printMacroCluster(Cluster* cluster, int& cluster_id);
   std::pair<float, float> printPinPos(sta::Instance* inst);
   void MLPartNetUtil(sta::Instance* inst,
-                     int& src_id,
+                     const int src_id,
                      int& count,
                      std::vector<int>& col_idx,
                      std::vector<int>& row_idx,
@@ -258,7 +250,7 @@ class AutoClusterMgr
                      std::unordered_map<int, sta::Instance*>& idx_to_inst,
                      std::unordered_map<sta::Instance*, int>& inst_to_idx);
   void MLPartBufferNetUtil(
-      int& src_id,
+      const int src_id,
       int& count,
       std::vector<int>& col_idx,
       std::vector<int>& row_idx,
