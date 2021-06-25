@@ -316,51 +316,6 @@ void AutoClusterMgr::createBundledIO()
       logger_->error(
           PAR, 400, "Floorplan has not been initialized? Pin location error.");
   }
-
-  // verify the correctness of  BTerm mapping
-  //
-  // RV Check??
-  //
-  unordered_map<string, string>::iterator term_map_iter;
-  int num_L = 0;
-  int num_L1 = 0;
-  int num_L3 = 0;
-  int num_R = 0;
-  int num_R1 = 0;
-  int num_R3 = 0;
-  int num_B = 0;
-  int num_B1 = 0;
-  int num_B3 = 0;
-  int num_T = 0;
-  int num_T1 = 0;
-  int num_T3 = 0;
-  for (term_map_iter = bterm_map_.begin(); term_map_iter != bterm_map_.end();
-       term_map_iter++) {
-    if (term_map_iter->second == string("L"))
-      num_L++;
-    else if (term_map_iter->second == string("L1"))
-      num_L1++;
-    else if (term_map_iter->second == string("L3"))
-      num_L3++;
-    else if (term_map_iter->second == string("R"))
-      num_R++;
-    else if (term_map_iter->second == string("R1"))
-      num_R1++;
-    else if (term_map_iter->second == string("R3"))
-      num_R3++;
-    else if (term_map_iter->second == string("B"))
-      num_B++;
-    else if (term_map_iter->second == string("B1"))
-      num_B1++;
-    else if (term_map_iter->second == string("B3"))
-      num_B3++;
-    else if (term_map_iter->second == string("T1"))
-      num_T1++;
-    else if (term_map_iter->second == string("T3"))
-      num_T3++;
-    else
-      num_T++;
-  }
 }
 
 void AutoClusterMgr::createCluster(int& cluster_id)
