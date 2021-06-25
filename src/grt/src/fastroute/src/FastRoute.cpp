@@ -1316,6 +1316,12 @@ NetRouteMap FastRouteCore::run()
     copyBR();
   }
 
+  if (overflow_increases > max_overflow_increases_) {
+    logger->warn(GRT,
+                 230,
+                 "Congestion iterations reached the maximum number of total overflow increases.");
+  }
+
   freeRR();
 
   checkUsage();
