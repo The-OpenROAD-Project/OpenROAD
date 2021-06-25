@@ -62,28 +62,24 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_alpha" { alpha }
+sta::define_cmd_args "set_routing_alpha" { alpha \
+                                          [-net net_name] }
 
 proc set_routing_alpha { args } {
-  sta::check_argc1 "set_routing_alpha" $args
+  sta::parse_key_args "set_routing_alpha" args \
+                 keys {-net}
+
   set alpha [lindex $args 0]
-  if { [string is double $alpha] && $alpha >= 0.0 && $alpha <= 1.0 } {
-    grt::set_alpha $alpha
-  } else {
-    utl::error GRT 227 "alpha must be between 0.0 and 1.0"
+  if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
+    utl::error GRT 29 "The alpha value must be between 0.0 and 1.0."
   }
-}
-
-sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
-
-proc set_pdrev_topology_priority { args } {
-  if {[llength $args] == 2} {
-    lassign $args net alpha
-    
-    sta::check_positive_float "-alpha" $alpha
-    grt::set_alpha_for_net $net $alpha
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+    grt::set_alpha_for_net $net_name $alpha
+  } elseif { [llength $args] == 1 } {
+    grt::set_routing_alpha_cmd $alpha
   } else {
-    utl::error GRT 46 "set_pdrev_topology_priority: Wrong number of arguments."
+    utl::error GRT 46 "set_routing_alpha: Wrong number of arguments."
   }
 }
 
@@ -164,35 +160,6 @@ proc set_macro_extension { args } {
     grt::set_macro_extension $extension
   } else {
     utl::error GRT 219 "set_macro_extension: Wrong number of arguments."
-  }
-}
-
-sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_topology_priority priority]
-}
-
-proc set_clock_routing { args } {
-  sta::parse_key_args "global_route" args \
-    keys { -clock_pdrev_fanout \
-           -clock_topology_priority
-         }
-
-  if { [info exists keys(-clock_topology_priority) ] } {
-    set priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $priority
-    grt::set_alpha $clock_topology_priority
-  } else {
-    # Default alpha as 0.3 prioritize wire length, but keeps
-    # aware of skew in the topology construction (see PDRev paper
-    # for more reference)
-    grt::set_alpha 0.3
-  }
-
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
-    grt::set_pdrev_for_high_fanout $fanout
-  } else {
-    grt::set_pdrev_for_high_fanout -1
   }
 }
 

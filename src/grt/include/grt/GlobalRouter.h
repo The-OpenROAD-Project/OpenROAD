@@ -140,7 +140,6 @@ class GlobalRouter
   void setMaxLayerForClock(const int maxLayer);
   void setAlpha(const float alpha);
   float getAlpha() const { return _alpha; }
-
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -153,7 +152,6 @@ class GlobalRouter
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
-  void setPDRevForHighFanout(int pdRevForHighFanout);
   void setAllowOverflow(bool allowOverflow);
   void setMacroExtension(int macroExtension);
   void printGrid();
@@ -223,7 +221,7 @@ class GlobalRouter
 
   // aux functions
   void findPins(Net* net);
-  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
+  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& root_idx);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
@@ -311,7 +309,6 @@ class GlobalRouter
   const int _selectedMetal = 3;
   const int _gcellsOffset = 2;
   int _overflowIterations;
-  int _pdRevForHighFanout;
   bool _allowOverflow;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
@@ -323,11 +320,9 @@ class GlobalRouter
   // Region adjustment variables
   std::vector<RegionAdjustment> _regionAdjustments;
 
-  // Clock net routing variables
-  bool _pdRev;
   float _alpha;
   int _verbose;
-  std::map<std::string, float> _netsAlpha;
+  std::map<std::string, float> _net_alpha_map;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 

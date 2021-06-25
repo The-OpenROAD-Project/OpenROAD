@@ -88,17 +88,13 @@ void GlobalRouter::init()
   _minRoutingLayer = 1;
   _maxRoutingLayer = -1;
   _overflowIterations = 50;
-  _pdRevForHighFanout = -1;
   _allowOverflow = true;
   _macroExtension = 0;
   _verbose = 0;
+  _alpha = 0;
   seed_ = 0;
   caps_perturbation_percentage_ = 0;
   perturbation_amount_ = 1;
-
-  // Clock net routing variables
-  _pdRev = 0;
-  _alpha = 0.3;
 }
 
 void GlobalRouter::makeComponents()
@@ -156,13 +152,9 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
     setSelectedMetal(maxRoutingLayer);
   }
 
-  if (_pdRevForHighFanout != -1) {
-    _fastRoute->setAlpha(_alpha);
-  }
-
+  _fastRoute->setAlpha(_alpha);
   _fastRoute->setVerbose(_verbose);
   _fastRoute->setOverflowIterations(_overflowIterations);
-  _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
   _fastRoute->setAllowOverflow(_allowOverflow);
 
   _block = _db->getChip()->getBlock();
@@ -649,10 +641,11 @@ void GlobalRouter::findPins(Net* net)
   }
 }
 
-void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
+void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& root_idx)
 {
   findPins(net);
 
+  root_idx = 0;
   for (Pin& pin : net->getPins()) {
     odb::Point pinPosition = pin.getOnGridPosition();
     int topLayer = pin.getTopLayer();
@@ -683,6 +676,9 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
 
       if (!invalid) {
         pinsOnGrid.push_back(RoutePt(pinX, pinY, topLayer));
+        if (pin.isDriver()) {
+          root_idx = pinsOnGrid.size()-1;
+        }
       }
     }
   }
@@ -718,7 +714,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1) {
+    if (pin_count > 1 && !net->isLocal()) {
       if (pin_count < minDegree) {
         minDegree = pin_count;
       }
@@ -728,28 +724,42 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       std::vector<RoutePt> pinsOnGrid;
-      findPins(net, pinsOnGrid);
+      int root_idx;
+      findPins(net, pinsOnGrid, root_idx);
 
-      if (pinsOnGrid.size() > 1) {
-        float netAlpha = _alpha;
-        if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
-          netAlpha = _netsAlpha[net->getName()];
+      // check if net is local in the global routing grid position
+      // the (x,y) pin positions here may be different from the original
+      // (x,y) pin positions because of findFakePinPosition function
+      bool on_grid_local = true;
+      RoutePt position = pinsOnGrid[0];
+      for (RoutePt& pinPos : pinsOnGrid) {
+        if (pinPos.x() != position.x() ||
+            pinPos.y() != position.y()) {
+          on_grid_local = false;
+          break;
         }
-        bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
+      }
+
+      if (pinsOnGrid.size() > 1 && !on_grid_local) {
+        float net_alpha = _alpha;
+        if (_net_alpha_map.find(net->getName()) != _net_alpha_map.end()) {
+          net_alpha = _net_alpha_map[net->getName()];
+        }
+        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int numLayers = _grid->getNumLayers();
-        std::vector<int> edgeCostsPerLayer(numLayers + 1, 1);
-        int edgeCostForNet = computeTrackConsumption(net, edgeCostsPerLayer);
+        std::vector<int> edge_cost_per_layer(numLayers + 1, 1);
+        int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
-                                       pinsOnGrid.size(),
-                                       netAlpha,
-                                       isClock,
-                                       edgeCostForNet,
-                                       edgeCostsPerLayer);
+                                       net_alpha,
+                                       is_clock,
+                                       root_idx,
+                                       edge_cost_for_net,
+                                       edge_cost_per_layer);
         for (RoutePt& pinPos : pinsOnGrid) {
-          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
+          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer()-1);
         }
       }
     }
@@ -1345,7 +1355,7 @@ void GlobalRouter::addRegionAdjustment(int minX,
 void GlobalRouter::addAlphaForNet(char* netName, float alpha)
 {
   std::string name(netName);
-  _netsAlpha[name] = alpha;
+  _net_alpha_map[name] = alpha;
 }
 
 void GlobalRouter::setVerbose(const int v)
@@ -1361,11 +1371,6 @@ void GlobalRouter::setOverflowIterations(int iterations)
 void GlobalRouter::setGridOrigin(long x, long y)
 {
   *_gridOrigin = odb::Point(x, y);
-}
-
-void GlobalRouter::setPDRevForHighFanout(int pdRevForHighFanout)
-{
-  _pdRevForHighFanout = pdRevForHighFanout;
 }
 
 void GlobalRouter::setAllowOverflow(bool allowOverflow)

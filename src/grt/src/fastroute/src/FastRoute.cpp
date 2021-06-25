@@ -56,7 +56,6 @@
 #include "maze.h"
 #include "maze3D.h"
 #include "utl/Logger.h"
-#include "pdr/pdrev.h"
 #include "opendb/db.h"
 
 #include "route.h"
@@ -520,33 +519,36 @@ void FastRouteCore::setLayerOrientation(int x)
 
 void FastRouteCore::addPin(int netID, int x, int y, int layer)
 {
-  nets[netID]->pinX.push_back(x);
-  nets[netID]->pinY.push_back(y);
-  nets[netID]->pinL.push_back(layer);
+  FrNet* net = nets[netID];
+  net->pinX.push_back(x);
+  net->pinY.push_back(y);
+  net->pinL.push_back(layer);
 }
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
-                          int nPins,
-                          int validPins,
+                          int num_pins,
                           float alpha,
-                          bool isClock,
+                          bool is_clock,
+                          int driver_idx,
                           int cost,
-                          std::vector<int> edgeCostPerLayer)
+                          std::vector<int> edge_cost_per_layer)
 {
   int netID = newnetID;
-  pinInd = validPins;
+  FrNet* net = nets[newnetID];
+  pinInd = num_pins;
   MD = std::max(MD, pinInd);
-  nets[newnetID]->db_net = db_net;
-  nets[newnetID]->numPins = nPins;
-  nets[newnetID]->deg = pinInd;
-  nets[newnetID]->alpha = alpha;
-  nets[newnetID]->isClock = isClock;
-  nets[newnetID]->edgeCost = cost;
-  nets[newnetID]->edgeCostPerLayer = edgeCostPerLayer;
+  net->db_net = db_net;
+  net->numPins = num_pins;
+  net->deg = pinInd;
+  net->alpha = alpha;
+  net->is_clock = is_clock;
+  net->driver_idx = driver_idx;
+  net->edgeCost = cost;
+  net->edge_cost_per_layer = edge_cost_per_layer;
 
   seglistIndex[newnetID] = segcount;
   newnetID++;
-  // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
+  // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs for a net
   segcount += 2 * pinInd - 3;
   return netID;
 }
@@ -1405,11 +1407,6 @@ void FastRouteCore::setVerbose(int v)
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflowIterations = iterations;
-}
-
-void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
-{
-  pdRevForHighFanout = pdRevHihgFanout;
 }
 
 void FastRouteCore::setAllowOverflow(bool allow)

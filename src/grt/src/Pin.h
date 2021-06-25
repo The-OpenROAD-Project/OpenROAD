@@ -92,6 +92,7 @@ class Pin
   bool isConnectedToPad() const { return _connectedToPad; }
   const odb::Point& getOnGridPosition() const { return _onGridPosition; }
   void setOnGridPosition(odb::Point onGridPos) { _onGridPosition = onGridPos; }
+  bool isDriver();
 
  private:
   union

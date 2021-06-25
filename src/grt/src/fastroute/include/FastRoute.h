@@ -72,12 +72,12 @@ class FastRouteCore
   void setLayerOrientation(int x);
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
-             int nPins,
-             int validPins,
+             int num_pins,
              float alpha,
-             bool isClock,
+             bool is_clock,
+             int driver_idx,
              int cost,
-             std::vector<int> edgeCostPerLayer);
+             std::vector<int> edge_cost_per_layer);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(long x1,
@@ -118,7 +118,6 @@ class FastRouteCore
   void setAlpha(float a);
   void setVerbose(int v);
   void setOverflowIterations(int iterations);
-  void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();

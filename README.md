@@ -852,26 +852,17 @@ You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
-set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_topology_priority priority]
+set_routing_alpha [-net net_name] alpha
 ```
-The `set_clock_routing` command sets specific configurations for clock nets.
-Options description:
-- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
-See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-
-```
-set_pdrev_topology_priority netName alpha
-```
-FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
-priority of PDRev between wire length and skew, using the `alpha` parameter.
-The `set_pdrev_topology_priority` command sets the PDRev routing topology construction priority for specific nets.
-Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generates topologies with shorter wire length,
-and alpha close to 1.0 generates topologies with lower skew. For more information about PDRev, check the paper in
-`src/FastRoute/src/pdrev/papers/PDRev.pdf`
+By default the global router uses steiner trees to construct route guides. A steiner tree minimizes the total wire length.
+Prim/Dijkstra is an alternative net topology algorithm that supports a trade-off between total wire length and maximum path depth from
+the net driver to its loads.
+The `set_routing_alpha` command enables the Prim/Dijkstra algorithm and sets the alpha parameter used to trade-off wire length and path depth.
+Alpha is between 0.0 and 1.0. When alpha is 0.0 the net topology minimizes total wire length (i.e. capacitance).
+When alpha is 1.0 it minimizes longest path between the driver and loads (i.e., maximum resistance).
+Typical values are 0.4-0.8. For more information about PDRev, check the paper in `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_topology_priority clk 0.3` sets an alpha value of 0.3 for net *clk*.
+Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
