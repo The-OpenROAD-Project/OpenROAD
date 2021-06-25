@@ -13,39 +13,6 @@
 #include "utl/Logger.h"
 
 namespace par {
-// * L1, L2, L3  : all the BTerms on the left boundary
-// * T1, T2, T3  : all the BTerms on the top boundary
-// * R1, R2, R3  : all the BTerms on the right boundary
-// * B1, B2, B3  : all the BTerms on the bottom boundary
-class BundledIO
-{
- public:
-  BundledIO() {}
-  BundledIO(int id, std::string name) : id_(id), name_(name) {}
-
-  // accessor
-  unsigned int getNumBTerms() const { return bterm_vec_.size(); }
-  int getId() const { return id_; }
-  std::string getName() const { return name_; }
-  const std::vector<std::string>& getBTerms() const { return bterm_vec_; }
-  bool findBTerm(std::string bterm_name) const
-  {
-    auto iter = std::find(bterm_vec_.begin(), bterm_vec_.end(), bterm_name);
-    return iter != bterm_vec_.end();
-  }
-
-  // operations
-  void addBTerm(std::string bterm_name)
-  {
-    if (!findBTerm(bterm_name))
-      bterm_vec_.push_back(bterm_name);
-  }
-
- private:
-  int id_ = 0;
-  std::string name_ = "";
-  std::vector<std::string> bterm_vec_;
-};
 
 class Cluster
 {
