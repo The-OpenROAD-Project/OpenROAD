@@ -12,12 +12,6 @@
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
-namespace utl {
-class Logger;
-}
-
-using utl::Logger;
-
 namespace par {
 // * L1, L2, L3  : all the BTerms on the left boundary
 // * T1, T2, T3  : all the BTerms on the top boundary
@@ -27,34 +21,30 @@ class BundledIO
 {
  public:
   BundledIO() {}
-  BundledIO(int id, std::string name) : _id(id), _name(name) {}
+  BundledIO(int id, std::string name) : id_(id), name_(name) {}
 
   // accessor
-  unsigned int getNumBTerms() { return _bterm_vec.size(); }
-  int getId() { return _id; }
-  std::string getName() { return _name; }
-  std::vector<std::string> getBTerms() { return _bterm_vec; }
-  bool findBTerm(std::string bterm_name)
+  unsigned int getNumBTerms() const { return bterm_vec_.size(); }
+  int getId() const { return id_; }
+  std::string getName() const { return name_; }
+  const std::vector<std::string>& getBTerms() const { return bterm_vec_; }
+  bool findBTerm(std::string bterm_name) const
   {
-    std::vector<std::string>::iterator iter;
-    iter = std::find(_bterm_vec.begin(), _bterm_vec.end(), bterm_name);
-    if (iter == _bterm_vec.end())
-      return false;
-    else
-      return true;
+    auto iter = std::find(bterm_vec_.begin(), bterm_vec_.end(), bterm_name);
+    return iter != bterm_vec_.end();
   }
 
   // operations
   void addBTerm(std::string bterm_name)
   {
-    if (findBTerm(bterm_name) == false)
-      _bterm_vec.push_back(bterm_name);
+    if (!findBTerm(bterm_name))
+      bterm_vec_.push_back(bterm_name);
   }
 
  private:
-  int _id = 0;
-  std::string _name = "";
-  std::vector<std::string> _bterm_vec;
+  int id_ = 0;
+  std::string name_ = "";
+  std::vector<std::string> bterm_vec_;
 };
 
 class Cluster
@@ -62,82 +52,83 @@ class Cluster
  public:
   Cluster() {}
   Cluster(int id, bool type, std::string name)
-      : _id(id), _type(type), _name(name)
+      : id_(id), type_(type), name_(name)
   {
   }
 
   // Accessor
-  int getId() { return _id; }
-  bool getType() { return _type; }
-  sta::Instance* getTopInstance() { return _top_inst; }
-  std::string getName() { return _name; }
-  std::vector<std::string> getLogicalModuleVec() { return _logical_module_vec; }
-  std::vector<sta::Instance*> getInstVec() { return _inst_vec; }
-  std::vector<sta::Instance*> getMacroVec() { return _macro_vec; }
-  unsigned int getNumMacro() { return _macro_vec.size(); }
-  unsigned int getNumInst() { return _inst_vec.size(); }
-  std::unordered_map<int, unsigned int> getInputConnectionMap()
+  int getId() const { return id_; }
+  bool getType() const { return type_; }
+  sta::Instance* getTopInstance() const { return top_inst_; }
+  std::string getName() { return name_; }
+  std::vector<std::string> getLogicalModuleVec() const
   {
-    return _input_connection_map;
+    return logical_module_vec_;
+  }
+  std::vector<sta::Instance*> getInstVec() const { return inst_vec_; }
+  std::vector<sta::Instance*> getMacroVec() const { return macro_vec_; }
+  unsigned int getNumMacro() const { return macro_vec_.size(); }
+  unsigned int getNumInst() const { return inst_vec_.size(); }
+  std::unordered_map<int, unsigned int> getInputConnectionMap() const
+  {
+    return input_connection_map_;
   }
 
-  std::unordered_map<int, unsigned int> getOutputConnectionMap()
+  std::unordered_map<int, unsigned int> getOutputConnectionMap() const
   {
-    return _output_connection_map;
+    return output_connection_map_;
   }
 
-  unsigned int getInputConnection(int cluster_id)
+  unsigned int getInputConnection(int cluster_id) const
   {
-    std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = _input_connection_map.find(cluster_id);
-    if (map_iter == _input_connection_map.end())
+    auto map_iter = input_connection_map_.find(cluster_id);
+    if (map_iter == input_connection_map_.end())
       return 0;
     else
       return map_iter->second;
   }
 
-  unsigned int getOutputConnection(int cluster_id)
+  unsigned int getOutputConnection(int cluster_id) const
   {
-    std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = _output_connection_map.find(cluster_id);
-    if (map_iter == _output_connection_map.end())
+    auto map_iter = output_connection_map_.find(cluster_id);
+    if (map_iter == output_connection_map_.end())
       return 0;
     else
       return map_iter->second;
   }
 
   // operations
-  void removeMacro() { _macro_vec.clear(); }
+  void removeMacro() { macro_vec_.clear(); }
 
   float calculateArea(ord::dbVerilogNetwork* network);
 
-  void addInst(sta::Instance* inst) { _inst_vec.push_back(inst); }
-  void addMacro(sta::Instance* inst) { _macro_vec.push_back(inst); }
-  void specifyTopInst(sta::Instance* inst) { _top_inst = inst; }
-  void specifyName(std::string name) { _name = name; }
+  void addInst(sta::Instance* inst) { inst_vec_.push_back(inst); }
+  void addMacro(sta::Instance* inst) { macro_vec_.push_back(inst); }
+  void specifyTopInst(sta::Instance* inst) { top_inst_ = inst; }
+  void specifyName(std::string name) { name_ = name; }
   void addLogicalModule(std::string module_name)
   {
-    _logical_module_vec.push_back(module_name);
+    logical_module_vec_.push_back(module_name);
   }
 
   void addLogicalModuleVec(std::vector<std::string> module_vec)
   {
     for (auto& module : module_vec)
-      _logical_module_vec.push_back(module);
+      logical_module_vec_.push_back(module);
   }
 
   void initConnection()
   {
-    _input_connection_map.clear();
-    _output_connection_map.clear();
+    input_connection_map_.clear();
+    output_connection_map_.clear();
   }
 
   void addInputConnection(int cluster_id, unsigned int weight = 1)
   {
     std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = _input_connection_map.find(cluster_id);
-    if (map_iter == _input_connection_map.end())
-      _input_connection_map[cluster_id] = weight;
+    map_iter = input_connection_map_.find(cluster_id);
+    if (map_iter == input_connection_map_.end())
+      input_connection_map_[cluster_id] = weight;
     else
       map_iter->second += weight;
   }
@@ -145,9 +136,9 @@ class Cluster
   void addOutputConnection(int cluster_id, unsigned int weight = 1)
   {
     std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = _output_connection_map.find(cluster_id);
-    if (map_iter == _output_connection_map.end())
-      _output_connection_map[cluster_id] = weight;
+    map_iter = output_connection_map_.find(cluster_id);
+    if (map_iter == output_connection_map_.end())
+      output_connection_map_[cluster_id] = weight;
     else
       map_iter->second += weight;
   }
@@ -156,8 +147,8 @@ class Cluster
   void printInputConnection()
   {
     std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = _input_connection_map.begin();
-    while (map_iter != _input_connection_map.end()) {
+    map_iter = input_connection_map_.begin();
+    while (map_iter != input_connection_map_.end()) {
       std::cout << "cluster_id:   " << map_iter->first << "   ";
       std::cout << "num_connections:   " << map_iter->second << "   ";
       std::cout << std::endl;
@@ -168,8 +159,8 @@ class Cluster
   void printOutputConnection()
   {
     std::unordered_map<int, unsigned int>::iterator map_iter;
-    map_iter = _output_connection_map.begin();
-    while (map_iter != _output_connection_map.end()) {
+    map_iter = output_connection_map_.begin();
+    while (map_iter != output_connection_map_.end()) {
       std::cout << "cluster_id:   " << map_iter->first << "   ";
       std::cout << "num_connections:   " << map_iter->second << "   ";
       std::cout << std::endl;
@@ -178,20 +169,19 @@ class Cluster
   }
 
  private:
-  int _id = 0;
-  bool _type = true;  // false for glue logic
-  sta::Instance* _top_inst = nullptr;
-  std::string _name = "";
-  std::vector<std::string> _logical_module_vec;
-  std::vector<sta::Instance*> _inst_vec;
-  std::vector<sta::Instance*> _macro_vec;
-  std::unordered_map<int, unsigned int> _input_connection_map;
-  std::unordered_map<int, unsigned int> _output_connection_map;
+  int id_ = 0;
+  bool type_ = true;  // false for glue logic
+  sta::Instance* top_inst_ = nullptr;
+  std::string name_ = "";
+  std::vector<std::string> logical_module_vec_;
+  std::vector<sta::Instance*> inst_vec_;
+  std::vector<sta::Instance*> macro_vec_;
+  std::unordered_map<int, unsigned int> input_connection_map_;
+  std::unordered_map<int, unsigned int> output_connection_map_;
 };
 
-class Metric
+struct Metric
 {
- public:
   float area = 0.0;
   unsigned int num_macro = 0;
   unsigned int num_inst = 0;
@@ -206,13 +196,13 @@ class Metric
   }
 };
 
-class autoclusterMgr
+class AutoClusterMgr
 {
  public:
-  autoclusterMgr(ord::dbVerilogNetwork* network,
+  AutoClusterMgr(ord::dbVerilogNetwork* network,
                  odb::dbDatabase* db,
-                 Logger* logger)
-      : _network(network), _db(db), _logger(logger)
+                 utl::Logger* logger)
+      : network_(network), db_(db), logger_(logger)
   {
   }
 
@@ -225,44 +215,44 @@ class autoclusterMgr
                        const char* file_name);
 
  private:
-  ord::dbVerilogNetwork* _network = nullptr;
-  odb::dbDatabase* _db = nullptr;
-  odb::dbBlock* _block = nullptr;
-  Logger* _logger;
-  unsigned int _max_num_macro = 0;
-  unsigned int _min_num_macro = 0;
-  unsigned int _max_num_inst = 0;
-  unsigned int _min_num_inst = 0;
-  unsigned int _net_threshold = 0;
-  unsigned int _virtual_weight = 10000;
-  unsigned int _num_buffer = 0;
-  float _area_buffer = 0;
+  ord::dbVerilogNetwork* network_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
+  utl::Logger* logger_;
+  unsigned int max_num_macro_ = 0;
+  unsigned int min_num_macro_ = 0;
+  unsigned int max_num_inst_ = 0;
+  unsigned int min_num_inst_ = 0;
+  unsigned int net_threshold_ = 0;
+  unsigned int virtual_weight_ = 10000;
+  unsigned int num_buffer_ = 0;
+  float area_buffer_ = 0;
 
-  float _dbu = 0.0;
+  float dbu_ = 0.0;
 
-  int _floorplan_lx = 0;
-  int _floorplan_ly = 0;
-  int _floorplan_ux = 0;
-  int _floorplan_uy = 0;
+  int floorplan_lx_ = 0;
+  int floorplan_ly_ = 0;
+  int floorplan_ux_ = 0;
+  int floorplan_uy_ = 0;
 
   // Map all the BTerms to one of "L", "R", "B" and "T"
-  std::unordered_map<std::string, std::string> _bterm_map;
-  std::unordered_map<std::string, int> _bundled_io_map;
-  std::unordered_map<sta::Instance*, Metric> _logical_cluster_map;
-  std::unordered_map<int, Cluster*> _cluster_map;
-  std::unordered_map<sta::Instance*, int> _inst_map;
+  std::unordered_map<std::string, std::string> bterm_map_;
+  std::unordered_map<std::string, int> bundled_io_map_;
+  std::unordered_map<sta::Instance*, Metric> logical_cluster_map_;
+  std::unordered_map<int, Cluster*> cluster_map_;
+  std::unordered_map<sta::Instance*, int> inst_map_;
 
-  std::unordered_map<int, int> _virtual_map;
+  std::unordered_map<int, int> virtual_map_;
 
-  std::map<sta::Instance*, int> _buffer_map;
-  int _buffer_id = -1;
-  std::vector<std::vector<sta::Net*>> _buffer_net_vec;
-  std::vector<sta::Net*> _buffer_net_list;
+  std::map<sta::Instance*, int> buffer_map_;
+  int buffer_id_ = -1;
+  std::vector<std::vector<sta::Net*>> buffer_net_vec_;
+  std::vector<sta::Net*> buffer_net_list_;
 
-  std::vector<Cluster*> _cluster_list;
-  std::vector<Cluster*> _merge_cluster_list;
-  std::queue<Cluster*> _break_cluster_list;
-  std::queue<Cluster*> _mlpart_cluster_list;
+  std::vector<Cluster*> cluster_list_;
+  std::vector<Cluster*> merge_cluster_list_;
+  std::queue<Cluster*> break_cluster_list_;
+  std::queue<Cluster*> mlpart_cluster_list_;
 
   void createBundledIO();
   Metric traverseLogicalHierarchy(sta::Instance* inst);
@@ -323,6 +313,6 @@ void dbPartitionDesign(ord::dbVerilogNetwork* network,
                        unsigned int net_threshold,
                        unsigned int virtual_weight,
                        const char* file_name,
-                       Logger* logger);
+                       utl::Logger* logger);
 
 }
