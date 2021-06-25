@@ -65,9 +65,9 @@ class lefout
   bool _write_marked_masters;
   double _dist_factor;
   double _area_factor;
-  utl::Logger* _logger;
+  utl::Logger* logger_;
 
-  void writeBoxes(void* boxes, const char* indent);
+  void writeBoxes(dbSet<dbBox>* boxes, const char* indent);
   void writeTech(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
@@ -100,13 +100,13 @@ class lefout
 
   double lefarea(int value) { return ((double) value * _area_factor); }
 
-  lefout(utl::Logger* logger)
+  lefout(utl::Logger* p_logger)
   {
     _out = nullptr;
     _write_marked_masters = _use_alias = _use_master_ids = false;
     _dist_factor = 0.001;
     _area_factor = 0.000001;
-    _logger = logger;
+    logger_ = p_logger;
   }
 
   ~lefout() {}
@@ -121,6 +121,8 @@ class lefout
 
   FILE* out() { return _out; }
   bool writeAbstractLef(odb::dbBlock* db_block, const char* lef_file);
+  void writeBlock(dbBlock* db_block);
+  void writePins(dbBlock* db_block);
 };
 
 }  // namespace odb

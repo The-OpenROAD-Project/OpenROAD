@@ -3306,7 +3306,8 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 
 void dbBlock::saveLef(char* filename)
 {
-  // TODO: Replace with writing abstract lef.
+  lefout writer(getImpl()->getLogger());
+  writer.writeAbstractLef(this, filename);
 }
 
 //

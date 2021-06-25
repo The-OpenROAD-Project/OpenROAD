@@ -32,6 +32,7 @@
 
 #include "lefout.h"
 
+#include <dbShape.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -47,15 +48,15 @@ void lefout::writeVersion(const char* version)
   fprintf(_out, "VERSION %s ;\n", version);
 }
 
-void lefout::writeBoxes(void* boxes, const char* indent)
+void lefout::writeBoxes(dbSet<dbBox>* boxes, const char* indent)
 {
-  dbSet<dbBox>* geoms = (dbSet<dbBox>*) boxes;
-  dbSet<dbBox>::iterator bitr;
   dbTechLayer* cur_layer = NULL;
 
-  for (bitr = geoms->begin(); bitr != geoms->end(); ++bitr) {
-    dbBox* box = *bitr;
+  for (dbBox* box : *boxes) {
     dbTechLayer* layer = box->getTechLayer();
+    if (box == nullptr) {
+      fprintf(_out, "THIS is basically null!\n");
+    }
 
     if (box->isVia()) {
       dbTechVia* via = box->getTechVia();
@@ -128,10 +129,6 @@ void lefout::writeHeader(dbBlock* db_block)
   writeNameCaseSensitive(tech->getNamesCaseSensitive());
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
-
-  if (tech->getLefUnits()) {
-    writeUnits(tech->getLefUnits());
-  }
 }
 
 void lefout::writeHeader(dbLib* lib)
@@ -1015,7 +1012,7 @@ bool lefout::writeTech(dbTech* tech, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    _logger->error(utl::ODB, 0274, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 0274, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1033,7 +1030,7 @@ bool lefout::writeLib(dbLib* lib, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    _logger->error(utl::ODB, 0273, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 0273, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1051,7 +1048,7 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    _logger->error(utl::ODB, 0272, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 0272, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1072,9 +1069,56 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == nullptr) {
-    _logger->error(utl::ODB, 0271, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 0271, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
   writeHeader(db_block);
+  writeBlock(db_block);
+
+//  for (dbNet* net :db_block->getNets()) {
+//    dbWireShapeItr wire_shape_itr;
+//
+//    dbShape shape;
+//    for (wire_shape_itr.begin(net->getWire()); wire_shape_itr.next(shape);) {
+//
+//    }
+//  }
+  fprintf(_out, "END LIBRARY\n");
+
+
+  return true;
+}
+
+void lefout::writeBlock(dbBlock* db_block)
+{
+  dbBox* bounding_box = db_block->getBBox();
+  double origin_x = lefdist(bounding_box->xMin());
+  double origin_y = lefdist(bounding_box->xMin());
+  double size_x = lefdist(bounding_box->getDX());
+  double size_y = lefdist(bounding_box->getDY());
+
+  fprintf(_out, "MACRO %s\n", db_block->getName().c_str());
+  fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
+  fprintf(_out, "  CLASS BLOCK ;\n");
+  fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
+  fprintf(_out, "  SIZE %g %g ;\n", size_x, size_y);
+  writePins(db_block);
+  fprintf(_out, "END %s\n", db_block->getName().c_str());
+  fclose(_out);
+}
+void lefout::writePins(dbBlock* db_block)
+{
+  for (dbBTerm* b_term : db_block->getBTerms()) {
+    fprintf(_out, "  PIN %s\n", b_term->getName().c_str());
+    fprintf(_out, "    DIRECTION %s ;\n", b_term->getIoType().getString());
+    fprintf(_out, "    USE %s ;\n", b_term->getSigType().getString());
+    for (dbBPin* db_b_pin : b_term->getBPins()) {
+       fprintf(_out, "    PORT\n");
+       dbSet<dbBox> term_pins = db_b_pin->getBoxes();
+       writeBoxes(&term_pins, "      ");
+       fprintf(_out, "    END\n");
+    }
+    fprintf(_out, "  END %s\n", b_term->getName().c_str());
+  }
 }
