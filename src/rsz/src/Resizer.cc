@@ -471,7 +471,7 @@ Resizer::hasPins(Net *net)
   return has_pins;
 }
 
-void
+Instance *
 Resizer::bufferInput(Pin *top_pin,
                      LibertyCell *buffer_cell)
 {
@@ -507,6 +507,7 @@ Resizer::bufferInput(Pin *top_pin,
     sta_->connectPin(buffer, input, input_net);
     sta_->connectPin(buffer, output, buffer_out);
   }
+  return buffer;
 }
 
 void
@@ -635,9 +636,8 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
       : network_->net(drvr_pin);
     if (net
         && !sta_->isClock(drvr_pin)
-        // Exclude tie hi/low cells.
-        && !isFuncOneZero(drvr_pin)
-        && !db_network_->isSpecial(net)) {
+        // Exclude tie hi/low cells and supply nets.
+        && !drvr->isConstant()) {
       repairNet(net, drvr, true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
@@ -812,7 +812,18 @@ Resizer::repairNet(Net *net,
       checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
       if (slew_slack1 < 0.0) {
         slew_violations++;
-        LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+        LibertyPort *drvr_port = nullptr;
+        if (network_->isTopLevelPort(drvr_pin)) {
+          // Wire delay/slew on input port.
+          Instance *buffer = bufferInput(drvr_pin, buffer_lowest_drive_);
+          if (buffer) {
+            LibertyPort *in_port;
+            buffer_lowest_drive_->bufferPorts(in_port, drvr_port);
+            drvr_pin = network_->findPin(buffer, drvr_port);
+          }
+        }
+        else
+          drvr_port = network_->libertyPort(drvr_pin);
         if (drvr_port) {
           // Find max load cap that corresponds to max_slew.
           double max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);

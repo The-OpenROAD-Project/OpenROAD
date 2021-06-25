@@ -298,8 +298,8 @@ protected:
   float routingAlpha() const;
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
-  void bufferInput(Pin *top_pin,
-                   LibertyCell *buffer_cell);
+  Instance *bufferInput(Pin *top_pin,
+                        LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
   void makeEquivCells();

@@ -1,0 +1,42 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0127] Reading DEF file: ./results/repair_slew8.def
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 250 components and 1500 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 2 nets and 500 connections.
+[INFO ODB-0134] Finished DEF file: ./results/repair_slew8.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+r239/RESET_B                            1.50    2.35   -0.85 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+r0/Q                                    0.17    0.00    0.17 (MET)
+
+[INFO RSZ-0058] Using max wire length 3199um.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0038] Inserted 27 buffers in 1 nets.
+[INFO RSZ-0039] Resized 1 instances.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+r179/RESET_B                            1.50    0.18    1.32 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+r0/Q                                    0.17    0.00    0.17 (MET)
+
