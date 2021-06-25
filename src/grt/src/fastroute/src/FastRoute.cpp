@@ -1304,9 +1304,9 @@ NetRouteMap FastRouteCore::run()
     }
 
     if (totalOverflow > last_total_overflow) {
-      last_total_overflow = maxOverflow;
       overflow_increases++;
     }
+    last_total_overflow = totalOverflow;
   } // end overflow iterations
 
   bool has_2D_overflow = totalOverflow > 0;
