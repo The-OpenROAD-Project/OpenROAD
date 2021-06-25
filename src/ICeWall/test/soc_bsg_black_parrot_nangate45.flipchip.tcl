@@ -1,3 +1,4 @@
+
 source "helpers.tcl"
 
 read_lef NangateOpenCellLibrary.mod.lef
@@ -5,7 +6,7 @@ read_lef dummy_pads.lef
 
 read_liberty dummy_pads.lib
 
-read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.v
+read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.v
 
 link_design soc_bsg_black_parrot
 
@@ -20,6 +21,8 @@ initialize_floorplan \
   -core_area {180.012 180.096 2819.964 2819.712} \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
+
+source ../../../test/Nangate45/Nangate45.tracks
 
 if {[catch {ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.sigmap} msg]} {
   puts $errorInfo
