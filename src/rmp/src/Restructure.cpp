@@ -107,9 +107,11 @@ void Restructure::run(float slack_threshold, unsigned max_depth)
 
   getBlob(max_depth);
 
-  runABC();
+  if (path_insts_.size()) {
+    runABC();
 
-  postABC(worst_slack);
+    postABC(worst_slack);
+  }
 }
 
 void Restructure::getBlob(unsigned max_depth)
@@ -337,15 +339,23 @@ void Restructure::removeConstCells()
   if (!hicell_master || !locell_master)
     return;
 
-  open_sta_->ensureGraph();
-  open_sta_->ensureLevelized();
-  open_sta_->searchPreamble();
-
+  // open_sta_->ensureGraph();
+  // open_sta_->ensureLevelized();
+  // open_sta_->searchPreamble();
+  open_sta_->clear();
+  open_sta_->clearLogicConstants();
+  open_sta_->findLogicConstants();
   std::set<odb::dbInst*> constInsts;
   int const_cnt = 1;
   for (auto inst : block_->getInsts()) {
     int outputs = 0;
     int const_outputs = 0;
+    auto master = inst->getMaster();
+    sta::LibertyCell* cell = open_sta_->getDbNetwork()->libertyCell(
+        open_sta_->getDbNetwork()->dbToSta(master));
+    if (cell->hasSequentials())
+      continue;
+
     for (auto&& iterm : inst->getITerms()) {
       auto mterm = iterm->getMTerm();
       auto net = iterm->getNet();
@@ -357,13 +367,8 @@ void Restructure::removeConstCells()
       if (iterm->getIoType() != odb::dbIoType::OUTPUT)
         continue;
       outputs++;
-      sta::Vertex *vertex, *bidirect_drvr_vertex;
-      auto pin_ = open_sta_->getDbNetwork()->dbToSta(iterm);
-      open_sta_->getDbNetwork()->graph()->pinVertices(pin_, vertex, bidirect_drvr_vertex);
-      sta::LogicValue pinVal = ((vertex)
-                 ? vertex->simValue()
-                 : ((bidirect_drvr_vertex) ? bidirect_drvr_vertex->simValue()
-                                           : sta::LogicValue::unknown));
+      auto pin = open_sta_->getDbNetwork()->dbToSta(iterm);
+      sta::LogicValue pinVal = open_sta_->simLogicValue(pin);
       if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
         odb::dbNet* net = iterm->getNet();
         if (net) {
@@ -387,6 +392,8 @@ void Restructure::removeConstCells()
     if (outputs > 0 && outputs == const_outputs)
       constInsts.insert(inst);
   }
+  open_sta_->clearLogicConstants();
+
   debugPrint(logger_, RMP, "remap", 2, "Removing {} instances...", constInsts.size());
 
   for (auto inst : constInsts)
