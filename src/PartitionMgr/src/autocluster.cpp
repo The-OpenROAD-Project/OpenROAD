@@ -1,8 +1,10 @@
-#include "autocluster.h"
+#include "par/autocluster.h"
 #include "opendb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
+#ifdef PARTITIONERS
 #include "MLPart.h"
+#endif
 #include "utl/Logger.h"
 
 
@@ -934,6 +936,7 @@ namespace par {
         unsigned int seed = 0;
 
         
+#ifdef PARTITIONERS
         UMpack_mlpart(num_vertice,
                       num_edge,
                       vertexWeight,
@@ -948,7 +951,8 @@ namespace par {
                       1,  // Number of Runs
                       0,  // Debug Level
                       seed);
-        
+#endif
+
         string name_part0 = cluster->getName() + string("_cluster_0"); 
         string name_part1 = cluster->getName() + string("_cluster_1");
         Cluster* cluster_part0 = new Cluster(++cluster_id, true, name_part0);

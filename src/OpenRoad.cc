@@ -79,7 +79,7 @@
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
-#include "PartitionMgr/include/autocluster.h"
+#include "par/autocluster.h"
 #include "pdn/MakePdnGen.hh"
 #include "rmp/rtl_mp.h"
 #include "pdr/MakePdrev.h"

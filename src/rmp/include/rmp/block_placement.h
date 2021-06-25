@@ -48,11 +48,11 @@ namespace block_placement {
                 // sort the aspect ratio according to the 1st element of the pair in ascending order
                 // And we assume the aspect_ratio[i].first <= aspect_ratio[i].second
                 std::sort(aspect_ratio_.begin(), aspect_ratio_.end());
-                for(int i = 0; i < aspect_ratio_.size(); i++) {
-                    float height_low = std::sqrt(area_ * aspect_ratio_[i].first);
+                for(auto& aspect_ratio : aspect_ratio_) {
+                    float height_low = std::sqrt(area_ * aspect_ratio.first);
                     float width_high = area_ / height_low;
 
-                    float height_high = std::sqrt(area_ * aspect_ratio_[i].second);
+                    float height_high = std::sqrt(area_ * aspect_ratio.second);
                     float width_low = area_ / height_high;
                     
                     // height_limit_ is sorted in non-decreasing order
@@ -429,7 +429,7 @@ namespace block_placement {
                 regions_ = regions;
                 terminal_position_ = terminal_position;
                 
-                for(int i = 0; i < blocks.size(); i++) {
+                for(size_t i = 0; i < blocks.size(); i++) {
                     pos_seq_.push_back(i);
                     neg_seq_.push_back(i);
 
@@ -438,7 +438,7 @@ namespace block_placement {
                 }
 
                 blocks_ = blocks;
-                for(int i = 0; i < blocks_.size(); i++) {
+                for(size_t i = 0; i < blocks_.size(); i++) {
                     blocks_[i].SpecifyRandom(generator_, distribution_);
                     block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
                 }

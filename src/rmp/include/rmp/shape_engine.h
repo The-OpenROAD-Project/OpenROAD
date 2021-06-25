@@ -201,15 +201,7 @@ namespace shape_engine {
 
 
             bool operator==(const Cluster& cluster) const {
-                if(!(macros_.size() == cluster.macros_.size()))
-                    return false;
-
-                for(int i = 0; i < macros_.size(); i++) {
-                    if(!(macros_[i] == cluster.macros_[i]))
-                        return false;
-                }
-
-                return true;
+                return macros_ == cluster.macros_;
             }
 
             void SortMacro() {
@@ -302,7 +294,7 @@ namespace shape_engine {
                 neg_swap_prob_ = pos_swap_prob_ + neg_swap_prob;
                 double_swap_prob_ = neg_swap_prob_ + double_swap_prob;
                 
-                for(int i = 0; i < macros.size(); i++) {
+                for(size_t i = 0; i < macros.size(); i++) {
                     pos_seq_.push_back(i);
                     neg_seq_.push_back(i);
                    
@@ -335,7 +327,7 @@ namespace shape_engine {
             void WriteFloorplan(std::string file_name) {
                 std::ofstream file;
                 file.open(file_name);
-                for(int i = 0; i < macros_.size(); i++) {
+                for(size_t i = 0; i < macros_.size(); i++) {
                     file << macros_[i]->GetX() << "   ";
                     file << macros_[i]->GetY() << "   ";
                     file << macros_[i]->GetX() + macros_[i]->GetWidth() << "   ";

@@ -119,8 +119,8 @@ namespace par {
         
             void addLogicalModuleVec(std::vector<std::string> module_vec)
             {
-                for(int i = 0; i < module_vec.size(); i++)
-                    _logical_module_vec.push_back(module_vec[i]);
+                for(auto& module : module_vec)
+                    _logical_module_vec.push_back(module);
             }
 
             void initConnection()
@@ -203,19 +203,6 @@ namespace par {
                 this->area = area;
                 this->num_macro = num_macro;
                 this->num_inst = num_inst;
-            }
-
-            Metric(Metric& metric) {
-                area = metric.area;
-                num_macro = metric.num_macro;
-                num_inst = metric.num_inst;
-            }
-
-            void operator= (Metric& metric)
-            {
-                area = metric.area;
-                num_macro = metric.num_macro;
-                num_inst = metric.num_inst;
             }
     };
 
