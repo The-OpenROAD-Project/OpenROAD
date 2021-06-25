@@ -1352,7 +1352,7 @@ void check2DEdgesUsage()
   for (int i = 0; i < yGrid - 1; i++) {
     for (int j = 0; j < xGrid; j++) {
       int grid = i * xGrid + j;
-      if (h_edges[grid].usage >= max_v_edge_usage) {
+      if (v_edges[grid].usage >= max_v_edge_usage) {
         logger->error(GRT,
                       229,
                       "Vertical edge exceeds the maximum usage allowed.");
