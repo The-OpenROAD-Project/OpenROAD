@@ -14,6 +14,25 @@
 
 namespace par {
 
+// The four edges (left, right, bottom, top) are divided into
+// thirds (lower, middle, upper).  The cross-product produces
+// twelve io regions.  IOs (bterms) are mapped to these regions.
+enum IORegion
+{
+  LeftLower,
+  LeftMiddle,
+  LeftUpper,
+  RightLower,
+  RightMiddle,
+  RightUpper,
+  TopLower,
+  TopMiddle,
+  TopUpper,
+  BottomLower,
+  BottomMiddle,
+  BottomUpper
+};
+
 class Cluster
 {
  public:
@@ -194,9 +213,9 @@ class AutoClusterMgr
   int floorplan_ux_ = 0;
   int floorplan_uy_ = 0;
 
-  // Map all the BTerms to one of "L", "R", "B" and "T"
-  std::unordered_map<std::string, std::string> bterm_map_;
-  std::unordered_map<std::string, int> bundled_io_map_;
+  // Map all the BTerms to an IORegion
+  std::unordered_map<std::string, IORegion> bterm_map_;
+  std::unordered_map<IORegion, int> bundled_io_map_;
   std::unordered_map<sta::Instance*, Metric> logical_cluster_map_;
   std::unordered_map<int, Cluster*> cluster_map_;
   std::unordered_map<sta::Instance*, int> inst_map_;

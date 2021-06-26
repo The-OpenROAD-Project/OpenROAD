@@ -269,7 +269,7 @@ void AutoClusterMgr::createBundledIO()
   floorplan_ux_ = die_box.xMax();
   floorplan_uy_ = die_box.yMax();
 
-  // Map all the BTerms to bundledIOs: "L", "R", "B", "T"
+  // Map all the BTerms to IORegions
   for (auto term : block_->getBTerms()) {
     std::string bterm_name = term->getName();
     int lx = INT_MAX;
@@ -286,29 +286,29 @@ void AutoClusterMgr::createBundledIO()
     }
 
     if (lx == floorplan_lx_ && (uy <= floorplan_uy_ / 3))
-      bterm_map_[bterm_name] = string("L1");
+      bterm_map_[bterm_name] = LeftLower;
     else if (lx == floorplan_lx_ && (ly >= floorplan_uy_ * 2 / 3))
-      bterm_map_[bterm_name] = string("L3");
+      bterm_map_[bterm_name] = LeftUpper;
     else if (lx == floorplan_lx_)
-      bterm_map_[bterm_name] = string("L");
+      bterm_map_[bterm_name] = LeftMiddle;
     else if (ux == floorplan_ux_ && (uy <= floorplan_uy_ / 3))
-      bterm_map_[bterm_name] = string("R1");
+      bterm_map_[bterm_name] = RightLower;
     else if (ux == floorplan_ux_ && (ly >= floorplan_uy_ * 2 / 3))
-      bterm_map_[bterm_name] = string("R3");
+      bterm_map_[bterm_name] = RightUpper;
     else if (ux == floorplan_ux_)
-      bterm_map_[bterm_name] = string("R");
+      bterm_map_[bterm_name] = RightMiddle;
     else if (ly == floorplan_ly_ && (ux <= floorplan_ux_ / 3))
-      bterm_map_[bterm_name] = string("B1");
+      bterm_map_[bterm_name] = BottomLower;
     else if (ly == floorplan_ly_ && (lx >= floorplan_ux_ * 2 / 3))
-      bterm_map_[bterm_name] = string("B3");
+      bterm_map_[bterm_name] = BottomUpper;
     else if (ly == floorplan_ly_)
-      bterm_map_[bterm_name] = string("B");
+      bterm_map_[bterm_name] = BottomMiddle;
     else if (uy == floorplan_uy_ && (ux <= floorplan_ux_ / 3))
-      bterm_map_[bterm_name] = string("T1");
+      bterm_map_[bterm_name] = TopLower;
     else if (uy == floorplan_uy_ && (lx >= floorplan_ux_ * 2 / 3))
-      bterm_map_[bterm_name] = string("T3");
+      bterm_map_[bterm_name] = TopUpper;
     else if (uy == floorplan_uy_)
-      bterm_map_[bterm_name] = string("T");
+      bterm_map_[bterm_name] = TopMiddle;
     else
       logger_->error(
           PAR, 400, "Floorplan has not been initialized? Pin location error.");
@@ -1381,24 +1381,24 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   int cluster_id = 0;
 
   //
-  // Map each boundled IO to cluster with zero area
-  // Create a cluster for each budled io
+  // Map each bundled IO to cluster with zero area
+  // Create a cluster for each bundled io
   //
-  vector<std::string> bundled_ios{string("L"),
-                                  string("R"),
-                                  string("T"),
-                                  string("B"),
-                                  string("L1"),
-                                  string("R1"),
-                                  string("T1"),
-                                  string("B1"),
-                                  string("L3"),
-                                  string("R3"),
-                                  string("T3"),
-                                  string("B3")};
+  for (auto [io, name] : {pair(LeftMiddle, "LM"),
+                          pair(RightMiddle, "RM"),
+                          pair(TopMiddle, "TM"),
+                          pair(BottomMiddle, "BM"),
 
-  for (auto io : bundled_ios) {
-    Cluster* cluster = new Cluster(++cluster_id, true, io);
+                          pair(LeftLower, "LL"),
+                          pair(RightLower, "RL"),
+                          pair(TopLower, "TL"),
+                          pair(BottomLower, "BL"),
+
+                          pair(LeftUpper, "LU"),
+                          pair(RightUpper, "RU"),
+                          pair(TopUpper, "TU"),
+                          pair(BottomUpper, "BU")}) {
+    Cluster* cluster = new Cluster(++cluster_id, true, name);
     bundled_io_map_[io] = cluster_id;
     cluster_map_[cluster_id] = cluster;
     cluster_list_.push_back(cluster);
@@ -1690,7 +1690,6 @@ void dbPartitionDesign(dbVerilogNetwork* network,
                 "dbPartitionDesign can't run because OpenROAD wasn't compiled "
                 "with LOAD_PARTITIONERS");
 #endif
-  logger->report("IN dbPartitionDesign");
   auto engine = new par::AutoClusterMgr(network, db, logger);
   engine->partitionDesign(max_num_macro,
                           min_num_macro,
