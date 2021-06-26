@@ -285,33 +285,41 @@ void AutoClusterMgr::createBundledIO()
       }
     }
 
-    if (lx == floorplan_lx_ && (uy <= floorplan_uy_ / 3))
-      bterm_map_[bterm_name] = LeftLower;
-    else if (lx == floorplan_lx_ && (ly >= floorplan_uy_ * 2 / 3))
-      bterm_map_[bterm_name] = LeftUpper;
-    else if (lx == floorplan_lx_)
-      bterm_map_[bterm_name] = LeftMiddle;
-    else if (ux == floorplan_ux_ && (uy <= floorplan_uy_ / 3))
-      bterm_map_[bterm_name] = RightLower;
-    else if (ux == floorplan_ux_ && (ly >= floorplan_uy_ * 2 / 3))
-      bterm_map_[bterm_name] = RightUpper;
-    else if (ux == floorplan_ux_)
-      bterm_map_[bterm_name] = RightMiddle;
-    else if (ly == floorplan_ly_ && (ux <= floorplan_ux_ / 3))
-      bterm_map_[bterm_name] = BottomLower;
-    else if (ly == floorplan_ly_ && (lx >= floorplan_ux_ * 2 / 3))
-      bterm_map_[bterm_name] = BottomUpper;
-    else if (ly == floorplan_ly_)
-      bterm_map_[bterm_name] = BottomMiddle;
-    else if (uy == floorplan_uy_ && (ux <= floorplan_ux_ / 3))
-      bterm_map_[bterm_name] = TopLower;
-    else if (uy == floorplan_uy_ && (lx >= floorplan_ux_ * 2 / 3))
-      bterm_map_[bterm_name] = TopUpper;
-    else if (uy == floorplan_uy_)
-      bterm_map_[bterm_name] = TopMiddle;
-    else
+    int x_third = floorplan_ux_ / 3;
+    int y_third = floorplan_uy_ / 3;
+
+    if (lx == floorplan_lx_) {  // Left
+      if (uy <= y_third)
+        bterm_map_[bterm_name] = LeftLower;
+      else if (ly >= 2 * y_third)
+        bterm_map_[bterm_name] = LeftUpper;
+      else
+        bterm_map_[bterm_name] = LeftMiddle;
+    } else if (ux == floorplan_ux_) {  // Right
+      if (uy <= y_third)
+        bterm_map_[bterm_name] = RightLower;
+      else if (ly >= 2 * y_third)
+        bterm_map_[bterm_name] = RightUpper;
+      else
+        bterm_map_[bterm_name] = RightMiddle;
+    } else if (ly == floorplan_ly_) {  // Bottom
+      if (ux <= x_third)
+        bterm_map_[bterm_name] = BottomLower;
+      else if (lx >= 2 * x_third)
+        bterm_map_[bterm_name] = BottomUpper;
+      else
+        bterm_map_[bterm_name] = BottomMiddle;
+    } else if (uy == floorplan_uy_) {  // Top
+      if (ux <= x_third)
+        bterm_map_[bterm_name] = TopLower;
+      else if (lx >= 2 * x_third)
+        bterm_map_[bterm_name] = TopUpper;
+      else
+        bterm_map_[bterm_name] = TopMiddle;
+    } else {
       logger_->error(
           PAR, 400, "Floorplan has not been initialized? Pin location error.");
+    }
   }
 }
 
