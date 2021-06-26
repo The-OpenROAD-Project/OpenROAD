@@ -33,5 +33,5 @@ metal1     Horizontal          0             0          0.00%
 metal2     Vertical        18375          1700          90.75%
 ---------------------------------------------------------------
 
-[ERROR GRT-0228] Horizontal edge exceeds the maximum usage allowed.
+[ERROR GRT-0228] Horizontal edge usage exceeds the maximum allowed.
 GRT-0228

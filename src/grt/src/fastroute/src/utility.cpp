@@ -1336,9 +1336,8 @@ void checkUsage()
 
 void check2DEdgesUsage()
 {
-  // check maze.cpp:1105-1106 for these values
-  int max_h_edge_usage = 40 * hCapacity;
-  int max_v_edge_usage = 40 * vCapacity;
+  int max_h_edge_usage = max_usage_multiplier * hCapacity;
+  int max_v_edge_usage = max_usage_multiplier * vCapacity;
 
   // check horizontal edges
   for (int i = 0; i < yGrid; i++) {
@@ -1347,7 +1346,7 @@ void check2DEdgesUsage()
       if (h_edges[grid].usage >= max_h_edge_usage) {
         logger->error(GRT,
                       228,
-                      "Horizontal edge exceeds the maximum usage allowed.");
+                      "Horizontal edge usage exceeds the maximum allowed.");
       }
     }
   }
@@ -1359,7 +1358,7 @@ void check2DEdgesUsage()
       if (v_edges[grid].usage >= max_v_edge_usage) {
         logger->error(GRT,
                       229,
-                      "Vertical edge exceeds the maximum usage allowed.");
+                      "Vertical edge usage exceeds the maximum allowed.");
       }
     }
   }

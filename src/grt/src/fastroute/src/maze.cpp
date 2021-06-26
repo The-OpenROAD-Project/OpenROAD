@@ -1103,10 +1103,10 @@ void mazeRouteMSMD(int iter,
   TreeNode* treenodes;
 
   // allocate memory for distance and parent and pop_heap
-  h_costTable = new float[40 * hCapacity];
-  v_costTable = new float[40 * vCapacity];
+  h_costTable = new float[max_usage_multiplier * hCapacity];
+  v_costTable = new float[max_usage_multiplier * vCapacity];
 
-  forange = 40 * hCapacity;
+  forange = max_usage_multiplier * hCapacity;
 
   if (cost_type == 2) {
     for (i = 0; i < forange; i++) {
@@ -1119,7 +1119,7 @@ void mazeRouteMSMD(int iter,
             = costHeight / (exp((float) (hCapacity - i - 1) * LOGIS_COF) + 1)
               + 1 + costHeight / slope * (i - hCapacity);
     }
-    forange = 40 * vCapacity;
+    forange = max_usage_multiplier * vCapacity;
     for (i = 0; i < forange; i++) {
       if (i < vCapacity - 1)
         v_costTable[i]
@@ -1140,7 +1140,7 @@ void mazeRouteMSMD(int iter,
             = costHeight / (exp((float) (hCapacity - i) * LOGIS_COF) + 1) + 1
               + costHeight / slope * (i - hCapacity);
     }
-    forange = 40 * vCapacity;
+    forange = max_usage_multiplier * vCapacity;
     for (i = 0; i < forange; i++) {
       if (i < vCapacity)
         v_costTable[i]
