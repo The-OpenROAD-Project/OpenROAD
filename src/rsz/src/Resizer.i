@@ -340,7 +340,7 @@ resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(drvr_pin);
+  resizer->resizeToTargetSlew(drvr_pin, false);
 }
 
 double

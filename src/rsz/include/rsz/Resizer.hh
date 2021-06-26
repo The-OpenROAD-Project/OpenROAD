@@ -189,7 +189,8 @@ public:
   // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
   // Return true if resized.
-  bool resizeToTargetSlew(const Pin *drvr_pin);
+  bool resizeToTargetSlew(const Pin *drvr_pin,
+                          bool update_count);
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
@@ -525,9 +526,9 @@ protected:
                    bool journal);
 
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
-                                     SteinerPt k,
-                                     SteinerPt prev,
-                                     int level);
+                                  SteinerPt k,
+                                  SteinerPt prev,
+                                  int level);
   void rebufferTopDown(BufferedNet *choice,
                        Net *net,
                        int level);

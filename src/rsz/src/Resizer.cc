@@ -779,9 +779,8 @@ Resizer::repairNet(Net *net,
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
-    if (resize_drvr
-        && resizeToTargetSlew(drvr_pin))
-      resize_count_++;
+    if (resize_drvr)
+      resizeToTargetSlew(drvr_pin, true);
     ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
@@ -891,9 +890,8 @@ Resizer::repairNet(Net *net,
         makeRepeater("drvr", tree, drvr_pt, net, repeater_cell, 0,
                      wire_length, pin_cap, fanout, load_pins);
       }
-      if (resize_drvr
-          && resizeToTargetSlew(drvr_pin))
-        resize_count_++;
+      if (resize_drvr)
+        resizeToTargetSlew(drvr_pin, true);
     }
     delete tree;
   }
@@ -1276,7 +1274,7 @@ Resizer::makeRepeater(const char *where,
 
     // Resize repeater as we back up by levels.
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
-    resizeToTargetSlew(drvr_pin);
+    resizeToTargetSlew(drvr_pin, false);
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
@@ -1359,8 +1357,7 @@ Resizer::resizeToTargetSlew()
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
         && !db_network_->isSpecial(net)) {
-      if (resizeToTargetSlew(drvr_pin))
-        resize_count_++;
+      resizeToTargetSlew(drvr_pin, true);
       if (overMaxArea()) {
         logger_->error(RSZ, 24, "Max utilization reached.");
         break;
@@ -1406,7 +1403,8 @@ targetLoadDist(float load_cap,
 }
 
 bool
-Resizer::resizeToTargetSlew(const Pin *drvr_pin)
+Resizer::resizeToTargetSlew(const Pin *drvr_pin,
+                            bool update_count)
 {
   NetworkEdit *network = networkEdit();
   Instance *inst = network_->instance(drvr_pin);
@@ -1477,8 +1475,10 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
                      sdc_network_->pathName(drvr_pin),
                      cell->name(),
                      best_cell->name());
-          return replaceCell(inst, best_cell, true)
-            && !revisiting_inst;
+          if (replaceCell(inst, best_cell, true)
+              && !revisiting_inst
+              && update_count)
+            resize_count_++;
         }
       }
     }
@@ -2298,7 +2298,7 @@ Resizer::splitLoads(PathRef *drvr_path,
     }
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
-  resizeToTargetSlew(buffer_out_pin);
+  resizeToTargetSlew(buffer_out_pin, false);
 }
 
 LibertyCell *
