@@ -1169,7 +1169,7 @@ NetRouteMap FastRouteCore::run()
 
     logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
                   " threshold {} via cost {}. \n"
-                  "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
+                  "log_coef {:.2f}, healingTrigger {} cost_step {} L {} cost_type"
                   " {} updatetype {}.",
         i,
         enlarge,

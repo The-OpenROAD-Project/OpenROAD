@@ -59,154 +59,154 @@ metal10    Vertical         2256            47          97.92%
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2. 
-log_coef 0.95301074, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 0.95, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 2, enlarge 23, costheight 19, threshold 6 via cost 2. 
-log_coef 0.95301074, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 0.95, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 3, enlarge 23, costheight 29, threshold 2 via cost 2. 
-log_coef 0.95301074, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 0.95, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 4, enlarge 23, costheight 39, threshold 0 via cost 2. 
-log_coef 1.1812322, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 1.18, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 5, enlarge 23, costheight 49, threshold 0 via cost 2. 
-log_coef 1.1812322, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 1.18, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 6, enlarge 23, costheight 59, threshold 0 via cost 2. 
-log_coef 1.1812322, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 1.18, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 7, enlarge 23, costheight 69, threshold 0 via cost 2. 
-log_coef 1.1812322, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+log_coef 1.18, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
 [INFO GRT-0124] Update congestion history type 1.
 [INFO GRT-0102] iteration 8, enlarge 23, costheight 79, threshold 0 via cost 2. 
-log_coef 1.1812322, healingTrigger 0 cost_step 5 L 0 cost_type 1 updatetype 2.
+log_coef 1.18, healingTrigger 0 cost_step 5 L 0 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 9, enlarge 23, costheight 89, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 10, enlarge 23, costheight 99, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 11, enlarge 23, costheight 109, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 12, enlarge 23, costheight 119, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 13, enlarge 23, costheight 129, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 14, enlarge 23, costheight 139, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 15, enlarge 23, costheight 144, threshold 0 via cost 2. 
-log_coef 2, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 16, enlarge 23, costheight 154, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 17, enlarge 23, costheight 164, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 18, enlarge 23, costheight 174, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 19, enlarge 23, costheight 184, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 3 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 3 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 20, enlarge 23, costheight 194, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 4 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 4 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 21, enlarge 23, costheight 204, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 5 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 5 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 22, enlarge 23, costheight 214, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 5 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 5 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 23, enlarge 23, costheight 224, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 5 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 5 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 24, enlarge 23, costheight 234, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 6 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 6 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 25, enlarge 23, costheight 244, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 6 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 6 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 26, enlarge 23, costheight 254, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 7 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 7 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 27, enlarge 23, costheight 264, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 8 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 8 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 28, enlarge 23, costheight 269, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 8 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 8 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 29, enlarge 23, costheight 279, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 8 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 8 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 30, enlarge 23, costheight 289, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 9 cost_step 5 L 1 cost_type 1 updatetype 2.
+log_coef 2.00, healingTrigger 9 cost_step 5 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 31, enlarge 23, costheight 299, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 10 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 10 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 32, enlarge 23, costheight 309, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 10 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 10 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 33, enlarge 23, costheight 319, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 11 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 11 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 34, enlarge 23, costheight 329, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 11 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 11 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 35, enlarge 23, costheight 339, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 11 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 11 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 36, enlarge 23, costheight 349, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 12 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 12 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 37, enlarge 23, costheight 354, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 12 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 12 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 38, enlarge 23, costheight 364, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 13 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 13 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 39, enlarge 23, costheight 374, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 13 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 13 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 40, enlarge 23, costheight 384, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 13 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 13 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 41, enlarge 23, costheight 394, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 14 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 14 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 42, enlarge 23, costheight 404, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 15 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 15 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 43, enlarge 23, costheight 414, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 15 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 15 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 44, enlarge 23, costheight 424, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 16 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 16 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 45, enlarge 23, costheight 434, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 17 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 17 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 46, enlarge 23, costheight 439, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 17 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 17 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 47, enlarge 23, costheight 449, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 18 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 18 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 48, enlarge 23, costheight 459, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 19 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 19 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 49, enlarge 23, costheight 469, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 19 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 19 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0124] Update congestion history type 4.
 [INFO GRT-0102] iteration 50, enlarge 23, costheight 479, threshold 0 via cost 0. 
-log_coef 2, healingTrigger 20 cost_step 5 L 1 cost_type 1 updatetype 4.
+log_coef 2.00, healingTrigger 20 cost_step 5 L 1 cost_type 1 updatetype 4.
 [INFO GRT-0104] Minimal overflow 8 occuring at round 45.
 [INFO GRT-0111] Final number of vias: 4707
 [INFO GRT-0112] Final usage 3D: 19149
