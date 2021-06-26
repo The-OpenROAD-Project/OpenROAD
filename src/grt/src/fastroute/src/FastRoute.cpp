@@ -1383,7 +1383,7 @@ NetRouteMap FastRouteCore::run()
 
   updateDbCongestion();
 
-  if (has_2D_overflow && !allowOverflow) {
+  if (has_2D_overflow && !allow_overflow_) {
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
@@ -1411,7 +1411,7 @@ void FastRouteCore::setOverflowIterations(int iterations)
 
 void FastRouteCore::setAllowOverflow(bool allow)
 {
-  allowOverflow = allow;
+  allow_overflow_ = allow;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()

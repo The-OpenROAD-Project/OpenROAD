@@ -541,7 +541,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_result = BIG_INT;
       for (i = treenodes[n2a].topL; i >= treenodes[n2a].botL; i--) {
         if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -551,7 +551,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
         if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -656,7 +656,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_result = BIG_INT;
       for (i = treenodes[n1a].topL; i >= treenodes[n1a].botL; i--) {
         if (gridD[i][k] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][0];
           endLayer = i;
         }
@@ -667,7 +667,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
         if (gridD[i][k] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][k];
           endLayer = i;
         }

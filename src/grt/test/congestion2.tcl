@@ -11,7 +11,7 @@ set_global_routing_layer_adjustment metal4-metal10 0.8
 
 set_routing_layers -signal metal2-metal10
 
-global_route
+global_route -allow_congestion
 
 write_guides $guide_file
 
