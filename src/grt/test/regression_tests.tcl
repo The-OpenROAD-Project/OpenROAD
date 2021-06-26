@@ -6,6 +6,8 @@ record_tests {
   congestion2
   congestion3
   congestion4
+  congestion5
+  congestion6
   est_rc1
   est_rc2
   gcd
