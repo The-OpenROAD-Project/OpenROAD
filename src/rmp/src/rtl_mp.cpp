@@ -322,13 +322,7 @@ namespace ord {
             clusters[i]->SpecifyFootprint(width, height);
         }
 
-        bool success_flag = pin_alignment::PinAlignment(clusters, logger, halo_width, num_thread, num_run, seed);
-
-        if(success_flag == false) {
-            logger->report("*** RTLMP Failed ***");
-            return;
-        }
-
+        pin_alignment::PinAlignment(clusters, logger, halo_width, num_thread, num_run, seed);
 
         const char* openroad_filename = "./rtl_mp/macro_placement.cfg";
         ofstream file;

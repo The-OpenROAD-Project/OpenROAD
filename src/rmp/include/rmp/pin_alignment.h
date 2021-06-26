@@ -25,9 +25,7 @@ namespace pin_alignment {
             float alpha_ = 0.4;
             float beta_ = 0.3;
             float gamma_ = 0.3;
-            
-            float cooling_rate_;
-
+        
             float outline_width_ = 0.0;
             float outline_height_ = 0.0;
 
@@ -88,7 +86,6 @@ namespace pin_alignment {
             // constructor
             SimulatedAnnealingCore(std::vector<shape_engine::Macro> macros, std::vector<block_placement::Net*>& nets,
                                    std::unordered_map<std::string, std::pair<float, float> >& terminal_position,
-                                   float cooling_rate,
                                    float outline_width, float outline_height,
                                    float init_prob = 0.95, float rej_ratio = 0.95, int max_num_step = 1000,
                                    int k = 100, float c = 100, int perturb_per_step = 60, 
@@ -109,8 +106,6 @@ namespace pin_alignment {
                 alpha_ = alpha;
                 beta_ = beta;
                 gamma_ = gamma;
-
-                cooling_rate_ = cooling_rate;
 
                 flip_prob_ = flip_prob;
                 pos_swap_prob_ = flip_prob_ +  pos_swap_prob;
@@ -192,7 +187,7 @@ namespace pin_alignment {
     void ParseMacroFile(std::vector<shape_engine::Macro>& macros, float halo_width, std::string file_name);
 
     // Pin Alignment Engine
-    bool PinAlignment(std::vector<shape_engine::Cluster*>& clusters, utl::Logger* logger,
+    void PinAlignment(std::vector<shape_engine::Cluster*>& clusters, utl::Logger* logger,
         float halo_width,  int num_thread, int num_run, unsigned seed = 0);
 
 }
