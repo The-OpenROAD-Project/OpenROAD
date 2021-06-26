@@ -1684,6 +1684,12 @@ void dbPartitionDesign(dbVerilogNetwork* network,
                        const char* file_name,
                        utl::Logger* logger)
 {
+#ifndef PARTITIONERS
+  logger->error(PAR,
+                404,
+                "dbPartitionDesign can't run because OpenROAD wasn't compiled "
+                "with LOAD_PARTITIONERS");
+#endif
   logger->report("IN dbPartitionDesign");
   auto engine = new par::AutoClusterMgr(network, db, logger);
   engine->partitionDesign(max_num_macro,
