@@ -810,7 +810,8 @@ Global router options and commands are described below.
 global_route [-guide_file out_file] \
              [-verbose verbose] \
              [-overflow_iterations iterations] \
-             [-grid_origin {x y}]
+             [-grid_origin {x y}] \
+             [-allow_congestion]
 
 ```
 Options description:
@@ -818,6 +819,7 @@ Options description:
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
+- **allow_congestion**: Allow global routing results with congestion
 
 ```
 set_routing_layers [-signal min-max] \

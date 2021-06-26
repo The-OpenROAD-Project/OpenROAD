@@ -88,7 +88,7 @@ void GlobalRouter::init()
   _minRoutingLayer = 1;
   _maxRoutingLayer = -1;
   _overflowIterations = 50;
-  _allowOverflow = true;
+  _allowCongestion = false;
   _macroExtension = 0;
   _verbose = 0;
   _alpha = 0;
@@ -155,7 +155,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
   _fastRoute->setAlpha(_alpha);
   _fastRoute->setVerbose(_verbose);
   _fastRoute->setOverflowIterations(_overflowIterations);
-  _fastRoute->setAllowOverflow(_allowOverflow);
+  _fastRoute->setAllowOverflow(_allowCongestion);
 
   _block = _db->getChip()->getBlock();
   reportLayerSettings(minRoutingLayer, maxRoutingLayer);
@@ -1373,9 +1373,9 @@ void GlobalRouter::setGridOrigin(long x, long y)
   *_gridOrigin = odb::Point(x, y);
 }
 
-void GlobalRouter::setAllowOverflow(bool allowOverflow)
+void GlobalRouter::setAllowCongestion(bool allowCongestion)
 {
-  _allowOverflow = allowOverflow;
+  _allowCongestion = allowCongestion;
 }
 
 void GlobalRouter::setMacroExtension(int macroExtension)

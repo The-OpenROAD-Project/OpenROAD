@@ -194,14 +194,17 @@ proc set_global_routing_random { args } {
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
-                                  [-grid_origin origin]
+                                  [-grid_origin origin] \
+                                  [-allow_congestion] \
+                                  [-allow_overflow]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -verbose \ 
           -overflow_iterations -grid_origin
-         }
+         } \
+    flags {-allow_congestion -allow_overflow}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "missing dbTech."
@@ -237,6 +240,13 @@ proc global_route { args } {
   } else {
     grt::set_overflow_iterations 50
   }
+
+  if { [info exists flags(-allow_overflow)] } {
+    utl::warn GRT 146 "-allow_overflow is deprecated. Use -allow_congestion."
+  }
+
+  set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
+  grt::set_allow_congestion $allow_congestion
 
   grt::clear
   grt::run
