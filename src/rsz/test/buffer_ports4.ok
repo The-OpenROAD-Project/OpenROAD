@@ -15,16 +15,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-input1/Z                                0.20    1.55   -1.35 (VIOLATED)
+input1/Z                                0.20    1.15   -0.95 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 853um.
-[INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0038] Inserted 10 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-repeater9/Z                             0.20    0.03    0.17 (MET)
+input1/Z                                0.20    0.03    0.17 (MET)
 

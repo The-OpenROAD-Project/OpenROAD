@@ -606,6 +606,8 @@ protected:
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
+  LibertyCell *buffer_med_drive_;
+  LibertyCell *buffer_highest_drive_;
   bool have_estimated_parasitics_;
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
   CellTargetLoadMap *target_load_map_;

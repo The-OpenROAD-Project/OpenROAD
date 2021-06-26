@@ -404,11 +404,17 @@ Resizer::resizePreamble()
   findTargetLoads();
 }
 
+static float
+bufferDrive(const LibertyCell *buffer)
+{
+  LibertyPort *input, *output;
+  buffer->bufferPorts(input, output);
+  return output->driveResistance();
+}
+
 void
 Resizer::findBuffers()
 {
-  buffer_lowest_drive_ = nullptr;
-  float low_drive = -INF;
   LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary *lib = lib_iter->next();
@@ -416,20 +422,21 @@ Resizer::findBuffers()
       if (!dontUse(buffer)
           && isLinkCell(buffer)) {
         buffer_cells_.push_back(buffer);
-
-        LibertyPort *input, *output;
-        buffer->bufferPorts(input, output);
-        float buffer_drive = output->driveResistance();
-        if (buffer_drive > low_drive) {
-          low_drive = buffer_drive;
-          buffer_lowest_drive_ = buffer;
-        }
       }
     }
   }
   delete lib_iter;
+
   if (buffer_cells_.empty())
     logger_->error(RSZ, 22, "no buffers found.");
+
+  sort(buffer_cells_, [] (const LibertyCell *buffer1,
+                          const LibertyCell *buffer2) {
+                        return bufferDrive(buffer1) > bufferDrive(buffer2);
+                      });
+  buffer_lowest_drive_ = buffer_cells_[0];
+  buffer_med_drive_ = buffer_cells_[buffer_cells_.size() / 2];
+  buffer_highest_drive_ = buffer_cells_[buffer_cells_.size() - 1];
 }
 
 bool
@@ -453,9 +460,12 @@ Resizer::bufferInputs()
         && !sta_->isClock(pin)
         && hasPins(net)
         && !db_network_->isSpecial(net))
+      // repair_design will resize to target slew.
       bufferInput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
+  ensureWireParasitics();
+
   if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
@@ -506,6 +516,9 @@ Resizer::bufferInput(Pin *top_pin,
     delete pin_iter;
     sta_->connectPin(buffer, input, input_net);
     sta_->connectPin(buffer, output, buffer_out);
+
+    parasiticsInvalid(input_net);
+    parasiticsInvalid(buffer_out);
   }
   return buffer;
 }
@@ -535,6 +548,8 @@ Resizer::bufferOutputs()
       bufferOutput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
+  ensureWireParasitics();
+
   if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
     level_drvr_vertices_valid_ = false;
@@ -575,6 +590,9 @@ Resizer::bufferOutput(Pin *top_pin,
     delete pin_iter;
     sta_->connectPin(buffer, input, buffer_in);
     sta_->connectPin(buffer, output, output_net);
+
+    parasiticsInvalid(buffer_in);
+    parasiticsInvalid(output_net);
   }
 }
 
@@ -637,11 +655,10 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
-        && !drvr->isConstant()) {
+        && !drvr->isConstant())
       repairNet(net, drvr, true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
-    }
   }
   ensureWireParasitics();
 
@@ -762,14 +779,19 @@ Resizer::repairNet(Net *net,
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
+    if (resize_drvr
+        && resizeToTargetSlew(drvr_pin))
+      resize_count_++;
     ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
+    LibertyCell *repeater_cell = buffer_lowest_drive_;
     LibertyPort *buffer_input_port, *buffer_output_port;
-    buffer_lowest_drive_->bufferPorts(buffer_input_port, buffer_output_port);
-    float buf_cap_limit;
-    bool buf_cap_limit_exists;
-    buffer_output_port->capacitanceLimit(max_, buf_cap_limit, buf_cap_limit_exists);
+    repeater_cell->bufferPorts(buffer_input_port, buffer_output_port);
+    float repeater_cap_limit;
+    bool repeater_cap_limit_exists;
+    buffer_output_port->capacitanceLimit(max_, repeater_cap_limit,
+                                         repeater_cap_limit_exists);
 
     double drvr_max_cap = INF;
     float max_fanout = INF;
@@ -777,6 +799,7 @@ Resizer::repairNet(Net *net,
     bool repair_cap = false;
     bool repair_fanout = false;
     bool repair_wire = false;
+    bool using_repeater_cap_limit = false;
     const Corner *corner = sta_->cmdCorner();
     if (check_cap) {
       float cap, max_cap1, cap_slack;
@@ -812,18 +835,7 @@ Resizer::repairNet(Net *net,
       checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
       if (slew_slack1 < 0.0) {
         slew_violations++;
-        LibertyPort *drvr_port = nullptr;
-        if (network_->isTopLevelPort(drvr_pin)) {
-          // Wire delay/slew on input port.
-          Instance *buffer = bufferInput(drvr_pin, buffer_lowest_drive_);
-          if (buffer) {
-            LibertyPort *in_port;
-            buffer_lowest_drive_->bufferPorts(in_port, drvr_port);
-            drvr_pin = network_->findPin(buffer, drvr_port);
-          }
-        }
-        else
-          drvr_port = network_->libertyPort(drvr_pin);
+        LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
         if (drvr_port) {
           // Find max load cap that corresponds to max_slew.
           double max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);
@@ -843,16 +855,16 @@ Resizer::repairNet(Net *net,
         || repair_cap
         || repair_fanout
         || repair_wire) {
-      bool using_buffer_cap_limit = false;
+      bool using_repeater_cap_limit = false;
       double max_cap = drvr_max_cap;
       if ((repair_cap || repair_slew)
-          && buf_cap_limit_exists
-          && buf_cap_limit > max_cap) {
+          && repeater_cap_limit_exists
+          && repeater_cap_limit > max_cap) {
         // Don't repair beyond what a min size buffer could drive, since
         // we can insert one at the driver output instead of over optimizing
         // the net for a weak driver.
-        max_cap = buf_cap_limit;
-        using_buffer_cap_limit = true;
+        max_cap = repeater_cap_limit;
+        using_repeater_cap_limit = true;
       }
 
       Point drvr_loc = db_network_->location(drvr->pin());
@@ -871,18 +883,18 @@ Resizer::repairNet(Net *net,
       repair_count++;
 
       double drvr_load = pin_cap + dbuToMeters(wire_length)*wireSignalCapacitance(corner);
-      if (using_buffer_cap_limit
+      if (using_repeater_cap_limit
           && drvr_load > drvr_max_cap) {
         // The remaining cap is more than the driver can handle.
         // We know the min buffer/repeater is capable of driving it,
         // so insert one.
-        makeRepeater("drvr", tree, drvr_pt, net, buffer_lowest_drive_, 0,
+        makeRepeater("drvr", tree, drvr_pt, net, repeater_cell, 0,
                      wire_length, pin_cap, fanout, load_pins);
       }
+      if (resize_drvr
+          && resizeToTargetSlew(drvr_pin))
+        resize_count_++;
     }
-    if (resize_drvr
-        && resizeToTargetSlew(drvr_pin))
-      resize_count_++;
     delete tree;
   }
 }
@@ -1422,7 +1434,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
         float best_delay = is_buf_inv
           ? bufferDelay(cell, load_cap, tgt_slew_dcalc_ap_)
           : 0.0;
-        debugPrint(logger_, RSZ, "resizer", 2, "{} load cap {} dist={:.2e} delay={}",
+        debugPrint(logger_, RSZ, "resizer", 3, "{} load cap {} dist={:.2e} delay={}",
                    sdc_network_->pathName(drvr_pin),
                    units_->capacitanceUnit()->asString(load_cap),
                    best_dist,
@@ -1435,7 +1447,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
               ? bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_)
               : 0.0;
             float dist = targetLoadDist(load_cap, target_load);
-            debugPrint(logger_, RSZ, "resizer", 2, " {} dist={:.2e} delay={}",
+            debugPrint(logger_, RSZ, "resizer", 3, " {} dist={:.2e} delay={}",
                        target_cell->name(),
                        dist,
                        delayAsString(delay, sta_, 3));
