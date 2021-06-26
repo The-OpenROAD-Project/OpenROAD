@@ -110,6 +110,16 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
+sta::define_cmd_args "write_abstract_lef" {filename}
+
+proc write_abstract_lef { args } {
+  sta::parse_key_args "write_abstract_lef" args keys {} flags {}
+
+  sta::check_argc_eq1 "write_abstract_lef" $args
+  set filename [file nativename [lindex $args 0]]
+  [ord::get_db_block] saveLef $filename
+}
+
 sta::define_cmd_args "write_cdl" {[-include_fillers] filename}
 
 proc write_cdl { args } {

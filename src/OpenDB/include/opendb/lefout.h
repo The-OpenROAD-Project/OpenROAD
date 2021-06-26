@@ -35,7 +35,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "cdl.h"
+#include "db.h"
 #include "dbObject.h"
 #include "odb.h"
 #include "utl/Logger.h"
@@ -67,7 +67,7 @@ class lefout
   double _area_factor;
   utl::Logger* logger_;
 
-  void writeBoxes(dbSet<dbBox>* boxes, const char* indent);
+  void writeBoxes(dbSet<dbBox>& boxes, const char* indent);
   void writeTech(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
@@ -89,7 +89,17 @@ class lefout
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
-
+  void writeObstructions(dbBlock* db_block);
+  void getTechLayerObstructions(
+      dbBlock* db_block,
+      std::set<dbTechLayer*>& obstruction_layers) const;
+  void writeBox(std::string indent, dbBox* box);
+  void findWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
+                                 dbNet* net) const;
+  void findSWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
+                                  dbNet* net) const;
+  void writeBlock(dbBlock* db_block);
+  void writePins(dbBlock* db_block);
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
@@ -100,13 +110,13 @@ class lefout
 
   double lefarea(int value) { return ((double) value * _area_factor); }
 
-  lefout(utl::Logger* p_logger)
+  lefout(utl::Logger* logger)
   {
     _out = nullptr;
     _write_marked_masters = _use_alias = _use_master_ids = false;
     _dist_factor = 0.001;
     _area_factor = 0.000001;
-    logger_ = p_logger;
+    logger_ = logger;
   }
 
   ~lefout() {}
@@ -118,11 +128,9 @@ class lefout
   bool writeTech(dbTech* tech, const char* lef_file);
   bool writeLib(dbLib* lib, const char* lef_file);
   bool writeTechAndLib(dbLib* lib, const char* lef_file);
+  bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
 
   FILE* out() { return _out; }
-  bool writeAbstractLef(odb::dbBlock* db_block, const char* lef_file);
-  void writeBlock(dbBlock* db_block);
-  void writePins(dbBlock* db_block);
 };
 
 }  // namespace odb

@@ -167,6 +167,7 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
+write_abstract_lef
 ```
 
 Use the Tcl `source` command to read commands from a file.
@@ -215,6 +216,21 @@ link_design top
 # Write the db for future runs.
 write_db reg1.db
 ```
+
+#### Abstract Lef Support
+OpenROAD also contains an abstract lef writer that can take your current design
+and emit an abstract lef representing the external pins of your design and metal
+obstructions.
+
+
+```tcl
+read reg1.db
+write_abstract_lef reg1_abstract.lef
+```
+
+##### Limitations of the Abstract Lef Writer
+Currently the writer will place an obstruction over the entire block area on any
+metal layer if there is any object on that metal layer.
 
 #### Example Scripts
 

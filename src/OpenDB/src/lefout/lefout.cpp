@@ -48,15 +48,12 @@ void lefout::writeVersion(const char* version)
   fprintf(_out, "VERSION %s ;\n", version);
 }
 
-void lefout::writeBoxes(dbSet<dbBox>* boxes, const char* indent)
+void lefout::writeBoxes(dbSet<dbBox>& boxes, const char* indent)
 {
   dbTechLayer* cur_layer = NULL;
 
-  for (dbBox* box : *boxes) {
+  for (dbBox* box : boxes) {
     dbTechLayer* layer = box->getTechLayer();
-    if (box == nullptr) {
-      fprintf(_out, "THIS is basically null!\n");
-    }
 
     if (box->isVia()) {
       dbTechVia* via = box->getTechVia();
@@ -72,38 +69,36 @@ void lefout::writeBoxes(dbSet<dbBox>* boxes, const char* indent)
               n.c_str());
       cur_layer = NULL;
     } else {
-      int x1 = box->xMin();
-      int y1 = box->yMin();
-      int x2 = box->xMax();
-      int y2 = box->yMax();
-
-      std::string n;
+      std::string layer_name;
       if (_use_alias && layer->hasAlias())
-        n = layer->getAlias();
+        layer_name = layer->getAlias();
       else
-        n = layer->getName();
+        layer_name = layer->getName();
 
       if (cur_layer != layer) {
-        std::string n;
-
-        if (_use_alias && layer->hasAlias())
-          n = layer->getAlias();
-        else
-          n = layer->getName();
-
-        fprintf(_out, "%sLAYER %s ;\n", indent, n.c_str());
+        fprintf(_out, "%sLAYER %s ;\n", indent, layer_name.c_str());
         cur_layer = layer;
       }
 
-      fprintf(_out,
-              "%s  RECT  %g %g %g %g ;\n",
-              indent,
-              lefdist(x1),
-              lefdist(y1),
-              lefdist(x2),
-              lefdist(y2));
+      writeBox(indent, box);
     }
   }
+}
+
+void lefout::writeBox(std::string indent, dbBox* box)
+{
+  int x1 = box->xMin();
+  int y1 = box->yMin();
+  int x2 = box->xMax();
+  int y2 = box->yMax();
+
+  fprintf(_out,
+          "%s  RECT  %g %g %g %g ;\n",
+          indent.c_str(),
+          lefdist(x1),
+          lefdist(y1),
+          lefdist(x2),
+          lefdist(y2));
 }
 
 void lefout::writeHeader(dbBlock* db_block)
@@ -129,6 +124,65 @@ void lefout::writeHeader(dbBlock* db_block)
   writeNameCaseSensitive(tech->getNamesCaseSensitive());
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
+}
+
+void lefout::writeObstructions(dbBlock* db_block)
+{
+  std::set<dbTechLayer*> obstruction_layers;
+  getTechLayerObstructions(db_block, obstruction_layers);
+
+  fprintf(_out, "  OBS\n");
+  for (dbTechLayer* tech_layer : obstruction_layers) {
+    fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
+    dbBox* block_bounding_box = db_block->getBBox();
+    writeBox("  ", block_bounding_box);
+  }
+  fprintf(_out, "  END\n");
+}
+
+void lefout::getTechLayerObstructions(
+    dbBlock* db_block,
+    std::set<dbTechLayer*>& obstruction_layers) const
+{
+  for (dbNet* net : db_block->getNets()) {
+    findSWireLayerObstructions(obstruction_layers, net);
+    findWireLayerObstructions(obstruction_layers, net);
+  }
+}
+
+void lefout::findSWireLayerObstructions(
+    std::set<dbTechLayer*>& obstruction_layers,
+    dbNet* net) const
+{  // Find all layers where an swire exists
+  for (dbSWire* swire : net->getSWires()) {
+    for (dbSBox* box : swire->getWires()) {
+      if (box->isVia()) {
+        continue;
+      }
+      obstruction_layers.insert(box->getTechLayer());
+    }
+  }
+}
+void lefout::findWireLayerObstructions(
+    std::set<dbTechLayer*>& obstruction_layers,
+    dbNet* net) const
+{
+  // Find all metal layers where a wire exists.
+  dbWire* wire = net->getWire();
+
+  if (wire == nullptr) {
+    return;
+  }
+
+  dbWireShapeItr wire_shape_itr;
+  dbShape shape;
+
+  for (wire_shape_itr.begin(wire); wire_shape_itr.next(shape);) {
+    if (shape.isVia()) {
+      continue;
+    }
+    obstruction_layers.insert(shape.getTechLayer());
+  }
 }
 
 void lefout::writeHeader(dbLib* lib)
@@ -184,6 +238,40 @@ void lefout::writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter)
 void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
 {
   fprintf(_out, "NAMESCASESENSITIVE %s ;\n", on_off_type.getString());
+}
+
+void lefout::writeBlock(dbBlock* db_block)
+{
+  dbBox* bounding_box = db_block->getBBox();
+  double origin_x = lefdist(bounding_box->xMin());
+  double origin_y = lefdist(bounding_box->xMin());
+  double size_x = lefdist(bounding_box->getDX());
+  double size_y = lefdist(bounding_box->getDY());
+
+  fprintf(_out, "MACRO %s\n", db_block->getName().c_str());
+  fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
+  fprintf(_out, "  CLASS BLOCK ;\n");
+  fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
+  fprintf(_out, "  SIZE %g %g ;\n", size_x, size_y);
+  writePins(db_block);
+  writeObstructions(db_block);
+  fprintf(_out, "END %s\n", db_block->getName().c_str());
+}
+
+void lefout::writePins(dbBlock* db_block)
+{
+  for (dbBTerm* b_term : db_block->getBTerms()) {
+    fprintf(_out, "  PIN %s\n", b_term->getName().c_str());
+    fprintf(_out, "    DIRECTION %s ;\n", b_term->getIoType().getString());
+    fprintf(_out, "    USE %s ;\n", b_term->getSigType().getString());
+    for (dbBPin* db_b_pin : b_term->getBPins()) {
+      fprintf(_out, "    PORT\n");
+      dbSet<dbBox> term_pins = db_b_pin->getBoxes();
+      writeBoxes(term_pins, "      ");
+      fprintf(_out, "    END\n");
+    }
+    fprintf(_out, "  END %s\n", b_term->getName().c_str());
+  }
 }
 
 void lefout::writeTech(dbTech* tech)
@@ -642,7 +730,7 @@ void lefout::writeVia(dbTechVia* via)
 
   if (rule == NULL) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(&boxes, "    ");
+    writeBoxes(boxes, "    ");
   } else {
     std::string rname = rule->getName();
     fprintf(_out, "\n    VIARULE %s \n", rname.c_str());
@@ -827,7 +915,7 @@ void lefout::writeMaster(dbMaster* master)
 
   if (obs.begin() != obs.end()) {
     fprintf(_out, "    OBS\n");
-    writeBoxes(&obs, "      ");
+    writeBoxes(obs, "      ");
     fprintf(_out, "    END\n");
   }
 
@@ -861,7 +949,7 @@ void lefout::writeMTerm(dbMTerm* mterm)
 
     if (geoms.begin() != geoms.end()) {
       fprintf(_out, "        PORT\n");
-      writeBoxes(&geoms, "            ");
+      writeBoxes(geoms, "            ");
       fprintf(_out, "        END\n");
     }
   }
@@ -1070,55 +1158,12 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
 
   if (_out == nullptr) {
     logger_->error(utl::ODB, 1072, "Cannot open LEF file %s\n", lef_file);
-    return false;
   }
 
   writeHeader(db_block);
   writeBlock(db_block);
-
-//  for (dbNet* net :db_block->getNets()) {
-//    dbWireShapeItr wire_shape_itr;
-//
-//    dbShape shape;
-//    for (wire_shape_itr.begin(net->getWire()); wire_shape_itr.next(shape);) {
-//
-//    }
-//  }
   fprintf(_out, "END LIBRARY\n");
-
+  fclose(_out);
 
   return true;
-}
-
-void lefout::writeBlock(dbBlock* db_block)
-{
-  dbBox* bounding_box = db_block->getBBox();
-  double origin_x = lefdist(bounding_box->xMin());
-  double origin_y = lefdist(bounding_box->xMin());
-  double size_x = lefdist(bounding_box->getDX());
-  double size_y = lefdist(bounding_box->getDY());
-
-  fprintf(_out, "MACRO %s\n", db_block->getName().c_str());
-  fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
-  fprintf(_out, "  CLASS BLOCK ;\n");
-  fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
-  fprintf(_out, "  SIZE %g %g ;\n", size_x, size_y);
-  writePins(db_block);
-  fprintf(_out, "END %s\n", db_block->getName().c_str());
-  fclose(_out);
-}
-void lefout::writePins(dbBlock* db_block)
-{
-  for (dbBTerm* b_term : db_block->getBTerms()) {
-    fprintf(_out, "  PIN %s\n", b_term->getName().c_str());
-    fprintf(_out, "    DIRECTION %s ;\n", b_term->getIoType().getString());
-    fprintf(_out, "    USE %s ;\n", b_term->getSigType().getString());
-    for (dbBPin* db_b_pin : b_term->getBPins()) {
-       fprintf(_out, "    PORT\n");
-       dbSet<dbBox> term_pins = db_b_pin->getBoxes();
-       writeBoxes(&term_pins, "      ");
-       fprintf(_out, "    END\n");
-    }
-    fprintf(_out, "  END %s\n", b_term->getName().c_str());
-  }
 }
