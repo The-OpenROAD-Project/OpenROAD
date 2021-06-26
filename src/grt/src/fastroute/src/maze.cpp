@@ -81,7 +81,7 @@ void convertToMazerouteNet(int netID)
     y2 = treenodes[n2].y;
     treeedge->route.gridsX = (short*) calloc((edgelength + 1), sizeof(short));
     treeedge->route.gridsY = (short*) calloc((edgelength + 1), sizeof(short));
-    treeedge->route.gridsL = (short*) calloc((edgelength + 1), sizeof(short));
+    treeedge->route.gridsL = nullptr;
     gridsX = treeedge->route.gridsX;
     gridsY = treeedge->route.gridsY;
     treeedge->len = ADIFF(x1, x2) + ADIFF(y1, y2);
