@@ -562,14 +562,12 @@ proc dblayer_wire_rc { layer } {
 proc set_dblayer_wire_rc { layer res cap } {
   # Zero the edge cap and just use the user given value
   $layer setEdgeCapacitance 0
-  # Convert wire capacitance/wire_length to capacitance/area.
   set wire_width [ord::dbu_to_microns [$layer getWidth]]
-  # Convert to pF/um.
+  # Convert wire capacitance/wire_length to capacitance/area (pF/um)
   set cap_per_square [expr $cap * 1e+6 / $wire_width]
   $layer setCapacitance $cap_per_square
   
-  # Convert resistance/wire_length to resistance/square.
-  # convert to ohms/square
+  # Convert resistance/wire_length (ohms/micron) to ohms/square
   set res_per_square [expr $wire_width * 1e-6 * $res]
   $layer setResistance $res_per_square
 }
