@@ -343,7 +343,6 @@ void Restructure::removeConstCells()
   if (!hiterm || !loterm)
     return;
   
-  open_sta_->clear();
   open_sta_->clearLogicConstants();
   open_sta_->findLogicConstants();
   std::set<odb::dbInst*> constInsts;

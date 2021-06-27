@@ -10,7 +10,10 @@ report_worst_slack
 
 report_design_area
 
-restructure -target area -abc_logfile results/abc.log
+set tiehi "NangateOpenCellLibrary/LOGIC1_X1/Z"
+set tielo "NangateOpenCellLibrary/LOGIC0_X1/Z"
+
+restructure -target area -abc_logfile results/abc_rcon.log  -tielo_pin $tielo -tiehi_pin $tiehi
 
 report_design_area
 

@@ -12,8 +12,7 @@
 [INFO ODB-0134] Finished DEF file: gcd_placed.def
 worst slack 1.36
 Design area 700 u^2 11% utilization.
-[WARNING RMP-0032] -tielo_pin not specified
-[WARNING RMP-0033] -tiehi_pin not specified
+Removed 0 instances with constant outputs...
 Number of paths for restructure are 70
 Found 35 end points for restructure
 Found 1290 pins in extracted logic

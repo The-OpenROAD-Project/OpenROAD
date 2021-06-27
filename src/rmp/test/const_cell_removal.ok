@@ -11,6 +11,15 @@
 [INFO ODB-0134] Finished DEF file: rcon.def
 Design area 0 u^2 100% utilization.
 Removed 2 instances with constant outputs...
-Number of paths for restructure are 0
-Found 0 end points for restructure
+Number of paths for restructure are 19
+Found 10 end points for restructure
+Found 123 pins in extracted logic
+Found 41 instances for restructuring ...
+[INFO RMP-0002] Blif writer successfully dumped file with 41 instances.
+Optimized to 36 instances in iteration 0
+Optimized to 37 instances in iteration 1
+Optimized to 36 instances in iteration 2
+[INFO RMP-0005] blif parsed successfully, destroying 41 existing instances...
+[INFO RMP-0006] Found 8 Inputs, 14 Outputs, 0 Clocks, 36 Combinational gates, 0 Flops after parsing the blif file.
+[INFO RMP-0007] inserting 36 new instances...
 Design area 0 u^2 100% utilization.
