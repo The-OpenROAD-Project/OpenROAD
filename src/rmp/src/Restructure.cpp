@@ -222,6 +222,10 @@ void Restructure::postABC(float worst_slack)
 
   // Leave the parasitices up to date.
   resizer->estimateWireParasitics();
+  open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
+
 }
 void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,
