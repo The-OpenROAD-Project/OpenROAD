@@ -779,20 +779,30 @@ Resizer::repairNet(Net *net,
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
+    // Resize the driver to normalize slews before repairing limit violations.
     if (resize_drvr)
       resizeToTargetSlew(drvr_pin, true);
     ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
-    LibertyCell *repeater_cell = buffer_lowest_drive_;
-    LibertyPort *buffer_input_port, *buffer_output_port;
-    repeater_cell->bufferPorts(buffer_input_port, buffer_output_port);
-    float repeater_cap_limit;
-    bool repeater_cap_limit_exists;
-    buffer_output_port->capacitanceLimit(max_, repeater_cap_limit,
-                                         repeater_cap_limit_exists);
+    if (checkLimits(drvr_pin, check_slew, check_cap, check_fanout)
+        && network_->isTopLevelPort(drvr_pin)) {
+      // Input port driving net with slew/cap/fanout violataions.
+      // Buffer the input so we some leverage to fix it.
+      LibertyCell *input_buffer_cell = buffer_lowest_drive_;
+      Instance *buffer = bufferInput(drvr_pin, input_buffer_cell);
+      if (buffer) {
+        // Switcheroo to repairting the input buffer output.
+        LibertyPort *buffer_input_port, *buffer_output_port;
+        input_buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+        drvr_pin = network_->findPin(buffer, buffer_output_port);
+        resizeToTargetSlew(drvr_pin, false);
+        ensureWireParasitic(drvr_pin, net);
+        graph_delay_calc_->findDelays(drvr);
+      }
+    }
 
-    double drvr_max_cap = INF;
+    double max_cap = INF;
     float max_fanout = INF;
     bool repair_slew = false;
     bool repair_cap = false;
@@ -807,7 +817,7 @@ Resizer::repairNet(Net *net,
       sta_->checkCapacitance(drvr_pin, nullptr, max_,
                              corner1, tr, cap, max_cap1, cap_slack);
       if (cap_slack < 0.0) {
-        drvr_max_cap = max_cap1;
+        max_cap = max_cap1;
         corner = corner1;
         cap_violations++;
         repair_cap = true;
@@ -838,7 +848,7 @@ Resizer::repairNet(Net *net,
         if (drvr_port) {
           // Find max load cap that corresponds to max_slew.
           double max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);
-          drvr_max_cap = min(drvr_max_cap, max_cap1);
+          max_cap = min(max_cap, max_cap1);
           corner = corner1;
           debugPrint(logger_, RSZ, "repair_net", 2, "slew={} max_slew={} max_cap={} corner={}",
                      delayAsString(slew1, this, 3),
@@ -854,18 +864,6 @@ Resizer::repairNet(Net *net,
         || repair_cap
         || repair_fanout
         || repair_wire) {
-      bool using_repeater_cap_limit = false;
-      double max_cap = drvr_max_cap;
-      if ((repair_cap || repair_slew)
-          && repeater_cap_limit_exists
-          && repeater_cap_limit > max_cap) {
-        // Don't repair beyond what a min size buffer could drive, since
-        // we can insert one at the driver output instead of over optimizing
-        // the net for a weak driver.
-        max_cap = repeater_cap_limit;
-        using_repeater_cap_limit = true;
-      }
-
       Point drvr_loc = db_network_->location(drvr->pin());
       debugPrint(logger_, RSZ, "repair_net", 1, "driver {} ({} {}) l={}",
                  sdc_network_->pathName(drvr_pin),
@@ -881,20 +879,43 @@ Resizer::repairNet(Net *net,
                 wire_length, pin_cap, fanout, load_pins);
       repair_count++;
 
-      double drvr_load = pin_cap + dbuToMeters(wire_length)*wireSignalCapacitance(corner);
-      if (using_repeater_cap_limit
-          && drvr_load > drvr_max_cap) {
-        // The remaining cap is more than the driver can handle.
-        // We know the min buffer/repeater is capable of driving it,
-        // so insert one.
-        makeRepeater("drvr", tree, drvr_pt, net, repeater_cell, 0,
-                     wire_length, pin_cap, fanout, load_pins);
-      }
       if (resize_drvr)
         resizeToTargetSlew(drvr_pin, true);
     }
     delete tree;
   }
+}
+
+bool
+Resizer::checkLimits(const Pin *drvr_pin,
+                     bool check_slew,
+                     bool check_cap,
+                     bool check_fanout)
+{
+  if (check_cap) {
+    float cap, max_cap1, cap_slack;
+    const Corner *corner1;
+    const RiseFall *tr;
+    sta_->checkCapacitance(drvr_pin, nullptr, max_,
+                           corner1, tr, cap, max_cap1, cap_slack);
+    if (cap_slack < 0.0)
+      return true;
+  }
+  if (check_fanout) {
+    float fanout, fanout_slack, max_fanout;
+    sta_->checkFanout(drvr_pin, max_,
+                      fanout, max_fanout, fanout_slack);
+    if (fanout_slack < 0.0)
+      return true;
+  }
+  if (check_slew) {
+    float slew1, slew_slack1, max_slew1;
+    const Corner *corner1;
+    checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
+    if (slew_slack1 < 0.0)
+      return true;
+  }
+  return false;
 }
 
 void

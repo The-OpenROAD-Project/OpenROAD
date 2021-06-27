@@ -350,6 +350,10 @@ protected:
                  int &cap_violations,
                  int &fanout_violations,
                  int &length_violations);
+  bool checkLimits(const Pin *drvr_pin,
+                   bool check_slew,
+                   bool check_cap,
+                   bool check_fanout);
   void checkSlew(const Pin *drvr_pin,
                  // Return values.
                  Slew &slew,

@@ -21,9 +21,9 @@ set_dont_use $dont_use
 
 estimate_parasitics -placement
 
-#buffer_ports -input
 report_check_types -max_slew -max_cap -max_fanout
 
+# This should work the same as if the reset input was buffered already.
 repair_design
 
 report_check_types -max_slew -max_cap -max_fanout
