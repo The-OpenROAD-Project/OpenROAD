@@ -211,7 +211,7 @@ void Restructure::runABC()
   }
 
   for (auto file_to_remove : files_to_remove) {
-    if (!logger_->debugCheck(RMP, "remap", 16))
+    if (!logger_->debugCheck(RMP, "remap", 1))
       std::remove(file_to_remove.c_str());
   }
 }
