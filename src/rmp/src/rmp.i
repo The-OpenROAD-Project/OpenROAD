@@ -67,14 +67,14 @@ void set_logfile_cmd(const char* logfile)
   getRestructure()->setLogfile(logfile);
 }
 
-void set_tielo_pin_cmd(LibertyPort* tieLoPin)
+void set_tielo_port_cmd(LibertyPort* tieLoport)
 {
-  getRestructure()->setTieLoPin(tieLoPin);
+  getRestructure()->setTieLoPort(tieLoport);
 }
 
-void set_tiehi_pin_cmd(LibertyPort* tieHiPin)
+void set_tiehi_port_cmd(LibertyPort* tieHiport)
 {
-  getRestructure()->setTieHiPin(tieHiPin);
+  getRestructure()->setTieHiPort(tieHiport);
 }
 
 void

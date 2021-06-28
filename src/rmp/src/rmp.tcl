@@ -52,13 +52,13 @@ sta::define_cmd_args "restructure" { \
                                       [-slack_threshold slack]\
                                       [-depth_threshold depth]\
                                       [-target area|timing]\
-                                      [-tielo_pin tielow_pin]\
-                                      [-tiehi_pin tiehigh_pin]
+                                      [-tielo_port tielow_port]\
+                                      [-tiehi_port tiehigh_port]
                                     }
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
-    keys {-slack_threshold -depth_threshold -target -abc_logfile -tielo_pin -tiehi_pin} flags {}
+    keys {-slack_threshold -depth_threshold -target -abc_logfile -tielo_port -tiehi_port} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
@@ -81,36 +81,36 @@ proc restructure { args } {
   }
 
 
-  if { [info exists keys(-tielo_pin)] } {
-      set lopin $keys(-tielo_pin)
-      if { ![sta::is_object $lopin] } {
-        set lopin [sta::get_lib_pins $keys(-tielo_pin)]
-        if { [llength $lopin] > 1 } {
+  if { [info exists keys(-tielo_port)] } {
+      set loport $keys(-tielo_port)
+      if { ![sta::is_object $loport] } {
+        set loport [sta::get_lib_pins $keys(-tielo_port)]
+        if { [llength $loport] > 1 } {
           # multiple libraries match the lib port arg; use any
-          set lopin [lindex $lopin 0]
+          set loport [lindex $loport 0]
         }
       }
-      if { $lopin != "" } {
-        rmp::set_tielo_pin_cmd $lopin
+      if { $loport != "" } {
+        rmp::set_tielo_port_cmd $loport
       }
   } else {
-      utl::warn RMP 32 "-tielo_pin not specified"
+      utl::warn RMP 32 "-tielo_port not specified"
   }
 
-  if { [info exists keys(-tiehi_pin)] } {
-      set hipin $keys(-tiehi_pin)
-      if { ![sta::is_object $hipin] } {
-        set hipin [sta::get_lib_pins $keys(-tiehi_pin)]
-        if { [llength $hipin] > 1 } {
+  if { [info exists keys(-tiehi_port)] } {
+      set hiport $keys(-tiehi_port)
+      if { ![sta::is_object $hiport] } {
+        set hiport [sta::get_lib_pins $keys(-tiehi_port)]
+        if { [llength $hiport] > 1 } {
           # multiple libraries match the lib port arg; use any
-          set hipin [lindex $hipin 0]
+          set hiport [lindex $hiport 0]
         }
       }
-      if { $hipin != "" } {
-        rmp::set_tiehi_pin_cmd $hipin
+      if { $hiport != "" } {
+        rmp::set_tiehi_port_cmd $hiport
       }
   } else {
-      utl::warn RMP 33 "-tiehi_pin not specified"
+      utl::warn RMP 33 "-tiehi_port not specified"
   }
 
   rmp::restructure_cmd $target $slack_threshold_value $depth_threshold_value

@@ -62,14 +62,13 @@ namespace rmp {
 
 void Restructure::init(ord::OpenRoad* openroad)
 {
-  openroad_ = openroad;
   logger_ = openroad->getLogger();
   makeComponents();
 }
 
 void Restructure::makeComponents()
 {
-  db_ = openroad_->getDb();
+  db_ = ord::OpenRoad::openRoad()->getDb();
 }
 
 void Restructure::deleteComponents()
@@ -90,13 +89,13 @@ void Restructure::reset()
 void Restructure::run(float slack_threshold, unsigned max_depth)
 {
   reset();
-  block_ = openroad_->getDb()->getChip()->getBlock();
+  block_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
   if (!block_)
     return;
 
   sta::Slack worst_slack = slack_threshold;
 
-  open_sta_ = openroad_->getSta();
+  open_sta_ = ord::OpenRoad::openRoad()->getSta();
   sta::LibertyLibraryIterator *lib_iter = open_sta_->getDbNetwork()->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary *lib = lib_iter->next();
@@ -116,7 +115,7 @@ void Restructure::run(float slack_threshold, unsigned max_depth)
 
 void Restructure::getBlob(unsigned max_depth)
 {
-  rsz::Resizer* resizer = openroad_->getResizer();
+  rsz::Resizer* resizer = ord::OpenRoad::openRoad()->getResizer();
   open_sta_->ensureGraph();
   open_sta_->ensureLevelized();
   open_sta_->searchPreamble();
@@ -135,7 +134,7 @@ void Restructure::getBlob(unsigned max_depth)
       if (term && term->getInst()->getITerms().size() < 10)
         path_insts_.insert(term->getInst());
     }
-    logger_->report("Found {} instances for restructuring ...", path_insts_.size());
+    logger_->report("Found {} instances for restructuring.", path_insts_.size());
   }
 }
 
@@ -152,7 +151,7 @@ void Restructure::runABC()
              "Constants before remap {}",
              countConsts(block_));
 
-  Blif blif_(openroad_, locell_, loport_, hicell_, hiport_);
+  Blif blif_(ord::OpenRoad::openRoad(), locell_, loport_, hicell_, hiport_);
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str());
   debugPrint(
@@ -218,9 +217,9 @@ void Restructure::runABC()
 
 void Restructure::postABC(float worst_slack)
 {
-  rsz::Resizer* resizer = openroad_->getResizer();
+  rsz::Resizer* resizer = ord::OpenRoad::openRoad()->getResizer();
 
-  // Leave the parasitices up to date.
+  // Leave the parasitics up to date.
   resizer->estimateWireParasitics();
   open_sta_->ensureGraph();
   open_sta_->ensureLevelized();
@@ -402,7 +401,7 @@ void Restructure::removeConstCells()
 
   for (auto inst : constInsts)
     removeConstCell(inst);
-  logger_->report("Removed {} instances with constant outputs...", constInsts.size());
+  logger_->report("Removed {} instances with constant outputs.", constInsts.size());
 }
 
 void Restructure::removeConstCell(odb::dbInst* inst)
@@ -539,7 +538,7 @@ void Restructure::setLogfile(const char* logfile)
   logfile_ = logfile;
 }
 
-void Restructure::setTieHiPin(sta::LibertyPort* tieHiPort)
+void Restructure::setTieHiPort(sta::LibertyPort* tieHiPort)
 {
   if (tieHiPort) {
     hicell_ = tieHiPort->libertyCell()->name();
@@ -547,7 +546,7 @@ void Restructure::setTieHiPin(sta::LibertyPort* tieHiPort)
   }
 }
 
-void Restructure::setTieLoPin(sta::LibertyPort* tieLoPort)
+void Restructure::setTieLoPort(sta::LibertyPort* tieLoPort)
 {
   if (tieLoPort) {
     locell_ = tieLoPort->libertyCell()->name();

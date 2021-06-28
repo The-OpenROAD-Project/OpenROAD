@@ -87,8 +87,8 @@ class Restructure
 
   void setMode(const char* mode_name);
   void setLogfile(const char* file_name);
-  void setTieLoPin(sta::LibertyPort* loport);
-  void setTieHiPin(sta::LibertyPort* hiport);
+  void setTieLoPort(sta::LibertyPort* loport);
+  void setTieHiPort(sta::LibertyPort* hiport);
 
  private:
   void makeComponents();
@@ -104,7 +104,6 @@ class Restructure
   void removeConstCells();
   void removeConstCell(odb::dbInst* inst);
 
-  ord::OpenRoad* openroad_;
   Logger* logger_;
   std::string logfile_;
   std::string locell_;

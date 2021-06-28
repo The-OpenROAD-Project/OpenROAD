@@ -5,10 +5,10 @@ read_sdc rcon.sdc
 
 report_design_area
 
-set tiehi "NangateOpenCellLibrary/LOGIC1_X1/Z"
-set tielo "NangateOpenCellLibrary/LOGIC0_X1/Z"
+set tiehi "LOGIC1_X1/Z"
+set tielo "LOGIC0_X1/Z"
 
-restructure -target area -abc_logfile results/abc_rcon.log  -tielo_pin $tielo -tiehi_pin $tiehi
+restructure -target area -abc_logfile results/abc_rcon.log  -tielo_port $tielo -tiehi_port $tiehi
 
 report_design_area
 
