@@ -1363,6 +1363,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
                                      unsigned int min_num_inst,
                                      unsigned int net_threshold,
                                      unsigned int virtual_weight,
+                                     unsigned int ignore_net_threshold,
                                      const char* file_name)
 {
   logger_->report("Running Partition Design...");
@@ -1625,16 +1626,20 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
 
     if (!(connection_map.size() == 0
           || (connection_map.size() == 1 && iter->first == src_id))) {
-      bool flag = (src_id >= 1 && src_id <= 12)
-                  || (cluster_map_[src_id]->getNumMacro() > 0);
+      //bool flag = (src_id >= 1 && src_id <= 12)
+      //            || (cluster_map_[src_id]->getNumMacro() > 0);
       output_file << "Net_" << ++net_id << ":  " << endl;
       output_file << "source: " << map_iter->second->getName() << "   ";
       while (iter != connection_map.end()) {
         if (iter->first != src_id) {
           int weight = iter->second;
-          if (flag || (iter->first >= 1 && iter->first <= 12)
-              || cluster_map_[iter->first]->getNumMacro() > 0) {
-            weight += virtual_weight_;
+          //if (flag || (iter->first >= 1 && iter->first <= 12)
+          //    || cluster_map_[iter->first]->getNumMacro() > 0) {
+          //  weight += virtual_weight_;
+          //}
+            
+          if(weight < ignore_net_threshold) {
+              weight = 0;
           }
 
           output_file << cluster_map_[iter->first]->getName() << "   " << weight
@@ -1680,6 +1685,7 @@ void dbPartitionDesign(dbVerilogNetwork* network,
                        unsigned int max_num_inst,
                        unsigned int min_num_inst,
                        unsigned int net_threshold,
+                       unsigned int ignore_net_threshold,
                        unsigned int virtual_weight,
                        const char* file_name,
                        utl::Logger* logger)
@@ -1691,6 +1697,7 @@ void dbPartitionDesign(dbVerilogNetwork* network,
                           max_num_inst,
                           min_num_inst,
                           net_threshold,
+                          ignore_net_threshold,
                           virtual_weight,
                           file_name);
 }

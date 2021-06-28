@@ -238,8 +238,8 @@ namespace shape_engine {
         float cost = pre_cost;
         float delta_cost = 0.0;
         float best_cost = cost;
-        vector<int> best_pos_seq = pos_seq_;
-        vector<int> best_neg_seq = neg_seq_;
+        //vector<int> best_pos_seq = pos_seq_;
+        //vector<int> best_neg_seq = neg_seq_;
 
 
         float rej_num = 0.0;
@@ -264,8 +264,8 @@ namespace shape_engine {
                     pre_cost = cost;
                     if(best_cost > cost) {
                         best_cost = cost;
-                        best_pos_seq = pos_seq_;
-                        best_neg_seq = neg_seq_;
+                        //best_pos_seq = pos_seq_;
+                        //best_neg_seq = neg_seq_;
                     }    
                 } else {
                     cost = pre_cost;
@@ -281,8 +281,8 @@ namespace shape_engine {
             T = T * 0.99;
         }
         
-        pos_seq_ = best_pos_seq;
-        neg_seq_ = best_neg_seq;
+        //pos_seq_ = best_pos_seq;
+        //neg_seq_ = best_neg_seq;
         PackFloorplan();
     }
     

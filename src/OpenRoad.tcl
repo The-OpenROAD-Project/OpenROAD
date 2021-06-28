@@ -117,11 +117,12 @@ sta::define_cmd_args "partition_design" { [-max_num_macro max_num_macro] \
                                           [-min_num_inst min_num_inst] \
                                           [-net_threshold net_threshold] \
                                           [-virtual_weight virtual_weight] \
+                                          [-ignore_net_threshold ignore_net_threshold] \
                                           [-rpt_file rpt_file] \
                                         }
 proc partition_design { args } {
     sta::parse_key_args "partition_design" args keys {-max_num_macro -min_num_macro
-                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -rpt_file} flags {  }
+                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold -rpt_file} flags {  }
     if { [info exists keys(-rpt_file)] } {
         set rpt_file $keys(-rpt_file)
         set max_num_macro 10
@@ -130,6 +131,7 @@ proc partition_design { args } {
         set min_num_inst 0
         set net_threshold 0
         set virtual_weight 50
+        set ignore_net_threshold 0
  
         if { [info exists keys(-max_num_macro)] } {
             set max_num_macro $keys(-max_num_macro)
@@ -155,11 +157,13 @@ proc partition_design { args } {
             set virtual_weight $keys(-virtual_weight)
         }
 
+        if { [info exists keys(-ignore_net_threshold)] } {
+            set net_threshold $keys(-ignore_net_threshold)
+        }
 
-
-        ord::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $rpt_file
+        ord::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold  $rpt_file
     } else {
-        ord::error "partition_design -max_num_macro -min_num_macro -max_num_inst -min_num_inst -net_threshold -virtual_weight -rpt_file"
+        ord::error "partition_design -max_num_macro -min_num_macro -max_num_inst -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold -rpt_file"
     }
 }
 
@@ -170,7 +174,7 @@ proc rtl_mp { args } {
     sta::parse_key_args "rtl_mp" args keys { -config_file } flag {  }
     if { [info exists keys(-config_file)] } {
         set config_file $keys(-config_file)
-        ord::rtl_mp_cmd $config_file
+        return [ord::rtl_mp_cmd $config_file]
     } else {
         ord::error "rtl_mp  -config_file config_file"
     }

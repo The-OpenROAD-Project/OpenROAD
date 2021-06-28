@@ -132,7 +132,7 @@ namespace block_placement {
 
 
         for(int i = 0; i < blocks_.size(); i++) {
-            if(blocks_[i].GetNumMacro() > 0) {
+            if(blocks_[i].GetNumMacro() > 1) {
                 hard_block_list.push_back(i);
             } else {
                 soft_block_list.push_back(i);
@@ -141,7 +141,7 @@ namespace block_placement {
         
         int index1 = -1;
         float prob = (distribution_)(generator_);
-        if(prob <= 0.5) {
+        if(prob <= hard_block_list.size() / blocks_.size()) {
             index1 = hard_block_list[floor((distribution_)(generator_) * hard_block_list.size())];
         } else {
             index1 = soft_block_list[floor((distribution_)(generator_) * soft_block_list.size())];
@@ -300,15 +300,10 @@ namespace block_placement {
     
     void SimulatedAnnealingCore::CalculateOutlinePenalty() {
         outline_penalty_ = 0.0;
-        
-        if(width_ > outline_width_ && height_ > outline_height_)
-            outline_penalty_ = width_ * height_ - outline_width_ * outline_height_;
-        else if(width_ > outline_width_ && height_ <= outline_height_)
-            outline_penalty_ = (width_ - outline_width_) * outline_height_;
-        else if(width_ <= outline_width_ && height_ > outline_height_)
-            outline_penalty_ = outline_width_ * (height_ - outline_height_);
-        else
-            outline_penalty_ = 0.0;
+       
+        float max_width = max(outline_width_, width_);
+        float max_height = max(outline_height_, height_);
+        outline_penalty_ = max(outline_penalty_, max_width * max_height - outline_width_ * outline_height_);
     }
 
     void SimulatedAnnealingCore::CalculateMacroBlockagePenalty() {
@@ -355,7 +350,8 @@ namespace block_placement {
                 
                 lx = min(lx, abs(outline_width_ - ux));
                 ly = min(ly, abs(outline_height_ - uy));
-                lx = min(lx, ly);
+                //lx = min(lx, ly);
+                lx = lx + ly;
                 boundary_penalty_ += lx;
             }
         }
@@ -573,11 +569,18 @@ namespace block_placement {
         float new_boundary_weight = avg_boundary_penalty / sum_cost;
         float new_macro_blockage_weight = avg_macro_blockage_penalty / sum_cost;
        
-        alpha_ = alpha_base_ * (1 - new_alpha * learning_rate_);
-        beta_ = beta_base_ * (1 - new_beta * learning_rate_);
-        gamma_ = gamma_base_ * ( 1 - new_gamma * learning_rate_);
-        boundary_weight_ = boundary_weight_base_ * (1 - new_boundary_weight * learning_rate_);
-        macro_blockage_weight_ = macro_blockage_weight_base_ * (1 - new_macro_blockage_weight * learning_rate_);
+        new_alpha = alpha_base_ * (1 - new_alpha * learning_rate_);
+        new_beta = beta_base_ * (1 - new_beta * learning_rate_);
+        new_gamma = gamma_base_ * ( 1 - new_gamma * learning_rate_);
+        new_boundary_weight = boundary_weight_base_ * (1 - new_boundary_weight * learning_rate_);
+        new_macro_blockage_weight = macro_blockage_weight_base_ * (1 - new_macro_blockage_weight * learning_rate_);
+        
+        float new_weight  = new_alpha + new_beta + new_gamma + new_boundary_weight + new_macro_blockage_weight;
+        alpha_ = new_alpha / new_weight;
+        beta_ = new_beta / new_weight;
+        gamma_ = new_gamma / new_weight;
+        boundary_weight_ = new_boundary_weight / new_weight;
+        macro_blockage_weight_ = new_macro_blockage_weight / new_weight;
     }
 
 
@@ -588,9 +591,9 @@ namespace block_placement {
         float delta_cost = 0.0;
         
         float best_cost = cost;
-        vector<Block> best_blocks = blocks_;
-        vector<int> best_pos_seq = pos_seq_;
-        vector<int> best_neg_seq = neg_seq_;
+        //vector<Block> best_blocks = blocks_;
+        //vector<int> best_pos_seq = pos_seq_;
+        //vector<int> best_neg_seq = neg_seq_;
         
         float avg_area = 0.0;
         float avg_wirelength = 0.0;
@@ -637,9 +640,9 @@ namespace block_placement {
                     accept_rate += 1.0;
                     if(cost < best_cost) {
                         best_cost = cost;
-                        best_blocks = blocks_;
-                        best_pos_seq = pos_seq_;
-                        best_neg_seq = neg_seq_;
+                        //best_blocks = blocks_;
+                        //best_pos_seq = pos_seq_;
+                        //best_neg_seq = neg_seq_;
                         
                         if((num_shrink <= max_num_shrink) && (step % modulo_base == 0) && (IsFeasible() == false)) {
                             num_shrink += 1;
@@ -666,16 +669,23 @@ namespace block_placement {
             }
             
             UpdateWeight(avg_area, avg_wirelength, avg_outline_penalty, avg_boundary_penalty, avg_macro_blockage_penalty);
+            //cout << "step:  " << step << "  T:  " << T << " cost:  " << cost << endl;
+            
             step++;
+            
+            /*
             if(step <= k_)
                 T = init_T_ / (step * c_ * avg_delta_cost / perturb_per_step_);
             else
                 T = init_T_ / (step * avg_delta_cost / perturb_per_step_);
+            */
+
+            T = T * cooling_rate_;
 
             if(step == max_num_step_) {
-                blocks_ = best_blocks;
-                pos_seq_ = best_pos_seq;
-                neg_seq_ = best_neg_seq;
+                //blocks_ = best_blocks;
+                //pos_seq_ = best_pos_seq;
+                //neg_seq_ = best_neg_seq;
                 
                 PackFloorplan();
                 CalculateWirelength();
@@ -683,7 +693,8 @@ namespace block_placement {
                 CalculateBoundaryPenalty();
                 CalculateMacroBlockagePenalty();
                 if(IsFeasible() == false) {
-                    if(FitFloorplan() == false && num_restart < max_num_restart) {
+                    if(num_restart < max_num_restart) {
+                    //if(FitFloorplan() == false && num_restart < max_num_restart) {
                         //step = int(max_num_step_  * 0.5);
                         step = 1;
                         T = init_T_;
@@ -839,7 +850,7 @@ namespace block_placement {
             seed_list[i] = (unsigned)rand_generator();
 
         SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width, outline_height, blocks, 
-                                     nets, regions, terminal_position,
+                                     nets, regions, terminal_position, 0.99,
                                      alpha, beta, gamma, boundary_weight, macro_blockage_weight,
                                      resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
                                      init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
@@ -871,9 +882,17 @@ namespace block_placement {
             heat_count = heat_count * heat_rate;
             vector<SimulatedAnnealingCore*> sa_vec;
             vector<thread> threads;
+            float cooling_rate_step = (0.99 - 0.01) / num_worker;
             for(int j = 0; j < num_worker; j++) {
+                float cooling_rate = 0.99;
+                if(num_worker >= 2) {
+                    cooling_rate = 0.99 - j * (0.99 - 0.01) / (num_worker - 1);
+                }
+                
+                cout << "init_T:  " << init_T << endl;
+                cout << "thread:  " << j << "  cooling_rate:   " << cooling_rate << endl;
                 SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width, outline_height, blocks, 
-                                             nets, regions, terminal_position,
+                                             nets, regions, terminal_position, cooling_rate,
                                              alpha, beta, gamma, boundary_weight, macro_blockage_weight,
                                              resize_prob, pos_swap_prob, neg_swap_prob, double_swap_prob,
                                              init_prob, rej_ratio, max_num_step, k, c, perturb_per_step, 
@@ -891,42 +910,34 @@ namespace block_placement {
             for(auto &th: threads)
                 th.join();
 
-
-            float min_cost = FLT_MAX;
-            float min_id = -1;
             for(int j = 0; j < num_worker; j++) {
-                if(min_cost > sa_vec[j]->GetCost()) {
-                    min_id = j;
-                    min_cost = sa_vec[j]->GetCost();
+                if(best_cost > sa_vec[j]->GetCost()) {
+                    best_cost = sa_vec[j]->GetCost();
+                    best_sa = sa_vec[j];
                 }
                 
-                if(best_cost > sa_vec[j]->GetCost()) {
-                    best_sa = sa_vec[j];
-                    best_cost = sa_vec[j]->GetCost();
-                }
+                cout << "thread:  " << j << "  cost:  " << sa_vec[j]->GetCost() << endl;
             }
 
-
-            blocks = sa_vec[min_id]->GetBlocks();
-            pos_seq = sa_vec[min_id]->GetPosSeq();
-            neg_seq = sa_vec[min_id]->GetNegSeq();
-            
+            blocks = best_sa->GetBlocks();
+            pos_seq = best_sa->GetPosSeq();
+            neg_seq = best_sa->GetNegSeq();
 
             // verify the result
             string output_info = "level:  ";
             output_info += to_string(i) + "   ";
             output_info += "cost:  ";
-            output_info += to_string(sa_vec[min_id]->GetCost()) + "   ";
+            output_info += to_string(best_sa->GetCost()) + "   ";
             output_info += "area:   ";
-            output_info += to_string(sa_vec[min_id]->GetArea()) + "   ";
+            output_info += to_string(best_sa->GetArea()) + "   ";
             output_info += "wirelength:  ";
-            output_info += to_string(sa_vec[min_id]->GetWirelength()) + "   ";
+            output_info += to_string(best_sa->GetWirelength()) + "   ";
             output_info += "outline_penalty:  ";
-            output_info += to_string(sa_vec[min_id]->GetOutlinePenalty()) + "   ";
+            output_info += to_string(best_sa->GetOutlinePenalty()) + "   ";
             output_info += "boundary_penalty:  ";
-            output_info += to_string(sa_vec[min_id]->GetBoundaryPenalty()) + "   ";
+            output_info += to_string(best_sa->GetBoundaryPenalty()) + "   ";
             output_info += "macro_blockage_penalty:  ";
-            output_info += to_string(sa_vec[min_id]->GetMacroBlockagePenalty());
+            output_info += to_string(best_sa->GetMacroBlockagePenalty());
 
             logger->info(RMP, 2004 + i, "Block_Placement {}", output_info);
 

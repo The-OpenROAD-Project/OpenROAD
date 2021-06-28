@@ -171,6 +171,7 @@ class AutoClusterMgr
                        unsigned int min_num_inst,
                        unsigned int net_threshold,
                        unsigned int virtual_weight,
+                       unsigned int ignore_net_threshold,
                        const char* file_name);
 
  private:
@@ -271,6 +272,7 @@ void dbPartitionDesign(ord::dbVerilogNetwork* network,
                        unsigned int min_num_inst,
                        unsigned int net_threshold,
                        unsigned int virtual_weight,
+                       unsigned int ignore_net_threshold,
                        const char* file_name,
                        utl::Logger* logger);
 

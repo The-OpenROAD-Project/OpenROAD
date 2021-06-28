@@ -356,10 +356,10 @@ namespace pin_alignment {
         float pre_cost = NormCost(area_, wirelength_, outline_penalty_);
         float cost = pre_cost;
         float delta_cost = 0.0;
-        vector<Macro> best_macros;
+        //vector<Macro> best_macros;
         float best_cost = cost;
-        vector<int> best_pos_seq = pos_seq_;
-        vector<int> best_neg_seq = neg_seq_;
+        //vector<int> best_pos_seq = pos_seq_;
+        //vector<int> best_neg_seq = neg_seq_;
 
         float rej_num = 0.0;
         float T = init_T_;
@@ -382,9 +382,9 @@ namespace pin_alignment {
                     pre_cost = cost;
                     if(cost < best_cost) {
                         best_cost = cost;
-                        best_pos_seq = pos_seq_;
-                        best_neg_seq = neg_seq_;
-                        best_macros = macros_;
+                        //best_pos_seq = pos_seq_;
+                        //best_neg_seq = neg_seq_;
+                        //best_macros = macros_;
                     }
                 } else {
                     rej_num += 1.0;
@@ -394,13 +394,14 @@ namespace pin_alignment {
 
             step++;
             
-            T = T * 0.99;
+            //T = T * 0.99;
+            T = T * cooling_rate_;
         }
        
         
-        macros_ = best_macros;
-        pos_seq_ = best_pos_seq;
-        neg_seq_ = best_neg_seq;
+        //macros_ = best_macros;
+        //pos_seq_ = best_pos_seq;
+        //neg_seq_ = best_neg_seq;
 
         PackFloorplan();
     }
@@ -432,13 +433,11 @@ namespace pin_alignment {
             macros[i].SpecifyPinPosition(pin_x, pin_y);
         }
     }
-    
+   
 
-
-    // Pin Alignment Engine
-    void PinAlignment(vector<Cluster*>& clusters, Logger* logger, float halo_width,  int num_thread, int num_run, unsigned seed) {
-        logger->info(RMP, 3001, "Pin_Aligment Starts");
-    
+    bool PinAlignmentSingleCluster(Cluster* cluster, unordered_map<string, pair<float, float> >& terminal_position,
+                                   vector<Net*>& nets, Logger* logger, float halo_width, 
+                                   int num_thread, int num_run, unsigned seed) {
         // parameterse related to fastSA
         float init_prob = 0.95;
         float rej_ratio = 0.99;
@@ -452,27 +451,124 @@ namespace pin_alignment {
         float pos_swap_prob = 0.3;
         float neg_swap_prob = 0.3;
         float double_swap_prob = 0.2;
+       
+        string name = cluster->GetName();
+        for(int j = 0; j < name.size(); j++) 
+            if(name[j] == '/')
+                name[j] = '*';
                 
+        logger->info(RMP, 3002 , "Pin_Aligment Working on macro_clutser: {}", name);
+
+        float lx = cluster->GetX();
+        float ly = cluster->GetY();
+        float ux = lx + cluster->GetWidth();
+        float uy = ly + cluster->GetHeight();
+        float outline_width = ux - lx;
+        float outline_height = uy - ly;
+
+
+        // deal with macros
+        vector<Macro> macros = cluster->GetMacros();
+        string macro_file = string("./rtl_mp/") + name + string(".txt.block");
+        ParseMacroFile(macros, halo_width,  macro_file);
         
-        int info_id = 2;
+        int perturb_per_step = 2 * macros.size();
+
+        std::mt19937 rand_generator(seed);
+        vector<int> seed_list;
+        for(int j = 0; j < num_thread; j++)
+            seed_list.push_back((unsigned)rand_generator());
+
+        int remaining_run = num_run;
+        int run_thread = num_thread;
+        int sa_id = 0;
+
+        vector<SimulatedAnnealingCore*> sa_vector;
+        vector<thread> threads;
+        while(remaining_run > 0) {
+            run_thread = num_thread;
+            if(remaining_run < num_thread)
+                run_thread = remaining_run;
+
+            for(int j = 0; j < run_thread; j++) {
+                float cooling_rate = 0.999;
+                if(run_thread >= 2) {
+                    cooling_rate = 0.999 - j * (0.999 - 0.001) / (run_thread - 1);
+                }
+               
+                SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(macros, nets, terminal_position,
+                                                cooling_rate,
+                                                outline_width, outline_height, 
+                                                init_prob, rej_ratio, max_num_step, 
+                                                k, c, perturb_per_step,
+                                                alpha, beta, gamma, 
+                                                flip_prob, pos_swap_prob,  neg_swap_prob, double_swap_prob, 
+                                                seed_list[j]);
+                    
+                sa_vector.push_back(sa);
+            }
+            
+            for(int j = 0; j < run_thread; j++)
+                threads.push_back(thread(Run, sa_vector[sa_id++]));
+                   
+            for(auto &th : threads)
+                th.join();
+
+            threads.clear();
+            remaining_run = remaining_run - run_thread;
+        }
+
+        int min_id = -1;
+        float wirelength = FLT_MAX;
+                
+        //for(int j = 0; j < sa_vector.size(); j++) {
+        //    string file_name = string("./rtl_mp/") + name + string("_") + to_string(j) + string("_final.txt");
+        //    sa_vector[j]->WriteFloorplan(file_name);
+        //}       
+                
+        for(int j = 0; j < sa_vector.size(); j++) 
+            if(sa_vector[j]->IsFeasible()) 
+                if(wirelength > sa_vector[j]->GetWirelength()) 
+                    min_id = j;
+
+        if(min_id == -1) {
+            //throw std::invalid_argument(std::string("Invalid Floorplan.  Please increase the num_run!!!"));
+            logger->info(RMP, 3003, "Pin_Alignment  Cannot generate valid floorplan for current cluster!!!");        
+            return false;
+        } else {
+            cluster->SpecifyMacros(sa_vector[min_id]->GetMacros());
+        }
+   
+
+        for(int j = 0; j < sa_vector.size(); j++) 
+            delete sa_vector[j];
+       
+        logger->info(RMP, 3004 , "Pin_Aligment finish macro_clutser: {}", name);
+
+
+        return true;
+    }
+
+
+
+    // Pin Alignment Engine
+    bool PinAlignment(vector<Cluster*>& clusters, Logger* logger, float halo_width,  int num_thread, int num_run, unsigned seed) {
+        logger->info(RMP, 3001, "Pin_Aligment Starts");
+        
+        unordered_map<string, pair<float, float> > terminal_position;
+        vector<Net*> nets;
+         
+        //int info_id = 2;
         for(int i = 0; i < clusters.size(); i++) {
             if(clusters[i]->GetNumMacro() > 0) {
                 string name = clusters[i]->GetName();
                 for(int j = 0; j < name.size(); j++) 
                     if(name[j] == '/')
                         name[j] = '*';
-                
-                logger->info(RMP, info_id++, "Pin_Aligment Working on macro_clutser: {}", name);
 
                 float lx = clusters[i]->GetX();
                 float ly = clusters[i]->GetY();
-                float ux = lx + clusters[i]->GetWidth();
-                float uy = ly + clusters[i]->GetHeight();
-                float outline_width = ux - lx;
-                float outline_height = uy - ly;
 
-                // deal with pin position
-                unordered_map<string, pair<float, float> > terminal_position;
                 for(int j = 0; j < clusters.size(); j++) {
                     if(j != i) {
                         string terminal_name = clusters[j]->GetName();
@@ -483,82 +579,29 @@ namespace pin_alignment {
                         terminal_position[terminal_name] = pair<float, float>(terminal_x, terminal_y);
                     }
                 }
-
-
-                // deal with macros
-                vector<Macro> macros = clusters[i]->GetMacros();
-                string macro_file = string("./rtl_mp/") + name + string(".txt.block");
-                ParseMacroFile(macros, halo_width,  macro_file);
                 
                 // deal with nets
-                vector<Net*> nets;
+                //vector<Net*> nets;
                 string net_file = string("./rtl_mp/") + name + string(".txt.net");
                 block_placement::ParseNetFile(nets, terminal_position, net_file.c_str());                
-              
-                int perturb_per_step = 2 * macros.size();
-
-                std::mt19937 rand_generator(seed);
-                vector<int> seed_list;
-                for(int j = 0; j < num_thread; j++)
-                    seed_list.push_back((unsigned)rand_generator());
-
-                int remaining_run = num_run;
-                int run_thread = num_thread;
-                int sa_id = 0;
-        
-                vector<SimulatedAnnealingCore*> sa_vector;
-                while(remaining_run > 0) {
-                    run_thread = num_thread;
-                    if(remaining_run < num_thread)
-                        run_thread = remaining_run;
-
-                    for(int j = 0; j < run_thread; j++) {
-                        SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(macros, nets, terminal_position,
-                                                         outline_width, outline_height, 
-                                                         init_prob, rej_ratio, max_num_step, 
-                                                         k, c, perturb_per_step,
-                                                         alpha, beta, gamma, 
-                                                         flip_prob, pos_swap_prob,  neg_swap_prob, double_swap_prob, 
-                                                         seed_list[j]);
-                    
-                        sa_vector.push_back(sa);
-                    }
             
-                    vector<thread> threads;
-                    for(int j = 0; j < run_thread; j++)
-                        threads.push_back(thread(Run, sa_vector[sa_id++]));
-                   
-                    for(auto &th : threads)
-                        th.join();
+                bool flag = PinAlignmentSingleCluster(clusters[i], terminal_position, nets, logger, 
+                                                      halo_width, num_thread, num_run, seed);
 
-                    remaining_run = remaining_run - run_thread;
-                }
+                if(flag == false) 
+                    return false;
 
-                int min_id = -1;
-                float wirelength = FLT_MAX;
-                
-                for(int j = 0; j < sa_vector.size(); j++) {
-                    string file_name = string("./rtl_mp/") + name + string("_") + to_string(j) + string("_final.txt");
-                    sa_vector[j]->WriteFloorplan(file_name);
-                }       
-                
-                for(int j = 0; j < sa_vector.size(); j++) 
-                    if(sa_vector[j]->IsFeasible()) 
-                        if(wirelength > sa_vector[j]->GetWirelength()) 
-                            min_id = j;
 
-                if(min_id == -1) {
-                    throw std::invalid_argument(std::string("Invalid Floorplan.  Please increase the num_run!!!"));
-                } else {
-                    clusters[i]->SpecifyMacros(sa_vector[min_id]->GetMacros());
+                terminal_position.clear();
+                for(int j = 0; j < nets.size(); j++) {
+                    delete nets[j];
                 }
                 
-                for(int j = 0; j < sa_vector.size(); j++) 
-                    delete sa_vector[j];
-                
-                sa_vector.clear();
+                nets.clear();
             }
         }
+        
+        return true;
     }
 }
 

@@ -48,11 +48,11 @@ namespace block_placement {
                 // sort the aspect ratio according to the 1st element of the pair in ascending order
                 // And we assume the aspect_ratio[i].first <= aspect_ratio[i].second
                 std::sort(aspect_ratio_.begin(), aspect_ratio_.end());
-                for(auto& aspect_ratio : aspect_ratio_) {
-                    float height_low = std::sqrt(area_ * aspect_ratio.first);
+                for(int i = 0; i < aspect_ratio_.size(); i++) {
+                    float height_low = std::sqrt(area_ * aspect_ratio_[i].first);
                     float width_high = area_ / height_low;
 
-                    float height_high = std::sqrt(area_ * aspect_ratio.second);
+                    float height_high = std::sqrt(area_ * aspect_ratio_[i].second);
                     float width_low = area_ / height_high;
                     
                     // height_limit_ is sorted in non-decreasing order
@@ -289,7 +289,9 @@ namespace block_placement {
             
             float outline_width_;
             float outline_height_;
-            
+        
+            float cooling_rate_;
+
             // learning rate for dynamic weight
             float learning_rate_ = 0.01;
 
@@ -381,6 +383,7 @@ namespace block_placement {
             SimulatedAnnealingCore(float outline_width, float outline_height, 
                 std::vector<Block>& blocks, std::vector<Net*>& nets, std::vector<Region*>& regions,
                 std::unordered_map<std::string, std::pair<float, float> > terminal_position,
+                float cooling_rate, 
                 float alpha, float beta, float gamma, float boundary_weight, float macro_blockage_weight,
                 float resize_prob, float pos_swap_prob, float neg_swap_prob, float double_swap_prob,
                 float init_prob, float rej_ratio, int max_num_step, int k, float c, int perturb_per_step,
@@ -389,6 +392,8 @@ namespace block_placement {
                 outline_width_ = outline_width;
                 outline_height_ = outline_height;
               
+                cooling_rate_ = cooling_rate;
+
                 learning_rate_ = learning_rate;
                 shrink_factor_ = shrink_factor;
                 shrink_freq_ = shrink_freq;
@@ -429,7 +434,7 @@ namespace block_placement {
                 regions_ = regions;
                 terminal_position_ = terminal_position;
                 
-                for(size_t i = 0; i < blocks.size(); i++) {
+                for(int i = 0; i < blocks.size(); i++) {
                     pos_seq_.push_back(i);
                     neg_seq_.push_back(i);
 
@@ -438,7 +443,7 @@ namespace block_placement {
                 }
 
                 blocks_ = blocks;
-                for(size_t i = 0; i < blocks_.size(); i++) {
+                for(int i = 0; i < blocks_.size(); i++) {
                     blocks_[i].SpecifyRandom(generator_, distribution_);
                     block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
                 }

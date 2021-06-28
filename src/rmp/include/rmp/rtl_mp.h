@@ -15,7 +15,7 @@
 using utl::RMP;
 
 namespace ord {
-    void RTLMP(const char* config_file, utl::Logger*  logger);
+    bool RTLMP(const char* config_file, utl::Logger*  logger);
 }
 
 #endif

@@ -61,7 +61,7 @@ namespace ord {
 #define DUMP_INFO_PARAM(param, value)   logger->info(RMP,0001, "RTL_MP  Param: {}: {}", param, value)
 
 
-    void RTLMP(const char* config_file, Logger*  logger) {
+    bool RTLMP(const char* config_file, Logger*  logger) {
 
         logger->report("*** In RTLMP ***");
 
@@ -322,7 +322,13 @@ namespace ord {
             clusters[i]->SpecifyFootprint(width, height);
         }
 
-        pin_alignment::PinAlignment(clusters, logger, halo_width, num_thread, num_run, seed);
+        bool success_flag = pin_alignment::PinAlignment(clusters, logger, halo_width, num_thread, num_run, seed);
+
+        if(success_flag == false) {
+            logger->report("*** RTLMP Failed ***");
+            return false;
+        }
+
 
         const char* openroad_filename = "./rtl_mp/macro_placement.cfg";
         ofstream file;
@@ -435,5 +441,7 @@ namespace ord {
         file.close();
         
         logger->report("*** Exit RTLMP ***");
+        
+        return true;
     }
 }

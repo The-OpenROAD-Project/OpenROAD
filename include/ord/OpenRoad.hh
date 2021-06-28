@@ -187,9 +187,10 @@ public:
   void partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
                        unsigned int max_num_inst,  unsigned int min_num_inst,
                        unsigned int net_threshold, unsigned int virtual_weight,
+                       unsigned int ignore_net_threshold,
                        const char* file_name);
 
-  void rtlMacroPlacer(const char* config_file);
+  bool rtlMacroPlacer(const char* config_file);
   
   
   void readVerilog(const char *filename);

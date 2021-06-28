@@ -402,19 +402,20 @@ void
 OpenRoad::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
                           unsigned int max_num_inst,  unsigned int min_num_inst,
                           unsigned int net_threshold, unsigned int virtual_weight,
+                          unsigned int ignore_net_threshold,
                           const char* file_name
                          ) 
 {
     dbPartitionDesign(verilog_network_, db_, max_num_macro, min_num_macro,
                       max_num_inst, min_num_inst, net_threshold, virtual_weight,
-                      file_name, logger_);
+                      ignore_net_threshold, file_name, logger_);
 }
 
 
-void 
+bool
 OpenRoad::rtlMacroPlacer(const char* config_file) 
 {
-    RTLMP(config_file, logger_);
+    return RTLMP(config_file, logger_);
 }
 
 
