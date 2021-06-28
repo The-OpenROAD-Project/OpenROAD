@@ -796,6 +796,7 @@ Resizer::repairNet(Net *net,
         LibertyPort *buffer_input_port, *buffer_output_port;
         input_buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
         drvr_pin = network_->findPin(buffer, buffer_output_port);
+        net = network_->net(drvr_pin);
         resizeToTargetSlew(drvr_pin, false);
         ensureWireParasitic(drvr_pin, net);
         graph_delay_calc_->findDelays(drvr);
