@@ -2737,20 +2737,20 @@ Resizer::makeHoldDelay(Vertex *drvr,
   int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);
 
   Net *buf_in_net = in_net;
+  Instance *buffer = nullptr;
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
   // drvr_pin->in_net->hold_buffer1->net2->hold_buffer2->out_net...->load_pins
   for (int i = 0; i < buffer_count; i++) {
     Net *buf_out_net = (i == buffer_count - 1) ? out_net : makeUniqueNet();
     // drvr_pin->drvr_net->hold_buffer->net2->load_pins
     string buffer_name = makeUniqueInstName("hold");
-    Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                                 buffer_name.c_str(),
-                                                 parent);
+    buffer = db_network_->makeInstance(buffer_cell, buffer_name.c_str(),
+                                       parent);
     journalMakeBuffer(buffer);
     inserted_buffer_count_++;
     designAreaIncr(area(db_network_->cell(buffer_cell)));
 
-    LibertyPort *input, *output;
-    buffer_cell->bufferPorts(input, output);
     sta_->connectPin(buffer, input, buf_in_net);
     sta_->connectPin(buffer, output, buf_out_net);
     Point buffer_loc(drvr_loc.x() + dx * i,
@@ -2766,6 +2766,8 @@ Resizer::makeHoldDelay(Vertex *drvr,
     sta_->disconnectPin(load_pin);
     sta_->connectPin(load, load_port, out_net);
   }
+  Pin *buffer_out_pin = network_->findPin(buffer, output);
+  resizeToTargetSlew(buffer_out_pin, false);
 }
 
 Point
