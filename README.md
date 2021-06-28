@@ -615,14 +615,22 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
+              [-max_slew_margin slew_margin]
+              [-max_cap_margin cap_margin]
               [-max_utilization util]
 ```
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
 delay in the wire. It also resizes gates to normalize slews. 
-The resistance/capacitance values in `set_wire_rc` are used to find the
-wire delays. Use `-max_wire_length` to specify the maximum length of wires.
+Use `estimate_parasitics -placement` before `repair_design` to estimate
+parasitics considered during repair. Placement based parasitics cannot
+accurately predict routed parasitics, so a margin can be used to "over-repair"
+the design to compensate. Use `-max_slew_margin` to add a margin to the slews,
+and `-max_cap_margin` to add a margin to the capacitances, The margins are
+a percentage of the slew/capacitance limit to leave as a margin. For example,
+10 means repair to 10% below the slew/capacitance limit.
+Use `-max_wire_length` to specify the maximum length of wires.
 The maximum wire length defaults to a value that minimizes the wire delay for the wire
 resistance/capacitance values specified by `set_wire_rc`.
 

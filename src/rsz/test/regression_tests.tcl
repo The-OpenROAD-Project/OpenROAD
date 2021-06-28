@@ -25,6 +25,7 @@ record_tests {
   repair_clk_inverters1
   repair_cap1
   repair_cap2
+  repair_cap3
   repair_fanout1
   repair_fanout2
   repair_hold1

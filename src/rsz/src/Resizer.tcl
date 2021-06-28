@@ -289,38 +289,31 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
-    keys {-max_wire_length -buffer_cell -libraries -max_utilization} \
+    keys {-max_wire_length -max_utilization -max_slew_margin -max_cap_margin} \
     flags {}
   
-  if { [info exists keys(-buffer_cell)] } {
-    utl::warn RSZ 16 "-buffer_cell is deprecated."
-  }
-  if { [info exists keys(-libraries)] } {
-    utl::warn RSZ 13 "-libraries is deprecated."
-  }
   set max_wire_length [rsz::parse_max_wire_length keys]
-  
+  set max_slew_margin [rsz::parse_margin_arg "-max_slew_margin" keys]
+  set max_cap_margin [rsz::parse_margin_arg "-max_cap_margin" keys]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   rsz::resizer_preamble
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
-  rsz::repair_design_cmd $max_wire_length
+  rsz::repair_design_cmd $max_wire_length $max_slew_margin $max_cap_margin
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
 
 proc repair_clock_nets { args } {
   sta::parse_key_args "repair_clock_nets" args \
-    keys {-max_wire_length -buffer_cell} \
+    keys {-max_wire_length} \
     flags {}
   
-  if { [info exists keys(-buffer_cell)] } {
-    utl::warn RSZ 18 "-buffer_cell is deprecated."
-  }
   set max_wire_length [rsz::parse_max_wire_length keys]
   
+
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
   rsz::resizer_preamble
@@ -574,6 +567,22 @@ proc set_dblayer_wire_rc { layer res cap } {
 
 proc set_dbvia_wire_r { layer res } {
   $layer setResistance $res
+}
+
+proc parse_margin_arg { key keys_var } {
+  upvar 1 $keys_var keys
+
+  if { [info exists keys($key)] } {
+    set margin $keys($key)
+    if { !([string is double $margin] \
+             && $margin >= 0 \
+             && $margin < 100) } {
+      utl::error RSZ 67 "$key must be between 0.0 and 1.0."
+    }
+    return [expr $margin / 100.0]
+  } else {
+    return 0.0
+  }
 }
 
 # namespace

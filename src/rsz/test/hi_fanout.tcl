@@ -16,7 +16,7 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 }
 
-# drvr/Q -> load0/D load1/D .... load<fanout-1>/D
+# nangate45 drvr/Q -> load0/D load1/D .... load<fanout-1>/D
 proc write_hi_fanout_def { filename fanout } {
   write_hi_fanout_def1 $filename $fanout \
     "drvr" "DFF_X1" "CK" "Q" \
@@ -65,7 +65,7 @@ proc write_hi_fanout_def1 { filename fanout
   close $stream
 }
 
-# reset -> load0/RN load1/RN .... load<fanout-1>/RN
+# nangate45 reset -> load0/RN load1/RN .... load<fanout-1>/RN
 proc write_hi_fanout_input_def { filename fanout } {
   write_hi_fanout_def2 $filename $fanout reset \
     "r" "DFFRS_X2" "CK" "RN" 5000 \

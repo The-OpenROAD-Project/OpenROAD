@@ -600,12 +600,15 @@ Resizer::bufferOutput(Pin *top_pin,
 
 // Repair long wires, max slew, max capacitance, max fanout violations
 // The whole enchilada.
+// max_wire_length zero for none (meters)
 void
-Resizer::repairDesign(double max_wire_length) // zero for none (meters)
+Resizer::repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
+                      double max_slew_margin,
+                      double max_cap_margin)
 {
   int repair_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length,
+  repairDesign(max_wire_length, max_slew_margin, max_cap_margin,
                repair_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
 
@@ -627,6 +630,8 @@ Resizer::repairDesign(double max_wire_length) // zero for none (meters)
 
 void
 Resizer::repairDesign(double max_wire_length, // zero for none (meters)
+                      double max_slew_margin,
+                      double max_cap_margin,
                       int &repair_count,
                       int &slew_violations,
                       int &cap_violations,
@@ -656,7 +661,8 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
-      repairNet(net, drvr, true, true, true, max_length, true,
+      repairNet(net, drvr, max_slew_margin, max_cap_margin,
+                true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
   }
@@ -669,7 +675,7 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
 // repairDesign but restricted to clock network and
 // no max_fanout/max_cap checks.
 void
-Resizer::repairClkNets(double max_wire_length) // meters
+Resizer::repairClkNets(double max_wire_length) // max_wire_length zero for none (meters)
 {
   init();
   // Need slews to resize inserted buffers.
@@ -692,7 +698,8 @@ Resizer::repairClkNets(double max_wire_length) // meters
           : network_->net(clk_pin);
         Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
         // Do not resize clock tree gates.
-        repairNet(net, drvr, false, false, false, max_length, false,
+        repairNet(net, drvr, 0.0, 0.0,
+                  false, false, false, max_length, false,
                   repair_count, slew_violations, cap_violations,
                   fanout_violations, length_violations);
       }
@@ -712,7 +719,9 @@ Resizer::repairClkNets(double max_wire_length) // meters
 // for debugging
 void
 Resizer::repairNet(Net *net,
-                   double max_wire_length) // meters
+                   double max_wire_length, // meters
+                   double max_slew_margin,
+                   double max_cap_margin)
 {
   init();
 
@@ -734,7 +743,8 @@ Resizer::repairNet(Net *net,
     PinSet::Iterator drvr_iter(drivers);
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-    repairNet(net, drvr, true, true, true, max_length, true,
+    repairNet(net, drvr, max_slew_margin, max_cap_margin,
+              true, true, true, max_length, true,
               repair_count, slew_violations, cap_violations,
               fanout_violations, length_violations);
   }
@@ -762,6 +772,8 @@ Resizer::repairNet(Net *net,
 void
 Resizer::repairNet(Net *net,
                    Vertex *drvr,
+                   double max_slew_margin,
+                   double max_cap_margin,
                    bool check_slew,
                    bool check_cap,
                    bool check_fanout,
@@ -785,7 +797,8 @@ Resizer::repairNet(Net *net,
     ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
-    if (checkLimits(drvr_pin, check_slew, check_cap, check_fanout)
+    if (checkLimits(drvr_pin, max_slew_margin, max_cap_margin,
+                    check_slew, check_cap, check_fanout)
         && network_->isTopLevelPort(drvr_pin)) {
       // Input port driving net with slew/cap/fanout violataions.
       // Buffer the input so we some leverage to fix it.
@@ -812,12 +825,13 @@ Resizer::repairNet(Net *net,
     bool using_repeater_cap_limit = false;
     const Corner *corner = sta_->cmdCorner();
     if (check_cap) {
-      float cap, max_cap1, cap_slack;
+      float cap1, max_cap1, cap_slack1;
       const Corner *corner1;
-      const RiseFall *tr;
+      const RiseFall *tr1;
       sta_->checkCapacitance(drvr_pin, nullptr, max_,
-                             corner1, tr, cap, max_cap1, cap_slack);
-      if (cap_slack < 0.0) {
+                             corner1, tr1, cap1, max_cap1, cap_slack1);
+      max_cap1 *= 1.0 - max_cap_margin;
+      if (cap1 > max_cap1) {
         max_cap = max_cap1;
         corner = corner1;
         cap_violations++;
@@ -842,7 +856,7 @@ Resizer::repairNet(Net *net,
     if (check_slew) {
       float slew1, slew_slack1, max_slew1;
       const Corner *corner1;
-      checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
+      checkSlew(drvr_pin, max_slew_margin, slew1, max_slew1, slew_slack1, corner1);
       if (slew_slack1 < 0.0) {
         slew_violations++;
         LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
@@ -889,17 +903,20 @@ Resizer::repairNet(Net *net,
 
 bool
 Resizer::checkLimits(const Pin *drvr_pin,
+                     double max_slew_margin,
+                     double max_cap_margin,
                      bool check_slew,
                      bool check_cap,
                      bool check_fanout)
 {
   if (check_cap) {
-    float cap, max_cap1, cap_slack;
+    float cap1, max_cap1, cap_slack1;
     const Corner *corner1;
-    const RiseFall *tr;
+    const RiseFall *tr1;
     sta_->checkCapacitance(drvr_pin, nullptr, max_,
-                           corner1, tr, cap, max_cap1, cap_slack);
-    if (cap_slack < 0.0)
+                           corner1, tr1, cap1, max_cap1, cap_slack1);
+    max_cap1 *= 1.0 - max_cap_margin;
+    if (cap1 < max_cap1)
       return true;
   }
   if (check_fanout) {
@@ -908,11 +925,12 @@ Resizer::checkLimits(const Pin *drvr_pin,
                       fanout, max_fanout, fanout_slack);
     if (fanout_slack < 0.0)
       return true;
+
   }
   if (check_slew) {
     float slew1, slew_slack1, max_slew1;
     const Corner *corner1;
-    checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
+    checkSlew(drvr_pin, max_slew_margin, slew1, max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
   }
@@ -921,6 +939,7 @@ Resizer::checkLimits(const Pin *drvr_pin,
 
 void
 Resizer::checkSlew(const Pin *drvr_pin,
+                   double max_slew_margin,
                    // Return values.
                    Slew &slew,
                    float &limit,
@@ -937,6 +956,8 @@ Resizer::checkSlew(const Pin *drvr_pin,
     float limit1, slack1;
     sta_->checkSlew(pin, nullptr, max_, false,
                     corner1, tr1, slew1, limit1, slack1);
+    limit1 *= 1.0 - max_slew_margin;
+    slack1 = limit1 - slew1;
     if (slack1 < slack) {
       slew = slew1;
       limit = limit1;
@@ -1579,7 +1600,7 @@ Resizer::findResizeSlacks()
   estimateWireParasitics();
   int repair_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length_,
+  repairDesign(max_wire_length_, 0.0, 0.0,
                repair_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
   findResizeSlacks1();

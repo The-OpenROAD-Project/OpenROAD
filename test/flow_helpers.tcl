@@ -1,3 +1,6 @@
+# defaults
+set max_slew_limit 0
+set max_cap_limit 0
 set power_corner "default"
 
 proc read_libraries {} {

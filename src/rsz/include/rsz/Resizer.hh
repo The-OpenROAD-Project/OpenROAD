@@ -229,10 +229,12 @@ public:
   float bufferSelfDelay(LibertyCell *buffer_cell,
                         const RiseFall *rf);
   // Repair long wires, max fanout violations.
-  void repairDesign(double max_wire_length); // zero for none (meters)
+  void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
+                    double max_slew_margin, // 0.0-1.0
+                    double max_cap_margin); // 0.0-1.0
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
-  void repairClkNets(double max_wire_length); // meters
+  void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -240,7 +242,9 @@ public:
   void repairClkInverters();
   // for debugging
   void repairNet(Net *net,
-                 double max_wire_length); // meters
+                 double max_wire_length, // meters
+                 double max_slew_margin,
+                 double max_cap_margin);
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
@@ -333,6 +337,8 @@ protected:
                          SteinerPt pt,
                          int dist_from_drvr);
   void repairDesign(double max_wire_length, // zero for none (meters)
+                    double max_slew_margin,
+                    double max_cap_margin,
                     int &repair_count,
                     int &slew_violations,
                     int &cap_violations,
@@ -340,6 +346,8 @@ protected:
                     int &length_violations);
   void repairNet(Net *net,
                  Vertex *drvr,
+                 double max_slew_margin,
+                 double max_cap_margin,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,
@@ -351,10 +359,13 @@ protected:
                  int &fanout_violations,
                  int &length_violations);
   bool checkLimits(const Pin *drvr_pin,
+                   double max_slew_margin,
+                   double max_cap_margin,
                    bool check_slew,
                    bool check_cap,
                    bool check_fanout);
   void checkSlew(const Pin *drvr_pin,
+                 double max_slew_margin,
                  // Return values.
                  Slew &slew,
                  float &limit,
