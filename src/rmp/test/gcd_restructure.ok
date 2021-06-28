@@ -22,6 +22,6 @@ Optimized to 241 instances in iteration 0
 Optimized to 257 instances in iteration 1
 Optimized to 255 instances in iteration 2
 [INFO RMP-0005] blif parsed successfully, destroying 422 existing instances...
-[INFO RMP-0006] Found 89 Inputs, 52 Outputs, 0 Clocks, 241 Combinational gates, 0 Flops after parsing the blif file.
+[INFO RMP-0006] Found 89 Inputs, 52 Outputs, 0 Clocks, 241 Combinational gates, 0 Registers after parsing the blif file.
 [INFO RMP-0007] inserting 241 new instances...
 Design area 523 u^2 8% utilization.

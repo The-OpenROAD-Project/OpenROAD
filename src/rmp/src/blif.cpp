@@ -403,7 +403,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   logger_->info(RMP,
                 6,
                 "Found {} Inputs, {} Outputs, {} Clocks, {} Combinational "
-                "gates, {} Flops after parsing the blif file.",
+                "gates, {} Registers after parsing the blif file.",
                 blif.getInputs().size(),
                 blif.getOutputs().size(),
                 blif.getClocks().size(),
