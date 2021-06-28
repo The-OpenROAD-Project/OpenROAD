@@ -293,8 +293,8 @@ proc repair_design { args } {
     flags {}
   
   set max_wire_length [rsz::parse_max_wire_length keys]
-  set max_slew_margin [rsz::parse_margin_arg "-max_slew_margin" keys]
-  set max_cap_margin [rsz::parse_margin_arg "-max_cap_margin" keys]
+  set max_slew_margin [rsz::parse_time_margin_arg "-max_slew_margin" keys]
+  set max_cap_margin [rsz::parse_cap_margin_arg "-max_cap_margin" keys]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
   sta::check_argc_eq0 "repair_design" $args
@@ -394,7 +394,7 @@ proc repair_timing { args } {
     set hold 1
   }
   
-  set slack_margin [rsz::parse_slack_margin_arg keys]
+  set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
@@ -484,15 +484,23 @@ proc check_parasitics { } {
   }
 }
   
-proc parse_slack_margin_arg { keys_var } {
-  upvar 1 $keys_var keys
-  set slack_margin 0.0
-  if { [info exists keys(-slack_margin)] } {
-    set slack_margin $keys(-slack_margin)
-    sta::check_positive_float "-slack_margin" $slack_margin
-    set slack_margin [sta::time_ui_sta $slack_margin]
+proc parse_time_margin_arg { key keys_var } {
+  return [sta::time_ui_sta [parse_margin_arg $key $keys_var]]
+}
+
+proc parse_cap_margin_arg { key keys_var } {
+  return [sta::capacitance_ui_sta [parse_margin_arg $key $keys_var]]
+}
+
+proc parse_margin_arg { key keys_var } {
+  upvar 2 $keys_var keys
+
+  set margin 0.0
+  if { [info exists keys($key)] } {
+    set margin $keys($key)
+    sta::check_positive_float $key $margin
   }
-  return $slack_margin
+  return $margin
 }
   
 proc parse_max_util { keys_var } {
@@ -567,22 +575,6 @@ proc set_dblayer_wire_rc { layer res cap } {
 
 proc set_dbvia_wire_r { layer res } {
   $layer setResistance $res
-}
-
-proc parse_margin_arg { key keys_var } {
-  upvar 1 $keys_var keys
-
-  if { [info exists keys($key)] } {
-    set margin $keys($key)
-    if { !([string is double $margin] \
-             && $margin >= 0 \
-             && $margin < 100) } {
-      utl::error RSZ 67 "$key must be between 0.0 and 1.0."
-    }
-    return [expr $margin / 100.0]
-  } else {
-    return 0.0
-  }
 }
 
 # namespace

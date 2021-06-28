@@ -627,9 +627,7 @@ Use `estimate_parasitics -placement` before `repair_design` to estimate
 parasitics considered during repair. Placement based parasitics cannot
 accurately predict routed parasitics, so a margin can be used to "over-repair"
 the design to compensate. Use `-max_slew_margin` to add a margin to the slews,
-and `-max_cap_margin` to add a margin to the capacitances, The margins are
-a percentage of the slew/capacitance limit to leave as a margin. For example,
-10 means repair to 10% below the slew/capacitance limit.
+and `-max_cap_margin` to add a margin to the capacitances,
 Use `-max_wire_length` to specify the maximum length of wires.
 The maximum wire length defaults to a value that minimizes the wire delay for the wire
 resistance/capacitance values specified by `set_wire_rc`.

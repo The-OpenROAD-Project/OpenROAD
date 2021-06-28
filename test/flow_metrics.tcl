@@ -33,8 +33,6 @@
 ##
 ############################################################################
 
-source ~/tmp/json.tcl
-
 # Functions/variables common to metrics scripts.
 
 proc define_metric { name short_name fmt cmp_op margin_expr } {
@@ -112,6 +110,9 @@ define_metric "clock_period" "" "%d" "<=" {0}
 # Used by regression.tcl to check pass/fail metrics test.
 # Returns "pass" or failing metric comparison string.
 proc check_test_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_file [test_metrics_result_file $test]
   set metrics_limits_file [test_metrics_limits_file $test]
   if { ![file exists $metrics_file] } {
@@ -197,6 +198,9 @@ proc report_metrics_header {} {
 }
 
 proc report_test_metrics { test } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_result_file [test_metrics_result_file $test]
   if { [file exists $metrics_result_file] } {
     set stream [open $metrics_result_file r]
@@ -249,6 +253,9 @@ proc compare_flow_metrics_main {} {
 }
 
 proc compare_test_metrics { test relative } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_file [test_metrics_file $test]
   set result_file [test_metrics_result_file $test]
   if { [file exists $metrics_file] \
@@ -339,6 +346,9 @@ proc save_flow_metric_limits_main {} {
 }
 
 proc save_metric_limits { test } {
+  # Don't require json until it is really needed.
+  package require json
+
   set metrics_file [test_metrics_result_file $test]
   set metrics_limits [test_metrics_limits_file $test]
   if { ! [file exists $metrics_file] } {
