@@ -686,7 +686,10 @@ BinGrid::initBins() {
 
   int64_t idealBinArea = 
     std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
-  int idealBinCnt = totalBinArea / idealBinArea; 
+  int idealBinCnt = totalBinArea / idealBinArea;
+  if (idealBinCnt < 4) { // the smallest we allow is 2x2 bins
+    idealBinCnt = 4;
+  }
   
   log_->info(GPL, 23, "TargetDensity: {:.2f}", targetDensity_);
   log_->info(GPL, 24, "AveragePlaceInstArea: {}", averagePlaceInstArea);
