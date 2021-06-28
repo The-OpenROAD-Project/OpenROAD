@@ -811,29 +811,29 @@ namespace block_placement {
         }
 
         unordered_map<string, pair<float, float> > terminal_position;
-        string word = string("L1");
+        string word = string("LL");
         terminal_position[word] = pair<float, float>(0.0, outline_height / 6.0);
-        word = string("R1");
+        word = string("RL");
         terminal_position[word] = pair<float, float>(outline_width, outline_height / 6.0);
-        word = string("B1");
+        word = string("BL");
         terminal_position[word] = pair<float, float>(outline_width / 6.0, 0.0);
-        word = string("T1");
+        word = string("TL");
         terminal_position[word] = pair<float, float>(outline_width / 6.0, outline_height);
-        word = string("L3");
+        word = string("LU");
         terminal_position[word] = pair<float, float>(0.0, outline_height * 5.0 / 6.0);
-        word = string("R3");
+        word = string("RU");
         terminal_position[word] = pair<float, float>(outline_width, outline_height * 5.0 / 6.0);
-        word = string("B3");
+        word = string("BU");
         terminal_position[word] = pair<float, float>(outline_width * 5.0 / 6.0, 0.0);
-        word = string("T3");
+        word = string("TU");
         terminal_position[word] = pair<float, float>(outline_width * 5.0 / 6.0, outline_height);
-        word = string("L");
+        word = string("LM");
         terminal_position[word] = pair<float, float>(0.0, outline_height / 2.0);
-        word = string("R");
+        word = string("RM");
         terminal_position[word] = pair<float, float>(outline_width, outline_height / 2.0);
-        word = string("B");
+        word = string("BM");
         terminal_position[word] = pair<float, float>(outline_width / 2.0, 0.0);
-        word = string("T");
+        word = string("TM");
         terminal_position[word] = pair<float, float>(outline_width / 2.0, outline_height);
 
         vector<Net*> nets;
