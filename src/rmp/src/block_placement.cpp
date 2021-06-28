@@ -561,6 +561,10 @@ namespace block_placement {
         if(norm_macro_blockage_penalty_ != 0.0) {
             avg_macro_blockage_penalty = avg_macro_blockage_penalty / (perturb_per_step_ * norm_macro_blockage_penalty_);
         }
+        
+
+
+        /*
 
         float sum_cost = avg_area + avg_wirelength + avg_outline_penalty + avg_boundary_penalty + avg_macro_blockage_penalty;
         float new_alpha = avg_area / sum_cost;
@@ -581,6 +585,11 @@ namespace block_placement {
         gamma_ = new_gamma / new_weight;
         boundary_weight_ = new_boundary_weight / new_weight;
         macro_blockage_weight_ = new_macro_blockage_weight / new_weight;
+        */
+        
+
+
+
     }
 
 
@@ -636,6 +645,20 @@ namespace block_placement {
                 float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / T) : 1;
                 avg_delta_cost += abs(delta_cost);
                 if(delta_cost < 0 || num < prob) {
+                    // update the action probability
+                    if(action_id_ == 0) {
+                        resize_accept_ += 1.0;
+                    } else if(action_id_ == 1) {
+                        pos_swap_accept_ += 1.0;
+                    } else if(action_id_ == 2) {
+                        neg_swap_accept_ += 1.0;
+                    } else if(action_id_ == 3) {
+                        double_swap_accept_ += 1.0;
+                    } else {
+                        ;  // for other actions
+                    }
+                    
+                    
                     pre_cost = cost;
                     accept_rate += 1.0;
                     if(cost < best_cost) {
@@ -657,6 +680,18 @@ namespace block_placement {
                         }
                     }
                 } else {
+                    if(action_id_ == 0) {
+                        resize_reject_ += 1.0;
+                    } else if(action_id_ == 1) {
+                        pos_swap_reject_ += 1.0;
+                    } else if(action_id_ == 2) {
+                        neg_swap_reject_ += 1.0;
+                    } else if(action_id_ == 3) {
+                        double_swap_reject_ += 1.0;
+                    } else {
+                        ;  // for other actions
+                    }
+                    
                     rej_num += 1.0;
                     Restore();
                 }
@@ -668,6 +703,33 @@ namespace block_placement {
                 avg_macro_blockage_penalty += macro_blockage_penalty_;
             }
             
+            // update action probability
+            if(resize_accept_ + resize_reject_ > 0.0) 
+                resize_accept_rate_ = resize_accept_ / (resize_accept_ + resize_reject_);
+            else
+                resize_accept_rate_ = 0.0;
+
+            if(pos_swap_accept_ + pos_swap_reject_ > 0.0)
+                pos_swap_accept_rate_  = pos_swap_accept_ / (pos_swap_accept_ + pos_swap_reject_);
+            else
+                pos_swap_accept_rate_ = 0.0;
+
+            if(neg_swap_accept_ + neg_swap_reject_ > 0.0)
+                neg_swap_accept_rate_ = neg_swap_accept_ / (neg_swap_accept_ + neg_swap_reject_);
+            else
+                neg_swap_accept_rate_ = 0.0;
+
+            if(double_swap_accept_ + double_swap_reject_ > 0.0)
+                double_swap_accept_rate_ = double_swap_accept_ / (double_swap_accept_ + double_swap_reject_);
+            else
+                double_swap_accept_rate_ = 0.0;
+
+            float accept_rate_sum = resize_accept_rate_ + pos_swap_accept_rate_ + neg_swap_accept_rate_ + double_swap_accept_rate_;
+            resize_prob_ = resize_accept_rate_ / accept_rate_sum;
+            pos_swap_prob_ = pos_swap_accept_rate / accept_rate_sum;
+            neg_swap_prob_ = neg_swap_accept_rate / accept_rate_sum;
+            double_swap_prob_ = double_swap_accept_rate / accept_rate_sum;
+
             UpdateWeight(avg_area, avg_wirelength, avg_outline_penalty, avg_boundary_penalty, avg_macro_blockage_penalty);
             //cout << "step:  " << step << "  T:  " << T << " cost:  " << cost << endl;
             
