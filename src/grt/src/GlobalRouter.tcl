@@ -193,16 +193,17 @@ proc set_global_routing_random { args } {
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
-                                  [-overflow_iterations iterations] \
+                                  [-congestion_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
+                                  [-overflow_iterations iterations] \
                                   [-allow_overflow]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -verbose \ 
-          -overflow_iterations -grid_origin
+          -congestion_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow}
 
@@ -233,12 +234,19 @@ proc global_route { args } {
     grt::set_grid_origin 0 0
   }
 
-  if { [info exists keys(-overflow_iterations) ] } {
-    set iterations $keys(-overflow_iterations)
-    sta::check_positive_integer "-overflow_iterations" $iterations
+  if { [info exists keys(-congestion_iterations) ] } {
+    set iterations $keys(-congestion_iterations)
+    sta::check_positive_integer "-congestion_iterations" $iterations
     grt::set_overflow_iterations $iterations
   } else {
     grt::set_overflow_iterations 50
+  }
+
+  if { [info exists keys(-overflow_iterations)] } {
+    utl::war GRT 147 "-overflow_iterations is deprecated. Use -congestion_iterations."
+    set iterations $keys(-congestion_iterations)
+    sta::check_positive_integer "-congestion_iterations" $iterations
+    grt::set_overflow_iterations $iterations
   }
 
   if { [info exists flags(-allow_overflow)] } {

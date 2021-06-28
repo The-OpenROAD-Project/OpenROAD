@@ -809,7 +809,7 @@ Global router options and commands are described below.
 ```
 global_route [-guide_file out_file] \
              [-verbose verbose] \
-             [-overflow_iterations iterations] \
+             [-congestion_iterations iterations] \
              [-grid_origin {x y}] \
              [-allow_congestion]
 
@@ -817,7 +817,7 @@ global_route [-guide_file out_file] \
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
-- **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
+- **congestion_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -congestion_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
 - **allow_congestion**: Allow global routing results with congestion
 
