@@ -193,17 +193,20 @@ proc set_global_routing_random { args } {
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
-                                  [-overflow_iterations iterations] \
+                                  [-congestion_iterations iterations] \
                                   [-grid_origin origin] \
+                                  [-allow_congestion] \
+                                  [-overflow_iterations iterations] \
                                   [-allow_overflow]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -verbose \ 
+          -congestion_iterations \
           -overflow_iterations -grid_origin
          } \
-    flags {-allow_overflow}
+    flags {-allow_congestion -allow_overflow}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "missing dbTech."
@@ -232,15 +235,27 @@ proc global_route { args } {
     grt::set_grid_origin 0 0
   }
 
-  if { [info exists keys(-overflow_iterations) ] } {
-    set iterations $keys(-overflow_iterations)
-    sta::check_positive_integer "-overflow_iterations" $iterations
+  if { [info exists keys(-congestion_iterations) ] } {
+    set iterations $keys(-congestion_iterations)
+    sta::check_positive_integer "-congestion_iterations" $iterations
     grt::set_overflow_iterations $iterations
   } else {
     grt::set_overflow_iterations 50
   }
 
-  grt::set_allow_overflow [info exists flags(-allow_overflow)]
+  if { [info exists keys(-overflow_iterations)] } {
+    utl::war GRT 147 "-overflow_iterations is deprecated. Use -congestion_iterations."
+    set iterations $keys(-overflow_iterations)
+    sta::check_positive_integer "-overflow_iterations" $iterations
+    grt::set_overflow_iterations $iterations
+  }
+
+  if { [info exists flags(-allow_overflow)] } {
+    utl::warn GRT 146 "-allow_overflow is deprecated. Use -allow_congestion."
+  }
+
+  set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
+  grt::set_allow_congestion $allow_congestion
 
   grt::clear
   grt::run

@@ -541,7 +541,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_result = BIG_INT;
       for (i = treenodes[n2a].topL; i >= treenodes[n2a].botL; i--) {
         if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -551,7 +551,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
         if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -656,7 +656,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_result = BIG_INT;
       for (i = treenodes[n1a].topL; i >= treenodes[n1a].botL; i--) {
         if (gridD[i][k] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][0];
           endLayer = i;
         }
@@ -667,7 +667,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
         if (gridD[i][k] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][k];
           endLayer = i;
         }
@@ -1331,6 +1331,36 @@ void checkUsage()
   }
   if (verbose > 1) {
     logger->report("Usage checked");
+  }
+}
+
+void check2DEdgesUsage()
+{
+  int max_h_edge_usage = max_usage_multiplier * hCapacity;
+  int max_v_edge_usage = max_usage_multiplier * vCapacity;
+
+  // check horizontal edges
+  for (int i = 0; i < yGrid; i++) {
+    for (int j = 0; j < xGrid - 1; j++) {
+      int grid = i * (xGrid - 1) + j;
+      if (h_edges[grid].usage >= max_h_edge_usage) {
+        logger->error(GRT,
+                      228,
+                      "Horizontal edge usage exceeds the maximum allowed.");
+      }
+    }
+  }
+
+  // check vertical edges
+  for (int i = 0; i < yGrid - 1; i++) {
+    for (int j = 0; j < xGrid; j++) {
+      int grid = i * xGrid + j;
+      if (v_edges[grid].usage >= max_v_edge_usage) {
+        logger->error(GRT,
+                      229,
+                      "Vertical edge usage exceeds the maximum allowed.");
+      }
+    }
   }
 }
 
