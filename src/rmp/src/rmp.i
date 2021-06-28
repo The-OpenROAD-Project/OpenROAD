@@ -78,10 +78,10 @@ void set_tiehi_port_cmd(LibertyPort* tieHiport)
 }
 
 void
-restructure_cmd(char* target, float slack_threshold, int depth_threshold)
+restructure_cmd(char* liberty_file_name, char* target, float slack_threshold, int depth_threshold)
 {
   getRestructure()->setMode(target);
-  getRestructure()->run(slack_threshold, depth_threshold);
+  getRestructure()->run(liberty_file_name, slack_threshold, depth_threshold);
 }
 
 // Locally Exposed for testing only..

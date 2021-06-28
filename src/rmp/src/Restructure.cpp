@@ -86,7 +86,7 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::run(float slack_threshold, unsigned max_depth)
+void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned max_depth)
 {
   reset();
   block_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
@@ -96,11 +96,8 @@ void Restructure::run(float slack_threshold, unsigned max_depth)
   sta::Slack worst_slack = slack_threshold;
 
   open_sta_ = ord::OpenRoad::openRoad()->getSta();
-  sta::LibertyLibraryIterator *lib_iter = open_sta_->getDbNetwork()->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary *lib = lib_iter->next();
-    lib_file_names_.emplace_back(lib->filename());
-  }
+  
+  lib_file_names_.emplace_back(liberty_file_name);
 
   removeConstCells();
 

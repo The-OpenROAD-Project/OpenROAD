@@ -52,13 +52,14 @@ sta::define_cmd_args "restructure" { \
                                       [-slack_threshold slack]\
                                       [-depth_threshold depth]\
                                       [-target area|timing]\
+                                      [-liberty_file liberty_file]\
                                       [-tielo_port tielow_port]\
                                       [-tiehi_port tiehigh_port]
                                     }
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
-    keys {-slack_threshold -depth_threshold -target -abc_logfile -tielo_port -tiehi_port} flags {}
+    keys {-slack_threshold -depth_threshold -target -liberty_file -abc_logfile -tielo_port -tiehi_port} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
@@ -80,6 +81,11 @@ proc restructure { args } {
     rmp::set_logfile_cmd $keys(-abc_logfile)
   }
 
+  if { [info exists keys(-liberty_file)] } {
+    set liberty_file_name $keys(-liberty_file)
+  } else {
+    utl::error RMP 12 "Missing argument -liberty_file"
+  }
 
   if { [info exists keys(-tielo_port)] } {
       set loport $keys(-tielo_port)
@@ -113,5 +119,5 @@ proc restructure { args } {
       utl::warn RMP 33 "-tiehi_port not specified"
   }
 
-  rmp::restructure_cmd $target $slack_threshold_value $depth_threshold_value
+  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value
 }

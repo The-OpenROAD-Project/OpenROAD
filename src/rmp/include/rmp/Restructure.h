@@ -83,7 +83,7 @@ class Restructure
 
   void init(ord::OpenRoad* openroad);
   void reset();
-  void run(float slack_threshold, unsigned max_depth);
+  void run(char* liberty_file_name, float slack_threshold, unsigned max_depth);
 
   void setMode(const char* mode_name);
   void setLogfile(const char* file_name);
