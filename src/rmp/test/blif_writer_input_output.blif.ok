@@ -1,0 +1,9 @@
+.model tmp_circuit
+.inputs n10 n11 n12 n9
+.outputs n15
+
+
+.gate AND2_X1 A1=n9 A2=n10 ZN=n13
+.gate AND2_X1 A1=n11 A2=n12 ZN=n14
+.gate AND2_X1 A1=n13 A2=n14 ZN=n15
+.end

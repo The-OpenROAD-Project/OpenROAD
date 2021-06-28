@@ -1,0 +1,10 @@
+.model tmp_circuit
+.inputs n1 n2 n3 n4
+.outputs n8
+.clock clk
+
+.gate AND2_X1 A1=n1 A2=n2 ZN=n5
+.gate AND2_X1 A1=n3 A2=n4 ZN=n6
+.mlatch DFF_X1 D=n7 Q=n8 QN=dummy_0 clk
+.gate OR2_X1 A1=n5 A2=n6 ZN=n7
+.end

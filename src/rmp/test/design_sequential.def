@@ -10,6 +10,7 @@ DIEAREA ( 0 0 ) ( 0 0 ) ;
 COMPONENTS 12 ;
 - _i1_ AND2_X1 ;
 - _i2_ AND2_X1 ;
+- _r1_ DFF_X1 ;
 - _i3_ OR2_X1 ;
 END COMPONENTS
 
@@ -18,17 +19,20 @@ PINS 12 ;
 - inp2 + NET n2 + DIRECTION INPUT ;
 - inp3 + NET n3 + DIRECTION INPUT ;
 - inp4 + NET n4 + DIRECTION INPUT ;
-- out1 + NET n7 + DIRECTION OUTPUT ;
+- clk + NET clk + DIRECTION INPUT ;
+- out1 + NET n8 + DIRECTION OUTPUT ;
 END PINS
 
 NETS 24 ;
+- clk ( PIN clk ) ( _r1_ CK ) + USE CLOCK ;
 - n1 ( _i1_ A1 ) ( PIN inp1 ) ;
 - n2 ( _i1_ A2 )  ( PIN inp2 ) ;
 - n3 ( _i2_ A1 ) ( PIN inp3 ) ;
 - n4 ( _i2_ A2 ) ( PIN inp4 ) ;
 - n5 ( _i1_ ZN ) ( _i3_ A1 ) ;
 - n6 ( _i2_ ZN ) ( _i3_ A2 ) ; 
-- n7 ( _i3_ ZN ) ( PIN out1 ) ;
+- n7 ( _i3_ ZN ) ( _r1_ D ) ;
+- n8 ( _r1_ Q ) ( PIN out1 ) ;
 END NETS
 
 END DESIGN

@@ -100,4 +100,8 @@ void blif_dump(Blif* blif_, const char* file_name){
   blif_->writeBlif(file_name);
 }
 
+int blif_read(Blif* blif_, const char* file_name){
+  return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
+}
+
 %}

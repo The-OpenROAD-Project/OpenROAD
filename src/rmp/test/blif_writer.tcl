@@ -10,13 +10,14 @@ set chip [$db getChip]
 set block [$chip getBlock]
 
 
-rmp::blif_add_instance $blif "_g1_"
-rmp::blif_add_instance $blif "_g2_"
+rmp::blif_add_instance $blif "_i1_"
+rmp::blif_add_instance $blif "_i2_"
+rmp::blif_add_instance $blif "_i3_"
 
 
-rmp::blif_dump $blif "./results/out.blif"
+rmp::blif_dump $blif "./results/blif_writer.blif"
 
-set isDiff [diff_files "./results/out.blif" "test_blif_writer.blif.ok"]
+set isDiff [diff_files "./results/blif_writer.blif" "blif_writer.blif.ok"]
 if {$isDiff != 0} {
     exit 1
 }

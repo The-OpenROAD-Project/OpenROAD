@@ -23,7 +23,6 @@ END PINS
 
 NETS 24 ;
 - n1 ( _i1_ A1 ) ( PIN inp1 ) ;
-- n2 ( _i1_ A2 )  ( PIN inp2 ) ;
 - n3 ( _i2_ A1 ) ( PIN inp3 ) ;
 - n4 ( _i2_ A2 ) ( PIN inp4 ) ;
 - n5 ( _i1_ ZN ) ( _i3_ A1 ) ;
