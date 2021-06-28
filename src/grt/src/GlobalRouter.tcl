@@ -203,7 +203,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -verbose \ 
-          -congestion_iterations -grid_origin
+          -congestion_iterations \
+          -overflow_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow}
 
@@ -244,8 +245,8 @@ proc global_route { args } {
 
   if { [info exists keys(-overflow_iterations)] } {
     utl::war GRT 147 "-overflow_iterations is deprecated. Use -congestion_iterations."
-    set iterations $keys(-congestion_iterations)
-    sta::check_positive_integer "-congestion_iterations" $iterations
+    set iterations $keys(-overflow_iterations)
+    sta::check_positive_integer "-overflow_iterations" $iterations
     grt::set_overflow_iterations $iterations
   }
 
