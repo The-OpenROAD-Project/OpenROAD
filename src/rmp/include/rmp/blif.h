@@ -65,10 +65,10 @@ class Blif
 {
  public:
   Blif(ord::OpenRoad* openroad,
-       std::string const0_cell_,
-       std::string const0_cell_port_,
-       std::string const1_cell_,
-       std::string const1_cell_port_);
+       const std::string& const0_cell_,
+       const std::string& const0_cell_port_,
+       const std::string& const1_cell_,
+       const std::string& const1_cell_port_);
   void setReplaceableInstances(std::set<odb::dbInst*>& insts);
   void addReplaceableInstance(odb::dbInst* inst);
   bool writeBlif(const char* file_name);

@@ -111,77 +111,82 @@ namespace rmp {
 
 BlifParser::BlifParser()
 {
-  combCount = 0;
-  flopCount = 0;
-  currentInstanceType = "";
-  currentGate = "";
+  combCount_ = 0;
+  flopCount_ = 0;
+  currentInstanceType_ = GateType::None;
+  currentGate_ = "";
 }
-void BlifParser::addInput(std::string& input)
+void BlifParser::addInput(const std::string& input)
 {
-  inputs.push_back(input);
+  inputs_.push_back(input);
 }
-void BlifParser::addOutput(std::string& output)
+void BlifParser::addOutput(const std::string& output)
 {
-  outputs.push_back(output);
+  outputs_.push_back(output);
 }
-void BlifParser::addClock(std::string& clock)
+void BlifParser::addClock(const std::string& clock)
 {
-  clocks.push_back(clock);
+  clocks_.push_back(clock);
 }
-void BlifParser::addNewInstanceType(std::string& type)
+void BlifParser::addNewInstanceType(const std::string& type)
 {
-  if (currentInstanceType != "") {
-    gates.push_back(
-        std::make_tuple(currentInstanceType, currentGate, currentConnections));
+  if (currentInstanceType_ != GateType::None) {
+    gates_.push_back(
+        Gate(currentInstanceType_, currentGate_, currentConnections_));
   }
-  currentInstanceType = type;
-  if (currentInstanceType == "mlatch")
-    flopCount++;
-  else if (currentInstanceType == "gate")
-    combCount++;
-  currentConnections.clear();
+  currentInstanceType_
+      = (type == "mlatch")
+            ? GateType::Mlatch
+            : ((type == "gate") ? GateType::Gate : GateType::None);
+  if (currentInstanceType_ == GateType::Mlatch)
+    flopCount_++;
+  else if (currentInstanceType_ == GateType::Gate)
+    combCount_++;
+  currentConnections_.clear();
 }
-void BlifParser::addNewGate(std::string& cell_name)
+void BlifParser::addNewGate(const std::string& cell_name)
 {
-  currentGate = cell_name;
+  currentGate_ = cell_name;
 }
-void BlifParser::addConnection(std::string& connection)
+void BlifParser::addConnection(const std::string& connection)
 {
-  currentConnections.push_back(connection);
+  currentConnections_.push_back(connection);
 }
 void BlifParser::endParser()
 {
-  if (currentInstanceType != "") {
-    gates.push_back(
-        std::make_tuple(currentInstanceType, currentGate, currentConnections));
+  if (currentInstanceType_ != GateType::None) {
+    gates_.push_back(
+        Gate(currentInstanceType_, currentGate_, currentConnections_));
   }
 }
 
-std::vector<std::string>& BlifParser::getInputs()
+const std::vector<std::string>& BlifParser::getInputs() const
 {
-  return inputs;
+  return inputs_;
 }
-std::vector<std::string>& BlifParser::getOutputs()
+const std::vector<std::string>& BlifParser::getOutputs() const
 {
-  return outputs;
+  return outputs_;
 }
-std::vector<std::string>& BlifParser::getClocks()
+const std::vector<std::string>& BlifParser::getClocks() const
 {
-  return clocks;
+  return clocks_;
 }
-std::vector<gate_>& BlifParser::getGates()
+const std::vector<Gate>& BlifParser::getGates() const
 {
-  return gates;
+  return gates_;
 }
-int BlifParser::getCombGateCount()
+int BlifParser::getCombGateCount() const
 {
-  return combCount;
+  return combCount_;
 }
-int BlifParser::getFlopCount()
+int BlifParser::getFlopCount() const
 {
-  return flopCount;
+  return flopCount_;
 }
 
+// Parsing blif format according to the following spec:
+// https://course.ece.cmu.edu/~ee760/760docs/blif.pdf
 bool BlifParser::parse(std::string& file_contents)
 {
   return blif_parser::parse(file_contents.begin(), file_contents.end(), this);
