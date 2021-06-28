@@ -98,7 +98,7 @@ write_def $global_place_def
 
 estimate_parasitics -placement
 
-repair_design -max_slew_margin $max_slew_limit -max_cap_margin $max_cap_limit
+repair_design -max_slew_margin $max_slew_margin -max_cap_margin $max_cap_margin
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
