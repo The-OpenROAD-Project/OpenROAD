@@ -64,7 +64,7 @@ namespace rmp {
 class Blif
 {
  public:
-  Blif(ord::OpenRoad* openroad,
+  Blif(Logger* logger, sta::dbSta* sta,
        const std::string& const0_cell_,
        const std::string& const0_cell_port_,
        const std::string& const1_cell_,
@@ -77,7 +77,6 @@ class Blif
 
  private:
   std::set<odb::dbInst*> instances_to_optimize;
-  ord::OpenRoad* openroad_;
   Logger* logger_;
   sta::dbSta* open_sta_ = nullptr;
   std::string const0_cell_;

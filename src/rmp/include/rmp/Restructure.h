@@ -39,6 +39,7 @@
 #include <string>
 
 #include "db_sta/dbSta.hh"
+#include "rsz/Resizer.hh"
 
 namespace ord {
 class OpenRoad;
@@ -114,6 +115,7 @@ class Restructure
   // db vars
   sta::dbSta* open_sta_;
   odb::dbDatabase* db_;
+  rsz::Resizer* resizer_;
   odb::dbBlock* block_ = nullptr;
 
   std::string input_blif_file_name_;

@@ -42,7 +42,6 @@
 #include "opendb/db.h"
 #include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
-#include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -63,12 +62,15 @@ namespace rmp {
 void Restructure::init(ord::OpenRoad* openroad)
 {
   logger_ = openroad->getLogger();
+  db_ = openroad->getDb();
+  open_sta_ = openroad->getSta();
+  resizer_ = openroad->getResizer();
   makeComponents();
 }
 
 void Restructure::makeComponents()
 {
-  db_ = ord::OpenRoad::openRoad()->getDb();
+  
 }
 
 void Restructure::deleteComponents()
@@ -89,14 +91,12 @@ void Restructure::reset()
 void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned max_depth)
 {
   reset();
-  block_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  block_ = db_->getChip()->getBlock();
   if (!block_)
     return;
 
   sta::Slack worst_slack = slack_threshold;
 
-  open_sta_ = ord::OpenRoad::openRoad()->getSta();
-  
   lib_file_names_.emplace_back(liberty_file_name);
 
   removeConstCells();
@@ -112,7 +112,6 @@ void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned m
 
 void Restructure::getBlob(unsigned max_depth)
 {
-  rsz::Resizer* resizer = ord::OpenRoad::openRoad()->getResizer();
   open_sta_->ensureGraph();
   open_sta_->ensureLevelized();
   open_sta_->searchPreamble();
@@ -121,7 +120,7 @@ void Restructure::getBlob(unsigned max_depth)
 
   getEndPoints(ends, opt_mode_ <= Mode::AREA_3, max_depth);
   if (ends.size()) {
-    sta::PinSet fanin_fanouts = resizer->findFaninFanouts(&ends);
+    sta::PinSet fanin_fanouts = resizer_->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
     logger_->report("Found {} pins in extracted logic", fanin_fanouts.size());
     for (sta::Pin* pin : fanin_fanouts) {
@@ -148,7 +147,7 @@ void Restructure::runABC()
              "Constants before remap {}",
              countConsts(block_));
 
-  Blif blif_(ord::OpenRoad::openRoad(), locell_, loport_, hicell_, hiport_);
+  Blif blif_(logger_, open_sta_, locell_, loport_, hicell_, hiport_);
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str());
   debugPrint(
@@ -214,14 +213,8 @@ void Restructure::runABC()
 
 void Restructure::postABC(float worst_slack)
 {
-  rsz::Resizer* resizer = ord::OpenRoad::openRoad()->getResizer();
-
   // Leave the parasitics up to date.
-  resizer->estimateWireParasitics();
-  open_sta_->ensureGraph();
-  open_sta_->ensureLevelized();
-  open_sta_->searchPreamble();
-
+  resizer_->estimateWireParasitics();
 }
 void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,

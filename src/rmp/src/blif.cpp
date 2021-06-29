@@ -60,7 +60,7 @@ using utl::RMP;
 
 namespace rmp {
 
-Blif::Blif(ord::OpenRoad* openroad,
+Blif::Blif(Logger* logger, sta::dbSta* sta,
            const std::string& const0_cell,
            const std::string& const0_cell_port,
            const std::string& const1_cell,
@@ -70,9 +70,8 @@ Blif::Blif(ord::OpenRoad* openroad,
       const1_cell_(const1_cell),
       const1_cell_port_(const1_cell_port)
 {
-  openroad_ = openroad;
-  logger_ = openroad->getLogger();
-  open_sta_ = openroad_->getSta();
+  logger_ = logger;
+  open_sta_ = sta;
 }
 
 void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)

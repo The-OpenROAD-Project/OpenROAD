@@ -86,7 +86,7 @@ restructure_cmd(char* liberty_file_name, char* target, float slack_threshold, in
 
 // Locally Exposed for testing only..
 Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport){
-  return new rmp::Blif(getOpenRoad(), locell, loport, hicell, hiport);
+  return new rmp::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport);
 }
 
 void blif_add_instance(Blif* blif_, const char* inst_){
