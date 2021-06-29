@@ -46,21 +46,21 @@ class Cluster
   int getId() const { return id_; }
   bool getType() const { return type_; }
   sta::Instance* getTopInstance() const { return top_inst_; }
-  const std::string& getName() const { return name_; }
-  const std::vector<std::string>& getLogicalModuleVec() const
+  std::string getName() const { return name_; }
+  std::vector<std::string> getLogicalModuleVec() const
   {
     return logical_module_vec_;
   }
-  const std::vector<sta::Instance*>& getInsts() const { return inst_vec_; }
-  const std::vector<sta::Instance*>& getMacros() const { return macro_vec_; }
+  std::vector<sta::Instance*> getInsts() const { return inst_vec_; }
+  std::vector<sta::Instance*> getMacros() const { return macro_vec_; }
   unsigned int getNumMacro() const { return macro_vec_.size(); }
   unsigned int getNumInst() const { return inst_vec_.size(); }
-  const std::unordered_map<int, unsigned int>& getInputConnections() const
+  std::unordered_map<int, unsigned int> getInputConnections() const
   {
     return input_connection_map_;
   }
 
-  const std::unordered_map<int, unsigned int>& getOutputConnections() const
+  std::unordered_map<int, unsigned int> getOutputConnections() const
   {
     return output_connection_map_;
   }
