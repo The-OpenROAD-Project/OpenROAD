@@ -33,9 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "MakePartitionMgr.h"
-
-#include "PartitionMgr.h"
+#include "par/MakePartitionMgr.h"
+#include "par/PartitionMgr.h"
 #include "opendb/db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -62,10 +61,10 @@ void initPartitionMgr(OpenRoad* openroad)
   Partitionmgr_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::PartitionMgr_tcl_inits);
 
-  unsigned dbId = openroad->getDb()->getId();
   par::PartitionMgr* kernel = openroad->getPartitionMgr();
 
-  kernel->init(dbId, openroad->getLogger());
+  kernel->init(
+      openroad->getDb(), openroad->getVerilogNetwork(), openroad->getLogger());
 };
 
 void deletePartitionMgr(par::PartitionMgr* partitionmgr)

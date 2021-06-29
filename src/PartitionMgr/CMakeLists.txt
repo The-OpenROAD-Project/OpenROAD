@@ -115,7 +115,6 @@ endif (LOAD_PARTITIONERS)
 target_include_directories(PartitionMgr
   PUBLIC
     include
-    src # Yuck!
 )
 
 target_link_libraries(PartitionMgr

@@ -33,10 +33,15 @@
 
 include("openroad")
 
-add_library(mpl2)
+swig_lib(NAME      mpl2
+         NAMESPACE mpl2
+         I_FILE    src/mpl.i
+         SCRIPTS   src/mpl.tcl
+)
 
 target_sources(mpl2
   PRIVATE
+    src/MakeMacroPlacer.cpp
     src/rtl_mp.cpp
     src/pin_alignment.cpp
     src/block_placement.cpp

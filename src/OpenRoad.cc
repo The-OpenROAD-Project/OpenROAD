@@ -70,6 +70,7 @@
 #include "dpl/MakeOpendp.h"
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
+#include "mpl2/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
@@ -78,10 +79,8 @@
 #include "triton_route/MakeTritonRoute.h"
 #include "psm/MakePDNSim.hh"
 #include "ant/MakeAntennaChecker.hh"
-#include "PartitionMgr/src/MakePartitionMgr.h"
-#include "par/autocluster.h"
+#include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
-#include "mpl2/rtl_mp.h"
 #include "pdr/MakePdrev.h"
 
 namespace sta {
@@ -128,6 +127,7 @@ OpenRoad::OpenRoad()
     opendp_(nullptr),
     finale_(nullptr),
     macro_placer_(nullptr),
+    macro_placer2_(nullptr),
     fastRoute_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
@@ -154,6 +154,7 @@ OpenRoad::~OpenRoad()
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
+  deleteMacroPlacer2(macro_placer2_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -214,6 +215,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
+  macro_placer2_ = makeMacroPlacer2();
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
@@ -243,6 +245,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTritonCts(this);
   initTapcell(this);
   initMacroPlacer(this);
+  initMacroPlacer2(this);
   initOpenRCX(this);
   initTritonRoute(this);
   initPDNSim(this);
@@ -397,28 +400,6 @@ OpenRoad::linkDesign(const char *design_name)
     observer->postReadDb(db_);
   }
 }
-
-void 
-OpenRoad::partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
-                          unsigned int max_num_inst,  unsigned int min_num_inst,
-                          unsigned int net_threshold, unsigned int virtual_weight,
-                          unsigned int ignore_net_threshold,
-                          const char* file_name
-                         ) 
-{
-    dbPartitionDesign(verilog_network_, db_, max_num_macro, min_num_macro,
-                      max_num_inst, min_num_inst, net_threshold, virtual_weight,
-                      ignore_net_threshold, file_name, logger_);
-}
-
-
-bool
-OpenRoad::rtlMacroPlacer(const char* config_file) 
-{
-    return RTLMP(config_file, logger_);
-}
-
-
 
 void
 OpenRoad::writeVerilog(const char *filename,

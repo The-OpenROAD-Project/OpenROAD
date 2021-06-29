@@ -35,10 +35,14 @@
 
 #pragma once
 
-#include "HypergraphDecomposition.h"
-
+#include <map>
+#include <memory>
 #include <random>
 #include <set>
+
+namespace ord {
+class dbVerilogNetwork;
+}
 
 namespace odb {
 class dbDatabase;
@@ -61,6 +65,17 @@ class Logger;
 using utl::Logger;
 
 namespace par {
+
+class Graph;
+class Hypergraph;
+
+enum GraphType : uint8_t
+{
+  CLIQUE,
+  HYBRID,
+  STAR,
+  HYPERGRAPH
+};
 
 class PartOptions
 {
@@ -232,7 +247,7 @@ class PartSolutions
 
 class PartitionMgr
 {
- protected:
+ private:
   odb::dbBlock* getDbBlock() const;
   unsigned getNumPartitioningResults() const { return _results.size(); }
   unsigned getNumClusteringResults() const { return _clusResults.size(); }
@@ -240,17 +255,21 @@ class PartitionMgr
   PartSolutions& getClusteringResult(unsigned id) { return _clusResults[id]; }
 
   PartOptions _options;
-  unsigned _dbId = 0;
+  odb::dbDatabase* _db = nullptr;
+  ord::dbVerilogNetwork* _network = nullptr;
   unsigned _bestId = 0;
-  Logger * _logger;
-  Graph _graph;
-  Hypergraph _hypergraph;
+  Logger* _logger;
+  std::unique_ptr<Graph> _graph;
+  std::unique_ptr<Hypergraph> _hypergraph;
   std::vector<PartSolutions> _results;
   std::vector<PartSolutions> _clusResults;
 
  public:
-  PartitionMgr() = default;
-  void init(unsigned dbId, Logger* logger);
+  PartitionMgr();
+  ~PartitionMgr();
+  void init(odb::dbDatabase* db,
+            ord::dbVerilogNetwork* network,
+            Logger* logger);
   void runPartitioning();
   void runClustering();
   void run3PClustering();
@@ -284,16 +303,28 @@ class PartitionMgr
   void readPartitioningFile(std::string filename);
   void reportGraph();
 
-  void writePartitionVerilog(const char* path, const char* port_prefix, const char* module_suffix);
+  void writePartitionVerilog(const char* path,
+                             const char* port_prefix,
+                             const char* module_suffix);
+
+  void partitionDesign(unsigned int max_num_macro,
+                       unsigned int min_num_macro,
+                       unsigned int max_num_inst,
+                       unsigned int min_num_inst,
+                       unsigned int net_threshold,
+                       unsigned int ignore_net_threshold,
+                       unsigned int virtual_weight,
+                       const char* file_name);
 
  private:
-  sta::Instance* buildPartitionedInstance(const char* name,
-                                          const char* port_prefix,
-                                          sta::Library* library,
-                                          sta::NetworkReader* network,
-                                          sta::Instance* parent,
-                                          std::set<sta::Instance*>* insts,
-                                          std::map<sta::Net*, sta::Port*>* port_map);
+  sta::Instance* buildPartitionedInstance(
+      const char* name,
+      const char* port_prefix,
+      sta::Library* library,
+      sta::NetworkReader* network,
+      sta::Instance* parent,
+      std::set<sta::Instance*>* insts,
+      std::map<sta::Net*, sta::Port*>* port_map);
 };
 
 }  // namespace par

@@ -1,5 +1,5 @@
 #include "opendb/db.h"
-#include "par/autocluster.h"
+#include "autocluster.h"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #ifdef PARTITIONERS
@@ -1682,37 +1682,5 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     delete cluster_list_[i];
   }
 }
+
 }  // namespace par
-
-namespace ord {
-
-void dbPartitionDesign(dbVerilogNetwork* network,
-                       odb::dbDatabase* db,
-                       unsigned int max_num_macro,
-                       unsigned int min_num_macro,
-                       unsigned int max_num_inst,
-                       unsigned int min_num_inst,
-                       unsigned int net_threshold,
-                       unsigned int ignore_net_threshold,
-                       unsigned int virtual_weight,
-                       const char* file_name,
-                       utl::Logger* logger)
-{
-#ifndef PARTITIONERS
-  logger->error(PAR,
-                404,
-                "dbPartitionDesign can't run because OpenROAD wasn't compiled "
-                "with LOAD_PARTITIONERS");
-#endif
-  auto engine = new par::AutoClusterMgr(network, db, logger);
-  engine->partitionDesign(max_num_macro,
-                          min_num_macro,
-                          max_num_inst,
-                          min_num_inst,
-                          net_threshold,
-                          ignore_net_threshold,
-                          virtual_weight,
-                          file_name);
-}
-
-}  // namespace ord

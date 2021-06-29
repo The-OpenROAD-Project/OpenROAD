@@ -31,30 +31,29 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+%{
+#include "mpl2/rtl_mp.h"
 
-#include <algorithm>
-#include <iostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <vector>
+namespace ord {
+// Defined in OpenRoad.i
+mpl::MacroPlacer2*
+getMacroPlacer2();
+}
 
-#include "mpl2/block_placement.h"
-#include "mpl2/shape_engine.h"
-#include "utl/Logger.h"
+using ord::getMacroPlacer2;
+%}
 
-namespace mpl {
+%include "../../Exception.i"
 
-class MacroPlacer2
-{
- public:
-  void init(utl::Logger* logger);
-  bool place(const char* config_file);
+%inline %{
 
- private:
-  utl::Logger* logger_ = nullptr;
-};
+namespace mpl2 {
 
-bool rtl_macro_placer(const char* config_file, utl::Logger* logger);
-}  // namespace mpl
+bool rtl_macro_placer_cmd(const char* config_file) {
+  auto macro_placer = getMacroPlacer2();
+  return macro_placer->place(config_file);
+}
+
+} // namespace
+
+%} // inline

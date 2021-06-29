@@ -565,3 +565,58 @@ proc report_partition_graph { args } {
 
   par::report_graph
 }
+
+sta::define_cmd_args "partition_design" { [-max_num_macro max_num_macro] \
+                                          [-min_num_macro min_num_macro] \
+                                          [-max_num_inst max_num_inst] \
+                                          [-min_num_inst min_num_inst] \
+                                          [-net_threshold net_threshold] \
+                                          [-virtual_weight virtual_weight] \
+                                          [-ignore_net_threshold ignore_net_threshold] \
+                                          -report_file report_file \
+                                        }
+proc partition_design { args } {
+    sta::parse_key_args "partition_design" args keys {-max_num_macro -min_num_macro
+                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold -report_file} flags {  }
+    if { ![info exists keys(-report_file)] } {
+        utl::error PAR 70 "missing mandatory argument -report_file"
+    }
+    set report_file $keys(-report_file)
+    set max_num_macro 10
+    set min_num_macro 2
+    set max_num_inst 0
+    set min_num_inst 0
+    set net_threshold 0
+    set virtual_weight 50
+    set ignore_net_threshold 0
+
+    if { [info exists keys(-max_num_macro)] } {
+        set max_num_macro $keys(-max_num_macro)
+    }
+
+    if { [info exists keys(-min_num_macro)] } {
+        set min_num_macro $keys(-min_num_macro)
+    }
+
+    if { [info exists keys(-max_num_inst)] } {
+        set max_num_inst $keys(-max_num_inst)
+    }
+
+    if { [info exists keys(-min_num_inst)] } {
+        set min_num_inst $keys(-min_num_inst)
+    }
+
+    if { [info exists keys(-net_threshold)] } {
+        set net_threshold $keys(-net_threshold)
+    }
+
+    if { [info exists keys(-virtual_weight)] } {
+        set virtual_weight $keys(-virtual_weight)
+    }
+
+    if { [info exists keys(-ignore_net_threshold)] } {
+        set net_threshold $keys(-ignore_net_threshold)
+    }
+
+    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $report_file
+}

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2019-2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,30 +31,40 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "mpl2/MakeMacroPlacer.h"
 
-#include <algorithm>
-#include <iostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <tcl.h>
 
-#include "mpl2/block_placement.h"
-#include "mpl2/shape_engine.h"
-#include "utl/Logger.h"
+#include "mpl2/rtl_mp.h"
+#include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
 
-namespace mpl {
+namespace sta {
+extern const char* mpl2_tcl_inits[];
+}
 
-class MacroPlacer2
+extern "C" {
+extern int Mpl2_Init(Tcl_Interp* interp);
+}
+
+namespace ord {
+
+mpl::MacroPlacer2* makeMacroPlacer2()
 {
- public:
-  void init(utl::Logger* logger);
-  bool place(const char* config_file);
+  return new mpl::MacroPlacer2;
+}
 
- private:
-  utl::Logger* logger_ = nullptr;
-};
+void initMacroPlacer2(OpenRoad* openroad)
+{
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  Mpl2_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::mpl2_tcl_inits);
+  openroad->getMacroPlacer2()->init(openroad->getLogger());
+}
 
-bool rtl_macro_placer(const char* config_file, utl::Logger* logger);
-}  // namespace mpl
+void deleteMacroPlacer2(mpl::MacroPlacer2* macro_placer)
+{
+  delete macro_placer;
+}
+
+}  // namespace ord

@@ -89,6 +89,7 @@ class Finale;
 
 namespace mpl {
 class MacroPlacer;
+class MacroPlacer2;
 }
 
 namespace gpl {
@@ -153,6 +154,7 @@ public:
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
+  mpl::MacroPlacer2 *getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -184,15 +186,6 @@ public:
   
   void writeCdl(const char *filename, bool includeFillers);
 
-  void partitionDesign(unsigned int max_num_macro, unsigned int min_num_macro,
-                       unsigned int max_num_inst,  unsigned int min_num_inst,
-                       unsigned int net_threshold, unsigned int virtual_weight,
-                       unsigned int ignore_net_threshold,
-                       const char* file_name);
-
-  bool rtlMacroPlacer(const char* config_file);
-  
-  
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
   void writeVerilog(const char *filename,
@@ -248,6 +241,7 @@ private:
   dpl::Opendp *opendp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
+  mpl::MacroPlacer2 *macro_placer2_;
   grt::GlobalRouter *fastRoute_;
   cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;

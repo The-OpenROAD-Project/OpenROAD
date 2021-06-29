@@ -33,28 +33,18 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "mpl2/block_placement.h"
-#include "mpl2/shape_engine.h"
-#include "utl/Logger.h"
-
 namespace mpl {
+class MacroPlacer2;
+}
 
-class MacroPlacer2
-{
- public:
-  void init(utl::Logger* logger);
-  bool place(const char* config_file);
+namespace ord {
 
- private:
-  utl::Logger* logger_ = nullptr;
-};
+class OpenRoad;
 
-bool rtl_macro_placer(const char* config_file, utl::Logger* logger);
-}  // namespace mpl
+mpl::MacroPlacer2* makeMacroPlacer2();
+
+void initMacroPlacer2(OpenRoad* openroad);
+
+void deleteMacroPlacer2(mpl::MacroPlacer2* macro_placer);
+
+}  // namespace ord

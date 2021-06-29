@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-#include "PartitionMgr.h"
+#include "par/PartitionMgr.h"
 #include "ord/OpenRoad.hh"
 #include <set>
 
@@ -219,6 +219,20 @@ void report_graph() {
 void write_partition_verilog(int id, const char* portprefix, const char* module_suffix, const char* path) {
   write_partitioning_to_db(id);
   getPartitionMgr()->writePartitionVerilog(path, portprefix, module_suffix);
+}
+
+void
+partition_design_cmd(unsigned int max_num_macro, unsigned int min_num_macro,
+                     unsigned int max_num_inst,  unsigned int min_num_inst,
+                     unsigned int net_threshold, unsigned int virtual_weight,
+                     unsigned int ignore_net_threshold,
+                     const char* file_name)
+{
+  getPartitionMgr()->partitionDesign(max_num_macro, min_num_macro,
+                                     max_num_inst, min_num_inst,
+                                     net_threshold, virtual_weight,
+                                     ignore_net_threshold,
+                                     file_name);
 }
 
 %}

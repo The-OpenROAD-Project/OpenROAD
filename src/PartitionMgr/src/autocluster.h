@@ -279,9 +279,6 @@ class AutoClusterMgr
       std::unordered_map<int, sta::Instance*>& idx_to_inst,
       std::unordered_map<sta::Instance*, int>& inst_to_idx);
 };
-}  // namespace par
-
-namespace ord {
 
 void dbPartitionDesign(ord::dbVerilogNetwork* network,
                        odb::dbDatabase* db,
@@ -295,4 +292,4 @@ void dbPartitionDesign(ord::dbVerilogNetwork* network,
                        const char* file_name,
                        utl::Logger* logger);
 
-}
+}  // namespace par
