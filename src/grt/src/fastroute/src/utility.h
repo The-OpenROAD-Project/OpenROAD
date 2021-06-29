@@ -59,6 +59,7 @@ extern void netedgeOrderDec(int netID);
 extern void printTree2D(int netID);
 extern void finalSumCheck();
 extern void ACE();
+extern void check2DEdgesUsage();
 
 extern void newLA();
 extern void iniBDE();

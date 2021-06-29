@@ -9,4 +9,4 @@ read_def "gcd_sky130.def"
 global_route
 
 catch {repair_antennas sky130_fd_sc_hs__diode_2/DIOD} error
-
+puts $error

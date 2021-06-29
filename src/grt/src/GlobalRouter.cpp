@@ -41,6 +41,7 @@
 #include <fstream>
 #include <iostream>
 #include <istream>
+#include <random>
 #include <set>
 #include <string>
 #include <utility>
@@ -64,6 +65,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace grt {
 
@@ -86,14 +88,13 @@ void GlobalRouter::init()
   _minRoutingLayer = 1;
   _maxRoutingLayer = -1;
   _overflowIterations = 50;
-  _pdRevForHighFanout = -1;
-  _allowOverflow = false;
+  _allowCongestion = false;
   _macroExtension = 0;
   _verbose = 0;
-
-  // Clock net routing variables
-  _pdRev = 0;
-  _alpha = 0.3;
+  _alpha = 0;
+  seed_ = 0;
+  caps_perturbation_percentage_ = 0;
+  perturbation_amount_ = 1;
 }
 
 void GlobalRouter::makeComponents()
@@ -151,14 +152,10 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
     setSelectedMetal(maxRoutingLayer);
   }
 
-  if (_pdRevForHighFanout != -1) {
-    _fastRoute->setAlpha(_alpha);
-  }
-
+  _fastRoute->setAlpha(_alpha);
   _fastRoute->setVerbose(_verbose);
   _fastRoute->setOverflowIterations(_overflowIterations);
-  _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
-  _fastRoute->setAllowOverflow(_allowOverflow);
+  _fastRoute->setAllowOverflow(_allowCongestion);
 
   _block = _db->getChip()->getBlock();
   reportLayerSettings(minRoutingLayer, maxRoutingLayer);
@@ -174,6 +171,7 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
   getNetsByType(type, nets);
   initializeNets(nets);
   applyAdjustments(minRoutingLayer, maxRoutingLayer);
+  perturbCapacities();
 
   return nets;
 }
@@ -643,10 +641,11 @@ void GlobalRouter::findPins(Net* net)
   }
 }
 
-void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
+void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& root_idx)
 {
   findPins(net);
 
+  root_idx = 0;
   for (Pin& pin : net->getPins()) {
     odb::Point pinPosition = pin.getOnGridPosition();
     int topLayer = pin.getTopLayer();
@@ -677,6 +676,9 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
 
       if (!invalid) {
         pinsOnGrid.push_back(RoutePt(pinX, pinY, topLayer));
+        if (pin.isDriver()) {
+          root_idx = pinsOnGrid.size()-1;
+        }
       }
     }
   }
@@ -701,9 +703,18 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   _fastRoute->setNumberNets(validNets);
   _fastRoute->setMaxNetDegree(getMaxNetDegree());
 
+  if (seed_ != 0) {
+    std::mt19937 g;
+    g.seed(seed_);
+
+    if (nets.size() > 1) {
+      utl::shuffle(nets.begin(), nets.end(), g);
+    }
+  }
+
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1) {
+    if (pin_count > 1 && !net->isLocal()) {
       if (pin_count < minDegree) {
         minDegree = pin_count;
       }
@@ -713,28 +724,42 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       std::vector<RoutePt> pinsOnGrid;
-      findPins(net, pinsOnGrid);
+      int root_idx;
+      findPins(net, pinsOnGrid, root_idx);
 
-      if (pinsOnGrid.size() > 1) {
-        float netAlpha = _alpha;
-        if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
-          netAlpha = _netsAlpha[net->getName()];
+      // check if net is local in the global routing grid position
+      // the (x,y) pin positions here may be different from the original
+      // (x,y) pin positions because of findFakePinPosition function
+      bool on_grid_local = true;
+      RoutePt position = pinsOnGrid[0];
+      for (RoutePt& pinPos : pinsOnGrid) {
+        if (pinPos.x() != position.x() ||
+            pinPos.y() != position.y()) {
+          on_grid_local = false;
+          break;
         }
-        bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
+      }
+
+      if (pinsOnGrid.size() > 1 && !on_grid_local) {
+        float net_alpha = _alpha;
+        if (_net_alpha_map.find(net->getName()) != _net_alpha_map.end()) {
+          net_alpha = _net_alpha_map[net->getName()];
+        }
+        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int numLayers = _grid->getNumLayers();
-        std::vector<int> edgeCostsPerLayer(numLayers + 1, 1);
-        int edgeCostForNet = computeTrackConsumption(net, edgeCostsPerLayer);
+        std::vector<int> edge_cost_per_layer(numLayers + 1, 1);
+        int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
 
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
-                                       pinsOnGrid.size(),
-                                       netAlpha,
-                                       isClock,
-                                       edgeCostForNet,
-                                       edgeCostsPerLayer);
+                                       net_alpha,
+                                       is_clock,
+                                       root_idx,
+                                       edge_cost_for_net,
+                                       edge_cost_per_layer);
         for (RoutePt& pinPos : pinsOnGrid) {
-          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
+          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer()-1);
         }
       }
     }
@@ -1330,7 +1355,7 @@ void GlobalRouter::addRegionAdjustment(int minX,
 void GlobalRouter::addAlphaForNet(char* netName, float alpha)
 {
   std::string name(netName);
-  _netsAlpha[name] = alpha;
+  _net_alpha_map[name] = alpha;
 }
 
 void GlobalRouter::setVerbose(const int v)
@@ -1348,19 +1373,65 @@ void GlobalRouter::setGridOrigin(long x, long y)
   *_gridOrigin = odb::Point(x, y);
 }
 
-void GlobalRouter::setPDRevForHighFanout(int pdRevForHighFanout)
+void GlobalRouter::setAllowCongestion(bool allowCongestion)
 {
-  _pdRevForHighFanout = pdRevForHighFanout;
-}
-
-void GlobalRouter::setAllowOverflow(bool allowOverflow)
-{
-  _allowOverflow = allowOverflow;
+  _allowCongestion = allowCongestion;
 }
 
 void GlobalRouter::setMacroExtension(int macroExtension)
 {
   _macroExtension = macroExtension;
+}
+
+void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
+{
+  caps_perturbation_percentage_ = percentage;
+}
+
+void GlobalRouter::perturbCapacities()
+{
+  int xGrids = _grid->getXGrids();
+  int yGrids = _grid->getYGrids();
+
+  int num_2d_grids = xGrids*yGrids;
+  int num_perturbations = (caps_perturbation_percentage_/100)*num_2d_grids;
+
+  std::mt19937 g;
+  g.seed(seed_);
+
+  for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
+    std::uniform_int_distribution<int> uni_x(1, xGrids-1);
+    std::uniform_int_distribution<int> uni_y(1, yGrids-1);
+    std::bernoulli_distribution add_or_subtract;
+
+    for (int i = 0; i < num_perturbations; i++) {
+      int x = uni_x(g);
+      int y = uni_y(g);
+      bool subtract = add_or_subtract(g);
+      int perturbation = subtract ? -perturbation_amount_ : perturbation_amount_;
+      if (_hCapacities[layer - 1] != 0) {
+        int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1] + perturbation;
+        newCap = newCap < 0 ? 0 : newCap;
+        _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
+        int edgeCap = _fastRoute->getEdgeCapacity(
+            x - 1, y - 1, layer, x, y - 1, layer);
+        int newHCapacity = (edgeCap + perturbation);
+        newHCapacity = newHCapacity < 0 ? 0 : newHCapacity;
+        _fastRoute->addAdjustment(
+            x - 1, y - 1, layer, x, y - 1, layer, newHCapacity, subtract);
+      } else if (_vCapacities[layer - 1] != 0) {
+        int newCap = _grid->getVerticalEdgesCapacities()[layer - 1] + perturbation;
+        newCap = newCap < 0 ? 0 : newCap;
+        _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
+        int edgeCap = _fastRoute->getEdgeCapacity(
+            x - 1, y - 1, layer, x - 1, y, layer);
+        int newVCapacity = (edgeCap + perturbation);
+        newVCapacity = newVCapacity < 0 ? 0 : newVCapacity;
+        _fastRoute->addAdjustment(
+            x - 1, y - 1, layer, x - 1, y, layer, newVCapacity, subtract);
+      }
+    }
+  }
 }
 
 void GlobalRouter::writeGuides(const char* fileName)

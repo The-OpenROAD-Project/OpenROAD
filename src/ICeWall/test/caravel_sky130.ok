@@ -157,25 +157,20 @@ Checking result
 [WARNING ORD-1011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
 [INFO IFP-0001] Added 1899 rows of 7776 sites.
 [WARNING PAD-0050] Multiple nets found on VSSA in pad ring
-[INFO PAD-0053] Creating pad ring net: VSSA
 [WARNING PAD-0018] No term VSSA found on brk_vdda_0
 [WARNING PAD-0018] No term VSSA found on brk_vdda_1
 [WARNING PAD-0018] No term VSSA found on brk_vdda_2
 [WARNING PAD-0050] Multiple nets found on VCCD in pad ring
-[INFO PAD-0053] Creating pad ring net: VCCD
 [WARNING PAD-0018] No term VCCD found on brk_vccd_0
 [WARNING PAD-0018] No term VCCD found on brk_vccd_1
 [WARNING PAD-0018] No term VCCD found on brk_vccd_2
 [WARNING PAD-0050] Multiple nets found on VSSD in pad ring
-[INFO PAD-0053] Creating pad ring net: VSSD
 [WARNING PAD-0018] No term VSSD found on brk_vccd_0
 [WARNING PAD-0018] No term VSSD found on brk_vccd_1
 [WARNING PAD-0018] No term VSSD found on brk_vccd_2
 [WARNING PAD-0050] Multiple nets found on VDDA in pad ring
-[INFO PAD-0053] Creating pad ring net: VDDA
 [WARNING PAD-0018] No term VDDA found on brk_vdda_0
 [WARNING PAD-0018] No term VDDA found on brk_vdda_1
 [WARNING PAD-0018] No term VDDA found on brk_vdda_2
-Differences found at line 7.
-ROW ROW_1898 unithd 5520 5173440 N DO 7776 BY 1 STEP 460 0 ;
-ROW ROW_1898 unithd 5520 5173440 FS DO 7776 BY 1 STEP 460 0 ;
+[INFO PAD-0053] Creating pad ring nets: VSSA, VCCD, VSSD, VDDA
+No differences found.

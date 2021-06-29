@@ -97,4 +97,16 @@ std::string Pin::getName() const
     return getITermName(_iterm);
 }
 
+bool Pin::isDriver()
+{
+  if (_isPort) {
+    return (_bterm->getIoType() == odb::dbIoType::INPUT);
+  } else {
+    odb::dbNet* db_net = _iterm->getNet();
+    odb::dbITerm* driver = db_net->getFirstOutput();
+    
+    return (driver == _iterm);
+  }
+}
+
 }  // namespace grt

@@ -97,7 +97,7 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_alpha(float alpha)
+set_routing_alpha_cmd(float alpha)
 {
   getGlobalRouter()->setAlpha(alpha);
 }
@@ -127,15 +127,9 @@ set_grid_origin(long x, long y)
 }
 
 void
-set_pdrev_for_high_fanout(int pdRevForHighFanout)
+set_allow_congestion(bool allowCongestion)
 {
-  getGlobalRouter()->setPDRevForHighFanout(pdRevForHighFanout);
-}
-
-void
-set_allow_overflow(bool allowOverflow)
-{
-  getGlobalRouter()->setAllowOverflow(allowOverflow);
+  getGlobalRouter()->setAllowCongestion(allowCongestion);
 }
 
 void
@@ -149,6 +143,24 @@ void
 set_macro_extension(int macroExtension)
 {
   getGlobalRouter()->setMacroExtension(macroExtension);
+}
+
+void
+set_seed(int seed)
+{
+  getGlobalRouter()->setSeed(seed);
+}
+
+void
+set_capacities_perturbation_percentage(float percentage)
+{
+  getGlobalRouter()->setCapacitiesPerturbationPercentage(percentage);
+}
+
+void
+set_perturbation_amount(int perturbation)
+{
+  getGlobalRouter()->setPerturbationAmount(perturbation);
 }
 
 void

@@ -135,22 +135,39 @@ proc check_test_metrics { test } {
     return "error parsing metrics limits json"
   }
 
+  set failures ""
   foreach name [metric_names] {
     set json_key [metric_json_key $name]
     set cmp_op [metric_cmp_op $name]
-    if { ![dict exists $metrics_dict $json_key] } {
-      return "missing $name in metrics"
-    }
-    set value [dict get $metrics_dict $json_key]
-    if { ![dict exists $metrics_limits_dict $json_key] } {
-      return "missing $name in metric limits"
-    }
-    set limit [dict get $metrics_limits_dict $json_key]
-    if { ![expr $value $cmp_op $limit] } {
-      return "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+    if { [dict exists $metrics_dict $json_key] } {
+      set value [dict get $metrics_dict $json_key]
+      if { [dict exists $metrics_limits_dict $json_key] } {
+        set limit [dict get $metrics_limits_dict $json_key]
+        if { ![expr $value $cmp_op $limit] } {
+          fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+        }
+      } else {
+        fail "missing $name in metric limits"
+      }
+    } else {
+      fail "missing $name in metrics"
     }
   }
-  return "pass"
+  if { $failures == "" } {
+    return "pass"
+  } else {
+    return $failures
+  }
+}
+
+proc fail { msg } {
+  upvar 1 failures failures
+
+  if { $failures != "" } {
+    set failures [concat $failures "; $msg"]
+  } else {
+    set failures $msg
+  }
 }
 
 ################################################################
@@ -283,7 +300,7 @@ proc compare_test_metrics { test relative } {
 
 # Copy result metrics to test results saved in the repository.
 proc save_flow_metrics_main {} {
-  global argv argc
+  global argc argv
 
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_flow_metrics [test1]...}
@@ -313,21 +330,17 @@ proc save_metrics { test } {
 
 # Save result metrics + margins as metric limits.
 proc save_flow_metric_limits_main {} {
-  global argv
+  global argc argv
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_flow_metric_limits [failures] test1 [test2]...}
   } else {
-    if { $argv == "failures" } {
-      set tests [failed_tests]
+    if { $argc == 0 } {
+      set tests [expand_tests "flow"]
     } else {
-      set tests $argv
+      set tests [expand_tests $argv]
     }
     foreach test $tests {
-      if { [lsearch [group_tests "all"] $test] == -1 } {
-        puts "Error: test $test not found."
-      } else {
-        save_metric_limits $test
-      }
+      save_metric_limits $test
     }
   }
 }
@@ -335,7 +348,7 @@ proc save_flow_metric_limits_main {} {
 proc save_metric_limits { test } {
   # Don't require json until it is really needed.
   package require json
-  
+
   set metrics_file [test_metrics_result_file $test]
   set metrics_limits [test_metrics_limits_file $test]
   if { ! [file exists $metrics_file] } {

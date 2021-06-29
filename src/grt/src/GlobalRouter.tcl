@@ -62,28 +62,24 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_alpha" { alpha }
+sta::define_cmd_args "set_routing_alpha" { alpha \
+                                          [-net net_name] }
 
 proc set_routing_alpha { args } {
-  sta::check_argc1 "set_routing_alpha" $args
+  sta::parse_key_args "set_routing_alpha" args \
+                 keys {-net}
+
   set alpha [lindex $args 0]
-  if { [string is double $alpha] && $alpha >= 0.0 && $alpha <= 1.0 } {
-    grt::set_alpha $alpha
-  } else {
-    utl::error GRT 227 "alpha must be between 0.0 and 1.0"
+  if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
+    utl::error GRT 29 "The alpha value must be between 0.0 and 1.0."
   }
-}
-
-sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
-
-proc set_pdrev_topology_priority { args } {
-  if {[llength $args] == 2} {
-    lassign $args net alpha
-    
-    sta::check_positive_float "-alpha" $alpha
-    grt::set_alpha_for_net $net $alpha
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+    grt::set_alpha_for_net $net_name $alpha
+  } elseif { [llength $args] == 1 } {
+    grt::set_routing_alpha_cmd $alpha
   } else {
-    utl::error GRT 46 "set_pdrev_topology_priority: Wrong number of arguments."
+    utl::error GRT 46 "set_routing_alpha: Wrong number of arguments."
   }
 }
 
@@ -167,48 +163,50 @@ proc set_macro_extension { args } {
   }
 }
 
-sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
-                                           [-clock_topology_priority priority]
-}
+sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
+                                                   [-capacities_perturbation_percentage percent] \
+                                                   [-perturbation_amount value]
+                                                 }
 
-proc set_clock_routing { args } {
-  sta::parse_key_args "global_route" args \
-    keys { -clock_pdrev_fanout \
-           -clock_topology_priority
-         }
+proc set_global_routing_random { args } {
+  sta::parse_key_args "set_global_routing_random" args \
+  keys { -seed -capacities_perturbation_percentage -perturbation_amount }
 
-  if { [info exists keys(-clock_topology_priority) ] } {
-    set priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $priority
-    grt::set_alpha $clock_topology_priority
-  } else {
-    # Default alpha as 0.3 prioritize wire length, but keeps
-    # aware of skew in the topology construction (see PDRev paper
-    # for more reference)
-    grt::set_alpha 0.3
+  if { [info exists keys(-seed)] } {
+    set seed $keys(-seed)
+    sta::check_integer "set_global_routing_random" $seed
+    grt::set_seed $seed
   }
 
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
-    grt::set_pdrev_for_high_fanout $fanout
-  } else {
-    grt::set_pdrev_for_high_fanout -1
+  if { [info exists keys(-capacities_perturbation_percentage)] } {
+    set percentage $keys(-capacities_perturbation_percentage)
+    sta::check_percent "set_global_routing_random" $percentage
+    grt::set_capacities_perturbation_percentage $percentage
+  }
+
+  if { [info exists keys(-perturbation_amount)] } {
+    set perturbation $keys(-perturbation_amount)
+    sta::check_positive_integer "set_global_routing_random" $perturbation
+    grt::set_perturbation_amount $perturbation
   }
 }
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
-                                  [-overflow_iterations iterations] \
+                                  [-congestion_iterations iterations] \
                                   [-grid_origin origin] \
+                                  [-allow_congestion] \
+                                  [-overflow_iterations iterations] \
                                   [-allow_overflow]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -verbose \ 
+          -congestion_iterations \
           -overflow_iterations -grid_origin
          } \
-    flags {-allow_overflow}
+    flags {-allow_congestion -allow_overflow}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "missing dbTech."
@@ -237,15 +235,27 @@ proc global_route { args } {
     grt::set_grid_origin 0 0
   }
 
-  if { [info exists keys(-overflow_iterations) ] } {
-    set iterations $keys(-overflow_iterations)
-    sta::check_positive_integer "-overflow_iterations" $iterations
+  if { [info exists keys(-congestion_iterations) ] } {
+    set iterations $keys(-congestion_iterations)
+    sta::check_positive_integer "-congestion_iterations" $iterations
     grt::set_overflow_iterations $iterations
   } else {
     grt::set_overflow_iterations 50
   }
 
-  grt::set_allow_overflow [info exists flags(-allow_overflow)]
+  if { [info exists keys(-overflow_iterations)] } {
+    utl::war GRT 147 "-overflow_iterations is deprecated. Use -congestion_iterations."
+    set iterations $keys(-overflow_iterations)
+    sta::check_positive_integer "-overflow_iterations" $iterations
+    grt::set_overflow_iterations $iterations
+  }
+
+  if { [info exists flags(-allow_overflow)] } {
+    utl::warn GRT 146 "-allow_overflow is deprecated. Use -allow_congestion."
+  }
+
+  set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
+  grt::set_allow_congestion $allow_congestion
 
   grt::clear
   grt::run
