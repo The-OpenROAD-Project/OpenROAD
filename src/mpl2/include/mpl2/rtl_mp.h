@@ -54,5 +54,4 @@ class MacroPlacer2
   utl::Logger* logger_ = nullptr;
 };
 
-bool rtl_macro_placer(const char* config_file, utl::Logger* logger);
 }  // namespace mpl
