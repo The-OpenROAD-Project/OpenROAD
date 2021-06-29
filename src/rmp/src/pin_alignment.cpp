@@ -419,7 +419,7 @@ void Run(SimulatedAnnealingCore* sa)
   sa->Run();
 }
 
-void ParseMacroFile(vector<Macro>& macros, float halo_width, string file_name)
+void ParseMacroFile(vector<Macro>& macros, float halo_width, const string& file_name)
 {
   unordered_map<string, pair<float, float>> pin_loc;
   fstream f;
@@ -447,8 +447,8 @@ void ParseMacroFile(vector<Macro>& macros, float halo_width, string file_name)
 
 bool PinAlignmentSingleCluster(
     Cluster* cluster,
-    unordered_map<string, pair<float, float>>& terminal_position,
-    vector<Net*>& nets,
+    const unordered_map<string, pair<float, float>>& terminal_position,
+    const vector<Net*>& nets,
     Logger* logger,
     float halo_width,
     int num_thread,
@@ -581,7 +581,7 @@ bool PinAlignmentSingleCluster(
 }
 
 // Pin Alignment Engine
-bool PinAlignment(vector<Cluster*>& clusters,
+bool PinAlignment(const vector<Cluster*>& clusters,
                   Logger* logger,
                   float halo_width,
                   int num_thread,

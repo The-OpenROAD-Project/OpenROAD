@@ -290,8 +290,8 @@ void Run(SimulatedAnnealingCore* sa)
 }
 
 // Macro Tile Engine
-vector<pair<float, float>> TileMacro(vector<Macro> macros,
-                                     string cluster_name,
+vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
+                                     const string& cluster_name,
                                      float& final_area,
                                      float outline_width,
                                      float outline_height,
@@ -384,14 +384,15 @@ vector<pair<float, float>> TileMacro(vector<Macro> macros,
   for (int i = 0; i < sa_vector.size(); i++)
     rank.push_back(pair<int, float>(i, sa_vector[i]->GetArea()));
 
-  for (int i = 0; i < cluster_name.size(); i++) {
-    if (cluster_name[i] == '/') {
-      cluster_name[i] = '*';
+  string cluster_file_name(cluster_name);
+  for (int i = 0; i < cluster_file_name.size(); i++) {
+    if (cluster_file_name[i] == '/') {
+      cluster_file_name[i] = '*';
     }
   }
 
   for (int i = 0; i < sa_vector.size(); i++) {
-    string file_name = string("./rtl_mp/") + cluster_name + string("_")
+    string file_name = string("./rtl_mp/") + cluster_file_name + string("_")
                        + to_string(i) + string(".txt");
     sa_vector[i]->WriteFloorplan(file_name);
   }

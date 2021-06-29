@@ -13,9 +13,9 @@ bool SortBySecond(const pair<int, float>& a, const pair<int, float>& b)
 }
 
 // char_match:  determine if the char is part of deliminators
-bool CharMatch(char c, string& delim)
+bool CharMatch(char c, const string& delim)
 {
-  string::iterator it = delim.begin();
+  auto it = delim.begin();
   while (it != delim.end()) {
     if ((*it) == c) {
       return true;
@@ -29,7 +29,7 @@ bool CharMatch(char c, string& delim)
 // find the next position for deliminator char
 string::const_iterator FindDelim(string::const_iterator i,
                                  string::const_iterator end,
-                                 string& delim)
+                                 const string& delim)
 {
   while (i != end && !CharMatch(*i, delim))
     ++i;
@@ -40,7 +40,7 @@ string::const_iterator FindDelim(string::const_iterator i,
 // find the next position for non deliminator char
 string::const_iterator FindNotDelim(string::const_iterator i,
                                     string::const_iterator end,
-                                    string& delim)
+                                    const string& delim)
 {
   while (i != end && CharMatch(*i, delim))
     ++i;

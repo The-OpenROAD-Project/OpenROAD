@@ -12,8 +12,6 @@
 #include "rmp/shape_engine.h"
 #include "utl/Logger.h"
 
-using utl::RMP;
-
 namespace ord {
 bool RTLMP(const char* config_file, utl::Logger* logger);
 }

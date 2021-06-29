@@ -842,7 +842,7 @@ void ParseRegionFile(vector<Region*>& regions, const char* region_file)
   }
 }
 
-vector<Block> Floorplan(vector<shape_engine::Cluster*> clusters,
+vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
                         Logger* logger,
                         float outline_width,
                         float outline_height,

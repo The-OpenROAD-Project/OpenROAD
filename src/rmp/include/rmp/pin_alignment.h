@@ -85,9 +85,9 @@ class SimulatedAnnealingCore
  public:
   // constructor
   SimulatedAnnealingCore(
-      std::vector<shape_engine::Macro> macros,
-      std::vector<block_placement::Net*>& nets,
-      std::unordered_map<std::string, std::pair<float, float>>&
+      const std::vector<shape_engine::Macro>& macros,
+      const std::vector<block_placement::Net*>& nets,
+      const std::unordered_map<std::string, std::pair<float, float>>&
           terminal_position,
       float cooling_rate,
       float outline_width,
@@ -179,7 +179,7 @@ class SimulatedAnnealingCore
       return false;
   }
 
-  void WriteFloorplan(std::string file_name) const
+  void WriteFloorplan(const std::string& file_name) const
   {
     std::ofstream file;
     file.open(file_name);
@@ -203,12 +203,13 @@ void Run(SimulatedAnnealingCore* sa);
 // Parse macro file
 void ParseMacroFile(std::vector<shape_engine::Macro>& macros,
                     float halo_width,
-                    std::string file_name);
+                    const std::string& file_name);
 
 bool PinAlignmentSingleCluster(
     shape_engine::Cluster* cluster,
-    std::unordered_map<std::string, std::pair<float, float>>& terminal_position,
-    std::vector<block_placement::Net*>& nets,
+    const std::unordered_map<std::string, std::pair<float, float>>&
+        terminal_position,
+    const std::vector<block_placement::Net*>& nets,
     utl::Logger* logger,
     float halo_width,
     int num_thread,
@@ -216,7 +217,7 @@ bool PinAlignmentSingleCluster(
     unsigned seed);
 
 // Pin Alignment Engine
-bool PinAlignment(std::vector<shape_engine::Cluster*>& clusters,
+bool PinAlignment(const std::vector<shape_engine::Cluster*>& clusters,
                   utl::Logger* logger,
                   float halo_width,
                   int num_thread,

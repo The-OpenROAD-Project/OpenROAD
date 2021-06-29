@@ -51,6 +51,7 @@ using std::to_string;
 using std::unordered_map;
 using std::vector;
 using utl::Logger;
+using utl::RMP;
 
 #define DUMP_INFO_PARAM(param, value) \
   logger->info(RMP, 0001, "RTL_MP  Param: {}: {}", param, value)

@@ -71,7 +71,7 @@ class Macro
   // Constructors
   Macro(){};
 
-  Macro(std::string name, float width, float height)
+  Macro(const std::string& name, float width, float height)
   {
     name_ = name;
     width_ = width;
@@ -108,7 +108,10 @@ class Macro
   float GetArea() const { return area_; }
   float GetPinX() const { return pin_x_; }
   float GetPinY() const { return pin_y_; }
-  std::string GetOrientation() const { return OrientationToString(orientation_); }
+  std::string GetOrientation() const
+  {
+    return OrientationToString(orientation_);
+  }
 
   std::string GetName() const { return name_; }
 
@@ -150,7 +153,7 @@ class Cluster
 
  public:
   Cluster(){};
-  Cluster(std::string name) { name_ = name; }
+  Cluster(const std::string& name) { name_ = name; }
 
   std::string GetName() const { return name_; }
   float GetArea() const { return area_; }
@@ -180,7 +183,8 @@ class Cluster
 
   void SpecifyArea(float area) { area_ = area; }
   void AddArea(float area) { area_ += area; }
-  void SpecifyAspectRatio(std::vector<std::pair<float, float>> aspect_ratio)
+  void SpecifyAspectRatio(
+      const std::vector<std::pair<float, float>>& aspect_ratio)
   {
     aspect_ratio_ = aspect_ratio;
   }
@@ -190,8 +194,8 @@ class Cluster
     aspect_ratio_.push_back(ar);
   }
 
-  void AddMacro(Macro macro) { macros_.push_back(macro); }
-  void SpecifyMacros(std::vector<Macro> macros) { macros_ = macros; }
+  void AddMacro(const Macro& macro) { macros_.push_back(macro); }
+  void SpecifyMacros(const std::vector<Macro>& macros) { macros_ = macros; }
 
   bool operator==(const Cluster& cluster) const
   {
@@ -263,7 +267,7 @@ class SimulatedAnnealingCore
 
  public:
   // constructor
-  SimulatedAnnealingCore(std::vector<Macro> macros,
+  SimulatedAnnealingCore(const std::vector<Macro>& macros,
                          float outline_width,
                          float outline_height,
                          float init_prob = 0.95,
@@ -319,7 +323,7 @@ class SimulatedAnnealingCore
   float GetHeight() const { return height_; }
   float GetArea() const { return area_; }
 
-  void WriteFloorplan(std::string file_name) const
+  void WriteFloorplan(const std::string& file_name) const
   {
     std::ofstream file;
     file.open(file_name);
@@ -339,8 +343,8 @@ class SimulatedAnnealingCore
 void Run(SimulatedAnnealingCore* sa);
 
 // Macro Tile Engine
-std::vector<std::pair<float, float>> TileMacro(std::vector<Macro> macros,
-                                               std::string cluster_name,
+std::vector<std::pair<float, float>> TileMacro(const std::vector<Macro>& macros,
+                                               const std::string& cluster_name,
                                                float& final_area,
                                                float outline_width,
                                                float outline_height,

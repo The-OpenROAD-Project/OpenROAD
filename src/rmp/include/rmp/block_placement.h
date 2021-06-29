@@ -36,10 +36,10 @@ class Block
  public:
   Block(){};
 
-  Block(std::string name,
+  Block(const std::string& name,
         float area,
         int num_macro,
-        std::vector<std::pair<float, float>> aspect_ratio)
+        const std::vector<std::pair<float, float>>& aspect_ratio)
   {
     name_ = name;
     area_ = area;
@@ -243,8 +243,8 @@ struct Net
   std::vector<std::string> terminals_;
 
   Net(int weight,
-      std::vector<std::string> blocks,
-      std::vector<std::string> terminals)
+      const std::vector<std::string>& blocks,
+      const std::vector<std::string>& terminals)
   {
     weight_ = weight;
     blocks_ = blocks;
@@ -379,10 +379,10 @@ class SimulatedAnnealingCore
   SimulatedAnnealingCore(
       float outline_width,
       float outline_height,
-      std::vector<Block>& blocks,
-      std::vector<Net*>& nets,
-      std::vector<Region*>& regions,
-      std::unordered_map<std::string, std::pair<float, float>>
+      const std::vector<Block>& blocks,
+      const std::vector<Net*>& nets,
+      const std::vector<Region*>& regions,
+      const std::unordered_map<std::string, std::pair<float, float>>&
           terminal_position,
       float cooling_rate,
       float alpha,
@@ -484,7 +484,8 @@ class SimulatedAnnealingCore
     norm_macro_blockage_penalty_ = norm_macro_blockage_penalty;
   }
 
-  void SpecifySeq(std::vector<int> pos_seq, std::vector<int> neg_seq)
+  void SpecifySeq(const std::vector<int>& pos_seq,
+                  const std::vector<int>& neg_seq)
   {
     pos_seq_ = pos_seq;
     neg_seq_ = neg_seq;
@@ -502,7 +503,10 @@ class SimulatedAnnealingCore
   float GetNormWirelength() const { return norm_wirelength_; }
   float GetNormOutlinePenalty() const { return norm_outline_penalty_; }
   float GetNormBoundaryPenalty() const { return norm_boundary_penalty_; }
-  float GetNormMacroBlockagePenalty() const { return norm_macro_blockage_penalty_; }
+  float GetNormMacroBlockagePenalty() const
+  {
+    return norm_macro_blockage_penalty_;
+  }
 
   float GetCost() const
   {
@@ -548,34 +552,35 @@ void ParseNetFile(
 
 void ParseRegionFile(std::vector<Region*>& regions, const char* region_file);
 
-std::vector<Block> Floorplan(std::vector<shape_engine::Cluster*> clusters,
-                             utl::Logger* logger,
-                             float outline_width,
-                             float outline_height,
-                             const char* net_file,
-                             const char* region_file,
-                             int num_level,
-                             int num_worker,
-                             float heat_rate,
-                             float alpha,
-                             float beta,
-                             float gamma,
-                             float boundary_weight,
-                             float macro_blockage_weight,
-                             float resize_prob,
-                             float pos_swap_prob,
-                             float neg_swap_prob,
-                             float double_swap_prob,
-                             float init_prob,
-                             float rej_ratio,
-                             int max_num_step,
-                             int k,
-                             float c,
-                             int perturb_per_step,
-                             float learning_rate,
-                             float shrink_factor,
-                             float shrink_freq,
-                             unsigned seed = 0);
+std::vector<Block> Floorplan(
+    const std::vector<shape_engine::Cluster*>& clusters,
+    utl::Logger* logger,
+    float outline_width,
+    float outline_height,
+    const char* net_file,
+    const char* region_file,
+    int num_level,
+    int num_worker,
+    float heat_rate,
+    float alpha,
+    float beta,
+    float gamma,
+    float boundary_weight,
+    float macro_blockage_weight,
+    float resize_prob,
+    float pos_swap_prob,
+    float neg_swap_prob,
+    float double_swap_prob,
+    float init_prob,
+    float rej_ratio,
+    int max_num_step,
+    int k,
+    float c,
+    int perturb_per_step,
+    float learning_rate,
+    float shrink_factor,
+    float shrink_freq,
+    unsigned seed = 0);
 
 }  // namespace block_placement
 #endif
