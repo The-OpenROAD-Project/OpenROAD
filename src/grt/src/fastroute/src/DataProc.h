@@ -60,7 +60,7 @@ extern int layerOrientation;
 extern float alpha;
 extern int verbose;
 extern int overflowIterations;
-extern bool allowOverflow;
+const int max_usage_multiplier = 40;
 
 extern int enlarge, costheight, ripup_threshold;
 extern int MaxDegree;

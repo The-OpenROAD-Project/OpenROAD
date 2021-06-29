@@ -68,7 +68,6 @@ int layerOrientation;
 float alpha;
 int verbose;
 int overflowIterations;
-bool allowOverflow;
 
 Bool** HV;
 Bool** hyperV;

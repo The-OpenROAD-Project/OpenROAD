@@ -2,6 +2,12 @@ record_tests {
   clock_route
   clock_route_error1
   clock_route_error2
+  congestion1
+  congestion2
+  congestion3
+  congestion4
+  congestion5
+  congestion6
   est_rc1
   est_rc2
   gcd
