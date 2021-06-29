@@ -139,42 +139,15 @@ class SimulatedAnnealingCore
       float double_swap_prob = 0.2,
       unsigned seed = 0);
 
-  void Run()
-  {
-    if (macros_.size() > 1)
-      FastSA();
-    else
-      SingleFlip();
-  }
+  void Run();
 
   float GetWidth() const { return width_; }
   float GetHeight() const { return height_; }
   float GetArea() const { return area_; }
   float GetWirelength() const { return wirelength_; };
-  bool IsFeasible() const
-  {
-    float tolerance = 0.01;
-    if (width_ <= outline_width_ * (1 + tolerance)
-        && height_ <= outline_height_ * (1 + tolerance))
-      return true;
-    else
-      return false;
-  }
+  bool IsFeasible() const;
 
-  void WriteFloorplan(const std::string& file_name) const
-  {
-    std::ofstream file;
-    file.open(file_name);
-    for (int i = 0; i < macros_.size(); i++) {
-      file << macros_[i].GetX() << "   ";
-      file << macros_[i].GetY() << "   ";
-      file << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
-      file << macros_[i].GetY() + macros_[i].GetHeight() << "   ";
-      file << std::endl;
-    }
-
-    file.close();
-  }
+  void WriteFloorplan(const std::string& file_name) const;
 
   std::vector<shape_engine::Macro> GetMacros() const { return macros_; }
 };

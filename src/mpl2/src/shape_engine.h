@@ -78,32 +78,13 @@ class Macro
   static std::string OrientationToString(Orientation orientation);
 
  public:
-  Macro(const std::string& name, float width, float height)
-  {
-    name_ = name;
-    width_ = width;
-    height_ = height;
-    area_ = width_ * height_;
-  }
+  Macro(const std::string& name, float width, float height);
 
-  // overload the operator <
-  bool operator<(const Macro& macro) const
-  {
-    if (width_ != macro.width_)
-      return width_ < macro.width_;
+  // overload the comparison operators
+  bool operator<(const Macro& macro) const;
+  bool operator==(const Macro& macro) const;
 
-    return height_ < macro.height_;
-  }
-
-  bool operator==(const Macro& macro) const
-  {
-    if (width_ == macro.width_ && height_ == macro.height_)
-      return true;
-    else
-      return false;
-  }
-
-  // accessor
+  // accessors
   float GetWidth() const { return width_; }
   float GetHeight() const { return height_; }
   float GetX() const { return x_; }
@@ -127,18 +108,7 @@ class Macro
   }
 
   // operation
-  void Flip(bool axis)
-  {
-    if (axis == true) {
-      // FLIP Y
-      orientation_ = FLIP_Y_TABLE[orientation_];
-      pin_x_ = width_ - pin_x_;
-    } else {
-      // FLIP X
-      orientation_ = FLIP_X_TABLE[orientation_];
-      pin_y_ = height_ - pin_y_;
-    }
-  }
+  void Flip(bool axis);
 };
 
 // definition of clusters:  include std cell clusters and hard macro clusters
@@ -291,20 +261,7 @@ class SimulatedAnnealingCore
   float GetHeight() const { return height_; }
   float GetArea() const { return area_; }
 
-  void WriteFloorplan(const std::string& file_name) const
-  {
-    std::ofstream file;
-    file.open(file_name);
-    for (unsigned int i = 0; i < macros_.size(); i++) {
-      file << macros_[i]->GetX() << "   ";
-      file << macros_[i]->GetY() << "   ";
-      file << macros_[i]->GetX() + macros_[i]->GetWidth() << "   ";
-      file << macros_[i]->GetY() + macros_[i]->GetHeight() << "   ";
-      file << std::endl;
-    }
-
-    file.close();
-  }
+  void WriteFloorplan(const std::string& file_name) const;
 };
 
 // wrapper for run function of SimulatedAnnealingCore

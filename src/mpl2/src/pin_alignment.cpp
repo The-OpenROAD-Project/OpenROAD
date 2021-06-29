@@ -149,6 +149,39 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
   }
 }
 
+void SimulatedAnnealingCore::Run()
+{
+  if (macros_.size() > 1)
+    FastSA();
+  else
+    SingleFlip();
+}
+
+bool SimulatedAnnealingCore::IsFeasible() const
+{
+  float tolerance = 0.01;
+  if (width_ <= outline_width_ * (1 + tolerance)
+      && height_ <= outline_height_ * (1 + tolerance))
+    return true;
+  else
+    return false;
+}
+
+void SimulatedAnnealingCore::WriteFloorplan(const std::string& file_name) const
+{
+  std::ofstream file;
+  file.open(file_name);
+  for (int i = 0; i < macros_.size(); i++) {
+    file << macros_[i].GetX() << "   ";
+    file << macros_[i].GetY() << "   ";
+    file << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
+    file << macros_[i].GetY() + macros_[i].GetHeight() << "   ";
+    file << std::endl;
+  }
+
+  file.close();
+}
+
 void SimulatedAnnealingCore::PackFloorplan()
 {
   for (int i = 0; i < macros_.size(); i++) {

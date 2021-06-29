@@ -71,7 +71,7 @@ class Block
         int num_macro,
         const std::vector<std::pair<float, float>>& aspect_ratio);
 
-  // Accesor
+  // Accessors
   bool IsSoft() const { return is_soft_; }
   std::string GetName() const { return name_; }
   float GetX() const { return x_; }
@@ -84,49 +84,21 @@ class Block
 
   void SpecifyX(float x) { x_ = x; }
   void SpecifyY(float y) { y_ = y; }
-  void SpecifyAspectRatio(float aspect_ratio)
-  {
-    height_ = std::sqrt(area_ * aspect_ratio);
-    width_ = area_ / height_;
-  }
-
+  void SpecifyAspectRatio(float aspect_ratio);
   void SpecifyRandom(std::mt19937& generator,
-                     std::uniform_real_distribution<float>& distribution)
-  {
-    generator_ = &generator;
-    distribution_ = &distribution;
-    ChooseAspectRatioRandom();
-  }
+                     std::uniform_real_distribution<float>& distribution);
 
   void ChangeWidth(float width);
   void ChangeHeight(float height);
 
-  bool IsResize()
-  {
-    if (num_macro_ > 0 && aspect_ratio_.size() == 1)
-      return false;
-    else
-      return true;
-  }
-
+  bool IsResizeable() const;
   void ResizeHardBlock();
 
   void ChooseAspectRatioRandom();
 
-  void RemoveSoftBlock()
-  {
-    if (num_macro_ == 0) {
-      width_ = 0.0;
-      height_ = 0.0;
-    }
-  }
+  void RemoveSoftBlock();
 
-  void ShrinkSoftBlock(float width_factor, float height_factor)
-  {
-    width_ = width_ * width_factor;
-    height_ = height_ * height_factor;
-    area_ = width_ * height_;
-  }
+  void ShrinkSoftBlock(float width_factor, float height_factor);
 };
 
 struct Net
@@ -307,29 +279,10 @@ class SimulatedAnnealingCore
                   float norm_wirelength,
                   float norm_outline_penalty,
                   float norm_boundary_penalty,
-                  float norm_macro_blockage_penalty)
-  {
-    init_T_ = init_T;
-    norm_area_ = norm_area;
-    norm_wirelength_ = norm_wirelength;
-    norm_outline_penalty_ = norm_outline_penalty;
-    norm_boundary_penalty_ = norm_boundary_penalty;
-    norm_macro_blockage_penalty_ = norm_macro_blockage_penalty;
-  }
+                  float norm_macro_blockage_penalty);
 
   void SpecifySeq(const std::vector<int>& pos_seq,
-                  const std::vector<int>& neg_seq)
-  {
-    pos_seq_ = pos_seq;
-    neg_seq_ = neg_seq;
-    pre_pos_seq_ = pos_seq;
-    pre_neg_seq_ = neg_seq;
-    PackFloorplan();
-    CalculateWirelength();
-    CalculateOutlinePenalty();
-    CalculateBoundaryPenalty();
-    CalculateMacroBlockagePenalty();
-  }
+                  const std::vector<int>& neg_seq);
 
   float GetInitT() const { return init_T_; }
   float GetNormArea() const { return norm_area_; }
@@ -364,15 +317,7 @@ class SimulatedAnnealingCore
   void ShrinkBlocks();
   bool FitFloorplan();
 
-  bool IsFeasible() const
-  {
-    float tolerance = 0.001;
-    if (width_ <= outline_width_ * (1 + tolerance)
-        && height_ <= outline_height_ * (1 + tolerance))
-      return true;
-    else
-      return false;
-  }
+  bool IsFeasible() const;
 };
 
 // wrapper for run function of SimulatedAnnealingCore

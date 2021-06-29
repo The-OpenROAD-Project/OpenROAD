@@ -218,6 +218,40 @@ void Block::ChooseAspectRatioRandom()
   width_ = area_ / height_;
 }
 
+void Block::SpecifyAspectRatio(float aspect_ratio)
+{
+  height_ = std::sqrt(area_ * aspect_ratio);
+  width_ = area_ / height_;
+}
+
+void Block::SpecifyRandom(std::mt19937& generator,
+                          std::uniform_real_distribution<float>& distribution)
+{
+  generator_ = &generator;
+  distribution_ = &distribution;
+  ChooseAspectRatioRandom();
+}
+
+bool Block::IsResizeable() const
+{
+  return num_macro_ == 0 || aspect_ratio_.size() > 1;
+}
+
+void Block::RemoveSoftBlock()
+{
+  if (num_macro_ == 0) {
+    width_ = 0.0;
+    height_ = 0.0;
+  }
+}
+
+void Block::ShrinkSoftBlock(float width_factor, float height_factor)
+{
+  width_ = width_ * width_factor;
+  height_ = height_ * height_factor;
+  area_ = width_ * height_;
+}
+
 SimulatedAnnealingCore::SimulatedAnnealingCore(
     float outline_width,
     float outline_height,
@@ -420,7 +454,7 @@ void SimulatedAnnealingCore::Resize()
 
   // int index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
 
-  while (blocks_[index1].IsResize() == false) {
+  while (blocks_[index1].IsResizeable() == false) {
     index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
@@ -745,6 +779,45 @@ void SimulatedAnnealingCore::Initialize()
     delta_cost += abs(cost_list[i] - cost_list[i - 1]);
 
   init_T_ = (-1.0) * (delta_cost / (perturb_per_step_ - 1)) / log(init_prob_);
+}
+
+void SimulatedAnnealingCore::Initialize(float init_T,
+                                        float norm_area,
+                                        float norm_wirelength,
+                                        float norm_outline_penalty,
+                                        float norm_boundary_penalty,
+                                        float norm_macro_blockage_penalty)
+{
+  init_T_ = init_T;
+  norm_area_ = norm_area;
+  norm_wirelength_ = norm_wirelength;
+  norm_outline_penalty_ = norm_outline_penalty;
+  norm_boundary_penalty_ = norm_boundary_penalty;
+  norm_macro_blockage_penalty_ = norm_macro_blockage_penalty;
+}
+
+void SimulatedAnnealingCore::SpecifySeq(const std::vector<int>& pos_seq,
+                                        const std::vector<int>& neg_seq)
+{
+  pos_seq_ = pos_seq;
+  neg_seq_ = neg_seq;
+  pre_pos_seq_ = pos_seq;
+  pre_neg_seq_ = neg_seq;
+  PackFloorplan();
+  CalculateWirelength();
+  CalculateOutlinePenalty();
+  CalculateBoundaryPenalty();
+  CalculateMacroBlockagePenalty();
+}
+
+bool SimulatedAnnealingCore::IsFeasible() const
+{
+  float tolerance = 0.001;
+  if (width_ <= outline_width_ * (1 + tolerance)
+      && height_ <= outline_height_ * (1 + tolerance))
+    return true;
+  else
+    return false;
 }
 
 void SimulatedAnnealingCore::ShrinkBlocks()
@@ -1252,8 +1325,9 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
         cooling_rate = 0.995 - j * (0.995 - 0.985) / (num_worker - 1);
       }
 
-      //cout << "init_T:  " << init_T << endl;
-      //cout << "thread:  " << j << "  cooling_rate:   " << cooling_rate << endl;
+      // cout << "init_T:  " << init_T << endl;
+      // cout << "thread:  " << j << "  cooling_rate:   " << cooling_rate <<
+      // endl;
       SimulatedAnnealingCore* sa
           = new SimulatedAnnealingCore(outline_width,
                                        outline_height,
@@ -1303,7 +1377,8 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
         best_sa = sa_vec[j];
       }
 
-      //cout << "thread:  " << j << "  cost:  " << sa_vec[j]->GetCost() << endl;
+      // cout << "thread:  " << j << "  cost:  " << sa_vec[j]->GetCost() <<
+      // endl;
     }
 
     blocks = best_sa->GetBlocks();

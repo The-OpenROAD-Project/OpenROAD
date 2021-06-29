@@ -90,6 +90,43 @@ std::string Macro::OrientationToString(Orientation orientation)
   }
 }
 
+Macro::Macro(const std::string& name, float width, float height)
+{
+  name_ = name;
+  width_ = width;
+  height_ = height;
+  area_ = width_ * height_;
+}
+
+bool Macro::operator<(const Macro& macro) const
+{
+  if (width_ != macro.width_)
+    return width_ < macro.width_;
+
+  return height_ < macro.height_;
+}
+
+bool Macro::operator==(const Macro& macro) const
+{
+  if (width_ == macro.width_ && height_ == macro.height_)
+    return true;
+  else
+    return false;
+}
+
+void Macro::Flip(bool axis)
+{
+  if (axis == true) {
+    // FLIP Y
+    orientation_ = FLIP_Y_TABLE[orientation_];
+    pin_x_ = width_ - pin_x_;
+  } else {
+    // FLIP X
+    orientation_ = FLIP_X_TABLE[orientation_];
+    pin_y_ = height_ - pin_y_;
+  }
+}
+
 SimulatedAnnealingCore::SimulatedAnnealingCore(const std::vector<Macro>& macros,
                                                float outline_width,
                                                float outline_height,
@@ -334,6 +371,21 @@ void SimulatedAnnealingCore::Initialize()
   init_T_ = (-1) * delta_cost / log(init_prob_);
 }
 
+void SimulatedAnnealingCore::WriteFloorplan(const std::string& file_name) const
+{
+  std::ofstream file;
+  file.open(file_name);
+  for (unsigned int i = 0; i < macros_.size(); i++) {
+    file << macros_[i]->GetX() << "   ";
+    file << macros_[i]->GetY() << "   ";
+    file << macros_[i]->GetX() + macros_[i]->GetWidth() << "   ";
+    file << macros_[i]->GetY() + macros_[i]->GetHeight() << "   ";
+    file << std::endl;
+  }
+
+  file.close();
+}
+
 void SimulatedAnnealingCore::FastSA()
 {
   int step = 1;
@@ -442,16 +494,15 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
     factor_list[0] = 1.0;
 
   if (num_thread > 1) {
-    //float step = 1.0 / (num_thread - 1);
-    //for (int i = 0; i < num_thread; i++)
-    //  factor_list[i] = pow(10.0, 1.0 - step * i);
-    for(int i = 0; i < num_thread / 2 ; i++)
-        factor_list[i] = 1.0 / (i + 1);
+    // float step = 1.0 / (num_thread - 1);
+    // for (int i = 0; i < num_thread; i++)
+    //   factor_list[i] = pow(10.0, 1.0 - step * i);
+    for (int i = 0; i < num_thread / 2; i++)
+      factor_list[i] = 1.0 / (i + 1);
 
-    for(int i = num_thread / 2; i < num_thread; i++) 
-        factor_list[i] = 1.0 * (i + 1 - num_thread / 2);
+    for (int i = num_thread / 2; i < num_thread; i++)
+      factor_list[i] = 1.0 * (i + 1 - num_thread / 2);
   }
-
 
   vector<SimulatedAnnealingCore*> sa_vector;
   while (remaining_run > 0) {
@@ -465,7 +516,7 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
       float temp_outline_width = outline_width * factor;
       float temp_outline_height
           = outline_width * outline_height / temp_outline_width;
-      //float temp_outline_height = outline_height;
+      // float temp_outline_height = outline_height;
       SimulatedAnnealingCore* sa
           = new SimulatedAnnealingCore(macros,
                                        temp_outline_width,
