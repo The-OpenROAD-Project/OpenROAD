@@ -726,9 +726,9 @@ namespace block_placement {
 
             float accept_rate_sum = resize_accept_rate_ + pos_swap_accept_rate_ + neg_swap_accept_rate_ + double_swap_accept_rate_;
             resize_prob_ = resize_accept_rate_ / accept_rate_sum;
-            pos_swap_prob_ = pos_swap_accept_rate_ / accept_rate_sum;
-            neg_swap_prob_ = neg_swap_accept_rate_ / accept_rate_sum;
-            double_swap_prob_ = double_swap_accept_rate_ / accept_rate_sum;
+            pos_swap_prob_ = pos_swap_accept_rate / accept_rate_sum;
+            neg_swap_prob_ = neg_swap_accept_rate / accept_rate_sum;
+            double_swap_prob_ = double_swap_accept_rate / accept_rate_sum;
 
             UpdateWeight(avg_area, avg_wirelength, avg_outline_penalty, avg_boundary_penalty, avg_macro_blockage_penalty);
             //cout << "step:  " << step << "  T:  " << T << " cost:  " << cost << endl;
