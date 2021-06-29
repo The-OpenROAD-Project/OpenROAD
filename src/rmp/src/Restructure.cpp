@@ -65,12 +65,6 @@ void Restructure::init(ord::OpenRoad* openroad)
   db_ = openroad->getDb();
   open_sta_ = openroad->getSta();
   resizer_ = openroad->getResizer();
-  makeComponents();
-}
-
-void Restructure::makeComponents()
-{
-  
 }
 
 void Restructure::deleteComponents()

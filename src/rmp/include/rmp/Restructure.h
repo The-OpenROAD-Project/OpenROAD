@@ -92,7 +92,6 @@ class Restructure
   void setTieHiPort(sta::LibertyPort* hiport);
 
  private:
-  void makeComponents();
   void deleteComponents();
   void getBlob(unsigned max_depth);
   void runABC();
