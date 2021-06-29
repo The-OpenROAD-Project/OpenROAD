@@ -504,7 +504,7 @@ void MacroPlacer2::init(Logger* logger)
 
 bool MacroPlacer2::place(const char* config_file)
 {
-  return true; // FIXME
+  return rtl_macro_placer(config_file, logger_);
 }
 
 }  // namespace mpl
