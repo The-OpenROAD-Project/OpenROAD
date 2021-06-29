@@ -2152,7 +2152,7 @@ namespace eval ICeWall {
 
     if {![dict exists $footprint die_area]} {
       if {[catch {set_die_area {*}[ord::get_die_area]} msg]} {
-        utl::error PAD 223 "Design data needs to be loaded  before this command"
+        utl::error PAD 223 "Design data needs to be loaded before this command"
       }
     }
 
