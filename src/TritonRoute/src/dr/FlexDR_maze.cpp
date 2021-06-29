@@ -2031,6 +2031,9 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
         //                            <<std::endl;
         // }
       }
+      if (getDRIter() == 1 && net->getFrNet()->getName() == "net60711" && getRouteBox().left() == 1488000 && 
+               getRouteBox().bottom() ==  1071360)
+          gridGraph_.printNode(mi.x(), mi.y(), mi.z());
       apMazeIdx.insert(mi);
       gridGraph_.setDst(mi);
     }
