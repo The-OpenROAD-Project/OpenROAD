@@ -68,9 +68,6 @@ class Macro
   }
 
  public:
-  // Constructors
-  Macro(){};
-
   Macro(const std::string& name, float width, float height)
   {
     name_ = name;
@@ -78,10 +75,6 @@ class Macro
     height_ = height;
     area_ = width_ * height_;
   }
-
-  Macro(const Macro& macro) = default;
-
-  Macro& operator=(const Macro& macro) = default;
 
   // overload the operator <
   bool operator<(const Macro& macro) const

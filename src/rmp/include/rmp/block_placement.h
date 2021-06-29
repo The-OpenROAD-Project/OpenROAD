@@ -34,8 +34,6 @@ class Block
   std::uniform_real_distribution<float>* distribution_;
 
  public:
-  Block(){};
-
   Block(const std::string& name,
         float area,
         int num_macro,
@@ -71,10 +69,6 @@ class Block
     // Initialize shape (width_, height_) randomly
     // ChooseAspectRatioRandom();
   }
-
-  Block(const Block& block) = default;
-
-  Block& operator=(const Block& block) = default;
 
   // Accesor
   bool IsSoft() const { return is_soft_; }
