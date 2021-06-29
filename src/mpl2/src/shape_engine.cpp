@@ -40,8 +40,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "mpl2/shape_engine.h"
-#include "mpl2/util.h"
+#include "shape_engine.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace shape_engine {

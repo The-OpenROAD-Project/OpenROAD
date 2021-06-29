@@ -40,8 +40,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "mpl2/block_placement.h"
-#include "mpl2/shape_engine.h"
 #include "utl/Logger.h"
 
 namespace mpl {

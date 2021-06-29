@@ -41,9 +41,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "mpl2/block_placement.h"
-#include "mpl2/shape_engine.h"
-#include "mpl2/util.h"
+#include "block_placement.h"
+#include "shape_engine.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace block_placement {
