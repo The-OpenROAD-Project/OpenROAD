@@ -159,46 +159,38 @@ void SimulatedAnnealingCore::Run()
 
 bool SimulatedAnnealingCore::IsFeasible() const
 {
-  float tolerance = 0.01;
-  if (width_ <= outline_width_ * (1 + tolerance)
-      && height_ <= outline_height_ * (1 + tolerance))
-    return true;
-  else
-    return false;
+  const float tolerance = 0.01;
+  return width_ <= outline_width_ * (1 + tolerance)
+    && height_ <= outline_height_ * (1 + tolerance);
 }
 
 void SimulatedAnnealingCore::WriteFloorplan(const std::string& file_name) const
 {
-  std::ofstream file;
-  file.open(file_name);
-  for (int i = 0; i < macros_.size(); i++) {
-    file << macros_[i].GetX() << "   ";
-    file << macros_[i].GetY() << "   ";
-    file << macros_[i].GetX() + macros_[i].GetWidth() << "   ";
-    file << macros_[i].GetY() + macros_[i].GetHeight() << "   ";
+  std::ofstream file(file_name);
+  for (const auto& macro : macros_) {
+    file << macro.GetX() << "   ";
+    file << macro.GetY() << "   ";
+    file << macro.GetX() + macro.GetWidth() << "   ";
+    file << macro.GetY() + macro.GetHeight() << "   ";
     file << std::endl;
   }
-
-  file.close();
 }
 
 void SimulatedAnnealingCore::PackFloorplan()
 {
-  for (int i = 0; i < macros_.size(); i++) {
-    macros_[i].SetX(0.0);
-    macros_[i].SetY(0.0);
+  for (auto& macro : macros_) {
+    macro.SetX(0.0);
+    macro.SetY(0.0);
   }
 
   // calculate X position
-  pair<int, int>* match = new pair<int, int>[macros_.size()];
+  vector<pair<int, int>> match(macros_.size());
   for (int i = 0; i < pos_seq_.size(); i++) {
     match[pos_seq_[i]].first = i;
     match[neg_seq_[i]].second = i;
   }
 
-  float* length = new float[macros_.size()];
-  for (int i = 0; i < macros_.size(); i++)
-    length[i] = 0.0;
+  vector<float> length(macros_.size(), 0.0);
 
   for (int i = 0; i < pos_seq_.size(); i++) {
     int b = pos_seq_[i];
@@ -215,7 +207,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   width_ = length[macros_.size() - 1];
 
   // calulate Y position
-  int* pos_seq = new int[pos_seq_.size()];
+  vector<int> pos_seq(pos_seq_.size());
   int num_blocks = pos_seq_.size();
   for (int i = 0; i < num_blocks; i++)
     pos_seq[i] = pos_seq_[num_blocks - 1 - i];
