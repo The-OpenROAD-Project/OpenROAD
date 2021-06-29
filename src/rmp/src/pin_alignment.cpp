@@ -303,7 +303,7 @@ void SimulatedAnnealingCore::CalculateWirelength()
 
 float SimulatedAnnealingCore::NormCost(float area,
                                        float wirelength,
-                                       float outline_penalty)
+                                       float outline_penalty) const
 {
   float cost = alpha_ * area / norm_area_;
   if (norm_wirelength_ > 0.0)

@@ -72,50 +72,20 @@ class Block
     // ChooseAspectRatioRandom();
   }
 
-  Block(const Block& block)
-  {
-    this->width_ = block.width_;
-    this->height_ = block.height_;
-    this->area_ = block.area_;
-    this->x_ = block.x_;
-    this->y_ = block.y_;
-    this->name_ = block.name_;
-    this->is_soft_ = block.is_soft_;
-    this->num_macro_ = block.num_macro_;
-    this->aspect_ratio_ = block.aspect_ratio_;
-    this->width_limit_ = block.width_limit_;
-    this->height_limit_ = block.height_limit_;
-    this->generator_ = block.generator_;
-    this->distribution_ = block.distribution_;
-  }
+  Block(const Block& block) = default;
 
-  void operator=(const Block& block)
-  {
-    this->width_ = block.width_;
-    this->height_ = block.height_;
-    this->area_ = block.area_;
-    this->x_ = block.x_;
-    this->y_ = block.y_;
-    this->name_ = block.name_;
-    this->is_soft_ = block.is_soft_;
-    this->num_macro_ = block.num_macro_;
-    this->aspect_ratio_ = block.aspect_ratio_;
-    this->width_limit_ = block.width_limit_;
-    this->height_limit_ = block.height_limit_;
-    this->generator_ = block.generator_;
-    this->distribution_ = block.distribution_;
-  }
+  Block& operator=(const Block& block) = default;
 
   // Accesor
-  bool IsSoft() { return is_soft_; }
-  std::string GetName() { return name_; }
-  float GetX() { return x_; }
-  float GetY() { return y_; }
-  float GetWidth() { return width_; }
-  float GetHeight() { return height_; }
-  float GetArea() { return area_; }
-  float GetAspectRatio() { return height_ / width_; }
-  int GetNumMacro() { return num_macro_; }
+  bool IsSoft() const { return is_soft_; }
+  std::string GetName() const { return name_; }
+  float GetX() const { return x_; }
+  float GetY() const { return y_; }
+  float GetWidth() const { return width_; }
+  float GetHeight() const { return height_; }
+  float GetArea() const { return area_; }
+  float GetAspectRatio() const { return height_ / width_; }
+  int GetNumMacro() const { return num_macro_; }
 
   void SpecifyX(float x) { x_ = x; }
   void SpecifyY(float y) { y_ = y; }
@@ -396,7 +366,7 @@ class SimulatedAnnealingCore
                  float wirelength,
                  float outline_penalty,
                  float boundary_penalty,
-                 float macro_blockage_penalty);
+                 float macro_blockage_penalty) const;
 
   void UpdateWeight(float avg_area,
                     float avg_wirelength,
@@ -527,14 +497,14 @@ class SimulatedAnnealingCore
     CalculateMacroBlockagePenalty();
   }
 
-  float GetInitT() { return init_T_; }
-  float GetNormArea() { return norm_area_; }
-  float GetNormWirelength() { return norm_wirelength_; }
-  float GetNormOutlinePenalty() { return norm_outline_penalty_; }
-  float GetNormBoundaryPenalty() { return norm_boundary_penalty_; }
-  float GetNormMacroBlockagePenalty() { return norm_macro_blockage_penalty_; }
+  float GetInitT() const { return init_T_; }
+  float GetNormArea() const { return norm_area_; }
+  float GetNormWirelength() const { return norm_wirelength_; }
+  float GetNormOutlinePenalty() const { return norm_outline_penalty_; }
+  float GetNormBoundaryPenalty() const { return norm_boundary_penalty_; }
+  float GetNormMacroBlockagePenalty() const { return norm_macro_blockage_penalty_; }
 
-  float GetCost()
+  float GetCost() const
   {
     return NormCost(area_,
                     wirelength_,
@@ -543,21 +513,21 @@ class SimulatedAnnealingCore
                     macro_blockage_penalty_);
   }
 
-  float GetWidth() { return width_; }
-  float GetHeight() { return height_; }
-  float GetArea() { return area_; }
-  float GetWirelength() { return wirelength_; }
-  float GetOutlinePenalty() { return outline_penalty_; }
-  float GetBoundaryPenalty() { return boundary_penalty_; }
-  float GetMacroBlockagePenalty() { return macro_blockage_penalty_; }
-  std::vector<Block> GetBlocks() { return blocks_; }
-  std::vector<int> GetPosSeq() { return pos_seq_; }
-  std::vector<int> GetNegSeq() { return neg_seq_; }
+  float GetWidth() const { return width_; }
+  float GetHeight() const { return height_; }
+  float GetArea() const { return area_; }
+  float GetWirelength() const { return wirelength_; }
+  float GetOutlinePenalty() const { return outline_penalty_; }
+  float GetBoundaryPenalty() const { return boundary_penalty_; }
+  float GetMacroBlockagePenalty() const { return macro_blockage_penalty_; }
+  std::vector<Block> GetBlocks() const { return blocks_; }
+  std::vector<int> GetPosSeq() const { return pos_seq_; }
+  std::vector<int> GetNegSeq() const { return neg_seq_; }
 
   void ShrinkBlocks();
   bool FitFloorplan();
 
-  bool IsFeasible()
+  bool IsFeasible() const
   {
     float tolerance = 0.001;
     if (width_ <= outline_width_ * (1 + tolerance)

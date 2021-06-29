@@ -79,7 +79,7 @@ class SimulatedAnnealingCore
   void Initialize();
   void CalculateWirelength();
   void CalculateOutlinePenalty();
-  float NormCost(float area, float wirelength, float outline_penalty);
+  float NormCost(float area, float wirelength, float outline_penalty) const;
   void FastSA();
 
  public:
@@ -165,11 +165,11 @@ class SimulatedAnnealingCore
       SingleFlip();
   }
 
-  float GetWidth() { return width_; }
-  float GetHeight() { return height_; }
-  float GetArea() { return area_; }
-  float GetWirelength() { return wirelength_; };
-  bool IsFeasible()
+  float GetWidth() const { return width_; }
+  float GetHeight() const { return height_; }
+  float GetArea() const { return area_; }
+  float GetWirelength() const { return wirelength_; };
+  bool IsFeasible() const
   {
     float tolerance = 0.01;
     if (width_ <= outline_width_ * (1 + tolerance)
@@ -179,7 +179,7 @@ class SimulatedAnnealingCore
       return false;
   }
 
-  void WriteFloorplan(std::string file_name)
+  void WriteFloorplan(std::string file_name) const
   {
     std::ofstream file;
     file.open(file_name);
@@ -194,7 +194,7 @@ class SimulatedAnnealingCore
     file.close();
   }
 
-  std::vector<shape_engine::Macro> GetMacros() { return macros_; }
+  std::vector<shape_engine::Macro> GetMacros() const { return macros_; }
 };
 
 // wrapper for run function of SimulatedAnnealingCore

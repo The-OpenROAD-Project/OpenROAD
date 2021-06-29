@@ -405,7 +405,7 @@ float SimulatedAnnealingCore::NormCost(float area,
                                        float wirelength,
                                        float outline_penalty,
                                        float boundary_penalty,
-                                       float macro_blockage_penalty)
+                                       float macro_blockage_penalty) const
 {
   float cost = 0.0;
   cost += alpha_ * area / norm_area_;

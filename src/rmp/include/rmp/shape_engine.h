@@ -43,7 +43,7 @@ class Macro
   Orientation orientation_ = R0;
   std::string name_;
 
-  std::string OrientationToString(Orientation orientation)
+  static std::string OrientationToString(Orientation orientation)
   {
     switch (orientation) {
       case R0:
@@ -79,31 +79,9 @@ class Macro
     area_ = width_ * height_;
   }
 
-  Macro(const Macro& macro)
-  {
-    this->name_ = macro.name_;
-    this->width_ = macro.width_;
-    this->height_ = macro.height_;
-    this->x_ = macro.x_;
-    this->y_ = macro.y_;
-    this->area_ = macro.area_;
-    this->pin_x_ = macro.pin_x_;
-    this->pin_y_ = macro.pin_y_;
-    this->orientation_ = macro.orientation_;
-  }
+  Macro(const Macro& macro) = default;
 
-  void operator=(const Macro& macro)
-  {
-    this->name_ = macro.name_;
-    this->width_ = macro.width_;
-    this->height_ = macro.height_;
-    this->x_ = macro.x_;
-    this->y_ = macro.y_;
-    this->area_ = macro.area_;
-    this->pin_x_ = macro.pin_x_;
-    this->pin_y_ = macro.pin_y_;
-    this->orientation_ = macro.orientation_;
-  }
+  Macro& operator=(const Macro& macro) = default;
 
   // overload the operator <
   bool operator<(const Macro& macro) const
@@ -123,16 +101,16 @@ class Macro
   }
 
   // accessor
-  float GetWidth() { return width_; }
-  float GetHeight() { return height_; }
-  float GetX() { return x_; }
-  float GetY() { return y_; }
-  float GetArea() { return area_; }
-  float GetPinX() { return pin_x_; }
-  float GetPinY() { return pin_y_; }
-  std::string GetOrientation() { return OrientationToString(orientation_); }
+  float GetWidth() const { return width_; }
+  float GetHeight() const { return height_; }
+  float GetX() const { return x_; }
+  float GetY() const { return y_; }
+  float GetArea() const { return area_; }
+  float GetPinX() const { return pin_x_; }
+  float GetPinY() const { return pin_y_; }
+  std::string GetOrientation() const { return OrientationToString(orientation_); }
 
-  std::string GetName() { return name_; }
+  std::string GetName() const { return name_; }
 
   void SpecifyX(float x) { x_ = x; }
   void SpecifyY(float y) { y_ = y; }
@@ -174,14 +152,14 @@ class Cluster
   Cluster(){};
   Cluster(std::string name) { name_ = name; }
 
-  std::string GetName() { return name_; }
-  float GetArea() { return area_; }
-  std::vector<std::pair<float, float>> GetAspectRatio()
+  std::string GetName() const { return name_; }
+  float GetArea() const { return area_; }
+  std::vector<std::pair<float, float>> GetAspectRatio() const
   {
     return aspect_ratio_;
   }
-  std::vector<Macro> GetMacros() { return macros_; }
-  int GetNumMacro() { return macros_.size(); }
+  std::vector<Macro> GetMacros() const { return macros_; }
+  int GetNumMacro() const { return macros_.size(); }
 
   void SpecifyPos(float x, float y)
   {
@@ -195,10 +173,10 @@ class Cluster
     height_ = height;
   }
 
-  float GetX() { return x_; }
-  float GetY() { return y_; }
-  float GetWidth() { return width_; }
-  float GetHeight() { return height_; }
+  float GetX() const { return x_; }
+  float GetY() const { return y_; }
+  float GetWidth() const { return width_; }
+  float GetHeight() const { return height_; }
 
   void SpecifyArea(float area) { area_ = area; }
   void AddArea(float area) { area_ += area; }
@@ -337,11 +315,11 @@ class SimulatedAnnealingCore
 
   void Run() { FastSA(); }
 
-  float GetWidth() { return width_; }
-  float GetHeight() { return height_; }
-  float GetArea() { return area_; }
+  float GetWidth() const { return width_; }
+  float GetHeight() const { return height_; }
+  float GetArea() const { return area_; }
 
-  void WriteFloorplan(std::string file_name)
+  void WriteFloorplan(std::string file_name) const
   {
     std::ofstream file;
     file.open(file_name);
