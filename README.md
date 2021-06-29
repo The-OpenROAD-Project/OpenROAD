@@ -374,6 +374,10 @@ clear_io_pin_constraints
 
 The `clear_io_pin_constraints` command clear all the previous defined constraints and pin shape pattern for top layer placement.
 
+##### Chip level connections
+
+At the top level of the chip, special padcells are use to connect signals to the external package. Additional commands are provided to [specify the placement of padcells, bondpads and bumps](src/ICeWall/doc/TCL_Interface.md)
+
 #### Tapcell
 
 Tapcell and endcap insertion.
@@ -805,17 +809,17 @@ Global router options and commands are described below.
 ```
 global_route [-guide_file out_file] \
              [-verbose verbose] \
-             [-overflow_iterations iterations] \
+             [-congestion_iterations iterations] \
              [-grid_origin {x y}] \
-             [-allow_overflow]
+             [-allow_congestion]
 
 ```
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
-- **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
+- **congestion_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -congestion_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
-- **allow_overflow**: Allow global routing results with overflow
+- **allow_congestion**: Allow global routing results with congestion
 
 ```
 set_routing_layers [-signal min-max] \
@@ -850,26 +854,17 @@ You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch Metal6 1.34`.
 
 ```
-set_clock_routing [-clock_pdrev_fanout fanout] \
-                  [-clock_topology_priority priority]
+set_routing_alpha [-net net_name] alpha
 ```
-The `set_clock_routing` command sets specific configurations for clock nets.
-Options description:
-- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
-See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-
-```
-set_pdrev_topology_priority netName alpha
-```
-FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
-priority of PDRev between wire length and skew, using the `alpha` parameter.
-The `set_pdrev_topology_priority` command sets the PDRev routing topology construction priority for specific nets.
-Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generates topologies with shorter wire length,
-and alpha close to 1.0 generates topologies with lower skew. For more information about PDRev, check the paper in
-`src/FastRoute/src/pdrev/papers/PDRev.pdf`
+By default the global router uses steiner trees to construct route guides. A steiner tree minimizes the total wire length.
+Prim/Dijkstra is an alternative net topology algorithm that supports a trade-off between total wire length and maximum path depth from
+the net driver to its loads.
+The `set_routing_alpha` command enables the Prim/Dijkstra algorithm and sets the alpha parameter used to trade-off wire length and path depth.
+Alpha is between 0.0 and 1.0. When alpha is 0.0 the net topology minimizes total wire length (i.e. capacitance).
+When alpha is 1.0 it minimizes longest path between the driver and loads (i.e., maximum resistance).
+Typical values are 0.4-0.8. For more information about PDRev, check the paper in `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_topology_priority clk 0.3` sets an alpha value of 0.3 for net *clk*.
+Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
@@ -879,6 +874,20 @@ The `set_global_routing_region_adjustment` command sets routing resources adjust
 The region is defined as a rectangle in a routing layer.
 Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
                                                -layer Metal4 -adjustment 0.7`
+
+```
+set_global_routing_random [-seed seed] \
+                          [-capacities_perturbation_percentage percent] \
+                          [-perturbation_amount value]
+```
+The `set_global_routing_random` command enables random global routing results. The random global routing shuffles the order
+of the nets and randomly subtracts or add the capacities of a random set of edges.
+The `-seed` option sets the random seed and is required to enable random mode. The `-capacities_perturbation_percentage` option
+sets the percentage of edges to perturb the capacities. By default, the edge capacities are perturbed by sum or subtract 1 from the original capacity.
+The `-perturbation_amount` option sets the perturbation value of the edge capacities. This option will only have effect when `-capacities_perturbation_percentage`
+is used.
+The random seed must be different from 0 to enable random global routing.
+Example: `set_global_routing_random -seed 42 -capacities_perturbation_percentage 50 -perturbation_amount 2`
 
 ```
 repair_antennas diodeCellName/diodePinName [-iterations iterations]

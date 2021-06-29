@@ -23,7 +23,6 @@ Footprint definition {
     sig1     {type sig       cell {centre {x  320.000 y  100.000}}}
     vzz_0    {type vssio_hvc cell {centre {x  400.000 y  100.000}}}
     v18_0    {type vddio_hvc cell {centre {x  480.000 y  100.000}}}
-    sig2     {type sig       cell {centre {x  560.000 y  100.000}}}
     sig3     {type sig       cell {centre {x  640.000 y  100.000}}}
     sig4     {type sig       cell {centre {x  720.000 y  100.000}}}
     sig5     {type sig       cell {centre {x  800.000 y  100.000}}}
@@ -230,18 +229,9 @@ Footprint definition {
     sig152   {type sig       cell {centre {x  100.000 y 1440.000}}}
     sig153   {type sig       cell {centre {x  100.000 y 1360.000}}}
     sig154   {type sig       cell {centre {x  100.000 y 1280.000}}}
-    sig155   {type sig       cell {centre {x  100.000 y 1200.000}}}
-    sig156   {type sig       cell {centre {x  100.000 y 1120.000}}}
-    sig157   {type sig       cell {centre {x  100.000 y 1040.000}}}
-    sig158   {type sig       cell {centre {x  100.000 y  960.000}}}
-    sig159   {type sig       cell {centre {x  100.000 y  880.000}}}
     vdd_8    {type vccd_hvc  cell {centre {x  100.000 y  800.000}}}
     vss_8    {type vssd_hvc  cell {centre {x  100.000 y  720.000}}}
     vzz_20   {type vssio_hvc cell {centre {x  100.000 y  640.000}}}
     v18_20   {type vddio_hvc cell {centre {x  100.000 y  560.000}}}
-    sig160   {type sig       cell {centre {x  100.000 y  480.000}}}
-    sig161   {type sig       cell {centre {x  100.000 y  400.000}}}
-    sig162   {type sig       cell {centre {x  100.000 y  320.000}}}
-    sig163   {type sig       cell {centre {x  100.000 y  240.000}}}
   }
 }                                                             

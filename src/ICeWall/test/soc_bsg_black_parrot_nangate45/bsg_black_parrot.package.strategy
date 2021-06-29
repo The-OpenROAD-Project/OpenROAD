@@ -17,7 +17,7 @@ Footprint definition {
   pad_pin_name "p_%s"
   
   place {
-    marker0 {type marker name u_marker_0   cell {centre {x 1200.000 y 1200.000} orient R0}}
+    marker0 {type marker inst_name u_marker_0   cell {centre {x 1200.000 y 1200.000} orient R0}}
   }
 
   padcells {                       

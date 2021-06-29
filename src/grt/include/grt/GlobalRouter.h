@@ -140,7 +140,6 @@ class GlobalRouter
   void setMaxLayerForClock(const int maxLayer);
   void setAlpha(const float alpha);
   float getAlpha() const { return _alpha; }
-
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -153,8 +152,7 @@ class GlobalRouter
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
-  void setPDRevForHighFanout(int pdRevForHighFanout);
-  void setAllowOverflow(bool allowOverflow);
+  void setAllowCongestion(bool allowCongestion);
   void setMacroExtension(int macroExtension);
   void printGrid();
 
@@ -176,6 +174,12 @@ class GlobalRouter
 
   // route clock nets public functions
   void routeClockNets();
+
+  // functions for random grt
+  void setSeed(int seed) { seed_ = seed; }
+  void setCapacitiesPerturbationPercentage(float percentage);
+  void setPerturbationAmount(int perturbation) { perturbation_amount_ = perturbation; };
+  void perturbCapacities();
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet *net);
@@ -217,7 +221,7 @@ class GlobalRouter
 
   // aux functions
   void findPins(Net* net);
-  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
+  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid, int& root_idx);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
@@ -305,8 +309,7 @@ class GlobalRouter
   const int _selectedMetal = 3;
   const int _gcellsOffset = 2;
   int _overflowIterations;
-  int _pdRevForHighFanout;
-  bool _allowOverflow;
+  bool _allowCongestion;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
   int _macroExtension;
@@ -317,16 +320,16 @@ class GlobalRouter
   // Region adjustment variables
   std::vector<RegionAdjustment> _regionAdjustments;
 
-  // Clock net routing variables
-  bool _pdRev;
   float _alpha;
   int _verbose;
-  std::map<std::string, float> _netsAlpha;
+  std::map<std::string, float> _net_alpha_map;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 
-  // temporary for congestion driven replace
-  int _numAdjusts = 0;
+  // variables for random grt
+  int seed_;
+  float caps_perturbation_percentage_;
+  int perturbation_amount_;
 
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;
