@@ -1212,15 +1212,15 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     heat_count = heat_count * heat_rate;
     vector<SimulatedAnnealingCore*> sa_vec;
     vector<thread> threads;
-    float cooling_rate_step = (0.99 - 0.01) / num_worker;
+    float cooling_rate_step = (0.995 - 0.985) / num_worker;
     for (int j = 0; j < num_worker; j++) {
-      float cooling_rate = 0.99;
+      float cooling_rate = 0.995;
       if (num_worker >= 2) {
-        cooling_rate = 0.99 - j * (0.99 - 0.01) / (num_worker - 1);
+        cooling_rate = 0.995 - j * (0.995 - 0.985) / (num_worker - 1);
       }
 
-      cout << "init_T:  " << init_T << endl;
-      cout << "thread:  " << j << "  cooling_rate:   " << cooling_rate << endl;
+      //cout << "init_T:  " << init_T << endl;
+      //cout << "thread:  " << j << "  cooling_rate:   " << cooling_rate << endl;
       SimulatedAnnealingCore* sa
           = new SimulatedAnnealingCore(outline_width,
                                        outline_height,
@@ -1270,7 +1270,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
         best_sa = sa_vec[j];
       }
 
-      cout << "thread:  " << j << "  cost:  " << sa_vec[j]->GetCost() << endl;
+      //cout << "thread:  " << j << "  cost:  " << sa_vec[j]->GetCost() << endl;
     }
 
     blocks = best_sa->GetBlocks();

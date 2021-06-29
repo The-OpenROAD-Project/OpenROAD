@@ -349,7 +349,7 @@ void SimulatedAnnealingCore::FastSA()
     //    T = init_T_ / (step * c_);
     // else
     //    T = init_T_ / step;
-    T = T * 0.99;
+    T = T * 0.995;
   }
 
   // pos_seq_ = best_pos_seq;
@@ -384,16 +384,16 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
   }
 
   // parameterse related to fastSA
-  float init_prob = 0.95;
-  float rej_ratio = 0.99;
-  int max_num_step = 5000;
+  float init_prob = 0.6;
+  float rej_ratio = 1.0;
+  int max_num_step = 3000;
   int k = 5000;
   float c = 1.0;
   int perturb_per_step = 2 * macros.size();
   float alpha = 0.5;
-  float pos_swap_prob = 0.4;
-  float neg_swap_prob = 0.4;
-  float double_swap_prob = 0.2;
+  float pos_swap_prob = 0.45;
+  float neg_swap_prob = 0.45;
+  float double_swap_prob = 0.1;
 
   std::mt19937 rand_generator(seed);
   vector<int> seed_list;
@@ -409,10 +409,16 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
     factor_list[0] = 1.0;
 
   if (num_thread > 1) {
-    float step = 2.0 / (num_thread - 1);
-    for (int i = 0; i < num_thread; i++)
-      factor_list[i] = pow(10.0, 1.0 - step * i);
+    //float step = 1.0 / (num_thread - 1);
+    //for (int i = 0; i < num_thread; i++)
+    //  factor_list[i] = pow(10.0, 1.0 - step * i);
+    for(int i = 0; i < num_thread / 2 ; i++)
+        factor_list[i] = 1.0 / (i + 1);
+
+    for(int i = num_thread / 2; i < num_thread; i++) 
+        factor_list[i] = 1.0 * (i + 1 - num_thread / 2);
   }
+
 
   vector<SimulatedAnnealingCore*> sa_vector;
   while (remaining_run > 0) {
@@ -422,9 +428,11 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
 
     for (int i = 0; i < run_thread; i++) {
       float factor = factor_list[i];
+      cout << "factor:   " << factor << endl;
       float temp_outline_width = outline_width * factor;
       float temp_outline_height
           = outline_width * outline_height / temp_outline_width;
+      //float temp_outline_height = outline_height;
       SimulatedAnnealingCore* sa
           = new SimulatedAnnealingCore(macros,
                                        temp_outline_width,

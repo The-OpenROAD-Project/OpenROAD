@@ -581,9 +581,9 @@ bool PinAlignmentSingleCluster(
       run_thread = remaining_run;
 
     for (int j = 0; j < run_thread; j++) {
-      float cooling_rate = 0.999;
+      float cooling_rate = 0.995;
       if (run_thread >= 2) {
-        cooling_rate = 0.999 - j * (0.999 - 0.001) / (run_thread - 1);
+        cooling_rate = 0.995 - j * (0.995 - 0.985) / (run_thread - 1);
       }
 
       SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(macros,
