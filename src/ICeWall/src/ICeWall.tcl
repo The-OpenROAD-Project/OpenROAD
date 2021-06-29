@@ -519,7 +519,7 @@ namespace eval ICeWall {
 
   proc get_die_area {} {
     variable footprint
- 
+
     if {![dict exists $footprint die_area]} {
       if {[dict exists $footprint scaled_die_area]} {
         set die_area {}
@@ -666,7 +666,7 @@ namespace eval ICeWall {
         }
         utl::error PAD 117 "No orient entry for cell reference $cell_ref matching orientation $orient"
       } else {
-        utl::error PAD 118 "No orient attribute defined for cell reference $cell_ref ([dict get $library cells $cell_ref])"
+        return $orient
       }
     } else {
       utl::error PAD 119 "No cell reference $cell_ref found in library data"
@@ -2149,8 +2149,11 @@ namespace eval ICeWall {
     set db [::ord::get_db]
     set tech [$db getTech]
     set block [[$db getChip] getBlock]
-    if {[catch {set_die_area {*}[ord::get_die_area]} msg]} {
-      utl::error PAD 223 "Design data needs to be loaded  before this command"
+
+    if {![dict exists $footprint die_area]} {
+      if {[catch {set_die_area {*}[ord::get_die_area]} msg]} {
+        utl::error PAD 223 "Design data needs to be loaded before this command"
+      }
     }
 
     set chip_width  [get_footprint_die_size_x]
@@ -4129,7 +4132,11 @@ namespace eval ICeWall {
       set inst_name [dict get $padcell inst_name]
     } else {
       if {[dict exists $padcell use_signal_name] && ([is_power_net [dict get $padcell use_signal_name]] || [is_ground_net [dict get $padcell use_signal_name]])} {
-        set inst_name [format [dict get $footprint pad_inst_name] [dict get $padcell name]]
+        if {[dict exists $footprint pad_inst_name]} {
+          set inst_name [format [dict get $footprint pad_inst_name] [dict get $padcell name]]
+        } else {
+          set inst_name [dict get $padcell name]
+        }
       } elseif {[set inst_name [check_inst_name_versus_signal $padcell]] == "NULL"} {
         if {[dict exists $footprint pad_inst_name]} {
           if {[dict exists $padcell use_signal_name]} {
@@ -4640,7 +4647,9 @@ namespace eval ICeWall {
     if {[dict exists $padcell bondpad]} {
       set bondpad_cell_ref [dict get $library types bondpad]
       if {![dict exists $library cells $bondpad_cell_ref]} {
-        utl::error PAD 133 "Bondpad cell $bondpad_cell_ref not found in library definition"
+        if {[$db findMaster $bondpad_cell_ref] == "NULL"} {
+          utl::error PAD 133 "Bondpad cell $bondpad_cell_ref not found in library definition"
+        }
       }
       if {[dict exists $padcell bondpad orient]} {
         if {[dict exists $library cells $bondpad_cell_ref orient]} {
@@ -4803,7 +4812,7 @@ namespace eval ICeWall {
 
     # Verify inst_name
     if {![dict exists $cell_inst inst_name]} {
-      utl::error PAD 172 "No value specified for inst_name for cell $name"
+      dict set cell_inst inst_name $name
     }
 
     # Verify cell orientation
