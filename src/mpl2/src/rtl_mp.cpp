@@ -31,18 +31,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "mpl2/rtl_mp.h"
-
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <random>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "block_placement.h"
+#include "mpl2/rtl_mp.h"
 #include "pin_alignment.h"
 #include "shape_engine.h"
 #include "util.h"
@@ -77,8 +77,6 @@ using shape_engine::Macro;
 using std::cout;
 using std::endl;
 using std::ofstream;
-using std::stof;
-using std::stoi;
 using std::string;
 using std::to_string;
 using std::unordered_map;
@@ -86,8 +84,19 @@ using std::vector;
 using utl::Logger;
 using utl::MPL;
 
-#define DUMP_INFO_PARAM(param, value) \
-  logger->info(MPL, 0001, "RTL_MP  Param: {}: {}", param, value)
+template <class T>
+static void get_param(const unordered_map<string, string>& params,
+                      const char* name,
+                      T& param,
+                      Logger* logger)
+{
+  auto iter = params.find(name);
+  if (iter != params.end()) {
+    std::istringstream s(iter->second);
+    s >> param;
+  }
+  logger->info(MPL, 9, "RTL_MP  Param: {}: {}", name, param);
+}
 
 bool rtl_macro_placer(const char* config_file, Logger* logger)
 {
@@ -145,175 +154,34 @@ bool rtl_macro_placer(const char* config_file, Logger* logger)
 
   unordered_map<string, string> params = ParseConfigFile(config_file);
 
-  unordered_map<string, string>::iterator param_iter;
-  string param;
-
-  param = "min_aspect_ratio";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    min_aspect_ratio = stof(param_iter->second);
-  DUMP_INFO_PARAM("min_aspect_ratio", min_aspect_ratio);
-
-  param = "dead_space";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    dead_space = stof(param_iter->second);
-  DUMP_INFO_PARAM("dead_space", dead_space);
-
-  param = "learning_rate";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    learning_rate = stof(param_iter->second);
-  DUMP_INFO_PARAM("learning_rate", learning_rate);
-
-  param = "shrink_factor";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    shrink_factor = stof(param_iter->second);
-  DUMP_INFO_PARAM("shrink_factor", shrink_factor);
-
-  param = "shrink_freq";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    shrink_freq = stof(param_iter->second);
-  DUMP_INFO_PARAM("shrink_freq", shrink_freq);
-
-  param = "halo_width";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    halo_width = stof(param_iter->second);
-  DUMP_INFO_PARAM("halo_width", halo_width);
-
-  param = "region_file";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    region_file = param_iter->second;
-
-  param = "num_thread";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    num_thread = stoi(param_iter->second);
-  DUMP_INFO_PARAM("num_threads", num_thread);
-
-  param = "num_run";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    num_run = stoi(param_iter->second);
-  DUMP_INFO_PARAM("num_run", num_run);
-
-  param = "heat_rate";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    heat_rate = stof(param_iter->second);
-  DUMP_INFO_PARAM("heat_rate", heat_rate);
-
-  param = "num_level";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    num_level = stoi(param_iter->second);
-  DUMP_INFO_PARAM("num_level", num_level);
-
-  param = "num_worker";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    num_worker = stoi(param_iter->second);
-  DUMP_INFO_PARAM("num_workers", num_worker);
-
-  param = "alpha";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    alpha = stof(param_iter->second);
-  DUMP_INFO_PARAM("alpha", alpha);
-
-  param = "beta";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    beta = stof(param_iter->second);
-  DUMP_INFO_PARAM("beta", beta);
-
-  param = "gamma";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    gamma = stof(param_iter->second);
-  DUMP_INFO_PARAM("gamma", gamma);
-
-  param = "boundary_weight";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    boundary_weight = stof(param_iter->second);
-  DUMP_INFO_PARAM("boundary_weight", boundary_weight);
-
-  param = "macro_blockage_weight";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    macro_blockage_weight = stof(param_iter->second);
-  DUMP_INFO_PARAM("macro_blockage_weight", macro_blockage_weight);
-
-  param = "resize_prob";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    resize_prob = stof(param_iter->second);
-  DUMP_INFO_PARAM("resize_probability", resize_prob);
-
-  param = "pos_swap_prob";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    pos_swap_prob = stof(param_iter->second);
-  DUMP_INFO_PARAM("pos_swap_probability", pos_swap_prob);
-
-  param = "neg_swap_prob";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    neg_swap_prob = stof(param_iter->second);
-  DUMP_INFO_PARAM("neg_swap_probability", neg_swap_prob);
-
-  param = "double_swap_prob";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    double_swap_prob = stof(param_iter->second);
-  DUMP_INFO_PARAM("double_swap_probability", double_swap_prob);
-
-  param = "init_prob";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    init_prob = stof(param_iter->second);
-  DUMP_INFO_PARAM("init_prob", init_prob);
-
-  param = "rej_ratio";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    rej_ratio = stof(param_iter->second);
-  DUMP_INFO_PARAM("rejection_ratio", rej_ratio);
-
-  param = "k";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    k = stoi(param_iter->second);
-  DUMP_INFO_PARAM("k", k);
-
-  param = "c";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    c = stof(param_iter->second);
-  DUMP_INFO_PARAM("c", c);
-
-  param = "max_num_step";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    max_num_step = stoi(param_iter->second);
-  DUMP_INFO_PARAM("max_num_step", max_num_step);
-
-  param = "perturb_per_step";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    perturb_per_step = stoi(param_iter->second);
-  DUMP_INFO_PARAM("perturb_per_step", perturb_per_step);
-
-  param = "seed";
-  param_iter = params.find(param);
-  if (param_iter != params.end())
-    seed = stoi(param_iter->second);
-  DUMP_INFO_PARAM("seed", seed);
+  get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
+  get_param(params, "dead_space", dead_space, logger);
+  get_param(params, "learning_rate", learning_rate, logger);
+  get_param(params, "shrink_factor", shrink_factor, logger);
+  get_param(params, "shrink_freq", shrink_freq, logger);
+  get_param(params, "halo_width", halo_width, logger);
+  get_param(params, "region_file", region_file, logger);
+  get_param(params, "num_thread", num_thread, logger);
+  get_param(params, "num_run", num_run, logger);
+  get_param(params, "heat_rate", heat_rate, logger);
+  get_param(params, "num_level", num_level, logger);
+  get_param(params, "num_worker", num_worker, logger);
+  get_param(params, "alpha", alpha, logger);
+  get_param(params, "beta", beta, logger);
+  get_param(params, "gamma", gamma, logger);
+  get_param(params, "boundary_weight", boundary_weight, logger);
+  get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
+  get_param(params, "resize_prob", resize_prob, logger);
+  get_param(params, "pos_swap_prob", pos_swap_prob, logger);
+  get_param(params, "neg_swap_prob", neg_swap_prob, logger);
+  get_param(params, "double_swap_prob", double_swap_prob, logger);
+  get_param(params, "init_prob", init_prob, logger);
+  get_param(params, "rej_ratio", rej_ratio, logger);
+  get_param(params, "k", k, logger);
+  get_param(params, "c", c, logger);
+  get_param(params, "max_num_step", max_num_step, logger);
+  get_param(params, "perturb_per_step", perturb_per_step, logger);
+  get_param(params, "seed", seed, logger);
 
   float outline_width = 0.0;
   float outline_height = 0.0;
