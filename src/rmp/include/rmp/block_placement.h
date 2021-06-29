@@ -341,22 +341,7 @@ namespace block_placement {
             float pos_swap_prob_ = 0.2;
             float neg_swap_prob_ = 0.2;
             float double_swap_prob_ = 0.2;
-            
-            float resize_accept_ = 0.0;
-            float pos_swap_accept_ = 0.0;
-            float neg_swap_accept_ = 0.0;
-            float double_swap_accept_ = 0.0;
-            
-            float resize_reject_ = 0.0;
-            float pos_swap_reject_ = 0.0;
-            float neg_swap_reject_ = 0.0;
-            float double_swap_reject_ = 0.0;
-            
-            float resize_accept_rate_ = 0.0;
-            float pos_swap_accept_rate_ = 0.0;
-            float neg_swap_accept_rate_ = 0.0;
-            float double_swap_accept_rate_ = 0.0;
-
+           
             std::unordered_map<std::string, int> block_map_;
             std::unordered_map<std::string, std::pair<float, float> > terminal_position_;
             std::vector<Net*> nets_;
@@ -367,8 +352,6 @@ namespace block_placement {
             
             int action_id_ = -1;
             int block_id_ = -1;
-            
-
 
 
             std::vector<int> pos_seq_;
