@@ -240,8 +240,8 @@ bool rtl_macro_placer(const char* config_file, Logger* logger)
     float y = blocks[block_map[clusters[i]->GetName()]].GetY();
     float width = blocks[block_map[clusters[i]->GetName()]].GetWidth();
     float height = blocks[block_map[clusters[i]->GetName()]].GetHeight();
-    clusters[i]->SpecifyPos(x, y);
-    clusters[i]->SpecifyFootprint(width, height);
+    clusters[i]->SetPos(x, y);
+    clusters[i]->SetFootprint(width, height);
   }
 
   bool success_flag = pin_alignment::PinAlignment(

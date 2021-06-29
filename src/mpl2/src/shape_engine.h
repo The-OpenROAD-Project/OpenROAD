@@ -99,9 +99,9 @@ class Macro
 
   std::string GetName() const { return name_; }
 
-  void SpecifyX(float x) { x_ = x; }
-  void SpecifyY(float y) { y_ = y; }
-  void SpecifyPinPosition(float pin_x, float pin_y)
+  void SetX(float x) { x_ = x; }
+  void SetY(float y) { y_ = y; }
+  void SetPinPosition(float pin_x, float pin_y)
   {
     pin_x_ = pin_x;
     pin_y_ = pin_y;
@@ -137,13 +137,13 @@ class Cluster
   std::vector<Macro> GetMacros() const { return macros_; }
   int GetNumMacro() const { return macros_.size(); }
 
-  void SpecifyPos(float x, float y)
+  void SetPos(float x, float y)
   {
     x_ = x;
     y_ = y;
   }
 
-  void SpecifyFootprint(float width, float height)
+  void SetFootprint(float width, float height)
   {
     width_ = width;
     height_ = height;
@@ -154,10 +154,9 @@ class Cluster
   float GetWidth() const { return width_; }
   float GetHeight() const { return height_; }
 
-  void SpecifyArea(float area) { area_ = area; }
+  void SetArea(float area) { area_ = area; }
   void AddArea(float area) { area_ += area; }
-  void SpecifyAspectRatio(
-      const std::vector<std::pair<float, float>>& aspect_ratio)
+  void SetAspectRatio(const std::vector<std::pair<float, float>>& aspect_ratio)
   {
     aspect_ratio_ = aspect_ratio;
   }
@@ -168,7 +167,7 @@ class Cluster
   }
 
   void AddMacro(const Macro& macro) { macros_.push_back(macro); }
-  void SpecifyMacros(const std::vector<Macro>& macros) { macros_ = macros; }
+  void SetMacros(const std::vector<Macro>& macros) { macros_ = macros; }
 
   bool operator==(const Cluster& cluster) const
   {

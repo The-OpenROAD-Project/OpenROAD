@@ -82,11 +82,11 @@ class Block
   float GetAspectRatio() const { return height_ / width_; }
   int GetNumMacro() const { return num_macro_; }
 
-  void SpecifyX(float x) { x_ = x; }
-  void SpecifyY(float y) { y_ = y; }
-  void SpecifyAspectRatio(float aspect_ratio);
-  void SpecifyRandom(std::mt19937& generator,
-                     std::uniform_real_distribution<float>& distribution);
+  void SetX(float x) { x_ = x; }
+  void SetY(float y) { y_ = y; }
+  void SetAspectRatio(float aspect_ratio);
+  void SetRandom(std::mt19937& generator,
+                 std::uniform_real_distribution<float>& distribution);
 
   void ChangeWidth(float width);
   void ChangeHeight(float height);
@@ -281,8 +281,7 @@ class SimulatedAnnealingCore
                   float norm_boundary_penalty,
                   float norm_macro_blockage_penalty);
 
-  void SpecifySeq(const std::vector<int>& pos_seq,
-                  const std::vector<int>& neg_seq);
+  void SetSeq(const std::vector<int>& pos_seq, const std::vector<int>& neg_seq);
 
   float GetInitT() const { return init_T_; }
   float GetNormArea() const { return norm_area_; }

@@ -218,14 +218,14 @@ void Block::ChooseAspectRatioRandom()
   width_ = area_ / height_;
 }
 
-void Block::SpecifyAspectRatio(float aspect_ratio)
+void Block::SetAspectRatio(float aspect_ratio)
 {
   height_ = std::sqrt(area_ * aspect_ratio);
   width_ = area_ / height_;
 }
 
-void Block::SpecifyRandom(std::mt19937& generator,
-                          std::uniform_real_distribution<float>& distribution)
+void Block::SetRandom(std::mt19937& generator,
+                      std::uniform_real_distribution<float>& distribution)
 {
   generator_ = &generator;
   distribution_ = &distribution;
@@ -334,7 +334,7 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
 
   blocks_ = blocks;
   for (unsigned int i = 0; i < blocks_.size(); i++) {
-    blocks_[i].SpecifyRandom(generator_, distribution_);
+    blocks_[i].SetRandom(generator_, distribution_);
     block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
   }
 
@@ -344,8 +344,8 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
 void SimulatedAnnealingCore::PackFloorplan()
 {
   for (int i = 0; i < blocks_.size(); i++) {
-    blocks_[i].SpecifyX(0.0);
-    blocks_[i].SpecifyY(0.0);
+    blocks_[i].SetX(0.0);
+    blocks_[i].SetY(0.0);
   }
 
   // calculate X position
@@ -362,7 +362,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     int b = pos_seq_[i];
     int p = match[b].second;
-    blocks_[b].SpecifyX(length[p]);
+    blocks_[b].SetX(length[p]);
     float t = blocks_[b].GetX() + blocks_[b].GetWidth();
     for (int j = p; j < neg_seq_.size(); j++)
       if (t > length[j])
@@ -390,7 +390,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   for (int i = 0; i < num_blocks; i++) {
     int b = pos_seq[i];
     int p = match[b].second;
-    blocks_[b].SpecifyY(length[p]);
+    blocks_[b].SetY(length[p]);
     float t = blocks_[b].GetY() + blocks_[b].GetHeight();
     for (int j = p; j < num_blocks; j++)
       if (t > length[j])
@@ -796,8 +796,8 @@ void SimulatedAnnealingCore::Initialize(float init_T,
   norm_macro_blockage_penalty_ = norm_macro_blockage_penalty;
 }
 
-void SimulatedAnnealingCore::SpecifySeq(const std::vector<int>& pos_seq,
-                                        const std::vector<int>& neg_seq)
+void SimulatedAnnealingCore::SetSeq(const std::vector<int>& pos_seq,
+                                    const std::vector<int>& neg_seq)
 {
   pos_seq_ = pos_seq;
   neg_seq_ = neg_seq;
@@ -849,12 +849,12 @@ bool SimulatedAnnealingCore::FitFloorplan()
       blocks_[i].ShrinkSoftBlock(1.0 / width_factor, 1.0 / height_factor);
       if (ux >= outline_width_ * 0.99) {
         x -= blocks_[i].GetWidth();
-        blocks_[i].SpecifyX(x);
+        blocks_[i].SetX(x);
       }
 
       if (uy >= outline_height_ * 0.99) {
         y -= blocks_[i].GetHeight();
-        blocks_[i].SpecifyY(y);
+        blocks_[i].SetY(y);
       }
     } else {
       blocks_[i].ShrinkSoftBlock(1.0 / width_factor, 1.0 / height_factor);
@@ -1363,7 +1363,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
                      norm_boundary_penalty,
                      norm_macro_blockage_penalty);
 
-      sa->SpecifySeq(pos_seq, neg_seq);
+      sa->SetSeq(pos_seq, neg_seq);
       sa_vec.push_back(sa);
       threads.push_back(thread(Run, sa));
     }

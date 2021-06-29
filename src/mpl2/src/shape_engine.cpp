@@ -180,8 +180,8 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(const std::vector<Macro>& macros,
 void SimulatedAnnealingCore::PackFloorplan()
 {
   for (int i = 0; i < macros_.size(); i++) {
-    macros_[i]->SpecifyX(0.0);
-    macros_[i]->SpecifyY(0.0);
+    macros_[i]->SetX(0.0);
+    macros_[i]->SetY(0.0);
   }
 
   // calculate X position
@@ -198,7 +198,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     int b = pos_seq_[i];
     int p = match[b].second;
-    macros_[b]->SpecifyX(length[p]);
+    macros_[b]->SetX(length[p]);
     float t = macros_[b]->GetX() + macros_[b]->GetWidth();
     for (int j = p; j < neg_seq_.size(); j++)
       if (t > length[j])
@@ -226,7 +226,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   for (int i = 0; i < num_blocks; i++) {
     int b = pos_seq[i];
     int p = match[b].second;
-    macros_[b]->SpecifyY(length[p]);
+    macros_[b]->SetY(length[p]);
     float t = macros_[b]->GetY() + macros_[b]->GetHeight();
     for (int j = p; j < num_blocks; j++)
       if (t > length[j])
@@ -680,7 +680,7 @@ void ParseBlockFile(vector<Cluster*>& clusters,
         std_cell_area += area;
       }
 
-      cluster->SpecifyArea(area);
+      cluster->SetArea(area);
       cluster->SortMacro();
     } else {
       i++;
@@ -701,7 +701,7 @@ void ParseBlockFile(vector<Cluster*>& clusters,
   for (int j = 0; j < clusters.size(); j++) {
     if (clusters[j]->GetNumMacro() == 0) {
       float area = clusters[j]->GetArea() / std_cell_util;
-      clusters[j]->SpecifyArea(area);
+      clusters[j]->SetArea(area);
     }
   }
 }
@@ -765,8 +765,8 @@ vector<Cluster*> ShapeEngine(float& outline_width,
                       num_thread,
                       num_run,
                       seed);
-      clusters[i]->SpecifyAspectRatio(aspect_ratio);
-      clusters[i]->SpecifyArea(final_area);
+      clusters[i]->SetAspectRatio(aspect_ratio);
+      clusters[i]->SetArea(final_area);
     }
   }
 
@@ -778,8 +778,8 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       float area = clusters[class_list[i]]->GetArea();
       vector<pair<float, float>> aspect_ratio
           = clusters[class_list[i]]->GetAspectRatio();
-      clusters[i]->SpecifyAspectRatio(aspect_ratio);
-      clusters[i]->SpecifyArea(area);
+      clusters[i]->SetAspectRatio(aspect_ratio);
+      clusters[i]->SetArea(area);
     } else {
       ;
     }

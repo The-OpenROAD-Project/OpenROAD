@@ -185,8 +185,8 @@ void SimulatedAnnealingCore::WriteFloorplan(const std::string& file_name) const
 void SimulatedAnnealingCore::PackFloorplan()
 {
   for (int i = 0; i < macros_.size(); i++) {
-    macros_[i].SpecifyX(0.0);
-    macros_[i].SpecifyY(0.0);
+    macros_[i].SetX(0.0);
+    macros_[i].SetY(0.0);
   }
 
   // calculate X position
@@ -203,7 +203,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     int b = pos_seq_[i];
     int p = match[b].second;
-    macros_[b].SpecifyX(length[p]);
+    macros_[b].SetX(length[p]);
     float t = macros_[b].GetX() + macros_[b].GetWidth();
     for (int j = p; j < neg_seq_.size(); j++)
       if (t > length[j])
@@ -231,7 +231,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   for (int i = 0; i < num_blocks; i++) {
     int b = pos_seq[i];
     int p = match[b].second;
-    macros_[b].SpecifyY(length[p]);
+    macros_[b].SetY(length[p]);
     float t = macros_[b].GetY() + macros_[b].GetHeight();
     for (int j = p; j < num_blocks; j++)
       if (t > length[j])
@@ -581,7 +581,7 @@ void ParseMacroFile(vector<Macro>& macros,
   for (int i = 0; i < macros.size(); i++) {
     float pin_x = pin_loc[macros[i].GetName()].first;
     float pin_y = pin_loc[macros[i].GetName()].second;
-    macros[i].SpecifyPinPosition(pin_x, pin_y);
+    macros[i].SetPinPosition(pin_x, pin_y);
   }
 }
 
@@ -709,7 +709,7 @@ bool PinAlignmentSingleCluster(
                  "cluster!!!");
     return false;
   } else {
-    cluster->SpecifyMacros(sa_vector[min_id]->GetMacros());
+    cluster->SetMacros(sa_vector[min_id]->GetMacros());
   }
 
   for (int j = 0; j < sa_vector.size(); j++)
