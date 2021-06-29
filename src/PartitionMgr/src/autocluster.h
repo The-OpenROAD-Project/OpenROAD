@@ -234,7 +234,7 @@ class AutoClusterMgr
   std::queue<Cluster*> mlpart_cluster_list_;
 
   void createBundledIO();
-  Metric traverseLogicalHierarchy(sta::Instance* inst);
+  Metric computeMetrics(sta::Instance* inst);
   void getBufferNet();
   void getBufferNetUtil(
       sta::Instance* inst,

@@ -97,7 +97,7 @@ float Cluster::calculateArea(ord::dbVerilogNetwork* network) const
 //  Recursive function to collect the design metrics (number of instances, hard
 //  macros, area) in the logical hierarchy
 //
-Metric AutoClusterMgr::traverseLogicalHierarchy(sta::Instance* inst)
+Metric AutoClusterMgr::computeMetrics(sta::Instance* inst)
 {
   float area = 0.0;
   unsigned int num_inst = 0;
@@ -107,7 +107,7 @@ Metric AutoClusterMgr::traverseLogicalHierarchy(sta::Instance* inst)
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();
     if (network_->isHierarchical(child)) {
-      Metric metric = traverseLogicalHierarchy(child);
+      Metric metric = computeMetrics(child);
       area += metric.area;
       num_inst += metric.num_inst;
       num_macro += metric.num_macro;
@@ -1413,7 +1413,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     cluster_list_.push_back(cluster);
   }
 
-  Metric metric = traverseLogicalHierarchy(network_->topInstance());
+  Metric metric = computeMetrics(network_->topInstance());
   logger_->info(
       PAR,
       402,
