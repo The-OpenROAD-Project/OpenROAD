@@ -43,29 +43,7 @@ class Macro
   Orientation orientation_ = R0;
   std::string name_;
 
-  static std::string OrientationToString(Orientation orientation)
-  {
-    switch (orientation) {
-      case R0:
-        return std::string("R0");
-      case R180:
-        return std::string("R180");
-      case R90:
-        return std::string("R90");
-      case R270:
-        return std::string("R270");
-      case MY:
-        return std::string("MY");
-      case MX:
-        return std::string("MX");
-      case MX90:
-        return std::string("MX90");
-      case MY90:
-        return std::string("MY90");
-      default:
-        return std::string("Unknown");
-    }
-  }
+  static std::string OrientationToString(Orientation orientation);
 
  public:
   Macro(const std::string& name, float width, float height)
@@ -273,42 +251,7 @@ class SimulatedAnnealingCore
                          float pos_swap_prob = 0.4,
                          float neg_swap_prob = 0.4,
                          float double_swap_prob = 0.2,
-                         unsigned seed = 0)
-  {
-    outline_width_ = outline_width;
-    outline_height_ = outline_height;
-
-    init_prob_ = init_prob;
-    rej_ratio_ = rej_ratio;
-    max_num_step_ = max_num_step;
-    k_ = k;
-    c_ = c;
-    perturb_per_step_ = perturb_per_step;
-    alpha_ = alpha;
-
-    pos_swap_prob_ = pos_swap_prob;
-    neg_swap_prob_ = pos_swap_prob_ + neg_swap_prob;
-    double_swap_prob_ = neg_swap_prob_ + double_swap_prob;
-
-    for (unsigned int i = 0; i < macros.size(); i++) {
-      pos_seq_.push_back(i);
-      neg_seq_.push_back(i);
-
-      pre_pos_seq_.push_back(i);
-      pre_neg_seq_.push_back(i);
-
-      Macro* macro = new Macro(macros[i]);
-      macros_.push_back(macro);
-    }
-
-    std::mt19937 randGen(seed);
-    generator_ = randGen;
-    std::uniform_real_distribution<float> distribution(0.0, 1.0);
-    distribution_ = distribution;
-
-    // Initialize init_T_, norm_blockage_, norm_area_
-    Initialize();
-  }
+                         unsigned seed = 0);
 
   void Run() { FastSA(); }
 

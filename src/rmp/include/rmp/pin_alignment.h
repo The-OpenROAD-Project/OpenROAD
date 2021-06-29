@@ -105,57 +105,7 @@ class SimulatedAnnealingCore
       float pos_swap_prob = 0.3,
       float neg_swap_prob = 0.3,
       float double_swap_prob = 0.2,
-      unsigned seed = 0)
-  {
-    outline_width_ = outline_width;
-    outline_height_ = outline_height;
-
-    init_prob_ = init_prob;
-    rej_ratio_ = rej_ratio;
-    max_num_step_ = max_num_step;
-    k_ = k;
-    c_ = c;
-    perturb_per_step_ = perturb_per_step;
-    alpha_ = alpha;
-    beta_ = beta;
-    gamma_ = gamma;
-
-    cooling_rate_ = cooling_rate;
-
-    flip_prob_ = flip_prob;
-    pos_swap_prob_ = flip_prob_ + pos_swap_prob;
-    neg_swap_prob_ = pos_swap_prob_ + neg_swap_prob;
-    double_swap_prob_ = neg_swap_prob_ + double_swap_prob;
-
-    nets_ = nets;
-    terminal_position_ = terminal_position;
-
-    for (int i = 0; i < macros.size(); i++) {
-      pos_seq_.push_back(i);
-      neg_seq_.push_back(i);
-
-      pre_pos_seq_.push_back(i);
-      pre_neg_seq_.push_back(i);
-
-      macros_.push_back(shape_engine::Macro(macros[i]));
-
-      macro_map_.insert(std::pair<std::string, int>(macros[i].GetName(), i));
-    }
-
-    std::mt19937 randGen(seed);
-    generator_ = randGen;
-    std::uniform_real_distribution<float> distribution(0.0, 1.0);
-    distribution_ = distribution;
-
-    if (macros_.size() == 1) {
-      width_ = macros_[0].GetWidth();
-      height_ = macros_[0].GetHeight();
-      area_ = width_ * height_;
-    } else {
-      // Initialize init_T_, norm_area_, norm_wirelength, norm_outline_penalty_
-      Initialize();
-    }
-  }
+      unsigned seed = 0);
 
   void Run()
   {

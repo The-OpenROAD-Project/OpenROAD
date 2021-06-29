@@ -1,5 +1,3 @@
-#include "rmp/pin_alignment.h"
-
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -11,6 +9,7 @@
 #include <vector>
 
 #include "rmp/block_placement.h"
+#include "rmp/pin_alignment.h"
 #include "rmp/shape_engine.h"
 #include "rmp/util.h"
 #include "utl/Logger.h"
@@ -43,6 +42,79 @@ using shape_engine::Macro;
 
 using utl::Logger;
 using utl::RMP;
+
+SimulatedAnnealingCore::SimulatedAnnealingCore(
+    const std::vector<shape_engine::Macro>& macros,
+    const std::vector<block_placement::Net*>& nets,
+    const std::unordered_map<std::string, std::pair<float, float>>&
+        terminal_position,
+    float cooling_rate,
+    float outline_width,
+    float outline_height,
+    float init_prob,
+    float rej_ratio,
+    int max_num_step,
+    int k,
+    float c,
+    int perturb_per_step,
+    float alpha,
+    float beta,
+    float gamma,
+    float flip_prob,
+    float pos_swap_prob,
+    float neg_swap_prob,
+    float double_swap_prob,
+    unsigned seed)
+{
+  outline_width_ = outline_width;
+  outline_height_ = outline_height;
+
+  init_prob_ = init_prob;
+  rej_ratio_ = rej_ratio;
+  max_num_step_ = max_num_step;
+  k_ = k;
+  c_ = c;
+  perturb_per_step_ = perturb_per_step;
+  alpha_ = alpha;
+  beta_ = beta;
+  gamma_ = gamma;
+
+  cooling_rate_ = cooling_rate;
+
+  flip_prob_ = flip_prob;
+  pos_swap_prob_ = flip_prob_ + pos_swap_prob;
+  neg_swap_prob_ = pos_swap_prob_ + neg_swap_prob;
+  double_swap_prob_ = neg_swap_prob_ + double_swap_prob;
+
+  nets_ = nets;
+  terminal_position_ = terminal_position;
+
+  for (int i = 0; i < macros.size(); i++) {
+    pos_seq_.push_back(i);
+    neg_seq_.push_back(i);
+
+    pre_pos_seq_.push_back(i);
+    pre_neg_seq_.push_back(i);
+
+    macros_.push_back(shape_engine::Macro(macros[i]));
+
+    macro_map_.insert(std::pair<std::string, int>(macros[i].GetName(), i));
+  }
+
+  std::mt19937 randGen(seed);
+  generator_ = randGen;
+  std::uniform_real_distribution<float> distribution(0.0, 1.0);
+  distribution_ = distribution;
+
+  if (macros_.size() == 1) {
+    width_ = macros_[0].GetWidth();
+    height_ = macros_[0].GetHeight();
+    area_ = width_ * height_;
+  } else {
+    // Initialize init_T_, norm_area_, norm_wirelength, norm_outline_penalty_
+    Initialize();
+  }
+}
 
 void SimulatedAnnealingCore::PackFloorplan()
 {
@@ -108,10 +180,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   }
 
   if (flag)
@@ -122,10 +194,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -206,10 +278,10 @@ void SimulatedAnnealingCore::Perturb()
   pre_wirelength_ = wirelength_;
   pre_outline_penalty_ = outline_penalty_;
 
-  float op = (distribution_)(generator_);
+  float op = (distribution_) (generator_);
   if (op <= flip_prob_) {
     action_id_ = 1;
-    float prob = (distribution_)(generator_);
+    float prob = (distribution_) (generator_);
     if (prob <= 0.5)
       flip_flag_ = true;
     else
@@ -419,7 +491,9 @@ void Run(SimulatedAnnealingCore* sa)
   sa->Run();
 }
 
-void ParseMacroFile(vector<Macro>& macros, float halo_width, const string& file_name)
+void ParseMacroFile(vector<Macro>& macros,
+                    float halo_width,
+                    const string& file_name)
 {
   unordered_map<string, pair<float, float>> pin_loc;
   fstream f;

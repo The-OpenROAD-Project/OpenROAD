@@ -1,5 +1,3 @@
-#include "rmp/block_placement.h"
-
 #include <float.h>
 
 #include <algorithm>
@@ -10,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "rmp/block_placement.h"
 #include "rmp/shape_engine.h"
 #include "rmp/util.h"
 #include "utl/Logger.h"
@@ -40,6 +39,240 @@ using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::RMP;
+
+Block::Block(const std::string& name,
+             float area,
+             int num_macro,
+             const std::vector<std::pair<float, float>>& aspect_ratio)
+{
+  name_ = name;
+  area_ = area;
+  num_macro_ = num_macro;
+  if (num_macro_ == 0)
+    is_soft_ = true;
+  else
+    is_soft_ = false;
+
+  aspect_ratio_ = aspect_ratio;
+
+  // sort the aspect ratio according to the 1st element of the pair in
+  // ascending order And we assume the aspect_ratio[i].first <=
+  // aspect_ratio[i].second
+  std::sort(aspect_ratio_.begin(), aspect_ratio_.end());
+  for (unsigned int i = 0; i < aspect_ratio_.size(); i++) {
+    float height_low = std::sqrt(area_ * aspect_ratio_[i].first);
+    float width_high = area_ / height_low;
+
+    float height_high = std::sqrt(area_ * aspect_ratio_[i].second);
+    float width_low = area_ / height_high;
+
+    // height_limit_ is sorted in non-decreasing order
+    height_limit_.push_back(std::pair<float, float>(height_low, height_high));
+
+    // width_limit_ is sorted in non-increasing order
+    width_limit_.push_back(std::pair<float, float>(width_high, width_low));
+  }
+  // Initialize shape (width_, height_) randomly
+  // ChooseAspectRatioRandom();
+}
+
+void Block::ChangeWidth(float width)
+{
+  if (is_soft_ == false)
+    return;
+
+  if (width >= width_limit_[0].first) {
+    width_ = width_limit_[0].first;
+    height_ = area_ / width_;
+  } else if (width <= width_limit_[width_limit_.size() - 1].second) {
+    width_ = width_limit_[width_limit_.size() - 1].second;
+    height_ = area_ / width_;
+  } else {
+    std::vector<std::pair<float, float>>::iterator vec_it
+        = width_limit_.begin();
+    while (vec_it->second > width)
+      vec_it++;
+
+    if (width <= vec_it->first) {
+      width_ = width;
+      height_ = area_ / width_;
+    } else {
+      float width_low = vec_it->first;
+      vec_it--;
+      float width_high = vec_it->second;
+      if (width - width_low > width_high - width)
+        width_ = width_high;
+      else
+        width_ = width_low;
+
+      height_ = area_ / width_;
+    }
+  }
+}
+
+void Block::ChangeHeight(float height)
+{
+  if (is_soft_ == false)
+    return;
+
+  if (height <= height_limit_[0].first) {
+    height_ = height_limit_[0].first;
+    width_ = area_ / height_;
+  } else if (height >= height_limit_[height_limit_.size() - 1].second) {
+    height_ = height_limit_[height_limit_.size() - 1].second;
+    width_ = area_ / height_;
+  } else {
+    std::vector<std::pair<float, float>>::iterator vec_it
+        = height_limit_.begin();
+    while (vec_it->second < height)
+      vec_it++;
+
+    if (height >= vec_it->first) {
+      height_ = height;
+      width_ = area_ / height_;
+    } else {
+      float height_high = vec_it->first;
+      vec_it--;
+      float height_low = vec_it->second;
+      if (height - height_low > height_high - height)
+        height_ = height_high;
+      else
+        height_ = height_low;
+
+      width_ = area_ / height_;
+    }
+  }
+}
+
+void Block::ResizeHardBlock()
+{
+  if (num_macro_ == 0 || (num_macro_ > 0 && aspect_ratio_.size() == 1)) {
+    return;
+  } else {
+    int index1
+        = (int) (floor((*distribution_)(*generator_) * aspect_ratio_.size()));
+    float ar = aspect_ratio_[index1].first;
+    float temp_ar = height_ / width_;
+    while (abs(ar - temp_ar) / ar < 0.01) {
+      index1
+          = (int) (floor((*distribution_)(*generator_) * aspect_ratio_.size()));
+      ar = aspect_ratio_[index1].first;
+      temp_ar = height_ / width_;
+    }
+
+    height_ = std::sqrt(area_ * ar);
+    width_ = area_ / height_;
+  }
+}
+
+void Block::ChooseAspectRatioRandom()
+{
+  float ar = 0.0;
+  int index1
+      = (int) (floor((*distribution_)(*generator_) * aspect_ratio_.size()));
+
+  float ar_low = aspect_ratio_[index1].first;
+  float ar_high = aspect_ratio_[index1].second;
+
+  if (ar_low == ar_high) {
+    ar = ar_low;
+  } else {
+    float num = (*distribution_)(*generator_);
+    ar = ar_low + (ar_high - ar_low) * num;
+  }
+
+  height_ = std::sqrt(area_ * ar);
+  width_ = area_ / height_;
+}
+
+SimulatedAnnealingCore::SimulatedAnnealingCore(
+    float outline_width,
+    float outline_height,
+    const std::vector<Block>& blocks,
+    const std::vector<Net*>& nets,
+    const std::vector<Region*>& regions,
+    const std::unordered_map<std::string, std::pair<float, float>>&
+        terminal_position,
+    float cooling_rate,
+    float alpha,
+    float beta,
+    float gamma,
+    float boundary_weight,
+    float macro_blockage_weight,
+    float resize_prob,
+    float pos_swap_prob,
+    float neg_swap_prob,
+    float double_swap_prob,
+    float init_prob,
+    float rej_ratio,
+    int max_num_step,
+    int k,
+    float c,
+    int perturb_per_step,
+    float learning_rate,
+    float shrink_factor,
+    float shrink_freq,
+    unsigned seed)
+{
+  outline_width_ = outline_width;
+  outline_height_ = outline_height;
+
+  cooling_rate_ = cooling_rate;
+
+  learning_rate_ = learning_rate;
+  shrink_factor_ = shrink_factor;
+  shrink_freq_ = shrink_freq;
+
+  alpha_ = alpha;
+  beta_ = beta;
+  gamma_ = gamma;
+  boundary_weight_ = boundary_weight;
+  macro_blockage_weight_ = macro_blockage_weight;
+
+  alpha_base_ = alpha_;
+  beta_base_ = beta_;
+  gamma_base_ = gamma_;
+  boundary_weight_base_ = boundary_weight_;
+  macro_blockage_weight_base_ = macro_blockage_weight_;
+
+  resize_prob_ = resize_prob;
+  pos_swap_prob_ = resize_prob_ + pos_swap_prob;
+  neg_swap_prob_ = pos_swap_prob_ + neg_swap_prob;
+  double_swap_prob_ = neg_swap_prob_ + double_swap_prob;
+
+  init_prob_ = init_prob;
+  rej_ratio_ = rej_ratio;
+  max_num_step_ = max_num_step;
+  k_ = k;
+  c_ = c;
+  perturb_per_step_ = perturb_per_step;
+
+  std::mt19937 randGen(seed);
+  generator_ = randGen;
+
+  std::uniform_real_distribution<float> distribution(0.0, 1.0);
+  distribution_ = distribution;
+
+  nets_ = nets;
+  regions_ = regions;
+  terminal_position_ = terminal_position;
+
+  for (unsigned int i = 0; i < blocks.size(); i++) {
+    pos_seq_.push_back(i);
+    neg_seq_.push_back(i);
+
+    pre_pos_seq_.push_back(i);
+    pre_neg_seq_.push_back(i);
+  }
+
+  blocks_ = blocks;
+  for (unsigned int i = 0; i < blocks_.size(); i++) {
+    blocks_[i].SpecifyRandom(generator_, distribution_);
+    block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
+  }
+
+  pre_blocks_ = blocks_;
+}
 
 void SimulatedAnnealingCore::PackFloorplan()
 {
@@ -105,10 +338,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_)(generator_) *blocks_.size()));
-  int index2 = (int) (floor((distribution_)(generator_) *blocks_.size()));
+  int index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+  int index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_)(generator_) *blocks_.size()));
+    index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
   if (flag)
@@ -119,10 +352,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_)(generator_) *blocks_.size()));
-  int index2 = (int) (floor((distribution_)(generator_) *blocks_.size()));
+  int index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+  int index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_)(generator_) *blocks_.size()));
+    index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -143,19 +376,19 @@ void SimulatedAnnealingCore::Resize()
   }
 
   int index1 = -1;
-  float prob = (distribution_)(generator_);
+  float prob = (distribution_) (generator_);
   if (prob <= hard_block_list.size() / blocks_.size()) {
     index1 = hard_block_list[floor(
-        (distribution_)(generator_) *hard_block_list.size())];
+        (distribution_) (generator_) *hard_block_list.size())];
   } else {
     index1 = soft_block_list[floor(
-        (distribution_)(generator_) *soft_block_list.size())];
+        (distribution_) (generator_) *soft_block_list.size())];
   }
 
   // int index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
 
   while (blocks_[index1].IsResize() == false) {
-    index1 = (int) (floor((distribution_)(generator_) *blocks_.size()));
+    index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
   block_id_ = index1;
@@ -165,7 +398,7 @@ void SimulatedAnnealingCore::Resize()
     return;
   }
 
-  float option = (distribution_)(generator_);
+  float option = (distribution_) (generator_);
   if (option <= 0.2) {
     // Change the aspect ratio of the soft block to a random value in the
     // range of the given soft aspect-ratio constraint
@@ -256,7 +489,7 @@ void SimulatedAnnealingCore::Perturb()
   pre_boundary_penalty_ = boundary_penalty_;
   pre_macro_blockage_penalty_ = macro_blockage_penalty_;
 
-  float op = (distribution_)(generator_);
+  float op = (distribution_) (generator_);
   if (op <= resize_prob_) {
     action_id_ = 0;
     pre_blocks_ = blocks_;

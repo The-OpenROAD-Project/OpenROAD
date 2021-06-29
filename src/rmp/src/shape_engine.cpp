@@ -1,5 +1,3 @@
-#include "rmp/shape_engine.h"
-
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -9,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "rmp/shape_engine.h"
 #include "rmp/util.h"
 #include "utl/Logger.h"
 
@@ -33,6 +32,80 @@ using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::RMP;
+
+std::string Macro::OrientationToString(Orientation orientation)
+{
+  switch (orientation) {
+    case R0:
+      return std::string("R0");
+    case R180:
+      return std::string("R180");
+    case R90:
+      return std::string("R90");
+    case R270:
+      return std::string("R270");
+    case MY:
+      return std::string("MY");
+    case MX:
+      return std::string("MX");
+    case MX90:
+      return std::string("MX90");
+    case MY90:
+      return std::string("MY90");
+    default:
+      return std::string("Unknown");
+  }
+}
+
+SimulatedAnnealingCore::SimulatedAnnealingCore(const std::vector<Macro>& macros,
+                                               float outline_width,
+                                               float outline_height,
+                                               float init_prob,
+                                               float rej_ratio,
+                                               int max_num_step,
+                                               int k,
+                                               float c,
+                                               int perturb_per_step,
+                                               float alpha,
+                                               float pos_swap_prob,
+                                               float neg_swap_prob,
+                                               float double_swap_prob,
+                                               unsigned seed)
+{
+  outline_width_ = outline_width;
+  outline_height_ = outline_height;
+
+  init_prob_ = init_prob;
+  rej_ratio_ = rej_ratio;
+  max_num_step_ = max_num_step;
+  k_ = k;
+  c_ = c;
+  perturb_per_step_ = perturb_per_step;
+  alpha_ = alpha;
+
+  pos_swap_prob_ = pos_swap_prob;
+  neg_swap_prob_ = pos_swap_prob_ + neg_swap_prob;
+  double_swap_prob_ = neg_swap_prob_ + double_swap_prob;
+
+  for (unsigned int i = 0; i < macros.size(); i++) {
+    pos_seq_.push_back(i);
+    neg_seq_.push_back(i);
+
+    pre_pos_seq_.push_back(i);
+    pre_neg_seq_.push_back(i);
+
+    Macro* macro = new Macro(macros[i]);
+    macros_.push_back(macro);
+  }
+
+  std::mt19937 randGen(seed);
+  generator_ = randGen;
+  std::uniform_real_distribution<float> distribution(0.0, 1.0);
+  distribution_ = distribution;
+
+  // Initialize init_T_, norm_blockage_, norm_area_
+  Initialize();
+}
 
 void SimulatedAnnealingCore::PackFloorplan()
 {
@@ -98,10 +171,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   }
 
   if (flag)
@@ -112,10 +185,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -133,7 +206,7 @@ void SimulatedAnnealingCore::Perturb()
   pre_height_ = height_;
   pre_area_ = area_;
 
-  float op = (distribution_)(generator_);
+  float op = (distribution_) (generator_);
   if (op <= pos_swap_prob_) {
     action_id_ = 0;
     SingleSwap(true);
