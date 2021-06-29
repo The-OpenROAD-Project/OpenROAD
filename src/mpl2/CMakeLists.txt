@@ -33,9 +33,9 @@
 
 include("openroad")
 
-add_library(rmp)
+add_library(mpl2)
 
-target_sources(rmp
+target_sources(mpl2
   PRIVATE
     src/rtl_mp.cpp
     src/pin_alignment.cpp
@@ -45,15 +45,15 @@ target_sources(rmp
 )
 
 messages(
-  TARGET rmp
+  TARGET mpl2
 )
 
-target_include_directories(rmp
+target_include_directories(mpl2
   PUBLIC
     include
 )
 
-target_link_libraries(rmp
+target_link_libraries(mpl2
     utl
     dbSta
     OpenSTA

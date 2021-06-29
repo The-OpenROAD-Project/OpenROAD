@@ -8,8 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rmp/block_placement.h"
-#include "rmp/shape_engine.h"
+#include "mpl2/block_placement.h"
+#include "mpl2/shape_engine.h"
 #include "utl/Logger.h"
 
 namespace ord {

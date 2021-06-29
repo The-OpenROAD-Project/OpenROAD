@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rmp/shape_engine.h"
+#include "mpl2/shape_engine.h"
 #include "utl/Logger.h"
 
 namespace block_placement {

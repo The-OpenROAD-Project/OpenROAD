@@ -1,4 +1,4 @@
-#include "rmp/rtl_mp.h"
+#include "mpl2/rtl_mp.h"
 
 #include <algorithm>
 #include <fstream>
@@ -9,10 +9,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rmp/block_placement.h"
-#include "rmp/pin_alignment.h"
-#include "rmp/shape_engine.h"
-#include "rmp/util.h"
+#include "mpl2/block_placement.h"
+#include "mpl2/pin_alignment.h"
+#include "mpl2/shape_engine.h"
+#include "mpl2/util.h"
 #include "utl/Logger.h"
 
 using utl::PAR;
@@ -51,10 +51,10 @@ using std::to_string;
 using std::unordered_map;
 using std::vector;
 using utl::Logger;
-using utl::RMP;
+using utl::MPL;
 
 #define DUMP_INFO_PARAM(param, value) \
-  logger->info(RMP, 0001, "RTL_MP  Param: {}: {}", param, value)
+  logger->info(MPL, 0001, "RTL_MP  Param: {}: {}", param, value)
 
 bool RTLMP(const char* config_file, Logger* logger)
 {

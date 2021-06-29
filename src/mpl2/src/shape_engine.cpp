@@ -7,8 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rmp/shape_engine.h"
-#include "rmp/util.h"
+#include "mpl2/shape_engine.h"
+#include "mpl2/util.h"
 #include "utl/Logger.h"
 
 namespace shape_engine {
@@ -31,7 +31,7 @@ using std::to_string;
 using std::unordered_map;
 using std::vector;
 using utl::Logger;
-using utl::RMP;
+using utl::MPL;
 
 std::string Macro::OrientationToString(Orientation orientation)
 {
@@ -607,12 +607,12 @@ void ParseBlockFile(vector<Cluster*>& clusters,
   float std_cell_util
       = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
 
-  logger->info(RMP, 1001, "Shape_Engine Outline width:  {}", outline_width);
-  logger->info(RMP, 1002, "Shape_Engine Outline height: {}", outline_height);
-  logger->info(RMP, 1003, "Shape_Engine Chip area: {}", chip_area);
-  logger->info(RMP, 1004, "Shape_Engine Macro area:  {}", macro_area);
-  logger->info(RMP, 1005, "Shape_Engine Std cell area: {}", std_cell_area);
-  logger->info(RMP, 1006, "Shape_Engine Std cell util: {}", std_cell_util);
+  logger->info(MPL, 1001, "Shape_Engine Outline width:  {}", outline_width);
+  logger->info(MPL, 1002, "Shape_Engine Outline height: {}", outline_height);
+  logger->info(MPL, 1003, "Shape_Engine Chip area: {}", chip_area);
+  logger->info(MPL, 1004, "Shape_Engine Macro area:  {}", macro_area);
+  logger->info(MPL, 1005, "Shape_Engine Std cell area: {}", std_cell_area);
+  logger->info(MPL, 1006, "Shape_Engine Std cell util: {}", std_cell_util);
 
   for (int j = 0; j < clusters.size(); j++) {
     if (clusters[j]->GetNumMacro() == 0) {
@@ -717,7 +717,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       output_info += ") ";
     }
 
-    logger->info(RMP, i + 1007, "Shape_Engine {}", output_info);
+    logger->info(MPL, i + 1007, "Shape_Engine {}", output_info);
   }
 
   return clusters;

@@ -127,7 +127,7 @@ add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(rmp)
+add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
@@ -180,7 +180,7 @@ target_link_libraries(openroad
   gui
   TritonRoute
   mpl
-  rmp
+  mpl2
   psm
   ant
   PartitionMgr

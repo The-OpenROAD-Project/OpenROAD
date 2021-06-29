@@ -8,10 +8,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rmp/block_placement.h"
-#include "rmp/pin_alignment.h"
-#include "rmp/shape_engine.h"
-#include "rmp/util.h"
+#include "mpl2/block_placement.h"
+#include "mpl2/pin_alignment.h"
+#include "mpl2/shape_engine.h"
+#include "mpl2/util.h"
 #include "utl/Logger.h"
 
 namespace pin_alignment {
@@ -41,7 +41,7 @@ using shape_engine::Cluster;
 using shape_engine::Macro;
 
 using utl::Logger;
-using utl::RMP;
+using utl::MPL;
 
 SimulatedAnnealingCore::SimulatedAnnealingCore(
     const std::vector<shape_engine::Macro>& macros,
@@ -548,7 +548,7 @@ bool PinAlignmentSingleCluster(
     if (name[j] == '/')
       name[j] = '*';
 
-  logger->info(RMP, 3002, "Pin_Aligment Working on macro_clutser: {}", name);
+  logger->info(MPL, 3002, "Pin_Aligment Working on macro_clutser: {}", name);
 
   float lx = cluster->GetX();
   float ly = cluster->GetY();
@@ -637,7 +637,7 @@ bool PinAlignmentSingleCluster(
   if (min_id == -1) {
     // throw std::invalid_argument(std::string("Invalid Floorplan.  Please
     // increase the num_run!!!"));
-    logger->info(RMP,
+    logger->info(MPL,
                  3003,
                  "Pin_Alignment  Cannot generate valid floorplan for current "
                  "cluster!!!");
@@ -649,7 +649,7 @@ bool PinAlignmentSingleCluster(
   for (int j = 0; j < sa_vector.size(); j++)
     delete sa_vector[j];
 
-  logger->info(RMP, 3004, "Pin_Aligment finish macro_clutser: {}", name);
+  logger->info(MPL, 3004, "Pin_Aligment finish macro_clutser: {}", name);
 
   return true;
 }
@@ -662,7 +662,7 @@ bool PinAlignment(const vector<Cluster*>& clusters,
                   int num_run,
                   unsigned seed)
 {
-  logger->info(RMP, 3001, "Pin_Aligment Starts");
+  logger->info(MPL, 3001, "Pin_Aligment Starts");
 
   unordered_map<string, pair<float, float>> terminal_position;
   vector<Net*> nets;

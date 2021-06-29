@@ -61,7 +61,6 @@ namespace utl {
     X(PAD) \
     X(IFP) \
     X(MPL) \
-    X(RMP) \
     X(ODB) \
     X(ORD) \
     X(PAR) \

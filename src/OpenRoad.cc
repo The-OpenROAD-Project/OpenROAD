@@ -81,7 +81,7 @@
 #include "PartitionMgr/src/MakePartitionMgr.h"
 #include "par/autocluster.h"
 #include "pdn/MakePdnGen.hh"
-#include "rmp/rtl_mp.h"
+#include "mpl2/rtl_mp.h"
 #include "pdr/MakePdrev.h"
 
 namespace sta {
