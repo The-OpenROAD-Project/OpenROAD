@@ -1,4 +1,4 @@
-import opendbpy as odb
+import opendb as odb
 import helper
 import odbUnitTest
 

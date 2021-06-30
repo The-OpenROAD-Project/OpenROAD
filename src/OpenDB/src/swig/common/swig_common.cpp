@@ -291,3 +291,11 @@ void createSBoxes(odb::dbSWire* swire,
     odb::dbSBox::create(
         swire, via, point.getX(), point.getY(), type);
 }
+
+odb::dbDatabase* create_db()
+{
+  utl::Logger* logger = new utl::Logger();
+  odb::dbDatabase* db = odb::dbDatabase::create();
+  db->setLogger(logger);
+  return db;
+}

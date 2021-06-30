@@ -216,7 +216,17 @@ link_design top
 write_db reg1.db
 ```
 
-#### Example Scripts
+#### Run in Python
+
+OpenROAD can be run in python mode as following
+
+```
+openroad -python [args]
+```
+
+This opens a python interpreter where you can load OpenROAD's modules and use them in python. Currently, the python mode is limited to one module; OpenDB. You can see examples of python scripts in  [OpenDB's python unit-tests](src/OpenDB/test/unitTestsPython/)
+
+#### TCL Example Scripts
 
 Example scripts demonstrating how to run OpenROAD on sample designs
 can be found in /test. Flow tests taking sample designs from synthesis

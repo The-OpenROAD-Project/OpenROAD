@@ -2,26 +2,17 @@
 
 ### Running tests
 
-For running the python unit tests you will need to install first *testtools* and *unittest-parallel* which enables concurrent unit testing
+For running the python unit tests you will need to install first *testtools*  which enables unit testing
 
 ```shell
 pip3 install testtools
-pip3 install unittest-parallel
 ```
 
-Then, you can run the unit tests  in sequence by running
+Then, you can run the unit tests by running
 
 ```shell
 ./../unitTests.sh
 ```
-
-or in parallel by running
-
-```shell
-./../unitTests.sh parallel
-```
-
-**Note**: The test cases within each Unit Test run in parallel in both situations
 
 --------------------------------------------------------------------------
 

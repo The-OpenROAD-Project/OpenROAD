@@ -22,23 +22,3 @@ target_link_libraries(opendbtcl
         Boost::boost
         ${TCL_LIBRARY}
 )
-
-# Executable
-add_executable(opendbtcl-bin
-    main.cpp
-)
-
-target_include_directories(opendbtcl-bin
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include/opendb
-)
-
-target_link_libraries(opendbtcl-bin
-    PUBLIC
-        opendbtcl
-)
-
-set_target_properties(opendbtcl-bin
-    PROPERTIES 
-        OUTPUT_NAME opendbtcl
-)
