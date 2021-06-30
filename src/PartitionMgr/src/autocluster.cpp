@@ -176,7 +176,7 @@ void AutoClusterMgr::getBufferNet()
   }
   getBufferNetUtil(network_->topInstance(), buffer_net);
 
-  int* class_array = new int[buffer_id_ + 1];
+  vector<int> class_array(buffer_id_ + 1);
   for (int i = 0; i <= buffer_id_; i++)
     class_array[i] = i;
 
