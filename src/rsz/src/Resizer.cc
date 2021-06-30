@@ -455,11 +455,12 @@ Resizer::bufferInputs()
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
+    Vertex *vertex = graph_->pinDrvrVertex(pin);
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
+        && !vertex->isConstant()
         && !sta_->isClock(pin)
-        && hasPins(net)
-        && !db_network_->isSpecial(net))
+        && hasPins(net))
       // repair_design will resize to target slew.
       bufferInput(pin, buffer_lowest_drive_);
   }
@@ -540,11 +541,12 @@ Resizer::bufferOutputs()
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
+    Vertex *vertex = graph_->pinLoadVertex(pin);
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isOutput()
         && net
-        && hasPins(net)
-        && !db_network_->isSpecial(net))
+        && !vertex->isConstant()
+        && hasPins(net))
       bufferOutput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
@@ -1401,9 +1403,7 @@ Resizer::resizeToTargetSlew()
         && !drvr->isConstant()
         && hasFanout(drvr)
         // Hands off the clock nets.
-        && !sta_->isClock(drvr_pin)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)) {
+        && !sta_->isClock(drvr_pin)) {
       resizeToTargetSlew(drvr_pin, true);
       if (overMaxArea()) {
         logger_->error(RSZ, 24, "Max utilization reached.");
@@ -1624,9 +1624,8 @@ Resizer::findResizeSlacks1()
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
     if (net
-        && !sta_->isClock(drvr_pin)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)) {
+        && !drvr->isConstant()
+        && !sta_->isClock(drvr_pin)) {
       net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
       nets.push_back(net);
     }
@@ -2590,12 +2589,11 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
       : RiseFall::fall();
     Slack drvr_hold_slack = drvr_slacks[drvr_rf->index()][min_index] - slack_margin;
     Slack drvr_setup_slack = drvr_slacks[drvr_rf->index()][max_index];
-    if (fuzzyLess(drvr_hold_slack, 0.0)
+    if (!vertex->isConstant()
+        && fuzzyLess(drvr_hold_slack, 0.0)
         // Have to have enough setup slack to add delay to repair the hold violation.
         && (allow_setup_violations
-            || fuzzyLess(drvr_hold_slack, drvr_setup_slack))
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)) {
+            || fuzzyLess(drvr_hold_slack, drvr_setup_slack))) {
       debugPrint(logger_, RSZ, "repair_hold", 2, "driver {}",
                  vertex->name(sdc_network_));
       // Only add delay to loads with hold violations.
