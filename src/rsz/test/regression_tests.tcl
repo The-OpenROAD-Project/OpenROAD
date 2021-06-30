@@ -3,7 +3,6 @@ record_tests {
   buffer_ports3
   buffer_ports4
   buffer_ports5
-  buffer_ports6
   fanin_fanout1
   make_parasitics1
   make_parasitics2
