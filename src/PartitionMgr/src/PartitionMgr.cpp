@@ -1371,6 +1371,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int net_threshold,
                                    unsigned int ignore_net_threshold,
                                    unsigned int virtual_weight,
+                                   const char* report_directory,
                                    const char* file_name)
 {
 #ifndef PARTITIONERS
@@ -1387,6 +1388,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              net_threshold,
                              ignore_net_threshold,
                              virtual_weight,
+                             report_directory,
                              file_name);
 }
 

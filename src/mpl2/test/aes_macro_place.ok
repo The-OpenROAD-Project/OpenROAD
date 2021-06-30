@@ -1,0 +1,67 @@
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45.lef
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via4Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via5Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via6Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via7Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: ./testcases/aes_fp.def
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0252]     Updated 388 pins.
+[INFO ODB-0134] Finished DEF file: ./testcases/aes_fp.def
+Running Partition Design...
+[INFO PAR-0402] Traversed Logical Hierarchy 
+	 Number of std cell instances: 10375
+	 Total Area: 13143.024
+	 Number of Hard Macros: 0
+	 
+[INFO PAR-0403] Number of Clusters created: 36
+*** In RTLMP ***
+[INFO MPL-0009] RTL_MP  Param: min_aspect_ratio: 0.5
+[INFO MPL-0009] RTL_MP  Param: dead_space: 0.1
+[INFO MPL-0009] RTL_MP  Param: learning_rate: 0.0
+[INFO MPL-0009] RTL_MP  Param: shrink_factor: 0.997
+[INFO MPL-0009] RTL_MP  Param: shrink_freq: 0.1
+[INFO MPL-0009] RTL_MP  Param: halo_width: 2.0
+[INFO MPL-0009] RTL_MP  Param: region_file: macro_blockage.txt
+[INFO MPL-0009] RTL_MP  Param: num_thread: 10
+[INFO MPL-0009] RTL_MP  Param: num_run: 5
+[INFO MPL-0009] RTL_MP  Param: heat_rate: 0.1
+[INFO MPL-0009] RTL_MP  Param: num_level: 3
+[INFO MPL-0009] RTL_MP  Param: num_worker: 10
+[INFO MPL-0009] RTL_MP  Param: alpha: 6.0
+[INFO MPL-0009] RTL_MP  Param: beta: 40.0
+[INFO MPL-0009] RTL_MP  Param: gamma: 100.0
+[INFO MPL-0009] RTL_MP  Param: boundary_weight: 2.0
+[INFO MPL-0009] RTL_MP  Param: macro_blockage_weight: 1.0
+[INFO MPL-0009] RTL_MP  Param: resize_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: pos_swap_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: neg_swap_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: double_swap_prob: 0.1
+[INFO MPL-0009] RTL_MP  Param: init_prob: 0.95
+[INFO MPL-0009] RTL_MP  Param: rej_ratio: 0.95
+[INFO MPL-0009] RTL_MP  Param: k: 5000000
+[INFO MPL-0009] RTL_MP  Param: c: 1000.0
+[INFO MPL-0009] RTL_MP  Param: max_num_step: 3000
+[INFO MPL-0009] RTL_MP  Param: perturb_per_step: 570
+[INFO MPL-0009] RTL_MP  Param: seed: 0
+ERROR segmentation violation

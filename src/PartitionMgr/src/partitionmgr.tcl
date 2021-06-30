@@ -573,11 +573,12 @@ sta::define_cmd_args "partition_design" { [-max_num_macro max_num_macro] \
                                           [-net_threshold net_threshold] \
                                           [-virtual_weight virtual_weight] \
                                           [-ignore_net_threshold ignore_net_threshold] \
+                                          [-report_directory report_file] \
                                           -report_file report_file \
                                         }
 proc partition_design { args } {
     sta::parse_key_args "partition_design" args keys {-max_num_macro -min_num_macro
-                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold -report_file} flags {  }
+                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold -report_directory -report_file} flags {  }
     if { ![info exists keys(-report_file)] } {
         utl::error PAR 70 "missing mandatory argument -report_file"
     }
@@ -589,6 +590,7 @@ proc partition_design { args } {
     set net_threshold 0
     set virtual_weight 50
     set ignore_net_threshold 0
+    set report_directory "rtl_mp"
 
     if { [info exists keys(-max_num_macro)] } {
         set max_num_macro $keys(-max_num_macro)
@@ -618,5 +620,9 @@ proc partition_design { args } {
         set net_threshold $keys(-ignore_net_threshold)
     }
 
-    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $report_file
+    if { [info exists keys(-report_directory)] } {
+        set report_directory $keys(-report_directory)
+    }
+
+    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $report_directory $report_file
 }

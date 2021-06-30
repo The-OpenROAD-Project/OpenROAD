@@ -1372,10 +1372,11 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
                                      unsigned int net_threshold,
                                      unsigned int virtual_weight,
                                      unsigned int ignore_net_threshold,
+                                     const char* report_directory,
                                      const char* file_name)
 {
   logger_->report("Running Partition Design...");
-  mkdir("rtl_mp", 0777);
+  mkdir(report_directory, 0777);
 
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
@@ -1572,7 +1573,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   unordered_map<int, Cluster*>::iterator map_iter = cluster_map_.begin();
 
   string block_file
-      = string("./rtl_mp/") + string(file_name) + string(".block");
+      = string(report_directory) + '/' + file_name + ".block";
   ofstream output_file;
   output_file.open(block_file);
   output_file << "[INFO] Num clusters: " << cluster_list_.size() << endl;
@@ -1622,7 +1623,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   output_file.close();
 
   // generate net file
-  string net_file = string("./rtl_mp/") + string(file_name) + string(".net");
+  string net_file = string(report_directory) + '/' + file_name + ".net";
   output_file.open(net_file);
   int net_id = 0;
   map_iter = cluster_map_.begin();

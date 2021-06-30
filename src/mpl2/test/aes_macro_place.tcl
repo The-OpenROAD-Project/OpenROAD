@@ -1,10 +1,8 @@
-set LIBDIR "./library/nangate45"
+set LIBDIR "./Nangate45"
 #
-set tech_lef "$LIBDIR/lef/NangateOpenCellLibrary.tech.lef"
-set std_cell_lef "$LIBDIR/lef/NangateOpenCellLibrary.macro.lef"
-set liberty_file "$LIBDIR/lib/NangateOpenCellLibrary_typical.lib"
- 
-set site "FreePDK45_38x28_10R_NP_162NW_34O"
+set tech_lef "$LIBDIR/Nangate45_tech.lef"
+set std_cell_lef "$LIBDIR/Nangate45.lef"
+set liberty_file "$LIBDIR/Nangate45_fast.lib"
  
 set synth_verilog "./testcases/aes_cipher_top.v"
 set sdc_file "./testcases/aes_cipher_top.sdc"
@@ -25,6 +23,7 @@ read_def $floorplan_file -floorplan_initialize
 partition_design -max_num_inst 1000 -min_num_inst 200 \
                     -max_num_macro 10 -min_num_macro 5 \
                     -net_threshold 5 -virtual_weight 500  \
-                    -report_file partition.txt
+                    -report_directory results/aes_macro_place \
+                    -report_file aes_macro_place
 
 rtl_macro_placer -config_file $config_file

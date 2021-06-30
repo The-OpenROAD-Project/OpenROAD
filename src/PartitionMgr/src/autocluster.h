@@ -191,6 +191,7 @@ class AutoClusterMgr
                        unsigned int net_threshold,
                        unsigned int virtual_weight,
                        unsigned int ignore_net_threshold,
+                       const char* report_directory,
                        const char* file_name);
 
  private:
@@ -279,17 +280,5 @@ class AutoClusterMgr
       std::unordered_map<int, sta::Instance*>& idx_to_inst,
       std::unordered_map<sta::Instance*, int>& inst_to_idx);
 };
-
-void dbPartitionDesign(ord::dbVerilogNetwork* network,
-                       odb::dbDatabase* db,
-                       unsigned int max_num_macro,
-                       unsigned int min_num_macro,
-                       unsigned int max_num_inst,
-                       unsigned int min_num_inst,
-                       unsigned int net_threshold,
-                       unsigned int virtual_weight,
-                       unsigned int ignore_net_threshold,
-                       const char* file_name,
-                       utl::Logger* logger);
 
 }  // namespace par
