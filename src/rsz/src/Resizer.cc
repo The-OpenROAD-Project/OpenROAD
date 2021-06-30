@@ -830,12 +830,14 @@ Resizer::repairNet(Net *net,
       const RiseFall *tr1;
       sta_->checkCapacitance(drvr_pin, nullptr, max_,
                              corner1, tr1, cap1, max_cap1, cap_slack1);
-      max_cap1 -= max_cap_margin;
-      if (cap1 > max_cap1) {
-        max_cap = max_cap1;
-        corner = corner1;
-        cap_violations++;
-        repair_cap = true;
+      if (corner1) {
+        max_cap1 *= (1.0 - max_cap_margin / 100.0);
+        if (cap1 > max_cap1) {
+          max_cap = max_cap1;
+          corner = corner1;
+          cap_violations++;
+          repair_cap = true;
+        }
       }
     }
     if (check_fanout) {
@@ -915,7 +917,7 @@ Resizer::checkLimits(const Pin *drvr_pin,
     const RiseFall *tr1;
     sta_->checkCapacitance(drvr_pin, nullptr, max_,
                            corner1, tr1, cap1, max_cap1, cap_slack1);
-    max_cap1 -= max_cap_margin;
+    max_cap1 *= (1.0 - max_cap_margin / 100.0);
     if (cap1 < max_cap1)
       return true;
   }
@@ -956,13 +958,15 @@ Resizer::checkSlew(const Pin *drvr_pin,
     float limit1, slack1;
     sta_->checkSlew(pin, nullptr, max_, false,
                     corner1, tr1, slew1, limit1, slack1);
-    limit1 -= max_slew_margin;
-    slack1 = limit1 - slew1;
-    if (slack1 < slack) {
-      slew = slew1;
-      limit = limit1;
-      slack = slack1;
-      corner = corner1;
+    if (corner1) {
+      limit1 *= (1.0 - max_slew_margin / 100.0);
+      slack1 = limit1 - slew1;
+      if (slack1 < slack) {
+        slew = slew1;
+        limit = limit1;
+        slack = slack1;
+        corner = corner1;
+      }
     }
   }
   delete pin_iter;

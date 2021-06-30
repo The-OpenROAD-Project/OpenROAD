@@ -293,8 +293,8 @@ proc repair_design { args } {
     flags {}
   
   set max_wire_length [rsz::parse_max_wire_length keys]
-  set max_slew_margin [rsz::parse_time_margin_arg "-max_slew_margin" keys]
-  set max_cap_margin [rsz::parse_cap_margin_arg "-max_cap_margin" keys]
+  set max_slew_margin [rsz::parse_percent_margin_arg "-max_slew_margin" keys]
+  set max_cap_margin [rsz::parse_percent_margin_arg "-max_cap_margin" keys]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
   sta::check_argc_eq0 "repair_design" $args
@@ -488,8 +488,12 @@ proc parse_time_margin_arg { key keys_var } {
   return [sta::time_ui_sta [parse_margin_arg $key $keys_var]]
 }
 
-proc parse_cap_margin_arg { key keys_var } {
-  return [sta::capacitance_ui_sta [parse_margin_arg $key $keys_var]]
+proc parse_percent_margin_arg { key keys_var } {
+  set margin [parse_margin_arg $key $keys_var]
+  if { !($margin >= 0 && $margin < 100) } {
+    utl::warn RSZ 67 "$key must be  between 0 and 100 percent."
+  }
+  return $margin
 }
 
 proc parse_margin_arg { key keys_var } {
