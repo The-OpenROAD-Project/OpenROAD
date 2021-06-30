@@ -104,6 +104,9 @@ class Parameters
   void setMinDistance(int min_dist) { min_dist_ = min_dist; }
   int getMinDistance() const { return min_dist_; }
 
+  void setMinDistanceInTracks(bool in_tracks) { distance_in_tracks_ = in_tracks; }
+  bool getMinDistanceInTracks() const { return distance_in_tracks_; }
+
  private:
   bool report_hpwl_ = false;
   bool force_spread_ = true;
@@ -120,6 +123,7 @@ class Parameters
   double rand_seed_ = 42.0;
   int corner_avoidance_;
   int min_dist_ = 0;
+  bool distance_in_tracks_ = false;
 };
 
 }  // namespace ppl

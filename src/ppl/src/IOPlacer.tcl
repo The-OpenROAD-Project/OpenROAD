@@ -252,6 +252,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                        	          [-random]\
                                   [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
+                                  [-min_distance_in_tracks]\
                                   [-exclude region]\
                                   [-group_pins pin_list]
                                  }
@@ -260,8 +261,9 @@ proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -corner_avoidance -min_distance -exclude -group_pins} \
-  flags {-random}
+  keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
+        -min_distance -exclude -group_pins} \
+  flags {-random -min_distance_in_tracks}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
@@ -318,14 +320,20 @@ proc place_pins { args } {
   }
 
   set min_dist 2
+  set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
   if [info exists keys(-min_distance)] {
     set min_dist $keys(-min_distance)
-    ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+    if {$dist_in_tracks} {
+      ppl::set_min_distance $min_dist
+    } else {
+      ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+    }
   } else {
     utl::report "Using $min_dist tracks default min distance between IO pins."
     # setting min distance as 0u leads to the default min distance
     ppl::set_min_distance 0
   }
+  ppl::set_min_distance_in_tracks $dist_in_tracks
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
