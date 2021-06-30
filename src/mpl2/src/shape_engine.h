@@ -76,10 +76,7 @@ class Macro
   float GetArea() const { return area_; }
   float GetPinX() const { return pin_x_; }
   float GetPinY() const { return pin_y_; }
-  std::string GetOrientation() const
-  {
-    return orientation_.getString();
-  }
+  std::string GetOrientation() const { return orientation_.getString(); }
 
   std::string GetName() const { return name_; }
 

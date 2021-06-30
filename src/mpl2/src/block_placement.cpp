@@ -81,10 +81,7 @@ Block::Block(const std::string& name,
   name_ = name;
   area_ = area;
   num_macro_ = num_macro;
-  if (num_macro_ == 0)
-    is_soft_ = true;
-  else
-    is_soft_ = false;
+  is_soft_ = (num_macro_ == 0);
 
   aspect_ratio_ = aspect_ratio;
 
@@ -100,10 +97,10 @@ Block::Block(const std::string& name,
     float width_low = area_ / height_high;
 
     // height_limit_ is sorted in non-decreasing order
-    height_limit_.push_back(std::pair<float, float>(height_low, height_high));
+    height_limit_.push_back({height_low, height_high});
 
     // width_limit_ is sorted in non-increasing order
-    width_limit_.push_back(std::pair<float, float>(width_high, width_low));
+    width_limit_.push_back({width_high, width_low});
   }
   // Initialize shape (width_, height_) randomly
   // ChooseAspectRatioRandom();
