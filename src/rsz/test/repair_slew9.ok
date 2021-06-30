@@ -15,8 +15,6 @@
 Found 105 slew violations
 Found 1 cap violations
 [INFO RSZ-0058] Using max wire length 7039um.
-[DEBUG RSZ-0001] repair net rdrv/Y
-[DEBUG RSZ-0001] driver rdrv/Y (5.7 2.7) l=89.7
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0038] Inserted 1 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.

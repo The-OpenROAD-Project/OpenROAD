@@ -2,8 +2,6 @@
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
-set_debug RSZ repair_net 1
-cd ~/openroad/src/rsz/test
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
