@@ -32,16 +32,31 @@
 ############################################################################
 
 sta::define_cmd_args "rtl_macro_placer" { -config_file config_file \
+                                         [-report_directory report_file] \
+                                         -report_file report_file \
                               }
 proc rtl_macro_placer { args } {
-    sta::parse_key_args "rtl_macro_placer" args keys { -config_file } flag {  }
-    if { [info exists keys(-config_file)] } {
-        set config_file $keys(-config_file)
-        return [mpl2::rtl_macro_placer_cmd $config_file]
-    } else {
-        utl::error "MPL" 2 "rtl_macro_placer -config_file config_file"
+    sta::parse_key_args "rtl_macro_placer" args keys { -config_file
+       -report_directory -report_file } flag {  }
+
+    if { ![info exists keys(-config_file)] } {
+        utl::error MPL 2 "rtl_macro_placer -config_file config_file"
     }
-    
+
+    if { ![info exists keys(-report_file)] } {
+        utl::error MPL 3 "missing mandatory argument -report_file"
+    }
+
+    set config_file $keys(-config_file)
+    set report_file $keys(-report_file)
+    set report_directory "rtl_mp"
+
+    if { [info exists keys(-report_directory)] } {
+        set report_directory $keys(-report_directory)
+    }
+
+    return [mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file]
+
     set block [ord::get_db_block]
     set units [$block getDefUnits]
     set macro_placement_file "./rtl_mp/macro_placement.cfg"

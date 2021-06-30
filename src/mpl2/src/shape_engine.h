@@ -277,7 +277,7 @@ std::vector<Cluster*> ShapeEngine(float& outline_width,
                                   float dead_space,
                                   float halo_width,
                                   utl::Logger* logger,
-                                  const char* block_file,
+                                  const std::string& block_file,
                                   int num_thread = 10,
                                   int num_run = 20,
                                   unsigned seed = 0);

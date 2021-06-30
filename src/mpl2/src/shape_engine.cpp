@@ -588,7 +588,7 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
 }
 
 void ParseBlockFile(vector<Cluster*>& clusters,
-                    const char* block_file,
+                    const string& block_file,
                     float& outline_width,
                     float& outline_height,
                     float& outline_lx,
@@ -688,7 +688,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
                              float dead_space,
                              float halo_width,
                              Logger* logger,
-                             const char* block_file,
+                             const string& block_file,
                              int num_thread,
                              int num_run,
                              unsigned seed)

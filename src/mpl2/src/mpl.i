@@ -49,9 +49,11 @@ using ord::getMacroPlacer2;
 
 namespace mpl2 {
 
-bool rtl_macro_placer_cmd(const char* config_file) {
+bool rtl_macro_placer_cmd(const char* config_file,
+                          const char* report_directory,
+                          const char* report_file) {
   auto macro_placer = getMacroPlacer2();
-  return macro_placer->place(config_file);
+  return macro_placer->place(config_file, report_directory, report_file);
 }
 
 } // namespace

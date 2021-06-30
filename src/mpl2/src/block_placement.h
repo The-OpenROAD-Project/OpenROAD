@@ -325,17 +325,17 @@ void Run(SimulatedAnnealingCore* sa);
 void ParseNetFile(
     std::vector<Net*>& nets,
     std::unordered_map<std::string, std::pair<float, float>>& terminal_position,
-    const char* net_file);
+    const std::string& net_file);
 
-void ParseRegionFile(std::vector<Region*>& regions, const char* region_file);
+void ParseRegionFile(std::vector<Region*>& regions, const std::string& region_file);
 
 std::vector<Block> Floorplan(
     const std::vector<shape_engine::Cluster*>& clusters,
     utl::Logger* logger,
     float outline_width,
     float outline_height,
-    const char* net_file,
-    const char* region_file,
+    const std::string& net_file,
+    const std::string& region_file,
     int num_level,
     int num_worker,
     float heat_rate,

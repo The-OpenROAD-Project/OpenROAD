@@ -48,7 +48,9 @@ class MacroPlacer2
 {
  public:
   void init(utl::Logger* logger);
-  bool place(const char* config_file);
+  bool place(const char* config_file,
+             const char* report_directory,
+             const char* report_file);
 
  private:
   utl::Logger* logger_ = nullptr;

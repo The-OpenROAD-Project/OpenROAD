@@ -1,4 +1,4 @@
 record_tests {
   aes_cluster
+  aes_macro_place
 }
-#  aes_macro_place

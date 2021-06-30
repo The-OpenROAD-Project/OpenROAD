@@ -78,12 +78,15 @@ static void get_param(const unordered_map<string, string>& params,
   logger->info(MPL, 9, "RTL_MP  Param: {}: {}", name, param);
 }
 
-bool rtl_macro_placer(const char* config_file, Logger* logger)
+bool rtl_macro_placer(const char* config_file,
+                      Logger* logger,
+                      const char* report_directory,
+                      const char* report_file)
 {
   logger->report("*** In RTLMP ***");
 
-  const char* block_file = "./rtl_mp/partition.txt.block";
-  const char* net_file = "./rtl_mp/partition.txt.net";
+  string block_file = string(report_directory) + '/' + report_file + ".block";
+  string net_file = string(report_directory) + '/' + report_file + ".net";
 
   // parameters defined in config_file
   // These parameters are related to shape engine
@@ -350,9 +353,11 @@ void MacroPlacer2::init(Logger* logger)
   logger_ = logger;
 }
 
-bool MacroPlacer2::place(const char* config_file)
+bool MacroPlacer2::place(const char* config_file,
+                         const char* report_directory,
+                         const char* report_file)
 {
-  return rtl_macro_placer(config_file, logger_);
+  return rtl_macro_placer(config_file, logger_, report_directory, report_file);
 }
 
 }  // namespace mpl

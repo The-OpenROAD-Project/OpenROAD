@@ -1,3 +1,5 @@
+source "helpers.tcl"
+
 set LIBDIR "./Nangate45"
 #
 set tech_lef "$LIBDIR/Nangate45_tech.lef"
@@ -26,4 +28,9 @@ partition_design -max_num_inst 1000 -min_num_inst 200 \
                     -report_directory results/aes_macro_place \
                     -report_file aes_macro_place
 
-rtl_macro_placer -config_file $config_file
+rtl_macro_placer -config_file $config_file \
+                    -report_directory results/aes_macro_place \
+                    -report_file aes_macro_place
+
+#diff_files aes_cluster.blockok results/aes_cluster/aes_cluster.block
+#diff_files aes_cluster.netok results/aes_cluster/aes_cluster.net
