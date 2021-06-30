@@ -1085,7 +1085,14 @@ NetRouteMap FastRouteCore::run()
     logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
-  while (totalOverflow > 0 && i <= overflowIterations) {
+  static const int max_overflow_increases_ = 15;
+
+  // set overflow_increases as -1 since the first iteration always sum 1
+  int overflow_increases = -1;
+  int last_total_overflow = 0;
+  while (totalOverflow > 0 &&
+         i <= overflowIterations &&
+         overflow_increases <= max_overflow_increases_) {
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
     } else if (THRESH_M >= 2) {
@@ -1164,7 +1171,7 @@ NetRouteMap FastRouteCore::run()
 
     logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
                   " threshold {} via cost {}. \n"
-                  "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
+                  "log_coef {:.2f}, healingTrigger {} cost_step {} L {} cost_type"
                   " {} updatetype {}.",
         i,
         enlarge,
@@ -1299,13 +1306,24 @@ NetRouteMap FastRouteCore::run()
       getOverflow2Dmaze(&maxOverflow, &tUsage);
       break;
     }
-  }
+
+    if (totalOverflow > last_total_overflow) {
+      overflow_increases++;
+    }
+    last_total_overflow = totalOverflow;
+  } // end overflow iterations
 
   bool has_2D_overflow = totalOverflow > 0;
 
   if (minofl > 0) {
     logger->info(GRT, 104, "Minimal overflow {} occuring at round {}.", minofl, minoflrnd);
     copyBR();
+  }
+
+  if (overflow_increases > max_overflow_increases_) {
+    logger->warn(GRT,
+                 230,
+                 "Congestion iterations reached the maximum number of total overflow increases.");
   }
 
   freeRR();
@@ -1367,7 +1385,7 @@ NetRouteMap FastRouteCore::run()
 
   updateDbCongestion();
 
-  if (has_2D_overflow && !allowOverflow) {
+  if (has_2D_overflow && !allow_overflow_) {
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
@@ -1395,7 +1413,7 @@ void FastRouteCore::setOverflowIterations(int iterations)
 
 void FastRouteCore::setAllowOverflow(bool allow)
 {
-  allowOverflow = allow;
+  allow_overflow_ = allow;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()

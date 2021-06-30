@@ -152,7 +152,7 @@ class GlobalRouter
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
-  void setAllowOverflow(bool allowOverflow);
+  void setAllowCongestion(bool allowCongestion);
   void setMacroExtension(int macroExtension);
   void printGrid();
 
@@ -309,7 +309,7 @@ class GlobalRouter
   const int _selectedMetal = 3;
   const int _gcellsOffset = 2;
   int _overflowIterations;
-  bool _allowOverflow;
+  bool _allowCongestion;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
   int _macroExtension;

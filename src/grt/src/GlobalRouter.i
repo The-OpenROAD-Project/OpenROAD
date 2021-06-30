@@ -127,9 +127,9 @@ set_grid_origin(long x, long y)
 }
 
 void
-set_allow_overflow(bool allowOverflow)
+set_allow_congestion(bool allowCongestion)
 {
-  getGlobalRouter()->setAllowOverflow(allowOverflow);
+  getGlobalRouter()->setAllowCongestion(allowCongestion);
 }
 
 void
