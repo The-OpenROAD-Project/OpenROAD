@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -86,7 +86,8 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
+    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
+                                        db_network_, logger_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
@@ -501,7 +502,8 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, true, db_network_, logger_);
+    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
+                                        db_network_, logger_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       BufferedNet *bnet = makeBufferedNetWire(tree, drvr_pt, tree->left(drvr_pt), 0);

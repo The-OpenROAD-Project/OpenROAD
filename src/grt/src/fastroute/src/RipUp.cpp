@@ -226,7 +226,7 @@ void newRipup(TreeEdge* treeedge,
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
       } else {
-        logger->error(GRT, 225, "MAZE RIPUP WRONG in newRipup.");
+        logger->error(GRT, 225, "Maze ripup wrong in newRipup.");
       }
     }
   }
@@ -324,7 +324,7 @@ Bool newRipupType2(TreeEdge* treeedge,
     return (needRipup);
 
   } else {
-    logger->error(GRT, 226, "type2 ripup not type L.");
+    logger->error(GRT, 226, "Type2 ripup not type L.");
   }
 }
 
@@ -390,7 +390,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
     }
   } else {
     printEdge(netID, edgeID);
-    logger->error(GRT, 121, "route type is not maze, netID {}.", netID);
+    logger->error(GRT, 121, "Route type is not maze, netID {}.", netID);
   }
 }
 
@@ -399,7 +399,7 @@ Bool newRipup3DType3(int netID, int edgeID)
   short *gridsX, *gridsY, *gridsL;
   int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid,
       deg;
-  std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
+  std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
 
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
@@ -509,14 +509,14 @@ Bool newRipup3DType3(int netID, int edgeID)
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage -= edgeCostPerLayer[gridsL[i]];
+        v_edges3D[grid].usage -= edge_cost_per_layer[gridsL[i]];
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage -= edgeCostPerLayer[gridsL[i]];
+        h_edges3D[grid].usage -= edge_cost_per_layer[gridsL[i]];
       } else {
-        logger->error(GRT, 122, "Maze RipUp wrong.");
+        logger->error(GRT, 122, "Maze ripup wrong.");
       }
     }
   }
@@ -618,7 +618,7 @@ void newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
           } else {
-            logger->error(GRT, 123, "MAZE RIPUP WRONG in newRipupNet for net {}.",
+            logger->error(GRT, 123, "Maze ripup wrong in newRipupNet for net {}.",
                           netName(nets[netID]));
           }
         }

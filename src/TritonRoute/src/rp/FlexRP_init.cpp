@@ -66,5 +66,4 @@ void FlexRP::init()
       ndr->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
     }
   }
-
 }

@@ -2853,12 +2853,25 @@ proc export_opendb_power_pin {net_name signal_type} {
   variable tech
   variable voltage_domains
   variable design_data
-  
+
   if {![dict exists $design_data grid stdcell grid pins]} {return}
   
   set net [$block findNet $net_name]
-  set bterm [odb::dbBTerm_create $net "${net_name}"]
-
+  if {$net == "NULL"} {
+    utl::error PDN 70 "Cannot find net $net_name in the design"
+  }
+  set bterms [$net getBTerms]
+  if {[llength $bterms] < 1} {
+    set bterm [odb::dbBTerm_create $net "${net_name}"]
+    if {$bterm == "NULL"} {
+      utl::error PDN 71 "Cannot create terminal for net $net_name"
+    }
+  }
+  # debug $bterm
+  foreach bterm [$net getBTerms] {
+    $bterm setSigType $signal_type
+  }
+  set bterm [lindex [$net getBTerms] 0]
   set bpin [odb::dbBPin_create $bterm]
   $bpin setPlacementStatus "FIRM"
   

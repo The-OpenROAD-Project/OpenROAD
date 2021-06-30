@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, University of California, San Diego.
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -246,7 +246,7 @@ proc tapcell_ripup { args } {
   }
 
   set taps_removed [tap::remove_cells $tap_prefix]
-  utl::info TAP 100 "Tap cells removed: $taps_removed"
+  utl::info TAP 100 "Tapcells removed: $taps_removed"
   set endcaps_removed [tap::remove_cells $endcap_prefix]
   utl::info TAP 101 "Endcaps removed: $endcaps_removed"
 
@@ -1011,7 +1011,7 @@ proc find_blockages {db} {
   foreach inst [[[$db getChip] getBlock] getInsts] {
     if { [$inst isBlock] } {
       if { ![$inst isPlaced] } {
-        utl::warn TAP 32 "Macro [$inst getName] is not placed"
+        utl::warn TAP 32 "Macro [$inst getName] is not placed."
         continue
       }
       lappend blockages $inst

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -45,6 +45,10 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 
+namespace grt {
+class GlobalRouter;
+}
+
 namespace rsz {
 
 using std::array;
@@ -54,6 +58,7 @@ using std::vector;
 using ord::OpenRoad;
 using utl::Logger;
 using gui::Gui;
+using grt::GlobalRouter;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -128,7 +133,8 @@ public:
             Logger *logger,
             Gui *gui,
             dbDatabase *db,
-            dbSta *sta);
+            dbSta *sta,
+            GlobalRouter *grt);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -155,6 +161,8 @@ public:
   double wireClkCapacitance(const Corner *corner);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
+  void estimateWireParasitic(const Pin *drvr_pin,
+                             const Net *net);
   bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
   void parasiticsInvalid(const Net *net);
   void parasiticsInvalid(const dbNet *net);
@@ -287,6 +295,7 @@ public:
 protected:
   void init();
   void ensureBlock();
+  float routingAlpha() const;
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
   void bufferInput(Pin *top_pin,
@@ -483,8 +492,8 @@ protected:
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
-  void estimateWireParasiticSteiner(const Net *net);
-  void ensureWireParasitic(const Net *net);
+  void estimateWireParasiticSteiner(const Pin *drvr_pin,
+                                    const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
@@ -587,6 +596,7 @@ protected:
   Logger *logger_;
   Gui *gui_;
   dbSta *sta_;
+  GlobalRouter *grt_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
@@ -625,7 +635,7 @@ protected:
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
+  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
 

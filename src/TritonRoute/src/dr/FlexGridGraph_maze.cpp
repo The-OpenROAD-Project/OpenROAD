@@ -543,7 +543,7 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
                                    frDirEnum prevDir,
                                    frLayer* layer) const
 {
-  if ((dir == frDirEnum::U || dir == frDirEnum::D) /*&& (dir != prevDir || ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1))*/)
+  if ((dir == frDirEnum::U || dir == frDirEnum::D))
     return getViaCostsNDR(gridX, gridY, gridZ, dir, prevDir, layer);
   frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
   frCoord cost = el;
@@ -608,7 +608,7 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
       }
       getPrevGrid(gridX, gridY, gridZ, dir);
     }
-  }
+      }
   if (xCoords_[startX] < x1)
     startX++;
   if (xCoords_[endX] > x2)

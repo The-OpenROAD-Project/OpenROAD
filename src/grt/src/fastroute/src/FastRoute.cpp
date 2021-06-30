@@ -56,7 +56,6 @@
 #include "maze.h"
 #include "maze3D.h"
 #include "utl/Logger.h"
-#include "pdr/pdrev.h"
 #include "opendb/db.h"
 
 #include "route.h"
@@ -520,33 +519,36 @@ void FastRouteCore::setLayerOrientation(int x)
 
 void FastRouteCore::addPin(int netID, int x, int y, int layer)
 {
-  nets[netID]->pinX.push_back(x);
-  nets[netID]->pinY.push_back(y);
-  nets[netID]->pinL.push_back(layer);
+  FrNet* net = nets[netID];
+  net->pinX.push_back(x);
+  net->pinY.push_back(y);
+  net->pinL.push_back(layer);
 }
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
-                          int nPins,
-                          int validPins,
+                          int num_pins,
                           float alpha,
-                          bool isClock,
+                          bool is_clock,
+                          int driver_idx,
                           int cost,
-                          std::vector<int> edgeCostPerLayer)
+                          std::vector<int> edge_cost_per_layer)
 {
   int netID = newnetID;
-  pinInd = validPins;
+  FrNet* net = nets[newnetID];
+  pinInd = num_pins;
   MD = std::max(MD, pinInd);
-  nets[newnetID]->db_net = db_net;
-  nets[newnetID]->numPins = nPins;
-  nets[newnetID]->deg = pinInd;
-  nets[newnetID]->alpha = alpha;
-  nets[newnetID]->isClock = isClock;
-  nets[newnetID]->edgeCost = cost;
-  nets[newnetID]->edgeCostPerLayer = edgeCostPerLayer;
+  net->db_net = db_net;
+  net->numPins = num_pins;
+  net->deg = pinInd;
+  net->alpha = alpha;
+  net->is_clock = is_clock;
+  net->driver_idx = driver_idx;
+  net->edgeCost = cost;
+  net->edge_cost_per_layer = edge_cost_per_layer;
 
   seglistIndex[newnetID] = segcount;
   newnetID++;
-  // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
+  // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs for a net
   segcount += 2 * pinInd - 3;
   return netID;
 }
@@ -1083,7 +1085,14 @@ NetRouteMap FastRouteCore::run()
     logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
-  while (totalOverflow > 0 && i <= overflowIterations) {
+  static const int max_overflow_increases_ = 15;
+
+  // set overflow_increases as -1 since the first iteration always sum 1
+  int overflow_increases = -1;
+  int last_total_overflow = 0;
+  while (totalOverflow > 0 &&
+         i <= overflowIterations &&
+         overflow_increases <= max_overflow_increases_) {
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
     } else if (THRESH_M >= 2) {
@@ -1162,7 +1171,7 @@ NetRouteMap FastRouteCore::run()
 
     logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
                   " threshold {} via cost {}. \n"
-                  "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
+                  "log_coef {:.2f}, healingTrigger {} cost_step {} L {} cost_type"
                   " {} updatetype {}.",
         i,
         enlarge,
@@ -1297,13 +1306,24 @@ NetRouteMap FastRouteCore::run()
       getOverflow2Dmaze(&maxOverflow, &tUsage);
       break;
     }
-  }
+
+    if (totalOverflow > last_total_overflow) {
+      overflow_increases++;
+    }
+    last_total_overflow = totalOverflow;
+  } // end overflow iterations
 
   bool has_2D_overflow = totalOverflow > 0;
 
   if (minofl > 0) {
-    logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
+    logger->info(GRT, 104, "Minimal overflow {} occuring at round {}.", minofl, minoflrnd);
     copyBR();
+  }
+
+  if (overflow_increases > max_overflow_increases_) {
+    logger->warn(GRT,
+                 230,
+                 "Congestion iterations reached the maximum number of total overflow increases.");
   }
 
   freeRR();
@@ -1319,7 +1339,7 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   if (verbose > 1)
-    logger->info(GRT, 106, "Layer Assignment Begins.");
+    logger->info(GRT, 106, "Layer assignment begins.");
   newLA();
   if (verbose > 1)
     logger->info(GRT, 107, "Layer assignment finished.");
@@ -1340,7 +1360,7 @@ NetRouteMap FastRouteCore::run()
 
   if (goingLV && past_cong == 0) {
     if (verbose > 1)
-      logger->info(GRT, 108, "Post Processing Begins.");
+      logger->info(GRT, 108, "Post-processing begins.");
     mazeRouteMSMDOrder3D(enlarge, 0, ripupTH3D);
 
     //  mazeRouteMSMDOrder3D(enlarge, 0, 10 );
@@ -1348,7 +1368,7 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge, 0, 12);
     }
     if (verbose > 1)
-      logger->info(GRT, 109, "Post Processsing finished.\n Starting via filling.");
+      logger->info(GRT, 109, "Post-processsing finished.\n Starting via filling.");
   }
 
   fillVIA();
@@ -1365,7 +1385,7 @@ NetRouteMap FastRouteCore::run()
 
   updateDbCongestion();
 
-  if (has_2D_overflow && !allowOverflow) {
+  if (has_2D_overflow && !allow_overflow_) {
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
@@ -1391,14 +1411,9 @@ void FastRouteCore::setOverflowIterations(int iterations)
   overflowIterations = iterations;
 }
 
-void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
-{
-  pdRevForHighFanout = pdRevHihgFanout;
-}
-
 void FastRouteCore::setAllowOverflow(bool allow)
 {
-  allowOverflow = allow;
+  allow_overflow_ = allow;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()

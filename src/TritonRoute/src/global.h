@@ -33,9 +33,9 @@
 #include <memory>
 #include <string>
 
+#include "db/drObj/drFig.h"
 #include "db/obj/frBlock.h"
 #include "frDesign.h"
-#include "db/drObj/drFig.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -138,6 +138,7 @@ std::ostream& operator<<(std::ostream& os, const frShape& fig);
 std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
 std::ostream& operator<<(std::ostream& os, const frGuide& p);
+std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
 // namespace fr
 }  // namespace fr
 #endif

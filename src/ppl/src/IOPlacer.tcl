@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, University of California, San Diego.
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -145,7 +145,7 @@ proc set_io_pin_constraint { args } {
     }
 
     if {[info exists keys(-direction)] && [info exists keys(-pin_names)]} {
-      utl::error PPL 16 "Both -direction and -pin_names constraints not allowed.."
+      utl::error PPL 16 "Both -direction and -pin_names constraints not allowed."
     }
 
     if [info exists keys(-direction)] {
@@ -172,7 +172,7 @@ proc set_io_pin_constraint { args } {
       set urx [ord::microns_to_dbu $urx]
       set ury [ord::microns_to_dbu $ury]
     } else {
-      utl::error PPL 59 "box at top layer must have 4 values (llx lly urx ury)."
+      utl::error PPL 59 "Box at top layer must have 4 values (llx lly urx ury)."
     }
 
     if [info exists keys(-pin_names)] {
@@ -180,7 +180,7 @@ proc set_io_pin_constraint { args } {
       ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
     }
   } else {
-    utl::warn PPL 73 "constraint with region $region has an invalid edge."
+    utl::warn PPL 73 "Constraint with region $region has an invalid edge."
   }
 }
 
@@ -265,12 +265,12 @@ proc place_pins { args } {
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
-    utl::error PPL 31 "no technology found."
+    utl::error PPL 31 "No technology found."
   }
 
   set dbBlock [ord::get_db_block]
   if { $dbBlock == "NULL" } {
-    utl::error PPL 32 "no block found."
+    utl::error PPL 32 "No block found."
   }
 
   set db [ord::get_db]
@@ -405,7 +405,7 @@ proc place_pins { args } {
           utl::error PPL 25 "-exclude: $interval is an invalid region"
         }
       } else {
-        utl::error PPL 26 "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval."
+        utl::error PPL 26 "-exclude: invalid syntax in $region. Use (top|bottom|left|right):interval."
       }
     }
   }
@@ -436,7 +436,7 @@ namespace eval ppl {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    utl::error PPL 27 "$cmd: $edge is an invalid edge. use top, bottom, left or right."
+    utl::error PPL 27 "$cmd: $edge is an invalid edge. Use top, bottom, left or right."
   }
   return [ppl::get_edge $edge]
 }
@@ -515,12 +515,12 @@ proc exclude_intervals { cmd intervals } {
 
 proc parse_layer_name { layer_name } {
   if { ![ord::db_has_tech] } {
-    utl::error PPL 50 "no technology has been read."
+    utl::error PPL 50 "No technology has been read."
   }
   set tech [ord::get_db_tech]
   set tech_layer [$tech findLayer $layer_name]
   if { $tech_layer == "NULL" } {
-    utl::error PPL 51 "layer $layer_name not found."
+    utl::error PPL 51 "Layer $layer_name not found."
   }
   set layer_idx [$tech_layer getRoutingLevel]
 

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+#include "rsz/SteinerTree.hh"
 
 #include "utl/Logger.h"
 
@@ -43,8 +44,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ArcDelayCalc.hh"
-
-#include "rsz/SteinerTree.hh"
 
 namespace rsz {
 
@@ -182,25 +181,6 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin)
 }
 
 void
-Resizer::ensureWireParasitic(const Net *net)
-{
-  if (have_estimated_parasitics_) {
-    PinSet *drivers = network_->drivers(net);
-    if (drivers && !drivers->empty()) {
-      PinSet::Iterator drvr_iter(drivers);
-      Pin *drvr_pin = drvr_iter.next();
-      // Sufficient to check for parasitic for one corner because
-      // they are all made at the same time.
-      const Corner *corner = sta_->corners()->findCorner(0);
-      const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
-      if (parasitics_invalid_.hasKey(net)
-          || parasitics_->findPiElmore(drvr_pin,RiseFall::rise(),parasitic_ap) == nullptr)
-        estimateWireParasitic(net);
-    }
-  }
-}
-
-void
 Resizer::ensureWireParasitic(const Pin *drvr_pin,
                              const Net *net)
 {
@@ -213,7 +193,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       && (parasitics_invalid_.hasKey(net)
           || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
                                        parasitic_ap) == nullptr)) {
-    estimateWireParasitic(net);
+    estimateWireParasitic(drvr_pin, net);
     parasitics_invalid_.erase(net);
   }
 }
@@ -240,6 +220,18 @@ Resizer::estimateWireParasitics()
 void
 Resizer::estimateWireParasitic(const Net *net)
 {
+  PinSet *drivers = network_->drivers(net);
+  if (drivers && !drivers->empty()) {
+    PinSet::Iterator drvr_iter(drivers);
+    Pin *drvr_pin = drvr_iter.next();
+    estimateWireParasitic(drvr_pin, net);
+  }
+}
+
+void
+Resizer::estimateWireParasitic(const Pin *drvr_pin,
+                               const Net *net)
+{
   if (!network_->isPower(net)
       && !network_->isGround(net)) {
     if (isPadNet(net))
@@ -248,7 +240,7 @@ Resizer::estimateWireParasitic(const Net *net)
       // wire capacitance to prevent wireload model parasitics from being used.
       makePadParasitic(net);
     else
-      estimateWireParasiticSteiner(net);
+      estimateWireParasiticSteiner(drvr_pin, net);
   }
 }
 
@@ -287,20 +279,11 @@ Resizer::makePadParasitic(const Net *net)
 }
 
 void
-Resizer::estimateWireParasiticSteiner(const Net *net)
+Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
+                                      const Net *net)
 {
-  const Pin *drvr_pin = nullptr;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    drvr_pin = pin;
-    if (network_->isDriver(pin)) {
-      break;
-    }
-  }
-  delete pin_iter;
-
-  SteinerTree *tree = makeSteinerTree(drvr_pin, false, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), false,
+                                      db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));

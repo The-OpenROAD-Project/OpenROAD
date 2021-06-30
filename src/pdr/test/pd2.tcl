@@ -1,12 +1,29 @@
-# prim-dikstra spanning tree root has 27 children
+# prim-dikstra with same x/y values that sent original code into the ozone
 source "pdrev_helpers.tcl"
 
 set alpha .4
 
+# p8 p10 same x
+set net {lalaland1 0
+  {p0 2013675 1174195}
+  {p1 1730950  624475}
+  {p2 1742950  751015}
+  {p3 1958747  834065}
+  {p4 1919867  767465}
+  {p5 1961350  840725}
+  {p6 1874470  807425}
+  {p7 1757627  854045}
+  {p8 1965947 1087145}
+  {p9 2005787 1127105}
+ {p10 1965947 1100465}
+}
+
+report_pdrev_net $net $alpha 1
+
 # p27 p29 same x
-# p9  p17 same xy
+# p9  p17 same y
 # p2  p5  same y
-set net {lalaland 0
+set net {lalaland2 0
   {p0 2013675 1174195}
   {p1 1705307 714185}
   {p2 1687067 740825}

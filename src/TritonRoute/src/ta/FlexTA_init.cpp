@@ -53,8 +53,7 @@ void FlexTAWorker::initTracks()
         bool isH = (getDir() == frcHorzPrefRoutingDir);
         frCoord lowCoord
             = (isH ? getRouteBox().bottom() : getRouteBox().left());
-        frCoord highCoord
-            = (isH ? getRouteBox().top() : getRouteBox().right());
+        frCoord highCoord = (isH ? getRouteBox().top() : getRouteBox().right());
         int trackNum
             = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
         if (trackNum < 0) {

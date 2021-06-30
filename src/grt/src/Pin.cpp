@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -95,6 +95,18 @@ std::string Pin::getName() const
     return _bterm->getName();
   else
     return getITermName(_iterm);
+}
+
+bool Pin::isDriver()
+{
+  if (_isPort) {
+    return (_bterm->getIoType() == odb::dbIoType::INPUT);
+  } else {
+    odb::dbNet* db_net = _iterm->getNet();
+    odb::dbITerm* driver = db_net->getFirstOutput();
+    
+    return (driver == _iterm);
+  }
 }
 
 }  // namespace grt

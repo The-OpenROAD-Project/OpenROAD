@@ -271,27 +271,26 @@ class frBlock : public frBlockObject
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
   }
-  const frBox& getDieBox() const {
-      return dieBox_;
-  }
-  void setBoundaries(const std::vector<frBoundary> in) { 
-      boundaries_ = in;
-      if (boundaries_.size()) {
-        boundaries_.begin()->getBBox(dieBox_);
-      }
-      frCoord llx = dieBox_.left();
-      frCoord lly = dieBox_.bottom();
-      frCoord urx = dieBox_.right();
-      frCoord ury = dieBox_.top();
-      frBox tmpBox;
-      for (auto& boundary : boundaries_) {
-        boundary.getBBox(tmpBox);
-        llx = std::min(llx, tmpBox.left());
-        lly = std::min(lly, tmpBox.bottom());
-        urx = std::max(urx, tmpBox.right());
-        ury = std::max(ury, tmpBox.top());
-      }
-      dieBox_.set(llx, lly, urx, ury);
+  const frBox& getDieBox() const { return dieBox_; }
+  void setBoundaries(const std::vector<frBoundary> in)
+  {
+    boundaries_ = in;
+    if (boundaries_.size()) {
+      boundaries_.begin()->getBBox(dieBox_);
+    }
+    frCoord llx = dieBox_.left();
+    frCoord lly = dieBox_.bottom();
+    frCoord urx = dieBox_.right();
+    frCoord ury = dieBox_.top();
+    frBox tmpBox;
+    for (auto& boundary : boundaries_) {
+      boundary.getBBox(tmpBox);
+      llx = std::min(llx, tmpBox.left());
+      lly = std::min(lly, tmpBox.bottom());
+      urx = std::max(urx, tmpBox.right());
+      ury = std::max(ury, tmpBox.top());
+    }
+    dieBox_.set(llx, lly, urx, ury);
   }
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {

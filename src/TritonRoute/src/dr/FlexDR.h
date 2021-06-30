@@ -34,6 +34,7 @@
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
@@ -47,7 +48,6 @@ class Logger;
 
 namespace fr {
 
-class FlexDRGraphics;
 class frConstraint;
 
 struct FlexDRViaData
@@ -59,8 +59,7 @@ struct FlexDRViaData
   // via2viaMinLen[z][1], last via=down, curr via=up
   // via2viaMinLen[z][2], last via=up,   curr via=down
   // via2viaMinLen[z][3], last via=up,   curr via=up
-  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>>
-      via2viaMinLen;
+  std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>> via2viaMinLen;
 
   // via2viaMinLen[z][0], prev via=down, curr via=down, min required x dist
   // via2viaMinLen[z][1], prev via=down, curr via=down, min required y dist
@@ -340,7 +339,9 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(const FlexDRViaData* via_data, frTechObject* tech, Logger* logger)
+  FlexDRWorker(const FlexDRViaData* via_data,
+               frTechObject* tech,
+               Logger* logger)
       : tech_(tech),
         logger_(logger),
         graphics_(nullptr),

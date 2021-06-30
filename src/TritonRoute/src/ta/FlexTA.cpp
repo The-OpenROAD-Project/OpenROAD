@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexTA.h"
+
 #include <omp.h>
 
 #include <algorithm>
@@ -33,7 +35,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "FlexTA.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "global.h"

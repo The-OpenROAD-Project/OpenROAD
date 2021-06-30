@@ -53,6 +53,7 @@ class Graph
 public:
   Graph(vector<int>& x,
         vector<int>& y,
+        int root_index,
         Logger* logger);
   void buildNearestNeighborsForSPT();
   void buildNearestNeighbors_single_node(int idx);
@@ -60,36 +61,36 @@ public:
   void doSteiner_HoVW();
   void fix_max_dc();
   void find_max_dc_node(vector<float>& node_and_dc);
-  unsigned calc_overlap(vector<vector<Node>>& set_of_nodes);
-  unsigned calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
+  int calc_overlap(vector<vector<Node>>& set_of_nodes);
+  int calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
   void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
-  void generate_permutations(vector<vector<unsigned>> lists,
-                             vector<vector<unsigned>>& result,
-                             unsigned depth,
-                             vector<unsigned> current);
-  void update_edgecosts_to_parent(unsigned child, unsigned par);
-  void update_node_detcost_Kt(unsigned j);
+  void generate_permutations(vector<vector<int>> lists,
+                             vector<vector<int>>& result,
+                             int depth,
+                             vector<int> current);
+  void update_edgecosts_to_parent(int child, int par);
+  void update_node_detcost_Kt(int j);
   void get_level_in_tree();
   void PDBU_new_NN(float alpha);
-  void update_detourcosts_to_NNs(unsigned j);
-  void swap_and_update_tree(unsigned min_node,
+  void update_detourcosts_to_NNs(int j);
+  void swap_and_update_tree(int min_node,
                             int nn_idx,
-                            unsigned distance,
-                            unsigned i_node);
+                            int distance,
+                            int i_node);
   float calc_tree_cost();
 
-  void heap_insert(int p, unsigned key);
-  unsigned heap_delete_min();
+  void heap_insert(int p, int key);
+  int heap_delete_min();
   void heap_decrease_key(int p, float new_key);
 
   void get_children_of_node();
   void print_tree();
   float calc_tree_det_cost();
-  unsigned calc_tree_wl_pd();
-  unsigned calc_tree_pl();
+  int calc_tree_wl_pd();
+  int calc_tree_pl();
   void updateMinDist();
-  void NESW_NearestNeighbors(int left, int right, unsigned oct);
-  void NESW_Combine(int left, int mid, int right, unsigned oct);
+  void NESW_NearestNeighbors(int left, int right, int oct);
+  void NESW_Combine(int left, int mid, int right, int oct);
   bool make_unique(vector<Node>& vec);
 
   void BuildDAG();
@@ -150,14 +151,16 @@ public:
                            std::pair<double, double>& out);
 
   vector<Node> nodes;
-  int orig_num_terminals;
+  int num_terminals;
 
 private:
+  bool nodeLessY(const int i, const int j);
+
   float alpha2;
   float alpha3;
   float alpha4;
   float beta;
-  unsigned distance;
+  int distance;
   float M;
 
   vector<Edge> edges;
@@ -166,9 +169,9 @@ private:
   float maxPLRatio;
   vector<vector<int>> ManhDist;
   float PLmargin;
-  int num_terminals;
   int root_idx;
 
+  // All of these should be local variables to buildNearestNeighborsForSPT -cherry 06/16/2021
   vector<int> urux;
   vector<int> urlx;
   vector<int> ulux;
@@ -191,10 +194,12 @@ private:
   vector<vector<int>> tree_struct;
   vector<int> tree_struct_1darr;
 
-  vector<unsigned> heap_key;
+  vector<int> heap_key;
+  //   0 empty
+  //  -1 visited (removed)
   vector<int> heap_idx;
   vector<int> heap_elt;
-  unsigned heap_size;
+  int heap_size;
 
   Logger* logger_;
 };
