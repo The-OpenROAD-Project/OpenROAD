@@ -761,11 +761,11 @@ vector<Cluster*> ShapeEngine(float& outline_width,
 
   // Verify the results
   for (int i = 0; i < clusters.size(); i++) {
-    string output_info = "cluster_name:  ";
+    string output_info = "Cluster: :  ";
     output_info += clusters[i]->GetName() + "    ";
-    output_info += "area:   ";
+    output_info += "area: ";
     output_info += to_string(clusters[i]->GetArea()) + "   ";
-    output_info += "aspect_ratio:    ";
+    output_info += "aspect_ratio: ";
     vector<pair<float, float>> aspect_ratio = clusters[i]->GetAspectRatio();
     for (int j = 0; j < aspect_ratio.size(); j++) {
       output_info += "(";
@@ -775,7 +775,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       output_info += ") ";
     }
 
-    logger->info(MPL, i + 1007, "Shape_Engine {}", output_info);
+    logger->info(MPL,  1007, "Shape_Engine {}", output_info);
   }
 
   return clusters;
