@@ -104,10 +104,10 @@ void PartitionMgr::runChaco()
 
   int firstRun = 0;
 
-  std::vector<int> edgeWeights = _graph.getEdgeWeight();
-  std::vector<int> vertexWeights = _graph.getVertexWeight();
-  std::vector<int> colIdx = _graph.getColIdx();
-  std::vector<int> rowPtr = _graph.getRowPtr();
+  std::vector<int> edgeWeights = _graph->getEdgeWeight();
+  std::vector<int> vertexWeights = _graph->getVertexWeight();
+  std::vector<int> colIdx = _graph->getColIdx();
+  std::vector<int> rowPtr = _graph->getRowPtr();
   int numVertices = vertexWeights.size();
   int numVerticesTotal = vertexWeights.size();
   short highestCurrentPartition = 0;
@@ -314,8 +314,8 @@ void PartitionMgr::runGpMetis()
 
   idx_t edgeCut;
   idx_t nPartitions = _options.getTargetPartitions();
-  int numVertices = _graph.getNumVertex();
-  int numEdges = _graph.getNumEdges();
+  int numVertices = _graph->getNumVertex();
+  int numEdges = _graph->getNumEdges();
   idx_t constraints = 1;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
@@ -331,16 +331,16 @@ void PartitionMgr::runGpMetis()
   idx_t* colIdx = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   idx_t* edgeWeights = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   for (int i = 0; i < numVertices; i++) {
-    vertexWeights[i] = _graph.getVertexWeight(i);
-    edgeWeights[i] = _graph.getEdgeWeight(i);
-    rowPtr[i] = _graph.getRowPtr(i);
-    colIdx[i] = _graph.getColIdx(i);
+    vertexWeights[i] = _graph->getVertexWeight(i);
+    edgeWeights[i] = _graph->getEdgeWeight(i);
+    rowPtr[i] = _graph->getRowPtr(i);
+    colIdx[i] = _graph->getColIdx(i);
   }
   rowPtr[numVertices] = numEdges;
 
   for (int i = numVertices; i < numEdges; i++) {
-    edgeWeights[i] = _graph.getEdgeWeight(i);
-    colIdx[i] = _graph.getColIdx(i);
+    edgeWeights[i] = _graph->getEdgeWeight(i);
+    colIdx[i] = _graph->getColIdx(i);
   }
   for (int seed : _options.getSeeds()) {
     std::vector<unsigned long> gpmetisResults;
@@ -399,12 +399,12 @@ void PartitionMgr::runMlPart()
 #ifdef PARTITIONERS
   _logger->report("Running MLPart...");
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(_dbId, _logger);
+  hypergraphDecomp.init(getDbBlock(), _logger);
   Hypergraph hypergraph;
   if (_options.getForceGraph()) {
-    hypergraphDecomp.toHypergraph(hypergraph, _graph);
+    hypergraphDecomp.toHypergraph(hypergraph, _graph.get());
   } else {
-    hypergraph = _hypergraph;
+    hypergraph = *_hypergraph;
   }
 
   PartSolutions currentResults;
@@ -539,12 +539,12 @@ void PartitionMgr::hypergraph(bool buildGraph)
 
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), _logger);
-  hypergraphDecomp.constructMap(*_hypergraph.get(),
+  hypergraphDecomp.constructMap(*_hypergraph,
                                 _options.getMaxVertexWeight());
 
   int numVertices = _hypergraph->getNumVertex();
   std::vector<unsigned long> clusters(numVertices, 0);
-  hypergraphDecomp.createHypergraph(*_hypergraph.get(), clusters, 0);
+  hypergraphDecomp.createHypergraph(*_hypergraph, clusters, 0);
 
   if (buildGraph)
     toGraph();
@@ -555,8 +555,8 @@ void PartitionMgr::toGraph()
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), _logger);
   _graph->clearGraph();
-  hypergraphDecomp.toGraph(*_hypergraph.get(),
-                           *_graph.get(),
+  hypergraphDecomp.toGraph(*_hypergraph,
+                           *_graph,
                            _options.getGraphModel(),
                            _options.getWeightModel(),
                            _options.getMaxEdgeWeight(),
@@ -899,10 +899,10 @@ void PartitionMgr::runChacoClustering()
   currentResults.setPartitionId(clusterId);
   std::string evaluationFunction = _options.getEvaluationFunction();
 
-  std::vector<int> edgeWeights = _graph.getEdgeWeight();
-  std::vector<int> vertexWeights = _graph.getVertexWeight();
-  std::vector<int> colIdx = _graph.getColIdx();
-  std::vector<int> rowPtr = _graph.getRowPtr();
+  std::vector<int> edgeWeights = _graph->getEdgeWeight();
+  std::vector<int> vertexWeights = _graph->getVertexWeight();
+  std::vector<int> colIdx = _graph->getColIdx();
+  std::vector<int> rowPtr = _graph->getRowPtr();
   int numVertices = vertexWeights.size();
 
   int architecture = _options.getArchTopology().size();
@@ -1032,8 +1032,8 @@ void PartitionMgr::runGpMetisClustering()
 
   idx_t edgeCut;
   idx_t nPartitions = _options.getTargetPartitions();
-  int numVertices = _graph.getNumVertex();
-  int numEdges = _graph.getNumEdges();
+  int numVertices = _graph->getNumVertex();
+  int numEdges = _graph->getNumEdges();
   idx_t constraints = 1;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
@@ -1050,16 +1050,16 @@ void PartitionMgr::runGpMetisClustering()
   idx_t* colIdx = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   idx_t* edgeWeights = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   for (int i = 0; i < numVertices; i++) {
-    vertexWeights[i] = _graph.getVertexWeight(i);
-    edgeWeights[i] = _graph.getEdgeWeight(i);
-    rowPtr[i] = _graph.getRowPtr(i);
-    colIdx[i] = _graph.getColIdx(i);
+    vertexWeights[i] = _graph->getVertexWeight(i);
+    edgeWeights[i] = _graph->getEdgeWeight(i);
+    rowPtr[i] = _graph->getRowPtr(i);
+    colIdx[i] = _graph->getColIdx(i);
   }
   rowPtr[numVertices] = numEdges;
 
   for (int i = numVertices; i < numEdges; i++) {
-    edgeWeights[i] = _graph.getEdgeWeight(i);
-    colIdx[i] = _graph.getColIdx(i);
+    edgeWeights[i] = _graph->getEdgeWeight(i);
+    colIdx[i] = _graph->getColIdx(i);
   }
   std::vector<unsigned long> gpmetisResults;
   auto start = std::chrono::system_clock::now();
@@ -1107,12 +1107,12 @@ void PartitionMgr::runMlPartClustering()
 #ifdef PARTITIONERS
   _logger->report("Running MLPart...");
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(_dbId, _logger);
+  hypergraphDecomp.init(getDbBlock(), _logger);
   Hypergraph hypergraph;
   if (_options.getForceGraph()) {
-    hypergraphDecomp.toHypergraph(hypergraph, _graph);
+    hypergraphDecomp.toHypergraph(hypergraph, _graph.get());
   } else {
-    hypergraph = _hypergraph;
+    hypergraph = *_hypergraph;
   }
 
   PartSolutions currentResults;
