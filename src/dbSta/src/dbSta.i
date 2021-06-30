@@ -109,4 +109,15 @@ sta_to_db_master(LibertyCell *cell)
   return db_network->staToDb(cell);
 }
 
+void
+db_network_defined()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbDatabase *db = openroad->getDb();
+  odb::dbChip *chip = db->getChip();
+  odb::dbBlock *block = chip->getBlock();
+  db_network->readDefAfter(block);
+}
+
 %} // inline
