@@ -12,7 +12,6 @@
 [INFO ODB-0134] Finished DEF file: reg3.def
 [INFO RSZ-0028] Inserted 1 output buffers.
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
-[INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 2 instances.
 Net out
