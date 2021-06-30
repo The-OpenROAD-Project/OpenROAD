@@ -66,30 +66,6 @@ using std::vector;
 using utl::Logger;
 using utl::MPL;
 
-std::string Macro::OrientationToString(Orientation orientation)
-{
-  switch (orientation) {
-    case R0:
-      return std::string("R0");
-    case R180:
-      return std::string("R180");
-    case R90:
-      return std::string("R90");
-    case R270:
-      return std::string("R270");
-    case MY:
-      return std::string("MY");
-    case MX:
-      return std::string("MX");
-    case MX90:
-      return std::string("MX90");
-    case MY90:
-      return std::string("MY90");
-    default:
-      return std::string("Unknown");
-  }
-}
-
 Macro::Macro(const std::string& name, float width, float height)
 {
   name_ = name;
@@ -117,12 +93,10 @@ bool Macro::operator==(const Macro& macro) const
 void Macro::Flip(bool axis)
 {
   if (axis == true) {
-    // FLIP Y
-    orientation_ = FLIP_Y_TABLE[orientation_];
+    orientation_ = orientation_.flipY();
     pin_x_ = width_ - pin_x_;
   } else {
-    // FLIP X
-    orientation_ = FLIP_X_TABLE[orientation_];
+    orientation_ = orientation_.flipX();
     pin_y_ = height_ - pin_y_;
   }
 }

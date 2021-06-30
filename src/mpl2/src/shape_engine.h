@@ -42,28 +42,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "opendb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace shape_engine {
-// definition of Orientation
-enum Orientation
-{
-  R0,
-  R90,
-  R180,
-  R270,
-  MX,
-  MY,
-  MX90,
-  MY90
-};
 
 // definition of hard macro
 class Macro
 {
-  static std::map<Orientation, Orientation> FLIP_X_TABLE;
-  static std::map<Orientation, Orientation> FLIP_Y_TABLE;
-
  private:
   float width_ = 0.0;
   float height_ = 0.0;
@@ -72,10 +58,8 @@ class Macro
   float y_ = 0.0;
   float pin_x_ = 0.0;
   float pin_y_ = 0.0;
-  Orientation orientation_ = R0;
+  odb::dbOrientType orientation_;
   std::string name_;
-
-  static std::string OrientationToString(Orientation orientation);
 
  public:
   Macro(const std::string& name, float width, float height);
@@ -94,7 +78,7 @@ class Macro
   float GetPinY() const { return pin_y_; }
   std::string GetOrientation() const
   {
-    return OrientationToString(orientation_);
+    return orientation_.getString();
   }
 
   std::string GetName() const { return name_; }

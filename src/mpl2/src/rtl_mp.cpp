@@ -50,26 +50,6 @@
 
 using utl::PAR;
 
-namespace shape_engine {
-std::map<Orientation, Orientation> Macro::FLIP_X_TABLE{{R0, MX},
-                                                       {MX, R0},
-                                                       {R90, MY90},
-                                                       {MY90, R90},
-                                                       {R180, MY},
-                                                       {MY, R180},
-                                                       {R270, MX90},
-                                                       {MX90, R270}};
-
-std::map<Orientation, Orientation> Macro::FLIP_Y_TABLE{{R0, MY},
-                                                       {MY, R0},
-                                                       {R180, MX},
-                                                       {MX, R180},
-                                                       {R90, MX90},
-                                                       {MX90, R90},
-                                                       {R270, MY90},
-                                                       {MY90, R270}};
-}  // namespace shape_engine
-
 namespace mpl {
 using block_placement::Block;
 using shape_engine::Cluster;
