@@ -82,7 +82,7 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned max_depth)
+void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned max_depth, char* workdir_name)
 {
   reset();
   block_ = db_->getChip()->getBlock();
@@ -92,6 +92,8 @@ void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned m
   sta::Slack worst_slack = slack_threshold;
 
   lib_file_names_.emplace_back(liberty_file_name);
+  work_dir_name_ = workdir_name;
+  work_dir_name_ = work_dir_name_ + "/";
 
   removeConstCells();
 
@@ -131,7 +133,7 @@ void Restructure::getBlob(unsigned max_depth)
 void Restructure::runABC()
 {
   input_blif_file_name_
-      = std::string(block_->getConstName()) + "_crit_path.blif";
+      = work_dir_name_ + std::string(block_->getConstName()) + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
   debugPrint(logger_,
@@ -150,14 +152,14 @@ void Restructure::runABC()
 
   // abc optimization
   bool area_mode = opt_mode_ <= Mode::AREA_3;
-  std::string abc_script_file = "ord_abc_script.tcl";
+  std::string abc_script_file = work_dir_name_ + "ord_abc_script.tcl";
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
   for (int opt_mode = static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_1) : static_cast<int>(Mode::DELAY_1);
        opt_mode <= (static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_3) : static_cast<int>(Mode::DELAY_4));
        opt_mode ++) {
     opt_mode_ = (Mode) opt_mode;
-    output_blif_file_name_ = std::string(block_->getConstName())
+    output_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
                              + std::to_string(opt_mode) + "_crit_path_out.blif";
     debugPrint(logger_,
                RMP,

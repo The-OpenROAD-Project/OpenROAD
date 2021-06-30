@@ -39,10 +39,9 @@
 # target:            "area"|"delay". In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
 # slack_threshold: specifies slack value below which timing paths need to be analyzed for restructuring
 # depth_threshold: specifies the path depth above which a timing path would be considered for restructuring
-# locell:          specifies tie cell which can drive constant zero
-# loport:          specifies port name of tie low cell
-# hicell:          specifies tie cell which can drive constant one
-# hiport:          specifies port name of tie high cell
+# tielo_port:      specifies port name of tie low cell in format <cell_name>/<port_name>
+# tielo_port:      specifies port name of tie high cell in format <cell_name>/<port_name>
+# work_dir:        Name of working directory for tmporary files. If not provided run directory would be used
 #
 # Note that for delay mode slack_threshold and depth_threshold are both considered together.
 # Even if slack_threshold is violated, path may not be considered for re-synthesis unless
@@ -54,16 +53,19 @@ sta::define_cmd_args "restructure" { \
                                       [-target area|timing]\
                                       [-liberty_file liberty_file]\
                                       [-tielo_port tielow_port]\
-                                      [-tiehi_port tiehigh_port]
+                                      [-tiehi_port tiehigh_port]\
+                                      [-work_dir workdir_name]
                                     }
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
-    keys {-slack_threshold -depth_threshold -target -liberty_file -abc_logfile -tielo_port -tiehi_port} flags {}
+    keys {-slack_threshold -depth_threshold -target -liberty_file -abc_logfile\
+          -tielo_port -tiehi_port -work_dir} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
   set target "area"
+  set workdir_name "."
 
   if { [info exists keys(-slack_threshold)] } {
     set slack_threshold_value $keys(-slack_threshold)
@@ -119,5 +121,9 @@ proc restructure { args } {
       utl::warn RMP 33 "-tiehi_port not specified"
   }
 
-  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value
+  if { [info exists keys(-work_dir)] } {
+    set workdir_name $keys(-work_dir)
+  }
+
+  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value $workdir_name
 }
