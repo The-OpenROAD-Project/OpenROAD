@@ -943,6 +943,7 @@ namespace eval ICeWall {
     if {[dict exists $library cells $cell_ref]} {
       if {[dict exists $library cells $cell_ref cell_name]} {
         if {[llength [dict get $library cells $cell_ref cell_name]] > 1} {
+          # debug [dict get $library cells $cell_ref cell_name]
           if {![dict exists $library cells $cell_ref cell_name $position]} {
             utl::error PAD 161 "Position $position not defined for $cell_ref, expecting one of [join [dict keys [dict get $library cells $cell_ref cell_name]] {, }]"
           }
@@ -3567,7 +3568,7 @@ namespace eval ICeWall {
               append net_name "_$section"
             }
             if {[set net [$block findNet $net_name]] != "NULL"} {
-              # utl::error "PAD" 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
+              utl::error "PAD" 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
             } else {
               lappend nets_created $net_name
               set net [odb::dbNet_create $block $net_name]
@@ -5175,14 +5176,18 @@ namespace eval ICeWall {
       } else {
         set cell_name [dict get $cell_ref cell_name]
         get_cell_master $cell_name
-        if {$type == "corner"} {
-          set sides "ll lr ur ul"
+        if {$type == "bump"} {
+          dict set cell_ref cell_name [check_cell_name $cell_name]
         } else {
-          set sides "bottom right top left"
-        }
-        dict set cell_ref cell_name {}
-        foreach side $sides {
-          dict set cell_ref cell_name $side $cell_name
+          if {$type == "corner"} {
+            set sides "ll lr ur ul"
+          } else {
+            set sides "bottom right top left"
+          }
+          dict set cell_ref cell_name {}
+          foreach side $sides {
+            dict set cell_ref cell_name $side $cell_name
+          }
         }
       }
     } else {
