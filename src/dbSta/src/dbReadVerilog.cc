@@ -90,22 +90,6 @@ using sta::LibertyCell;
 using utl::Logger;
 using utl::STA;
 
-// Hierarchical network for read_verilog.
-// Verilog cells and module networks are built here.
-// It is NOT part of an Sta.
-/*
-class dbVerilogNetwork : public  ConcreteNetwork
-{
-public:
-  dbVerilogNetwork();
-  virtual Cell *findAnyCell(const char *name);
-  void init(dbNetwork *db_network);
-
-private:
-  NetworkReader *db_network_;
-};
-*/
-
 dbVerilogNetwork::dbVerilogNetwork() :
   ConcreteNetwork(),
   db_network_(nullptr)
