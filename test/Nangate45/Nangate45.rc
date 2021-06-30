@@ -1,17 +1,4 @@
-if {0} {
-set_layer_rc -layer metal1 -capacitance 1.002e-01 -resistance 5.429e-03
-set_layer_rc -layer metal2 -capacitance 8.863e-02 -resistance 3.571e-03
-set_layer_rc -layer metal3 -capacitance 8.709e-02 -resistance 3.571e-03
-set_layer_rc -layer metal4 -capacitance 1.079e-01 -resistance 1.500e-03
-set_layer_rc -layer metal5 -capacitance 1.111e-02 -resistance 1.500e-03
-set_layer_rc -layer metal6 -capacitance 8.189e-02 -resistance 1.500e-03
-set_layer_rc -layer metal7 -capacitance 1.139e-01 -resistance 1.875e-04
-set_layer_rc -layer metal8 -capacitance 8.313e-02 -resistance 1.875e-04
-set_layer_rc -layer metal9 -capacitance 1.076e-01 -resistance 3.750e-05
-set_layer_rc -layer metal10 -capacitance 8.184e-02 -resistance 3.750e-05
-}
-
-# adjusted by -17%
+# find_wire_rc -17% adjustment
 set_layer_rc -layer metal1 -resistance 5.432e-03 -capacitance 8.494e-02
 set_layer_rc -layer metal2 -resistance 3.574e-03 -capacitance 8.081e-02
 set_layer_rc -layer metal3 -resistance 3.574e-03 -capacitance 7.516e-02
