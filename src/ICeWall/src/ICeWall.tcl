@@ -18,6 +18,45 @@ proc set_bump_options {args} {
   ICeWall::set_bump_options {*}[array get keys]
 }
 
+sta::define_cmd_args "set_bump" {-row row -col col [-power|-ground] [-net net_name] [-remove]}
+
+proc set_bump {args} {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PAD 231 "Design must be loaded before calling set_bump"
+  }
+
+  sta::parse_key_args "set_bump" args \
+    keys {-row -col -net} \
+    flags {-power -ground -remove} 
+
+  if {![info exists keys(-row)]} {
+    utl::error PAD 233 "Required option -row missing for set_bump"
+  }
+  if {![info exists keys(-col)]} {
+    utl::error PAD 234 "Required option -col missing for set_bump"
+  }
+
+  ICeWall::check_rowcol [list row $keys(-row) col $keys(-col)]
+
+  if {[info exists flags(-power)] && [info exists flags(-ground)]} {
+    utl::error PAD 232 "The -power and -ground options are mutualy exclusive for the set_bump command"
+  }
+
+  if {[info exists flags(-remove)]} {
+    ICeWall::bump_remove $keys(-row) $keys(-col) 
+  }
+
+  if {[info exists keys(-net)]} {
+    ICeWall::bump_set_net $keys(-row) $keys(-col) $keys(-net)
+  }
+  if {[info exists flags(-power)]} {
+    ICeWall::bump_set_power $keys(-row) $keys(-col)
+  }
+  if {[info exists flags(-ground)]} {
+    ICeWall::bump_set_ground $keys(-row) $keys(-col)
+  }
+}
+
 sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-power power_nets] \
                                             [-ground ground_nets] \
@@ -666,7 +705,7 @@ namespace eval ICeWall {
         }
         utl::error PAD 117 "No orient entry for cell reference $cell_ref matching orientation $orient"
       } else {
-        utl::error PAD 118 "No orient attribute defined for cell reference $cell_ref ([dict get $library cells $cell_ref])"
+        utl::error PAD 118 "No orient attribute defined for cell reference $cell_ref"
       }
     } else {
       utl::error PAD 119 "No cell reference $cell_ref found in library data"
@@ -3006,7 +3045,50 @@ namespace eval ICeWall {
 
     close $ch
   }
-  
+ 
+  variable bumps {}
+  proc bump_exists {row col} {
+    variable bumps 
+
+    if {[dict exists $bumps $row $col removed]} {
+      return 0
+    }
+    return 1
+  }
+
+  proc bump_remove {row col} {
+    variable bumps 
+
+    dict set bumps $row $col removed 1
+  }
+
+  proc bump_set_net {row col $net_name} {
+    variable bumps
+
+    dict set bumps $row $col net $net_name
+  }
+ 
+  proc bump_get_net {row col} {
+    variable bumps
+
+    if {[dict exists bumps $row $col net]} {
+      return [dict get $bumps $row $col net]
+    }
+    return ""
+  }
+ 
+  proc bump_set_power {row col} {
+    variable bumps
+
+    dict set bump $row $col power 1
+  }
+ 
+  proc bump_set_ground {row col} {
+    variable bumps
+
+    dict set bump $row $col ground 1
+  }
+
   proc place_bumps {} {
     variable num_bumps_x
     variable num_bumps_y
@@ -3018,6 +3100,7 @@ namespace eval ICeWall {
 
     for {set row 1} {$row <= $num_bumps_y} {incr row} {
       for {set col 1} {$col <= $num_bumps_x} {incr col} {
+        if {![bump_exists $row $col]} {continue}
         set origin [get_bump_origin $row $col]
         set bump_name [get_bump_name_at_row_col $row $col]
         # debug "bump ($row $col): $bump_name"
@@ -3040,6 +3123,7 @@ namespace eval ICeWall {
   proc add_power_ground_rdl_straps {} {
     variable num_bumps_x
     variable num_bumps_y
+    variable tech
 
     set rdl_routing_layer [get_footprint_rdl_layer_name]
     set rdl_stripe_width [get_footprint_rdl_width]
@@ -3053,58 +3137,84 @@ namespace eval ICeWall {
     # debug "corner_size $corner_size"
     # debug "bump_pitch $bump_pitch"
     
+    set rdl_min_spacing [[$tech findLayer $rdl_routing_layer] getSpacing]
     # Add stripes for bumps in the central core area
     if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
-      set point [get_bump_centre 1 [expr $corner_size + 1]]
-      set minX [expr [dict get $point x] - $bump_pitch / 2]
-      set point [get_bump_centre 1 [expr $num_bumps_x - $corner_size]]
-      set maxX [expr [dict get $point x] + $bump_pitch / 2]
-
       # debug "minX: [ord::dbu_to_microns $minX], maxX: [ord::dbu_to_microns $maxX]"
       for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
-        if {$row % 2 == 0} {
-          set tag "POWER"
-        } else {
-          set tag "GROUND"
-        }
+        set prev_net ""
         set y [dict get [get_bump_centre $row 1] y]
         set lowerY [expr $y - ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
         set upperY [expr $y + ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
-        set upper_stripe [odb::newSetFromRect $minX [expr $upperY - $rdl_stripe_width / 2] $maxX [expr $upperY + $rdl_stripe_width / 2]]
-        set lower_stripe [odb::newSetFromRect $minX [expr $lowerY - $rdl_stripe_width / 2] $maxX [expr $lowerY + $rdl_stripe_width / 2]]
-        pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
-        pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
         for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
           set point [get_bump_centre $row $col]
+          if {[set net_name [bump_get_net $row $col]] == ""} {
+            if {$row % 2 == 0} {
+              set net_name "POWER"
+            } else {
+              set net_name "GROUND"
+            }
+          }
+          if {$prev_net == ""} {
+            set minX [expr [dict get $point x] - $bump_pitch / 2]
+          } elseif {$prev_net == $net_name} {
+            set minX [expr [dict get $point x] - $bump_pitch / 2 - $rdl_min_spacing / 2]
+          } else {
+            set minX [expr [dict get $point x] - $bump_pitch / 2 + $rdl_min_spacing / 2]
+          }
+          set prev_net $net_name
+          if {$col == $num_bumps_x - $corner_size} {
+            set maxX [expr [dict get $point x] + $bump_pitch / 2]
+          } else {
+            set maxX [expr [dict get $point x] + $bump_pitch / 2 - $rdl_min_spacing / 2]
+          }
+
+          set upper_stripe [odb::newSetFromRect $minX [expr $upperY - $rdl_stripe_width / 2] $maxX [expr $upperY + $rdl_stripe_width / 2]]
+          set lower_stripe [odb::newSetFromRect $minX [expr $lowerY - $rdl_stripe_width / 2] $maxX [expr $lowerY + $rdl_stripe_width / 2]]
+          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
           set link_stripe [odb::newSetFromRect [expr [dict get $point x] - $rdl_stripe_width / 2] $lowerY [expr [dict get $point x] + $rdl_stripe_width / 2] $upperY]
-          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
         }
       }
     } elseif {[pdngen::get_dir $rdl_routing_layer] == "ver"} {
       # Columns numbered top to bottom, so maxY is for corner_size +1
-      set point [get_bump_centre [expr $corner_size + 1] 1]
-      set maxY [expr [dict get $point y] + $bump_pitch / 2]
-      set point [get_bump_centre [expr $num_bumps_y - $corner_size] 1]
-      set minY [expr [dict get $point y] - $bump_pitch / 2]
 
       # debug "minY: [ord::dbu_to_microns $minY], maxY: [ord::dbu_to_microns $maxY]"
       for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
-        if {$col % 2 == 0} {
-          set tag "POWER"
-        } else {
-          set tag "GROUND"
-        }
+        set prev_net ""
         set x [dict get [get_bump_centre 1 $col] x]
         set lowerX [expr $x - ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
         set upperX [expr $x + ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
-        set upper_stripe [odb::newSetFromRect [expr $upperX - $rdl_stripe_width / 2] $minY [expr $upperX + $rdl_stripe_width / 2] $maxY]
-        set lower_stripe [odb::newSetFromRect [expr $lowerX - $rdl_stripe_width / 2] $minY [expr $lowerX + $rdl_stripe_width / 2] $maxY]
-        pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
-        pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
         for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
           set point [get_bump_centre $row $col]
+          if {[set net_name [bump_get_net $row $col]] == ""} {
+            if {$col % 2 == 0} {
+              set net_name "POWER"
+            } else {
+              set net_name "GROUND"
+            }
+          }
+          if {$prev_net == ""} {
+            set maxY [expr [dict get $point y] + $bump_pitch / 2]
+          } elseif {$prev_net == $net_name} {
+            set maxY [expr [dict get $point y] + $bump_pitch / 2 + $rdl_min_spacing / 2]
+          } else {
+            set maxY [expr [dict get $point y] + $bump_pitch / 2 - $rdl_min_spacing / 2]
+          }
+          if {$row == $num_bumps_y - $corner_size} {
+            set minY [expr [dict get $point y] - $bump_pitch / 2]
+          } else {
+            set minY [expr [dict get $point y] - $bump_pitch / 2 + $rdl_min_spacing / 2]
+          }
+          # debug "x: $x, y: [dict get $point y], prev: $prev_net, net: $net_name, minY: $minY, maxY, $maxY"
+          set prev_net $net_name
+          set upper_stripe [odb::newSetFromRect [expr $upperX - $rdl_stripe_width / 2] $minY [expr $upperX + $rdl_stripe_width / 2] $maxY]
+          set lower_stripe [odb::newSetFromRect [expr $lowerX - $rdl_stripe_width / 2] $minY [expr $lowerX + $rdl_stripe_width / 2] $maxY]
+          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
           set link_stripe [odb::newSetFromRect $lowerX [expr [dict get $point y] - $rdl_stripe_width / 2] $upperX [expr [dict get $point y] + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
         }
       }
     }
@@ -3550,7 +3660,7 @@ namespace eval ICeWall {
     set signal_assignment_file $file_name
   }
 
-  proc verify_libcell_type_setup {} {
+  proc verify_libcell_setup {} {
     variable library
 
     if {[dict exists $library types]} {
@@ -3565,12 +3675,31 @@ namespace eval ICeWall {
         }
       }
     }
+
+    foreach type [dict keys [dict get $library types]] {
+      foreach cell [dict get $library types $type] {
+        if {[dict exists $library cells $cell]} {
+          set cell_ref [dict get $library cells $cell]
+          dict set cell_ref type $type
+          dict set library cells $cell $cell_ref
+        }
+      }
+    }
+
+    if {[dict exists $library cells]} {
+      dict for {cell_ref_name cell_ref} [dict get $library cells] {
+        if {![dict exists $cell_ref name]} {
+          dict set cell_ref name $cell_ref_name
+        }
+        dict set library cells $cell_ref_name [verify_cell_ref $cell_ref]
+      }
+    }
   }
   
   proc init_footprint {args} {
     set arglist $args
 
-    verify_libcell_type_setup
+    verify_libcell_setup
 
     # debug "start: $args"
     if {[set idx [lsearch $arglist "-signal_mapping"]] > -1} {
@@ -4908,7 +5037,7 @@ namespace eval ICeWall {
 
   proc check_orient_per_side {orient_by_side} {
     if {[catch {check_side_specification [dict keys $orient_by_side]} msg]} {
-      utl::error PAD 175 "Unexpected keyword in orient specification, $msg"
+      utl::error PAD 175 "Unexpected keyword in orient specification, $orient_by_side"
     }
     foreach side [dict keys $orient_by_side] {
       check_orient [dict get $orient_by_side $side]
@@ -5035,7 +5164,17 @@ namespace eval ICeWall {
       if {[llength [dict get $cell_ref cell_name]] > 1} {
         dict set cell_ref cell_name [check_cell_name_per_side [dict get $cell_ref cell_name]]
       } else {
-        get_cell_master [dict get $cell_ref cell_name]
+        set cell_name [dict get $cell_ref cell_name]
+        get_cell_master $cell_name
+        if {$type == "corner"} {
+          set sides "ll lr ur ul"
+        } else {
+          set sides "bottom right top left"
+        }
+        dict set cell_ref cell_name {}
+        foreach side $sides {
+          dict set cell_ref cell_name $side $cell_name
+        }
       }
     } else {
       if {[$db findMaster $cell_ref_name] != "NULL"} {
@@ -5048,14 +5187,18 @@ namespace eval ICeWall {
           dict set cell_ref cell_name $side $cell_ref_name
         }
       } else {
-        utl::error PAD 183 "No specification found for which cell names to use on each side"
+        utl::error PAD 183 "No specification found for which cell names to use on each side for padcell $cell_ref_name"
       }
     }
     set cell_name [dict get $cell_ref cell_name]
 
     # Verify orientation
     if {[dict exists $cell_ref orient]} {
-      dict set cell_ref orient [check_orient_per_side [dict get $cell_ref orient]]
+      if {$type != "bump"} {
+        dict set cell_ref orient [check_orient_per_side [dict get $cell_ref orient]]
+      } else {
+        check_orient [dict get $cell_ref orient]
+      }
     } else {
       if {$type != "bump"} {
         utl::error PAD 184 "No specification found for the orientation of cells on each side"
@@ -5083,12 +5226,8 @@ namespace eval ICeWall {
       }
     }
     if {$physical_only != 1} {
-      if {[llength $cell_name] == 1} {
-        check_pad_pin_name $cell_name [dict get $cell_ref pad_pin_name]
-      } else {
-        dict for {side name} $cell_name {
-          check_pad_pin_name $name [dict get $cell_ref pad_pin_name]
-        }
+      dict for {side name} $cell_name {
+        check_pad_pin_name $name [dict get $cell_ref pad_pin_name]
       }
     }
 
