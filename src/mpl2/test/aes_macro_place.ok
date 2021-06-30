@@ -64,4 +64,47 @@ Running Partition Design...
 [INFO MPL-0009] RTL_MP  Param: max_num_step: 3000
 [INFO MPL-0009] RTL_MP  Param: perturb_per_step: 570
 [INFO MPL-0009] RTL_MP  Param: seed: 0
-ERROR segmentation violation
+[INFO MPL-1001] Shape_Engine Outline width:  148.01
+[INFO MPL-1002] Shape_Engine Outline height: 148.4
+[INFO MPL-1003] Shape_Engine Chip area: 21964.682
+[INFO MPL-1004] Shape_Engine Macro area:  0.0
+[INFO MPL-1005] Shape_Engine Std cell area: 13139.061
+[INFO MPL-1006] Shape_Engine Std cell util: 0.664656
+[INFO MPL-1007] Shape_Engine Cluster: top_cluster_1, area: 2393.238037, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: top_cluster_0, area: 2577.724609, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0_glue_logic, area: 1560.807495, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u3, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u2, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u1, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u0, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/r0, area: 117.660873, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us33, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us32, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us31, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us30, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us23, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us22, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us21, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us00, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us01, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us02, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us03, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us10, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us11, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us12, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us13, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us20, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-2001] Block_Placement Starts
+[INFO MPL-2002] Block_Placement  Finish Initialization
+[INFO MPL-2003] Block_Placement Init_T: 205.60281
+[INFO MPL-2004] Block_Placement level:  0   cost:  0.135831   area:   21162.470703   wirelength:  95812.523438   outline_penalty:  0.000000   boundary_penalty:  0.000000   macro_blockage_penalty:  0.000000
+[INFO MPL-2005] Block_Placement level:  1   cost:  0.135831   area:   21162.470703   wirelength:  95812.523438   outline_penalty:  0.000000   boundary_penalty:  0.000000   macro_blockage_penalty:  0.000000
+[INFO MPL-2006] Block_Placement level:  2   cost:  0.129343   area:   20008.140625   wirelength:  91328.210938   outline_penalty:  0.000000   boundary_penalty:  0.000000   macro_blockage_penalty:  0.000000
+[INFO MPL-2007] Block_Placement Floorplan width: 136.08757
+[INFO MPL-2008] Block_Placement Floorplan height: 147.02402
+[INFO MPL-2009] Block_Placement Outline width: 148.01
+[INFO MPL-2010] Block_Placement Outline height: 148.4
+[INFO MPL-3001] Pin_Aligment Starts
+*** Exit RTLMP ***
+No differences found.
+No differences found.

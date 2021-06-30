@@ -32,5 +32,5 @@ rtl_macro_placer -config_file $config_file \
                     -report_directory results/aes_macro_place \
                     -report_file aes_macro_place
 
-#diff_files aes_cluster.blockok results/aes_cluster/aes_cluster.block
-#diff_files aes_cluster.netok results/aes_cluster/aes_cluster.net
+diff_files aes_macro_place.blockok results/aes_macro_place/aes_macro_place.block
+diff_files aes_macro_place.netok results/aes_macro_place/aes_macro_place.net
