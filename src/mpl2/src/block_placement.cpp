@@ -349,13 +349,13 @@ void SimulatedAnnealingCore::PackFloorplan()
   }
 
   // calculate X position
-  pair<int, int>* match = new pair<int, int>[blocks_.size()];
+  vector<pair<int, int>> match(blocks_.size());
   for (int i = 0; i < pos_seq_.size(); i++) {
     match[pos_seq_[i]].first = i;
     match[neg_seq_[i]].second = i;
   }
 
-  float* length = new float[blocks_.size()];
+  vector<float> length(blocks_.size());
   for (int i = 0; i < blocks_.size(); i++)
     length[i] = 0.0;
 
@@ -374,7 +374,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   width_ = length[blocks_.size() - 1];
 
   // calulate Y position
-  int* pos_seq = new int[pos_seq_.size()];
+  vector<int> pos_seq(pos_seq_.size());
   int num_blocks = pos_seq_.size();
   for (int i = 0; i < num_blocks; i++)
     pos_seq[i] = pos_seq_[num_blocks - 1 - i];
@@ -1261,7 +1261,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
 
   int num_seed = num_level * num_worker + 10;  // 10 is for guardband
   int seed_id = 0;
-  unsigned* seed_list = new unsigned[num_seed];
+  vector<unsigned> seed_list(num_seed);
   std::mt19937 rand_generator(seed);
   for (int i = 0; i < num_seed; i++)
     seed_list[i] = (unsigned) rand_generator();

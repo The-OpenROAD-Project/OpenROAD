@@ -185,13 +185,13 @@ void SimulatedAnnealingCore::PackFloorplan()
   }
 
   // calculate X position
-  pair<int, int>* match = new pair<int, int>[macros_.size()];
+  vector<pair<int, int>> match(macros_.size());
   for (int i = 0; i < pos_seq_.size(); i++) {
     match[pos_seq_[i]].first = i;
     match[neg_seq_[i]].second = i;
   }
 
-  float* length = new float[macros_.size()];
+  vector<float> length(macros_.size());
   for (int i = 0; i < macros_.size(); i++)
     length[i] = 0.0;
 
@@ -210,7 +210,7 @@ void SimulatedAnnealingCore::PackFloorplan()
   width_ = length[macros_.size() - 1];
 
   // calulate Y position
-  int* pos_seq = new int[pos_seq_.size()];
+  vector<int> pos_seq(pos_seq_.size());
   int num_blocks = pos_seq_.size();
   for (int i = 0; i < num_blocks; i++)
     pos_seq[i] = pos_seq_[num_blocks - 1 - i];
@@ -489,7 +489,7 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
   int run_thread = num_thread;
   int sa_id = 0;
 
-  float* factor_list = new float[num_thread];
+  vector<float> factor_list(num_thread);
   if (num_thread == 1)
     factor_list[0] = 1.0;
 
@@ -737,7 +737,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
                  halo_width);
 
   // Classify all the clusters into different types
-  int* class_list = new int[clusters.size()];
+  vector<int> class_list(clusters.size());
   for (int i = 0; i < clusters.size(); i++)
     class_list[i] = -1;
 
