@@ -89,6 +89,8 @@ void FlexDR::checkConnectivity_pin2epMap(
 {
   bool enableOutput = false;
   // bool enableOutput = true;
+  if (enableOutput)
+    cout << "pin2epMap\n\n";
   frPoint bp, ep;
   set<pair<frPoint, frLayerNum>>
       extEndPoints;  // to avoid delooping fake planar ep in pin
@@ -104,19 +106,11 @@ void FlexDR::checkConnectivity_pin2epMap(
              << endl;
         cout << "  query bp" << endl;
       }
-      if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, bp, lNum, pin2epMap, true);
-      } else {
-        extEndPoints.insert(make_pair(bp, lNum));
-      }
       if (enableOutput) {
         cout << "  query ep" << endl;
       }
-      if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, ep, lNum, pin2epMap, true);
-      } else {
-        extEndPoints.insert(make_pair(ep, lNum));
-      }
     }
   }
   for (auto& connFig : netDRObjs) {
@@ -131,15 +125,11 @@ void FlexDR::checkConnectivity_pin2epMap(
       if (enableOutput) {
         cout << "  query pt l1" << endl;
       }
-      if (extEndPoints.find(make_pair(bp, l1Num)) == extEndPoints.end()) {
         checkConnectivity_pin2epMap_helper(net, bp, l1Num, pin2epMap, false);
-      }
       if (enableOutput) {
         cout << "  query pt l2" << endl;
       }
-      if (extEndPoints.find(make_pair(bp, l2Num)) == extEndPoints.end()) {
         checkConnectivity_pin2epMap_helper(net, bp, l2Num, pin2epMap, false);
-      }
       //} else if (connFig->typeId() == frcPatchWire) {
       //  ;
     }
@@ -151,6 +141,8 @@ void FlexDR::checkConnectivity_initDRObjs(const frNet* net,
 {
   bool enableOutput = false;
   // bool enableOutput = true;
+  if (enableOutput)
+    cout << "initDRObjs\n\n";
   for (auto& uPtr : net->getShapes()) {
     auto connFig = uPtr.get();
     if (connFig->typeId() == frcPathSeg) {
@@ -423,7 +415,8 @@ bool FlexDR::checkConnectivity_astar(
   // bool enableOutput = true;
   bool enableOutput = false;
   // a star search
-
+  if (enableOutput)
+    cout << "checkConnectivity_astar\n\n";
   // node index, node visited
   vector<vector<int>> adjVec(nNetObjs, vector<int>());
   vector<bool> onPathIdx(nNetObjs, false);
@@ -1253,8 +1246,16 @@ void FlexDR::checkConnectivity(int iter)
       int nCnt = (int) netDRObjs.size() + (int) netPins.size();
 
       if (!status[i]) {
-        cout << "Error: checkConnectivity break, net " << net->getName()
-             << endl;
+        cout << "Error: checkConnectivity break, net " << net->getName() << endl
+             << "Objs not visited:\n";
+        for (int idx = 0; idx < (int)adjVisited.size(); idx++) {
+          if (!adjVisited[idx]) {
+            if (idx < (int)netDRObjs.size())
+              cout << *(netDRObjs[idx]) << "\n";
+            else
+              cout << *(netPins[idx - netDRObjs.size()]) << "\n";
+          }
+        }
         isWrong = true;
       } else {
         // get lock
@@ -1269,6 +1270,9 @@ void FlexDR::checkConnectivity(int iter)
   if (isWrong) {
     auto writer = io::Writer(getDesign(), logger_);
     writer.updateDb(db_);
+    if (graphics_.get()) {
+      graphics_->debugWholeDesign();
+    }
     logger_->error(utl::DRT, 206, "checkConnectivity error");
   }
 }

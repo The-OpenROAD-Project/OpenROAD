@@ -33,29 +33,27 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <vector>
 #include <map>
 #include <set>
+#include <unordered_map>
+#include <vector>
 
 #include "mpl/Partition.h"
-
 #include "opendb/db.h"
-
-#include "sta/NetworkClass.hh"
 #include "sta/GraphClass.hh"
+#include "sta/NetworkClass.hh"
 
 namespace sta {
 class dbSta;
 class BfsFwdIterator;
 class dbNetwork;
 class LibertyPort;
-}
+}  // namespace sta
 
 namespace odb {
 class dbDatabase;
 class dbBTerm;
-}
+}  // namespace odb
 
 namespace utl {
 class Logger;
@@ -65,12 +63,12 @@ namespace mpl {
 
 class Layout;
 
-using std::string;
+using std::map;
 using std::pair;
 using std::set;
-using std::map;
-using std::vector;
+using std::string;
 using std::unordered_map;
+using std::vector;
 
 typedef set<Macro*> MacroSet;
 // vertex -> fanin macro set
@@ -89,21 +87,15 @@ enum class CoreEdge
 };
 
 constexpr int core_edge_count = 4;
-const char *coreEdgeString(CoreEdge edge);
+const char* coreEdgeString(CoreEdge edge);
 CoreEdge coreEdgeFromIndex(int edge_index);
 int coreEdgeIndex(CoreEdge edge);
 
 class Macro
 {
  public:
-  Macro(double _lx,
-        double _ly,
-        double _w,
-        double _h,
-        odb::dbInst* _dbInstPtr);
-  Macro(double _lx,
-        double _ly,
-        const Macro &copy_from);
+  Macro(double _lx, double _ly, double _w, double _h, odb::dbInst* _dbInstPtr);
+  Macro(double _lx, double _ly, const Macro& copy_from);
   string name();
 
   double lx, ly;
@@ -119,10 +111,8 @@ class MacroSpacings
                 double halo_y,
                 double channel_x,
                 double channel_y);
-  void setHalo(double halo_x,
-               double halo_y);
-  void setChannel(double channel_x,
-                  double channel_y);
+  void setHalo(double halo_x, double halo_y);
+  void setChannel(double channel_x, double channel_y);
   void setChannelX(double channel_x);
   void setChannelY(double channel_y);
   double getHaloX() const { return halo_x_; }
@@ -138,7 +128,7 @@ class MacroSpacings
 
 class MacroPlacer
 {
-public:
+ public:
   MacroPlacer();
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
   void setDebug(bool partitions);
@@ -147,7 +137,7 @@ public:
   void setChannel(double channel_x, double channel_y);
   void setVerboseLevel(int verbose);
   void setFenceRegion(double lx, double ly, double ux, double uy);
-  void setSnapLayer(odb::dbTechLayer *snap_layer);
+  void setSnapLayer(odb::dbTechLayer* snap_layer);
 
   void placeMacrosCornerMinWL();
   void placeMacrosCornerMaxWl();
@@ -156,15 +146,15 @@ public:
   // return weighted wire-length to get best solution
   double getWeightedWL();
   int weight(int idx11, int idx12);
-  int macroIndex(odb::dbInst *inst);
-  MacroSpacings &getSpacings(const Macro &macro);
-  double paddedWidth(const Macro &macro);
-  double paddedHeight(const Macro &macro);
+  int macroIndex(odb::dbInst* inst);
+  MacroSpacings& getSpacings(const Macro& macro);
+  double paddedWidth(const Macro& macro);
+  double paddedHeight(const Macro& macro);
 
   Macro& macro(int idx) { return macros_[idx]; }
   size_t macroCount() { return macros_.size(); }
 
-private:
+ private:
   void findMacros();
   bool isMissingLiberty();
 
@@ -172,42 +162,36 @@ private:
   // Update Macro Location from Partition info
   void updateMacroLocations(Partition& part);
   void updateDbInstLocations();
-  void updateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
+  void updateMacroPartMap(Partition& part, MacroPartMap& macroPartMap);
   vector<pair<Partition, Partition>> getPartitions(const Layout& layout,
                                                    const Partition& partition,
                                                    bool isHorizontal);
-  void cutRoundUp(const Layout& layout,
-                  double& cutLine,
-                  bool isHorizontal);
-    void setDbInstLocations(Partition &partition);
+  void cutRoundUp(const Layout& layout, double& cutLine, bool isHorizontal);
+  void setDbInstLocations(Partition& partition);
 
   // graph based adjacencies
   void findAdjacencies();
-  void seedFaninBfs(sta::BfsFwdIterator &bfs,
-                    VertexFaninMap &vertex_fanins);
-  void findFanins(sta::BfsFwdIterator &bfs,
-                  VertexFaninMap &vertex_fanins);
-  void copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                 VertexFaninMap &vertex_fanins);
-  void findAdjWeights(VertexFaninMap &vertex_fanins,
-                      AdjWeightMap &adj_map);
-  sta::Pin *findSeqOutPin(sta::Instance *inst,
-                          sta::LibertyPort *out_port);
-  void fillMacroWeights(AdjWeightMap &adj_map);
+  void seedFaninBfs(sta::BfsFwdIterator& bfs, VertexFaninMap& vertex_fanins);
+  void findFanins(sta::BfsFwdIterator& bfs, VertexFaninMap& vertex_fanins);
+  void copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs,
+                                 VertexFaninMap& vertex_fanins);
+  void findAdjWeights(VertexFaninMap& vertex_fanins, AdjWeightMap& adj_map);
+  sta::Pin* findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port);
+  void fillMacroWeights(AdjWeightMap& adj_map);
   CoreEdge findNearestEdge(odb::dbBTerm* bTerm);
-  string faninName(Macro *macro);
-  int macroIndex(Macro *macro);
-  bool macroIndexIsEdge(Macro *macro);
+  string faninName(Macro* macro);
+  int macroIndex(Macro* macro);
+  bool macroIndexIsEdge(Macro* macro);
   string macroIndexName(int index);
 
   void reportEdgePinCounts();
 
   ////////////////////////////////////////////////////////////////
-    
+
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
-  odb::dbTechLayer *snap_layer_;
+  odb::dbTechLayer* snap_layer_;
 
   bool connection_driven_;
 

@@ -28,7 +28,7 @@ Contributing Open Source PDK information and Designs
 ----------------------------------------------------
 
 If you have new design or PDK information to contribute, please add this to
-the repo `OpenROAD-flow`_. In the `flow directory`_ you will see a directory
+the repo `OpenROAD-flow-scripts`_. In the `flow directory`_ you will see a directory
 for `designs`_ with Makefiles to run them, and one for PDK `platforms`_
 used by the designs. If you add a new PDK platform be sure to add at least
 one design that uses it.
@@ -42,13 +42,13 @@ that file. Please pay careful attention to the :ref:`tool-checklist` for
 all code. If you want to add or improve functionality in OpenROAD please
 start with the top level `app`_ repo. You can see in the src directory that
 submodules exist pointing to tested versions of the other relevant repos
-in the project. Please look at the tool workflow in the code architecture
-:doc:`document <OpenROADArch>` to work with the app and its submodule repos
-in an efficient way.
+in the project. Please look at the tool workflow in the developer guide
+:doc:`document <DeveloperGuide>` to work with the app and its submodule
+repos in an efficient way.
 
 Please pay attention to the `test directory`_ and be sure to add tests
 for any code changes that you make with open sourceable PDK and design
-information. We provide the nandgate45 PDK in the OpenROAD-flow repo to
+information. We provide the nandgate45 PDK in the OpenROAD-flow-scripts repo to
 help with this. Pull requests with code changes are unlikely to be accepted
 without accompanying test cases.  There are many `examples`_ tests. Each
 repo has a test directory as well with tests you should run and add to if
@@ -60,7 +60,7 @@ you modify something in one of the submodules.
 
 For changes that claim to improve QoR or PPA, please run many tests and
 ensure that the improvement is not design specific. There are designs
-in the `OpenROAD-flow`_ repo which can be used unless the improvement is
+in the `OpenROAD-flow-scripts`_ repo which can be used unless the improvement is
 technology specific.
 
 Do not add runtime or build dependencies without serious thought. For a
@@ -78,7 +78,7 @@ Questions
 You can file git issues to ask questions, file issues or you can contact
 us via email openroad at eng.ucsd.edu
 
-.. _`OpenROAD-flow`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/
+.. _`OpenROAD-flow-scripts`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/
 .. _`flow directory`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow
 .. _`designs`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/designs
 .. _`platforms`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms
