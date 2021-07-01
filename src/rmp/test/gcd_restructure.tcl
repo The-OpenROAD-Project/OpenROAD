@@ -16,6 +16,4 @@ set tielo "LOGIC0_X1/Z"
 restructure -liberty_file Nangate45/Nangate45_typ.lib -target area -abc_logfile results/abc_rcon.log  -tielo_port $tielo -tiehi_port $tiehi -work_dir ./results
 
 report_design_area
-write_sdc results/out.sdc
-
-exit
+write_sdc [file join "results" "out.sdc"]
