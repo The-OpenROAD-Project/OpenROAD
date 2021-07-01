@@ -1093,6 +1093,7 @@ std::pair<bool, bool> AntennaChecker::check_wire_PAR(ARinfo AntennaRatio, bool r
     if (!print) {
       return {if_violated, checked};
     }
+
     // generate final report, depnding on if report_violating_nets is needed
     if (!if_violated && report_violating_nets)
       return {if_violated, checked};
@@ -1649,7 +1650,7 @@ void AntennaChecker::check_antenna_cell()
   }
 
   fprintf(_out,
-          "Warning - class CORE ANTENNACELL is not found. This msg can be "
+          "Warning - class CORE ANTENNACELL is not found. This message can be "
           "ignored if not in the antenna-avoid flow\n");
 }
 
@@ -1665,8 +1666,8 @@ int AntennaChecker::check_antennas(std::string path, bool report_violating_nets)
   std::string bname = block->getName();
   std::vector<int> nets_info = GetAntennaRatio(path, report_violating_nets);
   if (nets_info[2] != 0) {
-    logger_->info(ANT, 1, "Found {} pin violatations.", nets_info[0]);
-    logger_->info(ANT, 2, "Found {} net violatations in {} nets.",
+    logger_->info(ANT, 1, "Found {} pin violations.", nets_info[0]);
+    logger_->info(ANT, 2, "Found {} net violations in {} nets.",
                   nets_info[1],
                   nets_info[2]);
   }

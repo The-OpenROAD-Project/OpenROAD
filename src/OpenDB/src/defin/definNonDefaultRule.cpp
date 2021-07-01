@@ -99,7 +99,7 @@ void definNonDefaultRule::viaRule(const char* name)
 
   if (rule == NULL) {
     _logger->warn(
-        utl::ODB, 113, "error: Cannot find tech-via-genreate rule {}", name);
+        utl::ODB, 113, "error: Cannot find tech-via-generate rule {}", name);
     ++_errors;
     return;
   }
