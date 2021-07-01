@@ -541,7 +541,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_result = BIG_INT;
       for (i = treenodes[n2a].topL; i >= treenodes[n2a].botL; i--) {
         if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -551,7 +551,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
         if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -656,7 +656,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_result = BIG_INT;
       for (i = treenodes[n1a].topL; i >= treenodes[n1a].botL; i--) {
         if (gridD[i][k] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][0];
           endLayer = i;
         }
@@ -667,7 +667,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
         if (gridD[i][k] < min_result
-            || (min_result == BIG_INT && allowOverflow)) {
+            || (min_result == BIG_INT)) {
           min_result = gridD[i][k];
           endLayer = i;
         }
@@ -713,19 +713,19 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
   }
   treeedge->assigned = TRUE;
 
-  std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
+  std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
 
   for (k = 0; k < routelen; k++) {
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       grid = gridsL[k] * gridV + min_y * xGrid + gridsX[k];
 
-      v_edges3D[grid].usage += edgeCostPerLayer[gridsL[k]];
+      v_edges3D[grid].usage += edge_cost_per_layer[gridsL[k]];
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
       grid = gridsL[k] * gridH + gridsY[k] * (xGrid - 1) + min_x;
 
-      h_edges3D[grid].usage += edgeCostPerLayer[gridsL[k]];
+      h_edges3D[grid].usage += edge_cost_per_layer[gridsL[k]];
     }
   }
 }
@@ -1036,20 +1036,24 @@ void checkRoute3D()
       gridFlag = FALSE;
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        logger->report("net[{}] edge[{}] start node wrong, net deg {}, n1 {}",
-               netID,
+        debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] start node wrong, net deg {}, n1 {}",
+               netName(nets[netID]),
                edgeID,
                deg,
                n1);
-        printEdge3D(netID, edgeID);
+        if (logger->debugCheck(GRT, "checkRoute3D", 1)) {
+          printEdge3D(netID, edgeID);
+        }
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger->report("net[{}] edge[{}] end node wrong, net deg {}, n2 {}",
-               netID,
+        debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] end node wrong, net deg {}, n2 {}",
+               netName(nets[netID]),
                edgeID,
                deg,
                n2);
-        printEdge3D(netID, edgeID);
+        if (logger->debugCheck(GRT, "checkRoute3D", 1)) {
+          printEdge3D(netID, edgeID);
+        }
       }
       for (i = 0; i < treeedge->route.routelen; i++) {
         distance = ADIFF(gridsX[i + 1], gridsX[i])
@@ -1057,12 +1061,12 @@ void checkRoute3D()
                    + ADIFF(gridsL[i + 1], gridsL[i]);
         if (distance > 1 || distance < 0) {
           gridFlag = TRUE;
-          logger->report("net {} edge[{}] maze route wrong, distance {}, i {}",
+          debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] maze route wrong, distance {}, i {}",
                  netName(nets[netID]),
                  edgeID,
                  distance,
                  i);
-          logger->report("current [{}, {}, {}], next [{}, {}, {}]",
+          debugPrint(logger, GRT, "checkRoute3D", 1, "current [{}, {}, {}], next [{}, {}, {}]",
                  gridsL[i],
                  gridsY[i],
                  gridsX[i],
@@ -1244,7 +1248,7 @@ void recoverEdge(int netID, int edgeID)
 
   treenodes[n2a].assigned = TRUE;
 
-  std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
+  std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
 
   for (i = 0; i < treeedge->route.routelen; i++) {
     if (gridsL[i] == gridsL[i + 1]) {
@@ -1252,12 +1256,12 @@ void recoverEdge(int netID, int edgeID)
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage += edgeCostPerLayer[gridsL[i]];
+        v_edges3D[grid].usage += edge_cost_per_layer[gridsL[i]];
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage += edgeCostPerLayer[gridsL[i]];
+        h_edges3D[grid].usage += edge_cost_per_layer[gridsL[i]];
       }
     }
   }
@@ -1327,6 +1331,36 @@ void checkUsage()
   }
   if (verbose > 1) {
     logger->report("Usage checked");
+  }
+}
+
+void check2DEdgesUsage()
+{
+  int max_h_edge_usage = max_usage_multiplier * hCapacity;
+  int max_v_edge_usage = max_usage_multiplier * vCapacity;
+
+  // check horizontal edges
+  for (int i = 0; i < yGrid; i++) {
+    for (int j = 0; j < xGrid - 1; j++) {
+      int grid = i * (xGrid - 1) + j;
+      if (h_edges[grid].usage >= max_h_edge_usage) {
+        logger->error(GRT,
+                      228,
+                      "Horizontal edge usage exceeds the maximum allowed.");
+      }
+    }
+  }
+
+  // check vertical edges
+  for (int i = 0; i < yGrid - 1; i++) {
+    for (int j = 0; j < xGrid; j++) {
+      int grid = i * xGrid + j;
+      if (v_edges[grid].usage >= max_v_edge_usage) {
+        logger->error(GRT,
+                      229,
+                      "Vertical edge usage exceeds the maximum allowed.");
+      }
+    }
   }
 }
 
@@ -1468,7 +1502,7 @@ Bool checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        logger->warn(GRT, 167, "Checking failed {}.", netID);
+        logger->error(GRT, 167, "Invalid 2D tree for net {}.", netName(nets[netID]));
         return (TRUE);
       }
     }

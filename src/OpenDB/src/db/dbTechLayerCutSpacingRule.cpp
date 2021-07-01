@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, OpenRoad Project
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -400,6 +400,27 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
 {
   uint64_t* flags__bit_field = (uint64_t*) &flags_;
   *flags__bit_field = 0;
+  cut_spacing_ = 0;
+  orthogonal_spacing_ = 0;
+  width_ = 0;
+  enclosure_ = 0;
+  edge_length_ = 0;
+  par_within_ = 0;
+  par_enclosure_ = 0;
+  edge_enclosure_ = 0;
+  adj_enclosure_ = 0;
+  above_enclosure_ = 0;
+  above_width_ = 0;
+  min_length_ = 0;
+  extension_ = 0;
+  eol_width_ = 0;
+  num_cuts_ = 0;
+  within_ = 0;
+  second_within_ = 0;
+  two_cuts_ = 0;
+  prl_ = 0;
+  par_length_ = 0;
+  cut_area_ = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }

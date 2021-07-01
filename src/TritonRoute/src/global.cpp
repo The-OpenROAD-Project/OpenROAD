@@ -176,9 +176,9 @@ ostream& operator<<(ostream& os, const frInstTerm& instTermIn)
   if (instTermIn.getNet()) {
     netName = instTermIn.getNet()->getName();
   }
-  os << "INSTTERM (INST/CELL/TERM/NET) " << name << " " << cellName << " "
+  os << "INSTTERM: (INST/CELL/TERM/NET) " << name << " " << cellName << " "
      << termName << " " << netName << endl;
-  os << *instTermIn.getTerm();
+  os << *instTermIn.getTerm() << "END_INSTTERM";
   return os;
 }
 
@@ -289,7 +289,7 @@ ostream& operator<<(ostream& os, const frPathSeg& p)
 {
   os << "frPathSeg: begin (" << p.getBeginPoint().x() << " "
      << p.getBeginPoint().y() << " ) end ( " << p.getEndPoint().x() << " "
-     << p.getEndPoint().y() << " )";
+     << p.getEndPoint().y() << " ) layerNum " << p.getLayerNum();
   return os;
 }
 

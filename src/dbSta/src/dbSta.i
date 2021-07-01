@@ -36,6 +36,15 @@ make_block_sta(odb::dbBlock *block)
   return sta::makeBlockSta(openroad, block);
 }
 
+// For testing
+void
+find_logic_constants()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->findLogicConstants();
+}
+
 void
 highlight_path_cmd(PathRef *path)
 {
@@ -98,6 +107,17 @@ sta_to_db_master(LibertyCell *cell)
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   return db_network->staToDb(cell);
+}
+
+void
+db_network_defined()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbDatabase *db = openroad->getDb();
+  odb::dbChip *chip = db->getChip();
+  odb::dbBlock *block = chip->getBlock();
+  db_network->readDefAfter(block);
 }
 
 %} // inline

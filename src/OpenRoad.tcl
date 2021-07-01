@@ -1,6 +1,6 @@
 ############################################################################
 ##
-## Copyright (c) 2019, OpenROAD
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -209,7 +209,7 @@ namespace eval ord {
   proc clear {} {
     sta::clear_network
     sta::clear_sta
-    grt::clear_fastroute
+    grt::clear
     [get_db] clear
   }
   

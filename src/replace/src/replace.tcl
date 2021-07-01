@@ -262,18 +262,14 @@ proc global_placement { args } {
     gpl::replace_nesterov_place_cmd
     gpl::replace_reset_cmd
   } else {
-    puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+    utl::error GPL 130 "No rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
-sta::define_cmd_args "global_placement_debug" {
-    [-pause iterations] \
-    [-update iterations] \
-    [-draw_bins]
-}
 
+namespace eval gpl {
 proc global_placement_debug { args } {
-  sta::parse_key_args "detailed_placement_debug" args \
+  sta::parse_key_args "global_placement_debug" args \
       keys {-pause -update} \
       flags {-draw_bins -initial}
 
@@ -296,8 +292,6 @@ proc global_placement_debug { args } {
   gpl::set_debug_cmd $pause $update $draw_bins $initial
 }
 
-sta::define_cmd_args "global_placement_plot" {}
-
 proc global_placement_plot { args } {
   sta::parse_key_args "global_placement_plot" args \
     keys {} \
@@ -306,3 +300,40 @@ proc global_placement_plot { args } {
   gpl::set_plot_path_cmd $args
 }
 
+
+proc get_global_placement_uniform_density { args } {
+  sta::parse_key_args "get_global_placement_uniform_density" args \
+    keys { -pad_left -pad_right }
+
+  # no need for init IP, TD and RD 
+  gpl::set_initial_place_max_iter_cmd 0
+  gpl::set_routability_driven_mode 0
+  gpl::set_timing_driven_mode 0
+  gpl::set_verbose_level 0
+
+  
+  # pad setting
+  if { [info exists keys(-pad_left)] } {
+    set pad_left $keys(-pad_left)
+    sta::check_positive_integer "-pad_left" $pad_left
+    gpl::set_pad_left_cmd $pad_left
+  }
+  if { [info exists keys(-pad_right)] } {
+    set pad_right $keys(-pad_right)
+    sta::check_positive_integer "-pad_right" $pad_right
+    gpl::set_pad_right_cmd $pad_right
+  }
+
+  set uniform_density 0
+  if { [ord::db_has_rows] } {
+    sta::check_argc_eq0 "get_global_placement_uniform_density" $args
+  
+    set uniform_density [gpl::get_global_placement_uniform_density_cmd]
+    gpl::replace_reset_cmd
+
+  } else {
+    utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."
+  }
+  return $uniform_density
+}
+}

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -45,6 +45,10 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 
+namespace grt {
+class GlobalRouter;
+}
+
 namespace rsz {
 
 using std::array;
@@ -54,6 +58,7 @@ using std::vector;
 using ord::OpenRoad;
 using utl::Logger;
 using gui::Gui;
+using grt::GlobalRouter;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -128,7 +133,8 @@ public:
             Logger *logger,
             Gui *gui,
             dbDatabase *db,
-            dbSta *sta);
+            dbSta *sta,
+            GlobalRouter *grt);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -183,7 +189,8 @@ public:
   // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
   // Return true if resized.
-  bool resizeToTargetSlew(const Pin *drvr_pin);
+  bool resizeToTargetSlew(const Pin *drvr_pin,
+                          bool update_count);
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
@@ -222,10 +229,12 @@ public:
   float bufferSelfDelay(LibertyCell *buffer_cell,
                         const RiseFall *rf);
   // Repair long wires, max fanout violations.
-  void repairDesign(double max_wire_length); // zero for none (meters)
+  void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
+                    double max_slew_margin, // 0.0-1.0
+                    double max_cap_margin); // 0.0-1.0
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
-  void repairClkNets(double max_wire_length); // meters
+  void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -233,7 +242,9 @@ public:
   void repairClkInverters();
   // for debugging
   void repairNet(Net *net,
-                 double max_wire_length); // meters
+                 double max_wire_length, // meters
+                 double max_slew_margin,
+                 double max_cap_margin);
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
@@ -289,10 +300,11 @@ public:
 protected:
   void init();
   void ensureBlock();
+  float routingAlpha() const;
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
-  void bufferInput(Pin *top_pin,
-                   LibertyCell *buffer_cell);
+  Instance *bufferInput(Pin *top_pin,
+                        LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
   void makeEquivCells();
@@ -325,6 +337,8 @@ protected:
                          SteinerPt pt,
                          int dist_from_drvr);
   void repairDesign(double max_wire_length, // zero for none (meters)
+                    double max_slew_margin,
+                    double max_cap_margin,
                     int &repair_count,
                     int &slew_violations,
                     int &cap_violations,
@@ -332,6 +346,8 @@ protected:
                     int &length_violations);
   void repairNet(Net *net,
                  Vertex *drvr,
+                 double max_slew_margin,
+                 double max_cap_margin,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,
@@ -342,7 +358,14 @@ protected:
                  int &cap_violations,
                  int &fanout_violations,
                  int &length_violations);
+  bool checkLimits(const Pin *drvr_pin,
+                   double max_slew_margin,
+                   double max_cap_margin,
+                   bool check_slew,
+                   bool check_cap,
+                   bool check_fanout);
   void checkSlew(const Pin *drvr_pin,
+                 double max_slew_margin,
                  // Return values.
                  Slew &slew,
                  float &limit,
@@ -518,9 +541,9 @@ protected:
                    bool journal);
 
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
-                                     SteinerPt k,
-                                     SteinerPt prev,
-                                     int level);
+                                  SteinerPt k,
+                                  SteinerPt prev,
+                                  int level);
   void rebufferTopDown(BufferedNet *choice,
                        Net *net,
                        int level);
@@ -589,6 +612,7 @@ protected:
   Logger *logger_;
   Gui *gui_;
   dbSta *sta_;
+  GlobalRouter *grt_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
@@ -598,6 +622,8 @@ protected:
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
+  LibertyCell *buffer_med_drive_;
+  LibertyCell *buffer_highest_drive_;
   bool have_estimated_parasitics_;
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
   CellTargetLoadMap *target_load_map_;
@@ -627,7 +653,7 @@ protected:
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
+  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
 

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+#include "rsz/SteinerTree.hh"
 
 #include "utl/Logger.h"
 
@@ -43,8 +44,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ArcDelayCalc.hh"
-
-#include "rsz/SteinerTree.hh"
 
 namespace rsz {
 
@@ -283,7 +282,8 @@ void
 Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                                       const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(drvr_pin, false, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), false,
+                                      db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));

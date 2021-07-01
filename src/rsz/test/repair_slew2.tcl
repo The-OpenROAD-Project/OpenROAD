@@ -11,8 +11,8 @@ read_lef repair_slew2.lef
 set def_file [make_result_file "repair_slew2.def"]
 write_hi_fanout_def1 $def_file 20 \
   "rdrv" "DFF_MAX_SLEW" "CK" "Q" \
-  "r" "DFF_X1" "CK" "D" \
-  "metal1"
+  "r" "DFF_X1" "CK" "D" 5000 \
+  "metal1" 1000
 
 read_def $def_file
 create_clock -period 1 clk1

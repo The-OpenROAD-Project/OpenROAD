@@ -28,7 +28,7 @@ replace_reset_cmd()
   replace->reset();
   replace->setDb(getOpenRoad()->getDb());
   replace->setLogger(getOpenRoad()->getLogger());
-  replace->setFastRoute(getOpenRoad()->getFastRoute());
+  replace->setGlobalRouter(getOpenRoad()->getGlobalRouter());
   replace->setResizer(getOpenRoad()->getResizer());
 }
 
@@ -230,6 +230,13 @@ set_pad_right_cmd(int pad)
 {
   Replace* replace = getReplace();
   replace->setPadRight(pad);
+}
+
+float
+get_global_placement_uniform_density_cmd() 
+{
+  Replace* replace = getReplace();
+  return replace->getUniformTargetDensity();
 }
 
 void

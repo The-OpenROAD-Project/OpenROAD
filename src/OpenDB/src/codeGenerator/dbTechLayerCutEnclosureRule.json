@@ -30,7 +30,8 @@
     },
     {
       "name":"eol_width_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"eol_min_length_valid_",
@@ -38,7 +39,8 @@
     },
     {
       "name":"eol_min_length_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"eol_only_",
@@ -50,11 +52,13 @@
     },
     {
       "name":"first_overhang_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"second_overhang_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"side_spacing_valid_",
@@ -66,19 +70,23 @@
     },
     {
       "name":"spacing_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"extension_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"forward_extension_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"backward_extension_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"off_center_line_",
@@ -90,7 +98,8 @@
     },
     {
       "name":"min_width_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"include_abutted_",
@@ -102,7 +111,8 @@
     },
     {
       "name":"cut_within_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"prl_",
@@ -118,7 +128,8 @@
     },
     {
       "name":"min_length_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"extra_cut_valid_",
@@ -142,15 +153,18 @@
     },
     {
       "name":"par_length_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"second_par_length_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"par_within_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"second_par_within_valid_",
@@ -158,7 +172,8 @@
     },
     {
       "name":"second_par_within_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"below_enclosure_valid_",
@@ -166,7 +181,8 @@
     },
     {
       "name":"below_enclosure_",
-      "type":"int"
+      "type":"int",
+      "default": 0
     },
     {
       "name":"concave_corners_valid_",
@@ -174,7 +190,8 @@
     },
     {
       "name":"num_corners_",
-      "type":"uint"
+      "type":"uint",
+      "default": 0
     }
   ],
   "enums":[
