@@ -169,7 +169,7 @@ log_coef 0.95, healingTrigger 15 cost_step 2 L 1 cost_type 1 updatetype 2.
 [INFO GRT-0124] Update congestion history type 2.
 [INFO GRT-0102] iteration 37, enlarge 23, costheight 258, threshold 0 via cost 0. 
 log_coef 0.95, healingTrigger 15 cost_step 2 L 1 cost_type 1 updatetype 2.
-[INFO GRT-0104] Minimal overflow 1066 occuring at round 15.
+[INFO GRT-0104] Minimal overflow 1066 occurring at round 15.
 [WARNING GRT-0230] Congestion iterations reached the maximum number of total overflow increases.
 [INFO GRT-0111] Final number of vias: 2717
 [INFO GRT-0112] Final usage 3D: 13661
