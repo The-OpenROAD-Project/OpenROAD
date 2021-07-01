@@ -1,0 +1,136 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_stdcell.lef
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_stdcell.lef
+[INFO ODB-0127] Reading DEF file: timing_driven1.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 437 components and 2205 component-terminals.
+[INFO ODB-0133]     Created 511 nets and 1331 connections.
+[INFO ODB-0134] Finished DEF file: timing_driven1.def
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via via1_4 as default.
+[INFO GRT-0224] Chose via via2_8 as default.
+[INFO GRT-0224] Chose via via3_2 as default.
+[INFO GRT-0224] Chose via via4_0 as default.
+[INFO GRT-0224] Chose via via5_0 as default.
+[INFO GRT-0224] Chose via via6_0 as default.
+[INFO GRT-0224] Chose via via7_0 as default.
+[INFO GRT-0224] Chose via via8_0 as default.
+[INFO GRT-0224] Chose via via9_0 as default.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 1957
+[INFO GRT-0019] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 22
+[INFO GRT-0017] Processing 6692 blockages on layer metal1.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        24816          5123          79.36%
+metal3     Horizontal      33840          9292          72.54%
+metal4     Vertical        15792          9212          41.67%
+metal5     Horizontal      15792          8924          43.49%
+metal6     Vertical        15792          9212          41.67%
+metal7     Horizontal       4512          2208          51.06%
+metal8     Vertical         4512          2350          47.92%
+metal9     Horizontal       2256             0          100.00%
+metal10    Vertical         2256            47          97.92%
+---------------------------------------------------------------
+
+[INFO GRT-0111] Final number of vias: 2663
+[INFO GRT-0112] Final usage 3D: 10733
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+metal1               0             0            0.00%             0 /  0 /  0
+metal2            5123           800           15.62%             0 /  0 /  0
+metal3            9292          1210           13.02%             0 /  0 /  0
+metal4            9212           568            6.17%             0 /  0 /  0
+metal5            8924           151            1.69%             0 /  0 /  0
+metal6            9212            15            0.16%             0 /  0 /  0
+metal7            2208             0            0.00%             0 /  0 /  0
+metal8            2350             0            0.00%             0 /  0 /  0
+metal9               0             0            0.00%             0 /  0 /  0
+metal10             47             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            46368          2744            5.92%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 8616 um
+[INFO GRT-0007] Repairing timing critical nets...
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via via1_4 as default.
+[INFO GRT-0224] Chose via via2_8 as default.
+[INFO GRT-0224] Chose via via3_2 as default.
+[INFO GRT-0224] Chose via via4_0 as default.
+[INFO GRT-0224] Chose via via5_0 as default.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 1957
+[INFO GRT-0231] Worst slack -4.33e-11
+[INFO GRT-0233] Critical nets: 10
+[INFO GRT-0001] Minimum degree: 4
+[INFO GRT-0002] Maximum degree: 8
+[INFO GRT-0017] Processing 6692 blockages on layer metal1.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        24816          4323          82.58%
+metal3     Horizontal      33840          8082          76.12%
+metal4     Vertical        15792          8644          45.26%
+metal5     Horizontal      15792          8773          44.45%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0124] Update congestion history type 1.
+[INFO GRT-0102] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2. 
+log_coef 1.18, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+[INFO GRT-0124] Update congestion history type 1.
+[INFO GRT-0102] iteration 2, enlarge 23, costheight 19, threshold 6 via cost 2. 
+log_coef 1.18, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+[INFO GRT-0124] Update congestion history type 1.
+[INFO GRT-0102] iteration 3, enlarge 23, costheight 29, threshold 2 via cost 2. 
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+[INFO GRT-0124] Update congestion history type 1.
+[INFO GRT-0102] iteration 4, enlarge 23, costheight 34, threshold 0 via cost 2. 
+log_coef 2.00, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1.
+[INFO GRT-0111] Final number of vias: 149
+[INFO GRT-0112] Final usage 3D: 600
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[INFO GRT-0013] Routed timing critical nets: 10
+[INFO GRT-0014] Routed nets: 474
+wns -0.022
+worst slack -0.022

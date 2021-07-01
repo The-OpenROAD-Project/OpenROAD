@@ -28,4 +28,5 @@ record_tests {
   repair_antennas3
   repair_antennas_error1
   repair_antennas_error2
+  timing_driven1
 }
