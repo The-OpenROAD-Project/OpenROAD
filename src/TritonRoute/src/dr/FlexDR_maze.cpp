@@ -2696,6 +2696,11 @@ bool FlexDRWorker::routeNet(drNet* net)
       isFirstConn = false;
     } else {
       searchSuccess = false;
+      cout << "Failed to find a path between pin " << nextPin->getName() << " and source aps:\n";
+      for (FlexMazeIdx& mi : connComps) {
+          cout << "( " << mi.x() << " " << mi.y() << " " << mi.z() << " ) (Idx) / " <<
+                  "( " << gridGraph_.xCoord(mi.x()) << " " << gridGraph_.yCoord(mi.y()) << " ) (coords)\n";
+      }
       break;
     }
   }

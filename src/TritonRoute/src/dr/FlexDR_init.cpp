@@ -976,6 +976,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           if (!boost::polygon::intersect(pinRect, routeRect)) {
             continue;
           }
+          bool noJog = getTech()->getLayer(currLayerNum)->
+                        getLef58RightWayOnGridOnlyConstraint() != nullptr;
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           // get intersecting tracks if any
@@ -1036,7 +1038,9 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           } else {
             yLoc = (yl(pinRect) + yh(pinRect)) / 2;
           }
-          if (!isInitDR() || (xLoc != xh(routeRect) || yLoc != yh(routeRect))) {
+          bool halfOnTrackFound = !yLocs.empty() || !xLocs.empty();
+          if (currLayerNum >= BOTTOM_ROUTING_LAYER && (!noJog || halfOnTrackFound) && (!isInitDR() || 
+                            (xLoc != xh(routeRect) || yLoc != yh(routeRect)))) {
             // TODO: update as drAccessPattern updated
             auto uap = std::make_unique<drAccessPattern>();
             frPoint pt(xLoc, yLoc);
