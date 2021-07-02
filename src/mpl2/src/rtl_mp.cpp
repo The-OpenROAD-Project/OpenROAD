@@ -235,7 +235,8 @@ bool rtl_macro_placer(const char* config_file,
     return false;
   }
 
-  const char* openroad_filename = "./rtl_mp/macro_placement.cfg";
+
+  string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
   file.open(openroad_filename);
   for (int i = 0; i < clusters.size(); i++) {
@@ -271,7 +272,7 @@ bool rtl_macro_placer(const char* config_file,
 
   file.close();
 
-  const char* invs_filename = "./rtl_mp/macro_placement.tcl";
+  string invs_filename =  string("./") + string(report_directory) + "/macro_placement.tcl";
   file.open(invs_filename);
   for (int i = 0; i < clusters.size(); i++) {
     if (clusters[i]->GetNumMacro() > 0) {
@@ -301,7 +302,7 @@ bool rtl_macro_placer(const char* config_file,
   file.close();
 
   // just for quick verification
-  const char* floorplan_filename = "./rtl_mp/final_floorplan.txt";
+  string floorplan_filename = string("./") + string(report_directory) + "/final_floorplan.txt";
   file.open(floorplan_filename);
   file << "outline_width:  " << outline_width << endl;
   file << "outline_height:  " << outline_height << endl;
