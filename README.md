@@ -167,7 +167,7 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
-write_abstract_lef
+write_abstract_lef filename
 ```
 
 Use the Tcl `source` command to read commands from a file.
