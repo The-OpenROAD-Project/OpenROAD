@@ -121,7 +121,6 @@ void lefout::writeHeader(dbBlock* db_block)
     hier_delimeter = '|';
 
   writeVersion(tech->getLefVersionStr());
-  writeNameCaseSensitive(tech->getNamesCaseSensitive());
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
 }
