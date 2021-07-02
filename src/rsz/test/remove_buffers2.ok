@@ -26,17 +26,17 @@ Path Type: max
 (Path is unconstrained)
 
 
-[INFO RSZ-0026] Removed 1 buffers.
-Startpoint: b2/A (internal pin)
-Endpoint: out2 (output port)
+[INFO RSZ-0026] Removed 0 buffers.
+Startpoint: b1/A (internal pin)
+Endpoint: out1 (output port)
 Path Group: (none)
 Path Type: max
 
   Delay    Time   Description
 ---------------------------------------------------------
-   0.00    0.00 v b2/A (BUF_X4)
-   0.02    0.02 v b2/Z (BUF_X4)
-   0.00    0.02 v out2 (out)
+   0.00    0.00 v b1/A (BUF_X2)
+   0.02    0.02 v b1/Z (BUF_X2)
+   0.00    0.02 v out1 (out)
            0.02   data arrival time
 ---------------------------------------------------------
 (Path is unconstrained)
