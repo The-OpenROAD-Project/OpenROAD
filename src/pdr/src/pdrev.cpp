@@ -43,12 +43,14 @@ class Graph;
 
 using stt::Tree;
 using stt::Branch;
+using utl::PDR;
 
 class PdRev
 {
 public:
   PdRev(std::vector<int> x,
         std::vector<int> y,
+        int root_index,
         Logger* logger);
   ~PdRev();
   void runPD(float alpha);
@@ -69,22 +71,41 @@ private:
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
+             int drvr_index,
              float alpha,
              Logger* logger)
 {
-  pdr::PdRev pd(x, y, logger);
+  // pdrev fails with non-zero root index despite showing signs of supporting it.
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
+
+  pdr::PdRev pd(x1, y1, drvr_index, logger);
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
+  //pd.highlightSteinerTree(tree);
   return tree;
 }
 
 Tree
 primDijkstraRevII(std::vector<int> x,
                   std::vector<int> y,
+                  int drvr_index,
                   float alpha,
                   Logger* logger)
 {
-  pdr::PdRev pd(x, y, logger);
+  // pdrev fails with non-zero root index despite showing signs of supporting it.
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
+
+  pdr::PdRev pd(x1, y1, drvr_index, logger);
   pd.runPDII(alpha);
   Tree tree = pd.translateTree();
   return tree;
@@ -92,10 +113,11 @@ primDijkstraRevII(std::vector<int> x,
 
 PdRev::PdRev(std::vector<int> x,
              std::vector<int> y,
+             int root_index,
              Logger* logger) :
   logger_(logger)
 {
-  graph_ = new Graph(x, y, logger_);
+  graph_ = new Graph(x, y, root_index, logger_);
 }
 
 PdRev::~PdRev()
@@ -107,7 +129,6 @@ void PdRev::runPD(float alpha)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
-  highlightGraph();
   graph_->doSteiner_HoVW();
 }
 
@@ -181,17 +202,17 @@ void PdRev::transferChildren(int originalNode)
 
 Tree PdRev::translateTree()
 {
-  if (graph_->orig_num_terminals > 2) {
-    for (int i = 0; i < graph_->orig_num_terminals; ++i) {
+  if (graph_->num_terminals > 2) {
+    for (int i = 0; i < graph_->num_terminals; ++i) {
       Node& child = graph_->nodes[i];
       if (child.children.size() == 0
           || (child.parent == i && child.children.size() == 1
-              && child.children[0] >= graph_->orig_num_terminals))
+              && child.children[0] >= graph_->num_terminals))
         continue;
       replaceNode(graph_, i);
     }
     int nNodes = graph_->nodes.size();
-    for (int i = graph_->orig_num_terminals; i < nNodes; ++i) {
+    for (int i = graph_->num_terminals; i < nNodes; ++i) {
       Node& child = graph_->nodes[i];
       while (graph_->nodes[i].children.size() > 3
              || (graph_->nodes[i].parent != i
@@ -203,17 +224,17 @@ Tree PdRev::translateTree()
   }
 
   Tree tree;
-  tree.deg = graph_->orig_num_terminals;
-  int branch_count = tree.deg * 2 - 2;
+  tree.deg = graph_->num_terminals;
+  int branch_count = stt::branch_count(tree);
   if (graph_->nodes.size() != branch_count)
-    logger_->error(utl::GRT, 666, "steiner branch count inconsistent");
+    logger_->error(PDR, 666, "steiner branch count inconsistent");
   tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
   tree.length = graph_->calc_tree_wl_pd();
   for (int i = 0; i < graph_->nodes.size(); ++i) {
     Node& child = graph_->nodes[i];
     int parent = child.parent;
     if (parent >= graph_->nodes.size())
-      logger_->error(utl::GRT, 666, "steiner branch node out of bounds");
+      logger_->error(PDR, 667, "steiner branch node out of bounds");
     Branch& newBranch = tree.branch[i];
     newBranch.x = child.x;
     newBranch.y = child.y;
@@ -243,6 +264,24 @@ reportXY(std::vector<int> x,
 {
   for (int i = 0; i < x.size(); i++)
     logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
+}
+
+// Used by regressions.
+void
+reportSteinerTree(stt::Tree &tree,
+                  Logger *logger)
+{
+  printf("WL = %d\n", tree.length);
+  for (int i = 0; i < stt::branch_count(tree); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    int parent = tree.branch[i].n;
+    int x2 = tree.branch[parent].x;
+    int y2 = tree.branch[parent].y;
+    int length = abs(x1-x2)+abs(y1-y2);
+    printf("%d (%d %d) neighbor %d length %d\n",
+           i, x1, y1, parent, length);
+  }
 }
 
 // Simple general purpose render for a group of lines.
@@ -296,6 +335,30 @@ PdRev::highlightGraph()
       std::pair<int, int> xy2 = xy_lines[i].second;
       lines.push_back(std::pair(odb::Point(xy1.first, xy1.second),
                                 odb::Point(xy2.first, xy2.second)));
+    }
+    lines_renderer->highlight(lines, gui::Painter::red);
+  }
+}
+
+void
+highlightSteinerTree(Tree &tree,
+                     gui::Gui *gui)
+{
+  if (gui) {
+    if (lines_renderer == nullptr) {
+      lines_renderer = new LinesRenderer();
+      gui->registerRenderer(lines_renderer);
+    }
+    std::vector<std::pair<odb::Point, odb::Point>> lines;
+    for (int i = 0; i < branch_count(tree); i++) {
+      stt::Branch &branch = tree.branch[i];
+      int x1 = branch.x;
+      int y1 = branch.y;
+      stt::Branch &neighbor = tree.branch[branch.n];
+      int x2 = neighbor.x;
+      int y2 = neighbor.y;
+      lines.push_back(std::pair(odb::Point(x1, y1),
+                                odb::Point(x2, y2)));
     }
     lines_renderer->highlight(lines, gui::Painter::red);
   }

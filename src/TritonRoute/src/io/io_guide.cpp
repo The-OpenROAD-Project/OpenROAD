@@ -39,7 +39,6 @@ void io::Parser::genGuides_merge(
     vector<frRect>& rects,
     vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
 {
-
   for (auto& rect : rects) {
     frBox box;
     rect.getBBox(box);
@@ -319,7 +318,8 @@ void io::Parser::genGuides_gCell2TermMap(
         if ((layer->getDir() == frcVertPrefRoutingDir
              && (!USENONPREFTRACKS || layer->isUnidirectional())
              && box.left() == gcellBox.left())
-            || (layer->getDir() == frcHorzPrefRoutingDir && (!USENONPREFTRACKS || layer->isUnidirectional())
+            || (layer->getDir() == frcHorzPrefRoutingDir
+                && (!USENONPREFTRACKS || layer->isUnidirectional())
                 && box.bottom() == gcellBox.bottom())) {
           condition3 = true;
         }

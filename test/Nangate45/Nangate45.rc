@@ -1,1 +1,13 @@
+# find_wire_rc -17% adjustment
+set_layer_rc -layer metal1 -resistance 5.432e-03 -capacitance 8.494e-02
+set_layer_rc -layer metal2 -resistance 3.574e-03 -capacitance 8.081e-02
+set_layer_rc -layer metal3 -resistance 3.574e-03 -capacitance 7.516e-02
+set_layer_rc -layer metal4 -resistance 1.502e-03 -capacitance 9.663e-02
+set_layer_rc -layer metal5 -resistance 1.502e-03 -capacitance 8.394e-02
+set_layer_rc -layer metal6 -resistance 1.502e-03 -capacitance 7.298e-02
+set_layer_rc -layer metal7 -resistance 1.883e-04 -capacitance 1.112e-01
+set_layer_rc -layer metal8 -resistance 1.883e-04 -capacitance 8.528e-02
+set_layer_rc -layer metal9 -resistance 3.780e-05 -capacitance 9.063e-02
+set_layer_rc -layer metal10 -resistance 3.780e-05 -capacitance 6.635e-02
+
 #MIA set_layer_rc -via -resistance

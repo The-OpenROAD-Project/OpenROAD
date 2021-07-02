@@ -7,26 +7,5 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
-[ERROR PAD-0049] No cells defined in the library description
-PAD-0049
-    while executing
-"utl::error "PAD" 49 "No cells defined in the library description""
-    (procedure "get_library_cell_orientation" line 7)
-    invoked from within
-"get_library_cell_orientation [get_library_cell_by_type [get_padcell_type $padcell]] $side_name"
-    (procedure "get_padcell_orient" line 11)
-    invoked from within
-"get_padcell_orient $padcell"
-    (procedure "get_scaled_origin" line 22)
-    invoked from within
-"get_scaled_origin $padcell $type"
-    (procedure "get_padcell_scaled_origin" line 5)
-    invoked from within
-"get_padcell_scaled_origin $padcell"
-    (procedure "get_footprint_padcells_order" line 11)
-    invoked from within
-"get_footprint_padcells_order"
-    (procedure "::ICeWall::init_footprint" line 27)
-    invoked from within
-"ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.sigmap"
-PAD-0049
+[ERROR PAD-0087] Cell PADCELL_SIG of Type sig is not specified in the list of cells in the library
+PAD-0087

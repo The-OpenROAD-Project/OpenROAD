@@ -1,0 +1,195 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: repair_antennas2.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 7167 components and 29882 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 14334 connections.
+[INFO ODB-0133]     Created 437 nets and 1214 connections.
+[INFO ODB-0134] Finished DEF file: repair_antennas2.def
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 105790
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 25
+[INFO GRT-0017] Processing 25185 blockages on layer li1.
+[INFO GRT-0017] Processing 27401 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      27436         19170          30.13%
+met2       Vertical        21660         21497          0.75%
+met3       Horizontal      12996         12987          0.07%
+met4       Vertical         8664          8444          2.54%
+met5       Horizontal       2888          2812          2.63%
+---------------------------------------------------------------
+
+[INFO GRT-0111] Final number of vias: 1832
+[INFO GRT-0112] Final usage 3D: 7530
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1             19170          1173            6.12%             0 /  0 /  0
+met2             21497           861            4.01%             0 /  0 /  0
+met3             12987             0            0.00%             0 /  0 /  0
+met4              8444             0            0.00%             0 /  0 /  0
+met5              2812             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            64910          2034            3.13%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 22291 um
+[INFO GRT-0006] Repairing antennas, iteration 1.
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 2 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+[INFO GRT-0012] Antenna violations: 1
+[INFO GRT-0011] Deleted 5890 filler cells.
+[INFO GRT-0015] 1 diodes inserted.
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 17100
+[INFO GRT-0001] Minimum degree: 3
+[INFO GRT-0002] Maximum degree: 3
+[INFO GRT-0017] Processing 13408 blockages on layer li1.
+[INFO GRT-0017] Processing 3845 blockages on layer met1.
+[INFO GRT-0017] Processing 10 blockages on layer met4.
+[INFO GRT-0009] Nets to reroute: 1.
+[INFO GRT-0111] Final number of vias: 4
+[INFO GRT-0112] Final usage 3D: 33
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[INFO GRT-0006] Repairing antennas, iteration 2.
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via L1M1_PR as default.
+[INFO GRT-0224] Chose via M1M2_PR as default.
+[INFO GRT-0224] Chose via M2M3_PR as default.
+[INFO GRT-0224] Chose via M3M4_PR as default.
+[INFO GRT-0224] Chose via M4M5_PR as default.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 2 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+[INFO GRT-0012] Antenna violations: 0
+[INFO GRT-0014] Routed nets: 437
+No differences found.
+No differences found.

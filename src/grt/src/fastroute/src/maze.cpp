@@ -81,6 +81,7 @@ void convertToMazerouteNet(int netID)
     y2 = treenodes[n2].y;
     treeedge->route.gridsX = (short*) calloc((edgelength + 1), sizeof(short));
     treeedge->route.gridsY = (short*) calloc((edgelength + 1), sizeof(short));
+    treeedge->route.gridsL = nullptr;
     gridsX = treeedge->route.gridsX;
     gridsY = treeedge->route.gridsY;
     treeedge->len = ADIFF(x1, x2) + ADIFF(y1, y2);
@@ -227,6 +228,9 @@ void convertToMazeroute()
       v_edges[grid].usage = v_edges[grid].est_usage;
     }
   }
+
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
 }
 
 // non recursive version of heapify
@@ -599,7 +603,7 @@ void setupHeap(int netID,
                     }
                   }  // if MAZEROUTE
                   else {
-                    logger->error(GRT, 125, "Setup Heap: not maze routing.");
+                    logger->error(GRT, 125, "Setup heap: not maze routing.");
                   }
                 }  // if not a degraded edge (len>0)
 
@@ -685,7 +689,7 @@ void setupHeap(int netID,
                     }
                   }  // if MAZEROUTE
                   else {
-                    logger->error(GRT, 201, "Setup Heap: not maze routing.");
+                    logger->error(GRT, 201, "Setup heap: not maze routing.");
                   }
                 }  // if the edge is not degraded (len>0)
 
@@ -1044,7 +1048,6 @@ void reInitTree(int netID)
     if (treeedge->len > 0) {
       delete[] treeedge->route.gridsX;
       delete[] treeedge->route.gridsY;
-      delete[] treeedge->route.gridsL;
     }
   }
   delete[] sttrees[netID].nodes;
@@ -1100,10 +1103,10 @@ void mazeRouteMSMD(int iter,
   TreeNode* treenodes;
 
   // allocate memory for distance and parent and pop_heap
-  h_costTable = new float[40 * hCapacity];
-  v_costTable = new float[40 * vCapacity];
+  h_costTable = new float[max_usage_multiplier * hCapacity];
+  v_costTable = new float[max_usage_multiplier * vCapacity];
 
-  forange = 40 * hCapacity;
+  forange = max_usage_multiplier * hCapacity;
 
   if (cost_type == 2) {
     for (i = 0; i < forange; i++) {
@@ -1116,7 +1119,7 @@ void mazeRouteMSMD(int iter,
             = costHeight / (exp((float) (hCapacity - i - 1) * LOGIS_COF) + 1)
               + 1 + costHeight / slope * (i - hCapacity);
     }
-    forange = 40 * vCapacity;
+    forange = max_usage_multiplier * vCapacity;
     for (i = 0; i < forange; i++) {
       if (i < vCapacity - 1)
         v_costTable[i]
@@ -1137,7 +1140,7 @@ void mazeRouteMSMD(int iter,
             = costHeight / (exp((float) (hCapacity - i) * LOGIS_COF) + 1) + 1
               + costHeight / slope * (i - hCapacity);
     }
-    forange = 40 * vCapacity;
+    forange = max_usage_multiplier * vCapacity;
     for (i = 0; i < forange; i++) {
       if (i < vCapacity)
         v_costTable[i]
@@ -1859,6 +1862,9 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   int total_cap = 0;
   int total_usage = 0;
 
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
+
   total_usage = 0;
   total_cap = 0;
 
@@ -1895,15 +1901,15 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   *maxOverflow = max_overflow;
 
   if (verbose > 1) {
-    logger->info(GRT, 126, "Overflow Report:");
-    logger->info(GRT, 127, "total Usage   : {}", total_usage);
-    logger->info(GRT, 128, "Max H Overflow: {}", max_H_overflow);
-    logger->info(GRT, 129, "Max V Overflow: {}", max_V_overflow);
-    logger->info(GRT, 130, "Max Overflow  : {}", max_overflow);
-    logger->info(GRT, 131, "Num Overflow e: {}", numedges);
-    logger->info(GRT, 132, "H   Overflow  : {}", H_overflow);
-    logger->info(GRT, 133, "V   Overflow  : {}", V_overflow);
-    logger->info(GRT, 134, "Final Overflow: {}\n", totalOverflow);
+    logger->info(GRT, 126, "Overflow report:");
+    logger->info(GRT, 127, "Total usage          : {}", total_usage);
+    logger->info(GRT, 128, "Max H overflow       : {}", max_H_overflow);
+    logger->info(GRT, 129, "Max V overflow       : {}", max_V_overflow);
+    logger->info(GRT, 130, "Max overflow         : {}", max_overflow);
+    logger->info(GRT, 131, "Number overflow edges: {}", numedges);
+    logger->info(GRT, 132, "H   overflow         : {}", H_overflow);
+    logger->info(GRT, 133, "V   overflow         : {}", V_overflow);
+    logger->info(GRT, 134, "Final overflow       : {}\n", totalOverflow);
   }
 
   *tUsage = total_usage;
@@ -1922,6 +1928,9 @@ int getOverflow2D(int* maxOverflow)
   int i, j, grid, overflow, max_overflow, H_overflow, max_H_overflow,
       V_overflow, max_V_overflow, numedges;
   int total_usage, total_cap, hCap, vCap;
+
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
 
   // get overflow
   overflow = max_overflow = H_overflow = max_H_overflow = V_overflow
@@ -1973,16 +1982,16 @@ int getOverflow2D(int* maxOverflow)
 
   if (verbose > 1) {
     logger->info(GRT, 135, "Overflow Report:");
-    logger->info(GRT, 136, "Total hCap    : {}", hCap);
-    logger->info(GRT, 137, "Total vCap    : {}", vCap);
-    logger->info(GRT, 138, "Total Usage   : {}", total_usage);
-    logger->info(GRT, 139, "Max H Overflow: {}", max_H_overflow);
-    logger->info(GRT, 140, "Max V Overflow: {}", max_V_overflow);
-    logger->info(GRT, 141, "Max Overflow  : {}", max_overflow);
-    logger->info(GRT, 142, "Num Overflow e: {}", numedges);
-    logger->info(GRT, 143, "H   Overflow  : {}", H_overflow);
-    logger->info(GRT, 144, "V   Overflow  : {}", V_overflow);
-    logger->info(GRT, 145, "Final Overflow: {}\n", totalOverflow);
+    logger->info(GRT, 136, "Total hCap        : {}", hCap);
+    logger->info(GRT, 137, "Total vCap        : {}", vCap);
+    logger->info(GRT, 138, "Total usage       : {}", total_usage);
+    logger->info(GRT, 139, "Max H overflow    : {}", max_H_overflow);
+    logger->info(GRT, 140, "Max V overflow    : {}", max_V_overflow);
+    logger->info(GRT, 141, "Max overflow      : {}", max_overflow);
+    logger->info(GRT, 142, "Num overflow edges: {}", numedges);
+    logger->info(GRT, 143, "H   overflow      : {}", H_overflow);
+    logger->info(GRT, 144, "V   overflow      : {}", V_overflow);
+    logger->info(GRT, 145, "Final overflow    : {}\n", totalOverflow);
   }
 
   return (totalOverflow);

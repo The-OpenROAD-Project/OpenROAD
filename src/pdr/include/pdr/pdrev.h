@@ -37,6 +37,9 @@
 namespace utl {
 class Logger;
 }
+namespace gui {
+class Gui;
+}
 
 namespace pdr {
 
@@ -46,13 +49,23 @@ using stt::Tree;
 Tree
 primDijkstra(std::vector<int> x,
              std::vector<int> y,
+             int drvr_index,
              float alpha,
              Logger* logger);
 
 Tree
 primDijkstraRevII(std::vector<int> x,
                   std::vector<int> y,
+                  int drvr_index,
                   float alpha,
                   Logger* logger);
+
+// Used by regressions.
+void
+reportSteinerTree(stt::Tree &tree,
+                  Logger *logger);
+void
+highlightSteinerTree(stt::Tree &tree,
+                     gui::Gui *gui);
 
 }  // namespace PD

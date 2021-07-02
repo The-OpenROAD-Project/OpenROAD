@@ -33,7 +33,6 @@ using namespace fr;
 
 void FlexGRWorker::route()
 {
-
   vector<grNet*> rerouteNets;
   for (int i = 0; i < mazeEndIter_; i++) {
     if (ripupMode_ == 0) {
@@ -224,7 +223,6 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
 // reset gridGraph, remove routeObj and remove nodes
 void FlexGRWorker::mazeNetInit(grNet* net)
 {
-
   gridGraph_.resetStatus();
   if (ripupMode_ == 0) {
     mazeNetInit_decayHistCost(net);
@@ -431,7 +429,6 @@ bool FlexGRWorker::routeNet(grNet* net)
     return true;
   }
 
-
   set<grNode*, frBlockObjectComp> unConnPinGCellNodes;
   map<FlexMazeIdx, grNode*> mazeIdx2unConnPinGCellNode;
   map<FlexMazeIdx, grNode*> mazeIdx2endPointNode;
@@ -444,7 +441,6 @@ bool FlexGRWorker::routeNet(grNet* net)
   frPoint centerPt;
   vector<FlexMazeIdx> connComps;
 
-
   routeNet_setSrc(net,
                   unConnPinGCellNodes,
                   mazeIdx2unConnPinGCellNode,
@@ -452,7 +448,6 @@ bool FlexGRWorker::routeNet(grNet* net)
                   ccMazeIdx1,
                   ccMazeIdx2,
                   centerPt);
-
 
   vector<FlexMazeIdx> path;  // astar must return with more than one idx
 
@@ -475,7 +470,6 @@ bool FlexGRWorker::routeNet(grNet* net)
       return false;
     }
   }
-
 
   routeNet_postRouteAddCong(net);
   return true;
@@ -597,7 +591,6 @@ void FlexGRWorker::routeNet_setSrc(
   auto lNum = rootPinGCellNode->getLayerNum();
   FlexMazeIdx mi;
   gridGraph_.getMazeIdx(loc, lNum, mi);
-
 
   mazeIdx2unConnPinGCellNode.erase(mi);
   gridGraph_.setSrc(mi);
@@ -735,10 +728,8 @@ void FlexGRWorker::routeNet_postAstarWritePath(
     grNode* leaf,
     map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode)
 {
-
   if (points.empty()) {
   }
-
 
   auto& workerRegionQuery = getWorkerRegionQuery();
   grNode* child = nullptr;
@@ -982,7 +973,6 @@ void FlexGRWorker::routeNet_postAstarWritePath(
     child = parent;
     parent = nullptr;
   }
-
 }
 
 grNode* FlexGRWorker::routeNet_postAstarWritePath_splitPathSeg(

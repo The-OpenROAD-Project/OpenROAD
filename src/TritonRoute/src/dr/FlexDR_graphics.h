@@ -80,7 +80,9 @@ class FlexDRGraphics : public gui::Renderer
   static bool guiActive();
 
   static void init();
-
+  
+  void show();
+  
   void update();
 
   void pause(drNet* net);

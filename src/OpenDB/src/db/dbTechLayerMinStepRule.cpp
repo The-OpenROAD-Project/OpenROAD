@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, OpenRoad Project
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -149,6 +149,12 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
+  min_step_length_ = 0;
+  max_edges_ = 0;
+  min_adj_length1_ = 0;
+  min_adj_length2_ = 0;
+  eol_width_ = 0;
+  min_between_length_ = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }

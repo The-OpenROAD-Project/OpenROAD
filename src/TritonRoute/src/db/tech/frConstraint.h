@@ -947,7 +947,7 @@ class frLef58EolKeepOutConstraint : public frConstraint
  public:
   // constructors
   frLef58EolKeepOutConstraint()
-      : backwardExt(0), sideExt(0), forwardExt(0), eolWidth(0)
+      : backwardExt(0), sideExt(0), forwardExt(0), eolWidth(0), cornerOnly(false)
   {
   }
   // getters

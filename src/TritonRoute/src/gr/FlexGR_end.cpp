@@ -34,8 +34,6 @@ using namespace fr;
 
 void FlexGRWorker::end()
 {
-
-
   set<frNet*, frBlockObjectComp> modNets;
   endGetModNets(modNets);
   endRemoveNets(modNets);
@@ -336,9 +334,7 @@ void FlexGRWorker::endStitchBoundary()
 // grNet remembers boundary pin frNode
 void FlexGRWorker::endStitchBoundary_net(grNet* net)
 {
-
   auto fnet = net->getFrNet();
-
 
   auto& pinNodePairs = net->getPinNodePairs();
   for (auto& pinNodePair : pinNodePairs) {
@@ -401,13 +397,11 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
 
     // remove node from fnet
     fnet->removeNode(node);
-
   }
 }
 
 void FlexGRWorker::endWriteBackCMap()
 {
-
   auto cmap = getCMap();
 
   frPoint gcellIdxLL = getRouteGCellIdxLL();
@@ -453,7 +447,6 @@ void FlexGRWorker::endWriteBackCMap()
       }
     }
   }
-
 }
 
 void FlexGRWorker::cleanup()

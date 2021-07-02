@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -95,6 +95,7 @@ typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
+                float alpha,
                 bool find_left_rights,
                 dbNetwork *network,
                 Logger *logger);
@@ -172,6 +173,7 @@ protected:
   SteinerPtSeq right_;
 
   friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
+                                      float alpha,
                                       bool find_left_rights,
                                       dbNetwork *network,
                                       Logger *logger);

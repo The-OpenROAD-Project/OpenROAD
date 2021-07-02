@@ -73,8 +73,8 @@ set drvs_ispd18 { \
     0 \
     0 \
     0 \
-    17 \
-    3 \
+    9 \
+    0 \
     0 \
     0 \
     }
@@ -91,7 +91,7 @@ set design_list_ispd19 " \
     ispd19_test1 \
     "
 set drvs_ispd19 { \
-    27 \
+    28 \
     1 \
     0 \
     0 \
@@ -115,6 +115,10 @@ cd $run_dir
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
 set status [catch { eval exec -ignorestderr parallel -j $parallel_jobs --halt never --joblog $run_dir/log ./{}/run.sh ::: $design_list >@stdout } ]
 foreach design $design_list {
+    set fileName "$run_dir/$design/run.log"
+    set f [open $fileName]
+    fcopy $f stdout
+    close $f
     exec tar czvf "${design}.tar.gz" "${design}"
 }
 puts "======================="

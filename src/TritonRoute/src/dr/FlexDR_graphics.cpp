@@ -271,10 +271,8 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  if (!net_) {
-    return;
-  }
-
+  if (points_by_layer_.empty())
+        return;
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
@@ -284,7 +282,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
+  if (worker_ && gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     frBox box;
     if (drawWholeDesign_) {
       design_->getTopBlock()->getDieBox(box);
@@ -303,7 +301,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (gui_->checkCustomVisibilityControl(route_guides_visible_)) {
+  if (net_ && gui_->checkCustomVisibilityControl(route_guides_visible_)) {
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
@@ -389,20 +387,22 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
     }
   }
-
+  if (!worker_)
+      return;
   // Draw markers
   frBox box;
-  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
+  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
-  painter.setPen(gui::Painter::green, /* cosmetic */ true);
-  for (auto& marker : design_->getTopBlock()->getMarkers()) {
+  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
+      cout << "MARKER " << box << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
@@ -460,6 +460,19 @@ void FlexDRGraphics::drawMarker(int xl,
   painter.drawLine({xl, yh}, {xh, yl});
 }
 
+void FlexDRGraphics::show() {
+    if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
+        return;
+    }
+    frBox gcellBox = worker_->getGCellBox();
+    if (settings_->gcellX >= 0
+        && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+      return;
+    }
+    update();
+    pause(nullptr);
+}
+
 void FlexDRGraphics::update()
 {
   if (settings_->draw)
@@ -481,8 +494,8 @@ void FlexDRGraphics::debugWholeDesign()
   if (!settings_->allowPause)
     return;
   drawWholeDesign_ = true;
-  gui_->pause();
   update();
+  gui_->pause();
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
@@ -546,6 +559,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     frBox box;
     worker_->getExtBox(box);
     gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+    if (settings_->draw)
+      gui_->redraw();
     if (settings_->allowPause)
       gui_->pause();
   }

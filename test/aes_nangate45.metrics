@@ -1,0 +1,17 @@
+{
+    "ord_sha1" : "8f71d7afbaf9278f4b7c184e30324ede7f1e43eb"
+  , "instance_count" : "22167"
+  , "utilization" : "3.0"
+  , "design_area" : "27084"
+  , "DPL::errors" : "0"
+  , "ANT::errors" : "0"
+  , "DRT::drv" : "0"
+  , "worst_slack_min" : "0.07753597983124387"
+  , "worst_slack_max" : "-0.0493184396170219"
+  , "tns_max" : "-1.5888472098817845"
+  , "clock_skew" : "0.06963660400974821"
+  , "max_slew_violations" : "0"
+  , "max_fanout_violations" : "0"
+  , "max_capacitance_violations" : "1"
+  , "clock_period" : "0.810900"
+}

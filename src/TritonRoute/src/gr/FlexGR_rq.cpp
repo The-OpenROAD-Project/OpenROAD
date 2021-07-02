@@ -231,9 +231,10 @@ void FlexGRWorkerRegionQuery::query(const frBox& box,
   });
 }
 
-void FlexGRWorkerRegionQuery::query(const frBox& box,
-                                    const frLayerNum layerNum,
-                                    vector<rq_box_value_t<grConnFig*>>& result) const
+void FlexGRWorkerRegionQuery::query(
+    const frBox& box,
+    const frLayerNum layerNum,
+    vector<rq_box_value_t<grConnFig*>>& result) const
 {
   box_t boostb = box_t(point_t(box.left(), box.bottom()),
                        point_t(box.right(), box.top()));

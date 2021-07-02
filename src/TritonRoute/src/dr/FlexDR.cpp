@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexDR.h"
-
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
@@ -36,6 +34,7 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -1265,15 +1264,14 @@ void FlexDR::init_via2turnMinLen()
     if (getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2turnMinLen[i][0]
-        = max(via2turnMinLen[i][0],
-              init_via2turnMinLen_minSpc(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(
-        via2turnMinLen[i][1], init_via2turnMinLen_minSpc(lNum, downVia, true));
+    via2turnMinLen[i][0] = max(
+        via2turnMinLen[i][0], init_via2turnMinLen_minSpc(lNum, downVia, false));
+    via2turnMinLen[i][1] = max(via2turnMinLen[i][1],
+                               init_via2turnMinLen_minSpc(lNum, downVia, true));
     via2turnMinLen[i][2] = max(via2turnMinLen[i][2],
-                                init_via2turnMinLen_minSpc(lNum, upVia, false));
+                               init_via2turnMinLen_minSpc(lNum, upVia, false));
     via2turnMinLen[i][3] = max(via2turnMinLen[i][3],
-                                init_via2turnMinLen_minSpc(lNum, upVia, true));
+                               init_via2turnMinLen_minSpc(lNum, upVia, true));
     i++;
   }
 
@@ -1292,15 +1290,14 @@ void FlexDR::init_via2turnMinLen()
       upVia = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
-    via2turnMinLen[i][0]
-        = max(via2turnMinLen[i][0],
-              init_via2turnMinLen_minStp(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(
-        via2turnMinLen[i][1], init_via2turnMinLen_minStp(lNum, downVia, true));
+    via2turnMinLen[i][0] = max(
+        via2turnMinLen[i][0], init_via2turnMinLen_minStp(lNum, downVia, false));
+    via2turnMinLen[i][1] = max(via2turnMinLen[i][1],
+                               init_via2turnMinLen_minStp(lNum, downVia, true));
     via2turnMinLen[i][2] = max(via2turnMinLen[i][2],
-                                init_via2turnMinLen_minStp(lNum, upVia, false));
+                               init_via2turnMinLen_minStp(lNum, upVia, false));
     via2turnMinLen[i][3] = max(via2turnMinLen[i][3],
-                                init_via2turnMinLen_minStp(lNum, upVia, true));
+                               init_via2turnMinLen_minStp(lNum, upVia, true));
     i++;
   }
 }
@@ -1712,75 +1709,159 @@ void FlexDR::reportDRC()
     }
     return;
   }
-  // cout << DRC_RPT_FILE << "\n";
+
   ofstream drcRpt(DRC_RPT_FILE.c_str());
   if (drcRpt.is_open()) {
     for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
       auto con = marker->getConstraint();
       drcRpt << "  violation type: ";
       if (con) {
-        if (con->typeId() == frConstraintTypeEnum::frcShortConstraint) {
-          if (getTech()->getLayer(marker->getLayerNum())->getType()
-              == frLayerTypeEnum::ROUTING) {
-            drcRpt << "Short";
-          } else if (getTech()->getLayer(marker->getLayerNum())->getType()
-                     == frLayerTypeEnum::CUT) {
-            drcRpt << "CShort";
+        switch (con->typeId()) {
+          case frConstraintTypeEnum::frcShortConstraint: {
+            if (getTech()->getLayer(marker->getLayerNum())->getType()
+                == frLayerTypeEnum::ROUTING) {
+              drcRpt << "Short";
+            } else if (getTech()->getLayer(marker->getLayerNum())->getType()
+                       == frLayerTypeEnum::CUT) {
+              drcRpt << "CShort";
+            }
+            break;
           }
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcMinWidthConstraint) {
-          drcRpt << "MinWid";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingConstraint) {
-          drcRpt << "MetSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingEndOfLineConstraint) {
-          drcRpt << "EOLSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-          drcRpt << "MetSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcCutSpacingConstraint) {
-          drcRpt << "CutSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcMinStepConstraint) {
-          drcRpt << "MinStp";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcNonSufficientMetalConstraint) {
-          drcRpt << "NSMet";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcSpacingSamenetConstraint) {
-          drcRpt << "MetSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcOffGridConstraint) {
-          drcRpt << "OffGrid";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcMinEnclosedAreaConstraint) {
-          drcRpt << "MinHole";
-        } else if (con->typeId() == frConstraintTypeEnum::frcAreaConstraint) {
-          drcRpt << "MinArea";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcLef58CornerSpacingConstraint) {
-          drcRpt << "CornerSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcLef58CutSpacingConstraint) {
-          drcRpt << "CutSpc";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcLef58RectOnlyConstraint) {
-          drcRpt << "RectOnly";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::
-                       frcLef58RightWayOnGridOnlyConstraint) {
-          drcRpt << "RightWayOnGridOnly";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::frcLef58MinStepConstraint) {
-          drcRpt << "MinStp";
-        } else if (con->typeId()
-                   == frConstraintTypeEnum::
-                       frcSpacingTableInfluenceConstraint) {
-          drcRpt << "MetSpcInf";
-        } else {
-          drcRpt << "unknown";
+          case frConstraintTypeEnum::frcMinWidthConstraint:
+            drcRpt << "MinWid";
+            break;
+          case frConstraintTypeEnum::frcSpacingConstraint:
+            drcRpt << "MetSpc";
+            break;
+          case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
+            drcRpt << "EOLSpc";
+            break;
+          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
+            drcRpt << "MetSpc";
+            break;
+          case frConstraintTypeEnum::frcCutSpacingConstraint:
+            drcRpt << "CutSpc";
+            break;
+          case frConstraintTypeEnum::frcMinStepConstraint:
+            drcRpt << "MinStp";
+            break;
+          case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
+            drcRpt << "NSMet";
+            break;
+          case frConstraintTypeEnum::frcSpacingSamenetConstraint:
+            drcRpt << "MetSpc";
+            break;
+          case frConstraintTypeEnum::frcOffGridConstraint:
+            drcRpt << "OffGrid";
+            break;
+          case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
+            drcRpt << "MinHole";
+            break;
+          case frConstraintTypeEnum::frcAreaConstraint:
+            drcRpt << "MinArea";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
+            drcRpt << "CornerSpc";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
+            drcRpt << "CutSpc";
+            break;
+          case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
+            drcRpt << "RectOnly";
+            break;
+          case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
+            drcRpt << "RightWayOnGridOnly";
+            break;
+          case frConstraintTypeEnum::frcLef58MinStepConstraint:
+            drcRpt << "MinStp";
+            break;
+          case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
+            drcRpt << "MetSpcInf";
+            break;
+          case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
+            drcRpt << "SpacingEndOfLineParallelEdge";
+            break;
+          case frConstraintTypeEnum::frcSpacingTableConstraint:
+            drcRpt << "SpacingTable";
+            break;
+          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+            drcRpt << "SpacingTableTw";
+            break;
+          case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
+            drcRpt << "Lef58SpacingTable";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
+            drcRpt << "Lef58CutSpacingTable";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
+            drcRpt << "Lef58CutSpacingTablePrl";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
+            drcRpt << "Lef58CutSpacingTableLayer";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
+            drcRpt << "Lef58CutSpacingParallelWithin";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
+            drcRpt << "Lef58CutSpacingAdjacentCuts";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
+            drcRpt << "Lef58CutSpacingLayer";
+            break;
+          case frConstraintTypeEnum::frcMinimumcutConstraint:
+            drcRpt << "Minimumcut";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58CornerSpacingConcaveCornerConstraint:
+            drcRpt << "Lef58CornerSpacingConcaveCorner";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58CornerSpacingConvexCornerConstraint:
+            drcRpt << "Lef58CornerSpacingConvexCorner";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
+            drcRpt << "Lef58CornerSpacingSpacing";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
+            drcRpt << "Lef58CornerSpacingSpacing1D";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
+            drcRpt << "Lef58CornerSpacingSpacing2D";
+            break;
+          case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
+            drcRpt << "Lef58SpacingEndOfLine";
+            break;
+          case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithin";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinEndToEndConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinEndToEnd";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinEncloseCut";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinParallelEdge";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinMaxMinLength";
+            break;
+          case frConstraintTypeEnum::frcLef58CutClassConstraint:
+            drcRpt << "Lef58CutClass";
+            break;
+          case frConstraintTypeEnum::frcRecheckConstraint:
+            drcRpt << "Recheck";
+            break;
+          case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
+            drcRpt << "Lef58EolExtension";
+            break;
+          case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
+            drcRpt << "Lef58EolKeepOut";
+            break;
         }
       } else {
         drcRpt << "nullptr";

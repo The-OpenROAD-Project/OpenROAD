@@ -26,12 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "frRegionQuery.h"
+
 #include <boost/polygon/polygon.hpp>
 #include <iostream>
 
 #include "frDesign.h"
 #include "frRTree.h"
-#include "frRegionQuery.h"
 #include "global.h"
 #include "utl/algorithms.h"
 

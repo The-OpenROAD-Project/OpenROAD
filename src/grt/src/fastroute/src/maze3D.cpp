@@ -948,7 +948,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
   for (orderIndex = 0; orderIndex < endIND; orderIndex++) {
     netID = treeOrderPV[orderIndex].treeIndex;
 
-    std::vector<int> edgeCostPerLayer = nets[netID]->edgeCostPerLayer;
+    std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
 
     /* TODO:  <14-08-19, uncomment this to reproduce ispd18_test6> */
     /* if (netID == 53757) { */
@@ -1670,13 +1670,13 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               {
                 min_y = std::min(gridsY[i], gridsY[i + 1]);
                 v_edges3D[gridsL[i] * gridV + min_y * xGrid + gridsX[i]].usage
-                    += edgeCostPerLayer[gridsL[i]];
+                    += edge_cost_per_layer[gridsL[i]];
               } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
               {
                 min_x = std::min(gridsX[i], gridsX[i + 1]);
                 h_edges3D[gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + min_x]
                     .usage
-                    += edgeCostPerLayer[gridsL[i]];
+                    += edge_cost_per_layer[gridsL[i]];
               }
             }
           }
@@ -1827,10 +1827,10 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
       }
     }
     if (nlID == -1) {
-      logger->error(GRT, 173, "Invalid lower neighbour for node {}.", n1);
+      logger->error(GRT, 173, "Invalid lower neighbor for node {}.", n1);
     }
     if (nhID == -1) {
-      logger->error(GRT, 174, "Invalid upper neighbour for node {}.", n1);
+      logger->error(GRT, 174, "Invalid upper neighbor for node {}.", n1);
     }
     if (n1 < deg) {
       nbtL = 0;
@@ -1841,7 +1841,7 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
     treenodes[n1].lID = nlID;
   } else {
     if (treenodes[n1].botL > 0) {
-      logger->warn(GRT, 185, "Bottom layer acutally {}.", treenodes[n1].botL);
+      logger->warn(GRT, 185, "Bottom layer actually {}.", treenodes[n1].botL);
     }
     treenodes[n1].topL = 0;
     treenodes[n1].botL = 0;

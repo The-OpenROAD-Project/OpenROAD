@@ -92,7 +92,7 @@ Path Type: min
 
 [INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 11 hold buffers.
+[INFO RSZ-0032] Inserted 12 hold buffers.
 worst slack 0.01
 worst slack 1.91
 Net in2
@@ -117,7 +117,7 @@ Net out
  Number of pins: 2
 
 Driver pins
- hold6/Z output (CLKBUF_X3) (6, 2)
+ hold6/Z output (BUF_X1) (5, 2)
 
 Load pins
  out output port
