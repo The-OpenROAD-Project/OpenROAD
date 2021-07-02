@@ -320,8 +320,9 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   Net *in_net = db_network_->net(in_pin);
   Net *out_net = db_network_->net(out_pin);
   bool in_net_ports = hasPort(in_net);
+  bool in_net_clk = sta_->isClock(in_net);
   bool out_net_ports = hasPort(out_net);
-  return in_net_ports && out_net_ports;
+  return (in_net_ports && !in_net_clk) || out_net_ports;
 }
 
 void
