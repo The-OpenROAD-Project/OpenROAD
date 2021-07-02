@@ -578,6 +578,7 @@ void ParseMacroFile(vector<Macro>& macros,
 }
 
 bool PinAlignmentSingleCluster(
+    const char *report_directory,
     Cluster* cluster,
     const unordered_map<string, pair<float, float>>& terminal_position,
     const vector<Net*>& nets,
@@ -617,7 +618,8 @@ bool PinAlignmentSingleCluster(
 
   // deal with macros
   vector<Macro> macros = cluster->GetMacros();
-  string macro_file = string("./rtl_mp/") + name + string(".txt.block");
+  //string macro_file = string("./rtl_mp/") + name + string(".txt.block");
+  string macro_file = string(report_directory) + string("/") + name + string(".txt.block");
   ParseMacroFile(macros, halo_width, macro_file);
 
   int perturb_per_step = 2 * macros.size();
@@ -715,6 +717,7 @@ bool PinAlignmentSingleCluster(
 // Pin Alignment Engine
 bool PinAlignment(const vector<Cluster*>& clusters,
                   Logger* logger,
+                  const char *report_directory,
                   float halo_width,
                   int num_thread,
                   int num_run,
@@ -752,10 +755,12 @@ bool PinAlignment(const vector<Cluster*>& clusters,
 
       // deal with nets
       // vector<Net*> nets;
-      string net_file = string("./rtl_mp/") + name + string(".txt.net");
+      //string net_file = string("./rtl_mp/") + name + string(".txt.net");
+      string net_file = string(report_directory) + string("/") + name + string(".txt.net");
       block_placement::ParseNetFile(nets, terminal_position, net_file.c_str());
 
-      bool flag = PinAlignmentSingleCluster(clusters[i],
+      bool flag = PinAlignmentSingleCluster(report_directory, 
+                                            clusters[i],
                                             terminal_position,
                                             nets,
                                             logger,

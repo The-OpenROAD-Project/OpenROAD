@@ -248,7 +248,8 @@ class SimulatedAnnealingCore
 void Run(SimulatedAnnealingCore* sa);
 
 // Macro Tile Engine
-std::vector<std::pair<float, float>> TileMacro(const std::vector<Macro>& macros,
+std::vector<std::pair<float, float>> TileMacro(const std::string& report_directory,
+                                               const std::vector<Macro>& macros,
                                                const std::string& cluster_name,
                                                float& final_area,
                                                float outline_width,
@@ -277,6 +278,7 @@ std::vector<Cluster*> ShapeEngine(float& outline_width,
                                   float dead_space,
                                   float halo_width,
                                   utl::Logger* logger,
+                                  const std::string& report_directory,
                                   const std::string& block_file,
                                   int num_thread = 10,
                                   int num_run = 20,

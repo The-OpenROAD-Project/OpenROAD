@@ -161,6 +161,7 @@ void ParseMacroFile(std::vector<shape_engine::Macro>& macros,
                     const std::string& file_name);
 
 bool PinAlignmentSingleCluster(
+    const char *report_directory,
     shape_engine::Cluster* cluster,
     const std::unordered_map<std::string, std::pair<float, float>>&
         terminal_position,
@@ -174,6 +175,7 @@ bool PinAlignmentSingleCluster(
 // Pin Alignment Engine
 bool PinAlignment(const std::vector<shape_engine::Cluster*>& clusters,
                   utl::Logger* logger,
+                  const char *report_directory,
                   float halo_width,
                   int num_thread,
                   int num_run,
