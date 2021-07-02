@@ -272,7 +272,7 @@ bool rtl_macro_placer(const char* config_file,
 
   file.close();
 
-  string invs_filename =  string("./") + string(report_directory) + "/macro_placement.tcl";
+  string invs_filename =  string("./") + string(report_directory) + "/macro_placement.txt";
   file.open(invs_filename);
   for (int i = 0; i < clusters.size(); i++) {
     if (clusters[i]->GetNumMacro() > 0) {
@@ -280,20 +280,14 @@ bool rtl_macro_placer(const char* config_file,
       float cluster_ly = clusters[i]->GetY();
       vector<Macro> macros = clusters[i]->GetMacros();
       for (int j = 0; j < macros.size(); j++) {
-        string line = "setObjFPlanBox Instance ";
-        line += macros[j].GetName() + string("   ");
+        string line = macros[j].GetName() + string("   ");
         float lx = outline_lx + cluster_lx + macros[j].GetX() + halo_width;
         float ly = outline_ly + cluster_ly + macros[j].GetY() + halo_width;
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
         line += to_string(lx) + string("   ") + to_string(ly) + string("  ");
         line += to_string(lx + width) + string("  ") + to_string(ly + height);
-        file << line << endl;
-
-        line = string("dbSet [dbGet top.insts.name -p ");
-        line += macros[j].GetName() + string(" ].orient ");
-        string orientation = macros[j].GetOrientation();
-        line += orientation;
+        line += string("   ") + macros[j].GetOrientation();
         file << line << endl;
       }
     }
