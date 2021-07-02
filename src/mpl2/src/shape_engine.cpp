@@ -422,7 +422,8 @@ void Run(SimulatedAnnealingCore* sa)
 }
 
 // Macro Tile Engine
-vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
+vector<pair<float, float>> TileMacro(const string& report_directory,
+                                     const vector<Macro>& macros,
                                      const string& cluster_name,
                                      float& final_area,
                                      float outline_width,
@@ -531,8 +532,8 @@ vector<pair<float, float>> TileMacro(const vector<Macro>& macros,
   }
 
   for (int i = 0; i < sa_vector.size(); i++) {
-    string file_name = string("./rtl_mp/") + cluster_file_name + string("_")
-                       + to_string(i) + string(".txt");
+    //string file_name = string("./rtl_mp/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
+    string file_name = string(report_directory) + string("/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
     sa_vector[i]->WriteFloorplan(file_name);
   }
 
@@ -688,6 +689,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
                              float dead_space,
                              float halo_width,
                              Logger* logger,
+                             const string& report_directory,
                              const string& block_file,
                              int num_thread,
                              int num_run,
@@ -731,7 +733,8 @@ vector<Cluster*> ShapeEngine(float& outline_width,
     if (clusters[i]->GetNumMacro() != 0 && class_list[i] == i) {
       float final_area = 0.0;
       vector<pair<float, float>> aspect_ratio
-          = TileMacro(clusters[i]->GetMacros(),
+          = TileMacro(report_directory,
+                      clusters[i]->GetMacros(),
                       clusters[i]->GetName(),
                       final_area,
                       outline_width,

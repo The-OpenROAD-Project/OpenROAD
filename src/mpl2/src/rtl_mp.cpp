@@ -179,6 +179,7 @@ bool rtl_macro_placer(const char* config_file,
                                                         dead_space,
                                                         halo_width,
                                                         logger,
+                                                        report_directory,
                                                         block_file,
                                                         num_thread,
                                                         num_run,
@@ -228,7 +229,7 @@ bool rtl_macro_placer(const char* config_file,
   }
 
   bool success_flag = pin_alignment::PinAlignment(
-      clusters, logger, halo_width, num_thread, num_run, seed);
+      clusters, logger, report_directory, halo_width, num_thread, num_run, seed);
 
   if (success_flag == false) {
     logger->report("*** RTLMP Failed ***");
