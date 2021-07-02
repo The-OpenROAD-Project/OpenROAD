@@ -119,14 +119,16 @@ typedef struct
   short status;
   short conCNT;
   short botL, topL;
-  short heights[6];
+  // heights and eID arrays size were increased after using PD
+  // to create the tree topologies. 
+  short heights[10];
+  int eID[10];
 
   short x, y;     // position in the grid graph
   int nbr[3];   // three neighbors
   int edge[3];  // three adjacent edges
   int hID;
   int lID;
-  int eID[6];
   int stackAlias;
 } TreeNode;
 
