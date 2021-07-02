@@ -103,8 +103,6 @@ void lefout::writeBox(std::string indent, dbBox* box)
 
 void lefout::writeHeader(dbBlock* db_block)
 {
-  dbTech* tech = db_block->getDataBase()->getTech();
-
   char left_bus_delimeter = 0;
   char right_bus_delimeter = 0;
   char hier_delimeter = db_block->getHierarchyDelimeter();
@@ -120,7 +118,7 @@ void lefout::writeHeader(dbBlock* db_block)
   if (hier_delimeter == 0)
     hier_delimeter = '|';
 
-  writeVersion(tech->getLefVersionStr());
+  writeVersion("5.8");
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
 }
