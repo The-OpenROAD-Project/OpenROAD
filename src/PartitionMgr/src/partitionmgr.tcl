@@ -624,5 +624,7 @@ proc partition_design { args } {
         set report_directory $keys(-report_directory)
     }
 
+    file mkdir $report_directory
+
     par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $report_directory $report_file
 }

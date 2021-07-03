@@ -1376,7 +1376,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
                                      const char* file_name)
 {
   logger_->report("Running Partition Design...");
-  mkdir(report_directory, 0777);
 
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
