@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -123,8 +123,8 @@ class TclCmdHighlighter : public QSyntaxHighlighter
     QTextCharFormat comment_format_;
 
     // common regex
-    const std::string start_of_command_ = "(?:^|(?<=\\s)|(?<=\\[))";
-    const std::string end_of_command_   = "(?:$|(?=\\s)|(?=\\]))";
+    const std::string start_of_command_ = "(?:^|(?<=\\s)|(?<=\\[)|(?<=\\{))";
+    const std::string end_of_command_   = "(?:$|(?=\\s)|(?=\\])|(?=\\}))";
 };
 
 }  // namespace gui

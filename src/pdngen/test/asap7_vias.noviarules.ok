@@ -14,7 +14,7 @@
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: asap7_vias/grid_strategy-M2-M4-M7.noviarules.cfg
 [WARNING PDN-0035] No track information found for layer Pad
-[INFO PDN-0008] Design Name is aes_cipher_top
+[INFO PDN-0008] Design name is aes_cipher_top
 [INFO PDN-0009] Reading technology data
 [WARNING PDN-0018] No macro grid specifications found - no straps added
 [INFO PDN-0011] ****** INFO ******

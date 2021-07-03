@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,41 +33,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "grt/MakeFastRoute.h"
+#pragma once
 
-#include "FastRoute.h"
-#include "grt/GlobalRouter.h"
-#include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* grt_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-extern int Grt_Init(Tcl_Interp* interp);
+namespace grt {
+class GlobalRouter;
 }
 
 namespace ord {
 
-grt::GlobalRouter* makeFastRoute()
-{
-  return new grt::GlobalRouter();
-}
+class OpenRoad;
 
-void deleteFastRoute(grt::GlobalRouter* fastroute)
-{
-  delete fastroute;
-}
+grt::GlobalRouter* makeGlobalRouter();
 
-void initFastRoute(OpenRoad* openroad)
-{
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  Grt_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::grt_tcl_inits);
-  openroad->getFastRoute()->init(openroad);
-}
+void initGlobalRouter(OpenRoad* openroad);
+
+void deleteGlobalRouter(grt::GlobalRouter* global_router);
 
 }  // namespace ord

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -100,9 +100,10 @@ void TclCmdHighlighter::initOpenRoad(Tcl_Interp* interp)
 
     int cmd_size;
     Tcl_Obj** cmds_objs;
-    Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs);
-    for (int i = 0; i < cmd_size; i++) {
-      cmds.insert(Tcl_GetString(cmds_objs[i]));
+    if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs) == TCL_OK) {
+      for (int i = 0; i < cmd_size; i++) {
+        cmds.insert(Tcl_GetString(cmds_objs[i]));
+      }
     }
   }
 
@@ -130,10 +131,11 @@ void TclCmdHighlighter::initOpenRoad(Tcl_Interp* interp)
       Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
       int cmd_size;
       Tcl_Obj** cmds_objs;
-      Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs);
-      for (int i = 0; i < cmd_size; i++) {
-        std::string cmd = Tcl_GetString(cmds_objs[i]);
-        cmd_regexes.push_back(buildRule(start_of_command_ + "((::)?" + escape(cmd.substr(2)) + ")" + end_of_command_));
+      if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs) == TCL_OK) {
+        for (int i = 0; i < cmd_size; i++) {
+          std::string cmd = Tcl_GetString(cmds_objs[i]);
+          cmd_regexes.push_back(buildRule(start_of_command_ + "((::)?" + escape(cmd.substr(2)) + ")" + end_of_command_));
+        }
       }
     }
   }
@@ -166,9 +168,9 @@ void TclCmdHighlighter::initTclKeywords()
   const std::string tcl_keywords[] = {"after", "append", "apply", "array", "auto_execok",
       "auto_import", "auto_load", "auto_load_index", "auto_qualify", "binary", "break",
       "catch", "cd", "chan", "clock", "close", "concat", "continue", "coroutine", "dict",
-      "echo", "encoding", "eof", "error", "eval", "exec", "exit", "expr", "fblocked",
-      "fconfigure", "fcopy", "file", "fileevent", "flush", "for", "foreach", "fork",
-      "format", "gets", "glob", "global", "history", "if", "incr", "info", "interp",
+      "echo", "else", "elseif", "encoding", "eof", "error", "eval", "exec", "exit", "expr",
+      "fblocked", "fconfigure", "fcopy", "file", "fileevent", "flush", "for", "foreach",
+      "fork", "format", "gets", "glob", "global", "history", "if", "incr", "info", "interp",
       "join", "lappend", "lassign", "lindex", "linsert", "list", "llength", "load",
       "lrange", "lrepeat", "lreplace", "lreverse", "lsearch", "lset", "lsort", "namespace",
       "open", "oo::class", "oo::copy", "oo::define", "oo::objdefine", "oo::object",

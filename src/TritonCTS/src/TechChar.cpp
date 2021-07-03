@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -119,9 +119,9 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
                   noSlewDegradationCount);
   }
 
-  _logger->info(CTS, 46, "    Num wire segments: {}",
+  _logger->info(CTS, 46, "    Number of wire segments: {}",
                 _wireSegments.size());
-  _logger->info(CTS, 47, "    Num keys in characterization LUT: {}",
+  _logger->info(CTS, 47, "    Number of keys in characterization LUT: {}",
                 _keyToWireSegments.size());
 
   _logger->info(CTS, 48, "    Actual min input cap: {}",

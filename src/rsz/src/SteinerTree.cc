@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -73,6 +73,7 @@ SteinerPt SteinerTree::null_pt = -1;
 
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
+                float alpha,
                 bool find_left_rights,
                 dbNetwork *network,
                 Logger *logger)
@@ -115,17 +116,11 @@ makeSteinerTree(const Pin *drvr_pin,
     }
     if (is_placed) {
       stt::Tree ftree;
-      bool use_pd = false;
-      bool use_pdrevII = false;
-      float alpha = 0.4;
-      if (use_pd || use_pdrevII) {
+      if (alpha > 0.0) {
         std::vector<int> x1(x, x + pin_count);
         std::vector<int> y1(y, y + pin_count);
         float alpha = 0.4;
-        if (use_pd)
-          ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
-        else
-          ftree = pdr::primDijkstraRevII(x1, y1, drvr_idx, alpha, logger);
+        ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
       }
       else {
         int flute_accuracy = 3;

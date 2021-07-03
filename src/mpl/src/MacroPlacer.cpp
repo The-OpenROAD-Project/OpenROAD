@@ -161,7 +161,7 @@ void MacroPlacer::init()
   } else {
     logger_->warn(MPL,
                   2,
-                  "Some instances do not have liberty models. TritonMP will "
+                  "Some instances do not have Liberty models. TritonMP will "
                   "place macros without connection information.");
   }
 }
@@ -758,7 +758,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
 
     // impossible partitioning
     if (upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      logger_->info(MPL, 80, "Impossible partiton found.");
+      logger_->info(MPL, 80, "Impossible partition found.");
       continue;
     }
 
@@ -793,7 +793,7 @@ void MacroPlacer::findMacros()
         logger_->error(MPL,
                        3,
                        "Macro {} is unplaced. Use global_placement to get an "
-                       "initial placement before macro placment.",
+                       "initial placement before macro placement.",
                        inst->getConstName());
       }
 

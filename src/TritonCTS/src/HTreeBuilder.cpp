@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -139,7 +139,7 @@ void HTreeBuilder::preSinkClustering(
   if (clusterCount)
     _treeBufLevels++;
 
-  _logger->info(CTS, 19, " Tot. number of sinks after clustering: {}", _topLevelSinksClustered.size());
+  _logger->info(CTS, 19, " Total number of sinks after clustering: {}", _topLevelSinksClustered.size());
 }
 
 void HTreeBuilder::initSinkRegion()
@@ -159,7 +159,7 @@ void HTreeBuilder::initSinkRegion()
     if (_options->isVertexBuffersEnabled()) {
       int vertexBufferLength
           = _options->getVertexBufferDistance() / (wireSegmentUnitInMicron * 2);
-      _logger->info(CTS, 22, " Branch Length for Vertex Buffer: {} units ({} um)",
+      _logger->info(CTS, 22, " Branch length for Vertex Buffer: {} units ({} um)",
                     vertexBufferLength,
                     static_cast<int>(_options->getVertexBufferDistance()));
     }
@@ -198,12 +198,12 @@ void HTreeBuilder::initSinkRegion()
 void HTreeBuilder::run()
 {
   _logger->info(CTS, 27, " Generating H-Tree topology for net {}", _clock.getName());
-  _logger->info(CTS, 28, "    Tot. number of sinks: {}", _clock.getNumSinks());
+  _logger->info(CTS, 28, "    Total number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
     if (_options->getSinkClusteringUseMaxCap()) {
       _logger->info(CTS, 90, "    Sinks will be clustered based on buffer max cap.");
     } else {
-      _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {:.1f} um",
+      _logger->info(CTS, 29, "    Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um",
                   _options->getSizeSinkClustering(), _options->getMaxDiameter());
     }
   }

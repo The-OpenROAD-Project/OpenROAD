@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -92,6 +92,7 @@ class Pin
   bool isConnectedToPad() const { return _connectedToPad; }
   const odb::Point& getOnGridPosition() const { return _onGridPosition; }
   void setOnGridPosition(odb::Point onGridPos) { _onGridPosition = onGridPos; }
+  bool isDriver();
 
  private:
   union

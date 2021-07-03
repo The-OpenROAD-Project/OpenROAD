@@ -76,7 +76,7 @@ Footprint library {
   }
 
   rdl {
-    layer_name LB
+    layer_name metal10
     width 10.0
     spacing 10.0
   }
@@ -94,7 +94,7 @@ Footprint library {
   cells {
     PAD {
       orient {bottom R0 right R90 top R180 left R270}
-      type bonpad
+      type bondpad
     }
     PADCELL_SIG {
       cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H}

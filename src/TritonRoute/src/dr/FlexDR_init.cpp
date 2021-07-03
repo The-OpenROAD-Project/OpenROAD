@@ -466,7 +466,8 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, lNum, pin2epMap, true);
       }
-      if (getRouteBox().contains(ep)) {
+      if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)
+          && getRouteBox().contains(ep)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, ep, lNum, pin2epMap, true);
       }

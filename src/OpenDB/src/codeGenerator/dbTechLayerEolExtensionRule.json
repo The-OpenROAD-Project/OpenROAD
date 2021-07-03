@@ -4,7 +4,8 @@
   "fields": [
     {
       "type": "int",
-      "name": "spacing_"
+      "name": "spacing_",
+      "default": 0
     },
     {
       "type": "bit",

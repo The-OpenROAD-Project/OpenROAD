@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -62,7 +62,8 @@ initResizer(OpenRoad *openroad)
                                // Broken gui api missing openroad accessor.
                                gui::Gui::get(),
                                openroad->getDb(),
-                               openroad->getSta());
+                               openroad->getSta(),
+                               openroad->getGlobalRouter());
 }
 
 }

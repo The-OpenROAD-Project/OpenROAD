@@ -74,7 +74,7 @@ void FlexDR::checkConnectivity_pin2epMap_helper(
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     } else if (rqObj->typeId() == frcTerm) {
-      if (!isPathSeg && !bx.contains(bp)) //terms have aps created on the fly
+      if (!isPathSeg && !bx.contains(bp)) 
             continue;
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
@@ -117,8 +117,8 @@ void FlexDR::checkConnectivity_pin2epMap(
         cout << "  query ep" << endl;
       }
         checkConnectivity_pin2epMap_helper(net, ep, lNum, pin2epMap, true);
+      }
     }
-  }
   for (auto& connFig : netDRObjs) {
     if (connFig->typeId() == frcVia) {
       auto obj = static_cast<frVia*>(connFig);
