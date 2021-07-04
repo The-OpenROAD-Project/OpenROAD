@@ -1039,7 +1039,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             yLoc = (yl(pinRect) + yh(pinRect)) / 2;
           }
           bool halfOnTrackFound = !yLocs.empty() || !xLocs.empty();
-          if (currLayerNum >= BOTTOM_ROUTING_LAYER && (!noJog || halfOnTrackFound) && (!isInitDR() || 
+          if ((currLayerNum >= BOTTOM_ROUTING_LAYER && !noJog || halfOnTrackFound) && (!isInitDR() || 
                             (xLoc != xh(routeRect) || yLoc != yh(routeRect)))) {
             // TODO: update as drAccessPattern updated
             auto uap = std::make_unique<drAccessPattern>();
