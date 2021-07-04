@@ -90,6 +90,7 @@ Graph::Graph(vector<int>& x,
              int root_index,
              Logger* logger) :
   root_idx(root_index),
+  heap_size(0),
   logger_(logger)
 {
   PtMap pts;
