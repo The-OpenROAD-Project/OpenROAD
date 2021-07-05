@@ -141,6 +141,7 @@ protected:
   void autoPlacePins(dbTechLayer *pin_layer,
 		     Rect &core);
   int metersToMfgGrid(double dist) const;
+  int metersToDbu(double dist) const;
   double dbuToMeters(int dist) const;
   void updateVoltageDomain(dbSite *site,
 			   int core_lx,
@@ -303,10 +304,10 @@ InitFloorplan::initFloorplan(double die_lx,
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // core lower left corner to multiple of site dx/dy.
-      int clx = divCeil(metersToMfgGrid(core_lx), site_dx) * site_dx;
-      int cly = divCeil(metersToMfgGrid(core_ly), site_dy) * site_dy;
-      int cux = metersToMfgGrid(core_ux);
-      int cuy = metersToMfgGrid(core_uy);
+      int clx = divCeil(metersToDbu(core_lx), site_dx) * site_dx;
+      int cly = divCeil(metersToDbu(core_ly), site_dy) * site_dy;
+      int cux = metersToDbu(core_ux);
+      int cuy = metersToDbu(core_uy);
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
     }
@@ -561,6 +562,14 @@ InitFloorplan::dbuToMeters(int dist) const
   dbTech *tech = db_->getTech();
   int dbu = tech->getDbUnitsPerMicron();
   return dist / (dbu * 1e+6);
+}
+
+int
+InitFloorplan::metersToDbu(double dist) const
+{
+  dbTech *tech = db_->getTech();
+  int dbu = tech->getDbUnitsPerMicron();
+  return dist * 1e+6 * dbu;
 }
 
 } // namespace
