@@ -123,8 +123,8 @@ class TclCmdHighlighter : public QSyntaxHighlighter
     QTextCharFormat comment_format_;
 
     // common regex
-    const std::string start_of_command_ = "(?:^|(?<=\\s)|(?<=\\[))";
-    const std::string end_of_command_   = "(?:$|(?=\\s)|(?=\\]))";
+    const std::string start_of_command_ = "(?:^|(?<=\\s)|(?<=\\[)|(?<=\\{))";
+    const std::string end_of_command_   = "(?:$|(?=\\s)|(?=\\])|(?=\\}))";
 };
 
 }  // namespace gui
