@@ -17,10 +17,5 @@ rmp::blif_add_instance $blif "_i3_"
 
 rmp::blif_dump $blif "./results/blif_writer_hanging.blif"
 
-set isDiff [diff_files "./results/blif_writer_hanging.blif" "blif_writer_hanging.blif.ok"]
-if {$isDiff != 0} {
-    exit 1
-}
+diff_files "./results/blif_writer_hanging.blif" "blif_writer_hanging.blif.ok"
 
-puts "pass"
-exit

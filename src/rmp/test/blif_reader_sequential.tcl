@@ -23,10 +23,5 @@ rmp::blif_add_instance $blif "_i8_"
 rmp::blif_read $blif "./blif_reader_sequential.blif"
 
 write_def "./results/blif_reader_sequential.def"
-set isDiff [diff_files "./results/blif_reader_sequential.def" "blif_reader_sequential.def.ok"]
-if {$isDiff != 0} {
-    exit 1
-}
+diff_files "./results/blif_reader_sequential.def" "blif_reader_sequential.def.ok"
 
-puts "pass"
-exit

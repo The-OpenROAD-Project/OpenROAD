@@ -19,10 +19,5 @@ rmp::blif_add_instance $blif "_r1_"
 rmp::blif_dump $blif "./results/blif_writer_sequential.blif"
 
 write_def "./results/design_seq.def"
-set isDiff [diff_files "./results/blif_writer_sequential.blif" "blif_writer_sequential.blif.ok"]
-if {$isDiff != 0} {
-    exit 1
-}
+diff_files "./results/blif_writer_sequential.blif" "blif_writer_sequential.blif.ok"
 
-puts "pass"
-exit
