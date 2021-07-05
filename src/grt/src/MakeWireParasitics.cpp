@@ -119,17 +119,17 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
 {
   for (GSegment& route : routes) {
     sta::ParasiticNode* n1
-        = ensureParasiticNode(route.initX, route.initY, route.initLayer);
+        = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
     sta::ParasiticNode* n2
-        = ensureParasiticNode(route.finalX, route.finalY, route.finalLayer);
+        = ensureParasiticNode(route.final_x, route.final_y, route.final_layer);
     int wire_length_dbu
-        = abs(route.initX - route.finalX) + abs(route.initY - route.finalY);
+        = abs(route.init_x - route.final_x) + abs(route.init_y - route.final_y);
     sta::Units* units = sta_->units();
     float res = 0.0;
     float cap = 0.0;
     if (wire_length_dbu == 0) {
       // via
-      int lower_layer = min(route.initLayer, route.finalLayer);
+      int lower_layer = min(route.init_layer, route.final_layer);
       odb::dbTechLayer* cut_layer
           = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
       res = cut_layer->getResistance();  // assumes single cut
@@ -142,8 +142,8 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
                  parasitics_->name(n1),
                  parasitics_->name(n2),
                  units->resistanceUnit()->asString(res));
-    } else if (route.initLayer == route.finalLayer) {
-      layerRC(wire_length_dbu, route.initLayer, res, cap);
+    } else if (route.init_layer == route.final_layer) {
+      layerRC(wire_length_dbu, route.init_layer, res, cap);
       debugPrint(logger_,
                  GRT,
                  "est_rc",
@@ -152,7 +152,7 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
                  parasitics_->name(n1),
                  parasitics_->name(n2),
                  static_cast<int>(dbuToMeters(wire_length_dbu) * 1e+6),
-                 route.initLayer,
+                 route.init_layer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
     } else
