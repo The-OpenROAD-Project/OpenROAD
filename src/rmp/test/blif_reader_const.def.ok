@@ -22,18 +22,20 @@ PINS 10 ;
     - inp9 + NET n16 + DIRECTION INPUT + USE SIGNAL ;
     - out1 + NET n17 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-NETS 12 ;
+NETS 14 ;
     - hinet ( AND2_X1_2 A2 ) ( LOGIC1_X1_1 Z ) + USE SIGNAL ;
     - lonet ( AND2_X1_1 A2 ) ( LOGIC0_X1_1 Z ) + USE SIGNAL ;
     - n1 ( PIN inp1 ) ( AND2_X1_1 A1 ) + USE SIGNAL ;
     - n16 ( PIN inp9 ) + USE SIGNAL ;
-    - n17 ( PIN out1 ) + USE SIGNAL ;
+    - n17 ( PIN out1 ) ( OR2_X1_1 ZN ) + USE SIGNAL ;
     - n2 ( PIN inp2 ) + USE SIGNAL ;
     - n3 ( PIN inp3 ) ( AND2_X1_2 A1 ) + USE SIGNAL ;
     - n4 ( PIN inp4 ) + USE SIGNAL ;
-    - n5 ( PIN inp5 ) ( OR2_X1_1 A1 ) ( AND2_X1_1 ZN ) + USE SIGNAL ;
-    - n6 ( PIN inp6 ) ( OR2_X1_1 A2 ) ( AND2_X1_2 ZN ) + USE SIGNAL ;
-    - n7 ( PIN inp7 ) ( OR2_X1_1 ZN ) + USE SIGNAL ;
+    - n5 ( PIN inp5 ) + USE SIGNAL ;
+    - n6 ( PIN inp6 ) + USE SIGNAL ;
+    - n7 ( PIN inp7 ) + USE SIGNAL ;
     - n8 ( PIN inp8 ) + USE SIGNAL ;
+    - t1 ( OR2_X1_1 A1 ) ( AND2_X1_1 ZN ) + USE SIGNAL ;
+    - t2 ( OR2_X1_1 A2 ) ( AND2_X1_2 ZN ) + USE SIGNAL ;
 END NETS
 END DESIGN
