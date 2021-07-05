@@ -25,8 +25,8 @@ Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
 2           8           1           13          1           20          
 [WARNING CTS-0043] 576 wires are pure wire and no slew degration.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Num wire segments: 4320
-[INFO CTS-0047]     Num keys in characterization LUT: 603
+[INFO CTS-0046]     Number of wire segments: 4320
+[INFO CTS-0047]     Number of keys in characterization LUT: 603
 [INFO CTS-0048]     Actual min input cap: 1
  **********************
  *  Find clock roots  *
@@ -51,7 +51,7 @@ TritonCTS forced slew degradation on these wires.
  *  Build clock trees  *
  ***********************
 [INFO CTS-0027]  Generating H-Tree topology for net clk2
-[INFO CTS-0028]     Tot. number of sinks: 2
+[INFO CTS-0028]     Total number of sinks: 2
 [INFO CTS-0030]     Number of static layers: 0
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um)
 [INFO CTS-0023]  Original sink region: [(3730, 1730), (4730, 2730)]
@@ -72,8 +72,8 @@ TritonCTS forced slew degradation on these wires.
  ****************
  * Post CTS opt *
  ****************
-[INFO CTS-0036]  Avg. source sink dist: 6460.00 dbu.
-[INFO CTS-0037]  Num outlier sinks: 0
+[INFO CTS-0036]  Average source sink dist: 6460.00 dbu.
+[INFO CTS-0037]  Number of outlier sinks: 0
  ********************
  * Write data to DB *
  ********************

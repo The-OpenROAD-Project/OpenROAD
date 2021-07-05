@@ -17,9 +17,9 @@ worst slack 1.36
 [INFO RSZ-0039] Resized 46 instances.
 [INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 90 hold buffers.
+[INFO RSZ-0032] Inserted 105 hold buffers.
 worst slack 0.20
-worst slack 1.27
+worst slack 1.28
 max slew
 
 Pin                                    Limit    Slew   Slack
@@ -50,4 +50,4 @@ _851_/Z manhtn 69.5 steiner 69.5 0.00
 _725_/Z manhtn 67.2 steiner 67.2 0.00
 _849_/Z manhtn 64.8 steiner 64.8 0.00
 _860_/Z manhtn 64.5 steiner 64.5 0.00
-Design area 854 u^2 13% utilization.
+Design area 822 u^2 13% utilization.

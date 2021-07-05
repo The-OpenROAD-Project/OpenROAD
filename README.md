@@ -307,6 +307,7 @@ place_pins [-hor_layers h_layers]
            [-group_pins pins]
            [-corner_avoidance length]
            [-min_distance distance]
+           [-min_distance_in_tracks]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer names.
@@ -319,7 +320,9 @@ where pins cannot be placed. Can be used multiple times.
 random.
 - ``-group_pins``. Specify a list of pins to be placed together on the die boundary.
 - ``-corner_avoidance distance``. Specify the distance (in micron) from each corner to avoid placing pins.
-- ``-min_distance distance``. Specify the minimum distance (in micron) between pins in the die boundary.
+- ``-min_distance distance``. Specify the minimum distance between pins in the die boundary.
+It can be in microns (default) or in number of tracks between each pin.
+- ``-min_distance_in_tracks``. Flag that allows set the min distance in number of tracks instead of microns.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -615,14 +618,20 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
+              [-max_slew_margin slew_margin]
+              [-max_cap_margin cap_margin]
               [-max_utilization util]
 ```
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
 delay in the wire. It also resizes gates to normalize slews. 
-The resistance/capacitance values in `set_wire_rc` are used to find the
-wire delays. Use `-max_wire_length` to specify the maximum length of wires.
+Use `estimate_parasitics -placement` before `repair_design` to estimate
+parasitics considered during repair. Placement based parasitics cannot
+accurately predict routed parasitics, so a margin can be used to "over-repair"
+the design to compensate. Use `-max_slew_margin` to add a margin to the slews,
+and `-max_cap_margin` to add a margin to the capacitances,
+Use `-max_wire_length` to specify the maximum length of wires.
 The maximum wire length defaults to a value that minimizes the wire delay for the wire
 resistance/capacitance values specified by `set_wire_rc`.
 

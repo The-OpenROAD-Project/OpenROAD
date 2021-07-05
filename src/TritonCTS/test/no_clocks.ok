@@ -20,8 +20,8 @@ Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
 2           4           1           34          1           26          
 [WARNING CTS-0043] 792 wires are pure wire and no slew degration.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Num wire segments: 2376
-[INFO CTS-0047]     Num keys in characterization LUT: 832
+[INFO CTS-0046]     Number of wire segments: 2376
+[INFO CTS-0047]     Number of keys in characterization LUT: 832
 [INFO CTS-0048]     Actual min input cap: 1
  **********************
  *  Find clock roots  *
