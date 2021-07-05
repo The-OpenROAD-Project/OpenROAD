@@ -37,6 +37,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
+#include <tcl.h>
 
 #include "db.h"
 #include "dbDescriptors.h"
