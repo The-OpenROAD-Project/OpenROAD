@@ -322,7 +322,7 @@ bool Blif::writeBlif(const char* file_name)
     f << subckt << "\n";
   }
 
-  f << ".end";
+  f << ".end\n";
 
   f.close();
 
