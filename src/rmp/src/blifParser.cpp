@@ -77,10 +77,9 @@ void endParser(std::string end, rmp::BlifParser* parser)
   parser->endParser();
 }
 
-template <typename Iterator>
-bool parse(Iterator first, Iterator last, rmp::BlifParser* parser)
+bool parse(std::string::iterator first, std::string::iterator last, rmp::BlifParser* parser)
 {
-  qi::rule<Iterator, std::string(), ascii::space_type> _string;
+  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
   _string %= lexeme[+(char_ - (' ' | qi::eol))];
 
   qi::rule<std::string::iterator, space_type> rule
