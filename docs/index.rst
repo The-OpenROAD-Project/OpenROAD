@@ -20,15 +20,15 @@ tool licenses, project schedule, and risk.
 The IDEA program targets no-human-in-loop (NHIL) design, with 24-hour turnaround
 time and zero loss of power-performance-area (PPA) design quality.
 
-No humans means tools must adapt and auto-tune successfully to flow completion
-without requiring human intervention. Machine intelligence augments human expertise
-through efficient modeling and prediction of flow outcomes during layout generation.
+The NHIL target requires tools to adapt and auto-tune successfully to flow completion
+without or with significantly minimal human intervention. Machine intelligence augments 
+human expertise through efficient modeling and prediction of flow outcomes during layout generation.
 
-24 hours means that problems must be strategically decomposed into optimal partitions
+24 hours runtime target implies that problems must be strategically decomposed into optimal partitions
 during the design process through intellgient distribution and management of computational
 resources. This ensures that the design constraints are met for schedule, performance
 and cost. Any quality loss due to decomposition that uses a parallel and distributed search
-over cloud resources, is recovered through improved flow predictability and enhanced optimization.
+over cloud resources, is subsequently recovered through improved flow predictability and enhanced optimization.
 
 For a technical description of the OpenROAD flow, please refer to our DAC paper:
 `Toward an Open-Source Digital Flow: First Learnings from the OpenROAD Project`_.
@@ -64,7 +64,6 @@ Site Map
    user/GettingStarted
    user/UserGuide
    user/ToolLimitations
-   contrib/GettingInvolved
    contrib/DeveloperGuide
    contrib/CodingPractices
    contrib/DatabaseMath

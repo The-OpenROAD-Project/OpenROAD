@@ -168,10 +168,10 @@ getPDNSim()
 }
 
 grt::GlobalRouter*
-getFastRoute()
+getGlobalRouter()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getFastRoute();
+  return openroad->getGlobalRouter();
 }
 
 ppl::IOPlacer*

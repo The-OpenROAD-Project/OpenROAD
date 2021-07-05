@@ -208,7 +208,7 @@ namespace eval ord {
   proc clear {} {
     sta::clear_network
     sta::clear_sta
-    grt::clear_fastroute
+    grt::clear
     [get_db] clear
   }
   

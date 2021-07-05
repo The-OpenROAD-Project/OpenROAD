@@ -159,7 +159,7 @@ public:
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
-  grt::GlobalRouter* getFastRoute() { return fastRoute_; }
+  grt::GlobalRouter* getGlobalRouter() { return global_router_; }
   par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
@@ -242,7 +242,7 @@ private:
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
   mpl::MacroPlacer2 *macro_placer2_;
-  grt::GlobalRouter *fastRoute_;
+  grt::GlobalRouter *global_router_;
   cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;

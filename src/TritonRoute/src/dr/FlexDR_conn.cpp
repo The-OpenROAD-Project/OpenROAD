@@ -106,11 +106,19 @@ void FlexDR::checkConnectivity_pin2epMap(
              << endl;
         cout << "  query bp" << endl;
       }
+      if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, bp, lNum, pin2epMap, true);
+      } else {
+        extEndPoints.insert(make_pair(bp, lNum));
+      }
       if (enableOutput) {
         cout << "  query ep" << endl;
       }
+      if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, ep, lNum, pin2epMap, true);
+      } else {
+        extEndPoints.insert(make_pair(ep, lNum));
+      }
     }
   }
   for (auto& connFig : netDRObjs) {
@@ -125,11 +133,15 @@ void FlexDR::checkConnectivity_pin2epMap(
       if (enableOutput) {
         cout << "  query pt l1" << endl;
       }
+      if (extEndPoints.find(make_pair(bp, l1Num)) == extEndPoints.end()) {
         checkConnectivity_pin2epMap_helper(net, bp, l1Num, pin2epMap, false);
+      }
       if (enableOutput) {
         cout << "  query pt l2" << endl;
       }
+      if (extEndPoints.find(make_pair(bp, l2Num)) == extEndPoints.end()) {
         checkConnectivity_pin2epMap_helper(net, bp, l2Num, pin2epMap, false);
+      }
       //} else if (connFig->typeId() == frcPatchWire) {
       //  ;
     }

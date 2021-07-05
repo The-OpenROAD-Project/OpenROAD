@@ -81,6 +81,7 @@ void convertToMazerouteNet(int netID)
     y2 = treenodes[n2].y;
     treeedge->route.gridsX = (short*) calloc((edgelength + 1), sizeof(short));
     treeedge->route.gridsY = (short*) calloc((edgelength + 1), sizeof(short));
+    treeedge->route.gridsL = nullptr;
     gridsX = treeedge->route.gridsX;
     gridsY = treeedge->route.gridsY;
     treeedge->len = ADIFF(x1, x2) + ADIFF(y1, y2);
@@ -227,6 +228,9 @@ void convertToMazeroute()
       v_edges[grid].usage = v_edges[grid].est_usage;
     }
   }
+
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
 }
 
 // non recursive version of heapify
@@ -1044,7 +1048,6 @@ void reInitTree(int netID)
     if (treeedge->len > 0) {
       delete[] treeedge->route.gridsX;
       delete[] treeedge->route.gridsY;
-      delete[] treeedge->route.gridsL;
     }
   }
   delete[] sttrees[netID].nodes;
@@ -1100,10 +1103,10 @@ void mazeRouteMSMD(int iter,
   TreeNode* treenodes;
 
   // allocate memory for distance and parent and pop_heap
-  h_costTable = new float[40 * hCapacity];
-  v_costTable = new float[40 * vCapacity];
+  h_costTable = new float[max_usage_multiplier * hCapacity];
+  v_costTable = new float[max_usage_multiplier * vCapacity];
 
-  forange = 40 * hCapacity;
+  forange = max_usage_multiplier * hCapacity;
 
   if (cost_type == 2) {
     for (i = 0; i < forange; i++) {
@@ -1116,7 +1119,7 @@ void mazeRouteMSMD(int iter,
             = costHeight / (exp((float) (hCapacity - i - 1) * LOGIS_COF) + 1)
               + 1 + costHeight / slope * (i - hCapacity);
     }
-    forange = 40 * vCapacity;
+    forange = max_usage_multiplier * vCapacity;
     for (i = 0; i < forange; i++) {
       if (i < vCapacity - 1)
         v_costTable[i]
@@ -1137,7 +1140,7 @@ void mazeRouteMSMD(int iter,
             = costHeight / (exp((float) (hCapacity - i) * LOGIS_COF) + 1) + 1
               + costHeight / slope * (i - hCapacity);
     }
-    forange = 40 * vCapacity;
+    forange = max_usage_multiplier * vCapacity;
     for (i = 0; i < forange; i++) {
       if (i < vCapacity)
         v_costTable[i]
@@ -1859,6 +1862,9 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   int total_cap = 0;
   int total_usage = 0;
 
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
+
   total_usage = 0;
   total_cap = 0;
 
@@ -1922,6 +1928,9 @@ int getOverflow2D(int* maxOverflow)
   int i, j, grid, overflow, max_overflow, H_overflow, max_H_overflow,
       V_overflow, max_V_overflow, numedges;
   int total_usage, total_cap, hCap, vCap;
+
+  // check 2D edges for invalid usage values
+  check2DEdgesUsage();
 
   // get overflow
   overflow = max_overflow = H_overflow = max_H_overflow = V_overflow

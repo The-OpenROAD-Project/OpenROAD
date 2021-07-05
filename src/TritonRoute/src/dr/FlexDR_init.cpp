@@ -449,11 +449,13 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       auto lNum = obj->getLayerNum();
       frSegStyle style;
       obj->getStyle(style);
-      if (getRouteBox().contains(bp)) {
+      if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)
+          && getRouteBox().contains(bp)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, lNum, pin2epMap, true);
       }
-      if (getRouteBox().contains(ep)) {
+      if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)
+          && getRouteBox().contains(ep)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, ep, lNum, pin2epMap, true);
       }

@@ -4,11 +4,13 @@
   "fields": [
     {
       "type": "int",
-      "name": "eol_space_"
+      "name": "eol_space_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "eol_width_"
+      "name": "eol_width_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -20,7 +22,8 @@
     },
     {
       "type": "int",
-      "name": "wrong_dir_space_"
+      "name": "wrong_dir_space_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -28,7 +31,8 @@
     },
     {
       "type": "int",
-      "name": "opposite_width_"
+      "name": "opposite_width_",
+      "default": 0
     },
     {
       "type": "bit",
@@ -36,7 +40,8 @@
     },
     {
       "type": "int",
-      "name": "eol_within_"
+      "name": "eol_within_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -45,7 +50,8 @@
     },
     {
       "type": "int",
-      "name": "wrong_dir_within_"
+      "name": "wrong_dir_within_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -59,11 +65,13 @@
     },
     {
       "type": "int",
-      "name": "exact_width_"
+      "name": "exact_width_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "other_width_"
+      "name": "other_width_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -72,7 +80,8 @@
     },
     {
       "type": "int",
-      "name": "fill_triangle_"
+      "name": "fill_triangle_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -86,7 +95,8 @@
     },
     {
       "type": "int",
-      "name": "cut_class_"
+      "name": "cut_class_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -95,7 +105,8 @@
     },
     {
       "type": "int",
-      "name": "with_cut_space_"
+      "name": "with_cut_space_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -104,7 +115,8 @@
     },
     {
       "type": "int",
-      "name": "enclosure_end_width_"
+      "name": "enclosure_end_width_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -113,7 +125,8 @@
     },
     {
       "type": "int",
-      "name": "enclosure_end_within_"
+      "name": "enclosure_end_within_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -122,7 +135,8 @@
     },
     {
       "type": "int",
-      "name": "end_prl_space_"
+      "name": "end_prl_space_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -131,7 +145,8 @@
     },
     {
       "type": "int",
-      "name": "end_prl_"
+      "name": "end_prl_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -140,7 +155,8 @@
     },
     {
       "type": "int",
-      "name": "end_to_end_space_"
+      "name": "end_to_end_space_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -149,11 +165,13 @@
     },
     {
       "type": "int",
-      "name": "one_cut_space_"
+      "name": "one_cut_space_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "two_cut_space_"
+      "name": "two_cut_space_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -162,7 +180,8 @@
     },
     {
       "type": "int",
-      "name": "extension_"
+      "name": "extension_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -171,7 +190,8 @@
     },
     {
       "type": "int",
-      "name": "wrong_dir_extension_"
+      "name": "wrong_dir_extension_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -180,7 +200,8 @@
     },
     {
       "type": "int",
-      "name": "other_end_width_"
+      "name": "other_end_width_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -189,7 +210,8 @@
     },
     {
       "type": "int",
-      "name": "max_length_"
+      "name": "max_length_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -198,7 +220,8 @@
     },
     {
       "type": "int",
-      "name": "min_length_"
+      "name": "min_length_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -222,11 +245,13 @@
     },
     {
       "type": "int",
-      "name": "par_space_"
+      "name": "par_space_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "par_within_"
+      "name": "par_within_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -235,7 +260,8 @@
     },
     {
       "type": "int",
-      "name": "par_prl_"
+      "name": "par_prl_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -244,7 +270,8 @@
     },
     {
       "type": "int",
-      "name": "par_min_length_"
+      "name": "par_min_length_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -283,7 +310,8 @@
     },
     {
       "type": "int",
-      "name": "enclose_dist_"
+      "name": "enclose_dist_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -292,7 +320,8 @@
     },
     {
       "type": "int",
-      "name": "cut_to_metal_space_"
+      "name": "cut_to_metal_space_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -316,15 +345,18 @@
     },
     {
       "type": "int",
-      "name": "min_adj_length_"
+      "name": "min_adj_length_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "min_adj_length1_"
+      "name": "min_adj_length1_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "min_adj_length2_"
+      "name": "min_adj_length2_",
+      "default": 0
     },
     {
       "type": "bool",
@@ -333,7 +365,8 @@
     },
     {
       "type": "int",
-      "name": "notch_length_"
+      "name": "notch_length_",
+      "default": 0
     }
   ],
   "constructors": [],

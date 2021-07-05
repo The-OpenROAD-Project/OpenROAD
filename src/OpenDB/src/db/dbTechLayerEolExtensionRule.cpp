@@ -96,6 +96,7 @@ _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
+  spacing_ = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
