@@ -38,14 +38,13 @@
 #include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
-#include <QLineEdit>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
-#include "utl/Logger.h"
 
 namespace gui {
 
@@ -226,32 +225,48 @@ void ScriptWidget::addTclResultToOutput(int return_code)
   }
 }
 
-void ScriptWidget::addBufferToOutput()
+void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
 {
-  // Show whatever we captured from the output channel in grey
-  for (auto& out : outputBuffer_) {
-    if (!out.isEmpty()) {
-      addToOutput(out, buffer_msg_);
-    }
-  }
-  outputBuffer_.clear();
+  addToOutput(text, color);
+}
+
+void ScriptWidget::addReportToOutput(const QString& text)
+{
+  addToOutput(text, buffer_msg_);
 }
 
 void ScriptWidget::addToOutput(const QString& text, const QColor& color)
 {
-  // make sure cursor is at the end of the document
-  QTextCursor cursor = output_->textCursor();
-  cursor.movePosition(QTextCursor::End);
-  output_->setTextCursor(cursor);
+  // disable updates while added text
+  output_->setUpdatesEnabled(false);
 
+  // make sure cursor is at the end of the document
+  output_->moveCursor(QTextCursor::End);
+
+  QString output_text = text;
+  if (text.endsWith('\n')) {
+    // remove last new line
+    output_text.chop(1);
+  }
+
+  // set new text color
   output_->setTextColor(color);
-  for (QString& text_line : text.split('\n')) {
+
+  QStringList output;
+  for (QString& text_line : output_text.split('\n')) {
+    // check for line length limits
     if (text_line.size() > max_output_line_length_) {
       text_line = text_line.left(max_output_line_length_-3);
       text_line += "...";
     }
-    output_->append(text_line);
+
+    output.append(text_line);
   }
+  // output new text
+  output_->append(output.join("\n"));
+
+  // reenable updates to display text
+  output_->setUpdatesEnabled(true);
 
   // ensure changes are updated
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -370,13 +385,18 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
     this->formatter_->format(msg, formatted);
-    // -1 is to drop the final '\n' character
-    auto str
-        = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
-    widget_->outputBuffer_.append(str);
+    std::string formatted_msg = std::string(formatted.data(), formatted.size());
 
-    // Make it appear now
-    widget_->addBufferToOutput();
+    if (msg.level == spdlog::level::level_enum::off) {
+      // this comes from a ->report
+      widget_->addReportToOutput(formatted_msg.c_str());
+    }
+    else {
+      // select error message color if message level is error or above.
+      const QColor& msg_color = msg.level >= spdlog::level::level_enum::err ? widget_->tcl_error_msg_ : widget_->buffer_msg_;
+
+      widget_->addLogToOutput(formatted_msg.c_str(), msg_color);
+    }
   }
 
   void flush_() override {}
