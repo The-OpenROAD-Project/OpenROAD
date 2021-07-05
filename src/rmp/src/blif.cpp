@@ -415,7 +415,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     for (auto iterm : iterms) {
       auto net = iterm->getNet();
       odb::dbITerm::disconnect(iterm);
-      if (net && net->getITerms().size() == 0) {
+      if (net && net->getITerms().size() == 0 && net->getBTerms().size() == 0) {
         odb::dbNet::destroy(net);
       }
     }
