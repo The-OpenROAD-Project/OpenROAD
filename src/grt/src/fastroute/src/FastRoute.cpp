@@ -87,6 +87,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
   maxNetDegree = 0;
   logger = log;
   db_ = db;
+  allow_overflow_ = false;
 }
 
 FastRouteCore::~FastRouteCore()
