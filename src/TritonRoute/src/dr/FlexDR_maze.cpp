@@ -2021,19 +2021,7 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
       mazeIdx2unConnPins[mi].insert(pin.get());
       if (pin->hasFrTerm()) {
         realPinAPMazeIdx.insert(mi);
-        // if (net->getFrNet()->getName() == string("pci_devsel_oe_o")) {
-        //   cout <<"apMazeIdx (" <<mi.x() <<", " <<mi.y() <<", " <<mi.z()
-        //   <<")\n"; auto routeBox = getRouteBox(); double dbu =
-        //   getDesign()->getTopBlock()->getDBUPerUU(); std::cout <<"routeBox ("
-        //   <<routeBox.left() / dbu <<", " <<routeBox.bottom() / dbu <<") ("
-        //                            <<routeBox.right()/ dbu <<", "
-        //                            <<routeBox.top()    / dbu <<")"
-        //                            <<std::endl;
-        // }
       }
-      if (getDRIter() == 1 && net->getFrNet()->getName() == "net60711" && getRouteBox().left() == 1488000 && 
-               getRouteBox().bottom() ==  1071360)
-          gridGraph_.printNode(mi.x(), mi.y(), mi.z());
       apMazeIdx.insert(mi);
       gridGraph_.setDst(mi);
     }

@@ -112,7 +112,6 @@ void FlexGridGraph::initEdges(
     const frBox& bbox,
     bool initDR)
 {
-   bool out = drWorker_->getDRIter() == 1 && drWorker_->getRouteBox().left() == 1488000 && drWorker_->getRouteBox().bottom() == 1071360;
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
   // initialize grid graph
@@ -130,10 +129,6 @@ void FlexGridGraph::initEdges(
     }
 	
     const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
-	if (out) {
- 		cout << "lNum " <<  layerNum << "constraint: " << (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr ? "NO" : "YES") << "\n";
-		cout << "nonpref lNum " <<  nonPrefLayerNum << "constraint: " << (nonPrefLayer->getLef58RightWayOnGridOnlyConstraint() == nullptr ? "NO" : "YES") << "\n";
-	}
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
       auto yIt = ySubMap.find(layerNum);
@@ -150,7 +145,6 @@ void FlexGridGraph::initEdges(
         bool xFound = (xIt != xSubMap.end());
         bool xFound2 = (xIt2 != xSubMap.end());
         bool xFound3 = (xIt3 != xSubMap.end());
-		bool out2 = out && xCoord == 1501440 && yCoord == 1082752 && layerNum == 4;
         // add cost to out-of-die edge
         bool outOfDiePlanar = false;
         // add edge for preferred direction
@@ -159,17 +153,13 @@ void FlexGridGraph::initEdges(
               && layerNum <= TOP_ROUTING_LAYER) {
             if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                 || yIt->second != nullptr) {
-			if (out2)
-				cout << "ADD1\n";
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               if (yIt->second == nullptr || outOfDiePlanar
                   || isWorkerBorder(yIdx, false)) {
                 setGridCostE(xIdx, yIdx, zIdx);
               }
-            }else if (out2)
-				cout << "NOT ADD1\n";
-          }else if (out2)
-				cout << "SKIP1. Yfound? " << yFound << "\n";
+            }
+          }
           // via to upper layer
           if (xFound2) {
             if ((layer->getLef58RightWayOnGridOnlyConstraint() != nullptr
@@ -177,16 +167,8 @@ void FlexGridGraph::initEdges(
                 || (nonPrefLayer->getLef58RightWayOnGridOnlyConstraint()
                         != nullptr
                     && xIt2->second == nullptr)) {
-			if (out2) {
-				cout << "NOT ADD2\n";
-				cout << " yIt->second " <<  (yIt->second == nullptr ? "NULL" : "EXISTS") << "\n";
-				cout << " xIt->second " <<  (xIt->second == nullptr ? "NULL" : "EXISTS") << "\n";
-			}
               ;
             } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
-			if (out2) {
-				cout << "ADD3\n";
-			}
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
@@ -194,20 +176,18 @@ void FlexGridGraph::initEdges(
                 setGridCostU(xIdx, yIdx, zIdx);
               }
             }
-          }else if (out2) cout << "xFound2 false\n";
+          }
         } else if (dir == frcVertPrefRoutingDir && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
             if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                 || xIt->second != nullptr) {
-			if (out2)
-				cout << "ADD4\n";
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               if (xIt->second == nullptr || outOfDiePlanar
                   || isWorkerBorder(xIdx, true)) {
                 setGridCostN(xIdx, yIdx, zIdx);
               }
-            }else if (out2) cout << "SKIP 2\n";
+            }
           }
           // via to upper layer
           if (yFound2) {
@@ -216,23 +196,17 @@ void FlexGridGraph::initEdges(
                 || (nonPrefLayer->getLef58RightWayOnGridOnlyConstraint()
                         != nullptr
                     && yIt2->second == nullptr)) {
-			if (out2) {
-				cout << "NOT ADD5\n";
-				cout << " yIt2->second " <<  (yIt2->second == nullptr ? "NULL" : "EXISTS") << "\n";
-				cout << " xIt->second " <<  (xIt->second == nullptr ? "NULL" : "EXISTS") << "\n";
-			}
               ;
             } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
-			if (out2) cout << "ADD 7 \n";
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
               if (condition) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
-            }else if (out2) cout << "SKIP8\n";
-          }else if (out2) cout << "SKIP9\n";
-        }else if (out2) cout << "SKIP10\n";
+            }
+          }
+        }
         // get non pref track layer --> use upper layer pref dir track if
         // possible
         if (USENONPREFTRACKS && !layer->isUnidirectional()) {
