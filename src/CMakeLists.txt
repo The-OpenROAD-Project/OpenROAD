@@ -136,7 +136,7 @@ add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
 add_subdirectory(pdr)
-add_subdirectory(pdngen)
+add_subdirectory(pdn)
 
 ################################################################
 
