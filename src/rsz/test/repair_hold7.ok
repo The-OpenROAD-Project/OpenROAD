@@ -13,7 +13,6 @@
 Design area 700 u^2 11% utilization.
 worst slack 0.14
 worst slack 1.36
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
 [INFO RSZ-0032] Inserted 108 hold buffers.
