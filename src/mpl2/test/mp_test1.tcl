@@ -28,3 +28,7 @@ partition_design -max_num_inst 1000 -min_num_inst 200 \
                     -report_directory results/mp_test1 -report_file mp_test1 
 
 rtl_macro_placer -config_file config.txt -report_directory results/mp_test1 -report_file mp_test1
+
+set def_file [make_result_file mp_test1.def]
+write_def $def_file
+diff_files mp_test1.defok $def_file
