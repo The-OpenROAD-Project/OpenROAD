@@ -237,9 +237,6 @@ void ScriptWidget::addReportToOutput(const QString& text)
 
 void ScriptWidget::addToOutput(const QString& text, const QColor& color)
 {
-  // disable updates while added text
-  output_->setUpdatesEnabled(false);
-
   // make sure cursor is at the end of the document
   output_->moveCursor(QTextCursor::End);
 
@@ -264,9 +261,6 @@ void ScriptWidget::addToOutput(const QString& text, const QColor& color)
   }
   // output new text
   output_->append(output.join("\n"));
-
-  // reenable updates to display text
-  output_->setUpdatesEnabled(true);
 
   // ensure changes are updated
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
