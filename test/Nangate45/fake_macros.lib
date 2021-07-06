@@ -1,0 +1,121 @@
+library(fake_macros) {
+    technology (cmos);
+    delay_model : table_lookup;
+    revision : 1.0;
+    date : "2019-11-05 15:53:47Z";
+    comment : "SRAM";
+    time_unit : "1ns";
+    voltage_unit : "1V";
+    current_unit : "1mA";
+    leakage_power_unit : "1mW";
+    nom_process : 1;
+    nom_temperature : 25.000;
+    nom_voltage : 1.1;
+    capacitive_load_unit (1,pf);
+
+    pulling_resistance_unit : "1kohm";
+
+    operating_conditions(tt_1.0_25.0) {
+        process : 1;
+        temperature : 25.000;
+        voltage : 1.1;
+        tree_type : balanced_tree;
+    }
+
+    /* default attributes */
+    default_cell_leakage_power : 0;
+    default_fanout_load : 1;
+    default_inout_pin_cap : 0.0;
+    default_input_pin_cap : 0.0;
+    default_output_pin_cap : 0.0;
+    default_input_pin_cap : 0.0;
+    default_max_transition : 0.0;
+
+    default_operating_conditions : tt_1.0_25.0;
+    default_leakage_power_density : 0.0;
+
+    /* additional header data */
+    slew_derate_from_library : 1.000;
+    slew_lower_threshold_pct_fall : 10.000;
+    slew_upper_threshold_pct_fall : 90.000;
+    slew_lower_threshold_pct_rise : 10.000;
+    slew_upper_threshold_pct_rise : 90.000;
+    input_threshold_pct_fall : 50.000;
+    input_threshold_pct_rise : 50.000;
+    output_threshold_pct_fall : 50.000;
+    output_threshold_pct_rise : 50.000;
+
+
+    lu_table_template(fakeram45_64x7_mem_out_delay_template) {
+        variable_1 : input_net_transition;
+        variable_2 : total_output_net_capacitance;
+            index_1 ("1000, 1001");
+            index_2 ("1000, 1001");
+    }
+    lu_table_template(fakeram45_64x7_mem_out_slew_template) {
+        variable_1 : total_output_net_capacitance;
+            index_1 ("1000, 1001");
+    }
+    lu_table_template(fakeram45_64x7_constraint_template) {
+        variable_1 : related_pin_transition;
+        variable_2 : constrained_pin_transition;
+            index_1 ("1000, 1001");
+            index_2 ("1000, 1001");
+    }
+    power_lut_template(fakeram45_64x7_energy_template_clkslew) {
+        variable_1 : input_transition_time;
+            index_1 ("1000, 1001");
+    }
+    power_lut_template(fakeram45_64x7_energy_template_sigslew) {
+        variable_1 : input_transition_time;
+            index_1 ("1000, 1001");
+    }
+    library_features(report_delay_calculation);
+
+cell(HM_100x400_4x4) {
+    area : 40000;
+    interface_timing : true;
+    is_macro : true;
+
+   pin (I1) {
+       direction : input;
+   }
+   pin (I2) {
+       direction : input;
+   }
+   pin (I3) {
+       direction : input;
+   }
+   pin (I4) {
+       direction : input;
+   }
+   pin (O1) {
+       direction : output;
+   }
+   pin (O2) {
+       direction : output;
+   }
+   pin (O3) {
+       direction : output;
+   }
+   pin (O4) {
+       direction : output;
+   }
+}
+
+
+cell(HM_100x100_1x1) {
+    area : 10000;
+    interface_timing : true;
+    is_macro : true;
+
+   pin (I1) {
+       direction : input;
+   }
+   pin (O1) {
+       direction : output;
+   }
+}
+
+
+}

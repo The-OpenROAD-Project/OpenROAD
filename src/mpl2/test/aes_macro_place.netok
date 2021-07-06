@@ -1,0 +1,55 @@
+Net_1:  
+source: top_cluster_1   us33   2   us32   5   us31   4   us30   4   RM   64   us23   5   us22   4   us21   5   us20   5   us13   4   us12   4   us11   4   us10   4   us03   4   us02   3   us01   5   us00   4   top_cluster_0   343   
+Net_2:  
+source: top_cluster_0   us33   6   us32   3   us31   4   us30   4   us22   4   us21   3   us20   3   us13   4   us12   4   us11   4   us10   4   us03   4   us02   5   us23   3   RM   65   us01   3   top_cluster_1   337   us00   4   
+Net_3:  
+source: u0_glue_logic   u0/u3   8   u0/u0   8   u0/u1   8   u0/u2   8   top_cluster_0   92   top_cluster_1   95   
+Net_4:  
+source: u0/u3   u0_glue_logic   8   
+Net_5:  
+source: u0/u2   u0_glue_logic   8   
+Net_6:  
+source: u0/u1   u0_glue_logic   8   
+Net_7:  
+source: u0/u0   u0_glue_logic   8   
+Net_8:  
+source: u0/r0   u0_glue_logic   8   
+Net_9:  
+source: us33   top_cluster_1   8   top_cluster_0   7   
+Net_10:  
+source: us32   top_cluster_1   7   top_cluster_0   8   
+Net_11:  
+source: us31   top_cluster_1   7   top_cluster_0   8   
+Net_12:  
+source: us30   top_cluster_0   8   top_cluster_1   8   
+Net_13:  
+source: us23   top_cluster_0   8   top_cluster_1   8   
+Net_14:  
+source: us22   top_cluster_0   6   top_cluster_1   8   
+Net_15:  
+source: us21   top_cluster_1   8   top_cluster_0   8   
+Net_16:  
+source: LU   top_cluster_1   18   top_cluster_0   21   
+Net_17:  
+source: LL   top_cluster_1   14   top_cluster_0   25   
+Net_18:  
+source: LM   u0/r0   2   u0_glue_logic   130   top_cluster_1   33   top_cluster_0   22   
+Net_19:  
+source: us00   top_cluster_1   6   top_cluster_0   8   
+Net_20:  
+source: us01   top_cluster_0   8   top_cluster_1   8   
+Net_21:  
+source: us02   top_cluster_0   5   top_cluster_1   7   
+Net_22:  
+source: us03   top_cluster_0   7   top_cluster_1   8   
+Net_23:  
+source: us10   top_cluster_1   8   top_cluster_0   8   
+Net_24:  
+source: us11   top_cluster_0   7   top_cluster_1   7   
+Net_25:  
+source: us12   top_cluster_0   7   top_cluster_1   8   
+Net_26:  
+source: us13   top_cluster_1   6   top_cluster_0   8   
+Net_27:  
+source: us20   top_cluster_1   7   top_cluster_0   8   
+
