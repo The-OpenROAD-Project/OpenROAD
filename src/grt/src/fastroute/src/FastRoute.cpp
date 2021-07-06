@@ -970,7 +970,7 @@ NetRouteMap FastRouteCore::run()
   int tUsage;
   int cost_step;
   int maxOverflow;
-  int minoflrnd;
+  int minoflrnd = 0;
   int bwcnt = 0;
 
   // TODO: check this size
