@@ -487,7 +487,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
 
     for (int i = 0; i < run_thread; i++) {
       float factor = factor_list[i];
-      cout << "factor:   " << factor << endl;
       float temp_outline_width = outline_width * factor;
       float temp_outline_height
           = outline_width * outline_height / temp_outline_width;
