@@ -33,8 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "tritoncts/MakeTritoncts.h"
-#include "tritoncts/TritonCTS.h"
+#include "cts/MakeTritoncts.h"
+#include "cts/TritonCTS.h"
 #include "db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -42,11 +42,11 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* TritonCTS_tcl_inits[];
+extern const char* cts_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Tritoncts_Init(Tcl_Interp* interp);
+extern int Cts_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -60,14 +60,14 @@ void initTritonCts(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
-  Tritoncts_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::TritonCTS_tcl_inits);
+  Cts_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::cts_tcl_inits);
   openroad->getTritonCts()->init(openroad);
 }
 
 void deleteTritonCts(cts::TritonCTS* tritoncts)
 {
-	delete tritoncts;
+  delete tritoncts;
 }
 
 }  // namespace ord

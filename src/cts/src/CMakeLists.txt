@@ -35,17 +35,15 @@
 
 include("openroad")
 
-project(TritonCTS)
-
 find_package(LEMON REQUIRED)
 
-swig_lib(NAME      TritonCTS
+swig_lib(NAME      cts
          NAMESPACE cts
          I_FILE    tritoncts.i
          SCRIPTS   tritoncts.tcl
 )
 
-target_sources(TritonCTS
+target_sources(cts
   PRIVATE
     Clock.cpp
     HTreeBuilder.cpp
@@ -59,7 +57,7 @@ target_sources(TritonCTS
     LevelBalancer.cpp
 )
 
-target_include_directories(TritonCTS
+target_include_directories(cts
   PUBLIC
     ../include
   PRIVATE
@@ -67,7 +65,7 @@ target_include_directories(TritonCTS
     ${LEMON_INCLUDE_DIRS}
  )
 
-target_link_libraries(TritonCTS 
+target_link_libraries(cts
   PRIVATE
     opendb
     dbSta
@@ -79,6 +77,6 @@ target_link_libraries(TritonCTS
  )
 
 messages(
-  TARGET TritonCTS
+  TARGET cts
   OUTPUT_DIR ..
 )
