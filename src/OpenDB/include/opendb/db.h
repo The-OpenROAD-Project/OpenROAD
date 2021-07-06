@@ -8297,7 +8297,9 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   getOppEncSpacingTable() const;
 
   dbTechLayer* getSecondLayer() const;
-
+  
+  bool isCenterToCenter(std::string cutClass1, std::string cutClass2);
+  
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
                        std::map<std::string, uint> row_map,
                        std::map<std::string, uint> col_map);
@@ -8305,6 +8307,8 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   void getSpacingTable(std::vector<std::vector<std::pair<int, int>>>& table,
                        std::map<std::string, uint>& row_map,
                        std::map<std::string, uint>& col_map);
+  
+  int getMaxSpacing(std::string cutClass, bool SIDE) const;
 
   std::pair<int, int> getSpacing(const char* class1,
                                  bool SIDE1,

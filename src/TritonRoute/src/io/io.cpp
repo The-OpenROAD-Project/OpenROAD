@@ -1307,77 +1307,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
     if (rule->isLayerValid() && tmpLayer->getLayerNum() == 1)
       continue;
-    auto con = make_shared<frLef58CutSpacingTableConstraint>();
-    if (rule->isDefaultValid())
-      con->setDefaultCutSpacing(rule->getDefault());
-    if (rule->isPrlValid()) {
-      auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>();
-      ptr->setPrl(rule->getPrl());
-      ptr->setHorizontal(rule->isPrlHorizontal());
-      ptr->setVertical(rule->isPrlVertical());
-      ptr->setMaxXY(rule->isMaxXY());
-      con->setPrlConstraint(ptr);
-    }
-    if (rule->isLayerValid()) {
-      auto secondLayerName = rule->getSecondLayer()->getName();
-      auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
-      if (tech->name2layer.find(secondLayerName) == tech->name2layer.end()) {
-        logger->warn(utl::DRT,
-                     264,
-                     "layer {} is not found to layer {} LEF58_SPACINGTABLE",
-                     secondLayerName,
-                     layer->getName());
-        continue;
-      }
-      auto secondLayerNum = tech->name2layer.at(secondLayerName)->getLayerNum();
-      ptr->setSecondLayerNum(secondLayerNum);
-      ptr->setNonZeroEnc(rule->isNonZeroEnclosure());
-      con->setLayerConstraint(ptr);
-    }
-    frCollection<frCollection<std::pair<frCoord, frCoord>>> table;
-    map<std::string, frUInt4> rowMap, tmpRowMap;
-    map<std::string, frUInt4> colMap, tmpColMap;
-    rule->getSpacingTable(table, tmpRowMap, tmpColMap);
-
-    for (auto& [key, val] : tmpRowMap) {
-      std::string newKey = key;
-      size_t idx = newKey.find("/");
-      if (idx != string::npos)
-        newKey.replace(idx, 1, "");
-      rowMap[newKey] = val;
-    }
-    for (auto& [key, val] : tmpColMap) {
-      std::string newKey = key;
-      size_t idx = newKey.find("/");
-      if (idx != string::npos)
-        newKey.replace(idx, 1, "");
-      colMap[newKey] = val;
-    }
-
-    vector<frString> expColNames;
-    for (auto& [col, idx] : colMap)
-      expColNames.push_back(col);
-    sort(expColNames.begin(), expColNames.end());
-
-    vector<frString> expRowNames;
-    for (auto& [row, idx] : rowMap)
-      expRowNames.push_back(row);
-    sort(expRowNames.begin(), expRowNames.end());
-
-    auto tblVals = table;
-    uint i = 0;
-    for (auto& [row, orig_i] : rowMap) {
-      uint j = 0;
-      for (auto& [col, orig_j] : colMap)
-        tblVals.at(i).at(j++) = table.at(orig_i).at(orig_j);
-      ++i;
-    }
-    string rowName("CUTCLASS");
-    string colName("CUTCLASS");
-    auto ptr = make_shared<
-        fr2DLookupTbl<frString, frString, pair<frCoord, frCoord>>>(
-        rowName, expRowNames, colName, expColNames, tblVals);
-    con->setCutClassTbl(ptr);
+    auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
     tmpLayer->lef58CutSpacingTableConstraints.push_back(con);
     tech->addConstraint(con);
   }

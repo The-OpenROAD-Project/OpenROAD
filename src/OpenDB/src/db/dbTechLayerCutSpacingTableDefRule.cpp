@@ -1064,6 +1064,39 @@ void dbTechLayerCutSpacingTableDefRule::getSpacingTable(
   }
 }
 
+int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass, bool SIDE) const
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  std::string classDir = cutClass;
+  if(SIDE)
+    classDir+="/SIDE";
+  else
+    classDir+="/END";
+  
+  if(obj->row_map_.find(classDir) == obj->row_map_.end())
+    return obj->default_;
+  auto itr = std::max_element(obj->spacing_tbl_[obj->row_map_[classDir]].begin(), obj->spacing_tbl_[obj->row_map_[classDir]].end());
+  return std::max((*itr).first,(*itr).second);
+}
+
+bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1, std::string cutClass2)
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  for (auto &[classId1, classId2] : obj->center_to_center_tbl_)
+  {
+    dbTechLayer* layer = (dbTechLayer*) obj->getOwner();
+    auto class1 = odb::dbTechLayerCutClassRule::getTechLayerCutClassRule(layer, classId1);
+    auto class2 = odb::dbTechLayerCutClassRule::getTechLayerCutClassRule(layer, classId2);
+    if(cutClass1 == class1->getName() && cutClass2 == class2->getName() )
+      return true;
+    if(cutClass1 == class2->getName() && cutClass2 == class1->getName() )
+      return true;
+  }
+  return false;
+}
+
 std::pair<int, int> dbTechLayerCutSpacingTableDefRule::getSpacing(
     const char* class1,
     bool SIDE1,
