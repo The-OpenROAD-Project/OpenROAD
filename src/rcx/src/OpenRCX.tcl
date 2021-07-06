@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-sta::define_cmd_args "define_process_corner" {
-    [-ext_model_index index] filename
+sta::define_cmd_args "define_process_corner" { \
+    [-ext_model_index index] filename \
 }
 
 proc define_process_corner { args } {
@@ -31,17 +31,17 @@ proc define_process_corner { args } {
   rcx::define_process_corner $ext_model_index $filename
 }
 
-sta::define_cmd_args "extract_parasitics" {
-    [-ext_model_file filename]
-    [-corner_cnt count]
-    [-max_res ohms]
-    [-coupling_threshold fF]
-    [-signal_table value]
-    [-debug_net_id id]
-    [-lef_res]
-    [-cc_model track]
-    [-context_depth depth]
-    [-no_merge_via_res]
+sta::define_cmd_args "extract_parasitics" { \
+    [-ext_model_file filename] \
+    [-corner_cnt count] \
+    [-max_res ohms] \
+    [-coupling_threshold fF] \
+    [-signal_table value] \
+    [-debug_net_id id] \
+    [-lef_res] \
+    [-cc_model track] \
+    [-context_depth depth] \
+    [-no_merge_via_res] \
 }
 
 proc extract_parasitics { args } {
@@ -109,8 +109,8 @@ proc extract_parasitics { args } {
       $depth $debug_net_id $lef_res $no_merge_via_res
 }
 
-sta::define_cmd_args "write_spef" { 
-  [-net_id net_id]
+sta::define_cmd_args "write_spef" { \
+  [-net_id net_id] \
   [-nets nets] filename }
 
 proc write_spef { args } {
@@ -134,10 +134,10 @@ proc write_spef { args } {
   rcx::write_spef $spef_file $nets $net_id
 }
 
-sta::define_cmd_args "adjust_rc" {
-    [-res_factor res]
-    [-cc_factor cc]
-    [-gndc_factor gndc]
+sta::define_cmd_args "adjust_rc" { \
+    [-res_factor res] \
+    [-cc_factor cc] \
+    [-gndc_factor gndc] \
 }
 
 proc adjust_rc { args } {
@@ -167,12 +167,12 @@ proc adjust_rc { args } {
    rcx::adjust_rc $res_factor $cc_factor $gndc_factor
 }
 
-sta::define_cmd_args "diff_spef" {
-    [-file filename]
-    [-r_res]
-    [-r_cap]
-    [-r_cc_cap]
-    [-r_conn]
+sta::define_cmd_args "diff_spef" { \
+    [-file filename] \
+    [-r_res] \
+    [-r_cap] \
+    [-r_cc_cap] \
+    [-r_conn] \
 }
 
 proc diff_spef { args } {
@@ -192,17 +192,17 @@ proc diff_spef { args } {
   rcx::diff_spef $filename $conn $res $cap $cc_cap
 }
 
-sta::define_cmd_args "bench_wires" {
-    [-met_cnt mcnt]
-    [-cnt count]
-    [-len wire_len]
-    [-over]
-    [-diag]
-    [-all]
-    [-db_only]
-    [-under_met layer]
-    [-w_list width]
-    [-s_list space]
+sta::define_cmd_args "bench_wires" { \
+    [-met_cnt mcnt] \
+    [-cnt count] \
+    [-len wire_len] \
+    [-over] \
+    [-diag] \
+    [-all] \
+    [-db_only] \
+    [-under_met layer] \
+    [-w_list width] \
+    [-s_list space] \
 }
 
 proc bench_wires { args } {
@@ -267,13 +267,13 @@ proc bench_read_spef { args } {
   rcx::read_spef $args
 }
 
-sta::define_cmd_args "write_rules" {
-    [-file filename]
-    [-dir dir]
-    [-name name]
-    [-pattern pattern]
-    [-read_from_solver]
-    [-db]
+sta::define_cmd_args "write_rules" { \
+    [-file filename] \
+    [-dir dir] \
+    [-name name] \
+    [-pattern pattern] \
+    [-read_from_solver] \
+    [-db] \
 }
 
 proc write_rules { args } {

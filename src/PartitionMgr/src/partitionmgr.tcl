@@ -354,7 +354,7 @@ proc write_partitioning_to_db { args } {
 #--------------------------------------------------------------------
 
 sta::define_cmd_args "write_partition_verilog" { [-partitioning_id id] \
-  [-port_prefix prefix] [-module_suffix suffix] [file]
+  [-port_prefix prefix] [-module_suffix suffix] [file] \
 }
 
 proc write_partition_verilog { args } {
@@ -532,8 +532,8 @@ proc run_clustering { args } {
   par::run_clustering
 }
 
-sta::define_cmd_args "report_partition_graph" { [-graph_model name
-  -clique_threshold value] \
+sta::define_cmd_args "report_partition_graph" { [-graph_model name] \
+  [-clique_threshold value] \
 }
 
 proc report_partition_graph { args } {

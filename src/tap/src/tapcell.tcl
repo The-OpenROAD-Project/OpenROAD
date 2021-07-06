@@ -226,7 +226,7 @@ proc tapcell { args } {
 }
 
 sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\
-                                      [-endcap_prefix endcap_prefix]
+                                      [-endcap_prefix endcap_prefix]\
 }
 
 # This will remove the tap cells and endcaps to tapcell can be rerun with new parameters

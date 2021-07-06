@@ -1,11 +1,11 @@
-sta::define_cmd_args "analyze_power_grid" { 
-  [-vsrc vsrc_file ]
-  [-outfile out_file]
-  [-enable_em]
-  [-em_outfile em_out_file]
-  [-net net_name]
-  [-dx bump_pitch_x]
-  [-dy bump_pitch_y]
+sta::define_cmd_args "analyze_power_grid" { \
+  [-vsrc vsrc_file] \
+  [-outfile out_file] \
+  [-enable_em] \
+  [-em_outfile em_out_file] \
+  [-net net_name] \
+  [-dx bump_pitch_x] \
+  [-dy bump_pitch_y] \
   }
 
 proc analyze_power_grid { args } {
@@ -54,7 +54,7 @@ proc analyze_power_grid { args } {
   }
 }
 
-sta::define_cmd_args "check_power_grid" { 
+sta::define_cmd_args "check_power_grid" { \
   [-net power_net]}
 
 proc check_power_grid { args } {
@@ -74,12 +74,12 @@ proc check_power_grid { args } {
   }
 }
 
-sta::define_cmd_args "write_pg_spice" { 
-  [-vsrc vsrc_file ]
-  [-outfile out_file]
-  [-net net_name]
-  [-dx bump_pitch_x]
-  [-dy bump_pitch_y]
+sta::define_cmd_args "write_pg_spice" { \
+  [-vsrc vsrc_file] \
+  [-outfile out_file] \
+  [-net net_name] \
+  [-dx bump_pitch_x] \
+  [-dy bump_pitch_y] \
   }
 
 proc write_pg_spice { args } {
@@ -119,8 +119,8 @@ proc write_pg_spice { args } {
   }
 }
 
-sta::define_cmd_args "set_pdnsim_net_voltage" { 
-  [-net net_name]
+sta::define_cmd_args "set_pdnsim_net_voltage" { \
+  [-net net_name] \
   [-voltage volt]}
 
 proc set_pdnsim_net_voltage { args } {

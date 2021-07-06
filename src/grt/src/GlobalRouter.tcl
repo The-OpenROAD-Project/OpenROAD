@@ -165,7 +165,7 @@ proc set_macro_extension { args } {
 
 sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
                                                    [-capacities_perturbation_percentage percent] \
-                                                   [-perturbation_amount value]
+                                                   [-perturbation_amount value] \
                                                  }
 
 proc set_global_routing_random { args } {
@@ -197,7 +197,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
                                   [-overflow_iterations iterations] \
-                                  [-allow_overflow]
+                                  [-allow_overflow] \
 }
 
 proc global_route { args } {

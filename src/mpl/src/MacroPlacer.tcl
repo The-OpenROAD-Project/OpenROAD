@@ -32,7 +32,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "macro_placement" {
+sta::define_cmd_args "macro_placement" { \
   [-halo {vertical_width horizontal_width}] \
     [-channel {vertical_width horizontal_width}]\
     [-fence_region {lx ly ux uy}]\
@@ -116,8 +116,8 @@ proc macro_placement { args } {
   }
 }
 
-sta::define_cmd_args "macro_placement_debug" {
-    [-partitions]
+sta::define_cmd_args "macro_placement_debug" { \
+    [-partitions] \
 }
 
 # This seg faults if the gui is not present -cherry

@@ -33,22 +33,22 @@
 #
 #############################################################################
 
-sta::define_cmd_args "detailed_route" {
-    [-guide filename]
-    [-output_guide filename]
-    [-output_maze filename]
-    [-output_drc filename]
-    [-output_cmap filename]
-    [-db_process_node name]
-    [-droute_end_iter iter]
-    [-droute_via_in_pin_bottom_layer_num num]
-    [-droute_via_in_pin_top_layer_num num]
-    [-or_seed seed]
-    [-or_k_ k]
-    [-bottom_routing_layer layer]
-    [-top_routing_layer layer]
-    [-verbose level]
-    [-param filename]
+sta::define_cmd_args "detailed_route" { \
+    [-guide filename] \
+    [-output_guide filename] \
+    [-output_maze filename] \
+    [-output_drc filename] \
+    [-output_cmap filename] \
+    [-db_process_node name] \
+    [-droute_end_iter iter] \
+    [-droute_via_in_pin_bottom_layer_num num] \
+    [-droute_via_in_pin_top_layer_num num] \
+    [-or_seed seed] \
+    [-or_k_ k] \
+    [-bottom_routing_layer layer] \
+    [-top_routing_layer layer] \
+    [-verbose level] \
+    [-param filename] \
 }
 
 proc detailed_route { args } {
@@ -152,15 +152,15 @@ proc detailed_route_num_drvs { args } {
   return [drt::detailed_route_num_drvs]
 }
 
-sta::define_cmd_args "detailed_route_debug" {
-    [-pa]
-    [-dr]
-    [-maze]
-    [-net name]
-    [-pin name]
-    [-gcell x y]
-    [-iter iter]
-    [-pa_markers]
+sta::define_cmd_args "detailed_route_debug" { \
+    [-pa] \
+    [-dr] \
+    [-maze] \
+    [-net name] \
+    [-pin name] \
+    [-gcell x y] \
+    [-iter iter] \
+    [-pa_markers] \
 }
 
 proc detailed_route_debug { args } {

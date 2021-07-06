@@ -67,10 +67,10 @@ proc configure_cts_characterization { args } {
   } 
 }
 
-sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
+sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit] \
                                              [-buf_list buflist] \
                                              [-root_buf buf] \
-                                             [-clk_nets nets] \ 
+                                             [-clk_nets nets] \
                                              [-out_path path] \
                                              [-tree_buf buf] \
                                              [-post_cts_disable] \

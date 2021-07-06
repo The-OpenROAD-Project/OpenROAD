@@ -191,7 +191,7 @@ proc clear_io_pin_constraints {} {
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
-                                  [-pin_size pin_size]
+                                  [-pin_size pin_size]\
 }
 
 proc place_pin { args } {
@@ -254,7 +254,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-min_distance min_dist]\
                                   [-min_distance_in_tracks]\
                                   [-exclude region]\
-                                  [-group_pins pin_list]
+                                  [-group_pins pin_list]\
                                  }
 
 proc place_pins { args } {
