@@ -41,11 +41,9 @@
 
 namespace par {
 
-void HypergraphDecomposition::init(int dbId, Logger * logger)
+void HypergraphDecomposition::init(odb::dbBlock* block, Logger * logger)
 {
-  _db = odb::dbDatabase::getDatabase(dbId);
-  _chip = _db->getChip();
-  _block = _chip->getBlock();
+  _block = block;
   _logger = logger;
 }
 
@@ -315,20 +313,21 @@ void HypergraphDecomposition::createCompressedMatrix(Graph& graph)
   }
 }
 
-void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph, Graph& graph)
+void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph,
+                                           const Graph* graph)
 {
-  std::vector<int> colIdx = graph.getColIdx();
-  adjMatrix.resize(graph.getNumVertex());
+  std::vector<int> colIdx = graph->getColIdx();
+  adjMatrix.resize(graph->getNumVertex());
   int countEdges = 0;
-  for (int i = 0; i < graph.getNumRowPtr() - 1; i++) {
+  for (int i = 0; i < graph->getNumRowPtr() - 1; i++) {
     std::vector<int> connections;
-    std::vector<int>::iterator begin = colIdx.begin() + graph.getRowPtr(i);
+    std::vector<int>::iterator begin = colIdx.begin() + graph->getRowPtr(i);
     std::vector<int>::iterator end = colIdx.end();
-    end = colIdx.begin() + graph.getRowPtr(i + 1);
+    end = colIdx.begin() + graph->getRowPtr(i + 1);
     connections.assign(begin, end);
     for (int j : connections) {
       if (j > i) {
-        adjMatrix[i][j] = graph.getEdgeWeight(countEdges);
+        adjMatrix[i][j] = graph->getEdgeWeight(countEdges);
       }
       countEdges++;
     }
@@ -347,7 +346,7 @@ void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph, Graph& graph)
   int nextPtr = hypergraph.computeNextRowPtr();
   hypergraph.addRowPtr(nextPtr);
 
-  hypergraph.assignVertexWeight(graph.getVertexWeight());
+  hypergraph.assignVertexWeight(graph->getVertexWeight());
 }
 
 }  // namespace par

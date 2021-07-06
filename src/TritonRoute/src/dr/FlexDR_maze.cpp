@@ -2021,15 +2021,6 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
       mazeIdx2unConnPins[mi].insert(pin.get());
       if (pin->hasFrTerm()) {
         realPinAPMazeIdx.insert(mi);
-        // if (net->getFrNet()->getName() == string("pci_devsel_oe_o")) {
-        //   cout <<"apMazeIdx (" <<mi.x() <<", " <<mi.y() <<", " <<mi.z()
-        //   <<")\n"; auto routeBox = getRouteBox(); double dbu =
-        //   getDesign()->getTopBlock()->getDBUPerUU(); std::cout <<"routeBox ("
-        //   <<routeBox.left() / dbu <<", " <<routeBox.bottom() / dbu <<") ("
-        //                            <<routeBox.right()/ dbu <<", "
-        //                            <<routeBox.top()    / dbu <<")"
-        //                            <<std::endl;
-        // }
       }
       apMazeIdx.insert(mi);
       gridGraph_.setDst(mi);
@@ -2693,6 +2684,13 @@ bool FlexDRWorker::routeNet(drNet* net)
       isFirstConn = false;
     } else {
       searchSuccess = false;
+      logger_->report("Failed to find a path between pin " + nextPin->getName() 
+                        + " and source aps:");
+      for (FlexMazeIdx& mi : connComps) {
+          logger_->report("( {} {} {} ) (Idx) / ( {} {} ) (coords)", mi.x(), 
+                  mi.y(), mi.z(), gridGraph_.xCoord(mi.x()), 
+                  gridGraph_.yCoord(mi.y()));
+      }
       break;
     }
   }

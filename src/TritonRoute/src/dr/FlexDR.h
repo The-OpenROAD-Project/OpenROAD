@@ -250,6 +250,7 @@ class FlexDR
       std::vector<bool>& adjVisited,
       std::vector<int>& adjPrevIdx,
       const std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
+      const vector<frConnFig*>& netDRObjs,
       const int& gCnt,
       const int& nCnt);
   void checkConnectivity_final(
