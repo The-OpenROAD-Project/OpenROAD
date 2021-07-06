@@ -158,7 +158,7 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
     _cur_net = _block->findNet(buf);
 
     if (_cur_net == NULL) {
-      _logger->warn(utl::ODB, 98, "duplicate mustjoin net found ({})", buf);
+      _logger->warn(utl::ODB, 98, "duplicate must-join net found ({})", buf);
       ++_errors;
     }
 

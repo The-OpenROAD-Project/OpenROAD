@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include "par/PartitionMgr.h"
 #include "Hypergraph.h"
 #include <string>
 
@@ -53,19 +54,11 @@ using utl::Logger;
 
 namespace par {
 
-enum GraphType : uint8_t
-{
-  CLIQUE,
-  HYBRID,
-  STAR,
-  HYPERGRAPH
-};
-
 class HypergraphDecomposition
 {
  public:
   HypergraphDecomposition() {}
-  void init(int dbId, Logger * logger);
+  void init(odb::dbBlock* block, Logger * logger);
   void constructMap(Hypergraph& hypergraph, unsigned maxVertexWeight);
   void createHypergraph(Hypergraph& hypergraph,
                         std::vector<unsigned long> clusters,
@@ -76,7 +69,7 @@ class HypergraphDecomposition
                unsigned weightingOption,
                unsigned maxEdgeWeight,
                unsigned threshold);
-  void toHypergraph(Hypergraph& hypergraph, Graph& graph);
+  void toHypergraph(Hypergraph& hypergraph, const Graph* graph);
   void updateHypergraph(Hypergraph& hypergraph,
                         Hypergraph& newHypergraph,
                         std::vector<unsigned long> clusters,
@@ -84,8 +77,6 @@ class HypergraphDecomposition
 
  private:
   odb::dbBlock* _block;
-  odb::dbDatabase* _db;
-  odb::dbChip* _chip;
   Logger * _logger;
 
   int _weightingOption;

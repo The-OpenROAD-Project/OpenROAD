@@ -104,7 +104,27 @@ class frTerm : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcTerm; }
   void setOrderId(int order_id) { _order_id = order_id; }
   int getOrderId() { return _order_id; }
-
+  frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum, 
+                                int pinAccessIdx) {
+        if (pinAccessIdx == -1) {
+          return nullptr;
+        }
+        for (auto& pin : pins_) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+            if (x == ap->getPoint().x() && y == ap->getPoint().y() && 
+                lNum == ap->getLayerNum()) {
+                return ap.get();
+            }
+          }
+        }
+        return nullptr;
+  }
+  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx) {
+      return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
+  }
  protected:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;

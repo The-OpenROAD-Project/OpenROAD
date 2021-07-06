@@ -1,0 +1,83 @@
+[INFO] Num clusters: 36
+[INFO] Floorplan width: 148.01
+[INFO] Floorplan height:  148.4
+[INFO] Floorplan_lx: 1.9
+[INFO] Floorplan_ly: 1.4
+[INFO] Num std cells: 10375
+[INFO] Num macros: 0
+[INFO] Total area: 13143
+[INFO] Num buffers:  5
+[INFO] Buffer area:  3.99
+
+cluster: top_cluster_1
+area:  1590.68
+
+cluster: top_cluster_0
+area:  1713.3
+
+cluster: u0_glue_logic
+area:  1037.4
+
+cluster: u0/u3
+area:  435.974
+
+cluster: u0/u2
+area:  435.974
+
+cluster: u0/u1
+area:  435.974
+
+cluster: u0/u0
+area:  435.974
+
+cluster: u0/r0
+area:  78.204
+
+cluster: us33
+area:  435.974
+
+cluster: us32
+area:  435.974
+
+cluster: us31
+area:  435.974
+
+cluster: us30
+area:  435.974
+
+cluster: us23
+area:  435.974
+
+cluster: us22
+area:  435.974
+
+cluster: us21
+area:  435.974
+
+cluster: us00
+area:  435.974
+
+cluster: us01
+area:  435.974
+
+cluster: us02
+area:  435.974
+
+cluster: us03
+area:  435.974
+
+cluster: us10
+area:  435.974
+
+cluster: us11
+area:  435.974
+
+cluster: us12
+area:  435.974
+
+cluster: us13
+area:  435.974
+
+cluster: us20
+area:  435.974
+

@@ -11,7 +11,7 @@
 [INFO ODB-0134] Finished DEF file: extend_to_core_ring/floorplan.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: extend_to_core_ring/pdn.cfg
-[INFO PDN-0008] Design Name is gcd
+[INFO PDN-0008] Design name is gcd
 [INFO PDN-0009] Reading technology data
 [WARNING PDN-0018] No macro grid specifications found - no straps added
 [INFO PDN-0011] ****** INFO ******
