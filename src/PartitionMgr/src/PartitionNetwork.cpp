@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "PartitionMgr.h"
+#include "par/PartitionMgr.h"
 
 #include "opendb/db.h"
 #include "utl/Logger.h"
