@@ -1438,7 +1438,11 @@ void FlexGR::initGR_initObj_net(frNet* net)
 {
   deque<frNode*> nodeQ;
 
-  nodeQ.push_back(net->getRoot());
+  frNode* root = net->getRoot();
+  if (root == nullptr) {
+    return; // dangling net with no connections
+  }
+  nodeQ.push_back(root);
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
