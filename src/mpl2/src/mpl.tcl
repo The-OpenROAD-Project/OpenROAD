@@ -55,11 +55,13 @@ proc rtl_macro_placer { args } {
         set report_directory $keys(-report_directory)
     }
 
-    return [mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file]
+    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file]} {
+        return
+    }
 
     set block [ord::get_db_block]
     set units [$block getDefUnits]
-    set macro_placement_file "./rtl_mp/macro_placement.cfg"
+    set macro_placement_file "./${report_directory}/macro_placement.cfg"
 
     set ch [open $macro_placement_file]
 
@@ -73,7 +75,7 @@ proc rtl_macro_placer { args } {
         set y [expr round([lindex $line 3] * $units)]
 
         if {[set inst [$block findInst $inst_name]] == "NULL"} {
-            error "Cannot find instance $inst_name"
+            utl::error MPL 4 "Cannot find instance $inst_name"
         }
 
         $inst setOrient $orientation
