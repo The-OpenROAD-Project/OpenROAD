@@ -1823,9 +1823,10 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   }
 
   // sanity check
-  for (frNode* node : nodes) {
-    if (node->getParent() == nullptr) {
-      cout << "Error: non-root node does not have parent\n";
+  for (size_t i = 1; i < nodes.size(); i++) {
+    if (nodes[i]->getParent() == nullptr) {
+      cout << "Error: non-root node does not have parent in "
+           << net->getName() << '\n';
     }
   }
   if (nodes.size() > 1 && nodes[0]->getChildren().size() == 0) {
