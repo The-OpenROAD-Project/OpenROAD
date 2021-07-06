@@ -826,8 +826,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
   using Point = boost::polygon::point_data<int>;
   Point routeRectCenter;
   center(routeRectCenter, routeRect);
-//  vector<pair<frBox, frLayerNum>> outOfRouteBoxRects;
-//  frCoord halfWidth;
   auto dPinTerm = dPin->getFrTerm();
   if (dPinTerm->typeId() == frcInstTerm) {
     auto instTerm = static_cast<frInstTerm*>(dPinTerm);
@@ -848,7 +846,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
               != frLayerTypeEnum::ROUTING) {
             continue;
           }
-//          halfWidth = getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
           frRect instPinRect(*rpinRect);
           instPinRect.move(xform);
           frBox instPinRectBBox;
@@ -858,9 +855,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                             instPinRectBBox.right(),
                             instPinRectBBox.top());
           if (!boost::polygon::intersect(pinRect, routeRect)) {
-//            if (instPinRectBBox.distMaxXY(routeBox) <= halfWidth)
-//              outOfRouteBoxRects.push_back(
-//                  make_pair(instPinRectBBox, currLayerNum));
             continue;
           }
           // pinRect now equals intersection of pinRect and routeRect
@@ -1105,9 +1099,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                             instPinRectBBox.right(),
                             instPinRectBBox.top());
           if (!boost::polygon::intersect(pinRect, routeRect)) {
-//            if (instPinRectBBox.distMaxXY(routeBox) <= halfWidth)
-//              outOfRouteBoxRects.push_back(
-//                  make_pair(instPinRectBBox, currLayerNum));
             continue;
           }
           // pinRect now equals intersection of pinRect and routeRect
@@ -1449,38 +1440,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
   } else {
     cout << "Error: initNet_termGenAp_new unexpected type\n";
   }
-//  if (dPin->getAccessPatterns().empty()) {
-//    frCoord x, y, halfWidth;
-//    for (auto& r : outOfRouteBoxRects) {
-//      halfWidth = getTech()->getLayer(r.second)->getMinWidth() / 2;
-//      if (r.first.left() > routeBox.right()) {
-//        x = r.first.left() - halfWidth;
-//      } else if (r.first.right() < routeBox.left()) {
-//        x = r.first.right() + halfWidth;
-//      } else
-//        x = max(routeBox.left(), r.first.left());
-//      if (r.first.bottom() > routeBox.top()) {
-//        y = r.first.bottom() - halfWidth;
-//      } else if (r.first.top() < routeBox.bottom()) {
-//        y = r.first.top() + halfWidth;
-//      } else
-//        y = max(routeBox.bottom(), r.first.bottom());
-//      auto uap = std::make_unique<drAccessPattern>();
-//      frPoint pt(x, y);
-//      uap->setBeginLayerNum(r.second);
-//      uap->setPoint(pt);
-//      uap->setOnTrack(false, true);
-//      uap->setOnTrack(false, false);
-//      uap->setPin(dPin);
-//      uap->setPinCost(7);
-//      auto minAreaConstraint
-//          = getTech()->getLayer(r.second)->getAreaConstraint();
-//      if (minAreaConstraint) {
-//        uap->setBeginArea(minAreaConstraint->getMinArea());
-//      }
-//      dPin->addAccessPattern(std::move(uap));
-//    }
-//  }
 }
 
 // when isHorzTracks == true, it means track loc == y loc
