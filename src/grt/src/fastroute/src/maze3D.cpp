@@ -884,7 +884,7 @@ void updateRouteType23D(int netID,
   }
 }
 
-void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
+void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation)
 {
   short* gridsLtmp;
   int netID, enlarge, endIND;

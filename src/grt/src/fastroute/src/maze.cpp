@@ -299,7 +299,7 @@ void extractMin(float** array, int arrayLen)
  * round : the number of maze route stages runned
  */
 
-void updateCongestionHistory(int round, int upType)
+void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj)
 {
   int i, j, grid, maxlimit, overflow;
 
@@ -343,9 +343,9 @@ void updateCongestionHistory(int round, int upType)
     }
   } else if (upType == 2) {
     if (max_adj < ahTH) {
-      stopDEC = TRUE;
+      stopDEC = true;
     } else {
-      stopDEC = FALSE;
+      stopDEC = false;
     }
     for (i = 0; i < yGrid; i++) {
       for (j = 0; j < xGrid - 1; j++) {
@@ -465,9 +465,6 @@ void updateCongestionHistory(int round, int upType)
         maxlimit = std::max<int>(maxlimit, v_edges[grid].last_usage);
       }
     }
-    //      if (maxlimit < 20) {
-    //              stopDEC = TRUE;
-    //      }
   }
 
   max_adj = maxlimit;
@@ -1079,7 +1076,11 @@ void mazeRouteMSMD(int iter,
                    int ripup_threshold,
                    int mazeedge_Threshold,
                    Bool Ordering,
-                   int cost_type)
+                   int cost_type,
+                   float LOGIS_COF,
+                   int VIA,
+                   int slope,
+                   int L)
 {
   int grid, netID, nidRPC;
   float forange;
@@ -1101,6 +1102,8 @@ void mazeRouteMSMD(int iter,
   float tmp, *dtmp;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
+
+  const int max_usage_multiplier = 40;
 
   // allocate memory for distance and parent and pop_heap
   h_costTable = new float[max_usage_multiplier * hCapacity];
@@ -1154,7 +1157,7 @@ void mazeRouteMSMD(int iter,
 
   forange = yGrid * XRANGE;
   for (i = 0; i < forange; i++) {
-    pop_heap2[i] = FALSE;
+    pop_heap2[i] = false;
   }
   for (i = 0; i < yGrid; i++) {
     for (j = 0; j < xGrid; j++)
@@ -1249,10 +1252,10 @@ void mazeRouteMSMD(int iter,
           // while loop to find shortest path
           ind1 = (heap1[0] - &d1[0][0]);
           for (i = 0; i < heapLen2; i++)
-            pop_heap2[(heap2[i] - &d2[0][0])] = TRUE;
+            pop_heap2[(heap2[i] - &d2[0][0])] = true;
 
           while (pop_heap2[ind1]
-                 == FALSE)  // stop until the grid position been popped out from
+                 == false)  // stop until the grid position been popped out from
                             // both heap1 and heap2
           {
             // relax all the adjacent grids within the enlarged region for
@@ -1478,7 +1481,7 @@ void mazeRouteMSMD(int iter,
           }  // while loop
 
           for (i = 0; i < heapLen2; i++)
-            pop_heap2[(heap2[i] - &d2[0][0])] = FALSE;
+            pop_heap2[(heap2[i] - &d2[0][0])] = false;
 
           crossX = ind1 % XRANGE;
           crossY = ind1 / XRANGE;

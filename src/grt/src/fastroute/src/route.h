@@ -62,7 +62,7 @@ extern void newrouteLAll(Bool firstTime, Bool viaGuided);
 extern void newrouteZAll(int threshold);
 extern void routeMonotonicAll(int threshold);
 extern void routeMonotonic(int netID, int edgeID, int threshold);
-extern void routeLVAll(int threshold, int expand);
+extern void routeLVAll(int threshold, int expand, float LOGIS_COF);
 extern void spiralRouteAll();
 extern void newrouteLInMaze(int netID);
 }  // namespace grt

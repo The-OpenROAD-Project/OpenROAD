@@ -1342,6 +1342,7 @@ void checkUsage()
 
 void check2DEdgesUsage()
 {
+  const int max_usage_multiplier = 40;
   int max_h_edge_usage = max_usage_multiplier * hCapacity;
   int max_v_edge_usage = max_usage_multiplier * vCapacity;
 

@@ -49,7 +49,6 @@ namespace grt {
 // Global variables
 int XRANGE, YRANGE;
 int xGrid, yGrid;
-short *vCapacity3D, *hCapacity3D;
 float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
 int *MinWidth, *MinSpacing, *ViaSpacing;
 int xcorner, ycorner, wTile, hTile;
@@ -61,7 +60,6 @@ FrNet** nets;
 Edge *h_edges, *v_edges;
 multi_array<float, 2> d1;
 multi_array<float, 2> d2;
-int layerOrientation;
 int verbose;
 
 Bool** HV;
@@ -69,17 +67,13 @@ Bool** hyperV;
 Bool** hyperH;
 int** corrEdge;
 
-float LOGIS_COF;
-int L;
-int VIA, slope, max_adj;
-
 Segment* seglist;
 int* seglistIndex;  // the index for the segments for each net
 int* seglistCnt;    // the number of segements for each net
 StTree* sttrees;    // the Steiner trees
-DTYPE** gxs;        // the copy of xs for nets, used for second FLUTE
-DTYPE** gys;        // the copy of xs for nets, used for second FLUTE
-DTYPE** gs;  // the copy of vertical sequence for nets, used for second FLUTE
+std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
+std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
+std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
 Edge3D* h_edges3D;
 Edge3D* v_edges3D;
 
@@ -107,7 +101,6 @@ int** heap13D;
 short** heap23D;
 
 float *h_costTable, *v_costTable;
-Bool stopDEC, errorPRONE;
 std::vector<OrderNetEdge> netEO;
 int *xcor, *ycor, *dcor;
 

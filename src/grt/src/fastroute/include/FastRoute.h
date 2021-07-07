@@ -139,6 +139,9 @@ class FastRouteCore
   bool allow_overflow_;
   int overflow_iterations_;
   int num_nets_;
+  int layer_orientation_;
+  std::vector<short> vCapacity3D;
+  std::vector<short> hCapacity3D;
 };
 
 }  // namespace grt

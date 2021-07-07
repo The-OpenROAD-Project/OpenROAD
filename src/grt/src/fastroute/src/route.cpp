@@ -1849,7 +1849,7 @@ void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
   delete[] gridsY;
 }
 
-void routeLVAll(int threshold, int expand)
+void routeLVAll(int threshold, int expand, float LOGIS_COF)
 {
   int netID, edgeID, numEdges, i, forange;
 

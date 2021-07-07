@@ -54,11 +54,8 @@ using boost::multi_array;
 // global variables
 extern int XRANGE, YRANGE;
 extern int xGrid, yGrid, vCapacity, hCapacity;
-extern short *vCapacity3D, *hCapacity3D;
 extern float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-extern int layerOrientation;
 extern int verbose;
-const int max_usage_multiplier = 40;
 
 extern int enlarge, costheight, ripup_threshold;
 extern int *MinWidth, *MinSpacing, *ViaSpacing;
@@ -79,20 +76,14 @@ extern Bool** hyperV;
 extern Bool** hyperH;
 extern int** corrEdge;
 
-// coefficient
-extern float LOGIS_COF;
-extern int L;
-extern int VIA, slope, max_adj;
-
 extern Segment* seglist;
 extern int* seglistIndex;  // the index for the segments for each net
 extern int* seglistCnt;    // the number of segements for each net
 
 extern StTree* sttrees;  // the Steiner trees
-extern DTYPE** gxs;      // the copy of xs for nets, used for second FLUTE
-extern DTYPE** gys;      // the copy of xs for nets, used for second FLUTE
-extern DTYPE**
-    gs;  // the copy of vertical sequence for nets, used for second FLUTE
+extern std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
+extern std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
+extern std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
 
 extern std::vector<OrderNetPin> treeOrderPV;
 extern std::vector<OrderTree> treeOrderCong;
@@ -122,7 +113,6 @@ extern short** heap23D;
 
 extern float *h_costTable, *v_costTable;
 
-extern Bool stopDEC, errorPRONE;
 extern std::vector<OrderNetEdge> netEO;
 
 extern int *xcor, *ycor, *dcor;

@@ -321,9 +321,9 @@ void fluteNormal(int netID,
       }
     }
 
-    gxs[netID] = new DTYPE[d];
-    gys[netID] = new DTYPE[d];
-    gs[netID] = new DTYPE[d];
+    gxs[netID].resize(d);
+    gys[netID].resize(d);
+    gs[netID].resize(d);
 
     for (i = 0; i < d; i++) {
       gxs[netID][i] = xs[i];

@@ -132,18 +132,6 @@ void FastRouteCore::deleteComponents()
     delete[] seglistCnt;
   seglistCnt = nullptr;
 
-  if (gxs)
-    delete[] gxs;
-  gxs = nullptr;
-
-  if (gys)
-    delete[] gys;
-  gys = nullptr;
-
-  if (gs)
-    delete[] gs;
-  gs = nullptr;
-
   treeOrderPV.clear();
   treeOrderCong.clear();
 
@@ -275,14 +263,6 @@ void FastRouteCore::deleteComponents()
   d1.resize(boost::extents[0][0]);
   d2.resize(boost::extents[0][0]);
 
-  if (vCapacity3D)
-    delete[] vCapacity3D;
-  if (hCapacity3D)
-    delete[] hCapacity3D;
-
-  vCapacity3D = nullptr;
-  hCapacity3D = nullptr;
-
   if (MinWidth)
     delete[] MinWidth;
   if (MinSpacing)
@@ -376,8 +356,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     YRANGE = 1000;
   }
 
-  vCapacity3D = new short[numLayers];
-  hCapacity3D = new short[numLayers];
+  vCapacity3D.resize(numLayers);
+  hCapacity3D.resize(numLayers);
 
   for (int i = 0; i < numLayers; i++) {
     vCapacity3D[i] = 0;
@@ -493,7 +473,7 @@ void FastRouteCore::setTileSize(int width, int height)
 
 void FastRouteCore::setLayerOrientation(int x)
 {
-  layerOrientation = x;
+  layer_orientation_ = x;
 }
 
 void FastRouteCore::addPin(int netID, int x, int y, int layer)
@@ -831,14 +811,13 @@ void FastRouteCore::setEdgeUsage(long x1,
 void FastRouteCore::initAuxVar()
 {
   treeOrderCong.clear();
-  stopDEC = FALSE;
 
   seglistCnt = new int[numValidNets];
   seglist = new Segment[segcount];
   sttrees = new StTree[numValidNets];
-  gxs = new DTYPE*[numValidNets];
-  gys = new DTYPE*[numValidNets];
-  gs = new DTYPE*[numValidNets];
+  gxs.resize(numValidNets);
+  gys.resize(numValidNets);
+  gs.resize(numValidNets);
 
   gridHV = XRANGE * YRANGE;
   gridH = (xGrid - 1) * yGrid;
@@ -976,8 +955,8 @@ NetRouteMap FastRouteCore::run()
   int CSTEP2 = 2;   // 3
   int CSTEP3 = 5;   // 15
   int COSHEIGHT = 4;
-  L = 0;
-  VIA = 2;
+  int L = 0;
+  int VIA = 2;
   int Ripvalue = -1;
   int ripupTH3D = 10;
   Bool goingLV = TRUE;
@@ -988,6 +967,9 @@ NetRouteMap FastRouteCore::run()
   int mazeRound = 500;
   int bmfl = BIG_INT;
   int minofl = BIG_INT;
+  float LOGIS_COF;
+  int slope;
+  int max_adj;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
 
@@ -1017,7 +999,7 @@ NetRouteMap FastRouteCore::run()
   int enlarge = 10;
   int newTH = 10;
   int healingTrigger = 0;
-  stopDEC = 0;
+  bool stopDEC = false;
   int upType = 1;
   // iniBDE();
   costheight = COSHEIGHT;
@@ -1035,7 +1017,7 @@ NetRouteMap FastRouteCore::run()
     LOGIS_COF = 2.0 / (1 + log(maxOverflow));
     if (verbose > 1)
       logger->info(GRT, 100, "LV routing round {}, enlarge {}.", i, enlarge);
-    routeLVAll(newTH, enlarge);
+    routeLVAll(newTH, enlarge, LOGIS_COF);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1057,7 +1039,7 @@ NetRouteMap FastRouteCore::run()
   int ripup_threshold = Ripvalue;
 
   minofl = totalOverflow;
-  stopDEC = FALSE;
+  stopDEC = false;
 
   slope = 20;
   L = 1;
@@ -1090,16 +1072,16 @@ NetRouteMap FastRouteCore::run()
     if (totalOverflow > 2000) {
       enlarge += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
       cost_step = CSTEP1;
-      updateCongestionHistory(i, upType);
+      updateCongestionHistory(i, upType, stopDEC, max_adj);
     } else if (totalOverflow < 500) {
       cost_step = CSTEP3;
       enlarge += ESTEP3;
       ripup_threshold = -1;
-      updateCongestionHistory(i, upType);
+      updateCongestionHistory(i, upType, stopDEC, max_adj);
     } else {
       cost_step = CSTEP2;
       enlarge += ESTEP2;
-      updateCongestionHistory(i, upType);
+      updateCongestionHistory(i, upType, stopDEC, max_adj);
     }
 
     if (totalOverflow > 15000 && maxOverflow > 400) {
@@ -1173,7 +1155,11 @@ NetRouteMap FastRouteCore::run()
                   ripup_threshold,
                   mazeedge_Threshold,
                   !(i % 3),
-                  cost_type);
+                  cost_type,
+                  LOGIS_COF,
+                  VIA,
+                  slope,
+                  L);
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1190,7 +1176,7 @@ NetRouteMap FastRouteCore::run()
 
     if (past_cong < 200 && i > 30 && upType == 2 && max_adj <= 20) {
       upType = 4;
-      stopDEC = TRUE;
+      stopDEC =true;
     }
 
     if (maxOverflow < 150) {
@@ -1198,7 +1184,7 @@ NetRouteMap FastRouteCore::run()
         logger->info(GRT, 103, "Extra Run for hard benchmark.");
         L = 0;
         upType = 3;
-        stopDEC = TRUE;
+        stopDEC = true;
         slope = 5;
         mazeRouteMSMD(i,
                       enlarge,
@@ -1206,13 +1192,17 @@ NetRouteMap FastRouteCore::run()
                       ripup_threshold,
                       mazeedge_Threshold,
                       !(i % 3),
-                      cost_type);
+                      cost_type,
+                      LOGIS_COF,
+                      VIA,
+                      slope,
+                      L);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
         str_accu(12);
         L = 1;
-        stopDEC = FALSE;
+        stopDEC = false;
         slope = 3;
         upType = 2;
       }
@@ -1227,7 +1217,7 @@ NetRouteMap FastRouteCore::run()
     if (i > 50) {
       upType = 4;
       if (i > 70) {
-        stopDEC = TRUE;
+        stopDEC = true;
       }
     }
 
@@ -1254,7 +1244,11 @@ NetRouteMap FastRouteCore::run()
                       ripup_threshold,
                       mazeedge_Threshold,
                       !(i % 3),
-                      cost_type);
+                      cost_type,
+                      LOGIS_COF,
+                      VIA,
+                      slope,
+                      L);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
         if (past_cong < last_cong) {
@@ -1344,11 +1338,10 @@ NetRouteMap FastRouteCore::run()
   if (goingLV && past_cong == 0) {
     if (verbose > 1)
       logger->info(GRT, 108, "Post-processing begins.");
-    mazeRouteMSMDOrder3D(enlarge, 0, ripupTH3D);
+    mazeRouteMSMDOrder3D(enlarge, 0, ripupTH3D, layer_orientation_);
 
-    //  mazeRouteMSMDOrder3D(enlarge, 0, 10 );
     if (gen_brk_Time > 120) {
-      mazeRouteMSMDOrder3D(enlarge, 0, 12);
+      mazeRouteMSMDOrder3D(enlarge, 0, 12, layer_orientation_);
     }
     if (verbose > 1)
       logger->info(GRT, 109, "Post-processing finished.\n Starting via filling.");
