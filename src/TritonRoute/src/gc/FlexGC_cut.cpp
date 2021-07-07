@@ -146,13 +146,35 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
   auto class2 = getCutClass(layer, viaEdge2);
   auto isSide1 = isSideEdge(viaEdge1);
   auto isSide2 = isSideEdge(viaEdge2);
-  auto spc = con->getODBRule()->getSpacing(class1.c_str(), isSide1, class2.c_str(), isSide2);
-  frSquaredDistance spcSqr = std::max(spc.first, spc.second);
-  auto isCenterToCenter = con->getODBRule()->isCenterToCenter(class1, class2);
-  spcSqr *= spcSqr;
-  frSquaredDistance dist = 0;
   gtl::rectangle_data<frCoord> rect1(viaEdge1->low().x(), viaEdge1->low().y(), viaEdge1->high().x(), viaEdge1->high().y());
   gtl::rectangle_data<frCoord> rect2(viaEdge2->low().x(), viaEdge2->low().y(), viaEdge2->high().x(), viaEdge2->high().y());
+  auto spc = con->getODBRule()->getSpacing(class1.c_str(), isSide1, class2.c_str(), isSide2);
+  frSquaredDistance spcSqr = spc.first;
+  //check if parallel
+  if(viaEdge1->getDir() == viaEdge2->getDir() || (int) viaEdge1->getDir() + (int) viaEdge2->getDir() != OPPOSITEDIR)
+  {
+    gtl::rectangle_data<frCoord> checkRect(rect1);
+    gtl::generalized_intersect(checkRect, rect2);
+    //check for prl
+    frCoord prl, dist;
+    if(viaEdge1->getDir() == frDirEnum::S || viaEdge1->getDir() == frDirEnum::N)
+    {
+      //vertical prl
+      dist = gtl::euclidean_distance(checkRect, rect2, gtl::VERTICAL);
+      prl = gtl::delta(checkRect, gtl::VERTICAL);
+    }else
+    {
+      //horizontal prl
+      dist = gtl::euclidean_distance(checkRect, rect2, gtl::HORIZONTAL);
+      prl = gtl::delta(checkRect, gtl::HORIZONTAL);
+    }
+    if(dist == 0 && prl > 0)
+      spcSqr = spc.second;
+  }
+  spcSqr *= spcSqr;
+
+  auto isCenterToCenter = con->getODBRule()->isCenterToCenter(class1, class2);
+  frSquaredDistance dist = 0;
   if(isCenterToCenter)
   {
     auto poly1 = viaEdge1->getPin()->getPolygon();
