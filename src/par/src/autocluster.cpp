@@ -5,29 +5,22 @@
 #ifdef PARTITIONERS
 #include "MLPart.h"
 #endif
-#include <sys/stat.h>
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iostream>
-#include <limits>
 #include <queue>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <vector>
 
 #include "utl/Logger.h"
 
+namespace par {
 using utl::PAR;
 
-namespace par {
-using std::ceil;
-using std::cout;
 using std::endl;
 using std::find;
-using std::floor;
 using std::map;
 using std::max;
 using std::min;
@@ -36,39 +29,26 @@ using std::pair;
 using std::queue;
 using std::string;
 using std::to_string;
-using std::tuple;
 using std::unordered_map;
 using std::vector;
 
-using odb::dbBlock;
 using odb::dbBox;
-using odb::dbDatabase;
-using odb::dbInst;
 using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
-using odb::dbSet;
-using odb::dbSigType;
-using odb::dbStringProperty;
 using odb::Rect;
 
 using sta::Cell;
 using sta::Instance;
 using sta::InstanceChildIterator;
-using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyCell;
-using sta::LibertyCellPortIterator;
-using sta::LibertyPort;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
-using sta::NetPinIterator;
 using sta::NetTermIterator;
 using sta::Pin;
-using sta::PinSeq;
 using sta::PortDirection;
-using sta::Term;
 
 // ******************************************************************************
 // Class Cluster
@@ -347,21 +327,19 @@ void AutoClusterMgr::createCluster(int& cluster_id)
       if (!is_hier)
         name += "_glue_logic";
       Cluster* cluster = new Cluster(++cluster_id, !is_hier, name);
-      vector<Instance*>::iterator vec_iter;
-      for (vec_iter = glue_inst_vec.begin(); vec_iter != glue_inst_vec.end();
-           vec_iter++) {
-        LibertyCell* liberty_cell = network_->libertyCell(*vec_iter);
+      for (Instance* inst : glue_inst_vec) {
+        LibertyCell* liberty_cell = network_->libertyCell(inst);
         if (liberty_cell->isBuffer() == true)
           continue;
 
-        Cell* cell = network_->cell(*vec_iter);
+        Cell* cell = network_->cell(inst);
         const char* cell_name = network_->name(cell);
         dbMaster* master = db_->findMaster(cell_name);
         if (master->isBlock())
-          cluster->addMacro(*vec_iter);
+          cluster->addMacro(inst);
         else
-          cluster->addInst(*vec_iter);
-        inst_map_[*vec_iter] = cluster_id;
+          cluster->addInst(inst);
+        inst_map_[inst] = cluster_id;
       }
       cluster_map_[cluster_id] = cluster;
 
@@ -437,8 +415,8 @@ void AutoClusterMgr::createClusterUtil(Instance* inst, int& cluster_id)
 void AutoClusterMgr::updateConnection()
 {
   unordered_map<int, Cluster*>::iterator map_it;
-  for (map_it = cluster_map_.begin(); map_it != cluster_map_.end(); map_it++) {
-    map_it->second->initConnection();
+  for (auto [id, cluster] : cluster_map_) {
+    cluster->initConnection();
   }
   calculateConnection(network_->topInstance());
   calculateBufferNetConnection();
