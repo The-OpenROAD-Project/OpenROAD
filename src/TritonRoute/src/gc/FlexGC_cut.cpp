@@ -153,7 +153,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
   frSquaredDistance dist = 0;
   gtl::rectangle_data<frCoord> rect1(viaEdge1->low().x(), viaEdge1->low().y(), viaEdge1->high().x(), viaEdge1->high().y());
   gtl::rectangle_data<frCoord> rect2(viaEdge2->low().x(), viaEdge2->low().y(), viaEdge2->high().x(), viaEdge2->high().y());
-  gtl::rectangle_data<frCoord> markerRect(rect1);
   if(isCenterToCenter)
   {
     auto poly1 = viaEdge1->getPin()->getPolygon();
@@ -162,14 +161,14 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
     gtl::center(centerPt1, *poly1);
     gtl::center(centerPt2, *poly2);
     dist = gtl::distance_squared(centerPt1, centerPt2);
-    gtl::set_points(markerRect, centerPt1, centerPt2);
   } else {
     dist = gtl::square_euclidean_distance(rect1, rect2);
-    gtl::generalized_intersect(markerRect, rect2);
   }
   if(dist < spcSqr)
   {
     //violation
+    gtl::rectangle_data<frCoord> markerRect(*viaEdge1->getPin()->getMaxRectangles()[0].get());
+    gtl::generalized_intersect(markerRect, *viaEdge2->getPin()->getMaxRectangles()[0].get());
     auto net1 = viaEdge1->getNet();
     auto net2 = viaEdge2->getNet();
     auto marker = make_unique<frMarker>();
