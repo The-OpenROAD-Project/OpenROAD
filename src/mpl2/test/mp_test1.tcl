@@ -23,11 +23,11 @@ link_design $top_module
 read_def $floorplan_def -floorplan_initialize
 #
 partition_design -max_num_inst 1000 -min_num_inst 200 \
-                    -max_num_macro 10 -min_num_macro 5 \
-                    -net_threshold 5 -virtual_weight 500  \
+                    -max_num_macro 1 -min_num_macro 0 \
+                    -net_threshold 0 -virtual_weight 500  \
                     -report_directory results/mp_test1 -report_file mp_test1 
 
-rtl_macro_placer -config_file config.txt -report_directory results/mp_test1 -report_file mp_test1
+rtl_macro_placer -config_file mp_test1_config.txt -report_directory results/mp_test1 -report_file mp_test1
 
 set def_file [make_result_file mp_test1.def]
 write_def $def_file
