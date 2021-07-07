@@ -393,15 +393,14 @@ void SimulatedAnnealingCore::CalculateOutlinePenalty()
 void SimulatedAnnealingCore::CalculateWirelength()
 {
   wirelength_ = 0.0;
-  std::vector<Net*>::iterator net_iter = nets_.begin();
-  for (net_iter; net_iter != nets_.end(); net_iter++) {
-    vector<string> blocks = (*net_iter)->blocks_;
-    vector<string> terminals = (*net_iter)->terminals_;
+  for (Net* net : nets_) {
+    vector<string> blocks = net->blocks_;
+    vector<string> terminals = net->terminals_;
 
     if (blocks.size() == 0)
       continue;
 
-    int weight = (*net_iter)->weight_;
+    int weight = net->weight_;
     float lx = FLT_MAX;
     float ly = FLT_MAX;
     float ux = 0.0;
