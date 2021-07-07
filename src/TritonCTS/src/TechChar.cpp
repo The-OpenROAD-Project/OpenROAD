@@ -119,9 +119,9 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
                   noSlewDegradationCount);
   }
 
-  _logger->info(CTS, 46, "    Num wire segments: {}",
+  _logger->info(CTS, 46, "    Number of wire segments: {}",
                 _wireSegments.size());
-  _logger->info(CTS, 47, "    Num keys in characterization LUT: {}",
+  _logger->info(CTS, 47, "    Number of keys in characterization LUT: {}",
                 _keyToWireSegments.size());
 
   _logger->info(CTS, 48, "    Actual min input cap: {}",

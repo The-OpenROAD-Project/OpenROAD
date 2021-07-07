@@ -14,7 +14,7 @@
 [INFO ODB-0134] Finished DEF file: soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.init.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: soc_bsg_black_parrot_nangate45/PDN.pad_offset.cfg
-[INFO PDN-0008] Design Name is soc_bsg_black_parrot
+[INFO PDN-0008] Design name is soc_bsg_black_parrot
 [INFO PDN-0009] Reading technology data
 [WARNING PDN-0037] Cannot find pin VDDPE on instance u_marker0 (MARKER)
 [WARNING PDN-0037] Cannot find pin VDDCE on instance u_marker0 (MARKER)

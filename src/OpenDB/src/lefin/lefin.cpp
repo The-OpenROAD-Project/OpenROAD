@@ -681,7 +681,7 @@ void lefin::layer(lefiLayer* layer)
     if (supported && !valid)
       _logger->warn(utl::ODB,
                     279,
-                    "parse mismatch in layer propery {} for layer {} : \"{}\"",
+                    "parse mismatch in layer property {} for layer {} : \"{}\"",
                     layer->propName(iii),
                     layer->name(),
                     layer->propValue(iii));
@@ -1131,7 +1131,7 @@ void lefin::macro(lefiMacro* macro)
     if (site == NULL)
       _logger->warn(utl::ODB,
                     186,
-                    "macro {} references unkown site {}",
+                    "macro {} references unknown site {}",
                     macro->name(),
                     macro->siteName());
     else
@@ -2077,7 +2077,7 @@ dbLib* lefin::createLib(const char* name, const char* lef_file)
   _tech = _db->getTech();
 
   if (_tech == NULL) {
-    _logger->warn(utl::ODB, 228, "Error: technolgy does not exists");
+    _logger->warn(utl::ODB, 228, "Error: technology does not exists");
     return NULL;
   }
 

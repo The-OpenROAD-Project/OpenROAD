@@ -404,7 +404,7 @@ void fillVIA()
 
   if (verbose > 1) {
    logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
-   logger->info(GRT, 198, "Via related steiner nodes: {}", numVIAT2);
+   logger->info(GRT, 198, "Via related Steiner nodes: {}", numVIAT2);
    logger->info(GRT, 199, "Via filling finished.");
   }
 }

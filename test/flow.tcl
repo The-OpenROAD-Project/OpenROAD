@@ -98,7 +98,7 @@ write_def $global_place_def
 
 estimate_parasitics -placement
 
-repair_design
+repair_design -max_slew_margin $max_slew_margin -max_cap_margin $max_cap_margin
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
@@ -159,7 +159,7 @@ foreach layer_adjustment $global_routing_layer_adjustments {
 set_routing_layers -signal $global_routing_layers \
   -clock $global_routing_clock_layers
 global_route -guide_file $route_guide \
-  -overflow_iterations 100
+  -congestion_iterations 100
 
 set antenna_report [make_result_file ${design}_${platform}_ant.log]
 set antenna_errors [check_antennas -report_violating_nets -report_file $antenna_report]

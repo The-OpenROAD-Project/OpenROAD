@@ -99,6 +99,16 @@ class dbOrientType
   ///
   operator Value() const { return _value; }
 
+  ///
+  /// Returns the orientation after flipping about the x-axis
+  ///
+  dbOrientType flipX() const;
+
+  ///
+  /// Returns the orientation after flipping about the y-axis
+  ///
+  dbOrientType flipY() const;
+
  private:
   Value _value;
 };
