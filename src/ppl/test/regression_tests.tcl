@@ -3,6 +3,8 @@ record_tests {
   multi_layers
   multiple_calls
   invalid_layer
+  min_dist_in_tracks1
+  min_dist_in_tracks2
   no_instance_pins
   no_pins
   no_tracks

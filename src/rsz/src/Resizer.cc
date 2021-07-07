@@ -2399,11 +2399,6 @@ Resizer::repairHold(float slack_margin,
   init();
   LibertyCell *buffer_cell = findHoldBuffer();
   Unit *time_unit = units_->timeUnit();
-  logger_->info(RSZ, 59, "Using {} with {}{}{} delay for hold repairs.",
-                buffer_cell->name(),
-                time_unit->asString(bufferHoldDelay(buffer_cell)),
-                time_unit->scaleAbreviation(),
-                time_unit->suffix());
   sta_->findRequireds();
   VertexSet *ends = sta_->search()->endpoints();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();

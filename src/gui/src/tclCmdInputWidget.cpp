@@ -32,8 +32,6 @@
 
 #include "tclCmdInputWidget.h"
 
-#include <tcl.h>
-
 #include <QMimeData>
 #include <QTextStream>
 #include <QMenu>

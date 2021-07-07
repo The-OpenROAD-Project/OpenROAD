@@ -387,11 +387,13 @@ SelectHighlightWindow::~SelectHighlightWindow()
 void SelectHighlightWindow::updateSelectionModel()
 {
   selection_model_.populateModel();
+  ui->tabWidget->setCurrentWidget(ui->selTab);
 }
 
 void SelectHighlightWindow::updateHighlightModel()
 {
   highlight_model_.populateModel();
+  ui->tabWidget->setCurrentWidget(ui->hltTab);
 }
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)

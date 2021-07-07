@@ -689,8 +689,14 @@ float coeffADJ(int netID)
         Vusage += v_edges[grid].est_usage;
       }
     }
-    // coef  = (Husage*Vcap)/ (Hcap*Vusage);
-    coef = (Hcap * Vusage) / (Husage * Vcap);
+    // (Husage * Vcap) resulting in zero is unlikely, but
+    // this check was added to avoid undefined behavior if
+    // the expression results in zero
+    if ((Husage * Vcap) > 0) {
+      coef = (Hcap * Vusage) / (Husage * Vcap);
+    } else {
+      coef = 1.2;
+    }
   }
 
   if (coef < 1.2) {
