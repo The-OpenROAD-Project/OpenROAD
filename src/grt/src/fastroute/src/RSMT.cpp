@@ -726,7 +726,7 @@ void gen_brk_RSMT(Bool congestionDriven,
   Bool cong;
 
   wl = wl1 = 0;
-  totalNumSeg = 0;
+  int totalNumSeg = 0;
 
   for (i = 0; i < numValidNets; i++) {
     FrNet* net = nets[i];

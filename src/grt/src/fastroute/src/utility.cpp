@@ -275,7 +275,7 @@ void netpinOrderInc()
 
   float npvalue;
 
-  numTreeedges = 0;
+  int numTreeedges = 0;
   for (j = 0; j < numValidNets; j++) {
     d = sttrees[j].deg;
     numTreeedges += 2 * d - 3;
@@ -444,6 +444,7 @@ int threeDVIA()
 void assignEdge(int netID, int edgeID, Bool processDIR)
 {
   short *gridsX, *gridsY, *gridsL;
+  std::vector<std::vector<int>> gridD;
   int i, k, l, grid, min_x, min_y, routelen, n1a, n2a, last_layer;
   int min_result, endLayer;
   TreeEdge *treeedges, *treeedge;
@@ -460,6 +461,11 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
   routelen = treeedge->route.routelen;
   n1a = treeedge->n1a;
   n2a = treeedge->n2a;
+
+  gridD.resize(numLayers);
+  for (int i = 0; i < numLayers; i++) {
+    gridD[i].resize(treeedge->route.routelen+1);
+  }
 
   for (l = 0; l < numLayers; l++) {
     for (k = 0; k <= routelen; k++) {
@@ -1152,7 +1158,7 @@ void StNetOrder()
   TreeEdge *treeedges, *treeedge;
   StTree* stree;
 
-  numTreeedges = 0;
+  int numTreeedges = 0;
 
   treeOrderCong.clear();
 

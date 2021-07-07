@@ -82,8 +82,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
   vCapacity = 0;
   hCapacity = 0;
   MD = 0;
-  numNets = 0;
-  invalidNets = 0;
+  num_nets_ = 0;
   maxNetDegree = 0;
   logger = log;
   db_ = db;
@@ -103,7 +102,7 @@ void FastRouteCore::clear()
 void FastRouteCore::deleteComponents()
 {
   if (nets) {
-    for (int i = 0; i < numNets; i++) {
+    for (int i = 0; i < num_nets_; i++) {
       if (nets[i])
         delete nets[i];
       nets[i] = nullptr;
@@ -155,10 +154,6 @@ void FastRouteCore::deleteComponents()
   if (v_edges3D)
     delete[] v_edges3D;
   v_edges3D = nullptr;
-
-  if (trees)
-    delete[] trees;
-  trees = nullptr;
 
   if (sttrees) {
     for (int i = 0; i < numValidNets; i++) {
@@ -318,17 +313,6 @@ void FastRouteCore::deleteComponents()
     layerGrid = nullptr;
   }
 
-  if (gridD) {
-    for (int i = 0; i < numLayers; i++) {
-      if (gridD[i])
-        delete[] gridD[i];
-      gridD[i] = nullptr;
-    }
-
-    delete[] gridD;
-    gridD = nullptr;
-  }
-
   if (viaLink) {
     for (int i = 0; i < numLayers; i++) {
       if (viaLink[i])
@@ -376,7 +360,7 @@ void FastRouteCore::deleteComponents()
   vCapacity = 0;
   hCapacity = 0;
   MD = 0;
-  numNets = 0;
+  num_nets_ = 0;
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
@@ -384,7 +368,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   xGrid = x;
   yGrid = y;
   numLayers = nLayers;
-  numGrids = xGrid * yGrid;
   if (std::max(xGrid, yGrid) >= 1000) {
     XRANGE = std::max(xGrid, yGrid);
     YRANGE = std::max(xGrid, yGrid);
@@ -410,11 +393,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   layerGrid = new int*[numLayers];
   for (int i = 0; i < numLayers; i++) {
     layerGrid[i] = new int[MAXLEN];
-  }
-
-  gridD = new int*[numLayers];
-  for (int i = 0; i < numLayers; i++) {
-    gridD[i] = new int[MAXLEN];
   }
 
   viaLink = new int*[numLayers];
@@ -494,11 +472,11 @@ void FastRouteCore::addViaSpacing(int spacing, int layer)
 
 void FastRouteCore::setNumberNets(int nNets)
 {
-  numNets = nNets;
-  nets = new FrNet*[numNets];
-  for (int i = 0; i < numNets; i++)
+  num_nets_ = nNets;
+  nets = new FrNet*[num_nets_];
+  for (int i = 0; i < num_nets_; i++)
     nets[i] = new FrNet;
-  seglistIndex = new int[numNets + 1];
+  seglistIndex = new int[num_nets_ + 1];
 }
 
 void FastRouteCore::setLowerLeft(int x, int y)
@@ -554,10 +532,20 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   return netID;
 }
 
+void FastRouteCore::init_usage()
+{
+  int i;
+
+  for (i = 0; i < yGrid * (xGrid - 1); i++)
+    h_edges[i].usage = 0;
+  for (i = 0; i < (yGrid - 1) * xGrid; i++)
+    v_edges[i].usage = 0;
+}
+
 void FastRouteCore::initEdges()
 {
-  LB = 0.9;
-  UB = 1.3;
+  float LB = 0.9;
+  float UB = 1.3;
   vCapacity_lb = LB * vCapacity;
   hCapacity_lb = LB * hCapacity;
   vCapacity_ub = UB * vCapacity;
@@ -847,7 +835,6 @@ void FastRouteCore::initAuxVar()
 
   seglistCnt = new int[numValidNets];
   seglist = new Segment[segcount];
-  trees = new Tree[numValidNets];
   sttrees = new StTree[numValidNets];
   gxs = new DTYPE*[numValidNets];
   gys = new DTYPE*[numValidNets];
@@ -860,8 +847,6 @@ void FastRouteCore::initAuxVar()
     gridHs[k] = k * gridH;
     gridVs[k] = k * gridV;
   }
-
-  MaxDegree = MD;
 
   parentX1.resize(boost::extents[yGrid][xGrid]);
   parentY1.resize(boost::extents[yGrid][xGrid]);
@@ -981,19 +966,16 @@ NetRouteMap FastRouteCore::run()
   dcor = new int[maxPin];
   netEO.reserve(maxPin);
 
-  LB = 0.9;
-  UB = 1.3;
-
-  SLOPE = 5;
-  THRESH_M = 20;
-  ENLARGE = 15;     // 5
+  int SLOPE = 5;
+  int THRESH_M = 20;
+  int ENLARGE = 15;     // 5
   int ESTEP1 = 10;  // 10
   int ESTEP2 = 5;   // 5
   int ESTEP3 = 5;   // 5
   int CSTEP1 = 2;   // 5
   int CSTEP2 = 2;   // 3
   int CSTEP3 = 5;   // 15
-  COSHEIGHT = 4;
+  int COSHEIGHT = 4;
   L = 0;
   VIA = 2;
   int Ripvalue = -1;
@@ -1082,7 +1064,7 @@ NetRouteMap FastRouteCore::run()
   int cost_type = 1;
 
   InitLastUsage(upType);
-  if (totalOverflow > 0 && overflowIterations > 0) {
+  if (totalOverflow > 0 && overflow_iterations_ > 0) {
     logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
@@ -1092,7 +1074,7 @@ NetRouteMap FastRouteCore::run()
   int overflow_increases = -1;
   int last_total_overflow = 0;
   while (totalOverflow > 0 &&
-         i <= overflowIterations &&
+         i <= overflow_iterations_ &&
          overflow_increases <= max_overflow_increases_) {
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
@@ -1397,11 +1379,6 @@ NetRouteMap FastRouteCore::run()
   return routes;
 }
 
-void FastRouteCore::setAlpha(float a)
-{
-  alpha = a;
-}
-
 void FastRouteCore::setVerbose(int v)
 {
   verbose = v;
@@ -1409,7 +1386,7 @@ void FastRouteCore::setVerbose(int v)
 
 void FastRouteCore::setOverflowIterations(int iterations)
 {
-  overflowIterations = iterations;
+  overflow_iterations_ = iterations;
 }
 
 void FastRouteCore::setAllowOverflow(bool allow)

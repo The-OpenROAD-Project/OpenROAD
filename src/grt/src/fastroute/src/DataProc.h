@@ -53,26 +53,21 @@ using boost::multi_array;
 
 // global variables
 extern int XRANGE, YRANGE;
-extern int xGrid, yGrid, numGrids, numNets, invalidNets, vCapacity, hCapacity;
+extern int xGrid, yGrid, vCapacity, hCapacity;
 extern short *vCapacity3D, *hCapacity3D;
 extern float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
 extern int layerOrientation;
-extern float alpha;
 extern int verbose;
-extern int overflowIterations;
 const int max_usage_multiplier = 40;
 
 extern int enlarge, costheight, ripup_threshold;
-extern int MaxDegree;
 extern int *MinWidth, *MinSpacing, *ViaSpacing;
 extern int xcorner, ycorner, wTile, hTile, ahTH;
 
 extern int
     numValidNets;  // # nets need to be routed (having pins in different grids)
 extern int numLayers;
-extern int totalNumSeg;    // total # segments
 extern int totalOverflow;  // total # overflow
-extern int mazeThreshold;  // the wirelen threshold to do maze routing
 extern FrNet** nets;
 extern Edge *h_edges, *v_edges;
 
@@ -83,27 +78,16 @@ extern Bool** HV;
 extern Bool** hyperV;
 extern Bool** hyperH;
 extern int** corrEdge;
-extern int SLOPE;
 
 // coefficient
-extern float LB;
-extern float UB;
-extern int THRESH_M;
 extern float LOGIS_COF;
-extern int ENLARGE;
-extern int STEP;
-extern int COSHEIGHT;
-extern int STOP;
 extern int L;
-extern int VCA;
 extern int VIA, slope, max_adj;
-extern char benchFile[STRINGLEN];
 
 extern Segment* seglist;
 extern int* seglistIndex;  // the index for the segments for each net
 extern int* seglistCnt;    // the number of segements for each net
 
-extern Tree* trees;      // the tree topologies
 extern StTree* sttrees;  // the Steiner trees
 extern DTYPE** gxs;      // the copy of xs for nets, used for second FLUTE
 extern DTYPE** gys;      // the copy of xs for nets, used for second FLUTE
@@ -112,14 +96,12 @@ extern DTYPE**
 
 extern std::vector<OrderNetPin> treeOrderPV;
 extern std::vector<OrderTree> treeOrderCong;
-extern int numTreeedges;
 extern int viacost;
 
 extern Edge3D* h_edges3D;
 extern Edge3D* v_edges3D;
 
 extern int** layerGrid;
-extern int** gridD;
 extern int** viaLink;
 
 extern multi_array<int, 3> d13D;
@@ -153,10 +135,6 @@ extern float **heap2, **heap1;
 extern Bool* pop_heap2;
 
 extern utl::Logger* logger;
-
-extern void init_usage();
-extern void readFile(char benchFile[]);
-extern void freeAllMemory();
 
 template <class T>
 T ADIFF(T x, T y)
