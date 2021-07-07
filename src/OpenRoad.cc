@@ -73,6 +73,7 @@
 #include "mpl2/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
+#include "cts/MakeTritoncts.h"
 #include "rmp/MakeRestructure.h"
 #include "tap/MakeTapcell.h"
 #include "rcx/MakeOpenRCX.h"
