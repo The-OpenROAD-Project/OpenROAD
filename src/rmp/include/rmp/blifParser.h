@@ -10,9 +10,6 @@ class Logger;
 
 namespace rmp {
 
-// First string is type (mlatch/gate)
-// Second string is master cell name
-// Third vector is a list of all connections
 enum class GateType
 {
   None,
@@ -61,7 +58,8 @@ class BlifParser
   std::string currentGate_;
   GateType currentInstanceType_;
   std::vector<std::string> currentConnections_;
-  int combCount_, flopCount_;
+  int combCount_;
+  int flopCount_;
 };
 
 }  // namespace rmp
