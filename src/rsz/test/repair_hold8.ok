@@ -11,7 +11,6 @@
 [INFO ODB-0134] Finished DEF file: repair_hold1.def
 worst slack -0.08
 worst slack 1.86
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 40 hold buffers.
 worst slack 0.20

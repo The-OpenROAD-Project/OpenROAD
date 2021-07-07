@@ -35,8 +35,6 @@
 
 include("openroad")
 
-project(PartitionMgr)
-
 option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" OFF)
 
 if (LOAD_PARTITIONERS)
@@ -44,13 +42,13 @@ if (LOAD_PARTITIONERS)
     message(STATUS "Using partitioners")
 endif (LOAD_PARTITIONERS)
 
-swig_lib(NAME      PartitionMgr
+swig_lib(NAME      par
          NAMESPACE par
          I_FILE    src/partitionmgr.i
          SCRIPTS   src/partitionmgr.tcl
 )
 
-target_sources(PartitionMgr
+target_sources(par
   PRIVATE
     src/Hypergraph.cpp
     src/MakePartitionMgr.cpp
@@ -62,15 +60,15 @@ target_sources(PartitionMgr
 )
 
 messages(
-  TARGET PartitionMgr
+  TARGET par
 )
 
 if (LOAD_PARTITIONERS)
-  target_compile_definitions(PartitionMgr
+  target_compile_definitions(par
     PRIVATE
       PARTITIONERS
   )
-  target_include_directories(PartitionMgr
+  target_include_directories(par
     PRIVATE
       ${PATH_PARTITIONERS}/Partitioners/Chaco/code
       ${PATH_PARTITIONERS}/Partitioners/Metis/include
@@ -104,7 +102,7 @@ if (LOAD_PARTITIONERS)
           set(METIS metis)
   endif()
   
-  target_link_libraries(PartitionMgr
+  target_link_libraries(par
     PUBLIC
       ${MLPART}
       ${CHACO}
@@ -112,12 +110,12 @@ if (LOAD_PARTITIONERS)
   )
 endif (LOAD_PARTITIONERS)
 
-target_include_directories(PartitionMgr
+target_include_directories(par
   PUBLIC
     include
 )
 
-target_link_libraries(PartitionMgr
+target_link_libraries(par
   PUBLIC
     opendb
     OpenSTA

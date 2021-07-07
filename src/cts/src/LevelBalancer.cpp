@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "tritoncts/TritonCTS.h"
+#include "cts/TritonCTS.h"
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"

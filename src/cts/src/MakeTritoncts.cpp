@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
@@ -33,42 +33,41 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "par/MakePartitionMgr.h"
-#include "par/PartitionMgr.h"
-#include "opendb/db.h"
+#include "cts/MakeTritoncts.h"
+#include "cts/TritonCTS.h"
+#include "db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
+#include "CtsOptions.h"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* PartitionMgr_tcl_inits[];
+extern const char* cts_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Partitionmgr_Init(Tcl_Interp* interp);
+extern int Cts_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-par::PartitionMgr* makePartitionMgr()
+cts::TritonCTS* makeTritonCts()
 {
-  return new par::PartitionMgr();
+  return new cts::TritonCTS();
 }
 
-void initPartitionMgr(OpenRoad* openroad)
+void initTritonCts(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Partitionmgr_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::PartitionMgr_tcl_inits);
-
-  par::PartitionMgr* kernel = openroad->getPartitionMgr();
-
-  kernel->init(
-      openroad->getDb(), openroad->getVerilogNetwork(), openroad->getLogger());
-};
-
-void deletePartitionMgr(par::PartitionMgr* partitionmgr)
-{
-  delete partitionmgr;
+  // Define swig TCL commands.
+  Cts_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::cts_tcl_inits);
+  openroad->getTritonCts()->init(openroad);
 }
+
+void deleteTritonCts(cts::TritonCTS* tritoncts)
+{
+  delete tritoncts;
+}
+
 }  // namespace ord

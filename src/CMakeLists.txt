@@ -123,20 +123,20 @@ add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
 add_subdirectory(ppl)
-add_subdirectory(TritonCTS)
+add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
-add_subdirectory(PartitionMgr)
+add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
 add_subdirectory(pdr)
-add_subdirectory(pdngen)
+add_subdirectory(pdn)
 
 ################################################################
 
@@ -174,7 +174,7 @@ target_link_libraries(openroad
   opendb
   opendbtcl
   rcx
-  TritonCTS
+  cts
   grt
   tap
   gui
@@ -183,7 +183,7 @@ target_link_libraries(openroad
   mpl2
   psm
   ant
-  PartitionMgr
+  par
   utl
   pdn
   pdr
