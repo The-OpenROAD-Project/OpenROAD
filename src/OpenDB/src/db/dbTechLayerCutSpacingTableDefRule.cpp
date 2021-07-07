@@ -1080,6 +1080,20 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass, bool 
   return std::max((*itr).first,(*itr).second);
 }
 
+int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass1, std::string cutClass2) const
+{
+  auto spc1 = getSpacing(cutClass1, true, cutClass2, true);
+  auto spc2 = getSpacing(cutClass1, true, cutClass2, false);
+  auto spc3 = getSpacing(cutClass1, false, cutClass2, true);
+  auto spc4 = getSpacing(cutClass1, false, cutClass2, false);
+
+  int reqSpc = std::max(spc1.first, spc1.second);
+  reqSpc = std::max(reqSpc, std::max(spc2.first, spc2.second));
+  reqSpc = std::max(reqSpc, std::max(spc3.first, spc3.second));
+  reqSpc = std::max(reqSpc, std::max(spc4.first, spc4.second));
+  return reqSpc;
+}
+
 bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1, std::string cutClass2)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
@@ -1098,15 +1112,13 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1, 
 }
 
 std::pair<int, int> dbTechLayerCutSpacingTableDefRule::getSpacing(
-    const char* class1,
+    std::string c1,
     bool SIDE1,
-    const char* class2,
-    bool SIDE2)
+    std::string c2,
+    bool SIDE2) const
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
-  std::string c1 = class1;
-  std::string c2 = class2;
   if (SIDE1)
     c1 += "/SIDE";
   else

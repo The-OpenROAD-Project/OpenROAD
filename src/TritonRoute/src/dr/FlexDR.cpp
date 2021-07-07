@@ -923,11 +923,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       for(auto con : layer->getLef58CutSpacingTableConstraints())
       {
         auto dbRule = con->getODBRule();
-        auto reqSpcVal = std::max(dbRule->getSpacing(cutClass1, true, cutClass2, true),
-                                  dbRule->getSpacing(cutClass1, true, cutClass2, false),
-                                  dbRule->getSpacing(cutClass1, false, cutClass2, true),
-                                  dbRule->getSpacing(cutClass1, false, cutClass2, false)
-        );
+        auto reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
         sol = max(sol, reqSpcVal);
       }
     }

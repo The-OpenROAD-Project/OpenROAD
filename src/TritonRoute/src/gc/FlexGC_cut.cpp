@@ -89,7 +89,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
   auto isSide2 = isSideEdge(viaEdge2);
   gtl::rectangle_data<frCoord> rect1(viaEdge1->low().x(), viaEdge1->low().y(), viaEdge1->high().x(), viaEdge1->high().y());
   gtl::rectangle_data<frCoord> rect2(viaEdge2->low().x(), viaEdge2->low().y(), viaEdge2->high().x(), viaEdge2->high().y());
-  auto spc = con->getODBRule()->getSpacing(class1.c_str(), isSide1, class2.c_str(), isSide2);
+  auto spc = con->getODBRule()->getSpacing(class1, isSide1, class2, isSide2);
   frSquaredDistance spcSqr = spc.first;
   //check if parallel
   if(viaEdge1->getDir() == viaEdge2->getDir() || (int) viaEdge1->getDir() + (int) viaEdge2->getDir() != OPPOSITEDIR)

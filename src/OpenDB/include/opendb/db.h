@@ -8310,10 +8310,12 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   
   int getMaxSpacing(std::string cutClass, bool SIDE) const;
 
-  std::pair<int, int> getSpacing(const char* class1,
+  int getMaxSpacing(std::string cutClass1, std::string cutClass2) const;
+
+  std::pair<int, int> getSpacing(std::string class1,
                                  bool SIDE1,
-                                 const char* class2,
-                                 bool SIDE2);
+                                 std::string class2,
+                                 bool SIDE2) const;
 
   dbTechLayer* getTechLayer() const;
 
