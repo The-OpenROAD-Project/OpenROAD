@@ -5,29 +5,22 @@
 #ifdef PARTITIONERS
 #include "MLPart.h"
 #endif
-#include <sys/stat.h>
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iostream>
-#include <limits>
 #include <queue>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <vector>
 
 #include "utl/Logger.h"
 
+namespace par {
 using utl::PAR;
 
-namespace par {
-using std::ceil;
-using std::cout;
 using std::endl;
 using std::find;
-using std::floor;
 using std::map;
 using std::max;
 using std::min;
@@ -36,39 +29,26 @@ using std::pair;
 using std::queue;
 using std::string;
 using std::to_string;
-using std::tuple;
 using std::unordered_map;
 using std::vector;
 
-using odb::dbBlock;
 using odb::dbBox;
-using odb::dbDatabase;
-using odb::dbInst;
 using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
-using odb::dbSet;
-using odb::dbSigType;
-using odb::dbStringProperty;
 using odb::Rect;
 
 using sta::Cell;
 using sta::Instance;
 using sta::InstanceChildIterator;
-using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyCell;
-using sta::LibertyCellPortIterator;
-using sta::LibertyPort;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
-using sta::NetPinIterator;
 using sta::NetTermIterator;
 using sta::Pin;
-using sta::PinSeq;
 using sta::PortDirection;
-using sta::Term;
 
 // ******************************************************************************
 // Class Cluster
