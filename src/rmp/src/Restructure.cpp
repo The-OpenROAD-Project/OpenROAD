@@ -82,7 +82,10 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::run(char* liberty_file_name, float slack_threshold, unsigned max_depth, char* workdir_name)
+void Restructure::run(char* liberty_file_name,
+                      float slack_threshold,
+                      unsigned max_depth,
+                      char* workdir_name)
 {
   reset();
   block_ = db_->getChip()->getBlock();
@@ -126,14 +129,15 @@ void Restructure::getBlob(unsigned max_depth)
       if (term && term->getInst()->getITerms().size() < 10)
         path_insts_.insert(term->getInst());
     }
-    logger_->report("Found {} instances for restructuring.", path_insts_.size());
+    logger_->report("Found {} instances for restructuring.",
+                    path_insts_.size());
   }
 }
 
 void Restructure::runABC()
 {
-  input_blif_file_name_
-      = work_dir_name_ + std::string(block_->getConstName()) + "_crit_path.blif";
+  input_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
+                          + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
   debugPrint(logger_,
@@ -155,11 +159,16 @@ void Restructure::runABC()
   std::string abc_script_file = work_dir_name_ + "ord_abc_script.tcl";
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  for (int opt_mode = static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_1) : static_cast<int>(Mode::DELAY_1);
-       opt_mode <= (static_cast<int>(area_mode) ? static_cast<int>(Mode::AREA_3) : static_cast<int>(Mode::DELAY_4));
-       opt_mode ++) {
+  for (int opt_mode = static_cast<int>(area_mode)
+                          ? static_cast<int>(Mode::AREA_1)
+                          : static_cast<int>(Mode::DELAY_1);
+       opt_mode <= (static_cast<int>(area_mode)
+                        ? static_cast<int>(Mode::AREA_3)
+                        : static_cast<int>(Mode::DELAY_4));
+       opt_mode++) {
     opt_mode_ = (Mode) opt_mode;
-    output_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
+    output_blif_file_name_ = work_dir_name_
+                             + std::string(block_->getConstName())
                              + std::to_string(opt_mode) + "_crit_path_out.blif";
     debugPrint(logger_,
                RMP,
@@ -173,7 +182,11 @@ void Restructure::runABC()
         abc_command = abc_command + " > " + logfile_;
       int ret = std::system(abc_command.c_str());
       if (ret) {
-        logger_->warn(RMP, 11, "ABC failed with code {}, please check messages for details.", ret);
+        logger_->warn(
+            RMP,
+            11,
+            "ABC failed with code {}, please check messages for details.",
+            ret);
         continue;
       }
     }
@@ -268,14 +281,13 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   }
 
   // unconstrained end points
-  auto errors
-      = open_sta_->checkTiming(false /*no_input_delay*/,
-				     false /*no_output_delay*/,
-				     false /*reg_multiple_clks*/,
-				     true /*reg_no_clks*/,
-				     true /*unconstrained_endpoints*/,
-				     false /*loops*/,
-				     false /*generated_clks*/);
+  auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
+                                       false /*no_output_delay*/,
+                                       false /*reg_multiple_clks*/,
+                                       true /*reg_no_clks*/,
+                                       true /*unconstrained_endpoints*/,
+                                       false /*loops*/,
+                                       false /*generated_clks*/);
   debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
   if (errors.size() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
@@ -313,17 +325,15 @@ int Restructure::countConsts(odb::dbBlock* top_block)
 
 void Restructure::removeConstCells()
 {
-
-  if (!hicell_.size()  || !locell_.size())
+  if (!hicell_.size() || !locell_.size())
     return;
 
   odb::dbMaster* hicell_master = nullptr;
-  odb::dbMTerm*  hiterm = nullptr;
+  odb::dbMTerm* hiterm = nullptr;
   odb::dbMaster* locell_master = nullptr;
-  odb::dbMTerm*  loterm = nullptr;
+  odb::dbMTerm* loterm = nullptr;
 
   for (auto&& lib : block_->getDb()->getLibs()) {
-
     hicell_master = lib->findMaster(hicell_.c_str());
 
     locell_master = lib->findMaster(locell_.c_str());
@@ -337,7 +347,7 @@ void Restructure::removeConstCells()
   loterm = locell_master->findMTerm(loport_.c_str());
   if (!hiterm || !loterm)
     return;
-  
+
   open_sta_->clearLogicConstants();
   open_sta_->findLogicConstants();
   std::set<odb::dbInst*> constInsts;
@@ -367,12 +377,22 @@ void Restructure::removeConstCells()
       if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
         odb::dbNet* net = iterm->getNet();
         if (net) {
-          odb::dbMaster* const_master = (pinVal == sta::LogicValue::one) ? hicell_master : locell_master;
-          odb::dbMTerm*  const_port = (pinVal == sta::LogicValue::one) ? hiterm : loterm;
+          odb::dbMaster* const_master = (pinVal == sta::LogicValue::one)
+                                            ? hicell_master
+                                            : locell_master;
+          odb::dbMTerm* const_port
+              = (pinVal == sta::LogicValue::one) ? hiterm : loterm;
           std::string inst_name = "rmp_const_" + std::to_string(const_cnt);
-          debugPrint(logger_, RMP, "remap", 2, "Adding cell {} inst {} for {}",
-                                      const_master->getName(), inst_name, inst->getName());
-          auto new_inst = odb::dbInst::create(block_, const_master, inst_name.c_str());
+          debugPrint(logger_,
+                     RMP,
+                     "remap",
+                     2,
+                     "Adding cell {} inst {} for {}",
+                     const_master->getName(),
+                     inst_name,
+                     inst->getName());
+          auto new_inst
+              = odb::dbInst::create(block_, const_master, inst_name.c_str());
           if (new_inst) {
             odb::dbITerm::disconnect(iterm);
             odb::dbITerm::connect(new_inst->getITerm(const_port), net);
@@ -382,18 +402,19 @@ void Restructure::removeConstCells()
         const_outputs++;
         const_cnt++;
       }
-        
     }
     if (outputs > 0 && outputs == const_outputs)
       constInsts.insert(inst);
   }
   open_sta_->clearLogicConstants();
 
-  debugPrint(logger_, RMP, "remap", 2, "Removing {} instances...", constInsts.size());
+  debugPrint(
+      logger_, RMP, "remap", 2, "Removing {} instances...", constInsts.size());
 
   for (auto inst : constInsts)
     removeConstCell(inst);
-  logger_->report("Removed {} instances with constant outputs.", constInsts.size());
+  logger_->report("Removed {} instances with constant outputs.",
+                  constInsts.size());
 }
 
 void Restructure::removeConstCell(odb::dbInst* inst)

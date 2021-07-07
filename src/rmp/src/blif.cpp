@@ -60,7 +60,8 @@ using utl::RMP;
 
 namespace rmp {
 
-Blif::Blif(Logger* logger, sta::dbSta* sta,
+Blif::Blif(Logger* logger,
+           sta::dbSta* sta,
            const std::string& const0_cell,
            const std::string& const0_cell_port,
            const std::string& const1_cell,

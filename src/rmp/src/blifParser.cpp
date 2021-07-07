@@ -77,7 +77,9 @@ void endParser(std::string end, rmp::BlifParser* parser)
   parser->endParser();
 }
 
-bool parse(std::string::iterator first, std::string::iterator last, rmp::BlifParser* parser)
+bool parse(std::string::iterator first,
+           std::string::iterator last,
+           rmp::BlifParser* parser)
 {
   qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
   _string %= lexeme[+(char_ - (' ' | qi::eol))];

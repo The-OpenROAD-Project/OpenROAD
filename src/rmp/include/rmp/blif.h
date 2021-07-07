@@ -37,9 +37,9 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <string>
 
 #include <set>
+#include <string>
 
 namespace ord {
 class OpenRoad;
@@ -65,7 +65,8 @@ namespace rmp {
 class Blif
 {
  public:
-  Blif(Logger* logger, sta::dbSta* sta,
+  Blif(Logger* logger,
+       sta::dbSta* sta,
        const std::string& const0_cell_,
        const std::string& const0_cell_port_,
        const std::string& const1_cell_,
