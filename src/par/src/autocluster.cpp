@@ -832,7 +832,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   vector<Instance*> inst_vec = cluster->getInsts();
   for (int i = 0; i < inst_vec.size(); i++) {
     idx_to_inst[inst_id++] = inst_vec[i];
-    inst_to_idx[inst_vec[i]] == inst_id;
+    inst_to_idx[inst_vec[i]] = inst_id;
     vertex_weight.push_back(1.0);
   }
 

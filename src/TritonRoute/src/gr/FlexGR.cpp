@@ -1438,7 +1438,11 @@ void FlexGR::initGR_initObj_net(frNet* net)
 {
   deque<frNode*> nodeQ;
 
-  nodeQ.push_back(net->getRoot());
+  frNode* root = net->getRoot();
+  if (root == nullptr) {
+    return; // dangling net with no connections
+  }
+  nodeQ.push_back(root);
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -1823,9 +1827,10 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   }
 
   // sanity check
-  for (frNode* node : nodes) {
-    if (node->getParent() == nullptr) {
-      cout << "Error: non-root node does not have parent\n";
+  for (size_t i = 1; i < nodes.size(); i++) {
+    if (nodes[i]->getParent() == nullptr) {
+      cout << "Error: non-root node does not have parent in "
+           << net->getName() << '\n';
     }
   }
   if (nodes.size() > 1 && nodes[0]->getChildren().size() == 0) {
