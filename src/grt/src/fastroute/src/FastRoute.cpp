@@ -386,19 +386,19 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   d1.resize(boost::extents[YRANGE][XRANGE]);
   d2.resize(boost::extents[YRANGE][XRANGE]);
 
-  HV = new Bool*[YRANGE];
+  HV = new bool*[YRANGE];
   for (int i = 0; i < YRANGE; i++) {
-    HV[i] = new Bool[XRANGE];
+    HV[i] = new bool[XRANGE];
   }
 
-  hyperV = new Bool*[YRANGE];
+  hyperV = new bool*[YRANGE];
   for (int i = 0; i < YRANGE; i++) {
-    hyperV[i] = new Bool[XRANGE];
+    hyperV[i] = new bool[XRANGE];
   }
 
-  hyperH = new Bool*[YRANGE];
+  hyperH = new bool*[YRANGE];
   for (int i = 0; i < YRANGE; i++) {
-    hyperH[i] = new Bool[XRANGE];
+    hyperH[i] = new bool[XRANGE];
   }
 
   corrEdge = new int*[YRANGE];
@@ -406,9 +406,9 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     corrEdge[i] = new int[XRANGE];
   }
 
-  inRegion = new Bool*[YRANGE];
+  inRegion = new bool*[YRANGE];
   for (int i = 0; i < YRANGE; i++) {
-    inRegion[i] = new Bool[XRANGE];
+    inRegion[i] = new bool[XRANGE];
   }
 
   costHVH = new float[XRANGE];  // Horizontal first Z
@@ -832,7 +832,7 @@ void FastRouteCore::initAuxVar()
   parentX3.resize(boost::extents[yGrid][xGrid]);
   parentY3.resize(boost::extents[yGrid][xGrid]);
 
-  pop_heap2 = new Bool[yGrid * XRANGE];
+  pop_heap2 = new bool[yGrid * XRANGE];
 
   // allocate memory for priority queue
   heap1 = new float*[yGrid * xGrid];
@@ -959,8 +959,8 @@ NetRouteMap FastRouteCore::run()
   int VIA = 2;
   int Ripvalue = -1;
   int ripupTH3D = 10;
-  Bool goingLV = TRUE;
-  Bool noADJ = FALSE;
+  bool goingLV = true;
+  bool noADJ = false;
   int thStep1 = 10;
   int thStep2 = 4;
   int LVIter = 3;
@@ -978,15 +978,15 @@ NetRouteMap FastRouteCore::run()
   VIA = 2;
   // viacost = VIA;
   viacost = 0;
-  gen_brk_RSMT(FALSE, FALSE, FALSE, FALSE, noADJ, logger);
+  gen_brk_RSMT(false, false, false, false, noADJ, logger);
   if (verbose > 1)
     logger->info(GRT, 97, "First L Route.");
-  routeLAll(TRUE);
-  gen_brk_RSMT(TRUE, TRUE, TRUE, FALSE, noADJ, logger);
+  routeLAll(true);
+  gen_brk_RSMT(true, true, true, false, noADJ, logger);
   getOverflow2D(&maxOverflow);
   if (verbose > 1)
     logger->info(GRT, 98, "Second L Route.");
-  newrouteLAll(FALSE, TRUE);
+  newrouteLAll(false, true);
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
   newrouteZAll(10);

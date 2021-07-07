@@ -517,11 +517,11 @@ void fluteCongest(int netID,
   // return t;
 }
 
-Bool netCongestion(int netID)
+bool netCongestion(int netID)
 {
   int i, j;
   int grid, ymin, ymax;
-  //  Bool Congested;
+  //  bool Congested;
   Segment* seg;
 
   for (j = seglistIndex[netID]; j < seglistIndex[netID] + seglistCnt[netID];
@@ -541,34 +541,34 @@ Bool netCongestion(int netID)
       grid = seg->y1 * (xGrid - 1);
       for (i = seg->x1; i < seg->x2; i++) {
         if (h_edges[grid + i].est_usage >= h_edges[grid + i].cap) {
-          return (TRUE);
+          return (true);
         }
       }
       for (i = ymin; i < ymax; i++) {
         if (v_edges[i * xGrid + seg->x2].est_usage
             >= v_edges[i * xGrid + seg->x2].cap) {
-          return (TRUE);
+          return (true);
         }
       }
     } else {
       for (i = ymin; i < ymax; i++) {
         if (v_edges[i * xGrid + seg->x1].est_usage
             >= v_edges[i * xGrid + seg->x1].cap) {
-          return (TRUE);
+          return (true);
         }
       }
       grid = seg->y2 * (xGrid - 1);
       for (i = seg->x1; i < seg->x2; i++) {
         if (h_edges[grid + i].est_usage >= h_edges[grid + i].cap) {
-          return (TRUE);
+          return (true);
         }
       }
     }
   }
-  return (FALSE);
+  return (false);
 }
 
-Bool VTreeSuite(int netID)
+bool VTreeSuite(int netID)
 {
   int xmin, xmax, ymin, ymax;
 
@@ -594,13 +594,13 @@ Bool VTreeSuite(int netID)
   }
 
   if ((ymax - ymin) > 3 * (xmax - xmin)) {
-    return (TRUE);
+    return (true);
   } else {
-    return (FALSE);
+    return (false);
   }
 }
 
-Bool HTreeSuite(int netID)
+bool HTreeSuite(int netID)
 {
   int xmin, xmax, ymin, ymax;
 
@@ -626,9 +626,9 @@ Bool HTreeSuite(int netID)
   }
 
   if (5 * (ymax - ymin) < (xmax - xmin)) {
-    return (TRUE);
+    return (true);
   } else {
-    return (FALSE);
+    return (false);
   }
 }
 
@@ -706,11 +706,11 @@ float coeffADJ(int netID)
   return (coef);
 }
 
-void gen_brk_RSMT(Bool congestionDriven,
-                  Bool reRoute,
-                  Bool genTree,
-                  Bool newType,
-                  Bool noADJ,
+void gen_brk_RSMT(bool congestionDriven,
+                  bool reRoute,
+                  bool genTree,
+                  bool newType,
+                  bool noADJ,
                   Logger* logger)
 {
   int i, j, d, n, n1, n2;
@@ -723,7 +723,7 @@ void gen_brk_RSMT(Bool congestionDriven,
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  Bool cong;
+  bool cong;
 
   wl = wl1 = 0;
   int totalNumSeg = 0;
@@ -852,7 +852,7 @@ void gen_brk_RSMT(Bool congestionDriven,
       newrouteL(
           i,
           NOROUTE,
-          TRUE);  // route the net with no previous route for each tree edge
+          true);  // route the net with no previous route for each tree edge
     }
   }  // loop i
 

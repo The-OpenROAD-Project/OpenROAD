@@ -38,16 +38,11 @@
 
 #define BIG_INT 1e7     // big integer used as infinity
 
-#define TRUE 1
-#define FALSE 0
-
 namespace odb {
 class dbNet;
 }
 
 namespace grt {
-typedef char Bool;
-
 typedef int DTYPE;
 
 typedef struct
@@ -66,9 +61,9 @@ typedef struct
 
 typedef struct
 {
-  Bool xFirst;  // route x-direction first (only for L route)
-  Bool HVH;     // TRUE = HVH or FALSE = VHV (only for Z route)
-  Bool maze;    // Whether this segment is routed by maze
+  bool xFirst;  // route x-direction first (only for L route)
+  bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
+  bool maze;    // Whether this segment is routed by maze
 
   short x1, y1, x2, y2;  // coordinates of two endpoints
   int netID;             // the netID of the net this segment belonging to
@@ -114,7 +109,7 @@ typedef struct
 
 typedef struct
 {
-  Bool assigned;
+  bool assigned;
 
   short status;
   short conCNT;
@@ -140,10 +135,10 @@ typedef char RouteType;
 typedef struct
 {
   RouteType type;  // type of route: LROUTE, ZROUTE, MAZEROUTE
-  Bool xFirst;   // valid for LROUTE, TRUE - the route is horizontal first (x1,
-                 // y1) - (x2, y1) - (x2, y2), FALSE (x1, y1) - (x1, y2) - (x2,
+  bool xFirst;   // valid for LROUTE, TRUE - the route is horizontal first (x1,
+                 // y1) - (x2, y1) - (x2, y2), false (x1, y1) - (x1, y2) - (x2,
                  // y2)
-  Bool HVH;      // valid for ZROUTE, TRUE - the route is HVH shape, FALSE - VHV
+  bool HVH;      // valid for ZROUTE, TRUE - the route is HVH shape, false - VHV
                  // shape
   short Zpoint;  // valid for ZROUTE, the position of turn point for Z-shape
   short*
@@ -161,7 +156,7 @@ typedef struct
 
 typedef struct
 {
-  Bool assigned;
+  bool assigned;
 
   int len;  // the Manhanttan Distance for two end nodes
   int n1, n1a;

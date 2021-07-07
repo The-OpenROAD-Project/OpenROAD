@@ -62,9 +62,9 @@ multi_array<float, 2> d1;
 multi_array<float, 2> d2;
 int verbose;
 
-Bool** HV;
-Bool** hyperV;
-Bool** hyperH;
+bool** HV;
+bool** hyperV;
+bool** hyperH;
 int** corrEdge;
 
 Segment* seglist;
@@ -92,7 +92,7 @@ int*** corrEdge3D;
 parent3D*** pr3D;
 
 int mazeedge_Threshold;
-Bool** inRegion;
+bool** inRegion;
 
 int gridHV, gridH, gridV;
 int *gridHs, *gridVs;
@@ -110,7 +110,7 @@ multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 float **heap2, **heap1;
 
-Bool* pop_heap2;
+bool* pop_heap2;
 
 utl::Logger* logger;
 }  // namespace grt

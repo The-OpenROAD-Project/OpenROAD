@@ -71,9 +71,9 @@ extern Edge *h_edges, *v_edges;
 extern multi_array<float, 2> d1;
 extern multi_array<float, 2> d2;
 
-extern Bool** HV;
-extern Bool** hyperV;
-extern Bool** hyperH;
+extern bool** HV;
+extern bool** hyperV;
+extern bool** hyperH;
 extern int** corrEdge;
 
 extern Segment* seglist;
@@ -103,7 +103,7 @@ extern int*** corrEdge3D;
 extern parent3D*** pr3D;
 
 extern int mazeedge_Threshold;
-extern Bool** inRegion;
+extern bool** inRegion;
 
 extern int gridHV, gridH, gridV;
 extern int *gridHs, *gridVs;
@@ -122,7 +122,7 @@ extern StTree* sttreesBK;
 extern multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 extern float **heap2, **heap1;
-extern Bool* pop_heap2;
+extern bool* pop_heap2;
 
 extern utl::Logger* logger;
 

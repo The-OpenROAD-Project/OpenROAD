@@ -232,7 +232,7 @@ void newRipup(TreeEdge* treeedge,
   }
 }
 
-Bool newRipupType2(TreeEdge* treeedge,
+bool newRipupType2(TreeEdge* treeedge,
                    TreeNode* treenodes,
                    int x1,
                    int y1,
@@ -243,12 +243,12 @@ Bool newRipupType2(TreeEdge* treeedge,
 {
   int i, grid, ymin, ymax, n1, n2;
   RouteType ripuptype;
-  Bool needRipup = FALSE;
+  bool needRipup = false;
 
   int edgeCost = nets[netID]->edgeCost;
 
   if (treeedge->len == 0) {
-    return (FALSE);  // not ripup for degraded edge
+    return (false);  // not ripup for degraded edge
   }
 
   ripuptype = treeedge->route.type;
@@ -266,28 +266,28 @@ Bool newRipupType2(TreeEdge* treeedge,
       grid = y1 * (xGrid - 1);
       for (i = x1; i < x2; i++) {
         if (h_edges[grid + i].est_usage > h_edges[grid + i].cap) {
-          needRipup = TRUE;
+          needRipup = true;
           break;
         }
       }
 
       for (i = ymin; i < ymax; i++) {
         if (v_edges[i * xGrid + x2].est_usage > v_edges[i * xGrid + x2].cap) {
-          needRipup = TRUE;
+          needRipup = true;
           break;
         }
       }
     } else {
       for (i = ymin; i < ymax; i++) {
         if (v_edges[i * xGrid + x1].est_usage > v_edges[i * xGrid + x1].cap) {
-          needRipup = TRUE;
+          needRipup = true;
           break;
         }
       }
       grid = y2 * (xGrid - 1);
       for (i = x1; i < x2; i++) {
         if (h_edges[grid + i].est_usage > h_edges[grid + i].cap) {
-          needRipup = TRUE;
+          needRipup = true;
           break;
         }
       }
@@ -328,7 +328,7 @@ Bool newRipupType2(TreeEdge* treeedge,
   }
 }
 
-Bool newRipupCheck(TreeEdge* treeedge,
+bool newRipupCheck(TreeEdge* treeedge,
                    int x1,
                    int y1,
                    int x2,
@@ -339,12 +339,12 @@ Bool newRipupCheck(TreeEdge* treeedge,
 {
   short *gridsX, *gridsY;
   int i, grid, ymin, xmin;
-  Bool needRipup = FALSE;
+  bool needRipup = false;
 
   int edgeCost = nets[netID]->edgeCost;
 
   if (treeedge->len == 0) {
-    return (FALSE);
+    return (false);
   }  // not ripup for degraded edge
 
   if (treeedge->route.type == MAZEROUTE) {
@@ -357,7 +357,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
         grid = ymin * xGrid + gridsX[i];
         if (v_edges[grid].usage + v_edges[grid].red
             >= vCapacity - ripup_threshold) {
-          needRipup = TRUE;
+          needRipup = true;
           break;
         }
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
@@ -366,7 +366,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
         grid = gridsY[i] * (xGrid - 1) + xmin;
         if (h_edges[grid].usage + h_edges[grid].red
             >= hCapacity - ripup_threshold) {
-          needRipup = TRUE;
+          needRipup = true;
           break;
         }
       }
@@ -384,9 +384,9 @@ Bool newRipupCheck(TreeEdge* treeedge,
           h_edges[gridsY[i] * (xGrid - 1) + xmin].usage -= edgeCost;
         }
       }
-      return (TRUE);
+      return (true);
     } else {
-      return (FALSE);
+      return (false);
     }
   } else {
     printEdge(netID, edgeID);
@@ -394,7 +394,7 @@ Bool newRipupCheck(TreeEdge* treeedge,
   }
 }
 
-Bool newRipup3DType3(int netID, int edgeID)
+bool newRipup3DType3(int netID, int edgeID)
 {
   short *gridsX, *gridsY, *gridsL;
   int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid,
@@ -408,7 +408,7 @@ Bool newRipup3DType3(int netID, int edgeID)
   treeedge = &(treeedges[edgeID]);
 
   if (treeedge->len == 0) {
-    return (FALSE);  // not ripup for degraded edge
+    return (false);  // not ripup for degraded edge
   }
 
   treenodes = sttrees[netID].nodes;
@@ -521,7 +521,7 @@ Bool newRipup3DType3(int netID, int edgeID)
     }
   }
 
-  return (TRUE);
+  return (true);
 }
 
 void newRipupNet(int netID)

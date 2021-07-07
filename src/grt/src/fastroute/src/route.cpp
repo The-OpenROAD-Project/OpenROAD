@@ -189,7 +189,7 @@ void routeSegL(Segment* seg)
       for (i = seg->x1; i < seg->x2; i++) {
         h_edges[grid + i].est_usage += edgeCost;
       }
-      seg->xFirst = FALSE;
+      seg->xFirst = false;
     }  // if costL1<costL2
     else {
       // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
@@ -200,7 +200,7 @@ void routeSegL(Segment* seg)
       for (i = ymin; i < ymax; i++) {
         v_edges[i * xGrid + seg->x2].est_usage += edgeCost;
       }
-      seg->xFirst = TRUE;
+      seg->xFirst = true;
     }
   }  // else L route
 }
@@ -264,7 +264,7 @@ void routeSegLFirstTime(Segment* seg)
       hedge = seg->y1 * (xGrid - 1) + i;
       h_edges[hedge].est_usage -= edgeCost/2.0f;
     }
-    seg->xFirst = FALSE;
+    seg->xFirst = false;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
     for (i = seg->x1; i < seg->x2; i++) {
@@ -279,13 +279,13 @@ void routeSegLFirstTime(Segment* seg)
       vedge += seg->x1 - seg->x2;
       v_edges[vedge].est_usage -= edgeCost/2.0f;
     }
-    seg->xFirst = TRUE;
+    seg->xFirst = true;
   }
 }
 
-// route all segments with L, firstTime: TRUE, no previous route, FALSE -
+// route all segments with L, firstTime: true, no previous route, false -
 // previous is L-route
-void routeLAll(Bool firstTime)
+void routeLAll(bool firstTime)
 {
   int i, j;
 
@@ -320,7 +320,7 @@ void routeLAll(Bool firstTime)
 }
 
 // L-route, rip-up the previous route according to the ripuptype
-void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
+void newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 {
   int i, j, d, n1, n2, x1, y1, x2, y2, grid, grid1;
   float costL1 = 0;
@@ -367,7 +367,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
       {
         for (j = ymin; j < ymax; j++)
           v_edges[j * xGrid + x1].est_usage += edgeCost;
-        treeedge->route.xFirst = FALSE;
+        treeedge->route.xFirst = false;
         if (treenodes[n1].status % 2 == 0) {
           treenodes[n1].status += 1;
         }
@@ -378,7 +378,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
       {
         for (j = x1; j < x2; j++)
           h_edges[y1 * (xGrid - 1) + j].est_usage += edgeCost;
-        treeedge->route.xFirst = TRUE;
+        treeedge->route.xFirst = true;
         if (treenodes[n2].status < 2) {
           treenodes[n2].status += 2;
         }
@@ -448,7 +448,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
           for (j = x1; j < x2; j++) {
             h_edges[grid + j].est_usage += edgeCost;
           }
-          treeedge->route.xFirst = FALSE;
+          treeedge->route.xFirst = false;
         }  // if costL1<costL2
         else {
           if (treenodes[n2].status % 2 == 0) {
@@ -466,7 +466,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
           for (j = ymin; j < ymax; j++) {
             v_edges[j * xGrid + x2].est_usage += edgeCost;
           }
-          treeedge->route.xFirst = TRUE;
+          treeedge->route.xFirst = true;
         }
 
       }  // else L-routing
@@ -476,9 +476,9 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
   }  // loop i
 }
 
-// route all segments with L, firstTime: TRUE, first newrouteLAll, FALSE - not
+// route all segments with L, firstTime: true, first newrouteLAll, false - not
 // first
-void newrouteLAll(Bool firstTime, Bool viaGuided)
+void newrouteLAll(bool firstTime, bool viaGuided)
 {
   int i;
 
@@ -639,8 +639,8 @@ void newrouteZ(int netID, int threshold)
   int ind, i, j, d, n1, n2, x1, y1, x2, y2, segWidth, segHeight, bestZ, grid,
       grid1, grid2, ymin, ymax, n1a, n2a, status1, status2;
   float tmp, bestcost, btTEST;
-  Bool HVH;        // the shape of Z routing (TRUE - HVH, FALSE - VHV)
-  Bool y1Smaller;  // TRUE - y1<y2, FALSE y1>y2
+  bool HVH;        // the shape of Z routing (true - HVH, false - VHV)
+  bool y1Smaller;  // true - y1<y2, false y1>y2
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
@@ -681,11 +681,11 @@ void newrouteZ(int netID, int threshold)
           if (y1 < y2) {
             ymin = y1;
             ymax = y2;
-            y1Smaller = TRUE;
+            y1Smaller = true;
           } else {
             ymin = y2;
             ymax = y1;
-            y1Smaller = FALSE;
+            y1Smaller = false;
           }
           segHeight = ymax - ymin;
 
@@ -842,7 +842,7 @@ void newrouteZ(int netID, int threshold)
           }
 
           // compute cost for all Z routing
-          HVH = TRUE;
+          HVH = true;
           bestcost = BIG_INT;
           btTEST = BIG_INT;
           bestZ = 0;
@@ -864,7 +864,7 @@ void newrouteZ(int netID, int threshold)
             if (costVHV[i] < bestcost) {
               bestcost = costVHV[i];
               bestZ = i + ymin;
-              HVH = FALSE;
+              HVH = false;
             }
           }
 
@@ -957,7 +957,7 @@ void newrouteZ(int netID, int threshold)
 }
 
 // ripup a tree edge according to its ripup type and Z-route it
-// route all segments with L, firstTime: TRUE, first newrouteLAll, FALSE - not
+// route all segments with L, firstTime: true, first newrouteLAll, false - not
 // first
 void newrouteZAll(int threshold)
 {
@@ -976,8 +976,8 @@ void routeMonotonic(int netID, int edgeID, int threshold)
   int* gridsX = new int[XRANGE + YRANGE];
   int* gridsY = new int[XRANGE + YRANGE];
   float **cost, tmp;
-  Bool** parent;  // remember the parent of a grid on the shortest path, TRUE -
-                  // same x, FALSE - same y
+  bool** parent;  // remember the parent of a grid on the shortest path, true -
+                  // same x, false - same y
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
@@ -1018,10 +1018,10 @@ void routeMonotonic(int netID, int edgeID, int threshold)
 
       // find the best monotonic path from (x1, y1) to (x2, y2)
       cost = new float*[segHeight + 1];
-      parent = new Bool*[segHeight + 1];
+      parent = new bool*[segHeight + 1];
       for (i = 0; i <= segHeight; i++) {
         cost[i] = new float[segWidth + 1];
-        parent[i] = new Bool[segWidth + 1];
+        parent[i] = new bool[segWidth + 1];
       }
 
       xGrid_1 = xGrid - 1;  // tmp variable to save runtime
@@ -1258,7 +1258,7 @@ void spiralRoute(int netID, int edgeID)
     {
       for (j = ymin; j < ymax; j++)
         v_edges[j * xGrid + x1].est_usage += edgeCost;
-      treeedge->route.xFirst = FALSE;
+      treeedge->route.xFirst = false;
       if (treenodes[n1].status % 2 == 0) {
         treenodes[n1].status += 1;
       }
@@ -1276,7 +1276,7 @@ void spiralRoute(int netID, int edgeID)
     {
       for (j = x1; j < x2; j++)
         h_edges[y1 * (xGrid - 1) + j].est_usage += edgeCost;
-      treeedge->route.xFirst = TRUE;
+      treeedge->route.xFirst = true;
       if (treenodes[n2].status < 2) {
         treenodes[n2].status += 2;
       }
@@ -1358,7 +1358,7 @@ void spiralRoute(int netID, int edgeID)
         for (j = x1; j < x2; j++) {
           h_edges[grid + j].est_usage += edgeCost;
         }
-        treeedge->route.xFirst = FALSE;
+        treeedge->route.xFirst = false;
       }  // if costL1<costL2
       else {
         if (treenodes[n2].status % 2 == 0) {
@@ -1386,7 +1386,7 @@ void spiralRoute(int netID, int edgeID)
         for (j = ymin; j < ymax; j++) {
           v_edges[j * xGrid + x2].est_usage += edgeCost;
         }
-        treeedge->route.xFirst = TRUE;
+        treeedge->route.xFirst = true;
       }
 
     }  // else L-routing
@@ -1399,7 +1399,7 @@ void spiralRouteAll()
 {
   int netID, d, k, edgeID, nodeID, deg, numpoints, n1, n2;
   int na;
-  Bool redundant;
+  bool redundant;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
   std::queue<int> edgeQueue;
@@ -1415,7 +1415,7 @@ void spiralRouteAll()
       treenodes[d].topL = -1;
       treenodes[d].botL = numLayers;
       // treenodes[d].l = 0;
-      treenodes[d].assigned = FALSE;
+      treenodes[d].assigned = false;
       treenodes[d].stackAlias = d;
       treenodes[d].conCNT = 0;
       treenodes[d].hID = 0;
@@ -1425,7 +1425,7 @@ void spiralRouteAll()
       if (d < deg) {
         treenodes[d].botL = treenodes[d].topL = 0;
         // treenodes[d].l = 0;
-        treenodes[d].assigned = TRUE;
+        treenodes[d].assigned = true;
         treenodes[d].status = 2;
 
         xcor[numpoints] = treenodes[d].x;
@@ -1433,11 +1433,11 @@ void spiralRouteAll()
         dcor[numpoints] = d;
         numpoints++;
       } else {
-        redundant = FALSE;
+        redundant = false;
         for (k = 0; k < numpoints; k++) {
           if ((treenodes[d].x == xcor[k]) && (treenodes[d].y == ycor[k])) {
             treenodes[d].stackAlias = dcor[k];
-            redundant = TRUE;
+            redundant = true;
             break;
           }
         }
@@ -1469,9 +1469,9 @@ void spiralRouteAll()
         treeedge->n2a = treenodes[n2].stackAlias;
         treenodes[treeedge->n2a].eID[treenodes[treeedge->n2a].conCNT] = edgeID;
         (treenodes[treeedge->n2a].conCNT)++;
-        treeedges[edgeID].assigned = FALSE;
+        treeedges[edgeID].assigned = false;
       } else {
-        treeedges[edgeID].assigned = TRUE;
+        treeedges[edgeID].assigned = true;
       }
     }
   }
@@ -1485,13 +1485,13 @@ void spiralRouteAll()
     /* edgeQueue.clear(); */
 
     for (nodeID = 0; nodeID < deg; nodeID++) {
-      treenodes[nodeID].assigned = TRUE;
+      treenodes[nodeID].assigned = true;
       for (k = 0; k < treenodes[nodeID].conCNT; k++) {
         edgeID = treenodes[nodeID].eID[k];
 
-        if (treeedges[edgeID].assigned == FALSE) {
+        if (treeedges[edgeID].assigned == false) {
           edgeQueue.push(edgeID);
-          treeedges[edgeID].assigned = TRUE;
+          treeedges[edgeID].assigned = true;
         }
       }
     }
@@ -1502,29 +1502,29 @@ void spiralRouteAll()
       treeedge = &(treeedges[edgeID]);
       if (treenodes[treeedge->n1a].assigned) {
         spiralRoute(netID, edgeID);
-        treeedge->assigned = TRUE;
+        treeedge->assigned = true;
         if (!treenodes[treeedge->n2a].assigned) {
           for (k = 0; k < treenodes[treeedge->n2a].conCNT; k++) {
             edgeID = treenodes[treeedge->n2a].eID[k];
             if (!treeedges[edgeID].assigned) {
               edgeQueue.push(edgeID);
-              treeedges[edgeID].assigned = TRUE;
+              treeedges[edgeID].assigned = true;
             }
           }
-          treenodes[treeedge->n2a].assigned = TRUE;
+          treenodes[treeedge->n2a].assigned = true;
         }
       } else {
         spiralRoute(netID, edgeID);
-        treeedge->assigned = TRUE;
+        treeedge->assigned = true;
         if (!treenodes[treeedge->n1a].assigned) {
           for (k = 0; k < treenodes[treeedge->n1a].conCNT; k++) {
             edgeID = treenodes[treeedge->n1a].eID[k];
             if (!treeedges[edgeID].assigned) {
               edgeQueue.push(edgeID);
-              treeedges[edgeID].assigned = TRUE;
+              treeedges[edgeID].assigned = true;
             }
           }
-          treenodes[treeedge->n1a].assigned = TRUE;
+          treenodes[treeedge->n1a].assigned = true;
         }
       }
     }
@@ -1550,7 +1550,7 @@ void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
   int* gridsX = new int[XRANGE + YRANGE];
   int* gridsY = new int[XRANGE + YRANGE];
   float tmp1, tmp2, tmp3, tmp4, tmp, best;
-  Bool LH1, LH2, BL1, BL2;
+  bool LH1, LH2, BL1, BL2;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
@@ -1647,24 +1647,24 @@ void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
                  + ADIFF(d1[j][x2], d1[j][i]);  // xifrst for mid point
 
           tmp = tmp1 + tmp4;
-          LH1 = FALSE;
-          LH2 = TRUE;
+          LH1 = false;
+          LH2 = true;
 
           if (tmp2 + tmp3 < tmp) {
             tmp = tmp2 + tmp3;
-            LH1 = TRUE;
-            LH2 = FALSE;
+            LH1 = true;
+            LH2 = false;
           }
 
           if (tmp1 + tmp3 + viacost < tmp) {
-            LH1 = FALSE;
-            LH2 = FALSE;
+            LH1 = false;
+            LH2 = false;
             tmp = tmp1 + tmp3 + viacost;
           }
 
           if (tmp2 + tmp4 + viacost < tmp) {
-            LH1 = TRUE;
-            LH2 = TRUE;
+            LH1 = true;
+            LH2 = true;
             tmp = tmp2 + tmp4 + viacost;
           }
 
@@ -1917,13 +1917,13 @@ void newrouteLInMaze(int netID)
       {
         for (j = ymin; j < ymax; j++)
           v_edges[j * xGrid + x1].usage += edgeCost;
-        treeedge->route.xFirst = FALSE;
+        treeedge->route.xFirst = false;
 
       } else if (y1 == y2)  // H-routing
       {
         for (j = x1; j < x2; j++)
           h_edges[y1 * (xGrid - 1) + j].usage += edgeCost;
-        treeedge->route.xFirst = TRUE;
+        treeedge->route.xFirst = true;
 
       } else  // L-routing
       {
@@ -1961,7 +1961,7 @@ void newrouteLInMaze(int netID)
           for (j = x1; j < x2; j++) {
             h_edges[grid + j].usage += edgeCost;
           }
-          treeedge->route.xFirst = FALSE;
+          treeedge->route.xFirst = false;
         }  // if costL1<costL2
         else {
           // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
@@ -1972,7 +1972,7 @@ void newrouteLInMaze(int netID)
           for (j = ymin; j < ymax; j++) {
             v_edges[j * xGrid + x2].usage += edgeCost;
           }
-          treeedge->route.xFirst = TRUE;
+          treeedge->route.xFirst = true;
         }
 
       }  // else L-routing
