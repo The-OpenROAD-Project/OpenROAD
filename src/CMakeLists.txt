@@ -130,7 +130,7 @@ add_subdirectory(mpl)
 add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
-add_subdirectory(PartitionMgr)
+add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
@@ -183,7 +183,7 @@ target_link_libraries(openroad
   mpl2
   psm
   ant
-  PartitionMgr
+  par
   utl
   pdn
   pdr

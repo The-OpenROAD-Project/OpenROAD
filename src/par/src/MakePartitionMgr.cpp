@@ -41,11 +41,11 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* PartitionMgr_tcl_inits[];
+extern const char* par_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Partitionmgr_Init(Tcl_Interp* interp);
+extern int Par_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -58,8 +58,8 @@ par::PartitionMgr* makePartitionMgr()
 void initPartitionMgr(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Partitionmgr_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::PartitionMgr_tcl_inits);
+  Par_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::par_tcl_inits);
 
   par::PartitionMgr* kernel = openroad->getPartitionMgr();
 
