@@ -269,7 +269,13 @@ void Restructure::getEndPoints(sta::PinSet& ends,
 
   // unconstrained end points
   auto errors
-      = open_sta_->checkTiming(false, false, false, true, true, false, false);
+      = open_sta_->checkTiming(false /*no_input_delay*/,
+				     false /*no_output_delay*/,
+				     false /*reg_multiple_clks*/,
+				     true /*reg_no_clks*/,
+				     true /*unconstrained_endpoints*/,
+				     false /*loops*/,
+				     false /*generated_clks*/);
   debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
   if (errors.size() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
