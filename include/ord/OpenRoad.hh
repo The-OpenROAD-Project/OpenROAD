@@ -93,6 +93,7 @@ class Finale;
 
 namespace mpl {
 class MacroPlacer;
+class MacroPlacer2;
 }
 
 namespace gpl {
@@ -158,6 +159,7 @@ public:
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
+  mpl::MacroPlacer2 *getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -244,6 +246,7 @@ private:
   dpl::Opendp *opendp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
+  mpl::MacroPlacer2 *macro_placer2_;
   grt::GlobalRouter *global_router_;
   rmp::Restructure *restructure_;
   cts::TritonCTS *tritonCts_;

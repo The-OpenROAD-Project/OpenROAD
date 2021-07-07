@@ -87,6 +87,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
   maxNetDegree = 0;
   logger = log;
   db_ = db;
+  allow_overflow_ = false;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -969,7 +970,7 @@ NetRouteMap FastRouteCore::run()
   int tUsage;
   int cost_step;
   int maxOverflow;
-  int minoflrnd;
+  int minoflrnd = 0;
   int bwcnt = 0;
 
   // TODO: check this size

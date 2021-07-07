@@ -127,6 +127,7 @@ void FlexGridGraph::initEdges(
     } else {
       nonPrefLayerNum = layerNum;
     }
+	
     const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
@@ -144,7 +145,6 @@ void FlexGridGraph::initEdges(
         bool xFound = (xIt != xSubMap.end());
         bool xFound2 = (xIt2 != xSubMap.end());
         bool xFound3 = (xIt3 != xSubMap.end());
-
         // add cost to out-of-die edge
         bool outOfDiePlanar = false;
         // add edge for preferred direction

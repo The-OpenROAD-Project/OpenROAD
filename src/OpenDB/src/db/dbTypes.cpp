@@ -140,6 +140,52 @@ const char* dbOrientType::getString() const
   return value;
 }
 
+dbOrientType dbOrientType::flipX() const
+{
+  switch (_value) {
+    case R0:
+      return MX;
+    case R90:
+      return MYR90;
+    case R180:
+      return MY;
+    case R270:
+      return MXR90;
+    case MY:
+      return R180;
+    case MYR90:
+      return R90;
+    case MX:
+      return R0;
+    case MXR90:
+      return R270;
+  }
+  return R0;
+}
+
+dbOrientType dbOrientType::flipY() const
+{
+  switch (_value) {
+    case R0:
+      return MY;
+    case R90:
+      return MXR90;
+    case R180:
+      return MX;
+    case R270:
+      return MYR90;
+    case MY:
+      return R0;
+    case MYR90:
+      return R270;
+    case MX:
+      return R180;
+    case MXR90:
+      return R90;
+  }
+  return R0;
+}
+
 dbSigType::dbSigType(const char* value)
 {
   if (strcasecmp(value, "SIGNAL") == 0)
