@@ -876,10 +876,11 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
 
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
+    auto layer = getTech()->getLayer(viaDef1->getCutLayerNum());
     auto samenetCons
-        = getTech()->getLayer(viaDef1->getCutLayerNum())->getCutSpacing(true);
+        = layer->getCutSpacing(true);
     auto diffnetCons
-        = getTech()->getLayer(viaDef1->getCutLayerNum())->getCutSpacing(false);
+        = layer->getCutSpacing(false);
     if (!samenetCons.empty()) {
       // check samenet spacing rule if exists
       for (auto con : samenetCons) {
@@ -917,9 +918,22 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         }
         sol = max(sol, reqSpcVal);
       }
+      auto cutClass1 = layer->getCutClass(cutBox1.width(), cutBox1.length())->getName();
+      auto cutClass2 = layer->getCutClass(cutBox2.width(), cutBox2.length())->getName();
+      for(auto con : layer->getLef58CutSpacingTableConstraints())
+      {
+        auto dbRule = con->getODBRule();
+        auto reqSpcVal = std::max(dbRule->getSpacing(cutClass1, true, cutClass2, true),
+                                  dbRule->getSpacing(cutClass1, true, cutClass2, false),
+                                  dbRule->getSpacing(cutClass1, false, cutClass2, true),
+                                  dbRule->getSpacing(cutClass1, false, cutClass2, false)
+        );
+        sol = max(sol, reqSpcVal);
+      }
     }
     // TODO: diff layer
-  } else {
+  } 
+  else {
     auto layerNum1 = viaDef1->getCutLayerNum();
     auto layerNum2 = viaDef2->getCutLayerNum();
     frCutSpacingConstraint* samenetCon = nullptr;

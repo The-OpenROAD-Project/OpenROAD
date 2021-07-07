@@ -30,65 +30,6 @@
 #include "frProfileTask.h"
 #include "opendb/db.h"
 using namespace fr;
-/*
-int getCutClassIdx(layer, viaEdge)
-{
-  width = std::min(gtl::length(viaEdge), gtl::length(viaEdge->prevEdge));
-  length = std::max(gtl::length(viaEdge), gtl::length(viaEdge->prevEdge));
-  return layer->getCutClassIdx(width, length);
-}
-bool isSide(viaEdge)
-{
-  return gtl::length(viaEdge) > gtl::length(viaEdge->prevEdge);
-}
-void getQueryRegion(viaEdge, maxSpc)
-{
-  bloat viaEdge by MaxSpc according to direction
-}
-void checkLef58CutSp1acingTbl(viaEdge1, viaEdge2)
-{
-  class1 = getCutClassIdx(viaEdge1)
-  class2 = getCutClassIdx(viaEdge2)
-  reqSpc = getSpacing(class1, isSide(viaEdge1), class2, isSide(viaEdge2))
-  isCenterToCenter = isCenterToCenter(class1, class2)
-  dist = 0
-  if(isCenterToCenter)
-  {
-    center1 = getCenteroid(viaEdge1->getPin()->getPolygon())
-    center2 = getCenteroid(viaEdge2->getPin()->getPolygon())
-    dist = euclidean_dist(center1, center2)
-  }else
-  {
-    dist = euclidean_dist(viaEdge1, viaEdge2)
-  }
-  if(dist < reqSpc)
-  {
-    //mark violation
-  }
-}
-
-void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge, frLef58CutSpacingTableConstraint* con)
-{
-  auto layerNum = viaEdge->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
-  width = std::min(gtl::length(viaEdge), gtl::length(viaEdge->prevEdge));
-  length = std::max(gtl::length(viaEdge), gtl::length(viaEdge->prevEdge));
-  isSide = isSide(viaEdge);
-  auto cutClassIdx = layer->getCutClassIdx(width, length);
-  cutClass = layer->getCutClass(cutClassIdx);
-  auto dbRule = con->getODBRule();
-  maxSpc = dbRule->getMaxSpacing(cutclass, isSide)
-  box = getQueryRegion(viaEdge, maxSpc);
-  results = queryEdges(box, layer)
-  for(edge : results)
-  {
-    if(edge's pin is viaEdge's pin)
-      continue;
-    checkLef58CutSpacingTbl(edge, viaEdge);
-  }
- 
-}
- */
 
 
 inline std::string getCutClass(frLayer* layer, gcSegment* viaEdge)
