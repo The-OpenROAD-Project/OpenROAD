@@ -39,7 +39,7 @@ The -edge option is used to determine the orientation of the padcell, the actual
 | -location | Specify the location of the centre or origin of the padcell |
 | -bump | For flipchip designs, declare that the padcell is associated with the bump at the specified row/col location on the die |
 | -bondpad | For wirebond designs where the pad cells have separate bondpad instances, use this option to specify the location of the associated bondpad |
-| -inst_name | Specify the name of the padcell instance in the design |
+| -inst_name | Specify the name of the padcell instance in the design. This takes precedence over the -pad_inst_pattern method described in the set_padring_options command |
 
 ### Examples
 ```

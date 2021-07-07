@@ -1,6 +1,8 @@
 sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-bump_pin_name pin_name] \
                                            [-spacing_to_edge spacing] \
+                                           [-offset {x_offset y_offset}] \
+                                           [-array_size {rows columns}] \
                                            [-cell_name bump_cell_table] \
                                            [-num_pads_per_tile value] \
                                            [-rdl_layer name] \
@@ -10,7 +12,7 @@ sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
 
 proc set_bump_options {args} {
   sta::parse_key_args "set_bump_options" args \
-    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_cover_file_name}
+    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_cover_file_name -offset -array_size}
 
   if {[llength $args] > 0} {
     utl::error PAD 218 "Unrecognized arguments ([lindex $args 0]) specified for set_bump_options"
@@ -18,7 +20,7 @@ proc set_bump_options {args} {
   ICeWall::set_bump_options {*}[array get keys]
 }
 
-sta::define_cmd_args "set_bump" {-row row -col col [-power|-ground] [-net net_name] [-remove]}
+sta::define_cmd_args "set_bump" {-row row -col col [(-power|-ground|-net) net_name] [-remove]}
 
 proc set_bump {args} {
   if {[ord::get_db_block] == "NULL"} {
@@ -26,8 +28,12 @@ proc set_bump {args} {
   }
 
   sta::parse_key_args "set_bump" args \
-    keys {-row -col -net} \
-    flags {-power -ground -remove} 
+    keys {-row -col -net -power -ground} \
+    flags {-remove} 
+
+  if {[llength $args] > 0} {
+    utl::error PAD 237 "Unrecognized arguments ([lindex $args 0]) specified for set_bump"
+  }
 
   if {![info exists keys(-row)]} {
     utl::error PAD 233 "Required option -row missing for set_bump"
@@ -38,8 +44,10 @@ proc set_bump {args} {
 
   ICeWall::check_rowcol [list row $keys(-row) col $keys(-col)]
 
-  if {[info exists flags(-power)] && [info exists flags(-ground)]} {
-    utl::error PAD 232 "The -power and -ground options are mutualy exclusive for the set_bump command"
+  if {([info exists flags(-power)] && [info exists flags(-ground)]) ||
+      ([info exists flags(-power)] && [info exists flags(-net)]) ||
+      ([info exists flags(-net)] && [info exists flags(-ground)])} {
+    utl::error PAD 232 "The -power -ground and -net options are mutualy exclusive for the set_bump command"
   }
 
   if {[info exists flags(-remove)]} {
@@ -49,11 +57,11 @@ proc set_bump {args} {
   if {[info exists keys(-net)]} {
     ICeWall::bump_set_net $keys(-row) $keys(-col) $keys(-net)
   }
-  if {[info exists flags(-power)]} {
-    ICeWall::bump_set_power $keys(-row) $keys(-col)
+  if {[info exists keys(-power)]} {
+    ICeWall::bump_set_power $keys(-row) $keys(-col) $keys(-power)
   }
-  if {[info exists flags(-ground)]} {
-    ICeWall::bump_set_ground $keys(-row) $keys(-col)
+  if {[info exists keys(-ground)]} {
+    ICeWall::bump_set_ground $keys(-row) $keys(-col) $keys(-ground)
   }
 }
 
@@ -63,8 +71,8 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-core_area core_area] \
                                             [-die_area die_area] \
                                             [-offsets offsets] \
-                                            [-pad_inst_name pad_inst_name] \
-                                            [-pad_pin_name pad_pin_name] \
+                                            [-pad_inst_pattern pad_inst_pattern] \
+                                            [-pad_pin_pattern pad_pin_pattern] \
                                             [-pin_layer pin_layer_name] \
                                             [-connect_by_abutment signal_list]}
 
@@ -74,7 +82,7 @@ proc set_padring_options {args} {
   }
 
   sta::parse_key_args "set_padring_options" args \
-    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_name -pad_pin_name -pin_layer -connect_by_abutment}
+    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_pattern -pad_pin_pattern -pin_layer -connect_by_abutment}
 
   if {[llength $args] > 0} {
     utl::error PAD 219 "Unrecognized arguments ([lindex $args 0]) specified for set_padring_options"
@@ -104,12 +112,12 @@ proc set_padring_options {args} {
     ICeWall::set_offsets $keys(-offsets)
   }
 
-  if {[info exists keys(-pad_inst_name)]} {
-    ICeWall::set_pad_inst_name $keys(-pad_inst_name)
+  if {[info exists keys(-pad_inst_pattern)]} {
+    ICeWall::set_pad_inst_name $keys(-pad_inst_pattern)
   }
 
-  if {[info exists keys(-pad_pin_name)]} {
-    ICeWall::set_pad_pin_name $keys(-pad_pin_name)
+  if {[info exists keys(-pad_pin_pattern)]} {
+    ICeWall::set_pad_pin_name $keys(-pad_pin_pattern)
   }
 
   if {[info exists keys(-pin_layer)]} {
@@ -1340,7 +1348,11 @@ namespace eval ICeWall {
     if {$padcell != ""} {
       return [get_padcell_signal_name $padcell]
     }
-    
+
+    if {[set name [bump_get_net $row $col]] != ""} {
+      return [bump_get_net $row $col]
+    }
+
     set rdl_routing_layer [get_footprint_rdl_layer_name]
     if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
       if {$row % 2 == 0} {
@@ -1351,7 +1363,7 @@ namespace eval ICeWall {
         return "VDD"
       }
     }
-    
+   
     return "VSS"
   }
 
@@ -2468,22 +2480,46 @@ namespace eval ICeWall {
     variable num_bumps_y
     variable actual_tile_offset_x
     variable actual_tile_offset_y
+    variable library
 
     set die_size_x [get_footprint_die_size_x]
     set die_size_y [get_footprint_die_size_y]
-    set min_bump_spacing_to_die_edge [get_footprint_min_bump_spacing_to_die_edge]
     set pitch [get_footprint_bump_pitch]
     set bump_width [get_footprint_bump_width]
     # debug "$pitch $bump_width"
 
-    set tile_spacing_to_die_edge [expr $min_bump_spacing_to_die_edge - ($pitch - $bump_width) / 2]
-    set available_bump_space_x [expr $die_size_x - 2 * $tile_spacing_to_die_edge]
-    set available_bump_space_y [expr $die_size_y - 2 * $tile_spacing_to_die_edge]
-    set num_bumps_x [expr int(1.0 * $available_bump_space_x / $pitch)]
-    set num_bumps_y [expr int(1.0 * $available_bump_space_y / $pitch)]
-    set actual_tile_offset_x [expr ($die_size_x - $num_bumps_x * $pitch) / 2]
-    set actual_tile_offset_y [expr ($die_size_y - $num_bumps_y * $pitch) / 2]
-    
+    if {[dict exists $library bump array_size]} {
+      set num_bumps_x [dict get $library bump array_size columns]
+      set num_bumps_y [dict get $library bump array_size rows]
+
+      if {[dict exists $library bump offset]} {
+        set actual_tile_offset_x [expr [ord::microns_to_dbu [dict get $library bump offset x]] - $pitch / 2]
+        set actual_tile_offset_y [expr [ord::microns_to_dbu [dict get $library bump offset y]] - $pitch / 2]
+      } else {
+        set actual_tile_offset_x [expr ($die_size_x - $num_bumps_x * $pitch) / 2]
+        set actual_tile_offset_y [expr ($die_size_y - $num_bumps_y * $pitch) / 2]
+      }
+    } else {
+      if {[dict exists $library bump offset]} {
+        set actual_tile_offset_x [expr [ord::microns_to_dbu [dict get $library bump offset x]] - $pitch / 2]
+        set actual_tile_offset_y [expr [ord::microns_to_dbu [dict get $library bump offset y]] - $pitch / 2]
+        set available_bump_space_x [expr $die_size_x - $actual_tile_offset_x]
+        set available_bump_space_y [expr $die_size_y - $actual_tile_offset_y]
+      } else {
+        set min_bump_spacing_to_die_edge [get_footprint_min_bump_spacing_to_die_edge]
+        set tile_spacing_to_die_edge [expr $min_bump_spacing_to_die_edge - ($pitch - $bump_width) / 2]
+        set available_bump_space_x [expr $die_size_x - 2 * $tile_spacing_to_die_edge]
+        set available_bump_space_y [expr $die_size_y - 2 * $tile_spacing_to_die_edge]
+      }
+      set num_bumps_x [expr int(1.0 * $available_bump_space_x / $pitch)]
+      set num_bumps_y [expr int(1.0 * $available_bump_space_y / $pitch)]
+
+      if {![dict exists $library bump offset]} {
+        set actual_tile_offset_x [expr ($die_size_x - $num_bumps_x * $pitch) / 2]
+        set actual_tile_offset_y [expr ($die_size_y - $num_bumps_y * $pitch) / 2]
+      }
+    }
+
     # debug "tile_spacing_to_die_edge $tile_spacing_to_die_edge"
 
     # debug "available_bump_space_x $available_bump_space_x"
@@ -3066,33 +3102,82 @@ namespace eval ICeWall {
     dict set bumps $row $col removed 1
   }
 
-  proc bump_set_net {row col $net_name} {
+  proc bump_set_net_name {row col net_name} {
+    variable bumps
+    variable footprint
+
+    if {[dict exists $bumps $row $col net]} {
+      if {[dict get $bumps $row $col net] != $net_name} {
+        utl::error PAD 238 "Trying to set bump at ($row $col) to be $net_name, but it has already been set to [dict get $bumps $row $col net]"
+      }
+    }
+    dict set bumps $row $col net $net_name
+  }
+
+  proc bump_set_net {row col net_name} {
     variable bumps
 
-    dict set bumps $row $col net $net_name
+    check_net_type $net_name signal
+    bump_set_net_name $row $col $net_name
   }
  
   proc bump_get_net {row col} {
     variable bumps
 
-    if {[dict exists bumps $row $col net]} {
+    if {[dict exists $bumps $row $col net]} {
       return [dict get $bumps $row $col net]
     }
     return ""
   }
- 
-  proc bump_set_power {row col} {
+
+  proc check_net_type {net_name type} {
     variable bumps
 
-    dict set bump $row $col power 1
+    if {[dict exists $bumps nets $net_name]} {
+      if {[dict get $bumps nets $net_name] != $type} {
+        utl::error PAD 235 "Net $net_name specified as a $type net, but has alreaqdy been defined as a [dict get $bumps nets $net_name] net"
+      }
+    }
+
+    dict set bumps nets $net_name $type
   }
  
-  proc bump_set_ground {row col} {
+  proc bump_set_power {row col power_net} {
     variable bumps
 
-    dict set bump $row $col ground 1
+    check_net_type $power_net power
+    bump_set_net_name $row $col $power_net
+    add_power_nets $power_net
+    dict set bumps $row $col power 1
   }
 
+  proc bump_is_power {row col} {
+    variable bumps
+
+    if {[dict exists $bumps $row $col power]} {
+      return [dict get $bumps $row $col power]
+    } 
+    return 0
+  }
+ 
+  proc bump_set_ground {row col ground_net} {
+    variable bumps
+
+    check_net_type $ground_net ground
+    bump_set_net_name $row $col $ground_net
+    add_ground_nets $ground_net
+    dict set bumps $row $col ground 1
+  }
+
+  proc bump_is_ground {row col} {
+    variable bumps
+
+    if {[dict exists $bumps $row $col ground]} {
+      return [dict get $bumps $row $col ground]
+    } 
+    return 0
+  }
+ 
   proc place_bumps {} {
     variable num_bumps_x
     variable num_bumps_y
@@ -3107,7 +3192,6 @@ namespace eval ICeWall {
         if {![bump_exists $row $col]} {continue}
         set origin [get_bump_origin $row $col]
         set bump_name [get_bump_name_at_row_col $row $col]
-        # debug "bump ($row $col): $bump_name"
 
         set inst [odb::dbInst_create $block $bump_master $bump_name]
 
@@ -3122,6 +3206,24 @@ namespace eval ICeWall {
       }
     }
     # debug "end"
+  }
+
+  proc bump_get_tag {row col} {
+    set net_name [bump_get_net $row $col]
+    if {[bump_is_power $row $col]} {
+      if {$net_name == "VDD"} {
+        return "POWER"
+      } else {
+        return "POWER_[bump_get_net $row $col]"
+      }
+    } elseif {[bump_is_ground $row $col]} {
+      if {$net_name == "VSS"} {
+        return "GROUND"
+      } else {
+        return "GROUND_[bump_get_net $row $col]"
+      }
+    } 
+    utl::error PAD 236 "Bump $row $col is not assigned to power or ground"
   }
 
   proc add_power_ground_rdl_straps {} {
@@ -3142,31 +3244,49 @@ namespace eval ICeWall {
     # debug "bump_pitch $bump_pitch"
     
     set rdl_min_spacing [[$tech findLayer $rdl_routing_layer] getSpacing]
+    set power_nets {}
+    set ground_nets {}
     # Add stripes for bumps in the central core area
     if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
+      for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
+        for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
+          if {[bump_get_net $row $col] == ""} {
+            if {$row % 2 == 0} {
+              bump_set_power $row $col "VDD"
+            } else {
+              bump_set_ground $row $col "VSS"
+            }
+          }
+        }
+      }
       # debug "minX: [ord::dbu_to_microns $minX], maxX: [ord::dbu_to_microns $maxX]"
       for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
-        set prev_net ""
+        set prev_tag ""
         set y [dict get [get_bump_centre $row 1] y]
         set lowerY [expr $y - ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
         set upperY [expr $y + ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
         for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
-          set point [get_bump_centre $row $col]
-          if {[set net_name [bump_get_net $row $col]] == ""} {
-            if {$row % 2 == 0} {
-              set net_name "POWER"
-            } else {
-              set net_name "GROUND"
-            }
+          if {![bump_exists $row $col]} {
+            set prev_tag ""
+            continue
           }
-          if {$prev_net == ""} {
+          set point [get_bump_centre $row $col]
+          set net_name [bump_get_net $row $col]
+          set tag [bump_get_tag $row $col]
+          if {[bump_is_power $row $col]} {
+            lappend power_nets $net_name
+          } elseif {[bump_is_ground $row $col]} {
+            lappend ground_nets $net_name
+          }
+          # debug $net_name
+          if {$prev_tag == ""} {
             set minX [expr [dict get $point x] - $bump_pitch / 2]
-          } elseif {$prev_net == $net_name} {
+          } elseif {$prev_tag == $tag} {
             set minX [expr [dict get $point x] - $bump_pitch / 2 - $rdl_min_spacing / 2]
           } else {
             set minX [expr [dict get $point x] - $bump_pitch / 2 + $rdl_min_spacing / 2]
           }
-          set prev_net $net_name
+          set prev_tag $tag
           if {$col == $num_bumps_x - $corner_size} {
             set maxX [expr [dict get $point x] + $bump_pitch / 2]
           } else {
@@ -3175,33 +3295,49 @@ namespace eval ICeWall {
 
           set upper_stripe [odb::newSetFromRect $minX [expr $upperY - $rdl_stripe_width / 2] $maxX [expr $upperY + $rdl_stripe_width / 2]]
           set lower_stripe [odb::newSetFromRect $minX [expr $lowerY - $rdl_stripe_width / 2] $maxX [expr $lowerY + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
-          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
+          pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
           set link_stripe [odb::newSetFromRect [expr [dict get $point x] - $rdl_stripe_width / 2] $lowerY [expr [dict get $point x] + $rdl_stripe_width / 2] $upperY]
-          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
         }
       }
     } elseif {[pdngen::get_dir $rdl_routing_layer] == "ver"} {
       # Columns numbered top to bottom, so maxY is for corner_size +1
 
       # debug "minY: [ord::dbu_to_microns $minY], maxY: [ord::dbu_to_microns $maxY]"
+      for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
+        for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
+          if {[bump_get_net $row $col] == ""} {
+            if {$col % 2 == 0} {
+              bump_set_power $row $col "VDD"
+            } else {
+              bump_set_ground $row $col "VSS"
+            }
+          }
+        }
+      }
       for {set col [expr $corner_size + 1]} {$col <= $num_bumps_x - $corner_size} {incr col} {
-        set prev_net ""
+        set prev_tag ""
         set x [dict get [get_bump_centre 1 $col] x]
         set lowerX [expr $x - ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
         set upperX [expr $x + ($bump_pitch - $rdl_stripe_width - $rdl_stripe_spacing) / 2]
         for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
-          set point [get_bump_centre $row $col]
-          if {[set net_name [bump_get_net $row $col]] == ""} {
-            if {$col % 2 == 0} {
-              set net_name "POWER"
-            } else {
-              set net_name "GROUND"
-            }
+          if {![bump_exists $row $col]} { 
+            set prev_tag ""
+            continue
           }
-          if {$prev_net == ""} {
+          set net_name [bump_get_net $row $col]
+          set tag [bump_get_tag $row $col]
+          if {[bump_is_power $row $col]} {
+            lappend power_nets $net_name
+          } elseif {[bump_is_ground $row $col]} {
+            lappend ground_nets $net_name
+          }
+          set point [get_bump_centre $row $col]
+          # debug $tag
+          if {$prev_tag == ""} {
             set maxY [expr [dict get $point y] + $bump_pitch / 2]
-          } elseif {$prev_net == $net_name} {
+          } elseif {$prev_tag == $tag} {
             set maxY [expr [dict get $point y] + $bump_pitch / 2 + $rdl_min_spacing / 2]
           } else {
             set maxY [expr [dict get $point y] + $bump_pitch / 2 - $rdl_min_spacing / 2]
@@ -3211,14 +3347,14 @@ namespace eval ICeWall {
           } else {
             set minY [expr [dict get $point y] - $bump_pitch / 2 + $rdl_min_spacing / 2]
           }
-          # debug "x: $x, y: [dict get $point y], prev: $prev_net, net: $net_name, minY: $minY, maxY, $maxY"
-          set prev_net $net_name
+          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $tag, minY: $minY, maxY, $maxY"
+          set prev_tag $tag
           set upper_stripe [odb::newSetFromRect [expr $upperX - $rdl_stripe_width / 2] $minY [expr $upperX + $rdl_stripe_width / 2] $maxY]
           set lower_stripe [odb::newSetFromRect [expr $lowerX - $rdl_stripe_width / 2] $minY [expr $lowerX + $rdl_stripe_width / 2] $maxY]
-          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
-          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
+          pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
           set link_stripe [odb::newSetFromRect $lowerX [expr [dict get $point y] - $rdl_stripe_width / 2] $upperX [expr [dict get $point y] + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
         }
       }
     }
@@ -3226,8 +3362,8 @@ namespace eval ICeWall {
     # debug "$pdngen::metal_layers"
     # debug "[array get pdngen::stripe_locs]"
     pdngen::merge_stripes
-    dict set pdngen::design_data power_nets "VDD"
-    dict set pdngen::design_data ground_nets "VSS"
+    dict set pdngen::design_data power_nets [lsort -unique $power_nets]
+    dict set pdngen::design_data ground_nets [lsort -unique $ground_nets]
     dict set pdngen::design_data core_domain "CORE"
     pdngen::opendb_update_grid
   }
@@ -4112,9 +4248,9 @@ namespace eval ICeWall {
       if {$signal == "NULL"} {
         if {[$block findInst $signal_name] == "NULL"} {
           if {$alt_signal_name == 1} {
-            utl::error PAD 92 "No signal $signal_name or $try_signal defined for padcell [dict get $padcell name]"
+            utl::error PAD 92 "No signal $signal_name or $try_signal defined for padcell"
           } else {
-            utl::error PAD 91 "No signal $signal_name defined for padcell [dict get $padcell name]"
+            utl::error PAD 91 "No signal $signal_name defined for padcell"
           }
         } else {
           dict set padcell use_signal_name $signal_name
@@ -4161,6 +4297,45 @@ namespace eval ICeWall {
     }
   }
 
+  proc check_coordinate {xy} {
+    if {[llength $xy] != 2} {
+      utl::error PAD 239 "expecting a 2 element list in the form \"number number\""
+    }
+    set coord [list x [lindex $xy 0] y [lindex $xy 1]]
+    if {[catch {check_xy $coord} msg]} {
+      utl::error PAD 240 "Invalid coordinate specified $msg"
+    }
+    return $coord
+  }
+
+  proc check_rows_columns {rc} {
+    # debug $xy
+    if {![dict exists $rc rows]} {
+      error "no value specified for rows"
+    }
+    if {![dict exists $rc columns]} {
+      error "no value specified for columns"
+    }
+    if {![is_number [dict get $rc rows]]} {
+      error "rows ([dict get $rc rows]), not recognised as a nummber"
+    }
+    if {![is_number [dict get $rc columns]]} {
+      error "columns ([dict get $rc columns]), not recognised as a nummber"
+    }
+  }
+
+
+  proc check_array_size {rc} {
+    if {[llength $rc] != 2} {
+      utl::error PAD 241 "expecting a 2 element list in the form \"number number\""
+    }
+    set rc_spec [list rows [lindex $rc 0] columns [lindex $rc 1]]
+    if {[catch {check_rows_columns $rc_spec} msg]} {
+      utl::error PAD 242 "Invalid array_size specified $msg"
+    }
+    return $rc_spec
+  }
+
   proc check_xy {xy} {
     # debug $xy
     if {[llength $xy] != 4} {
@@ -4181,14 +4356,27 @@ namespace eval ICeWall {
   }
 
   proc check_rowcol {rowcol} {
+    variable num_bumps_x
+    variable num_bumps_y
+
     if {[llength $rowcol] != 4} {
-      error "expecting a 4 element list in the form \"row <integer> col <integer>\""
+      utl::error PAD 243 "expecting a 4 element list in the form \"row <integer> col <integer>\""
     }
     if {![regexp {[0-9]+} [dict get $rowcol row]]} {
-      error "row value ([dict get $rowcol row]), not recognised as an integer"
+      utl::error PAD 244 "row value ([dict get $rowcol row]), not recognised as an integer"
     }
     if {![regexp {[0-9]+} [dict get $rowcol col]]} {
-      error "col value ([dict get $rowcol col]), not recognised as an integer"
+      utl::error PAD 245 "col value ([dict get $rowcol col]), not recognised as an integer"
+    }
+
+    set row [dict get $rowcol row]
+    set col [dict get $rowcol col]
+
+    if {$row < 1 || $row > $num_bumps_y} {
+      utl::error PAD 229 "The value for row is $row, but must be in the range 1 - $num_bumps_y"
+    }
+    if {$col < 1 || $col > $num_bumps_x} {
+      utl::error PAD 230 "The value for col is $col, but must be in the range 1 - $num_bumps_x"
     }
   }
 
@@ -4247,9 +4435,7 @@ namespace eval ICeWall {
       utl::error PAD 106 "Specification of bumps is only allowed for Flipchip padring layouts"
     }
 
-    if {[catch {check_rowcol $bump} msg]} {
-      utl::error PAD 107 "Bump value specified incorrectly, $msg"
-    }
+    check_rowcol $bump
 
     return $bump
   }
@@ -4360,7 +4546,6 @@ namespace eval ICeWall {
     return [regexp {[\+\-]?[0-9]*[\.]?[0-9]*} $value]
   }
 
-  # ICeWall set_die_area {0 0 3000.000 3000.000}
   proc set_die_area {args} {
     variable footprint 
 
@@ -4386,7 +4571,6 @@ namespace eval ICeWall {
     dict set footprint die_area $die_area
   }
 
-  # ICeWall set_core_area {180.012 180.096 2819.964 2819.712}
   proc set_core_area {args} {
     variable footprint 
 
@@ -4412,13 +4596,17 @@ namespace eval ICeWall {
     dict set footprint core_area $core_area
   }
 
-  # ICeWall add_power_nets  VDD DVDD_0 DVDD_1
-  # ICeWall add_ground_nets VSS DVSS_0 DVSS_1
   proc add_power_nets {args} {
     variable footprint
 
     foreach arg $args {
-      dict lappend footprint power_nets $arg
+      if {[dict exists $footprint power_nets]} {
+        if {[lsearch [dict get $footprint power_nets] $arg] == -1} {
+          dict lappend footprint power_nets $arg
+        }
+      } else {
+        dict lappend footprint power_nets $arg
+      }
     }
   }
 
@@ -4426,11 +4614,16 @@ namespace eval ICeWall {
     variable footprint
 
     foreach arg $args {
-      dict lappend footprint ground_nets $arg
+      if {[dict exists $footprint ground_nets]} {
+        if {[lsearch [dict get $footprint ground_nets] $arg] == -1} {
+          dict lappend footprint ground_nets $arg
+        }
+      } else {
+        dict lappend footprint ground_nets $arg
+      }
     }
   }
 
-  # ICeWall set_offsets 35
   proc set_offsets {value} {
     variable footprint
 
@@ -4448,7 +4641,6 @@ namespace eval ICeWall {
     }
   }
 
-  # ICeWall set_pin_layer metal10
   proc set_pin_layer {layer_name} {
     variable footprint
 
@@ -4456,7 +4648,6 @@ namespace eval ICeWall {
     dict set footprint pin_layer [check_layer_name $layer_name]
   }
 
-  # ICeWall set_pad_inst_name "%s"
   proc set_pad_inst_name {format_string} {
     variable footprint
 
@@ -4466,7 +4657,6 @@ namespace eval ICeWall {
     dict set footprint pad_inst_name $format_string
   }
 
-  # ICeWall set_pad_pin_name "%s"
   proc set_pad_pin_name {format_string} {
     variable footprint
 
@@ -4502,6 +4692,8 @@ namespace eval ICeWall {
         -pitch               {dict set library bump pitch $value}
         -bump_pin_name       {dict set library bump bump_pin_name $value}
         -spacing_to_edge     {dict set library bump spacing_to_edge $value} 
+        -offset              {dict set library bump offset [check_coordinate $value]}
+        -array_size          {dict set library bump array_size [check_array_size $value]}
         -cell_name           {dict set library bump cell_name $value}
         -num_pads_per_tile   {dict set library num_pads_per_tile [check_num_pads_per_tile_option $value]}
         -rdl_layer           {dict set library rdl layer_name [check_layer_name $value]}
@@ -4822,15 +5014,9 @@ namespace eval ICeWall {
 
       dict set padcell bump [check_bump [dict get $padcell bump]]
 
+      check_rowcol [dict get $padcell bump] 
       set row [dict get $padcell bump row]
       set col [dict get $padcell bump col]
-    
-      if {$row < 1 || $row > $num_bumps_y} {
-        utl::error PAD 229 "The value for row is $row, but must be in the range 1 - $num_bumps_y"
-      }
-      if {$col < 1 || $col > $num_bumps_x} {
-        utl::error PAD 230 "The value for col is $col, but must be in the range 1 - $num_bumps_x"
-      }
 
       set pitch [get_footprint_bump_pitch]
       set centre [get_bump_centre $row $col]
@@ -4842,12 +5028,20 @@ namespace eval ICeWall {
         "top"    {set xMin [expr [dict get $centre x] - $pitch / 2]; set xMax [expr [dict get $centre x] + $pitch / 2]}
         "left"   {set yMin [expr [dict get $centre y] - $pitch / 2]; set yMax [expr [dict get $centre y] + $pitch / 2]}
       }
-
       if {[dict get $padcell cell scaled_centre x] < $xMin || [dict get $padcell cell scaled_centre x] > $xMax} {
         utl::error PAD 163 "The padcell x location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre x]], but for bump $row,$col to connect to a pad on the $side_name edge, [ord::dbu_to_microns $xMin] <= x <= [ord::dbu_to_microns $xMax]"
       }
       if {[dict get $padcell cell scaled_centre y] < $yMin || [dict get $padcell cell scaled_centre y] > $yMax} {
         utl::error PAD 164 "The padcell y location is [ord::dbu_to_microns [dict get $padcell cell scaled_centre y]], but for bump $row,$col to connect to a pad on the $side_name edge, [ord::dbu_to_microns $yMin] <= y <= [ord::dbu_to_microns $yMax]"
+      }
+
+      if {[dict exists $padcell use_signal_name]} {
+        bump_set_net_name $row $col $signal_name
+      } else {
+        if {[set net [bump_get_net $row $col]] != ""} {
+          dict set padcell signal_name $net
+          set padcell [check_signal_name $padcell]
+        }
       }
     }
 
@@ -4856,6 +5050,7 @@ namespace eval ICeWall {
         consistency_check $padcell_name signal [dict get $padcell use_signal_name]
       }
     }
+
     consistency_check $padcell_name instance $inst_name
     if {[dict exists $padcell bump]} {
       consistency_check $padcell_name row_col "row=$row, col=$col"
@@ -5215,11 +5410,11 @@ namespace eval ICeWall {
       }
     } else {
       if {$type != "bump"} {
-        utl::error PAD 184 "No specification found for the orientation of cells on each side"
+        # utl::error PAD 184 "No specification found for the orientation of cells on each side"
+      } else {
+        dict set cell_ref orient "R0"
       }
-      dict set cell_ref orient "R0"
     }
-    set orients [dict get $cell_ref orient]
 
     # Verify physical_only
     if {[dict exists $cell_ref physical_only]} {
