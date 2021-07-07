@@ -5069,8 +5069,6 @@ uint extMain::readExtRules(const char* name, const char* filename, int min,
   if (dbunit > 1000)
     dbFactor = dbunit * 0.001;
 
-  logger_->info(RCX, 36, "Database dbFactor= {}  dbunit= {}", dbFactor, dbunit);
-
   _minModelIndex = 0;
   _maxModelIndex = 0;
   _typModelIndex = 0;
