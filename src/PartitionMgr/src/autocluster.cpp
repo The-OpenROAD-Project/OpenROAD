@@ -347,21 +347,19 @@ void AutoClusterMgr::createCluster(int& cluster_id)
       if (!is_hier)
         name += "_glue_logic";
       Cluster* cluster = new Cluster(++cluster_id, !is_hier, name);
-      vector<Instance*>::iterator vec_iter;
-      for (vec_iter = glue_inst_vec.begin(); vec_iter != glue_inst_vec.end();
-           vec_iter++) {
-        LibertyCell* liberty_cell = network_->libertyCell(*vec_iter);
+      for (Instance* inst : glue_inst_vec) {
+        LibertyCell* liberty_cell = network_->libertyCell(inst);
         if (liberty_cell->isBuffer() == true)
           continue;
 
-        Cell* cell = network_->cell(*vec_iter);
+        Cell* cell = network_->cell(inst);
         const char* cell_name = network_->name(cell);
         dbMaster* master = db_->findMaster(cell_name);
         if (master->isBlock())
-          cluster->addMacro(*vec_iter);
+          cluster->addMacro(inst);
         else
-          cluster->addInst(*vec_iter);
-        inst_map_[*vec_iter] = cluster_id;
+          cluster->addInst(inst);
+        inst_map_[inst] = cluster_id;
       }
       cluster_map_[cluster_id] = cluster;
 
@@ -437,8 +435,8 @@ void AutoClusterMgr::createClusterUtil(Instance* inst, int& cluster_id)
 void AutoClusterMgr::updateConnection()
 {
   unordered_map<int, Cluster*>::iterator map_it;
-  for (map_it = cluster_map_.begin(); map_it != cluster_map_.end(); map_it++) {
-    map_it->second->initConnection();
+  for (auto [id, cluster] : cluster_map_) {
+    cluster->initConnection();
   }
   calculateConnection(network_->topInstance());
   calculateBufferNetConnection();
