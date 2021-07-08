@@ -61,12 +61,6 @@ struct pnt
   int o;
 };
 
-struct wire
-{
-  int x1, y1, x2, y2;
-  int netID;
-};
-
 int orderx(const struct pnt* a, const struct pnt* b)
 {
   return a->x < b->x;

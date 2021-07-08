@@ -53,7 +53,6 @@ namespace grt {
 using utl::GRT;
 
 #define PARENT(i) (i - 1) / 2
-//#define PARENT(i) ((i-1)>>1)
 #define LEFT(i) 2 * i + 1
 #define RIGHT(i) 2 * i + 2
 
@@ -1775,55 +1774,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOri
 
   delete[] heap13D;
   delete[] heap23D;
-}
-
-void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
-{
-  int i, ntpL, nbtL, nhID, nlID;
-
-  ntpL = -1;
-  nbtL = BIG_INT;
-
-  if (treenodes[n1].conCNT > 1) {
-    nhID = -1;
-    nlID = -1;
-    for (i = 0; i < treenodes[n1].conCNT; i++) {
-      if (treenodes[n1].eID[i] != edgeID) {
-        if (ntpL < treenodes[n1].heights[i]) {
-          ntpL = treenodes[n1].heights[i];
-          nhID = treenodes[n1].eID[i];
-        }
-        if (nbtL > treenodes[n1].heights[i]) {
-          nbtL = treenodes[n1].heights[i];
-          nlID = treenodes[n1].eID[i];
-        }
-      }
-    }
-    if (nlID == -1) {
-      logger->error(GRT, 173, "Invalid lower neighbor for node {}.", n1);
-    }
-    if (nhID == -1) {
-      logger->error(GRT, 174, "Invalid upper neighbor for node {}.", n1);
-    }
-    if (n1 < deg) {
-      nbtL = 0;
-    }
-    treenodes[n1].topL = ntpL;
-    treenodes[n1].botL = nbtL;
-    treenodes[n1].hID = nhID;
-    treenodes[n1].lID = nlID;
-  } else {
-    if (treenodes[n1].botL > 0) {
-      logger->warn(GRT, 185, "Bottom layer actually {}.", treenodes[n1].botL);
-    }
-    treenodes[n1].topL = 0;
-    treenodes[n1].botL = 0;
-    treenodes[n1].hID = BIG_INT;
-    treenodes[n1].lID = BIG_INT;
-    if (n1 >= deg) {
-      logger->error(GRT, 186, "Steiner nodes only have one connection.");
-    }
-  }
 }
 
 }  // namespace grt

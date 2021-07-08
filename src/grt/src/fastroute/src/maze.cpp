@@ -2044,50 +2044,6 @@ int getOverflow3D(void)
   return (total_usage);
 }
 
-int unsolved;
-
-void initialCongestionHistory(int round)
-{
-  int i, j, grid;
-
-  for (i = 0; i < yGrid; i++) {
-    for (j = 0; j < xGrid - 1; j++) {
-      grid = i * (xGrid - 1) + j;
-      h_edges[grid].est_usage
-          -= ((float) h_edges[grid].usage / h_edges[grid].cap);
-    }
-  }
-
-  for (i = 0; i < yGrid - 1; i++) {
-    for (j = 0; j < xGrid; j++) {
-      grid = i * xGrid + j;
-      v_edges[grid].est_usage
-          -= ((float) v_edges[grid].usage / v_edges[grid].cap);
-    }
-  }
-}
-
-void reduceCongestionHistory(int round)
-{
-  int i, j, grid;
-
-  for (i = 0; i < yGrid; i++) {
-    for (j = 0; j < xGrid - 1; j++) {
-      grid = i * (xGrid - 1) + j;
-      h_edges[grid].est_usage
-          -= 0.2 * ((float) h_edges[grid].usage / h_edges[grid].cap);
-    }
-  }
-
-  for (i = 0; i < yGrid - 1; i++) {
-    for (j = 0; j < xGrid; j++) {
-      grid = i * xGrid + j;
-      v_edges[grid].est_usage
-          -= 0.2 * ((float) v_edges[grid].usage / v_edges[grid].cap);
-    }
-  }
-}
-
 void InitEstUsage()
 {
   int i, j, grid;

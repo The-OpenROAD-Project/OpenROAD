@@ -37,12 +37,6 @@
 
 namespace grt {
 
-typedef struct
-{
-  int x;  // x position
-  int y;  // y position
-} Pos;
-
 // Maze-routing in different orders
 extern void mazeRouteMSMD(int iter,
                           int expand,
@@ -59,8 +53,6 @@ extern void mazeRouteMSMD(int iter,
 extern void convertToMazeroute();
 
 extern void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj);
-extern void initialCongestionHistory(int round);
-extern void reduceCongestionHistory(int round);
 
 extern int getOverflow2D(int* maxOverflow);
 extern int getOverflow2Dmaze(int* maxOverflow, int* tUsage);

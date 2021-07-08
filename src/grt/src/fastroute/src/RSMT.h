@@ -43,9 +43,6 @@ namespace grt {
 
 using utl::Logger;
 
-extern int** V_table;
-extern int** H_table;
-
 extern void copyStTree(int ind, Tree rsmt);
 extern void gen_brk_RSMT(bool congestionDriven,
                          bool reRoute,

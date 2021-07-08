@@ -34,12 +34,6 @@
 #define __MAZE3D_H__
 
 namespace grt {
-typedef struct
-{
-  int x;  // x position
-  int y;  // y position
-  int l;
-} Pos3D;
 
 void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation);
 

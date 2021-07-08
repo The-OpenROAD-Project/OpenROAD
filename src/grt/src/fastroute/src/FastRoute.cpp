@@ -852,7 +852,7 @@ NetRouteMap FastRouteCore::run()
   int healingTrigger = 0;
   bool stopDEC = false;
   int upType = 1;
-  // iniBDE();
+
   costheight = COSHEIGHT;
   if (maxOverflow > 700) {
     costheight = 8;
