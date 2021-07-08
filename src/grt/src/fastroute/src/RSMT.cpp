@@ -541,31 +541,31 @@ bool netCongestion(int netID)
       grid = seg->y1 * (xGrid - 1);
       for (i = seg->x1; i < seg->x2; i++) {
         if (h_edges[grid + i].est_usage >= h_edges[grid + i].cap) {
-          return (true);
+          return true;
         }
       }
       for (i = ymin; i < ymax; i++) {
         if (v_edges[i * xGrid + seg->x2].est_usage
             >= v_edges[i * xGrid + seg->x2].cap) {
-          return (true);
+          return true;
         }
       }
     } else {
       for (i = ymin; i < ymax; i++) {
         if (v_edges[i * xGrid + seg->x1].est_usage
             >= v_edges[i * xGrid + seg->x1].cap) {
-          return (true);
+          return true;
         }
       }
       grid = seg->y2 * (xGrid - 1);
       for (i = seg->x1; i < seg->x2; i++) {
         if (h_edges[grid + i].est_usage >= h_edges[grid + i].cap) {
-          return (true);
+          return true;
         }
       }
     }
   }
-  return (false);
+  return false;
 }
 
 bool VTreeSuite(int netID)
@@ -594,9 +594,9 @@ bool VTreeSuite(int netID)
   }
 
   if ((ymax - ymin) > 3 * (xmax - xmin)) {
-    return (true);
+    return true;
   } else {
-    return (false);
+    return false;
   }
 }
 
@@ -626,9 +626,9 @@ bool HTreeSuite(int netID)
   }
 
   if (5 * (ymax - ymin) < (xmax - xmin)) {
-    return (true);
+    return true;
   } else {
-    return (false);
+    return false;
   }
 }
 

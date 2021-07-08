@@ -1489,7 +1489,7 @@ bool checkRoute2DTree(int netID)
                      treeedge->route.routelen,
                      treeedge->len);
         STHwrong = true;
-        return (true);
+        return true;
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
@@ -1535,7 +1535,7 @@ bool checkRoute2DTree(int netID)
       if (STHwrong) {
         logger->error(
             GRT, 167, "Invalid 2D tree for net {}.", netName(nets[netID]));
-        return (true);
+        return true;
       }
     }
   }
