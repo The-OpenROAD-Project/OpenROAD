@@ -60,6 +60,8 @@ extern void copyRS(void);
 extern void freeRR(void);
 extern Tree fluteToTree(stt::Tree fluteTree);
 extern stt::Tree treeToFlute(Tree tree);
+extern int edgeShift(Tree* t, int net);
+extern int edgeShiftNew(Tree* t, int net);
 
 }  // namespace grt
 

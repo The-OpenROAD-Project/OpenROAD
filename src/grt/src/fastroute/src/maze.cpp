@@ -42,7 +42,6 @@
 
 #include "DataProc.h"
 #include "DataType.h"
-#include "EdgeShift.h"
 #include "RSMT.h"
 #include "RipUp.h"
 #include "flute.h"
