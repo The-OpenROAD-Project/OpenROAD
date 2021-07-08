@@ -888,7 +888,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOri
 {
   short* gridsLtmp;
   int netID, enlarge, endIND;
-  bool* pop_heap23D;
+  std::vector<bool> pop_heap23D;
 
   int i, j, k, deg, n1, n2, n1x, n1y, n2x, n2y, ymin, ymax, xmin, xmax, curX,
       curY, curL, crossX, crossY, crossL, tmpX, tmpY, tmpL, tmpi, min_x, min_y,
@@ -910,23 +910,11 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOri
       connectionCNT;
   int origEng, orderIndex;
 
-  directions3D = new dirctionT**[numLayers];
-  corrEdge3D = new int**[numLayers];
-  pr3D = new parent3D**[numLayers];
+  directions3D.resize(boost::extents[numLayers][yGrid][xGrid]);
+  corrEdge3D.resize(boost::extents[numLayers][yGrid][xGrid]);
+  pr3D.resize(boost::extents[numLayers][yGrid][xGrid]);
 
-  for (i = 0; i < numLayers; i++) {
-    directions3D[i] = new dirctionT*[yGrid];
-    corrEdge3D[i] = new int*[yGrid];
-    pr3D[i] = new parent3D*[yGrid];
-
-    for (j = 0; j < yGrid; j++) {
-      directions3D[i][j] = new dirctionT[xGrid];
-      corrEdge3D[i][j] = new int[xGrid];
-      pr3D[i][j] = new parent3D[xGrid];
-    }
-  }
-
-  pop_heap23D = new bool[numLayers * YRANGE * XRANGE];
+  pop_heap23D.resize(numLayers * YRANGE * XRANGE);
 
   // allocate memory for priority queue
   heap13D = new int*[yGrid * xGrid * numLayers];
@@ -1781,25 +1769,10 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOri
     }
   }
 
-  for (i = 0; i < numLayers; i++) {
-    for (j = 0; j < yGrid; j++) {
-      delete[] directions3D[i][j];
-      delete[] corrEdge3D[i][j];
-      delete[] pr3D[i][j];
-    }
-  }
+  directions3D.resize(boost::extents[0][0][0]);
+  corrEdge3D.resize(boost::extents[0][0][0]);
+  pr3D.resize(boost::extents[0][0][0]);
 
-  for (i = 0; i < numLayers; i++) {
-    delete[] directions3D[i];
-    delete[] corrEdge3D[i];
-    delete[] pr3D[i];
-  }
-
-  delete[] directions3D;
-  delete[] corrEdge3D;
-  delete[] pr3D;
-
-  delete[] pop_heap23D;
   delete[] heap13D;
   delete[] heap23D;
 }

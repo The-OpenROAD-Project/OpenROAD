@@ -71,10 +71,10 @@ extern std::vector<Edge> v_edges;
 extern multi_array<float, 2> d1;
 extern multi_array<float, 2> d2;
 
-extern bool** HV;
-extern bool** hyperV;
-extern bool** hyperH;
-extern int** corrEdge;
+extern multi_array<bool, 2> HV;
+extern multi_array<bool, 2> hyperV;
+extern multi_array<bool, 2> hyperH;
+extern multi_array<int, 2> corrEdge;
 
 extern std::vector<Segment> seglist;
 extern std::vector<int> seglistIndex;  // the index for the segments for each net
@@ -92,18 +92,18 @@ extern int viacost;
 extern std::vector<Edge3D> h_edges3D;
 extern std::vector<Edge3D> v_edges3D;
 
-extern int** layerGrid;
-extern int** viaLink;
+extern multi_array<int, 2> layerGrid;
+extern multi_array<int, 2> viaLink;
 
 extern multi_array<int, 3> d13D;
 extern multi_array<short, 3> d23D;
 
-extern dirctionT*** directions3D;
-extern int*** corrEdge3D;
-extern parent3D*** pr3D;
+extern multi_array<dirctionT, 3> directions3D;
+extern multi_array<int, 3> corrEdge3D;
+extern multi_array<parent3D, 3> pr3D;
 
 extern int mazeedge_Threshold;
-extern bool** inRegion;
+extern multi_array<bool, 2> inRegion;
 
 extern int gridHV, gridH, gridV;
 extern std::vector<int> gridHs;
@@ -112,7 +112,8 @@ extern std::vector<int> gridVs;
 extern int** heap13D;
 extern short** heap23D;
 
-extern float *h_costTable, *v_costTable;
+extern std::vector<float> h_costTable;
+extern std::vector<float> v_costTable;
 
 extern std::vector<OrderNetEdge> netEO;
 

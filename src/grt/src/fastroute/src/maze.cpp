@@ -1104,8 +1104,8 @@ void mazeRouteMSMD(int iter,
   const int max_usage_multiplier = 40;
 
   // allocate memory for distance and parent and pop_heap
-  h_costTable = new float[max_usage_multiplier * hCapacity];
-  v_costTable = new float[max_usage_multiplier * vCapacity];
+  h_costTable.resize(max_usage_multiplier * hCapacity);
+  v_costTable.resize(max_usage_multiplier * vCapacity);
 
   forange = max_usage_multiplier * hCapacity;
 
@@ -1840,12 +1840,9 @@ void mazeRouteMSMD(int iter,
     }      // loop edgeID
   }
 
-  if (!h_costTable) {
-    delete[] h_costTable;
-  }
-  if (!v_costTable) {
-    delete[] v_costTable;
-  }
+  
+  h_costTable.clear();
+  v_costTable.clear();
 }
 
 int getOverflow2Dmaze(int* maxOverflow, int* tUsage)

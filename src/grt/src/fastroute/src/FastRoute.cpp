@@ -179,60 +179,12 @@ void FastRouteCore::deleteComponents()
   ycor.clear();
   dcor.clear();
 
-  if (HV) {
-    for (int i = 0; i < YRANGE; i++) {
-      if (HV[i])
-        delete[] HV[i];
-      HV[i] = nullptr;
-    }
-
-    delete[] HV;
-    HV = nullptr;
-  }
-
-  if (hyperV) {
-    for (int i = 0; i < YRANGE; i++) {
-      if (hyperV[i])
-        delete[] hyperV[i];
-      hyperV[i] = nullptr;
-    }
-
-    delete[] hyperV;
-    hyperV = nullptr;
-  }
-
-  if (hyperH) {
-    for (int i = 0; i < XRANGE; i++) {
-      if (hyperH[i])
-        delete[] hyperH[i];
-      hyperH[i] = nullptr;
-    }
-
-    delete[] hyperH;
-    hyperH = nullptr;
-  }
-
-  if (inRegion) {
-    for (int i = 0; i < YRANGE; i++) {
-      if (inRegion[i])
-        delete[] inRegion[i];
-      inRegion[i] = nullptr;
-    }
-
-    delete[] inRegion;
-    inRegion = nullptr;
-  }
-
-  if (corrEdge) {
-    for (int i = 0; i < YRANGE; i++) {
-      if (corrEdge[i])
-        delete[] corrEdge[i];
-      corrEdge[i] = nullptr;
-    }
-
-    delete[] corrEdge;
-    corrEdge = nullptr;
-  }
+  HV.resize(boost::extents[0][0]);
+  hyperV.resize(boost::extents[0][0]);
+  hyperH.resize(boost::extents[0][0]);
+  corrEdge.resize(boost::extents[0][0]);
+  
+  inRegion.resize(boost::extents[0][0]);
 
   d13D.resize(boost::extents[0][0][0]);
   d23D.resize(boost::extents[0][0][0]);
@@ -245,27 +197,8 @@ void FastRouteCore::deleteComponents()
   gridHs.clear();
   gridVs.clear();
 
-  if (layerGrid) {
-    for (int i = 0; i < numLayers; i++) {
-      if (layerGrid[i])
-        delete[] layerGrid[i];
-      layerGrid[i] = nullptr;
-    }
-
-    delete[] layerGrid;
-    layerGrid = nullptr;
-  }
-
-  if (viaLink) {
-    for (int i = 0; i < numLayers; i++) {
-      if (viaLink[i])
-        delete[] viaLink[i];
-      viaLink[i] = nullptr;
-    }
-
-    delete[] viaLink;
-    viaLink = nullptr;
-  }
+  layerGrid.resize(boost::extents[0][0]);
+  viaLink.resize(boost::extents[0][0]);
 
   if (costHVH)
     delete[] costHVH;
@@ -330,15 +263,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   gridHs.resize(numLayers);
   gridVs.resize(numLayers);
 
-  layerGrid = new int*[numLayers];
-  for (int i = 0; i < numLayers; i++) {
-    layerGrid[i] = new int[MAXLEN];
-  }
-
-  viaLink = new int*[numLayers];
-  for (int i = 0; i < numLayers; i++) {
-    viaLink[i] = new int[MAXLEN];
-  }
+  layerGrid.resize(boost::extents[numLayers][MAXLEN]);
+  viaLink.resize(boost::extents[numLayers][MAXLEN]);
 
   d13D.resize(boost::extents[numLayers][YRANGE][XRANGE]);
   d23D.resize(boost::extents[numLayers][YRANGE][XRANGE]);
@@ -346,30 +272,12 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   d1.resize(boost::extents[YRANGE][XRANGE]);
   d2.resize(boost::extents[YRANGE][XRANGE]);
 
-  HV = new bool*[YRANGE];
-  for (int i = 0; i < YRANGE; i++) {
-    HV[i] = new bool[XRANGE];
-  }
+  HV.resize(boost::extents[YRANGE][XRANGE]);
+  hyperV.resize(boost::extents[YRANGE][XRANGE]);
+  hyperH.resize(boost::extents[YRANGE][XRANGE]);
+  corrEdge.resize(boost::extents[YRANGE][XRANGE]);
 
-  hyperV = new bool*[YRANGE];
-  for (int i = 0; i < YRANGE; i++) {
-    hyperV[i] = new bool[XRANGE];
-  }
-
-  hyperH = new bool*[YRANGE];
-  for (int i = 0; i < YRANGE; i++) {
-    hyperH[i] = new bool[XRANGE];
-  }
-
-  corrEdge = new int*[YRANGE];
-  for (int i = 0; i < YRANGE; i++) {
-    corrEdge[i] = new int[XRANGE];
-  }
-
-  inRegion = new bool*[YRANGE];
-  for (int i = 0; i < YRANGE; i++) {
-    inRegion[i] = new bool[XRANGE];
-  }
+  inRegion.resize(boost::extents[YRANGE][XRANGE]);
 
   costHVH = new float[XRANGE];  // Horizontal first Z
   costVHV = new float[YRANGE];  // Vertical first Z

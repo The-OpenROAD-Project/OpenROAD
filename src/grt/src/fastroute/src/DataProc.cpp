@@ -63,10 +63,10 @@ multi_array<float, 2> d1;
 multi_array<float, 2> d2;
 int verbose;
 
-bool** HV;
-bool** hyperV;
-bool** hyperH;
-int** corrEdge;
+multi_array<bool, 2> HV;
+multi_array<bool, 2> hyperV;
+multi_array<bool, 2> hyperH;
+multi_array<int, 2> corrEdge;
 
 std::vector<Segment> seglist;
 std::vector<int> seglistIndex;  // the index for the segments for each net
@@ -82,18 +82,18 @@ std::vector<OrderNetPin> treeOrderPV;
 std::vector<OrderTree> treeOrderCong;
 int viacost;
 
-int** layerGrid;
-int** viaLink;
+multi_array<int, 2> layerGrid;
+multi_array<int, 2> viaLink;
 
 multi_array<int, 3> d13D;
 multi_array<short, 3> d23D;
 
-dirctionT*** directions3D;
-int*** corrEdge3D;
-parent3D*** pr3D;
+multi_array<dirctionT, 3> directions3D;
+multi_array<int, 3> corrEdge3D;
+multi_array<parent3D, 3> pr3D;
 
 int mazeedge_Threshold;
-bool** inRegion;
+multi_array<bool, 2> inRegion;
 
 int gridHV, gridH, gridV;
 std::vector<int> gridHs;
@@ -102,7 +102,8 @@ std::vector<int> gridVs;
 int** heap13D;
 short** heap23D;
 
-float *h_costTable, *v_costTable;
+std::vector<float> h_costTable;
+std::vector<float> v_costTable;
 std::vector<OrderNetEdge> netEO;
 std::vector<int> xcor, ycor, dcor;
 

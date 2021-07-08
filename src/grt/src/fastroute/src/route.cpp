@@ -1856,7 +1856,7 @@ void routeLVAll(int threshold, int expand, float LOGIS_COF)
   if (verbose > 1)
     logger->info(GRT, 182, "{} threshold, {} expand.", threshold, expand);
 
-  h_costTable = new float[10 * hCapacity];
+  h_costTable.resize(10 * hCapacity);
 
   forange = 10 * hCapacity;
   for (i = 0; i < forange; i++) {
@@ -1873,7 +1873,7 @@ void routeLVAll(int threshold, int expand, float LOGIS_COF)
                   expand);  // ripup previous route and do Monotonic routing
     }
   }
-  delete[] h_costTable;
+  h_costTable.clear();
 }
 
 void newrouteLInMaze(int netID)
