@@ -3195,8 +3195,6 @@ class dbInst : public dbObject
 class dbITerm : public dbObject
 {
  public:
-  void print(FILE* fp = NULL, const char* trail = "");
-
   ///
   /// Get the instance of this instance-terminal.
   ///
