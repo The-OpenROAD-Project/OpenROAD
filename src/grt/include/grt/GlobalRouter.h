@@ -205,7 +205,6 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int maxLayer);
   void initRoutingTracks(int maxRoutingLayer);
   void setCapacities(int minRoutingLayer, int maxRoutingLayer);
-  void setSpacingsAndMinWidths();
   void initializeNets(std::vector<Net*>& nets);
   void computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer);
   void computeTrackAdjustments(int minRoutingLayer, int maxRoutingLayer);

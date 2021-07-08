@@ -163,7 +163,6 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer,
   initRoutingTracks(maxRoutingLayer);
   initCoreGrid(maxRoutingLayer);
   setCapacities(minRoutingLayer, maxRoutingLayer);
-  setSpacingsAndMinWidths();
   initNetlist();
 
   std::vector<Net*> nets;
@@ -586,15 +585,6 @@ void GlobalRouter::updateDirtyNets()
     makeItermPins(net, db_net, _grid->getGridArea());
     makeBtermPins(net, db_net, _grid->getGridArea());
     findPins(net);
-  }
-}
-
-void GlobalRouter::setSpacingsAndMinWidths()
-{
-  for (int l = 1; l <= _grid->getNumLayers(); l++) {
-    _fastRoute->addMinSpacing(_grid->getSpacings()[l - 1], l);
-    _fastRoute->addMinWidth(_grid->getMinWidths()[l - 1], l);
-    _fastRoute->addViaSpacing(1, l);
   }
 }
 

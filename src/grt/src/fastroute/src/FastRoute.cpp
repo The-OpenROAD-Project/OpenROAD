@@ -263,17 +263,6 @@ void FastRouteCore::deleteComponents()
   d1.resize(boost::extents[0][0]);
   d2.resize(boost::extents[0][0]);
 
-  if (MinWidth)
-    delete[] MinWidth;
-  if (MinSpacing)
-    delete[] MinSpacing;
-  if (ViaSpacing)
-    delete[] ViaSpacing;
-
-  MinWidth = nullptr;
-  MinSpacing = nullptr;
-  ViaSpacing = nullptr;
-
   if (gridHs)
     delete[] gridHs;
   if (gridVs)
@@ -364,9 +353,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     hCapacity3D[i] = 0;
   }
 
-  MinWidth = new int[numLayers];
-  MinSpacing = new int[numLayers];
-  ViaSpacing = new int[numLayers];
   gridHs = new int[numLayers];
   gridVs = new int[numLayers];
 
@@ -433,21 +419,6 @@ void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
 {
   hCapacity3D[layer - 1] = horizontalCapacity;
   hCapacity += hCapacity3D[layer - 1];
-}
-
-void FastRouteCore::addMinWidth(int width, int layer)
-{
-  MinWidth[layer - 1] = width;
-}
-
-void FastRouteCore::addMinSpacing(int spacing, int layer)
-{
-  MinSpacing[layer - 1] = spacing;
-}
-
-void FastRouteCore::addViaSpacing(int spacing, int layer)
-{
-  ViaSpacing[layer - 1] = spacing;
 }
 
 void FastRouteCore::setNumberNets(int nNets)

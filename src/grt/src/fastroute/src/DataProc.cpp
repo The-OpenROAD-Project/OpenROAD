@@ -50,7 +50,6 @@ namespace grt {
 int XRANGE, YRANGE;
 int xGrid, yGrid;
 float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-int *MinWidth, *MinSpacing, *ViaSpacing;
 int xcorner, ycorner, wTile, hTile;
 int enlarge, costheight, ripup_threshold, ahTH;
 int numValidNets;  // # nets need to be routed (having pins in different grids)

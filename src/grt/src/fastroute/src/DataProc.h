@@ -58,7 +58,6 @@ extern float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
 extern int verbose;
 
 extern int enlarge, costheight, ripup_threshold;
-extern int *MinWidth, *MinSpacing, *ViaSpacing;
 extern int xcorner, ycorner, wTile, hTile, ahTH;
 
 extern int
