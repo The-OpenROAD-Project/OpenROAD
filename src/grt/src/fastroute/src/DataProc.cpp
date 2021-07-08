@@ -56,7 +56,9 @@ int numValidNets;  // # nets need to be routed (having pins in different grids)
 int numLayers;
 int totalOverflow;  // total # overflow
 FrNet** nets;
-Edge *h_edges, *v_edges;
+std::vector<Edge> h_edges;
+std::vector<Edge> v_edges;
+
 multi_array<float, 2> d1;
 multi_array<float, 2> d2;
 int verbose;
@@ -66,15 +68,15 @@ bool** hyperV;
 bool** hyperH;
 int** corrEdge;
 
-Segment* seglist;
-int* seglistIndex;  // the index for the segments for each net
-int* seglistCnt;    // the number of segements for each net
+std::vector<Segment> seglist;
+std::vector<int> seglistIndex;  // the index for the segments for each net
+std::vector<int> seglistCnt;    // the number of segements for each net
 StTree* sttrees;    // the Steiner trees
 std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
 std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
 std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
-Edge3D* h_edges3D;
-Edge3D* v_edges3D;
+std::vector<Edge3D> h_edges3D;
+std::vector<Edge3D> v_edges3D;
 
 std::vector<OrderNetPin> treeOrderPV;
 std::vector<OrderTree> treeOrderCong;
@@ -94,14 +96,15 @@ int mazeedge_Threshold;
 bool** inRegion;
 
 int gridHV, gridH, gridV;
-int *gridHs, *gridVs;
+std::vector<int> gridHs;
+std::vector<int> gridVs;
 
 int** heap13D;
 short** heap23D;
 
 float *h_costTable, *v_costTable;
 std::vector<OrderNetEdge> netEO;
-int *xcor, *ycor, *dcor;
+std::vector<int> xcor, ycor, dcor;
 
 StTree* sttreesBK;
 
@@ -109,7 +112,7 @@ multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 float **heap2, **heap1;
 
-bool* pop_heap2;
+std::vector<bool> pop_heap2;
 
 utl::Logger* logger;
 }  // namespace grt

@@ -112,36 +112,17 @@ void FastRouteCore::deleteComponents()
     nets = nullptr;
   }
 
-  if (h_edges)
-    delete[] h_edges;
-  h_edges = nullptr;
-
-  if (v_edges)
-    delete[] v_edges;
-  v_edges = nullptr;
-
-  if (seglist)
-    delete[] seglist;
-  seglist = nullptr;
-
-  if (seglistIndex)
-    delete[] seglistIndex;
-  seglistIndex = nullptr;
-
-  if (seglistCnt)
-    delete[] seglistCnt;
-  seglistCnt = nullptr;
+  h_edges.clear();
+  v_edges.clear();
+  seglist.clear();
+  seglistIndex.clear();
+  seglistCnt.clear();
 
   treeOrderPV.clear();
   treeOrderCong.clear();
 
-  if (h_edges3D)
-    delete[] h_edges3D;
-  h_edges3D = nullptr;
-
-  if (v_edges3D)
-    delete[] v_edges3D;
-  v_edges3D = nullptr;
+  h_edges3D.clear();
+  v_edges3D.clear();
 
   if (sttrees) {
     for (int i = 0; i < numValidNets; i++) {
@@ -179,29 +160,20 @@ void FastRouteCore::deleteComponents()
   parentX3.resize(boost::extents[0][0]);
   parentY3.resize(boost::extents[0][0]);
 
-  if (pop_heap2)
-    delete[] pop_heap2;
   if (heap1)
     delete[] heap1;
   if (heap2)
     delete[] heap2;
 
-  pop_heap2 = nullptr;
+  pop_heap2.clear();
   heap1 = nullptr;
   heap2 = nullptr;
 
-  if (xcor)
-    delete[] xcor;
-  if (ycor)
-    delete[] ycor;
-  if (dcor)
-    delete[] dcor;
-
   netEO.clear();
 
-  xcor = nullptr;
-  ycor = nullptr;
-  dcor = nullptr;
+  xcor.clear();
+  ycor.clear();
+  dcor.clear();
 
   if (HV) {
     for (int i = 0; i < YRANGE; i++) {
@@ -263,13 +235,8 @@ void FastRouteCore::deleteComponents()
   d1.resize(boost::extents[0][0]);
   d2.resize(boost::extents[0][0]);
 
-  if (gridHs)
-    delete[] gridHs;
-  if (gridVs)
-    delete[] gridVs;
-
-  gridHs = nullptr;
-  gridVs = nullptr;
+  gridHs.clear();
+  gridVs.clear();
 
   if (layerGrid) {
     for (int i = 0; i < numLayers; i++) {
@@ -353,8 +320,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     hCapacity3D[i] = 0;
   }
 
-  gridHs = new int[numLayers];
-  gridVs = new int[numLayers];
+  gridHs.resize(numLayers);
+  gridVs.resize(numLayers);
 
   layerGrid = new int*[numLayers];
   for (int i = 0; i < numLayers; i++) {
@@ -427,7 +394,7 @@ void FastRouteCore::setNumberNets(int nNets)
   nets = new FrNet*[num_nets_];
   for (int i = 0; i < num_nets_; i++)
     nets[i] = new FrNet;
-  seglistIndex = new int[num_nets_ + 1];
+  seglistIndex.resize(num_nets_ + 1);
 }
 
 void FastRouteCore::setLowerLeft(int x, int y)
@@ -510,13 +477,13 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  h_edges = new Edge[((xGrid - 1) * yGrid)];
-  v_edges = new Edge[(xGrid * (yGrid - 1))];
+  h_edges.resize((xGrid - 1) * yGrid);
+  v_edges.resize(xGrid * (yGrid - 1));
 
   init_usage();
 
-  v_edges3D = new Edge3D[(numLayers * xGrid * yGrid)];
-  h_edges3D = new Edge3D[(numLayers * xGrid * yGrid)];
+  v_edges3D.resize(numLayers * xGrid * yGrid);
+  h_edges3D.resize(numLayers * xGrid * yGrid);
 
   // 2D edge initialization
   int TC = 0;
@@ -783,8 +750,8 @@ void FastRouteCore::initAuxVar()
 {
   treeOrderCong.clear();
 
-  seglistCnt = new int[numValidNets];
-  seglist = new Segment[segcount];
+  seglistCnt.resize(numValidNets);
+  seglist.resize(segcount);
   sttrees = new StTree[numValidNets];
   gxs.resize(numValidNets);
   gys.resize(numValidNets);
@@ -803,7 +770,7 @@ void FastRouteCore::initAuxVar()
   parentX3.resize(boost::extents[yGrid][xGrid]);
   parentY3.resize(boost::extents[yGrid][xGrid]);
 
-  pop_heap2 = new bool[yGrid * XRANGE];
+  pop_heap2.resize(yGrid * XRANGE);
 
   // allocate memory for priority queue
   heap1 = new float*[yGrid * xGrid];
@@ -911,9 +878,9 @@ NetRouteMap FastRouteCore::run()
   // TODO: check this size
   int maxPin = maxNetDegree;
   maxPin = 2 * maxPin;
-  xcor = new int[maxPin];
-  ycor = new int[maxPin];
-  dcor = new int[maxPin];
+  xcor.resize(maxPin);
+  ycor.resize(maxPin);
+  dcor.resize(maxPin);
   netEO.reserve(maxPin);
 
   int SLOPE = 5;

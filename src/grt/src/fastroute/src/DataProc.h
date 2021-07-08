@@ -65,7 +65,8 @@ extern int
 extern int numLayers;
 extern int totalOverflow;  // total # overflow
 extern FrNet** nets;
-extern Edge *h_edges, *v_edges;
+extern std::vector<Edge> h_edges;
+extern std::vector<Edge> v_edges;
 
 extern multi_array<float, 2> d1;
 extern multi_array<float, 2> d2;
@@ -75,9 +76,9 @@ extern bool** hyperV;
 extern bool** hyperH;
 extern int** corrEdge;
 
-extern Segment* seglist;
-extern int* seglistIndex;  // the index for the segments for each net
-extern int* seglistCnt;    // the number of segements for each net
+extern std::vector<Segment> seglist;
+extern std::vector<int> seglistIndex;  // the index for the segments for each net
+extern std::vector<int> seglistCnt;    // the number of segements for each net
 
 extern StTree* sttrees;  // the Steiner trees
 extern std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
@@ -88,8 +89,8 @@ extern std::vector<OrderNetPin> treeOrderPV;
 extern std::vector<OrderTree> treeOrderCong;
 extern int viacost;
 
-extern Edge3D* h_edges3D;
-extern Edge3D* v_edges3D;
+extern std::vector<Edge3D> h_edges3D;
+extern std::vector<Edge3D> v_edges3D;
 
 extern int** layerGrid;
 extern int** viaLink;
@@ -105,7 +106,8 @@ extern int mazeedge_Threshold;
 extern bool** inRegion;
 
 extern int gridHV, gridH, gridV;
-extern int *gridHs, *gridVs;
+extern std::vector<int> gridHs;
+extern std::vector<int> gridVs;
 
 extern int** heap13D;
 extern short** heap23D;
@@ -114,14 +116,14 @@ extern float *h_costTable, *v_costTable;
 
 extern std::vector<OrderNetEdge> netEO;
 
-extern int *xcor, *ycor, *dcor;
+extern std::vector<int> xcor, ycor, dcor;
 
 extern StTree* sttreesBK;
 
 extern multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 extern float **heap2, **heap1;
-extern bool* pop_heap2;
+extern std::vector<bool> pop_heap2;
 
 extern utl::Logger* logger;
 
