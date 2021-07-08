@@ -305,8 +305,6 @@ void updateCongestionHistory(int round, int upType)
 
   maxlimit = 0;
 
-  logger->info(GRT, 124, "Update congestion history type {}.", upType);
-
   if (upType == 1) {
     for (i = 0; i < yGrid; i++) {
       for (j = 0; j < xGrid - 1; j++) {

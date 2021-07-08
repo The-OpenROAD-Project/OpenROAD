@@ -67,6 +67,10 @@ namespace ppl {
 class IOPlacer;
 }
 
+namespace rmp {
+class Restructure;
+}
+
 namespace cts {
 class TritonCTS;
 }
@@ -148,6 +152,7 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   rsz::Resizer *getResizer() { return resizer_; }
+  rmp::Restructure *getRestructure() { return restructure_; } 
   cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
@@ -243,6 +248,7 @@ private:
   mpl::MacroPlacer *macro_placer_;
   mpl::MacroPlacer2 *macro_placer2_;
   grt::GlobalRouter *global_router_;
+  rmp::Restructure *restructure_;
   cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;

@@ -14,7 +14,6 @@
  (clk ^) r -0.14:2.03 f -0.05:2.01
  (clk ^) r -0.07:-0.22 f 0.02:-0.25
  (clk ^) r 0.04:1.85 f 0.16:1.79
-[INFO RSZ-0059] Using sky130_fd_sc_hs__dlygate4sd3_1 with 0.293ns delay for hold repairs.
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 3 hold buffers.
  (clk ^) r 0.06:1.83 f 0.16:1.80

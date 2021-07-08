@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
@@ -33,42 +33,75 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "par/MakePartitionMgr.h"
-#include "par/PartitionMgr.h"
-#include "opendb/db.h"
+%{
+#include "rmp/Restructure.h"
+#include "rmp/blif.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* PartitionMgr_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-extern int Partitionmgr_Init(Tcl_Interp* interp);
-}
+#include "opendb/db.h"
+#include "sta/Liberty.hh"
 
 namespace ord {
+// Defined in OpenRoad.i
+rmp::Restructure *
+getRestructure();
 
-par::PartitionMgr* makePartitionMgr()
-{
-  return new par::PartitionMgr();
+OpenRoad *
+getOpenRoad();
 }
 
-void initPartitionMgr(OpenRoad* openroad)
+
+using namespace rmp;
+using ord::getRestructure;
+using ord::getOpenRoad;
+using odb::dbInst;
+using sta::LibertyPort;
+%}
+
+%include "../../Exception.i"
+
+%inline %{
+
+
+void set_logfile_cmd(const char* logfile)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Partitionmgr_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::PartitionMgr_tcl_inits);
-
-  par::PartitionMgr* kernel = openroad->getPartitionMgr();
-
-  kernel->init(
-      openroad->getDb(), openroad->getVerilogNetwork(), openroad->getLogger());
-};
-
-void deletePartitionMgr(par::PartitionMgr* partitionmgr)
-{
-  delete partitionmgr;
+  getRestructure()->setLogfile(logfile);
 }
-}  // namespace ord
+
+void set_tielo_port_cmd(LibertyPort* tieLoport)
+{
+  getRestructure()->setTieLoPort(tieLoport);
+}
+
+void set_tiehi_port_cmd(LibertyPort* tieHiport)
+{
+  getRestructure()->setTieHiPort(tieHiport);
+}
+
+void
+restructure_cmd(char* liberty_file_name, char* target, float slack_threshold, int depth_threshold, char* workdir_name)
+{
+  getRestructure()->setMode(target);
+  getRestructure()->run(liberty_file_name, slack_threshold, depth_threshold, workdir_name);
+}
+
+// Locally Exposed for testing only..
+Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport){
+  return new rmp::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport);
+}
+
+void blif_add_instance(Blif* blif_, const char* inst_){
+  blif_->addReplaceableInstance(getOpenRoad()->getDb()->getChip()->getBlock()->findInst(inst_));
+}
+
+void blif_dump(Blif* blif_, const char* file_name){
+  getOpenRoad()->getSta()->ensureGraph();
+  getOpenRoad()->getSta()->ensureLevelized();
+  getOpenRoad()->getSta()->searchPreamble();
+  blif_->writeBlif(file_name);
+}
+
+int blif_read(Blif* blif_, const char* file_name){
+  return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
+}
+
+%}

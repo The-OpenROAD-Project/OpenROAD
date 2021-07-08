@@ -38,60 +38,64 @@ Running Partition Design...
 	 Total Area: 160000.0
 	 Number of Hard Macros: 10
 	 
-[INFO PAR-0403] Number of Clusters created: 15
+[INFO PAR-0403] Number of Clusters created: 17
 *** In RTLMP ***
-[INFO MPL-0009] RTL_MP  Param: min_aspect_ratio: 0.33
+[INFO MPL-0009] RTL_MP  Param: min_aspect_ratio: 0.5
 [INFO MPL-0009] RTL_MP  Param: dead_space: 0.1
-[INFO MPL-0009] RTL_MP  Param: learning_rate: 0.01
-[INFO MPL-0009] RTL_MP  Param: shrink_factor: 0.995
-[INFO MPL-0009] RTL_MP  Param: shrink_freq: 0.01
-[INFO MPL-0009] RTL_MP  Param: halo_width: 2.0
+[INFO MPL-0009] RTL_MP  Param: learning_rate: 0.0
+[INFO MPL-0009] RTL_MP  Param: shrink_factor: 0.997
+[INFO MPL-0009] RTL_MP  Param: shrink_freq: 0.1
+[INFO MPL-0009] RTL_MP  Param: halo_width: 0.0
 [INFO MPL-0009] RTL_MP  Param: region_file: macro_blockage.txt
-[INFO MPL-0009] RTL_MP  Param: num_thread: 5
+[INFO MPL-0009] RTL_MP  Param: num_thread: 10
 [INFO MPL-0009] RTL_MP  Param: num_run: 5
-[INFO MPL-0009] RTL_MP  Param: heat_rate: 0.5
-[INFO MPL-0009] RTL_MP  Param: num_level: 5
+[INFO MPL-0009] RTL_MP  Param: heat_rate: 0.1
+[INFO MPL-0009] RTL_MP  Param: num_level: 3
 [INFO MPL-0009] RTL_MP  Param: num_worker: 10
-[INFO MPL-0009] RTL_MP  Param: alpha: 0.4
-[INFO MPL-0009] RTL_MP  Param: beta: 0.3
-[INFO MPL-0009] RTL_MP  Param: gamma: 0.3
-[INFO MPL-0009] RTL_MP  Param: boundary_weight: 0.06
-[INFO MPL-0009] RTL_MP  Param: macro_blockage_weight: 0.08
-[INFO MPL-0009] RTL_MP  Param: resize_prob: 0.4
-[INFO MPL-0009] RTL_MP  Param: pos_swap_prob: 0.2
-[INFO MPL-0009] RTL_MP  Param: neg_swap_prob: 0.2
-[INFO MPL-0009] RTL_MP  Param: double_swap_prob: 0.2
+[INFO MPL-0009] RTL_MP  Param: alpha: 6.0
+[INFO MPL-0009] RTL_MP  Param: beta: 40.0
+[INFO MPL-0009] RTL_MP  Param: gamma: 100.0
+[INFO MPL-0009] RTL_MP  Param: boundary_weight: 2.0
+[INFO MPL-0009] RTL_MP  Param: macro_blockage_weight: 1.0
+[INFO MPL-0009] RTL_MP  Param: resize_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: pos_swap_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: neg_swap_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: double_swap_prob: 0.1
 [INFO MPL-0009] RTL_MP  Param: init_prob: 0.95
 [INFO MPL-0009] RTL_MP  Param: rej_ratio: 0.95
-[INFO MPL-0009] RTL_MP  Param: k: 50
-[INFO MPL-0009] RTL_MP  Param: c: 100.0
-[INFO MPL-0009] RTL_MP  Param: max_num_step: 300
-[INFO MPL-0009] RTL_MP  Param: perturb_per_step: 3000
+[INFO MPL-0009] RTL_MP  Param: k: 5000000
+[INFO MPL-0009] RTL_MP  Param: c: 1000.0
+[INFO MPL-0009] RTL_MP  Param: max_num_step: 500
+[INFO MPL-0009] RTL_MP  Param: perturb_per_step: 60
 [INFO MPL-0009] RTL_MP  Param: seed: 0
 [INFO MPL-1001] Shape_Engine Outline width:  440.04
 [INFO MPL-1002] Shape_Engine Outline height: 439.6
 [INFO MPL-1003] Shape_Engine Chip area: 193441.6
-[INFO MPL-1004] Shape_Engine Macro area:  170560.0
+[INFO MPL-1004] Shape_Engine Macro area:  160000.0
 [INFO MPL-1005] Shape_Engine Std cell area: 0.0
 [INFO MPL-1006] Shape_Engine Std cell util: 0.0
-[INFO MPL-1007] Shape_Engine Cluster: top_instance_macro_cluster_0_part_1, area: 86528.000000, aspect_ratio: (0.500000,0.500000) (2.000000,2.000000) 
-[INFO MPL-1007] Shape_Engine Cluster: top_instance_macro_cluster_0_part_0, area: 84032.000000, aspect_ratio: (1.942308,1.942308) 
+[INFO MPL-1007] Shape_Engine Cluster: top_glue_logic_macro_cluster_2_part_1, area: 40000.000000, aspect_ratio: (1.000000,1.000000) (4.000000,4.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: top_glue_logic_macro_cluster_2_part_0, area: 40000.000000, aspect_ratio: (4.000000,4.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: top_glue_logic_macro_cluster_1_part_0, area: 40000.000000, aspect_ratio: (1.000000,1.000000) (4.000000,4.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: top_glue_logic_macro_cluster_0_part_0, area: 40000.000000, aspect_ratio: (4.000000,4.000000) 
 [INFO MPL-2001] Block_Placement Starts
 [INFO MPL-2002] Block_Placement  Finish Initialization
-[INFO MPL-2003] Block_Placement Init_T: 6.9087906
-[INFO MPL-2004] Block_Placement level:  0   cost:  0.446578   area:   173056.000000   wirelength:  109972.562500   outline_penalty:  0.000000   boundary_penalty:  24.040009   macro_blockage_penalty:  0.000000
-[INFO MPL-2005] Block_Placement level:  1   cost:  0.446578   area:   173056.000000   wirelength:  109972.562500   outline_penalty:  0.000000   boundary_penalty:  24.040009   macro_blockage_penalty:  0.000000
-[INFO MPL-2006] Block_Placement level:  2   cost:  0.446578   area:   173056.000000   wirelength:  109972.562500   outline_penalty:  0.000000   boundary_penalty:  24.040009   macro_blockage_penalty:  0.000000
-[INFO MPL-2007] Block_Placement level:  3   cost:  0.446577   area:   173056.000000   wirelength:  109972.562500   outline_penalty:  0.000000   boundary_penalty:  24.040009   macro_blockage_penalty:  0.000000
-[INFO MPL-2008] Block_Placement level:  4   cost:  0.446577   area:   173056.000000   wirelength:  109972.562500   outline_penalty:  0.000000   boundary_penalty:  24.040009   macro_blockage_penalty:  0.000000
-[INFO MPL-2009] Block_Placement Floorplan width: 416.0
-[INFO MPL-2010] Block_Placement Floorplan height: 416.0
-[INFO MPL-2011] Block_Placement Outline width: 440.04
-[INFO MPL-2012] Block_Placement Outline height: 439.6
+[INFO MPL-2003] Block_Placement Init_T: 1121.7853
+[INFO MPL-2004] Block_Placement level:  0   cost:  0.102303   area:   160000.000000   wirelength:  53218.558594   outline_penalty:  0.000000   boundary_penalty:  280.080017   macro_blockage_penalty:  0.000000
+[INFO MPL-2005] Block_Placement level:  1   cost:  0.100091   area:   160000.000000   wirelength:  51618.558594   outline_penalty:  0.000000   boundary_penalty:  280.080017   macro_blockage_penalty:  0.000000
+[INFO MPL-2006] Block_Placement level:  2   cost:  0.100091   area:   160000.000000   wirelength:  51618.558594   outline_penalty:  0.000000   boundary_penalty:  280.080017   macro_blockage_penalty:  0.000000
+[INFO MPL-2007] Block_Placement Floorplan width: 400.0
+[INFO MPL-2008] Block_Placement Floorplan height: 400.0
+[INFO MPL-2009] Block_Placement Outline width: 440.04
+[INFO MPL-2010] Block_Placement Outline height: 439.6
 [INFO MPL-3001] Pin_Aligment Starts
-[INFO MPL-3002] Pin_Aligment Working on macro_clutser: top_instance_macro_cluster_0_part_1
-[INFO MPL-3004] Pin_Aligment finish macro_clutser: top_instance_macro_cluster_0_part_1
-[INFO MPL-3002] Pin_Aligment Working on macro_clutser: top_instance_macro_cluster_0_part_0
-[INFO MPL-3004] Pin_Aligment finish macro_clutser: top_instance_macro_cluster_0_part_0
+[INFO MPL-3002] Pin_Aligment Working on macro_clutser: top_glue_logic_macro_cluster_2_part_1
+[INFO MPL-3004] Pin_Aligment finish macro_clutser: top_glue_logic_macro_cluster_2_part_1
+[INFO MPL-3002] Pin_Aligment Working on macro_clutser: top_glue_logic_macro_cluster_2_part_0
+[INFO MPL-3004] Pin_Aligment finish macro_clutser: top_glue_logic_macro_cluster_2_part_0
+[INFO MPL-3002] Pin_Aligment Working on macro_clutser: top_glue_logic_macro_cluster_1_part_0
+[INFO MPL-3004] Pin_Aligment finish macro_clutser: top_glue_logic_macro_cluster_1_part_0
+[INFO MPL-3002] Pin_Aligment Working on macro_clutser: top_glue_logic_macro_cluster_0_part_0
+[INFO MPL-3004] Pin_Aligment finish macro_clutser: top_glue_logic_macro_cluster_0_part_0
 *** Exit RTLMP ***
 No differences found.

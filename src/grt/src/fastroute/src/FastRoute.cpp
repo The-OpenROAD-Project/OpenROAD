@@ -1170,21 +1170,6 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
-    logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
-                  " threshold {} via cost {}. \n"
-                  "log_coef {:.2f}, healingTrigger {} cost_step {} L {} cost_type"
-                  " {} updatetype {}.",
-        i,
-        enlarge,
-        costheight,
-        mazeedge_Threshold,
-        VIA,
-        LOGIS_COF,
-        healingTrigger,
-        cost_step,
-        L,
-        cost_type,
-        upType);
     mazeRouteMSMD(i,
                   enlarge,
                   costheight,
