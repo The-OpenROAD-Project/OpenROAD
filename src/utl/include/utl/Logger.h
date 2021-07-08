@@ -70,6 +70,7 @@ namespace utl {
     X(PSM) \
     X(PSN) \
     X(RCX) \
+    X(RMP) \
     X(RSZ) \
     X(STA) \
     X(STT) \
