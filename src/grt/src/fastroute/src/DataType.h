@@ -112,7 +112,7 @@ typedef struct
   unsigned short red;
 } Edge3D;
 
-typedef struct
+typedef struct TNode
 {
   Bool assigned;
 
@@ -120,9 +120,10 @@ typedef struct
   short conCNT;
   short botL, topL;
   // heights and eID arrays size were increased after using PD
-  // to create the tree topologies. 
-  short heights[10];
-  int eID[10];
+  // to create the tree topologies.
+  static constexpr int max_connections = 10;
+  short heights[max_connections];
+  int eID[max_connections];
 
   short x, y;     // position in the grid graph
   int nbr[3];   // three neighbors
