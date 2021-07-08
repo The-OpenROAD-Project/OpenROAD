@@ -118,6 +118,10 @@ void FastRouteCore::deleteComponents()
   seglistIndex.clear();
   seglistCnt.clear();
 
+  gxs.clear();
+  gys.clear();
+  gs.clear();
+
   treeOrderPV.clear();
   treeOrderCong.clear();
 
@@ -234,6 +238,9 @@ void FastRouteCore::deleteComponents()
   d23D.resize(boost::extents[0][0][0]);
   d1.resize(boost::extents[0][0]);
   d2.resize(boost::extents[0][0]);
+
+  vCapacity3D.clear();
+  hCapacity3D.clear();
 
   gridHs.clear();
   gridVs.clear();

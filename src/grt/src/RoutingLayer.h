@@ -48,25 +48,25 @@ namespace grt {
 class RoutingLayer
 {
  private:
-  int _index;
-  std::string _name;
-  bool _preferredDirection;
+  int index_;
+  std::string name_;
+  bool preferred_direction_;
 
  public:
   RoutingLayer() = default;
   RoutingLayer(const int index,
                const std::string& name,
-               const bool preferredDirection)
-      : _index(index), _name(name), _preferredDirection(preferredDirection)
+               const bool preferred_direction)
+      : index_(index), name_(name), preferred_direction_(preferred_direction)
   {
   }
 
   const static bool HORIZONTAL = 0;
   const static bool VERTICAL = 1;
 
-  int getIndex() const { return _index; }
-  const std::string& getName() const { return _name; }
-  bool getPreferredDirection() const { return _preferredDirection; }
+  int getIndex() const { return index_; }
+  const std::string& getName() const { return name_; }
+  bool getPreferredDirection() const { return preferred_direction_; }
 };
 
 }  // namespace grt
