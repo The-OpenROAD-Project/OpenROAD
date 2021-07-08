@@ -56,15 +56,15 @@ void printEdge(int netID, int edgeID)
   nodes = sttrees[netID].nodes;
 
   logger->report("edge {}: ({}, {})->({}, {})",
-         edgeID,
-         nodes[edge.n1].x,
-         nodes[edge.n1].y,
-         nodes[edge.n2].x,
-         nodes[edge.n2].y);
+                 edgeID,
+                 nodes[edge.n1].x,
+                 nodes[edge.n1].y,
+                 nodes[edge.n2].x,
+                 nodes[edge.n2].y);
   std::string routes_rpt;
   for (i = 0; i <= edge.route.routelen; i++) {
-    routes_rpt = routes_rpt + "(" + std::to_string(edge.route.gridsX[i]) +
-                 ", " + std::to_string(edge.route.gridsY[i]) + ") ";
+    routes_rpt = routes_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
+                 + std::to_string(edge.route.gridsY[i]) + ") ";
   }
   logger->report("{}", routes_rpt);
 }
@@ -403,9 +403,9 @@ void fillVIA()
   }
 
   if (verbose > 1) {
-   logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
-   logger->info(GRT, 198, "Via related Steiner nodes: {}", numVIAT2);
-   logger->info(GRT, 199, "Via filling finished.");
+    logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
+    logger->info(GRT, 198, "Via related Steiner nodes: {}", numVIAT2);
+    logger->info(GRT, 199, "Via filling finished.");
   }
 }
 
@@ -464,7 +464,7 @@ void assignEdge(int netID, int edgeID, bool processDIR)
 
   gridD.resize(numLayers);
   for (int i = 0; i < numLayers; i++) {
-    gridD[i].resize(treeedge->route.routelen+1);
+    gridD[i].resize(treeedge->route.routelen + 1);
   }
 
   for (l = 0; l < numLayers; l++) {
@@ -546,8 +546,7 @@ void assignEdge(int netID, int edgeID, bool processDIR)
     if (treenodes[n2a].assigned) {
       min_result = BIG_INT;
       for (i = treenodes[n2a].topL; i >= treenodes[n2a].botL; i--) {
-        if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT)) {
+        if (gridD[i][routelen] < min_result || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -556,8 +555,7 @@ void assignEdge(int netID, int edgeID, bool processDIR)
       min_result = gridD[0][routelen];
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
-        if (gridD[i][routelen] < min_result
-            || (min_result == BIG_INT)) {
+        if (gridD[i][routelen] < min_result || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
         }
@@ -597,17 +595,18 @@ void assignEdge(int netID, int edgeID, bool processDIR)
       }
 
     } else {
-      treenodes[n2a].topL
-          = gridsL[routelen];
-      treenodes[n2a].botL
-          = gridsL[routelen];
+      treenodes[n2a].topL = gridsL[routelen];
+      treenodes[n2a].botL = gridsL[routelen];
       treenodes[n2a].lID = treenodes[n2a].hID = edgeID;
     }
 
     if (treenodes[n2a].assigned) {
       if (gridsL[routelen] > treenodes[n2a].topL
           || gridsL[routelen] < treenodes[n2a].botL) {
-        logger->error(GRT, 202, "Target ending layer ({}) out of range.", gridsL[routelen]);
+        logger->error(GRT,
+                      202,
+                      "Target ending layer ({}) out of range.",
+                      gridsL[routelen]);
       }
     }
 
@@ -661,8 +660,7 @@ void assignEdge(int netID, int edgeID, bool processDIR)
     if (treenodes[n1a].assigned) {
       min_result = BIG_INT;
       for (i = treenodes[n1a].topL; i >= treenodes[n1a].botL; i--) {
-        if (gridD[i][k] < min_result
-            || (min_result == BIG_INT)) {
+        if (gridD[i][k] < min_result || (min_result == BIG_INT)) {
           min_result = gridD[i][0];
           endLayer = i;
         }
@@ -672,8 +670,7 @@ void assignEdge(int netID, int edgeID, bool processDIR)
       min_result = gridD[0][k];
       endLayer = 0;
       for (i = 0; i < numLayers; i++) {
-        if (gridD[i][k] < min_result
-            || (min_result == BIG_INT)) {
+        if (gridD[i][k] < min_result || (min_result == BIG_INT)) {
           min_result = gridD[i][k];
           endLayer = i;
         }
@@ -969,19 +966,19 @@ void printEdge3D(int netID, int edgeID)
   nodes = sttrees[netID].nodes;
 
   logger->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {})",
-         edgeID,
-         edge.n1,
-         nodes[edge.n1].x,
-         nodes[edge.n1].y,
-         edge.n2,
-         nodes[edge.n2].x,
-         nodes[edge.n2].y);
+                 edgeID,
+                 edge.n1,
+                 nodes[edge.n1].x,
+                 nodes[edge.n1].y,
+                 edge.n2,
+                 nodes[edge.n2].x,
+                 nodes[edge.n2].y);
   if (edge.len > 0) {
     std::string edge_rpt;
     for (i = 0; i <= edge.route.routelen; i++) {
-      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", " +
-                 std::to_string(edge.route.gridsY[i]) + ", " +
-                 std::to_string(edge.route.gridsL[i]) + ") ";
+      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
+                 + std::to_string(edge.route.gridsY[i]) + ", "
+                 + std::to_string(edge.route.gridsL[i]) + ") ";
     }
     logger->report("{}", edge_rpt);
   }
@@ -992,9 +989,9 @@ void printTree3D(int netID)
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
     logger->report("nodeID {},  [{}, {}]",
-           nodeID,
-           sttrees[netID].nodes[nodeID].y,
-           sttrees[netID].nodes[nodeID].x);
+                   nodeID,
+                   sttrees[netID].nodes[nodeID].y,
+                   sttrees[netID].nodes[nodeID].x);
   }
 
   for (edgeID = 0; edgeID < 2 * sttrees[netID].deg - 3; edgeID++) {
@@ -1042,21 +1039,29 @@ void checkRoute3D()
       gridFlag = false;
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] start node wrong, net deg {}, n1 {}",
-               netName(nets[netID]),
-               edgeID,
-               deg,
-               n1);
+        debugPrint(logger,
+                   GRT,
+                   "checkRoute3D",
+                   1,
+                   "net {} edge[{}] start node wrong, net deg {}, n1 {}",
+                   netName(nets[netID]),
+                   edgeID,
+                   deg,
+                   n1);
         if (logger->debugCheck(GRT, "checkRoute3D", 1)) {
           printEdge3D(netID, edgeID);
         }
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] end node wrong, net deg {}, n2 {}",
-               netName(nets[netID]),
-               edgeID,
-               deg,
-               n2);
+        debugPrint(logger,
+                   GRT,
+                   "checkRoute3D",
+                   1,
+                   "net {} edge[{}] end node wrong, net deg {}, n2 {}",
+                   netName(nets[netID]),
+                   edgeID,
+                   deg,
+                   n2);
         if (logger->debugCheck(GRT, "checkRoute3D", 1)) {
           printEdge3D(netID, edgeID);
         }
@@ -1067,24 +1072,33 @@ void checkRoute3D()
                    + ADIFF(gridsL[i + 1], gridsL[i]);
         if (distance > 1 || distance < 0) {
           gridFlag = true;
-          debugPrint(logger, GRT, "checkRoute3D", 1, "net {} edge[{}] maze route wrong, distance {}, i {}",
-                 netName(nets[netID]),
-                 edgeID,
-                 distance,
-                 i);
-          debugPrint(logger, GRT, "checkRoute3D", 1, "current [{}, {}, {}], next [{}, {}, {}]",
-                 gridsL[i],
-                 gridsY[i],
-                 gridsX[i],
-                 gridsL[i + 1],
-                 gridsY[i + 1],
-                 gridsX[i + 1]);
+          debugPrint(logger,
+                     GRT,
+                     "checkRoute3D",
+                     1,
+                     "net {} edge[{}] maze route wrong, distance {}, i {}",
+                     netName(nets[netID]),
+                     edgeID,
+                     distance,
+                     i);
+          debugPrint(logger,
+                     GRT,
+                     "checkRoute3D",
+                     1,
+                     "current [{}, {}, {}], next [{}, {}, {}]",
+                     gridsL[i],
+                     gridsY[i],
+                     gridsX[i],
+                     gridsL[i + 1],
+                     gridsY[i + 1],
+                     gridsX[i + 1]);
         }
       }
 
       for (i = 0; i <= treeedge->route.routelen; i++) {
         if (gridsL[i] < 0) {
-          logger->error(GRT, 204, "Invalid layer value in gridsL, {}.", gridsL[i]);
+          logger->error(
+              GRT, 204, "Invalid layer value in gridsL, {}.", gridsL[i]);
         }
       }
       if (gridFlag) {
@@ -1351,9 +1365,8 @@ void check2DEdgesUsage()
     for (int j = 0; j < xGrid - 1; j++) {
       int grid = i * (xGrid - 1) + j;
       if (h_edges[grid].usage >= max_h_edge_usage) {
-        logger->error(GRT,
-                      228,
-                      "Horizontal edge usage exceeds the maximum allowed.");
+        logger->error(
+            GRT, 228, "Horizontal edge usage exceeds the maximum allowed.");
       }
     }
   }
@@ -1363,9 +1376,8 @@ void check2DEdgesUsage()
     for (int j = 0; j < xGrid; j++) {
       int grid = i * xGrid + j;
       if (v_edges[grid].usage >= max_v_edge_usage) {
-        logger->error(GRT,
-                      229,
-                      "Vertical edge usage exceeds the maximum allowed.");
+        logger->error(
+            GRT, 229, "Vertical edge usage exceeds the maximum allowed.");
       }
     }
   }
@@ -1405,19 +1417,19 @@ void printEdge2D(int netID, int edgeID)
   nodes = sttrees[netID].nodes;
 
   logger->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {}), routeType {}",
-         edgeID,
-         edge.n1,
-         nodes[edge.n1].x,
-         nodes[edge.n1].y,
-         edge.n2,
-         nodes[edge.n2].x,
-         nodes[edge.n2].y,
-         edge.route.type);
+                 edgeID,
+                 edge.n1,
+                 nodes[edge.n1].x,
+                 nodes[edge.n1].y,
+                 edge.n2,
+                 nodes[edge.n2].x,
+                 nodes[edge.n2].y,
+                 edge.route.type);
   if (edge.len > 0) {
     std::string edge_rpt;
     for (i = 0; i <= edge.route.routelen; i++) {
-      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) +
-                 ", " + std::to_string(edge.route.gridsY[i]) + ") ";
+      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
+                 + std::to_string(edge.route.gridsY[i]) + ") ";
     }
     logger->report("{}", edge_rpt);
   }
@@ -1428,9 +1440,9 @@ void printTree2D(int netID)
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
     logger->report("nodeID {},  [{}, {}]",
-           nodeID,
-           sttrees[netID].nodes[nodeID].y,
-           sttrees[netID].nodes[nodeID].x);
+                   nodeID,
+                   sttrees[netID].nodes[nodeID].y,
+                   sttrees[netID].nodes[nodeID].x);
   }
 
   for (edgeID = 0; edgeID < 2 * sttrees[netID].deg - 3; edgeID++) {
@@ -1464,20 +1476,27 @@ bool checkRoute2DTree(int netID)
     gridsY = treeedge->route.gridsY;
 
     if (treeedge->len < 0) {
-      logger->warn(GRT, 207, "Ripped up edge without edge length reassignment.");
+      logger->warn(
+          GRT, 207, "Ripped up edge without edge length reassignment.");
       STHwrong = true;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        logger->warn(GRT, 208, "Route length {}, tree length {}.",
-          treeedge->route.routelen, treeedge->len);
+        logger->warn(GRT,
+                     208,
+                     "Route length {}, tree length {}.",
+                     treeedge->route.routelen,
+                     treeedge->len);
         STHwrong = true;
         return (true);
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        logger->warn(GRT, 164, "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
+        logger->warn(
+            GRT,
+            164,
+            "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
             "{}.",
             y1,
             x1,
@@ -1487,7 +1506,10 @@ bool checkRoute2DTree(int netID)
         STHwrong = true;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger->warn(GRT, 165, "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
+        logger->warn(
+            GRT,
+            165,
+            "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
             y1,
             x1,
             gridsY[edgelength],
@@ -1499,17 +1521,20 @@ bool checkRoute2DTree(int netID)
         distance
             = ADIFF(gridsX[i + 1], gridsX[i]) + ADIFF(gridsY[i + 1], gridsY[i]);
         if (distance != 1) {
-          logger->warn(GRT, 166, "Net {} edge[{}] maze route wrong, distance {}, i {}.",
-                 netName(nets[netID]),
-                 edgeID,
-                 distance,
-                 i);
+          logger->warn(GRT,
+                       166,
+                       "Net {} edge[{}] maze route wrong, distance {}, i {}.",
+                       netName(nets[netID]),
+                       edgeID,
+                       distance,
+                       i);
           STHwrong = true;
         }
       }
 
       if (STHwrong) {
-        logger->error(GRT, 167, "Invalid 2D tree for net {}.", netName(nets[netID]));
+        logger->error(
+            GRT, 167, "Invalid 2D tree for net {}.", netName(nets[netID]));
         return (true);
       }
     }
