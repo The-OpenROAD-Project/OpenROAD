@@ -49,12 +49,16 @@ extern void mazeRouteMSMD(int iter,
                           float height,
                           int ripup_threshold,
                           int mazeedge_Threshold,
-                          Bool ordering,
-                          int cost_type);
+                          bool ordering,
+                          int cost_type,
+                          float LOGIS_COF,
+                          int VIA,
+                          int slope,
+                          int L);
 // Maze-routing for multi-source, multi-destination
 extern void convertToMazeroute();
 
-extern void updateCongestionHistory(int round, int upType);
+extern void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj);
 extern void initialCongestionHistory(int round);
 extern void reduceCongestionHistory(int round);
 

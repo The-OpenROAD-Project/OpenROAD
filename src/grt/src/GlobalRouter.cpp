@@ -152,7 +152,6 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
     setSelectedMetal(max_routing_layer);
   }
 
-  fastroute_->setAlpha(alpha_);
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
   fastroute_->setAllowOverflow(allow_congestion_);
@@ -164,7 +163,6 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
-  setSpacingsAndMinWidths();
   initNetlist();
 
   std::vector<Net*> nets;
@@ -587,15 +585,6 @@ void GlobalRouter::updateDirtyNets()
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
-  }
-}
-
-void GlobalRouter::setSpacingsAndMinWidths()
-{
-  for (int l = 1; l <= grid_->getNumLayers(); l++) {
-    fastroute_->addMinSpacing(grid_->getSpacings()[l - 1], l);
-    fastroute_->addMinWidth(grid_->getMinWidths()[l - 1], l);
-    fastroute_->addViaSpacing(1, l);
   }
 }
 
