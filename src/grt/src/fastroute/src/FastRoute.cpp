@@ -367,18 +367,16 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
 
 void FastRouteCore::init_usage()
 {
-  int i;
-
-  for (i = 0; i < yGrid * (xGrid - 1); i++)
+  for (int i = 0; i < yGrid * (xGrid - 1); i++)
     h_edges[i].usage = 0;
-  for (i = 0; i < (yGrid - 1) * xGrid; i++)
+  for (int i = 0; i < (yGrid - 1) * xGrid; i++)
     v_edges[i].usage = 0;
 }
 
 void FastRouteCore::initEdges()
 {
-  float LB = 0.9;
-  float UB = 1.3;
+  const float LB = 0.9;
+  const float UB = 1.3;
   vCapacity_lb = LB * vCapacity;
   hCapacity_lb = LB * hCapacity;
   vCapacity_ub = UB * vCapacity;

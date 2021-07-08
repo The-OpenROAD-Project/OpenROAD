@@ -1849,7 +1849,7 @@ void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
   delete[] gridsY;
 }
 
-void routeLVAll(int threshold, int expand, float LOGIS_COF)
+void routeLVAll(int threshold, int expand, float logis_cof)
 {
   int netID, edgeID, numEdges, i, forange;
 
@@ -1860,7 +1860,7 @@ void routeLVAll(int threshold, int expand, float LOGIS_COF)
 
   forange = 10 * hCapacity;
   for (i = 0; i < forange; i++) {
-    h_costTable[i] = costheight / (exp((float) (hCapacity - i) * LOGIS_COF) + 1)
+    h_costTable[i] = costheight / (exp((float) (hCapacity - i) * logis_cof) + 1)
                      + 1;  // /hCapacity*30));
   }
 
