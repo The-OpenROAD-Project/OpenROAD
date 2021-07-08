@@ -5255,7 +5255,7 @@ class dbMaster : public dbObject
   ///
   /// Get the width of this master cell.
   ///
-  uint getWidth();
+  uint getWidth() const;
 
   ///
   /// Set the width of this master cell.
@@ -5265,7 +5265,7 @@ class dbMaster : public dbObject
   ///
   /// Get the height of this master cell.
   ///
-  uint getHeight();
+  uint getHeight() const;
 
   ///
   /// Set the height of this master cell.

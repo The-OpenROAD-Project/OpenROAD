@@ -110,7 +110,6 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
-
 sta::define_cmd_args "write_cdl" {[-include_fillers] filename}
 
 proc write_cdl { args } {

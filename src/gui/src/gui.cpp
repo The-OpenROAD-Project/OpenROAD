@@ -390,6 +390,10 @@ void Selected::highlight(Painter& painter,
 
 }  // namespace gui
 
+extern "C" {
+struct Tcl_Interp;
+}
+
 namespace ord {
 
 extern "C" {

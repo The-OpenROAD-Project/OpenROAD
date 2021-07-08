@@ -67,6 +67,10 @@ namespace ppl {
 class IOPlacer;
 }
 
+namespace rmp {
+class Restructure;
+}
+
 namespace cts {
 class TritonCTS;
 }
@@ -89,6 +93,7 @@ class Finale;
 
 namespace mpl {
 class MacroPlacer;
+class MacroPlacer2;
 }
 
 namespace gpl {
@@ -147,12 +152,14 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   rsz::Resizer *getResizer() { return resizer_; }
+  rmp::Restructure *getRestructure() { return restructure_; } 
   cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
+  mpl::MacroPlacer2 *getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -239,7 +246,9 @@ private:
   dpl::Opendp *opendp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
+  mpl::MacroPlacer2 *macro_placer2_;
   grt::GlobalRouter *global_router_;
+  rmp::Restructure *restructure_;
   cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;

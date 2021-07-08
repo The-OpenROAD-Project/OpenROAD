@@ -91,7 +91,7 @@ void GlobalRouter::init()
   allow_congestion_ = false;
   macro_extension_ = 0;
   verbose_ = 0;
-  alpha_ = 0;
+  alpha_ = 0.3;
   seed_ = 0;
   caps_perturbation_percentage_ = 0;
   perturbation_amount_ = 1;
