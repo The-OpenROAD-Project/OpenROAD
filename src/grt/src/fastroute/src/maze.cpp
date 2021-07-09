@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "maze.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,10 +40,10 @@
 
 #include "DataProc.h"
 #include "DataType.h"
+#include "FastRoute.h"
 #include "RSMT.h"
 #include "RipUp.h"
 #include "flute.h"
-#include "pdr/pdrev.h"
 #include "route.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -55,11 +53,10 @@ namespace grt {
 using utl::GRT;
 
 #define PARENT(i) (i - 1) / 2
-//#define PARENT(i) ((i-1)>>1)
 #define LEFT(i) 2 * i + 1
 #define RIGHT(i) 2 * i + 2
 
-void convertToMazerouteNet(int netID)
+void FastRouteCore::convertToMazerouteNet(int netID)
 {
   short *gridsX, *gridsY;
   int i, edgeID, edgelength;
@@ -206,7 +203,7 @@ void convertToMazerouteNet(int netID)
   }  // loop for all the edges
 }
 
-void convertToMazeroute()
+void FastRouteCore::convertToMazeroute()
 {
   int i, j, grid, netID;
 
@@ -298,7 +295,7 @@ void extractMin(float** array, int arrayLen)
  * round : the number of maze route stages runned
  */
 
-void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj)
+void FastRouteCore::updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj)
 {
   int i, j, grid, maxlimit, overflow;
 
@@ -475,7 +472,7 @@ void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj)
 // d2      - the distance of any grid from the destination subtree t2
 // heap1   - the heap storing the addresses for d1[][]
 // heap2   - the heap storing the addresses for d2[][]
-void setupHeap(int netID,
+void FastRouteCore::setupHeap(int netID,
                int edgeID,
                int* heapLen1,
                int* heapLen2,
@@ -708,7 +705,7 @@ void setupHeap(int netID,
   }
 }
 
-int copyGrids(TreeNode* treenodes,
+int FastRouteCore::copyGrids(TreeNode* treenodes,
               int n1,
               int n2,
               TreeEdge* treeedges,
@@ -756,10 +753,10 @@ int copyGrids(TreeNode* treenodes,
     }  // MAZEROUTE
   }
 
-  return (cnt);
+  return cnt;
 }
 
-void updateRouteType1(TreeNode* treenodes,
+void FastRouteCore::updateRouteType1(TreeNode* treenodes,
                       int n1,
                       int A1,
                       int A2,
@@ -894,7 +891,7 @@ void updateRouteType1(TreeNode* treenodes,
   delete[] gridsY_n1A2;
 }
 
-void updateRouteType2(TreeNode* treenodes,
+void FastRouteCore::updateRouteType2(TreeNode* treenodes,
                       int n1,
                       int A1,
                       int A2,
@@ -1027,7 +1024,7 @@ void updateRouteType2(TreeNode* treenodes,
   delete[] gridsY_C1C2;
 }
 
-void reInitTree(int netID)
+void FastRouteCore::reInitTree(int netID)
 {
   int deg, numEdges, edgeID, d, j;
   TreeEdge* treeedge;
@@ -1067,7 +1064,7 @@ void reInitTree(int netID)
   convertToMazerouteNet(netID);
 }
 
-void mazeRouteMSMD(int iter,
+void FastRouteCore::mazeRouteMSMD(int iter,
                    int expand,
                    float costHeight,
                    int ripup_threshold,
@@ -1844,7 +1841,7 @@ void mazeRouteMSMD(int iter,
   v_costTable.clear();
 }
 
-int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
+int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 {
   int H_overflow = 0;
   int V_overflow = 0;
@@ -1917,10 +1914,10 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     ahTH = 20;
   }
 
-  return (totalOverflow);
+  return totalOverflow;
 }
 
-int getOverflow2D(int* maxOverflow)
+int FastRouteCore::getOverflow2D(int* maxOverflow)
 {
   int i, j, grid, overflow, max_overflow, H_overflow, max_H_overflow,
       V_overflow, max_V_overflow, numedges;
@@ -1991,10 +1988,10 @@ int getOverflow2D(int* maxOverflow)
     logger->info(GRT, 145, "Final overflow    : {}\n", totalOverflow);
   }
 
-  return (totalOverflow);
+  return totalOverflow;
 }
 
-int getOverflow3D(void)
+int FastRouteCore::getOverflow3D(void)
 {
   int i, j, k, grid, overflow, max_overflow, H_overflow, max_H_overflow,
       V_overflow, max_V_overflow;
@@ -2040,10 +2037,10 @@ int getOverflow3D(void)
   max_overflow = std::max(max_H_overflow, max_V_overflow);
   totalOverflow = H_overflow + V_overflow;
 
-  return (total_usage);
+  return total_usage;
 }
 
-void InitEstUsage()
+void FastRouteCore::InitEstUsage()
 {
   int i, j, grid;
   for (i = 0; i < yGrid; i++) {
@@ -2061,7 +2058,7 @@ void InitEstUsage()
   }
 }
 
-void str_accu(int rnd)
+void FastRouteCore::str_accu(int rnd)
 {
   int i, j, grid, overflow;
   for (i = 0; i < yGrid; i++) {
@@ -2085,7 +2082,7 @@ void str_accu(int rnd)
   }
 }
 
-void InitLastUsage(int upType)
+void FastRouteCore::InitLastUsage(int upType)
 {
   int i, j, grid;
   for (i = 0; i < yGrid; i++) {

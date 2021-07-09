@@ -129,6 +129,34 @@ class FastRouteCore
  private:
   NetRouteMap getRoutes();
   void init_usage();
+
+  // maze functions
+  // Maze-routing in different orders
+  void mazeRouteMSMD(int iter,
+                            int expand,
+                            float height,
+                            int ripup_threshold,
+                            int mazeedge_Threshold,
+                            bool ordering,
+                            int cost_type,
+                            float LOGIS_COF,
+                            int VIA,
+                            int slope,
+                            int L);
+  // Maze-routing for multi-source, multi-destination
+  void convertToMazeroute();
+
+  void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj);
+
+  int getOverflow2D(int* maxOverflow);
+  int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
+  int getOverflow3D(void);
+
+  void str_accu(int rnd);
+
+  void InitLastUsage(int upType);
+  void InitEstUsage();
+
   int maxNetDegree;
   std::vector<int> cap_per_layer;
   std::vector<int> usage_per_layer;

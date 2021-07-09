@@ -53,7 +53,6 @@
 #include "RSMT.h"
 #include "RipUp.h"
 #include "flute.h"
-#include "maze.h"
 #include "maze3D.h"
 #include "utl/Logger.h"
 #include "opendb/db.h"
