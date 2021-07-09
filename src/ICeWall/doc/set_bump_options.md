@@ -21,9 +21,9 @@ The set_bump_options command is used to provide detailed information about how t
 
 Use the -pitch options to set the centre-to-centre spacing of bumps.
 
-If the -spacing_to_edge option is specified, then the number of rows and columns of bumps added will be the maximum that can fit in the die with a minimum spacing to the edge of the die as specified. Alternatively, specify the number of ows are columns of bump using the -array_size option, and specify the -offset option to specify the location of the lower left bump on the die.
+If the -spacing_to_edge option is specified, then the number of rows and columns of bumps added will be the maximum that can fit in the die with a minimum spacing to the edge of the die as specified. Alternatively, specify the number of rows are columns of bump using the -array_size option, and specify the -offset option to specify the location of the lower left bump on the die.
 
-The name of the cell in the library is specified with the -cell name option. If the technology supports a number of different bump cells according to bump pitch, then the value for cell name can be specified as a list of key value pairs, where the key is pitch between bump centres, and he value is the name of the bump cell to be used. The actual cell selected will depend upon the value of the -pitch option.
+The name of the cell in the library is specified with the -cell name option. If the technology supports a number of different bump cells according to bump pitch, then the value for cell name can be specified as a list of key value pairs, where the key is pitch between bump centres, and the value is the name of the bump cell to be used. The actual cell selected will depend upon the value of the -pitch option.
 
 The name of the pin on the bump is specified with the -bump_pin_name
 
