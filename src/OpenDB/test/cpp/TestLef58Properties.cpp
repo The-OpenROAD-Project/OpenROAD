@@ -149,6 +149,9 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(keepoutRule->getBackwardExt() == 0.03 * distFactor);
   BOOST_TEST(keepoutRule->getForwardExt() == 0.1 * distFactor);
   BOOST_TEST(keepoutRule->getSideExt() == 0.05 * distFactor);
+  BOOST_TEST(keepoutRule->isExceptWithin());
+  BOOST_TEST(keepoutRule->getWithinLow() == -0.01 * distFactor);
+  BOOST_TEST(keepoutRule->getWithinHigh() == 0.05 * distFactor);
   BOOST_TEST(keepoutRule->isClassValid());
   BOOST_TEST(keepoutRule->getClassName() == "EOL_WIDE");
 
