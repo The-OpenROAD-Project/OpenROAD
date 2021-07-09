@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "route.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,30 +40,22 @@
 
 #include "DataProc.h"
 #include "DataType.h"
+#include "FastRoute.h"
 #include "RipUp.h"
 #include "flute.h"
 #include "utl/Logger.h"
 
 #define HCOST 5000
+#define SAMEX 0
+#define SAMEY 1
 
 namespace grt {
 
 using utl::GRT;
 
-float* costHVH;  // Horizontal first Z
-float* costVHV;  // Vertical first Z
-float* costH;    // Horizontal segment cost
-float* costV;    // Vertical segment cost
-float* costLR;   // Left and right boundary cost
-float* costTB;   // Top and bottom boundary cost
-
-float* costHVHtest;  // Vertical first Z
-float* costVtest;    // Vertical segment cost
-float* costTBtest;   // Top and bottom boundary cost
-
 // estimate the routing by assigning 1 for H and V segments, 0.5 to both
 // possible L for L segments
-void estimateOneSeg(Segment* seg)
+void FastRouteCore::estimateOneSeg(Segment* seg)
 {
   int i;
   int ymin, ymax;
@@ -103,7 +93,7 @@ void estimateOneSeg(Segment* seg)
   }
 }
 
-void routeSegV(Segment* seg)
+void FastRouteCore::routeSegV(Segment* seg)
 {
   int i;
   int ymin, ymax;
@@ -122,7 +112,7 @@ void routeSegV(Segment* seg)
     v_edges[i * xGrid + seg->x1].est_usage += edgeCost;
 }
 
-void routeSegH(Segment* seg)
+void FastRouteCore::routeSegH(Segment* seg)
 {
   int i;
 
@@ -133,7 +123,7 @@ void routeSegH(Segment* seg)
 }
 
 // L-route, based on previous L route
-void routeSegL(Segment* seg)
+void FastRouteCore::routeSegL(Segment* seg)
 {
   int i, grid, grid1;
   float costL1, costL2, tmp;
@@ -206,7 +196,7 @@ void routeSegL(Segment* seg)
 }
 
 // First time L-route, based on 0.5-0.5 estimation
-void routeSegLFirstTime(Segment* seg)
+void FastRouteCore::routeSegLFirstTime(Segment* seg)
 {
   int i, vedge, hedge;
   float costL1, costL2, tmp;
@@ -285,7 +275,7 @@ void routeSegLFirstTime(Segment* seg)
 
 // route all segments with L, firstTime: true, no previous route, false -
 // previous is L-route
-void routeLAll(bool firstTime)
+void FastRouteCore::routeLAll(bool firstTime)
 {
   int i, j;
 
@@ -320,7 +310,7 @@ void routeLAll(bool firstTime)
 }
 
 // L-route, rip-up the previous route according to the ripuptype
-void newrouteL(int netID, RouteType ripuptype, bool viaGuided)
+void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 {
   int i, j, d, n1, n2, x1, y1, x2, y2, grid, grid1;
   float costL1 = 0;
@@ -478,7 +468,7 @@ void newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 
 // route all segments with L, firstTime: true, first newrouteLAll, false - not
 // first
-void newrouteLAll(bool firstTime, bool viaGuided)
+void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   int i;
 
@@ -493,7 +483,7 @@ void newrouteLAll(bool firstTime, bool viaGuided)
   }
 }
 
-void newrouteZ_edge(int netID, int edgeID)
+void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
 {
   int i, j, n1, n2, x1, y1, x2, y2, segWidth, bestZ, grid, grid1, grid2, ymin,
       ymax;
@@ -634,7 +624,7 @@ void newrouteZ_edge(int netID, int edgeID)
 }
 
 // Z-route, rip-up the previous route according to the ripuptype
-void newrouteZ(int netID, int threshold)
+void FastRouteCore::newrouteZ(int netID, int threshold)
 {
   int ind, i, j, d, n1, n2, x1, y1, x2, y2, segWidth, segHeight, bestZ, grid,
       grid1, grid2, ymin, ymax, n1a, n2a, status1, status2;
@@ -959,7 +949,7 @@ void newrouteZ(int netID, int threshold)
 // ripup a tree edge according to its ripup type and Z-route it
 // route all segments with L, firstTime: true, first newrouteLAll, false - not
 // first
-void newrouteZAll(int threshold)
+void FastRouteCore::newrouteZAll(int threshold)
 {
   int i;
   for (i = 0; i < numValidNets; i++) {
@@ -968,7 +958,7 @@ void newrouteZAll(int threshold)
 }
 
 // Ripup the original route and do Monotonic routing within bounding box
-void routeMonotonic(int netID, int edgeID, int threshold)
+void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 {
   int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       ind_i, ind_j, ind_x;
@@ -1201,7 +1191,7 @@ void routeMonotonic(int netID, int edgeID, int threshold)
   delete[] gridsY;
 }
 
-void routeMonotonicAll(int threshold)
+void FastRouteCore::routeMonotonicAll(int threshold)
 {
   int netID, edgeID;
 
@@ -1215,7 +1205,7 @@ void routeMonotonicAll(int threshold)
   }
 }
 
-void spiralRoute(int netID, int edgeID)
+void FastRouteCore::spiralRoute(int netID, int edgeID)
 {
   int j, n1, n2, x1, y1, x2, y2, grid, grid1, n1a, n2a;
   float costL1 = 0;
@@ -1395,7 +1385,7 @@ void spiralRoute(int netID, int edgeID)
     sttrees[netID].edges[edgeID].route.type = NOROUTE;
 }
 
-void spiralRouteAll()
+void FastRouteCore::spiralRouteAll()
 {
   int netID, d, k, edgeID, nodeID, deg, numpoints, n1, n2;
   int na;
@@ -1542,7 +1532,7 @@ void spiralRouteAll()
   }
 }
 
-void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
+void FastRouteCore::routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
 {
   int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       deg, yminorig, ymaxorig;
@@ -1849,7 +1839,7 @@ void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
   delete[] gridsY;
 }
 
-void routeLVAll(int threshold, int expand, float logis_cof)
+void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 {
   int netID, edgeID, numEdges, i, forange;
 
@@ -1876,7 +1866,7 @@ void routeLVAll(int threshold, int expand, float logis_cof)
   h_costTable.clear();
 }
 
-void newrouteLInMaze(int netID)
+void FastRouteCore::newrouteLInMaze(int netID)
 {
   int i, j, d, n1, n2, x1, y1, x2, y2, grid, grid1;
   int costL1, costL2, tmp;

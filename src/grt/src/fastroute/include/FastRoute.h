@@ -260,6 +260,28 @@ class FastRouteCore
   bool VTreeSuite(int netID);
   bool netCongestion(int netID);
 
+  // route functions
+  // old functions for segment list data structure
+  void routeSegL(Segment* seg);
+  void routeLAll(bool firstTime);
+  // new functions for tree data structure
+  void newrouteL(int netID, RouteType ripuptype, bool viaGuided);
+  void newrouteZ(int netID, int threshold);
+  void newrouteZ_edge(int netID, int edgeID);
+  void newrouteLAll(bool firstTime, bool viaGuided);
+  void newrouteZAll(int threshold);
+  void routeMonotonicAll(int threshold);
+  void routeMonotonic(int netID, int edgeID, int threshold);
+  void routeLVAll(int threshold, int expand, float logis_cof);
+  void spiralRouteAll();
+  void newrouteLInMaze(int netID);
+  void estimateOneSeg(Segment* seg);
+  void routeSegV(Segment* seg);
+  void routeSegH(Segment* seg);
+  void routeSegLFirstTime(Segment* seg);
+  void spiralRoute(int netID, int edgeID);
+  void routeLVEnew(int netID, int edgeID, int threshold, int enlarge);
+
   int maxNetDegree;
   std::vector<int> cap_per_layer;
   std::vector<int> usage_per_layer;
@@ -273,6 +295,16 @@ class FastRouteCore
   int layer_orientation_;
   std::vector<short> vCapacity3D;
   std::vector<short> hCapacity3D;
+
+  float* costHVH;  // Horizontal first Z
+  float* costVHV;  // Vertical first Z
+  float* costH;    // Horizontal segment cost
+  float* costV;    // Vertical segment cost
+  float* costLR;   // Left and right boundary cost
+  float* costTB;   // Top and bottom boundary cost
+  float* costHVHtest;  // Vertical first Z
+  float* costVtest;    // Vertical segment cost
+  float* costTBtest;   // Top and bottom boundary cost
 };
 
 }  // namespace grt
