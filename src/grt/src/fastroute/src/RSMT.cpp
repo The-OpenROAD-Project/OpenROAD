@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "RSMT.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +38,7 @@
 
 #include "DataProc.h"
 #include "DataType.h"
+#include "FastRoute.h"
 #include "RipUp.h"
 #include "flute.h"
 #include "pdr/pdrev.h"
@@ -88,12 +87,10 @@ int mapxy(int nx, int xs[], int nxs[], int d)
       min = mid + 1;
   }
 
-  debugPrint(logger, GRT, "fastroute", 3, "Fail when mapping coordinates");
-
   return -1;
 }
 
-void copyStTree(int ind, Tree rsmt)
+void FastRouteCore::copyStTree(int ind, Tree rsmt)
 {
   int i, d, numnodes, numedges;
   int n, x1, y1, x2, y2, edgecnt;
@@ -165,7 +162,7 @@ void copyStTree(int ind, Tree rsmt)
   }
 }
 
-void fluteNormal(int netID,
+void FastRouteCore::fluteNormal(int netID,
                  int d,
                  DTYPE x[],
                  DTYPE y[],
@@ -344,7 +341,7 @@ void fluteNormal(int netID,
   }
 }
 
-void fluteCongest(int netID,
+void FastRouteCore::fluteCongest(int netID,
                   int d,
                   DTYPE x[],
                   DTYPE y[],
@@ -510,7 +507,7 @@ void fluteCongest(int netID,
   // return t;
 }
 
-bool netCongestion(int netID)
+bool FastRouteCore::netCongestion(int netID)
 {
   int i, j;
   int grid, ymin, ymax;
@@ -561,7 +558,7 @@ bool netCongestion(int netID)
   return false;
 }
 
-bool VTreeSuite(int netID)
+bool FastRouteCore::VTreeSuite(int netID)
 {
   int xmin, xmax, ymin, ymax;
 
@@ -593,7 +590,7 @@ bool VTreeSuite(int netID)
   }
 }
 
-bool HTreeSuite(int netID)
+bool FastRouteCore::HTreeSuite(int netID)
 {
   int xmin, xmax, ymin, ymax;
 
@@ -625,7 +622,7 @@ bool HTreeSuite(int netID)
   }
 }
 
-float coeffADJ(int netID)
+float FastRouteCore::coeffADJ(int netID)
 {
   int xmin, xmax, ymin, ymax, Hcap, Vcap;
   float Husage, Vusage, coef;
@@ -699,12 +696,11 @@ float coeffADJ(int netID)
   return (coef);
 }
 
-void gen_brk_RSMT(bool congestionDriven,
+void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
                   bool reRoute,
                   bool genTree,
                   bool newType,
-                  bool noADJ,
-                  Logger* logger)
+                  bool noADJ)
 {
   int i, j, d, n, n1, n2;
   int x1, y1, x2, y2;

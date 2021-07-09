@@ -50,7 +50,6 @@
 
 #include "DataProc.h"
 #include "DataType.h"
-#include "RSMT.h"
 #include "RipUp.h"
 #include "flute.h"
 #include "maze3D.h"
@@ -828,11 +827,11 @@ NetRouteMap FastRouteCore::run()
   VIA = 2;
   // viacost = VIA;
   viacost = 0;
-  gen_brk_RSMT(false, false, false, false, noADJ, logger);
+  gen_brk_RSMT(false, false, false, false, noADJ);
   if (verbose > 1)
     logger->info(GRT, 97, "First L Route.");
   routeLAll(true);
-  gen_brk_RSMT(true, true, true, false, noADJ, logger);
+  gen_brk_RSMT(true, true, true, false, noADJ);
   getOverflow2D(&maxOverflow);
   if (verbose > 1)
     logger->info(GRT, 98, "Second L Route.");

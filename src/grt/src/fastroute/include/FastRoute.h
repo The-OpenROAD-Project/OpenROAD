@@ -191,6 +191,32 @@ class FastRouteCore
                         int edge_C1C2);
   void reInitTree(int netID);
 
+  // rsmt functions
+  void copyStTree(int ind, Tree rsmt);
+  void gen_brk_RSMT(bool congestionDriven,
+                    bool reRoute,
+                    bool genTree,
+                    bool newType,
+                    bool noADJ);
+  void fluteNormal(int netID,
+                   int d,
+                   DTYPE x[],
+                   DTYPE y[],
+                   int acc,
+                   float coeffV,
+                   Tree* t);
+  void fluteCongest(int netID,
+                    int d,
+                    DTYPE x[],
+                    DTYPE y[],
+                    int acc,
+                    float coeffV,
+                    Tree* t);
+  float coeffADJ(int netID);
+  bool HTreeSuite(int netID);
+  bool VTreeSuite(int netID);
+  bool netCongestion(int netID);
+
   int maxNetDegree;
   std::vector<int> cap_per_layer;
   std::vector<int> usage_per_layer;
