@@ -164,6 +164,8 @@ class lefTechLayerEolKeepOutRuleParser
 
  private:
   lefin* lefin_;
+  void setExceptWithin(const boost::fusion::vector<double, double>& params,
+                       odb::dbTechLayerEolKeepOutRule* rule);
   bool parseSubRule(std::string, odb::dbTechLayer* layer);
   void setInt(double val,
               odb::dbTechLayerEolKeepOutRule* rule,

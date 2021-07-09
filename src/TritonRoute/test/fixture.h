@@ -90,6 +90,9 @@ class Fixture
 
   void makeLef58EolKeepOutConstraint(frLayerNum layer_num,
                                      bool cornerOnly = false,
+                                     bool exceptWithin = false,
+                                     frCoord withinLow = -10,
+                                     frCoord withinHigh = 10,
                                      frCoord forward = 200,
                                      frCoord side = 50,
                                      frCoord backward = 0,

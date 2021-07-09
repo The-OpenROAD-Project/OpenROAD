@@ -3195,8 +3195,6 @@ class dbInst : public dbObject
 class dbITerm : public dbObject
 {
  public:
-  void print(FILE* fp = NULL, const char* trail = "");
-
   ///
   /// Get the instance of this instance-terminal.
   ///
@@ -7769,6 +7767,14 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   int getSideExt() const;
 
+  void setWithinLow(int within_low);
+
+  int getWithinLow() const;
+
+  void setWithinHigh(int within_high);
+
+  int getWithinHigh() const;
+
   void setClassName(std::string class_name);
 
   std::string getClassName() const;
@@ -7780,6 +7786,10 @@ class dbTechLayerEolKeepOutRule : public dbObject
   void setCornerOnly(bool corner_only);
 
   bool isCornerOnly() const;
+
+  void setExceptWithin(bool except_within);
+
+  bool isExceptWithin() const;
 
   // User Code Begin dbTechLayerEolKeepOutRule
   static dbTechLayerEolKeepOutRule* create(dbTechLayer* layer);
