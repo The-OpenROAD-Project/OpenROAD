@@ -8,7 +8,7 @@ For running the python unit tests you will need to install first *testtools*  wh
 pip3 install testtools
 ```
 
-Then, you can run the unit tests by running
+Then, you can run the unit tests:
 
 ```shell
 ./../unitTests.sh

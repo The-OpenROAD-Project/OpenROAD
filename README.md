@@ -224,7 +224,7 @@ OpenROAD can be run in python mode as following
 openroad -python [args]
 ```
 
-This opens a python interpreter where you can load OpenROAD's modules and use them in python. Currently, the python mode is limited to one module; OpenDB. You can see examples of python scripts in  [OpenDB's python unit-tests](src/OpenDB/test/unitTestsPython/)
+This opens a python interpreter where you can load OpenROAD's modules and use them in python. Currently, the python mode is limited to one module: OpenDB. You can see examples of python scripts in  [OpenDB's python unit-tests](src/OpenDB/test/unitTestsPython/)
 
 #### TCL Example Scripts
 
