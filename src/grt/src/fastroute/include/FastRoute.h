@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "DataType.h"
 
 namespace utl {
 class Logger;
@@ -143,19 +144,52 @@ class FastRouteCore
                             int VIA,
                             int slope,
                             int L);
-  // Maze-routing for multi-source, multi-destination
   void convertToMazeroute();
-
   void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj);
-
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D(void);
-
   void str_accu(int rnd);
-
   void InitLastUsage(int upType);
   void InitEstUsage();
+  void convertToMazerouteNet(int netID);
+  void setupHeap(int netID,
+                 int edgeID,
+                 int* heapLen1,
+                 int* heapLen2,
+                 int regionX1,
+                 int regionX2,
+                 int regionY1,
+                 int regionY2);
+  int copyGrids(TreeNode* treenodes,
+                int n1,
+                int n2,
+                TreeEdge* treeedges,
+                int edge_n1n2,
+                int gridsX_n1n2[],
+                int gridsY_n1n2[]);
+  void updateRouteType1(TreeNode* treenodes,
+                        int n1,
+                        int A1,
+                        int A2,
+                        int E1x,
+                        int E1y,
+                        TreeEdge* treeedges,
+                        int edge_n1A1,
+                        int edge_n1A2);
+  void updateRouteType2(TreeNode* treenodes,
+                        int n1,
+                        int A1,
+                        int A2,
+                        int C1,
+                        int C2,
+                        int E1x,
+                        int E1y,
+                        TreeEdge* treeedges,
+                        int edge_n1A1,
+                        int edge_n1A2,
+                        int edge_C1C2);
+  void reInitTree(int netID);
 
   int maxNetDegree;
   std::vector<int> cap_per_layer;
