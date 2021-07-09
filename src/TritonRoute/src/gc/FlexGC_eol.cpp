@@ -819,7 +819,6 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
   box_t queryBox;
   gtl::rectangle_data<frCoord> queryRect;
   getEolKeepOutQueryBox(edge, constraint, queryBox, queryRect);
-  DEBUG_RECT(queryRect, 2);
   if (constraint->isCornerOnly()) {
     // For corners, we query polygon edges to make sure we catch concave corners
     vector<pair<segment_t, gcSegment*>> results;
@@ -1054,7 +1053,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
       && extCons.empty()) {
     return;
   }
-  DEBUG_RECT(*pin->getMaxRectangles()[0], 1)
 
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
