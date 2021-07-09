@@ -34,21 +34,344 @@ proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
     keys {} flags {-verbose}
 
-  set verbose [info exists flags(-verbose)]
+  if {[info exists flags(-verbose)]} {
+    pdngen::set_verbose
+  }
 
-  sta::check_argc_eq1 "pdngen" $args
-  set config_file [file nativename [lindex $args 0]]
-
-  if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg options]} {
-    if {![regexp {PDN\-[0-9]*} $error_msg]} {
-      puts $options
-      utl::error "PDN" 9999 "Unexpected error: $error_msg"
-    }
-    error "Execution stopped"
+  if {[llength $args] > 0} {
+    set config_file [file nativename [lindex $args 0]]
+    pdngen::apply $config_file
+  } else {
+    pdngen::apply
   }
 }
 
+sta::define_cmd_args "add_global_connection" {-net <net_name> \
+                                              -inst_pattern <inst_name_pattern> \ 
+                                              -pin_pattern <pin_name_pattern> \
+                                              [(-power|-ground)]}
+
+proc add_global_connection {args} {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PDN 91 "Design must be loaded before calling the add_global_connection command"
+  }
+
+  sta::parse_key_args "add_global_connection" args \
+    keys {-net -inst_pattern -pin_pattern} \
+    flags {-power -ground}
+
+  if {[info exists flags(-power)] && [info exists flags(-ground)]} {
+    utl::error PDN 92 "The flags -power and -ground of the add_global_connection command are mutually exclusive "
+  }
+
+  if {![info exists keys(-net)]} {
+    utl::error PDN 93 "The -net option of the add_global_connection command is required"
+  }
+
+  if {![info exists keys(-inst_pattern)]} {
+    set keys(-inst_pattern) {.*}
+  }
+
+  if {![info exists keys(-pin_pattern)]} {
+    utl::error PDN 94 "The -pin_pattern option of the add_global_connection command is required"
+  }
+
+  if {[info exists flags(-power)]} {
+    pdngen::add_power_net $keys(-net)
+  }
+
+  if {[info exists flags(-ground)]} {
+    pdngen::add_ground_net $keys(-net)
+  }
+
+  dict lappend pdngen::global_connections $keys(-net) [list inst_name $keys(-inst_pattern) pin_name $keys(-pin_pattern)]
+}
+
+sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
+                                        -type (stdcell|macro) \
+                                        [-orient <list_of_valid_orientations>] \
+                                        [-power_pins <list_of_power_pin_names>] \
+                                        [-ground_pins <list_of_ground_pin_names>] \
+                                        [-blockages <list_of_blocked_layers>] \
+                                        [-rails <list_of_rail_specifications>] \
+                                        [-straps <list_of_strap_specifications>] \
+                                        [-pins <list_of_pin_layers>] \
+                                        [-connect <list_of_connected_layer_pairs>] \
+                                        [-starts_with (POWER|GROUND)]}
+
+proc define_pdn_grid {args} {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PDN 72 "Design must be loaded before calling the define_pdn_grid command"
+  }
+
+  sta::parse_key_args "define_pdn_grid" args \
+    keys {-name -type -orient -power_pins -ground_pins -blockages -rails -straps -pins -connect -starts_with}
+
+  if {[llength $args] > 0} {
+    utl::error PDN 73 "Unrecognised argument [lindex $args 0] for define_pdn_grid"
+  }
+
+  pdngen::define_pdn_grid {*}[array get keys]
+}
+
+
 namespace eval pdngen {
+
+proc check_orientations {orientations} {
+  set valid_orientations {R0 R90 R180 R270 MX MY MXR90 MYR90}
+  foreach orient $orientations {
+    if {[lsearch -exact $valid_orientations $orient] == -1} {
+      utl::error PDN 74 "Invalid orientation $orient specified, must be one of [join $valid_orientation {, }]"
+    }
+  }
+  return $orientations
+}
+
+proc check_layer_names {layer_names} {
+  set tech [ord::get_db_tech]
+
+  foreach layer_name $layer_names {
+    if {[$tech findLayer $layer_name] == "NULL"} {
+      if {[regexp {(.*)_PIN_(hor|ver)$} $layer_name - actual_layer_name]} {
+        if {[$tech findLayer $actual_layer_name] == "NULL"} {
+          utl::error "PDN" 75 "Layer $actual_layer_name not found in loaded technology data"
+        }
+      } else {
+        utl::error "PDN" 76 "Layer $layer_name not found in loaded technology data"
+      }
+    }  
+  }
+  return $layer_names
+}
+
+proc check_layer_width {layer_name width} {
+  set tech [ord::get_db_tech]
+
+  set layer [$tech findLayer $layer_name]
+  set minWidth [$layer getMinWidth]
+  set maxWidth [$layer getMaxWidth]
+
+  if {[ord::microns_to_dbu $width] < $minWidth} {
+    utl::error "PDN" 77 "Width ($width) specified for layer $layer_name is less than minimum width ([ord::dbu_to_microns $minWidth])"
+  }
+  if {[ord::microns_to_dbu $width] > $maxWidth} {
+    utl::error "PDN" 78 "Width ($width) specified for layer $layer_name is greater than maximum width ([ord::dbu_to_microns $maxWidth])"
+  }
+  return $width
+}
+
+proc check_layer_spacing {layer_name spacing} {
+  set tech [ord::get_db_tech]
+
+  set layer [$tech findLayer $layer_name]
+  set minSpacing [$layer getSpacing]
+
+  if {[ord::microns_to_dbu $spacing] < $minSpacing} {
+    utl::error "PDN" 79 "Spacing ($spacing) specified for layer $layer_name is less than minimum spacing ([ord::dbu_to_microns $minSpacing)]"
+  }
+  return $spacing
+}
+
+proc check_layer_pitch {layer_name pitch} {
+  set tech [ord::get_db_tech]
+
+  set layer [$tech findLayer $layer_name]
+  set minSpacing [$layer getSpacing]
+  if {[ord::microns_to_dbu $spacing] < $minSpacing} {
+    utl::error "PDN" 80 "Spacing ($spacing) specified for layer $layer_name is less than minimum spacing ([ord::dbu_to_microns $minSpacing])"
+  }
+  return $pitch
+}
+
+proc check_rails {rails_spec} {
+  if {[llength $rails_spec] % 2 == 1} {
+    utl::error "PDN" 81 "Expected an even number of elements in the list for -rails option, got [llength $rails_spec]"
+  }
+  check_layer_names [dict keys $rails_spec]
+  foreach layer_name [dict keys $rails_spec] {
+    if {[dict exists $rails_spec $layer_name width]} {
+      check_layer_width $layer_name [dict get $rails_spec $layer_name width]
+    }
+    if {[dict exists $rails_spec $layer_name spacing]} {
+      check_layer_spacing $layer_name [dict get $rails_spec $layer_name spacing]
+    }
+    if {[dict exists $rails_spec $layer_name pitch]} {
+      if {[dict exists $rails_spec $layer_name spacing]} {
+        if {[dict get $rails_spec $layer_name pitch] < [dict get $rails_spec $layer_name width] + [dict get $rails_spec $layer_name spacing]} {
+          utl::error "PDN" 82 "The value of pitch ([dict get $rails_spec $layer_name pitch]) should be greater than width + spacing ([dict get $rails_spec $layer_name width] + [dict get $rails_spec $layer_name spacing])"
+        }
+      }
+    }
+  }
+  return $rails_spec
+}
+
+proc check_straps {straps_spec} {
+  if {[llength $straps_spec] % 2 == 1} {
+    utl::error "PDN" 83 "Expected an even number of elements in the list for -straps option, got [llength $straps_spec]"
+  }
+  check_layer_names [dict keys $straps_spec]
+  foreach layer_name [dict keys $straps_spec] {
+    if {[dict exists $straps_spec $layer_name width]} {
+      check_layer_width $layer_name [dict get $straps_spec $layer_name width]
+    } else {
+      utl::error PDN 84 "Missing width specification for strap on layer $layer_name"
+    }
+    set width [ord::microns_to_dbu [dict get $straps_spec $layer_name width]]
+
+    if {![dict exists $straps_spec $layer_name spacing]} {
+      dict set straps_spec $layer_name spacing [expr [dict get $straps_spec $layer_name pitch] / 2.0]
+    }
+    check_layer_spacing $layer_name [dict get $straps_spec $layer_name spacing]
+    set spacing [ord::microns_to_dbu [dict get $straps_spec $layer_name spacing]]
+
+    if {[dict exists $straps_spec $layer_name pitch]} {
+      set layer [[ord::get_db_tech] findLayer $layer_name]
+      set minPitch [expr 2 * ([$layer getSpacing] + $width)]
+      if {[ord::microns_to_dbu [dict get $straps_spec $layer_name pitch]] < $minPitch} {
+        utl::error "PDN" 85 "Pitch [dict get $straps_spec $layer_name pitch] specified for layer $layer_name is less than 2 x (width + spacing) (width=[ord::dbu_to_microns $width], spacing=[ord::dbu_to_microns $spacing])"
+      }
+    } else {
+      utl::error PDN 86 "No pitch specified for strap on layer $layer_name"
+    }
+  }
+  return $straps_spec
+}
+
+proc check_connect {connect_spec} {
+  foreach connect_statement $connect_spec {
+    if {[llength $connect_statement] < 2} {
+      utl::error PDN 87 "Connect statement must consist of at least 2 entries"
+    }
+    check_layer_names [lrange $connect_statement 0 1]
+  }
+  return $connect_spec
+}
+
+proc check_core_ring {core_ring_spec} {
+  return $core_ring_spec
+}
+
+proc check_starts_with {value} {
+  if {$value != "POWER" && $value != "GROUND"} {
+    utl::error PDN 95 "Value specified for -starts_with option ($value), must be POWER or GROUND"
+  }
+
+  return $value
+}
+
+proc define_pdn_grid {args} {
+  set process_args $args
+  while {[llength $process_args] > 0} {
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
+      -name        {dict set grid name $value}
+      -type        {dict set grid type $value}
+      -orient      {dict set grid orient [check_orientations $value]}
+      -power_pins  {dict set grid power_pins $value}
+      -ground_pins {dict set grid ground_pins $value}
+      -blockages   {dict set grid blockages [check_layer_names $value]}
+      -rails       {dict set grid rails [check_rails $value]}
+      -straps      {dict set grid straps [check_straps $value]}
+      -connect     {dict set grid connect [check_connect $value]}
+      -core_ring   {dict set grid core_ring [check_core_ring $value]}
+      -pins        {dict set grid pins [check_layer_names $value]}
+      -starts_with {dict set grid starts_with [check_starts_with $value]}
+      default {utl::error PDN 88 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect"}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+
+  if {[dict exists $grid type]} {
+    specify_grid [dict get $grid type] $grid
+  } else {
+    utl::error PDN 89 "The -type option is required for the define_pdn_grid command"
+  }
+}
+
+proc verify_grid {grid} {
+  variable design_data
+
+  if {![dict exists $grid type]} {
+    utl::error PDN 96 "No type attribute specified for grid $grid_name"
+  }
+  set type [dict get $grid type]
+
+  if {![dict exists $grid name]} {
+    if {[dict exists $design_data grid $type]} {
+      set index [expr [dict size [dict get $design_data grid $type]] + 1]
+    } else {
+      set index 1
+    }
+    dict set grid name "${type}_$index"
+  }
+  set grid_name [dict get $grid name]
+
+  if {[dict exists $grid core_ring]} {
+    dict for {layer data} [dict get $grid core_ring] {
+      dict set grid core_ring $layer [convert_layer_spec_to_def_units $data]
+    }
+  }
+  
+  if {[dict exists $grid rails]} {
+    dict for {layer data} [dict get $grid rails] {
+      dict set grid rails $layer [convert_layer_spec_to_def_units $data]
+      if {[dict exists $grid template]} {
+        foreach template [dict get $grid template names] {
+          if {[dict exists $grid layers $layer $template]} {
+            dict set grid rails $layer $template [convert_layer_spec_to_def_units [dict get $grid rails $layer $template]]
+          }
+        }
+      }
+    }
+  }
+  if {[dict exists $grid straps]} {
+    dict for {layer data} [dict get $grid straps] {
+      dict set grid straps $layer [convert_layer_spec_to_def_units $data]
+      if {[dict exists $grid template]} {
+        foreach template [dict get $grid template names] {
+          if {[dict exists $grid straps $layer $template]} {
+            dict set grid straps $layer $template [convert_layer_spec_to_def_units [dict get $grid straps $layer $template]]
+          }
+        }
+      }
+    }
+  }
+
+  if {[dict exists $grid template]} {
+    set_template_size {*}[dict get $grid template size]
+  }
+  
+  if {[dict exists $grid orient]} {
+    if {$type == "stdcell"} {
+      utl::error PDN 90 "The orient attribute cannot be used with stdcell grids"
+    }
+  }
+
+  if {[dict exists $grid ground_pins]} {
+  }
+
+  if {[dict exists $grid power_pins]} {
+  }
+
+  if {[dict exists $grid blockages]} {
+    check_layer_names [dict get $grid blockages]
+  }
+
+  if {[dict exists $grid rails]} {
+  }
+
+  if {[dict exists $grid straps]} {
+  }
+
+  if {[dict exists $grid connect]} {
+  }
+
+  dict set design_data grid $type $grid_name $grid
+}
 
 variable logical_viarules {}
 variable physical_viarules {}
@@ -79,6 +402,8 @@ variable default_cutclass {}
 variable twowidths_table {}
 variable twowidths_table_wrongdirection {}
 variable stdcell_area ""
+variable power_nets {}
+variable ground_nets {}
 
 #This file contains procedures that are used for PDN generation
 proc debug {message} {
@@ -2011,21 +2336,31 @@ proc generate_lower_metal_followpin_rails {} {
   }
 }
 
+proc starts_with {lay} {
+  variable grid_data
+  if {[dict exists $grid_data straps $lay starts_with]} {
+    set starts_with [dict get $grid_data straps $lay starts_with]
+  } elseif {[dict exists $grid_data starts_with]} {
+    set starts_with [dict get $grid_data starts_with]
+  } else {
+    set starts_with $::stripes_start_with
+  }
+  return $starts_with
+}
 
 # proc for creating pdn mesh for upper metal layers
 proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
-  variable stripes_start_with
-
 # If the grid_data defines a spacing for the layer, then:
 #    place the second stripe spacing + width away from the first,
 # otherwise:
 #    place the second stripe pitch / 2 away from the first,
 #
   set width [dict get $layer_info width]
+  set start_with [starts_with $layer]
 
   if {[get_dir $layer] == "hor"} {
     set offset [expr [lindex $area 1] + [dict get $layer_info offset]]
-    if {![regexp "$stripes_start_with.*" $tag match]} { ;#If not starting from bottom with this net,
+    if {![regexp "$start_with.*" $tag match]} { ;#If not starting from bottom with this net, 
       if {[dict exists $layer_info spacing]} {
         set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
       } else {
@@ -2039,7 +2374,7 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
   } elseif {[get_dir $layer] == "ver"} {
     set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
 
-    if {![regexp "$stripes_start_with.*" $tag match]} { ;#If not starting from bottom with this net,
+    if {![regexp "$start_with.*" $tag match]} { ;#If not starting from bottom with this net, 
       if {[dict exists $layer_info spacing]} {
         set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
       } else {
@@ -2113,7 +2448,6 @@ proc generate_stripes {tag net_name} {
   if {![dict exists $grid_data straps]} {return}
   foreach lay [dict keys [dict get $grid_data straps]] {
     # debug "    Layer $lay ..."
-
     #Upper layer stripes
     if {[dict exists $grid_data straps $lay width]} {
       set area [dict get $grid_data area]
@@ -2640,7 +2974,8 @@ proc import_def_components {macros} {
   return $instances
 }
 
-variable global_connections {
+variable global_connections {}
+variable default_global_connections {
   VDD {
     {inst_name .* pin_name ^VDD$}
     {inst_name .* pin_name ^VDDPE$}
@@ -2930,57 +3265,6 @@ proc export_opendb_power_pins {} {
 
 }
 
-
-proc init_orientation {height} {
-  variable lowest_rail
-  variable orient_rows
-  variable rails_start_with
-
-  set lowest_rail $height
-  if {$rails_start_with == "GROUND"} {
-    set orient_rows {0 "R0" 1 "MX"}
-  } else {
-    set orient_rows {0 "MX" 1 "R0"}
-  }
-}
-
-proc orientation {height} {
-  variable lowest_rail
-  variable orient_rows
-  variable row_height
-
-  set row_line [expr int(($height - $lowest_rail) / $row_height)]
-  return [dict get $orient_rows [expr $row_line % 2]]
-}
-
-proc write_opendb_row {height start end} {
-  variable row_index
-  variable block
-  variable site
-  variable site_width
-  variable def_units
-  variable design_data
-
-  set start  [expr int($start)]
-  set height [expr int($height)]
-  set end    [expr int($end)]
-
-  if {$start == $end} {return}
-
-  set llx [lindex [dict get $design_data config core_area] 0]
-  if {(int($start - $llx) % $site_width) == 0} {
-      set x $start
-  } else {
-      set offset [expr { int($start - $llx) % $site_width}]
-      set x [expr {$start + $site_width - $offset}]
-  }
-
-  set num  [expr {($end - $x)/$site_width}]
-
-  odb::dbRow_create $block ROW_$row_index $site $x $height [orientation $height] "HORIZONTAL" $num $site_width
-  incr row_index
-}
-
 ## procedure for file existence check, returns 0 if file does not exist or file exists, but empty
 proc file_exists_non_empty {filename} {
   return [expr [file exists $filename] && [file size $filename] > 0]
@@ -3130,7 +3414,19 @@ proc init_tech {} {
 
 }
 
-proc init {{PDN_cfg "PDN.cfg"}} {
+proc add_power_net {net_name} {
+  variable power_nets
+
+  lappend power_nets $net_name
+}
+
+proc add_ground_net {net_name} {
+  variable ground_nets
+
+  lappend ground_nets $net_name
+}
+
+proc init {args} {
   variable db
   variable block
   variable tech
@@ -3147,49 +3443,65 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   variable metal_layers
   variable def_units
   variable stripes_start_with
-  variable rails_start_with
   variable physical_viarules
   variable stdcell_area
   variable voltage_domains
+  variable global_connections
+  variable default_global_connections
+  variable power_nets
+  variable ground_nets
 
-#    set ::start_time [clock clicks -milliseconds]
-  init_tech
-
-  if {![file exists $PDN_cfg]} {
-    utl::error "PDN" 62 "File $PDN_cfg does not exist"
-  }
-
-  if {![file_exists_non_empty $PDN_cfg]} {
-    utl::error "PDN" 28 "File $PDN_cfg is empty"
-  }
+  # debug "start" 
+  init_tech 
 
   set design_name [$block getName]
 
-  set design_data {}
   set physical_viarules {}
   set stdcell_area ""
+ 
+  if {[llength $args] == 1} {
+    set PDN_cfg [lindex $args 0]
+    if {![file exists $PDN_cfg]} {
+      utl::error "PDN" 62 "File $PDN_cfg does not exist"
+    }
+ 
+    if {![file_exists_non_empty $PDN_cfg]} {
+      utl::error "PDN" 28 "File $PDN_cfg is empty"
+    }
+    source $PDN_cfg
+  }
 
-  # debug "start"
-  source $PDN_cfg
-  write_pdn_strategy
+  write_pdn_strategy 
 
+  if {$global_connections == {}} {
+    set global_connections $default_global_connections
+  }
+  
   set die_area [$block getDieArea]
   utl::info "PDN" 8 "Design name is $design_name"
   set def_output "${design_name}_pdn.def"
 
   # debug "examine vars"
-  if {[info vars ::power_nets] == ""} {
-    set ::power_nets "VDD"
+  if {$power_nets == {}} {
+    if {[info vars ::power_nets] == ""} {
+      set power_nets "VDD"
+    } else {
+      set power_nets $::power_nets
+    }
   }
-
-  if {[info vars ::ground_nets] == ""} {
-    set ::ground_nets "VSS"
+  
+  if {$ground_nets == {}} {
+    if {[info vars ::ground_nets] == ""} {
+      set ground_nets "VSS"
+    } else {
+      set ground_nets $::ground_nets
+    }
   }
 
   if {[info vars ::core_domain] == ""} {
     set  ::core_domain "CORE"
-    dict set voltage_domains $::core_domain primary_power [lindex $::power_nets 0]
-    dict set voltage_domains $::core_domain primary_ground [lindex $::ground_nets 0]
+    dict set voltage_domains $::core_domain primary_power [lindex $power_nets 0]
+    dict set voltage_domains $::core_domain primary_ground [lindex $ground_nets 0]
   }
 
   if {[info vars ::stripes_start_with] == ""} {
@@ -3197,15 +3509,9 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   } else {
     set stripes_start_with $::stripes_start_with
   }
-
-  if {[info vars ::rails_start_with] == ""} {
-    set rails_start_with "GROUND"
-  } else {
-    set rails_start_with $::rails_start_with
-  }
-
-  dict set design_data power_nets $::power_nets
-  dict set design_data ground_nets $::ground_nets
+  
+  dict set design_data power_nets $power_nets
+  dict set design_data ground_nets $ground_nets
   dict set design_data core_domain $::core_domain
 
   # Sourcing user inputs file
@@ -3303,67 +3609,19 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 }
 
 proc convert_layer_spec_to_def_units {data} {
-  variable def_units
-
   foreach key {width pitch spacing offset pad_offset core_offset} {
     if {[dict exists $data $key]} {
-      dict set data $key [expr round([dict get $data $key] * $def_units)]
+      dict set data $key [ord::microns_to_dbu [dict get $data $key]]
     }
   }
   return $data
 }
 
 proc specify_grid {type specification} {
-  variable design_data
-
-  set spec $specification
-  if {![dict exists $spec name]} {
-    if {[dict exists $design_data grid $type]} {
-      set index [expr [dict size [dict get $design_data grid $type]] + 1]
-    } else {
-      set index 1
-    }
-    dict set spec name "${type}_$index"
+  if {![dict exists $specification type]} {
+    dict set specification type $type
   }
-  set spec_name [dict get $spec name]
-
-  if {[dict exists $specification core_ring]} {
-    dict for {layer data} [dict get $specification core_ring] {
-      dict set spec core_ring $layer [convert_layer_spec_to_def_units $data]
-    }
-  }
-
-  if {[dict exists $specification rails]} {
-    dict for {layer data} [dict get $specification rails] {
-      dict set spec rails $layer [convert_layer_spec_to_def_units $data]
-      if {[dict exists $specification template]} {
-        foreach template [dict get $specification template names] {
-          if {[dict exists $specification layers $layer $template]} {
-            dict set spec rails $layer $template [convert_layer_spec_to_def_units [dict get $specification rails $layer $template]]
-          }
-        }
-      }
-    }
-  }
-
-  if {[dict exists $specification straps]} {
-    dict for {layer data} [dict get $specification straps] {
-      dict set spec straps $layer [convert_layer_spec_to_def_units $data]
-      if {[dict exists $specification template]} {
-        foreach template [dict get $specification template names] {
-          if {[dict exists $specification straps $layer $template]} {
-            dict set spec straps $layer $template [convert_layer_spec_to_def_units [dict get $specification straps $layer $template]]
-          }
-        }
-      }
-    }
-  }
-
-  if {[dict exists $specification template]} {
-    set_template_size {*}[dict get $specification template size]
-  }
-
-  dict set design_data grid $type $spec_name $spec
+  verify_grid $specification
 }
 
 proc get_quadrant {rect x y} {
@@ -4965,6 +5223,7 @@ proc add_padcell_blockage {layer blockage} {
 
 proc apply_padcell_blockages {} {
   variable padcell_blockages
+  variable global_connections
 
   dict for {layer_name blockages} $padcell_blockages {
     add_blockage $layer_name $blockages
@@ -5074,33 +5333,24 @@ proc opendb_update_grid {} {
   export_opendb_specialnets
   export_opendb_power_pins
 }
-
-proc apply_pdn {config is_verbose} {
-  variable design_data
-  variable instances
+  
+proc set_verbose {} {
   variable verbose
 
-  set verbose $is_verbose
+  set verbose 1
+}
 
-  set ::start_time [clock clicks -milliseconds]
-  if {$verbose} {
+proc apply {args} {
+  variable verbose
+
+  if {[llength $args] > 0 && $verbose} {
+    set config [lindex $args 0]
     utl::info "PDN" 16 "Power Delivery Network Generator: Generating PDN\n  config: $config"
   }
 
-  apply $config
-}
-
-proc apply {config} {
-  variable verbose
-
-  init $config
+  init {*}$args
   plan_grid
 
   opendb_update_grid
-
-  if {$verbose} {
-#    debug apply "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
-  }
 }
-
 }

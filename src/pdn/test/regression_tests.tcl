@@ -12,4 +12,5 @@ record_tests {
   extend_to_core_ring
   asap7_vias
   asap7_vias.noviarules
+  test_gcd_M7_pin.api
 }

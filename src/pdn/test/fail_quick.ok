@@ -14,4 +14,4 @@
 [INFO PDN-0008] Design name is gcd
 [INFO PDN-0009] Reading technology data
 [ERROR PDN-0030] Layer specified for stdcell rails 'M1' not in list of layers.
-Execution stopped
+PDN-0030
