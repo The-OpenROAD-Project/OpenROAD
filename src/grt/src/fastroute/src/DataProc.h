@@ -127,16 +127,6 @@ extern float **heap2, **heap1;
 extern std::vector<bool> pop_heap2;
 
 extern utl::Logger* logger;
-
-template <class T>
-T ADIFF(T x, T y)
-{
-  if (x > y) {
-    return (x - y);
-  } else {
-    return (y - x);
-  }
-}
 }  // namespace grt
 
 #endif /* __DATAPROC_H__ */

@@ -136,7 +136,7 @@ void copyStTree(int ind, Tree rsmt)
     }
     if (n != i)  // not root
     {
-      treeedges[edgecnt].len = ADIFF(x1, x2) + ADIFF(y1, y2);
+      treeedges[edgecnt].len = abs(x1 - x2) + abs(y1 - y2);
       // make x1 always less than x2
       if (x1 < x2) {
         treeedges[edgecnt].n1 = i;
@@ -181,7 +181,7 @@ void fluteNormal(int netID,
 
   if (d == 2) {
     t->deg = 2;
-    t->length = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
+    t->length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
     t->branch = new Branch[2];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
@@ -234,7 +234,7 @@ void fluteNormal(int netID,
       }
     }
 
-    t->length = ADIFF(x_max, x_min) + ADIFF(y_max, y_min);
+    t->length = abs(x_max - x_min) + abs(y_max - y_min);
     t->branch = new Branch[4];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
@@ -363,7 +363,7 @@ void fluteCongest(int netID,
 
   if (d == 2) {
     t->deg = 2;
-    t->length = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
+    t->length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
     t->branch = new Branch[2];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
@@ -416,7 +416,7 @@ void fluteCongest(int netID,
       }
     }
 
-    t->length = ADIFF(x_max, x_min) + ADIFF(y_max, y_min);
+    t->length = abs(x_max - x_min) + abs(y_max - y_min);
     t->branch = new Branch[4];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
@@ -814,7 +814,7 @@ void gen_brk_RSMT(bool congestionDriven,
       x2 = rsmt.branch[n].x;
       y2 = rsmt.branch[n].y;
 
-      wl += ADIFF(x1, x2) + ADIFF(y1, y2);
+      wl += abs(x1 - x2) + abs(y1 - y2);
 
       if (x1 != x2 || y1 != y2)  // the branch is not degraded (a point)
       {

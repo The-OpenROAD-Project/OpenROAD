@@ -385,15 +385,15 @@ void assignEdge(int netID, int edgeID, bool processDIR)
         for (i = 0; i < numLayers; i++) {
           if (k == 0) {
             if (l != i) {
-              if (gridD[i][k] > gridD[l][k] + ADIFF(i, l) * 2) {
-                gridD[i][k] = gridD[l][k] + ADIFF(i, l) * 2;
+              if (gridD[i][k] > gridD[l][k] + abs(i - l) * 2) {
+                gridD[i][k] = gridD[l][k] + abs(i - l) * 2;
                 viaLink[i][k] = l;
               }
             }
           } else {
             if (l != i) {
-              if (gridD[i][k] > gridD[l][k] + ADIFF(i, l) * 3) {
-                gridD[i][k] = gridD[l][k] + ADIFF(i, l) * 3;
+              if (gridD[i][k] > gridD[l][k] + abs(i - l) * 3) {
+                gridD[i][k] = gridD[l][k] + abs(i - l) * 3;
                 viaLink[i][k] = l;
               }
             }
@@ -413,8 +413,8 @@ void assignEdge(int netID, int edgeID, bool processDIR)
       for (i = 0; i < numLayers; i++) {
         if (l != i) {
           if (gridD[i][k]
-              > gridD[l][k] + ADIFF(i, l) * 1) {          //+ ADIFF(i,l) * 3 ) {
-            gridD[i][k] = gridD[l][k] + ADIFF(i, l) * 1;  //+ ADIFF(i,l) * 3 ;
+              > gridD[l][k] + abs(i - l) * 1) {
+            gridD[i][k] = gridD[l][k] + abs(i - l) * 1;
             viaLink[i][k] = l;
           }
         }
@@ -502,15 +502,15 @@ void assignEdge(int netID, int edgeID, bool processDIR)
         for (i = 0; i < numLayers; i++) {
           if (k == routelen) {
             if (l != i) {
-              if (gridD[i][k] > gridD[l][k] + ADIFF(i, l) * 2) {
-                gridD[i][k] = gridD[l][k] + ADIFF(i, l) * 2;
+              if (gridD[i][k] > gridD[l][k] + abs(i - l) * 2) {
+                gridD[i][k] = gridD[l][k] + abs(i - l) * 2;
                 viaLink[i][k] = l;
               }
             }
           } else {
             if (l != i) {
-              if (gridD[i][k] > gridD[l][k] + ADIFF(i, l) * 3) {
-                gridD[i][k] = gridD[l][k] + ADIFF(i, l) * 3;
+              if (gridD[i][k] > gridD[l][k] + abs(i - l) * 3) {
+                gridD[i][k] = gridD[l][k] + abs(i - l) * 3;
                 viaLink[i][k] = l;
               }
             }
@@ -529,8 +529,8 @@ void assignEdge(int netID, int edgeID, bool processDIR)
     for (l = 0; l < numLayers; l++) {
       for (i = 0; i < numLayers; i++) {
         if (l != i) {
-          if (gridD[i][0] > gridD[l][0] + ADIFF(i, l) * 1) {
-            gridD[i][0] = gridD[l][0] + ADIFF(i, l) * 1;
+          if (gridD[i][0] > gridD[l][0] + abs(i - l) * 1) {
+            gridD[i][0] = gridD[l][0] + abs(i - l) * 1;
             viaLink[i][0] = l;
           }
         }
@@ -947,9 +947,9 @@ void checkRoute3D()
         }
       }
       for (i = 0; i < treeedge->route.routelen; i++) {
-        distance = ADIFF(gridsX[i + 1], gridsX[i])
-                   + ADIFF(gridsY[i + 1], gridsY[i])
-                   + ADIFF(gridsL[i + 1], gridsL[i]);
+        distance = abs(gridsX[i + 1] - gridsX[i])
+                   + abs(gridsY[i + 1] - gridsY[i])
+                   + abs(gridsL[i + 1] - gridsL[i]);
         if (distance > 1 || distance < 0) {
           gridFlag = true;
           debugPrint(logger,
@@ -1347,7 +1347,7 @@ bool checkRoute2DTree(int netID)
       }
       for (i = 0; i < treeedge->route.routelen; i++) {
         distance
-            = ADIFF(gridsX[i + 1], gridsX[i]) + ADIFF(gridsY[i + 1], gridsY[i]);
+            = abs(gridsX[i + 1] - gridsX[i]) + abs(gridsY[i + 1] - gridsY[i]);
         if (distance != 1) {
           logger->warn(GRT,
                        166,

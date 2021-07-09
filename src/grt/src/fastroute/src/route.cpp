@@ -1002,8 +1002,8 @@ void routeMonotonic(int netID, int edgeID, int threshold)
       // ripup the original routing
       newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
 
-      segWidth = ADIFF(x1, x2);
-      segHeight = ADIFF(y1, y2);
+      segWidth = abs(x1 - x2);
+      segHeight = abs(y1 - y2);
       if (x1 <= x2) {
         xl = x1;
         yl = y1;
@@ -1639,12 +1639,12 @@ void routeLVEnew(int netID, int edgeID, int threshold, int enlarge)
 
       for (j = ymin; j <= ymax; j++) {
         for (i = xmin; i <= xmax; i++) {
-          tmp1 = ADIFF(d2[j][x1], d2[y1][x1])
-                 + ADIFF(d1[j][i], d1[j][x1]);  // yfirst for point 1
-          tmp2 = ADIFF(d2[j][i], d2[y1][i]) + ADIFF(d1[y1][i], d1[y1][x1]);
-          tmp3 = ADIFF(d2[y2][i], d2[j][i]) + ADIFF(d1[y2][i], d1[y2][x2]);
-          tmp4 = ADIFF(d2[y2][x2], d2[j][x2])
-                 + ADIFF(d1[j][x2], d1[j][i]);  // xifrst for mid point
+          tmp1 = abs(d2[j][x1] - d2[y1][x1])
+                 + abs(d1[j][i] - d1[j][x1]);  // yfirst for point 1
+          tmp2 = abs(d2[j][i] - d2[y1][i]) + abs(d1[y1][i] - d1[y1][x1]);
+          tmp3 = abs(d2[y2][i] - d2[j][i]) + abs(d1[y2][i] - d1[y2][x2]);
+          tmp4 = abs(d2[y2][x2] - d2[j][x2])
+                 + abs(d1[j][x2] - d1[j][i]);  // xifrst for mid point
 
           tmp = tmp1 + tmp4;
           LH1 = false;

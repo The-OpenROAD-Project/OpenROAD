@@ -563,7 +563,7 @@ void updateRouteType13D(int netID,
     treeedges[edge_n1A1].n1 = n1;
     treeedges[edge_n1A1].n2 = A1;
   }
-  treeedges[edge_n1A1].len = ADIFF(A1x, E1x) + ADIFF(A1y, E1y);
+  treeedges[edge_n1A1].len = abs(A1x - E1x) + abs(A1y - E1y);
 
   treeedges[edge_n1A1].route.type = MAZEROUTE;
   treeedges[edge_n1A1].route.routelen = E1_pos1;
@@ -581,15 +581,15 @@ void updateRouteType13D(int netID,
   if (cnt_n1A2 > 1) {
     treeedges[edge_n1A2].route.gridsX
         = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-                           + ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0])),
+                           + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0])),
                           sizeof(short));
     treeedges[edge_n1A2].route.gridsY
         = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-                           + ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0])),
+                           + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0])),
                           sizeof(short));
     treeedges[edge_n1A2].route.gridsL
         = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-                           + ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0])),
+                           + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0])),
                           sizeof(short));
   } else {
     treeedges[edge_n1A2].route.gridsX
@@ -673,7 +673,7 @@ void updateRouteType13D(int netID,
   }
   treeedges[edge_n1A2].route.type = MAZEROUTE;
   treeedges[edge_n1A2].route.routelen = cnt - 1;
-  treeedges[edge_n1A2].len = ADIFF(A2x, E1x) + ADIFF(A2y, E1y);
+  treeedges[edge_n1A2].len = abs(A2x - E1x) + abs(A2y - E1y);
 
   treenodes[n1].x = E1x;
   treenodes[n1].y = E1y;
@@ -755,11 +755,11 @@ void updateRouteType23D(int netID,
 
   if (len_A1A2 == 1) {
     treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
-    treeedges[edge_A1A2].len = ADIFF(A1x, A2x) + ADIFF(A1y, A2y);
+    treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
   } else {
     extraLen = 0;
     if (cnt_n1A1 > 1 && cnt_n1A2 > 1) {
-      extraLen = ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0]);
+      extraLen = abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]);
       len_A1A2 += extraLen;
     }
     treeedges[edge_A1A2].route.gridsX
@@ -769,7 +769,7 @@ void updateRouteType23D(int netID,
     treeedges[edge_A1A2].route.gridsL
         = (short*) calloc(len_A1A2, sizeof(short));
     treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
-    treeedges[edge_A1A2].len = ADIFF(A1x, A2x) + ADIFF(A1y, A2y);
+    treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
     cnt = 0;
     startIND = 0;
@@ -849,7 +849,7 @@ void updateRouteType23D(int netID,
   treeedges[edge_n1C1].route.gridsY = (short*) calloc(len_n1C1, sizeof(short));
   treeedges[edge_n1C1].route.gridsL = (short*) calloc(len_n1C1, sizeof(short));
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
-  treeedges[edge_n1C1].len = ADIFF(C1x, E1x) + ADIFF(C1y, E1y);
+  treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
   if (treeedges[edge_n1C2].route.type == MAZEROUTE
       && treeedges[edge_n1C2].route.routelen > 0) {
@@ -863,7 +863,7 @@ void updateRouteType23D(int netID,
   treeedges[edge_n1C2].route.gridsY = (short*) calloc(len_n1C2, sizeof(short));
   treeedges[edge_n1C2].route.gridsL = (short*) calloc(len_n1C2, sizeof(short));
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
-  treeedges[edge_n1C2].len = ADIFF(C2x, E1x) + ADIFF(C2y, E1y);
+  treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
   // split original (C1, C2) to (C1, n1) and (n1, C2)
   cnt = 0;
@@ -1640,7 +1640,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOri
               = (short*) calloc(newcnt_n1n2, sizeof(short));
           treeedges[edge_n1n2].route.type = MAZEROUTE;
           treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
-          treeedges[edge_n1n2].len = ADIFF(E1x, E2x) + ADIFF(E1y, E2y);
+          treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y- E2y);
 
           j = headRoom;
           for (i = 0; i < newcnt_n1n2; i++) {
