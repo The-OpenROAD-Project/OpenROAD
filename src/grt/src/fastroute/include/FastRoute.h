@@ -191,6 +191,49 @@ class FastRouteCore
                         int edge_C1C2);
   void reInitTree(int netID);
 
+  // maze3D functions
+  void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation);
+  void setupHeap3D(int netID,
+                   int edgeID,
+                   int* heapLen1,
+                   int* heapLen2,
+                   int regionX1,
+                   int regionX2,
+                   int regionY1,
+                   int regionY2);
+  void newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL);
+  int copyGrids3D(TreeNode* treenodes,
+                  int n1,
+                  int n2,
+                  TreeEdge* treeedges,
+                  int edge_n1n2,
+                  int gridsX_n1n2[],
+                  int gridsY_n1n2[],
+                  int gridsL_n1n2[]);
+  void updateRouteType13D(int netID,
+                          TreeNode* treenodes,
+                          int n1,
+                          int A1,
+                          int A2,
+                          int E1x,
+                          int E1y,
+                          TreeEdge* treeedges,
+                          int edge_n1A1,
+                          int edge_n1A2);
+  void updateRouteType23D(int netID,
+                          TreeNode* treenodes,
+                          int n1,
+                          int A1,
+                          int A2,
+                          int C1,
+                          int C2,
+                          int E1x,
+                          int E1y,
+                          TreeEdge* treeedges,
+                          int edge_n1A1,
+                          int edge_n1A2,
+                          int edge_C1C2);
+
   // rsmt functions
   void copyStTree(int ind, Tree rsmt);
   void gen_brk_RSMT(bool congestionDriven,

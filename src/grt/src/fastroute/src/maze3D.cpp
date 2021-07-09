@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "maze3D.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +39,7 @@
 
 #include "DataProc.h"
 #include "DataType.h"
+#include "FastRoute.h"
 #include "RipUp.h"
 #include "flute.h"
 #include "pdr/pdrev.h"
@@ -110,7 +109,7 @@ static void extractMin3D(int** array, int arrayLen)
   heapify3D(array, arrayLen - 1, 0);
 }
 
-void setupHeap3D(int netID,
+void FastRouteCore::setupHeap3D(int netID,
                  int edgeID,
                  int* heapLen1,
                  int* heapLen2,
@@ -381,7 +380,7 @@ void setupHeap3D(int netID,
   }  // net with more than two pins
 }
 
-void newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL)
+void FastRouteCore::newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL)
 {
   int con;
 
@@ -400,7 +399,7 @@ void newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL)
   }
 }
 
-int copyGrids3D(TreeNode* treenodes,
+int FastRouteCore::copyGrids3D(TreeNode* treenodes,
                 int n1,
                 int n2,
                 TreeEdge* treeedges,
@@ -459,7 +458,7 @@ int copyGrids3D(TreeNode* treenodes,
   return (cnt);
 }
 
-void updateRouteType13D(int netID,
+void FastRouteCore::updateRouteType13D(int netID,
                         TreeNode* treenodes,
                         int n1,
                         int A1,
@@ -679,7 +678,7 @@ void updateRouteType13D(int netID,
   treenodes[n1].y = E1y;
 }
 
-void updateRouteType23D(int netID,
+void FastRouteCore::updateRouteType23D(int netID,
                         TreeNode* treenodes,
                         int n1,
                         int A1,
@@ -883,7 +882,7 @@ void updateRouteType23D(int netID,
   }
 }
 
-void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation)
+void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation)
 {
   short* gridsLtmp;
   int netID, enlarge, endIND;
