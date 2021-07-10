@@ -6,7 +6,7 @@
 [INFO ODB-0222] Reading LEF file: flipchip_test.dummy_pads.m9.lef
 [INFO ODB-0225]     Created 25 library cells
 [INFO ODB-0226] Finished LEF file:  flipchip_test.dummy_pads.m9.lef
-[INFO IFP-0001] Added 2600 rows of 19158 sites.
+[INFO IFP-0001] Added 2599 rows of 19157 sites.
 [INFO PAD-0053] Creating pad ring nets: DVSS, SNS, RETN, DVDD
 [INFO PDN-0015] Writing to database
 No differences found.

@@ -224,7 +224,10 @@ class FlexGCWorker::Impl
   void checkMetalSpacing_main(gcRect* rect,
                               bool checkNDRs = true,
                               bool isSpcRect = false);
-  void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool checkNDRs = true, bool isSpcRect = false);
+  void checkMetalSpacing_main(gcRect* rect1,
+                              gcRect* rect2,
+                              bool checkNDRs = true,
+                              bool isSpcRect = false);
   void checkMetalSpacing_short(gcRect* rect1,
                                gcRect* rect2,
                                const gtl::rectangle_data<frCoord>& markerRect);
@@ -323,6 +326,10 @@ class FlexGCWorker::Impl
                                    frLef58EolKeepOutConstraint* constraint);
   void checkMetalEOLkeepout_main(gcSegment* edge,
                                  frLef58EolKeepOutConstraint* constraint);
+  void getEolKeepOutExceptWithinRects(gcSegment* edge,
+                                      frLef58EolKeepOutConstraint* constraint,
+                                      gtl::rectangle_data<frCoord>& rect1,
+                                      gtl::rectangle_data<frCoord>& rect2);
   void getEolKeepOutQueryBox(gcSegment* edge,
                              frLef58EolKeepOutConstraint* constraint,
                              box_t& queryBox,

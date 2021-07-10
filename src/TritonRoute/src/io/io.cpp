@@ -413,9 +413,11 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     createNDR(ndr);
   }
   for (auto& layer : design->getTech()->getLayers()) {
-      if (layer->getType() != frLayerTypeEnum::ROUTING)
-          continue;
-      MTSAFEDIST = max(MTSAFEDIST, design->getTech()->getMaxNondefaultSpacing(layer->getLayerNum()/2 -1));
+    if (layer->getType() != frLayerTypeEnum::ROUTING)
+      continue;
+    MTSAFEDIST = max(MTSAFEDIST,
+                     design->getTech()->getMaxNondefaultSpacing(
+                         layer->getLayerNum() / 2 - 1));
   }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
@@ -1632,6 +1634,9 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     rptr->setForwardExt(rule->getForwardExt());
     rptr->setSideExt(rule->getSideExt());
     rptr->setCornerOnly(rule->isCornerOnly());
+    rptr->setExceptWithin(rule->isExceptWithin());
+    rptr->setWithinLow(rule->getWithinLow());
+    rptr->setWithinHigh(rule->getWithinHigh());
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }

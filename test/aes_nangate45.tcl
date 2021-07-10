@@ -10,4 +10,6 @@ set sdc_file "aes_nangate45.sdc"
 set die_area {0 0 1020 920.8}
 set core_area {10 12 1010 911.2}
 
+set max_cap_margin 10
+
 source -echo "flow.tcl"
