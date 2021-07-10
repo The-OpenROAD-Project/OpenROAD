@@ -332,7 +332,7 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   Net *out_net = db_network_->net(out_pin);
   bool in_net_ports = hasPort(in_net);
   bool out_net_ports = hasPort(out_net);
-  return in_net_ports || out_net_ports;
+  return in_net_ports && out_net_ports;
 }
 
 void
