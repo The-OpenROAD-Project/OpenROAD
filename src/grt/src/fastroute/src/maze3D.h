@@ -41,7 +41,7 @@ typedef struct
   int l;
 } Pos3D;
 
-void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation);
 
 }  // namespace grt
 #endif /* __MAZE3D_H__ */

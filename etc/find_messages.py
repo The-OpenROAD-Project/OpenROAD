@@ -80,7 +80,7 @@ warn_regexp_c = \
       \s*,\s*                                          # ,
       (?P<id>\d+)                                      # id
       \s*,\s*                                          # ,
-      "(?P<message>(?:[^"\\]|\\.)+?)"                  # message
+      (?P<message>("(?:[^"\\]|\\.)+?"\s*)+)            # message
     ''', re.VERBOSE | re.MULTILINE)
 
 warn_regexp_tcl = \
@@ -91,7 +91,7 @@ warn_regexp_tcl = \
       \s+                              # white-space
       (?P<id>\d+)                      # id
       \s+                              # white-space
-      "(?P<message>(?:[^"\\]|\\.)+?)"  # message
+      (?P<message>"(?:[^"\\]|\\.)+?")  # message
     ''', re.VERBOSE | re.MULTILINE)
 
 def scan_file(path, file_name, msgs):
@@ -107,10 +107,15 @@ def scan_file(path, file_name, msgs):
         msg_id = int(match.group('id'))
         key = '{} {:04d}'.format(tool, msg_id)
 
+        # remove quotes and join strings
+        message = match.group('message')
+        message = message.rstrip()[1:-1]
+        message = re.sub(r'"\s*"', '', message)
+
         # Count the newlines before the match starts
         line_num = lines[0:match.start()].count('\n') + 1
         position = '{}:{}'.format(file_name, line_num)
-        value = '{:25} {}'.format(position, match.group('message'))
+        value = '{:25} {}'.format(position, message)
 
         msgs[key].add(value)
 

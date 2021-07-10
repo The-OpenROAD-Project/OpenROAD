@@ -32,8 +32,6 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>

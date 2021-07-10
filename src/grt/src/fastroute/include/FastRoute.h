@@ -115,7 +115,6 @@ class FastRouteCore
                        int l2,
                        int newCap);
   void setMaxNetDegree(int);
-  void setAlpha(float a);
   void setVerbose(int v);
   void setOverflowIterations(int iterations);
   void setAllowOverflow(bool allow);
@@ -129,6 +128,7 @@ class FastRouteCore
 
  private:
   NetRouteMap getRoutes();
+  void init_usage();
   int maxNetDegree;
   std::vector<int> cap_per_layer;
   std::vector<int> usage_per_layer;
@@ -137,6 +137,11 @@ class FastRouteCore
   std::vector<int> max_v_overflow;
   odb::dbDatabase* db_;
   bool allow_overflow_;
+  int overflow_iterations_;
+  int num_nets_;
+  int layer_orientation_;
+  std::vector<short> vCapacity3D;
+  std::vector<short> hCapacity3D;
 };
 
 }  // namespace grt

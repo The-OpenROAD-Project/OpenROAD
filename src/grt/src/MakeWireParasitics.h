@@ -88,27 +88,27 @@ class MakeWireParasitics
                // Return values.
                float& res,
                float& cap);
-  float getCutLayerRes(unsigned belowLayerId);
+  float getCutLayerRes(unsigned below_layer_id);
   double dbuToMeters(int dbu);
 
   // Variables common to all nets.
-  GlobalRouter* _grouter;
-  odb::dbTech* _tech;
-  utl::Logger* _logger;
-  sta::dbSta* _sta;
-  sta::dbNetwork* _network;
-  sta::Parasitics* _parasitics;
-  sta::Corner* _corner;
-  sta::MinMax* _min_max;
-  sta::ParasiticAnalysisPt* _analysisPoint;
+  GlobalRouter* grouter_;
+  odb::dbTech* tech_;
+  utl::Logger* logger_;
+  sta::dbSta* sta_;
+  sta::dbNetwork* network_;
+  sta::Parasitics* parasitics_;
+  sta::Corner* corner_;
+  sta::MinMax* min_max_;
+  sta::ParasiticAnalysisPt* analysis_point_;
 
   // Net variables
-  sta::Net* _sta_net;
-  sta::Parasitic* _parasitic;
+  sta::Net* sta_net_;
+  sta::Parasitic* parasitic_;
   // Counter for internal parasitic node IDs.
-  int _node_id;
+  int node_id_;
   // x/y/layer -> parasitic node
-  NodeRoutePtMap _node_map;
+  NodeRoutePtMap node_map_;
 };
 
 }  // namespace grt

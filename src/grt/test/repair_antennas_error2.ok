@@ -49,22 +49,22 @@ met4       Vertical        10086          9768          3.15%
 met5       Horizontal       3362          3280          2.44%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 940
-[INFO GRT-0112] Final usage 3D: 5754
+[INFO GRT-0111] Final number of vias: 933
+[INFO GRT-0112] Final usage 3D: 5776
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-li1              24714          1480            5.99%             0 /  0 /  0
-met1             28047          1454            5.18%             0 /  0 /  0
+li1              24714          1547            6.26%             0 /  0 /  0
+met1             28047          1430            5.10%             0 /  0 /  0
 met2             24920             0            0.00%             0 /  0 /  0
 met3             15040             0            0.00%             0 /  0 /  0
 met4              9768             0            0.00%             0 /  0 /  0
 met5              3280             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           105769          2934            2.77%             0 /  0 /  0
+Total           105769          2977            2.81%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30182 um
+[INFO GRT-0018] Total wirelength: 30506 um
 [WARNING STA-0328] port 'DIOD' not found.
 [ERROR GRT-0069] Diode not found.
 GRT-0069
