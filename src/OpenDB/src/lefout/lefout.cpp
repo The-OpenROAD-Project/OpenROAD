@@ -48,25 +48,37 @@ void lefout::writeVersion(const char* version)
   fprintf(_out, "VERSION %s ;\n", version);
 }
 
-void lefout::writeBoxes(dbSet<dbBox>& boxes, const char* indent)
+template <typename GenericBox>
+void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
 {
   dbTechLayer* cur_layer = NULL;
 
-  for (dbBox* box : boxes) {
+  for (GenericBox* generic_box : boxes) {
+    if (generic_box == nullptr) {
+      continue;
+    }
+
+    dbBox* box = generic_box;
     dbTechLayer* layer = box->getTechLayer();
 
-    if (box->isVia()) {
-      dbTechVia* via = box->getTechVia();
-      assert(via);
+    // Checks if the box is either a tech via or a block via.
+    if (box->getTechVia() || box->getBlockVia()) {
+      std::string via_name;
+      if (box->getTechVia()) {
+        via_name = box->getTechVia()->getName();
+      }
+      if (box->getBlockVia()) {
+        via_name = box->getBlockVia()->getName();
+      }
+
       int x, y;
       box->getViaXY(x, y);
-      std::string n = via->getName();
       fprintf(_out,
               "%sVIA %g %g %s ;\n",
               indent,
               lefdist(x),
               lefdist(y),
-              n.c_str());
+              via_name.c_str());
       cur_layer = NULL;
     } else {
       std::string layer_name;
@@ -142,6 +154,10 @@ void lefout::getTechLayerObstructions(
     std::set<dbTechLayer*>& obstruction_layers) const
 {
   for (dbNet* net : db_block->getNets()) {
+    if (isPowerNet(net->getSigType())) {
+      continue;
+    }
+
     findSWireLayerObstructions(obstruction_layers, net);
     findWireLayerObstructions(obstruction_layers, net);
   }
@@ -257,6 +273,12 @@ void lefout::writeBlock(dbBlock* db_block)
 
 void lefout::writePins(dbBlock* db_block)
 {
+  writePowerPins(db_block);
+  writeBlockTerms(db_block);
+}
+
+void lefout::writeBlockTerms(dbBlock* db_block)
+{
   for (dbBTerm* b_term : db_block->getBTerms()) {
     fprintf(_out, "  PIN %s\n", b_term->getName().c_str());
     fprintf(_out, "    DIRECTION %s ;\n", b_term->getIoType().getString());
@@ -269,6 +291,31 @@ void lefout::writePins(dbBlock* db_block)
     }
     fprintf(_out, "  END %s\n", b_term->getName().c_str());
   }
+}
+
+void lefout::writePowerPins(dbBlock* db_block)
+{  // Power Ground.
+  for (dbNet* net : db_block->getNets()) {
+    if (isPowerNet(net->getSigType())) {
+      continue;
+    }
+    fprintf(_out, "  PIN %s\n", net->getName().c_str());
+    fprintf(_out, "    USE %s ;\n", net->getSigType().getString());
+    fprintf(
+        _out, "    DIRECTION %s ;\n", dbIoType(dbIoType::INOUT).getString());
+    for (dbSWire* special_wire : net->getSWires()) {
+      fprintf(_out, "    PORT\n");
+      dbSet<dbSBox> wires = special_wire->getWires();
+      writeBoxes(wires, /*indent=*/"      ");
+      fprintf(_out, "    END\n");
+    }
+    fprintf(_out, "  END %s\n", net->getName().c_str());
+  }
+}
+
+bool lefout::isPowerNet(const dbSigType& db_sig_type) const
+{
+  return db_sig_type != dbSigType::POWER && db_sig_type != dbSigType::GROUND;
 }
 
 void lefout::writeTech(dbTech* tech)

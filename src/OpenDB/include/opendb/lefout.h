@@ -67,7 +67,9 @@ class lefout
   double _area_factor;
   utl::Logger* logger_;
 
-  void writeBoxes(dbSet<dbBox>& boxes, const char* indent);
+  template<typename GenericBox>
+  void writeBoxes(dbSet<GenericBox>& boxes, const char* indent);
+
   void writeTech(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
@@ -131,6 +133,8 @@ class lefout
   bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
 
   FILE* out() { return _out; }
+  bool isPowerNet(const dbSigType& db_sig_type) const;
+  void writePowerPins(dbBlock* db_block);
+  void writeBlockTerms(dbBlock* db_block);
 };
-
 }  // namespace odb

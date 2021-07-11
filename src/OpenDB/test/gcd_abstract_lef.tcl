@@ -9,4 +9,4 @@ set lef_file [make_result_file gcd_abstract_lef.lef]
 
 [ord::get_db_block] saveLef $lef_file
 
-diff_file $lef_file "gcd_abstract_lef.lef.ok"
+diff_file $lef_file "gcd_abstract_lef.lefok"
