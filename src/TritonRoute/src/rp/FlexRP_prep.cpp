@@ -33,7 +33,7 @@
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
-
+#include "opendb/db.h"
 using namespace std;
 using namespace fr;
 
@@ -440,6 +440,8 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
       lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
   prep_via2viaForbiddenLen_lef58CutSpc(
       lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+  prep_via2viaForbiddenLen_lef58CutSpcTbl(
+      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
 
   // merge forbidden ranges
   boost::icl::interval_set<frCoord> forbiddenIntvSet;
@@ -594,6 +596,57 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
       reqSpcVal = con->getCutSpacing();
       prep_via2viaForbiddenLen_lef58CutSpc_helper(
           enclosureBox1, enclosureBox2, cutBox2, reqSpcVal, range);
+      forbiddenRanges.push_back(range);
+    }
+  }
+}
+
+void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
+    const frLayerNum& lNum,
+    frViaDef* viaDef1,
+    frViaDef* viaDef2,
+    bool isCurrDirX,
+    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+{
+  if (!viaDef1 || !viaDef2) {
+    return;
+  }
+  if (viaDef1->getCutLayerNum() != viaDef2->getCutLayerNum())
+    return;
+  bool isCurrDirY = !isCurrDirX;
+  frVia via1(viaDef1);
+  frBox viaBox1, viaBox2, cutBox1, cutBox2;
+  if (viaDef1->getLayer1Num() == lNum) {
+    via1.getLayer1BBox(viaBox1);
+  } else {
+    via1.getLayer2BBox(viaBox1);
+  }
+
+  frVia via2(viaDef2);
+  if (viaDef2->getLayer1Num() == lNum) {
+    via2.getLayer1BBox(viaBox2);
+  } else {
+    via2.getLayer2BBox(viaBox2);
+  }
+  via1.getCutBBox(cutBox1);
+  via2.getCutBBox(cutBox2);
+  pair<frCoord, frCoord> range;
+  frCoord reqSpcVal = 0;
+  auto layer = tech_->getLayer(viaDef1->getCutLayerNum());
+  for(auto con : layer->getLef58CutSpacingTableConstraints())
+  {
+    auto cutClass1 = layer->getCutClass(cutBox1.width(), cutBox1.length())->getName();
+    auto cutClass2 = layer->getCutClass(cutBox2.width(), cutBox2.length())->getName();
+    for(auto con : layer->getLef58CutSpacingTableConstraints())
+    {
+      auto dbRule = con->getODBRule();
+      reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
+      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+        reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
+                                : (cutBox1.right() - cutBox1.left());
+      }
+      prep_via2viaForbiddenLen_lef58CutSpc_helper(
+          viaBox1, viaBox2, cutBox2, reqSpcVal, range);
       forbiddenRanges.push_back(range);
     }
   }
