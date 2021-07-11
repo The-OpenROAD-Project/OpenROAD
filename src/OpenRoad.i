@@ -118,6 +118,13 @@ getResizer()
   return openroad->getResizer();
 }
 
+rmp::Restructure *
+getRestructure()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getRestructure();
+}
+
 cts::TritonCTS *
 getTritonCts()
 {

@@ -48,23 +48,23 @@ typedef std::vector<std::vector<std::vector<int>>> CapacitiesVec;
 
 struct GSegment
 {
-  int initX;
-  int initY;
-  int initLayer;
-  int finalX;
-  int finalY;
-  int finalLayer;
+  int init_x;
+  int init_y;
+  int init_layer;
+  int final_x;
+  int final_y;
+  int final_layer;
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
-      : initX(x0),
-        initY(y0),
-        initLayer(l0),
-        finalX(x1),
-        finalY(y1),
-        finalLayer(l1)
+      : init_x(x0),
+        init_y(y0),
+        init_layer(l0),
+        final_x(x1),
+        final_y(y1),
+        final_layer(l1)
   {
   }
-  bool isVia() { return (initX == finalX && initY == finalY); }
+  bool isVia() { return (init_x == final_x && init_y == final_y); }
 };
 
 class Capacities

@@ -947,7 +947,14 @@ class frLef58EolKeepOutConstraint : public frConstraint
  public:
   // constructors
   frLef58EolKeepOutConstraint()
-      : backwardExt(0), sideExt(0), forwardExt(0), eolWidth(0), cornerOnly(false)
+      : backwardExt(0),
+        sideExt(0),
+        forwardExt(0),
+        eolWidth(0),
+        cornerOnly(false),
+        exceptWithin(false),
+        withinLow(0),
+        withinHigh(0)
   {
   }
   // getters
@@ -956,12 +963,18 @@ class frLef58EolKeepOutConstraint : public frConstraint
   frCoord getSideExt() const { return sideExt; }
   frCoord getEolWidth() const { return eolWidth; }
   bool isCornerOnly() const { return cornerOnly; }
+  bool isExceptWithin() const { return exceptWithin; }
+  frCoord getWithinLow() const { return withinLow; }
+  frCoord getWithinHigh() const { return withinHigh; }
   // setters
   void setBackwardExt(frCoord value) { backwardExt = value; }
   void setForwardExt(frCoord value) { forwardExt = value; }
   void setSideExt(frCoord value) { sideExt = value; }
   void setEolWidth(frCoord value) { eolWidth = value; }
   void setCornerOnly(bool value) { cornerOnly = value; }
+  void setExceptWithin(bool value) { exceptWithin = value; }
+  void setWithinLow(frCoord value) { withinLow = value; }
+  void setWithinHigh(frCoord value) { withinHigh = value; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -972,11 +985,15 @@ class frLef58EolKeepOutConstraint : public frConstraint
     logger->report(
         "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} "
         "cornerOnly {}",
+        "exceptWithin {} withinLow {} withinHigh {}",
         backwardExt,
         sideExt,
         forwardExt,
         eolWidth,
-        cornerOnly);
+        cornerOnly,
+        exceptWithin,
+        withinLow,
+        withinHigh);
   }
 
  private:
@@ -985,6 +1002,8 @@ class frLef58EolKeepOutConstraint : public frConstraint
   frCoord forwardExt;
   frCoord eolWidth;
   bool cornerOnly;
+  bool exceptWithin;
+  frCoord withinLow, withinHigh;
 };
 
 class frLef58CornerSpacingSpacingConstraint;

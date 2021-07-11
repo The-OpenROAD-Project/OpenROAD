@@ -1,0 +1,28 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: gcd_placed.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO ODB-0134] Finished DEF file: gcd_placed.def
+[WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
+worst slack 1.29
+Design area 700 u^2 11% utilization.
+Removed 0 instances with constant outputs.
+Number of paths for restructure are 105
+Found 53 end points for restructure
+Found 1290 pins in extracted logic
+Found 422 instances for restructuring.
+[INFO RMP-0002] Blif writer successfully dumped file with 422 instances.
+Optimized to 241 instances in iteration 0
+Optimized to 257 instances in iteration 1
+Optimized to 255 instances in iteration 2
+[INFO RMP-0005] blif parsed successfully, destroying 422 existing instances...
+[INFO RMP-0006] Found 89 Inputs, 52 Outputs, 0 Clocks, 241 Combinational gates, 0 Registers after parsing the blif file.
+[INFO RMP-0007] inserting 241 new instances...
+Design area 523 u^2 8% utilization.

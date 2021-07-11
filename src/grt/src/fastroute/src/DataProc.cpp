@@ -48,87 +48,64 @@ namespace grt {
 
 // Global variables
 int XRANGE, YRANGE;
-int xGrid, yGrid, numGrids, numNets, invalidNets;
-short *vCapacity3D, *hCapacity3D;
+int xGrid, yGrid;
 float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-int MaxDegree;
-int *MinWidth, *MinSpacing, *ViaSpacing;
 int xcorner, ycorner, wTile, hTile;
 int enlarge, costheight, ripup_threshold, ahTH;
 int numValidNets;  // # nets need to be routed (having pins in different grids)
 int numLayers;
-int totalNumSeg;    // total # segments
 int totalOverflow;  // total # overflow
-int mazeThreshold;  // the wirelen threshold to do maze routing
 FrNet** nets;
-Edge *h_edges, *v_edges;
+std::vector<Edge> h_edges;
+std::vector<Edge> v_edges;
+
 multi_array<float, 2> d1;
 multi_array<float, 2> d2;
-int layerOrientation;
-float alpha;
 int verbose;
-int overflowIterations;
 
-Bool** HV;
-Bool** hyperV;
-Bool** hyperH;
-int** corrEdge;
-int SLOPE;
+multi_array<bool, 2> HV;
+multi_array<bool, 2> hyperV;
+multi_array<bool, 2> hyperH;
+multi_array<int, 2> corrEdge;
 
-float LB;
-float UB;
-int THRESH_M;
-float LOGIS_COF;
-int ENLARGE;
-int STEP;
-int COSHEIGHT;
-int STOP;
-int VCA;
-int L;
-int VIA, slope, max_adj;
-
-char benchFile[STRINGLEN];
-
-Segment* seglist;
-int* seglistIndex;  // the index for the segments for each net
-int* seglistCnt;    // the number of segements for each net
-Tree* trees;        // the tree topologies
+std::vector<Segment> seglist;
+std::vector<int> seglistIndex;  // the index for the segments for each net
+std::vector<int> seglistCnt;    // the number of segements for each net
 StTree* sttrees;    // the Steiner trees
-DTYPE** gxs;        // the copy of xs for nets, used for second FLUTE
-DTYPE** gys;        // the copy of xs for nets, used for second FLUTE
-DTYPE** gs;  // the copy of vertical sequence for nets, used for second FLUTE
-Edge3D* h_edges3D;
-Edge3D* v_edges3D;
+std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
+std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
+std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
+std::vector<Edge3D> h_edges3D;
+std::vector<Edge3D> v_edges3D;
 
 std::vector<OrderNetPin> treeOrderPV;
 std::vector<OrderTree> treeOrderCong;
-int numTreeedges;
 int viacost;
 
-int** layerGrid;
-int** gridD;
-int** viaLink;
+multi_array<int, 2> layerGrid;
+multi_array<int, 2> viaLink;
 
 multi_array<int, 3> d13D;
 multi_array<short, 3> d23D;
 
-dirctionT*** directions3D;
-int*** corrEdge3D;
-parent3D*** pr3D;
+multi_array<dirctionT, 3> directions3D;
+multi_array<int, 3> corrEdge3D;
+multi_array<parent3D, 3> pr3D;
 
 int mazeedge_Threshold;
-Bool** inRegion;
+multi_array<bool, 2> inRegion;
 
 int gridHV, gridH, gridV;
-int *gridHs, *gridVs;
+std::vector<int> gridHs;
+std::vector<int> gridVs;
 
 int** heap13D;
 short** heap23D;
 
-float *h_costTable, *v_costTable;
-Bool stopDEC, errorPRONE;
+std::vector<float> h_costTable;
+std::vector<float> v_costTable;
 std::vector<OrderNetEdge> netEO;
-int *xcor, *ycor, *dcor;
+std::vector<int> xcor, ycor, dcor;
 
 StTree* sttreesBK;
 
@@ -136,17 +113,7 @@ multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 float **heap2, **heap1;
 
-Bool* pop_heap2;
+std::vector<bool> pop_heap2;
 
 utl::Logger* logger;
-
-void init_usage()
-{
-  int i;
-
-  for (i = 0; i < yGrid * (xGrid - 1); i++)
-    h_edges[i].usage = 0;
-  for (i = 0; i < (yGrid - 1) * xGrid; i++)
-    v_edges[i].usage = 0;
-}
 }  // namespace grt

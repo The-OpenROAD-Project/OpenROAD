@@ -402,7 +402,7 @@ int edgeShiftNew(Tree* t, int net)
   int deg, pairCnt, cur_pairN1, cur_pairN2;
   int N1nbrH, N1nbrV, N2nbrH, N2nbrV, iter;
   int numShift;
-  Bool isPair;
+  bool isPair;
 
   numShift = edgeShift(t, net);
   deg = t->deg;
@@ -434,14 +434,14 @@ int edgeShiftNew(Tree* t, int net)
       {
         cur_pairN1 = pairN1[0];
         cur_pairN2 = pairN2[0];
-        isPair = TRUE;
+        isPair = true;
       } else if (pairN1[0] == cur_pairN1 && pairN2[0] == cur_pairN2
                  && pairCnt > 1) {
         cur_pairN1 = pairN1[1];
         cur_pairN2 = pairN2[1];
-        isPair = TRUE;
+        isPair = true;
       } else
-        isPair = FALSE;
+        isPair = false;
 
       if (isPair)  // find a new pair to swap
       {

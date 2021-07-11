@@ -46,7 +46,7 @@ extern void newRipup(TreeEdge* treeedge,
                      int x2,
                      int y2,
                      int netID);
-extern Bool newRipupCheck(TreeEdge* treeedge,
+extern bool newRipupCheck(TreeEdge* treeedge,
                           int x1,
                           int y1,
                           int x2,
@@ -55,7 +55,7 @@ extern Bool newRipupCheck(TreeEdge* treeedge,
                           int netID,
                           int edgeID);
 
-extern Bool newRipupType2(TreeEdge* treeedge,
+extern bool newRipupType2(TreeEdge* treeedge,
                           TreeNode* treenodes,
                           int x1,
                           int y1,
@@ -63,7 +63,7 @@ extern Bool newRipupType2(TreeEdge* treeedge,
                           int y2,
                           int deg,
                           int netID);
-extern Bool newRipup3DType3(int netID, int edgeID);
+extern bool newRipup3DType3(int netID, int edgeID);
 
 extern void newRipupNet(int netID);
 }  // namespace grt

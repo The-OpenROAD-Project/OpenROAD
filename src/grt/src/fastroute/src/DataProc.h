@@ -53,110 +53,80 @@ using boost::multi_array;
 
 // global variables
 extern int XRANGE, YRANGE;
-extern int xGrid, yGrid, numGrids, numNets, invalidNets, vCapacity, hCapacity;
-extern short *vCapacity3D, *hCapacity3D;
+extern int xGrid, yGrid, vCapacity, hCapacity;
 extern float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-extern int layerOrientation;
-extern float alpha;
 extern int verbose;
-extern int overflowIterations;
-const int max_usage_multiplier = 40;
 
 extern int enlarge, costheight, ripup_threshold;
-extern int MaxDegree;
-extern int *MinWidth, *MinSpacing, *ViaSpacing;
 extern int xcorner, ycorner, wTile, hTile, ahTH;
 
 extern int
     numValidNets;  // # nets need to be routed (having pins in different grids)
 extern int numLayers;
-extern int totalNumSeg;    // total # segments
 extern int totalOverflow;  // total # overflow
-extern int mazeThreshold;  // the wirelen threshold to do maze routing
 extern FrNet** nets;
-extern Edge *h_edges, *v_edges;
+extern std::vector<Edge> h_edges;
+extern std::vector<Edge> v_edges;
 
 extern multi_array<float, 2> d1;
 extern multi_array<float, 2> d2;
 
-extern Bool** HV;
-extern Bool** hyperV;
-extern Bool** hyperH;
-extern int** corrEdge;
-extern int SLOPE;
+extern multi_array<bool, 2> HV;
+extern multi_array<bool, 2> hyperV;
+extern multi_array<bool, 2> hyperH;
+extern multi_array<int, 2> corrEdge;
 
-// coefficient
-extern float LB;
-extern float UB;
-extern int THRESH_M;
-extern float LOGIS_COF;
-extern int ENLARGE;
-extern int STEP;
-extern int COSHEIGHT;
-extern int STOP;
-extern int L;
-extern int VCA;
-extern int VIA, slope, max_adj;
-extern char benchFile[STRINGLEN];
+extern std::vector<Segment> seglist;
+extern std::vector<int> seglistIndex;  // the index for the segments for each net
+extern std::vector<int> seglistCnt;    // the number of segements for each net
 
-extern Segment* seglist;
-extern int* seglistIndex;  // the index for the segments for each net
-extern int* seglistCnt;    // the number of segements for each net
-
-extern Tree* trees;      // the tree topologies
 extern StTree* sttrees;  // the Steiner trees
-extern DTYPE** gxs;      // the copy of xs for nets, used for second FLUTE
-extern DTYPE** gys;      // the copy of xs for nets, used for second FLUTE
-extern DTYPE**
-    gs;  // the copy of vertical sequence for nets, used for second FLUTE
+extern std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
+extern std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
+extern std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
 
 extern std::vector<OrderNetPin> treeOrderPV;
 extern std::vector<OrderTree> treeOrderCong;
-extern int numTreeedges;
 extern int viacost;
 
-extern Edge3D* h_edges3D;
-extern Edge3D* v_edges3D;
+extern std::vector<Edge3D> h_edges3D;
+extern std::vector<Edge3D> v_edges3D;
 
-extern int** layerGrid;
-extern int** gridD;
-extern int** viaLink;
+extern multi_array<int, 2> layerGrid;
+extern multi_array<int, 2> viaLink;
 
 extern multi_array<int, 3> d13D;
 extern multi_array<short, 3> d23D;
 
-extern dirctionT*** directions3D;
-extern int*** corrEdge3D;
-extern parent3D*** pr3D;
+extern multi_array<dirctionT, 3> directions3D;
+extern multi_array<int, 3> corrEdge3D;
+extern multi_array<parent3D, 3> pr3D;
 
 extern int mazeedge_Threshold;
-extern Bool** inRegion;
+extern multi_array<bool, 2> inRegion;
 
 extern int gridHV, gridH, gridV;
-extern int *gridHs, *gridVs;
+extern std::vector<int> gridHs;
+extern std::vector<int> gridVs;
 
 extern int** heap13D;
 extern short** heap23D;
 
-extern float *h_costTable, *v_costTable;
+extern std::vector<float> h_costTable;
+extern std::vector<float> v_costTable;
 
-extern Bool stopDEC, errorPRONE;
 extern std::vector<OrderNetEdge> netEO;
 
-extern int *xcor, *ycor, *dcor;
+extern std::vector<int> xcor, ycor, dcor;
 
 extern StTree* sttreesBK;
 
 extern multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 extern float **heap2, **heap1;
-extern Bool* pop_heap2;
+extern std::vector<bool> pop_heap2;
 
 extern utl::Logger* logger;
-
-extern void init_usage();
-extern void readFile(char benchFile[]);
-extern void freeAllMemory();
 
 template <class T>
 T ADIFF(T x, T y)
