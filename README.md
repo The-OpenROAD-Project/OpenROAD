@@ -218,7 +218,7 @@ write_db reg1.db
 ```
 
 #### Abstract Lef Support
-OpenROAD also contains an abstract lef writer that can take your current design
+OpenROAD contains an abstract lef writer that can take your current design
 and emit an abstract lef representing the external pins of your design and metal
 obstructions.
 

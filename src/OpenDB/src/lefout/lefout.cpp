@@ -36,6 +36,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <fstream>
 #include <unordered_map>
 
 #include "db.h"
@@ -141,9 +142,9 @@ void lefout::writeObstructions(dbBlock* db_block)
   getTechLayerObstructions(db_block, obstruction_layers);
 
   fprintf(_out, "  OBS\n");
+  dbBox* block_bounding_box = db_block->getBBox();
   for (dbTechLayer* tech_layer : obstruction_layers) {
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
-    dbBox* block_bounding_box = db_block->getBBox();
     writeBox("  ", block_bounding_box);
   }
   fprintf(_out, "  END\n");
