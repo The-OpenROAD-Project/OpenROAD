@@ -133,6 +133,27 @@ struct Region
   }
 };
 
+
+struct Location
+{
+  float lx_ = 0.0;
+  float ly_ = 0.0;
+  float ux_ = 0.0;
+  float uy_ = 0.0;
+  std::string name_;
+
+  Location(std::string name, float lx, float ly, float ux, float uy) {
+    name_ = name;
+    lx_ = lx;
+    ly_ = ly;
+    ux_ = ux;
+    uy_ = uy;
+  }
+};
+
+
+
+
 class SimulatedAnnealingCore
 {
  private:
@@ -164,7 +185,8 @@ class SimulatedAnnealingCore
   float outline_penalty_;
   float boundary_penalty_;
   float macro_blockage_penalty_;
-
+  float location_penalty_;
+   
   float pre_height_;
   float pre_width_;
   float pre_area_;
@@ -172,36 +194,43 @@ class SimulatedAnnealingCore
   float pre_outline_penalty_;
   float pre_boundary_penalty_;
   float pre_macro_blockage_penalty_;
+  float pre_location_penalty_;
 
   float norm_area_;
   float norm_wirelength_;
   float norm_outline_penalty_;
   float norm_boundary_penalty_;
   float norm_macro_blockage_penalty_;
+  float norm_location_penalty_;
 
   // These parameters are related to cost function
   float alpha_;                  // weight for area
   float beta_;                   // weight for wirelength
   float gamma_;                  // weight for outline penalty
   float boundary_weight_;        // weight for boundary penalty
-  float macro_blockage_weight_;  // weight for macro blockage weight
+  float macro_blockage_weight_;  // weight for macro blockage penalty
+  float location_weight_;        // weight for location penalty
+
 
   float alpha_base_;
   float beta_base_;
   float gamma_base_;
   float boundary_weight_base_;
   float macro_blockage_weight_base_;
-
+  float location_weight_base_;
+ 
   // These parameters are related to action probabilities
   float resize_prob_ = 0.4;
   float pos_swap_prob_ = 0.2;
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
-
+  
   std::unordered_map<std::string, int> block_map_;
+  std::unordered_map<int, int> location_map_;
   std::unordered_map<std::string, std::pair<float, float>> terminal_position_;
   std::vector<Net*> nets_;
   std::vector<Region*> regions_;
+  std::vector<Location*> locations_;
 
   std::vector<Block> blocks_;
   std::vector<Block> pre_blocks_;
@@ -226,18 +255,21 @@ class SimulatedAnnealingCore
   void CalculateOutlinePenalty();
   void CalculateBoundaryPenalty();
   void CalculateMacroBlockagePenalty();
+  void CalculateLocationPenalty();
   void CalculateWirelength();
   float NormCost(float area,
                  float wirelength,
                  float outline_penalty,
                  float boundary_penalty,
-                 float macro_blockage_penalty) const;
+                 float macro_blockage_penalty,
+                 float location_penalty) const;
 
   void UpdateWeight(float avg_area,
                     float avg_wirelength,
                     float avg_outline_penalty,
                     float avg_boundary_penalty,
-                    float avg_macro_blockage_penalty);
+                    float avg_macro_blockage_penalty,
+                    float avg_location_penalty);
 
  public:
   // Constructor
@@ -247,6 +279,7 @@ class SimulatedAnnealingCore
       const std::vector<Block>& blocks,
       const std::vector<Net*>& nets,
       const std::vector<Region*>& regions,
+      const std::vector<Location*>& locations,
       const std::unordered_map<std::string, std::pair<float, float>>&
           terminal_position,
       float cooling_rate,
@@ -255,6 +288,7 @@ class SimulatedAnnealingCore
       float gamma,
       float boundary_weight,
       float macro_blockage_weight,
+      float location_weight,
       float resize_prob,
       float pos_swap_prob,
       float neg_swap_prob,
@@ -279,7 +313,8 @@ class SimulatedAnnealingCore
                   float norm_wirelength,
                   float norm_outline_penalty,
                   float norm_boundary_penalty,
-                  float norm_macro_blockage_penalty);
+                  float norm_macro_blockage_penalty,
+                  float norm_location_penalty);
 
   void SetSeq(const std::vector<int>& pos_seq, const std::vector<int>& neg_seq);
 
@@ -292,6 +327,7 @@ class SimulatedAnnealingCore
   {
     return norm_macro_blockage_penalty_;
   }
+  float GetNormLocationPenalty() const { return norm_location_penalty_; }
 
   float GetCost() const
   {
@@ -299,7 +335,8 @@ class SimulatedAnnealingCore
                     wirelength_,
                     outline_penalty_,
                     boundary_penalty_,
-                    macro_blockage_penalty_);
+                    macro_blockage_penalty_,
+                    location_penalty_);
   }
 
   float GetWidth() const { return width_; }
@@ -309,6 +346,7 @@ class SimulatedAnnealingCore
   float GetOutlinePenalty() const { return outline_penalty_; }
   float GetBoundaryPenalty() const { return boundary_penalty_; }
   float GetMacroBlockagePenalty() const { return macro_blockage_penalty_; }
+  float GetLocationPenalty() const { return location_penalty_; }
   std::vector<Block> GetBlocks() const { return blocks_; }
   std::vector<int> GetPosSeq() const { return pos_seq_; }
   std::vector<int> GetNegSeq() const { return neg_seq_; }
@@ -328,6 +366,7 @@ void ParseNetFile(
     const std::string& net_file);
 
 void ParseRegionFile(std::vector<Region*>& regions, const std::string& region_file);
+void ParseLocationFile(std::vector<Location*>& locations, const std::string& location_file);
 
 std::vector<Block> Floorplan(
     const std::vector<shape_engine::Cluster*>& clusters,
@@ -336,6 +375,7 @@ std::vector<Block> Floorplan(
     float outline_height,
     const std::string& net_file,
     const std::string& region_file,
+    const std::string& location_file,
     int num_level,
     int num_worker,
     float heat_rate,
@@ -344,6 +384,7 @@ std::vector<Block> Floorplan(
     float gamma,
     float boundary_weight,
     float macro_blockage_weight,
+    float location_weight,
     float resize_prob,
     float pos_swap_prob,
     float neg_swap_prob,

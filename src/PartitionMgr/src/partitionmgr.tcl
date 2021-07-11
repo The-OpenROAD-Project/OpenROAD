@@ -573,12 +573,15 @@ sta::define_cmd_args "partition_design" { [-max_num_macro max_num_macro] \
                                           [-net_threshold net_threshold] \
                                           [-virtual_weight virtual_weight] \
                                           [-ignore_net_threshold ignore_net_threshold] \
+                                          [-num_hop num_hop] \
+                                          [-timing_weight timing_weight] \
                                           [-report_directory report_file] \
                                           -report_file report_file \
                                         }
 proc partition_design { args } {
     sta::parse_key_args "partition_design" args keys {-max_num_macro -min_num_macro
-                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold -report_directory -report_file} flags {  }
+                     -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold
+                     -num_hop -timing_weight -report_directory -report_file} flags {  }
     if { ![info exists keys(-report_file)] } {
         utl::error PAR 70 "missing mandatory argument -report_file"
     }
@@ -591,6 +594,8 @@ proc partition_design { args } {
     set virtual_weight 50
     set ignore_net_threshold 0
     set report_directory "rtl_mp"
+    set num_hop 4
+    set timing_weight 0
 
     if { [info exists keys(-max_num_macro)] } {
         set max_num_macro $keys(-max_num_macro)
@@ -623,8 +628,16 @@ proc partition_design { args } {
     if { [info exists keys(-report_directory)] } {
         set report_directory $keys(-report_directory)
     }
-
+  
+    if { [info exists keys(-num_hop)] } {
+        set num_hop $keys(-num_hop)
+    }
+   
+    if { [info exists keys(-timing_weight)] } {
+        set timing_weight $keys(-timing_weight)
+    }
+ 
     file mkdir $report_directory
 
-    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $report_directory $report_file
+    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $num_hop $timing_weight $report_directory $report_file
 }

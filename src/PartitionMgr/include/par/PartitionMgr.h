@@ -56,6 +56,7 @@ class NetworkReader;
 class Library;
 class Port;
 class Net;
+class dbSta;
 }  // namespace sta
 
 namespace utl {
@@ -257,6 +258,7 @@ class PartitionMgr
   PartOptions _options;
   odb::dbDatabase* _db = nullptr;
   ord::dbVerilogNetwork* _network = nullptr;
+  sta::dbSta* _sta = nullptr;
   unsigned _bestId = 0;
   Logger* _logger;
   std::unique_ptr<Graph> _graph;
@@ -269,6 +271,7 @@ class PartitionMgr
   ~PartitionMgr();
   void init(odb::dbDatabase* db,
             ord::dbVerilogNetwork* network,
+            sta::dbSta* sta,
             Logger* logger);
   void runPartitioning();
   void runClustering();
@@ -314,6 +317,8 @@ class PartitionMgr
                        unsigned int net_threshold,
                        unsigned int ignore_net_threshold,
                        unsigned int virtual_weight,
+                       unsigned int num_hops,
+                       unsigned int timing_weight,
                        const char* report_directory,
                        const char* file_name);
 

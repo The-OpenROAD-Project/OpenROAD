@@ -7,10 +7,17 @@
 #include <unordered_map>
 #include <vector>
 
+
+
+
 #include "db_sta/dbReadVerilog.hh"
+#include "db_sta/dbSta.hh"
 #include "opendb/db.h"
+#include "sta/Bfs.hh"
 #include "sta/Liberty.hh"
+#include "sta/Graph.hh"
 #include "utl/Logger.h"
+#include "sta/Sta.hh"
 
 namespace par {
 
@@ -179,8 +186,9 @@ class AutoClusterMgr
  public:
   AutoClusterMgr(ord::dbVerilogNetwork* network,
                  odb::dbDatabase* db,
+                 sta::dbSta* sta,
                  utl::Logger* logger)
-      : network_(network), db_(db), logger_(logger)
+      : network_(network), db_(db), sta_(sta), logger_(logger)
   {
   }
 
@@ -191,6 +199,8 @@ class AutoClusterMgr
                        unsigned int net_threshold,
                        unsigned int virtual_weight,
                        unsigned int ignore_net_threshold,
+                       unsigned int num_hops,
+                       unsigned int timing_weight,
                        const char* report_directory,
                        const char* file_name);
 
@@ -198,6 +208,7 @@ class AutoClusterMgr
   ord::dbVerilogNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_;
   unsigned int max_num_macro_ = 0;
   unsigned int min_num_macro_ = 0;
@@ -228,6 +239,22 @@ class AutoClusterMgr
   int buffer_id_ = -1;
   std::vector<std::vector<sta::Net*>> buffer_net_vec_;
   std::vector<sta::Net*> buffer_net_list_;
+
+  // timing-driven related function
+  unsigned int num_hops_;
+  unsigned int timing_weight_;
+  std::vector<sta::Instance*> macros_;
+  std::unordered_map<sta::Vertex*, std::unordered_map<int, int> > vertex_fanins_;
+  std::unordered_map<int, std::unordered_map<int, int> > virtual_timing_map_;
+  void findAdjacencies();
+  void seedFaninBfs(sta::BfsFwdIterator& bfs);
+  void findFanins(sta::BfsFwdIterator& bfs);
+  sta::Pin* findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port);
+  void copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs);
+  void addTimingWeight(float weight);
+  void addFanin(sta::Vertex* vertex, int fanin_id, int num_bit);
+  void addWeight(int src_id, int target_id);
+
 
   std::vector<Cluster*> cluster_list_;
   std::vector<Cluster*> merge_cluster_list_;

@@ -1574,7 +1574,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
         for(map_it; map_it != pin_fanins.end(); map_it++) {
           int src_id = map_it->first;
           if(src_id != sink_id) {
-            //cluster_map_[src_id]->addOutputConnection(sink_id, map_it->second * weight);
+            cluster_map_[src_id]->addOutputConnection(sink_id, map_it->second * weight);
             addWeight(src_id, sink_id);
           }
         }
@@ -1594,7 +1594,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
       for(map_it; map_it != pin_fanins.end(); map_it++) {
         int src_id = map_it->first;
         if(src_id != sink_id) {
-          //cluster_map_[src_id]->addOutputConnection(sink_id, map_it->second * weight);
+          cluster_map_[src_id]->addOutputConnection(sink_id, map_it->second * weight);
           addWeight(src_id, sink_id);
         }
       }
@@ -1607,8 +1607,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
     unordered_map<int, int> sinks = map_iter->second;
     unordered_map<int, int>::iterator map_it = sinks.begin();
     for(map_it; map_it != sinks.end(); map_it++) {
-        cluster_map_[src_id]->addOutputConnection(map_it->first, weight);
-        logger_->info(PAR, 492, "src:  {}\t   target:  {}\t   #bits:  {}",
+      logger_->info(PAR, 492, "src:  {}\t   target:  {}\t   #bits:  {}",
                     cluster_map_[src_id]->getName(),
                     cluster_map_[map_it->first]->getName(),
                     map_it->second);

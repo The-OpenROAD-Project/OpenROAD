@@ -95,6 +95,7 @@ bool rtl_macro_placer(const char* config_file,
   float halo_width = 2.0;
 
   string region_file = string("macro_blockage.txt");
+  string location_file = string("location.txt");
 
   // These parameters are related to multi-start in shape engine
   int num_thread = 5;
@@ -113,6 +114,7 @@ bool rtl_macro_placer(const char* config_file,
   float gamma = 0.3;                   // weight for outline penalty
   float boundary_weight = 0.06;        // weight for pushing macros to boundary
   float macro_blockage_weight = 0.08;  // weight for macro blockage
+  float location_weight = 0.05;        // weight for preferred location
 
   float learning_rate
       = 0.01;  // learning rate for dynamic weight in cost function
@@ -144,6 +146,7 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "shrink_freq", shrink_freq, logger);
   get_param(params, "halo_width", halo_width, logger);
   get_param(params, "region_file", region_file, logger);
+  get_param(params, "location_file", location_file, logger);
   get_param(params, "num_thread", num_thread, logger);
   get_param(params, "num_run", num_run, logger);
   get_param(params, "heat_rate", heat_rate, logger);
@@ -154,6 +157,7 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "gamma", gamma, logger);
   get_param(params, "boundary_weight", boundary_weight, logger);
   get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
+  get_param(params, "location_weight", location_weight, logger);
   get_param(params, "resize_prob", resize_prob, logger);
   get_param(params, "pos_swap_prob", pos_swap_prob, logger);
   get_param(params, "neg_swap_prob", neg_swap_prob, logger);
@@ -191,6 +195,7 @@ bool rtl_macro_placer(const char* config_file,
                                                     outline_height,
                                                     net_file,
                                                     region_file.c_str(),
+                                                    location_file.c_str(),
                                                     num_level,
                                                     num_worker,
                                                     heat_rate,
@@ -199,6 +204,7 @@ bool rtl_macro_placer(const char* config_file,
                                                     gamma,
                                                     boundary_weight,
                                                     macro_blockage_weight,
+                                                    location_weight,
                                                     resize_prob,
                                                     pos_swap_prob,
                                                     neg_swap_prob,

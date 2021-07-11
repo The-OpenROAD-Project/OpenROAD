@@ -53,6 +53,7 @@ extern "C" {
 #include "autocluster.h"
 #include "opendb/db.h"
 #include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
 
 using utl::PAR;
 
@@ -70,10 +71,12 @@ PartitionMgr::~PartitionMgr()
 
 void PartitionMgr::init(odb::dbDatabase* db,
                         ord::dbVerilogNetwork* network,
+                        sta::dbSta* sta,
                         Logger* logger)
 {
   _db = db;
   _network = network;
+  _sta = sta;
   _logger = logger;
 }
 
@@ -1371,6 +1374,8 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int net_threshold,
                                    unsigned int ignore_net_threshold,
                                    unsigned int virtual_weight,
+                                   unsigned int num_hops,
+                                   unsigned int timing_weight,
                                    const char* report_directory,
                                    const char* file_name)
 {
@@ -1380,7 +1385,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                  "dbPartitionDesign can't run because OpenROAD wasn't compiled "
                  "with LOAD_PARTITIONERS");
 #endif
-  auto clusterer = std::make_unique<AutoClusterMgr>(_network, _db, _logger);
+  auto clusterer = std::make_unique<AutoClusterMgr>(_network, _db, _sta, _logger);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,
                              max_num_inst,
@@ -1388,6 +1393,8 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              net_threshold,
                              ignore_net_threshold,
                              virtual_weight,
+                             num_hops,
+                             timing_weight,
                              report_directory,
                              file_name);
 }
