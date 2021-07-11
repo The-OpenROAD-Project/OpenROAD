@@ -918,14 +918,6 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         }
         sol = max(sol, reqSpcVal);
       }
-      auto cutClass1 = layer->getCutClass(cutBox1.width(), cutBox1.length())->getName();
-      auto cutClass2 = layer->getCutClass(cutBox2.width(), cutBox2.length())->getName();
-      for(auto con : layer->getLef58CutSpacingTableConstraints())
-      {
-        auto dbRule = con->getODBRule();
-        auto reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
-        sol = max(sol, reqSpcVal);
-      }
     }
     // TODO: diff layer
   } 
