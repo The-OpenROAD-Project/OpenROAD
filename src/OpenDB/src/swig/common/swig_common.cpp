@@ -31,8 +31,6 @@
 
 #include <array>
 
-#include "ord/OpenRoad.hh"
-
 #include "opendb/defin.h"
 #include "opendb/lefin.h"
 #include "opendb/lefout.h"
@@ -78,7 +76,7 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
   odb::dbChip* chip2 = db2->getChip();
   if (chip2)
     odb::dbChip::destroy(chip2);
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  utl::Logger* logger = new utl::Logger();
   odb::defin def_reader(db2, logger);
   std::vector<odb::dbLib*> search_libs;
   for (odb::dbLib* lib : db2->getLibs())
@@ -92,7 +90,7 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  utl::Logger* logger = new utl::Logger(NULL);
   odb::lefin lefParser(db, logger, false);
   const char* libname = basename(const_cast<char*>(path));
   if (!db->getTech()) {
@@ -104,8 +102,7 @@ odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 
 odb::dbChip* read_def(odb::dbDatabase* db, std::string path)
 {
-
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  utl::Logger* logger = new utl::Logger(NULL);
   std::vector<odb::dbLib*> libs;
   for (auto* lib : db->getLibs()) {
     libs.push_back(lib);
@@ -118,7 +115,7 @@ int write_def(odb::dbBlock* block,
               const char* path,
               odb::defout::Version version)
 {
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  utl::Logger* logger = new utl::Logger(NULL);
   odb::defout writer(logger);
   writer.setVersion(version);
   return writer.writeBlock(block, path);
@@ -126,21 +123,18 @@ int write_def(odb::dbBlock* block,
 
 int write_lef(odb::dbLib* lib, const char* path)
 {
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-  odb::lefout writer(logger);
+  odb::lefout writer;
   return writer.writeTechAndLib(lib, path);
 }
 
 int write_tech_lef(odb::dbTech* tech, const char* path)
 {
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-  odb::lefout writer(logger);
+  odb::lefout writer;
   return writer.writeTech(tech, path);
 }
 int write_macro_lef(odb::dbLib* lib, const char* path)
 {
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-  odb::lefout writer(logger);
+  odb::lefout writer;
   return writer.writeLib(lib, path);
 }
 
