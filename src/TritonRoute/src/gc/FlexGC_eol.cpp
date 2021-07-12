@@ -36,7 +36,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
     gcSegment* edge,
     frConstraint* constraint)
 {
-  frCoord eolWidth;
+  frCoord eolWidth = 0;
   switch (constraint->typeId()) {
     case frConstraintTypeEnum::frcSpacingEndOfLineConstraint: {
       auto con = (frSpacingEndOfLineConstraint*) constraint;
@@ -210,7 +210,9 @@ void FlexGCWorker::Impl::
         box_t& queryBox,
         gtl::rectangle_data<frCoord>& queryRect)
 {
-  frCoord eolWithin, parWithin, parSpace;
+  frCoord eolWithin = 0;
+  frCoord parWithin = 0;
+  frCoord parSpace = 0;
   switch (constraint->typeId()) {
     case frConstraintTypeEnum::frcSpacingEndOfLineConstraint: {
       auto con = (frSpacingEndOfLineConstraint*) constraint;
@@ -425,7 +427,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
     box_t& queryBox,
     gtl::rectangle_data<frCoord>& queryRect)
 {
-  frCoord eolWithin, eolSpace;
+  frCoord eolWithin = 0;
+  frCoord eolSpace = 0;
   switch (constraint->typeId()) {
     case frConstraintTypeEnum::frcSpacingEndOfLineConstraint: {
       auto con = (frSpacingEndOfLineConstraint*) constraint;

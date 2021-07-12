@@ -434,7 +434,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
   int y2 = box->yMax();
   uint dx = box->getDX();
   uint dy = box->getDY();
-  uint w;
+  uint w = 0;
   switch (box->getDirection()) {
     case odb::dbSBox::UNDEFINED: {
       bool dx_even = ((dx & 1) == 0);
@@ -815,6 +815,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         break;
       default:
         logger->error(DRT, 110, "unsupported NET USE in def");
+        netType = frNetEnum::frcNormalNet;
         break;
     }
     netIn->setType(netType);
@@ -844,6 +845,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         break;
       default:
         logger->error(DRT, 111, "unsupported PIN USE in db");
+        termType = frTermEnum::frcNormalTerm;
         break;
     }
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;

@@ -325,6 +325,7 @@ bool newRipupType2(TreeEdge* treeedge,
 
   } else {
     logger->error(GRT, 226, "Type2 ripup not type L.");
+    return false;
   }
 }
 
@@ -391,6 +392,7 @@ bool newRipupCheck(TreeEdge* treeedge,
   } else {
     printEdge(netID, edgeID);
     logger->error(GRT, 121, "Route type is not maze, netID {}.", netID);
+    return false;
   }
 }
 

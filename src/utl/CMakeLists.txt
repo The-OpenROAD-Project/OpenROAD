@@ -18,6 +18,7 @@ include("openroad")
 swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
+         SCRIPTS   src/Logger.tcl
 )
 
 target_sources(utl
@@ -34,4 +35,11 @@ target_include_directories(utl
 target_link_libraries(utl
   PUBLIC
     spdlog::spdlog
+
+  PRIVATE
+    OpenSTA
+)
+
+messages(
+  TARGET utl
 )

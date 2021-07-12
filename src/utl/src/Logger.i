@@ -120,6 +120,16 @@ metric(const char *metric,
   logger->metric(metric, value);
 }
 
+void
+set_message_level(utl::ToolId tool,
+                  int id,
+                  const char* level_str)
+{
+  Logger *logger = getLogger();
+  auto level = spdlog::level::from_str(level_str);
+  logger->setType(tool, id, level);
+}
+
 } // namespace
 
 %} // inline

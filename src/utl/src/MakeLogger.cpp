@@ -37,9 +37,14 @@
 
 #include <tcl.h>
 #include "utl/Logger.h"
+#include "sta/StaMain.hh"
 
 extern "C" {
 extern int Utl_Init(Tcl_Interp *interp);
+}
+
+namespace sta {
+extern const char *utl_tcl_inits[];
 }
 
 namespace ord {
@@ -58,6 +63,8 @@ initLogger(Logger *logger,
 {
   // Define swig TCL commands.
   Utl_Init(tcl_interp);
+  // Eval encoded sta TCL sources.
+  sta::evalTclInit(tcl_interp, sta::utl_tcl_inits);
 }
 
 } // namespace

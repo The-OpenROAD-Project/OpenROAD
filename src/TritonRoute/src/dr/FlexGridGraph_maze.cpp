@@ -753,6 +753,7 @@ frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer,
         width1, width2, prl);
   drWorker_->getLogger()->error(
       utl::ToolId::DRT, 0, "ERROR FlexGridGraph::getMinSpacingValue");
+  return 0;
 }
 
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks,

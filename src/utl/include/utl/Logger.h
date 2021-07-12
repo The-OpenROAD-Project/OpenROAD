@@ -138,29 +138,21 @@ class Logger
     }
 
   template <typename... Args>
-    __attribute__((noreturn))
     inline void error(ToolId tool,
                       int id,
                       const std::string& message,
                       const Args&... args) 
     {
       log(tool, spdlog::level::err, id, message, args...);
-      char tool_id[32];
-      sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
-      std::runtime_error except(tool_id);
-      // Exception should be caught by swig error handler.
-      throw except;
     }
 
   template <typename... Args>
-    __attribute__((noreturn))
     void critical(ToolId tool,
                   int id,
                   const std::string& message,
                   const Args&... args) 
     {
       log(tool, spdlog::level::level_enum::critical, id, message, args...);
-      exit(EXIT_FAILURE);
     }
 
   // For logging to the metrics file.  This is a much more restricted
@@ -194,6 +186,8 @@ class Logger
   void addSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
 
+  void setType(ToolId tool, int id, spdlog::level::level_enum level);
+
  private:
   template <typename... Args>
     inline void log(ToolId tool,
@@ -203,6 +197,11 @@ class Logger
                     const Args&... args)
     {
       assert(id >= 0 && id <= max_message_id);
+      const auto& overrides = message_overrides_[tool];
+      auto it = overrides.find(id);
+      if (it != overrides.end()) {
+        level = it->second;
+      }
       auto& counter = message_counters_[tool][id];
       auto count = counter++;
       if (count < max_message_print) {
@@ -212,10 +211,7 @@ class Logger
                      tool_names_[tool],
                      id,
                      args...);
-        return;
-      }
-
-      if (count == max_message_print) {
+      } else if (count == max_message_print) {
         logger_->log(level,
                      "[{} {}-{:04d}] message limit reached, "
                      "this message will no longer print",
@@ -224,6 +220,16 @@ class Logger
                      id);
       } else {
         counter--; // to avoid counter overflow
+      }
+
+      if (level == spdlog::level::err) {
+        char tool_id[32];
+        sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
+        std::runtime_error except(tool_id);
+        // Exception should be caught by swig error handler.
+        throw except;
+      } else if (level == spdlog::level::critical) {
+        exit(EXIT_FAILURE);
       }
     }
 
@@ -262,6 +268,10 @@ class Logger
   using MessageCounter = std::array<short, max_message_id + 1>;
   std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
+
+  using MessageOverrides = std::map<int, spdlog::level::level_enum>;
+  std::array<MessageOverrides, ToolId::SIZE> message_overrides_;
+
   bool debug_on_;
   bool first_metric_;
   static constexpr const char *level_names[] = {"TRACE",

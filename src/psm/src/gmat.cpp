@@ -78,6 +78,7 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/)
     } else {
       m_logger->error(utl::PSM, 47, "Node location lookup error for x.");
     }
+    return nullptr;
   } else {
     NodeMap::iterator        x_itr = layer_map.lower_bound(t_x);
     vector<pair<int, Node*>> node_dist_vector;

@@ -123,4 +123,9 @@ void Logger::addSink(spdlog::sink_ptr sink)
   logger_->set_pattern(pattern_); // updates the new sink
 }
 
+void Logger::setType(ToolId tool, int id, spdlog::level::level_enum level)
+{
+  message_overrides_[tool][id] = level;
+}
+
 }  // namespace
