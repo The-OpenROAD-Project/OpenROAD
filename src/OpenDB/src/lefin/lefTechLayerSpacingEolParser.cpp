@@ -481,11 +481,12 @@ bool parse(Iterator first,
          >> (withinRule | toconcavecornerrule | tonotchlengthrule)
          >> -lit(";"));
 
-  bool valid = qi::phrase_parse(first, last, spacingRule, space);
+  bool valid
+      = qi::phrase_parse(first, last, spacingRule, space) && first == last;
 
   if (!valid)
     odb::dbTechLayerSpacingEolRule::destroy(sc);
-  return valid && first == last;
+  return valid;
 }
 }  // namespace lefTechLayerSpacingEol
 

@@ -487,7 +487,8 @@ bool parse(
 
   qi::rule<std::string::iterator, space_type> LEF58_SPACINGTABLE
       = (+(ORTHOGONAL | DEFAULT));
-  bool valid = qi::phrase_parse(first, last, LEF58_SPACINGTABLE, space);
+  bool valid = qi::phrase_parse(first, last, LEF58_SPACINGTABLE, space)
+               && first == last;
   if (!valid && parser->curRule != nullptr) {
     if (!incomplete_props.empty()
         && incomplete_props.back().first == parser->curRule)
@@ -495,7 +496,7 @@ bool parse(
     odb::dbTechLayerCutSpacingTableDefRule::destroy(parser->curRule);
   }
 
-  return valid && first == last;
+  return valid;
 }
 }  // namespace lefTechLayerCutSpacingTable
 

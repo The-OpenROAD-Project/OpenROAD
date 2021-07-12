@@ -97,9 +97,9 @@ bool parse(Iterator first,
            >> -(lit("LENGTH") >> double_) >> -(lit("CUTS") >> int_)
            >> lit(";"))[boost::bind(&addCutClassRule, _1, layer, lefin)]);
 
-  bool valid = qi::phrase_parse(first, last, cutClassRule, space);
-
-  return valid && first == last;
+  bool valid
+      = qi::phrase_parse(first, last, cutClassRule, space) && first == last;
+  return valid;
 }
 }  // namespace lefTechLayerCutClass
 
