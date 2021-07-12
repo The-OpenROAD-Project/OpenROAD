@@ -125,11 +125,11 @@ class FastRouteCore
   void setAllowOverflow(bool allow);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
-  std::vector<int> getTotalCapacityPerLayer() { return cap_per_layer_; }
-  std::vector<int> getTotalUsagePerLayer() { return usage_per_layer_; }
-  std::vector<int> getTotalOverflowPerLayer() { return overflow_per_layer_; }
-  std::vector<int> getMaxHorizontalOverflows() { return max_h_overflow_; }
-  std::vector<int> getMaxVerticalOverflows() { return max_v_overflow_; }
+  const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
+  const std::vector<int>& getTotalUsagePerLayer() { return usage_per_layer_; }
+  const std::vector<int>& getTotalOverflowPerLayer() { return overflow_per_layer_; }
+  const std::vector<int>& getMaxHorizontalOverflows() { return max_h_overflow_; }
+  const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
  private:
   NetRouteMap getRoutes();
