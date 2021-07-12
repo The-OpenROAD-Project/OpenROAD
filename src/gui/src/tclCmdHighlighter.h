@@ -49,7 +49,7 @@ using QRegularExpressionPtr = std::unique_ptr<QRegularExpression>;
 struct CommandRule
 {
   QRegularExpressionPtr pattern;
-  int command; // command index
+  int command; // command index from tclCmdInputWidget::commands_
 };
 
 struct ArgumentRule
@@ -66,7 +66,12 @@ struct CommandRuleGroup
   const QTextCharFormat* format;
 };
 
-using CommandArguments = std::tuple<std::string, bool, std::set<std::string>>;
+struct CommandArguments
+{
+  std::string command; // name of command
+  bool is_toplevel; // command is part of the toplevel namepace
+  std::set<std::string> arguments; // set of command arguments
+};
 
 struct TclCmdUserData : public QTextBlockUserData
 {

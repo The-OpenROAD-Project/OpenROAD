@@ -531,7 +531,7 @@ void TclCmdInputWidget::setCompleterArguments(const std::set<int>& cmds)
   // fill with arguments
   QStringList options;
   for (const int cmd_id : cmds) {
-    for (const auto& args : std::get<2>(commands_[cmd_id])) {
+    for (const auto& args : commands_[cmd_id].arguments) {
       options.append(args.c_str());
     }
   }
