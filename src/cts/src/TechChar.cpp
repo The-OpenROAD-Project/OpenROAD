@@ -831,20 +831,9 @@ void TechChar::setParasitics(
                                  (nodesWithoutBuf * charUnit * _capPerDBU) / 2,
                                  nodesWithoutBuf * charUnit * _resPerDBU,
                                  (nodesWithoutBuf * charUnit * _capPerDBU) / 2);
-      _openStaChar->makePiElmore(firstPin,
-                                 sta::RiseFall::fall(),
-                                 sta::MinMaxAll::all(),
-                                 (nodesWithoutBuf * charUnit * _capPerDBU) / 2,
-                                 nodesWithoutBuf * charUnit * _resPerDBU,
-                                 (nodesWithoutBuf * charUnit * _capPerDBU) / 2);
       _openStaChar->setElmore(firstPin,
                               lastPin,
                               sta::RiseFall::rise(),
-                              sta::MinMaxAll::all(),
-                              nodesWithoutBuf * charUnit * _capPerDBU);
-      _openStaChar->setElmore(firstPin,
-                              lastPin,
-                              sta::RiseFall::fall(),
                               sta::MinMaxAll::all(),
                               nodesWithoutBuf * charUnit * _capPerDBU);
     }
@@ -1138,27 +1127,13 @@ void TechChar::create()
                                      c1,
                                      r1,
                                      c2 + load);
-          _openStaChar->makePiElmore(firstPinLastNet,
-                                     sta::RiseFall::fall(),
-                                     sta::MinMaxAll::all(),
-                                     c1,
-                                     r1,
-                                     c2 + load);
           _openStaChar->setElmore(firstPinLastNet,
                                   outPin,
                                   sta::RiseFall::rise(),
                                   sta::MinMaxAll::all(),
                                   c1 + c2 + load);
-          _openStaChar->setElmore(firstPinLastNet,
-                                  outPin,
-                                  sta::RiseFall::fall(),
-                                  sta::MinMaxAll::all(),
-                                  c1 + c2 + load);
           // For each possible input slew.
           for (float inputslew : _slewsToTest) {
-            // sta2->setInputSlew(inPort, sta::RiseFallBoth::riseFall(),
-            //                   sta::MinMaxAll::all(), inputslew);
-
             // Sets the slew on the input vertex.
             // Here the new pattern is created (combination of load, buffers and
             // slew values).
