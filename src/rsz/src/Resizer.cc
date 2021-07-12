@@ -204,8 +204,7 @@ Resizer::init(OpenRoad *openroad,
 float
 Resizer::routingAlpha() const
 {
-  //return grt_->getAlpha();
-  return 0.3;
+  return grt_->getAlpha();
 }
 
 double
