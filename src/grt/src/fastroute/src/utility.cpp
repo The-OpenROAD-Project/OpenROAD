@@ -38,6 +38,7 @@
 
 #include "DataProc.h"
 #include "DataType.h"
+#include "FastRoute.h"
 #include "flute.h"
 #include "utl/Logger.h"
 
@@ -45,7 +46,7 @@ namespace grt {
 
 using utl::GRT;
 
-void printEdge(int netID, int edgeID)
+void FastRouteCore::printEdge(int netID, int edgeID)
 {
   int i;
   TreeEdge edge;
@@ -68,7 +69,7 @@ void printEdge(int netID, int edgeID)
   logger->report("{}", routes_rpt);
 }
 
-void ConvertToFull3DType2()
+void FastRouteCore::ConvertToFull3DType2()
 {
   short *gridsX, *gridsY, *gridsL, tmpX[MAXLEN], tmpY[MAXLEN], tmpL[MAXLEN];
   int k, netID, edgeID, routeLen;
@@ -146,7 +147,7 @@ static int comparePVPV(const OrderNetPin a, const OrderNetPin b)
   return a.npv < b.npv;
 }
 
-void netpinOrderInc()
+void FastRouteCore::netpinOrderInc()
 {
   int j, d, ind, totalLength, xmin;
   TreeNode* treenodes;
@@ -188,7 +189,7 @@ void netpinOrderInc()
   std::stable_sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVPV);
 }
 
-void fillVIA()
+void FastRouteCore::fillVIA()
 {
   short tmpX[MAXLEN], tmpY[MAXLEN], *gridsX, *gridsY, *gridsL, tmpL[MAXLEN];
   int k, netID, edgeID, routeLen, n1a, n2a;
@@ -288,7 +289,7 @@ void fillVIA()
   }
 }
 
-int threeDVIA()
+int FastRouteCore::threeDVIA()
 {
   short* gridsL;
   int netID, edgeID, deg;
@@ -320,7 +321,7 @@ int threeDVIA()
   return (numVIA);
 }
 
-void assignEdge(int netID, int edgeID, bool processDIR)
+void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
 {
   short *gridsX, *gridsY, *gridsL;
   std::vector<std::vector<int>> gridD;
@@ -612,7 +613,7 @@ void assignEdge(int netID, int edgeID, bool processDIR)
   }
 }
 
-void newLayerAssignmentV4()
+void FastRouteCore::newLayerAssignmentV4()
 {
   short* gridsL;
   int i, k, netID, edgeID, nodeID, routeLen;
@@ -754,7 +755,7 @@ void newLayerAssignmentV4()
   }
 }
 
-void newLA()
+void FastRouteCore::newLA()
 {
   int netID, d, k, edgeID, deg, numpoints, n1, n2;
   bool redundant;
@@ -835,7 +836,7 @@ void newLA()
   ConvertToFull3DType2();
 }
 
-void printEdge3D(int netID, int edgeID)
+void FastRouteCore::printEdge3D(int netID, int edgeID)
 {
   int i;
   TreeEdge edge;
@@ -863,7 +864,7 @@ void printEdge3D(int netID, int edgeID)
   }
 }
 
-void printTree3D(int netID)
+void FastRouteCore::printTree3D(int netID)
 {
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
@@ -878,7 +879,7 @@ void printTree3D(int netID)
   }
 }
 
-void checkRoute3D()
+void FastRouteCore::checkRoute3D()
 {
   short *gridsX, *gridsY, *gridsL;
   int i, netID, edgeID, nodeID, edgelength;
@@ -992,7 +993,7 @@ static int compareTEL(const OrderTree a, const OrderTree b)
   return a.xmin > b.xmin;
 }
 
-void StNetOrder()
+void FastRouteCore::StNetOrder()
 {
   short *gridsX, *gridsY;
   int i, j, d, ind, grid, min_x, min_y;
@@ -1038,7 +1039,7 @@ void StNetOrder()
   std::stable_sort(treeOrderCong.begin(), treeOrderCong.end(), compareTEL);
 }
 
-void recoverEdge(int netID, int edgeID)
+void FastRouteCore::recoverEdge(int netID, int edgeID)
 {
   short *gridsX, *gridsY, *gridsL;
   int i, grid, ymin, xmin, n1a, n2a;
@@ -1114,7 +1115,7 @@ void recoverEdge(int netID, int edgeID)
   }
 }
 
-void checkUsage()
+void FastRouteCore::checkUsage()
 {
   short *gridsX, *gridsY;
   int netID, i, k, edgeID, deg;
@@ -1181,7 +1182,7 @@ void checkUsage()
   }
 }
 
-void check2DEdgesUsage()
+void FastRouteCore::check2DEdgesUsage()
 {
   const int max_usage_multiplier = 40;
   int max_h_edge_usage = max_usage_multiplier * hCapacity;
@@ -1215,7 +1216,7 @@ static int compareEdgeLen(const OrderNetEdge a, const OrderNetEdge b)
   return a.length > b.length;
 }
 
-void netedgeOrderDec(int netID)
+void FastRouteCore::netedgeOrderDec(int netID)
 {
   int j, d, numTreeedges;
 
@@ -1234,7 +1235,7 @@ void netedgeOrderDec(int netID)
   std::stable_sort(netEO.begin(), netEO.end(), compareEdgeLen);
 }
 
-void printEdge2D(int netID, int edgeID)
+void FastRouteCore::printEdge2D(int netID, int edgeID)
 {
   int i;
   TreeEdge edge;
@@ -1262,7 +1263,7 @@ void printEdge2D(int netID, int edgeID)
   }
 }
 
-void printTree2D(int netID)
+void FastRouteCore::printTree2D(int netID)
 {
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
@@ -1277,7 +1278,7 @@ void printTree2D(int netID)
   }
 }
 
-bool checkRoute2DTree(int netID)
+bool FastRouteCore::checkRoute2DTree(int netID)
 {
   bool STHwrong;
   short *gridsX, *gridsY;
@@ -1371,7 +1372,7 @@ bool checkRoute2DTree(int netID)
 }
 
 // Copy Routing Solution for the best routing solution so far
-void copyRS(void)
+void FastRouteCore::copyRS(void)
 {
   int i, j, netID, edgeID, numEdges, numNodes;
 
@@ -1436,7 +1437,7 @@ void copyRS(void)
   }
 }
 
-void copyBR(void)
+void FastRouteCore::copyBR(void)
 {
   short *gridsX, *gridsY;
   int i, j, netID, edgeID, numEdges, numNodes, grid, min_y, min_x;
@@ -1543,7 +1544,7 @@ void copyBR(void)
   }
 }
 
-void freeRR(void)
+void FastRouteCore::freeRR(void)
 {
   int netID, edgeID, numEdges;
   if (sttreesBK != NULL) {
@@ -1562,7 +1563,7 @@ void freeRR(void)
   }
 }
 
-Tree fluteToTree(stt::Tree fluteTree)
+Tree FastRouteCore::fluteToTree(stt::Tree fluteTree)
 {
   Tree tree;
   tree.deg = fluteTree.deg;
@@ -1577,7 +1578,7 @@ Tree fluteToTree(stt::Tree fluteTree)
   return tree;
 }
 
-stt::Tree treeToFlute(Tree tree)
+stt::Tree FastRouteCore::treeToFlute(Tree tree)
 {
   stt::Tree fluteTree;
   fluteTree.deg = tree.deg;
@@ -1591,7 +1592,7 @@ stt::Tree treeToFlute(Tree tree)
   return fluteTree;
 }
 
-int edgeShift(Tree* t, int net)
+int FastRouteCore::edgeShift(Tree* t, int net)
 {
   int i, j, k, l, m, deg, root, x, y, n, n1, n2, n3;
   int maxX, minX, maxY, minY, maxX1, minX1, maxY1, minY1, maxX2, minX2, maxY2,
@@ -1940,7 +1941,7 @@ int edgeShift(Tree* t, int net)
 }
 
 // exchange Steiner nodes at the same position, then call edgeShift()
-int edgeShiftNew(Tree* t, int net)
+int FastRouteCore::edgeShiftNew(Tree* t, int net)
 {
   int i, j, n;
   int deg, pairCnt, cur_pairN1, cur_pairN2;

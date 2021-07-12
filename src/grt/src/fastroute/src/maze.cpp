@@ -42,7 +42,6 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "flute.h"
-#include "utility.h"
 #include "utl/Logger.h"
 
 namespace grt {

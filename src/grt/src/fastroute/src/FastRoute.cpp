@@ -54,8 +54,6 @@
 #include "utl/Logger.h"
 #include "opendb/db.h"
 
-#include "utility.h"
-
 namespace grt {
 
 using utl::GRT;

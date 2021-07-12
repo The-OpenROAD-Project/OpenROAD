@@ -42,6 +42,7 @@
 
 #include "grt/GRoute.h"
 #include "DataType.h"
+#include "flute.h"
 
 namespace utl {
 class Logger;
@@ -311,6 +312,34 @@ class FastRouteCore
                             int netID);
   bool newRipup3DType3(int netID, int edgeID);
   void newRipupNet(int netID);
+
+  // utility functions
+  void printEdge(int netID, int edgeID);
+  void ConvertToFull3DType2();
+  void fillVIA();
+  int threeDVIA();
+  void assignEdge(int netID, int edgeID, bool processDIR);
+  void recoverEdge(int netID, int edgeID);
+  void newLayerAssignmentV4();
+  void netpinOrderInc();
+  void checkRoute3D();
+  void StNetOrder();
+  bool checkRoute2DTree(int netID);
+  void checkUsage();
+  void netedgeOrderDec(int netID);
+  void printTree2D(int netID);
+  void printEdge2D(int netID, int edgeID);
+  void printEdge3D(int netID, int edgeID);
+  void printTree3D(int netID);
+  void check2DEdgesUsage();
+  void newLA();
+  void copyBR(void);
+  void copyRS(void);
+  void freeRR(void);
+  Tree fluteToTree(stt::Tree fluteTree);
+  stt::Tree treeToFlute(Tree tree);
+  int edgeShift(Tree* t, int net);
+  int edgeShiftNew(Tree* t, int net);
 
   int maxNetDegree;
   std::vector<int> cap_per_layer;
