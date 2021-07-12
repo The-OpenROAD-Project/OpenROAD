@@ -269,8 +269,6 @@ class TechChar
   void createStaInstance();
   void setParasitics(std::vector<SolutionData> topologiesVector,
                      unsigned setupWirelength);
-  void setSdc(std::vector<SolutionData> topologiesVector,
-              unsigned setupWirelength);
   ResultData computeTopologyResults(SolutionData solution,
                                     sta::Vertex* outPinVert,
                                     float load,

@@ -851,55 +851,6 @@ void TechChar::setParasitics(
   }
 }
 
-void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
-                      unsigned setupWirelength)
-{
-  // Creates a clock to set input and output delay.
-  sta::Sdc* sdcChar = _openStaChar->sdc();
-  sta::FloatSeq* characterizationClockWave = new sta::FloatSeq;
-  characterizationClockWave->push_back(0);
-  characterizationClockWave->push_back(1);
-  const std::string characterizationClockName
-      = "characlock" + std::to_string(setupWirelength);
-  _openStaChar->makeClock(characterizationClockName.c_str(),
-                          nullptr,
-                          false,
-                          1.0,
-                          characterizationClockWave,
-                          nullptr);
-  sta::Clock* characterizationClock
-      = sdcChar->findClock(characterizationClockName.c_str());
-  // For each topology...
-  for (SolutionData solution : topologiesVector) {
-    // Gets the input and output ports.
-    odb::dbBTerm* inBTerm = solution.inPort->getBTerm();
-    odb::dbBTerm* outBTerm = solution.outPort->getBTerm();
-    sta::Pin* inPin = _dbNetworkChar->dbToSta(inBTerm);
-    sta::Pin* outPin = _dbNetworkChar->dbToSta(outBTerm);
-    // Set the input delay and output delay on each one.
-    _openStaChar->setInputDelay(inPin,
-                                sta::RiseFallBoth::riseFall(),
-                                characterizationClock,
-                                sta::RiseFall::rise(),
-                                nullptr,
-                                false,
-                                false,
-                                sta::MinMaxAll::max(),
-                                true,
-                                0.0);
-    _openStaChar->setOutputDelay(outPin,
-                                 sta::RiseFallBoth::riseFall(),
-                                 characterizationClock,
-                                 sta::RiseFall::rise(),
-                                 nullptr,
-                                 false,
-                                 false,
-                                 sta::MinMaxAll::max(),
-                                 true,
-                                 0.0);
-  }
-}
-
 TechChar::ResultData TechChar::computeTopologyResults(
     TechChar::SolutionData solution,
     sta::Vertex* outPinVert,
@@ -1143,9 +1094,8 @@ void TechChar::create()
         = createPatterns(setupWirelength);
     // Creates the new openSTA instance.
     createStaInstance();
-    // Setup of the parasitics for each net and the input/output delay.
+    // Setup of the parasitics for each net.
     setParasitics(topologiesVector, setupWirelength);
-    setSdc(topologiesVector, setupWirelength);
     // For each topology...
     sta::Graph *graph = _openStaChar->ensureGraph();
     for (SolutionData solution : topologiesVector) {
