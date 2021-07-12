@@ -646,16 +646,16 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
       reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
                               : (cutBox1.right() - cutBox1.left());
     }
-    prep_via2viaForbiddenLen_lef58CutSpc_helper(
-        viaBox1, viaBox2, cutBox2, reqSpcVal, range);
-    forbiddenRanges.push_back(range);
+    forbiddenRanges.push_back(make_pair(0, reqSpcVal));
   }
   if(layer2->getLayerNum() != layer1->getLayerNum())
     for(auto con : layer2->getLef58CutSpacingTableConstraints())
     {
+      auto dbRule = con->getODBRule();
+      if(!dbRule->isLayerValid())
+        continue;
       auto cutClass1 = layer1->getCutClass(cutBox1.width(), cutBox1.length())->getName();
       auto cutClass2 = layer2->getCutClass(cutBox2.width(), cutBox2.length())->getName();
-      auto dbRule = con->getODBRule();
       if(layer1->getName() != dbRule->getSecondLayer()->getName())
         continue;
       reqSpcVal = dbRule->getMaxSpacing(cutClass2, cutClass1);
@@ -663,9 +663,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
         reqSpcVal += isCurrDirY ? (cutBox2.top() - cutBox2.bottom())
                                 : (cutBox2.right() - cutBox2.left());
       }
-      prep_via2viaForbiddenLen_lef58CutSpc_helper(
-          viaBox2, viaBox1, cutBox1, reqSpcVal, range);
-      forbiddenRanges.push_back(range);
+      forbiddenRanges.push_back(make_pair(0, reqSpcVal));
     }
 }
 
