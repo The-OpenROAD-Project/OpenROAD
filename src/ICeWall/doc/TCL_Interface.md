@@ -5,6 +5,7 @@ The following commands can be used from the command prompt to define the padring
  - [define_pad_cell](define_pad_cell.md)
  - [set_padring_options](set_padring_options.md)
  - [set_bump_options](set_bump_options.md)
+ - [set_bump](set_bump.md)
 
 Once the padcells have been added, the padring can be built using the initialize_padring command.
  - [initialize_padring](initialize_padring.md)

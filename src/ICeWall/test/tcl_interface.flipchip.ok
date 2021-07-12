@@ -12,7 +12,7 @@ Trigger errors
 No more errors expected
 [ERROR PAD-0229] The value for row is 23, but must be in the range 1 - 17
 [ERROR PAD-0230] The value for col is 0, but must be in the range 1 - 17
-[ERROR PAD-0217] Attribute row_col row=17, col=1 for padcell sig_4 has already been used for padcell sig_3
+[ERROR PAD-0238] Trying to set bump at (17 1) to be p_ddr_dqs_n_1_io, but it has already been set to p_ddr_dm_1_o
 Trigger errors for incorrect bump options
 [ERROR PAD-0212] Width set for RDL layer metal10 (0.5) is less than the minimum width of the layer in this technology (0.8)
 [ERROR PAD-0214] Spacing set for RDL layer metal10 (0.5) is less than the required spacing for the layer in this technology (0.8)

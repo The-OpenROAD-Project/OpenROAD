@@ -48,8 +48,8 @@ extern void writeRoute3D(char routingfile3D[]);
 extern void checkRoute3D();
 extern void write3D();
 extern void StNetOrder();
-extern Bool checkRoute3DEdgeType2(int netID, int edgeID);
-extern Bool checkRoute2DTree(int netID);
+extern bool checkRoute3DEdgeType2(int netID, int edgeID);
+extern bool checkRoute2DTree(int netID);
 
 extern void printTree3D(int netID);
 extern void recoverEdge(int netID, int edgeID);

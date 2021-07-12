@@ -48,41 +48,41 @@ namespace grt {
 class Grid
 {
  private:
-  long _lowerLeftX;
-  long _lowerLeftY;
-  long _upperRightX;
-  long _upperRightY;
-  long _tileWidth;
-  long _tileHeight;
-  int _xGrids;
-  int _yGrids;
-  bool _perfectRegularX;
-  bool _perfectRegularY;
-  int _numLayers;
-  int _pitchesInTile = 15;
-  std::vector<int> _spacings;
-  std::vector<int> _minWidths;
-  std::vector<int> _horizontalEdgesCapacities;
-  std::vector<int> _verticalEdgesCapacities;
-  std::map<int, std::vector<odb::Rect>> _obstructions;
+  long lower_left_x_;
+  long lower_left_y_;
+  long upper_right_x_;
+  long upper_right_y_;
+  long tile_width_;
+  long tile_height_;
+  int x_grids_;
+  int y_grids_;
+  bool perfect_regular_x_;
+  bool perfect_regular_y_;
+  int num_layers_;
+  int pitches_in_tile_ = 15;
+  std::vector<int> spacings_;
+  std::vector<int> min_widths_;
+  std::vector<int> horizontal_edges_capacities_;
+  std::vector<int> vertical_edges_capacities_;
+  std::map<int, std::vector<odb::Rect>> obstructions_;
 
  public:
   Grid() = default;
   ~Grid() = default;
 
-  void init(const long lowerLeftX,
-            const long lowerLeftY,
-            const long upperRightX,
-            const long upperRightY,
-            const long tileWidth,
-            const long tileHeight,
-            const int xGrids,
-            const int yGrids,
-            const bool perfectRegularX,
-            const bool perfectRegularY,
-            const int numLayers,
+  void init(const long lower_left_x,
+            const long lower_left_y,
+            const long upper_right_x,
+            const long upper_right_y,
+            const long tile_width,
+            const long tile_height,
+            const int x_grids,
+            const int y_grids,
+            const bool perfect_regular_x,
+            const bool perfectR_rgular_y,
+            const int num_layers,
             const std::vector<int>& spacings,
-            const std::vector<int>& minWidths,
+            const std::vector<int>& min_widths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,
             const std::map<int, std::vector<odb::Rect>>& obstructions);
@@ -95,83 +95,83 @@ class Grid
 
   void clear();
 
-  long getLowerLeftX() const { return _lowerLeftX; }
-  long getLowerLeftY() const { return _lowerLeftY; }
+  long getLowerLeftX() const { return lower_left_x_; }
+  long getLowerLeftY() const { return lower_left_y_; }
 
-  void setLowerLeftX(long x) { _lowerLeftX = x; }
-  void setLowerLeftY(long y) { _lowerLeftY = y; }
+  void setLowerLeftX(long x) { lower_left_x_ = x; }
+  void setLowerLeftY(long y) { lower_left_y_ = y; }
 
-  long getUpperRightX() const { return _upperRightX; }
-  long getUpperRightY() const { return _upperRightY; }
+  long getUpperRightX() const { return upper_right_x_; }
+  long getUpperRightY() const { return upper_right_y_; }
 
-  long getTileWidth() const { return _tileWidth; }
-  long getTileHeight() const { return _tileHeight; }
+  long getTileWidth() const { return tile_width_; }
+  long getTileHeight() const { return tile_height_; }
 
-  int getXGrids() const { return _xGrids; }
-  int getYGrids() const { return _yGrids; }
+  int getXGrids() const { return x_grids_; }
+  int getYGrids() const { return y_grids_; }
 
-  bool isPerfectRegularX() const { return _perfectRegularX; }
-  bool isPerfectRegularY() const { return _perfectRegularY; }
+  bool isPerfectRegularX() const { return perfect_regular_x_; }
+  bool isPerfectRegularY() const { return perfect_regular_y_; }
 
-  int getNumLayers() const { return _numLayers; }
+  int getNumLayers() const { return num_layers_; }
 
-  void setPitchesInTile(const int pitchesInTile)
+  void setPitchesInTile(const int pitches_in_tile)
   {
-    _pitchesInTile = pitchesInTile;
+    pitches_in_tile_ = pitches_in_tile;
   }
-  int getPitchesInTile() const { return _pitchesInTile; }
+  int getPitchesInTile() const { return pitches_in_tile_; }
 
-  const std::vector<int>& getSpacings() const { return _spacings; }
-  const std::vector<int>& getMinWidths() const { return _minWidths; }
+  const std::vector<int>& getSpacings() const { return spacings_; }
+  const std::vector<int>& getMinWidths() const { return min_widths_; }
 
-  void addSpacing(int value, int layer) { _spacings[layer] = value; }
-  void addMinWidth(int value, int layer) { _minWidths[layer] = value; }
+  void addSpacing(int value, int layer) { spacings_[layer] = value; }
+  void addMinWidth(int value, int layer) { min_widths_[layer] = value; }
 
   const std::vector<int>& getHorizontalEdgesCapacities()
   {
-    return _horizontalEdgesCapacities;
+    return horizontal_edges_capacities_;
   };
   const std::vector<int>& getVerticalEdgesCapacities()
   {
-    return _verticalEdgesCapacities;
+    return vertical_edges_capacities_;
   };
 
   void addHorizontalCapacity(int value, int layer)
   {
-    _horizontalEdgesCapacities[layer] = value;
+    horizontal_edges_capacities_[layer] = value;
   }
   void addVerticalCapacity(int value, int layer)
   {
-    _verticalEdgesCapacities[layer] = value;
+    vertical_edges_capacities_[layer] = value;
   }
 
   void updateHorizontalEdgesCapacities(int layer, int reduction)
   {
-    _horizontalEdgesCapacities[layer] = reduction;
+    horizontal_edges_capacities_[layer] = reduction;
   };
   void updateVerticalEdgesCapacities(int layer, int reduction)
   {
-    _verticalEdgesCapacities[layer] = reduction;
+    vertical_edges_capacities_[layer] = reduction;
   };
 
   const std::map<int, std::vector<odb::Rect>>& getAllObstructions() const
   {
-    return _obstructions;
+    return obstructions_;
   }
   void addObstruction(int layer, const odb::Rect& obstruction)
   {
-    _obstructions[layer].push_back(obstruction);
+    obstructions_[layer].push_back(obstruction);
   }
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
   std::pair<TILE, TILE> getBlockedTiles(const odb::Rect& obstruction,
-                                        odb::Rect& firstTileBds,
-                                        odb::Rect& lastTileBds);
+                                        odb::Rect& first_tile_bds,
+                                        odb::Rect& last_tile_bds);
 
   int computeTileReduce(const odb::Rect& obs,
                         const odb::Rect& tile,
-                        int trackSpace,
+                        int track_space,
                         bool first,
                         bool direction);
 

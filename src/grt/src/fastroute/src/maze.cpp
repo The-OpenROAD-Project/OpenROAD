@@ -238,7 +238,7 @@ void heapify(float** array, int heapSize, int i)
 {
   int l, r, smallest;
   float* tmp;
-  Bool STOP = FALSE;
+  bool STOP = false;
 
   tmp = array[i];
   do {
@@ -259,7 +259,7 @@ void heapify(float** array, int heapSize, int i)
       i = smallest;
     } else {
       array[i] = tmp;
-      STOP = TRUE;
+      STOP = true;
     }
   } while (!STOP);
 }
@@ -299,13 +299,11 @@ void extractMin(float** array, int arrayLen)
  * round : the number of maze route stages runned
  */
 
-void updateCongestionHistory(int round, int upType)
+void updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj)
 {
   int i, j, grid, maxlimit, overflow;
 
   maxlimit = 0;
-
-  logger->info(GRT, 124, "Update congestion history type {}.", upType);
 
   if (upType == 1) {
     for (i = 0; i < yGrid; i++) {
@@ -343,9 +341,9 @@ void updateCongestionHistory(int round, int upType)
     }
   } else if (upType == 2) {
     if (max_adj < ahTH) {
-      stopDEC = TRUE;
+      stopDEC = true;
     } else {
-      stopDEC = FALSE;
+      stopDEC = false;
     }
     for (i = 0; i < yGrid; i++) {
       for (j = 0; j < xGrid - 1; j++) {
@@ -465,9 +463,6 @@ void updateCongestionHistory(int round, int upType)
         maxlimit = std::max<int>(maxlimit, v_edges[grid].last_usage);
       }
     }
-    //      if (maxlimit < 20) {
-    //              stopDEC = TRUE;
-    //      }
   }
 
   max_adj = maxlimit;
@@ -494,14 +489,14 @@ void setupHeap(int netID,
   int nbr, nbrX, nbrY, cur, edge;
   int x_grid, y_grid, heapcnt;
   int queuehead, queuetail, *queue;
-  Bool* visited;
+  bool* visited;
   TreeEdge* treeedges;
   TreeNode* treenodes;
   Route* route;
 
   for (i = regionY1; i <= regionY2; i++) {
     for (j = regionX1; j <= regionX2; j++)
-      inRegion[i][j] = TRUE;
+      inRegion[i][j] = true;
   }
 
   treeedges = sttrees[netID].edges;
@@ -527,9 +522,9 @@ void setupHeap(int netID,
   {
     numNodes = 2 * d - 2;
 
-    visited = new Bool[numNodes];
+    visited = new bool[numNodes];
     for (i = 0; i < numNodes; i++)
-      visited[i] = FALSE;
+      visited[i] = false;
 
     queue = new int[numNodes];
 
@@ -540,7 +535,7 @@ void setupHeap(int netID,
       // just need to put n1 itself into heap1
       d1[y1][x1] = 0;
       heap1[0] = &d1[y1][x1];
-      visited[n1] = TRUE;
+      visited[n1] = true;
       *heapLen1 = 1;
     } else  // n1 is a Steiner node
     {
@@ -550,7 +545,7 @@ void setupHeap(int netID,
       // add n1 into heap1
       d1[y1][x1] = 0;
       heap1[0] = &d1[y1][x1];
-      visited[n1] = TRUE;
+      visited[n1] = true;
       heapcnt++;
 
       // add n1 into the queue
@@ -562,7 +557,7 @@ void setupHeap(int netID,
         // get cur node from the queuehead
         cur = queue[queuehead];
         queuehead++;
-        visited[cur] = TRUE;
+        visited[cur] = true;
         if (cur >= d)  // cur node is a Steiner node
         {
           for (i = 0; i < 3; i++) {
@@ -570,7 +565,7 @@ void setupHeap(int netID,
             edge = treenodes[cur].edge[i];
             if (nbr != n2)  // not n2
             {
-              if (visited[nbr] == FALSE) {
+              if (visited[nbr] == false) {
                 // put all the grids on the two adjacent tree edges into heap1
                 if (treeedges[edge].route.routelen > 0)  // not a degraded edge
                 {
@@ -626,7 +621,7 @@ void setupHeap(int netID,
       // just need to put n1 itself into heap1
       d2[y2][x2] = 0;
       heap2[0] = &d2[y2][x2];
-      visited[n2] = TRUE;
+      visited[n2] = true;
       *heapLen2 = 1;
     } else  // n2 is a Steiner node
     {
@@ -636,7 +631,7 @@ void setupHeap(int netID,
       // add n2 into heap2
       d2[y2][x2] = 0;
       heap2[0] = &d2[y2][x2];
-      visited[n2] = TRUE;
+      visited[n2] = true;
       heapcnt++;
 
       // add n2 into the queue
@@ -647,7 +642,7 @@ void setupHeap(int netID,
       while (queuetail > queuehead) {
         // get cur node form queuehead
         cur = queue[queuehead];
-        visited[cur] = TRUE;
+        visited[cur] = true;
         queuehead++;
 
         if (cur >= d)  // cur node is a Steiner node
@@ -657,7 +652,7 @@ void setupHeap(int netID,
             edge = treenodes[cur].edge[i];
             if (nbr != n1)  // not n1
             {
-              if (visited[nbr] == FALSE) {
+              if (visited[nbr] == false) {
                 // put all the grids on the two adjacent tree edges into heap2
                 if (treeedges[edge].route.routelen > 0)  // not a degraded edge
                 {
@@ -710,7 +705,7 @@ void setupHeap(int netID,
 
   for (i = regionY1; i <= regionY2; i++) {
     for (j = regionX1; j <= regionX2; j++)
-      inRegion[i][j] = FALSE;
+      inRegion[i][j] = false;
   }
 }
 
@@ -1078,14 +1073,18 @@ void mazeRouteMSMD(int iter,
                    float costHeight,
                    int ripup_threshold,
                    int mazeedge_Threshold,
-                   Bool Ordering,
-                   int cost_type)
+                   bool Ordering,
+                   int cost_type,
+                   float LOGIS_COF,
+                   int VIA,
+                   int slope,
+                   int L)
 {
   int grid, netID, nidRPC;
   float forange;
 
   // maze routing for multi-source, multi-destination
-  Bool hypered, enter;
+  bool hypered, enter;
   int i, j, deg, edgeID, n1, n2, n1x, n1y, n2x, n2y, ymin, ymax, xmin, xmax,
       curX, curY, crossX, crossY, tmpX, tmpY, tmpi, min_x, min_y, num_edges;
   int regionX1, regionX2, regionY1, regionY2;
@@ -1102,9 +1101,11 @@ void mazeRouteMSMD(int iter,
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
+  const int max_usage_multiplier = 40;
+
   // allocate memory for distance and parent and pop_heap
-  h_costTable = new float[max_usage_multiplier * hCapacity];
-  v_costTable = new float[max_usage_multiplier * vCapacity];
+  h_costTable.resize(max_usage_multiplier * hCapacity);
+  v_costTable.resize(max_usage_multiplier * vCapacity);
 
   forange = max_usage_multiplier * hCapacity;
 
@@ -1154,11 +1155,11 @@ void mazeRouteMSMD(int iter,
 
   forange = yGrid * XRANGE;
   for (i = 0; i < forange; i++) {
-    pop_heap2[i] = FALSE;
+    pop_heap2[i] = false;
   }
   for (i = 0; i < yGrid; i++) {
     for (j = 0; j < xGrid; j++)
-      inRegion[i][j] = FALSE;
+      inRegion[i][j] = false;
   }
 
   if (Ordering) {
@@ -1230,8 +1231,8 @@ void mazeRouteMSMD(int iter,
             for (j = regionX1; j <= regionX2; j++) {
               d1[i][j] = BIG_INT;
               d2[i][j] = BIG_INT;
-              hyperH[i][j] = FALSE;
-              hyperV[i][j] = FALSE;
+              hyperH[i][j] = false;
+              hyperV[i][j] = false;
             }
           }
 
@@ -1249,10 +1250,10 @@ void mazeRouteMSMD(int iter,
           // while loop to find shortest path
           ind1 = (heap1[0] - &d1[0][0]);
           for (i = 0; i < heapLen2; i++)
-            pop_heap2[(heap2[i] - &d2[0][0])] = TRUE;
+            pop_heap2[(heap2[i] - &d2[0][0])] = true;
 
           while (pop_heap2[ind1]
-                 == FALSE)  // stop until the grid position been popped out from
+                 == false)  // stop until the grid position been popped out from
                             // both heap1 and heap2
           {
             // relax all the adjacent grids within the enlarged region for
@@ -1291,7 +1292,7 @@ void mazeRouteMSMD(int iter,
                                            + L * h_edges[tmp_grid].last_usage];
 
                   if (tmp_cost < d1[curY][curX] + VIA) {
-                    hyperH[curY][curX] = TRUE;
+                    hyperH[curY][curX] = true;
                   }
                 }
                 tmp = d1[curY][curX] + VIA
@@ -1306,7 +1307,7 @@ void mazeRouteMSMD(int iter,
                 d1[curY][tmpX] = tmp;
                 parentX3[curY][tmpX] = curX;
                 parentY3[curY][tmpX] = curY;
-                HV[curY][tmpX] = FALSE;
+                HV[curY][tmpX] = false;
                 heap1[heapLen1] = &d1[curY][tmpX];
                 heapLen1++;
                 updateHeap(heap1, heapLen1, heapLen1 - 1);
@@ -1316,7 +1317,7 @@ void mazeRouteMSMD(int iter,
                 d1[curY][tmpX] = tmp;
                 parentX3[curY][tmpX] = curX;
                 parentY3[curY][tmpX] = curY;
-                HV[curY][tmpX] = FALSE;
+                HV[curY][tmpX] = false;
                 dtmp = &d1[curY][tmpX];
                 ind = 0;
                 while (heap1[ind] != dtmp)
@@ -1340,7 +1341,7 @@ void mazeRouteMSMD(int iter,
                                            + L * h_edges[tmp_grid].last_usage];
 
                   if (tmp_cost < d1[curY][curX] + VIA) {
-                    hyperH[curY][curX] = TRUE;
+                    hyperH[curY][curX] = true;
                   }
                 }
                 tmp = d1[curY][curX] + VIA
@@ -1355,7 +1356,7 @@ void mazeRouteMSMD(int iter,
                 d1[curY][tmpX] = tmp;
                 parentX3[curY][tmpX] = curX;
                 parentY3[curY][tmpX] = curY;
-                HV[curY][tmpX] = FALSE;
+                HV[curY][tmpX] = false;
                 heap1[heapLen1] = &d1[curY][tmpX];
                 heapLen1++;
                 updateHeap(heap1, heapLen1, heapLen1 - 1);
@@ -1365,7 +1366,7 @@ void mazeRouteMSMD(int iter,
                 d1[curY][tmpX] = tmp;
                 parentX3[curY][tmpX] = curX;
                 parentY3[curY][tmpX] = curY;
-                HV[curY][tmpX] = FALSE;
+                HV[curY][tmpX] = false;
                 dtmp = &d1[curY][tmpX];
                 ind = 0;
                 while (heap1[ind] != dtmp)
@@ -1390,7 +1391,7 @@ void mazeRouteMSMD(int iter,
                                            + L * v_edges[tmp_grid].last_usage];
 
                   if (tmp_cost < d1[curY][curX] + VIA) {
-                    hyperV[curY][curX] = TRUE;
+                    hyperV[curY][curX] = true;
                   }
                 }
                 tmp = d1[curY][curX] + VIA
@@ -1404,7 +1405,7 @@ void mazeRouteMSMD(int iter,
                 d1[tmpY][curX] = tmp;
                 parentX1[tmpY][curX] = curX;
                 parentY1[tmpY][curX] = curY;
-                HV[tmpY][curX] = TRUE;
+                HV[tmpY][curX] = true;
                 heap1[heapLen1] = &d1[tmpY][curX];
                 heapLen1++;
                 updateHeap(heap1, heapLen1, heapLen1 - 1);
@@ -1414,7 +1415,7 @@ void mazeRouteMSMD(int iter,
                 d1[tmpY][curX] = tmp;
                 parentX1[tmpY][curX] = curX;
                 parentY1[tmpY][curX] = curY;
-                HV[tmpY][curX] = TRUE;
+                HV[tmpY][curX] = true;
                 dtmp = &d1[tmpY][curX];
                 ind = 0;
                 while (heap1[ind] != dtmp)
@@ -1439,7 +1440,7 @@ void mazeRouteMSMD(int iter,
                                            + L * v_edges[tmp_grid].last_usage];
 
                   if (tmp_cost < d1[curY][curX] + VIA) {
-                    hyperV[curY][curX] = TRUE;
+                    hyperV[curY][curX] = true;
                   }
                 }
                 tmp = d1[curY][curX] + VIA
@@ -1453,7 +1454,7 @@ void mazeRouteMSMD(int iter,
                 d1[tmpY][curX] = tmp;
                 parentX1[tmpY][curX] = curX;
                 parentY1[tmpY][curX] = curY;
-                HV[tmpY][curX] = TRUE;
+                HV[tmpY][curX] = true;
                 heap1[heapLen1] = &d1[tmpY][curX];
                 heapLen1++;
                 updateHeap(heap1, heapLen1, heapLen1 - 1);
@@ -1463,7 +1464,7 @@ void mazeRouteMSMD(int iter,
                 d1[tmpY][curX] = tmp;
                 parentX1[tmpY][curX] = curX;
                 parentY1[tmpY][curX] = curY;
-                HV[tmpY][curX] = TRUE;
+                HV[tmpY][curX] = true;
                 dtmp = &d1[tmpY][curX];
                 ind = 0;
                 while (heap1[ind] != dtmp)
@@ -1478,7 +1479,7 @@ void mazeRouteMSMD(int iter,
           }  // while loop
 
           for (i = 0; i < heapLen2; i++)
-            pop_heap2[(heap2[i] - &d2[0][0])] = FALSE;
+            pop_heap2[(heap2[i] - &d2[0][0])] = false;
 
           crossX = ind1 % XRANGE;
           crossY = ind1 / XRANGE;
@@ -1489,16 +1490,16 @@ void mazeRouteMSMD(int iter,
           std::vector<int> tmp_gridsX, tmp_gridsY;
           while (d1[curY][curX] != 0)  // loop until reach subtree1
           {
-            hypered = FALSE;
+            hypered = false;
             if (cnt != 0) {
               if (curX != tmpX && hyperH[curY][curX]) {
                 curX = 2 * curX - tmpX;
-                hypered = TRUE;
+                hypered = true;
               }
 
               if (curY != tmpY && hyperV[curY][curX]) {
                 curY = 2 * curY - tmpY;
-                hypered = TRUE;
+                hypered = true;
               }
             }
             tmpX = curX;
@@ -1839,12 +1840,9 @@ void mazeRouteMSMD(int iter,
     }      // loop edgeID
   }
 
-  if (!h_costTable) {
-    delete[] h_costTable;
-  }
-  if (!v_costTable) {
-    delete[] v_costTable;
-  }
+  
+  h_costTable.clear();
+  v_costTable.clear();
 }
 
 int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
