@@ -885,16 +885,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
         _dbNetworkChar->dbToSta(solution.instVector[0]));
     sta::LibertyPort* firstPinLiberty
         = firstInstLiberty->findLibertyPort(_charBufIn.c_str());
-    float firstPinCapRise = firstPinLiberty->capacitance(sta::RiseFall::rise(),
-                                                         sta::MinMax::max());
-    float firstPinCapFall = firstPinLiberty->capacitance(sta::RiseFall::fall(),
-                                                         sta::MinMax::max());
-    float firstPinCap = 0;
-    if (firstPinCapRise > firstPinCapFall) {
-      firstPinCap = firstPinCapRise;
-    } else {
-      firstPinCap = firstPinCapFall;
-    }
+    float firstPinCap = firstPinLiberty->capacitance();
     incap = firstPinCap + (length * _capPerDBU);
   }
   float totalcap = std::floor((incap + (_charCapInter / 2)) / _charCapInter)
