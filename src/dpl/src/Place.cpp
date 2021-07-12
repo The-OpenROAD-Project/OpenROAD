@@ -608,7 +608,7 @@ Opendp::shiftMove(Cell *cell)
   for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
       if (!mapMove(around_cell)) {
-        logger_->warn(DPL, 19, "detailed placement failed on {}",
+        logger_->error(DPL, 19, "detailed placement failed on {}",
                       around_cell->name());
         return false;
       }
