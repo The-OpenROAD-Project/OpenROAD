@@ -43,6 +43,7 @@
 #include "grt/GRoute.h"
 #include "DataType.h"
 #include "flute.h"
+#include "boost/multi_array.hpp"
 
 namespace utl {
 class Logger;
@@ -51,6 +52,8 @@ class Logger;
 namespace odb{
 class dbDatabase;
 }
+
+using boost::multi_array;
 
 namespace grt {
 
@@ -341,6 +344,8 @@ class FastRouteCore
   int edgeShift(Tree* t, int net);
   int edgeShiftNew(Tree* t, int net);
 
+  static const int MAXLEN = 20000;
+
   int maxNetDegree;
   std::vector<int> cap_per_layer;
   std::vector<int> usage_per_layer;
@@ -364,6 +369,83 @@ class FastRouteCore
   float* costHVHtest;  // Vertical first Z
   float* costVtest;    // Vertical segment cost
   float* costTBtest;   // Top and bottom boundary cost
+
+  int XRANGE, YRANGE;
+  int newnetID;
+  int segcount;
+  int pinInd;
+  int numAdjust;
+  int vCapacity;
+  int hCapacity;
+  int MD;
+  int xGrid, yGrid;
+  float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
+  int xcorner, ycorner, wTile, hTile;
+  int enlarge, costheight, ripup_threshold, ahTH;
+  int numValidNets;  // # nets need to be routed (having pins in different grids)
+  int numLayers;
+  int totalOverflow;  // total # overflow
+  FrNet** nets;
+  std::vector<Edge> h_edges;
+  std::vector<Edge> v_edges;
+
+  multi_array<float, 2> d1;
+  multi_array<float, 2> d2;
+  int verbose;
+
+  multi_array<bool, 2> HV;
+  multi_array<bool, 2> hyperV;
+  multi_array<bool, 2> hyperH;
+  multi_array<int, 2> corrEdge;
+
+  std::vector<Segment> seglist;
+  std::vector<int> seglistIndex;  // the index for the segments for each net
+  std::vector<int> seglistCnt;    // the number of segements for each net
+  StTree* sttrees;    // the Steiner trees
+  std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
+  std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
+  std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
+  std::vector<Edge3D> h_edges3D;
+  std::vector<Edge3D> v_edges3D;
+
+  std::vector<OrderNetPin> treeOrderPV;
+  std::vector<OrderTree> treeOrderCong;
+  int viacost;
+
+  multi_array<int, 2> layerGrid;
+  multi_array<int, 2> viaLink;
+
+  multi_array<int, 3> d13D;
+  multi_array<short, 3> d23D;
+
+  multi_array<dirctionT, 3> directions3D;
+  multi_array<int, 3> corrEdge3D;
+  multi_array<parent3D, 3> pr3D;
+
+  int mazeedge_Threshold;
+  multi_array<bool, 2> inRegion;
+
+  int gridHV, gridH, gridV;
+  std::vector<int> gridHs;
+  std::vector<int> gridVs;
+
+  int** heap13D;
+  short** heap23D;
+
+  std::vector<float> h_costTable;
+  std::vector<float> v_costTable;
+  std::vector<OrderNetEdge> netEO;
+  std::vector<int> xcor, ycor, dcor;
+
+  StTree* sttreesBK;
+
+  multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
+
+  float **heap2, **heap1;
+
+  std::vector<bool> pop_heap2;
+
+  utl::Logger* logger;
 };
 
 }  // namespace grt

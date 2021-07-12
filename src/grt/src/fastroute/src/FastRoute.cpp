@@ -48,7 +48,6 @@
 #include <string>
 #include <utility>
 
-#include "DataProc.h"
 #include "DataType.h"
 #include "flute.h"
 #include "utl/Logger.h"
@@ -57,14 +56,6 @@
 namespace grt {
 
 using utl::GRT;
-
-int newnetID;
-int segcount;
-int pinInd;
-int numAdjust;
-int vCapacity;
-int hCapacity;
-int MD;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
 {

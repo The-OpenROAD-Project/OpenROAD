@@ -37,7 +37,6 @@
 
 #include <algorithm>
 
-#include "DataProc.h"
 #include "DataType.h"
 #include "FastRoute.h"
 #include "flute.h"
@@ -99,8 +98,6 @@ static void updateHeap3D(int** array, int arrayLen, int i)
 // extract the entry with minimum distance from Priority queue
 static void extractMin3D(int** array, int arrayLen)
 {
-  if (arrayLen < 1)
-    logger->error(GRT, 183, "Heap underflow.");
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);
 }
@@ -1025,6 +1022,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
             curX = remd % XRANGE;
             curY = remd / XRANGE;
 
+            if (heapLen1 < 1) {
+              logger->error(GRT, 183, "Heap underflow.");
+            }
             extractMin3D(heap13D, heapLen1);
             // pop_heap13D[ind1] = true;
             heapLen1--;
