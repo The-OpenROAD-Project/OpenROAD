@@ -214,11 +214,11 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   yGrid = y;
   numLayers = nLayers;
   if (std::max(xGrid, yGrid) >= 1000) {
-    XRANGE = std::max(xGrid, yGrid);
-    YRANGE = std::max(xGrid, yGrid);
+    x_range_ = std::max(xGrid, yGrid);
+    y_range_ = std::max(xGrid, yGrid);
   } else {
-    XRANGE = 1000;
-    YRANGE = 1000;
+    x_range_ = 1000;
+    y_range_ = 1000;
   }
 
   vCapacity3D.resize(numLayers);
@@ -235,29 +235,29 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   layerGrid.resize(boost::extents[numLayers][MAXLEN]);
   viaLink.resize(boost::extents[numLayers][MAXLEN]);
 
-  d13D.resize(boost::extents[numLayers][YRANGE][XRANGE]);
-  d23D.resize(boost::extents[numLayers][YRANGE][XRANGE]);
+  d13D.resize(boost::extents[numLayers][y_range_][x_range_]);
+  d23D.resize(boost::extents[numLayers][y_range_][x_range_]);
 
-  d1.resize(boost::extents[YRANGE][XRANGE]);
-  d2.resize(boost::extents[YRANGE][XRANGE]);
+  d1.resize(boost::extents[y_range_][x_range_]);
+  d2.resize(boost::extents[y_range_][x_range_]);
 
-  HV.resize(boost::extents[YRANGE][XRANGE]);
-  hyperV.resize(boost::extents[YRANGE][XRANGE]);
-  hyperH.resize(boost::extents[YRANGE][XRANGE]);
-  corrEdge.resize(boost::extents[YRANGE][XRANGE]);
+  HV.resize(boost::extents[y_range_][x_range_]);
+  hyperV.resize(boost::extents[y_range_][x_range_]);
+  hyperH.resize(boost::extents[y_range_][x_range_]);
+  corrEdge.resize(boost::extents[y_range_][x_range_]);
 
-  inRegion.resize(boost::extents[YRANGE][XRANGE]);
+  inRegion.resize(boost::extents[y_range_][x_range_]);
 
-  costHVH.resize(XRANGE);  // Horizontal first Z
-  costVHV.resize(YRANGE);  // Vertical first Z
-  costH.resize(YRANGE);    // Horizontal segment cost
-  costV.resize(XRANGE);    // Vertical segment cost
-  costLR.resize(YRANGE);   // Left and right boundary cost
-  costTB.resize(XRANGE);   // Top and bottom boundary cost
+  costHVH.resize(x_range_);  // Horizontal first Z
+  costVHV.resize(y_range_);  // Vertical first Z
+  costH.resize(y_range_);    // Horizontal segment cost
+  costV.resize(x_range_);    // Vertical segment cost
+  costLR.resize(y_range_);   // Left and right boundary cost
+  costTB.resize(x_range_);   // Top and bottom boundary cost
 
-  costHVHtest.resize(YRANGE);  // Vertical first Z
-  costVtest.resize(XRANGE);    // Vertical segment cost
-  costTBtest.resize(XRANGE);   // Top and bottom boundary cost
+  costHVHtest.resize(y_range_);  // Vertical first Z
+  costVtest.resize(x_range_);    // Vertical segment cost
+  costTBtest.resize(x_range_);   // Top and bottom boundary cost
 }
 
 void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
@@ -639,7 +639,7 @@ void FastRouteCore::initAuxVar()
   gys.resize(numValidNets);
   gs.resize(numValidNets);
 
-  gridHV = XRANGE * YRANGE;
+  gridHV = x_range_ * y_range_;
   gridH = (xGrid - 1) * yGrid;
   gridV = xGrid * (yGrid - 1);
   for (int k = 0; k < numLayers; k++) {
@@ -652,7 +652,7 @@ void FastRouteCore::initAuxVar()
   parentX3.resize(boost::extents[yGrid][xGrid]);
   parentY3.resize(boost::extents[yGrid][xGrid]);
 
-  pop_heap2.resize(yGrid * XRANGE);
+  pop_heap2.resize(yGrid * x_range_);
 
   // allocate memory for priority queue
   heap1 = new float*[yGrid * xGrid];
@@ -758,12 +758,11 @@ NetRouteMap FastRouteCore::run()
   int bwcnt = 0;
 
   // TODO: check this size
-  int maxPin = maxNetDegree;
-  maxPin = 2 * maxPin;
-  xcor.resize(maxPin);
-  ycor.resize(maxPin);
-  dcor.resize(maxPin);
-  netEO.reserve(maxPin);
+  maxNetDegree = 2 * maxNetDegree;
+  xcor.resize(maxNetDegree);
+  ycor.resize(maxNetDegree);
+  dcor.resize(maxNetDegree);
+  netEO.reserve(maxNetDegree);
 
   int SLOPE = 5;
   int THRESH_M = 20;
@@ -1204,42 +1203,42 @@ std::vector<int> FastRouteCore::getOriginalResources()
 
 void FastRouteCore::computeCongestionInformation()
 {
-  cap_per_layer.resize(numLayers);
-  usage_per_layer.resize(numLayers);
-  overflow_per_layer.resize(numLayers);
-  max_h_overflow.resize(numLayers);
-  max_v_overflow.resize(numLayers);
+  cap_per_layer_.resize(numLayers);
+  usage_per_layer_.resize(numLayers);
+  overflow_per_layer_.resize(numLayers);
+  max_h_overflow_.resize(numLayers);
+  max_v_overflow_.resize(numLayers);
 
   for (int l = 0; l < numLayers; l++) {
-    cap_per_layer[l] = 0;
-    usage_per_layer[l] = 0;
-    overflow_per_layer[l] = 0;
-    max_h_overflow[l] = 0;
-    max_v_overflow[l] = 0;
+    cap_per_layer_[l] = 0;
+    usage_per_layer_[l] = 0;
+    overflow_per_layer_[l] = 0;
+    max_h_overflow_[l] = 0;
+    max_v_overflow_[l] = 0;
 
     for (int i = 0; i < yGrid; i++) {
       for (int j = 0; j < xGrid - 1; j++) {
         int grid = i * (xGrid - 1) + j + l * (xGrid - 1) * yGrid;
-        cap_per_layer[l] += h_edges3D[grid].cap;
-        usage_per_layer[l] += h_edges3D[grid].usage;
+        cap_per_layer_[l] += h_edges3D[grid].cap;
+        usage_per_layer_[l] += h_edges3D[grid].usage;
 
         int overflow = h_edges3D[grid].usage - h_edges3D[grid].cap;
         if (overflow > 0) {
-          overflow_per_layer[l] += overflow;
-          max_h_overflow[l] = std::max(max_h_overflow[l], overflow);
+          overflow_per_layer_[l] += overflow;
+          max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
         }
       }
     }
     for (int i = 0; i < yGrid - 1; i++) {
       for (int j = 0; j < xGrid; j++) {
         int grid = i * xGrid + j + l * xGrid * (yGrid - 1);
-        cap_per_layer[l] += v_edges3D[grid].cap;
-        usage_per_layer[l] += v_edges3D[grid].usage;
+        cap_per_layer_[l] += v_edges3D[grid].cap;
+        usage_per_layer_[l] += v_edges3D[grid].usage;
 
         int overflow = v_edges3D[grid].usage - v_edges3D[grid].cap;
         if (overflow > 0) {
-          overflow_per_layer[l] += overflow;
-          max_v_overflow[l] = std::max(max_v_overflow[l], overflow);
+          overflow_per_layer_[l] += overflow;
+          max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
         }
       }
     }

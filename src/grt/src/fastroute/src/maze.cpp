@@ -763,10 +763,10 @@ void FastRouteCore::updateRouteType1(TreeNode* treenodes,
 {
   int i, cnt, A1x, A1y, A2x, A2y;
   int cnt_n1A1, cnt_n1A2, E1_pos;
-  int* gridsX_n1A1 = new int[XRANGE + YRANGE];
-  int* gridsY_n1A1 = new int[XRANGE + YRANGE];
-  int* gridsX_n1A2 = new int[XRANGE + YRANGE];
-  int* gridsY_n1A2 = new int[XRANGE + YRANGE];
+  int* gridsX_n1A1 = new int[x_range_ + y_range_];
+  int* gridsY_n1A1 = new int[x_range_ + y_range_];
+  int* gridsX_n1A2 = new int[x_range_ + y_range_];
+  int* gridsY_n1A2 = new int[x_range_ + y_range_];
 
   A1x = treenodes[A1].x;
   A1y = treenodes[A1].y;
@@ -903,12 +903,12 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
   int edge_n1C1, edge_n1C2, edge_A1A2;
   int cnt_n1A1, cnt_n1A2, cnt_C1C2, E1_pos;
   int len_A1A2, len_n1C1, len_n1C2;
-  int *gridsX_n1A1 = new int[XRANGE + YRANGE],
-      *gridsY_n1A1 = new int[XRANGE + YRANGE];
-  int *gridsX_n1A2 = new int[XRANGE + YRANGE],
-      *gridsY_n1A2 = new int[XRANGE + YRANGE];
-  int *gridsX_C1C2 = new int[XRANGE + YRANGE],
-      *gridsY_C1C2 = new int[XRANGE + YRANGE];
+  int *gridsX_n1A1 = new int[x_range_ + y_range_],
+      *gridsY_n1A1 = new int[x_range_ + y_range_];
+  int *gridsX_n1A2 = new int[x_range_ + y_range_],
+      *gridsY_n1A2 = new int[x_range_ + y_range_];
+  int *gridsX_C1C2 = new int[x_range_ + y_range_],
+      *gridsY_C1C2 = new int[x_range_ + y_range_];
 
   A1x = treenodes[A1].x;
   A1y = treenodes[A1].y;
@@ -1144,7 +1144,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
     }
   }
 
-  forange = yGrid * XRANGE;
+  forange = yGrid * x_range_;
   for (i = 0; i < forange; i++) {
     pop_heap2[i] = false;
   }
@@ -1249,8 +1249,8 @@ void FastRouteCore::mazeRouteMSMD(int iter,
           {
             // relax all the adjacent grids within the enlarged region for
             // source subtree
-            curX = ind1 % XRANGE;
-            curY = ind1 / XRANGE;
+            curX = ind1 % x_range_;
+            curY = ind1 / x_range_;
             if (d1[curY][curX] != 0) {
               if (HV[curY][curX]) {
                 preX = parentX1[curY][curX];
@@ -1472,8 +1472,8 @@ void FastRouteCore::mazeRouteMSMD(int iter,
           for (i = 0; i < heapLen2; i++)
             pop_heap2[(heap2[i] - &d2[0][0])] = false;
 
-          crossX = ind1 % XRANGE;
-          crossY = ind1 / XRANGE;
+          crossX = ind1 % x_range_;
+          crossY = ind1 / x_range_;
 
           cnt = 0;
           curX = crossX;

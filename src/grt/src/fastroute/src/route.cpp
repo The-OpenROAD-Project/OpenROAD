@@ -961,8 +961,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
   int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       ind_i, ind_j, ind_x;
   int vedge, hedge, segWidth, segHeight, curX, curY;
-  int* gridsX = new int[XRANGE + YRANGE];
-  int* gridsY = new int[XRANGE + YRANGE];
+  int* gridsX = new int[x_range_ + y_range_];
+  int* gridsY = new int[x_range_ + y_range_];
   float **cost, tmp;
   bool** parent;  // remember the parent of a grid on the shortest path, true -
                   // same x, false - same y
@@ -1535,8 +1535,8 @@ void FastRouteCore::routeLVEnew(int netID, int edgeID, int threshold, int enlarg
   int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       deg, yminorig, ymaxorig;
   int vedge, hedge, bestp1x, bestp1y;
-  int* gridsX = new int[XRANGE + YRANGE];
-  int* gridsY = new int[XRANGE + YRANGE];
+  int* gridsX = new int[x_range_ + y_range_];
+  int* gridsY = new int[x_range_ + y_range_];
   float tmp1, tmp2, tmp3, tmp4, tmp, best;
   bool LH1, LH2, BL1, BL2;
   TreeEdge *treeedges, *treeedge;

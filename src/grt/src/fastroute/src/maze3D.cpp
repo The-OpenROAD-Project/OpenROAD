@@ -905,7 +905,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
   corrEdge3D.resize(boost::extents[numLayers][yGrid][xGrid]);
   pr3D.resize(boost::extents[numLayers][yGrid][xGrid]);
 
-  pop_heap23D.resize(numLayers * YRANGE * XRANGE);
+  pop_heap23D.resize(numLayers * y_range_ * x_range_);
 
   // allocate memory for priority queue
   heap13D = new int*[yGrid * xGrid * numLayers];
@@ -917,7 +917,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
     }
   }
 
-  range = YRANGE * XRANGE * numLayers;
+  range = y_range_ * x_range_ * numLayers;
   for (i = 0; i < range; i++) {
     pop_heap23D[i] = false;
   }
@@ -1019,8 +1019,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
             // source subtree
             curL = ind1 / (gridHV);
             remd = ind1 % (gridHV);
-            curX = remd % XRANGE;
-            curY = remd / XRANGE;
+            curX = remd % x_range_;
+            curY = remd / x_range_;
 
             if (heapLen1 < 1) {
               logger->error(GRT, 183, "Heap underflow.");
@@ -1258,8 +1258,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
           // gridsY[] temporarily
 
           crossL = ind1 / (gridHV);
-          crossX = (ind1 % (gridHV)) % XRANGE;
-          crossY = (ind1 % (gridHV)) / XRANGE;
+          crossX = (ind1 % (gridHV)) % x_range_;
+          crossY = (ind1 % (gridHV)) / x_range_;
 
           cnt = 0;
           curX = crossX;

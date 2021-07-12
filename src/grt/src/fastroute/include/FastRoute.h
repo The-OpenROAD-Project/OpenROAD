@@ -125,11 +125,11 @@ class FastRouteCore
   void setAllowOverflow(bool allow);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
-  std::vector<int> getTotalCapacityPerLayer() { return cap_per_layer; }
-  std::vector<int> getTotalUsagePerLayer() { return usage_per_layer; }
-  std::vector<int> getTotalOverflowPerLayer() { return overflow_per_layer; }
-  std::vector<int> getMaxHorizontalOverflows() { return max_h_overflow; }
-  std::vector<int> getMaxVerticalOverflows() { return max_v_overflow; }
+  std::vector<int> getTotalCapacityPerLayer() { return cap_per_layer_; }
+  std::vector<int> getTotalUsagePerLayer() { return usage_per_layer_; }
+  std::vector<int> getTotalOverflowPerLayer() { return overflow_per_layer_; }
+  std::vector<int> getMaxHorizontalOverflows() { return max_h_overflow_; }
+  std::vector<int> getMaxVerticalOverflows() { return max_v_overflow_; }
 
  private:
   NetRouteMap getRoutes();
@@ -348,19 +348,52 @@ class FastRouteCore
   static const int BIG_INT = 1e7;     // big integer used as infinity
 
   int maxNetDegree;
-  std::vector<int> cap_per_layer;
-  std::vector<int> usage_per_layer;
-  std::vector<int> overflow_per_layer;
-  std::vector<int> max_h_overflow;
-  std::vector<int> max_v_overflow;
+  std::vector<int> cap_per_layer_;
+  std::vector<int> usage_per_layer_;
+  std::vector<int> overflow_per_layer_;
+  std::vector<int> max_h_overflow_;
+  std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
   bool allow_overflow_;
   int overflow_iterations_;
   int num_nets_;
   int layer_orientation_;
+  int x_range_;
+  int y_range_;
+
+  int newnetID;
+  int segcount;
+  int pinInd;
+  int numAdjust;
+  int vCapacity;
+  int hCapacity;
+  int MD;
+  int xGrid;
+  int yGrid;
+  int xcorner;
+  int ycorner;
+  int wTile;
+  int hTile;
+  int enlarge;
+  int costheight;
+  int ripup_threshold;
+  int ahTH;
+  int numValidNets;  // # nets need to be routed (having pins in different grids)
+  int numLayers;
+  int totalOverflow;  // total # overflow
+  int gridHV;
+  int gridH;
+  int gridV;
+  int verbose;
+  int viacost;
+  int mazeedge_Threshold;
+  float vCapacity_lb;
+  float hCapacity_lb;
+  float vCapacity_ub;
+  float hCapacity_ub;
+
   std::vector<short> vCapacity3D;
   std::vector<short> hCapacity3D;
-
   std::vector<float> costHVH;  // Horizontal first Z
   std::vector<float> costVHV;  // Vertical first Z
   std::vector<float> costH;    // Horizontal segment cost
@@ -370,81 +403,57 @@ class FastRouteCore
   std::vector<float> costHVHtest;  // Vertical first Z
   std::vector<float> costVtest;    // Vertical segment cost
   std::vector<float> costTBtest;   // Top and bottom boundary cost
+  std::vector<float> h_costTable;
+  std::vector<float> v_costTable;
+  std::vector<int> xcor;
+  std::vector<int> ycor;
+  std::vector<int> dcor;
+  std::vector<int> seglistIndex;  // the index for the segments for each net
+  std::vector<int> seglistCnt;    // the number of segements for each net
+  std::vector<int> gridHs;
+  std::vector<int> gridVs;
+  std::vector<bool> pop_heap2;
 
-  int XRANGE, YRANGE;
-  int newnetID;
-  int segcount;
-  int pinInd;
-  int numAdjust;
-  int vCapacity;
-  int hCapacity;
-  int MD;
-  int xGrid, yGrid;
-  float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-  int xcorner, ycorner, wTile, hTile;
-  int enlarge, costheight, ripup_threshold, ahTH;
-  int numValidNets;  // # nets need to be routed (having pins in different grids)
-  int numLayers;
-  int totalOverflow;  // total # overflow
   std::vector<FrNet*> nets;
   std::vector<Edge> h_edges;
   std::vector<Edge> v_edges;
-
-  multi_array<float, 2> d1;
-  multi_array<float, 2> d2;
-  int verbose;
-
-  multi_array<bool, 2> HV;
-  multi_array<bool, 2> hyperV;
-  multi_array<bool, 2> hyperH;
-  multi_array<int, 2> corrEdge;
-
-  std::vector<Segment> seglist;
-  std::vector<int> seglistIndex;  // the index for the segments for each net
-  std::vector<int> seglistCnt;    // the number of segements for each net
-  StTree* sttrees;    // the Steiner trees
+  std::vector<OrderNetEdge> netEO;
   std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
   std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
   std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
   std::vector<Edge3D> h_edges3D;
   std::vector<Edge3D> v_edges3D;
-
+  std::vector<Segment> seglist;
   std::vector<OrderNetPin> treeOrderPV;
   std::vector<OrderTree> treeOrderCong;
-  int viacost;
-
-  multi_array<int, 2> layerGrid;
-  multi_array<int, 2> viaLink;
-
-  multi_array<int, 3> d13D;
-  multi_array<short, 3> d23D;
 
   multi_array<dirctionT, 3> directions3D;
-  multi_array<int, 3> corrEdge3D;
   multi_array<parent3D, 3> pr3D;
-
-  int mazeedge_Threshold;
+  multi_array<int, 3> corrEdge3D;
+  multi_array<int, 2> corrEdge;
+  multi_array<int, 2> layerGrid;
+  multi_array<int, 2> viaLink;
+  multi_array<int, 3> d13D;
+  multi_array<short, 3> d23D;
+  multi_array<short, 2> parentX1;
+  multi_array<short, 2> parentY1;
+  multi_array<short, 2> parentX3;
+  multi_array<short, 2> parentY3;
+  multi_array<float, 2> d1;
+  multi_array<float, 2> d2;
+  multi_array<bool, 2> HV;
+  multi_array<bool, 2> hyperV;
+  multi_array<bool, 2> hyperH;
   multi_array<bool, 2> inRegion;
 
-  int gridHV, gridH, gridV;
-  std::vector<int> gridHs;
-  std::vector<int> gridVs;
+  StTree* sttrees;    // the Steiner trees
+  StTree* sttreesBK;
 
   int** heap13D;
   short** heap23D;
 
-  std::vector<float> h_costTable;
-  std::vector<float> v_costTable;
-  std::vector<OrderNetEdge> netEO;
-  std::vector<int> xcor, ycor, dcor;
-
-  StTree* sttreesBK;
-
-  multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
-
-  float **heap2, **heap1;
-
-  std::vector<bool> pop_heap2;
+  float **heap2;
+  float **heap1;
 
   utl::Logger* logger;
 };
