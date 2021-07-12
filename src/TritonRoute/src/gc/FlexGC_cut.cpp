@@ -96,7 +96,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 {
   auto layerNum1 = viaEdge1->getLayerNum();
   auto layer1 = getTech()->getLayer(layerNum1);
-  auto layerNum2 = viaEdge1->getLayerNum();
+  auto layerNum2 = viaEdge2->getLayerNum();
   auto layer2 = getTech()->getLayer(layerNum2);
   auto class1 = getCutClass(layer1, viaEdge1);
   auto class2 = getCutClass(layer2, viaEdge2);
