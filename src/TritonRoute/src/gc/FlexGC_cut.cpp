@@ -26,16 +26,17 @@
  */
 #include <boost/geometry.hpp>
 
-#include "gc/FlexGC_impl.h"
 #include "frProfileTask.h"
+#include "gc/FlexGC_impl.h"
 #include "opendb/db.h"
 using namespace fr;
 
-
 inline std::string getCutClass(frLayer* layer, gcSegment* viaEdge)
 {
-  auto width = std::min(gtl::length(*viaEdge), gtl::length(*(viaEdge->getPrevEdge())));
-  auto length = std::max(gtl::length(*viaEdge), gtl::length(*(viaEdge->getPrevEdge())));
+  auto width
+      = std::min(gtl::length(*viaEdge), gtl::length(*(viaEdge->getPrevEdge())));
+  auto length
+      = std::max(gtl::length(*viaEdge), gtl::length(*(viaEdge->getPrevEdge())));
   return layer->getCutClass(width, length)->getName();
 }
 
@@ -77,9 +78,21 @@ void FlexGCWorker::Impl::getLef58CutSpacingTblQueryBox(
   gtl::yh(queryRect, queryBox.max_corner().y());
 }
 
-void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1, 
-                                                      gcSegment* viaEdge2, 
-                                                      frLef58CutSpacingTableConstraint* con)
+inline frSquaredDistance getCenterToCenterDist(gcSegment* viaEdge1,
+                                               gcSegment* viaEdge2)
+{
+  auto poly1 = viaEdge1->getPin()->getPolygon();
+  auto poly2 = viaEdge2->getPin()->getPolygon();
+  gtl::point_data<frCoord> centerPt1, centerPt2;
+  gtl::center(centerPt1, *poly1);
+  gtl::center(centerPt2, *poly2);
+  return gtl::distance_squared(centerPt1, centerPt2);
+}
+
+void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
+    gcSegment* viaEdge1,
+    gcSegment* viaEdge2,
+    frLef58CutSpacingTableConstraint* con)
 {
   auto layerNum = viaEdge1->getLayerNum();
   auto layer = getTech()->getLayer(layerNum);
@@ -87,51 +100,68 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
   auto class2 = getCutClass(layer, viaEdge2);
   auto isSide1 = isSideEdge(viaEdge1);
   auto isSide2 = isSideEdge(viaEdge2);
-  gtl::rectangle_data<frCoord> rect1(viaEdge1->low().x(), viaEdge1->low().y(), viaEdge1->high().x(), viaEdge1->high().y());
-  gtl::rectangle_data<frCoord> rect2(viaEdge2->low().x(), viaEdge2->low().y(), viaEdge2->high().x(), viaEdge2->high().y());
-  auto spc = con->getODBRule()->getSpacing(class1, isSide1, class2, isSide2);
-  frSquaredDistance spcSqr = spc.first;
-  //check if parallel
-  if(viaEdge1->getDir() == viaEdge2->getDir() || (int) viaEdge1->getDir() + (int) viaEdge2->getDir() != OPPOSITEDIR)
-  {
-    gtl::rectangle_data<frCoord> checkRect(rect1);
-    gtl::generalized_intersect(checkRect, rect2);
-    //check for prl
-    frCoord prl, dist;
-    if(viaEdge1->getDir() == frDirEnum::S || viaEdge1->getDir() == frDirEnum::N)
-    {
-      //vertical prl
-      dist = gtl::euclidean_distance(checkRect, rect2, gtl::VERTICAL);
-      prl = gtl::delta(checkRect, gtl::VERTICAL);
-    }else
-    {
-      //horizontal prl
-      dist = gtl::euclidean_distance(checkRect, rect2, gtl::HORIZONTAL);
-      prl = gtl::delta(checkRect, gtl::HORIZONTAL);
+  gtl::rectangle_data<frCoord> rect1(viaEdge1->low().x(),
+                                     viaEdge1->low().y(),
+                                     viaEdge1->high().x(),
+                                     viaEdge1->high().y());
+  gtl::rectangle_data<frCoord> rect2(viaEdge2->low().x(),
+                                     viaEdge2->low().y(),
+                                     viaEdge2->high().x(),
+                                     viaEdge2->high().y());
+  auto dbRule = con->getODBRule();
+  bool viol = false;
+  if (dbRule->isCenterAndEdge(class1, class2)) {
+    frSquaredDistance spcSqr
+        = dbRule->getSpacing(class1, isSide1, class2, isSide2, 2);
+    spcSqr *= spcSqr;
+    if (getCenterToCenterDist(viaEdge1, viaEdge2) < spcSqr) {
+      viol = true;
+    } else {
+      spcSqr = dbRule->getSpacing(class1, isSide1, class2, isSide2, 3);
+      spcSqr *= spcSqr;
+      if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2)
+          < spcSqr)
+        viol = true;
     }
-    if(dist == 0 && prl > 0)
-      spcSqr = spc.second;
-  }
-  spcSqr *= spcSqr;
-
-  auto isCenterToCenter = con->getODBRule()->isCenterToCenter(class1, class2);
-  frSquaredDistance dist = 0;
-  if(isCenterToCenter)
-  {
-    auto poly1 = viaEdge1->getPin()->getPolygon();
-    auto poly2 = viaEdge2->getPin()->getPolygon();
-    gtl::point_data<frCoord> centerPt1, centerPt2;
-    gtl::center(centerPt1, *poly1);
-    gtl::center(centerPt2, *poly2);
-    dist = gtl::distance_squared(centerPt1, centerPt2);
   } else {
-    dist = gtl::square_euclidean_distance(rect1, rect2);
+    short strategy = 0;  // first spacing value
+    // check if parallel
+    if (viaEdge1->getDir() == viaEdge2->getDir()
+        || (int) viaEdge1->getDir() + (int) viaEdge2->getDir() != OPPOSITEDIR) {
+      gtl::rectangle_data<frCoord> checkRect(rect1);
+      gtl::generalized_intersect(checkRect, rect2);
+      // check for prl
+      frCoord prl, dist;
+      if (viaEdge1->getDir() == frDirEnum::S
+          || viaEdge1->getDir() == frDirEnum::N) {
+        // vertical prl
+        dist = gtl::euclidean_distance(checkRect, rect2, gtl::VERTICAL);
+        prl = gtl::delta(checkRect, gtl::VERTICAL);
+      } else {
+        // horizontal prl
+        dist = gtl::euclidean_distance(checkRect, rect2, gtl::HORIZONTAL);
+        prl = gtl::delta(checkRect, gtl::HORIZONTAL);
+      }
+      if (dist == 0 && prl > 0)
+        strategy = 1;  // second spacing value
+    }
+    frSquaredDistance spcSqr
+        = dbRule->getSpacing(class1, isSide1, class2, isSide2, strategy);
+    spcSqr *= spcSqr;
+    if (dbRule->isCenterToCenter(class1, class2)) {
+      if (getCenterToCenterDist(viaEdge1, viaEdge2) < spcSqr)
+        viol = true;
+    } else if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2)
+               < spcSqr) {
+      viol = true;
+    }
   }
-  if(dist < spcSqr)
-  {
-    //violation
-    gtl::rectangle_data<frCoord> markerRect(*viaEdge1->getPin()->getMaxRectangles()[0].get());
-    gtl::generalized_intersect(markerRect, *viaEdge2->getPin()->getMaxRectangles()[0].get());
+  if (viol) {
+    // violation
+    gtl::rectangle_data<frCoord> markerRect(
+        *viaEdge1->getPin()->getMaxRectangles()[0].get());
+    gtl::generalized_intersect(
+        markerRect, *viaEdge2->getPin()->getMaxRectangles()[0].get());
     auto net1 = viaEdge1->getNet();
     auto net2 = viaEdge2->getNet();
     auto marker = make_unique<frMarker>();
@@ -143,28 +173,34 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
     marker->setLayerNum(layerNum);
     marker->setConstraint(con);
     marker->addSrc(net1->getOwner());
-    frCoord llx = min(viaEdge1->getLowCorner()->x(), viaEdge1->getHighCorner()->x());
-    frCoord lly = min(viaEdge1->getLowCorner()->y(), viaEdge1->getHighCorner()->y());
-    frCoord urx = max(viaEdge1->getLowCorner()->x(), viaEdge1->getHighCorner()->x());
-    frCoord ury = max(viaEdge1->getLowCorner()->y(), viaEdge1->getHighCorner()->y());
-    marker->addVictim(
-        net1->getOwner(),
-        make_tuple(
-            viaEdge1->getLayerNum(), frBox(llx, lly, urx, ury), viaEdge1->isFixed()));
+    frCoord llx
+        = min(viaEdge1->getLowCorner()->x(), viaEdge1->getHighCorner()->x());
+    frCoord lly
+        = min(viaEdge1->getLowCorner()->y(), viaEdge1->getHighCorner()->y());
+    frCoord urx
+        = max(viaEdge1->getLowCorner()->x(), viaEdge1->getHighCorner()->x());
+    frCoord ury
+        = max(viaEdge1->getLowCorner()->y(), viaEdge1->getHighCorner()->y());
+    marker->addVictim(net1->getOwner(),
+                      make_tuple(viaEdge1->getLayerNum(),
+                                 frBox(llx, lly, urx, ury),
+                                 viaEdge1->isFixed()));
     marker->addSrc(net2->getOwner());
     llx = min(viaEdge2->getLowCorner()->x(), viaEdge2->getHighCorner()->x());
     lly = min(viaEdge2->getLowCorner()->y(), viaEdge2->getHighCorner()->y());
     urx = max(viaEdge2->getLowCorner()->x(), viaEdge2->getHighCorner()->x());
     ury = max(viaEdge2->getLowCorner()->y(), viaEdge2->getHighCorner()->y());
-    marker->addAggressor(
-        net2->getOwner(),
-        make_tuple(
-            viaEdge2->getLayerNum(), frBox(llx, lly, urx, ury), viaEdge2->isFixed()));
+    marker->addAggressor(net2->getOwner(),
+                         make_tuple(viaEdge2->getLayerNum(),
+                                    frBox(llx, lly, urx, ury),
+                                    viaEdge2->isFixed()));
     addMarker(std::move(marker));
   }
 }
 
-void FlexGCWorker::Impl::checkLef58CutSpacingTbl(gcSegment* viaEdge, frLef58CutSpacingTableConstraint* con)
+void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
+    gcSegment* viaEdge,
+    frLef58CutSpacingTableConstraint* con)
 {
   auto layerNum = viaEdge->getLayerNum();
   auto layer = getTech()->getLayer(layerNum);
@@ -178,12 +214,11 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(gcSegment* viaEdge, frLef58CutS
   vector<pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
-  for(auto res : results)
-  {
+  for (auto res : results) {
     auto ptr = res.second;
-    if(ptr->isFixed() && viaEdge->isFixed())
+    if (ptr->isFixed() && viaEdge->isFixed())
       continue;
-    if(ptr->getPin() == viaEdge->getPin())
+    if (ptr->getPin() == viaEdge->getPin())
       continue;
     checkLef58CutSpacingTbl_main(viaEdge, ptr, con);
   }

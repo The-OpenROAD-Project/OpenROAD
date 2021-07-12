@@ -112,10 +112,9 @@ void setPrlForAlignedCut(
 {
   parser->curRule->setPrlForAlignedCut(true);
   for (auto item : params) {
-    auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
-    auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
-    if (from != nullptr && to != nullptr)
-      parser->curRule->addPrlForAlignedCutEntry(from, to);
+    auto from = at_c<0>(item).c_str();
+    auto to = at_c<1>(item).c_str();
+    parser->curRule->addPrlForAlignedCutEntry(from, to);
   }
 }
 void setCenterToCenter(
@@ -124,10 +123,9 @@ void setCenterToCenter(
 {
   parser->curRule->setCenterToCenterValid(true);
   for (auto item : params) {
-    auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
-    auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
-    if (from != nullptr && to != nullptr)
-      parser->curRule->addCenterToCenterEntry(from, to);
+    auto from = at_c<0>(item).c_str();
+    auto to = at_c<1>(item).c_str();
+    parser->curRule->addCenterToCenterEntry(from, to);
   }
 }
 void setCenterAndEdge(
@@ -136,10 +134,9 @@ void setCenterAndEdge(
 {
   parser->curRule->setCenterAndEdgeValid(true);
   for (auto item : params) {
-    auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
-    auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
-    if (from != nullptr && to != nullptr)
-      parser->curRule->addCenterAndEdgeEntry(from, to);
+    auto from = at_c<0>(item).c_str();
+    auto to = at_c<1>(item).c_str();
+    parser->curRule->addCenterAndEdgeEntry(from, to);
   }
 }
 void setPRL(
@@ -168,11 +165,10 @@ void setPRL(
     parser->curRule->setMaxXY(true);
 
   for (auto item : items) {
-    auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
-    auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
+    auto from = at_c<0>(item).c_str();
+    auto to = at_c<1>(item).c_str();
     auto ccPrl = lefin->dbdist(at_c<2>(item));
-    if (from != nullptr && to != nullptr)
-      parser->curRule->addPrlEntry(from, to, ccPrl);
+    parser->curRule->addPrlEntry(from, to, ccPrl);
   }
 }
 void setExactAlignedSpacing(
@@ -193,10 +189,9 @@ void setExactAlignedSpacing(
   }
 
   for (auto item : items) {
-    auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+    auto cls = at_c<0>(item).c_str();
     auto ext = lefin->dbdist(at_c<1>(item));
-    if (cls != nullptr)
-      parser->curRule->addExactElignedEntry(cls, ext);
+    parser->curRule->addExactElignedEntry(cls, ext);
   }
 }
 
@@ -207,10 +202,9 @@ void setNonOppositeEnclosureSpacing(
 {
   parser->curRule->setNonOppositeEnclosureSpacingValid(true);
   for (auto item : params) {
-    auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+    auto cls = at_c<0>(item).c_str();
     auto ext = lefin->dbdist(at_c<1>(item));
-    if (cls != nullptr)
-      parser->curRule->addExactElignedEntry(cls, ext);
+    parser->curRule->addExactElignedEntry(cls, ext);
   }
 }
 
@@ -223,12 +217,11 @@ void setOppositeEnclosureResizeSpacing(
   parser->curRule->setOppositeEnclosureResizeSpacingValid(true);
   std::vector<std::tuple<char*, int, int, int>> table;
   for (auto item : params) {
-    auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+    auto cls = at_c<0>(item).c_str();
     auto rsz1 = lefin->dbdist(at_c<1>(item));
     auto rsz2 = lefin->dbdist(at_c<2>(item));
     auto spacing = lefin->dbdist(at_c<3>(item));
-    if (cls != nullptr)
-      parser->curRule->addOppEncSpacingEntry(cls, rsz1, rsz2, spacing);
+    parser->curRule->addOppEncSpacingEntry(cls, rsz1, rsz2, spacing);
   }
 }
 
@@ -244,10 +237,9 @@ void setEndExtension(
   auto items = at_c<1>(params);
   parser->curRule->setExtension(lefin->dbdist(ext));
   for (auto item : items) {
-    auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+    auto cls = at_c<0>(item).c_str();
     auto ext = lefin->dbdist(at_c<1>(item));
-    if (cls != nullptr)
-      parser->curRule->addEndExtensionEntry(cls, ext);
+    parser->curRule->addEndExtensionEntry(cls, ext);
   }
 }
 void setSideExtension(
@@ -257,10 +249,9 @@ void setSideExtension(
 {
   parser->curRule->setSideExtensionValid(true);
   for (auto item : params) {
-    auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+    auto cls = at_c<0>(item).c_str();
     auto ext = lefin->dbdist(at_c<1>(item));
-    if (cls != nullptr)
-      parser->curRule->addSideExtensionEntry(cls, ext);
+    parser->curRule->addSideExtensionEntry(cls, ext);
   }
 }
 
