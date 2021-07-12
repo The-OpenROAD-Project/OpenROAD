@@ -464,8 +464,8 @@ void TechChar::initCharacterization()
   float dbUnitsPerMicron = static_cast<float>(block->getDbUnitsPerMicron());
 
   // Change resPerSqr and capPerSqr to DBU units.
-  double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12)) / dbUnitsPerMicron;
-  double newResPerSqr = (_options->getResPerSqr()) / dbUnitsPerMicron;
+  double newCapPerSqr = _options->getCapPerSqr() * 1e-12 / dbUnitsPerMicron;
+  double newResPerSqr = _options->getResPerSqr() / dbUnitsPerMicron;
   if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
     getClockLayerResCap(newCapPerSqr, newResPerSqr);
     newCapPerSqr = (newCapPerSqr / dbUnitsPerMicron);  // picofarad/meter to farad/DBU
@@ -644,7 +644,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   // drive) that can exist.
   const unsigned numberOfNodes
       = setupWirelength / _options->getWireSegmentUnit();
-  unsigned numberOfTopologies = std::pow(2, numberOfNodes);
+  unsigned numberOfTopologies = 1 << numberOfNodes;
   std::vector<SolutionData> topologiesVector;
   odb::dbNet* net = nullptr;
   odb::dbWire* wire = nullptr;
