@@ -360,15 +360,15 @@ class FastRouteCore
   std::vector<short> vCapacity3D;
   std::vector<short> hCapacity3D;
 
-  float* costHVH;  // Horizontal first Z
-  float* costVHV;  // Vertical first Z
-  float* costH;    // Horizontal segment cost
-  float* costV;    // Vertical segment cost
-  float* costLR;   // Left and right boundary cost
-  float* costTB;   // Top and bottom boundary cost
-  float* costHVHtest;  // Vertical first Z
-  float* costVtest;    // Vertical segment cost
-  float* costTBtest;   // Top and bottom boundary cost
+  std::vector<float> costHVH;  // Horizontal first Z
+  std::vector<float> costVHV;  // Vertical first Z
+  std::vector<float> costH;    // Horizontal segment cost
+  std::vector<float> costV;    // Vertical segment cost
+  std::vector<float> costLR;   // Left and right boundary cost
+  std::vector<float> costTB;   // Top and bottom boundary cost
+  std::vector<float> costHVHtest;  // Vertical first Z
+  std::vector<float> costVtest;    // Vertical segment cost
+  std::vector<float> costTBtest;   // Top and bottom boundary cost
 
   int XRANGE, YRANGE;
   int newnetID;
@@ -385,7 +385,7 @@ class FastRouteCore
   int numValidNets;  // # nets need to be routed (having pins in different grids)
   int numLayers;
   int totalOverflow;  // total # overflow
-  FrNet** nets;
+  std::vector<FrNet*> nets;
   std::vector<Edge> h_edges;
   std::vector<Edge> v_edges;
 

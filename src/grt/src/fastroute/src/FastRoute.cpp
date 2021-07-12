@@ -73,6 +73,9 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
   allow_overflow_ = false;
   overflow_iterations_ = 0;
   layer_orientation_ = 0;
+  sttrees = nullptr;
+  heap1 = nullptr;
+  heap2 = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -87,15 +90,14 @@ void FastRouteCore::clear()
 
 void FastRouteCore::deleteComponents()
 {
-  if (nets) {
+  if (!nets.empty()) {
     for (int i = 0; i < num_nets_; i++) {
-      if (nets[i])
+      if (nets[i] != nullptr)
         delete nets[i];
       nets[i] = nullptr;
     }
   
-    delete[] nets;
-    nets = nullptr;
+    nets.clear();
   }
 
   h_edges.clear();
@@ -114,18 +116,18 @@ void FastRouteCore::deleteComponents()
   h_edges3D.clear();
   v_edges3D.clear();
 
-  if (sttrees) {
+  if (sttrees != nullptr) {
     for (int i = 0; i < numValidNets; i++) {
       int deg = sttrees[i].deg;
       int numEdges = 2 * deg - 3;
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         TreeEdge* treeedge = &(sttrees[i].edges[edgeID]);
         if (treeedge->len > 0) {
-          if (treeedge->route.gridsX)
+          if (treeedge->route.gridsX != nullptr)
             free(treeedge->route.gridsX);
-          if (treeedge->route.gridsY)
+          if (treeedge->route.gridsY != nullptr)
             free(treeedge->route.gridsY);
-          if (treeedge->route.gridsL)
+          if (treeedge->route.gridsL != nullptr)
             free(treeedge->route.gridsL);
           treeedge->route.gridsX = nullptr;
           treeedge->route.gridsY = nullptr;
@@ -133,11 +135,11 @@ void FastRouteCore::deleteComponents()
         }
       }
 
-      if (sttrees[i].nodes)
+      if (sttrees[i].nodes != nullptr)
         delete[] sttrees[i].nodes;
       sttrees[i].nodes = nullptr;
 
-      if (sttrees[i].edges)
+      if (sttrees[i].edges != nullptr)
         delete[] sttrees[i].edges;
       sttrees[i].edges = nullptr;
     }
@@ -150,14 +152,14 @@ void FastRouteCore::deleteComponents()
   parentX3.resize(boost::extents[0][0]);
   parentY3.resize(boost::extents[0][0]);
 
-  if (heap1)
+  if (heap1 != nullptr)
     delete[] heap1;
-  if (heap2)
+  if (heap2 != nullptr)
     delete[] heap2;
-
-  pop_heap2.clear();
   heap1 = nullptr;
   heap2 = nullptr;
+
+  pop_heap2.clear();
 
   netEO.clear();
 
@@ -186,34 +188,15 @@ void FastRouteCore::deleteComponents()
   layerGrid.resize(boost::extents[0][0]);
   viaLink.resize(boost::extents[0][0]);
 
-  if (costHVH)
-    delete[] costHVH;
-  if (costVHV)
-    delete[] costVHV;
-  if (costH)
-    delete[] costH;
-  if (costV)
-    delete[] costV;
-  if (costLR)
-    delete[] costLR;
-  if (costTB)
-    delete[] costTB;
-  if (costHVHtest)
-    delete[] costHVHtest;
-  if (costVtest)
-    delete[] costVtest;
-  if (costTBtest)
-    delete[] costTBtest;
-
-  costHVH = nullptr;
-  costVHV = nullptr;
-  costH = nullptr;
-  costV = nullptr;
-  costLR = nullptr;
-  costTB = nullptr;
-  costHVHtest = nullptr;
-  costVtest = nullptr;
-  costTBtest = nullptr;
+  costHVH.clear();
+  costVHV.clear();
+  costH.clear();
+  costV.clear();
+  costLR.clear();
+  costTB.clear();
+  costHVHtest.clear();
+  costVtest.clear();
+  costTBtest.clear();
 
   newnetID = 0;
   segcount = 0;
@@ -265,16 +248,16 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   inRegion.resize(boost::extents[YRANGE][XRANGE]);
 
-  costHVH = new float[XRANGE];  // Horizontal first Z
-  costVHV = new float[YRANGE];  // Vertical first Z
-  costH = new float[YRANGE];    // Horizontal segment cost
-  costV = new float[XRANGE];    // Vertical segment cost
-  costLR = new float[YRANGE];   // Left and right boundary cost
-  costTB = new float[XRANGE];   // Top and bottom boundary cost
+  costHVH.resize(XRANGE);  // Horizontal first Z
+  costVHV.resize(YRANGE);  // Vertical first Z
+  costH.resize(YRANGE);    // Horizontal segment cost
+  costV.resize(XRANGE);    // Vertical segment cost
+  costLR.resize(YRANGE);   // Left and right boundary cost
+  costTB.resize(XRANGE);   // Top and bottom boundary cost
 
-  costHVHtest = new float[YRANGE];  // Vertical first Z
-  costVtest = new float[XRANGE];    // Vertical segment cost
-  costTBtest = new float[XRANGE];   // Top and bottom boundary cost
+  costHVHtest.resize(YRANGE);  // Vertical first Z
+  costVtest.resize(XRANGE);    // Vertical segment cost
+  costTBtest.resize(XRANGE);   // Top and bottom boundary cost
 }
 
 void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
@@ -292,7 +275,7 @@ void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
 void FastRouteCore::setNumberNets(int nNets)
 {
   num_nets_ = nNets;
-  nets = new FrNet*[num_nets_];
+  nets.resize(num_nets_);
   for (int i = 0; i < num_nets_; i++)
     nets[i] = new FrNet;
   seglistIndex.resize(num_nets_ + 1);
