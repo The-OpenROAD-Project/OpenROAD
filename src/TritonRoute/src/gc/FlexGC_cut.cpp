@@ -94,10 +94,12 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     gcSegment* viaEdge2,
     frLef58CutSpacingTableConstraint* con)
 {
-  auto layerNum = viaEdge1->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
-  auto class1 = getCutClass(layer, viaEdge1);
-  auto class2 = getCutClass(layer, viaEdge2);
+  auto layerNum1 = viaEdge1->getLayerNum();
+  auto layer1 = getTech()->getLayer(layerNum1);
+  auto layerNum2 = viaEdge1->getLayerNum();
+  auto layer2 = getTech()->getLayer(layerNum2);
+  auto class1 = getCutClass(layer1, viaEdge1);
+  auto class2 = getCutClass(layer2, viaEdge2);
   auto isSide1 = isSideEdge(viaEdge1);
   auto isSide2 = isSideEdge(viaEdge2);
   gtl::rectangle_data<frCoord> rect1(viaEdge1->low().x(),
@@ -170,7 +172,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
               gtl::xh(markerRect),
               gtl::yh(markerRect));
     marker->setBBox(box);
-    marker->setLayerNum(layerNum);
+    marker->setLayerNum(layerNum1);
     marker->setConstraint(con);
     marker->addSrc(net1->getOwner());
     frCoord llx
@@ -182,7 +184,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     frCoord ury
         = max(viaEdge1->getLowCorner()->y(), viaEdge1->getHighCorner()->y());
     marker->addVictim(net1->getOwner(),
-                      make_tuple(viaEdge1->getLayerNum(),
+                      make_tuple(layerNum1,
                                  frBox(llx, lly, urx, ury),
                                  viaEdge1->isFixed()));
     marker->addSrc(net2->getOwner());
@@ -191,7 +193,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     urx = max(viaEdge2->getLowCorner()->x(), viaEdge2->getHighCorner()->x());
     ury = max(viaEdge2->getLowCorner()->y(), viaEdge2->getHighCorner()->y());
     marker->addAggressor(net2->getOwner(),
-                         make_tuple(viaEdge2->getLayerNum(),
+                         make_tuple(layerNum2,
                                     frBox(llx, lly, urx, ury),
                                     viaEdge2->isFixed()));
     addMarker(std::move(marker));
@@ -202,18 +204,23 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     gcSegment* viaEdge,
     frLef58CutSpacingTableConstraint* con)
 {
-  auto layerNum = viaEdge->getLayerNum();
-  auto layer = getTech()->getLayer(layerNum);
+  auto layerNum1 = viaEdge->getLayerNum();
+  auto layer1 = getTech()->getLayer(layerNum1);
   auto isSide = isSideEdge(viaEdge);
-  auto cutClass = getCutClass(layer, viaEdge);
+  auto cutClass = getCutClass(layer1, viaEdge);
   auto dbRule = con->getODBRule();
+  frLayerNum queryLayerNum;
+  if(dbRule->isLayerValid())
+    queryLayerNum = getTech()->getLayer(dbRule->getSecondLayer()->getName())->getLayerNum();
+  else
+    queryLayerNum = layerNum1;
   auto maxSpc = dbRule->getMaxSpacing(cutClass, isSide);
   box_t queryBox;
   gtl::rectangle_data<frCoord> queryRect;
   getLef58CutSpacingTblQueryBox(viaEdge, maxSpc, queryBox, queryRect);
   vector<pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
-  workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
+  workerRegionQuery.queryPolygonEdge(queryBox, queryLayerNum, results);
   for (auto res : results) {
     auto ptr = res.second;
     if (ptr->isFixed() && viaEdge->isFixed())
