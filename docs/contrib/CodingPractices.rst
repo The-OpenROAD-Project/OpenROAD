@@ -81,7 +81,7 @@ Don't use prefixes on file names. That's what directories are for.
 Practice #6
 -----------
 
-Don't name variables theThingy or curThingy. It is just distracting
+Don't name variables theThingy, curThingy or myThingy. It is just distracting
 extraneous verbage. Just use thingy.
 
 .. code-block:: cpp
@@ -140,6 +140,7 @@ Do not use continue. Wrap the body in an if instead.
       for(dbInst* inst : block->getInsts() ) {
             // Skip for standard cells
             if( (int)inst->getBBox()->getDY() <= cellHeight) { continue; }
+            // code
       }
       // use
       for(dbInst* inst : block->getInsts() ){
@@ -251,7 +252,11 @@ Practice #16
 ------------
 
 Don't reinvent functions like round, floor, abs, min, max. Use the std
-versions `int size_x = (int)floor(theCell->width / wsite + 0.5);`
+versions.
+
+.. code-block:: cpp
+
+      int size_x = (int)floor(theCell->width / wsite + 0.5);
 
 Practice #17
 ------------
@@ -496,8 +501,8 @@ Use range iteration. C++ iterators are ugly and verbose.
 Practice #34
 ------------
 
-Don't use end of line comments unless they are very short. Don't forced
-someone reading your code to use a super wide window.
+Don't use end of line comments unless they are very short. Don't
+assume that the person reading your code has a 60" monitor.
 
 .. code-block:: cpp
 
@@ -505,6 +510,23 @@ someone reading your code to use a super wide window.
             // code
       }
 
+Practice #35
+------------
+
+Don't std::pow for powers of 2 or for decimal constants.
+
+.. code-block:: cpp
+
+      // This
+      double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12));
+      // Should be
+      double newCapPerSqr = _options->getCapPerSqr() * 1E-12;
+
+      // This
+      unsigned numberOfTopologies = std::pow(2, numberOfNodes);
+      // Should be
+      unsigned numberOfTopologies = 1 << numberOfNodes;
+      
 Git
 ***
 
