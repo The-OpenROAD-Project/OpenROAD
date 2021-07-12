@@ -968,6 +968,9 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 
   int edgeCost = nets[netID]->edgeCost;
 
+  static const bool same_x =  false;
+  static const bool same_y =  true;
+
   if (sttrees[netID].edges[edgeID].route.routelen
       > threshold)  // only route the non-degraded edges (len>0)
   {
@@ -1016,7 +1019,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                 + std::max(0.0f,
                            v_edges[grid + xl].red + v_edges[grid + xl].est_usage
                                - vCapacity_lb);
-          parent[j + 1][0] = SAMEX;
+          parent[j + 1][0] = same_x;
           grid += xGrid;
         }
         // update other columns
@@ -1029,7 +1032,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                            h_edges[grid + x].red + h_edges[grid + x].est_usage
                                - hCapacity_lb);
             cost[j][i + 1] = cost[j][i] + tmp;
-            parent[j][i + 1] = SAMEY;
+            parent[j][i + 1] = same_y;
             grid += xGrid - 1;
           }
           // update the cost of a column of grids by v-edges
@@ -1045,7 +1048,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                                  - vCapacity_lb);
             if (cost[ind_j][ind_i] > tmp) {
               cost[ind_j][ind_i] = tmp;
-              parent[ind_j][ind_i] = SAMEX;
+              parent[ind_j][ind_i] = same_x;
             }
             grid += xGrid;
           }
@@ -1060,7 +1063,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
           gridsX[cnt] = curX;
           gridsY[cnt] = curY;
           cnt++;
-          if (parent[curY - yl][curX - xl] == SAMEX) {
+          if (parent[curY - yl][curX - xl] == same_x) {
             curY--;
             vedge = curY * xGrid + curX;
             v_edges[vedge].est_usage += edgeCost;
@@ -1088,7 +1091,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                 + std::max(0.0f,
                            v_edges[grid + xl].red + v_edges[grid + xl].est_usage
                                - vCapacity_lb);
-          parent[j][0] = SAMEX;
+          parent[j][0] = same_x;
           grid -= xGrid;
         }
         // update other columns
@@ -1102,7 +1105,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                            h_edges[grid + x].red + h_edges[grid + x].est_usage
                                - hCapacity_lb);
             cost[j][ind_i] = cost[j][i] + tmp;
-            parent[j][ind_i] = SAMEY;
+            parent[j][ind_i] = same_y;
             grid -= xGrid - 1;
           }
           // update the cost of a column of grids by v-edges
@@ -1116,7 +1119,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                                  - vCapacity_lb);
             if (cost[j][ind_i] > tmp) {
               cost[j][ind_i] = tmp;
-              parent[j][ind_i] = SAMEX;
+              parent[j][ind_i] = same_x;
             }
             grid -= xGrid;
           }
@@ -1130,7 +1133,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
           gridsX[cnt] = curX;
           gridsY[cnt] = curY;
           cnt++;
-          if (parent[curY - yr][curX - xl] == SAMEX) {
+          if (parent[curY - yr][curX - xl] == same_x) {
             vedge = curY * xGrid + curX;
             v_edges[vedge].est_usage += edgeCost;
             curY++;
