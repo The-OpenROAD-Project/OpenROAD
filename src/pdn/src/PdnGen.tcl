@@ -2715,8 +2715,10 @@ proc get_global_connect_list {net_name} {
   variable voltage_domains
 
   set connect_patterns {}
-  foreach pattern [dict get $global_connections $net_name] {
-    lappend connect_patterns $pattern
+  if {[dict exist $global_connections $net_name]} {
+    foreach pattern [dict get $global_connections $net_name] {
+      lappend connect_patterns $pattern
+    }
   }
 
   return $connect_patterns
