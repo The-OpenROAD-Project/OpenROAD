@@ -901,12 +901,13 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass,
   else
     classDir += "/END";
 
-  if (obj->row_map_.find(classDir) == obj->row_map_.end())
+  if (obj->col_map_.find(classDir) == obj->col_map_.end())
     return obj->default_;
-  auto itr
-      = std::max_element(obj->spacing_tbl_[obj->row_map_[classDir]].begin(),
-                         obj->spacing_tbl_[obj->row_map_[classDir]].end());
-  return std::max((*itr).first, (*itr).second);
+  auto colIdx = obj->col_map_[classDir];
+  auto spc = 0;
+  for(int rowIdx = 0; rowIdx < obj->spacing_tbl_.size(); rowIdx++)
+    spc = std::max(spc, std::max(obj->spacing_tbl_[rowIdx][colIdx].first,obj->spacing_tbl_[rowIdx][colIdx].second));
+  return spc;
 }
 
 int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(
@@ -973,10 +974,7 @@ int dbTechLayerCutSpacingTableDefRule::getSpacing(std::string c1,
   else
     c2 += "/END";
   std::pair<int, int> res;
-  if (obj->row_map_.find(c1) != obj->row_map_.end()
-      && obj->col_map_.find(c2) != obj->col_map_.end())
-    res = obj->spacing_tbl_[obj->row_map_[c1]][obj->col_map_[c2]];
-  else if (obj->row_map_.find(c2) != obj->row_map_.end()
+  if (obj->row_map_.find(c2) != obj->row_map_.end()
            && obj->col_map_.find(c1) != obj->col_map_.end())
     res = obj->spacing_tbl_[obj->row_map_[c2]][obj->col_map_[c1]];
   else
