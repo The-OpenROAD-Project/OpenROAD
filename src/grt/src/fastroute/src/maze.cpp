@@ -479,8 +479,9 @@ void FastRouteCore::setupHeap(int netID,
   int i, j, d, numNodes, n1, n2, x1, y1, x2, y2;
   int nbr, nbrX, nbrY, cur, edge;
   int x_grid, y_grid, heapcnt;
-  int queuehead, queuetail, *queue;
-  bool* visited;
+  int queuehead, queuetail;
+  std::vector<int> queue;
+  std::vector<bool> visited;
   TreeEdge* treeedges;
   TreeNode* treenodes;
   Route* route;
@@ -513,11 +514,11 @@ void FastRouteCore::setupHeap(int netID,
   {
     numNodes = 2 * d - 2;
 
-    visited = new bool[numNodes];
+    visited.resize(numNodes);
     for (i = 0; i < numNodes; i++)
       visited[i] = false;
 
-    queue = new int[numNodes];
+    queue.resize(numNodes);
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into heap1
@@ -689,9 +690,6 @@ void FastRouteCore::setupHeap(int netID,
       }                     // while queue is not empty
       *heapLen2 = heapcnt;  // record the length of heap2
     }                       // else n2 is not a Pin node
-
-    delete[] queue;
-    delete[] visited;
   }  // net with more than two pins
 
   for (i = regionY1; i <= regionY2; i++) {
@@ -705,8 +703,8 @@ int FastRouteCore::copyGrids(TreeNode* treenodes,
               int n2,
               TreeEdge* treeedges,
               int edge_n1n2,
-              int gridsX_n1n2[],
-              int gridsY_n1n2[])
+              std::vector<int>& gridsX_n1n2,
+              std::vector<int>& gridsY_n1n2)
 {
   int i, cnt;
   int n1x, n1y;
@@ -763,10 +761,10 @@ void FastRouteCore::updateRouteType1(TreeNode* treenodes,
 {
   int i, cnt, A1x, A1y, A2x, A2y;
   int cnt_n1A1, cnt_n1A2, E1_pos;
-  int* gridsX_n1A1 = new int[x_range_ + y_range_];
-  int* gridsY_n1A1 = new int[x_range_ + y_range_];
-  int* gridsX_n1A2 = new int[x_range_ + y_range_];
-  int* gridsY_n1A2 = new int[x_range_ + y_range_];
+  std::vector<int> gridsX_n1A1(x_range_ + y_range_);
+  std::vector<int> gridsY_n1A1(x_range_ + y_range_);
+  std::vector<int> gridsX_n1A2(x_range_ + y_range_);
+  std::vector<int> gridsY_n1A2(x_range_ + y_range_);
 
   A1x = treenodes[A1].x;
   A1y = treenodes[A1].y;
@@ -879,11 +877,6 @@ void FastRouteCore::updateRouteType1(TreeNode* treenodes,
   treeedges[edge_n1A2].route.type = RouteType::MazeRoute;
   treeedges[edge_n1A2].route.routelen = cnt - 1;
   treeedges[edge_n1A2].len = abs(A2x - E1x) + abs(A2y - E1y);
-
-  delete[] gridsX_n1A1;
-  delete[] gridsY_n1A1;
-  delete[] gridsX_n1A2;
-  delete[] gridsY_n1A2;
 }
 
 void FastRouteCore::updateRouteType2(TreeNode* treenodes,
@@ -903,12 +896,13 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
   int edge_n1C1, edge_n1C2, edge_A1A2;
   int cnt_n1A1, cnt_n1A2, cnt_C1C2, E1_pos;
   int len_A1A2, len_n1C1, len_n1C2;
-  int *gridsX_n1A1 = new int[x_range_ + y_range_],
-      *gridsY_n1A1 = new int[x_range_ + y_range_];
-  int *gridsX_n1A2 = new int[x_range_ + y_range_],
-      *gridsY_n1A2 = new int[x_range_ + y_range_];
-  int *gridsX_C1C2 = new int[x_range_ + y_range_],
-      *gridsY_C1C2 = new int[x_range_ + y_range_];
+  
+  std::vector<int> gridsX_n1A1(x_range_ + y_range_);
+  std::vector<int> gridsY_n1A1(x_range_ + y_range_);
+  std::vector<int> gridsX_n1A2(x_range_ + y_range_);
+  std::vector<int> gridsY_n1A2(x_range_ + y_range_);
+  std::vector<int> gridsX_C1C2(x_range_ + y_range_);
+  std::vector<int> gridsY_C1C2(x_range_ + y_range_);
 
   A1x = treenodes[A1].x;
   A1y = treenodes[A1].y;
@@ -1010,13 +1004,6 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
     treeedges[edge_n1C2].route.gridsY[cnt] = gridsY_C1C2[i];
     cnt++;
   }
-
-  delete[] gridsX_n1A1;
-  delete[] gridsY_n1A1;
-  delete[] gridsX_n1A2;
-  delete[] gridsY_n1A2;
-  delete[] gridsX_C1C2;
-  delete[] gridsY_C1C2;
 }
 
 void FastRouteCore::reInitTree(int netID)

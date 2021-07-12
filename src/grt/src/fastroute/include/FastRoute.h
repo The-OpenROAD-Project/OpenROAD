@@ -170,8 +170,8 @@ class FastRouteCore
                 int n2,
                 TreeEdge* treeedges,
                 int edge_n1n2,
-                int gridsX_n1n2[],
-                int gridsY_n1n2[]);
+                std::vector<int>& gridsX_n1n2,
+                std::vector<int>& gridsY_n1n2);
   void updateRouteType1(TreeNode* treenodes,
                         int n1,
                         int A1,

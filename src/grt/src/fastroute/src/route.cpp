@@ -957,10 +957,11 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
   int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       ind_i, ind_j, ind_x;
   int vedge, hedge, segWidth, segHeight, curX, curY;
-  int* gridsX = new int[x_range_ + y_range_];
-  int* gridsY = new int[x_range_ + y_range_];
-  float **cost, tmp;
-  bool** parent;  // remember the parent of a grid on the shortest path, true -
+  std::vector<int> gridsX(x_range_ + y_range_);
+  std::vector<int> gridsY(x_range_ + y_range_);
+  float tmp;
+  multi_array<float, 2> cost;
+  multi_array<bool, 2> parent;  // remember the parent of a grid on the shortest path, true -
                   // same x, false - same y
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
@@ -1001,12 +1002,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
       }
 
       // find the best monotonic path from (x1, y1) to (x2, y2)
-      cost = new float*[segHeight + 1];
-      parent = new bool*[segHeight + 1];
-      for (i = 0; i <= segHeight; i++) {
-        cost[i] = new float[segWidth + 1];
-        parent[i] = new bool[segWidth + 1];
-      }
+      cost.resize(boost::extents[segHeight + 1][segWidth + 1]);
+      parent.resize(boost::extents[segHeight + 1][segWidth + 1]);
 
       xGrid_1 = xGrid - 1;  // tmp variable to save runtime
       if (yl <= yr) {
@@ -1171,18 +1168,11 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
         }
       }
 
-      for (i = 0; i <= segHeight; i++) {
-        delete[] cost[i];
-        delete[] parent[i];
-      }
-      delete[] cost;
-      delete[] parent;
+      cost.resize(boost::extents[0][0]);
+      parent.resize(boost::extents[0][0]);
 
     }  // if(x1!=x2 || y1!=y2)
   }    // non-degraded edge
-
-  delete[] gridsX;
-  delete[] gridsY;
 }
 
 void FastRouteCore::routeMonotonicAll(int threshold)
@@ -1531,8 +1521,8 @@ void FastRouteCore::routeLVEnew(int netID, int edgeID, int threshold, int enlarg
   int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       deg, yminorig, ymaxorig;
   int vedge, hedge, bestp1x, bestp1y;
-  int* gridsX = new int[x_range_ + y_range_];
-  int* gridsY = new int[x_range_ + y_range_];
+  std::vector<int> gridsX(x_range_ + y_range_);
+  std::vector<int> gridsY(x_range_ + y_range_);
   float tmp1, tmp2, tmp3, tmp4, tmp, best;
   bool LH1, LH2, BL1, BL2;
   TreeEdge *treeedges, *treeedge;
@@ -1828,9 +1818,6 @@ void FastRouteCore::routeLVEnew(int netID, int edgeID, int threshold, int enlarg
 
     }  // if(x1!=x2 || y1!=y2)
   }    // non-degraded edge
-
-  delete[] gridsX;
-  delete[] gridsY;
 }
 
 void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
