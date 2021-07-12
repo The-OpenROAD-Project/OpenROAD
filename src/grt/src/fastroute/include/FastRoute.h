@@ -346,6 +346,13 @@ class FastRouteCore
 
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;     // big integer used as infinity
+  static const int NOROUTE = 0;
+  static const int LROUTE = 1;
+  static const int ZROUTE = 2;
+  static const int MAZEROUTE = 3;
+  static const int HCOST =  5000;
+  static const int SAMEX =  0;
+  static const int SAMEY =  1;
 
   int maxNetDegree;
   std::vector<int> cap_per_layer_;

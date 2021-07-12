@@ -47,8 +47,6 @@ namespace grt {
 
 using utl::GRT;
 
-#define FLUTEACCURACY 2
-
 struct pnt
 {
   DTYPE x, y;
@@ -713,6 +711,8 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
   wl = wl1 = 0;
   int totalNumSeg = 0;
 
+  const int flute_accuracy = 2;
+
   for (i = 0; i < numValidNets; i++) {
     FrNet* net = nets[i];
     coeffV = 1.36;
@@ -772,16 +772,16 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
         if (cong) {
-          fluteCongest(i, d, x, y, FLUTEACCURACY, coeffV, &rsmt);
+          fluteCongest(i, d, x, y, flute_accuracy, coeffV, &rsmt);
         } else {
-          fluteNormal(i, d, x, y, FLUTEACCURACY, coeffV, &rsmt);
+          fluteNormal(i, d, x, y, flute_accuracy, coeffV, &rsmt);
         }
         if (d > 3) {
           numShift += edgeShiftNew(&rsmt, i);
         }
       } else {
         // call FLUTE to generate RSMT for each net
-        fluteNormal(i, d, x, y, FLUTEACCURACY, coeffV, &rsmt);
+        fluteNormal(i, d, x, y, flute_accuracy, coeffV, &rsmt);
       }
     }
 

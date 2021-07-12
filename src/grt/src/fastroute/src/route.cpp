@@ -43,10 +43,6 @@
 #include "flute.h"
 #include "utl/Logger.h"
 
-#define HCOST 5000
-#define SAMEX 0
-#define SAMEY 1
-
 namespace grt {
 
 using utl::GRT;

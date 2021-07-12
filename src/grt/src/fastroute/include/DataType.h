@@ -125,11 +125,6 @@ typedef struct TNode
   int stackAlias;
 } TreeNode;
 
-#define NOROUTE 0
-#define LROUTE 1
-#define ZROUTE 2
-#define MAZEROUTE 3
-
 typedef char RouteType;
 
 typedef struct
