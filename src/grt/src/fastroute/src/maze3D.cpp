@@ -227,7 +227,7 @@ void FastRouteCore::setupHeap3D(int netID,
                   // the coordinates of two end nodes of the edge
 
                   route = &(treeedges[edge].route);
-                  if (route->type == MAZEROUTE) {
+                  if (route->type == RouteType::MazeRoute) {
                     for (int j = 1; j < route->routelen;
                          j++)  // don't put edge_n1 and edge_n2 into heap13D
                     {
@@ -244,7 +244,7 @@ void FastRouteCore::setupHeap3D(int netID,
                       }
                     }
 
-                  }  // if MAZEROUTE
+                  }  // if MazeRoute
                 }    // if not a degraded edge (len>0)
 
                 // add the neighbor of cur node into heapQueue
@@ -334,7 +334,7 @@ void FastRouteCore::setupHeap3D(int netID,
                   // the coordinates of two end nodes of the edge
 
                   route = &(treeedges[edge].route);
-                  if (route->type == MAZEROUTE) {
+                  if (route->type == RouteType::MazeRoute) {
                     for (int j = 1; j < route->routelen;
                          j++)  // don't put edge_n1 and edge_n2 into heap23D
                     {
@@ -351,7 +351,7 @@ void FastRouteCore::setupHeap3D(int netID,
                       }
                     }
 
-                  }  // if MAZEROUTE
+                  }  // if MazeRoute
                 }    // if the edge is not degraded (len>0)
 
                 // add the neighbor of cur node into heapQueue
@@ -418,9 +418,9 @@ int FastRouteCore::copyGrids3D(TreeNode* treenodes,
         gridsL_n1n2[cnt] = treeedges[edge_n1n2].route.gridsL[i];
         cnt++;
       }
-    }  // MAZEROUTE
+    }  // MazeRoute
     else
-    // NOROUTE
+    // NoRoute
     {
       fflush(stdout);
       gridsX_n1n2[cnt] = n1x;
@@ -438,14 +438,14 @@ int FastRouteCore::copyGrids3D(TreeNode* treenodes,
         gridsL_n1n2[cnt] = treeedges[edge_n1n2].route.gridsL[i];
         cnt++;
       }
-    }     // MAZEROUTE
-    else  // NOROUTE
+    }     // MazeRoute
+    else  // NoRoute
     {
       gridsX_n1n2[cnt] = n1x;
       gridsY_n1n2[cnt] = n1y;
       gridsL_n1n2[cnt] = n1l;
       cnt++;
-    }  // MAZEROUTE
+    }  // MazeRoute
   }
 
   return (cnt);
@@ -519,7 +519,7 @@ void FastRouteCore::updateRouteType13D(int netID,
   }
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A1].route.type == MAZEROUTE
+  if (treeedges[edge_n1A1].route.type == RouteType::MazeRoute
       && treeedges[edge_n1A1].route.routelen
              > 0)  // if originally allocated, free them first
   {
@@ -557,11 +557,11 @@ void FastRouteCore::updateRouteType13D(int netID,
   }
   treeedges[edge_n1A1].len = abs(A1x - E1x) + abs(A1y - E1y);
 
-  treeedges[edge_n1A1].route.type = MAZEROUTE;
+  treeedges[edge_n1A1].route.type = RouteType::MazeRoute;
   treeedges[edge_n1A1].route.routelen = E1_pos1;
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A2].route.type == MAZEROUTE
+  if (treeedges[edge_n1A2].route.type == RouteType::MazeRoute
       && treeedges[edge_n1A2].route.routelen
              > 0)  // if originally allocated, free them first
   {
@@ -663,7 +663,7 @@ void FastRouteCore::updateRouteType13D(int netID,
     treeedges[edge_n1A2].n1 = A2;
     treeedges[edge_n1A2].n2 = n1;
   }
-  treeedges[edge_n1A2].route.type = MAZEROUTE;
+  treeedges[edge_n1A2].route.type = RouteType::MazeRoute;
   treeedges[edge_n1A2].route.routelen = cnt - 1;
   treeedges[edge_n1A2].len = abs(A2x - E1x) + abs(A2y - E1y);
 
@@ -738,7 +738,7 @@ void FastRouteCore::updateRouteType23D(int netID,
 
   // combine grids on original (A1, n1) and (n1, A2) to new (A1, A2)
   // allocate memory for gridsX[] and gridsY[] of edge_A1A2
-  if (treeedges[edge_A1A2].route.type == MAZEROUTE) {
+  if (treeedges[edge_A1A2].route.type == RouteType::MazeRoute) {
     free(treeedges[edge_A1A2].route.gridsX);
     free(treeedges[edge_A1A2].route.gridsY);
     free(treeedges[edge_A1A2].route.gridsL);
@@ -829,7 +829,7 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
-  if (treeedges[edge_n1C1].route.type == MAZEROUTE
+  if (treeedges[edge_n1C1].route.type == RouteType::MazeRoute
       && treeedges[edge_n1C1].route.routelen > 0) {
     free(treeedges[edge_n1C1].route.gridsX);
     free(treeedges[edge_n1C1].route.gridsY);
@@ -843,7 +843,7 @@ void FastRouteCore::updateRouteType23D(int netID,
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
   treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
-  if (treeedges[edge_n1C2].route.type == MAZEROUTE
+  if (treeedges[edge_n1C2].route.type == RouteType::MazeRoute
       && treeedges[edge_n1C2].route.routelen > 0) {
     free(treeedges[edge_n1C2].route.gridsX);
     free(treeedges[edge_n1C2].route.gridsY);
@@ -1621,7 +1621,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
           newcnt_n1n2 = tailRoom - headRoom + 1;
 
           // update route for edge (n1, n2) and edge usage
-          if (treeedges[edge_n1n2].route.type == MAZEROUTE) {
+          if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
             free(treeedges[edge_n1n2].route.gridsX);
             free(treeedges[edge_n1n2].route.gridsY);
             free(treeedges[edge_n1n2].route.gridsL);
@@ -1633,7 +1633,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
               = (short*) calloc(newcnt_n1n2, sizeof(short));
           treeedges[edge_n1n2].route.gridsL
               = (short*) calloc(newcnt_n1n2, sizeof(short));
-          treeedges[edge_n1n2].route.type = MAZEROUTE;
+          treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
           treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
           treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y- E2y);
 

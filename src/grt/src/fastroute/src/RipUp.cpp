@@ -162,7 +162,7 @@ void FastRouteCore::newRipup(TreeEdge* treeedge,
     ymax = y1;
   }
 
-  if (ripuptype == LROUTE)  // remove L routing
+  if (ripuptype == RouteType::LRoute)  // remove L routing
   {
     if (treeedge->route.xFirst) {
       grid = y1 * (xGrid - 1);
@@ -177,7 +177,7 @@ void FastRouteCore::newRipup(TreeEdge* treeedge,
       for (i = x1; i < x2; i++)
         h_edges[grid + i].est_usage -= edgeCost;
     }
-  } else if (ripuptype == ZROUTE) {
+  } else if (ripuptype == RouteType::ZRoute) {
     // remove Z routing
     Zpoint = treeedge->route.Zpoint;
     if (treeedge->route.HVH) {
@@ -208,7 +208,7 @@ void FastRouteCore::newRipup(TreeEdge* treeedge,
           h_edges[grid + i].est_usage -= edgeCost;
       }
     }
-  } else if (ripuptype == MAZEROUTE) {
+  } else if (ripuptype == RouteType::MazeRoute) {
     gridsX = treeedge->route.gridsX;
     gridsY = treeedge->route.gridsY;
     for (i = 0; i < treeedge->route.routelen; i++) {
@@ -255,7 +255,7 @@ bool FastRouteCore::newRipupType2(TreeEdge* treeedge,
     ymax = y1;
   }
 
-  if (ripuptype == LROUTE)  // remove L routing
+  if (ripuptype == RouteType::LRoute)  // remove L routing
   {
     if (treeedge->route.xFirst) {
       grid = y1 * (xGrid - 1);
@@ -342,7 +342,7 @@ bool FastRouteCore::newRipupCheck(TreeEdge* treeedge,
     return false;
   }  // not ripup for degraded edge
 
-  if (treeedge->route.type == MAZEROUTE) {
+  if (treeedge->route.type == RouteType::MazeRoute) {
     gridsX = treeedge->route.gridsX;
     gridsY = treeedge->route.gridsY;
     for (i = 0; i < treeedge->route.routelen; i++) {
@@ -554,7 +554,7 @@ void FastRouteCore::newRipupNet(int netID)
         ymax = y1;
       }
 
-      if (ripuptype == LROUTE)  // remove L routing
+      if (ripuptype == RouteType::LRoute)  // remove L routing
       {
         if (treeedge->route.xFirst) {
           grid = y1 * (xGrid - 1);
@@ -569,7 +569,7 @@ void FastRouteCore::newRipupNet(int netID)
           for (i = x1; i < x2; i++)
             h_edges[grid + i].est_usage -= edgeCost;
         }
-      } else if (ripuptype == ZROUTE) {
+      } else if (ripuptype == RouteType::ZRoute) {
         // remove Z routing
         Zpoint = treeedge->route.Zpoint;
         if (treeedge->route.HVH) {
@@ -600,7 +600,7 @@ void FastRouteCore::newRipupNet(int netID)
               h_edges[grid + i].est_usage -= edgeCost;
           }
         }
-      } else if (ripuptype == MAZEROUTE) {
+      } else if (ripuptype == RouteType::MazeRoute) {
         gridsX = treeedge->route.gridsX;
         gridsY = treeedge->route.gridsY;
         for (i = 0; i < treeedge->route.routelen; i++) {

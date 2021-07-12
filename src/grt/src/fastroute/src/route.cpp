@@ -343,10 +343,10 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
       }
 
       // ripup the original routing
-      if (ripuptype > NOROUTE)  // it's been routed
+      if (ripuptype > RouteType::NoRoute)  // it's been routed
         newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
 
-      treeedge->route.type = LROUTE;
+      treeedge->route.type = RouteType::LRoute;
       if (x1 == x2)  // V-routing
       {
         for (j = ymin; j < ymax; j++)
@@ -456,7 +456,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
       }  // else L-routing
     }    // if non-degraded edge
     else
-      sttrees[netID].edges[i].route.type = NOROUTE;
+      sttrees[netID].edges[i].route.type = RouteType::NoRoute;
   }  // loop i
 }
 
@@ -468,11 +468,11 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 
   if (firstTime) {
     for (i = 0; i < numValidNets; i++) {
-      newrouteL(i, NOROUTE, viaGuided);  // do L-routing
+      newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
     for (i = 0; i < numValidNets; i++) {
-      newrouteL(i, LROUTE, viaGuided);
+      newrouteL(i, RouteType::LRoute, viaGuided);
     }
   }
 }
@@ -506,7 +506,7 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
       // ripup the original routing
       newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
 
-      treeedge->route.type = ZROUTE;
+      treeedge->route.type = RouteType::ZRoute;
 
       segWidth = x2 - x1;
       if (y1 < y2) {
@@ -659,7 +659,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
           status1 = treenodes[n1a].status;
           status2 = treenodes[n2a].status;
 
-          treeedge->route.type = ZROUTE;
+          treeedge->route.type = RouteType::ZRoute;
 
           segWidth = x2 - x1;
           if (y1 < y2) {
@@ -1237,7 +1237,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 
     // ripup the original routing
 
-    treeedge->route.type = LROUTE;
+    treeedge->route.type = RouteType::LRoute;
     if (x1 == x2)  // V-routing
     {
       for (j = ymin; j < ymax; j++)
@@ -1376,7 +1376,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
     }  // else L-routing
   }    // if non-degraded edge
   else
-    sttrees[netID].edges[edgeID].route.type = NOROUTE;
+    sttrees[netID].edges[edgeID].route.type = RouteType::NoRoute;
 }
 
 void FastRouteCore::spiralRouteAll()
@@ -1896,7 +1896,7 @@ void FastRouteCore::newrouteLInMaze(int netID)
         ymax = y1;
       }
 
-      treeedge->route.type = LROUTE;
+      treeedge->route.type = RouteType::LRoute;
       if (x1 == x2)  // V-routing
       {
         for (j = ymin; j < ymax; j++)
@@ -1962,7 +1962,7 @@ void FastRouteCore::newrouteLInMaze(int netID)
       }  // else L-routing
     }    // if non-degraded edge
     else
-      sttrees[netID].edges[i].route.type = NOROUTE;
+      sttrees[netID].edges[i].route.type = RouteType::NoRoute;
   }  // loop i
 }
 }  // namespace grt

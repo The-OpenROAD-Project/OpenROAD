@@ -42,6 +42,14 @@ class dbNet;
 namespace grt {
 typedef int DTYPE;
 
+enum class RouteType
+{
+  NoRoute,
+  LRoute,
+  ZRoute,
+  MazeRoute
+};
+
 typedef struct
 {
   DTYPE x, y;
@@ -125,25 +133,23 @@ typedef struct TNode
   int stackAlias;
 } TreeNode;
 
-typedef char RouteType;
-
 typedef struct
 {
-  RouteType type;  // type of route: LROUTE, ZROUTE, MAZEROUTE
-  bool xFirst;   // valid for LROUTE, TRUE - the route is horizontal first (x1,
+  RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
+  bool xFirst;   // valid for LRoute, TRUE - the route is horizontal first (x1,
                  // y1) - (x2, y1) - (x2, y2), false (x1, y1) - (x1, y2) - (x2,
                  // y2)
-  bool HVH;      // valid for ZROUTE, TRUE - the route is HVH shape, false - VHV
+  bool HVH;      // valid for ZRoute, TRUE - the route is HVH shape, false - VHV
                  // shape
-  short Zpoint;  // valid for ZROUTE, the position of turn point for Z-shape
+  short Zpoint;  // valid for ZRoute, the position of turn point for Z-shape
   short*
-      gridsX;  // valid for MAZEROUTE, a list of grids (n=routelen+1) the route
+      gridsX;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   short*
-      gridsY;  // valid for MAZEROUTE, a list of grids (n=routelen+1) the route
+      gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   short* gridsL;  // n
-  int routelen;   // valid for MAZEROUTE, the number of edges in the route
+  int routelen;   // valid for MazeRoute, the number of edges in the route
                   // Edge3D *edge;       // list of 3D edges the route go
                   // through;
 

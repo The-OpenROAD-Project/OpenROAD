@@ -115,7 +115,7 @@ void FastRouteCore::ConvertToFull3DType2()
         tmpL[newCNT] = gridsL[j];
         newCNT++;
         // last grid -> node2 finished
-        if (treeedges[edgeID].route.type == MAZEROUTE) {
+        if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
           free(treeedges[edgeID].route.gridsX);
           free(treeedges[edgeID].route.gridsY);
           free(treeedges[edgeID].route.gridsL);
@@ -123,7 +123,7 @@ void FastRouteCore::ConvertToFull3DType2()
         treeedge->route.gridsX = (short*) calloc(newCNT, sizeof(short));
         treeedge->route.gridsY = (short*) calloc(newCNT, sizeof(short));
         treeedge->route.gridsL = (short*) calloc(newCNT, sizeof(short));
-        treeedge->route.type = MAZEROUTE;
+        treeedge->route.type = RouteType::MazeRoute;
         treeedge->route.routelen = newCNT - 1;
 
         for (k = 0; k < newCNT; k++) {
@@ -260,7 +260,7 @@ void FastRouteCore::fillVIA()
           }
           // last grid -> node2 finished
 
-          if (treeedges[edgeID].route.type == MAZEROUTE) {
+          if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
             free(treeedges[edgeID].route.gridsX);
             free(treeedges[edgeID].route.gridsY);
             free(treeedges[edgeID].route.gridsL);
@@ -268,7 +268,7 @@ void FastRouteCore::fillVIA()
           treeedge->route.gridsX = (short*) calloc(newCNT, sizeof(short));
           treeedge->route.gridsY = (short*) calloc(newCNT, sizeof(short));
           treeedge->route.gridsL = (short*) calloc(newCNT, sizeof(short));
-          treeedge->route.type = MAZEROUTE;
+          treeedge->route.type = RouteType::MazeRoute;
           treeedge->route.routelen = newCNT - 1;
 
           for (k = 0; k < newCNT; k++) {
@@ -1481,14 +1481,14 @@ void FastRouteCore::copyBR(void)
         sttrees[netID].edges[edgeID].n1 = sttreesBK[netID].edges[edgeID].n1;
         sttrees[netID].edges[edgeID].n2 = sttreesBK[netID].edges[edgeID].n2;
 
-        sttrees[netID].edges[edgeID].route.type = MAZEROUTE;
+        sttrees[netID].edges[edgeID].route.type = RouteType::MazeRoute;
         sttrees[netID].edges[edgeID].route.routelen
             = sttreesBK[netID].edges[edgeID].route.routelen;
 
         if (sttreesBK[netID].edges[edgeID].len
             > 0)  // only route the non-degraded edges (len>0)
         {
-          sttrees[netID].edges[edgeID].route.type = MAZEROUTE;
+          sttrees[netID].edges[edgeID].route.type = RouteType::MazeRoute;
           sttrees[netID].edges[edgeID].route.routelen
               = sttreesBK[netID].edges[edgeID].route.routelen;
           sttrees[netID].edges[edgeID].route.gridsX

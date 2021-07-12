@@ -836,7 +836,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
       // update the est_usage due to the segments in this net
       newrouteL(
           i,
-          NOROUTE,
+          RouteType::NoRoute,
           true);  // route the net with no previous route for each tree edge
     }
   }  // loop i
