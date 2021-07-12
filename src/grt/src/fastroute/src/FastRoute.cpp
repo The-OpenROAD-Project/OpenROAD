@@ -91,10 +91,10 @@ void FastRouteCore::clear()
 void FastRouteCore::deleteComponents()
 {
   if (!nets.empty()) {
-    for (int i = 0; i < num_nets_; i++) {
-      if (nets[i] != nullptr)
-        delete nets[i];
-      nets[i] = nullptr;
+    for (FrNet* net : nets) {
+      if (net != nullptr)
+        delete net;
+      net = nullptr;
     }
   
     nets.clear();
