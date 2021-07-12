@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "RipUp.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -39,6 +37,7 @@
 
 #include "DataProc.h"
 #include "DataType.h"
+#include "FastRoute.h"
 #include "flute.h"
 #include "pdr/pdrev.h"
 #include "utility.h"
@@ -49,7 +48,7 @@ namespace grt {
 using utl::GRT;
 
 // rip-up a L segment
-void ripupSegL(Segment* seg)
+void FastRouteCore::ripupSegL(Segment* seg)
 {
   int edgeCost = nets[seg->netID]->edgeCost;
   int i, grid;
@@ -79,7 +78,7 @@ void ripupSegL(Segment* seg)
   }
 }
 
-void ripupSegZ(Segment* seg)
+void FastRouteCore::ripupSegZ(Segment* seg)
 {
   int i, grid;
   int ymin, ymax;
@@ -136,7 +135,7 @@ void ripupSegZ(Segment* seg)
   }
 }
 
-void newRipup(TreeEdge* treeedge,
+void FastRouteCore::newRipup(TreeEdge* treeedge,
               TreeNode* treenodes,
               int x1,
               int y1,
@@ -231,7 +230,7 @@ void newRipup(TreeEdge* treeedge,
   }
 }
 
-bool newRipupType2(TreeEdge* treeedge,
+bool FastRouteCore::newRipupType2(TreeEdge* treeedge,
                    TreeNode* treenodes,
                    int x1,
                    int y1,
@@ -327,7 +326,7 @@ bool newRipupType2(TreeEdge* treeedge,
   }
 }
 
-bool newRipupCheck(TreeEdge* treeedge,
+bool FastRouteCore::newRipupCheck(TreeEdge* treeedge,
                    int x1,
                    int y1,
                    int x2,
@@ -393,7 +392,7 @@ bool newRipupCheck(TreeEdge* treeedge,
   }
 }
 
-bool newRipup3DType3(int netID, int edgeID)
+bool FastRouteCore::newRipup3DType3(int netID, int edgeID)
 {
   short *gridsX, *gridsY, *gridsL;
   int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid,
@@ -523,7 +522,7 @@ bool newRipup3DType3(int netID, int edgeID)
   return true;
 }
 
-void newRipupNet(int netID)
+void FastRouteCore::newRipupNet(int netID)
 {
   short *gridsX, *gridsY;
   int i, grid, Zpoint, ymin, ymax, xmin, n1, n2, edgeID;

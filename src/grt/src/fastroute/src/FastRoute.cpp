@@ -50,7 +50,6 @@
 
 #include "DataProc.h"
 #include "DataType.h"
-#include "RipUp.h"
 #include "flute.h"
 #include "utl/Logger.h"
 #include "opendb/db.h"

@@ -282,6 +282,36 @@ class FastRouteCore
   void spiralRoute(int netID, int edgeID);
   void routeLVEnew(int netID, int edgeID, int threshold, int enlarge);
 
+  // ripup functions
+  void ripupSegL(Segment* seg);
+  void ripupSegZ(Segment* seg);
+  void newRipup(TreeEdge* treeedge,
+                       TreeNode* treenodes,
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2,
+                       int netID);
+  bool newRipupCheck(TreeEdge* treeedge,
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2,
+                            int ripup_threshold,
+                            int netID,
+                            int edgeID);
+
+  bool newRipupType2(TreeEdge* treeedge,
+                            TreeNode* treenodes,
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2,
+                            int deg,
+                            int netID);
+  bool newRipup3DType3(int netID, int edgeID);
+  void newRipupNet(int netID);
+
   int maxNetDegree;
   std::vector<int> cap_per_layer;
   std::vector<int> usage_per_layer;
