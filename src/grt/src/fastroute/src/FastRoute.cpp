@@ -87,6 +87,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
   logger = log;
   db_ = db;
   allow_overflow_ = false;
+  overflow_iterations_ = 0;
+  layer_orientation_ = 0;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -860,7 +862,6 @@ NetRouteMap FastRouteCore::run()
     VIA = 0;
     THRESH_M = 0;
     CSTEP1 = 30;
-    slope = BIG_INT;
   }
 
   for (int i = 0; i < LVIter; i++) {
