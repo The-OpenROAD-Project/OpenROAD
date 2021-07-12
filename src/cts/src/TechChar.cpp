@@ -1141,14 +1141,13 @@ void TechChar::create()
     // Creates the topologies for the current wirelength.
     std::vector<SolutionData> topologiesVector
         = createPatterns(setupWirelength);
-    // Creates the new openSTA instance and setup its components with
-    // updateTiming(true);
+    // Creates the new openSTA instance.
     createStaInstance();
-    _openStaChar->updateTiming(true);
     // Setup of the parasitics for each net and the input/output delay.
     setParasitics(topologiesVector, setupWirelength);
     setSdc(topologiesVector, setupWirelength);
     // For each topology...
+    sta::Graph *graph = _openStaChar->ensureGraph();
     for (SolutionData solution : topologiesVector) {
       // Gets the input and output port (as terms, pins and vertices).
       odb::dbBTerm* inBTerm = solution.inPort->getBTerm();
@@ -1158,27 +1157,24 @@ void TechChar::create()
       sta::Pin* outPin = _dbNetworkChar->dbToSta(outBTerm);
       sta::Port* inPort = _dbNetworkChar->port(inPin);
       sta::Port* outPort = _dbNetworkChar->port(outPin);
-      sta::Vertex* outPinVert
-          = _openStaChar->graph()->vertex(outBTerm->staVertexId());
-      sta::Vertex* inPinVert
-          = _openStaChar->graph()->vertex(inBTerm->staVertexId());
+      sta::Vertex* outPinVert = graph->pinLoadVertex(outPin);
+      sta::Vertex* inPinVert = graph->pinDrvrVertex(inPin);
 
       // Gets the first pin of the last net. Needed to set a new parasitic
       // (load) value.
       sta::Pin* firstPinLastNet = nullptr;
-      if (lastNet->getBTerms().size()
-          > 1) {  // Parasitics for purewire segment.
-                  // First and last pin are already available.
+      if (lastNet->getBTerms().size() > 1) {
+        // Parasitics for purewire segment.
+        // First and last pin are already available.
         firstPinLastNet = inPin;
-      } else {  // Parasitics for the end/start of a net. One Port and one
-                // instance pin.
+      } else {
+        // Parasitics for the end/start of a net. One Port and one
+        // instance pin.
         odb::dbITerm* netITerm = lastNet->get1stITerm();
         firstPinLastNet = _dbNetworkChar->dbToSta(netITerm);
       }
 
-      float c1 = 0;
-      float c2 = 0;
-      float r1 = 0;
+      float c1, c2, r1;
       bool piExists = false;
       // Gets the parasitics that are currently used for the last net.
       _openStaChar->findPiElmore(firstPinLastNet,
@@ -1194,9 +1190,6 @@ void TechChar::create()
       do {
         // For each possible load.
         for (float load : _loadsToTest) {
-          // sta2->setPortExtPinCap(outPort, sta::RiseFallBoth::riseFall(),
-          //                       sta::MinMaxAll::all(), load );
-
           // Sets the new parasitic of the last net (load added to last pin).
           _openStaChar->makePiElmore(firstPinLastNet,
                                      sta::RiseFall::rise(),
