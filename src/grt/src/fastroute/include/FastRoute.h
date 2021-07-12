@@ -345,6 +345,7 @@ class FastRouteCore
   int edgeShiftNew(Tree* t, int net);
 
   static const int MAXLEN = 20000;
+  static const int BIG_INT = 1e7;     // big integer used as infinity
 
   int maxNetDegree;
   std::vector<int> cap_per_layer;

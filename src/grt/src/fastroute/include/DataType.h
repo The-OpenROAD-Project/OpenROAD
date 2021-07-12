@@ -30,13 +30,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATATYPE_H__
-#define __DATATYPE_H__
+#pragma once
 
 #include <string>
 #include <vector>
-
-#define BIG_INT 1e7     // big integer used as infinity
 
 namespace odb {
 class dbNet;
@@ -220,5 +217,3 @@ typedef enum
 } viaST;
 
 }  // namespace grt
-
-#endif /* __DATATYPE_H__ */
