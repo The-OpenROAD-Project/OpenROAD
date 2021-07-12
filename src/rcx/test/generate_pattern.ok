@@ -2,7 +2,6 @@
 [INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
 [INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO RCX-0437] RECT li1 ( 9910 85 ) ( 10080 16915 )  jids= ( 1 2 )
 [INFO RCX-0055] Finished 252 bench measurements for pattern MET_OVER_MET
 [INFO RCX-0055] Finished 330 bench measurements for pattern MET_OVER_MET
 [INFO RCX-0007] Finished 240 measurements for pattern MET_UNDER_MET
