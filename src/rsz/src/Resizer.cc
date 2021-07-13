@@ -2750,8 +2750,8 @@ Resizer::makeHoldDelay(Vertex *drvr,
   // Stay inside the core.
   Point drvr_loc = core_exists_ ? closestPtInRect(core_, drvr_pin_loc) : drvr_pin_loc;
   Point load_center = findCenter(load_pins);
-  int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
-  int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);
+  int dx = (load_center.x() - drvr_loc.x()) / (buffer_count + 1);
+  int dy = (load_center.y() - drvr_loc.y()) / (buffer_count + 1);
 
   Net *buf_in_net = in_net;
   Instance *buffer = nullptr;
