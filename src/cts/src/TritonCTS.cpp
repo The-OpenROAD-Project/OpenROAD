@@ -248,7 +248,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet, std::string sdcClockName
   }
 }
 
-void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks,
+void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder, odb::dbNet* net, unsigned &sinks, unsigned &leafSinks,
                                       unsigned currWireLength, double &sinkWireLength,
                                       int& minDepth, int& maxDepth, int depth, bool fullTree)
 {
@@ -288,17 +288,17 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
       iterm->getAvgXY(&receiverX, &receiverY);
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
       bool terminate = fullTree ? _staEngine->isSink(iterm) : 
-                                  !(strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf", 6));
+                                  !builder->isAnyTreeBuffer(getClockFromInst(iterm->getInst()));
       if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
-          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength + dist),
+          countSinksPostDbWrite(builder, outputPin->getNet(), sinks, leafSinks, (currWireLength + dist),
                                 sinkWireLength, minDepth, maxDepth, depth+1, fullTree);
         else
         {
           _logger->report("  Hanging buffer {}", name);
         }
-        if (strlen(name.c_str()) > 11 && !strncmp(name.c_str(), "clkbuf_leaf", 11))
+        if (builder->isLeafBuffer(getClockFromInst(iterm->getInst())))
           leafSinks++;
       } else {
         sinks++;
@@ -331,7 +331,7 @@ void TritonCTS::writeDataToDb()
     int minDepth = 0;
     int maxDepth = 0;
     bool reportFullTree = !builder->getParent() && builder->getChildren().size() && _options->getBalanceLevels();
-    countSinksPostDbWrite(topClockNet, sinkCount, leafSinks, 0, allSinkDistance,
+    countSinksPostDbWrite(builder, topClockNet, sinkCount, leafSinks, 0, allSinkDistance,
                            minDepth, maxDepth, 0, reportFullTree);
     _logger->report(" Post DB write clock net \"{}\" report", builder->getClock().getName());
     _logger->info(CTS, 91, "Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
@@ -835,6 +835,7 @@ void TritonCTS::createClockBuffers(Clock& clockNet)
     odb::dbInst* newInst
         = odb::dbInst::create(_block, master, inst.getName().c_str());
     inst.setInstObj(newInst);
+    inst2clkbuf[newInst] = &inst;
     inst.setInputPinObj(getFirstInput(newInst));
     newInst->setLocation(inst.getX(), inst.getY());
     newInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);

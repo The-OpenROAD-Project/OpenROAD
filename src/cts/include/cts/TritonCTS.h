@@ -38,6 +38,7 @@
 #include <string>
 #include <functional>
 #include <set>
+#include <map>
 
 namespace ord {
 class OpenRoad;
@@ -118,13 +119,15 @@ class TritonCTS
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
-  void countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned & leafSinks,
+  void countSinksPostDbWrite(TreeBuilder* builder, odb::dbNet* net, unsigned &sinks, unsigned & leafSinks,
                   unsigned currWireLength, double &sinkWireLength, int& minDepth, int& maxDepth, int depth, bool fullTree = false);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
+  ClockInst* getClockFromInst(odb::dbInst* inst) { return (inst2clkbuf.find(inst) != inst2clkbuf.end())
+                                                            ? inst2clkbuf[inst] : nullptr;}
   ord::OpenRoad* _openroad;
   Logger* _logger;
   CtsOptions* _options;
@@ -133,6 +136,7 @@ class TritonCTS
   std::vector<TreeBuilder*>* _builders;
   std::set <odb::dbNet*> staClockNets;
   std::set <odb::dbNet*> visitedClockNets;
+  std::map<odb::dbInst*, ClockInst*> inst2clkbuf;
 
   // db vars
   sta::dbSta* _openSta = nullptr;

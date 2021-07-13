@@ -147,7 +147,7 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
   SegmentBuilder builder("clkbuf_opt_" + std::to_string(bufIndex) + "_",
                       "clknet_opt_" + std::to_string(bufIndex) + "_",
                       driverLoc, sinkLoc, segments, *_clock,
-                      net, *_techChar, wireSegmentUnit);
+                      net, *_techChar, wireSegmentUnit, _builder);
   bufIndex++;
   builder.build(_options->getRootBuffer(), sink);
 }
@@ -163,6 +163,7 @@ void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
       master,
       bufLoc.getX(),
       bufLoc.getY());
+  _builder->addTreeLevelBuffer(&clkBuffer);;
 
   net.replaceSink(sink, &clkBuffer);
 
