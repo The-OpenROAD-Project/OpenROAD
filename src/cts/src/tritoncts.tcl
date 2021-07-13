@@ -33,9 +33,6 @@
 ##
 ###############################################################################
 
-#Clock Tree Synthesis TCL -> Required commands:
-#clock_tree_synthesis -buf_list 
-
 sta::define_cmd_args "configure_cts_characterization" {[-max_cap cap] \
                                                        [-max_slew slew] \
                                                        [-slew_inter slewvalue] \
@@ -198,18 +195,20 @@ proc clock_tree_synthesis { args } {
     cts::set_out_path $out_path
   }
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error CTS 103 "No design block found."
+  }
   cts::run_triton_cts
 }
 
 sta::define_cmd_args "report_cts" {[-out_file file] \
                                   } 
-
 proc report_cts { args } {
   sta::parse_key_args "report_cts" args \
     keys {-out_file} flags {}
 
   if { [info exists keys(-out_file)] } {
-	  set outFile $keys(-out_file)
+    set outFile $keys(-out_file)
     cts::set_metric_output $outFile 
   } 
 

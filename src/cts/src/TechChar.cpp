@@ -446,26 +446,11 @@ void TechChar::initCharacterization()
   // Gets the chip, openSta and networks.
   ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
   _dbNetworkChar = openRoad->getDbNetwork();
-  if (_dbNetworkChar == nullptr) {
-    _logger->error(CTS, 68, "Network not found. Check your lef/def/verilog file.");
-  }
   _db = openRoad->getDb();
-  if (_db == nullptr) {
-    _logger->error(CTS, 69, "Database not found. Check your lef/def/verilog file.");
-  }
   odb::dbChip* chip = _db->getChip();
-  if (chip == nullptr) {
-    _logger->error(CTS, 70, "Chip not found. Check your lef/def/verilog file.");
-  }
   odb::dbBlock* block = chip->getBlock();
-  if (block == nullptr) {
-    _logger->error(CTS, 71, "Block not found. Check your lef/def/verilog file.");
-  }
   _openSta = openRoad->getSta();
   sta::Network* networkChar = _openSta->network();
-  if (networkChar == nullptr) {
-    _logger->error(CTS, 72, "Network not found. Check your lef/def/verilog file.");
-  }
   float dbUnitsPerMicron = static_cast<float>(block->getDbUnitsPerMicron());
 
   // Change resPerSqr and capPerSqr to DBU units.
