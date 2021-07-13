@@ -140,6 +140,7 @@ class GlobalRouter
   void setMaxLayerForClock(const int max_layer);
   void setAlpha(const float alpha);
   float getAlpha() const { return alpha_; }
+  const std::map<odb::dbNet*, float>& getNetAlphaMap() { return net_alpha_map_; };
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,
