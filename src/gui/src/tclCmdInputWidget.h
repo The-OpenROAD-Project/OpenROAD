@@ -46,6 +46,7 @@
 #include <QStringListModel>
 
 #include "tclCmdHighlighter.h"
+#include "tclSwig.h" // generated header
 
 namespace gui {
 
@@ -105,11 +106,13 @@ class TclCmdInputWidget: public QPlainTextEdit {
     void initOpenRoadCommands();
     void parseOpenRoadArguments(const char* or_args, std::set<std::string>& args);
     void collectNamespaces(std::set<std::string>& namespaces);
-    void collectSWIGArguments(std::set<std::string>& args);
+    void collectSWIGArguments();
 
     const QString wordUnderCursor();
+    const swig_class* swigBeforeCursor();
 
-    void setCompleterCommands(bool add_swig);
+    void setCompleterCommands();
+    void setCompleterSWIG(const swig_class* type);
     void setCompleterArguments(const std::set<int>& cmds);
     void setCompleterVariables();
 
@@ -134,7 +137,7 @@ class TclCmdInputWidget: public QPlainTextEdit {
 
     // hold openroad commands and associated arguments
     std::vector<CommandArguments> commands_;
-    QStringList swig_arguments_;
+    std::map<const swig_class*, std::unique_ptr<QStringList>> swig_arguments_;
 
     static constexpr const char* enable_highlighting_keyword_ = "highlighting";
     static constexpr const char* enable_completion_keyword_ = "completion";

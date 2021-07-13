@@ -31,7 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "tclCmdInputWidget.h"
-#include "tclSwig.h" // generated header
 
 #include <regex>
 
@@ -177,13 +176,16 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     }
 
     QString completion_prefix = wordUnderCursor();
+    const swig_class* swig_type = swigBeforeCursor();
     bool is_variable = completion_prefix.startsWith("$");
     bool is_argument = completion_prefix.startsWith("-");
+    bool is_swig     = swig_type != nullptr;
 
     bool show_popup = is_completer_shortcut; // shortcut enabled it
     show_popup |= completion_prefix.length() >= completer_mimimum_length_; // minimum length
     show_popup |= is_argument; // is argument
     show_popup |= is_variable; // is variable
+    show_popup |= is_swig;     // is swig argument
     if (!show_popup) {
       completer_->popup()->hide();
     }
@@ -204,9 +206,14 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
             setCompleterArguments(block_data->commands);
           }
           else {
-            // default to just commands
-            bool add_swig = !completion_prefix.isEmpty();
-            setCompleterCommands(add_swig);
+            if (is_swig) {
+              // previous item was of swig type, so complete with arguments for that type
+              setCompleterSWIG(swig_type);
+            }
+            else {
+              // default to just commands
+              setCompleterCommands();
+            }
           }
         }
       }
@@ -401,10 +408,7 @@ void TclCmdInputWidget::updateCompletion()
     completer_->setWidget(this);
     completer_->setCompletionMode(QCompleter::PopupCompletion);
 
-    setCompleterCommands(false);
-
-    std::set<std::string> args;
-    collectSWIGArguments(args);
+    setCompleterCommands();
 
     connect(completer_.get(), QOverload<const QString&>::of(&QCompleter::activated),
             this, &TclCmdInputWidget::insertCompletion);
@@ -498,14 +502,8 @@ void TclCmdInputWidget::initOpenRoadCommands()
     }
   }
 
-  // get namespaces
-  std::set<std::string> swig_arguments;
-  collectSWIGArguments(swig_arguments);
-
-  for (const std::string& arg : swig_arguments) {
-    swig_arguments_.append(arg.c_str());
-  }
-  swig_arguments_.sort();
+  // get swig arguments
+  collectSWIGArguments();
 }
 
 void TclCmdInputWidget::collectNamespaces(std::set<std::string>& namespaces)
@@ -522,8 +520,10 @@ void TclCmdInputWidget::collectNamespaces(std::set<std::string>& namespaces)
   }
 }
 
-void TclCmdInputWidget::collectSWIGArguments(std::set<std::string>& args)
+void TclCmdInputWidget::collectSWIGArguments()
 {
+  swig_arguments_.clear();
+
   swig_module_info* module = SWIG_Tcl_GetModule(interp_);
   if (module == nullptr) {
     return;
@@ -535,10 +535,18 @@ void TclCmdInputWidget::collectSWIGArguments(std::set<std::string>& args)
     // loop through types in modules to find classes
     for (int i = 0; i < module->size; i++) {
       swig_class* cls = static_cast<swig_class*>(module->types[i]->clientdata);
+
       if (cls != nullptr) {
+        std::unique_ptr<QStringList> methods = std::make_unique<QStringList>();
+
         // loop through methods for each class to collect method names
         for (swig_method* meth = cls->methods; meth != nullptr && meth->name; ++meth) {
-          args.insert(meth->name);
+          methods->append(meth->name);
+        }
+
+        if (!methods->isEmpty()) {
+          methods->sort();
+          swig_arguments_[cls] = std::move(methods);
         }
       }
     }
@@ -547,7 +555,7 @@ void TclCmdInputWidget::collectSWIGArguments(std::set<std::string>& args)
   } while (first_module != module);
 }
 
-void TclCmdInputWidget::setCompleterCommands(bool add_swig)
+void TclCmdInputWidget::setCompleterCommands()
 {
   bool add_colons = completer_->completionPrefix().startsWith(":");
 
@@ -562,13 +570,12 @@ void TclCmdInputWidget::setCompleterCommands(bool add_swig)
     }
   }
 
-  if (add_swig && !add_colons) {
-    // add swig arguments
-    // only add if we're not starting with ::
-    options << swig_arguments_;
-  }
-
   completer_options_->setStringList(options);
+}
+
+void TclCmdInputWidget::setCompleterSWIG(const swig_class* type)
+{
+  completer_options_->setStringList(*swig_arguments_[type]);
 }
 
 void TclCmdInputWidget::setCompleterArguments(const std::set<int>& cmds)
@@ -644,7 +651,13 @@ void TclCmdInputWidget::insertCompletion(const QString& text)
   int extra_chars = text.length() - completer_->completionPrefix().length();
   cursor.movePosition(QTextCursor::Left);
   cursor.movePosition(QTextCursor::EndOfWord);
-  cursor.insertText(text.right(extra_chars));
+
+  QString insert = text.right(extra_chars);
+  if (completer_->completionPrefix().isEmpty() && !cursor.atStart()) {
+    // prefix was empty and not at start of line, need space
+    insert = " " + insert;
+  }
+  cursor.insertText(insert);
   setTextCursor(cursor);
 }
 
@@ -667,6 +680,55 @@ const QString TclCmdInputWidget::wordUnderCursor()
   }
 
   return line.mid(start_of_word, end_of_word-start_of_word);
+}
+
+const swig_class* TclCmdInputWidget::swigBeforeCursor()
+{
+  QTextCursor cursor = textCursor();
+  int cursor_position = cursor.positionInBlock();
+
+  cursor.select(QTextCursor::LineUnderCursor);
+  const QString line = cursor.selectedText();
+
+  int end_of_word  = line.lastIndexOf(*completer_end_of_command_.get(), cursor_position-1);
+  if (end_of_word == -1) {
+    end_of_word = 0;
+  }
+  int start_of_word = line.lastIndexOf(*completer_start_of_command_.get(), end_of_word);
+  if (start_of_word == -1) {
+    start_of_word = 0;
+  }
+
+  const QString word = line.mid(start_of_word, end_of_word-start_of_word).trimmed();
+
+  std::string variable_content = word.toStdString();
+  if (word.startsWith("$")) {
+    // variable
+    const char* var_content = Tcl_GetVar(interp_, variable_content.substr(1).c_str(), TCL_GLOBAL_ONLY);
+
+    if (var_content == nullptr) {
+      // invalid variable
+      return nullptr;
+    }
+    variable_content = var_content;
+  }
+
+  Tcl_CmdInfo infoPtr;
+  // find command information
+  if (Tcl_GetCommandInfo(interp_, variable_content.c_str(), &infoPtr) != 0) {
+    if (infoPtr.isNativeObjectProc == 1) {
+      // set to one if created by Tcl_CreateObjCommand()
+      swig_instance* inst = static_cast<swig_instance*>(infoPtr.objClientData);
+      if (inst != nullptr && inst->classptr != nullptr) {
+        // make sure cls is in the arguments
+        if (swig_arguments_.count(inst->classptr) != 0) {
+          return inst->classptr;
+        }
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 }  // namespace gui
