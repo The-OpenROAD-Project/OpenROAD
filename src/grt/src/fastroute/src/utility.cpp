@@ -329,6 +329,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
+  FrNet* net = nets_[netID];
   treeedges = sttrees_[netID].edges;
   treenodes = sttrees_[netID].nodes;
   treeedge = &(treeedges[edgeID]);
@@ -358,13 +359,21 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       for (l = 0; l < num_layers_; l++) {
         grid = l * grid_v_ + min_y * x_grid_ + gridsX[k];
-        layer_grid_[l][k] = v_edges_3D_[grid].cap - v_edges_3D_[grid].usage;
+        if (l >= net->minLayer && l <= net->maxLayer) {
+          layer_grid_[l][k] = v_edges_3D_[grid].cap - v_edges_3D_[grid].usage;
+        } else {
+          layer_grid_[l][k] = 0;
+        }
       }
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
       for (l = 0; l < num_layers_; l++) {
         grid = l * grid_h_ + gridsY[k] * (x_grid_ - 1) + min_x;
-        layer_grid_[l][k] = h_edges_3D_[grid].cap - h_edges_3D_[grid].usage;
+        if (l >= net->minLayer && l <= net->maxLayer) {
+          layer_grid_[l][k] = h_edges_3D_[grid].cap - h_edges_3D_[grid].usage;
+        } else {
+          layer_grid_[l][k] = 0;
+        }
       }
     }
   }
