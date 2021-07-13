@@ -282,7 +282,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (worker_ && gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
+  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     frBox box;
     if (drawWholeDesign_) {
       design_->getTopBlock()->getDieBox(box);
@@ -291,7 +291,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
-    } else {
+    } else if (worker_){
       worker_->getExtBox(box);
       std::vector<drConnFig*> figs;
       worker_->getWorkerRegionQuery().query(box, layerNum, figs);

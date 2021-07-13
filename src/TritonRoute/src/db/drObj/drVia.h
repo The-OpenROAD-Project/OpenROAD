@@ -60,7 +60,9 @@ class drVia : public drRef
         owner_(in.owner_),
         beginMazeIdx_(in.beginMazeIdx_),
         endMazeIdx_(in.endMazeIdx_),
-        tapered_(in.tapered_)
+        tapered_(in.tapered_),
+        bottomConnected_(in.bottomConnected_),
+        topConnected_(in.topConnected_)
   {
   }
   drVia(const frVia& in);
@@ -297,7 +299,11 @@ class drVia : public drRef
   bool isTapered() const { return tapered_; }
 
   const frPoint& getOrigin() const { return origin_; }
-
+  
+  bool isBottomConnected() const { return bottomConnected_; }
+  bool isTopConnected() const { return topConnected_; }
+  void setBottomConnected(bool c) { bottomConnected_ = c; }
+  void setTopConnected(bool c) { topConnected_ = c; }
  protected:
   frPoint origin_;
   frViaDef* viaDef_;
@@ -305,6 +311,8 @@ class drVia : public drRef
   FlexMazeIdx beginMazeIdx_;
   FlexMazeIdx endMazeIdx_;
   bool tapered_;
+  bool bottomConnected_ = false;
+  bool topConnected_ = false;
 };
 }  // namespace fr
 

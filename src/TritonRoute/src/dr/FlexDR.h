@@ -341,9 +341,10 @@ class FlexDRWorker
  public:
   // constructors
   FlexDRWorker(const FlexDRViaData* via_data,
-               frTechObject* tech,
+               frDesign* design,
                Logger* logger)
-      : tech_(tech),
+      : design_(design),
+        tech_(design->getTech()),
         logger_(logger),
         graphics_(nullptr),
         via_data_(via_data),
@@ -368,7 +369,7 @@ class FlexDRWorker
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
         nets_(),
         owner2nets_(),
-        gridGraph_(tech, this),
+        gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
         gcWorker_(nullptr) /*, drcWorker(drIn->getDesign())*/
@@ -492,7 +493,7 @@ class FlexDRWorker
     int numReroute;
     bool doRoute;
   } RouteQueueEntry;
-
+  frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
@@ -889,6 +890,8 @@ class FlexDRWorker
                       bool taper,
                       int i,
                       vector<FlexMazeIdx>& points);
+  void checkStyleForBPin(drPathSeg* ps, bool isBegin, frSegStyle& style);
+  void checkConnForBPin(drVia* ps, bool isBottom, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
       const std::vector<FlexMazeIdx>& path,

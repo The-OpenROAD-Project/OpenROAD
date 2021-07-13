@@ -421,12 +421,16 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
   for (auto& [bx, rqObj] : result) {
     if (isPathSeg && !bx.contains(bp))
       continue;
+    if (enableOutput)
+          cout << "got " << rqObj << "\n";
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
       if (instTerm->getNet() == net) {
         if (!isPathSeg && !bx.contains(bp) && 
             !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
             continue;
+        if (enableOutput)
+          cout << "inserting " << instTerm << "\n";
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     } else if (rqObj->typeId() == frcTerm) {
@@ -434,6 +438,8 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
             continue;
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
+          if (enableOutput)
+          cout << "inserting " << term << "\n";
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     }
@@ -448,7 +454,7 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
         pin2epMap)
 {
   frPoint bp, ep;
-  bool enableOutput = false;;
+  bool enableOutput = false;
   if (enableOutput)
       cout << "initNets_searchRepair_pin2epMap\n\n";
   // should not count extObjs in union find
@@ -462,11 +468,11 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       obj->getStyle(style);
       if (enableOutput)
           cout << "passing by " << *obj << "\n";
-      if (getRouteBox().contains(bp)) {
+      if (getRouteBox().contains(bp) && style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, lNum, pin2epMap, true);
       }
-      if (getRouteBox().contains(ep)) {
+      if (getRouteBox().contains(ep) && style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, ep, lNum, pin2epMap, true);
       }
@@ -478,10 +484,12 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       if (enableOutput)
           cout << "passing by " << *obj << "\n";
       if (getRouteBox().contains(bp)) {
-        initNets_searchRepair_pin2epMap_helper(
-            design, net, bp, l1Num, pin2epMap, false);
-        initNets_searchRepair_pin2epMap_helper(
-            design, net, bp, l2Num, pin2epMap, false);
+          if (obj->isBottomConnected())
+            initNets_searchRepair_pin2epMap_helper(
+                design, net, bp, l1Num, pin2epMap, false);
+          if (obj->isTopConnected())
+            initNets_searchRepair_pin2epMap_helper(
+                design, net, bp, l2Num, pin2epMap, false);
       }
     } else if (connFig->typeId() == drcPatchWire) {
     } else {
@@ -1621,6 +1629,11 @@ void FlexDRWorker::initNet_boundary(drNet* dNet,
   }
   for (auto& [pr, area] : extBounds) {
     auto& [pt, lNum] = pr;
+    //if there is an ap over the bp, dont create the bp
+//    if (dNet->hasAccessPoint(pt, lNum)) {
+//        cout << "skiping bp for net " << dNet->getFrNet()->getName() << "\n";
+//        continue;
+//    }
     auto dPin = make_unique<drPin>();
     auto dAp = make_unique<drAccessPattern>();
     dAp->setPoint(pt);

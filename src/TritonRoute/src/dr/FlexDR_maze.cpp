@@ -2380,6 +2380,12 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         currVia->setOrigin(loc);
         currVia->setMazeIdx(FlexMazeIdx(startX, startY, currZ),
                             FlexMazeIdx(startX, startY, currZ + 1));
+        if (apMazeIdx.find(FlexMazeIdx(startX, startY, currZ)) != apMazeIdx.end())
+            currVia->setBottomConnected(true);
+        else checkConnForBPin(currVia.get(), true, net->getFrNet());
+        if (apMazeIdx.find(FlexMazeIdx(startX, startY, currZ+1)) != apMazeIdx.end())
+            currVia->setTopConnected(true);
+        else checkConnForBPin(currVia.get(), false, net->getFrNet());
         unique_ptr<drConnFig> tmp(std::move(currVia));
         workerRegionQuery.add(tmp.get());
         net->addRoute(std::move(tmp));
@@ -2479,10 +2485,10 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   auto currStyle = getTech()->getLayer(currLayerNum)->getDefaultSegStyle();
   if (apMazeIdx.find(start) != apMazeIdx.end()) {
     currStyle.setBeginStyle(frcTruncateEndStyle, 0);
-  }
+  } else checkStyleForBPin(currPathSeg.get(), true, currStyle);
   if (apMazeIdx.find(end) != apMazeIdx.end()) {
     currStyle.setEndStyle(frcTruncateEndStyle, 0);
-  }
+  } else checkStyleForBPin(currPathSeg.get(), false, currStyle);
   if (net->getFrNet()->getNondefaultRule()) {
     if (taper)
       currPathSeg->setTapered(true);
@@ -2520,6 +2526,64 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   }
 }
 
+void FlexDRWorker::checkStyleForBPin(drPathSeg* ps, bool isBegin, frSegStyle& style) {
+    const frPoint& pt = (isBegin ? ps->getBeginPoint() : ps->getEndPoint());
+    frRegionQuery::Objects<frBlockObject> result;
+    frBox bx(pt.x(), pt.y(), pt.x(), pt.y());
+    bool apFound = false;
+    design_->getRegionQuery()->query(bx, ps->getLayerNum(), result);
+    for (auto& rqObj : result) {
+        if (rqObj.second->typeId() == frcInstTerm) {
+            auto instTerm = static_cast<frInstTerm*>(rqObj.second);
+            if (instTerm->getNet() == ps->getNet()->getFrNet() && 
+                instTerm->hasAccessPoint(pt.x(), pt.y(), ps->getLayerNum()))
+                  apFound = true;
+        } else if (rqObj.second->typeId() == frcTerm) {
+              auto term = static_cast<frTerm*>(rqObj.second);
+              if (term->getNet() == ps->getNet()->getFrNet() && 
+                  term->hasAccessPoint(pt.x(), pt.y(), ps->getLayerNum(), 0))
+                    apFound = true;
+        }
+        if (apFound)
+            break;
+    }
+    if (apFound) {
+        if (isBegin)
+            style.setBeginStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+        else 
+            style.setEndStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+    }
+}
+
+void FlexDRWorker::checkConnForBPin(drVia* ps, bool isBottom, frNet* net) {
+    const frPoint& pt = ps->getOrigin();
+    frRegionQuery::Objects<frBlockObject> result;
+    frLayerNum lNum = isBottom ? ps->getViaDef()->getLayer1Num() : ps->getViaDef()->getLayer2Num();
+    frBox bx(pt.x(), pt.y(), pt.x(), pt.y());
+    bool apFound = false;
+    design_->getRegionQuery()->query(bx, lNum, result);
+    for (auto& rqObj : result) {
+        if (rqObj.second->typeId() == frcInstTerm) {
+            auto instTerm = static_cast<frInstTerm*>(rqObj.second);
+            if (instTerm->getNet() == net && 
+                instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
+                  apFound = true;
+        } else if (rqObj.second->typeId() == frcTerm) {
+              auto term = static_cast<frTerm*>(rqObj.second);
+              if (term->getNet() == net && 
+                  term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
+                    apFound = true;
+        }
+        if (apFound)
+            break;
+    }
+    if (apFound) {
+        if (isBottom)
+            ps->setBottomConnected(true);
+        else 
+            ps->setTopConnected(true);
+    }
+}
 void FlexDRWorker::setNDRStyle(drNet* net,
                                frSegStyle& currStyle,
                                frMIdx startX,

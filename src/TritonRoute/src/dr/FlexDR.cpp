@@ -1438,7 +1438,7 @@ void FlexDR::searchRepair(int iter,
   int xIdx = 0, yIdx = 0;
   for (int i = offset; i < (int) xgp.getCount(); i += clipSize) {
     for (int j = offset; j < (int) ygp.getCount(); j += clipSize) {
-      auto worker = make_unique<FlexDRWorker>(&via_data_, getTech(), logger_);
+      auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
       frBox routeBox1;
       getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
       frBox routeBox2;

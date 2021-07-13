@@ -52,7 +52,9 @@ class frVia : public frRef
         origin_(in.origin_),
         viaDef_(in.viaDef_),
         owner_(in.owner_),
-        tapered_(in.tapered_)
+        tapered_(in.tapered_),
+        bottomConnected_(in.bottomConnected_),
+        topConnected_(in.topConnected_)
   {
   }
   frVia(const drVia& in);
@@ -280,11 +282,17 @@ class frVia : public frRef
 
   bool isTapered() const { return tapered_; }
 
+  bool isBottomConnected() const { return bottomConnected_; }
+  bool isTopConnected() const { return topConnected_; }
+  void setBottomConnected(bool c) { bottomConnected_ = c; }
+  void setTopConnected(bool c) { topConnected_ = c; }
  protected:
   frPoint origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
   bool tapered_;
+  bool bottomConnected_ = false;
+  bool topConnected_ = false;
   frListIter<std::unique_ptr<frVia>> iter_;
 };
 }  // namespace fr
