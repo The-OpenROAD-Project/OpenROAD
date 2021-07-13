@@ -232,6 +232,7 @@ class TechChar
   }
 
   float getCharMaxCap() const { return _charMaxCap; }
+  double getCapPerDBU() const { return _capPerDBU; }
   float getCharMaxSlew() const { return _charMaxSlew; }
   utl::Logger* getLogger() { return _options->getLogger(); }
 
@@ -279,12 +280,12 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
-  void getClockLayerResCap(double &cap, double &res);
-  void getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
-                                      float &maxSlew, bool &maxSlewExist,
-                                      float &maxCap, bool &maxCapExist, bool midValue = false);
+  void getClockLayerResCap(float dbUnitsPerMicron);
+  void getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
+                              float &maxSlew, bool &maxSlewExist,
+                              float &maxCap, bool &maxCapExist, bool midValue = false);
   void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
-                                     float& maxCap, bool& maxCapExist, bool midValue = false);
+                                float& maxCap, bool& maxCapExist, bool midValue = false);
 
   Logger* _logger;
   sta::dbSta* _openSta = nullptr;
@@ -297,8 +298,8 @@ class TechChar
   odb::dbMaster* _charBuf = nullptr;
   std::string _charBufIn = "";
   std::string _charBufOut = "";
-  double _resPerDBU = 0.0001;   // Default values, not used
-  double _capPerDBU = 5.0e-20;  // Default values, not used
+  double _resPerDBU; // ohms/dbu
+  double _capPerDBU; // farads/dbu
   float _charMaxSlew = 0.0;
   float _charMaxCap = 0.0;
   float _charSlewInter = 5.0e-12;  // Hard-coded interval

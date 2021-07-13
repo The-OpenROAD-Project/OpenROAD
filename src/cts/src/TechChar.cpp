@@ -365,6 +365,51 @@ void TechChar::reportSegment(unsigned key) const
                   seg.getLength(), seg.isBuffered());
 }
 
+void TechChar::getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
+                                      float &maxSlew, bool &maxSlewExist,
+                                      float &maxCap, bool &maxCapExist,
+                                      bool midValue)
+{
+  sta::LibertyPort *input, *output;
+  buffer->bufferPorts(input, output);
+  sta::TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
+  if (arc_sets) {
+    for (sta::TimingArcSet *arc_set : *arc_sets) {
+      sta::TimingArcSetArcIterator arc_iter(arc_set);
+      while (arc_iter.hasNext()) {
+        sta::TimingArc *arc = arc_iter.next();
+        sta::GateTableModel *model = dynamic_cast<sta::GateTableModel*>(arc->model());
+        if(model && model->delayModel()) {
+          auto delayModel = model->delayModel();
+          sta::TableAxis *axis1 = delayModel->axis1();
+          sta::TableAxis *axis2 = delayModel->axis2();
+          sta::TableAxis *axis3 = delayModel->axis3();
+          if (axis1)
+            getMaxSlewMaxCapFromAxis(axis1, maxSlew, maxSlewExist, maxCap,
+                                     maxCapExist, midValue);
+          if (axis2)
+            getMaxSlewMaxCapFromAxis(axis2, maxSlew, maxSlewExist, maxCap,
+                                     maxCapExist, midValue);
+          if (axis3)
+            getMaxSlewMaxCapFromAxis(axis3, maxSlew, maxSlewExist, maxCap,
+                                     maxCapExist, midValue);
+        }
+      }
+    }
+  }
+
+  float slew_limit, cap_limit;
+  bool exists;
+  output->slewLimit(sta::MinMax::max(), slew_limit, exists);
+  if (exists) {
+    maxSlew = std::min(maxSlew, slew_limit);
+  }
+  output->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
+  if (exists) {
+    maxCap = std::min(maxCap, cap_limit);
+  }
+}
+
 void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
                                         float& maxSlew,
                                         bool& maxSlewExist,
@@ -400,44 +445,22 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
     }
   }
 }
-void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib,
-                                      sta::LibertyCell* buffer,
-                                      float &maxSlew, bool &maxSlewExist,
-                                      float &maxCap, bool &maxCapExist, bool midValue)
-{
-  sta::LibertyPort *input, *output;
-  buffer->bufferPorts(input, output);
-  sta::TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
-  if (arc_sets) {
-    for (sta::TimingArcSet *arc_set : *arc_sets) {
-      sta::TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        sta::TimingArc *arc = arc_iter.next();
-        sta::GateTableModel *model = dynamic_cast<sta::GateTableModel*>(arc->model());
-        if(model && model->delayModel()) {
-          auto delayModel = model->delayModel();
-          sta::TableAxis *axis1 = delayModel->axis1();
-          sta::TableAxis *axis2 = delayModel->axis2();
-          sta::TableAxis *axis3 = delayModel->axis3();
-          if(axis1) getMaxSlewMaxCapFromAxis(axis1, maxSlew, maxSlewExist, maxCap, maxCapExist, midValue);
-          if(axis2) getMaxSlewMaxCapFromAxis(axis2, maxSlew, maxSlewExist, maxCap, maxCapExist, midValue);
-          if(axis3) getMaxSlewMaxCapFromAxis(axis3, maxSlew, maxSlewExist, maxCap, maxCapExist, midValue);
-        }
-      }
-    }
-  }
-}
 
-void TechChar::getClockLayerResCap(double &cap, double &res)
+void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
 {
-  /* Clock layer should be set with set_wire_rc -clock */
+  /* Clock RC should be set with set_wire_rc -clock */
   rsz::Resizer *sizer = ord::OpenRoad::openRoad()->getResizer();
   sta::Corner *corner = _openSta->cmdCorner();
 
-  cap = sizer->wireClkCapacitance(corner)*1e-6; //convert from per meter to per micron
-  res = sizer->wireClkResistance(corner)*1e-6; //convert from per meter to per micron
+  // convert from per meter to per dbu
+  _capPerDBU = sizer->wireClkCapacitance(corner) * 1e-6 / dbUnitsPerMicron;
+  _resPerDBU = sizer->wireClkResistance(corner) * 1e-6 / dbUnitsPerMicron;
 
+  if (_resPerDBU == 0.0 || _capPerDBU == 0.0) {
+    _logger->warn(CTS, 104, "Clock wire resistance/capacitance values are zero.\nUse set_wire_rc to set them.");
+  }
 }
+
 // Characterization Methods
 
 void TechChar::initCharacterization()
@@ -451,23 +474,10 @@ void TechChar::initCharacterization()
   odb::dbBlock* block = chip->getBlock();
   _openSta = openRoad->getSta();
   sta::Network* networkChar = _openSta->network();
-  float dbUnitsPerMicron = static_cast<float>(block->getDbUnitsPerMicron());
+  float dbUnitsPerMicron = block->getDbUnitsPerMicron();
 
-  // Change resPerSqr and capPerSqr to DBU units.
-  double newCapPerSqr = _options->getCapPerSqr() * 1e-12 / dbUnitsPerMicron;
-  double newResPerSqr = _options->getResPerSqr() / dbUnitsPerMicron;
-  if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
-    getClockLayerResCap(newCapPerSqr, newResPerSqr);
-    newCapPerSqr = (newCapPerSqr / dbUnitsPerMicron);  // picofarad/meter to farad/DBU
-    newResPerSqr = (newResPerSqr / dbUnitsPerMicron);  // ohm/meter to ohm/DBU
-  }
-  if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
-    std::cout << "    [WARNING] Per unit resistance or capacitance not set or zero." << std::endl;
-    std::cout << "              Use set_wire_rc before running clock_tree_synthesis." << std::endl;
-  } else {
-    _options->setCapPerSqr(newCapPerSqr);  // picofarad/micron to farad/DBU
-    _options->setResPerSqr(newResPerSqr);  // ohm/micron to ohm/DBU
-  }
+  getClockLayerResCap(dbUnitsPerMicron);
+
   // Change intervals if needed
   if (_options->getSlewInter() != 0) {
     _charSlewInter = _options->getSlewInter();
@@ -509,10 +519,6 @@ void TechChar::initCharacterization()
   std::string characterizationBlockName = "CharacterizationBlock";
   _charBlock = odb::dbBlock::create(block, characterizationBlockName.c_str());
 
-  // Gets the capacitance and resistance per DBU. User input.
-  _resPerDBU = _options->getResPerSqr();
-  _capPerDBU = _options->getCapPerSqr();
-
   // Defines the different wirelengths to test and the characterization unit.
   unsigned wirelengthIterations = _options->getCharWirelengthIterations();
   unsigned maxWirelength = (_charBuf->getHeight() * 10)
@@ -522,7 +528,6 @@ void TechChar::initCharacterization()
     _options->setWireSegmentUnit(static_cast<unsigned>(charaunit));
   } else {
     // Updates the units to DBU.
-    int dbUnitsPerMicron = block->getDbUnitsPerMicron();
     unsigned segmentDistance = _options->getWireSegmentUnit();
     _options->setWireSegmentUnit(segmentDistance * dbUnitsPerMicron);
   }
@@ -563,18 +568,18 @@ void TechChar::initCharacterization()
     if (!libertyCell) {
       _logger->error(CTS, 96, "No Liberty cell found for {}.", bufMasterName);
     } else {
-      sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
-      getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist,
+      getBufferMaxSlewMaxCap(libertyCell, maxSlew, maxSlewExist,
                              maxCap, maxCapExist);
       if (!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
         _logger->warn(CTS, 67,
-              "Could not get maxSlew/maxCap values from buffer {}. Using library values", bufMasterName);
+              "Could not find max slew/max cap values for buffer {}. Using library values", bufMasterName);
+        sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
         staLib->defaultMaxSlew(maxSlew, maxSlewExist);
         staLib->defaultMaxCapacitance(maxCap, maxCapExist);
       }
     }
     if (!maxSlewExist || !maxCapExist) {
-      _logger->error(CTS, 77, "Liberty Library does not have Max Slew or Max Cap values.");
+      _logger->error(CTS, 77, "Liberty library does not have max slew or max cap values.");
     } else {
       _charMaxSlew = maxSlew;
       _charMaxCap = maxCap;
@@ -582,13 +587,13 @@ void TechChar::initCharacterization()
     if (!libertySinkCell) {
       _logger->error(CTS, 76, "No Liberty cell found for {}.", _options->getSinkBuffer());
     } else {
-      sta::LibertyLibrary* staLib = libertySinkCell->libertyLibrary();
       sta::LibertyPort *input, *output;
       libertySinkCell->bufferPorts(input, output);
       _options->setSinkBufferInputCap(input->capacitance());
       maxCapExist = false;
       maxSlewExist = false;
-      getBufferMaxSlewMaxCap(staLib, libertySinkCell, maxSlew, maxSlewExist, maxCap, maxCapExist, true);
+      getBufferMaxSlewMaxCap(libertySinkCell, maxSlew, maxSlewExist, maxCap,
+                             maxCapExist, true);
       if (!maxCapExist) { //In case buffer does not have tables
         _logger->warn(CTS, 66,
               "Could not get maxSlew/maxCap values from buffer {}", _options->getSinkBuffer());

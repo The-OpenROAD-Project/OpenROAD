@@ -68,11 +68,7 @@ class Matching
 class SinkClustering
 {
  public:
-  SinkClustering(CtsOptions* options, TechChar* techChar): _options(options), _logger(options->getLogger()),
-                                   _techChar(techChar),
-                                   _maxInternalDiameter(10), _capPerUnit(0.0),
-                                  _useMaxCapLimit(options->getSinkClusteringUseMaxCap())
-                                  {}
+  SinkClustering(CtsOptions* options, TechChar* techChar);
 
   void addPoint(double x, double y) { _points.emplace_back(x, y); }
   void addCap(float cap) { _pointsCap.emplace_back(cap);}
@@ -88,6 +84,7 @@ class SinkClustering
   }
 
   double getWireLength(std::vector<Point<double>> points);
+
  private:
   void normalizePoints(float maxDiameter = 10);
   void computeAllThetas();

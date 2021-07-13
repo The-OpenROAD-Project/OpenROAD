@@ -9,8 +9,8 @@
 [INFO ODB-0131]     Created 16 components and 96 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 16 connections.
 [INFO ODB-0134] Finished DEF file: 16sinks.def
-    [WARNING] Per unit resistance or capacitance not set or zero.
-              Use set_wire_rc before running clock_tree_synthesis.
+[WARNING CTS-0104] Clock wire resistance/capacitance values are zero.
+Use set_wire_rc to set them.
 [INFO CTS-0039] Number of created patterns = 2376.
 [INFO CTS-0084] Compiling LUT
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew

@@ -54,12 +54,12 @@ proc configure_cts_characterization { args } {
   } 
 
   if { [info exists keys(-slew_inter)] } {
-	  set slew $keys(-slew_inter)
+    set slew $keys(-slew_inter)
     cts::set_slew_inter $slew 
   } 
 
   if { [info exists keys(-cap_inter)] } {
-	  set cap $keys(-cap_inter)
+    set cap $keys(-cap_inter)
     cts::set_cap_inter $cap 
   } 
 }

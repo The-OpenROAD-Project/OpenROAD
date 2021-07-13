@@ -106,10 +106,6 @@ class CtsOptions
   }
   void setOutputPath(const std::string& path) { _outputPath = path; }
   std::string getOutputPath() const { return _outputPath; }
-  void setCapPerSqr(double cap) { _capPerSqr = cap; }
-  double getCapPerSqr() const { return _capPerSqr; }
-  void setResPerSqr(double res) { _resPerSqr = res; }
-  double getResPerSqr() const { return _resPerSqr; }
   void setCapInter(double cap) { _capInter = cap; }
   double getCapInter() const { return _capInter; }
   void setSlewInter(double slew) { _slewInter = slew; }
@@ -215,8 +211,6 @@ class CtsOptions
   double _maxCharCap = 0;
   double _sinkBufferMaxCap = 0;
   double _sinkBufferInputCap = 0;
-  double _capPerSqr = 0;
-  double _resPerSqr = 0;
   double _capInter = 0;
   double _slewInter = 0;
   unsigned _charWirelengthIterations = 4;
