@@ -89,16 +89,12 @@ class TritonCTS
  private:
   void makeComponents();
   void deleteComponents();
-  void printHeader() const;
   void setupCharacterization();
-  void createCharacterization();
   void checkCharacterization();
   void findClockRoots();
-  void populateTritonCts();
   void buildClockTrees();
   void runPostCtsOpt();
   void writeDataToDb();
-  void printFooter() const;
 
   // db functions
   bool masterExists(const std::string& master) const;

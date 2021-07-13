@@ -197,17 +197,17 @@ void HTreeBuilder::initSinkRegion()
 
 void HTreeBuilder::run()
 {
-  _logger->info(CTS, 27, " Generating H-Tree topology for net {}", _clock.getName());
-  _logger->info(CTS, 28, "    Total number of sinks: {}", _clock.getNumSinks());
+  _logger->info(CTS, 27, "Generating H-Tree topology for net {}", _clock.getName());
+  _logger->info(CTS, 28, " Total number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
     if (_options->getSinkClusteringUseMaxCap()) {
-      _logger->info(CTS, 90, "    Sinks will be clustered based on buffer max cap.");
+      _logger->info(CTS, 90, " Sinks will be clustered based on buffer max cap.");
     } else {
-      _logger->info(CTS, 29, "    Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um",
+      _logger->info(CTS, 29, " Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um",
                   _options->getSizeSinkClustering(), _options->getMaxDiameter());
     }
   }
-  _logger->info(CTS, 30, "    Number of static layers: {}", _options->getNumStaticLayers());
+  _logger->info(CTS, 30, " Number of static layers: {}", _options->getNumStaticLayers());
 
   _clockTreeMaxDepth = _options->getClockTreeMaxDepth();
   _minInputCap = _techChar->getActualMinInputCap();

@@ -92,19 +92,19 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
-  printHeader();
   setupCharacterization();
   findClockRoots();
-  populateTritonCts();
-  if (_builders->size() < 1)
-    return;
-  checkCharacterization();
-  buildClockTrees();
-  if (_options->runPostCtsOpt()) {
-    runPostCtsOpt();
+  populateTritonCTS();
+  if (_builders->empty()) {
+    _logger->warn(CTS, 82, "No valid clock nets in the design.");
+  } else {
+    checkCharacterization();
+    buildClockTrees();
+    if (_options->runPostCtsOpt()) {
+      runPostCtsOpt();
+    }
+    writeDataToDb();
   }
-  writeDataToDb();
-  printFooter();
 }
 
 void TritonCTS::addBuilder(TreeBuilder* builder)
@@ -112,17 +112,10 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
   _builders->push_back(builder);
 }
 
-void TritonCTS::printHeader() const
-{
-  _logger->report(" *****************");
-  _logger->report(" * TritonCTS 2.0 *");
-  _logger->report(" *****************");
-}
-
 void TritonCTS::setupCharacterization()
 {
   // A new characteriztion is always created.
-  createCharacterization();
+  _techChar->create();
   
   // Also resets metrics everytime the setup is done
   _options->setNumSinks(0);
@@ -131,21 +124,8 @@ void TritonCTS::setupCharacterization()
   _options->setNumClockSubnets(0);
 }
 
-void TritonCTS::createCharacterization()
-{
-  _logger->report(" *****************************");
-  _logger->report(" *  Create characterization  *");
-  _logger->report(" *****************************");
-
-  _techChar->create();
-}
-
 void TritonCTS::checkCharacterization()
 {
-  _logger->report(" ****************************");
-  _logger->report(" *  Check characterization  *");
-  _logger->report(" ****************************");
-
   std::unordered_set<std::string> visitedMasters;
   _techChar->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
     for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
@@ -160,43 +140,22 @@ void TritonCTS::checkCharacterization()
     }
   });
 
-  _logger->report( "    The chacterization used {} buffer(s) types."
-                   " All of them are in the loaded DB.", visitedMasters.size());
+  _logger->info(CTS, 97, "Chacterization used {} buffer(s) types.",
+                   visitedMasters.size());
 }
 
 void TritonCTS::findClockRoots()
 {
-  _logger->report(" **********************");
-  _logger->report(" *  Find clock roots  *");
-  _logger->report(" **********************");
   _staEngine->init();
   if (_options->getClockNets() != "") {
     _logger->info(CTS, 1, " Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
-    return;
-  }
-
-  _logger->info(CTS, 2, " User did not specify clock roots.");
-}
-
-void TritonCTS::populateTritonCts()
-{
-  _logger->report(" ************************");
-  _logger->report(" *  Populate TritonCTS  *");
-  _logger->report(" ************************");
-
-  populateTritonCTS();
-
-  if (_builders->size() < 1) {
-    _logger->warn(CTS, 82, "No valid clock nets in the design. Skipping CTS...");
+  } else {
+    _logger->info(CTS, 2, " User did not specify clock roots.");
   }
 }
 
 void TritonCTS::buildClockTrees()
 {
-  _logger->report(" ***********************");
-  _logger->report(" *  Build clock trees  *");
-  _logger->report(" ***********************");
-
   for (TreeBuilder* builder : *_builders) {
     builder->setTechChar(*_techChar);
     builder->run();
@@ -217,10 +176,6 @@ void TritonCTS::runPostCtsOpt()
   if (!_options->runPostCtsOpt()) {
     return;
   }
-
-  _logger->report(" ****************");
-  _logger->report(" * Post CTS opt *");
-  _logger->report(" ****************");
 
   for (TreeBuilder* builder : *_builders) {
     PostCtsOpt opt(builder, _options, _techChar, _logger);
@@ -315,10 +270,6 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
 
 void TritonCTS::writeDataToDb()
 {
-  _logger->report(" ********************");
-  _logger->report(" * Write data to DB *");
-  _logger->report(" ********************");
-
   for (TreeBuilder* builder : *_builders) {
     writeClockNetsToDb(builder->getClock());
   }
@@ -350,11 +301,6 @@ void TritonCTS::forEachBuilder(
   for (const TreeBuilder* builder : *_builders) {
     func(builder);
   }
-}
-
-void TritonCTS::printFooter() const
-{
-  _logger->report(" ... End of TritonCTS execution.");
 }
 
 void TritonCTS::reportCtsMetrics()
@@ -453,14 +399,9 @@ void TritonCTS::initDB()
 
 void TritonCTS::initAllClocks()
 {
-  _logger->report(" Initializing clock nets");
-
   clearNumClocks();
 
-  _logger->report(" Looking for clock nets in the design");
-
-  // Uses dbSta to find all clock nets in the design.
-
+  // Use dbSta to find all clock nets in the design.
   std::vector<std::pair<std::set<odb::dbNet*>, std::string>> clockNetsInfo;
 
   // Checks the user input in case there are other nets that need to be added to
