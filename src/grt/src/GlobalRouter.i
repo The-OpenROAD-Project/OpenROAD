@@ -38,6 +38,7 @@
 #include "grt/GlobalRouter.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
+#include "opendb/db.h"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -46,6 +47,7 @@ grt::GlobalRouter* getGlobalRouter();
 
 using ord::getGlobalRouter;
 using sta::LibertyPort;
+using odb::dbNet;
 %}
 
 %include "../../Exception.i"
@@ -103,9 +105,9 @@ set_routing_alpha_cmd(float alpha)
 }
 
 void
-set_alpha_for_net(char* netName, float alpha)
+set_alpha_for_net(odb::dbNet* net, float alpha)
 {
-  getGlobalRouter()->addAlphaForNet(netName, alpha);
+  getGlobalRouter()->addAlphaForNet(net, alpha);
 }
 
 void

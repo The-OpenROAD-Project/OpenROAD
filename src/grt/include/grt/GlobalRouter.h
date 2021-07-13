@@ -148,7 +148,7 @@ class GlobalRouter
                            int max_y,
                            int layer,
                            float reduction_percentage);
-  void addAlphaForNet(char* netName, float alpha);
+  void addAlphaForNet(odb::dbNet* net, float alpha);
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
@@ -321,7 +321,7 @@ class GlobalRouter
 
   float alpha_;
   int verbose_;
-  std::map<std::string, float> net_alpha_map_;
+  std::map<odb::dbNet*, float> net_alpha_map_;
   int min_layer_for_clock_ = -1;
   int max_layer_for_clock_ = -2;
 

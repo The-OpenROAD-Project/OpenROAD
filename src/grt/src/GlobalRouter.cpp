@@ -731,8 +731,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
       if (pins_on_grid.size() > 1 && !on_grid_local) {
         float net_alpha = alpha_;
-        if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
-          net_alpha = net_alpha_map_[net->getName()];
+        if (net_alpha_map_.find(net->getDbNet()) != net_alpha_map_.end()) {
+          net_alpha = net_alpha_map_[net->getDbNet()];
         }
         bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
@@ -1341,10 +1341,9 @@ void GlobalRouter::addRegionAdjustment(int min_x,
       RegionAdjustment(min_x, min_y, max_x, max_y, layer, reduction_percentage));
 }
 
-void GlobalRouter::addAlphaForNet(char* netName, float alpha)
+void GlobalRouter::addAlphaForNet(odb::dbNet* net, float alpha)
 {
-  std::string name(netName);
-  net_alpha_map_[name] = alpha;
+  net_alpha_map_[net] = alpha;
 }
 
 void GlobalRouter::setVerbose(const int v)

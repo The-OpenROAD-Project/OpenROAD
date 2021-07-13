@@ -77,7 +77,7 @@ proc set_routing_alpha { args } {
     set net_names $keys(-net)
     set nets [grt::parse_net_names "set_routing_alpha" $net_names]
     foreach net $nets {
-      grt::set_alpha_for_net [$net getName] $alpha
+      grt::set_alpha_for_net $net $alpha
     }
   } elseif { [llength $args] == 1 } {
     grt::set_routing_alpha_cmd $alpha
