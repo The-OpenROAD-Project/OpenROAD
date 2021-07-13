@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "tclCmdInputWidget.h"
+#include "tclSwig.h" // generated header
 
 #include <regex>
 
@@ -204,7 +205,8 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
           }
           else {
             // default to just commands
-            setCompleterCommands();
+            bool add_swig = !completion_prefix.isEmpty();
+            setCompleterCommands(add_swig);
           }
         }
       }
@@ -399,7 +401,10 @@ void TclCmdInputWidget::updateCompletion()
     completer_->setWidget(this);
     completer_->setCompletionMode(QCompleter::PopupCompletion);
 
-    setCompleterCommands();
+    setCompleterCommands(false);
+
+    std::set<std::string> args;
+    collectSWIGArguments(args);
 
     connect(completer_.get(), QOverload<const QString&>::of(&QCompleter::activated),
             this, &TclCmdInputWidget::insertCompletion);
@@ -492,6 +497,15 @@ void TclCmdInputWidget::initOpenRoadCommands()
       }
     }
   }
+
+  // get namespaces
+  std::set<std::string> swig_arguments;
+  collectSWIGArguments(swig_arguments);
+
+  for (const std::string& arg : swig_arguments) {
+    swig_arguments_.append(arg.c_str());
+  }
+  swig_arguments_.sort();
 }
 
 void TclCmdInputWidget::collectNamespaces(std::set<std::string>& namespaces)
@@ -508,7 +522,32 @@ void TclCmdInputWidget::collectNamespaces(std::set<std::string>& namespaces)
   }
 }
 
-void TclCmdInputWidget::setCompleterCommands()
+void TclCmdInputWidget::collectSWIGArguments(std::set<std::string>& args)
+{
+  swig_module_info* module = SWIG_Tcl_GetModule(interp_);
+  if (module == nullptr) {
+    return;
+  }
+
+  // loop through circularly linked list of modules
+  swig_module_info* first_module = module;
+  do {
+    // loop through types in modules to find classes
+    for (int i = 0; i < module->size; i++) {
+      swig_class* cls = static_cast<swig_class*>(module->types[i]->clientdata);
+      if (cls != nullptr) {
+        // loop through methods for each class to collect method names
+        for (swig_method* meth = cls->methods; meth != nullptr && meth->name; ++meth) {
+          args.insert(meth->name);
+        }
+      }
+    }
+
+    module = module->next;
+  } while (first_module != module);
+}
+
+void TclCmdInputWidget::setCompleterCommands(bool add_swig)
 {
   bool add_colons = completer_->completionPrefix().startsWith(":");
 
@@ -521,6 +560,12 @@ void TclCmdInputWidget::setCompleterCommands()
     else {
       options.append(cmd);
     }
+  }
+
+  if (add_swig && !add_colons) {
+    // add swig arguments
+    // only add if we're not starting with ::
+    options << swig_arguments_;
   }
 
   completer_options_->setStringList(options);

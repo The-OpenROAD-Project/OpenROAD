@@ -54,6 +54,17 @@ if (Qt5_FOUND AND BUILD_GUI)
       Boost::boost
   )
 
+  # add custom call to swig to generate required header
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tclSwig.h
+    COMMAND ${SWIG_EXECUTABLE} -tcl -external-runtime ${CMAKE_CURRENT_BINARY_DIR}/tclSwig.h
+  )
+  set_property(
+    SOURCE src/tclCmdInputWidget.cpp
+    APPEND PROPERTY INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}
+    APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/tclSwig.h
+  )
+
 messages(
   TARGET gui
 )
