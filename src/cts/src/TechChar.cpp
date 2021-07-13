@@ -365,8 +365,12 @@ void TechChar::reportSegment(unsigned key) const
                   seg.getLength(), seg.isBuffered());
 }
 
-void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
-                                     float& maxCap, bool& maxCapExist, bool midValue)
+void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
+                                        float& maxSlew,
+                                        bool& maxSlewExist,
+                                        float& maxCap,
+                                        bool& maxCapExist,
+                                        bool midValue)
 {
   if (axis) {
     switch (axis->variable()) {
@@ -396,7 +400,8 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bo
     }
   }
 }
-void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
+void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib,
+                                      sta::LibertyCell* buffer,
                                       float &maxSlew, bool &maxSlewExist,
                                       float &maxCap, bool &maxCapExist, bool midValue)
 {
@@ -557,8 +562,7 @@ void TechChar::initCharacterization()
         "parameter or technology files.");
   }
 
-  setLenghthUnit(static_cast<unsigned>(((_charBuf->getHeight() * 10) / 2)
-                                       / dbUnitsPerMicron));
+  setLenghthUnit(_charBuf->getHeight() * 10 / 2 / dbUnitsPerMicron);
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
@@ -575,7 +579,8 @@ void TechChar::initCharacterization()
       _logger->error(CTS, 96, "No Liberty cell found for {}.", bufMasterName);
     } else {
       sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
-      getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist, maxCap, maxCapExist);
+      getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist,
+                             maxCap, maxCapExist);
       if (!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
         _logger->warn(CTS, 67,
               "Could not get maxSlew/maxCap values from buffer {}. Using library values", bufMasterName);

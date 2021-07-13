@@ -35,26 +35,26 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0026]     Height: 6.3491
  Level 1
     Direction: Horizontal
-    # sinks per sub-region: 76
+    Sinks per sub-region: 76
     Sub-region size: 6.7460 X 6.3491
 [INFO CTS-0034]     Segment length (rounded): 4
     Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
 [WARNING CTS-0045] Creating fake entries in the LUT.
  Level 2
     Direction: Vertical
-    # sinks per sub-region: 38
+    Sinks per sub-region: 38
     Sub-region size: 6.7460 X 3.1746
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
  Level 3
     Direction: Horizontal
-    # sinks per sub-region: 19
+    Sinks per sub-region: 19
     Sub-region size: 3.3730 X 3.1746
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
  Level 4
     Direction: Vertical
-    # sinks per sub-region: 10
+    Sinks per sub-region: 10
     Sub-region size: 3.3730 X 1.5873
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
@@ -81,26 +81,26 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0026]     Height: 6.3491
  Level 1
     Direction: Horizontal
-    # sinks per sub-region: 75
+    Sinks per sub-region: 75
     Sub-region size: 6.7460 X 6.3491
 [INFO CTS-0034]     Segment length (rounded): 4
     Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
 [WARNING CTS-0045] Creating fake entries in the LUT.
  Level 2
     Direction: Vertical
-    # sinks per sub-region: 38
+    Sinks per sub-region: 38
     Sub-region size: 6.7460 X 3.1746
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
  Level 3
     Direction: Horizontal
-    # sinks per sub-region: 19
+    Sinks per sub-region: 19
     Sub-region size: 3.3730 X 3.1746
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
  Level 4
     Direction: Vertical
-    # sinks per sub-region: 10
+    Sinks per sub-region: 10
     Sub-region size: 3.3730 X 1.5873
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false

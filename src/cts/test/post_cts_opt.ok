@@ -34,7 +34,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0026]     Height: 13.9461
  Level 1
     Direction: Vertical
-    # sinks per sub-region: 14
+    Sinks per sub-region: 14
     Sub-region size: 13.1312 X 6.9731
 [INFO CTS-0034]     Segment length (rounded): 4
     Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false

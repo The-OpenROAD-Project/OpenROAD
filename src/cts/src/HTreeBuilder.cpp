@@ -299,7 +299,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
   _logger->report(" Level {}", level);
   _logger->report("    Direction: {}", (isVertical(level)) ? ("Vertical") : ("Horizontal"));
-  _logger->report("    # sinks per sub-region: {}", numSinksPerSubRegion);
+  _logger->report("    Sinks per sub-region: {}", numSinksPerSubRegion);
   _logger->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
   unsigned minLength = _minLengthSinkRegion / 2;

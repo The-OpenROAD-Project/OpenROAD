@@ -35,7 +35,7 @@ TritonCTS forced slew degradation on these wires.
 [WARNING CTS-0045] Creating fake entries in the LUT.
  Level 1
     Direction: Vertical
-    # sinks per sub-region: 8
+    Sinks per sub-region: 8
     Sub-region size: 1.3571 X 0.6786
 [INFO CTS-0034]     Segment length (rounded): 1
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
