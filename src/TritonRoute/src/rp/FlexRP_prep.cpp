@@ -611,6 +611,13 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   if (!viaDef1 || !viaDef2) {
     return;
   }
+  if(viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum())
+  {
+    //swap
+    frViaDef* temp = viaDef2;
+    viaDef2 = viaDef1;
+    viaDef1 = temp;
+  }
   bool isCurrDirY = !isCurrDirX;
   frVia via1(viaDef1);
   frBox viaBox1, viaBox2, cutBox1, cutBox2;
@@ -639,7 +646,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     auto dbRule = con->getODBRule();
     if(dbRule->isLayerValid() && layer2->getName() != dbRule->getSecondLayer()->getName())
       continue;
-    else if(layer2->getLayerNum() != layer1->getLayerNum())
+    if(!dbRule->isLayerValid() && layer2->getLayerNum() != layer1->getLayerNum())
       continue;
     reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
     if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
@@ -648,23 +655,6 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     }
     forbiddenRanges.push_back(make_pair(0, reqSpcVal));
   }
-  if(layer2->getLayerNum() != layer1->getLayerNum())
-    for(auto con : layer2->getLef58CutSpacingTableConstraints())
-    {
-      auto dbRule = con->getODBRule();
-      if(!dbRule->isLayerValid())
-        continue;
-      auto cutClass1 = layer1->getCutClass(cutBox1.width(), cutBox1.length())->getName();
-      auto cutClass2 = layer2->getCutClass(cutBox2.width(), cutBox2.length())->getName();
-      if(layer1->getName() != dbRule->getSecondLayer()->getName())
-        continue;
-      reqSpcVal = dbRule->getMaxSpacing(cutClass2, cutClass1);
-      if (!dbRule->isCenterToCenter(cutClass2, cutClass1)) {
-        reqSpcVal += isCurrDirY ? (cutBox2.top() - cutBox2.bottom())
-                                : (cutBox2.right() - cutBox2.left());
-      }
-      forbiddenRanges.push_back(make_pair(0, reqSpcVal));
-    }
 }
 
 void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc_helper(

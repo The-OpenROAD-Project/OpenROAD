@@ -939,6 +939,26 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1,
   return false;
 }
 
+int dbTechLayerCutSpacingTableDefRule::getPrlEntry(std::string cutClass1,
+                                                   std::string cutClass2)
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  for (auto entry : obj->prl_tbl_) {
+    std::string class1 = std::get<0>(entry);
+    std::string class2 = std::get<1>(entry);
+    int prl = std::get<2>(entry);
+    if ((class1 == cutClass1 || class1 == "ALL")
+        && (class2 == cutClass2 || class2 == "ALL"))
+      return prl;
+    class1.swap(class2);
+    if ((class1 == cutClass1 || class1 == "ALL")
+        && (class2 == cutClass2 || class2 == "ALL"))
+      return prl;
+  }
+  return obj->prl_;
+}
+
 bool dbTechLayerCutSpacingTableDefRule::isCenterAndEdge(std::string cutClass1,
                                                         std::string cutClass2)
 {
