@@ -74,8 +74,11 @@ proc set_routing_alpha { args } {
     utl::error GRT 29 "The alpha value must be between 0.0 and 1.0."
   }
   if { [info exists keys(-net)] } {
-    set net_name $keys(-net)
-    grt::set_alpha_for_net $net_name $alpha
+    set net_names $keys(-net)
+    set nets [grt::parse_net_names "set_routing_alpha" $net_names]
+    foreach net $nets {
+      grt::set_alpha_for_net [$net getName] $alpha
+    }
   } elseif { [llength $args] == 1 } {
     grt::set_routing_alpha_cmd $alpha
   } else {
@@ -424,6 +427,20 @@ proc define_clock_layer_range { layers } {
   } else {
     utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
   }
+}
+
+proc parse_net_names {cmd names} {
+  set dbBlock [ord::get_db_block]
+  set net_list {}
+  foreach net [get_nets $names] {
+    lappend net_list [sta::sta_to_db_net $net]
+  }
+
+  if {[llength $net_list] == 0} {
+    utl::error GRT 102 "Nets for $cmd command were not found"
+  }
+
+  return $net_list
 }
 
 # grt namespace end

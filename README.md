@@ -872,8 +872,8 @@ The `set_routing_alpha` command enables the Prim/Dijkstra algorithm and sets the
 Alpha is between 0.0 and 1.0. When alpha is 0.0 the net topology minimizes total wire length (i.e. capacitance).
 When alpha is 1.0 it minimizes longest path between the driver and loads (i.e., maximum resistance).
 Typical values are 0.4-0.8. For more information about PDRev, check the paper in `src/FastRoute/src/pdrev/papers/PDRev.pdf`
-You can call it multiple times for different nets.
-Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
+You can call it multiple times for different nets or can use regex for net names.
+Example: `set_routing_alpha -net clknet_* 0.3` sets the alpha value of 0.3 for all nets with prefix *clknet_*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
