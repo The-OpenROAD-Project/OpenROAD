@@ -141,7 +141,7 @@ class FastRouteCore
                             int expand,
                             float height,
                             int ripup_threshold,
-                            int mazeedge_Threshold,
+                            int mazeedgeThreshold,
                             bool ordering,
                             int cost_type,
                             float LOGIS_COF,
@@ -348,7 +348,7 @@ class FastRouteCore
   static const int BIG_INT = 1e7;     // big integer used as infinity
   static const int HCOST =  5000;
 
-  int maxNetDegree;
+  int max_degree_;
   std::vector<int> cap_per_layer_;
   std::vector<int> usage_per_layer_;
   std::vector<int> overflow_per_layer_;
@@ -362,101 +362,97 @@ class FastRouteCore
   int x_range_;
   int y_range_;
 
-  int newnetID;
-  int segcount;
-  int pinInd;
-  int numAdjust;
-  int vCapacity;
-  int hCapacity;
-  int MD;
-  int xGrid;
-  int yGrid;
-  int xcorner;
-  int ycorner;
-  int wTile;
-  int hTile;
-  int enlarge;
-  int costheight;
-  int ripup_threshold;
-  int ahTH;
-  int numValidNets;  // # nets need to be routed (having pins in different grids)
-  int numLayers;
-  int totalOverflow;  // total # overflow
-  int gridHV;
-  int gridH;
-  int gridV;
-  int verbose;
-  int viacost;
-  int mazeedge_Threshold;
-  float vCapacity_lb;
-  float hCapacity_lb;
-  float vCapacity_ub;
-  float hCapacity_ub;
+  int new_net_id_;
+  int seg_count_;
+  int pin_ind_;
+  int num_adjust_;
+  int v_capacity_;
+  int h_capacity_;
+  int x_grid_;
+  int y_grid_;
+  int x_corner_;
+  int y_corner_;
+  int w_tile_;
+  int h_tile_;
+  int enlarge_;
+  int costheight_;
+  int ahth_;
+  int num_valid_nets_;  // # nets need to be routed (having pins in different grids)
+  int num_layers_;
+  int total_overflow_;  // total # overflow
+  int grid_hv_;
+  int grid_h_;
+  int grid_v_;
+  int verbose_;
+  int via_cost_;
+  int mazeedge_threshold_;
+  float v_capacity_lb_;
+  float h_capacity_lb_;
 
-  std::vector<short> vCapacity3D;
-  std::vector<short> hCapacity3D;
-  std::vector<float> costHVH;  // Horizontal first Z
-  std::vector<float> costVHV;  // Vertical first Z
-  std::vector<float> costH;    // Horizontal segment cost
-  std::vector<float> costV;    // Vertical segment cost
-  std::vector<float> costLR;   // Left and right boundary cost
-  std::vector<float> costTB;   // Top and bottom boundary cost
-  std::vector<float> costHVHtest;  // Vertical first Z
-  std::vector<float> costVtest;    // Vertical segment cost
-  std::vector<float> costTBtest;   // Top and bottom boundary cost
-  std::vector<float> h_costTable;
-  std::vector<float> v_costTable;
-  std::vector<int> xcor;
-  std::vector<int> ycor;
-  std::vector<int> dcor;
-  std::vector<int> seglistIndex;  // the index for the segments for each net
-  std::vector<int> seglistCnt;    // the number of segements for each net
-  std::vector<int> gridHs;
-  std::vector<int> gridVs;
-  std::vector<bool> pop_heap2;
+  std::vector<short> v_capacity_3D_;
+  std::vector<short> h_capacity_3D_;
+  std::vector<float> cost_hvh_;  // Horizontal first Z
+  std::vector<float> cost_vhv_;  // Vertical first Z
+  std::vector<float> cost_h_;    // Horizontal segment cost
+  std::vector<float> cost_v_;    // Vertical segment cost
+  std::vector<float> cost_lr_;   // Left and right boundary cost
+  std::vector<float> cost_tb_;   // Top and bottom boundary cost
+  std::vector<float> cost_hvh_test_;  // Vertical first Z
+  std::vector<float> cost_v_test_;    // Vertical segment cost
+  std::vector<float> cost_tb_test_;   // Top and bottom boundary cost
+  std::vector<float> h_cost_table_;
+  std::vector<float> v_cost_table_;
+  std::vector<int> xcor_;
+  std::vector<int> ycor_;
+  std::vector<int> dcor_;
+  std::vector<int> seglist_index_;  // the index for the segments for each net
+  std::vector<int> seglist_cnt_;    // the number of segements for each net
+  std::vector<int> grid_hs_;
+  std::vector<int> grid_vs_;
+  std::vector<bool> pop_heap2_;
 
-  std::vector<FrNet*> nets;
-  std::vector<Edge> h_edges;
-  std::vector<Edge> v_edges;
-  std::vector<OrderNetEdge> netEO;
-  std::vector<std::vector<DTYPE>> gxs;        // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>> gys;        // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>> gs;  // the copy of vertical sequence for nets, used for second FLUTE
-  std::vector<Edge3D> h_edges3D;
-  std::vector<Edge3D> v_edges3D;
-  std::vector<Segment> seglist;
-  std::vector<OrderNetPin> treeOrderPV;
-  std::vector<OrderTree> treeOrderCong;
+  std::vector<FrNet*> nets_;
+  std::vector<Edge> h_edges_;
+  std::vector<Edge> v_edges_;
+  std::vector<OrderNetEdge> net_eo_;
+  std::vector<std::vector<DTYPE>> gxs_;        // the copy of xs for nets, used for second FLUTE
+  std::vector<std::vector<DTYPE>> gys_;        // the copy of xs for nets, used for second FLUTE
+  std::vector<std::vector<DTYPE>> gs_;  // the copy of vertical sequence for nets, used for second FLUTE
+  std::vector<Edge3D> h_edges_3D_;
+  std::vector<Edge3D> v_edges_3D_;
+  std::vector<Segment> seglist_;
+  std::vector<OrderNetPin> tree_order_pv_;
+  std::vector<OrderTree> tree_order_cong_;
 
-  multi_array<dirctionT, 3> directions3D;
-  multi_array<parent3D, 3> pr3D;
-  multi_array<int, 3> corrEdge3D;
-  multi_array<int, 2> corrEdge;
-  multi_array<int, 2> layerGrid;
-  multi_array<int, 2> viaLink;
-  multi_array<int, 3> d13D;
-  multi_array<short, 3> d23D;
-  multi_array<short, 2> parentX1;
-  multi_array<short, 2> parentY1;
-  multi_array<short, 2> parentX3;
-  multi_array<short, 2> parentY3;
-  multi_array<float, 2> d1;
-  multi_array<float, 2> d2;
-  multi_array<bool, 2> HV;
-  multi_array<bool, 2> hyperV;
-  multi_array<bool, 2> hyperH;
-  multi_array<bool, 2> inRegion;
+  multi_array<dirctionT, 3> directions_3D_;
+  multi_array<parent3D, 3> pr_3D_;
+  multi_array<int, 3> corr_edge_3D_;
+  multi_array<int, 2> corr_edge_;
+  multi_array<int, 2> layer_grid_;
+  multi_array<int, 2> via_link_;
+  multi_array<int, 3> d1_3D_;
+  multi_array<short, 3> d2_3D_;
+  multi_array<short, 2> parent_x1_;
+  multi_array<short, 2> parent_y1_;
+  multi_array<short, 2> parent_x3_;
+  multi_array<short, 2> parent_y3_;
+  multi_array<float, 2> d1_;
+  multi_array<float, 2> d2_;
+  multi_array<bool, 2> hv_;
+  multi_array<bool, 2> hyper_v_;
+  multi_array<bool, 2> hyper_h_;
+  multi_array<bool, 2> in_region_;
 
-  StTree* sttrees;    // the Steiner trees
-  StTree* sttreesBK;
+  StTree* sttrees_;    // the Steiner trees
+  StTree* sttrees_bk_;
 
-  int** heap13D;
-  short** heap23D;
+  int** heap1_3D_;
+  short** heap2_3D_;
 
-  float **heap2;
-  float **heap1;
+  float **heap2_;
+  float **heap1_;
 
-  utl::Logger* logger;
+  utl::Logger* logger_;
 };
 
 }  // namespace grt

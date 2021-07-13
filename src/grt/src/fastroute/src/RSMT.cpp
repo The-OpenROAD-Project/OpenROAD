@@ -92,18 +92,18 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
   TreeNode* treenodes;
 
   // TODO: check this size
-  const int sizeV = 2 * nets[ind]->numPins;
+  const int sizeV = 2 * nets_[ind]->numPins;
   int nbrcnt[sizeV];
 
   d = rsmt.deg;
-  sttrees[ind].deg = d;
+  sttrees_[ind].deg = d;
   numnodes = 2 * d - 2;
   numedges = 2 * d - 3;
-  sttrees[ind].nodes = new TreeNode[numnodes];
-  sttrees[ind].edges = new TreeEdge[numedges];
+  sttrees_[ind].nodes = new TreeNode[numnodes];
+  sttrees_[ind].edges = new TreeEdge[numedges];
 
-  treenodes = sttrees[ind].nodes;
-  treeedges = sttrees[ind].edges;
+  treenodes = sttrees_[ind].nodes;
+  treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes
   for (i = 0; i < numnodes; i++)
@@ -149,10 +149,10 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
       edgecnt++;
     }
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
-      logger->error(GRT, 188, "Invalid number of node neighbors.");
+      logger_->error(GRT, 188, "Invalid number of node neighbors.");
   }
   if (edgecnt != numnodes - 1) {
-    logger->error(GRT, 189, "Failure in copy tree. Num edges: {}, num nodes: {}.", edgecnt, numnodes);
+    logger_->error(GRT, 189, "Failure in copy tree. Num edges: {}, num nodes: {}.", edgecnt, numnodes);
   }
 }
 
@@ -305,14 +305,14 @@ void FastRouteCore::fluteNormal(int netID,
       }
     }
 
-    gxs[netID].resize(d);
-    gys[netID].resize(d);
-    gs[netID].resize(d);
+    gxs_[netID].resize(d);
+    gys_[netID].resize(d);
+    gs_[netID].resize(d);
 
     for (i = 0; i < d; i++) {
-      gxs[netID][i] = xs[i];
-      gys[netID][i] = ys[i];
-      gs[netID][i] = s[i];
+      gxs_[netID][i] = xs[i];
+      gys_[netID][i] = ys[i];
+      gs_[netID][i] = s[i];
 
       tmp_xs[i] = xs[i] * 100;
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
@@ -350,7 +350,6 @@ void FastRouteCore::fluteCongest(int netID,
   DTYPE height, width;
   int usageH, usageV;
   float coeffH = 1;
-  //  float coeffV = 2;//1.36;//hCapacity/vCapacity;//1;//
 
   if (d == 2) {
     t->deg = 2;
@@ -432,9 +431,9 @@ void FastRouteCore::fluteCongest(int netID,
     s = new int[d];
 
     for (i = 0; i < d; i++) {
-      xs[i] = gxs[netID][i];
-      ys[i] = gys[netID][i];
-      s[i] = gs[netID][i];
+      xs[i] = gxs_[netID][i];
+      ys[i] = gys_[netID][i];
+      s[i] = gs_[netID][i];
     }
 
     // get the new coordinates considering congestion
@@ -450,24 +449,24 @@ void FastRouteCore::fluteCongest(int netID,
       usageH = 0;
       for (k = ys[0]; k <= ys[d - 1]; k++)  // all grids in the column
       {
-        grid = k * (xGrid - 1);
+        grid = k * (x_grid_ - 1);
         for (j = xs[i]; j < xs[i + 1]; j++)
-          usageH += (h_edges[grid + j].est_usage + h_edges[grid + j].red);
+          usageH += (h_edges_[grid + j].est_usage + h_edges_[grid + j].red);
       }
       if (x_seg[i] != 0 && usageH != 0) {
         x_seg[i]
-            *= coeffH * usageH / ((xs[i + 1] - xs[i]) * height * hCapacity);
+            *= coeffH * usageH / ((xs[i + 1] - xs[i]) * height * h_capacity_);
         x_seg[i] = std::max(1, x_seg[i]);  // the segment len is at least 1 if
                                            // original segment len > 0
       }
       usageV = 0;
       for (j = ys[i]; j < ys[i + 1]; j++) {
-        grid = j * xGrid;
+        grid = j * x_grid_;
         for (k = xs[0]; k <= xs[d - 1]; k++)  // all grids in the row
-          usageV += (v_edges[grid + k].est_usage + v_edges[grid + k].red);
+          usageV += (v_edges_[grid + k].est_usage + v_edges_[grid + k].red);
       }
       if (y_seg[i] != 0 && usageV != 0) {
-        y_seg[i] *= coeffV * usageV / ((ys[i + 1] - ys[i]) * width * vCapacity);
+        y_seg[i] *= coeffV * usageV / ((ys[i + 1] - ys[i]) * width * v_capacity_);
         y_seg[i] = std::max(1, y_seg[i]);  // the segment len is at least 1 if
                                            // original segment len > 0
       }
@@ -508,9 +507,9 @@ bool FastRouteCore::netCongestion(int netID)
   //  bool Congested;
   Segment* seg;
 
-  for (j = seglistIndex[netID]; j < seglistIndex[netID] + seglistCnt[netID];
+  for (j = seglist_index_[netID]; j < seglist_index_[netID] + seglist_cnt_[netID];
        j++) {
-    seg = &seglist[j];
+    seg = &seglist_[j];
 
     if (seg->y1 < seg->y2) {
       ymin = seg->y1;
@@ -522,28 +521,28 @@ bool FastRouteCore::netCongestion(int netID)
 
     // remove L routing
     if (seg->xFirst) {
-      grid = seg->y1 * (xGrid - 1);
+      grid = seg->y1 * (x_grid_ - 1);
       for (i = seg->x1; i < seg->x2; i++) {
-        if (h_edges[grid + i].est_usage >= h_edges[grid + i].cap) {
+        if (h_edges_[grid + i].est_usage >= h_edges_[grid + i].cap) {
           return true;
         }
       }
       for (i = ymin; i < ymax; i++) {
-        if (v_edges[i * xGrid + seg->x2].est_usage
-            >= v_edges[i * xGrid + seg->x2].cap) {
+        if (v_edges_[i * x_grid_ + seg->x2].est_usage
+            >= v_edges_[i * x_grid_ + seg->x2].cap) {
           return true;
         }
       }
     } else {
       for (i = ymin; i < ymax; i++) {
-        if (v_edges[i * xGrid + seg->x1].est_usage
-            >= v_edges[i * xGrid + seg->x1].cap) {
+        if (v_edges_[i * x_grid_ + seg->x1].est_usage
+            >= v_edges_[i * x_grid_ + seg->x1].cap) {
           return true;
         }
       }
-      grid = seg->y2 * (xGrid - 1);
+      grid = seg->y2 * (x_grid_ - 1);
       for (i = seg->x1; i < seg->x2; i++) {
-        if (h_edges[grid + i].est_usage >= h_edges[grid + i].cap) {
+        if (h_edges_[grid + i].est_usage >= h_edges_[grid + i].cap) {
           return true;
         }
       }
@@ -558,22 +557,22 @@ bool FastRouteCore::VTreeSuite(int netID)
 
   int i, deg;
 
-  deg = nets[netID]->deg;
+  deg = nets_[netID]->deg;
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
 
   for (i = 0; i < deg; i++) {
-    if (xmin > nets[netID]->pinX[i]) {
-      xmin = nets[netID]->pinX[i];
+    if (xmin > nets_[netID]->pinX[i]) {
+      xmin = nets_[netID]->pinX[i];
     }
-    if (xmax < nets[netID]->pinX[i]) {
-      xmax = nets[netID]->pinX[i];
+    if (xmax < nets_[netID]->pinX[i]) {
+      xmax = nets_[netID]->pinX[i];
     }
-    if (ymin > nets[netID]->pinY[i]) {
-      ymin = nets[netID]->pinY[i];
+    if (ymin > nets_[netID]->pinY[i]) {
+      ymin = nets_[netID]->pinY[i];
     }
-    if (ymax < nets[netID]->pinY[i]) {
-      ymax = nets[netID]->pinY[i];
+    if (ymax < nets_[netID]->pinY[i]) {
+      ymax = nets_[netID]->pinY[i];
     }
   }
 
@@ -590,22 +589,22 @@ bool FastRouteCore::HTreeSuite(int netID)
 
   int i, deg;
 
-  deg = nets[netID]->deg;
+  deg = nets_[netID]->deg;
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
 
   for (i = 0; i < deg; i++) {
-    if (xmin > nets[netID]->pinX[i]) {
-      xmin = nets[netID]->pinX[i];
+    if (xmin > nets_[netID]->pinX[i]) {
+      xmin = nets_[netID]->pinX[i];
     }
-    if (xmax < nets[netID]->pinX[i]) {
-      xmax = nets[netID]->pinX[i];
+    if (xmax < nets_[netID]->pinX[i]) {
+      xmax = nets_[netID]->pinX[i];
     }
-    if (ymin > nets[netID]->pinY[i]) {
-      ymin = nets[netID]->pinY[i];
+    if (ymin > nets_[netID]->pinY[i]) {
+      ymin = nets_[netID]->pinY[i];
     }
-    if (ymax < nets[netID]->pinY[i]) {
-      ymax = nets[netID]->pinY[i];
+    if (ymax < nets_[netID]->pinY[i]) {
+      ymax = nets_[netID]->pinY[i];
     }
   }
 
@@ -623,54 +622,54 @@ float FastRouteCore::coeffADJ(int netID)
 
   int i, j, deg, grid;
 
-  deg = nets[netID]->deg;
+  deg = nets_[netID]->deg;
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
   Hcap = Vcap = 0;
   Husage = Vusage = 0;
 
   for (i = 0; i < deg; i++) {
-    if (xmin > nets[netID]->pinX[i]) {
-      xmin = nets[netID]->pinX[i];
+    if (xmin > nets_[netID]->pinX[i]) {
+      xmin = nets_[netID]->pinX[i];
     }
-    if (xmax < nets[netID]->pinX[i]) {
-      xmax = nets[netID]->pinX[i];
+    if (xmax < nets_[netID]->pinX[i]) {
+      xmax = nets_[netID]->pinX[i];
     }
-    if (ymin > nets[netID]->pinY[i]) {
-      ymin = nets[netID]->pinY[i];
+    if (ymin > nets_[netID]->pinY[i]) {
+      ymin = nets_[netID]->pinY[i];
     }
-    if (ymax < nets[netID]->pinY[i]) {
-      ymax = nets[netID]->pinY[i];
+    if (ymax < nets_[netID]->pinY[i]) {
+      ymax = nets_[netID]->pinY[i];
     }
   }
 
   if (xmin == xmax) {
     for (j = ymin; j < ymax; j++) {
-      grid = j * xGrid + xmin;
-      Vcap += v_edges[grid].cap;
-      Vusage += v_edges[grid].est_usage;
+      grid = j * x_grid_ + xmin;
+      Vcap += v_edges_[grid].cap;
+      Vusage += v_edges_[grid].est_usage;
     }
     coef = 1;
   } else if (ymin == ymax) {
     for (i = xmin; i < xmax; i++) {
-      grid = ymin * (xGrid - 1) + i;
-      Hcap += h_edges[grid].cap;
-      Husage += h_edges[grid].est_usage;
+      grid = ymin * (x_grid_ - 1) + i;
+      Hcap += h_edges_[grid].cap;
+      Husage += h_edges_[grid].est_usage;
     }
     coef = 1;
   } else {
     for (j = ymin; j <= ymax; j++) {
       for (i = xmin; i < xmax; i++) {
-        grid = j * (xGrid - 1) + i;
-        Hcap += h_edges[grid].cap;
-        Husage += h_edges[grid].est_usage;
+        grid = j * (x_grid_ - 1) + i;
+        Hcap += h_edges_[grid].cap;
+        Husage += h_edges_[grid].est_usage;
       }
     }
     for (j = ymin; j < ymax; j++) {
       for (i = xmin; i <= xmax; i++) {
-        grid = j * xGrid + i;
-        Vcap += v_edges[grid].cap;
-        Vusage += v_edges[grid].est_usage;
+        grid = j * x_grid_ + i;
+        Vcap += v_edges_[grid].cap;
+        Vusage += v_edges_[grid].est_usage;
       }
     }
     // (Husage * Vcap) resulting in zero is unlikely, but
@@ -713,8 +712,8 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
 
   const int flute_accuracy = 2;
 
-  for (i = 0; i < numValidNets; i++) {
-    FrNet* net = nets[i];
+  for (i = 0; i < num_valid_nets_; i++) {
+    FrNet* net = nets_[i];
     coeffV = 1.36;
     int sizeV = net->numPins;
     int x[sizeV];
@@ -738,10 +737,10 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
 
     if (reRoute) {
       if (newType) {
-        treeedges = sttrees[i].edges;
-        treenodes = sttrees[i].nodes;
+        treeedges = sttrees_[i].edges;
+        treenodes = sttrees_[i].nodes;
         for (j = 0; j < 2 * d - 3; j++) {
-          if (sttrees[i].edges[j].len
+          if (sttrees_[i].edges[j].len
               > 0)  // only route the non-degraded edges (len>0)
           {
             treeedge = &(treeedges[j]);
@@ -756,8 +755,8 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
         }
       } else {
         // remove the est_usage due to the segments in this net
-        for (j = seglistIndex[i]; j < seglistIndex[i] + seglistCnt[i]; j++) {
-          ripupSegL(&seglist[j]);
+        for (j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i]; j++) {
+          ripupSegL(&seglist_[j]);
         }
       }
     }
@@ -766,7 +765,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
       coeffV = 1.2;
     }
     if (net->alpha > 0) {
-      stt::Tree tree = pdr::primDijkstra(net->pinX, net->pinY, net->driver_idx, net->alpha, logger);
+      stt::Tree tree = pdr::primDijkstra(net->pinX, net->pinY, net->driver_idx, net->alpha, logger_);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
@@ -795,7 +794,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
 
     if (congestionDriven) {
       for (j = 0; j < 2 * d - 3; j++)
-        wl1 += sttrees[i].edges[j].len;
+        wl1 += sttrees_[i].edges[j].len;
     }
 
     segcnt = 0;
@@ -810,26 +809,26 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
 
       if (x1 != x2 || y1 != y2)  // the branch is not degraded (a point)
       {
-        segPos = seglistIndex[i]
+        segPos = seglist_index_[i]
                  + segcnt;  // the position of this segment in seglist
         if (x1 < x2) {
-          seglist[segPos].x1 = x1;
-          seglist[segPos].x2 = x2;
-          seglist[segPos].y1 = y1;
-          seglist[segPos].y2 = y2;
+          seglist_[segPos].x1 = x1;
+          seglist_[segPos].x2 = x2;
+          seglist_[segPos].y1 = y1;
+          seglist_[segPos].y2 = y2;
         } else {
-          seglist[segPos].x1 = x2;
-          seglist[segPos].x2 = x1;
-          seglist[segPos].y1 = y2;
-          seglist[segPos].y2 = y1;
+          seglist_[segPos].x1 = x2;
+          seglist_[segPos].x2 = x1;
+          seglist_[segPos].y1 = y2;
+          seglist_[segPos].y2 = y1;
         }
 
-        seglist[segPos].netID = i;
+        seglist_[segPos].netID = i;
         segcnt++;
       }
     }  // loop j
 
-    seglistCnt[i] = segcnt;  // the number of segments for net i
+    seglist_cnt_[i] = segcnt;  // the number of segments for net i
     totalNumSeg += segcnt;
 
     if (reRoute) {
@@ -841,10 +840,10 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     }
   }  // loop i
 
-  if (verbose > 1) {
-    logger->info(GRT, 191, "Wirelength: {}, Wirelength1: {}", wl, wl1);
-    logger->info(GRT, 192, "Number of segments: {}", totalNumSeg);
-    logger->info(GRT, 193, "Number of shifts: {}", numShift);
+  if (verbose_ > 1) {
+    logger_->info(GRT, 191, "Wirelength: {}, Wirelength1: {}", wl, wl1);
+    logger_->info(GRT, 192, "Number of segments: {}", totalNumSeg);
+    logger_->info(GRT, 193, "Number of shifts: {}", numShift);
   }
 }
 
