@@ -241,13 +241,7 @@ void GlobalRouter::run()
 {
   clear();
 
-  bool route_clocks = min_layer_for_clock_ > 0 && max_layer_for_clock_ > 0;
-
-  if (route_clocks) {
-    globalRouteClocksSeparately();
-  } else {
-    globalRoute();
-  }
+  globalRoute();
 
   reportCongestion();
   computeWirelength();
@@ -734,11 +728,17 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
           net_alpha = net_alpha_map_[net->getName()];
         }
-        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK) &&
+                         !clockHasLeafITerm(net->getDbNet());
 
         int num_layers = grid_->getNumLayers();
         std::vector<int> edge_cost_per_layer(num_layers + 1, 1);
         int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
+
+        int min_layer = (is_clock && min_layer_for_clock_ > 0) ?
+                         min_layer_for_clock_ : min_routing_layer_;
+        int max_layer = (is_clock && max_layer_for_clock_ > 0) ?
+                        max_layer_for_clock_ : max_routing_layer_;
 
         int netID = fastroute_->addNet(net->getDbNet(),
                                        pins_on_grid.size(),
@@ -746,8 +746,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,
-                                       min_routing_layer_-1,
-                                       max_routing_layer_-1,
+                                       min_layer-1,
+                                       max_layer-1,
                                        edge_cost_per_layer);
         for (RoutePt& pin_pos : pins_on_grid) {
           fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer()-1);
