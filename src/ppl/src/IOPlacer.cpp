@@ -830,6 +830,10 @@ void IOPlacer::updatePinArea(IOPin& pin)
 {
   const int mfg_grid = tech_->getManufacturingGrid();
   
+  if (mfg_grid == 0) {
+    logger_->error(PPL, 20, "Manufacturing grid is not defined.");
+  }
+
   if (pin.getLayer() != top_grid_.layer) {
     int index;
 
