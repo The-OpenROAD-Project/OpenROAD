@@ -17,8 +17,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0046]     Number of wire segments: 2376
 [INFO CTS-0047]     Number of keys in characterization LUT: 832
 [INFO CTS-0048]     Actual min input cap: 1
-[INFO CTS-0002]  User did not specify clock roots.
 [WARNING CTS-0083] No clock nets have been found.
-[INFO CTS-0008]  TritonCTS found 0 clock nets.
+[INFO CTS-0008] TritonCTS found 0 clock nets.
 [WARNING CTS-0082] No valid clock nets in the design.
 

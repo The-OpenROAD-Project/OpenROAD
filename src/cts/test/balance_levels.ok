@@ -18,13 +18,10 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0046]     Number of wire segments: 2376
 [INFO CTS-0047]     Number of keys in characterization LUT: 832
 [INFO CTS-0048]     Actual min input cap: 1
-[INFO CTS-0002]  User did not specify clock roots.
-[INFO CTS-0007]  Net "clk" found for clock "clk"
-[INFO CTS-0009]  Initializing clock net for : "clk"
+[INFO CTS-0007] Net "clk" found for clock "clk"
 [INFO CTS-0010]  Clock net "clk" has 151 sinks
-[INFO CTS-0009]  Initializing clock net for : "clk2"
 [INFO CTS-0010]  Clock net "clk2" has 150 sinks
-[INFO CTS-0008]  TritonCTS found 2 clock nets.
+[INFO CTS-0008] TritonCTS found 2 clock nets.
 [INFO CTS-0097] Chacterization used 1 buffer(s) types.
 [INFO CTS-0027] Generating H-Tree topology for net clk
 [INFO CTS-0028]  Total number of sinks: 151
@@ -132,11 +129,13 @@ Fixing from level 2 (parent=0 + current=2) to max 5 for driver clk
 [INFO CTS-0015]     Created 17 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 6:1, 7:1, 8:4, 9:4, 10:1, 11:2, 12:2, 13:1.
 [INFO CTS-0017]     Max level of the clock tree: 4.
- Post DB write clock net "clk" report
-[INFO CTS-0091] Sinks after db write = 300 (Leaf Buffers = 0)
-[INFO CTS-0092] Avg Sink Wire Length = 169.0 um
-[INFO CTS-0094] Min path depth = 5 Max path depth = 5
- Post DB write clock net "clk2" report
-[INFO CTS-0091] Sinks after db write = 150 (Leaf Buffers = 0)
-[INFO CTS-0092] Avg Sink Wire Length = 67.2 um
-[INFO CTS-0094] Min path depth = 2 Max path depth = 2
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 300
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Avgerage sink wire length 169.0 um
+[INFO CTS-0102]  Path depth 5 - 5
+[INFO CTS-0098] Clock net "clk2"
+[INFO CTS-0099]  Sinks 150
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Avgerage sink wire length 67.2 um
+[INFO CTS-0102]  Path depth 2 - 2

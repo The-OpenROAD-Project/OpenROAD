@@ -148,9 +148,7 @@ void TritonCTS::findClockRoots()
 {
   _staEngine->init();
   if (_options->getClockNets() != "") {
-    _logger->info(CTS, 1, " Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
-  } else {
-    _logger->info(CTS, 2, " User did not specify clock roots.");
+    _logger->info(CTS, 1, "Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
   }
 }
 
@@ -283,15 +281,13 @@ void TritonCTS::writeDataToDb()
     int maxDepth = 0;
     bool reportFullTree = !builder->getParent() && builder->getChildren().size() && _options->getBalanceLevels();
     countSinksPostDbWrite(topClockNet, sinkCount, leafSinks, 0, allSinkDistance,
-                           minDepth, maxDepth, 0, reportFullTree);
-    _logger->report(" Post DB write clock net \"{}\" report", builder->getClock().getName());
-    _logger->info(CTS, 91, "Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
+                          minDepth, maxDepth, 0, reportFullTree);
+    _logger->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
+    _logger->info(CTS, 99, " Sinks {}", sinkCount);
+    _logger->info(CTS, 100, " Leaf buffers {}", leafSinks);
     double avgWL = allSinkDistance/sinkCount;
-    _logger->info(CTS, 92, "Avg Sink Wire Length = {:.3} um", avgWL);
-    _logger->info(CTS, 94, "Min path depth = {} Max path depth = {}", minDepth, maxDepth);
-    if (!builder->getParent() && _options->getBalanceLevels()) {
-
-    }
+    _logger->info(CTS, 101, " Avgerage sink wire length {:.3} um", avgWL);
+    _logger->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
   }
 }
 
@@ -436,9 +432,9 @@ void TritonCTS::initAllClocks()
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
         if (clkName == "")
-          _logger->info(CTS, 95, " Net \"{}\" found", net->getName());
+          _logger->info(CTS, 95, "Net \"{}\" found", net->getName());
         else
-          _logger->info(CTS, 7, " Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
+          _logger->info(CTS, 7, "Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
         initOneClockTree(net, clkName, nullptr);
@@ -452,7 +448,7 @@ void TritonCTS::initAllClocks()
     _logger->warn(CTS, 83, "No clock nets have been found.");
   }
 
-  _logger->info(CTS, 8, " TritonCTS found {} clock nets.", getNumClocks());
+  _logger->info(CTS, 8, "TritonCTS found {} clock nets.", getNumClocks());
   _options->setNumClockRoots(getNumClocks());
 }
 
@@ -477,8 +473,6 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
   }
 
   // Initialize clock net
-  _logger->info(CTS, 9, " Initializing clock net for : \"{}\"", net->getConstName());
-
   Clock clockNet(net->getConstName(), driver, sdcClock, xPin, yPin);
   clockNet.setDriverPin(iterm);
 
@@ -501,8 +495,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
     return nullptr;
   } else {
     if (clockNet.getNumSinks() == 0) {
-      _logger->warn(CTS, 42, "Net \"{}\" has 0 sinks. Unconnected net or"
-                    " unplaced sink instances. Skipping...", clockNet.getName());
+      _logger->warn(CTS, 42, "Net \"{}\" has no sinks. Skipping...", clockNet.getName());
       return nullptr;
     }
   }
