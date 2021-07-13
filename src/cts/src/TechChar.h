@@ -129,8 +129,8 @@ class TechChar
 {
  public:
   typedef uint32_t Key;
-  static const unsigned NUM_BITS_PER_FIELD = 10;
-  static const unsigned MAX_NORMALIZED_VAL = 1023;
+  static constexpr unsigned NUM_BITS_PER_FIELD = 10;
+  static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
   unsigned LENGTH_UNIT_MICRON = 10;
 
   // SolutionData represents the various different structures of the
