@@ -449,7 +449,7 @@ protected:
   string makeUniqueInstName(const char *base_name,
                             bool underscore);
   bool overMaxArea();
-  bool bufferConnectedToPorts(Instance *buffer);
+  bool bufferBetweenPorts(Instance *buffer);
   bool hasPort(const Net *net);
   bool hasInputPort(const Net *net);
   bool hasOutputPort(const Net *net);

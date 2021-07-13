@@ -204,8 +204,7 @@ Resizer::init(OpenRoad *openroad,
 float
 Resizer::routingAlpha() const
 {
-  //return grt_->getAlpha();
-  return 0.3;
+  return grt_->getAlpha();
 }
 
 double
@@ -310,7 +309,7 @@ Resizer::removeBuffers()
       Instance *buffer = db_network_->dbToSta(inst);
       // Do not remove buffers connected to input/output ports
       // because verilog netlists use the net name for the port.
-      if (!bufferConnectedToPorts(buffer)) {
+      if (!bufferBetweenPorts(buffer)) {
         removeBuffer(buffer);
         remove_count++;
       }
@@ -321,7 +320,7 @@ Resizer::removeBuffers()
 }
 
 bool
-Resizer::bufferConnectedToPorts(Instance *buffer)
+Resizer::bufferBetweenPorts(Instance *buffer)
 {
   LibertyCell *lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
@@ -332,7 +331,7 @@ Resizer::bufferConnectedToPorts(Instance *buffer)
   Net *out_net = db_network_->net(out_pin);
   bool in_net_ports = hasPort(in_net);
   bool out_net_ports = hasPort(out_net);
-  return in_net_ports || out_net_ports;
+  return in_net_ports && out_net_ports;
 }
 
 void
