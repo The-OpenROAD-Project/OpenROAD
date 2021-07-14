@@ -118,6 +118,12 @@ void HTreeBuilder::preSinkClustering(
                                   _options->getSinkBuffer(),
                                   centerX,
                                   centerY);
+
+      if (!secondLevel)
+        addFirstLevelSinkDriver(&rootBuffer);
+      else
+        addSecondLevelSinkDriver(&rootBuffer);
+
       baseName = secondLevel ? "clknet_leaf2_" : "clknet_leaf_";
       Clock::SubNet& clockSubNet
           = _clock.addSubNet(baseName + std::to_string(clusterCount));
@@ -748,6 +754,7 @@ void HTreeBuilder::createClockSubNets()
 
   ClockInst& rootBuffer = _clock.addClockBuffer(
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
+  addTreeLevelBuffer(&rootBuffer);
   Clock::SubNet& rootClockSubNet = _clock.addSubNet("clknet_0");
   rootClockSubNet.addInst(rootBuffer);
   _treeBufLevels++;
@@ -765,7 +772,8 @@ void HTreeBuilder::createClockSubNets()
                            _clock,
                            rootClockSubNet,
                            *_techChar,
-                           _wireSegmentUnit);
+                           _wireSegmentUnit,
+                           this);
     if (_options->getTreeBuffer() != "") {
       builder.build(_options->getTreeBuffer());
     } else {
@@ -801,7 +809,8 @@ void HTreeBuilder::createClockSubNets()
                              _clock,
                              *parentTopology.getBranchDrivingSubNet(parentIdx),
                              *_techChar,
-                             _wireSegmentUnit);
+                             _wireSegmentUnit,
+                             this);
       if (_options->getTreeBuffer() != "") {
         builder.build(_options->getTreeBuffer());
       } else {
@@ -851,6 +860,7 @@ void HTreeBuilder::createSingleBufferClockNet()
   DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
   ClockInst& rootBuffer = _clock.addClockBuffer(
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
+  addTreeLevelBuffer(&rootBuffer);
   Clock::SubNet& clockSubNet = _clock.addSubNet("clknet_0");
   clockSubNet.addInst(rootBuffer);
 
@@ -954,6 +964,7 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
                                    buffMaster,
                                    x * _techCharDistUnit,
                                    y * _techCharDistUnit);
+      _tree->addTreeLevelBuffer(&newBuffer);;
       if (sink) {
         _drivingSubNet->replaceSink(sink, &newBuffer);
         _drivingSubNet
@@ -984,6 +995,7 @@ void SegmentBuilder::forceBufferInSegment(std::string master)
   unsigned y = _target.getY();
   ClockInst& newBuffer = _clock->addClockBuffer(
       _instPrefix + "_f", master, x * _techCharDistUnit, y * _techCharDistUnit);
+  _tree->addTreeLevelBuffer(&newBuffer);;
   _drivingSubNet->addInst(newBuffer);
   _drivingSubNet = &_clock->addSubNet(_netPrefix + "_leaf");
   _drivingSubNet->addInst(newBuffer);

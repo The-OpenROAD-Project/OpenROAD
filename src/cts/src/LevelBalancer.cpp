@@ -97,6 +97,7 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*
                                           _options->getSinkBuffer(),
           driverX + (centroidX - driverX) * (level + 1) / (bufLevels + 1),
           driverY + (centroidY - driverY) * (level + 1) / (bufLevels + 1));
+    builder->addTreeLevelBuffer(&levelBuffer);
 
     // Add Net
     Clock::SubNet* levelSubNet
