@@ -39,10 +39,9 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0034]     Segment length (rounded): 4
     Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
  Out of 28 sinks, 2 sinks closer to other cluster
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is (15)
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15
  Building clock sub nets...
 [INFO CTS-0035]  Number of sinks covered: 28
-[INFO CTS-0033]  Clock topology of net "clk" done.
 [INFO CTS-0036]  Average source sink dist: 36812.45 dbu.
 [INFO CTS-0037]  Number of outlier sinks: 1
  Writing clock net "clk" to DB
