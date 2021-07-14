@@ -393,7 +393,6 @@ void TritonCTS::populateTritonCTS()
 
 void TritonCTS::initDB()
 {
-  _openSta = _openroad->getSta();
   _block = _db->getChip()->getBlock();
   _options->setDbUnits(_block->getDbUnitsPerMicron());
 }
