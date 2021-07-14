@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,11 +37,120 @@
 
 #include "tap/tapcell.h"
 #include "ord/OpenRoad.hh"
+#include "opendb/db.h"
 
-tap::Tapcell *
-getTapcell()
-{
-  return ord::OpenRoad::openRoad()->getTapcell();
+namespace ord {
+
+tap::Tapcell* getTapcell();
+// {
+//   return ord::OpenRoad::openRoad()->getTapcell();
+// }
+
 }
+
+using ord::getTapcell;
+using std::vector;
+using std::set;
+
+// template <class TYPE>
+// vector<TYPE> *
+// tclListStdSeq(Tcl_Obj *const source,
+// 	      swig_type_info *swig_type,
+// 	      Tcl_Interp *interp)
+// {
+//   int argc;
+//   Tcl_Obj **argv;
+
+//   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+//       && argc > 0) {
+//     vector<TYPE> *seq = new vector<TYPE>;
+//     for (int i = 0; i < argc; i++) {
+//       void *obj;
+//       // Ignore returned TCL_ERROR because can't get swig_type_info.
+//       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+//       seq->push_back(reinterpret_cast<TYPE>(obj));
+//     }
+//     return seq;
+//   }
+//   else
+//     return nullptr;
+// }
+
+// template <class TYPE>
+// set<TYPE> *
+// tclSetStdSeq(Tcl_Obj *const source,
+//         swig_type_info *swig_type,
+//         Tcl_Interp *interp)
+// {
+//   int argc;
+//   Tcl_Obj **argv;
+
+//   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+//       && argc > 0) {
+//     set<TYPE> *seq = new set<TYPE>;
+//     for (int i = 0; i < argc; i++) {
+//       void *obj;
+//       // Ignore returned TCL_ERROR because can't get swig_type_info.
+//       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+//       seq->insert(reinterpret_cast<TYPE>(obj));
+//     }
+//     return seq;
+//   }
+//   else
+//     return nullptr;
+// }
+
+%}
+
+// %typemap(in) PinGroup* {
+//   $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
+// }
+
+// %typemap(in) PinList* {
+//   $1 = tclSetStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
+// }
+
+%include "../../Exception.i"
+
+%inline %{
+
+namespace tap {
+
+void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbBlockage*> blockages,int halo_x, int halo_y)
+{
+  getTapcell()->cut_rows(endcap_master, blockages, halo_x, halo_y);
+}
+
+std::vector<std::vector<odb::dbRow*>> organize_rows()
+{
+  return getTapcell()->organize_rows();
+}
+
+int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, std::string prefix)
+{
+  return getTapcell()->insert_endcaps(rows, endcap_master, cnrcap_masters, prefix);
+}
+
+int insert_at_top_bottom (std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix)
+{
+  return getTapcell()->insert_at_top_bottom(rows, masters, endcap_master, prefix);
+}
+
+int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix)
+{
+  return getTapcell()->insert_around_macros(rows, masters, corner_master, prefix);
+}
+
+// std::vector<odb::dbInst*> find_blockages();
+// {
+//   return getTapcell()->find_blockages();
+// }
+
+// int remove_cells(std::string prefix);
+// {
+//   return remove_cells(prefix);
+// }
+
+} // namespace
 
 %}
