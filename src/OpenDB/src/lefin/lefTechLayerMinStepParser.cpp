@@ -143,11 +143,12 @@ bool lefTechLayerMinStepParser::parse(std::string s,
            >> lit(";")));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, minstepRule, space);
+  bool valid
+      = qi::phrase_parse(first, last, minstepRule, space) && first == last;
 
   if (!valid && curRule != nullptr)  // fail if we did not get a full match
     odb::dbTechLayerMinStepRule::destroy(curRule);
-  return valid && first == last;
+  return valid;
 }
 
 }  // namespace odb
