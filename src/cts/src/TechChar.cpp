@@ -811,17 +811,19 @@ void TechChar::setParasitics(
       }
       // Sets the Pi and Elmore information.
       unsigned charUnit = _options->getWireSegmentUnit();
+      double wire_cap = nodesWithoutBuf * charUnit * _capPerDBU;
+      double wire_res = nodesWithoutBuf * charUnit * _resPerDBU;
       _openStaChar->makePiElmore(firstPin,
                                  sta::RiseFall::rise(),
                                  sta::MinMaxAll::all(),
-                                 (nodesWithoutBuf * charUnit * _capPerDBU) / 2,
-                                 nodesWithoutBuf * charUnit * _resPerDBU,
-                                 (nodesWithoutBuf * charUnit * _capPerDBU) / 2);
+                                 wire_cap / 2,
+                                 wire_res,
+                                 wire_cap / 2);
       _openStaChar->setElmore(firstPin,
                               lastPin,
                               sta::RiseFall::rise(),
                               sta::MinMaxAll::all(),
-                              nodesWithoutBuf * charUnit * _capPerDBU);
+                              wire_res * wire_cap);
     }
   }
 }
@@ -1054,7 +1056,7 @@ void TechChar::create()
     // Creates the topologies for the current wirelength.
     std::vector<SolutionData> topologiesVector
         = createPatterns(setupWirelength);
-    // Creates the new openSTA instance.
+    // Creates an OpenSTA instance.
     createStaInstance();
     // Setup of the parasitics for each net.
     setParasitics(topologiesVector, setupWirelength);
@@ -1092,9 +1094,9 @@ void TechChar::create()
       _openStaChar->findPiElmore(firstPinLastNet,
                                  sta::RiseFall::rise(),
                                  sta::MinMax::max(),
-                                 c1,
-                                 r1,
                                  c2,
+                                 r1,
+                                 c1,
                                  piExists);
       // For each possible buffer combination (different sizes).
       unsigned buffersUpdate
@@ -1106,14 +1108,14 @@ void TechChar::create()
           _openStaChar->makePiElmore(firstPinLastNet,
                                      sta::RiseFall::rise(),
                                      sta::MinMaxAll::all(),
-                                     c1,
+                                     c2,
                                      r1,
-                                     c2 + load);
+                                     c1 + load);
           _openStaChar->setElmore(firstPinLastNet,
                                   outPin,
                                   sta::RiseFall::rise(),
                                   sta::MinMaxAll::all(),
-                                  c1 + c2 + load);
+                                  r1 * (c1 + c2 + load));
           // For each possible input slew.
           for (float inputslew : _slewsToTest) {
             // Sets the slew on the input vertex.
@@ -1171,11 +1173,9 @@ void TechChar::create()
   // Post-processing of the results.
   std::vector<ResultData> convertedSolutions = characterizationPostProcess();
   // Changes the segment units back to micron and creates the wire segments.
-  float dbUnitsPerMicron
-      = static_cast<float>(_charBlock->getDbUnitsPerMicron());
-  float segmentDistance = static_cast<float>(_options->getWireSegmentUnit());
-  _options->setWireSegmentUnit(
-      static_cast<unsigned>(segmentDistance / dbUnitsPerMicron));
+  float dbUnitsPerMicron = _charBlock->getDbUnitsPerMicron();
+  float segmentDistance = _options->getWireSegmentUnit();
+  _options->setWireSegmentUnit(segmentDistance / dbUnitsPerMicron);
   compileLut(convertedSolutions);
   // Saves the characterization file if needed.
   if (_options->getOutputPath().length() > 0) {
@@ -1184,6 +1184,7 @@ void TechChar::create()
     write(lutFile);
     writeSol(solFile);
   }
+  // super confused -cherry
   if (_openStaChar != nullptr) {
     _openStaChar->clear();
     delete _openStaChar;
