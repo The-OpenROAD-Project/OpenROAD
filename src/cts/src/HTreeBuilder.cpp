@@ -109,9 +109,8 @@ void HTreeBuilder::preSinkClustering(
       }
       float normCenterX = (xSum / (float) pointCounter);
       float normCenterY = (ySum / (float) pointCounter);
-      DBU centerX
-          = normCenterX * _wireSegmentUnit;  // geometric center of cluster
-      DBU centerY = normCenterY * _wireSegmentUnit;
+      int centerX = normCenterX * _wireSegmentUnit;  // geometric center of cluster
+      int centerY = normCenterY * _wireSegmentUnit;
       std::string baseName = secondLevel ? "clkbuf_leaf2_" : "clkbuf_leaf_";
       ClockInst& rootBuffer
           = _clock.addClockBuffer(baseName + std::to_string(clusterCount),
@@ -145,7 +144,7 @@ void HTreeBuilder::preSinkClustering(
 void HTreeBuilder::initSinkRegion()
 {
   unsigned wireSegmentUnitInMicron = _techChar->getLengthUnit();
-  DBU dbUnits = _options->getDbUnits();
+  int dbUnits = _options->getDbUnits();
   _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
   _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um)",
@@ -742,8 +741,8 @@ void HTreeBuilder::createClockSubNets()
 {
   _logger->report(" Building clock sub nets...");
 
-  DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
-  DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
+  int centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
+  int centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
 
   ClockInst& rootBuffer = _clock.addClockBuffer(
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
@@ -844,8 +843,8 @@ void HTreeBuilder::createSingleBufferClockNet()
 {
   _logger->report(" Building single-buffer clock net.");
 
-  DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
-  DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
+  int centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
+  int centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
   ClockInst& rootBuffer = _clock.addClockBuffer(
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
   Clock::SubNet& clockSubNet = _clock.addSubNet("clknet_0");

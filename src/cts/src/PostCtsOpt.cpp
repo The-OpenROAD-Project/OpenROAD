@@ -66,10 +66,10 @@ void PostCtsOpt::initSourceSinkDists()
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
 {
   const ClockInst* driver = subNet.getDriver();
-  Point<DBU> driverLoc = driver->getLocation();
+  Point<int> driverLoc = driver->getLocation();
 
   subNet.forEachSink([&](const ClockInst* sink) {
-    Point<DBU> sinkLoc = sink->getLocation();
+    Point<int> sinkLoc = sink->getLocation();
     std::string sinkName = sink->getName();
     DBU dist = driverLoc.computeDist(sinkLoc);
     _avgSourceSinkDist += dist;
@@ -177,8 +177,8 @@ void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
 Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver,
                                              ClockInst* sink) const
 {
-  Point<DBU> driverLoc = driver->getLocation();
-  Point<DBU> sinkLoc = sink->getLocation();
+  Point<int> driverLoc = driver->getLocation();
+  Point<int> sinkLoc = sink->getLocation();
   unsigned xDist = driverLoc.computeDistX(sinkLoc);
   unsigned yDist = driverLoc.computeDistY(sinkLoc);
 

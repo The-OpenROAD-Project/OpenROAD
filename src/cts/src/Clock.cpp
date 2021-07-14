@@ -78,10 +78,10 @@ Box<DBU> Clock::computeSinkRegion()
 
   unsigned numSinks = allPositionsX.size();
   unsigned numOutliers = percentile * numSinks;
-  DBU xMin = allPositionsX[numOutliers];
-  DBU xMax = allPositionsX[numSinks - numOutliers - 1];
-  DBU yMin = allPositionsY[numOutliers];
-  DBU yMax = allPositionsY[numSinks - numOutliers - 1];
+  int xMin = allPositionsX[numOutliers];
+  int xMax = allPositionsX[numSinks - numOutliers - 1];
+  int yMin = allPositionsY[numOutliers];
+  int yMax = allPositionsY[numSinks - numOutliers - 1];
 
   return Box<DBU>(xMin, yMin, xMax, yMax);
 }

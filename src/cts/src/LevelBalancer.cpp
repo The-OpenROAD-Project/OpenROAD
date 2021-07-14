@@ -79,15 +79,15 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*
   Clock::SubNet* prevLevelSubNet = driverNet;
 
   // Compute driver, receiver locations
-  cts::DBU totalX = 0, totalY = 0;
+  double totalX = 0, totalY = 0;
   for (ClockInst* clockInstObj : cluster) {
     totalX += clockInstObj->getX();
     totalY += clockInstObj->getY();
   }
-  cts::DBU centroidX = totalX/cluster.size();
-  cts::DBU centroidY = totalY/cluster.size();
-  cts::DBU driverX = prevLevelSubNet->getDriver()->getX();
-  cts::DBU driverY = prevLevelSubNet->getDriver()->getY();
+  double centroidX = totalX/cluster.size();
+  double centroidY = totalY/cluster.size();
+  int driverX = prevLevelSubNet->getDriver()->getX();
+  int driverY = prevLevelSubNet->getDriver()->getY();
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer

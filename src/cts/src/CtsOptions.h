@@ -63,8 +63,8 @@ class CtsOptions
     _bufferList = buffers;
   }
   std::vector<std::string> getBufferList() const { return _bufferList; }
-  void setDbUnits(DBU units) { _dbUnits = units; }
-  DBU getDbUnits() const { return _dbUnits; }
+  void setDbUnits(int units) { _dbUnits = units; }
+  int getDbUnits() const { return _dbUnits; }
   void setWireSegmentUnit(unsigned wireSegmentUnit)
   {
     _wireSegmentUnit = wireSegmentUnit;
@@ -192,7 +192,7 @@ class CtsOptions
   std::string _sinkBuffer = "";
   std::string _treeBuffer = "";
   std::string _metricFile = "";
-  DBU _dbUnits = -1;
+  int _dbUnits = -1;
   unsigned _wireSegmentUnit = 0;
   bool _plotSolution = false;
   bool _simpleCts = false;

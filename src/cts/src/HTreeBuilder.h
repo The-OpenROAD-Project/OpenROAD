@@ -281,8 +281,8 @@ class HTreeBuilder : public TreeBuilder
   std::map<Point<double>, ClockInst*> _mapLocationToSink;
   std::vector<std::pair<float, float>> _topLevelSinksClustered;
 
-  DBU _wireSegmentUnit = -1;
-  unsigned _minInputCap = 1;
+  int _wireSegmentUnit = 0;
+  unsigned _minInputCap = 0;
   unsigned _numMaxLeafSinks = 0;
   unsigned _minLengthSinkRegion = 0;
   unsigned _clockTreeMaxDepth = 0;
