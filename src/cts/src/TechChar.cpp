@@ -522,7 +522,7 @@ void TechChar::initCharacterization()
                            * wirelengthIterations;  // Hard-coded limit
   if (_options->getWireSegmentUnit() == 0) {
     unsigned charaunit = _charBuf->getHeight() * 10;
-    _options->setWireSegmentUnit(static_cast<unsigned>(charaunit));
+    _options->setWireSegmentUnit(charaunit);
   } else {
     // Updates the units to DBU.
     unsigned segmentDistance = _options->getWireSegmentUnit();
@@ -861,10 +861,9 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData sol
     sta::LibertyPort* firstPinLiberty
         = firstInstLiberty->findLibertyPort(_charBufIn.c_str());
     float firstPinCap = firstPinLiberty->capacitance();
-    incap = firstPinCap + (length * _capPerDBU);
+    incap = firstPinCap + length * _capPerDBU;
   }
-  float totalcap = std::floor((incap + (_charCapInter / 2)) / _charCapInter)
-                   * _charCapInter;
+  float totalcap = std::round(incap / _charCapInter) * _charCapInter;
   results.totalcap = totalcap;
   // Computations for delay.
   float pinArrival = _openStaChar->vertexArrival(
