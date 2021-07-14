@@ -72,6 +72,7 @@ using namespace odb;
 %include "dbenums.i"
 %include "parserenums.i"
 %include "dbtypes.i"
+%include "dbtypes_common.i"
 
 %include "geom.h"
 %include "db.h"

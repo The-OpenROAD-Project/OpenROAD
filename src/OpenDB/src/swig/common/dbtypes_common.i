@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,38 +25,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/trim_all.hpp>
-#include <boost/bind.hpp>
-#include <boost/config/warning_disable.hpp>
-#include <boost/fusion/algorithm.hpp>
-#include <boost/fusion/container.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
-#include <boost/fusion/include/at_c.hpp>
-#include <boost/fusion/include/io.hpp>
-#include <boost/fusion/sequence.hpp>
-#include <boost/fusion/sequence/intrinsic/at_c.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/optional/optional_io.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/qi_alternative.hpp>
+%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
 
-namespace qi = boost::spirit::qi;
-namespace ascii = boost::spirit::ascii;
-namespace phoenix = boost::phoenix;
+// (dbGCellGrid|dbTrackGrid)::getGridPattern[XY]
+%apply int& OUTPUT { int& origin_x, int& origin_y, int& line_count, int& step };
 
-using ascii::char_;
-using boost::fusion::at_c;
-using boost::spirit::ascii::space_type;
-using boost::spirit::ascii::string;
-using boost::spirit::qi::lit;
+// (dbGCellGrid|dbTrackGrid)::getGrid[XY]
+%typemap(in, numinputs=0) std::vector<int> &OUTPUT  {
+   $1 = new std::vector<int>();
+}
 
-using qi::double_;
-using qi::int_;
-using qi::lexeme;
-
-using ascii::space;
-using phoenix::ref;
+%apply std::vector<int> &OUTPUT { std::vector<int> & x_grid,
+                                  std::vector<int> & y_grid };

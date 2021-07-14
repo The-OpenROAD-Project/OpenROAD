@@ -11,13 +11,14 @@ define_pad_cell [-name name] [-type cell_type|-fill|-corner|-bondpad|-bump]
    [-cell_name cell_names_per_side] [-orient orientation_per_side]
    [-pad_pin_name pad_pin_name] [-break_signals signal_list] [-physical_only]
 set_bump_options [-pitch pitch] [-bump_pin_name pin_name]
-   [-spacing_to_edge spacing] [-cell_name bump_cell_table]
+   [-spacing_to_edge spacing] [-offset {x_offset y_offset}]
+   [-array_size {rows columns}] [-cell_name bump_cell_table]
    [-num_pads_per_tile value] [-rdl_layer name] [-rdl_width value]
    [-rdl_spacing value] [-rdl_cover_file_name rdl_file_name]
 set_padring_options [-type (flipchip|wirebond)] [-power power_nets]
    [-ground ground_nets] [-core_area core_area] [-die_area die_area]
-   [-offsets offsets] [-pad_inst_name pad_inst_name]
-   [-pad_pin_name pad_pin_name] [-pin_layer pin_layer_name]
+   [-offsets offsets] [-pad_inst_pattern pad_inst_pattern]
+   [-pad_pin_pattern pad_pin_pattern] [-pin_layer pin_layer_name]
    [-connect_by_abutment signal_list]
 place_cell -inst_name inst_name [-cell library_cell] -origin xy_origin -orient
 add_pad [-name name] [-type type] [-cell library_cell] [-signal signal_name]
@@ -29,7 +30,7 @@ initialize_padring [-signal_assignment_file signal_assigment_file]
 [ERROR PAD-0219] Unrecognized arguments (offsets) specified for set_padring_options
 Trigger errors
 [ERROR PAD-0094] Value for -edge_name (other) not permitted, choose one of bottom, right, top or left
-[ERROR PAD-0092] No signal dr_dm_1_o or PAD defined for padcell sig_1
+[ERROR PAD-0091] No signal dr_dm_1_o defined for padcell
 [ERROR PAD-0095] Value for -type (sign) does not match any library types (bondpad sig vdd vss vddio vssio cbk pdt fbk fill corner bump)
 [ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (somewhere)
 [ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (centre)

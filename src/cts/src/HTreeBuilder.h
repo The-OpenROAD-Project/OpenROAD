@@ -61,7 +61,8 @@ class SegmentBuilder
                  Clock& clock,
                  Clock::SubNet& drivingSubNet,
                  TechChar& techChar,
-                 unsigned techCharDistUnit)
+                 unsigned techCharDistUnit,
+                 TreeBuilder* tree)
       : _instPrefix(instPrefix),
         _netPrefix(netPrefix),
         _root(root),
@@ -70,7 +71,8 @@ class SegmentBuilder
         _clock(&clock),
         _drivingSubNet(&drivingSubNet),
         _techChar(&techChar),
-        _techCharDistUnit(techCharDistUnit)
+        _techCharDistUnit(techCharDistUnit),
+        _tree(tree)
   {
   }
 
@@ -88,6 +90,7 @@ class SegmentBuilder
   Clock* _clock;
   Clock::SubNet* _drivingSubNet;
   TechChar* _techChar;
+  TreeBuilder* _tree;
   unsigned _techCharDistUnit;
   bool _forceBuffer;
   unsigned _numBufferLevels = 0;

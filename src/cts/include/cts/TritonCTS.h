@@ -38,6 +38,7 @@
 #include <string>
 #include <functional>
 #include <set>
+#include <map>
 
 namespace ord {
 class OpenRoad;
@@ -112,10 +113,11 @@ private:
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
-  void countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned & leafSinks,
-                             double currWireLength, double &sinkWireLength,
-                             int& minDepth, int& maxDepth, int depth,
-                             bool fullTree = false);
+void countSinksPostDbWrite(TreeBuilder* builder, odb::dbNet* net,
+                           unsigned &sinks, unsigned &leafSinks,
+                           unsigned currWireLength, double &sinkWireLength,
+                           int& minDepth, int& maxDepth, int depth,
+                           bool fullTree);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
@@ -125,6 +127,7 @@ private:
                       std::set<odb::dbNet*> &clockNets);
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
+  ClockInst* getClockFromInst(odb::dbInst* inst);
 
   ord::OpenRoad* _openroad;
   sta::dbSta* _openSta;
@@ -135,6 +138,7 @@ private:
   std::vector<TreeBuilder*>* _builders;
   std::set <odb::dbNet*> staClockNets;
   std::set <odb::dbNet*> visitedClockNets;
+  std::map<odb::dbInst*, ClockInst*> inst2clkbuf;
 
   // db vars
   odb::dbDatabase* _db;

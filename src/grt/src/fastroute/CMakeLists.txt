@@ -35,8 +35,6 @@
 ################################################################################
 
 add_library(FastRoute4.1
-  src/DataProc.cpp
-  src/EdgeShift.cpp
   src/FastRoute.cpp
   src/RSMT.cpp
   src/RipUp.cpp
