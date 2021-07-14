@@ -102,6 +102,9 @@ class lefout
                                   dbNet* net) const;
   void writeBlock(dbBlock* db_block);
   void writePins(dbBlock* db_block);
+  void writePowerPins(dbBlock* db_block);
+  void writeBlockTerms(dbBlock* db_block);
+
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
@@ -133,8 +136,5 @@ class lefout
   bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
 
   FILE* out() { return _out; }
-  bool isPowerNet(const dbSigType& db_sig_type) const;
-  void writePowerPins(dbBlock* db_block);
-  void writeBlockTerms(dbBlock* db_block);
 };
 }  // namespace odb

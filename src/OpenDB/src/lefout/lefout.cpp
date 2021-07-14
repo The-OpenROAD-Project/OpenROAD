@@ -132,6 +132,7 @@ void lefout::writeHeader(dbBlock* db_block)
   writeVersion("5.8");
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
+  writeUnits(/*database_units = */static_cast<int>(1.0/_dist_factor));
 }
 
 void lefout::writeObstructions(dbBlock* db_block)
@@ -153,10 +154,6 @@ void lefout::getTechLayerObstructions(
     std::set<dbTechLayer*>& obstruction_layers) const
 {
   for (dbNet* net : db_block->getNets()) {
-    if (isPowerNet(net->getSigType())) {
-      continue;
-    }
-
     findSWireLayerObstructions(obstruction_layers, net);
     findWireLayerObstructions(obstruction_layers, net);
   }
@@ -295,7 +292,7 @@ void lefout::writeBlockTerms(dbBlock* db_block)
 void lefout::writePowerPins(dbBlock* db_block)
 {  // Power Ground.
   for (dbNet* net : db_block->getNets()) {
-    if (isPowerNet(net->getSigType())) {
+    if (!net->getSigType().isSupply()) {
       continue;
     }
     fprintf(_out, "  PIN %s\n", net->getName().c_str());
@@ -310,11 +307,6 @@ void lefout::writePowerPins(dbBlock* db_block)
     }
     fprintf(_out, "  END %s\n", net->getName().c_str());
   }
-}
-
-bool lefout::isPowerNet(const dbSigType& db_sig_type) const
-{
-  return db_sig_type != dbSigType::POWER && db_sig_type != dbSigType::GROUND;
 }
 
 void lefout::writeTech(dbTech* tech)
@@ -1198,7 +1190,6 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
 bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
 {
   _out = fopen(lef_file, "w");
-
   if (_out == nullptr) {
     logger_->error(utl::ODB, 1072, "Cannot open LEF file %s\n", lef_file);
   }
@@ -1207,6 +1198,5 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
   writeBlock(db_block);
   fprintf(_out, "END LIBRARY\n");
   fclose(_out);
-
   return true;
 }
