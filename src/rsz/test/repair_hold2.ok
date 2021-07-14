@@ -116,7 +116,7 @@ Net out
  Number of pins: 2
 
 Driver pins
- hold6/Z output (BUF_X1) (5, 2)
+ hold6/Z output (BUF_X1) (2, 1)
 
 Load pins
  out output port
