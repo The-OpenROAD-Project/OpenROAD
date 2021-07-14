@@ -35,6 +35,11 @@
 
 #include "rmp/Restructure.h"
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include <fstream>
 
 #include "db_sta/dbNetwork.hh"
@@ -156,20 +161,25 @@ void Restructure::runABC()
 
   // abc optimization
   bool area_mode = opt_mode_ <= Mode::AREA_3;
-  std::string abc_script_file = work_dir_name_ + "ord_abc_script.tcl";
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  for (int opt_mode = static_cast<int>(area_mode)
+  int opt_mode_init = static_cast<int>(area_mode)
                           ? static_cast<int>(Mode::AREA_1)
                           : static_cast<int>(Mode::DELAY_1);
-       opt_mode <= (static_cast<int>(area_mode)
-                        ? static_cast<int>(Mode::AREA_3)
-                        : static_cast<int>(Mode::DELAY_4));
-       opt_mode++) {
-    opt_mode_ = (Mode) opt_mode;
+  int opt_mode_bound = static_cast<int>(area_mode)
+                           ? static_cast<int>(Mode::AREA_3)
+                           : static_cast<int>(Mode::DELAY_4);
+
+  std::vector<pid_t> child_proc(opt_mode_bound - opt_mode_init + 1, 0);
+
+  for (int opt_mode = opt_mode_init; opt_mode <= opt_mode_bound; opt_mode++) {
     output_blif_file_name_ = work_dir_name_
                              + std::string(block_->getConstName())
                              + std::to_string(opt_mode) + "_crit_path_out.blif";
+
+    opt_mode_ = (Mode) opt_mode;
+    std::string abc_script_file
+        = work_dir_name_ + std::to_string(opt_mode) + "ord_abc_script.tcl";
     debugPrint(logger_,
                RMP,
                "remap",
@@ -179,17 +189,47 @@ void Restructure::runABC()
     if (writeAbcScript(abc_script_file)) {
       std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
       if (logfile_ != "")
-        abc_command = abc_command + " > " + logfile_;
-      int ret = std::system(abc_command.c_str());
-      if (ret) {
-        logger_->warn(
-            RMP,
-            11,
-            "ABC failed with code {}, please check messages for details.",
-            ret);
-        continue;
+        abc_command = abc_command + " > " + logfile_ + std::to_string(opt_mode);
+
+      pid_t child_pid = fork();
+      if (child_pid == 0) {
+        int ret = std::system(abc_command.c_str());
+        exit(ret);
       }
+
+      if(child_pid > 0){
+        child_proc[opt_mode - opt_mode_init] = child_pid;
+      }
+      
+      files_to_remove.emplace_back(abc_script_file);
     }
+  }
+
+  for (int child_idx = 0; child_idx < child_proc.size(); child_idx++) {
+    pid_t child = child_proc[child_idx];
+    if (child == 0) {
+      logger_->warn(RMP, 14, "ABC ({}) failed to run.", child_idx + 1);
+      continue;
+    }
+
+    int return_status;
+    waitpid(child, &return_status, 0);
+
+    if (return_status) {
+      logger_->warn(
+          RMP,
+          15,
+          "ABC ({}) failed with code {}, please check messages for details.",
+          child_idx + 1,
+          return_status);
+    }
+  }
+
+  for (int opt_mode = opt_mode_init; opt_mode <= opt_mode_bound; opt_mode++) {
+    output_blif_file_name_ = work_dir_name_
+                             + std::string(block_->getConstName())
+                             + std::to_string(opt_mode) + "_crit_path_out.blif";
+
     int num_instances = 0;
     bool status
         = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
@@ -201,7 +241,7 @@ void Restructure::runABC()
     }
     files_to_remove.emplace_back(output_blif_file_name_);
   }
-  files_to_remove.emplace_back(abc_script_file);
+
   if (best_inst_count < std::numeric_limits<int>::max()) {
     // read back netlist
     debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
