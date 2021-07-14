@@ -692,16 +692,18 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
           net_alpha = net_alpha_map_[net->getName()];
         }
-        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK) &&
-                         !clockHasLeafITerm(net->getDbNet());
+        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int num_layers = grid_->getNumLayers();
         std::vector<int> edge_cost_per_layer(num_layers + 1, 1);
         int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
 
-        int min_layer = (is_clock && min_layer_for_clock_ > 0) ?
+        // set layer restriction only to clock nets that are not connected to leaf iterms
+        int min_layer = (is_clock && min_layer_for_clock_ > 0 &&
+                         !clockHasLeafITerm(net->getDbNet())) ?
                          min_layer_for_clock_ : min_routing_layer_;
-        int max_layer = (is_clock && max_layer_for_clock_ > 0) ?
+        int max_layer = (is_clock && max_layer_for_clock_ > 0 &&
+                         !clockHasLeafITerm(net->getDbNet())) ?
                         max_layer_for_clock_ : max_routing_layer_;
 
         int netID = fastroute_->addNet(net->getDbNet(),
@@ -2553,18 +2555,7 @@ Net* GlobalRouter::getNet(odb::dbNet* db_net)
 
 void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
 {
-  if (type == NetType::Clock || type == NetType::Signal) {
-    bool get_clock = type == NetType::Clock;
-    for (Net net : *nets_) {
-      if ((get_clock && net.getSignalType() == odb::dbSigType::CLOCK
-           && !clockHasLeafITerm(net.getDbNet()))
-          || (!get_clock
-              && (net.getSignalType() != odb::dbSigType::CLOCK
-                  || clockHasLeafITerm(net.getDbNet())))) {
-        nets.push_back(db_net_map_[net.getDbNet()]);
-      }
-    }
-  } else if (type == NetType::Antenna) {
+  if (type == NetType::Antenna) {
     for (odb::dbNet* db_net : dirty_nets_) {
       nets.push_back(db_net_map_[db_net]);
     }
