@@ -699,11 +699,12 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
 
         // set layer restriction only to clock nets that are not connected to leaf iterms
+        bool has_leaf = clockHasLeafITerm(net->getDbNet());
         int min_layer = (is_clock && min_layer_for_clock_ > 0 &&
-                         !clockHasLeafITerm(net->getDbNet())) ?
+                         !has_leaf) ?
                          min_layer_for_clock_ : min_routing_layer_;
         int max_layer = (is_clock && max_layer_for_clock_ > 0 &&
-                         !clockHasLeafITerm(net->getDbNet())) ?
+                         !has_leaf) ?
                         max_layer_for_clock_ : max_routing_layer_;
 
         int netID = fastroute_->addNet(net->getDbNet(),
