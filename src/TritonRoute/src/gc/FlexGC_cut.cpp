@@ -158,21 +158,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
       vector<pair<segment_t, gcSegment*>> results;
       auto& workerRegionQuery = getWorkerRegionQuery();
       workerRegionQuery.queryPolygonEdge(qb, layerNum2 + 1, results);
-      bool found = false;
-      for (auto res : results) {
-        auto edge = res.second;
-        gtl::rectangle_data<frCoord> edgeRect(edge->low().x(),
-                                     edge->low().y(),
-                                     edge->high().x(),
-                                     edge->high().y());
-        gtl::intersect(edgeRect, rect2);
-        if(edgeRect == rect2)
-        {
-          found = true;
-          break;
-        }
-      }
-      if(!found)
+      if(res.size() == 0)
         strategy = 0;
     }
 
