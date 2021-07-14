@@ -1170,8 +1170,6 @@ void TechChar::create()
     }
   }
   _logger->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
-  // Returns the OpenSTA instance to the old one.
-  sta::Sta::setSta(_openSta);
   // Post-processing of the results.
   std::vector<ResultData> convertedSolutions = characterizationPostProcess();
   // Changes the segment units back to micron and creates the wire segments.
