@@ -38,7 +38,6 @@
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
 #include "PostCtsOpt.h"
-#include "StaEngine.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
 #include "LevelBalancer.h"
@@ -47,7 +46,8 @@
 #include "opendb/dbShape.h"
 #include "utl/Logger.h"
 #include "sta/Sdc.hh"
-#include "sta/PatternMatch.hh"
+#include "sta/Liberty.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
 #include <chrono>
@@ -64,35 +64,26 @@ void TritonCTS::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
   _logger = openroad->getLogger();
-  makeComponents();
-}
-
-void TritonCTS::makeComponents()
-{
   _db = _openroad->getDb();
+  _network = _openroad->getDbNetwork();
+  _openSta = _openroad->getSta();
+
   _options = new CtsOptions(_logger);
   _techChar = new TechChar(_options,
                            _openroad,
-                           _openroad->getDb(),
-                           _openroad->getSta(),
+                           _db,
+                           _openSta,
                            _openroad->getResizer(),
-                           _openroad->getDbNetwork(),
+                           _network,
                            _logger);
-  _staEngine = new StaEngine(_options);
   _builders = new std::vector<TreeBuilder*>;
-}
-
-void TritonCTS::deleteComponents()
-{
-  delete _options;
-  delete _techChar;
-  delete _staEngine;
-  delete _builders;
 }
 
 TritonCTS::~TritonCTS()
 {
-  deleteComponents();
+  delete _options;
+  delete _techChar;
+  delete _builders;
 }
 
 void TritonCTS::runTritonCts()
@@ -151,7 +142,6 @@ void TritonCTS::checkCharacterization()
 
 void TritonCTS::findClockRoots()
 {
-  _staEngine->init();
   if (_options->getClockNets() != "") {
     _logger->info(CTS, 1, "Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
   }
@@ -176,13 +166,11 @@ void TritonCTS::buildClockTrees()
 
 void TritonCTS::runPostCtsOpt()
 {
-  if (!_options->runPostCtsOpt()) {
-    return;
-  }
-
-  for (TreeBuilder* builder : *_builders) {
-    PostCtsOpt opt(builder, _options, _techChar, _logger);
-    opt.run();
+  if (_options->runPostCtsOpt()) {
+    for (TreeBuilder* builder : *_builders) {
+      PostCtsOpt opt(builder, _options, _techChar, _logger);
+      opt.run();
+    }
   }
 }
 
@@ -194,7 +182,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet, std::string sdcClockName
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
-      if (!_staEngine->isSink(iterm) && (iterm->getInst()->isCore() || iterm->getInst()->isPad())) { // Clock Gate
+      if (!isSink(iterm) && (iterm->getInst()->isCore() || iterm->getInst()->isPad())) { // Clock Gate
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
@@ -245,8 +233,8 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
       int receiverX, receiverY;
       iterm->getAvgXY(&receiverX, &receiverY);
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
-      bool terminate = fullTree ? _staEngine->isSink(iterm) : 
-                                  !(strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf", 6));
+      bool terminate = fullTree ? isSink(iterm) : 
+        !(strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf", 6));
       if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
@@ -387,18 +375,9 @@ void TritonCTS::setBufferList(const char* buffers)
 
 void TritonCTS::populateTritonCTS()
 {
-  initDB();
-  initAllClocks();
-}
-
-void TritonCTS::initDB()
-{
   _block = _db->getChip()->getBlock();
   _options->setDbUnits(_block->getDbUnitsPerMicron());
-}
 
-void TritonCTS::initAllClocks()
-{
   clearNumClocks();
 
   // Use dbSta to find all clock nets in the design.
@@ -418,13 +397,10 @@ void TritonCTS::initAllClocks()
   } else {
     staClockNets = _openSta->findClkNets();
     sta::Sdc *sdc = _openSta->sdc();
-    sta::PatternMatch matcher("*");
-    sta::ClockSeq clks;
-    sdc->findClocksMatching(&matcher, &clks);
-    for (auto clk : clks) {
+    for (auto clk : *sdc->clocks()) {
       std::string clkName = clk->name();
       std::set<odb::dbNet*> clkNets;
-      _staEngine->findClockRoots(clk, clkNets);
+      findClockRoots(clk, clkNets);
       clockNetsInfo.emplace_back(make_pair(clkNets, clkName));
     }
   }
@@ -489,7 +465,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
                          + std::string(mterm->getConstName());
       int x, y;
       computeITermPosition(iterm, x, y);
-      clockNet.addSink(name, x, y, iterm, _staEngine->getInputPinCap(iterm));
+      clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm));
     }
   }
 
@@ -825,6 +801,52 @@ void TritonCTS::removeNonClockNets()
       odb::dbNet::destroy(net);
     }
   }
+}
+
+void TritonCTS::findClockRoots(sta::Clock* clk,
+                               std::set<odb::dbNet*> &clockNets)
+{
+  for (sta::Pin* pin : clk->leafPins()) {
+    odb::dbITerm* instTerm;
+    odb::dbBTerm* port;
+    _network->staToDb(pin, instTerm, port);
+    odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
+    clockNets.insert(net);
+  }
+}
+
+float TritonCTS::getInputPinCap(odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  sta::Cell* masterCell = _network->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = _network->libertyCell(masterCell);
+  if (!libertyCell) {
+    return 0.0;
+  }
+
+  sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
+  if (inputPort) {
+    return inputPort->capacitance();
+  } else {
+    return 0.0;
+  }
+}
+
+bool TritonCTS::isSink(odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  sta::Cell* masterCell = _network->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = _network->libertyCell(masterCell);
+  if (!libertyCell) {
+    return false;
+  }
+
+  sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
+  if (inputPort) {
+    return inputPort->isRegClk();
+  } else {
+    return false;
+  }    
 }
 
 }  // namespace cts
