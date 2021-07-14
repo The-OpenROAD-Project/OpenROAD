@@ -69,6 +69,7 @@ TechChar::TechChar(CtsOptions* options,
   _db(db),
   _db_network(db_network),
   _openSta(sta),
+  _openStaChar(nullptr),
   _resizer(resizer),
   _logger(logger)
 {
@@ -746,12 +747,8 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
 void TechChar::createStaInstance()
 {
   // Creates a new OpenSTA instance that is used only for the characterization.
-  ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
   // Creates the new instance based on the charcterization block.
-  if (_openStaChar != nullptr) {
-    _openStaChar->clear();
-  }
-  _openStaChar = sta::makeBlockSta(openRoad, _charBlock);
+  _openStaChar = sta::makeBlockSta(_openroad, _charBlock);
   // Gets the corner and other analysis attributes from the new instance.
   _charCorner = _openStaChar->cmdCorner();
   sta::PathAPIndex path_ap_index
@@ -1168,6 +1165,8 @@ void TechChar::create()
         buffersUpdate--;
       } while (buffersUpdate != 0);
     }
+    delete _openStaChar;
+    _openStaChar = nullptr;
   }
   _logger->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   // Post-processing of the results.
