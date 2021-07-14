@@ -2561,8 +2561,19 @@ void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
       nets.push_back(db_net_map_[db_net]);
     }
   } else {
+    // add clock nets not connected to a leaf first    
     for (Net net : *nets_) {
-      nets.push_back(db_net_map_[net.getDbNet()]);
+      bool has_leaf = clockHasLeafITerm(net.getDbNet());
+      if ((net.getSignalType() == odb::dbSigType::CLOCK && !has_leaf)) {
+        nets.push_back(db_net_map_[net.getDbNet()]);
+      }
+    }
+
+    for (Net net : *nets_) {
+      bool has_leaf = clockHasLeafITerm(net.getDbNet());
+      if ((net.getSignalType() != odb::dbSigType::CLOCK || has_leaf)) {
+        nets.push_back(db_net_map_[net.getDbNet()]);
+      }
     }
   }
 }
