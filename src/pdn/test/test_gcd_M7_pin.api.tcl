@@ -3,48 +3,6 @@ source "helpers.tcl"
 read_lef ../../../test/Nangate45/Nangate45.lef
 read_def gcd_M7_pin/floorplan.def
 
-define_pdn_grid -name grid \
-  -type stdcell \
-  -rails {
-    metal1 {width 0.17 pitch  2.4 offset 0}
-    metal2 {width 0.17 pitch  2.4 offset 0}
-   } \
-  -straps {
-    metal4 {width 0.48 pitch 56.0 offset 2}
-    metal7 {width 1.40 pitch 40.0 offset 2 -starts_with POWER}
-   } \
-  -connect {{metal1 metal2 constraints {cut_pitch 0.16}} {metal2 metal4} {metal4 metal7}} \
-  -pins metal7 \
-  -starts_with POWER
-
-define_pdn_grid \
-  -name ram \
-  -type macro \
-  -orient {R0 R180 MX MY} \
-  -power_pins "VDD VDDPE VDDCE" \
-  -ground_pins "VSS VSSE" \
-  -blockages "metal1 metal2 metal3 metal4 metal5 metal6" \
-  -straps {
-    metal5 {width 0.93 pitch 10.0 offset 2}
-    metal6 {width 0.93 pitch 10.0 offset 2}
-   } \
-  -connect {{metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}} \
-  -starts_with POWER
-
-define_pdn_grid \
-  -name rotated_rams \
-  -type macro \
-  -orient {R90 R270 MXR90 MYR90} \
-  -power_pins "VDD VDDPE VDDCE" \
-  -ground_pins "VSS VSSE" \
-  -blockages "metal1 metal2 metal3 metal4 metal5 metal6" \
-  -straps {
-     metal6 {width 0.93 pitch 10.0 offset 2}
-   } \
-  -connect {{metal4_PIN_hor metal6} {metal6 metal7}} \
-  -starts_with POWER
-
- 
 # Stdcell power/ground pins
 add_global_connection -net VDD -pin_pattern {^VDD$} -power
 add_global_connection -net VSS -pin_pattern {^VSS$} -ground
@@ -53,6 +11,33 @@ add_global_connection -net VSS -pin_pattern {^VSS$} -ground
 add_global_connection -net VDD -pin_pattern {^VDDPE$} 
 add_global_connection -net VDD -pin_pattern {^VDDCE$}
 add_global_connection -net VSS -pin_pattern {^VSSE$}
+
+set_voltage_domain -name CORE -power_net VDD  -ground_net VSS
+set_voltage_domain -name VIN  -region_name TEMP_ANALOG -power_net VPWR -ground_net VSS
+
+define_pdn_grid   -name main_grid -pins {metal7} -voltage_domains {CORE VIN}
+add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins
+add_pdn_stripe -name main_grid -layer metal2 -width 0.17 -followpins
+add pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
+add_pdn_stripe -name main_grid -layer metal7 -width 1.40 -pitch 40.0 -offset 2 -starts_with POWER
+add_pdn_ring   -name main_grid -layer metal6 -width 5.0 -spacing  3.0 -core_offset 5
+add_pdn_ring   -name main_grid -layer metal7 -width 5.0 -spacing  3.0 -core_offset 5
+
+add_pdn_connect -name main_grid -layers {metal1 metal2} -cut_pitch 0.16
+add_pdn_connect -name main_grid -layers {metal2 metal4}
+add_pdn_connect -name main_grid -layers {metal4 metal7}
+
+define_pdn_grid -macro -name ram -orient {R0 R180 MX MY} -starts_with POWER -pin_direction vertical -block metal6
+add_pdn_stripe -name ram -layer metal5 -width 0.93 -pitch 10.0 -offset 2
+add_pdn_stripe -name ram -layer metal6 -width 0.93 -pitch 10.0 -offset 2
+add_pdn_connect -name ram -layers {metal4 metal5}
+add_pdn_connect -name ram -layers {metal5 metal6}
+add_pdn_connect -name ram -layers {metal6 metal7}
+
+define_pdn_grid -macro -name rotated_rams -orient {R90 R270 MXR90 MYR90} -starts_with POWER -pin_direction horizontal -block metal6
+add_pdn_stripe -name rotated_rams -layer metal6 -width 0.93 -pitch 10.0 -offset 2
+add_pdn_connect -name rotated_rams -layers {metal4 metal6}
+add_pdn_connect -name rotated_rams -layers {metal6 metal7}
 
 pdngen -verbose
 

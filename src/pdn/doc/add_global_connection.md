@@ -5,7 +5,8 @@
   % add_global_connection \
     -net net_name \
     [-inst_pattern inst_regular_expression] \
-    -pin_pattern pin_regular_expression
+    -pin_pattern pin_regular_expression \
+    (-power|-ground)
 ```
 
 ### Description

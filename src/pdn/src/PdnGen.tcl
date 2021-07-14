@@ -87,22 +87,22 @@ proc add_global_connection {args} {
   dict lappend pdngen::global_connections $keys(-net) [list inst_name $keys(-inst_pattern) pin_name $keys(-pin_pattern)]
 }
 
+# define_pdn_grid -name main_grid -pins {metal7} -voltage_domains {CORE VIN}
+# define_pdn_grid -macro -name ram -orient {R0 R180 MX MY} -starts_with POWER -pin_direction vertical -block metal6
+
 sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
-                                        -type (stdcell|macro) \
+                                        [-macro] \
+                                        [-voltage_domains] \
                                         [-orient <list_of_valid_orientations>] \
-                                        [-power_pins <list_of_power_pin_names>] \
-                                        [-ground_pins <list_of_ground_pin_names>] \
-                                        [-blockages <list_of_blocked_layers>] \
-                                        [-rails <list_of_rail_specifications>] \
-                                        [-straps <list_of_strap_specifications>] \
+                                        [-instances <list_of_instances>] \
+                                        [-cell_names <list_of_cell_names> ] \
+                                        [-pin_direction (horizontal|vertical)] \
+                                        [-block <list_of_blocked_layers>] \
                                         [-pins <list_of_pin_layers>] \
-                                        [-connect <list_of_connected_layer_pairs>] \
                                         [-starts_with (POWER|GROUND)]}
 
 proc define_pdn_grid {args} {
-  if {[ord::get_db_block] == "NULL"} {
-    utl::error PDN 72 "Design must be loaded before calling the define_pdn_grid command"
-  }
+  pdngen::check_design_state
 
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -type -orient -power_pins -ground_pins -blockages -rails -straps -pins -connect -starts_with}
@@ -114,8 +114,97 @@ proc define_pdn_grid {args} {
   pdngen::define_pdn_grid {*}[array get keys]
 }
 
+# set_voltage_domain -name CORE -power_net VDD  -ground_net VSS
+# set_voltage_domain -name VIN  -region_name TEMP_ANALOG -power_net VPWR -ground_net VSS
+
+sta::define_cmd_args "set_voltage_domain" {[-name domain_name] \
+                                           [-region region_name] \
+                                           -power_net power_net_name \
+                                           -ground_net ground_net_name}
+
+proc set_voltage_domain {args} {
+  pdngen::check_design_state
+
+  sta::parse_key_args "set_voltage_domain" args \
+    keys {-name -power_net -ground_net}
+
+  if {[llength $args] > 0} {
+    utl::error PDN 73 "Unrecognised argument [lindex $args 0] for set_voltage_domain"
+  }
+
+  pdngen::set_voltage_domain {*}[array get keys]
+}
+
+# add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins
+# add_pdn_stripe -name main_grid -layer metal2 -width 0.17 -followpins
+# add pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
+# add_pdn_stripe -name main_grid -layer metal7 -width 1.40 -pitch 40.0 -offset 2 -starts_with POWER
+sta::define_cmd_args "add_pdn_stripe" {[-name grid_name] \
+                                       -layer layer_name \
+                                       -width width_value \
+                                       [-followpins] \
+                                       [-pitch pitch_value] \
+                                       [-spacing spacing_value] \
+                                       [-offset offset_value] \
+                                       [-starts_width (POWER|GROUND)]}
+
+proc add_pdn_stripe {args} {
+  pdngen::check_design_state
+
+  sta::parse_key_args "add_pdn_stripe" args \
+    keys {-name -layer -width -pitch -spacing -offset -starts_with -followpins} \
+    flags {-followpins}
+
+  if {[info exists flags(followpins)]} {
+    set array keys(-followpins) 1
+  }
+
+  pdngen::add_pdn_stripe {*}[array get keys]
+}
+
+# add_pdn_ring   -name main_grid -layer metal6 -width 5.0 -spacing  3.0 -core_offset 5
+# add_pdn_ring   -name main_grid -layer metal7 -width 5.0 -spacing  3.0 -core_offset 5
+
+sta::define_cmd_args "add_pdn_ring" {[-name grid_name] \
+                                     -layer layer_name \
+                                     -width width_value \
+                                     -spacing spacing_value \
+                                     [-core_offset offset_value] \
+                                     [-pad_offset offset_value]}
+
+proc add_pdn_ring {args} {
+  pdngen::check_design_state
+
+  sta::parse_key_args "add_pdn_ring" args \
+    keys {-name -layer -width -spacing -core_offset -pad_offset}} 
+
+  pdngen::add_pdn_ring {*}[array get keys]
+}
+
+sta::define_cmd_args "add_pdn_connect" {[-name grid_name] \
+                                        -layers list_of_2_layers \
+                                        [-cut_pitch pitch_value]}
+
+# add_pdn_connect -name main_grid -layers {metal1 metal2} -cut_pitch 0.16
+# add_pdn_connect -name main_grid -layers {metal2 metal4}
+# add_pdn_connect -name main_grid -layers {metal4 metal7}
+
+proc add_pdn_connect {args} {
+  pdngen::check_design_state
+
+  sta::parse_key_args "add_pdn_stripe" args \
+    keys {-name -layers -cut_pitch} \
+
+  pdngen::add_pdn_connect {*}[array get keys]
+}
 
 namespace eval pdngen {
+
+proc check_design_state {} {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PDN 72 "Design must be loaded before calling pdngen commands"
+  }
+}
 
 proc check_orientations {orientations} {
   set valid_orientations {R0 R90 R180 R270 MX MY MXR90 MYR90}

@@ -4,101 +4,71 @@
 For specifying a power grid over the stdcell area
 ```
   % define_pdn_grid
-    -type stdcell \
     [-name name] \
-    [-rails list_of_rail_specifications] \
-    [-straps list_of_strap_specifications] \
     [-pins list_of_pin_layers] \
-    [-connect list_of_connected_layer_pairs] \
-    [-starts_with (POWER|GROUND)]    
+    [-starts_with (POWER|GROUND)] \
+    [-voltage_domain list_of_domain_names]    
 ```
 For specifying a power grid over macros in the design
 ```
   % define_pdn_grid
-    -type macro \
+    -macro \
     [-name name] \
-    [-straps list_of_strap_specifications] \
-    [-connect list_of_connected_layer_pairs] \
-    [-blockages list_of_blocked_layers] \
     [-orient list_of_valid_orientations>] \
-    [-power_pins list_of_power_pin_names] \
-    [-ground_pins list_of_groiund_pin_names] \
-    [-connect list_of_connected_layer_pairs] \
+    [-instances list_of_instances>] \
+    [-cells list_of_cells>] \
     [-starts_with (POWER|GROUND)]    
 ```
 
 ### Description
 
+Defines the rules to describe a power grid pattern to be placed in the design.
+
+The design is made up of one or more voltage domain regions, specified using the [set_voltage_domain](set_voltage_domain.md) command. 
+
+The -voltage_domain argument is used to specify the voltage domain(s) to which this grid is to be applied. If no voltage domain is specified then the default domain CORE is assumed.
+
+Rules for adding stdcell rails and supply straps can be added to the grid specificatoin using the [add_pdn_stripe](add_pdn_stripe.md) command.
+Rules for adding rings around the grid can be added to the grid specification using the [add_pdn_ring](add_pdn_ring.md) command.
+Connections between layers are specified using the [add_pdn_connect](add_pdn_connect.md) command.
+
+The -name argument is used to create a name for the grid that can be used in subsequent add_pdn_* commands
+
+The -pins argument is used to create power and ground pins on the power and ground stripes of the specified layers.
+
+The -starts_with argument is used to define whether the power net, or ground net is added as the first in a power/ground pair
+
+The presence of macros in the design interupts the normal power grid pattern, and additional power grids are defined over the macros in order to control the grid over the macro and which layers in the normal grid pattern are blocked around the macro.
+
+The -macro flag is used to declare that this grid definition is for macros in the design. All macro cell instances will have this grid, but this list of instances can be filtered using the -instances, -cells and/or -orient arguments
+
+The -instances argument filters the list of instances for which this grid applies, such that only the specified instances are retained.
+The -cells argument filters the list of instance for which this grid applies, such that only instances of the specified cells are retained.
+The -orient argument filters the list of instances for which this grid applies, such that only instances of the specified orientation are retained.
+
+Each of the -instances, -cells and -orient acts as an independent filter applied in succession to the list of macros.
+
+
 ### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| -type | Defines the type of grid being added, can be either stdcell or macro|
 | -name | Defines a name to use when referring to this grid definition |
-| -rails | Defines a list of rail specifications to define the followpins connections to the stdcells |
-| -straps | Defines a list of strap specifications to define the power straps to be added to the design |
+| -voltage_domain | Defines the name of the voltage domain for this grid. (Default: CORE) |
 | -pins | Defines a list of layers which where the power straps will be promoted to block pins |
-| -connect | Defines the connections to be made between the layers |
 | -starts_with | Specifies whether the first strap placed will be POWER or GROUND |
+| -macro | Defines the type of grid being added, can be either stdcell or macro|
+| -instances | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification |
+| -cells | For a macro, defines a set of valid orientations. Macros which are instances of one of these cells will use this grid specification |
 | -orient | For a macro, defines a set of valid orientations. Macros with one of the valid orientations will use this grid specification |
-| -blockages | For a macro, defines which layers are to be treated as blockages for the stdcell grid |
-| -power_pins | For a macro, define the names of pins on the macro to be treated as power pins |
-| -ground_pins | For a macro, define the names of pins on the macro to be treated as ground pins |
 
-
-### Specifications
-
-#### Rail specifications
-A rails specification defines the width and offset of the stdcell rails for each layer that forms the stdcell followpins structure.
-| Attribute | Description |
-| ----- | ----- |
-| width | Value for the width of the stdcell rail |
-| offset | Value for the offset of the stdcell rail |
-
-#### Strap specifications
-A strap specification defines the width, pitch, offset and spacing for each layer that will have power straps added. The spacing attribute is optional, and defaults to half the pitch.
-| Attribute | Description |
-| ----- | ----- |
-| width | Value for the width of the power strap |
-| offset | Value for the offset of the power strap |
-| pitch | Value for the distance between each power/ground pair |
-| spacing | Optional specification of the spacing between power/ground pairs within a single pitch. (Default: pitch / 2) |
-| starts_with | Optional specifies whether the first stripe is POWER or GROUND (Default: POWER) |
-
-#### Connection specifications
-A connection specification defines which layers are to be connected to each other. This consists of a pair of layer names, optionally followed by some constraint settings
-
-For macro grids, to consider the pins of the macro as power/ground straps on that layer, add _PIN to the layer name.
 
 ### Examples
 ```
-define_pdn_grid -name grid \
-  -type stdcell \
-  -rails {
-    metal1 {width 0.17 offset 0}
-    metal2 {width 0.17 offset 0}
-   } \
-  -straps {
-    metal4 {width 0.48 pitch 56.0 offset 2}
-    metal7 {width 1.40 pitch 40.0 offset 2 -starts_with POWER}
-   } \
-  -connect {{metal1 metal2 constraints {cut_pitch 0.16}} {metal2 metal4} {metal4 metal7}} \
-  -pins metal7 \
-  -starts_with POWER
+define_pdn_grid -name main_grid -pins {metal7} -voltage_domain {CORE TEMP_ANALOG}
 
-define_pdn_grid \
-  -name ram \
-  -type macro \
-  -orient {R0 R180 MX MY} \
-  -power_pins "VDD VDDPE VDDCE" \
-  -ground_pins "VSS VSSE" \
-  -blockages "metal1 metal2 metal3 metal4 metal5 metal6" \
-  -straps {
-    metal5 {width 0.93 pitch 10.0 offset 2}
-    metal6 {width 0.93 pitch 10.0 offset 2}
-   } \
-  -connect {{metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}} \
-  -starts_with POWER
+define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY}        -starts_with POWER -pin_direction vertical
+define_pdn_grid -macro -name rotated_rams -orient {R90 R270 MXR90 MYR90} -starts_with POWER -pin_direction horizontal
 
 ```
 
