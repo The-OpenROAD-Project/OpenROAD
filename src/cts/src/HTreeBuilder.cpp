@@ -62,7 +62,7 @@ void HTreeBuilder::preSinkClustering(
     });
   }
 
-  if (sinks.size() <= 200 || !(_options->getSinkClustering())) {
+  if (sinks.size() <= min_clustering_sinks || !(_options->getSinkClustering())) {
     _topLevelSinksClustered = sinks;
     return;
   }
@@ -148,7 +148,8 @@ void HTreeBuilder::initSinkRegion()
   DBU dbUnits = _options->getDbUnits();
   _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
-  _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um)", _wireSegmentUnit, wireSegmentUnitInMicron);
+  _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um)",
+                _wireSegmentUnit, wireSegmentUnitInMicron);
 
   if (_options->isSimpleSegmentEnabled()) {
     int remainingLength
@@ -173,7 +174,7 @@ void HTreeBuilder::initSinkRegion()
 
   preSinkClustering(
       topLevelSinks, sinkInsts, maxDiameter, _options->getSizeSinkClustering());
-  if (topLevelSinks.size() <= 200 || !(_options->getSinkClustering())) {
+  if (topLevelSinks.size() <= min_clustering_sinks || !(_options->getSinkClustering())) {
     Box<DBU> sinkRegionDbu = _clock.computeSinkRegion();
     _logger->info(CTS, 23, " Original sink region: {}", sinkRegionDbu);
 
@@ -219,7 +220,7 @@ void HTreeBuilder::run()
   for (int level = 1; level <= _clockTreeMaxDepth; ++level) {
     bool stopCriterionFound = false;
     unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
-    double regionWidth = 0.0, regionHeight = 0.0;
+    double regionWidth, regionHeight;
     computeSubRegionSize(level, regionWidth, regionHeight);
 
     stopCriterionFound = isSubRegionTooSmall(regionWidth, regionHeight);
@@ -263,7 +264,7 @@ void HTreeBuilder::run()
 unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(unsigned level) const
 {
   unsigned totalNumSinks = 0;
-  if (_clock.getNumSinks() > 200 && _options->getSinkClustering()) {
+  if (_clock.getNumSinks() > min_clustering_sinks && _options->getSinkClustering()) {
     totalNumSinks = _topLevelSinksClustered.size();
   } else {
     totalNumSinks = _clock.getNumSinks();
@@ -816,8 +817,6 @@ void HTreeBuilder::createClockSubNets()
     });
   }
 
-  // ---
-
   LevelTopology& leafTopology = _topologyForEachLevel.back();
   unsigned levelIdx = _topologyForEachLevel.size() - 1;
   unsigned numSinks = 0;
@@ -843,7 +842,7 @@ void HTreeBuilder::createClockSubNets()
 
 void HTreeBuilder::createSingleBufferClockNet()
 {
-  _logger->report(" Building single-buffer clock net...");
+  _logger->report(" Building single-buffer clock net.");
 
   DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
   DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;

@@ -286,6 +286,7 @@ class HTreeBuilder : public TreeBuilder
   unsigned _numMaxLeafSinks = 0;
   unsigned _minLengthSinkRegion = 0;
   unsigned _clockTreeMaxDepth = 0;
+  static constexpr int min_clustering_sinks = 200;
 };
 
 }  // namespace cts
