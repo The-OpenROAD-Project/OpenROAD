@@ -228,6 +228,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (ptr->getPin() == viaEdge->getPin())
       continue;
+    if (dbRule->isLayerValid() && ptr->getNet() == viaEdge->getNet())
+      continue;
     checkLef58CutSpacingTbl_main(viaEdge, ptr, con);
   }
 }
