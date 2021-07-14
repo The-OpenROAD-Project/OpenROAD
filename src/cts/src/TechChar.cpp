@@ -188,23 +188,20 @@ void TechChar::forEachWireSegment(
   }
 };
 
-void TechChar::forEachWireSegment(
-    uint8_t length,
-    uint8_t load,
-    uint8_t outputSlew,
-    const std::function<void(unsigned, const WireSegment&)> func) const
+void TechChar::forEachWireSegment(uint8_t length,
+                                  uint8_t load,
+                                  uint8_t outputSlew,
+                                  const std::function<void(unsigned, const WireSegment&)> func) const
 {
   unsigned key = computeKey(length, load, outputSlew);
 
-  if (_keyToWireSegments.find(key) == _keyToWireSegments.end()) {
-    return;
+  if (_keyToWireSegments.find(key) != _keyToWireSegments.end()) {
+    const std::deque<unsigned>& wireSegmentsIdx = _keyToWireSegments.at(key);
+    for (unsigned idx : wireSegmentsIdx) {
+      func(idx, _wireSegments[idx]);
+    }
   }
-
-  const std::deque<unsigned>& wireSegmentsIdx = _keyToWireSegments.at(key);
-  for (unsigned idx : wireSegmentsIdx) {
-    func(idx, _wireSegments[idx]);
-  }
-};
+}
 
 void TechChar::report() const
 {
@@ -748,16 +745,10 @@ void TechChar::createStaInstance()
   _openStaChar = sta::makeBlockSta(openRoad, _charBlock);
   // Sets the current OpenSTA instance as the new one just created.
   sta::Sta::setSta(_openStaChar);
-  _openStaChar->clear();
   // Gets the new components from the new OpenSTA.
   _dbNetworkChar = openRoad->getDbNetwork();
-  // Set some attributes for the new instance.
-  _openStaChar->units()->timeUnit()->setScale(1);
-  _openStaChar->units()->capacitanceUnit()->setScale(1);
-  _openStaChar->units()->resistanceUnit()->setScale(1);
-  _openStaChar->units()->powerUnit()->setScale(1);
   // Gets the corner and other analysis attributes from the new instance.
-  _charCorner = _openStaChar->corners()->findCorner(0);
+  _charCorner = _openStaChar->cmdCorner();
   sta::PathAPIndex path_ap_index
       = _charCorner->findPathAnalysisPt(sta::MinMax::max())->index();
   sta::Corners* corners = _openStaChar->search()->corners();
@@ -835,11 +826,10 @@ void TechChar::setParasitics(
   }
 }
 
-TechChar::ResultData TechChar::computeTopologyResults(
-    TechChar::SolutionData solution,
-    sta::Vertex* outPinVert,
-    float load,
-    unsigned setupWirelength)
+TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData solution,
+                                                      sta::Vertex* outPinVert,
+                                                      float load,
+                                                      unsigned setupWirelength)
 {
   ResultData results;
   // Computations for power, requires the PowerResults class from OpenSTA.
@@ -850,7 +840,6 @@ TechChar::ResultData TechChar::computeTopologyResults(
     for (odb::dbInst* bufferInst : solution.instVector) {
       sta::Instance* bufferInstSta = _dbNetworkChar->dbToSta(bufferInst);
       sta::PowerResult instResults;
-      instResults.clear();
       _openStaChar->power(bufferInstSta, _charCorner, instResults);
       totalPower = totalPower + instResults.total();
     }
@@ -892,8 +881,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
   return results;
 }
 
-TechChar::SolutionData TechChar::updateBufferTopologies(
-    TechChar::SolutionData solution)
+TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData solution)
 {
   unsigned index = 0;
   // Change the buffer topology by increasing the size of the buffers.
@@ -1010,8 +998,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
                                  &minResultWirelength,
                                  &maxResultWirelength);
       // Processing and normalizing of delay.
-      convertedResult.pinArrival = static_cast<unsigned>(
-          std::ceil(solution.pinArrival / (_charSlewInter / 5)));
+      convertedResult.pinArrival = std::ceil(solution.pinArrival / (_charSlewInter / 5));
       // Add missing information.
       convertedResult.totalPower = solution.totalPower;
       convertedResult.isPureWire = solution.isPureWire;
@@ -1049,7 +1036,7 @@ unsigned TechChar::normalizeCharResults(float value,
                                         unsigned* min,
                                         unsigned* max)
 {
-  unsigned normVal = static_cast<unsigned>(std::ceil(value / iter));
+  unsigned normVal = std::ceil(value / iter);
   if (normVal == 0) {
     normVal = 1;
   }
