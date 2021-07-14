@@ -187,6 +187,9 @@ void ScriptWidget::executeCommand()
   addTclResultToOutput(return_code);
 
   if (return_code == TCL_OK) {
+    // record the successful command to tcl history command
+    Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
+
     // Update history; ignore repeated commands and keep last 100
     const int history_limit = 100;
     if (history_.empty() || command != history_.last()) {
