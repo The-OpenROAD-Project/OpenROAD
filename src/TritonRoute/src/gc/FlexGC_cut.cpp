@@ -126,6 +126,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
         viol = true;
     }
   } else {
+    bool prlValid = false;
     short strategy = 0;  // first spacing value
     auto reqPrl = dbRule->getPrlEntry(class1, class2);
     // check if parallel
@@ -145,13 +146,40 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
         dist = gtl::euclidean_distance(checkRect, rect2, gtl::HORIZONTAL);
         prl = gtl::delta(checkRect, gtl::HORIZONTAL);
       }
-      if (dist == 0 && prl > reqPrl)
-        strategy = 1;  // second spacing value
+      if (dist == 0 && prl > reqPrl){
+        strategy = 1;
+        prlValid = true;  // second spacing value
+      }
     }
+    //check PRLALIGNED
+    if(prlValid && dbRule->isPrlForAlignedCutClasses(class1, class2))
+    {
+      box_t qb(point_t(gtl::xl(rect2), gtl::yl(rect2)), point_t(gtl::xh(rect2), gtl::yh(rect2)));
+      vector<pair<segment_t, gcSegment*>> results;
+      auto& workerRegionQuery = getWorkerRegionQuery();
+      workerRegionQuery.queryPolygonEdge(qb, layerNum2 + 1, results);
+      bool found = false;
+      for (auto res : results) {
+        auto edge = res.second;
+        gtl::rectangle_data<frCoord> edgeRect(edge->low().x(),
+                                     edge->low().y(),
+                                     edge->high().x(),
+                                     edge->high().y());
+        gtl::intersect(edgeRect, rect2);
+        if(edgeRect == rect2)
+        {
+          found = true;
+          break;
+        }
+      }
+      if(!found)
+        strategy = 0;
+    }
+
     frSquaredDistance spcSqr
         = dbRule->getSpacing(class1, isSide1, class2, isSide2, strategy);
     spcSqr *= spcSqr;
-    if (dbRule->isCenterToCenter(class1, class2) || (dbRule->isCenterAndEdge(class1, class2) && strategy == 1)) {
+    if (dbRule->isCenterToCenter(class1, class2) || (dbRule->isCenterAndEdge(class1, class2) && prlValid)) {
       if (getCenterToCenterDist(viaEdge1, viaEdge2) < spcSqr)
         viol = true;
     } else if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2)

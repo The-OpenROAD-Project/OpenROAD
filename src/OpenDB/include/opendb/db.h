@@ -8276,6 +8276,8 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isCenterAndEdge(std::string cutClass1, std::string cutClass2);
   
+  bool isPrlForAlignedCutClasses(std::string cutClass1, std::string cutClass2);
+  
   int getPrlEntry(std::string cutClass1, std::string cutClass2);
 
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
