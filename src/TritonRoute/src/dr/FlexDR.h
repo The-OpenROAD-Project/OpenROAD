@@ -344,7 +344,6 @@ class FlexDRWorker
                frDesign* design,
                Logger* logger)
       : design_(design),
-        tech_(design->getTech()),
         logger_(logger),
         graphics_(nullptr),
         via_data_(via_data),
@@ -443,7 +442,7 @@ class FlexDRWorker
   }
 
   // getters
-  frTechObject* getTech() const { return tech_; }
+  frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(frBox& boxIn) const { boxIn.set(routeBox_); }
   const frBox& getRouteBox() const { return routeBox_; }
   frBox& getRouteBox() { return routeBox_; }
@@ -852,8 +851,9 @@ class FlexDRWorker
   void routeNet_postAstarWritePath(
       drNet* net,
       std::vector<FlexMazeIdx>& points,
-      const std::set<FlexMazeIdx>& apMazeIdx,
-      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox);
+      const std::set<FlexMazeIdx>& realPinApMazeIdx,
+      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
+      const set<FlexMazeIdx>& apMazeIdx);
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,
@@ -884,14 +884,16 @@ class FlexDRWorker
                       frMIdx endX,
                       frMIdx endY,
                       frMIdx z,
-                      const set<FlexMazeIdx>& apMazeIdx,
+                      const set<FlexMazeIdx>& realApMazeIdx,
                       drNet* net,
                       bool vertical,
                       bool taper,
                       int i,
-                      vector<FlexMazeIdx>& points);
-  void checkStyleForBPin(drPathSeg* ps, bool isBegin, frSegStyle& style);
-  void checkConnForBPin(drVia* ps, bool isBottom, frNet* net);
+                      vector<FlexMazeIdx>& points,
+                      const set<FlexMazeIdx>& apMazeIdx);
+  void checkPathSegStyle(drPathSeg* ps, bool isBegin, frSegStyle& style);
+  void checkViaConnectivity(drVia* ps, bool isBottom, frNet* net);
+  bool hasAccessPoint(const frPoint& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
       const std::vector<FlexMazeIdx>& path,

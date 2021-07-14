@@ -42,9 +42,22 @@ class frVia : public frRef
 {
  public:
   // constructors
-  frVia() : viaDef_(nullptr), owner_(nullptr), tapered_(false) {}
+  frVia()
+      : viaDef_(nullptr),
+        owner_(nullptr),
+        tapered_(false),
+        bottomConnected_(false),
+        topConnected_(false)
+  {
+  }
   frVia(frViaDef* in)
-      : frRef(), origin_(), viaDef_(in), owner_(nullptr), tapered_(false)
+      : frRef(),
+        origin_(),
+        viaDef_(in),
+        owner_(nullptr),
+        tapered_(false),
+        bottomConnected_(false),
+        topConnected_(false)
   {
   }
   frVia(const frVia& in)
@@ -290,9 +303,9 @@ class frVia : public frRef
   frPoint origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
-  bool tapered_;
-  bool bottomConnected_ = false;
-  bool topConnected_ = false;
+  bool tapered_ : 1;
+  bool bottomConnected_ : 1;
+  bool topConnected_ : 1;
   frListIter<std::unique_ptr<frVia>> iter_;
 };
 }  // namespace fr

@@ -42,7 +42,14 @@ class drVia : public drRef
 {
  public:
   // constructors
-  drVia() : viaDef_(nullptr), owner_(nullptr), tapered_(false) {}
+  drVia()
+      : viaDef_(nullptr),
+        owner_(nullptr),
+        tapered_(false),
+        bottomConnected_(false),
+        topConnected_(false)
+  {
+  }
   drVia(frViaDef* in)
       : drRef(),
         origin_(),
@@ -50,7 +57,9 @@ class drVia : public drRef
         owner_(nullptr),
         beginMazeIdx_(),
         endMazeIdx_(),
-        tapered_(false)
+        tapered_(false),
+        bottomConnected_(false),
+        topConnected_(false)
   {
   }
   drVia(const drVia& in)
@@ -310,9 +319,9 @@ class drVia : public drRef
   drBlockObject* owner_;
   FlexMazeIdx beginMazeIdx_;
   FlexMazeIdx endMazeIdx_;
-  bool tapered_;
-  bool bottomConnected_ = false;
-  bool topConnected_ = false;
+  bool tapered_ : 1;
+  bool bottomConnected_ : 1;
+  bool topConnected_ : 1;
 };
 }  // namespace fr
 

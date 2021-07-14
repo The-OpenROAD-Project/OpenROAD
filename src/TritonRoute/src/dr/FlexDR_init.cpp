@@ -3440,10 +3440,6 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 
 void FlexDRWorker::init(const frDesign* design)
 {
-  if (design->getTech() != tech_) {
-    logger_->error(DRT, 254, "Design and tech mismatch");
-  }
-
   // if initDR
   //   get all instterm/term for each net
   // else
