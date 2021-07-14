@@ -874,9 +874,7 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData sol
       outPinVert, sta::RiseFall::rise(), sta::MinMax::max());
   float pinFall = _openStaChar->vertexSlew(
       outPinVert, sta::RiseFall::fall(), sta::MinMax::max());
-  float pinSlew = std::floor((((pinRise + pinFall) / 2) + (_charSlewInter / 2))
-                             / _charSlewInter)
-                  * _charSlewInter;
+  float pinSlew = std::round((pinRise + pinFall) / 2 / _charSlewInter) * _charSlewInter;
   results.pinSlew = pinSlew;
 
   return results;
