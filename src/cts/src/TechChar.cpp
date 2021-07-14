@@ -82,13 +82,13 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
 
     unsigned length = toInternalLengthUnit(lutLine.wirelength);
 
-    WireSegment& segment = createWireSegment((unsigned) (length),
-                                             (unsigned) (lutLine.load),
-                                             (unsigned) (lutLine.pinSlew),
+    WireSegment& segment = createWireSegment(length,
+                                             (unsigned) lutLine.load,
+                                             (unsigned) lutLine.pinSlew,
                                              lutLine.totalPower,
-                                             (unsigned) (lutLine.pinArrival),
-                                             (unsigned) (lutLine.totalcap),
-                                             (unsigned) (lutLine.inSlew));
+                                             (unsigned) lutLine.pinArrival,
+                                             (unsigned) lutLine.totalcap,
+                                             (unsigned) lutLine.inSlew);
 
     if (!(lutLine.isPureWire)) {
       // Goes through the topology of the wiresegment and defines the buffer

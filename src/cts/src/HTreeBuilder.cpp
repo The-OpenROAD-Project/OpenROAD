@@ -272,7 +272,7 @@ inline unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
   }
   unsigned numRoots = std::pow(2, level);
   double numSinksPerRoot = (double) totalNumSinks / numRoots;
-  return (unsigned) std::ceil(numSinksPerRoot);
+  return std::ceil(numSinksPerRoot);
 }
 
 inline void HTreeBuilder::computeSubRegionSize(unsigned level,

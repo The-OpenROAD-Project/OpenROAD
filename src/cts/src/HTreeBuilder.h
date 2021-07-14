@@ -266,18 +266,12 @@ class HTreeBuilder : public TreeBuilder
 
   bool isSubRegionTooSmall(double width, double height) const
   {
-    if (width < _minLengthSinkRegion || height < _minLengthSinkRegion) {
-      return true;
-    }
-    return false;
+    return width < _minLengthSinkRegion || height < _minLengthSinkRegion;
   }
 
   bool isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
   {
-    if (numSinksPerSubRegion < _numMaxLeafSinks) {
-      return true;
-    }
-    return false;
+    return numSinksPerSubRegion < _numMaxLeafSinks;
   }
 
  protected:
