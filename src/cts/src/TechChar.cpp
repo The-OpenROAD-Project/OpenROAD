@@ -57,6 +57,23 @@ namespace cts {
 
 using utl::CTS;
 
+TechChar::TechChar(CtsOptions* options,
+                   ord::OpenRoad* openroad,
+                   odb::dbDatabase* db,
+                   sta::dbSta* sta,
+                   rsz::Resizer* resizer,
+                   sta::dbNetwork* db_network,
+                   Logger* logger) :
+  _options(options),
+  _openroad(openroad),
+  _db(db),
+  _db_network(db_network),
+  _openSta(sta),
+  _resizer(resizer),
+  _logger(logger)
+{
+}
+
 void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
 {
   _logger->info(CTS, 84, "Compiling LUT");
@@ -445,13 +462,12 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
 
 void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
 {
-  /* Clock RC should be set with set_wire_rc -clock */
-  rsz::Resizer *sizer = ord::OpenRoad::openRoad()->getResizer();
+  // Clock RC should be set with set_wire_rc -clock
   sta::Corner *corner = _openSta->cmdCorner();
 
   // convert from per meter to per dbu
-  _capPerDBU = sizer->wireClkCapacitance(corner) * 1e-6 / dbUnitsPerMicron;
-  _resPerDBU = sizer->wireClkResistance(corner) * 1e-6 / dbUnitsPerMicron;
+  _capPerDBU = _resizer->wireClkCapacitance(corner) * 1e-6 / dbUnitsPerMicron;
+  _resPerDBU = _resizer->wireClkResistance(corner) * 1e-6 / dbUnitsPerMicron;
 
   if (_resPerDBU == 0.0 || _capPerDBU == 0.0) {
     _logger->warn(CTS, 104, "Clock wire resistance/capacitance values are zero.\nUse set_wire_rc to set them.");
@@ -462,15 +478,8 @@ void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
 
 void TechChar::initCharacterization()
 {
-  // Sets up most of the attributes that the characterization uses.
-  // Gets the chip, openSta and networks.
-  ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
-  _dbNetworkChar = openRoad->getDbNetwork();
-  _db = openRoad->getDb();
   odb::dbChip* chip = _db->getChip();
   odb::dbBlock* block = chip->getBlock();
-  _openSta = openRoad->getSta();
-  sta::Network* networkChar = _openSta->network();
   float dbUnitsPerMicron = block->getDbUnitsPerMicron();
 
   getClockLayerResCap(dbUnitsPerMicron);
@@ -555,10 +564,10 @@ void TechChar::initCharacterization()
   float maxSlew = 0.0;
   float maxCap = 0.0;
   if (_options->getMaxCharSlew() == 0 || _options->getMaxCharCap() == 0) {
-    sta::Cell* masterCell = _dbNetworkChar->dbToSta(_charBuf);
-    sta::Cell* sinkCell = _dbNetworkChar->dbToSta(sinkMaster);
-    sta::LibertyCell* libertyCell = networkChar->libertyCell(masterCell);
-    sta::LibertyCell* libertySinkCell = networkChar->libertyCell(sinkCell);
+    sta::Cell* masterCell = _db_network->dbToSta(_charBuf);
+    sta::Cell* sinkCell = _db_network->dbToSta(sinkMaster);
+    sta::LibertyCell* libertyCell = _db_network->libertyCell(masterCell);
+    sta::LibertyCell* libertySinkCell = _db_network->libertyCell(sinkCell);
     bool maxSlewExist = false;
     bool maxCapExist = false;
 
@@ -743,10 +752,6 @@ void TechChar::createStaInstance()
     _openStaChar->clear();
   }
   _openStaChar = sta::makeBlockSta(openRoad, _charBlock);
-  // Sets the current OpenSTA instance as the new one just created.
-  sta::Sta::setSta(_openStaChar);
-  // Gets the new components from the new OpenSTA.
-  _dbNetworkChar = openRoad->getDbNetwork();
   // Gets the corner and other analysis attributes from the new instance.
   _charCorner = _openStaChar->cmdCorner();
   sta::PathAPIndex path_ap_index
@@ -777,30 +782,30 @@ void TechChar::setParasitics(
       // Gets the sta::Pin from the beginning and end of the net.
       if (netBTerms.size() > 1) {  // Parasitics for a purewire segment.
                                    // First and last pin are already available.
-        firstPin = _dbNetworkChar->dbToSta(inBTerm);
-        lastPin = _dbNetworkChar->dbToSta(outBTerm);
+        firstPin = _db_network->dbToSta(inBTerm);
+        lastPin = _db_network->dbToSta(outBTerm);
       } else if (netBTerms.size()
                  == 1) {  // Parasitics for the end/start of a net.
                           // One Port and one instance pin.
         odb::dbBTerm* netBTerm = net->get1stBTerm();
         odb::dbITerm* netITerm = net->get1stITerm();
         if (netBTerm == inBTerm) {
-          firstPin = _dbNetworkChar->dbToSta(netBTerm);
-          lastPin = _dbNetworkChar->dbToSta(netITerm);
+          firstPin = _db_network->dbToSta(netBTerm);
+          lastPin = _db_network->dbToSta(netITerm);
         } else {
-          firstPin = _dbNetworkChar->dbToSta(netITerm);
-          lastPin = _dbNetworkChar->dbToSta(netBTerm);
+          firstPin = _db_network->dbToSta(netITerm);
+          lastPin = _db_network->dbToSta(netBTerm);
         }
       } else {  // Parasitics for a net that is between two buffers. Need to
                 // iterate over the net ITerms.
         for (odb::dbITerm* iterm : netITerms) {
           if (iterm != nullptr) {
             if (iterm->getIoType() == odb::dbIoType::INPUT) {
-              lastPin = _dbNetworkChar->dbToSta(iterm);
+              lastPin = _db_network->dbToSta(iterm);
             }
 
             if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-              firstPin = _dbNetworkChar->dbToSta(iterm);
+              firstPin = _db_network->dbToSta(iterm);
             }
 
             if (firstPin != nullptr && lastPin != nullptr) {
@@ -840,7 +845,7 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData sol
     // If it isn't a pure wire solution, get the sum of the total power of each
     // buffer.
     for (odb::dbInst* bufferInst : solution.instVector) {
-      sta::Instance* bufferInstSta = _dbNetworkChar->dbToSta(bufferInst);
+      sta::Instance* bufferInstSta = _db_network->dbToSta(bufferInst);
       sta::PowerResult instResults;
       _openStaChar->power(bufferInstSta, _charCorner, instResults);
       totalPower = totalPower + instResults.total();
@@ -856,8 +861,8 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData sol
     // For buffered solutions, add the cap of the input of the first buffer
     // with the capacitance of the left-most net.
     float length = std::stod(solution.topologyDescriptor[0]);
-    sta::LibertyCell* firstInstLiberty = _dbNetworkChar->libertyCell(
-        _dbNetworkChar->dbToSta(solution.instVector[0]));
+    sta::LibertyCell* firstInstLiberty = _db_network->libertyCell(
+        _db_network->dbToSta(solution.instVector[0]));
     sta::LibertyPort* firstPinLiberty
         = firstInstLiberty->findLibertyPort(_charBufIn.c_str());
     float firstPinCap = firstPinLiberty->capacitance();
@@ -1064,10 +1069,10 @@ void TechChar::create()
       odb::dbBTerm* inBTerm = solution.inPort->getBTerm();
       odb::dbBTerm* outBTerm = solution.outPort->getBTerm();
       odb::dbNet* lastNet = solution.netVector.back();
-      sta::Pin* inPin = _dbNetworkChar->dbToSta(inBTerm);
-      sta::Pin* outPin = _dbNetworkChar->dbToSta(outBTerm);
-      sta::Port* inPort = _dbNetworkChar->port(inPin);
-      sta::Port* outPort = _dbNetworkChar->port(outPin);
+      sta::Pin* inPin = _db_network->dbToSta(inBTerm);
+      sta::Pin* outPin = _db_network->dbToSta(outBTerm);
+      sta::Port* inPort = _db_network->port(inPin);
+      sta::Port* outPort = _db_network->port(outPin);
       sta::Vertex* outPinVert = graph->pinLoadVertex(outPin);
       sta::Vertex* inPinVert = graph->pinDrvrVertex(inPin);
 
@@ -1082,7 +1087,7 @@ void TechChar::create()
         // Parasitics for the end/start of a net. One Port and one
         // instance pin.
         odb::dbITerm* netITerm = lastNet->get1stITerm();
-        firstPinLastNet = _dbNetworkChar->dbToSta(netITerm);
+        firstPinLastNet = _db_network->dbToSta(netITerm);
       }
 
       float c1, c2, r1;

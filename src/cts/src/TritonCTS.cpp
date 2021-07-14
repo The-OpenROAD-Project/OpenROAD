@@ -70,9 +70,14 @@ void TritonCTS::init(ord::OpenRoad* openroad)
 void TritonCTS::makeComponents()
 {
   _db = _openroad->getDb();
-  _options = new CtsOptions;
-  _options->setLogger(_logger);
-  _techChar = new TechChar(_options, _logger);
+  _options = new CtsOptions(_logger);
+  _techChar = new TechChar(_options,
+                           _openroad,
+                           _openroad->getDb(),
+                           _openroad->getSta(),
+                           _openroad->getResizer(),
+                           _openroad->getDbNetwork(),
+                           _logger);
   _staEngine = new StaEngine(_options);
   _builders = new std::vector<TreeBuilder*>;
 }

@@ -239,7 +239,8 @@ void HTreeBuilder::run()
 
     stopCriterionFound = isNumberOfSinksTooSmall(numSinksPerSubRegion);
     if (stopCriterionFound) {
-      _logger->info(CTS, 32, " Stop criterion found. Max number of sinks is ({})", _numMaxLeafSinks);
+      _logger->info(CTS, 32, " Stop criterion found. Max number of sinks is {}",
+                    _numMaxLeafSinks);
       break;
     }
   }
@@ -257,12 +258,9 @@ void HTreeBuilder::run()
   }
 
   createClockSubNets();
-
-  _logger->info(CTS, 33, " Clock topology of net \"{}\" done.", _clock.getName());
 }
 
-inline unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
-    unsigned level) const
+unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(unsigned level) const
 {
   unsigned totalNumSinks = 0;
   if (_clock.getNumSinks() > 200 && _options->getSinkClustering()) {
@@ -275,9 +273,9 @@ inline unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
   return std::ceil(numSinksPerRoot);
 }
 
-inline void HTreeBuilder::computeSubRegionSize(unsigned level,
-                                               double& width,
-                                               double& height) const
+void HTreeBuilder::computeSubRegionSize(unsigned level,
+                                        double& width,
+                                        double& height) const
 {
   unsigned gridSizeX = 0;
   unsigned gridSizeY = 0;

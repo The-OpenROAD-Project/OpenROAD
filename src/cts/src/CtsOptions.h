@@ -49,7 +49,7 @@ namespace cts {
 class CtsOptions
 {
  public:
-  CtsOptions() = default;
+  CtsOptions(utl::Logger* logger) : _logger(logger) {}
 
   void setBlockName(const std::string& blockName) { _blockName = blockName; }
   std::string getBlockName() const { return _blockName; }
@@ -182,7 +182,6 @@ class CtsOptions
   void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
   double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
-  void setLogger(utl::Logger* l) { _logger = l;}
   utl::Logger *getLogger() { return _logger;}
 
  private:
@@ -233,7 +232,7 @@ class CtsOptions
   unsigned _numStaticLayers = 0;
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;
-  utl::Logger* _logger = nullptr;
+  utl::Logger* _logger;
 };
 
 }  // namespace cts

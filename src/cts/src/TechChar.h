@@ -128,6 +128,14 @@ class WireSegment
 class TechChar
 {
  public:
+  TechChar(CtsOptions* options,
+           ord::OpenRoad* openroad,
+           odb::dbDatabase* db,
+           sta::dbSta* sta,
+           rsz::Resizer* resizer,
+           sta::dbNetwork* db_network,
+           Logger* logger);
+
   typedef uint32_t Key;
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
@@ -179,9 +187,6 @@ class TechChar
                  && pinSlew == o.pinSlew && totalcap < o.totalcap);
     }
   };
-
- public:
-  TechChar(CtsOptions* options, Logger* logger) : _logger(logger), _options(options) {}
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
@@ -287,11 +292,14 @@ class TechChar
   void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
                                 float& maxCap, bool& maxCapExist, bool midValue = false);
 
+  CtsOptions* _options;
+  ord::OpenRoad* _openroad;
+  odb::dbDatabase* _db;
+  rsz::Resizer* _resizer;
+  sta::dbSta* _openSta;
+  sta::dbSta* _openStaChar;
+  sta::dbNetwork* _db_network;
   Logger* _logger;
-  sta::dbSta* _openSta = nullptr;
-  odb::dbDatabase* _db = nullptr;
-  sta::dbSta* _openStaChar = nullptr;
-  sta::dbNetwork* _dbNetworkChar = nullptr;
   sta::PathAnalysisPt* _charPathAnalysis = nullptr;
   sta::Corner* _charCorner = nullptr;
   odb::dbBlock* _charBlock = nullptr;
@@ -310,8 +318,6 @@ class TechChar
   std::vector<float> _slewsToTest;
 
   std::map<CharKey, std::vector<ResultData>> _solutionMap;
-
-  CtsOptions* _options;
 };
 
 }  // namespace cts
