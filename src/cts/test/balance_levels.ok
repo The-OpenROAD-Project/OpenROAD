@@ -130,10 +130,10 @@ Fixing from level 2 (parent=0 + current=2) to max 5 for driver clk
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 300
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Avgerage sink wire length 169.0 um
+[INFO CTS-0101]  Average sink wire length 169.0 um
 [INFO CTS-0102]  Path depth 5 - 5
 [INFO CTS-0098] Clock net "clk2"
 [INFO CTS-0099]  Sinks 150
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Avgerage sink wire length 67.2 um
+[INFO CTS-0101]  Average sink wire length 67.2 um
 [INFO CTS-0102]  Path depth 2 - 2

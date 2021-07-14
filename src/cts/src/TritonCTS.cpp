@@ -194,13 +194,15 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet, std::string sdcClockName
   }
 }
 
-void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks,
-                                      unsigned currWireLength, double &sinkWireLength,
-                                      int& minDepth, int& maxDepth, int depth, bool fullTree)
+void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks,
+                                      unsigned &leafSinks,
+                                      double currWireLength, double &sinkWireLength,
+                                      int& minDepth, int& maxDepth, int depth,
+                                      bool fullTree)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
-  int driverX = -1;
-  int driverY = -1;
+  int driverX = 0;
+  int driverY = 0;
   for (odb::dbITerm* iterm : iterms) {
     if (iterm->getIoType() != odb::dbIoType::INPUT) {
       iterm->getAvgXY(&driverX, &driverY);
@@ -232,17 +234,17 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
       std::string name = iterm->getInst()->getName();
       int receiverX, receiverY;
       iterm->getAvgXY(&receiverX, &receiverY);
-      unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
+      int dist = std::abs(driverX - receiverX) + std::abs(driverY - receiverY);
       bool terminate = fullTree ? isSink(iterm) : 
         !(strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf", 6));
       if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
-          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength + dist),
-                                sinkWireLength, minDepth, maxDepth, depth+1, fullTree);
-        else
-        {
-          _logger->report("  Hanging buffer {}", name);
+          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks,
+                                currWireLength + dist, sinkWireLength,
+                                minDepth, maxDepth, depth+1, fullTree);
+        else {
+          _logger->warn(CTS, 104, "Hanging buffer {}", name);
         }
         if (strlen(name.c_str()) > 11 && !strncmp(name.c_str(), "clkbuf_leaf", 11))
           leafSinks++;
@@ -279,7 +281,7 @@ void TritonCTS::writeDataToDb()
     _logger->info(CTS, 99, " Sinks {}", sinkCount);
     _logger->info(CTS, 100, " Leaf buffers {}", leafSinks);
     double avgWL = allSinkDistance/sinkCount;
-    _logger->info(CTS, 101, " Avgerage sink wire length {:.3} um", avgWL);
+    _logger->info(CTS, 101, " Average sink wire length {:.3} um", avgWL);
     _logger->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
   }
 }
