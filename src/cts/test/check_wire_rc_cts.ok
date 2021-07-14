@@ -45,9 +45,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0034]     Segment length (rounded): 2
     Key: 0 outSlew: 2 load: 1 length: 2 isBuffered: false
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15
- Building clock sub nets...
 [INFO CTS-0035]  Number of sinks covered: 29
- Writing clock net "clk" to DB
 [INFO CTS-0018]     Created 34 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.

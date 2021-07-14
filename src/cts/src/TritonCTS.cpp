@@ -540,7 +540,6 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 
 void TritonCTS::writeClockNetsToDb(Clock& clockNet)
 {
-  _logger->report(" Writing clock net \"{}\" to DB", clockNet.getName());
   odb::dbNet* topClockNet = clockNet.getNetObj();
 
   disconnectAllSinksFromNet(topClockNet);

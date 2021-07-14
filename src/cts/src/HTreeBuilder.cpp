@@ -57,7 +57,7 @@ void HTreeBuilder::preSinkClustering(
   if (!secondLevel) {
     _clock.forEachSink([&](ClockInst& inst) {
       Point<double> normLocation((float) inst.getX() / _wireSegmentUnit,
-                                (float) inst.getY() / _wireSegmentUnit);
+                                 (float) inst.getY() / _wireSegmentUnit);
       _mapLocationToSink[normLocation] = &inst;
     });
   }
@@ -732,15 +732,12 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   if (movedSinks>0)
     _logger->report(" Out of {} sinks, {} sinks closer to other cluster", sinks.size(), movedSinks);
 
-
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()
 {
-  _logger->report(" Building clock sub nets...");
-
   int centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
   int centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
 

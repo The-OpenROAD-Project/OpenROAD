@@ -66,7 +66,6 @@ TritonCTS forced slew degradation on these wires.
  Out of 20 sinks, 1 sinks closer to other cluster
  Out of 16 sinks, 1 sinks closer to other cluster
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15
- Building clock sub nets...
 [INFO CTS-0035]  Number of sinks covered: 151
 [INFO CTS-0027] Generating H-Tree topology for net clk2
 [INFO CTS-0028]  Total number of sinks: 150
@@ -109,18 +108,15 @@ TritonCTS forced slew degradation on these wires.
  Out of 16 sinks, 1 sinks closer to other cluster
  Out of 16 sinks, 1 sinks closer to other cluster
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15
- Building clock sub nets...
 [INFO CTS-0035]  Number of sinks covered: 150
 [INFO CTS-0093] Fixing tree levels for max depth 5
 Fixing from level 2 (parent=0 + current=2) to max 5 for driver clk
- Writing clock net "clk" to DB
 [INFO CTS-0018]     Created 65 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 5.
 [INFO CTS-0015]     Created 65 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 7:2, 8:2, 9:6, 10:1, 11:4, 12:1.
 [INFO CTS-0017]     Max level of the clock tree: 4.
- Writing clock net "clk2" to DB
 [INFO CTS-0018]     Created 17 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
