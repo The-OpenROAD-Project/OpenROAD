@@ -174,7 +174,7 @@ void HTreeBuilder::initSinkRegion()
   preSinkClustering(
       topLevelSinks, sinkInsts, maxDiameter, _options->getSizeSinkClustering());
   if (topLevelSinks.size() <= min_clustering_sinks || !(_options->getSinkClustering())) {
-    Box<DBU> sinkRegionDbu = _clock.computeSinkRegion();
+    Box<int> sinkRegionDbu = _clock.computeSinkRegion();
     _logger->info(CTS, 23, " Original sink region: {}", sinkRegionDbu);
 
     _sinkRegion = sinkRegionDbu.normalize(1.0 / _wireSegmentUnit);

@@ -73,7 +73,7 @@ class SinkClustering
   void addPoint(double x, double y) { _points.emplace_back(x, y); }
   void addCap(float cap) { _pointsCap.emplace_back(cap);}
   void run();
-  void run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor);
+  void run(unsigned groupSize, float maxDiameter, int scaleFactor);
   unsigned getNumPoints() const { return _points.size(); }
 
   const std::vector<Matching>& allMatchings() const { return _matchings; }
@@ -119,7 +119,7 @@ class SinkClustering
   float _maxInternalDiameter;
   float _capPerUnit;
   bool _useMaxCapLimit;
-  cts::DBU _scaleFactor;
+  int _scaleFactor;
 };
 
 }  // namespace cts

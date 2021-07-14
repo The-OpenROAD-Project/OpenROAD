@@ -62,12 +62,12 @@ void Clock::report(utl::Logger* _logger) const
   });
 }
 
-Box<DBU> Clock::computeSinkRegion()
+Box<int> Clock::computeSinkRegion()
 {
   double percentile = 0.01;
 
-  std::vector<DBU> allPositionsX;
-  std::vector<DBU> allPositionsY;
+  std::vector<int> allPositionsX;
+  std::vector<int> allPositionsY;
   forEachSink([&](const ClockInst& sink) {
     allPositionsX.push_back(sink.getX());
     allPositionsY.push_back(sink.getY());
@@ -83,7 +83,7 @@ Box<DBU> Clock::computeSinkRegion()
   int yMin = allPositionsY[numOutliers];
   int yMax = allPositionsY[numSinks - numOutliers - 1];
 
-  return Box<DBU>(xMin, yMin, xMax, yMax);
+  return Box<int>(xMin, yMin, xMax, yMax);
 }
 
 Box<double> Clock::computeSinkRegionClustered(
@@ -109,7 +109,7 @@ Box<double> Clock::computeSinkRegionClustered(
 
 Box<double> Clock::computeNormalizedSinkRegion(double factor)
 {
-  Box<DBU> sinkRegion = computeSinkRegion();
+  Box<int> sinkRegion = computeSinkRegion();
   return sinkRegion.normalize(factor);
 }
 

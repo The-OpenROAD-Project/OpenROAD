@@ -185,7 +185,7 @@ void SinkClustering::run()
     writePlotFile();
 }
 
-void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
+void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
 {
   _scaleFactor = scaleFactor;
 
