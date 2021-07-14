@@ -97,8 +97,11 @@ bool lefTechLayerEolExtensionRuleParser::parseSubRule(std::string s,
          >> +EXTENSION_ENTRY >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, EOLEXTENSIONSPACING, space);
-  return valid && first == last;
+  bool valid = qi::phrase_parse(first, last, EOLEXTENSIONSPACING, space)
+               && first == last;
+  if (!valid)
+    odb::dbTechLayerEolExtensionRule::destroy(rule);
+  return valid;
 }
 
 }  // namespace odb

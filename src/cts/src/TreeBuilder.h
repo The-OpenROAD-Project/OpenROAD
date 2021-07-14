@@ -66,6 +66,14 @@ class TreeBuilder
   std::vector<TreeBuilder*> getChildren() const { return _children; }
   TreeBuilder* getParent() const { return _parent; }
   unsigned getTreeBufLevels() const { return _treeBufLevels; }
+  void addFirstLevelSinkDriver(ClockInst* inst) { first_level_sink_drivers_.insert(inst); }
+  void addSecondLevelSinkDriver(ClockInst* inst) { second_level_sink_drivers_.insert(inst); }
+  void addTreeLevelBuffer(ClockInst* inst) { tree_level_buffers_.insert(inst); }
+  bool isAnyTreeBuffer(ClockInst* inst) {return isLeafBuffer(inst) || isLevelBuffer(inst); }
+  bool isLeafBuffer(ClockInst* inst) {return isFirstLevelSinkDriver(inst) || isSecondLevelSinkDriver(inst); }
+  bool isFirstLevelSinkDriver(ClockInst* inst) { return first_level_sink_drivers_.find(inst) != first_level_sink_drivers_.end(); }
+  bool isSecondLevelSinkDriver(ClockInst* inst) { return second_level_sink_drivers_.find(inst) != second_level_sink_drivers_.end(); }
+  bool isLevelBuffer(ClockInst* inst) { return tree_level_buffers_.find(inst) != tree_level_buffers_.end(); }
 
  protected:
   CtsOptions* _options = nullptr;
@@ -77,6 +85,9 @@ class TreeBuilder
   // is buffer levels (depth) of tree in all legs.
   // This becomes buffer level for whole tree thus
   unsigned _treeBufLevels = 0;
+  std::set<ClockInst*> first_level_sink_drivers_;
+  std::set<ClockInst*> second_level_sink_drivers_;
+  std::set<ClockInst*> tree_level_buffers_;
 };
 
 }  // namespace cts

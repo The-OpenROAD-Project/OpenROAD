@@ -142,7 +142,8 @@ bool parse(Iterator first,
               >> +double_[boost::bind(&addSpacing, _1, parser, lefin)])
          >> -SPACINGTABLE >> lit(";"));
 
-  bool valid = qi::phrase_parse(first, last, spacingTableRule, space);
+  bool valid
+      = qi::phrase_parse(first, last, spacingTableRule, space) && first == last;
 
   if (!valid)  // fail if we did not get a full match
     odb::dbTechLayerSpacingTablePrlRule::destroy(rule);
@@ -161,7 +162,7 @@ bool parse(Iterator first,
     } else
       odb::dbTechLayerSpacingTablePrlRule::destroy(rule);
   }
-  return valid && first == last;
+  return valid;
 }
 }  // namespace lefTechLayerSpacingTablePrl
 

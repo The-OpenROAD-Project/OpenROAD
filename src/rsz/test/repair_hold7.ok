@@ -15,9 +15,9 @@ worst slack 0.14
 worst slack 1.36
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
-[INFO RSZ-0032] Inserted 108 hold buffers.
+[INFO RSZ-0032] Inserted 114 hold buffers.
 [ERROR RSZ-0050] Max utilization reached.
 RSZ-0050
-Design area 834 u^2 13% utilization.
+Design area 841 u^2 13% utilization.
 worst slack 0.17
-worst slack 0.97
+worst slack 1.14

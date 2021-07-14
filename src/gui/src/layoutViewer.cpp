@@ -767,9 +767,9 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
     uint x_idx = key.first;
     uint y_idx = key.second;
 
-    if (x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1) {
-      if (logger_ != nullptr)
-        logger_->warn(utl::GUI, 4, "Skipping malformed GCell");
+    if (x_idx >= x_grid_sz || y_idx >= y_grid_sz) {
+      logger_->warn(utl::GUI, 4, "Skipping malformed GCell {} {} ({} {})",
+                    x_idx, y_idx, x_grid_sz, y_grid_sz);
       continue;
     }
 

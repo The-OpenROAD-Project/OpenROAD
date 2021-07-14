@@ -128,8 +128,11 @@ bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
          >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, EOLKEEPOUT, space);
-  return valid && first == last;
+  bool valid
+      = qi::phrase_parse(first, last, EOLKEEPOUT, space) && first == last;
+  if (!valid)
+    odb::dbTechLayerEolKeepOutRule::destroy(rule);
+  return valid;
 }
 
 }  // namespace odb
