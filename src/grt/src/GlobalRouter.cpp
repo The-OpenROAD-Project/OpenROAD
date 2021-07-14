@@ -194,38 +194,9 @@ void GlobalRouter::applyAdjustments(int min_routing_layer, int max_routing_layer
   fastroute_->initAuxVar();
 }
 
-void GlobalRouter::globalRouteClocksSeparately()
-{
-  // route clock nets
-  std::vector<Net*> clock_nets
-      = startFastRoute(min_layer_for_clock_, max_layer_for_clock_, NetType::Clock);
-  reportResources();
-
-  logger_->report("Routing clock nets...");
-  routes_ = findRouting(clock_nets, min_layer_for_clock_, max_layer_for_clock_);
-  Capacities clk_capacities
-      = saveCapacities(min_layer_for_clock_, max_layer_for_clock_);
-  clearObjects();
-  logger_->info(GRT, 10, "Routed clock nets: {}", routes_.size());
-
-  if (max_routing_layer_ == -1) {
-    max_routing_layer_ = computeMaxRoutingLayer();
-  }
-  // route signal nets
-  std::vector<Net*> signalNets
-      = startFastRoute(min_routing_layer_, max_routing_layer_, NetType::Signal);
-  restoreCapacities(clk_capacities, min_layer_for_clock_, max_layer_for_clock_);
-  reportResources();
-
-  // Store results in a temporary map, allowing to keep previous
-  // routing result from clock nets
-  NetRouteMap result
-      = findRouting(signalNets, min_routing_layer_, max_routing_layer_);
-  routes_.insert(result.begin(), result.end());
-}
-
 void GlobalRouter::globalRoute()
 {
+  clear();
   if (max_routing_layer_ == -1) {
     max_routing_layer_ = computeMaxRoutingLayer();
   }
@@ -235,13 +206,6 @@ void GlobalRouter::globalRoute()
   reportResources();
 
   routes_ = findRouting(nets, min_routing_layer_, max_routing_layer_);
-}
-
-void GlobalRouter::run()
-{
-  clear();
-
-  globalRoute();
 
   reportCongestion();
   computeWirelength();
