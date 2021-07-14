@@ -746,6 +746,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,
+                                       min_routing_layer_-1,
+                                       max_routing_layer_-1,
                                        edge_cost_per_layer);
         for (RoutePt& pin_pos : pins_on_grid) {
           fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer()-1);
