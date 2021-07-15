@@ -84,14 +84,12 @@ create_clock -period 5 clk
 set_wire_rc -clock -layer metal5
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
-                     -buf_list CLKBUF_X3 \
-                     -wire_unit 20 \
-                     -post_cts_disable \
-                     -sink_clustering_enable \
-                     -distance_between_buffers 100 \
-                     -sink_clustering_size 10 \
-                     -sink_clustering_max_diameter 60 \
-                     -balance_levels \
-                     -num_static_layers 1
-
-exit
+  -buf_list CLKBUF_X3 \
+  -wire_unit 20 \
+  -post_cts_disable \
+  -sink_clustering_enable \
+  -distance_between_buffers 100 \
+  -sink_clustering_size 10 \
+  -sink_clustering_max_diameter 60 \
+  -balance_levels \
+  -num_static_layers 1

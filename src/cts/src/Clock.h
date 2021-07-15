@@ -63,8 +63,8 @@ class ClockInst
   ClockInst(const std::string& name,
             const std::string& master,
             InstType type,
-            DBU x,
-            DBU y,
+            int x,
+            int y,
             odb::dbITerm* pinObj = nullptr,
             float inputCap = 0.0)
       : _name(name),
@@ -78,9 +78,9 @@ class ClockInst
 
   std::string getName() const { return _name; }
   std::string getMaster() const { return _master; }
-  DBU getX() const { return _location.getX(); }
-  DBU getY() const { return _location.getY(); }
-  Point<DBU> getLocation() const { return _location; }
+  int getX() const { return _location.getX(); }
+  int getY() const { return _location.getY(); }
+  Point<int> getLocation() const { return _location; }
 
   void setInstObj(odb::dbInst* inst) { _instObj = inst; }
   odb::dbInst* getDbInst() const { return _instObj; }
@@ -95,7 +95,7 @@ class ClockInst
   std::string _name;
   std::string _master;
   InstType _type;
-  Point<DBU> _location;
+  Point<int> _location;
   odb::dbInst* _instObj = nullptr;
   odb::dbITerm* _inputPinObj = nullptr;
   float _inputCap;
@@ -176,8 +176,8 @@ class Clock
   Clock(const std::string& netName,
         const std::string& clockPin,
         const std::string& sdcClockName,
-        DBU clockPinX,
-        DBU clockPinY)
+        int clockPinX,
+        int clockPinY)
       : _netName(netName),
         _clockPin(clockPin),
         _sdcClockName(sdcClockName),
@@ -186,8 +186,8 @@ class Clock
 
   ClockInst& addClockBuffer(const std::string& name,
                             const std::string& master,
-                            DBU x,
-                            DBU y)
+                            int x,
+                            int y)
   {
     _clockBuffers.emplace_back(
         name + "_" + getName(), master, CLOCK_BUFFER, x, y);
@@ -210,12 +210,12 @@ class Clock
     return _subNets.back();
   }
 
-  void addSink(const std::string& name, DBU x, DBU y)
+  void addSink(const std::string& name, int x, int y)
   {
     _sinks.emplace_back(name, "", CLOCK_SINK, x, y);
   }
 
-  void addSink(const std::string& name, DBU x, DBU y, odb::dbITerm* pinObj, float inputCap)
+  void addSink(const std::string& name, int x, int y, odb::dbITerm* pinObj, float inputCap)
   {
     _sinks.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap);
   }
@@ -223,7 +223,7 @@ class Clock
   std::string getName() const { return _netName; }
   unsigned getNumSinks() const { return _sinks.size(); }
 
-  Box<DBU> computeSinkRegion();
+  Box<int> computeSinkRegion();
   Box<double> computeSinkRegionClustered(
       std::vector<std::pair<float, float>> sinks);
   Box<double> computeNormalizedSinkRegion(double factor);
@@ -267,8 +267,8 @@ class Clock
   std::string _netName;
   std::string _clockPin;
   std::string _sdcClockName;
-  DBU _clockPinX;
-  DBU _clockPinY;
+  int _clockPinX;
+  int _clockPinY;
 
   std::deque<ClockInst> _sinks;
   std::deque<ClockInst> _clockBuffers;

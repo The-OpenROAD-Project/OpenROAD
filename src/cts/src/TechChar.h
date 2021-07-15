@@ -128,9 +128,17 @@ class WireSegment
 class TechChar
 {
  public:
+  TechChar(CtsOptions* options,
+           ord::OpenRoad* openroad,
+           odb::dbDatabase* db,
+           sta::dbSta* sta,
+           rsz::Resizer* resizer,
+           sta::dbNetwork* db_network,
+           Logger* logger);
+
   typedef uint32_t Key;
-  static const unsigned NUM_BITS_PER_FIELD = 10;
-  static const unsigned MAX_NORMALIZED_VAL = 1023;
+  static constexpr unsigned NUM_BITS_PER_FIELD = 10;
+  static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
   unsigned LENGTH_UNIT_MICRON = 10;
 
   // SolutionData represents the various different structures of the
@@ -179,9 +187,6 @@ class TechChar
                  && pinSlew == o.pinSlew && totalcap < o.totalcap);
     }
   };
-
- public:
-  TechChar(CtsOptions* options, Logger* logger) : _logger(logger), _options(options) {}
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
@@ -232,6 +237,7 @@ class TechChar
   }
 
   float getCharMaxCap() const { return _charMaxCap; }
+  double getCapPerDBU() const { return _capPerDBU; }
   float getCharMaxSlew() const { return _charMaxSlew; }
   utl::Logger* getLogger() { return _options->getLogger(); }
 
@@ -269,8 +275,6 @@ class TechChar
   void createStaInstance();
   void setParasitics(std::vector<SolutionData> topologiesVector,
                      unsigned setupWirelength);
-  void setSdc(std::vector<SolutionData> topologiesVector,
-              unsigned setupWirelength);
   ResultData computeTopologyResults(SolutionData solution,
                                     sta::Vertex* outPinVert,
                                     float load,
@@ -281,26 +285,29 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
-  void getClockLayerResCap(double &cap, double &res);
-  void getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
-                                      float &maxSlew, bool &maxSlewExist,
-                                      float &maxCap, bool &maxCapExist, bool midValue = false);
+  void getClockLayerResCap(float dbUnitsPerMicron);
+  void getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
+                              float &maxSlew, bool &maxSlewExist,
+                              float &maxCap, bool &maxCapExist, bool midValue = false);
   void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
-                                     float& maxCap, bool& maxCapExist, bool midValue = false);
+                                float& maxCap, bool& maxCapExist, bool midValue = false);
 
+  CtsOptions* _options;
+  ord::OpenRoad* _openroad;
+  odb::dbDatabase* _db;
+  rsz::Resizer* _resizer;
+  sta::dbSta* _openSta;
+  sta::dbSta* _openStaChar;
+  sta::dbNetwork* _db_network;
   Logger* _logger;
-  sta::dbSta* _openSta = nullptr;
-  odb::dbDatabase* _db = nullptr;
-  sta::dbSta* _openStaChar = nullptr;
-  sta::dbNetwork* _dbNetworkChar = nullptr;
   sta::PathAnalysisPt* _charPathAnalysis = nullptr;
   sta::Corner* _charCorner = nullptr;
   odb::dbBlock* _charBlock = nullptr;
   odb::dbMaster* _charBuf = nullptr;
   std::string _charBufIn = "";
   std::string _charBufOut = "";
-  double _resPerDBU = 0.0001;   // Default values, not used
-  double _capPerDBU = 5.0e-20;  // Default values, not used
+  double _resPerDBU; // ohms/dbu
+  double _capPerDBU; // farads/dbu
   float _charMaxSlew = 0.0;
   float _charMaxCap = 0.0;
   float _charSlewInter = 5.0e-12;  // Hard-coded interval
@@ -311,8 +318,6 @@ class TechChar
   std::vector<float> _slewsToTest;
 
   std::map<CharKey, std::vector<ResultData>> _solutionMap;
-
-  CtsOptions* _options;
 };
 
 }  // namespace cts

@@ -58,6 +58,8 @@ class dbITerm;
 
 namespace sta {
 class dbSta;
+class Clock;
+class dbNetwork;
 }  // namespace sta
 
 namespace cts {
@@ -87,19 +89,13 @@ class TritonCTS
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
 
- private:
-  void makeComponents();
-  void deleteComponents();
-  void printHeader() const;
+private:
   void setupCharacterization();
-  void createCharacterization();
   void checkCharacterization();
   void findClockRoots();
-  void populateTritonCts();
   void buildClockTrees();
   void runPostCtsOpt();
   void writeDataToDb();
-  void printFooter() const;
 
   // db functions
   bool masterExists(const std::string& master) const;
@@ -109,8 +105,6 @@ class TritonCTS
   void clearNumClocks() { _numberOfClocks = 0; }
   unsigned getNumClocks() const { return _numberOfClocks; }
   void parseClockNames(std::vector<std::string>& clockNetNames) const;
-  void initDB();
-  void initAllClocks();
   void initOneClockTree(odb::dbNet* driverNet, std::string sdcClockName, TreeBuilder* parent);
   TreeBuilder* initClock(odb::dbNet* net, std::string sdcClock, TreeBuilder* parentBuilder);
   void disconnectAllSinksFromNet(odb::dbNet* net);
@@ -119,28 +113,35 @@ class TritonCTS
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
-  void countSinksPostDbWrite(TreeBuilder* builder, odb::dbNet* net, unsigned &sinks, unsigned & leafSinks,
-                  unsigned currWireLength, double &sinkWireLength, int& minDepth, int& maxDepth, int depth, bool fullTree = false);
+void countSinksPostDbWrite(TreeBuilder* builder, odb::dbNet* net,
+                           unsigned &sinks, unsigned &leafSinks,
+                           unsigned currWireLength, double &sinkWireLength,
+                           int& minDepth, int& maxDepth, int depth,
+                           bool fullTree);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
-  ClockInst* getClockFromInst(odb::dbInst* inst) { return (inst2clkbuf.find(inst) != inst2clkbuf.end())
-                                                            ? inst2clkbuf[inst] : nullptr;}
+  void findClockRoots(sta::Clock* clk,
+                      std::set<odb::dbNet*> &clockNets);
+  float getInputPinCap(odb::dbITerm* iterm);
+  bool isSink(odb::dbITerm* iterm);
+  ClockInst* getClockFromInst(odb::dbInst* inst);
+
   ord::OpenRoad* _openroad;
+  sta::dbSta* _openSta;
+  sta::dbNetwork* _network;
   Logger* _logger;
   CtsOptions* _options;
   TechChar* _techChar;
-  StaEngine* _staEngine;
   std::vector<TreeBuilder*>* _builders;
   std::set <odb::dbNet*> staClockNets;
   std::set <odb::dbNet*> visitedClockNets;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf;
 
   // db vars
-  sta::dbSta* _openSta = nullptr;
-  odb::dbDatabase* _db = nullptr;
+  odb::dbDatabase* _db;
   odb::dbBlock* _block = nullptr;
   unsigned _numberOfClocks = 0;
   unsigned _numClkNets = 0;
