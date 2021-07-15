@@ -166,10 +166,29 @@ void lefout::findSWireLayerObstructions(
   for (dbSWire* swire : net->getSWires()) {
     for (dbSBox* box : swire->getWires()) {
       if (box->isVia()) {
-        continue;
+        // In certain power grid arrangements there may be a metal layer that
+        // isn't directly used for straps or stripes just punching vias through.
+        // In these cases the metal layer should still be blocked even though
+        // we can't find any metal wires on the layer.
+        // https://github.com/The-OpenROAD-Project/OpenROAD/pull/725#discussion_r669927312
+        findLayerViaObstructions(obstruction_layers, box);
+      } else {
+        obstruction_layers.insert(box->getTechLayer());
       }
-      obstruction_layers.insert(box->getTechLayer());
     }
+  }
+}
+void lefout::findLayerViaObstructions(
+    std::set<dbTechLayer*>& obstruction_layers,
+    dbSBox* box) const
+{
+  std::vector<dbShape> via_shapes;
+  box->getViaBoxes(via_shapes);
+  for (dbShape db_shape : via_shapes) {
+    if (db_shape.isViaBox()) {
+      continue;
+    }
+    obstruction_layers.insert(db_shape.getTechLayer());
   }
 }
 void lefout::findWireLayerObstructions(

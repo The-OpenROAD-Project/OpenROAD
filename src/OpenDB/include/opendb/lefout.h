@@ -104,7 +104,8 @@ class lefout
   void writePins(dbBlock* db_block);
   void writePowerPins(dbBlock* db_block);
   void writeBlockTerms(dbBlock* db_block);
-
+  void findLayerViaObstructions(std::set<dbTechLayer*>& obstruction_layers,
+                                dbSBox* box) const;
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,

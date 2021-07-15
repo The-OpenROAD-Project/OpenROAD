@@ -806,13 +806,27 @@ MACRO gcd
   OBS
     LAYER metal1 ;
     RECT  0 0 200.26 201.6 ;
+    LAYER via1 ;
+    RECT  0 0 200.26 201.6 ;
     LAYER metal2 ;
+    RECT  0 0 200.26 201.6 ;
+    LAYER via2 ;
     RECT  0 0 200.26 201.6 ;
     LAYER metal3 ;
     RECT  0 0 200.26 201.6 ;
+    LAYER via3 ;
+    RECT  0 0 200.26 201.6 ;
     LAYER metal4 ;
     RECT  0 0 200.26 201.6 ;
+    LAYER via4 ;
+    RECT  0 0 200.26 201.6 ;
+    LAYER metal5 ;
+    RECT  0 0 200.26 201.6 ;
+    LAYER via5 ;
+    RECT  0 0 200.26 201.6 ;
     LAYER metal6 ;
+    RECT  0 0 200.26 201.6 ;
+    LAYER via6 ;
     RECT  0 0 200.26 201.6 ;
     LAYER metal7 ;
     RECT  0 0 200.26 201.6 ;
