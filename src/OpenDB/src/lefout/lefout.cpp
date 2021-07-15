@@ -132,7 +132,7 @@ void lefout::writeHeader(dbBlock* db_block)
   writeVersion("5.8");
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
-  writeUnits(/*database_units = */static_cast<int>(1.0/_dist_factor));
+  writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
 }
 
 void lefout::writeObstructions(dbBlock* db_block)
@@ -1213,9 +1213,18 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
     logger_->error(utl::ODB, 1072, "Cannot open LEF file %s\n", lef_file);
   }
 
+  double temporary_dist_factor = _dist_factor;
+  db_block->getDefUnits()
+  _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
+  _area_factor = _dist_factor * _dist_factor;
+
   writeHeader(db_block);
   writeBlock(db_block);
   fprintf(_out, "END LIBRARY\n");
   fclose(_out);
+
+  _dist_factor = temporary_dist_factor;
+  _area_factor = _dist_factor * _dist_factor;
+
   return true;
 }
