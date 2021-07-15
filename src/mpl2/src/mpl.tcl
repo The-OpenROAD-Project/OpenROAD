@@ -56,7 +56,7 @@ proc rtl_macro_placer { args } {
     }
 
     if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file]} {
-        return
+        return false
     }
 
     set block [ord::get_db_block]
@@ -84,4 +84,6 @@ proc rtl_macro_placer { args } {
     }
 
     close $ch
+
+    return true
 }
