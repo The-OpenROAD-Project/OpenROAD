@@ -46,13 +46,32 @@ proc set_routing_alpha { args } {
   }
   if { [info exists keys(-net)] } {
     set net_names $keys(-net)
-    set nets [grt::parse_net_names "set_routing_alpha" $net_names]
+    set nets [stt::parse_net_names "set_routing_alpha" $net_names]
     foreach net $nets {
-      grt::set_alpha_for_net $net $alpha
+      stt::set_alpha_for_net $net $alpha
     }
   } elseif { [llength $args] == 1 } {
-    grt::set_routing_alpha_cmd $alpha
+    stt::set_routing_alpha_cmd $alpha
   } else {
     utl::error STT 2 "set_routing_alpha: Wrong number of arguments."
   }
+}
+
+namespace eval stt {
+
+proc parse_net_names {cmd names} {
+  set dbBlock [ord::get_db_block]
+  set net_list {}
+  foreach net [get_nets $names] {
+    lappend net_list [sta::sta_to_db_net $net]
+  }
+
+  if {[llength $net_list] == 0} {
+    utl::error GRT 102 "Nets for $cmd command were not found"
+  }
+
+  return $net_list
+}
+
+# stt namespace end
 }

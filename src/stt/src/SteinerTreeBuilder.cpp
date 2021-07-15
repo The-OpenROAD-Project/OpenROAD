@@ -44,10 +44,27 @@
 
 namespace stt{
 
+SteinerTreeBuilder::SteinerTreeBuilder() :
+  alpha_(0.3)
+{
+}
+
+SteinerTreeBuilder::~SteinerTreeBuilder()
+{
+}
+
 void SteinerTreeBuilder::init(ord::OpenRoad* openroad)
 {
   db_ = openroad->getDb();
   logger_ = openroad->getLogger();
+}
+
+Tree SteinerTreeBuilder::findFluteTree(int pin_count,
+                                       int x[],
+                                       int y[],
+                                       int accuracy)
+{
+  return flt::flute(pin_count, x, y, accuracy);
 }
 
 Tree SteinerTreeBuilder::findSteinerTree(odb::dbNet* net,
@@ -74,6 +91,11 @@ Tree SteinerTreeBuilder::findSteinerTree(odb::dbNet* net,
   }
 
   return tree;
+}
+
+void SteinerTreeBuilder::freeTree(Tree tree)
+{
+  flt::free_tree(tree);
 }
 
 }

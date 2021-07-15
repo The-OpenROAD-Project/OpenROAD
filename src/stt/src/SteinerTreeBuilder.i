@@ -61,7 +61,7 @@ namespace std {
 
 %inline %{
 
-namespace grt {
+namespace stt {
 
 void
 set_routing_alpha_cmd(float alpha)

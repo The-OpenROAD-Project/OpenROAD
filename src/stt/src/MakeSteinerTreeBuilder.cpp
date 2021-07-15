@@ -36,6 +36,7 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 
 #include "stt/SteinerTreeBuilder.h"
+#include "flute.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -52,12 +53,12 @@ namespace ord {
 
 stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
 {
-  flt::deleteLUT();
   return new stt::SteinerTreeBuilder();
 }
 
 void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
 {
+  flt::deleteLUT();
   delete stt_builder;
 }
 

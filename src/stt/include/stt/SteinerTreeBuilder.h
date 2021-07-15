@@ -55,16 +55,21 @@ using utl::Logger;
 class SteinerTreeBuilder
 {
  public:
-  SteinerTreeBuilder() = default;
+  SteinerTreeBuilder();
   ~SteinerTreeBuilder();
 
   void init(ord::OpenRoad* openroad);
 
+  Tree findFluteTree(int pin_count,
+                     int x[],
+                     int y[],
+                     int accuracy);
   Tree findSteinerTree(odb::dbNet* net,
                        std::vector<int> x,
                        std::vector<int> y,
                        int flute_accuracy,
                        int drvr_index);
+  void freeTree(Tree tree);
   void setAlpha(float alpha) { alpha_ = alpha; }
   void addAlphaForNet(odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
 

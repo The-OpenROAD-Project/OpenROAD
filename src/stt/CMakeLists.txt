@@ -49,6 +49,7 @@ swig_lib(NAME      stt
 target_sources(stt
   PRIVATE
     src/SteinerTreeBuilder.cpp
+    src/MakeSteinerTreeBuilder.cpp
 )
 
 target_include_directories(stt
@@ -60,6 +61,7 @@ target_link_libraries(stt
     flt
     pdr
     utl
+    OpenSTA
 )
 
 messages(
