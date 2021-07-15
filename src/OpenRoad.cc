@@ -265,7 +265,9 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   // Initialize tcl history
   if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
-    // due to tcl history.tcl return error, remove error
+    // There appears to be a typo in the history.tcl file in some
+    // distributions, which is generating this error.
+    // remove error from tcl result.
     Tcl_ResetResult(tcl_interp);
   }
 }
