@@ -204,8 +204,7 @@ Resizer::init(OpenRoad *openroad,
 float
 Resizer::routingAlpha() const
 {
-  //return grt_->getAlpha();
-  return 0.3;
+  return grt_->getAlpha();
 }
 
 double
@@ -310,7 +309,7 @@ Resizer::removeBuffers()
       Instance *buffer = db_network_->dbToSta(inst);
       // Do not remove buffers connected to input/output ports
       // because verilog netlists use the net name for the port.
-      if (!bufferConnectedToPorts(buffer)) {
+      if (!bufferBetweenPorts(buffer)) {
         removeBuffer(buffer);
         remove_count++;
       }
@@ -321,7 +320,7 @@ Resizer::removeBuffers()
 }
 
 bool
-Resizer::bufferConnectedToPorts(Instance *buffer)
+Resizer::bufferBetweenPorts(Instance *buffer)
 {
   LibertyCell *lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
@@ -332,7 +331,7 @@ Resizer::bufferConnectedToPorts(Instance *buffer)
   Net *out_net = db_network_->net(out_pin);
   bool in_net_ports = hasPort(in_net);
   bool out_net_ports = hasPort(out_net);
-  return in_net_ports || out_net_ports;
+  return in_net_ports && out_net_ports;
 }
 
 void
@@ -528,9 +527,18 @@ void
 Resizer::setLocation(Instance *inst,
                      Point pt)
 {
+  int x = pt.getX();
+  int y = pt.getY();
+  // Stay inside the lines.
+  if (core_exists_) {
+    Point in_core = closestPtInRect(core_, x, y);
+    x = in_core.getX();
+    y = in_core.getY();
+  }
+
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dinst->setLocation(pt.getX(), pt.getY());
+  dinst->setLocation(x, y);
 }
 
 void
@@ -1185,7 +1193,7 @@ Resizer::repairNet(SteinerTree *tree,
         logger_->critical(RSZ, 23, "repairNet failure.");
       double dx = prev_x - pt_x;
       double dy = prev_y - pt_y;
-      double d = buf_dist / length;
+      double d = (length == 0) ? 0.0 : buf_dist / length;
       int buf_x = pt_x + d * dx;
       int buf_y = pt_y + d * dy;
       makeRepeater("wire", buf_x, buf_y, net, buffer_lowest_drive_, level,
@@ -1232,108 +1240,105 @@ Resizer::makeRepeater(const char *where,
                       float &fanout,
                       PinSeq &load_pins)
 {
-  Point buf_loc(x, y);
-  if (!core_exists_
-      || core_.overlaps(buf_loc)) {
-    LibertyPort *buffer_input_port, *buffer_output_port;
-    buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  LibertyPort *buffer_input_port, *buffer_output_port;
+  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
-    string buffer_name = makeUniqueInstName("repeater");
-    debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}{} {} ({} {})",
-               "", level,
-               where,
-               buffer_name.c_str(),
-               units_->distanceUnit()->asString(dbuToMeters(x), 1),
-               units_->distanceUnit()->asString(dbuToMeters(y), 1));
+  string buffer_name = makeUniqueInstName("repeater");
+  debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}{} {} ({} {})",
+             "", level,
+             where,
+             buffer_name.c_str(),
+             units_->distanceUnit()->asString(dbuToMeters(x), 1),
+             units_->distanceUnit()->asString(dbuToMeters(y), 1));
 
-    // Inserting a buffer is complicated by the fact that verilog netlists
-    // use the net name for input and output ports. This means the ports
-    // cannot be moved to a different net.
+  // Inserting a buffer is complicated by the fact that verilog netlists
+  // use the net name for input and output ports. This means the ports
+  // cannot be moved to a different net.
 
-    bool have_output_port_load = false;
-    for (Pin *pin : load_pins) {
-      if (network_->isTopLevelPort(pin)
-          && network_->direction(pin)->isAnyOutput()) {
-        have_output_port_load = true;
-        break;
-      }
+  bool have_output_port_load = false;
+  for (Pin *pin : load_pins) {
+    if (network_->isTopLevelPort(pin)
+        && network_->direction(pin)->isAnyOutput()) {
+      have_output_port_load = true;
+      break;
     }
-    Net *in_net, *out_net;
-    Instance *parent = db_network_->topInstance();
+  }
+  Net *in_net, *out_net;
+  Instance *parent = db_network_->topInstance();
 
-    // If the net is driven by an input port,
-    // use the net as the repeater input net so the port stays connected to it.
-    if (hasInputPort(net)
-        || !have_output_port_load) {
-      in_net = net;
-      out_net = makeUniqueNet();
-      // Copy signal type to new net.
-      dbNet *out_net_db = db_network_->staToDb(out_net);
-      dbNet *in_net_db = db_network_->staToDb(in_net);
-      out_net_db->setSigType(in_net_db->getSigType());
+  // If the net is driven by an input port,
+  // use the net as the repeater input net so the port stays connected to it.
+  if (hasInputPort(net)
+      || !have_output_port_load) {
+    in_net = net;
+    out_net = makeUniqueNet();
+    // Copy signal type to new net.
+    dbNet *out_net_db = db_network_->staToDb(out_net);
+    dbNet *in_net_db = db_network_->staToDb(in_net);
+    out_net_db->setSigType(in_net_db->getSigType());
 
-      // Move load pins to out_net.
-      for (Pin *pin : load_pins) {
+    // Move load pins to out_net.
+    for (Pin *pin : load_pins) {
+      Port *port = network_->port(pin);
+      Instance *inst = network_->instance(pin);
+      sta_->disconnectPin(pin);
+      sta_->connectPin(inst, port, out_net);
+    }
+  }
+  else {
+    // One of the loads is an output port.
+    // Use the net as the repeater output net so the port stays connected to it.
+    in_net = makeUniqueNet();
+    out_net = net;
+    // Copy signal type to new net.
+    dbNet *out_net_db = db_network_->staToDb(out_net);
+    dbNet *in_net_db = db_network_->staToDb(in_net);
+    in_net_db->setSigType(out_net_db->getSigType());
+
+    // Move non-repeater load pins to in_net.
+    PinSet load_pins1;
+    for (Pin *pin : load_pins)
+      load_pins1.insert(pin);
+
+    NetPinIterator *pin_iter = network_->pinIterator(out_net);
+    while (pin_iter->hasNext()) {
+      Pin *pin = pin_iter->next();
+      if (!load_pins1.hasKey(pin)) {
         Port *port = network_->port(pin);
         Instance *inst = network_->instance(pin);
         sta_->disconnectPin(pin);
-        sta_->connectPin(inst, port, out_net);
+        sta_->connectPin(inst, port, in_net);
       }
     }
-    else {
-      // One of the loads is an output port.
-      // Use the net as the repeater output net so the port stays connected to it.
-      in_net = makeUniqueNet();
-      out_net = net;
-      // Copy signal type to new net.
-      dbNet *out_net_db = db_network_->staToDb(out_net);
-      dbNet *in_net_db = db_network_->staToDb(in_net);
-      in_net_db->setSigType(out_net_db->getSigType());
-
-      // Move non-repeater load pins to in_net.
-      PinSet load_pins1;
-      for (Pin *pin : load_pins)
-        load_pins1.insert(pin);
-
-      NetPinIterator *pin_iter = network_->pinIterator(out_net);
-      while (pin_iter->hasNext()) {
-        Pin *pin = pin_iter->next();
-        if (!load_pins1.hasKey(pin)) {
-          Port *port = network_->port(pin);
-          Instance *inst = network_->instance(pin);
-          sta_->disconnectPin(pin);
-          sta_->connectPin(inst, port, in_net);
-        }
-      }
-    }
-
-    Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                                 buffer_name.c_str(),
-                                                 parent);
-    journalMakeBuffer(buffer);
-    setLocation(buffer, buf_loc);
-    designAreaIncr(area(db_network_->cell(buffer_cell)));
-    inserted_buffer_count_++;
-
-    sta_->connectPin(buffer, buffer_input_port, in_net);
-    sta_->connectPin(buffer, buffer_output_port, out_net);
-
-    parasiticsInvalid(in_net);
-    parasiticsInvalid(out_net);
-
-    // Resize repeater as we back up by levels.
-    Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
-    resizeToTargetSlew(drvr_pin, false);
-    buffer_cell = network_->libertyCell(buffer);
-    buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-
-    Pin *buf_in_pin = network_->findPin(buffer, buffer_input_port);
-    load_pins.clear();
-    load_pins.push_back(buf_in_pin);
-    wire_length = 0;
-    pin_cap = buffer_input_port->capacitance();
-    fanout = portFanoutLoad(buffer_input_port);
   }
+
+  Instance *buffer = db_network_->makeInstance(buffer_cell,
+                                               buffer_name.c_str(),
+                                               parent);
+  journalMakeBuffer(buffer);
+  Point buf_loc(x, y);
+  setLocation(buffer, buf_loc);
+  designAreaIncr(area(db_network_->cell(buffer_cell)));
+  inserted_buffer_count_++;
+
+  sta_->connectPin(buffer, buffer_input_port, in_net);
+  sta_->connectPin(buffer, buffer_output_port, out_net);
+
+  parasiticsInvalid(in_net);
+  parasiticsInvalid(out_net);
+
+  // Resize repeater as we back up by levels.
+  Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
+  resizeToTargetSlew(drvr_pin, false);
+  buffer_cell = network_->libertyCell(buffer);
+  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+
+  Pin *buf_in_pin = network_->findPin(buffer, buffer_input_port);
+  load_pins.clear();
+  load_pins.push_back(buf_in_pin);
+  wire_length = 0;
+  pin_cap = buffer_input_port->capacitance();
+  fanout = portFanoutLoad(buffer_input_port);
 }
 
 bool
@@ -2034,6 +2039,7 @@ Resizer::findCellInstances(LibertyCell *cell,
   delete inst_iter;
 }
 
+// Place the tie instance on the side of the load pin.
 Point
 Resizer::tieLocation(Pin *load,
                      int separation)
@@ -2071,10 +2077,7 @@ Resizer::tieLocation(Pin *load,
       // top
       tie_y += separation;
   }
-  if (core_exists_)
-    return closestPtInRect(core_, tie_x, tie_y);
-  else
-    return Point(tie_x, tie_y);
+  return Point(tie_x, tie_y);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2747,12 +2750,10 @@ Resizer::makeHoldDelay(Vertex *drvr,
 
   parasiticsInvalid(in_net);
   // Spread buffers between driver and load center.
-  Point drvr_pin_loc = db_network_->location(drvr_pin);
-  // Stay inside the core.
-  Point drvr_loc = core_exists_ ? closestPtInRect(core_, drvr_pin_loc) : drvr_pin_loc;
+  Point drvr_loc = db_network_->location(drvr_pin);
   Point load_center = findCenter(load_pins);
-  int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
-  int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);
+  int dx = (load_center.x() - drvr_loc.x()) / (buffer_count + 1);
+  int dy = (load_center.y() - drvr_loc.y()) / (buffer_count + 1);
 
   Net *buf_in_net = in_net;
   Instance *buffer = nullptr;
@@ -2791,13 +2792,14 @@ Resizer::makeHoldDelay(Vertex *drvr,
 Point
 Resizer::findCenter(PinSeq &pins)
 {
-  Point sum(0, 0);
+  long sum_x = 0;
+  long sum_y = 0;
   for (Pin *pin : pins) {
     Point loc = db_network_->location(pin);
-    sum.x() += loc.x();
-    sum.y() += loc.y();
+    sum_x += loc.x();
+    sum_y += loc.y();
   }
-  return Point(sum.x() / pins.size(), sum.y() / pins.size());
+  return Point(sum_x / pins.size(), sum_y / pins.size());
 }
 
 // Gap between min setup and hold slacks.

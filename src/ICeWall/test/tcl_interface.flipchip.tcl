@@ -109,7 +109,8 @@ define_pad_cell \
 set_bump_options \
   -pitch 160 \
   -bump_pin_name PAD \
-  -spacing_to_edge 165 \
+  -array_size {17 17} \
+  -offset {210.0 215.0} \
   -cell_name DUMMY_BUMP \
   -num_pads_per_tile 5 \
   -rdl_layer metal10 \
@@ -122,8 +123,8 @@ set_padring_options \
   -ground {VSS DVSS_0 DVSS_1} \
   -offsets 35 \
   -pin_layer metal10 \
-  -pad_inst_name "%s" \
-  -pad_pin_name "PAD" \
+  -pad_inst_pattern "%s" \
+  -pad_pin_pattern "p_%s" \
   -connect_by_abutment {SNS RETN DVDD DVSS}
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM
@@ -417,6 +418,56 @@ add_pad -edge left   -inst_name u_v18_33 -signal DVDD_0 -type vddio -location {o
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  555}} -bump {row 15 col 2}
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  525}} -bump {row 15 col 1}
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  395}} -bump {row 16 col 1}
+
+set_bump -row  6 -col  6 -power  VDD2
+set_bump -row  7 -col  6 -power  VDD2
+set_bump -row  8 -col  6 -power  VDD1
+set_bump -row  9 -col  6 -remove 
+set_bump -row 10 -col  6 -power  VDD1
+set_bump -row 11 -col  6 -power  VDD1
+set_bump -row 12 -col  6 -power  VDD1
+set_bump -row  6 -col  7 -ground VSS2
+set_bump -row  7 -col  7 -ground VSS2
+set_bump -row  8 -col  7 -ground VSS1
+set_bump -row  9 -col  7 -remove
+set_bump -row 10 -col  7 -ground VSS1
+set_bump -row 11 -col  7 -ground VSS1
+set_bump -row 12 -col  7 -ground VSS1
+set_bump -row  6 -col  8 -power  VDD2
+set_bump -row  7 -col  8 -power  VDD2
+set_bump -row  8 -col  8 -power  VDD2
+set_bump -row  9 -col  8 -remove
+set_bump -row 10 -col  8 -power  VDD1
+set_bump -row 11 -col  8 -power  VDD1
+set_bump -row 12 -col  8 -power  VDD1
+set_bump -row  6 -col  9 -remove
+set_bump -row  7 -col  9 -remove
+set_bump -row  8 -col  9 -remove
+set_bump -row  9 -col  9 -remove
+set_bump -row 10 -col  9 -remove
+set_bump -row 11 -col  9 -remove
+set_bump -row 12 -col  9 -remove
+set_bump -row  6 -col 10 -power  VDD3
+set_bump -row  7 -col 10 -power  VDD3
+set_bump -row  8 -col 10 -power  VDD3
+set_bump -row  9 -col 10 -remove
+set_bump -row 10 -col 10 -power  VDD4
+set_bump -row 11 -col 10 -power  VDD4
+set_bump -row 12 -col 10 -power  VDD4
+set_bump -row  6 -col 11 -ground VSS3
+set_bump -row  7 -col 11 -ground VSS3
+set_bump -row  8 -col 11 -ground VSS3
+set_bump -row  9 -col 11 -remove
+set_bump -row 10 -col 11 -ground VSS4
+set_bump -row 11 -col 11 -ground VSS4
+set_bump -row 12 -col 11 -ground VSS4
+set_bump -row  6 -col 12 -power  VDD3
+set_bump -row  7 -col 12 -power  VDD3
+set_bump -row  8 -col 12 -power  VDD3
+set_bump -row  9 -col 12 -remove
+set_bump -row 10 -col 12 -power  VDD4
+set_bump -row 11 -col 12 -power  VDD4
+set_bump -row 12 -col 12 -power  VDD4
 
 puts "Trigger errors for incorrect bump options"
 set_bump_options -rdl_layer metal10 -rdl_width 0.5 -rdl_spacing 1

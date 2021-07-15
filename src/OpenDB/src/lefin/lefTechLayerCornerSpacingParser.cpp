@@ -174,12 +174,13 @@ bool parse(Iterator first,
       = (lit("CORNERSPACING") >> (convexCornerRule | concaveCornerRule)
          >> -(exceptSameRule) >> +(spacingRule) >> lit(";"));
 
-  bool valid = qi::phrase_parse(first, last, cornerSpacingRule, space);
+  bool valid = qi::phrase_parse(first, last, cornerSpacingRule, space)
+               && first == last;
 
   if (!valid)
     odb::dbTechLayerCornerSpacingRule::destroy(rule);
 
-  return valid && first == last;
+  return valid;
 }
 }  // namespace lefTechLayerCornerSpacing
 

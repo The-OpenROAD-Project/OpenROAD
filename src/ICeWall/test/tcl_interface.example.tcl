@@ -109,8 +109,8 @@ set_padring_options \
   -ground {VSS DVSS_0 DVSS_1} \
   -offsets 35 \
   -pin_layer metal10 \
-  -pad_inst_name "%s" \
-  -pad_pin_name "PAD" \
+  -pad_inst_pattern "%s" \
+  -pad_pin_pattern "p_%s" \
   -connect_by_abutment {SNS RETN DVDD DVSS}
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM

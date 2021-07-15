@@ -8,12 +8,6 @@
 [INFO ODB-0131]     Created 2 components and 8 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 2 connections.
 [INFO ODB-0134] Finished DEF file: no_clock.def
- *****************
- * TritonCTS 2.0 *
- *****************
- *****************************
- *  Create characterization  *
- *****************************
 [INFO CTS-0039] Number of created patterns = 2376.
 [INFO CTS-0084] Compiling LUT
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
@@ -23,16 +17,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0046]     Number of wire segments: 2376
 [INFO CTS-0047]     Number of keys in characterization LUT: 832
 [INFO CTS-0048]     Actual min input cap: 1
- **********************
- *  Find clock roots  *
- **********************
-[INFO CTS-0002]  User did not specify clock roots.
- ************************
- *  Populate TritonCTS  *
- ************************
- Initializing clock nets
- Looking for clock nets in the design
 [WARNING CTS-0083] No clock nets have been found.
-[INFO CTS-0008]  TritonCTS found 0 clock nets.
-[WARNING CTS-0082] No valid clock nets in the design. Skipping CTS...
+[INFO CTS-0008] TritonCTS found 0 clock nets.
+[WARNING CTS-0082] No valid clock nets in the design.
 

@@ -57,12 +57,12 @@ void HTreeBuilder::preSinkClustering(
   if (!secondLevel) {
     _clock.forEachSink([&](ClockInst& inst) {
       Point<double> normLocation((float) inst.getX() / _wireSegmentUnit,
-                                (float) inst.getY() / _wireSegmentUnit);
+                                 (float) inst.getY() / _wireSegmentUnit);
       _mapLocationToSink[normLocation] = &inst;
     });
   }
 
-  if (sinks.size() <= 200 || !(_options->getSinkClustering())) {
+  if (sinks.size() <= min_clustering_sinks || !(_options->getSinkClustering())) {
     _topLevelSinksClustered = sinks;
     return;
   }
@@ -109,15 +109,20 @@ void HTreeBuilder::preSinkClustering(
       }
       float normCenterX = (xSum / (float) pointCounter);
       float normCenterY = (ySum / (float) pointCounter);
-      DBU centerX
-          = normCenterX * _wireSegmentUnit;  // geometric center of cluster
-      DBU centerY = normCenterY * _wireSegmentUnit;
+      int centerX = normCenterX * _wireSegmentUnit;  // geometric center of cluster
+      int centerY = normCenterY * _wireSegmentUnit;
       std::string baseName = secondLevel ? "clkbuf_leaf2_" : "clkbuf_leaf_";
       ClockInst& rootBuffer
           = _clock.addClockBuffer(baseName + std::to_string(clusterCount),
                                   _options->getSinkBuffer(),
                                   centerX,
                                   centerY);
+
+      if (!secondLevel)
+        addFirstLevelSinkDriver(&rootBuffer);
+      else
+        addSecondLevelSinkDriver(&rootBuffer);
+
       baseName = secondLevel ? "clknet_leaf2_" : "clknet_leaf_";
       Clock::SubNet& clockSubNet
           = _clock.addSubNet(baseName + std::to_string(clusterCount));
@@ -145,10 +150,11 @@ void HTreeBuilder::preSinkClustering(
 void HTreeBuilder::initSinkRegion()
 {
   unsigned wireSegmentUnitInMicron = _techChar->getLengthUnit();
-  DBU dbUnits = _options->getDbUnits();
+  int dbUnits = _options->getDbUnits();
   _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
-  _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um)", _wireSegmentUnit, wireSegmentUnitInMicron);
+  _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um)",
+                _wireSegmentUnit, wireSegmentUnitInMicron);
 
   if (_options->isSimpleSegmentEnabled()) {
     int remainingLength
@@ -173,8 +179,8 @@ void HTreeBuilder::initSinkRegion()
 
   preSinkClustering(
       topLevelSinks, sinkInsts, maxDiameter, _options->getSizeSinkClustering());
-  if (topLevelSinks.size() <= 200 || !(_options->getSinkClustering())) {
-    Box<DBU> sinkRegionDbu = _clock.computeSinkRegion();
+  if (topLevelSinks.size() <= min_clustering_sinks || !(_options->getSinkClustering())) {
+    Box<int> sinkRegionDbu = _clock.computeSinkRegion();
     _logger->info(CTS, 23, " Original sink region: {}", sinkRegionDbu);
 
     _sinkRegion = sinkRegionDbu.normalize(1.0 / _wireSegmentUnit);
@@ -197,17 +203,17 @@ void HTreeBuilder::initSinkRegion()
 
 void HTreeBuilder::run()
 {
-  _logger->info(CTS, 27, " Generating H-Tree topology for net {}", _clock.getName());
-  _logger->info(CTS, 28, "    Total number of sinks: {}", _clock.getNumSinks());
+  _logger->info(CTS, 27, "Generating H-Tree topology for net {}", _clock.getName());
+  _logger->info(CTS, 28, " Total number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
     if (_options->getSinkClusteringUseMaxCap()) {
-      _logger->info(CTS, 90, "    Sinks will be clustered based on buffer max cap.");
+      _logger->info(CTS, 90, " Sinks will be clustered based on buffer max cap.");
     } else {
-      _logger->info(CTS, 29, "    Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um",
+      _logger->info(CTS, 29, " Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um",
                   _options->getSizeSinkClustering(), _options->getMaxDiameter());
     }
   }
-  _logger->info(CTS, 30, "    Number of static layers: {}", _options->getNumStaticLayers());
+  _logger->info(CTS, 30, " Number of static layers: {}", _options->getNumStaticLayers());
 
   _clockTreeMaxDepth = _options->getClockTreeMaxDepth();
   _minInputCap = _techChar->getActualMinInputCap();
@@ -219,7 +225,7 @@ void HTreeBuilder::run()
   for (int level = 1; level <= _clockTreeMaxDepth; ++level) {
     bool stopCriterionFound = false;
     unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
-    double regionWidth = 0.0, regionHeight = 0.0;
+    double regionWidth, regionHeight;
     computeSubRegionSize(level, regionWidth, regionHeight);
 
     stopCriterionFound = isSubRegionTooSmall(regionWidth, regionHeight);
@@ -239,7 +245,8 @@ void HTreeBuilder::run()
 
     stopCriterionFound = isNumberOfSinksTooSmall(numSinksPerSubRegion);
     if (stopCriterionFound) {
-      _logger->info(CTS, 32, " Stop criterion found. Max number of sinks is ({})", _numMaxLeafSinks);
+      _logger->info(CTS, 32, " Stop criterion found. Max number of sinks is {}",
+                    _numMaxLeafSinks);
       break;
     }
   }
@@ -257,27 +264,24 @@ void HTreeBuilder::run()
   }
 
   createClockSubNets();
-
-  _logger->info(CTS, 33, " Clock topology of net \"{}\" done.", _clock.getName());
 }
 
-inline unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
-    unsigned level) const
+unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(unsigned level) const
 {
   unsigned totalNumSinks = 0;
-  if (_clock.getNumSinks() > 200 && _options->getSinkClustering()) {
+  if (_clock.getNumSinks() > min_clustering_sinks && _options->getSinkClustering()) {
     totalNumSinks = _topLevelSinksClustered.size();
   } else {
     totalNumSinks = _clock.getNumSinks();
   }
   unsigned numRoots = std::pow(2, level);
   double numSinksPerRoot = (double) totalNumSinks / numRoots;
-  return (unsigned) std::ceil(numSinksPerRoot);
+  return std::ceil(numSinksPerRoot);
 }
 
-inline void HTreeBuilder::computeSubRegionSize(unsigned level,
-                                               double& width,
-                                               double& height) const
+void HTreeBuilder::computeSubRegionSize(unsigned level,
+                                        double& width,
+                                        double& height) const
 {
   unsigned gridSizeX = 0;
   unsigned gridSizeY = 0;
@@ -299,7 +303,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
   _logger->report(" Level {}", level);
   _logger->report("    Direction: {}", (isVertical(level)) ? ("Vertical") : ("Horizontal"));
-  _logger->report("    # sinks per sub-region: {}", numSinksPerSubRegion);
+  _logger->report("    Sinks per sub-region: {}", numSinksPerSubRegion);
   _logger->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
   unsigned minLength = _minLengthSinkRegion / 2;
@@ -734,20 +738,18 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   if (movedSinks>0)
     _logger->report(" Out of {} sinks, {} sinks closer to other cluster", sinks.size(), movedSinks);
 
-
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()
 {
-  _logger->report(" Building clock sub nets...");
-
-  DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
-  DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
+  int centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
+  int centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
 
   ClockInst& rootBuffer = _clock.addClockBuffer(
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
+  addTreeLevelBuffer(&rootBuffer);
   Clock::SubNet& rootClockSubNet = _clock.addSubNet("clknet_0");
   rootClockSubNet.addInst(rootBuffer);
   _treeBufLevels++;
@@ -765,7 +767,8 @@ void HTreeBuilder::createClockSubNets()
                            _clock,
                            rootClockSubNet,
                            *_techChar,
-                           _wireSegmentUnit);
+                           _wireSegmentUnit,
+                           this);
     if (_options->getTreeBuffer() != "") {
       builder.build(_options->getTreeBuffer());
     } else {
@@ -801,7 +804,8 @@ void HTreeBuilder::createClockSubNets()
                              _clock,
                              *parentTopology.getBranchDrivingSubNet(parentIdx),
                              *_techChar,
-                             _wireSegmentUnit);
+                             _wireSegmentUnit,
+                             this);
       if (_options->getTreeBuffer() != "") {
         builder.build(_options->getTreeBuffer());
       } else {
@@ -817,8 +821,6 @@ void HTreeBuilder::createClockSubNets()
       topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
     });
   }
-
-  // ---
 
   LevelTopology& leafTopology = _topologyForEachLevel.back();
   unsigned levelIdx = _topologyForEachLevel.size() - 1;
@@ -845,12 +847,13 @@ void HTreeBuilder::createClockSubNets()
 
 void HTreeBuilder::createSingleBufferClockNet()
 {
-  _logger->report(" Building single-buffer clock net...");
+  _logger->report(" Building single-buffer clock net.");
 
-  DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
-  DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
+  int centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
+  int centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
   ClockInst& rootBuffer = _clock.addClockBuffer(
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
+  addTreeLevelBuffer(&rootBuffer);
   Clock::SubNet& clockSubNet = _clock.addSubNet("clknet_0");
   clockSubNet.addInst(rootBuffer);
 
@@ -954,6 +957,7 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
                                    buffMaster,
                                    x * _techCharDistUnit,
                                    y * _techCharDistUnit);
+      _tree->addTreeLevelBuffer(&newBuffer);;
       if (sink) {
         _drivingSubNet->replaceSink(sink, &newBuffer);
         _drivingSubNet
@@ -984,6 +988,7 @@ void SegmentBuilder::forceBufferInSegment(std::string master)
   unsigned y = _target.getY();
   ClockInst& newBuffer = _clock->addClockBuffer(
       _instPrefix + "_f", master, x * _techCharDistUnit, y * _techCharDistUnit);
+  _tree->addTreeLevelBuffer(&newBuffer);;
   _drivingSubNet->addInst(newBuffer);
   _drivingSubNet = &_clock->addSubNet(_netPrefix + "_leaf");
   _drivingSubNet->addInst(newBuffer);

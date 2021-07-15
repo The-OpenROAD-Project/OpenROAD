@@ -74,16 +74,15 @@ pdngen -verbose $pdn_cfg
 ################################################################
 # Global placement
 
-# Used by resizer for timing driven placement.
-source $layer_rc_file
-set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
-set_dont_use $dont_use
+foreach layer_adjustment $global_routing_layer_adjustments {
+  lassign $layer_adjustment layer adjustment
+  set_global_routing_layer_adjustment $layer $adjustment
+}
+set_routing_layers -signal $global_routing_layers \
+  -clock $global_routing_clock_layers
+set_macro_extension 2
 
-# If/when this enables routing driven also the layer adjustments have to
-# move to here.
-global_placement -timing_driven -density $global_place_density \
-  -init_density_penalty $global_place_density_penalty \
+global_placement -routability_driven -density $global_place_density \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
 # IO Placement
@@ -95,6 +94,11 @@ write_def $global_place_def
 
 ################################################################
 # Repair max slew/cap/fanout violations and normalize slews
+
+source $layer_rc_file
+set_wire_rc -signal -layer $wire_rc_layer
+set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_dont_use $dont_use
 
 estimate_parasitics -placement
 
@@ -151,13 +155,8 @@ utl::metric "DPL::errors" $dpl_errors
 
 ################################################################
 # Global routing
+
 set route_guide [make_result_file ${design}_${platform}.route_guide]
-foreach layer_adjustment $global_routing_layer_adjustments {
-  lassign $layer_adjustment layer adjustment
-  set_global_routing_layer_adjustment $layer $adjustment
-}
-set_routing_layers -signal $global_routing_layers \
-  -clock $global_routing_clock_layers
 global_route -guide_file $route_guide \
   -congestion_iterations 100
 
