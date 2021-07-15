@@ -67,7 +67,7 @@ proc parse_net_names {cmd names} {
   }
 
   if {[llength $net_list] == 0} {
-    utl::error GRT 102 "Nets for $cmd command were not found"
+    utl::error STT 3 "Nets for $cmd command were not found"
   }
 
   return $net_list

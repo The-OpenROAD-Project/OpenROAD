@@ -37,8 +37,23 @@ include("openroad")
 
 project(stt)
 
-add_subdirectory(src/flt)
-add_subdirectory(src/pdr)
+set(FLUTE_HOME ${PROJECT_SOURCE_DIR}/src/flt)
+set(PDR_HOME ${PROJECT_SOURCE_DIR}/src/pdr)
+
+set(POWV9_DAT ${FLUTE_HOME}/etc/POWV9.dat)
+set(POST9_DAT ${FLUTE_HOME}/etc/POST9.dat)
+set(POWV9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POWV9.cpp)
+set(POST9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POST9.cpp)
+
+add_custom_command(OUTPUT ${POWV9_CPP}
+  COMMAND ${FLUTE_HOME}/etc/MakeDatVar.tcl powv9 ${POWV9_CPP} ${POWV9_DAT}
+  DEPENDS ${POWV9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
+)
+
+add_custom_command(OUTPUT ${POST9_CPP}
+  COMMAND ${FLUTE_HOME}/etc/MakeDatVar.tcl post9 ${POST9_CPP} ${POST9_DAT}
+  DEPENDS ${POST9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
+  )
 
 swig_lib(NAME      stt
          NAMESPACE stt
@@ -50,6 +65,13 @@ target_sources(stt
   PRIVATE
     src/SteinerTreeBuilder.cpp
     src/MakeSteinerTreeBuilder.cpp
+    ${FLUTE_HOME}/flute.cpp
+    ${POWV9_CPP}
+    ${POST9_CPP}
+    ${PDR_HOME}/src/pdrev.cpp
+    ${PDR_HOME}/src/graph.cpp
+    ${PDR_HOME}/src/node.cpp
+    ${PDR_HOME}/src/edge.cpp
 )
 
 target_include_directories(stt
@@ -58,9 +80,8 @@ target_include_directories(stt
 )
 
 target_link_libraries(stt
-    flt
-    pdr
     utl
+    gui
     OpenSTA
 )
 

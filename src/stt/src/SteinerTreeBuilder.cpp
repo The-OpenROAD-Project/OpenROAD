@@ -38,8 +38,6 @@
 #include <map>
 #include <vector>
 
-#include "flute.h"
-#include "pdr/pdrev.h"
 #include "ord/OpenRoad.hh"
 
 namespace stt{

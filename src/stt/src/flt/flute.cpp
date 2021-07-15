@@ -37,7 +37,7 @@
 #include <math.h>
 #include <string>
 #include <algorithm>
-#include "flute.h"
+#include "stt/flute.h"
 
 namespace flt {
 

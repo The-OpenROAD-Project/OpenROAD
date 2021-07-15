@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "pdr/pdrev.h"
+#include "stt/pdrev.h"
 
 #include "graph.h"
 #include "utl/Logger.h"
