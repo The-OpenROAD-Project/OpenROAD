@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
-#include "pdr/pdrev.h"
+#include "stt/SteinerTreeBuilder.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
