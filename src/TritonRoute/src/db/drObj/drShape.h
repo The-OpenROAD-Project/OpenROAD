@@ -110,6 +110,10 @@ class drPathSeg : public drShape
     endIn.set(end_);
   }
 
+  const frPoint& getBeginPoint() const { return begin_; }
+
+  const frPoint& getEndPoint() const { return end_; }
+
   void getStyle(frSegStyle& styleIn) const
   {
     styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
@@ -127,6 +131,14 @@ class drPathSeg : public drShape
     style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
     style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
     style_.setWidth(styleIn.getWidth());
+  }
+  void setBeginStyle(frEndStyle bs, frUInt4 ext = 0)
+  {
+    style_.setBeginStyle(bs, ext);
+  }
+  void setEndStyle(frEndStyle es, frUInt4 ext = 0)
+  {
+    style_.setEndStyle(es, ext);
   }
   frCoord getBeginX() const { return begin_.x(); }
   frCoord getBeginY() const { return begin_.y(); }
