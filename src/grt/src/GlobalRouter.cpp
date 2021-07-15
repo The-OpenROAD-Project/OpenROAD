@@ -71,53 +71,38 @@ namespace grt {
 
 using utl::GRT;
 
+GlobalRouter::GlobalRouter() :
+  adjustment_(0.0),
+  min_routing_layer_(1),
+  max_routing_layer_(-1),
+  min_layer_for_clock_(-1),
+  max_layer_for_clock_(-2),
+  overflow_iterations_(50),
+  allow_congestion_(false),
+  macro_extension_(0),
+  verbose_(0),
+  alpha_(0.3),
+  seed_(0),
+  caps_perturbation_percentage_(0),
+  perturbation_amount_(1),
+  layer_for_guide_dimension_(3),
+  grid_origin_(odb::Point(0, 0))
+{
+  routing_tracks_ = new std::vector<RoutingTracks>;
+  grid_ = new Grid;
+  nets_ = new std::vector<Net>;
+  routing_layers_ = new std::vector<RoutingLayer>;
+}
+
 void GlobalRouter::init(ord::OpenRoad* openroad)
 {
   openroad_ = openroad;
   logger_ = openroad->getLogger();
   // Broken gui api missing openroad accessor.
   gui_ = gui::Gui::get();
-  init();
-}
-
-void GlobalRouter::init()
-{
-  makeComponents();
-  // Initialize variables
-  adjustment_ = 0.0;
-  min_routing_layer_ = 1;
-  max_routing_layer_ = -1;
-  overflow_iterations_ = 50;
-  allow_congestion_ = false;
-  macro_extension_ = 0;
-  verbose_ = 0;
-  alpha_ = 0.3;
-  seed_ = 0;
-  caps_perturbation_percentage_ = 0;
-  perturbation_amount_ = 1;
-}
-
-void GlobalRouter::makeComponents()
-{
-  // Allocate memory for objects
-  routing_tracks_ = new std::vector<RoutingTracks>;
   db_ = openroad_->getDb();
   fastroute_ = new FastRouteCore(db_, logger_);
-  grid_ = new Grid;
-  grid_origin_ = new odb::Point(0, 0);
-  nets_ = new std::vector<Net>;
   sta_ = openroad_->getSta();
-  routing_layers_ = new std::vector<RoutingLayer>;
-}
-
-void GlobalRouter::deleteComponents()
-{
-  delete routing_tracks_;
-  delete fastroute_;
-  delete grid_;
-  delete grid_origin_;
-  delete nets_;
-  delete routing_layers_;
 }
 
 void GlobalRouter::clear()
@@ -139,7 +124,11 @@ void GlobalRouter::clearObjects()
 
 GlobalRouter::~GlobalRouter()
 {
-  deleteComponents();
+  delete routing_tracks_;
+  delete fastroute_;
+  delete grid_;
+  delete nets_;
+  delete routing_layers_;
 }
 
 std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
@@ -148,8 +137,8 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
 {
   initAdjustments();
 
-  if (max_routing_layer < selected_metal_) {
-    setSelectedMetal(max_routing_layer);
+  if (max_routing_layer < layer_for_guide_dimension_) {
+    layer_for_guide_dimension_ = max_routing_layer;
   }
 
   fastroute_->setVerbose(verbose_);
@@ -1359,7 +1348,7 @@ void GlobalRouter::setOverflowIterations(int iterations)
 
 void GlobalRouter::setGridOrigin(long x, long y)
 {
-  *grid_origin_ = odb::Point(x, y);
+  grid_origin_ = odb::Point(x, y);
 }
 
 void GlobalRouter::setAllowCongestion(bool allow_congestion)
@@ -1433,8 +1422,8 @@ void GlobalRouter::writeGuides(const char* file_name)
   }
   RoutingLayer ph_layer_final;
 
-  int offset_x = grid_origin_->x();
-  int offset_y = grid_origin_->y();
+  int offset_x = grid_origin_.x();
+  int offset_y = grid_origin_.y();
 
   logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   int final_layer;
@@ -2152,10 +2141,10 @@ void GlobalRouter::initGrid(int max_layer)
 {
   odb::dbTech* tech = db_->getTech();
 
-  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(selected_metal_);
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_guide_dimension_);
 
   if (tech_layer == nullptr) {
-    logger_->error(GRT, 81, "Layer {} not found.", selected_metal_);
+    logger_->error(GRT, 81, "Layer {} not found.", layer_for_guide_dimension_);
   }
 
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
@@ -3244,7 +3233,7 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer, int max_routing_la
   logger_->info(GRT, 20, "Min routing layer: {}", min_layer->getName());
   logger_->info(GRT, 21, "Max routing layer: {}", max_layer->getName());
   logger_->info(GRT, 22, "Global adjustment: {}%", int(adjustment_ * 100));
-  logger_->info(GRT, 23, "Grid origin: ({}, {})", grid_origin_->x(), grid_origin_->y());
+  logger_->info(GRT, 23, "Grid origin: ({}, {})", grid_origin_.x(), grid_origin_.y());
 }
 
 void GlobalRouter::reportResources()
