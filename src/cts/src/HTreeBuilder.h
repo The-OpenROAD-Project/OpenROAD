@@ -269,18 +269,12 @@ class HTreeBuilder : public TreeBuilder
 
   bool isSubRegionTooSmall(double width, double height) const
   {
-    if (width < _minLengthSinkRegion || height < _minLengthSinkRegion) {
-      return true;
-    }
-    return false;
+    return width < _minLengthSinkRegion || height < _minLengthSinkRegion;
   }
 
   bool isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
   {
-    if (numSinksPerSubRegion < _numMaxLeafSinks) {
-      return true;
-    }
-    return false;
+    return numSinksPerSubRegion < _numMaxLeafSinks;
   }
 
  protected:
@@ -290,11 +284,12 @@ class HTreeBuilder : public TreeBuilder
   std::map<Point<double>, ClockInst*> _mapLocationToSink;
   std::vector<std::pair<float, float>> _topLevelSinksClustered;
 
-  DBU _wireSegmentUnit = -1;
-  unsigned _minInputCap = 1;
+  int _wireSegmentUnit = 0;
+  unsigned _minInputCap = 0;
   unsigned _numMaxLeafSinks = 0;
   unsigned _minLengthSinkRegion = 0;
   unsigned _clockTreeMaxDepth = 0;
+  static constexpr int min_clustering_sinks = 200;
 };
 
 }  // namespace cts

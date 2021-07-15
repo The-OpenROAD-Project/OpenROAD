@@ -66,12 +66,12 @@ void PostCtsOpt::initSourceSinkDists()
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
 {
   const ClockInst* driver = subNet.getDriver();
-  Point<DBU> driverLoc = driver->getLocation();
+  Point<int> driverLoc = driver->getLocation();
 
   subNet.forEachSink([&](const ClockInst* sink) {
-    Point<DBU> sinkLoc = sink->getLocation();
+    Point<int> sinkLoc = sink->getLocation();
     std::string sinkName = sink->getName();
-    DBU dist = driverLoc.computeDist(sinkLoc);
+    int dist = driverLoc.computeDist(sinkLoc);
     _avgSourceSinkDist += dist;
     _sinkDistMap[sinkName] = dist;
   });
@@ -113,7 +113,7 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
 {
   unsigned inputCap = _techChar->getActualMinInputCap();
   unsigned inputSlew = _techChar->getMaxSlew()/2;
-  DBU wireSegmentUnit = _techChar->getLengthUnit() * _options->getDbUnits();
+  int wireSegmentUnit = _techChar->getLengthUnit() * _options->getDbUnits();
   Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
                           (float) driver->getY() / wireSegmentUnit);
   Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
@@ -157,7 +157,7 @@ void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
 {
   std::string master = _options->getRootBuffer();
 
-  Point<DBU> bufLoc = computeBufferLocation(driver, sink);
+  Point<int> bufLoc = computeBufferLocation(driver, sink);
   ClockInst& clkBuffer = _clock->addClockBuffer(
       "clkbuf_opt_" + std::to_string(_numInsertedBuffers),
       master,
@@ -175,11 +175,11 @@ void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
   ++_numInsertedBuffers;
 }
 
-Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver,
+Point<int> PostCtsOpt::computeBufferLocation(ClockInst* driver,
                                              ClockInst* sink) const
 {
-  Point<DBU> driverLoc = driver->getLocation();
-  Point<DBU> sinkLoc = sink->getLocation();
+  Point<int> driverLoc = driver->getLocation();
+  Point<int> sinkLoc = sink->getLocation();
   unsigned xDist = driverLoc.computeDistX(sinkLoc);
   unsigned yDist = driverLoc.computeDistY(sinkLoc);
 
@@ -193,7 +193,7 @@ Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver,
     yBufDistRatio = -_bufDistRatio;
   }
 
-  Point<DBU> bufLoc(driverLoc.getX() + xBufDistRatio * xDist,
+  Point<int> bufLoc(driverLoc.getX() + xBufDistRatio * xDist,
                     driverLoc.getY() + yBufDistRatio * yDist);
 
   return bufLoc;

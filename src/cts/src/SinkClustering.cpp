@@ -48,6 +48,14 @@ namespace cts {
 
 using utl::CTS;
 
+SinkClustering::SinkClustering(CtsOptions* options, TechChar* techChar) :
+    _options(options), _logger(options->getLogger()),
+    _techChar(techChar),
+    _maxInternalDiameter(10), _capPerUnit(0.0),
+    _useMaxCapLimit(options->getSinkClusteringUseMaxCap())
+{
+}
+
 void SinkClustering::normalizePoints(float maxDiameter)
 {
   double xMax = -std::numeric_limits<double>::infinity();
@@ -71,7 +79,7 @@ void SinkClustering::normalizePoints(float maxDiameter)
     p = Point<double>(xNorm, yNorm);
   }
   _maxInternalDiameter = maxDiameter / std::min(xSpan, ySpan);
-  _capPerUnit = _options->getCapPerSqr() * _scaleFactor * std::min(xSpan, ySpan);
+  _capPerUnit = _techChar->getCapPerDBU() * _scaleFactor * std::min(xSpan, ySpan);
 }
 
 void SinkClustering::computeAllThetas()
@@ -177,7 +185,7 @@ void SinkClustering::run()
     writePlotFile();
 }
 
-void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
+void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
 {
   _scaleFactor = scaleFactor;
 

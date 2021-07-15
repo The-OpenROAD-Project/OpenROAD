@@ -39,8 +39,6 @@
 
 namespace cts {
 
-typedef long long DBU;
-
 template <class T>
 class Point
 {
