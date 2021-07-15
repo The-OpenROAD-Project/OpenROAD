@@ -1310,11 +1310,6 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
   max_layer_for_clock_ = max_layer;
 }
 
-void GlobalRouter::setAlpha(const float alpha)
-{
-  alpha_ = alpha;
-}
-
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
 {
   initAdjustments();
@@ -1339,12 +1334,6 @@ void GlobalRouter::addRegionAdjustment(int min_x,
 {
   region_adjustments_.push_back(
       RegionAdjustment(min_x, min_y, max_x, max_y, layer, reduction_percentage));
-}
-
-void GlobalRouter::addAlphaForNet(char* netName, float alpha)
-{
-  std::string name(netName);
-  net_alpha_map_[name] = alpha;
 }
 
 void GlobalRouter::setVerbose(const int v)

@@ -138,7 +138,6 @@ class GlobalRouter
   void setMaxRoutingLayer(const int max_layer);
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
-  void setAlpha(const float alpha);
   float getAlpha() const { return alpha_; }
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reduction_percentage);
@@ -148,7 +147,6 @@ class GlobalRouter
                            int max_y,
                            int layer,
                            float reduction_percentage);
-  void addAlphaForNet(char* netName, float alpha);
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
