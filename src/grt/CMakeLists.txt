@@ -64,7 +64,6 @@ target_include_directories(grt
 target_link_libraries(grt
     utl
     FastRoute4.1
-    pdr
     ant
     dpl
     dbSta

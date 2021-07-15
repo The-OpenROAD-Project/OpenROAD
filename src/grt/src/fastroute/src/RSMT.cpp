@@ -39,7 +39,6 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "flute.h"
-#include "pdr/pdrev.h"
 #include "utl/Logger.h"
 #include "utl/Logger.h"
 
@@ -240,7 +239,7 @@ void FastRouteCore::fluteNormal(int netID,
     t->branch[3].y = y_mid;
     t->branch[3].n = 3;
   } else {
-    stt::Tree fluteTree;
+    flt::Tree fluteTree;
     xs = new DTYPE[d];
     ys = new DTYPE[d];
 
@@ -318,7 +317,7 @@ void FastRouteCore::fluteNormal(int netID,
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
-    fluteTree = stt::flutes(d, tmp_xs, tmp_ys, s, acc);
+    fluteTree = flt::flutes(d, tmp_xs, tmp_ys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     for (i = 0; i < 2 * d - 2; i++) {
@@ -421,7 +420,7 @@ void FastRouteCore::fluteCongest(int netID,
     t->branch[3].y = y_mid;
     t->branch[3].n = 3;
   } else {
-    stt::Tree fluteTree;
+    flt::Tree fluteTree;
     xs = new DTYPE[d];
     ys = new DTYPE[d];
     nxs = new DTYPE[d];
@@ -479,7 +478,7 @@ void FastRouteCore::fluteCongest(int netID,
       nys[i + 1] = nys[i] + y_seg[i];
     }
 
-    fluteTree = stt::flutes(d, nxs, nys, s, acc);
+    fluteTree = flt::flutes(d, nxs, nys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     // map the new coordinates back to original coordinates
@@ -765,7 +764,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
       coeffV = 1.2;
     }
     if (net->alpha > 0) {
-      stt::Tree tree = pdr::primDijkstra(net->pinX, net->pinY, net->driver_idx, net->alpha, logger_);
+      flt::Tree tree = stt_builder_->findSteinerTree(net->db_net, net->pinX, net->pinY, flute_accuracy, net->driver_idx);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {

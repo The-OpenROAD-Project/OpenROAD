@@ -57,7 +57,7 @@ namespace grt {
 
 using utl::GRT;
 
-FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
+FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder)
 {
   new_net_id_ = 0;
   seg_count_ = 0;
@@ -68,6 +68,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
   num_nets_ = 0;
   max_degree_ = 0;
   logger_ = log;
+  stt_builder_ = stt_builder;
   db_ = db;
   allow_overflow_ = false;
   overflow_iterations_ = 0;

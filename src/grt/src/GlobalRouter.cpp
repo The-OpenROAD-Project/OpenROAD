@@ -103,7 +103,7 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   gui_ = gui::Gui::get();
   stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
-  fastroute_ = new FastRouteCore(db_, logger_);
+  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = openroad_->getSta();
 }
 
