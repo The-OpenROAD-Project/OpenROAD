@@ -44,7 +44,7 @@
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
-#include "pdr/pdrev.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
 
@@ -73,10 +73,10 @@ SteinerPt SteinerTree::null_pt = -1;
 
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
-                float alpha,
                 bool find_left_rights,
                 dbNetwork *network,
-                Logger *logger)
+                Logger *logger,
+                SteinerTreeBuilder *stt_builder)
 {
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
@@ -115,19 +115,20 @@ makeSteinerTree(const Pin *drvr_pin,
       tree->locAddPin(loc, pin);
     }
     if (is_placed) {
-      stt::Tree ftree;
-      if (alpha > 0.0) {
-        std::vector<int> x1(x, x + pin_count);
-        std::vector<int> y1(y, y + pin_count);
-        float alpha = 0.4;
-        ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
-      }
-      else {
-        int flute_accuracy = 3;
-        ftree = stt::flute(pin_count, x, y, flute_accuracy);
-      }
+      int flute_accuracy = 3;
+      std::vector<int> x1(x, x + pin_count);
+      std::vector<int> y1(y, y + pin_count);
+      
+      // save alpha defined in stt builder
+      float alpha = stt_builder->getAlpha();
+      // resizer was setting alpha as independently of the original value
+      stt_builder->setAlpha(0.4);
+      stt::Tree ftree = stt_builder->findSteinerTree(network->staToDb(net), x1, y1, flute_accuracy, drvr_idx);
+      // restore previous alpha after it
+      stt_builder->setAlpha(alpha);
+      
       if (debug->check("steiner", 3))
-        stt::printtree(ftree);
+        flt::printtree(ftree);
       tree->setTree(ftree, network);
       if (find_left_rights)
         tree->findLeftRights(network, logger);
@@ -165,7 +166,7 @@ SteinerTree::setTree(stt::Tree tree,
   Point drvr_loc = network->location(drvr_pin_);
   int drvr_x = drvr_loc.getX();
   int drvr_y = drvr_loc.getY();
-  int branch_count = stt::branch_count(tree_);
+  int branch_count = flt::branch_count(tree_);
   for (int i = 0; i < branch_count; i++) {
     stt::Branch &pt1 = tree_.branch[i];
     if (pt1.x == drvr_x
@@ -184,13 +185,13 @@ SteinerTree::SteinerTree(const Pin *drvr_pin) :
 
 SteinerTree::~SteinerTree()
 {
-  stt::free_tree(tree_);
+  flt::free_tree(tree_);
 }
 
 int
 SteinerTree::branchCount() const
 {
-  return stt::branch_count(tree_);
+  return flt::branch_count(tree_);
 }
 
 void
