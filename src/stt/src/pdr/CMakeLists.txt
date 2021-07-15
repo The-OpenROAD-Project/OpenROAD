@@ -36,14 +36,7 @@
 
 include("openroad")
 
-swig_lib(NAME      pdr
-         NAMESPACE pdr
-         I_FILE    src/pdrev.i
-)
-
-target_sources(pdr
-  PRIVATE
-  src/MakePdrev.cpp
+add_library(pdr
   src/pdrev.cpp
   src/graph.cpp
   src/node.cpp

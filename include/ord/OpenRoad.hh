@@ -263,7 +263,7 @@ private:
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
   pdn::PdnGen *pdngen_;
-  stt:SteinerTreeBuilder *stt_builder_;
+  stt::SteinerTreeBuilder *stt_builder_;
 
   std::set<Observer *> observers_;
 
