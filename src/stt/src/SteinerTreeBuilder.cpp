@@ -47,10 +47,6 @@ SteinerTreeBuilder::SteinerTreeBuilder() :
 {
 }
 
-SteinerTreeBuilder::~SteinerTreeBuilder()
-{
-}
-
 void SteinerTreeBuilder::init(ord::OpenRoad* openroad)
 {
   db_ = openroad->getDb();

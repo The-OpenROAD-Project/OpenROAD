@@ -56,7 +56,7 @@ class SteinerTreeBuilder
 {
  public:
   SteinerTreeBuilder();
-  ~SteinerTreeBuilder();
+  ~SteinerTreeBuilder() = default;
 
   void init(ord::OpenRoad* openroad);
 
@@ -81,7 +81,6 @@ class SteinerTreeBuilder
 
   Logger* logger_;
   odb::dbDatabase* db_;
-  odb::dbBlock* block_;
 };
 
 }  // namespace stt
