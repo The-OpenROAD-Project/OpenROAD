@@ -1214,7 +1214,6 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
   }
 
   double temporary_dist_factor = _dist_factor;
-  db_block->getDefUnits()
   _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
 
