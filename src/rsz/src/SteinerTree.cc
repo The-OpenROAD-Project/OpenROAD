@@ -118,14 +118,7 @@ makeSteinerTree(const Pin *drvr_pin,
       int flute_accuracy = 3;
       std::vector<int> x1(x, x + pin_count);
       std::vector<int> y1(y, y + pin_count);
-      
-      // save alpha defined in stt builder
-      float alpha = stt_builder->getAlpha();
-      // resizer was setting alpha as independently of the original value
-      stt_builder->setAlpha(0.4);
       stt::Tree ftree = stt_builder->findSteinerTree(network->staToDb(net), x1, y1, flute_accuracy, drvr_idx);
-      // restore previous alpha after it
-      stt_builder->setAlpha(alpha);
       
       if (debug->check("steiner", 3))
         flt::printtree(ftree);
