@@ -83,6 +83,7 @@
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "pdr/MakePdrev.h"
+#include "stt/MakeSteinerTreeBuilder.h"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -140,6 +141,7 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr), 
     partitionMgr_(nullptr),
     pdngen_(nullptr),
+    stt_builder_(nullptr),
     threads_(1)
 {
   db_ = dbDatabase::create();
@@ -166,6 +168,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
+  deleteSteinerTreeBuilder(stt_builder_);
   stt::deleteLUT();
   delete logger_;
 }
@@ -227,6 +230,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  stt_builder_ = makeSteinerTreeBuilder();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
