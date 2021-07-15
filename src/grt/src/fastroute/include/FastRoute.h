@@ -343,8 +343,8 @@ class FastRouteCore
   void copyBR(void);
   void copyRS(void);
   void freeRR(void);
-  Tree fluteToTree(flt::Tree fluteTree);
-  flt::Tree treeToFlute(Tree tree);
+  Tree fluteToTree(stt::Tree fluteTree);
+  stt::Tree treeToFlute(Tree tree);
   int edgeShift(Tree* t, int net);
   int edgeShiftNew(Tree* t, int net);
 

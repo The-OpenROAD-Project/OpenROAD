@@ -38,7 +38,6 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
-#include "flute.h"
 #include "utl/Logger.h"
 #include "utl/Logger.h"
 
@@ -239,7 +238,7 @@ void FastRouteCore::fluteNormal(int netID,
     t->branch[3].y = y_mid;
     t->branch[3].n = 3;
   } else {
-    flt::Tree fluteTree;
+    stt::Tree fluteTree;
     xs = new DTYPE[d];
     ys = new DTYPE[d];
 
@@ -420,7 +419,7 @@ void FastRouteCore::fluteCongest(int netID,
     t->branch[3].y = y_mid;
     t->branch[3].n = 3;
   } else {
-    flt::Tree fluteTree;
+    stt::Tree fluteTree;
     xs = new DTYPE[d];
     ys = new DTYPE[d];
     nxs = new DTYPE[d];
@@ -764,7 +763,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
       coeffV = 1.2;
     }
     if (net->alpha > 0) {
-      flt::Tree tree = stt_builder_->findSteinerTree(net->db_net, net->pinX, net->pinY, flute_accuracy, net->driver_idx);
+      stt::Tree tree = stt_builder_->findSteinerTree(net->db_net, net->pinX, net->pinY, flute_accuracy, net->driver_idx);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
