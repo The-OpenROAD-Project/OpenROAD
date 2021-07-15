@@ -86,12 +86,12 @@ GlobalRouter::GlobalRouter() :
   caps_perturbation_percentage_(0),
   perturbation_amount_(1),
   layer_for_guide_dimension_(3),
-  grid_origin_(odb::Point(0, 0))
+  grid_origin_(0, 0),
+  routing_tracks_(new std::vector<RoutingTracks>),
+  grid_(new Grid),
+  nets_(new std::vector<Net>),
+  routing_layers_(new std::vector<RoutingLayer>)
 {
-  routing_tracks_ = new std::vector<RoutingTracks>;
-  grid_ = new Grid;
-  nets_ = new std::vector<Net>;
-  routing_layers_ = new std::vector<RoutingLayer>;
 }
 
 void GlobalRouter::init(ord::OpenRoad* openroad)
