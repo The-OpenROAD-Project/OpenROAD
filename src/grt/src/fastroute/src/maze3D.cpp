@@ -1042,7 +1042,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX - 1;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap &&
-                    curL >= net->minLayer && curL <= net->maxLayer) {
+                    net->minLayer <= curL && curL <= net->maxLayer) {
                   tmpX = curX - 1;  // the left neighbor
 
                   if (d1_3D_[curL][curY][tmpX]
@@ -1082,7 +1082,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 tmpX = curX + 1;  // the right neighbor
 
                 if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap &&
-                    curL >= net->minLayer && curL <= net->maxLayer) {
+                    net->minLayer <= curL && curL <= net->maxLayer) {
                   if (d1_3D_[curL][curY][tmpX]
                       >= BIG_INT)  // right neighbor not been put into heap1_3D_
                   {
@@ -1119,7 +1119,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY - 1;  // the bottom neighbor
                 if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap &&
-                    curL >= net->minLayer && curL <= net->maxLayer) {
+                    net->minLayer <= curL && curL <= net->maxLayer) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
                   {
@@ -1155,7 +1155,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY + 1;  // the top neighbor
                 if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap &&
-                    curL >= net->minLayer && curL <= net->maxLayer) {
+                    net->minLayer <= curL && curL <= net->maxLayer) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // top neighbor not been put into heap1_3D_
                   {
