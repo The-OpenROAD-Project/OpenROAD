@@ -69,6 +69,7 @@ target_link_libraries(grt
     dpl
     dbSta
     gui
+    stt
     OpenSTA
     Boost::boost
 )

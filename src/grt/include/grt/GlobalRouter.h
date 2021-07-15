@@ -65,6 +65,10 @@ class dbDatabase;
 class dbTechLayer;
 }  // namespace odb
 
+namespace stt {
+class SteinerTreeBuilder;
+}
+
 namespace sta {
 class dbSta;
 class dbNetwork;
@@ -283,6 +287,7 @@ class GlobalRouter
   ord::OpenRoad* openroad_;
   utl::Logger *logger_;
   gui::Gui *gui_;
+  stt::SteinerTreeBuilder *stt_builder_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
@@ -315,7 +320,6 @@ class GlobalRouter
 
   float alpha_;
   int verbose_;
-  std::map<std::string, float> net_alpha_map_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
 

@@ -61,6 +61,7 @@
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "ord/OpenRoad.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -100,6 +101,7 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   logger_ = openroad->getLogger();
   // Broken gui api missing openroad accessor.
   gui_ = gui::Gui::get();
+  stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
   fastroute_ = new FastRouteCore(db_, logger_);
   sta_ = openroad_->getSta();
@@ -144,6 +146,8 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
   fastroute_->setAllowOverflow(allow_congestion_);
+
+  alpha_ = stt_builder_->getAlpha();
 
   block_ = db_->getChip()->getBlock();
   reportLayerSettings(min_routing_layer, max_routing_layer);
@@ -690,6 +694,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
     }
   }
 
+  const std::map<odb::dbNet*, float>& net_alpha_map = stt_builder_->getNetAlphaMap();
+
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     if (pin_count > 1 && !net->isLocal()) {
@@ -720,8 +726,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
       if (pins_on_grid.size() > 1 && !on_grid_local) {
         float net_alpha = alpha_;
-        if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
-          net_alpha = net_alpha_map_[net->getName()];
+        if (net_alpha_map.find(net->getDbNet()) != net_alpha_map.end()) {
+          net_alpha = net_alpha_map.at(net->getDbNet());
         }
         bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
