@@ -64,7 +64,6 @@ target_link_libraries(rsz
     dbSta
     grt
     gui
-    pdr
     utl
 )
 

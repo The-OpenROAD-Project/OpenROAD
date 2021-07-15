@@ -42,6 +42,7 @@
 #include "BufferedNet.hh"
 
 #include "utl/Logger.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 
@@ -66,6 +67,8 @@ using odb::dbNet;
 using odb::dbMaster;
 using odb::dbBlock;
 using odb::dbTechLayer;
+
+using stt::SteinerTreeBuilder;
 
 using sta::StaState;
 using sta::Sta;
@@ -134,7 +137,8 @@ public:
             Gui *gui,
             dbDatabase *db,
             dbSta *sta,
-            GlobalRouter *grt);
+            GlobalRouter *grt,
+            SteinerTreeBuilder *stt_builder);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -610,6 +614,7 @@ protected:
 
   OpenRoad *openroad_;
   Logger *logger_;
+  SteinerTreeBuilder *stt_builder_;
   Gui *gui_;
   dbSta *sta_;
   GlobalRouter *grt_;

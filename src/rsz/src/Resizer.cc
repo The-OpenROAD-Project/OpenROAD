@@ -182,7 +182,8 @@ Resizer::init(OpenRoad *openroad,
               Gui *gui,
               dbDatabase *db,
               dbSta *sta,
-              GlobalRouter *grt)
+              GlobalRouter *grt,
+              SteinerTreeBuilder *stt_builder)
 {
   openroad_ = openroad;
   logger_ = logger;
@@ -191,6 +192,7 @@ Resizer::init(OpenRoad *openroad,
   block_ = nullptr;
   sta_ = sta;
   grt_ = grt;
+  stt_builder_ = stt_builder;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
@@ -797,7 +799,7 @@ Resizer::repairNet(Net *net,
 {
   Pin *drvr_pin = drvr->pin();
   SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                      db_network_, logger_);
+                                      db_network_, logger_, stt_builder_);
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
@@ -2925,7 +2927,7 @@ Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
   SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                      db_network_, logger_);
+                                      db_network_, logger_, stt_builder_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
     delete tree;
@@ -3676,7 +3678,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, routingAlpha(), false, db_network_, logger_);
+      tree = makeSteinerTree(drvr, routingAlpha(), false, db_network_, logger_, stt_builder_);
     steiner_renderer_->highlight(tree);
   }
 }

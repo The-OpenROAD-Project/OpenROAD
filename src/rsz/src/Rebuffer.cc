@@ -87,7 +87,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
     SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                        db_network_, logger_);
+                                        db_network_, logger_, stt_builder_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
@@ -503,7 +503,7 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
     SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                        db_network_, logger_);
+                                        db_network_, logger_, stt_builder_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       BufferedNet *bnet = makeBufferedNetWire(tree, drvr_pt, tree->left(drvr_pt), 0);
