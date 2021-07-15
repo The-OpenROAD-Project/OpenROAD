@@ -1,10 +1,8 @@
-################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
-##          (Advisor: Ricardo Reis)
+###############################################################################
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, Federal University of Rio Grande do Sul (UFRGS)
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -32,32 +30,38 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-################################################################################
+##
+###############################################################################
 
 include("openroad")
 
-swig_lib(NAME      pdr
-         NAMESPACE pdr
-         I_FILE    src/pdrev.i
+project(stt)
+
+add_subdirectory(src/flt)
+add_subdirectory(src/pdr)
+
+swig_lib(NAME      stt
+         NAMESPACE stt
+         I_FILE    src/SteinerTreeBuilder.i
+         SCRIPTS   src/SteinerTreeBuilder.tcl
 )
 
-target_sources(pdr
+target_sources(stt
   PRIVATE
-  src/MakePdrev.cpp
-  src/pdrev.cpp
-  src/graph.cpp
-  src/node.cpp
-  src/edge.cpp
+    src/SteinerTreeBuilder.cpp
 )
 
-target_include_directories(pdr
+target_include_directories(stt
   PUBLIC
     include
 )
 
-target_link_libraries(pdr
-  PUBLIC
+target_link_libraries(stt
     flt
+    pdr
     utl
-    gui
+)
+
+messages(
+  TARGET stt
 )

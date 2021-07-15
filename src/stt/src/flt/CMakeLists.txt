@@ -50,13 +50,13 @@ add_custom_command(OUTPUT ${POST9_CPP}
   DEPENDS ${POST9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
   )
 
-add_library(stt
+add_library(flt
   flute.cpp
   ${POWV9_CPP}
   ${POST9_CPP}
 )
 
-target_include_directories(stt
+target_include_directories(flt
   PUBLIC
     .
 )
