@@ -34,18 +34,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+
+#include <vector>
+#include "pdr/pdrev.h"
+#include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "opendb/db.h"
 
 namespace ord {
 // Defined in OpenRoad.i
 stt::SteinerTreeBuilder* getSteinerTreeBuilder();
+utl::Logger* getLogger();
 }  // namespace ord
 
 using odb::dbNet;
 %}
 
 %include "../../Exception.i"
+
+%import <std_vector.i>
+namespace std {
+%template(pdrev_xy) vector<int>;
+}
 
 %inline %{
 
@@ -61,6 +71,40 @@ void
 set_alpha_for_net(odb::dbNet* net, float alpha)
 {
   getSteinerTreeBuilder()->addAlphaForNet(net, alpha);
+}
+
+void
+report_pd_tree(const std::vector<int> &x,
+               const std::vector<int> &y,
+               int drvr_index,
+               float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  pdr::reportSteinerTree(tree, logger);
+}
+
+void
+highlight_pd_tree(const std::vector<int> &x,
+                  const std::vector<int> &y,
+                  int drvr_index,
+                  float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  gui::Gui *gui = gui::Gui::get();
+  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  pdr::highlightSteinerTree(tree, gui);
+}
+
+void
+report_pdII_tree(const std::vector<int> &x,
+                 const std::vector<int> &y,
+                 int drvr_index,
+                 float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
+  pdr::reportSteinerTree(tree, logger);
 }
 
 } // namespace
