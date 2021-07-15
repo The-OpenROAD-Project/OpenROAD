@@ -1193,7 +1193,7 @@ Resizer::repairNet(SteinerTree *tree,
         logger_->critical(RSZ, 23, "repairNet failure.");
       double dx = prev_x - pt_x;
       double dy = prev_y - pt_y;
-      double d = buf_dist / length;
+      double d = (length == 0) ? 0.0 : buf_dist / length;
       int buf_x = pt_x + d * dx;
       int buf_y = pt_y + d * dy;
       makeRepeater("wire", buf_x, buf_y, net, buffer_lowest_drive_, level,
