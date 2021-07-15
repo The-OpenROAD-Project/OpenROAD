@@ -262,6 +262,12 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // Initialize tcl history
+  if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
+    // due to tcl history.tcl return error, remove error
+    Tcl_ResetResult(tcl_interp);
+  }
 }
 
 ////////////////////////////////////////////////////////////////
