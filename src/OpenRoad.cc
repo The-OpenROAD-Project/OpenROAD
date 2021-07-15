@@ -167,7 +167,6 @@ OpenRoad::~OpenRoad()
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
   deleteSteinerTreeBuilder(stt_builder_);
-  stt::deleteLUT();
   delete logger_;
 }
 
@@ -239,7 +238,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initGui(this); // first so we can register our sink with the logger
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
-  stt::readLUT();
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);
@@ -259,6 +257,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
+  initSteinerTreeBuilder(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

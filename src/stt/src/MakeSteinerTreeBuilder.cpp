@@ -52,6 +52,7 @@ namespace ord {
 
 stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
 {
+  flt::deleteLUT();
   return new stt::SteinerTreeBuilder();
 }
 
@@ -67,6 +68,7 @@ void initSteinerTreeBuilder(OpenRoad* openroad)
   Stt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
   openroad->getSteinerTreeBuilder()->init(openroad);
+  flt::readLUT();
 }
 
 }  // namespace ord
