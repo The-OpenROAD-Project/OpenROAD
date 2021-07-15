@@ -31,7 +31,7 @@
 
 #pragma once
 
-namespace stt {
+namespace flt {
 
 /*****************************/
 /*  User-Defined Parameters  */

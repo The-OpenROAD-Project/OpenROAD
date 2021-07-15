@@ -39,7 +39,7 @@
 #include <algorithm>
 #include "flute.h"
 
-namespace stt {
+namespace flt {
 
 #if FLUTE_D <= 7
 #define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
