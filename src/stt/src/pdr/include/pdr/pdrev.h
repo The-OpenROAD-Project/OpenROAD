@@ -44,7 +44,7 @@ class Gui;
 namespace pdr {
 
 using utl::Logger;
-using stt::Tree;
+using flt::Tree;
 
 Tree
 primDijkstra(std::vector<int> x,
@@ -62,10 +62,10 @@ primDijkstraRevII(std::vector<int> x,
 
 // Used by regressions.
 void
-reportSteinerTree(stt::Tree &tree,
+reportSteinerTree(flt::Tree &tree,
                   Logger *logger);
 void
-highlightSteinerTree(stt::Tree &tree,
+highlightSteinerTree(flt::Tree &tree,
                      gui::Gui *gui);
 
 }  // namespace PD

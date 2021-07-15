@@ -43,9 +43,13 @@
 #include "flute.h"
 #include "opendb/db.h"
 
+namespace ord {
+class OpenRoad;
+}
+
 namespace stt {
 
-using stt::Tree;
+using flt::Tree;
 using utl::Logger;
 
 class SteinerTreeBuilder

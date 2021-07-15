@@ -41,8 +41,8 @@ namespace pdr {
 
 class Graph;
 
-using stt::Tree;
-using stt::Branch;
+using flt::Tree;
+using flt::Branch;
 using utl::PDR;
 
 class PdRev
@@ -225,7 +225,7 @@ Tree PdRev::translateTree()
 
   Tree tree;
   tree.deg = graph_->num_terminals;
-  int branch_count = stt::branch_count(tree);
+  int branch_count = flt::branch_count(tree);
   if (graph_->nodes.size() != branch_count)
     logger_->error(PDR, 666, "steiner branch count inconsistent");
   tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
@@ -268,11 +268,11 @@ reportXY(std::vector<int> x,
 
 // Used by regressions.
 void
-reportSteinerTree(stt::Tree &tree,
+reportSteinerTree(flt::Tree &tree,
                   Logger *logger)
 {
   printf("WL = %d\n", tree.length);
-  for (int i = 0; i < stt::branch_count(tree); i++) {
+  for (int i = 0; i < flt::branch_count(tree); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
     int parent = tree.branch[i].n;
@@ -351,10 +351,10 @@ highlightSteinerTree(Tree &tree,
     }
     std::vector<std::pair<odb::Point, odb::Point>> lines;
     for (int i = 0; i < branch_count(tree); i++) {
-      stt::Branch &branch = tree.branch[i];
+      flt::Branch &branch = tree.branch[i];
       int x1 = branch.x;
       int y1 = branch.y;
-      stt::Branch &neighbor = tree.branch[branch.n];
+      flt::Branch &neighbor = tree.branch[branch.n];
       int x2 = neighbor.x;
       int y2 = neighbor.y;
       lines.push_back(std::pair(odb::Point(x1, y1),

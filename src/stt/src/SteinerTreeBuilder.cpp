@@ -40,10 +40,11 @@
 
 #include "flute.h"
 #include "pdr/pdrev.h"
+#include "ord/OpenRoad.hh"
 
 namespace stt{
 
-void SteinerTreeBuilder::init(ord::OpenRoad* openroad);
+void SteinerTreeBuilder::init(ord::OpenRoad* openroad)
 {
   db_ = openroad->getDb();
   logger_ = openroad->getLogger();
@@ -60,7 +61,7 @@ Tree SteinerTreeBuilder::findSteinerTree(odb::dbNet* net,
                     net_alpha_map_[net] : alpha_;
 
   if (net_alpha > 0.0) {
-    tree = pdr::primDijkstra(x1, y1, drvr_index, net_alpha, logger_);
+    tree = pdr::primDijkstra(x, y, drvr_index, net_alpha, logger_);
   } else {
     int pin_count = x.size();
     int x_arr[pin_count];
@@ -68,7 +69,7 @@ Tree SteinerTreeBuilder::findSteinerTree(odb::dbNet* net,
 
     std::copy(x.begin(), x.end(), x_arr);
     std::copy(y.begin(), y.end(), x_arr);
-    
+
     tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
   }
 

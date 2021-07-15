@@ -35,11 +35,12 @@
 
 %{
 
-#include <vector>
+#include "stt/SteinerTreeBuilder.h"
 #include "pdr/pdrev.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "opendb/db.h"
+#include <vector>
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -47,6 +48,7 @@ stt::SteinerTreeBuilder* getSteinerTreeBuilder();
 utl::Logger* getLogger();
 }  // namespace ord
 
+using ord::getSteinerTreeBuilder;
 using odb::dbNet;
 %}
 
