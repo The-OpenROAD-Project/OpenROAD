@@ -1,29 +1,87 @@
 Using the logging infrastructure
 ================================
 
-In order to ensure consistent messaging from the openroad application we
-have adopted spdlog as our logging infrastructure. We have a thin
-wrapper on top for extensibility. Whenever a message needs to be issued
-you will use one of the logging functions in the ‘ord’ namespace.
+OpenROAD provides spdlog as part of logging infrastructure in order to ensure a clear, consistent messaging and complete messaging interface. 
+A wrapper formats the prefix in the reccommended messaging style and limit requiring the tool and id as follows:
+<tool> <message number> <id> : <Message body>.
+
+For e.g,
+DRT 0001 TritonRoute.cpp:333       Error reading param file: {}
+
+Use one of the logging functions in the ‘ord’ namespace to issue the message.
 
 All output from OpenROAD tools should be directed through the logging
-API so that redirection, file logging and execution control flow is
-handled consistently.
+API to ensure that redirection, file logging and execution control flow is
+handled consistently. This also includes messages from a third party tool integration.
 
 The logging infrastructure also supports generating a `JSON
 <https://www.json.org>`__ file containing design metrics (e.g. area,
-slack). This output is directed to a user specified file. The openroad
-application take a "-metrics " command line argument to specify the file.
+slack). This output is directed to a user specified file. The OpenROAD
+application has a "-metrics " command line argument to specify the file.
 
-Message Types
--------------
+Handling Messages
+------------------
+OpenROAD supports multiple levels of severity for message outputs as: Critical, Error, Warning, Information, Debug.
+These are supported by automatic calls to the logger which will then prefix the appropriate severity type to the message. 
 
+Messaging Guidelines
+--------------------
+
+In addition to the proper use of message types, follow the guidelines below to compose messages for clarity, consistency and other guiding principles:
+
+a. Grammar
+   i. Start with capital letter, end with period besides well-known exceptions. Use capital letters for well known file formats and tool names. For e.g., 
+      LEF, DEF, SPICE.
+   ii. After the first word’s capitalization, do not use capital letters (aside from obvious exceptions - RSMT, hCut, etc.
+   iii. Do not use exclamations. Severity must be communicated by message severity and clear implied or explicit action.
+   iv. Avoid long, verbose messages. Use commas to list, separate clauses and introduce pauses in messages.
+   v. Spellcheck all messages using American English spelings.
+   vii. Use ellipsis (...) only to indicate a pause, as when some tool is running or being intialized
+   
+b. Abbreviations and Shortcuts
+   i. Use single-word versions when well-accepted / well-understood by users+developers. 
+   Examples, stdcell, cutline, wirelength, stdcell, flipchip, padring, bondpad, wirebond, libcell, viarule etc.
+   
+   ii. Do not abbreviate english words, expand for the sake of clarity . 
+   Incorrect: Num, # , Correct: Number
+   Incorrect: Tot., Correct: Total
+   
+   iii. Use acceptable, well-understood abbreviations for brevity. Examples, db, tech, lib, inst, term, params, etc.
+  
+   iv. Avoid contractions of action words
+   Incorrect: Can't, Don't, Can not
+   Correct: Cannot, Do not
+   
+b. Actionability
+   Messages should have clear implied or an explicit action that is necessary for flow continuation or quality of results. 
+   Correct: A value for core_area must specified in the footprint specification, or in the environment variable CORE_AREA
+   
+d. Clarity
+   Messages must be clear and complete so as to communicate necessary and sufficient information and action. Elaborate variable, option, parameter numbers.
+   Correct: Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer, -rdl_width, -rdl_spacing
+   
+  i. Specify objects clearly in the local context
+   Correct:cutWithin is smaller than cutSpacing for ADJACENTCUTS on layer {}, please check your rule definition
+   Incomplete: Warning: {} does not have viaDef aligned with layer
+
+   ii. Make any assumptions or default values explicit.
+   Correct:  No net slacks found. Timing-driven mode disabled.
+   Incomplete, missing default:  Utilization exceeds 100%.
+   
+   iii. Use simple language, avoid repetitions.
+   Incorrect: No orientation available for orientation of $cell_ref.
+   Correct: Missing orientation for cell $cell_ref
+   
+ 
+ Message Types
+ --------------
+  
 Report
 ~~~~~~
 
 Reports are tool output in the form of a report to the user. Examples
 are timing paths, or power analysis results. Tool reports that use
-‘printf’ or c++ streams should use the report message API instead.
+‘printf’ or c++ streams, 'cout', should use the report message API instead.
 
 Debug
 ~~~~~
@@ -67,8 +125,8 @@ Error
 
 Error messages should be used for indicating correctness problems.
 Problems with command arguments are a good example of errors. Errors
-exit the current command by throw an error that can be caught in a Tcl
-command script. Errors that occur while reading a command file stop
+exit the current command by throwing an exception that can be caught in a Tcl
+command script. Errors that occur while reading a command file stop,
 executing the script commands.
 
 Example error messages:
@@ -259,8 +317,7 @@ call the utl::error/warn with a Tool ID and message ID. For
 compatibility these are defaulted to 'UKN' and '0000' until they are
 updated.
 
-There is no reason to ``puts`` (ie, print) errors in regression tests
-that are caught. The logger prints the error now.
+Do no use "puts", ie, print) errors in regression tests. The logger prints the error now.
 
 Init floorplan, openroad/src, init floorplan, dbSta, resizer, and opendp
 have been updated to use the Logger if you need examples of how to
