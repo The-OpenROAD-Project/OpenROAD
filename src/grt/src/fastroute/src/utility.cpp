@@ -364,7 +364,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         if (l >= net->minLayer && l <= net->maxLayer && is_vertical) {
           layer_grid_[l][k] = v_edges_3D_[grid].cap - v_edges_3D_[grid].usage;
         } else {
-          layer_grid_[l][k] = -1;
+          layer_grid_[l][k] = std::numeric_limits<int>::min();
         }
       }
     } else {
@@ -376,7 +376,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         if (l >= net->minLayer && l <= net->maxLayer && is_horizontal) {
           layer_grid_[l][k] = h_edges_3D_[grid].cap - h_edges_3D_[grid].usage;
         } else {
-          layer_grid_[l][k] = -1;
+          layer_grid_[l][k] = std::numeric_limits<int>::min();
         }
       }
     }
@@ -415,13 +415,13 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid_[l][k] > 0) {
           gridD[l][k + 1] = gridD[l][k] + 1;
-        } else if (layer_grid_[l][k] == 0) {
-          gridD[l][k + 1] = gridD[l][k] + BIG_INT;
-        } else {
+        } else if (layer_grid_[l][k] == std::numeric_limits<int>::min()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the routing
           // has 3D overflow
           gridD[l][k + 1] = gridD[l][k] + 2*BIG_INT;
+        } else {
+          gridD[l][k + 1] = gridD[l][k] + BIG_INT;
         }
       }
     }
@@ -537,13 +537,13 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid_[l][k - 1] > 0) {
           gridD[l][k - 1] = gridD[l][k] + 1;
-        } else if (layer_grid_[l][k] == 0) {
-          gridD[l][k - 1] = gridD[l][k] + BIG_INT;
-        } else {
+        } else if (layer_grid_[l][k] == std::numeric_limits<int>::min()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the routing
           // has 3D overflow
           gridD[l][k - 1] = gridD[l][k] + 2*BIG_INT;
+        } else {
+          gridD[l][k - 1] = gridD[l][k] + BIG_INT;
         }
       }
     }
