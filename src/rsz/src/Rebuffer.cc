@@ -86,7 +86,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
+    SteinerTree *tree = makeSteinerTree(drvr_pin, true,
                                         db_network_, logger_, stt_builder_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
@@ -502,7 +502,7 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
+    SteinerTree *tree = makeSteinerTree(drvr_pin, true,
                                         db_network_, logger_, stt_builder_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);

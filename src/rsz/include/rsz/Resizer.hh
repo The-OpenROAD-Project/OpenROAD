@@ -304,7 +304,6 @@ public:
 protected:
   void init();
   void ensureBlock();
-  float routingAlpha() const;
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
   Instance *bufferInput(Pin *top_pin,
