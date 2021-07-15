@@ -30,6 +30,7 @@
 #include <iostream>
 
 #include "FlexGR.h"
+#include "stt/SteinerTreeBuilder.h"
 
 using namespace std;
 using namespace fr;
@@ -52,7 +53,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     ys[i] = loc.y();
   }
   int accuracy = 3;
-  auto fluteTree = stt::flute(degree, xs.data(), ys.data(), accuracy);
+  auto fluteTree = stt_builder_->findFluteTree(degree, xs.data(), ys.data(), accuracy);
 
   map<frPoint, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
   map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp>
@@ -124,7 +125,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     adjacencyList[epNode].insert(bpNode);
   }
 
-  stt::free_tree(fluteTree);
+  stt_builder_->freeTree(fluteTree);
 
   // reset nodes
   for (auto& [loc, node] : pinGCell2Nodes) {
