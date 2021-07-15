@@ -127,10 +127,9 @@ bool operator<(const RoutePt& p1, const RoutePt& p2);
 class GlobalRouter
 {
  public:
-  GlobalRouter() = default;
+  GlobalRouter();
   ~GlobalRouter();
   void init(ord::OpenRoad* openroad);
-  void init();
   void clear();
 
   void setAdjustment(const float adjustment);
@@ -195,8 +194,6 @@ class GlobalRouter
   friend class AntennaRepair;
 
  private:
-  void makeComponents();
-  void deleteComponents();
   void clearObjects();
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
@@ -284,14 +281,13 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool clockHasLeafITerm(odb::dbNet* db_net);
-  void setSelectedMetal(int metal) { selected_metal_ = metal; }
 
   ord::OpenRoad* openroad_;
   utl::Logger *logger_;
   gui::Gui *gui_;
   // Objects variables
   FastRouteCore* fastroute_;
-  odb::Point* grid_origin_;
+  odb::Point grid_origin_;
   GrouteRenderer *groute_renderer_;
   NetRouteMap routes_;
 
@@ -305,7 +301,7 @@ class GlobalRouter
   float adjustment_;
   int min_routing_layer_;
   int max_routing_layer_;
-  int selected_metal_ = 3;
+  int layer_for_guide_dimension_;
   const int gcells_offset_ = 2;
   int overflow_iterations_;
   bool allow_congestion_;
@@ -322,8 +318,8 @@ class GlobalRouter
   float alpha_;
   int verbose_;
   std::map<std::string, float> net_alpha_map_;
-  int min_layer_for_clock_ = -1;
-  int max_layer_for_clock_ = -2;
+  int min_layer_for_clock_;
+  int max_layer_for_clock_;
 
   // variables for random grt
   int seed_;
