@@ -2391,12 +2391,12 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         if (realPinApMazeIdx.find(mzIdxBot) != realPinApMazeIdx.end()) {
           currVia->setBottomConnected(true);
         } else if (apMazeIdx.find(mzIdxBot) != apMazeIdx.end()) {
-          checkViaConnectivity(currVia.get(), true, net->getFrNet());
+          checkViaConnectivityToAP(currVia.get(), true, net->getFrNet());
         }
         if (realPinApMazeIdx.find(mzIdxTop) != realPinApMazeIdx.end()) {
           currVia->setTopConnected(true);
         } else if (apMazeIdx.find(mzIdxTop) != apMazeIdx.end()) {
-          checkViaConnectivity(currVia.get(), false, net->getFrNet());
+          checkViaConnectivityToAP(currVia.get(), false, net->getFrNet());
         }
         unique_ptr<drConnFig> tmp(std::move(currVia));
         workerRegionQuery.add(tmp.get());
@@ -2581,7 +2581,9 @@ bool FlexDRWorker::hasAccessPoint(const frPoint& pt,
 }
 // checks whether the via is connected to an access point and update
 // connectivity info
-void FlexDRWorker::checkViaConnectivity(drVia* via, bool isBottom, frNet* net)
+void FlexDRWorker::checkViaConnectivityToAP(drVia* via,
+                                            bool isBottom,
+                                            frNet* net)
 {
   if (isBottom) {
     if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer1Num(), net))
@@ -2755,12 +2757,15 @@ bool FlexDRWorker::routeNet(drNet* net)
       isFirstConn = false;
     } else {
       searchSuccess = false;
-      logger_->report("Failed to find a path between pin " + nextPin->getName() 
-                        + " and source aps:");
+      logger_->report("Failed to find a path between pin " + nextPin->getName()
+                      + " and source aps:");
       for (FlexMazeIdx& mi : connComps) {
-          logger_->report("( {} {} {} ) (Idx) / ( {} {} ) (coords)", mi.x(), 
-                  mi.y(), mi.z(), gridGraph_.xCoord(mi.x()), 
-                  gridGraph_.yCoord(mi.y()));
+        logger_->report("( {} {} {} ) (Idx) / ( {} {} ) (coords)",
+                        mi.x(),
+                        mi.y(),
+                        mi.z(),
+                        gridGraph_.xCoord(mi.x()),
+                        gridGraph_.yCoord(mi.y()));
       }
       break;
     }

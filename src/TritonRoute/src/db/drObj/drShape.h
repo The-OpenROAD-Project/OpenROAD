@@ -109,14 +109,10 @@ class drPathSeg : public drShape
     beginIn.set(begin_);
     endIn.set(end_);
   }
-  
-  const frPoint& getBeginPoint() const {
-      return begin_;
-  }
-  
-  const frPoint& getEndPoint() const {
-      return end_;
-  }
+
+  const frPoint& getBeginPoint() const { return begin_; }
+
+  const frPoint& getEndPoint() const { return end_; }
 
   void getStyle(frSegStyle& styleIn) const
   {

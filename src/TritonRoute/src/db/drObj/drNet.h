@@ -183,20 +183,6 @@ class drNet : public drBlockObject
                                           : (numMarkers_ > b.numMarkers_);
   }
 
-  bool hasAccessPoint(const frPoint& pt, frLayerNum lNum) {
-      return getAccessPoint(pt, lNum) != nullptr;
-  }
-  
-  frPoint const* getAccessPoint(const frPoint& pt, frLayerNum lNum) {
-    for (auto& pin : getPins()) {
-        for (auto& ap : pin->getAccessPatterns()) {
-            if (ap->getPoint() == pt && ap->getBeginLayerNum() == lNum) 
-                return &ap->getPoint();
-        }
-    }
-    return nullptr;
-  }
-  
  protected:
   std::vector<std::unique_ptr<drPin>> pins_;
   std::vector<std::unique_ptr<drConnFig>> extConnFigs_;
