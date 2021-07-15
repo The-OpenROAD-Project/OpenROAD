@@ -58,7 +58,7 @@ class SteinerTreeBuilder
   SteinerTreeBuilder();
   ~SteinerTreeBuilder() = default;
 
-  void init(ord::OpenRoad* openroad);
+  void init(odb::dbDatabase* db, Logger* logger);
 
   Tree findFluteTree(int pin_count,
                      int x[],

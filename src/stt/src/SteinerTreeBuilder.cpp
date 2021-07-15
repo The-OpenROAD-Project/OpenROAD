@@ -47,10 +47,10 @@ SteinerTreeBuilder::SteinerTreeBuilder() :
 {
 }
 
-void SteinerTreeBuilder::init(ord::OpenRoad* openroad)
+void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
 {
-  db_ = openroad->getDb();
-  logger_ = openroad->getLogger();
+  db_ = db;
+  logger_ = logger;
 }
 
 Tree SteinerTreeBuilder::findFluteTree(int pin_count,

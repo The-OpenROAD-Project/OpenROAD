@@ -67,7 +67,7 @@ void initSteinerTreeBuilder(OpenRoad* openroad)
   // Define swig TCL commands.
   Stt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
-  openroad->getSteinerTreeBuilder()->init(openroad);
+  openroad->getSteinerTreeBuilder()->init(openroad->getDb(), openroad->getLogger());
   flt::readLUT();
 }
 
