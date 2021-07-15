@@ -404,9 +404,9 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
         pin2epMap,
     bool isPathSeg)
 {
-    bool enableOutput = false;
-    if (enableOutput)
-        cout << "initNets_searchRepair_pin2epMap_helper\nQuerying " << bp << "\n";
+  bool enableOutput = false;
+  if (enableOutput)
+    cout << "initNets_searchRepair_pin2epMap_helper\nQuerying " << bp << "\n";
   auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
   // In PA we may have used NearbyGrid which puts a via outside the pin
@@ -421,19 +421,25 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
   for (auto& [bx, rqObj] : result) {
     if (isPathSeg && !bx.contains(bp))
       continue;
+    if (enableOutput)
+      cout << "got " << rqObj << "\n";
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
       if (instTerm->getNet() == net) {
-        if (!isPathSeg && !bx.contains(bp) && 
-            !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
-            continue;
+        if (!isPathSeg && !bx.contains(bp)
+            && !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
+          continue;
+        if (enableOutput)
+          cout << "inserting " << instTerm << "\n";
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     } else if (rqObj->typeId() == frcTerm) {
-      if (!isPathSeg && !bx.contains(bp)) //terms have aps created on the fly
-            continue;
+      if (!isPathSeg && !bx.contains(bp))  // terms have aps created on the fly
+        continue;
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
+        if (enableOutput)
+          cout << "inserting " << term << "\n";
         pin2epMap[rqObj].insert(make_pair(bp, lNum));
       }
     }
@@ -448,9 +454,9 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
         pin2epMap)
 {
   frPoint bp, ep;
-  bool enableOutput = false;;
+  bool enableOutput = false;
   if (enableOutput)
-      cout << "initNets_searchRepair_pin2epMap\n\n";
+    cout << "initNets_searchRepair_pin2epMap\n\n";
   // should not count extObjs in union find
   for (auto& uPtr : netRouteObjs) {
     auto connFig = uPtr.get();
@@ -461,12 +467,14 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       frSegStyle style;
       obj->getStyle(style);
       if (enableOutput)
-          cout << "passing by " << *obj << "\n";
-      if (getRouteBox().contains(bp)) {
+        cout << "passing by " << *obj << "\n";
+      if (getRouteBox().contains(bp)
+          && style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, lNum, pin2epMap, true);
       }
-      if (getRouteBox().contains(ep)) {
+      if (getRouteBox().contains(ep)
+          && style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, ep, lNum, pin2epMap, true);
       }
@@ -476,12 +484,14 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       auto l1Num = obj->getViaDef()->getLayer1Num();
       auto l2Num = obj->getViaDef()->getLayer2Num();
       if (enableOutput)
-          cout << "passing by " << *obj << "\n";
+        cout << "passing by " << *obj << "\n";
       if (getRouteBox().contains(bp)) {
-        initNets_searchRepair_pin2epMap_helper(
-            design, net, bp, l1Num, pin2epMap, false);
-        initNets_searchRepair_pin2epMap_helper(
-            design, net, bp, l2Num, pin2epMap, false);
+        if (obj->isBottomConnected())
+          initNets_searchRepair_pin2epMap_helper(
+              design, net, bp, l1Num, pin2epMap, false);
+        if (obj->isTopConnected())
+          initNets_searchRepair_pin2epMap_helper(
+              design, net, bp, l2Num, pin2epMap, false);
       }
     } else if (connFig->typeId() == drcPatchWire) {
     } else {
@@ -970,8 +980,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           if (!boost::polygon::intersect(pinRect, routeRect)) {
             continue;
           }
-          bool noJog = getTech()->getLayer(currLayerNum)->
-                        getLef58RightWayOnGridOnlyConstraint() != nullptr;
+
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           // get intersecting tracks if any
@@ -1032,10 +1041,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           } else {
             yLoc = (yl(pinRect) + yh(pinRect)) / 2;
           }
-          bool halfOnTrackFound = !yLocs.empty() || !xLocs.empty();
-          if (currLayerNum >= BOTTOM_ROUTING_LAYER && (!noJog || 
-                halfOnTrackFound) && (!isInitDR() || (xLoc != xh(routeRect) || 
-                yLoc != yh(routeRect)))) {
+          if (!isInitDR() || (xLoc != xh(routeRect) || yLoc != yh(routeRect))) {
             // TODO: update as drAccessPattern updated
             auto uap = std::make_unique<drAccessPattern>();
             frPoint pt(xLoc, yLoc);
@@ -1089,7 +1095,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
               != frLayerTypeEnum::ROUTING) {
             continue;
           }
-//          halfWidth = getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
+          //          halfWidth =
+          //          getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
           frRect instPinRect(*rpinRect);
           // instPinRect.move(xform);
           frBox instPinRectBBox;
@@ -3430,10 +3437,6 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 
 void FlexDRWorker::init(const frDesign* design)
 {
-  if (design->getTech() != tech_) {
-    logger_->error(DRT, 254, "Design and tech mismatch");
-  }
-
   // if initDR
   //   get all instterm/term for each net
   // else

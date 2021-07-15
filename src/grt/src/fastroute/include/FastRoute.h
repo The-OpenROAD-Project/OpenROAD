@@ -86,6 +86,8 @@ class FastRouteCore
              bool is_clock,
              int driver_idx,
              int cost,
+             int min_layer,
+             int max_layer,
              std::vector<int> edge_cost_per_layer);
   void initEdges();
   void setNumAdjustments(int nAdjustements);

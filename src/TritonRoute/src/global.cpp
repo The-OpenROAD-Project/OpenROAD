@@ -263,7 +263,10 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
     case drcPathSeg: {
       auto p = static_cast<const drPathSeg*>(&fig);
       os << "drPathSeg: begin (" << p->getBeginX() << " " << p->getBeginY()
-         << " ) end ( " << p->getEndX() << " " << p->getEndY() << " )";
+         << " ) end ( " << p->getEndX() << " " << p->getEndY() << " ) layerNum " << p->getLayerNum();
+      frSegStyle st;
+      p->getStyle(st);
+      os << "\n\tbeginStyle: " << st.getBeginStyle() << "\n\tendStyle: " << st.getEndStyle();
       break;
     }
     case drcVia: {
@@ -290,6 +293,9 @@ ostream& operator<<(ostream& os, const frPathSeg& p)
   os << "frPathSeg: begin (" << p.getBeginPoint().x() << " "
      << p.getBeginPoint().y() << " ) end ( " << p.getEndPoint().x() << " "
      << p.getEndPoint().y() << " ) layerNum " << p.getLayerNum();
+  frSegStyle st;
+  p.getStyle(st);
+  os << "\n\tbeginStyle: " << st.getBeginStyle() << "\n\tendStyle: " << st.getEndStyle();
   return os;
 }
 

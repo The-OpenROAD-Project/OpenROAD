@@ -262,6 +262,14 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // Initialize tcl history
+  if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
+    // There appears to be a typo in the history.tcl file in some
+    // distributions, which is generating this error.
+    // remove error from tcl result.
+    Tcl_ResetResult(tcl_interp);
+  }
 }
 
 ////////////////////////////////////////////////////////////////
