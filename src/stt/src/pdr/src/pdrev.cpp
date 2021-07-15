@@ -41,8 +41,8 @@ namespace pdr {
 
 class Graph;
 
-using flt::Tree;
-using flt::Branch;
+using stt::Tree;
+using stt::Branch;
 using utl::PDR;
 
 class PdRev
@@ -268,7 +268,7 @@ reportXY(std::vector<int> x,
 
 // Used by regressions.
 void
-reportSteinerTree(flt::Tree &tree,
+reportSteinerTree(stt::Tree &tree,
                   Logger *logger)
 {
   printf("WL = %d\n", tree.length);
@@ -350,11 +350,11 @@ highlightSteinerTree(Tree &tree,
       gui->registerRenderer(lines_renderer);
     }
     std::vector<std::pair<odb::Point, odb::Point>> lines;
-    for (int i = 0; i < branch_count(tree); i++) {
-      flt::Branch &branch = tree.branch[i];
+    for (int i = 0; i < flt::branch_count(tree); i++) {
+      stt::Branch &branch = tree.branch[i];
       int x1 = branch.x;
       int y1 = branch.y;
-      flt::Branch &neighbor = tree.branch[branch.n];
+      stt::Branch &neighbor = tree.branch[branch.n];
       int x2 = neighbor.x;
       int y2 = neighbor.y;
       lines.push_back(std::pair(odb::Point(x1, y1),

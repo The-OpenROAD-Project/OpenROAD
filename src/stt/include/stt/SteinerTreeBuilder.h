@@ -50,7 +50,6 @@ class OpenRoad;
 
 namespace stt {
 
-using flt::Tree;
 using utl::Logger;
 
 class SteinerTreeBuilder
