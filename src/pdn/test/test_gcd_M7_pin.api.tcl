@@ -12,8 +12,8 @@ add_global_connection -net VDD -pin_pattern {^VDDPE$}
 add_global_connection -net VDD -pin_pattern {^VDDCE$}
 add_global_connection -net VSS -pin_pattern {^VSSE$}
 
-set_voltage_domain -name CORE -power_net VDD  -ground_net VSS
-set_voltage_domain -name VIN  -region_name TEMP_ANALOG -power_net VPWR -ground_net VSS
+set_voltage_domain -name CORE -power VDD  -ground VSS
+set_voltage_domain -name VIN  -region_name TEMP_ANALOG -power VPWR -ground VSS
 
 define_pdn_grid   -name main_grid -pins {metal7} -voltage_domains {CORE VIN}
 add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins

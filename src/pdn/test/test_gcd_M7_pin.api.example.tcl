@@ -11,8 +11,8 @@ add_global_connection -net VDD -pin_pattern {^VDDCE$}
 add_global_connection -net VSS -pin_pattern {^VSSE$}
 
 # Define voltage domains
-set_voltage_domain -name CORE -power_net VDD  -ground_net VSS
-set_voltage_domain -name TEMP_ANALOG  -region_name TEMP_ANALOG -power_net VIN -ground_net VSS
+set_voltage_domain -name CORE -power VDD  -ground VSS
+set_voltage_domain -name TEMP_ANALOG  -region_name TEMP_ANALOG -power VIN -ground VSS
 
 # Define power grid over the stdcell region
 define_pdn_grid -name main_grid -pins {metal7} -voltage_domains {CORE TEMP_ANALOG}

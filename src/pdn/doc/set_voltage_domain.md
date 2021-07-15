@@ -31,7 +31,7 @@ The -power and -ground arguments are used to define the names of the nets to be 
 
 ### Examples
 ```
-set_voltage_domain -name CORE -power_net VDD -ground_net VSS
-set_voltage_domain -name TEMP_ANALOG -region TEMP_ANALOG -power_net VIN -ground_net VSS
+set_voltage_domain -name CORE -power VDD -ground VSS
+set_voltage_domain -name TEMP_ANALOG -region TEMP_ANALOG -power VIN -ground VSS
 ```
 

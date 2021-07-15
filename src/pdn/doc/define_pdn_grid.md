@@ -36,7 +36,7 @@ The -name argument is used to create a name for the grid that can be used in sub
 
 The -pins argument is used to create power and ground pins on the power and ground stripes of the specified layers.
 
-The -starts_with argument is used to define whether the power net, or ground net is added as the first in a power/ground pair
+The -starts_with argument is used to define whether the power net, or ground net is added as the first in a power/ground pair (Default: GROUND)
 
 The presence of macros in the design interupts the normal power grid pattern, and additional power grids are defined over the macros in order to control the grid over the macro and which layers in the normal grid pattern are blocked around the macro.
 
@@ -56,7 +56,7 @@ Each of the -instances, -cells and -orient acts as an independent filter applied
 | -name | Defines a name to use when referring to this grid definition |
 | -voltage_domain | Defines the name of the voltage domain for this grid. (Default: CORE) |
 | -pins | Defines a list of layers which where the power straps will be promoted to block pins |
-| -starts_with | Specifies whether the first strap placed will be POWER or GROUND |
+| -starts_with | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
 | -macro | Defines the type of grid being added, can be either stdcell or macro|
 | -instances | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification |
 | -cells | For a macro, defines a set of valid orientations. Macros which are instances of one of these cells will use this grid specification |
