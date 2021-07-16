@@ -316,7 +316,7 @@ void FastRouteCore::fluteNormal(int netID,
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
-    fluteTree = stt::flt::flutes(d, tmp_xs, tmp_ys, s, acc);
+    fluteTree = stt_builder_->buildSteinerTree(d, tmp_xs, tmp_ys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     for (i = 0; i < 2 * d - 2; i++) {
@@ -477,7 +477,7 @@ void FastRouteCore::fluteCongest(int netID,
       nys[i + 1] = nys[i] + y_seg[i];
     }
 
-    fluteTree = stt::flt::flutes(d, nxs, nys, s, acc);
+    fluteTree = stt_builder_->buildSteinerTree(d, nxs, nys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     // map the new coordinates back to original coordinates

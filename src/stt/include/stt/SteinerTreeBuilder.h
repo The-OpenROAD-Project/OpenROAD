@@ -69,6 +69,11 @@ class SteinerTreeBuilder
                        std::vector<int> y,
                        int flute_accuracy,
                        int drvr_index);
+  Tree buildSteinerTree(int d,
+                        DTYPE xs[],
+                        DTYPE ys[],
+                        int s[],
+                        int acc);
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha) { alpha_ = alpha; }
   float getNetAlpha(odb::dbNet* net) const;

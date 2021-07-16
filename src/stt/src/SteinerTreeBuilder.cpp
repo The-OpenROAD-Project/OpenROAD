@@ -102,6 +102,18 @@ Tree SteinerTreeBuilder::buildSteinerTree(odb::dbNet* net,
   return tree;
 }
 
+// API only for FastRoute, that requires the use of flutes in its
+// internal flute implementation
+Tree SteinerTreeBuilder::buildSteinerTree(int d,
+                                          int x[],
+                                          int y[],
+                                          int s[],
+                                          int accuracy)
+{
+  Tree tree = flt::flutes(d, x, y, s, accuracy);
+  return tree;
+}
+
 float SteinerTreeBuilder::getNetAlpha(odb::dbNet* net) const
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
