@@ -39,7 +39,6 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "utl/Logger.h"
-#include "utl/Logger.h"
 
 namespace grt {
 

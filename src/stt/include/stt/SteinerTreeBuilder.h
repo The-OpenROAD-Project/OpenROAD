@@ -60,15 +60,15 @@ class SteinerTreeBuilder
 
   void init(odb::dbDatabase* db, Logger* logger);
 
-  Tree buildSteinerTree(std::vector<int> x,
-                       std::vector<int> y,
-                       int flute_accuracy,
-                       int drvr_index);
+  Tree buildSteinerTree(const std::vector<int>& x,
+                        const std::vector<int>& y,
+                        int flute_accuracy,
+                        int drvr_index);
   Tree buildSteinerTree(odb::dbNet* net,
-                       std::vector<int> x,
-                       std::vector<int> y,
-                       int flute_accuracy,
-                       int drvr_index);
+                        const std::vector<int>& x,
+                        const std::vector<int>& y,
+                        int flute_accuracy,
+                        int drvr_index);
   Tree buildSteinerTree(int d,
                         DTYPE xs[],
                         DTYPE ys[],

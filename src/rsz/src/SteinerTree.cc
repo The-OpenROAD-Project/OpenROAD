@@ -121,7 +121,7 @@ makeSteinerTree(const Pin *drvr_pin,
       stt::Tree ftree = stt_builder->buildSteinerTree(network->staToDb(net), x1, y1, flute_accuracy, drvr_idx);
       
       if (debug->check("steiner", 3))
-        ftree.printTree();
+        ftree.printTree(logger);
       tree->setTree(ftree, network);
       if (find_left_rights)
         tree->findLeftRights(network, logger);

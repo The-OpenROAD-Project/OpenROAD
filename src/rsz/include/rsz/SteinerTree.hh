@@ -116,7 +116,6 @@ class SteinerTree
 {
 public:
   SteinerTree(const Pin *drvr_pin);
-  ~SteinerTree() = default;
   PinSeq &pins() { return pins_; }
   int pinCount() const { return pins_.size(); }
   int branchCount() const;

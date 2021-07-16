@@ -30,6 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
+#include "utl/Logger.h"
 
 #pragma once
 
@@ -46,7 +47,7 @@ typedef struct {
   DTYPE length;    // total wirelength
   std::vector<Branch> branch;  // array of tree branches
 
-  void printTree();
+  void printTree(utl::Logger* logger);
   int branchCount() const { return deg * 2 - 2; }
 } Tree;
 

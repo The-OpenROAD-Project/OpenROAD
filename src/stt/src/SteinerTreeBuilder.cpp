@@ -53,10 +53,10 @@ void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-Tree SteinerTreeBuilder::buildSteinerTree(std::vector<int> x,
-                                         std::vector<int> y,
-                                         int flute_accuracy,
-                                         int drvr_index)
+Tree SteinerTreeBuilder::buildSteinerTree(const std::vector<int>& x,
+                                          const std::vector<int>& y,
+                                          int flute_accuracy,
+                                          int drvr_index)
 {
   Tree tree;
 
@@ -77,10 +77,10 @@ Tree SteinerTreeBuilder::buildSteinerTree(std::vector<int> x,
 }
 
 Tree SteinerTreeBuilder::buildSteinerTree(odb::dbNet* net,
-                                         std::vector<int> x,
-                                         std::vector<int> y,
-                                         int flute_accuracy,
-                                         int drvr_index)
+                                          const std::vector<int>& x,
+                                          const std::vector<int>& y,
+                                          int flute_accuracy,
+                                          int drvr_index)
 {
   Tree tree;
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
