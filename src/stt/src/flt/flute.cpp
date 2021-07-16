@@ -1030,7 +1030,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
     ys = (DTYPE *)malloc(sizeof(DTYPE) * (d));
     s = (int *)malloc(sizeof(int) * (d));
     pt = (struct point *)malloc(sizeof(struct point) * (d + 1));
-    ptp = (struct point **)malloc(sizeof(struct point *) * (d + 1));
+    std::vector<point*> ptp(d+1);
 
     for (i = 0; i < d; i++) {
       pt[i].x = x[i];
@@ -1054,7 +1054,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
         ptp[minidx] = tmpp;
       }
     } else {
-      qsort(ptp, d, sizeof(struct point *), orderx);
+      std::stable_sort(ptp.begin(), ptp.end(), orderx);
     }
 
 #if FLUTE_REMOVE_DUPLICATE_PIN == 1
@@ -1094,7 +1094,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
       ys[d - 1] = ptp[d - 1]->y;
       s[d - 1] = ptp[d - 1]->o;
     } else {
-      qsort(ptp, d, sizeof(struct point *), ordery);
+      std::stable_sort(ptp.begin(), ptp.end(), ordery);
       for (i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
         s[i] = ptp[i]->o;
@@ -1107,7 +1107,6 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
     free(ys);
     free(s);
     free(pt);
-    free(ptp);
   }
 
   return t;
