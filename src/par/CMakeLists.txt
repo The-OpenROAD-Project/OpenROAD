@@ -37,7 +37,7 @@ include("openroad")
 
 project(PartitionMgr)
 
-option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" ON)
+option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" OFF)
 
 if (LOAD_PARTITIONERS)
     #set(PATH_PARTITIONERS ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to Partitioners Folder")
