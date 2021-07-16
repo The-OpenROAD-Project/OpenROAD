@@ -53,12 +53,27 @@ void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-Tree SteinerTreeBuilder::findFluteTree(int pin_count,
-                                       int x[],
-                                       int y[],
-                                       int accuracy)
+Tree SteinerTreeBuilder::findSteinerTree(std::vector<int> x,
+                                         std::vector<int> y,
+                                         int flute_accuracy,
+                                         int drvr_index)
 {
-  return flt::flute(pin_count, x, y, accuracy);
+  Tree tree;
+
+  if (alpha_ > 0.0) {
+    tree = pdr::primDijkstra(x, y, drvr_index, alpha_, logger_);
+  } else {
+    int pin_count = x.size();
+    int x_arr[pin_count];
+    int y_arr[pin_count];
+
+    std::copy(x.begin(), x.end(), x_arr);
+    std::copy(y.begin(), y.end(), x_arr);
+
+    tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
+  }
+
+  return tree;
 }
 
 Tree SteinerTreeBuilder::findSteinerTree(odb::dbNet* net,
