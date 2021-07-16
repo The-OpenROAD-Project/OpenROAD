@@ -53,6 +53,7 @@ using std::to_string;
 using std::unordered_map;
 using std::vector;
 
+using odb::dbInst;
 using odb::dbBox;
 using odb::dbMaster;
 using odb::dbMPin;
