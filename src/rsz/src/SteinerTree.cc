@@ -178,7 +178,7 @@ SteinerTree::SteinerTree(const Pin *drvr_pin) :
 
 SteinerTree::~SteinerTree()
 {
-  flt::free_tree(tree_);
+  stt::flt::free_tree(tree_);
 }
 
 int

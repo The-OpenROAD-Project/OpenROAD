@@ -39,6 +39,18 @@
 #include <algorithm>
 #include "stt/flute.h"
 
+namespace stt {
+void Tree::printTree()
+{
+  for (int i = 0; i < deg; i++)
+    printf(" %-2d:  x=%4g  y=%4g  e=%d\n",
+           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+  for (int i = deg; i < 2 * deg - 2; i++)
+    printf("s%-2d:  x=%4g  y=%4g  e=%d\n",
+           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+  printf("\n");
+}
+
 namespace flt {
 
 #if FLUTE_D <= 7
@@ -1974,17 +1986,6 @@ void free_tree(Tree t) {
   t.deg = 0 ;
 }
 
-}  // namespace
+} // namespace flt
 
-namespace stt {
-void Tree::printTree()
-{
-  for (int i = 0; i < deg; i++)
-    printf(" %-2d:  x=%4g  y=%4g  e=%d\n",
-           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-  for (int i = deg; i < 2 * deg - 2; i++)
-    printf("s%-2d:  x=%4g  y=%4g  e=%d\n",
-           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-  printf("\n");
-}
 } // namespace stt

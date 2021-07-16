@@ -47,7 +47,6 @@ typedef struct {
   void printTree();
   int branchCount() const { return deg * 2 - 2; }
 } Tree;
-}
 
 namespace flt {
 
@@ -130,4 +129,6 @@ inline Tree flutes_LMD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
   }
 }
 
-}  // namespace
+} // namespace flt
+
+} // namespace stt

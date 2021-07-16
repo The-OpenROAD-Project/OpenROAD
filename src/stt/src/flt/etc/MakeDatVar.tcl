@@ -25,7 +25,7 @@ set dat_file [lindex $argv 2]
 
 set var_stream [open $var_file "w"]
 puts $var_stream "#include <string>"
-puts $var_stream "namespace flt {"
+puts $var_stream "namespace stt::flt {"
 puts -nonewline $var_stream "std::string $var = \""
 close $var_stream
 

@@ -57,7 +57,7 @@ stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
 
 void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
 {
-  flt::deleteLUT();
+  stt::flt::deleteLUT();
   delete stt_builder;
 }
 
@@ -68,7 +68,7 @@ void initSteinerTreeBuilder(OpenRoad* openroad)
   Stt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
   openroad->getSteinerTreeBuilder()->init(openroad->getDb(), openroad->getLogger());
-  flt::readLUT();
+  stt::flt::readLUT();
 }
 
 }  // namespace ord
