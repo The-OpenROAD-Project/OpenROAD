@@ -82,7 +82,6 @@ GlobalRouter::GlobalRouter() :
   allow_congestion_(false),
   macro_extension_(0),
   verbose_(0),
-  alpha_(0.3),
   seed_(0),
   caps_perturbation_percentage_(0),
   perturbation_amount_(1),
@@ -146,8 +145,6 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
   fastroute_->setAllowOverflow(allow_congestion_);
-
-  alpha_ = stt_builder_->getAlpha();
 
   block_ = db_->getChip()->getBlock();
   reportLayerSettings(min_routing_layer, max_routing_layer);
@@ -652,8 +649,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
     }
   }
 
-  const std::map<odb::dbNet*, float>& net_alpha_map = stt_builder_->getNetAlphaMap();
-
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     if (pin_count > 1 && !net->isLocal()) {
@@ -683,10 +678,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       if (pins_on_grid.size() > 1 && !on_grid_local) {
-        float net_alpha = alpha_;
-        if (net_alpha_map.find(net->getDbNet()) != net_alpha_map.end()) {
-          net_alpha = net_alpha_map.at(net->getDbNet());
-        }
         bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int num_layers = grid_->getNumLayers();
@@ -704,7 +695,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
         int netID = fastroute_->addNet(net->getDbNet(),
                                        pins_on_grid.size(),
-                                       net_alpha,
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,

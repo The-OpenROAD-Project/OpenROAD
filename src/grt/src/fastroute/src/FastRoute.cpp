@@ -306,7 +306,6 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
                           int num_pins,
-                          float alpha,
                           bool is_clock,
                           int driver_idx,
                           int cost,
@@ -320,7 +319,6 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->db_net = db_net;
   net->numPins = num_pins;
   net->deg = pin_ind_;
-  net->alpha = alpha;
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
   net->edgeCost = cost;

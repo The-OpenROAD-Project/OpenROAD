@@ -141,7 +141,6 @@ class GlobalRouter
   void setMaxRoutingLayer(const int max_layer);
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
-  float getAlpha() const { return alpha_; }
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,
@@ -316,7 +315,6 @@ class GlobalRouter
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
 
-  float alpha_;
   int verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;

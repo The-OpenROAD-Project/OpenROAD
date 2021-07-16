@@ -82,7 +82,6 @@ class FastRouteCore
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
              int num_pins,
-             float alpha,
              bool is_clock,
              int driver_idx,
              int cost,
