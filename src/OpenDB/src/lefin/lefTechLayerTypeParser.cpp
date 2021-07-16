@@ -92,10 +92,9 @@ bool parse(Iterator first,
                  &odb::dbTechLayer::setLef58Type,
                  layer,
                  odb::dbTechLayer::LEF58_TYPE::TRIMPOLY)]
-             | lit("MIMCAP")[boost::bind(
-                 &odb::dbTechLayer::setLef58Type,
-                 layer,
-                 odb::dbTechLayer::LEF58_TYPE::MIMCAP)])
+             | lit("MIMCAP")[boost::bind(&odb::dbTechLayer::setLef58Type,
+                                         layer,
+                                         odb::dbTechLayer::LEF58_TYPE::MIMCAP)])
          >> lit(";"));
 
   bool valid = qi::phrase_parse(first, last, TypeRule, space);

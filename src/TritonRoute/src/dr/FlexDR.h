@@ -341,9 +341,9 @@ class FlexDRWorker
  public:
   // constructors
   FlexDRWorker(const FlexDRViaData* via_data,
-               frTechObject* tech,
+               frDesign* design,
                Logger* logger)
-      : tech_(tech),
+      : design_(design),
         logger_(logger),
         graphics_(nullptr),
         via_data_(via_data),
@@ -368,7 +368,7 @@ class FlexDRWorker
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
         nets_(),
         owner2nets_(),
-        gridGraph_(tech, this),
+        gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
         gcWorker_(nullptr) /*, drcWorker(drIn->getDesign())*/
@@ -442,7 +442,7 @@ class FlexDRWorker
   }
 
   // getters
-  frTechObject* getTech() const { return tech_; }
+  frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(frBox& boxIn) const { boxIn.set(routeBox_); }
   const frBox& getRouteBox() const { return routeBox_; }
   frBox& getRouteBox() { return routeBox_; }
@@ -492,7 +492,7 @@ class FlexDRWorker
     int numReroute;
     bool doRoute;
   } RouteQueueEntry;
-
+  frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
@@ -851,8 +851,9 @@ class FlexDRWorker
   void routeNet_postAstarWritePath(
       drNet* net,
       std::vector<FlexMazeIdx>& points,
-      const std::set<FlexMazeIdx>& apMazeIdx,
-      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox);
+      const std::set<FlexMazeIdx>& realPinApMazeIdx,
+      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
+      const set<FlexMazeIdx>& apMazeIdx);
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,
@@ -883,12 +884,16 @@ class FlexDRWorker
                       frMIdx endX,
                       frMIdx endY,
                       frMIdx z,
-                      const set<FlexMazeIdx>& apMazeIdx,
+                      const set<FlexMazeIdx>& realApMazeIdx,
                       drNet* net,
                       bool vertical,
                       bool taper,
                       int i,
-                      vector<FlexMazeIdx>& points);
+                      vector<FlexMazeIdx>& points,
+                      const set<FlexMazeIdx>& apMazeIdx);
+  void checkPathSegStyle(drPathSeg* ps, bool isBegin, frSegStyle& style);
+  void checkViaConnectivityToAP(drVia* ps, bool isBottom, frNet* net);
+  bool hasAccessPoint(const frPoint& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
       const std::vector<FlexMazeIdx>& path,

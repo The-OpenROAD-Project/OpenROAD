@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "maze3D.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,13 +37,9 @@
 
 #include <algorithm>
 
-#include "DataProc.h"
 #include "DataType.h"
-#include "RipUp.h"
+#include "FastRoute.h"
 #include "flute.h"
-#include "pdr/pdrev.h"
-#include "route.h"
-#include "utility.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -53,7 +47,6 @@ namespace grt {
 using utl::GRT;
 
 #define PARENT(i) (i - 1) / 2
-//#define PARENT(i) ((i-1)>>1)
 #define LEFT(i) 2 * i + 1
 #define RIGHT(i) 2 * i + 2
 
@@ -62,7 +55,7 @@ static void heapify3D(int** array, int heapSize, int i)
 {
   int l, r, smallest;
   int* tmp;
-  Bool STOP = FALSE;
+  bool STOP = false;
 
   tmp = array[i];
   do {
@@ -83,7 +76,7 @@ static void heapify3D(int** array, int heapSize, int i)
       i = smallest;
     } else {
       array[i] = tmp;
-      STOP = TRUE;
+      STOP = true;
     }
   } while (!STOP);
 }
@@ -105,13 +98,11 @@ static void updateHeap3D(int** array, int arrayLen, int i)
 // extract the entry with minimum distance from Priority queue
 static void extractMin3D(int** array, int arrayLen)
 {
-  if (arrayLen < 1)
-    logger->error(GRT, 183, "Heap underflow.");
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);
 }
 
-void setupHeap3D(int netID,
+void FastRouteCore::setupHeap3D(int netID,
                  int edgeID,
                  int* heapLen1,
                  int* heapLen2,
@@ -125,10 +116,10 @@ void setupHeap3D(int netID,
   int queuehead, queuetail;
   Route* route;
 
-  TreeEdge* treeedges = sttrees[netID].edges;
-  TreeNode* treenodes = sttrees[netID].nodes;
+  TreeEdge* treeedges = sttrees_[netID].edges;
+  TreeNode* treenodes = sttrees_[netID].nodes;
 
-  int d = sttrees[netID].deg;
+  int d = sttrees_[netID].deg;
   // TODO: check this size
   int numNodes = 2 * d - 2;
   int heapVisited[numNodes];
@@ -144,39 +135,39 @@ void setupHeap3D(int netID,
 
   if (d == 2)  // 2-pin net
   {
-    d13D[0][y1][x1] = 0;
-    directions3D[0][y1][x1] = ORIGIN;
-    heap13D[0] = &d13D[0][y1][x1];
+    d1_3D_[0][y1][x1] = 0;
+    directions_3D_[0][y1][x1] = ORIGIN;
+    heap1_3D_[0] = &d1_3D_[0][y1][x1];
     *heapLen1 = 1;
-    d23D[0][y2][x2] = 0;
-    directions3D[0][y2][x2] = ORIGIN;
-    heap23D[0] = &d23D[0][y2][x2];
+    d2_3D_[0][y2][x2] = 0;
+    directions_3D_[0][y2][x2] = ORIGIN;
+    heap2_3D_[0] = &d2_3D_[0][y2][x2];
     *heapLen2 = 1;
   } else  // net with more than 2 pins
   {
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
-        inRegion[i][j] = TRUE;
+        in_region_[i][j] = true;
       }
     }
 
     for (int i = 0; i < numNodes; i++)
-      heapVisited[i] = FALSE;
+      heapVisited[i] = false;
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
-    // them into heap13D
+    // them into heap1_3D_
     if (n1 < d)  // n1 is a Pin node
     {
-      // just need to put n1 itself into heap13D
+      // just need to put n1 itself into heap1_3D_
       heapcnt = 0;
 
       nt = treenodes[n1].stackAlias;
 
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        d13D[l][y1][x1] = 0;
-        heap13D[heapcnt] = &d13D[l][y1][x1];
-        directions3D[l][y1][x1] = ORIGIN;
-        heapVisited[n1] = TRUE;
+        d1_3D_[l][y1][x1] = 0;
+        heap1_3D_[heapcnt] = &d1_3D_[l][y1][x1];
+        directions_3D_[l][y1][x1] = ORIGIN;
+        heapVisited[n1] = true;
         heapcnt++;
       }
       *heapLen1 = heapcnt;
@@ -188,12 +179,12 @@ void setupHeap3D(int netID,
 
       nt = treenodes[n1].stackAlias;
 
-      // add n1 into heap13D
+      // add n1 into heap1_3D_
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        d13D[l][y1][x1] = 0;
-        directions3D[l][y1][x1] = ORIGIN;
-        heap13D[heapcnt] = &d13D[l][y1][x1];
-        heapVisited[n1] = TRUE;
+        d1_3D_[l][y1][x1] = 0;
+        directions_3D_[l][y1][x1] = ORIGIN;
+        heap1_3D_[heapcnt] = &d1_3D_[l][y1][x1];
+        heapVisited[n1] = true;
         heapcnt++;
       }
 
@@ -206,7 +197,7 @@ void setupHeap3D(int netID,
         // get cur node from the queuehead
         cur = heapQueue[queuehead];
         queuehead++;
-        heapVisited[cur] = TRUE;
+        heapVisited[cur] = true;
         if (cur >= d)  // cur node is a Steiner node
         {
           for (int i = 0; i < 3; i++) {
@@ -214,46 +205,46 @@ void setupHeap3D(int netID,
             edge = treenodes[cur].edge[i];
             if (nbr != n2)  // not n2
             {
-              if (heapVisited[nbr] == FALSE) {
-                // put all the grids on the two adjacent tree edges into heap13D
+              if (heapVisited[nbr] == false) {
+                // put all the grids on the two adjacent tree edges into heap1_3D_
                 if (treeedges[edge].route.routelen > 0)  // not a degraded edge
                 {
-                  // put nbr into heap13D if in enlarged region
-                  if (inRegion[treenodes[nbr].y][treenodes[nbr].x]) {
+                  // put nbr into heap1_3D_ if in enlarged region
+                  if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
                     nbrX = treenodes[nbr].x;
                     nbrY = treenodes[nbr].y;
                     nt = treenodes[nbr].stackAlias;
                     for (int l = treenodes[nt].botL; l <= treenodes[nt].topL;
                          l++) {
-                      d13D[l][nbrY][nbrX] = 0;
-                      directions3D[l][nbrY][nbrX] = ORIGIN;
-                      heap13D[heapcnt] = &d13D[l][nbrY][nbrX];
+                      d1_3D_[l][nbrY][nbrX] = 0;
+                      directions_3D_[l][nbrY][nbrX] = ORIGIN;
+                      heap1_3D_[heapcnt] = &d1_3D_[l][nbrY][nbrX];
                       heapcnt++;
-                      corrEdge3D[l][nbrY][nbrX] = edge;
+                      corr_edge_3D_[l][nbrY][nbrX] = edge;
                     }
                   }
 
                   // the coordinates of two end nodes of the edge
 
                   route = &(treeedges[edge].route);
-                  if (route->type == MAZEROUTE) {
+                  if (route->type == RouteType::MazeRoute) {
                     for (int j = 1; j < route->routelen;
-                         j++)  // don't put edge_n1 and edge_n2 into heap13D
+                         j++)  // don't put edge_n1 and edge_n2 into heap1_3D_
                     {
                       x_grid = route->gridsX[j];
                       y_grid = route->gridsY[j];
                       l_grid = route->gridsL[j];
 
-                      if (inRegion[y_grid][x_grid]) {
-                        d13D[l_grid][y_grid][x_grid] = 0;
-                        heap13D[heapcnt] = &d13D[l_grid][y_grid][x_grid];
-                        directions3D[l_grid][y_grid][x_grid] = ORIGIN;
+                      if (in_region_[y_grid][x_grid]) {
+                        d1_3D_[l_grid][y_grid][x_grid] = 0;
+                        heap1_3D_[heapcnt] = &d1_3D_[l_grid][y_grid][x_grid];
+                        directions_3D_[l_grid][y_grid][x_grid] = ORIGIN;
                         heapcnt++;
-                        corrEdge3D[l_grid][y_grid][x_grid] = edge;
+                        corr_edge_3D_[l_grid][y_grid][x_grid] = edge;
                       }
                     }
 
-                  }  // if MAZEROUTE
+                  }  // if MazeRoute
                 }    // if not a degraded edge (len>0)
 
                 // add the neighbor of cur node into heapQueue
@@ -264,12 +255,12 @@ void setupHeap3D(int netID,
           }                 // loop i (3 neigbors for cur node)
         }                   // if cur node is a Steiner nodes
       }                     // while heapQueue is not empty
-      *heapLen1 = heapcnt;  // record the length of heap13D
+      *heapLen1 = heapcnt;  // record the length of heap1_3D_
     }                       // else n1 is not a Pin node
 
     // find all the grids on subtree t2 (connect to n2) and put them into
-    // heap23D find all the grids on tree edges in subtree t2 (connecting to n2)
-    // and put them into heap23D
+    // heap2_3D_ find all the grids on tree edges in subtree t2 (connecting to n2)
+    // and put them into heap2_3D_
     if (n2 < d)  // n2 is a Pin node
     {
       nt = treenodes[n2].stackAlias;
@@ -277,11 +268,11 @@ void setupHeap3D(int netID,
       heapcnt = 0;
 
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        // just need to put n1 itself into heap13D
-        d23D[l][y2][x2] = 0;
-        directions3D[l][y2][x2] = ORIGIN;
-        heap23D[heapcnt] = &d23D[l][y2][x2];
-        heapVisited[n2] = TRUE;
+        // just need to put n1 itself into heap1_3D_
+        d2_3D_[l][y2][x2] = 0;
+        directions_3D_[l][y2][x2] = ORIGIN;
+        heap2_3D_[heapcnt] = &d2_3D_[l][y2][x2];
+        heapVisited[n2] = true;
         //*heapLen2 += 1;
         heapcnt++;
       }
@@ -292,14 +283,14 @@ void setupHeap3D(int netID,
       queuehead = queuetail = 0;
 
       nt = treenodes[n2].stackAlias;
-      // add n2 into heap23D
+      // add n2 into heap2_3D_
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        d23D[l][y2][x2] = 0;
-        directions3D[l][y2][x2] = ORIGIN;
-        heap23D[heapcnt] = &d23D[l][y2][x2];
+        d2_3D_[l][y2][x2] = 0;
+        directions_3D_[l][y2][x2] = ORIGIN;
+        heap2_3D_[heapcnt] = &d2_3D_[l][y2][x2];
         heapcnt++;
       }
-      heapVisited[n2] = TRUE;
+      heapVisited[n2] = true;
 
       // add n2 into the heapQueue
       heapQueue[queuetail] = n2;
@@ -309,7 +300,7 @@ void setupHeap3D(int netID,
       while (queuetail > queuehead) {
         // get cur node form queuehead
         cur = heapQueue[queuehead];
-        heapVisited[cur] = TRUE;
+        heapVisited[cur] = true;
         queuehead++;
 
         if (cur >= d)  // cur node is a Steiner node
@@ -319,12 +310,12 @@ void setupHeap3D(int netID,
             edge = treenodes[cur].edge[i];
             if (nbr != n1)  // not n1
             {
-              if (heapVisited[nbr] == FALSE) {
-                // put all the grids on the two adjacent tree edges into heap23D
+              if (heapVisited[nbr] == false) {
+                // put all the grids on the two adjacent tree edges into heap2_3D_
                 if (treeedges[edge].route.routelen > 0)  // not a degraded edge
                 {
-                  // put nbr into heap23D
-                  if (inRegion[treenodes[nbr].y][treenodes[nbr].x]) {
+                  // put nbr into heap2_3D_
+                  if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
                     nbrX = treenodes[nbr].x;
                     nbrY = treenodes[nbr].y;
                     nt = treenodes[nbr].stackAlias;
@@ -332,35 +323,35 @@ void setupHeap3D(int netID,
                          l++) {
                       // nbrL = treenodes[nbr].l;
 
-                      d23D[l][nbrY][nbrX] = 0;
-                      directions3D[l][nbrY][nbrX] = ORIGIN;
-                      heap23D[heapcnt] = &d23D[l][nbrY][nbrX];
+                      d2_3D_[l][nbrY][nbrX] = 0;
+                      directions_3D_[l][nbrY][nbrX] = ORIGIN;
+                      heap2_3D_[heapcnt] = &d2_3D_[l][nbrY][nbrX];
                       heapcnt++;
-                      corrEdge3D[l][nbrY][nbrX] = edge;
+                      corr_edge_3D_[l][nbrY][nbrX] = edge;
                     }
                   }
 
                   // the coordinates of two end nodes of the edge
 
                   route = &(treeedges[edge].route);
-                  if (route->type == MAZEROUTE) {
+                  if (route->type == RouteType::MazeRoute) {
                     for (int j = 1; j < route->routelen;
-                         j++)  // don't put edge_n1 and edge_n2 into heap23D
+                         j++)  // don't put edge_n1 and edge_n2 into heap2_3D_
                     {
                       x_grid = route->gridsX[j];
                       y_grid = route->gridsY[j];
                       l_grid = route->gridsL[j];
-                      if (inRegion[y_grid][x_grid]) {
-                        d23D[l_grid][y_grid][x_grid] = 0;
-                        directions3D[l_grid][y_grid][x_grid] = ORIGIN;
-                        heap23D[heapcnt] = &d23D[l_grid][y_grid][x_grid];
+                      if (in_region_[y_grid][x_grid]) {
+                        d2_3D_[l_grid][y_grid][x_grid] = 0;
+                        directions_3D_[l_grid][y_grid][x_grid] = ORIGIN;
+                        heap2_3D_[heapcnt] = &d2_3D_[l_grid][y_grid][x_grid];
                         heapcnt++;
 
-                        corrEdge3D[l_grid][y_grid][x_grid] = edge;
+                        corr_edge_3D_[l_grid][y_grid][x_grid] = edge;
                       }
                     }
 
-                  }  // if MAZEROUTE
+                  }  // if MazeRoute
                 }    // if the edge is not degraded (len>0)
 
                 // add the neighbor of cur node into heapQueue
@@ -371,18 +362,18 @@ void setupHeap3D(int netID,
           }                 // loop i (3 neigbors for cur node)
         }                   // if cur node is a Steiner nodes
       }                     // while heapQueue is not empty
-      *heapLen2 = heapcnt;  // record the length of heap23D
+      *heapLen2 = heapcnt;  // record the length of heap2_3D_
     }                       // else n2 is not a Pin node
 
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
-        inRegion[i][j] = FALSE;
+        in_region_[i][j] = false;
       }
     }
   }  // net with more than two pins
 }
 
-void newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL)
+void FastRouteCore::newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL)
 {
   int con;
 
@@ -401,7 +392,7 @@ void newUpdateNodeLayers(TreeNode* treenodes, int edgeID, int n1, int lastL)
   }
 }
 
-int copyGrids3D(TreeNode* treenodes,
+int FastRouteCore::copyGrids3D(TreeNode* treenodes,
                 int n1,
                 int n2,
                 TreeEdge* treeedges,
@@ -427,9 +418,9 @@ int copyGrids3D(TreeNode* treenodes,
         gridsL_n1n2[cnt] = treeedges[edge_n1n2].route.gridsL[i];
         cnt++;
       }
-    }  // MAZEROUTE
+    }  // MazeRoute
     else
-    // NOROUTE
+    // NoRoute
     {
       fflush(stdout);
       gridsX_n1n2[cnt] = n1x;
@@ -447,20 +438,20 @@ int copyGrids3D(TreeNode* treenodes,
         gridsL_n1n2[cnt] = treeedges[edge_n1n2].route.gridsL[i];
         cnt++;
       }
-    }     // MAZEROUTE
-    else  // NOROUTE
+    }     // MazeRoute
+    else  // NoRoute
     {
       gridsX_n1n2[cnt] = n1x;
       gridsY_n1n2[cnt] = n1y;
       gridsL_n1n2[cnt] = n1l;
       cnt++;
-    }  // MAZEROUTE
+    }  // MazeRoute
   }
 
   return (cnt);
 }
 
-void updateRouteType13D(int netID,
+void FastRouteCore::updateRouteType13D(int netID,
                         TreeNode* treenodes,
                         int n1,
                         int A1,
@@ -503,7 +494,7 @@ void updateRouteType13D(int netID,
                          gridsL_n1A2);
 
   if (cnt_n1A1 == 1) {
-    logger->error(GRT, 187, "In 3D maze routing, type 1 node shift, cnt_n1A1 is 1.");
+    logger_->error(GRT, 187, "In 3D maze routing, type 1 node shift, cnt_n1A1 is 1.");
   }
 
   E1_pos1 = -1;
@@ -516,7 +507,7 @@ void updateRouteType13D(int netID,
   }
 
   if (E1_pos1 == -1) {
-    logger->error(GRT, 171, "Invalid index for position ({}, {}).", E1x, E1y);
+    logger_->error(GRT, 171, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
   for (i = cnt_n1A1 - 1; i >= 0; i--) {
@@ -528,7 +519,7 @@ void updateRouteType13D(int netID,
   }
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A1].route.type == MAZEROUTE
+  if (treeedges[edge_n1A1].route.type == RouteType::MazeRoute
       && treeedges[edge_n1A1].route.routelen
              > 0)  // if originally allocated, free them first
   {
@@ -564,13 +555,13 @@ void updateRouteType13D(int netID,
     treeedges[edge_n1A1].n1 = n1;
     treeedges[edge_n1A1].n2 = A1;
   }
-  treeedges[edge_n1A1].len = ADIFF(A1x, E1x) + ADIFF(A1y, E1y);
+  treeedges[edge_n1A1].len = abs(A1x - E1x) + abs(A1y - E1y);
 
-  treeedges[edge_n1A1].route.type = MAZEROUTE;
+  treeedges[edge_n1A1].route.type = RouteType::MazeRoute;
   treeedges[edge_n1A1].route.routelen = E1_pos1;
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A2].route.type == MAZEROUTE
+  if (treeedges[edge_n1A2].route.type == RouteType::MazeRoute
       && treeedges[edge_n1A2].route.routelen
              > 0)  // if originally allocated, free them first
   {
@@ -582,15 +573,15 @@ void updateRouteType13D(int netID,
   if (cnt_n1A2 > 1) {
     treeedges[edge_n1A2].route.gridsX
         = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-                           + ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0])),
+                           + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0])),
                           sizeof(short));
     treeedges[edge_n1A2].route.gridsY
         = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-                           + ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0])),
+                           + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0])),
                           sizeof(short));
     treeedges[edge_n1A2].route.gridsL
         = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1
-                           + ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0])),
+                           + abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0])),
                           sizeof(short));
   } else {
     treeedges[edge_n1A2].route.gridsX
@@ -672,15 +663,15 @@ void updateRouteType13D(int netID,
     treeedges[edge_n1A2].n1 = A2;
     treeedges[edge_n1A2].n2 = n1;
   }
-  treeedges[edge_n1A2].route.type = MAZEROUTE;
+  treeedges[edge_n1A2].route.type = RouteType::MazeRoute;
   treeedges[edge_n1A2].route.routelen = cnt - 1;
-  treeedges[edge_n1A2].len = ADIFF(A2x, E1x) + ADIFF(A2y, E1y);
+  treeedges[edge_n1A2].len = abs(A2x - E1x) + abs(A2y - E1y);
 
   treenodes[n1].x = E1x;
   treenodes[n1].y = E1y;
 }
 
-void updateRouteType23D(int netID,
+void FastRouteCore::updateRouteType23D(int netID,
                         TreeNode* treenodes,
                         int n1,
                         int A1,
@@ -747,7 +738,7 @@ void updateRouteType23D(int netID,
 
   // combine grids on original (A1, n1) and (n1, A2) to new (A1, A2)
   // allocate memory for gridsX[] and gridsY[] of edge_A1A2
-  if (treeedges[edge_A1A2].route.type == MAZEROUTE) {
+  if (treeedges[edge_A1A2].route.type == RouteType::MazeRoute) {
     free(treeedges[edge_A1A2].route.gridsX);
     free(treeedges[edge_A1A2].route.gridsY);
     free(treeedges[edge_A1A2].route.gridsL);
@@ -756,11 +747,11 @@ void updateRouteType23D(int netID,
 
   if (len_A1A2 == 1) {
     treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
-    treeedges[edge_A1A2].len = ADIFF(A1x, A2x) + ADIFF(A1y, A2y);
+    treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
   } else {
     extraLen = 0;
     if (cnt_n1A1 > 1 && cnt_n1A2 > 1) {
-      extraLen = ADIFF(gridsL_n1A1[cnt_n1A1 - 1], gridsL_n1A2[0]);
+      extraLen = abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]);
       len_A1A2 += extraLen;
     }
     treeedges[edge_A1A2].route.gridsX
@@ -770,7 +761,7 @@ void updateRouteType23D(int netID,
     treeedges[edge_A1A2].route.gridsL
         = (short*) calloc(len_A1A2, sizeof(short));
     treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
-    treeedges[edge_A1A2].len = ADIFF(A1x, A2x) + ADIFF(A1y, A2y);
+    treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
     cnt = 0;
     startIND = 0;
@@ -813,7 +804,7 @@ void updateRouteType23D(int netID,
   }
 
   if (cnt_C1C2 == 1) {
-    logger->warn(GRT, 184, "Shift to 0 length edge, type2.");
+    logger_->warn(GRT, 184, "Shift to 0 length edge, type2.");
   }
 
   // find the index of E1 in (C1, C2)
@@ -834,11 +825,11 @@ void updateRouteType23D(int netID,
   }
 
   if (E1_pos2 == -1) {
-    logger->error(GRT, 172, "Invalid index for position ({}, {}).", E1x, E1y);
+    logger_->error(GRT, 172, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
-  if (treeedges[edge_n1C1].route.type == MAZEROUTE
+  if (treeedges[edge_n1C1].route.type == RouteType::MazeRoute
       && treeedges[edge_n1C1].route.routelen > 0) {
     free(treeedges[edge_n1C1].route.gridsX);
     free(treeedges[edge_n1C1].route.gridsY);
@@ -850,9 +841,9 @@ void updateRouteType23D(int netID,
   treeedges[edge_n1C1].route.gridsY = (short*) calloc(len_n1C1, sizeof(short));
   treeedges[edge_n1C1].route.gridsL = (short*) calloc(len_n1C1, sizeof(short));
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
-  treeedges[edge_n1C1].len = ADIFF(C1x, E1x) + ADIFF(C1y, E1y);
+  treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
-  if (treeedges[edge_n1C2].route.type == MAZEROUTE
+  if (treeedges[edge_n1C2].route.type == RouteType::MazeRoute
       && treeedges[edge_n1C2].route.routelen > 0) {
     free(treeedges[edge_n1C2].route.gridsX);
     free(treeedges[edge_n1C2].route.gridsY);
@@ -864,7 +855,7 @@ void updateRouteType23D(int netID,
   treeedges[edge_n1C2].route.gridsY = (short*) calloc(len_n1C2, sizeof(short));
   treeedges[edge_n1C2].route.gridsL = (short*) calloc(len_n1C2, sizeof(short));
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
-  treeedges[edge_n1C2].len = ADIFF(C2x, E1x) + ADIFF(C2y, E1y);
+  treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
   // split original (C1, C2) to (C1, n1) and (n1, C2)
   cnt = 0;
@@ -884,11 +875,11 @@ void updateRouteType23D(int netID,
   }
 }
 
-void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
+void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub, int layerOrientation)
 {
   short* gridsLtmp;
   int netID, enlarge, endIND;
-  Bool* pop_heap23D;
+  std::vector<bool> pop_heap2_3D_;
 
   int i, j, k, deg, n1, n2, n1x, n1y, n2x, n2y, ymin, ymax, xmin, xmax, curX,
       curY, curL, crossX, crossY, crossL, tmpX, tmpY, tmpL, tmpi, min_x, min_y,
@@ -905,50 +896,39 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
   int edge_n2B1, edge_n2B2, edge_n2D1, edge_n2D2, edge_B1B2, edge_D1D2, D1, D2;
   int E1x, E1y, E2x, E2y, range, corE1, corE2, edgeID;
 
-  Bool Horizontal, n1Shift, n2Shift, redundant;
+  bool Horizontal, n1Shift, n2Shift, redundant;
   int lastL, origL, headRoom, tailRoom, newcnt_n1n2, numpoints, d, n1a, n2a,
       connectionCNT;
   int origEng, orderIndex;
 
-  directions3D = new dirctionT**[numLayers];
-  corrEdge3D = new int**[numLayers];
-  pr3D = new parent3D**[numLayers];
+  directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  for (i = 0; i < numLayers; i++) {
-    directions3D[i] = new dirctionT*[yGrid];
-    corrEdge3D[i] = new int*[yGrid];
-    pr3D[i] = new parent3D*[yGrid];
-
-    for (j = 0; j < yGrid; j++) {
-      directions3D[i][j] = new dirctionT[xGrid];
-      corrEdge3D[i][j] = new int[xGrid];
-      pr3D[i][j] = new parent3D[xGrid];
-    }
-  }
-
-  pop_heap23D = new Bool[numLayers * YRANGE * XRANGE];
+  pop_heap2_3D_.resize(num_layers_ * y_range_ * x_range_);
 
   // allocate memory for priority queue
-  heap13D = new int*[yGrid * xGrid * numLayers];
-  heap23D = new short*[yGrid * xGrid * numLayers];
+  heap1_3D_ = new int*[y_grid_ * x_grid_ * num_layers_];
+  heap2_3D_ = new short*[y_grid_ * x_grid_ * num_layers_];
 
-  for (i = 0; i < yGrid; i++) {
-    for (j = 0; j < xGrid; j++) {
-      inRegion[i][j] = FALSE;
+  for (i = 0; i < y_grid_; i++) {
+    for (j = 0; j < x_grid_; j++) {
+      in_region_[i][j] = false;
     }
   }
 
-  range = YRANGE * XRANGE * numLayers;
+  range = y_range_ * x_range_ * num_layers_;
   for (i = 0; i < range; i++) {
-    pop_heap23D[i] = FALSE;
+    pop_heap2_3D_[i] = false;
   }
 
-  endIND = numValidNets * 0.9;
+  endIND = num_valid_nets_ * 0.9;
 
   for (orderIndex = 0; orderIndex < endIND; orderIndex++) {
-    netID = treeOrderPV[orderIndex].treeIndex;
+    netID = tree_order_pv_[orderIndex].treeIndex;
+    FrNet* net = nets_[netID];
 
-    std::vector<int> edge_cost_per_layer = nets[netID]->edge_cost_per_layer;
+    std::vector<int> edge_cost_per_layer = nets_[netID]->edge_cost_per_layer;
 
     /* TODO:  <14-08-19, uncomment this to reproduce ispd18_test6> */
     /* if (netID == 53757) { */
@@ -956,9 +936,9 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
     /* } */
 
     enlarge = expand;
-    deg = sttrees[netID].deg;
-    treeedges = sttrees[netID].edges;
-    treenodes = sttrees[netID].nodes;
+    deg = sttrees_[netID].deg;
+    treeedges = sttrees_[netID].edges;
+    treenodes = sttrees_[netID].nodes;
     origEng = enlarge;
 
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
@@ -994,28 +974,28 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
           enlarge = std::min(origEng, treeedge->route.routelen);
 
           regionX1 = std::max(0, xmin - enlarge);
-          regionX2 = std::min(xGrid - 1, xmax + enlarge);
+          regionX2 = std::min(x_grid_ - 1, xmax + enlarge);
           regionY1 = std::max(0, ymin - enlarge);
-          regionY2 = std::min(yGrid - 1, ymax + enlarge);
+          regionY2 = std::min(y_grid_ - 1, ymax + enlarge);
 
-          n1Shift = FALSE;
-          n2Shift = FALSE;
+          n1Shift = false;
+          n2Shift = false;
           n1a = treeedge->n1a;
           n2a = treeedge->n2a;
 
-          // initialize pop_heap13D[] and pop_heap23D[] as FALSE (for detecting
+          // initialize pop_heap1_3D_[] and pop_heap2_3D_[] as false (for detecting
           // the shortest path is found or not)
 
-          for (k = 0; k < numLayers; k++) {
+          for (k = 0; k < num_layers_; k++) {
             for (i = regionY1; i <= regionY2; i++) {
               for (j = regionX1; j <= regionX2; j++) {
-                d13D[k][i][j] = BIG_INT;
-                d23D[k][i][j] = 256;
+                d1_3D_[k][i][j] = BIG_INT;
+                d2_3D_[k][i][j] = 256;
               }
             }
           }
 
-          // setup heap13D, heap23D and initialize d13D[][] and d23D[][] for all
+          // setup heap1_3D_, heap2_3D_ and initialize d1_3D_[][] and d2_3D_[][] for all
           // the grids on the two subtrees
           setupHeap3D(netID,
                       edgeID,
@@ -1027,275 +1007,282 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
                       regionY2);
 
           // while loop to find shortest path
-          ind1 = (heap13D[0] - &d13D[0][0][0]);
+          ind1 = (heap1_3D_[0] - &d1_3D_[0][0][0]);
 
           for (i = 0; i < heapLen2; i++)
-            pop_heap23D[heap23D[i] - &d23D[0][0][0]] = TRUE;
+            pop_heap2_3D_[heap2_3D_[i] - &d2_3D_[0][0][0]] = true;
 
-          while (pop_heap23D[ind1]
-                 == FALSE)  // stop until the grid position been popped out from
-                            // both heap13D and heap23D
+          while (pop_heap2_3D_[ind1]
+                 == false)  // stop until the grid position been popped out from
+                            // both heap1_3D_ and heap2_3D_
           {
             // relax all the adjacent grids within the enlarged region for
             // source subtree
-            curL = ind1 / (gridHV);
-            remd = ind1 % (gridHV);
-            curX = remd % XRANGE;
-            curY = remd / XRANGE;
+            curL = ind1 / (grid_hv_);
+            remd = ind1 % (grid_hv_);
+            curX = remd % x_range_;
+            curY = remd / x_range_;
 
-            extractMin3D(heap13D, heapLen1);
-            // pop_heap13D[ind1] = TRUE;
+            if (heapLen1 < 1) {
+              logger_->error(GRT, 183, "Heap underflow.");
+            }
+            extractMin3D(heap1_3D_, heapLen1);
+            // pop_heap1_3D_[ind1] = true;
             heapLen1--;
 
             if (((curL % 2) - layerOrientation) == 0) {
-              Horizontal = TRUE;
+              Horizontal = true;
             } else {
-              Horizontal = FALSE;
+              Horizontal = false;
             }
 
             if (Horizontal) {
               // left
-              if (curX > regionX1 && directions3D[curL][curY][curX] != EAST) {
-                grid = gridHs[curL] + curY * (xGrid - 1) + curX - 1;
-                tmp = d13D[curL][curY][curX] + 1;
-                if (h_edges3D[grid].usage < h_edges3D[grid].cap) {
+              if (curX > regionX1 && directions_3D_[curL][curY][curX] != EAST) {
+                grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX - 1;
+                tmp = d1_3D_[curL][curY][curX] + 1;
+                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap &&
+                    net->minLayer <= curL && curL <= net->maxLayer) {
                   tmpX = curX - 1;  // the left neighbor
 
-                  if (d13D[curL][curY][tmpX]
-                      >= BIG_INT)  // left neighbor not been put into heap13D
+                  if (d1_3D_[curL][curY][tmpX]
+                      >= BIG_INT)  // left neighbor not been put into heap1_3D_
                   {
-                    d13D[curL][curY][tmpX] = tmp;
-                    pr3D[curL][curY][tmpX].l = curL;
-                    pr3D[curL][curY][tmpX].x = curX;
-                    pr3D[curL][curY][tmpX].y = curY;
-                    directions3D[curL][curY][tmpX] = WEST;
-                    heap13D[heapLen1] = &d13D[curL][curY][tmpX];
+                    d1_3D_[curL][curY][tmpX] = tmp;
+                    pr_3D_[curL][curY][tmpX].l = curL;
+                    pr_3D_[curL][curY][tmpX].x = curX;
+                    pr_3D_[curL][curY][tmpX].y = curY;
+                    directions_3D_[curL][curY][tmpX] = WEST;
+                    heap1_3D_[heapLen1] = &d1_3D_[curL][curY][tmpX];
                     heapLen1++;
-                    updateHeap3D(heap13D, heapLen1, heapLen1 - 1);
-                  } else if (d13D[curL][curY][tmpX]
-                             > tmp)  // left neighbor been put into heap13D but
+                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                  } else if (d1_3D_[curL][curY][tmpX]
+                             > tmp)  // left neighbor been put into heap1_3D_ but
                                      // needs update
                   {
-                    d13D[curL][curY][tmpX] = tmp;
-                    pr3D[curL][curY][tmpX].l = curL;
-                    pr3D[curL][curY][tmpX].x = curX;
-                    pr3D[curL][curY][tmpX].y = curY;
-                    directions3D[curL][curY][tmpX] = WEST;
-                    dtmp = &d13D[curL][curY][tmpX];
+                    d1_3D_[curL][curY][tmpX] = tmp;
+                    pr_3D_[curL][curY][tmpX].l = curL;
+                    pr_3D_[curL][curY][tmpX].x = curX;
+                    pr_3D_[curL][curY][tmpX].y = curY;
+                    directions_3D_[curL][curY][tmpX] = WEST;
+                    dtmp = &d1_3D_[curL][curY][tmpX];
                     ind = 0;
-                    while (heap13D[ind] != dtmp)
+                    while (heap1_3D_[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap13D, heapLen1, ind);
+                    updateHeap3D(heap1_3D_, heapLen1, ind);
                   }
                 }
               }
               // right
               if (Horizontal && curX < regionX2
-                  && directions3D[curL][curY][curX] != WEST) {
-                grid = gridHs[curL] + curY * (xGrid - 1) + curX;
+                  && directions_3D_[curL][curY][curX] != WEST) {
+                grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX;
 
-                tmp = d13D[curL][curY][curX] + 1;
+                tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpX = curX + 1;  // the right neighbor
 
-                if (h_edges3D[grid].usage < h_edges3D[grid].cap) {
-                  if (d13D[curL][curY][tmpX]
-                      >= BIG_INT)  // right neighbor not been put into heap13D
+                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap &&
+                    net->minLayer <= curL && curL <= net->maxLayer) {
+                  if (d1_3D_[curL][curY][tmpX]
+                      >= BIG_INT)  // right neighbor not been put into heap1_3D_
                   {
-                    d13D[curL][curY][tmpX] = tmp;
-                    pr3D[curL][curY][tmpX].l = curL;
-                    pr3D[curL][curY][tmpX].x = curX;
-                    pr3D[curL][curY][tmpX].y = curY;
-                    directions3D[curL][curY][tmpX] = EAST;
-                    heap13D[heapLen1] = &d13D[curL][curY][tmpX];
+                    d1_3D_[curL][curY][tmpX] = tmp;
+                    pr_3D_[curL][curY][tmpX].l = curL;
+                    pr_3D_[curL][curY][tmpX].x = curX;
+                    pr_3D_[curL][curY][tmpX].y = curY;
+                    directions_3D_[curL][curY][tmpX] = EAST;
+                    heap1_3D_[heapLen1] = &d1_3D_[curL][curY][tmpX];
                     heapLen1++;
-                    updateHeap3D(heap13D, heapLen1, heapLen1 - 1);
-                  } else if (d13D[curL][curY][tmpX]
-                             > tmp)  // right neighbor been put into heap13D but
+                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                  } else if (d1_3D_[curL][curY][tmpX]
+                             > tmp)  // right neighbor been put into heap1_3D_ but
                                      // needs update
                   {
-                    d13D[curL][curY][tmpX] = tmp;
-                    pr3D[curL][curY][tmpX].l = curL;
-                    pr3D[curL][curY][tmpX].x = curX;
-                    pr3D[curL][curY][tmpX].y = curY;
-                    directions3D[curL][curY][tmpX] = EAST;
-                    dtmp = &d13D[curL][curY][tmpX];
+                    d1_3D_[curL][curY][tmpX] = tmp;
+                    pr_3D_[curL][curY][tmpX].l = curL;
+                    pr_3D_[curL][curY][tmpX].x = curX;
+                    pr_3D_[curL][curY][tmpX].y = curY;
+                    directions_3D_[curL][curY][tmpX] = EAST;
+                    dtmp = &d1_3D_[curL][curY][tmpX];
                     ind = 0;
-                    while (heap13D[ind] != dtmp)
+                    while (heap1_3D_[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap13D, heapLen1, ind);
+                    updateHeap3D(heap1_3D_, heapLen1, ind);
                   }
                 }
               }
             } else {
               // bottom
               if (!Horizontal && curY > regionY1
-                  && directions3D[curL][curY][curX] != SOUTH) {
-                grid = gridVs[curL] + (curY - 1) * xGrid + curX;
-                tmp = d13D[curL][curY][curX] + 1;
+                  && directions_3D_[curL][curY][curX] != SOUTH) {
+                grid = grid_vs_[curL] + (curY - 1) * x_grid_ + curX;
+                tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY - 1;  // the bottom neighbor
-                if (v_edges3D[grid].usage < v_edges3D[grid].cap) {
-                  if (d13D[curL][tmpY][curX]
-                      >= BIG_INT)  // bottom neighbor not been put into heap13D
+                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap &&
+                    net->minLayer <= curL && curL <= net->maxLayer) {
+                  if (d1_3D_[curL][tmpY][curX]
+                      >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
                   {
-                    d13D[curL][tmpY][curX] = tmp;
-                    pr3D[curL][tmpY][curX].l = curL;
-                    pr3D[curL][tmpY][curX].x = curX;
-                    pr3D[curL][tmpY][curX].y = curY;
-                    directions3D[curL][tmpY][curX] = NORTH;
-                    heap13D[heapLen1] = &d13D[curL][tmpY][curX];
+                    d1_3D_[curL][tmpY][curX] = tmp;
+                    pr_3D_[curL][tmpY][curX].l = curL;
+                    pr_3D_[curL][tmpY][curX].x = curX;
+                    pr_3D_[curL][tmpY][curX].y = curY;
+                    directions_3D_[curL][tmpY][curX] = NORTH;
+                    heap1_3D_[heapLen1] = &d1_3D_[curL][tmpY][curX];
                     heapLen1++;
-                    updateHeap3D(heap13D, heapLen1, heapLen1 - 1);
-                  } else if (d13D[curL][tmpY][curX]
-                             > tmp)  // bottom neighbor been put into heap13D
+                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                  } else if (d1_3D_[curL][tmpY][curX]
+                             > tmp)  // bottom neighbor been put into heap1_3D_
                                      // but needs update
                   {
-                    d13D[curL][tmpY][curX] = tmp;
-                    pr3D[curL][tmpY][curX].l = curL;
-                    pr3D[curL][tmpY][curX].x = curX;
-                    pr3D[curL][tmpY][curX].y = curY;
-                    directions3D[curL][tmpY][curX] = NORTH;
-                    dtmp = &d13D[curL][tmpY][curX];
+                    d1_3D_[curL][tmpY][curX] = tmp;
+                    pr_3D_[curL][tmpY][curX].l = curL;
+                    pr_3D_[curL][tmpY][curX].x = curX;
+                    pr_3D_[curL][tmpY][curX].y = curY;
+                    directions_3D_[curL][tmpY][curX] = NORTH;
+                    dtmp = &d1_3D_[curL][tmpY][curX];
                     ind = 0;
-                    while (heap13D[ind] != dtmp)
+                    while (heap1_3D_[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap13D, heapLen1, ind);
+                    updateHeap3D(heap1_3D_, heapLen1, ind);
                   }
                 }
               }
               // top
               if (!Horizontal && curY < regionY2
-                  && directions3D[curL][curY][curX] != NORTH) {
-                grid = gridVs[curL] + curY * xGrid + curX;
-                tmp = d13D[curL][curY][curX] + 1;
+                  && directions_3D_[curL][curY][curX] != NORTH) {
+                grid = grid_vs_[curL] + curY * x_grid_ + curX;
+                tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY + 1;  // the top neighbor
-                if (v_edges3D[grid].usage < v_edges3D[grid].cap) {
-                  if (d13D[curL][tmpY][curX]
-                      >= BIG_INT)  // top neighbor not been put into heap13D
+                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap &&
+                    net->minLayer <= curL && curL <= net->maxLayer) {
+                  if (d1_3D_[curL][tmpY][curX]
+                      >= BIG_INT)  // top neighbor not been put into heap1_3D_
                   {
-                    d13D[curL][tmpY][curX] = tmp;
-                    pr3D[curL][tmpY][curX].l = curL;
-                    pr3D[curL][tmpY][curX].x = curX;
-                    pr3D[curL][tmpY][curX].y = curY;
-                    directions3D[curL][tmpY][curX] = SOUTH;
-                    heap13D[heapLen1] = &d13D[curL][tmpY][curX];
+                    d1_3D_[curL][tmpY][curX] = tmp;
+                    pr_3D_[curL][tmpY][curX].l = curL;
+                    pr_3D_[curL][tmpY][curX].x = curX;
+                    pr_3D_[curL][tmpY][curX].y = curY;
+                    directions_3D_[curL][tmpY][curX] = SOUTH;
+                    heap1_3D_[heapLen1] = &d1_3D_[curL][tmpY][curX];
                     heapLen1++;
-                    updateHeap3D(heap13D, heapLen1, heapLen1 - 1);
-                  } else if (d13D[curL][tmpY][curX]
-                             > tmp)  // top neighbor been put into heap13D but
+                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                  } else if (d1_3D_[curL][tmpY][curX]
+                             > tmp)  // top neighbor been put into heap1_3D_ but
                                      // needs update
                   {
-                    d13D[curL][tmpY][curX] = tmp;
-                    pr3D[curL][tmpY][curX].l = curL;
-                    pr3D[curL][tmpY][curX].x = curX;
-                    pr3D[curL][tmpY][curX].y = curY;
-                    directions3D[curL][tmpY][curX] = SOUTH;
-                    dtmp = &d13D[curL][tmpY][curX];
+                    d1_3D_[curL][tmpY][curX] = tmp;
+                    pr_3D_[curL][tmpY][curX].l = curL;
+                    pr_3D_[curL][tmpY][curX].x = curX;
+                    pr_3D_[curL][tmpY][curX].y = curY;
+                    directions_3D_[curL][tmpY][curX] = SOUTH;
+                    dtmp = &d1_3D_[curL][tmpY][curX];
                     ind = 0;
-                    while (heap13D[ind] != dtmp)
+                    while (heap1_3D_[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap13D, heapLen1, ind);
+                    updateHeap3D(heap1_3D_, heapLen1, ind);
                   }
                 }
               }
             }
 
             // down
-            if (curL > 0 && directions3D[curL][curY][curX] != UP) {
-              tmp = d13D[curL][curY][curX] + viacost;
+            if (curL > 0 && directions_3D_[curL][curY][curX] != UP) {
+              tmp = d1_3D_[curL][curY][curX] + via_cost_;
               tmpL = curL - 1;  // the bottom neighbor
 
-              if (d13D[tmpL][curY][curX]
-                  >= BIG_INT)  // bottom neighbor not been put into heap13D
+              if (d1_3D_[tmpL][curY][curX]
+                  >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
               {
-                d13D[tmpL][curY][curX] = tmp;
-                pr3D[tmpL][curY][curX].l = curL;
-                pr3D[tmpL][curY][curX].x = curX;
-                pr3D[tmpL][curY][curX].y = curY;
-                directions3D[tmpL][curY][curX] = DOWN;
-                heap13D[heapLen1] = &d13D[tmpL][curY][curX];
+                d1_3D_[tmpL][curY][curX] = tmp;
+                pr_3D_[tmpL][curY][curX].l = curL;
+                pr_3D_[tmpL][curY][curX].x = curX;
+                pr_3D_[tmpL][curY][curX].y = curY;
+                directions_3D_[tmpL][curY][curX] = DOWN;
+                heap1_3D_[heapLen1] = &d1_3D_[tmpL][curY][curX];
                 heapLen1++;
-                updateHeap3D(heap13D, heapLen1, heapLen1 - 1);
-              } else if (d13D[tmpL][curY][curX]
-                         > tmp)  // bottom neighbor been put into heap13D but
+                updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+              } else if (d1_3D_[tmpL][curY][curX]
+                         > tmp)  // bottom neighbor been put into heap1_3D_ but
                                  // needs update
               {
-                d13D[tmpL][curY][curX] = tmp;
-                pr3D[tmpL][curY][curX].l = curL;
-                pr3D[tmpL][curY][curX].x = curX;
-                pr3D[tmpL][curY][curX].y = curY;
-                directions3D[tmpL][curY][curX] = DOWN;
-                dtmp = &d13D[tmpL][curY][curX];
+                d1_3D_[tmpL][curY][curX] = tmp;
+                pr_3D_[tmpL][curY][curX].l = curL;
+                pr_3D_[tmpL][curY][curX].x = curX;
+                pr_3D_[tmpL][curY][curX].y = curY;
+                directions_3D_[tmpL][curY][curX] = DOWN;
+                dtmp = &d1_3D_[tmpL][curY][curX];
                 ind = 0;
-                while (heap13D[ind] != dtmp)
+                while (heap1_3D_[ind] != dtmp)
                   ind++;
-                updateHeap3D(heap13D, heapLen1, ind);
+                updateHeap3D(heap1_3D_, heapLen1, ind);
               }
             }
 
             // up
-            if (curL < numLayers - 1
-                && directions3D[curL][curY][curX] != DOWN) {
-              tmp = d13D[curL][curY][curX] + viacost;
+            if (curL < num_layers_ - 1
+                && directions_3D_[curL][curY][curX] != DOWN) {
+              tmp = d1_3D_[curL][curY][curX] + via_cost_;
               tmpL = curL + 1;  // the bottom neighbor
-              if (d13D[tmpL][curY][curX]
-                  >= BIG_INT)  // bottom neighbor not been put into heap13D
+              if (d1_3D_[tmpL][curY][curX]
+                  >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
               {
-                d13D[tmpL][curY][curX] = tmp;
-                pr3D[tmpL][curY][curX].l = curL;
-                pr3D[tmpL][curY][curX].x = curX;
-                pr3D[tmpL][curY][curX].y = curY;
-                directions3D[tmpL][curY][curX] = UP;
-                heap13D[heapLen1] = &d13D[tmpL][curY][curX];
+                d1_3D_[tmpL][curY][curX] = tmp;
+                pr_3D_[tmpL][curY][curX].l = curL;
+                pr_3D_[tmpL][curY][curX].x = curX;
+                pr_3D_[tmpL][curY][curX].y = curY;
+                directions_3D_[tmpL][curY][curX] = UP;
+                heap1_3D_[heapLen1] = &d1_3D_[tmpL][curY][curX];
                 heapLen1++;
-                updateHeap3D(heap13D, heapLen1, heapLen1 - 1);
-              } else if (d13D[tmpL][curY][curX]
-                         > tmp)  // bottom neighbor been put into heap13D but
+                updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+              } else if (d1_3D_[tmpL][curY][curX]
+                         > tmp)  // bottom neighbor been put into heap1_3D_ but
                                  // needs update
               {
-                d13D[tmpL][curY][curX] = tmp;
-                pr3D[tmpL][curY][curX].l = curL;
-                pr3D[tmpL][curY][curX].x = curX;
-                pr3D[tmpL][curY][curX].y = curY;
-                directions3D[tmpL][curY][curX] = UP;
-                dtmp = &d13D[tmpL][curY][curX];
+                d1_3D_[tmpL][curY][curX] = tmp;
+                pr_3D_[tmpL][curY][curX].l = curL;
+                pr_3D_[tmpL][curY][curX].x = curX;
+                pr_3D_[tmpL][curY][curX].y = curY;
+                directions_3D_[tmpL][curY][curX] = UP;
+                dtmp = &d1_3D_[tmpL][curY][curX];
                 ind = 0;
-                while (heap13D[ind] != dtmp)
+                while (heap1_3D_[ind] != dtmp)
                   ind++;
-                updateHeap3D(heap13D, heapLen1, ind);
+                updateHeap3D(heap1_3D_, heapLen1, ind);
               }
             }
 
             // update ind1 for next loop
-            ind1 = (heap13D[0] - &d13D[0][0][0]);
+            ind1 = (heap1_3D_[0] - &d1_3D_[0][0][0]);
           }  // while loop
 
           for (i = 0; i < heapLen2; i++)
-            pop_heap23D[heap23D[i] - &d23D[0][0][0]] = FALSE;
+            pop_heap2_3D_[heap2_3D_[i] - &d2_3D_[0][0][0]] = false;
 
           // get the new route for the edge and store it in gridsX[] and
           // gridsY[] temporarily
 
-          crossL = ind1 / (gridHV);
-          crossX = (ind1 % (gridHV)) % XRANGE;
-          crossY = (ind1 % (gridHV)) / XRANGE;
+          crossL = ind1 / (grid_hv_);
+          crossX = (ind1 % (grid_hv_)) % x_range_;
+          crossY = (ind1 % (grid_hv_)) / x_range_;
 
           cnt = 0;
           curX = crossX;
           curY = crossY;
           curL = crossL;
 
-          if (d13D[curL][curY][curX] == 0) {
+          if (d1_3D_[curL][curY][curX] == 0) {
             recoverEdge(netID, edgeID);
             break;
           }
 
           std::vector<int> tmp_gridsX, tmp_gridsY, tmp_gridsL;
 
-          while (d13D[curL][curY][curX] != 0)  // loop until reach subtree1
+          while (d1_3D_[curL][curY][curX] != 0)  // loop until reach subtree1
           {
-            tmpL = pr3D[curL][curY][curX].l;
-            tmpX = pr3D[curL][curY][curX].x;
-            tmpY = pr3D[curL][curY][curX].y;
+            tmpL = pr_3D_[curL][curY][curX].l;
+            tmpX = pr_3D_[curL][curY][curX].x;
+            tmpY = pr_3D_[curL][curY][curX].y;
             curX = tmpX;
             curY = tmpY;
             curL = tmpL;
@@ -1349,8 +1336,8 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
           // n1 is not a pin and E1!=n1, then make change to subtree1,
           // otherwise, no change to subtree1
           {
-            n1Shift = TRUE;
-            corE1 = corrEdge3D[origL][E1y][E1x];
+            n1Shift = true;
+            corE1 = corr_edge_3D_[origL][E1y][E1x];
 
             endpt1 = treeedges[corE1].n1;
             endpt2 = treeedges[corE1].n2;
@@ -1401,13 +1388,13 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               // update position for n1
 
               // treenodes[n1].l = E1l;
-              treenodes[n1].assigned = TRUE;
+              treenodes[n1].assigned = true;
             }     // if E1 is on (n1, A1) or (n1, A2)
             else  // E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
             {
               C1 = endpt1;
               C2 = endpt2;
-              edge_C1C2 = corrEdge3D[origL][E1y][E1x];
+              edge_C1C2 = corr_edge_3D_[origL][E1y][E1x];
 
               // update route for edge (n1, C1), (n1, C2) and (A1, A2)
               updateRouteType23D(netID,
@@ -1426,7 +1413,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               // update position for n1
               treenodes[n1].x = E1x;
               treenodes[n1].y = E1y;
-              treenodes[n1].assigned = TRUE;
+              treenodes[n1].assigned = true;
               // update 3 edges (n1, A1)->(C1, n1), (n1, A2)->(n1, C2), (C1,
               // C2)->(A1, A2)
               edge_n1C1 = edge_n1A1;
@@ -1504,8 +1491,8 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
           {
             // find the endpoints of the edge E1 is on
 
-            n2Shift = TRUE;
-            corE2 = corrEdge3D[origL][E2y][E2x];
+            n2Shift = true;
+            corE2 = corr_edge_3D_[origL][E2y][E2x];
             endpt1 = treeedges[corE2].n1;
             endpt2 = treeedges[corE2].n2;
 
@@ -1553,15 +1540,15 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
                                  edge_n2B2);
 
               // update position for n2
-              treenodes[n2].assigned = TRUE;
+              treenodes[n2].assigned = true;
             }     // if E2 is on (n2, B1) or (n2, B2)
-            else  // E2 is not on (n2, B1) or (n2, B2), but on (d13D, d23D)
+            else  // E2 is not on (n2, B1) or (n2, B2), but on (d1_3D_, d2_3D_)
             {
               D1 = endpt1;
               D2 = endpt2;
-              edge_D1D2 = corrEdge3D[origL][E2y][E2x];
+              edge_D1D2 = corr_edge_3D_[origL][E2y][E2x];
 
-              // update route for edge (n2, d13D), (n2, d23D) and (B1, B2)
+              // update route for edge (n2, d1_3D_), (n2, d2_3D_) and (B1, B2)
               updateRouteType23D(netID,
                                  treenodes,
                                  n2,
@@ -1578,9 +1565,9 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               // update position for n2
               treenodes[n2].x = E2x;
               treenodes[n2].y = E2y;
-              treenodes[n2].assigned = TRUE;
-              // update 3 edges (n2, B1)->(d13D, n2), (n2, B2)->(n2, d23D),
-              // (d13D, d23D)->(B1, B2)
+              treenodes[n2].assigned = true;
+              // update 3 edges (n2, B1)->(d1_3D_, n2), (n2, B2)->(n2, d2_3D_),
+              // (d1_3D_, d2_3D_)->(B1, B2)
               edge_n2D1 = edge_n2B1;
               treeedges[edge_n2D1].n1 = D1;
               treeedges[edge_n2D1].n2 = n2;
@@ -1590,8 +1577,8 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               edge_B1B2 = edge_D1D2;
               treeedges[edge_B1B2].n1 = B1;
               treeedges[edge_B1B2].n2 = B2;
-              // update nbr and edge for 5 nodes n2, B1, B2, d13D, d23D
-              // n1's nbr (n1, B1, B2)->(n1, d13D, d23D)
+              // update nbr and edge for 5 nodes n2, B1, B2, d1_3D_, d2_3D_
+              // n1's nbr (n1, B1, B2)->(n1, d1_3D_, d2_3D_)
               treenodes[n2].nbr[0] = n1;
               treenodes[n2].edge[0] = edge_n1n2;
               treenodes[n2].nbr[1] = D1;
@@ -1630,7 +1617,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
                   break;
                 }
               }
-            }     // else E2 is not on (n2, B1) or (n2, B2), but on (d13D, d23D)
+            }     // else E2 is not on (n2, B1) or (n2, B2), but on (d1_3D_, d2_3D_)
           } else  // n2 is not a pin and E2!=n2
           {
             newUpdateNodeLayers(treenodes, edge_n1n2, n2a, lastL);
@@ -1639,7 +1626,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
           newcnt_n1n2 = tailRoom - headRoom + 1;
 
           // update route for edge (n1, n2) and edge usage
-          if (treeedges[edge_n1n2].route.type == MAZEROUTE) {
+          if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
             free(treeedges[edge_n1n2].route.gridsX);
             free(treeedges[edge_n1n2].route.gridsY);
             free(treeedges[edge_n1n2].route.gridsL);
@@ -1651,9 +1638,9 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               = (short*) calloc(newcnt_n1n2, sizeof(short));
           treeedges[edge_n1n2].route.gridsL
               = (short*) calloc(newcnt_n1n2, sizeof(short));
-          treeedges[edge_n1n2].route.type = MAZEROUTE;
+          treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
           treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
-          treeedges[edge_n1n2].len = ADIFF(E1x, E2x) + ADIFF(E1y, E2y);
+          treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y- E2y);
 
           j = headRoom;
           for (i = 0; i < newcnt_n1n2; i++) {
@@ -1669,12 +1656,12 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               if (gridsX[i] == gridsX[i + 1])  // a vertical edge
               {
                 min_y = std::min(gridsY[i], gridsY[i + 1]);
-                v_edges3D[gridsL[i] * gridV + min_y * xGrid + gridsX[i]].usage
+                v_edges_3D_[gridsL[i] * grid_v_ + min_y * x_grid_ + gridsX[i]].usage
                     += edge_cost_per_layer[gridsL[i]];
               } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
               {
                 min_x = std::min(gridsX[i], gridsX[i + 1]);
-                h_edges3D[gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + min_x]
+                h_edges_3D_[gridsL[i] * grid_h_ + gridsY[i] * (x_grid_ - 1) + min_x]
                     .usage
                     += edge_cost_per_layer[gridsL[i]];
               }
@@ -1687,8 +1674,8 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
 
             for (d = 0; d < 2 * deg - 2; d++) {
               treenodes[d].topL = -1;
-              treenodes[d].botL = numLayers;
-              treenodes[d].assigned = FALSE;
+              treenodes[d].botL = num_layers_;
+              treenodes[d].assigned = false;
               treenodes[d].stackAlias = d;
               treenodes[d].conCNT = 0;
               treenodes[d].hID = BIG_INT;
@@ -1698,28 +1685,28 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               if (d < deg) {
                 treenodes[d].botL = treenodes[d].topL = 0;
                 // treenodes[d].l = 0;
-                treenodes[d].assigned = TRUE;
+                treenodes[d].assigned = true;
                 treenodes[d].status = 1;
 
-                xcor[numpoints] = treenodes[d].x;
-                ycor[numpoints] = treenodes[d].y;
-                dcor[numpoints] = d;
+                xcor_[numpoints] = treenodes[d].x;
+                ycor_[numpoints] = treenodes[d].y;
+                dcor_[numpoints] = d;
                 numpoints++;
               } else {
-                redundant = FALSE;
+                redundant = false;
                 for (k = 0; k < numpoints; k++) {
-                  if ((treenodes[d].x == xcor[k])
-                      && (treenodes[d].y == ycor[k])) {
-                    treenodes[d].stackAlias = dcor[k];
+                  if ((treenodes[d].x == xcor_[k])
+                      && (treenodes[d].y == ycor_[k])) {
+                    treenodes[d].stackAlias = dcor_[k];
 
-                    redundant = TRUE;
+                    redundant = true;
                     break;
                   }
                 }
                 if (!redundant) {
-                  xcor[numpoints] = treenodes[d].x;
-                  ycor[numpoints] = treenodes[d].y;
-                  dcor[numpoints] = d;
+                  xcor_[numpoints] = treenodes[d].x;
+                  ycor_[numpoints] = treenodes[d].y;
+                  dcor_[numpoints] = d;
                   numpoints++;
                 }
               }
@@ -1755,7 +1742,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
                   treenodes[n1a].botL = gridsLtmp[0];
                 }
 
-                treenodes[n1a].assigned = TRUE;
+                treenodes[n1a].assigned = true;
 
                 connectionCNT = treenodes[n2a].conCNT;
                 treenodes[n2a].heights[connectionCNT] = gridsLtmp[routeLen];
@@ -1770,7 +1757,7 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
                   treenodes[n2a].botL = gridsLtmp[routeLen];
                 }
 
-                treenodes[n2a].assigned = TRUE;
+                treenodes[n2a].assigned = true;
 
               }  // edge len > 0
 
@@ -1781,76 +1768,12 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
     }
   }
 
-  for (i = 0; i < numLayers; i++) {
-    for (j = 0; j < yGrid; j++) {
-      delete[] directions3D[i][j];
-      delete[] corrEdge3D[i][j];
-      delete[] pr3D[i][j];
-    }
-  }
+  directions_3D_.resize(boost::extents[0][0][0]);
+  corr_edge_3D_.resize(boost::extents[0][0][0]);
+  pr_3D_.resize(boost::extents[0][0][0]);
 
-  for (i = 0; i < numLayers; i++) {
-    delete[] directions3D[i];
-    delete[] corrEdge3D[i];
-    delete[] pr3D[i];
-  }
-
-  delete[] directions3D;
-  delete[] corrEdge3D;
-  delete[] pr3D;
-
-  delete[] pop_heap23D;
-  delete[] heap13D;
-  delete[] heap23D;
-}
-
-void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
-{
-  int i, ntpL, nbtL, nhID, nlID;
-
-  ntpL = -1;
-  nbtL = BIG_INT;
-
-  if (treenodes[n1].conCNT > 1) {
-    nhID = -1;
-    nlID = -1;
-    for (i = 0; i < treenodes[n1].conCNT; i++) {
-      if (treenodes[n1].eID[i] != edgeID) {
-        if (ntpL < treenodes[n1].heights[i]) {
-          ntpL = treenodes[n1].heights[i];
-          nhID = treenodes[n1].eID[i];
-        }
-        if (nbtL > treenodes[n1].heights[i]) {
-          nbtL = treenodes[n1].heights[i];
-          nlID = treenodes[n1].eID[i];
-        }
-      }
-    }
-    if (nlID == -1) {
-      logger->error(GRT, 173, "Invalid lower neighbor for node {}.", n1);
-    }
-    if (nhID == -1) {
-      logger->error(GRT, 174, "Invalid upper neighbor for node {}.", n1);
-    }
-    if (n1 < deg) {
-      nbtL = 0;
-    }
-    treenodes[n1].topL = ntpL;
-    treenodes[n1].botL = nbtL;
-    treenodes[n1].hID = nhID;
-    treenodes[n1].lID = nlID;
-  } else {
-    if (treenodes[n1].botL > 0) {
-      logger->warn(GRT, 185, "Bottom layer actually {}.", treenodes[n1].botL);
-    }
-    treenodes[n1].topL = 0;
-    treenodes[n1].botL = 0;
-    treenodes[n1].hID = BIG_INT;
-    treenodes[n1].lID = BIG_INT;
-    if (n1 >= deg) {
-      logger->error(GRT, 186, "Steiner nodes only have one connection.");
-    }
-  }
+  delete[] heap1_3D_;
+  delete[] heap2_3D_;
 }
 
 }  // namespace grt

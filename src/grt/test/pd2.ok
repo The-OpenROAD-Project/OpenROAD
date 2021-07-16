@@ -12,7 +12,7 @@
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO ODB-0134] Finished DEF file: clock_route.def
-[INFO GRT-0020] Min routing layer: met3
+[INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%
 [INFO GRT-0023] Grid origin: (0, 0)
@@ -32,45 +32,6 @@
 [INFO GRT-0004] Blockages: 6714
 [INFO GRT-0019] Found 6 clock nets.
 [INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 5
-[INFO GRT-0017] Processing 5262 blockages on layer li1.
-[INFO GRT-0017] Processing 706 blockages on layer met1.
-
-[INFO GRT-0053] Routing resources analysis:
-          Routing      Original      Derated      Resource
-Layer     Direction    Resources     Resources    Reduction (%)
----------------------------------------------------------------
-li1        Vertical            0             0          0.00%
-met1       Horizontal          0             0          0.00%
-met2       Vertical            0             0          0.00%
-met3       Horizontal      12996          6142          52.74%
-met4       Vertical         8664          4625          46.62%
-met5       Horizontal       2888          1443          50.03%
----------------------------------------------------------------
-
-Routing clock nets...
-[INFO GRT-0111] Final number of vias: 27
-[INFO GRT-0112] Final usage 3D: 114
-[INFO GRT-0010] Routed clock nets: 2
-[INFO GRT-0020] Min routing layer: met1
-[INFO GRT-0021] Max routing layer: met5
-[INFO GRT-0022] Global adjustment: 50%
-[INFO GRT-0023] Grid origin: (0, 0)
-[WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
-[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
-[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
-[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
-[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
-[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
-[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 6714
-[INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 12
 [INFO GRT-0017] Processing 5262 blockages on layer li1.
 [INFO GRT-0017] Processing 706 blockages on layer met1.
@@ -82,27 +43,26 @@ Layer     Direction    Resources     Resources    Reduction (%)
 li1        Vertical            0             0          0.00%
 met1       Horizontal      27436          5430          80.21%
 met2       Vertical        21660          6475          70.11%
-met3       Horizontal      12996          6121          52.90%
-met4       Vertical         8664          4613          46.76%
+met3       Horizontal      12996          6142          52.74%
+met4       Vertical         8664          4625          46.62%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 117
-[INFO GRT-0112] Final usage 3D: 482
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[INFO GRT-0111] Final number of vias: 147
+[INFO GRT-0112] Final usage 3D: 606
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              5430            70            1.29%             0 /  0 /  0
-met2              6475            61            0.94%             0 /  0 /  0
-met3              6121             0            0.00%             0 /  0 /  0
-met4              4613             0            0.00%             0 /  0 /  0
+met1              5430            69            1.27%             0 /  0 /  0
+met2              6475            63            0.97%             0 /  0 /  0
+met3              6142            21            0.34%             0 /  0 /  0
+met4              4625            12            0.26%             0 /  0 /  0
 met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            24082           131            0.54%             0 /  0 /  0
+Total            24115           165            0.68%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1792 um
+[INFO GRT-0018] Total wirelength: 1807 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

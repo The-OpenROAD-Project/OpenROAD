@@ -73,7 +73,8 @@
 #include "mpl2/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
-#include "tritoncts/MakeTritoncts.h"
+#include "cts/MakeTritoncts.h"
+#include "rmp/MakeRestructure.h"
 #include "tap/MakeTapcell.h"
 #include "rcx/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
@@ -129,6 +130,7 @@ OpenRoad::OpenRoad()
     macro_placer_(nullptr),
     macro_placer2_(nullptr),
     global_router_(nullptr),
+    restructure_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
     extractor_(nullptr),
@@ -151,6 +153,7 @@ OpenRoad::~OpenRoad()
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
   deleteGlobalRouter(global_router_);
+  deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
@@ -212,6 +215,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   opendp_ = makeOpendp();
   finale_ = makeFinale();
   global_router_ = makeGlobalRouter();
+  restructure_ = makeRestructure();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
@@ -247,6 +251,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initMacroPlacer(this);
   initMacroPlacer2(this);
   initOpenRCX(this);
+  initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
@@ -257,6 +262,14 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // Initialize tcl history
+  if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
+    // There appears to be a typo in the history.tcl file in some
+    // distributions, which is generating this error.
+    // remove error from tcl result.
+    Tcl_ResetResult(tcl_interp);
+  }
 }
 
 ////////////////////////////////////////////////////////////////

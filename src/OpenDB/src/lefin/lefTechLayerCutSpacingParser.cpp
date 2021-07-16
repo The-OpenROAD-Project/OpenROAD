@@ -491,7 +491,8 @@ bool parse(
                       | SAMEMETALSHAREDEDGE | AREA))
       >> lit(";")));
 
-  bool valid = qi::phrase_parse(first, last, LEF58_SPACING, space);
+  bool valid
+      = qi::phrase_parse(first, last, LEF58_SPACING, space) && first == last;
 
   if (!valid && parser->curRule != nullptr) {
     if (!incomplete_props.empty()
@@ -499,7 +500,7 @@ bool parse(
       incomplete_props.pop_back();
     odb::dbTechLayerCutSpacingRule::destroy(parser->curRule);
   }
-  return valid && first == last;
+  return valid;
 }
 }  // namespace lefTechLayerCutSpacing
 

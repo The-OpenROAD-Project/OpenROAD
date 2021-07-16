@@ -27,13 +27,13 @@ Path Type: min
    0.08    0.08   clock network delay (propagated)
    0.00    0.08   clock reconvergence pessimism
            0.08 ^ r2/CK (DFF_X1)
-   0.01    0.08   library hold time
-           0.08   data required time
+   0.01    0.09   library hold time
+           0.09   data required time
 ---------------------------------------------------------
-           0.08   data required time
+           0.09   data required time
           -0.00   data arrival time
 ---------------------------------------------------------
-          -0.08   slack (VIOLATED)
+          -0.09   slack (VIOLATED)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -52,16 +52,16 @@ Path Type: min
            0.13   data arrival time
 
    0.00    0.00   clock clk (rise edge)
-   0.15    0.15   clock network delay (propagated)
-   0.00    0.15   clock reconvergence pessimism
-           0.15 ^ r3/CK (DFF_X1)
+   0.16    0.16   clock network delay (propagated)
+   0.00    0.16   clock reconvergence pessimism
+           0.16 ^ r3/CK (DFF_X1)
    0.00    0.16   library hold time
            0.16   data required time
 ---------------------------------------------------------
            0.16   data required time
           -0.13   data arrival time
 ---------------------------------------------------------
-          -0.03   slack (VIOLATED)
+          -0.04   slack (VIOLATED)
 
 
 Startpoint: r3 (rising edge-triggered flip-flop clocked by clk)
@@ -72,11 +72,11 @@ Path Type: min
   Delay    Time   Description
 ---------------------------------------------------------
    0.00    0.00   clock clk (rise edge)
-   0.15    0.15   clock network delay (propagated)
-   0.00    0.15 ^ r3/CK (DFF_X1)
-   0.08    0.23 v r3/Q (DFF_X1)
-   0.00    0.23 v out (out)
-           0.23   data arrival time
+   0.16    0.16   clock network delay (propagated)
+   0.00    0.16 ^ r3/CK (DFF_X1)
+   0.09    0.25 v r3/Q (DFF_X1)
+   0.00    0.25 v out (out)
+           0.25   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (propagated)
@@ -85,39 +85,38 @@ Path Type: min
            0.30   data required time
 ---------------------------------------------------------
            0.30   data required time
-          -0.23   data arrival time
+          -0.25   data arrival time
 ---------------------------------------------------------
-          -0.07   slack (VIOLATED)
+          -0.05   slack (VIOLATED)
 
 
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 12 hold buffers.
+[INFO RSZ-0032] Inserted 11 hold buffers.
 worst slack 0.01
 worst slack 1.91
 Net in2
  Pin capacitance: 1.25-1.42
- Wire capacitance: 0.31-0.31
- Total capacitance: 1.56-1.73
+ Wire capacitance: 3.69
+ Total capacitance: 4.94-5.11
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- in2 input port
+ in2 input port (20, 0)
 
 Load pins
- hold1/A input (CLKBUF_X3) 1.25-1.42 (0, 1)
+ hold1/A input (CLKBUF_X3) 1.25-1.42 (40, 41)
 Net out
  Pin capacitance: 0.00
- Wire capacitance: 0.31
- Total capacitance: 0.31
+ Wire capacitance: 4.92
+ Total capacitance: 4.92
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- hold6/Z output (BUF_X1) (5, 2)
+ hold5/Z output (BUF_X1) (41, 41)
 
 Load pins
- out output port
+ out output port (0, 0)

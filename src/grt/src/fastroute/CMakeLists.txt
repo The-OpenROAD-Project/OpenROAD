@@ -35,12 +35,9 @@
 ################################################################################
 
 add_library(FastRoute4.1
-  src/DataProc.cpp
-  src/EdgeShift.cpp
   src/FastRoute.cpp
   src/RSMT.cpp
   src/RipUp.cpp
-  src/dist.cpp
   src/maze.cpp
   src/maze3D.cpp
   src/route.cpp

@@ -671,27 +671,6 @@ bool dbITerm::getAvgXY(int* x, int* y)
   *y = int(yy);
   return true;
 }
-void dbITerm::print(FILE* fp, const char* trail)
-{
-  if (fp == NULL) {
-    getImpl()->getLogger()->info(utl::ODB,
-                                 35,
-                                 "{} {} {} {}{}",
-                                 getId(),
-                                 getMTerm()->getConstName(),
-                                 getMTerm()->getMaster()->getConstName(),
-                                 getInst()->getConstName(),
-                                 trail);
-  } else {
-    fprintf(fp,
-            "%d %s %s %s%s",
-            getId(),
-            getMTerm()->getConstName(),
-            getMTerm()->getMaster()->getConstName(),
-            getInst()->getConstName(),
-            trail);
-  }
-}
 
 uint32_t dbITerm::staVertexId()
 {

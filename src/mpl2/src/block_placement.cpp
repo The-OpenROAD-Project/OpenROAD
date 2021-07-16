@@ -641,8 +641,7 @@ void SimulatedAnnealingCore::CalculateMacroBlockagePenalty()
   if (regions_.size() == 0)
     return;
 
-  vector<Region*>::iterator vec_iter = regions_.begin();
-  for (vec_iter; vec_iter != regions_.end(); vec_iter++) {
+  for (Region* region : regions_) {
     for (int i = 0; i < blocks_.size(); i++) {
       if (blocks_[i].GetNumMacro() > 0) {
         float lx = blocks_[i].GetX();
@@ -650,10 +649,10 @@ void SimulatedAnnealingCore::CalculateMacroBlockagePenalty()
         float ux = lx + blocks_[i].GetWidth();
         float uy = ly + blocks_[i].GetHeight();
 
-        float region_lx = (*vec_iter)->lx_;
-        float region_ly = (*vec_iter)->ly_;
-        float region_ux = (*vec_iter)->ux_;
-        float region_uy = (*vec_iter)->uy_;
+        float region_lx = region->lx_;
+        float region_ly = region->ly_;
+        float region_ux = region->ux_;
+        float region_uy = region->uy_;
 
         if (ux <= region_lx || lx >= region_ux || uy <= region_ly
             || ly >= region_uy)
@@ -737,11 +736,10 @@ void SimulatedAnnealingCore::CalculateBoundaryPenalty()
 void SimulatedAnnealingCore::CalculateWirelength()
 {
   wirelength_ = 0.0;
-  std::vector<Net*>::iterator net_iter = nets_.begin();
-  for (net_iter; net_iter != nets_.end(); net_iter++) {
-    vector<string> blocks = (*net_iter)->blocks_;
-    vector<string> terminals = (*net_iter)->terminals_;
-    int weight = (*net_iter)->weight_;
+  for (Net* net : nets_) {
+    vector<string> blocks = net->blocks_;
+    vector<string> terminals = net->terminals_;
+    int weight = net->weight_;
     float lx = FLT_MAX;
     float ly = FLT_MAX;
     float ux = 0.0;
