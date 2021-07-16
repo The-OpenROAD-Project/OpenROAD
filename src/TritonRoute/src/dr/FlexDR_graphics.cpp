@@ -225,6 +225,7 @@ const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
 const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
+const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
 
 static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
 {
@@ -269,13 +270,14 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   gui_->addCustomVisibilityControl(fixed_shape_cost_visible_);
   gui_->addCustomVisibilityControl(route_guides_visible_, true);
   gui_->addCustomVisibilityControl(routing_objs_visible_, true);
+  gui_->addCustomVisibilityControl(maze_search_visible_, true);
 
   gui_->registerRenderer(this);
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  if (points_by_layer_.empty())
+  if (layer_map_.empty())
         return;
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
@@ -291,7 +293,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     if (drawWholeDesign_) {
       design_->getTopBlock()->getDieBox(box);
       fr::frRegionQuery::Objects<frBlockObject> figs;
-      design_->getRegionQuery()->query(box, layerNum, figs);
+      design_->getRegionQuery()->queryDRObj(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
@@ -317,11 +319,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
   painter.setPen(layer, /* cosmetic */ true);
-  for (frPoint& pt : points_by_layer_[layerNum]) {
-    painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
-    painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+  if (gui_->checkCustomVisibilityControl(maze_search_visible_) &&
+        !points_by_layer_.empty()) {
+    for (frPoint& pt : points_by_layer_[layerNum]) {
+      painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
+      painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+    }
   }
-
   // Draw graphs
   const bool draw_drc
       = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
@@ -446,12 +450,33 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
 {
   frBox box;
   switch (fig->typeId()) {
+    case frcPathSeg: {
+        auto seg = (frPathSeg*) fig;
+        if (seg->getLayerNum() == layerNum) {
+          seg->getBBox(box);
+          painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        }
+        break;
+    }
     case drcPathSeg: {
       auto seg = (drPathSeg*) fig;
       if (seg->getLayerNum() == layerNum) {
         seg->getBBox(box);
         painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       }
+      break;
+    }
+    case frcVia: {
+      auto via = (frVia*) fig;
+      auto viadef = via->getViaDef();
+      if (viadef->getLayer1Num() == layerNum) {
+        via->getLayer1BBox(box);
+      } else if (viadef->getLayer2Num() == layerNum) {
+        via->getLayer2BBox(box);
+      } else {
+        return;
+      }
+      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       break;
     }
     case drcVia: {
@@ -467,6 +492,14 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       break;
     }
+    case frcPatchWire: {
+      auto patch = (frPatchWire*) fig;
+      if (patch->getLayerNum() == layerNum) {
+        patch->getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
+      break;
+    }
     case drcPatchWire: {
       auto patch = (drPatchWire*) fig;
       if (patch->getLayerNum() == layerNum) {
@@ -476,8 +509,8 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
       break;
     }
 
-    default:
-      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+    default: {}
+//      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
   }
 }
 
@@ -507,8 +540,9 @@ void FlexDRGraphics::show() {
 
 void FlexDRGraphics::update()
 {
-  if (settings_->draw)
+  if (settings_->draw) {
     gui_->redraw();
+  }
 }
 
 void FlexDRGraphics::pause(drNet* net)
@@ -528,6 +562,7 @@ void FlexDRGraphics::debugWholeDesign()
   drawWholeDesign_ = true;
   update();
   gui_->pause();
+  drawWholeDesign_ = false;
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {

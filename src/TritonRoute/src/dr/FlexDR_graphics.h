@@ -116,6 +116,7 @@ class FlexDRGraphics : public gui::Renderer
   static const char* route_shape_cost_visible_;
   static const char* marker_cost_visible_;
   static const char* fixed_shape_cost_visible_;
+  static const char* maze_search_visible_;
 
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };
