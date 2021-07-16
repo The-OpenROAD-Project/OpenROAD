@@ -767,7 +767,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     // TODO: move this flute implementation to SteinerTreeBuilder
     float net_alpha = stt_builder_->getNetAlpha(net->db_net);
     if (net_alpha > 0.0) {
-      stt::Tree tree = stt_builder_->findSteinerTree(net->db_net, net->pinX, net->pinY, flute_accuracy, net->driver_idx);
+      stt::Tree tree = stt_builder_->buildSteinerTree(net->db_net, net->pinX, net->pinY, flute_accuracy, net->driver_idx);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {

@@ -60,11 +60,11 @@ class SteinerTreeBuilder
 
   void init(odb::dbDatabase* db, Logger* logger);
 
-  Tree findSteinerTree(std::vector<int> x,
+  Tree buildSteinerTree(std::vector<int> x,
                        std::vector<int> y,
                        int flute_accuracy,
                        int drvr_index);
-  Tree findSteinerTree(odb::dbNet* net,
+  Tree buildSteinerTree(odb::dbNet* net,
                        std::vector<int> x,
                        std::vector<int> y,
                        int flute_accuracy,

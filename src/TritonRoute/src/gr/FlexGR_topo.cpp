@@ -55,7 +55,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   int accuracy = 3;
   // temporary to keep using flute here
   stt_builder_->setAlpha(0);
-  auto fluteTree = stt_builder_->findSteinerTree(xs, ys, accuracy, 0);
+  auto fluteTree = stt_builder_->buildSteinerTree(xs, ys, accuracy, 0);
 
   map<frPoint, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
   map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp>
