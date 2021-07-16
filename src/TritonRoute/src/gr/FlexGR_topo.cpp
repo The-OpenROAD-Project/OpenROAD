@@ -127,8 +127,6 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     adjacencyList[epNode].insert(bpNode);
   }
 
-  stt_builder_->freeTree(fluteTree);
-
   // reset nodes
   for (auto& [loc, node] : pinGCell2Nodes) {
     node->reset();

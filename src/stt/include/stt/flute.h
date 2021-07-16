@@ -29,6 +29,8 @@
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <vector>
+
 #pragma once
 
 namespace stt {
@@ -42,7 +44,7 @@ typedef struct {
 typedef struct {
   int deg;         // degree
   DTYPE length;    // total wirelength
-  Branch *branch;  // array of tree branches
+  std::vector<Branch> branch;  // array of tree branches
 
   void printTree();
   int branchCount() const { return deg * 2 - 2; }
@@ -74,7 +76,6 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc);
 DTYPE wirelength(Tree t);
 void plottree(Tree t);
 void write_svg(Tree t, const char *filename);
-void free_tree(Tree t);
 
 // Other useful functions
 DTYPE flutes_wl_LD(int d, DTYPE xs[], DTYPE ys[], int s[]);

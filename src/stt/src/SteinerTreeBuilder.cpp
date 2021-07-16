@@ -102,11 +102,6 @@ Tree SteinerTreeBuilder::buildSteinerTree(odb::dbNet* net,
   return tree;
 }
 
-void SteinerTreeBuilder::freeTree(Tree tree)
-{
-  flt::free_tree(tree);
-}
-
 float SteinerTreeBuilder::getNetAlpha(odb::dbNet* net) const
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?

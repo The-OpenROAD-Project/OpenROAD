@@ -228,7 +228,7 @@ Tree PdRev::translateTree()
   int branch_count = tree.branchCount();
   if (graph_->nodes.size() != branch_count)
     logger_->error(PDR, 666, "steiner branch count inconsistent");
-  tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
+  tree.branch.resize(branch_count);
   tree.length = graph_->calc_tree_wl_pd();
   for (int i = 0; i < graph_->nodes.size(); ++i) {
     Node& child = graph_->nodes[i];
@@ -351,7 +351,7 @@ highlightSteinerTree(Tree &tree,
     }
     std::vector<std::pair<odb::Point, odb::Point>> lines;
     for (int i = 0; i < tree.branchCount(); i++) {
-      stt::Branch &branch = tree.branch[i];
+      stt::Branch branch = tree.branch[i];
       int x1 = branch.x;
       int y1 = branch.y;
       stt::Branch &neighbor = tree.branch[branch.n];

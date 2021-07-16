@@ -171,14 +171,8 @@ SteinerTree::setTree(stt::Tree tree,
 }
 
 SteinerTree::SteinerTree(const Pin *drvr_pin) :
-  drvr_pin_(drvr_pin),
-  tree_({0, 0, nullptr})
+  drvr_pin_(drvr_pin)
 {
-}
-
-SteinerTree::~SteinerTree()
-{
-  stt::flt::free_tree(tree_);
 }
 
 int
@@ -280,7 +274,7 @@ SteinerTree::drvrPt(const Network *network) const
 Point
 SteinerTree::location(SteinerPt pt) const
 {
-  stt::Branch &branch_pt = tree_.branch[pt];
+  stt::Branch branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
 }
 
