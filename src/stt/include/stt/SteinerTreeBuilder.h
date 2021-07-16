@@ -70,9 +70,9 @@ class SteinerTreeBuilder
                        int flute_accuracy,
                        int drvr_index);
   void freeTree(Tree tree);
-  const float getAlpha() { return alpha_; }
+  float getAlpha() const { return alpha_; }
   void setAlpha(float alpha) { alpha_ = alpha; }
-  const float getNetAlpha(odb::dbNet* net);
+  float getNetAlpha(odb::dbNet* net) const;
   void addAlphaForNet(odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
 
  private:

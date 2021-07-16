@@ -121,7 +121,7 @@ makeSteinerTree(const Pin *drvr_pin,
       stt::Tree ftree = stt_builder->findSteinerTree(network->staToDb(net), x1, y1, flute_accuracy, drvr_idx);
       
       if (debug->check("steiner", 3))
-        flt::printtree(ftree);
+        ftree.printTree();
       tree->setTree(ftree, network);
       if (find_left_rights)
         tree->findLeftRights(network, logger);
@@ -159,7 +159,7 @@ SteinerTree::setTree(stt::Tree tree,
   Point drvr_loc = network->location(drvr_pin_);
   int drvr_x = drvr_loc.getX();
   int drvr_y = drvr_loc.getY();
-  int branch_count = flt::branch_count(tree_);
+  int branch_count = tree_.branchCount();
   for (int i = 0; i < branch_count; i++) {
     stt::Branch &pt1 = tree_.branch[i];
     if (pt1.x == drvr_x
@@ -184,7 +184,7 @@ SteinerTree::~SteinerTree()
 int
 SteinerTree::branchCount() const
 {
-  return flt::branch_count(tree_);
+  return tree_.branchCount();
 }
 
 void

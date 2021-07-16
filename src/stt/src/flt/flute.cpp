@@ -1917,18 +1917,6 @@ DTYPE wirelength(Tree t) {
   return l;
 }
 
-void printtree(Tree t) {
-  int i;
-
-  for (i = 0; i < t.deg; i++)
-    printf(" %-2d:  x=%4g  y=%4g  e=%d\n",
-           i, (float)t.branch[i].x, (float)t.branch[i].y, t.branch[i].n);
-  for (i = t.deg; i < 2 * t.deg - 2; i++)
-    printf("s%-2d:  x=%4g  y=%4g  e=%d\n",
-           i, (float)t.branch[i].x, (float)t.branch[i].y, t.branch[i].n);
-  printf("\n");
-}
-
 // Output in a format that can be plotted by gnuplot
 void plottree(Tree t) {
   int i;
@@ -1987,3 +1975,16 @@ void free_tree(Tree t) {
 }
 
 }  // namespace
+
+namespace stt {
+void Tree::printTree()
+{
+  for (int i = 0; i < deg; i++)
+    printf(" %-2d:  x=%4g  y=%4g  e=%d\n",
+           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+  for (int i = deg; i < 2 * deg - 2; i++)
+    printf("s%-2d:  x=%4g  y=%4g  e=%d\n",
+           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+  printf("\n");
+}
+} // namespace stt

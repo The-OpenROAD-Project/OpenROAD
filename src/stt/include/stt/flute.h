@@ -43,6 +43,9 @@ typedef struct {
   int deg;         // degree
   DTYPE length;    // total wirelength
   Branch *branch;  // array of tree branches
+
+  void printTree();
+  int branchCount() const { return deg * 2 - 2; }
 } Tree;
 }
 
@@ -70,8 +73,6 @@ void deleteLUT();
 DTYPE flute_wl(int d, DTYPE x[], DTYPE y[], int acc);
 Tree flute(int d, DTYPE x[], DTYPE y[], int acc);
 DTYPE wirelength(Tree t);
-void printtree(Tree t);
-inline int branch_count(const Tree &t) { return t.deg * 2 - 2; }
 void plottree(Tree t);
 void write_svg(Tree t, const char *filename);
 void free_tree(Tree t);
