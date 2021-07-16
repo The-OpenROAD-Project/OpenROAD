@@ -769,6 +769,7 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     if (net_alpha > 0.0) {
       stt::Tree tree = stt_builder_->buildSteinerTree(net->db_net, net->pinX, net->pinY, flute_accuracy, net->driver_idx);
       rsmt = fluteToTree(tree);
+      flt::free_tree(tree);
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
