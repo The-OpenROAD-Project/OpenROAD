@@ -104,13 +104,8 @@ if (LOAD_PARTITIONERS)
           add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Metis Metis)
           set(METIS metis)
   endif()
-<<<<<<< HEAD:src/PartitionMgr/CMakeLists.txt
-
-  target_link_libraries(PartitionMgr
-=======
   
   target_link_libraries(par
->>>>>>> origin/master:src/par/CMakeLists.txt
     PUBLIC
       ${MLPART}
       ${CHACO}
