@@ -115,10 +115,9 @@ makeSteinerTree(const Pin *drvr_pin,
       tree->locAddPin(loc, pin);
     }
     if (is_placed) {
-      int flute_accuracy = 3;
       std::vector<int> x1(x, x + pin_count);
       std::vector<int> y1(y, y + pin_count);
-      stt::Tree ftree = stt_builder->buildSteinerTree(network->staToDb(net), x1, y1, flute_accuracy, drvr_idx);
+      stt::Tree ftree = stt_builder->buildSteinerTree(network->staToDb(net), x1, y1, drvr_idx);
       
       if (debug->check("steiner", 3))
         ftree.printTree(logger);

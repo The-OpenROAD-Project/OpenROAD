@@ -62,12 +62,10 @@ class SteinerTreeBuilder
 
   Tree buildSteinerTree(const std::vector<int>& x,
                         const std::vector<int>& y,
-                        int flute_accuracy,
                         int drvr_index);
   Tree buildSteinerTree(odb::dbNet* net,
                         const std::vector<int>& x,
                         const std::vector<int>& y,
-                        int flute_accuracy,
                         int drvr_index);
   Tree buildSteinerTree(int d,
                         DTYPE xs[],
@@ -80,6 +78,7 @@ class SteinerTreeBuilder
   void addAlphaForNet(odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
 
  private:
+  const int flute_accuracy = 3;
   float alpha_;
   std::map<odb::dbNet*, float> net_alpha_map_;
 
