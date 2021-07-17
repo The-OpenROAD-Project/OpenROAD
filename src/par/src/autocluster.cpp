@@ -26,22 +26,29 @@
 #ifdef PARTITIONERS
 #include "MLPart.h"
 #endif
+#include <sys/stat.h>
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <iostream>
+#include <limits>
 #include <queue>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
 #include "utl/Logger.h"
 
-namespace par {
 using utl::PAR;
 
+namespace par {
+using std::ceil;
+using std::cout;
 using std::endl;
 using std::find;
+using std::floor;
 using std::map;
 using std::max;
 using std::min;
@@ -50,14 +57,20 @@ using std::pair;
 using std::queue;
 using std::string;
 using std::to_string;
+using std::tuple;
 using std::unordered_map;
 using std::vector;
 
-using odb::dbInst;
+using odb::dbBlock;
 using odb::dbBox;
+using odb::dbDatabase;
+using odb::dbInst;
 using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
+using odb::dbSet;
+using odb::dbSigType;
+using odb::dbStringProperty;
 using odb::Rect;
 using odb::dbITerm;
 using odb::dbBTerm;
@@ -65,14 +78,20 @@ using odb::dbBTerm;
 using sta::Cell;
 using sta::Instance;
 using sta::InstanceChildIterator;
+using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyCell;
+using sta::LibertyCellPortIterator;
+using sta::LibertyPort;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
+using sta::NetPinIterator;
 using sta::NetTermIterator;
 using sta::Pin;
+using sta::PinSeq;
 using sta::PortDirection;
+using sta::Term;
 
 // ******************************************************************************
 // Class Cluster
@@ -440,10 +459,9 @@ void AutoClusterMgr::createClusterUtil(Instance* inst, int& cluster_id)
 
 void AutoClusterMgr::updateConnection()
 {
-  unordered_map<int, Cluster*>::iterator map_it;
-  for (auto [id, cluster] : cluster_map_) {
-    cluster->initConnection();
-  }
+  for (auto [id, cluster] : cluster_map_)
+      cluster->initConnection();
+  
   calculateConnection(network_->topInstance());
   calculateBufferNetConnection();
 }
@@ -835,8 +853,8 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
 
   vector<Instance*> inst_vec = cluster->getInsts();
   for (int i = 0; i < inst_vec.size(); i++) {
-    idx_to_inst[inst_id++] = inst_vec[i];
-    inst_to_idx[inst_vec[i]] = inst_id;
+    idx_to_inst[inst_id] = inst_vec[i];
+    inst_to_idx[inst_vec[i]] = inst_id++;
     vertex_weight.push_back(1.0);
   }
 
@@ -850,6 +868,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
                 node_map,
                 idx_to_inst,
                 inst_to_idx);
+
   MLPartBufferNetUtil(src_id,
                       count,
                       col_idx,

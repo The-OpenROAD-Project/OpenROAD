@@ -79,30 +79,30 @@ if (LOAD_PARTITIONERS)
   find_library(MLPART NAMES MLPart
           PATHS ${PATH_PARTITIONERS}/Partitioners
           PATH_SUFFIXES build/MLPart)
- 
+
   if (NOT MLPART)
           add_subdirectory(${PATH_PARTITIONERS}/Partitioners/MLPart MLPart)
           set(MLPART MLPart)
   endif()
- 
+
   find_library(CHACO NAMES Chaco
           PATHS ${PATH_PARTITIONERS}/Partitioners
           PATH_SUFFIXES build/Chaco/code)
-  
+
   if (NOT CHACO)
           add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Chaco/code Chaco/code)
           set(CHACO Chaco)
   endif()
- 
+
   find_library(METIS NAMES metis
           PATHS ${PATH_PARTITIONERS}/Partitioners
           PATH_SUFFIXES build/Metis build/Metis/libmetis)
-  
+
   if (NOT METIS)
           add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Metis Metis)
           set(METIS metis)
   endif()
-  
+
   target_link_libraries(par
     PUBLIC
       ${MLPART}
