@@ -75,7 +75,7 @@ Tree SteinerTreeBuilder::buildSteinerTree(const std::vector<int>& x,
   return tree;
 }
 
-Tree SteinerTreeBuilder::buildSteinerTree(odb::dbNet* net,
+Tree SteinerTreeBuilder::buildSteinerTree(const odb::dbNet* net,
                                           const std::vector<int>& x,
                                           const std::vector<int>& y,
                                           int drvr_index)
@@ -112,7 +112,7 @@ Tree SteinerTreeBuilder::buildSteinerTree(int d,
   return tree;
 }
 
-float SteinerTreeBuilder::getNetAlpha(odb::dbNet* net) const
+float SteinerTreeBuilder::getNetAlpha(const odb::dbNet* net) const
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_.at(net) : alpha_;
