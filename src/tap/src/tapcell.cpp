@@ -103,7 +103,7 @@ utl::Logger *logger_;
 //   filled_sites.clear();
 // }
 
-void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbBlockage*> blockages,int halo_x, int halo_y)
+void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   int rows_count = (block->getRows()).size();
@@ -121,7 +121,7 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbBlockage
   std::vector<odb::dbRow*> blocked_rows;   
   std::map<std::string, std::vector<odb::dbBox*>> row_blockages;
   std::vector<odb::dbBox*> row_blockages_bbox;
-  for (odb::dbBlockage* blockage : blockages) {
+  for (odb::dbInst* blockage : blockages) {
     for(auto row : block->getRows()) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
         std::string  row_name = row->getName();
@@ -955,7 +955,7 @@ std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> Tapcell::get_mac
 }
 
 // // proc to detect if blockage overlaps with row
-bool Tapcell::overlaps(odb::dbBlockage* blockage, odb::dbRow* row, int halo_x, int halo_y) {
+bool Tapcell::overlaps(odb::dbInst* blockage, odb::dbRow* row, int halo_x, int halo_y) {
   odb::dbBox* blockageBB = blockage->getBBox();
   odb::Rect rowBB;
   row->getBBox(rowBB);
@@ -1093,7 +1093,7 @@ int Tapcell::remove_cells(std::string prefix) {
   }
 
   for(odb::dbInst* inst : block->getInsts()) {
-    if (prefix==inst->getName()) {
+    if (prefix.std::string::compare(inst->getName())) {
       odb::dbInst::destroy(inst);
       removed++;
     }

@@ -66,7 +66,7 @@ void deleteTapcell(tap::Tapcell* tapcell)
 
 void initTapcell(OpenRoad* openroad)
 {
-  Tcl_Interp* tcl_interp;
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Tap_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);

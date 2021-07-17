@@ -181,6 +181,13 @@ getGlobalRouter()
   return openroad->getGlobalRouter();
 }
 
+tap::Tapcell* 
+getTapcell()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTapcell();
+}
+
 ppl::IOPlacer*
 getIOPlacer()
 {

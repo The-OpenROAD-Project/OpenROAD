@@ -51,6 +51,7 @@ tap::Tapcell* getTapcell();
 using ord::getTapcell;
 using std::vector;
 using std::set;
+using std::string;
 
 // template <class TYPE>
 // vector<TYPE> *
@@ -116,7 +117,7 @@ using std::set;
 
 namespace tap {
 
-void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbBlockage*> blockages,int halo_x, int halo_y)
+void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
   getTapcell()->cut_rows(endcap_master, blockages, halo_x, halo_y);
 }
@@ -131,7 +132,7 @@ int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* en
   return getTapcell()->insert_endcaps(rows, endcap_master, cnrcap_masters, prefix);
 }
 
-int insert_at_top_bottom (std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix)
+int insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix)
 {
   return getTapcell()->insert_at_top_bottom(rows, masters, endcap_master, prefix);
 }
@@ -141,15 +142,15 @@ int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, std::vector
   return getTapcell()->insert_around_macros(rows, masters, corner_master, prefix);
 }
 
-// std::vector<odb::dbInst*> find_blockages();
-// {
-//   return getTapcell()->find_blockages();
-// }
+int remove_cells(std::string prefix)
+{
+  return getTapcell()->remove_cells(prefix);
+}
 
-// int remove_cells(std::string prefix);
-// {
-//   return remove_cells(prefix);
-// }
+std::vector<odb::dbInst*> find_blockages()
+{
+  return getTapcell()->find_blockages();
+}
 
 } // namespace
 
