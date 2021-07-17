@@ -328,7 +328,6 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  FrNet* net = nets_[netID];
   treeedges = sttrees_[netID].edges;
   treenodes = sttrees_[netID].nodes;
   treeedge = &(treeedges[edgeID]);
@@ -357,26 +356,14 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       for (l = 0; l < num_layers_; l++) {
-        // check if the current layer is vertical to match the edge orientation
-        bool is_vertical = ((l % 2) - layer_orientation_) != 0;
         grid = l * grid_v_ + min_y * x_grid_ + gridsX[k];
-        if (l >= net->minLayer && l <= net->maxLayer && is_vertical) {
-          layer_grid_[l][k] = v_edges_3D_[grid].cap - v_edges_3D_[grid].usage;
-        } else {
-          layer_grid_[l][k] = std::numeric_limits<int>::min();
-        }
+        layer_grid_[l][k] = v_edges_3D_[grid].cap - v_edges_3D_[grid].usage;
       }
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
       for (l = 0; l < num_layers_; l++) {
-        // check if the current layer is horizontal to match the edge orientation
-        bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
         grid = l * grid_h_ + gridsY[k] * (x_grid_ - 1) + min_x;
-        if (l >= net->minLayer && l <= net->maxLayer && is_horizontal) {
-          layer_grid_[l][k] = h_edges_3D_[grid].cap - h_edges_3D_[grid].usage;
-        } else {
-          layer_grid_[l][k] = std::numeric_limits<int>::min();
-        }
+        layer_grid_[l][k] = h_edges_3D_[grid].cap - h_edges_3D_[grid].usage;
       }
     }
   }
@@ -414,11 +401,6 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid_[l][k] > 0) {
           gridD[l][k + 1] = gridD[l][k] + 1;
-        } else if (layer_grid_[l][k] == std::numeric_limits<int>::min()) {
-          // when the layer orientation doesn't match the edge orientation,
-          // set a larger weight to avoid assigning to this layer when the routing
-          // has 3D overflow
-          gridD[l][k + 1] = gridD[l][k] + 2*BIG_INT;
         } else {
           gridD[l][k + 1] = gridD[l][k] + BIG_INT;
         }
@@ -536,11 +518,6 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid_[l][k - 1] > 0) {
           gridD[l][k - 1] = gridD[l][k] + 1;
-        } else if (layer_grid_[l][k] == std::numeric_limits<int>::min()) {
-          // when the layer orientation doesn't match the edge orientation,
-          // set a larger weight to avoid assigning to this layer when the routing
-          // has 3D overflow
-          gridD[l][k - 1] = gridD[l][k] + 2*BIG_INT;
         } else {
           gridD[l][k - 1] = gridD[l][k] + BIG_INT;
         }

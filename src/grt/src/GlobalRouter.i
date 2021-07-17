@@ -152,9 +152,21 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-run()
+global_route()
 {
   getGlobalRouter()->globalRoute();
+}
+
+void
+global_route_clocks_separately()
+{
+  getGlobalRouter()->globalRouteClocksSeparately();
+}
+
+void
+run()
+{
+  getGlobalRouter()->run();
 }
 
 void

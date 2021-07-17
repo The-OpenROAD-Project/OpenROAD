@@ -925,7 +925,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
 
   for (orderIndex = 0; orderIndex < endIND; orderIndex++) {
     netID = tree_order_pv_[orderIndex].treeIndex;
-    FrNet* net = nets_[netID];
 
     std::vector<int> edge_cost_per_layer = nets_[netID]->edge_cost_per_layer;
 
@@ -1040,8 +1039,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
               if (curX > regionX1 && directions_3D_[curL][curY][curX] != EAST) {
                 grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX - 1;
                 tmp = d1_3D_[curL][curY][curX] + 1;
-                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap &&
-                    net->minLayer <= curL && curL <= net->maxLayer) {
+                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap) {
                   tmpX = curX - 1;  // the left neighbor
 
                   if (d1_3D_[curL][curY][tmpX]
@@ -1080,8 +1078,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpX = curX + 1;  // the right neighbor
 
-                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap &&
-                    net->minLayer <= curL && curL <= net->maxLayer) {
+                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap) {
                   if (d1_3D_[curL][curY][tmpX]
                       >= BIG_INT)  // right neighbor not been put into heap1_3D_
                   {
@@ -1117,8 +1114,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 grid = grid_vs_[curL] + (curY - 1) * x_grid_ + curX;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY - 1;  // the bottom neighbor
-                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap &&
-                    net->minLayer <= curL && curL <= net->maxLayer) {
+                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
                   {
@@ -1153,8 +1149,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
                 grid = grid_vs_[curL] + curY * x_grid_ + curX;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY + 1;  // the top neighbor
-                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap &&
-                    net->minLayer <= curL && curL <= net->maxLayer) {
+                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // top neighbor not been put into heap1_3D_
                   {
