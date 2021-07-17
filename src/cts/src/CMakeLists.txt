@@ -50,7 +50,6 @@ target_sources(cts
     MakeTritoncts.cpp
     PostCtsOpt.cpp
     SinkClustering.cpp
-    StaEngine.cpp
     TechChar.cpp
     TritonCTS.cpp
     clustering.cpp

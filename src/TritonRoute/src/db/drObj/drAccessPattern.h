@@ -56,6 +56,7 @@ class drAccessPattern : public drBlockObject
   }
   // getters
   void getPoint(frPoint& bpIn) const { bpIn.set(beginPoint_); }
+  const frPoint& getPoint() const { return beginPoint_; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum_; }
   frCoord getBeginArea() const { return beginArea_; }
   drPin* getPin() const { return pin_; }

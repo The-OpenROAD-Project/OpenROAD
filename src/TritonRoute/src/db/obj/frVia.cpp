@@ -38,4 +38,6 @@ frVia::frVia(const drVia& in) : owner_(nullptr)
   in.getOrigin(origin_);
   viaDef_ = in.getViaDef();
   setTapered(in.isTapered());
+  setBottomConnected(in.isBottomConnected());
+  setTopConnected(in.isTopConnected());
 }
