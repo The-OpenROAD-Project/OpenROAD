@@ -1665,7 +1665,8 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
   cout << flush;
 
   if (instCnt != -1) {
-    cout << "Error: valid access pattern combination not found\n";
+    logger_->error(
+        DRT, 276, "Valid access pattern combination not found.");
   }
 }
 
@@ -2446,7 +2447,8 @@ void FlexPA::genPatterns_print_debug(
   }
   cout << endl;
   if (pinCnt != -1) {
-    cout << "Error: valid access pattern not found\n";
+    logger_->error(
+        DRT, 277, "Valid access pattern not found.");
   }
 }
 
@@ -2493,7 +2495,8 @@ void FlexPA::genPatterns_print(
     pinCnt--;
   }
   if (pinCnt != -1) {
-    cout << "Error: valid access pattern not found\n";
+    logger_->error(
+        DRT, 278, "Valid access pattern not found.");
   }
 }
 
