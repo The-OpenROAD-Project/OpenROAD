@@ -74,7 +74,7 @@ proc read_def { args } {
     utl::error "ORD" 4 "$filename is not readable."
   }
   if { ![ord::db_has_tech] } {
-    utl::error "ORD" 5 "no technology has been read."
+    utl::error "ORD" 5 "No technology has been read."
   }
   if { [info exists flags(-order_wires)] } {
     utl::warn "ORD" 33 "-order_wires is deprecated."
@@ -83,7 +83,7 @@ proc read_def { args } {
   set floorplan_init [info exists flags(-floorplan_initialize)]
   set incremental [info exists flags(-incremental)]
   if { $floorplan_init && $incremental } {
-    utl::error ORD 16 "incremental and floorplan_initialization options are both set. At most one should be used."
+    utl::error ORD 16 "Options -incremental and -floorplan_initialization are both set. Use one option."
   }
   ord::read_def_cmd $filename $continue_on_errors $floorplan_init $incremental
 }
@@ -149,22 +149,22 @@ sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
 proc assign_ndr { args } {
   sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {-all_clocks}
   if { ![info exists keys(-ndr)] } {
-    utl::error ORD 1009 "-name is missing"
+    utl::error ORD 1009 "-name is missing."
   }
   if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
-    utl::error ORD 1010 "Either -net or -all_clocks need to be defined"
+    utl::error ORD 1010 "Either -net or -all_clocks need to be defined."
   }
   set block [[[ord::get_db] getChip] getBlock]
   set ndrName $keys(-ndr)
   set ndr [$block findNonDefaultRule $ndrName]
   if { $ndr == "NULL" } {
-    utl::error ORD 1011 "No NDR named ${ndrName} found"
+    utl::error ORD 1011 "No NDR named ${ndrName} found."
   }
   if { [info exists keys(-net)] } {
     set netName $keys(-net)
     set net [$block findNet $netName]
     if { $net == "NULL" } {
-      utl::error ORD 1012 "No net named ${netName} found"
+      utl::error ORD 1012 "No net named ${netName} found."
     }
     $net setNonDefaultRule $ndr
   } else {
@@ -198,22 +198,22 @@ proc thread_count { } {
 ################################################################
 
 namespace eval ord {
-  
+
   proc ensure_units_initialized { } {
     if { ![units_initialized] } {
-      utl::error "ORD" 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+      utl::error "ORD" 13 "Command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
     }
   }
-  
+
   proc clear {} {
     sta::clear_network
     sta::clear_sta
     grt::clear
     [get_db] clear
   }
-  
+
   proc profile_cmd {filename args} {
-    utl::info 99 "Profiling $args > $filename"
+    utl::info 99 "Profiling $args > $filename."
     profile -commands on
     if {[catch "{*}$args"]} {
       global errorInfo
@@ -222,7 +222,7 @@ namespace eval ord {
     profile off profarray
     profrep profarray cpu $filename
   }
-  
+
   proc get_die_area { } {
     set area {}
     set rect [[ord::get_db_block] getDieArea]
@@ -232,7 +232,7 @@ namespace eval ord {
     lappend area [ord::dbu_to_microns [$rect yMax]]
     return $area
   }
-  
+
   proc get_core_area { } {
     set area {}
     set rect [[ord::get_db_block] getCoreArea]
@@ -242,6 +242,6 @@ namespace eval ord {
     lappend area [ord::dbu_to_microns [$rect yMax]]
     return $area
   }
-  
+
     # namespace ord
 }

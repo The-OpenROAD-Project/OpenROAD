@@ -468,7 +468,11 @@ void
 OpenRoad::setThreadCount(int threads, bool printInfo) {
   int max_threads = std::thread::hardware_concurrency();
   if (max_threads == 0) {
-    logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
+    logger_->warn(ORD,
+        31,
+        "Unable to determine maximum number of threads.\n"
+        "Will use single thread."
+        );
     max_threads = 1;
   }
   if (threads <= 0) { // max requested
@@ -479,7 +483,7 @@ OpenRoad::setThreadCount(int threads, bool printInfo) {
   threads_ = threads;
 
   if (printInfo)
-    logger_->info(ORD, 30, "Using {} thread(s)", threads_);
+    logger_->info(ORD, 30, "Using {} thread(s).", threads_);
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
@@ -496,7 +500,7 @@ OpenRoad::setThreadCount(const char* threads, bool printInfo) {
     try {
       max_threads = std::stoi(threads);
     } catch (const std::invalid_argument&) {
-      logger_->warn(ORD, 32, "Invalid thread number specification: {}", threads);
+      logger_->warn(ORD, 32, "Invalid thread number specification: {}.", threads);
     }
   }
 
