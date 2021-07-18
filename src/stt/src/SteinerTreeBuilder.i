@@ -72,7 +72,7 @@ set_routing_alpha_cmd(float alpha)
 void
 set_alpha_for_net(odb::dbNet* net, float alpha)
 {
-  getSteinerTreeBuilder()->addAlphaForNet(net, alpha);
+  getSteinerTreeBuilder()->setNetAlpha(net, alpha);
 }
 
 void

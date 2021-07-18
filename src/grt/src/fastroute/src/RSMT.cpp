@@ -315,7 +315,7 @@ void FastRouteCore::fluteNormal(int netID,
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
-    fluteTree = stt_builder_->buildSteinerTree(d, tmp_xs, tmp_ys, s, acc);
+    fluteTree = stt_builder_->makeSteinerTree(d, tmp_xs, tmp_ys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     for (i = 0; i < 2 * d - 2; i++) {
@@ -476,7 +476,7 @@ void FastRouteCore::fluteCongest(int netID,
       nys[i + 1] = nys[i] + y_seg[i];
     }
 
-    fluteTree = stt_builder_->buildSteinerTree(d, nxs, nys, s, acc);
+    fluteTree = stt_builder_->makeSteinerTree(d, nxs, nys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     // map the new coordinates back to original coordinates
@@ -764,9 +764,9 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
 
     // check net alpha because FastRoute has a special implementation of flute
     // TODO: move this flute implementation to SteinerTreeBuilder
-    float net_alpha = stt_builder_->getNetAlpha(net->db_net);
+    float net_alpha = stt_builder_->getAlpha(net->db_net);
     if (net_alpha > 0.0) {
-      stt::Tree tree = stt_builder_->buildSteinerTree(net->db_net, net->pinX, net->pinY, net->driver_idx);
+      stt::Tree tree = stt_builder_->makeSteinerTree(net->db_net, net->pinX, net->pinY, net->driver_idx);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {

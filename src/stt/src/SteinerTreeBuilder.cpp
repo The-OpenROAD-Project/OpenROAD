@@ -53,7 +53,7 @@ void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-Tree SteinerTreeBuilder::buildSteinerTree(const std::vector<int>& x,
+Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                           const std::vector<int>& y,
                                           int drvr_index)
 {
@@ -75,7 +75,7 @@ Tree SteinerTreeBuilder::buildSteinerTree(const std::vector<int>& x,
   return tree;
 }
 
-Tree SteinerTreeBuilder::buildSteinerTree(const odb::dbNet* net,
+Tree SteinerTreeBuilder::makeSteinerTree(const odb::dbNet* net,
                                           const std::vector<int>& x,
                                           const std::vector<int>& y,
                                           int drvr_index)
@@ -102,17 +102,17 @@ Tree SteinerTreeBuilder::buildSteinerTree(const odb::dbNet* net,
 
 // API only for FastRoute, that requires the use of flutes in its
 // internal flute implementation
-Tree SteinerTreeBuilder::buildSteinerTree(int d,
+Tree SteinerTreeBuilder::makeSteinerTree(int num_pins,
                                           int x[],
                                           int y[],
                                           int s[],
                                           int accuracy)
 {
-  Tree tree = flt::flutes(d, x, y, s, accuracy);
+  Tree tree = flt::flutes(num_pins, x, y, s, accuracy);
   return tree;
 }
 
-float SteinerTreeBuilder::getNetAlpha(const odb::dbNet* net) const
+float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_.at(net) : alpha_;

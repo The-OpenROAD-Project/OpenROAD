@@ -60,22 +60,22 @@ class SteinerTreeBuilder
 
   void init(odb::dbDatabase* db, Logger* logger);
 
-  Tree buildSteinerTree(const std::vector<int>& x,
+  Tree makeSteinerTree(const std::vector<int>& x,
                         const std::vector<int>& y,
                         int drvr_index);
-  Tree buildSteinerTree(const odb::dbNet* net,
+  Tree makeSteinerTree(const odb::dbNet* net,
                         const std::vector<int>& x,
                         const std::vector<int>& y,
                         int drvr_index);
-  Tree buildSteinerTree(int d,
-                        DTYPE xs[],
-                        DTYPE ys[],
+  Tree makeSteinerTree(int num_pins,
+                        int xs[],
+                        int ys[],
                         int s[],
                         int acc);
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha) { alpha_ = alpha; }
-  float getNetAlpha(const odb::dbNet* net) const;
-  void addAlphaForNet(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
+  float getAlpha(const odb::dbNet* net) const;
+  void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
 
  private:
   const int flute_accuracy = 3;
