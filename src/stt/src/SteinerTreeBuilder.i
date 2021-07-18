@@ -76,8 +76,8 @@ set_net_alpha(odb::dbNet* net, float alpha)
 }
 
 void
-report_pd_tree(const std::vector<int> &x,
-               const std::vector<int> &y,
+report_pd_tree(std::vector<int> x,
+               std::vector<int> y,
                int drvr_index,
                float alpha)
 {
@@ -87,8 +87,8 @@ report_pd_tree(const std::vector<int> &x,
 }
 
 void
-highlight_pd_tree(const std::vector<int> &x,
-                  const std::vector<int> &y,
+highlight_pd_tree(std::vector<int> x,
+                  std::vector<int> y,
                   int drvr_index,
                   float alpha)
 {
@@ -99,8 +99,8 @@ highlight_pd_tree(const std::vector<int> &x,
 }
 
 void
-report_pdII_tree(const std::vector<int> &x,
-                 const std::vector<int> &y,
+report_pdII_tree(std::vector<int> x,
+                 std::vector<int> y,
                  int drvr_index,
                  float alpha)
 {

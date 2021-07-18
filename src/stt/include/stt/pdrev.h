@@ -47,15 +47,15 @@ using utl::Logger;
 using stt::Tree;
 
 Tree
-primDijkstra(std::vector<int> x,
-             std::vector<int> y,
+primDijkstra(std::vector<int>& x,
+             std::vector<int>& y,
              int drvr_index,
              float alpha,
              Logger* logger);
 
 Tree
-primDijkstraRevII(std::vector<int> x,
-                  std::vector<int> y,
+primDijkstraRevII(std::vector<int>& x,
+                  std::vector<int>& y,
                   int drvr_index,
                   float alpha,
                   Logger* logger);

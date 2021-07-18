@@ -60,12 +60,12 @@ class SteinerTreeBuilder
 
   void init(odb::dbDatabase* db, Logger* logger);
 
-  Tree makeSteinerTree(const std::vector<int>& x,
-                       const std::vector<int>& y,
+  Tree makeSteinerTree(std::vector<int>& x,
+                       std::vector<int>& y,
                        int drvr_index);
-  Tree makeSteinerTree(const odb::dbNet* net,
-                       const std::vector<int>& x,
-                       const std::vector<int>& y,
+  Tree makeSteinerTree(odb::dbNet* net,
+                       std::vector<int>& x,
+                       std::vector<int>& y,
                        int drvr_index);
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
@@ -80,8 +80,8 @@ class SteinerTreeBuilder
   void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
 
  private:
-  Tree makeTree(const std::vector<int>& x,
-                const std::vector<int>& y,
+  Tree makeTree(std::vector<int>& x,
+                std::vector<int>& y,
                 int drvr_index,
                 float alpha);
 

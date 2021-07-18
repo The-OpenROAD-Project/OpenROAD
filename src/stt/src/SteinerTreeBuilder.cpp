@@ -53,19 +53,19 @@ void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
-                                          const std::vector<int>& y,
-                                          int drvr_index)
+Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
+                                         std::vector<int>& y,
+                                         int drvr_index)
 {
   Tree tree = makeTree(x, y, drvr_index, alpha_);
 
   return tree;
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(const odb::dbNet* net,
-                                          const std::vector<int>& x,
-                                          const std::vector<int>& y,
-                                          int drvr_index)
+Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
+                                         std::vector<int>& x,
+                                         std::vector<int>& y,
+                                         int drvr_index)
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_[net] : alpha_;
@@ -76,10 +76,10 @@ Tree SteinerTreeBuilder::makeSteinerTree(const odb::dbNet* net,
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(int num_pins,
-                                          int x[],
-                                          int y[],
-                                          int s[],
-                                          int accuracy)
+                                         int x[],
+                                         int y[],
+                                         int s[],
+                                         int accuracy)
 {
   Tree tree = flt::flutes(num_pins, x, y, s, accuracy);
   return tree;
@@ -92,8 +92,8 @@ float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
   return net_alpha;
 }
 
-Tree SteinerTreeBuilder::makeTree(const std::vector<int>& x,
-                                  const std::vector<int>& y,
+Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
+                                  std::vector<int>& y,
                                   int drvr_index,
                                   float alpha)
 {
