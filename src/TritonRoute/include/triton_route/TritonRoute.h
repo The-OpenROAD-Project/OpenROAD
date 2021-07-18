@@ -56,6 +56,7 @@ typedef struct {
   const std::string& outputDrcFile;
   const std::string& outputCmapFile;
   const std::string& dbProcessNode;
+  bool enableViaGen;
   int drouteEndIter;
   int drouteViaInPinBottomLayerNum;
   int drouteViaInPinTopLayerNum;
