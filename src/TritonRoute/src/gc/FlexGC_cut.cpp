@@ -89,6 +89,37 @@ inline frSquaredDistance getCenterToCenterDist(gcSegment* viaEdge1,
   return gtl::distance_squared(centerPt1, centerPt2);
 }
 
+bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(const gtl::rectangle_data<frCoord>& edgeRect1,
+                                                          const gtl::rectangle_data<frCoord>& edgeRect2,
+                                                          std::string cutClass1,
+                                                          std::string cutClass2,
+                                                          odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+{
+  auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
+
+  auto orient1 = gtl::guess_orientation(edgeRect1);
+  auto orient2 = gtl::guess_orientation(edgeRect2);
+  if (orient1 == orient1) {
+    gtl::rectangle_data<frCoord> checkRect(edgeRect1);
+    gtl::generalized_intersect(checkRect, edgeRect2);
+    // check for prl
+    frCoord prl, dist;
+    if (orient1 == gtl::orientation_2d_enum::VERTICAL) {
+      // vertical prl
+      dist = gtl::euclidean_distance(checkRect, edgeRect2, gtl::VERTICAL);
+      prl = gtl::delta(checkRect, gtl::VERTICAL);
+    } else {
+      // horizontal prl
+      dist = gtl::euclidean_distance(checkRect, edgeRect2, gtl::HORIZONTAL);
+      prl = gtl::delta(checkRect, gtl::HORIZONTAL);
+    }
+    if (dist == 0 && prl > reqPrl){
+      return true;
+    }
+  }
+  return false;
+}
+
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     gcSegment* viaEdge1,
     gcSegment* viaEdge2,
@@ -112,6 +143,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
                                      viaEdge2->high().y());
   auto dbRule = con->getODBRule();
   bool viol = false;
+  auto prlValid = checkLef58CutSpacingTbl_prlValid(rect1, rect2, class1, class2, dbRule);
   if (dbRule->isNoPrl() && dbRule->isCenterAndEdge(class1, class2)) {
     frSquaredDistance spcSqr
         = dbRule->getSpacing(class1, isSide1, class2, isSide2, 2);
@@ -126,32 +158,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
         viol = true;
     }
   } else {
-    bool prlValid = false;
-    short strategy = 0;  // first spacing value
-    auto reqPrl = dbRule->getPrlEntry(class1, class2);
-    // check if parallel
-    if (viaEdge1->getDir() == viaEdge2->getDir()
-        || (int) viaEdge1->getDir() + (int) viaEdge2->getDir() != OPPOSITEDIR) {
-      gtl::rectangle_data<frCoord> checkRect(rect1);
-      gtl::generalized_intersect(checkRect, rect2);
-      // check for prl
-      frCoord prl, dist;
-      if (viaEdge1->getDir() == frDirEnum::S
-          || viaEdge1->getDir() == frDirEnum::N) {
-        // vertical prl
-        dist = gtl::euclidean_distance(checkRect, rect2, gtl::VERTICAL);
-        prl = gtl::delta(checkRect, gtl::VERTICAL);
-      } else {
-        // horizontal prl
-        dist = gtl::euclidean_distance(checkRect, rect2, gtl::HORIZONTAL);
-        prl = gtl::delta(checkRect, gtl::HORIZONTAL);
-      }
-      if (dist == 0 && prl > reqPrl){
-        strategy = 1;
-        prlValid = true;  // second spacing value
-      }
-    }
     //check PRLALIGNED
+    short spcIdx = prlValid ? 1 : 0;
     if(prlValid && dbRule->isPrlForAlignedCutClasses(class1, class2))
     {
       box_t qb(point_t(gtl::xl(rect2), gtl::yl(rect2)), point_t(gtl::xh(rect2), gtl::yh(rect2)));
@@ -159,19 +167,28 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
       auto& workerRegionQuery = getWorkerRegionQuery();
       workerRegionQuery.queryPolygonEdge(qb, layerNum2 + 1, results);
       if(results.size() == 0)
-        strategy = 0;
+        spcIdx = 0;
     }
 
-    frSquaredDistance spcSqr
-        = dbRule->getSpacing(class1, isSide1, class2, isSide2, strategy);
-    spcSqr *= spcSqr;
-    if (dbRule->isCenterToCenter(class1, class2) || (dbRule->isCenterAndEdge(class1, class2) && prlValid)) {
+    frCoord reqSpc
+        = dbRule->getSpacing(class1, isSide1, class2, isSide2, spcIdx);
+    frSquaredDistance spcSqr = (frSquaredDistance) reqSpc * reqSpc;
+    bool useCenter;
+    if (dbRule->isCenterToCenter(class1, class2))
+      useCenter = true;
+    else if(dbRule->isCenterAndEdge(class1, class2) && reqSpc == dbRule->getSpacing(class1, isSide1, class2, isSide2, 2))
+      useCenter = true;
+    else
+      useCenter = false;
+
+    if(useCenter) {
       if (getCenterToCenterDist(viaEdge1, viaEdge2) < spcSqr)
         viol = true;
-    } else if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2)
-               < spcSqr) {
-      viol = true;
+    } else {
+      if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2) < spcSqr)
+        viol = true;
     }
+
   }
   if (viol) {
     // violation
