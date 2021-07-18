@@ -49,6 +49,7 @@ record_tests {
   simple08
   simple09
   simple10
+  max_disp1
   aes
   gcd
   ibex
