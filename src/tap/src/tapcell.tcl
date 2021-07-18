@@ -193,9 +193,9 @@ proc tapcell { args } {
 
   tap::clear $tap_prefix $endcap_prefix
 
-  tap::cut_rows $endcap_master [tap::find_blockages $db] $halo_x $halo_y
+  tap::cut_rows $endcap_master [tap::find_blockages] $halo_x $halo_y
 
-  set rows [tap::organize_rows $db]
+  set rows [tap::organize_rows]
 
   set cnrcap_masters {}
   lappend cnrcap_masters $cnrcap_nwin_master $cnrcap_nwout_master
@@ -203,7 +203,7 @@ proc tapcell { args } {
   set tap::phy_idx 0
   set tap::filled_sites []
   if { [info exists keys(-endcap_master)] } {
-    tap::insert_endcaps $db $rows $endcap_master $cnrcap_masters $endcap_prefix
+    tap::insert_endcaps $rows $endcap_master $cnrcap_masters $endcap_prefix
   }
 
   if {$add_boundary_cell} {
@@ -216,11 +216,11 @@ proc tapcell { args } {
     $tap_nwintie_master $incnrcap_nwout_master $tap_nwout2_master \
     $tap_nwout3_master $tap_nwouttie_master
 
-    tap::insert_at_top_bottom $db $rows $tap_nw_masters [$db findMaster $cnrcap_nwin_master] $endcap_prefix
-    tap::insert_around_macros $db $rows $tap_macro_masters [$db findMaster $cnrcap_nwin_master] $endcap_prefix
+    tap::insert_at_top_bottom $rows $tap_nw_masters [$db findMaster $cnrcap_nwin_master] $endcap_prefix
+    tap::insert_around_macros $rows $tap_macro_masters [$db findMaster $cnrcap_nwin_master] $endcap_prefix
   }
 
-  tap::insert_tapcells $db $rows $tapcell_master $dist $tap_prefix
+  tap::insert_tapcells $rows $tapcell_master $dist $tap_prefix
 
   set tap::filled_sites []
 }

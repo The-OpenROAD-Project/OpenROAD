@@ -62,7 +62,7 @@ public:
   void run();
   //void clear (std::string tap_prefix, std::string endcap_prefix);
   void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y);
-  int remove_cells(std::string prefix);
+  int remove_cells(const char* prefix);
   bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int halo_x, int halo_y);
   void  cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>> row_blockages, int min_row_width, int halo_x, int halo_y);
   int make_site_loc( int x, double site_x, int dirc, int offset);

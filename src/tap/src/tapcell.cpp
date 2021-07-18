@@ -122,7 +122,7 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
   std::map<std::string, std::vector<odb::dbBox*>> row_blockages;
   std::vector<odb::dbBox*> row_blockages_bbox;
   for (odb::dbInst* blockage : blockages) {
-    for(auto row : block->getRows()) {
+    for(odb::dbRow* row : block->getRows()) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
         std::string  row_name = row->getName();
         if (row_blockages.find(row_name) == row_blockages.end()) {
@@ -1082,18 +1082,19 @@ std::vector<std::vector<odb::dbRow*>> Tapcell::organize_rows() {
   return rows;
 }
 
-int Tapcell::remove_cells(std::string prefix) {
+int Tapcell::remove_cells(const char* prefix) {
   odb::dbBlock* block = db_->getChip()->getBlock();
-
+  //odb::dbBlock* block = getOpenRoad()->getDb()->getChip()->getBlock();
   int removed = 0;
 
-  if (prefix.length() == 0) {
+  if (std::strlen(prefix) == 0) {
+  //if (prefix.length() == 0) {
     // no prefix is given, this will result in all cells being removed
     return 0;
   }
 
   for(odb::dbInst* inst : block->getInsts()) {
-    if (prefix.std::string::compare(inst->getName())) {
+    if (prefix == inst->getName()) {
       odb::dbInst::destroy(inst);
       removed++;
     }

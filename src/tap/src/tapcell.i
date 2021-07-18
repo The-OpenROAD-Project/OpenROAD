@@ -142,7 +142,7 @@ int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, std::vector
   return getTapcell()->insert_around_macros(rows, masters, corner_master, prefix);
 }
 
-int remove_cells(std::string prefix)
+int remove_cells(const char* prefix)
 {
   return getTapcell()->remove_cells(prefix);
 }
