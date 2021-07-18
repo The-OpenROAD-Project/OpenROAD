@@ -57,20 +57,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                           const std::vector<int>& y,
                                           int drvr_index)
 {
-  Tree tree;
-
-  if (alpha_ > 0.0) {
-    tree = pdr::primDijkstra(x, y, drvr_index, alpha_, logger_);
-  } else {
-    int pin_count = x.size();
-    int x_arr[pin_count];
-    int y_arr[pin_count];
-
-    std::copy(x.begin(), x.end(), x_arr);
-    std::copy(y.begin(), y.end(), x_arr);
-
-    tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
-  }
+  Tree tree = makeTree(x, y, drvr_index, alpha_);
 
   return tree;
 }
@@ -80,22 +67,10 @@ Tree SteinerTreeBuilder::makeSteinerTree(const odb::dbNet* net,
                                           const std::vector<int>& y,
                                           int drvr_index)
 {
-  Tree tree;
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_[net] : alpha_;
 
-  if (net_alpha > 0.0) {
-    tree = pdr::primDijkstra(x, y, drvr_index, net_alpha, logger_);
-  } else {
-    int pin_count = x.size();
-    int x_arr[pin_count];
-    int y_arr[pin_count];
-
-    std::copy(x.begin(), x.end(), x_arr);
-    std::copy(y.begin(), y.end(), x_arr);
-
-    tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
-  }
+  Tree tree = makeTree(x, y, drvr_index, net_alpha);
 
   return tree;
 }
@@ -115,6 +90,29 @@ float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_.at(net) : alpha_;
   return net_alpha;
+}
+
+Tree SteinerTreeBuilder::makeTree(const std::vector<int>& x,
+                                  const std::vector<int>& y,
+                                  int drvr_index,
+                                  float alpha)
+{
+  Tree tree;
+
+  if (alpha > 0.0) {
+    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
+  } else {
+    int pin_count = x.size();
+    int x_arr[pin_count];
+    int y_arr[pin_count];
+
+    std::copy(x.begin(), x.end(), x_arr);
+    std::copy(y.begin(), y.end(), x_arr);
+
+    tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
+  }
+
+  return tree;
 }
 
 }
