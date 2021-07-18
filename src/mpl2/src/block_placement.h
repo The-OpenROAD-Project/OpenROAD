@@ -56,6 +56,8 @@ class Block
   bool is_soft_ = true;
   int num_macro_ = 0;
 
+  bool flag_ = false;
+
   std::vector<std::pair<float, float>> aspect_ratio_;
   std::vector<std::pair<float, float>>
       width_limit_;  // This is in increasing order
@@ -82,6 +84,9 @@ class Block
   float GetAspectRatio() const { return height_ / width_; }
   int GetNumMacro() const { return num_macro_; }
 
+  void SetFlag(bool flag) { flag_ = flag; }
+  bool GetFlag() { return flag_; }
+
   void SetX(float x) { x_ = x; }
   void SetY(float y) { y_ = y; }
   void SetAspectRatio(float aspect_ratio);
@@ -100,6 +105,17 @@ class Block
 
   void ShrinkSoftBlock(float width_factor, float height_factor);
 };
+
+//bool CompareBlockX(const Block& block_a, const Block& block_b)
+//{
+//    return block_a.GetX() < block_b.GetX();
+//}
+
+//bool CompareBlockY(const Block& block_a, const Block& block_b)
+//{
+//    return block_a.GetY() < block_b.GetY();
+//}
+
 
 struct Net
 {
@@ -317,7 +333,7 @@ class SimulatedAnnealingCore
                   float norm_location_penalty);
 
   void SetSeq(const std::vector<int>& pos_seq, const std::vector<int>& neg_seq);
-
+  void AlignMacro();
   float GetInitT() const { return init_T_; }
   float GetNormArea() const { return norm_area_; }
   float GetNormWirelength() const { return norm_wirelength_; }

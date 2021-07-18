@@ -47,6 +47,7 @@
 #include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
+#include "opendb/db.h"
 
 using utl::PAR;
 
@@ -63,6 +64,8 @@ using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
+using odb::dbDatabase;
+
 
 template <class T>
 static void get_param(const unordered_map<string, string>& params,
@@ -80,6 +83,7 @@ static void get_param(const unordered_map<string, string>& params,
 
 bool rtl_macro_placer(const char* config_file,
                       Logger* logger,
+                      dbDatabase* db,
                       const char* report_directory,
                       const char* report_file)
 {
@@ -242,6 +246,25 @@ bool rtl_macro_placer(const char* config_file,
     return false;
   }
 
+    
+  // Get Block Placement Grid
+  // The Block Placement Grid is based on the pitch of the bottom horizontal and 
+  // vertical routing layers. The Block Placement Grid is one pitch wide and one pitch tall.
+  odb::dbTech* tech = db->getTech();
+  const int dbu = tech->getDbUnitsPerMicron();
+  int layer_numbers [] = {1, 2};
+  float pitch_x = 0.0;
+  float pitch_y = 0.0;
+  for(int i = 0; i < 2; i++) {
+    if(tech->findRoutingLayer(layer_numbers[i])->getDirection()
+        == odb::dbTechLayerDir::Value::HORIZONTAL) 
+      pitch_y = static_cast<float>(tech->findRoutingLayer(layer_numbers[i])->getPitch()) / dbu;
+    else if(tech->findRoutingLayer(layer_numbers[i])->getDirection()
+           == odb::dbTechLayerDir::Value::VERTICAL)
+      pitch_x = static_cast<float>(tech->findRoutingLayer(layer_numbers[i])->getPitch()) / dbu;
+    else
+      ;
+  }
 
   string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
@@ -258,16 +281,22 @@ bool rtl_macro_placer(const char* config_file,
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
         string orientation = macros[j].GetOrientation();
+        float ux = lx + width;
+        float uy = ly + height;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
 
         if (orientation == string("MX"))
           line += string("  MX  ") + to_string(lx) + string("   ")
-                  + to_string(ly + height);
+                  + to_string(uy);
         else if (orientation == string("MY"))
-          line += string("  MY  ") + to_string(lx + width) + string("   ")
+          line += string("  MY  ") + to_string(ux) + string("   ")
                   + to_string(ly);
         else if (orientation == string("R180"))
-          line += string("  R180  ") + to_string(lx + width) + string("   ")
-                  + to_string(ly + height);
+          line += string("  R180  ") + to_string(ux) + string("   ")
+                  + to_string(uy);
         else
           line += string("  R0 ") + to_string(lx) + string("   ")
                   + to_string(ly);
@@ -292,8 +321,15 @@ bool rtl_macro_placer(const char* config_file,
         float ly = outline_ly + cluster_ly + macros[j].GetY() + halo_width;
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
+        float ux = lx + width;
+        float uy = ly + height;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
+   
         line += to_string(lx) + string("   ") + to_string(ly) + string("  ");
-        line += to_string(lx + width) + string("  ") + to_string(ly + height);
+        line += to_string(ux) + string("  ") + to_string(uy);
         line += string("   ") + macros[j].GetOrientation();
         file << line << endl;
       }
@@ -350,8 +386,9 @@ bool rtl_macro_placer(const char* config_file,
   return true;
 }
 
-void MacroPlacer2::init(Logger* logger)
+void MacroPlacer2::init(dbDatabase* db, Logger* logger)
 {
+  db_ = db;
   logger_ = logger;
 }
 
@@ -359,7 +396,7 @@ bool MacroPlacer2::place(const char* config_file,
                          const char* report_directory,
                          const char* report_file)
 {
-  return rtl_macro_placer(config_file, logger_, report_directory, report_file);
+  return rtl_macro_placer(config_file, logger_, db_,  report_directory, report_file);
 }
 
 }  // namespace mpl

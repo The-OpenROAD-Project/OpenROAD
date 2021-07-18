@@ -40,6 +40,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <queue>
 
 #include "block_placement.h"
 #include "shape_engine.h"
@@ -70,6 +71,7 @@ using std::thread;
 using std::to_string;
 using std::unordered_map;
 using std::vector;
+using std::queue;
 using utl::Logger;
 using utl::MPL;
 
@@ -711,7 +713,153 @@ void SimulatedAnnealingCore::CalculateLocationPenalty()
   }
 }
 
+void SimulatedAnnealingCore::AlignMacro()
+{
+  float boundary_threshold = 20.0;
+  for (int i = 0; i < blocks_.size(); i++) {
+    int weight = blocks_[i].GetNumMacro();
+    if (weight > 0) {
+      float width = blocks_[i].GetWidth();
+      float height = blocks_[i].GetHeight();
+      boundary_threshold = min(boundary_threshold, width);
+      boundary_threshold = min(boundary_threshold, height);
+    }
+  }
 
+  boundary_threshold = boundary_threshold * 0.99;
+  // Alignment macros to boundaries
+  for (int i = 0; i < blocks_.size(); i++) {
+    int weight = blocks_[i].GetNumMacro();
+    if (weight > 0) {
+      float lx = blocks_[i].GetX();
+      float ly = blocks_[i].GetY();
+      float ux = lx + blocks_[i].GetWidth();
+      float uy = ly + blocks_[i].GetHeight();
+
+      if(lx < boundary_threshold) {
+        blocks_[i].SetX(0.0);
+      } else if(ux < outline_width_ && outline_width_  - ux < boundary_threshold) {
+        blocks_[i].SetX(outline_width_ - blocks_[i].GetWidth());
+      } else {
+        ; // do nothing
+      }
+
+      if(ly < boundary_threshold) {
+        blocks_[i].SetY(0.0);
+      } else if(uy < outline_height_ && outline_height_ - uy < boundary_threshold) {
+        blocks_[i].SetY(outline_height_ - blocks_[i].GetHeight());
+      } else {
+        ; // do nothing
+      }
+    }
+  }
+
+  // Align macros according to X
+  //sort(blocks_.begin(), blocks_.end(), CompareBlockX);
+  vector<int> macro_id_list;
+  queue<int> macro_queue;
+  for (int i = 0; i < blocks_.size(); i++) {
+    int weight = blocks_[i].GetNumMacro();
+    if (weight > 0) {
+      macro_id_list.push_back(i);
+      if(blocks_[i].GetX() == 0.0) {
+        macro_queue.push(i);
+        blocks_[i].SetFlag(true);
+      }
+      
+      if(blocks_[i].GetX() + blocks_[i].GetWidth() >= outline_width_)
+      {
+        macro_queue.push(i);
+        blocks_[i].SetFlag(true);
+      }
+    }
+  }
+
+  while(!macro_queue.empty()) {
+    int src = macro_queue.front();
+    float lx = blocks_[src].GetX();
+    float ux = blocks_[src].GetWidth() + lx;
+    float ly = blocks_[src].GetY();
+    float uy = blocks_[src].GetHeight() + ly;
+    macro_queue.pop();
+    for(auto macro_id : macro_id_list) {
+      if (blocks_[macro_id].GetFlag() == false) {
+        float lx_b = blocks_[macro_id].GetX();
+        float ly_b = blocks_[macro_id].GetY();
+        float ux_b = lx_b + blocks_[macro_id].GetWidth();
+        float uy_b = ly_b + blocks_[macro_id].GetHeight();
+        if(lx_b >= ux && lx_b <= ux + boundary_threshold && 
+          (abs(ly - ly_b) <= boundary_threshold || abs(uy - uy_b) <= boundary_threshold)) 
+        {
+          blocks_[macro_id].SetX(ux);
+          blocks_[macro_id].SetFlag(true);
+          macro_queue.push(macro_id);
+        } else if(lx >= ux_b && lx <= ux_b + boundary_threshold &&
+          (abs(ly - ly_b) <= boundary_threshold || abs(uy - uy_b) <= boundary_threshold)) 
+        {
+          blocks_[macro_id].SetX(lx - (ux_b - lx_b));
+          blocks_[macro_id].SetFlag(true);
+          macro_queue.push(macro_id);
+        } else {
+          ; // do nothing  
+        }
+      }
+    }
+  }
+
+  for(auto macro_id : macro_id_list)
+      blocks_[macro_id].SetFlag(false);
+
+  // Align macros according to Y
+  //sort(blocks_.begin(), blocks_.end(), CompareBlockY);
+  for (int i = 0; i < blocks_.size(); i++) {
+    int weight = blocks_[i].GetNumMacro();
+    if (weight > 0) {
+      if(blocks_[i].GetY() == 0.0) {
+        macro_queue.push(i);
+        blocks_[i].SetFlag(true);
+      }
+      
+      if(blocks_[i].GetY() + blocks_[i].GetHeight() >= outline_height_)
+      {
+        macro_queue.push(i);
+        blocks_[i].SetFlag(true);
+      }
+    }
+  }
+
+  while(!macro_queue.empty()) {
+    int src = macro_queue.front();
+    float lx = blocks_[src].GetX();
+    float ux = blocks_[src].GetWidth() + lx;
+    float ly = blocks_[src].GetY();
+    float uy = blocks_[src].GetHeight() + ly;
+    macro_queue.pop();
+    for(auto macro_id : macro_id_list) {
+      if (blocks_[macro_id].GetFlag() == false) {
+        float lx_b = blocks_[macro_id].GetX();
+        float ly_b = blocks_[macro_id].GetY();
+        float ux_b = lx_b + blocks_[macro_id].GetWidth();
+        float uy_b = ly_b + blocks_[macro_id].GetHeight();
+        if(ly_b >= uy && ly_b <= uy + boundary_threshold && 
+          (abs(lx - lx_b) <= boundary_threshold || abs(ux - ux_b) <= boundary_threshold)) 
+        {
+          blocks_[macro_id].SetY(uy);
+          blocks_[macro_id].SetFlag(true);
+          macro_queue.push(macro_id);
+        } else if(ly >= uy_b && ly <= uy_b + boundary_threshold &&
+          (abs(lx - lx_b) <= boundary_threshold || abs(ux - ux_b) <= boundary_threshold)) 
+        {
+          blocks_[macro_id].SetY(ly - (uy_b - ly_b));
+          blocks_[macro_id].SetFlag(true);
+          macro_queue.push(macro_id);
+        } else {
+          ; // do nothing  
+        }
+      }
+    }
+  }
+}
 
 void SimulatedAnnealingCore::CalculateBoundaryPenalty()
 {
@@ -1559,6 +1707,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     }
   }
 
+  best_sa->AlignMacro();
   blocks = best_sa->GetBlocks();
   logger->info(MPL,
                2004 + num_level,
