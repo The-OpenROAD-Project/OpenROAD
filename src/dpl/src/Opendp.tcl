@@ -32,7 +32,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "detailed_placement" {[-max_displacement max_displacement]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
@@ -40,14 +40,32 @@ proc detailed_placement { args } {
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
-    sta::check_positive_integer "-max_displacement" $max_displacement
+    if { [llength $max_displacement] == 1 } {
+      sta::check_positive_integer "-max_displacement" $max_displacement
+      set max_displacement_x $max_displacement
+      set max_displacement_y $max_displacement
+    } elseif { [llength $max_displacement] == 2 } {
+      lassign $max_displacement max_displacement_x max_displacement_y
+      sta::check_positive_integer "-max_displacement" $max_displacement_x
+      sta::check_positive_integer "-max_displacement" $max_displacement_y
+    } else {
+      sta::error DPL 31 "-max_displacement disp|{disp_x disp_y}"
+    }
   } else {
-    set max_displacement 0
+    # use default displacement
+    set max_displacement_x 0
+    set max_displacement_y 0
   }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    dpl::detailed_placement_cmd $max_displacement
+    set site [dpl::get_row_site]
+    # Convert displacement from microns to sites.
+    set max_displacement_x [expr [ord::microns_to_dbu $max_displacement_x] \
+                              / [$site getWidth]]
+    set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
+                              / [$site getHeight]]
+    dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -183,6 +201,10 @@ proc format_grid { x w } {
   } else {
     return [format "%.2f" [expr $x / double($w)]]
   }
+}
+
+proc get_row_site {} {
+  return [[lindex [[ord::get_db_block] getRows] 0] getSite]
 }
 
 }
