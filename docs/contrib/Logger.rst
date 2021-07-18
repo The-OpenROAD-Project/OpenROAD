@@ -2,17 +2,17 @@ Using the logging infrastructure
 ================================
 
 OpenROAD provides spdlog as part of logging infrastructure in order to ensure a clear, consistent messaging and complete messaging interface. 
-A wrapper formats the prefix in the reccommended messaging style and limit requiring the tool and id as follows:
-<tool> <message number> <id> : <Message body>.
+A wrapper formats the prefix in the reccommended messaging style and limit. 
+A message format is as follows:
+<tool id> <message id> : <Message body>.
 
-For e.g,
-DRT 0001 TritonRoute.cpp:333       Error reading param file: {}
-
-Use one of the logging functions in the ‘ord’ namespace to issue the message.
+For Example,
+DRT 0001 TritonRoute.cpp:333       Error reading param file: {}.
 
 All output from OpenROAD tools should be directed through the logging
 API to ensure that redirection, file logging and execution control flow is
 handled consistently. This also includes messages from a third party tool integration.
+Use one of the logging functions in the ‘ord’ namespace to issue the message.
 
 The logging infrastructure also supports generating a `JSON
 <https://www.json.org>`__ file containing design metrics (e.g. area,
@@ -27,22 +27,22 @@ These are supported by automatic calls to the logger which will then prefix the 
 Messaging Guidelines
 --------------------
 
-In addition to the proper use of message types, follow the guidelines below to compose messages for clarity, consistency and other guiding principles:
+In addition to the proper use of message types, follow the guidelines below to compose messages for clarity, consistency and other guidelines:
 
 a. Grammar
-   i. Start with capital letter, end with period besides well-known exceptions. Use capital letters for well known file formats and tool names. For e.g., 
+   i. Start with a capital letter, end with period besides well-known exceptions. Use capital letters for file formats and tool names. e.g., 
       LEF, DEF, SPICE.
    ii. After the first word’s capitalization, do not use capital letters (aside from obvious exceptions - RSMT, hCut, etc.
    iii. Do not use exclamations. Severity must be communicated by message severity and clear implied or explicit action.
-   iv. Avoid long, verbose messages. Use commas to list, separate clauses and introduce pauses in messages.
-   v. Spellcheck all messages using American English spelings.
+   iv. Avoid long, verbose messages. Use commas to list and  separate clauses in messages.
+   v. Spellcheck all messages using American English spellings.
    vii. Use ellipsis (...) only to indicate a pause, as when some tool is running or being intialized
    
 b. Abbreviations and Shortcuts
    i. Use single-word versions when well-accepted / well-understood by users+developers. 
    Examples, stdcell, cutline, wirelength, stdcell, flipchip, padring, bondpad, wirebond, libcell, viarule etc.
    
-   ii. Do not abbreviate english words, expand for the sake of clarity . 
+   ii. Do not abbreviate English words, expand for the sake of clarity . 
    Incorrect: Num, # , Correct: Number
    Incorrect: Tot., Correct: Total
    
@@ -53,7 +53,7 @@ b. Abbreviations and Shortcuts
    Correct: Cannot, Do not
    
 b. Actionability
-   Messages should have clear implied or an explicit action that is necessary for flow continuation or quality of results. 
+   Messages should have clear, implied or an explicit action that is necessary for flow continuation or quality of results. 
    Correct: A value for core_area must specified in the footprint specification, or in the environment variable CORE_AREA
    
 d. Clarity
@@ -61,27 +61,34 @@ d. Clarity
    Correct: Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer, -rdl_width, -rdl_spacing
    
   i. Specify objects clearly in the local context
-   Correct:cutWithin is smaller than cutSpacing for ADJACENTCUTS on layer {}, please check your rule definition
-   Incomplete: Warning: {} does not have viaDef aligned with layer
+  
+   Correct: cutWithin is smaller than cutSpacing for ADJACENTCUTS on layer {}, please check your rule definition.
+   Incomplete: Warning: {} does not have viaDef aligned with layer.
 
-   ii. Make any assumptions or default values explicit.
+   ii. Make any assumptions or use of default values explicit.
+   
    Correct:  No net slacks found. Timing-driven mode disabled.
    Incomplete, missing default:  Utilization exceeds 100%.
    
    iii. Use simple language, avoid repetitions.
-   Incorrect: No orientation available for orientation of $cell_ref.
+  
    Correct: Missing orientation for cell $cell_ref
+   Incorrect: No orientation available for orientation of $cell_ref.
    
  
  Message Types
- --------------
+ ~~~~~~~~~~~~~
   
 Report
 ~~~~~~
 
 Reports are tool output in the form of a report to the user. Examples
-are timing paths, or power analysis results. Tool reports that use
-‘printf’ or c++ streams, 'cout', should use the report message API instead.
+are timing paths, or power analysis results. 
+
+Example Report message:
+
+::
+    Path startpoint: $startpoint
 
 Debug
 ~~~~~
@@ -93,11 +100,11 @@ Information
 ~~~~~~~~~~~
 
 Information messages may be used for reporting metrics, quality of
-results, or program status to the user. Any messages which indicate
+results, or program status to the user. Any message which indicates
 runtime problems, such as potential faulty input or other internal
 program issues, should be issued at a higher status level.
 
-Example messages for this status level:
+Example Information messages:
 
 ::
 
@@ -112,7 +119,7 @@ Warnings should be used for indicating atypical runtime conditions that
 may affect quality, but not correctness of the output. Any conditions
 that affect correctness should be issued at a higher status level.
 
-Example warning messages:
+Example Warning messages:
 
 ::
 
@@ -129,7 +136,7 @@ exit the current command by throwing an exception that can be caught in a Tcl
 command script. Errors that occur while reading a command file stop,
 executing the script commands.
 
-Example error messages:
+Example Error messages:
 
 ::
 
@@ -144,7 +151,7 @@ Critical messages should be used for indicating correctness problems
 that the program is not able to work around or ignore, and require
 immediate exiting of the program (abort).
 
-Example critical messages:
+Example Critical messages:
 
 ::
 
@@ -317,7 +324,10 @@ call the utl::error/warn with a Tool ID and message ID. For
 compatibility these are defaulted to 'UKN' and '0000' until they are
 updated.
 
-Do no use "puts", ie, print) errors in regression tests. The logger prints the error now.
+Do no use "puts", i.e, (print) errors in regression tests. Use the report
+function to ensure proper logging of the message.
+  Logger::report(const std::string& message,
+                  const Args&... args)
 
 Init floorplan, openroad/src, init floorplan, dbSta, resizer, and opendp
 have been updated to use the Logger if you need examples of how to
