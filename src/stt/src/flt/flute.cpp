@@ -1340,8 +1340,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
       t1 = flutes_LMD(ms + 2, x1, y1, s1, acc);
       t2 = flutes_LMD(d - ms, xs + ms, ys + ms, s2, acc);
       t = dmergetree(t1, t2);
-      t1.branch.clear();
-      t2.branch.clear();
                         
       free(score);
       free(penalty);
@@ -1381,8 +1379,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
       t1 = flutes_LMD(d + 1 - ms, x1, y1, s1, acc);
       t2 = flutes_LMD(ms + 1, xs, ys + d - 1 - ms, s2, acc);
       t = dmergetree(t1, t2);
-      t1.branch.clear();
-      t2.branch.clear();
                         
       free(score);
       free(penalty);
@@ -1498,8 +1494,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
   }
 
   minl = (DTYPE)INT_MAX;
-  bestt1.branch.clear();
-  bestt2.branch.clear();
   for (i = 0; i < acc; i++) {
     maxbp = 0;
     for (bp = 1; bp < nbp; bp++)
@@ -1573,14 +1567,10 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
     }
     if (minl > ll) {
       minl = ll;
-      bestt1.branch.clear();
-      bestt2.branch.clear();
       bestt1 = t1;
       bestt2 = t2;
       bestbp = maxbp;
     } else {
-      t1.branch.clear();
-      t2.branch.clear();
     }
   }
 
@@ -1600,8 +1590,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
   }
 #endif
 
-  bestt1.branch.clear();
-  bestt2.branch.clear();
 
   free(score);
   free(penalty);
@@ -1904,7 +1892,6 @@ void local_refinement(int deg, Tree *tp, int p) {
       tp->branch[index[ii]].y = tt.branch[ii].y;
       tp->branch[index[ii]].n = index[tt.branch[ii].n];
     }
-    tt.branch.clear();
   }
 
   free(SteinerPin);

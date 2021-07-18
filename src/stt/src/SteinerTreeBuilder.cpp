@@ -100,8 +100,6 @@ Tree SteinerTreeBuilder::makeSteinerTree(const odb::dbNet* net,
   return tree;
 }
 
-// API only for FastRoute, that requires the use of flutes in its
-// internal flute implementation
 Tree SteinerTreeBuilder::makeSteinerTree(int num_pins,
                                           int x[],
                                           int y[],
