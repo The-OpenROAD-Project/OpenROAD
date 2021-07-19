@@ -692,7 +692,7 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
       y += stepSize;
       break;
     default:
-      logger_->error(DRT, 70, "unexpected direction in getPlanarEP");
+      logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
   ep.set(x, y);
   gtl::point_data<frCoord> pt(x, y);
@@ -1124,7 +1124,7 @@ bool FlexPA::prepPoint_pin_helper(
     // write to pa
     auto it = unique2paidx_.find(instTerm->getInst());
     if (it == unique2paidx_.end()) {
-      logger_->error(DRT, 72, "prepPoint_pin_helper unique2paidx not found");
+      logger_->error(DRT, 72, "prepPoint_pin_helper unique2paidx not found.");
     } else {
       for (auto& ap : aps) {
         pin->getPinAccess(it->second)->addAccessPoint(std::move(ap));
@@ -1207,11 +1207,11 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
     if (instTerm) {
       logger_->error(DRT,
                      73,
-                     "no ap for {}/{}",
+                     "No ap for {}/{}.",
                      instTerm->getInst()->getName(),
                      instTerm->getTerm()->getName());
     } else {
-      logger_->error(DRT, 74, "no ap for PIN/{}", pin->getTerm()->getName());
+      logger_->error(DRT, 74, "No ap for PIN/{}.", pin->getTerm()->getName());
     }
     if (isStdCellPin) {
       stdCellPinNoApCnt_++;
@@ -1280,11 +1280,11 @@ void FlexPA::prepPoint()
         if (VERBOSE > 0) {
           if (cnt < 1000) {
             if (cnt % 100 == 0) {
-              logger_->info(DRT, 76, "  complete {} pins", cnt);
+              logger_->info(DRT, 76, "  Complete {} pins.", cnt);
             }
           } else {
             if (cnt % 1000 == 0) {
-              logger_->info(DRT, 77, "  complete {} pins", cnt);
+              logger_->info(DRT, 77, "  Complete {} pins.", cnt);
             }
           }
         }
@@ -1313,7 +1313,7 @@ void FlexPA::prepPoint()
   }
 
   if (VERBOSE > 0) {
-    logger_->info(DRT, 78, "  complete {} pins", cnt);
+    logger_->info(DRT, 78, "  Complete {} pins.", cnt);
   }
 }
 
@@ -1348,18 +1348,18 @@ void FlexPA::prepPattern()
       if (VERBOSE > 0) {
         if (cnt < 1000) {
           if (cnt % 100 == 0) {
-            logger_->info(DRT, 79, "  complete {} unique inst patterns", cnt);
+            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
           }
         } else {
           if (cnt % 1000 == 0) {
-            logger_->info(DRT, 80, "  complete {} unique inst patterns", cnt);
+            logger_->info(DRT, 80, "  Complete {} unique inst patterns.", cnt);
           }
         }
       }
     }
   }
   if (VERBOSE > 0) {
-    logger_->info(DRT, 81, "  complete {} unique inst patterns", cnt);
+    logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
   }
 
   // prep pattern for each row
@@ -1422,18 +1422,18 @@ void FlexPA::prepPattern()
       if (VERBOSE > 0) {
         if (cnt < 10000) {
           if (cnt % 1000 == 0) {
-            logger_->info(DRT, 82, "  complete {} groups", cnt);
+            logger_->info(DRT, 82, "  Complete {} groups.", cnt);
           }
         } else {
           if (cnt % 10000 == 0) {
-            logger_->info(DRT, 83, "  complete {} groups", cnt);
+            logger_->info(DRT, 83, "  Complete {} groups.", cnt);
           }
         }
       }
     }
   }
   if (VERBOSE > 0) {
-    logger_->info(DRT, 84, "  complete {} groups", cnt);
+    logger_->info(DRT, 84, "  Complete {} groups.", cnt);
   }
 }
 
@@ -1588,7 +1588,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
   }
 
   if (instCnt != -1) {
-    logger_->error(DRT, 85, "valid access pattern combination not found.");
+    logger_->error(DRT, 85, "Valid access pattern combination not found.");
   }
 
   // for (int i = 0; i < (int)instAccessPatternIdx.size(); i++) {
@@ -1829,7 +1829,7 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
             std::make_pair((sumXCoord + 0.0 * sumYCoord) / cnt,
                            std::make_pair(pin.get(), instTerm.get())));
       } else {
-        logger_->error(DRT, 86, "pin does not have access point.");
+        logger_->error(DRT, 86, "Pin does not have an access point.");
       }
     }
   }
@@ -1952,7 +1952,7 @@ void FlexPA::genPatterns(
     auto inst = pins[0].second->getInst();
     logger_->warn(DRT,
                   87,
-                  "no valid pattern for unique instance {}, refBlock is {}",
+                  "No valid pattern for unique instance {}, refBlock is {}.",
                   inst->getName(),
                   inst->getRefBlock()->getName());
     // int paIdx = unique2paidx[pins[0].second->getInst()];
@@ -2282,7 +2282,7 @@ bool FlexPA::genPatterns_commit(
   }
 
   if (pinCnt != -1) {
-    logger_->error(DRT, 90, "valid access pattern not found.");
+    logger_->error(DRT, 90, "Valid access pattern not found.");
   }
 
   // add to pattern set if unique
@@ -2339,7 +2339,7 @@ bool FlexPA::genPatterns_commit(
       }
       for (auto& pin : instTerm->getTerm()->getPins()) {
         if (pin2AP.find(pin.get()) == pin2AP.end()) {
-          logger_->error(DRT, 91, "pin does not have valid ap.");
+          logger_->error(DRT, 91, "Pin does not have valid ap.");
         } else {
           auto& ap = pin2AP[pin.get()];
           ap->getPoint(tmpPt);

@@ -445,7 +445,7 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
     }
 
     default:
-      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+      logger_->debug(DRT, 1, "Unknown fig type {} in drawLayer.", fig->typeId());
   }
 }
 
@@ -614,15 +614,15 @@ void FlexDRGraphics::startNet(drNet* net)
   status("Start net: " + net->getFrNet()->getName() + " "
          + workerOrigin(worker_, design_));
   logger_->info(
-      DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
+      DRT, 249, "Net {} (id = {}).", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {
-    logger_->info(DRT, 250, "  Pin {}", pin->getName());
+    logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
       frPoint pt;
       ap->getPoint(pt);
       logger_->info(DRT,
                     275,
-                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
+                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {}).",
                     pt.x() / (double) dbu_per_uu_,
                     pt.y() / (double) dbu_per_uu_,
                     ap->getBeginLayerNum(),

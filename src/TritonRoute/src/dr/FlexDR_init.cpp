@@ -359,7 +359,7 @@ void FlexDRWorker::initNets_initDR(
     } else if (obj->typeId() == frcTerm) {
       net = static_cast<frTerm*>(obj)->getNet();
     } else {
-      logger_->error(utl::DRT, 0, "Error: initNetTerms unsupported obj");
+      logger_->error(utl::DRT, 0, "initNetTerms unsupported obj.");
     }
     nets.insert(net);
     netTerms[net].insert(obj);
