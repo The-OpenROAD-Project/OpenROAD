@@ -1694,6 +1694,160 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
   }
 }
 
+void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
+                                               frMIdx z,
+                                               int type,
+                                               bool isUpperVia,
+                                               bool isBlockage)
+{
+  auto cutLayerNum1 = gridGraph_.getLayerNum(z) + 1;
+  auto cutLayerNum2 = isUpperVia ? cutLayerNum1 + 2 : cutLayerNum1 - 2;
+  
+  auto z2 = isUpperVia ? z + 1 : z - 1;
+
+  frViaDef* viaDef = nullptr;
+  if (isUpperVia) {
+    viaDef = (cutLayerNum2 <= getTech()->getTopLayerNum())
+                 ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
+                 : nullptr;
+  } else {
+    viaDef = (cutLayerNum2 >= getTech()->getBottomLayerNum())
+                 ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
+                 : nullptr;
+  }
+  if (viaDef == nullptr) {
+    return;
+  }
+  // obj1 = curr obj
+  // obj2 = other obj
+  // default via dimension
+  frVia via(viaDef);
+  frBox viaBox(0, 0, 0, 0);
+  via.getCutBBox(viaBox);
+
+  // spacing value needed
+
+  FlexMazeIdx mIdx1;
+  FlexMazeIdx mIdx2;
+  frString cutClass1, cutClass2;
+  frCoord bloatDist = 0;
+  frLayer* higherLayer;
+  frLayer* lowerLayer;
+  if(isUpperVia)
+  {
+    higherLayer = getTech()->getLayer(cutLayerNum2);
+    lowerLayer = getTech()->getLayer(cutLayerNum1);
+    cutClass1 = getTech()->getLayer(cutLayerNum2)->getCutClass(viaBox.width(), viaBox.length())->getName();
+    cutClass2 = getTech()->getLayer(cutLayerNum1)->getCutClass(box.width(), box.length())->getName();
+  } else 
+  {
+    lowerLayer = getTech()->getLayer(cutLayerNum2);
+    higherLayer = getTech()->getLayer(cutLayerNum1);
+    cutClass2 = getTech()->getLayer(cutLayerNum2)->getCutClass(viaBox.width(), viaBox.length())->getName();
+    cutClass1 = getTech()->getLayer(cutLayerNum1)->getCutClass(box.width(), box.length())->getName();
+  }
+  for(auto con : higherLayer->getLef58CutSpacingTableConstraints())
+  {
+    if(con->getODBRule()->isLayerValid())
+      if(con->getODBRule()->getSecondLayer()->getName() == lowerLayer->getName())
+        bloatDist = std::max(bloatDist, con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+  }
+  if(bloatDist == 0)
+    return;
+  // assumes width always > 2
+  frBox bx(box.left() - bloatDist - (viaBox.right() - 0) + 1,
+           box.bottom() - bloatDist - (viaBox.top() - 0) + 1,
+           box.right() + bloatDist + (0 - viaBox.left()) - 1,
+           box.top() + bloatDist + (0 - viaBox.bottom()) - 1);
+  gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
+
+  frPoint pt;
+  frBox tmpBx;
+  frSquaredDistance distSquare = 0;
+  frSquaredDistance c2cSquare = 0;
+  frCoord dx, dy, prl;
+  frTransform xform;
+  frSquaredDistance reqDistSquare = 0;
+  frPoint boxCenter, tmpBxCenter;
+  boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
+  frSquaredDistance currDistSquare = 0;
+  bool hasViol = false;
+  for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
+    for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+      for (auto& uFig : via.getViaDef()->getCutFigs()) {
+        auto obj = static_cast<frRect*>(uFig.get());
+        gridGraph_.getPoint(pt, i, j);
+        xform.set(pt);
+        obj->getBBox(tmpBx);
+        tmpBx.transform(xform);
+        tmpBxCenter.set((tmpBx.left() + tmpBx.right()) / 2,
+                        (tmpBx.bottom() + tmpBx.top()) / 2);
+        distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
+        c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
+        prl = max(-dx, -dy);
+        for(auto con : higherLayer->getLef58CutSpacingTableConstraints())
+        {
+          hasViol = false;
+          auto dbRule = con->getODBRule();
+          if(! dbRule->isLayerValid())
+            continue;
+          if(dbRule->getSecondLayer()->getName() != lowerLayer->getName())
+            continue;
+          auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
+          if(dbRule->isCenterAndEdge(cutClass1, cutClass2) && dbRule->isNoPrl())
+          {
+            reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false, 2);
+            reqDistSquare *= reqDistSquare;
+            if(c2cSquare < reqDistSquare)
+            {
+              reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false, 3);
+              reqDistSquare *= reqDistSquare;
+              if(distSquare < reqDistSquare)
+                hasViol = true;
+            }
+          } else {
+            if(prl > reqPrl)
+              reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false, 1);
+            else
+              reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false, 0);
+            
+            if(dbRule->isCenterToCenter(cutClass1, cutClass2))
+              currDistSquare = c2cSquare;
+            else if(dbRule->isCenterAndEdge(cutClass1, cutClass2) && 
+                      reqDistSquare == dbRule->getSpacing(cutClass1, false, cutClass2, false, 2))
+              currDistSquare = c2cSquare;
+            else
+              currDistSquare = distSquare;
+            
+
+            reqDistSquare *= reqDistSquare;
+            if(currDistSquare < reqDistSquare)
+              hasViol = true;
+          }
+          if (hasViol) {
+            switch (type) {
+              case 0:
+                gridGraph_.subRouteShapeCostVia(i, j, z2);  // safe access
+                break;
+              case 1:
+                gridGraph_.addRouteShapeCostVia(i, j, z2);  // safe access
+                break;
+              case 2:
+                gridGraph_.subFixedShapeCostVia(i, j, z2);  // safe access
+                break;
+              case 3:
+                gridGraph_.addFixedShapeCostVia(i, j, z2);  // safe access
+                break;
+              default:;
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
 void FlexDRWorker::addPathCost(drConnFig* connFig)
 {
   modPathCost(connFig, 1);

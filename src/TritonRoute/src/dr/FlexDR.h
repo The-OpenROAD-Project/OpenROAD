@@ -796,6 +796,11 @@ class FlexDRWorker
                                    int type,
                                    bool isUpperVia,
                                    bool isBlockage = false);
+  void modLef58InterLayerCutSpacingCost(const frBox& box,
+                                   frMIdx z,
+                                   int type,
+                                   bool isUpperVia,
+                                   bool isBlockage = false);
   // adjCut
   void modAdjCutSpacingCost_fixedObj(const frDesign* design,
                                      const frBox& box,
