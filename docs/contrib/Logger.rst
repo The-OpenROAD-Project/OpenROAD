@@ -7,7 +7,7 @@ A message format is as follows:
 <tool id> <message id> : <Message body>.
 
 For Example,
-DRT 0001 TritonRoute.cpp:333       Error reading param file: {}.
+[INFO ODB-0127] Reading DEF file: ./results/asap7/aes/base/4_cts.def
 
 All output from OpenROAD tools should be directed through the logging
 API to ensure that redirection, file logging and execution control flow is
@@ -39,7 +39,7 @@ a. Grammar
    vii. Use ellipsis (...) only to indicate a pause, as when some tool is running or being intialized
    
 b. Abbreviations and Shortcuts
-   i. Use single-word versions when well-accepted / well-understood by users+developers. 
+   i. Use single-word versions when well-accepted / well-understood by users and developers. 
    Examples, stdcell, cutline, wirelength, stdcell, flipchip, padring, bondpad, wirebond, libcell, viarule etc.
    
    ii. Do not abbreviate English words, expand for the sake of clarity. 
