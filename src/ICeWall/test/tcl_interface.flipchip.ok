@@ -23,5 +23,5 @@ Reset bump options
 [WARNING PAD-0012] Cannot find a terminal UNASSIGNED_1 for sig_140 to associate with bondpad bump_15_1_UNASSIGNED_1
 [WARNING PAD-0012] Cannot find a terminal UNASSIGNED_0 for sig_139 to associate with bondpad bump_15_2_UNASSIGNED_0
 [WARNING PAD-0012] Cannot find a terminal UNASSIGNED_2 for sig_141 to associate with bondpad bump_16_1_UNASSIGNED_2
-[INFO PDN-0015] Writing to database
+[INFO PDN-0015] Writing to database.
 No differences found.

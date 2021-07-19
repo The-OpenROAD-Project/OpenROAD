@@ -13,5 +13,5 @@
 [WARNING PAD-0012] Cannot find a terminal UNASSIGNED_1 for sig136 to associate with bondpad bump_15_1_UNASSIGNED_1
 [WARNING PAD-0012] Cannot find a terminal UNASSIGNED_0 for sig135 to associate with bondpad bump_15_2_UNASSIGNED_0
 [WARNING PAD-0012] Cannot find a terminal UNASSIGNED_2 for sig137 to associate with bondpad bump_16_1_UNASSIGNED_2
-[INFO PDN-0015] Writing to database
+[INFO PDN-0015] Writing to database.
 No differences found.
