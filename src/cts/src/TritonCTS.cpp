@@ -112,7 +112,7 @@ void TritonCTS::setupCharacterization()
 {
   // A new characteriztion is always created.
   _techChar->create();
-  
+
   // Also resets metrics everytime the setup is done
   _options->setNumSinks(0);
   _options->setNumBuffersInserted(0);
@@ -136,14 +136,14 @@ void TritonCTS::checkCharacterization()
     }
   });
 
-  _logger->info(CTS, 97, "Chacterization used {} buffer(s) types.",
+  _logger->info(CTS, 97, "Characterization used {} buffer(s) types.",
                    visitedMasters.size());
 }
 
 void TritonCTS::findClockRoots()
 {
   if (_options->getClockNets() != "") {
-    _logger->info(CTS, 1, "Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
+    _logger->info(CTS, 1, "Running TritonCTS with user-specified clock roots: {}.", _options->getClockNets());
   }
 }
 
@@ -235,7 +235,7 @@ void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder, odb::dbNet* net,
       int receiverX, receiverY;
       iterm->getAvgXY(&receiverX, &receiverY);
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
-      bool terminate = fullTree ? isSink(iterm) : 
+      bool terminate = fullTree ? isSink(iterm) :
         !builder->isAnyTreeBuffer(getClockFromInst(iterm->getInst()));
       if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
@@ -307,24 +307,20 @@ void TritonCTS::reportCtsMetrics()
     std::ofstream file(filename.c_str());
 
     if (!file.is_open()) {
-      _logger->error(CTS, 87, "Could not open output metric file.");
+      _logger->error(CTS, 87, "Could not open output metric file {}.", filename.c_str());
     }
 
-    file << "[TritonCTS Metrics] Total number of Clock Roots: "
-         << _options->getNumClockRoots() << ".\n";
-    file << "[TritonCTS Metrics] Total number of Buffers Inserted: "
-         << _options->getNumBuffersInserted() << ".\n";
-    file << "[TritonCTS Metrics] Total number of Clock Subnets: "
-         << _options->getNumClockSubnets() << ".\n";
-    file << "[TritonCTS Metrics] Total number of Sinks: "
-         << _options->getNumSinks() << ".\n";
-
+    file << "Total number of Clock Roots: " << _options->getNumClockRoots() << ".\n";
+    file << "Total number of Buffers Inserted: " << _options->getNumBuffersInserted() << ".\n";
+    file << "Total number of Clock Subnets: " << _options->getNumClockSubnets() << ".\n";
+    file << "Total number of Sinks: " << _options->getNumSinks() << ".\n";
     file.close();
+
   } else {
-    _logger->info(CTS, 3, "[TritonCTS Metrics] Total number of Clock Roots: {}.", _options->getNumClockRoots());
-    _logger->info(CTS, 4, "[TritonCTS Metrics] Total number of Buffers Inserted: {}.", _options->getNumBuffersInserted());
-    _logger->info(CTS, 5, "[TritonCTS Metrics] Total number of Clock Subnets: {}.", _options->getNumClockSubnets());
-    _logger->info(CTS, 6, "[TritonCTS Metrics] Total number of Sinks: {}.", _options->getNumSinks());
+    _logger->info(CTS, 3, "Total number of Clock Roots: {}.", _options->getNumClockRoots());
+    _logger->info(CTS, 4, "Total number of Buffers Inserted: {}.", _options->getNumBuffersInserted());
+    _logger->info(CTS, 5, "Total number of Clock Subnets: {}.", _options->getNumClockSubnets());
+    _logger->info(CTS, 6, "Total number of Sinks: {}.", _options->getNumSinks());
   }
 }
 
@@ -419,9 +415,9 @@ void TritonCTS::populateTritonCTS()
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
         if (clkName == "")
-          _logger->info(CTS, 95, "Net \"{}\" found", net->getName());
+          _logger->info(CTS, 95, "Net \"{}\" found.", net->getName());
         else
-          _logger->info(CTS, 7, "Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
+          _logger->info(CTS, 7, "Net \"{}\" found for clock \"{}\".", net->getName(), clkName);
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
         initOneClockTree(net, clkName, nullptr);
@@ -487,7 +483,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
     }
   }
 
-  _logger->info(CTS, 10, " Clock net \"{}\" has {} sinks", net->getConstName(), clockNet.getNumSinks());
+  _logger->info(CTS, 10, " Clock net \"{}\" has {} sinks.", net->getConstName(), clockNet.getNumSinks());
 
   long int totalSinks = _options->getNumSinks() + clockNet.getNumSinks();
   _options->setNumSinks(totalSinks);
@@ -850,7 +846,7 @@ bool TritonCTS::isSink(odb::dbITerm* iterm)
     return inputPort->isRegClk();
   } else {
     return false;
-  }    
+  }
 }
 
 }  // namespace cts
