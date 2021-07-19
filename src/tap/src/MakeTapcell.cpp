@@ -70,7 +70,7 @@ void initTapcell(OpenRoad* openroad)
   Tap_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
-  openroad->getTapcell()->init(openroad->getDb());
+  openroad->getTapcell()->init(openroad->getDb(), openroad->getLogger());
 }
 
 // using std::max;

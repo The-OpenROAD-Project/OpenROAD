@@ -58,7 +58,7 @@ class Tapcell
 public:
   Tapcell();
   ~Tapcell();
-  void init(odb::dbDatabase *db);
+  void init(odb::dbDatabase *db, utl::Logger* logger);
   void run();
   //void clear (std::string tap_prefix, std::string endcap_prefix);
   void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y);
@@ -67,7 +67,7 @@ public:
   void  cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>> row_blockages, int min_row_width, int halo_x, int halo_y);
   int make_site_loc( int x, double site_x, int dirc, int offset);
   void build_row(odb::dbBlock* block, std::string name, odb::dbSite* site, int start_x, int end_x, int y, odb::dbOrientType orient, odb::dbRowDir direction, int min_row_width);
-  int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, std::string prefix);
+  int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<const char*> cnrcap_masters, const char* prefix);
   std::pair<int, int> get_min_max_x(std::vector<std::vector<odb::dbRow*>> rows);
   std::vector<std::vector<odb::dbRow*>> organize_rows();
   bool check_symmetry( odb::dbMaster* master, odb::dbOrientType ori);
@@ -84,6 +84,7 @@ public:
   std::vector<odb::dbInst*> find_blockages();
 private:
   odb::dbDatabase *db_;
+  utl::Logger* logger_;
 };
 
 }

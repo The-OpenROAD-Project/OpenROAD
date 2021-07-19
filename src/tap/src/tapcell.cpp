@@ -52,7 +52,6 @@
 
 namespace tap {
 
-//using utl::PPL;
 
 using std::max;
 using std::min;
@@ -71,9 +70,10 @@ Tapcell::~Tapcell()
 {
 }
 
-void Tapcell::init(odb::dbDatabase *db)
+void Tapcell::init(odb::dbDatabase *db, utl::Logger* logger)
 {
   db_ = db;
+  logger_ = logger;
 
   // Define swig TCL commands.
   //Tap_Init(tcl_interp);
@@ -89,7 +89,7 @@ void Tapcell::init(odb::dbDatabase *db)
 //namespace evaltap{
 // int phy_idx;
 // std::vector<std::vector<int>> filled_sites;
-utl::Logger *logger_;
+//utl::Logger *logger_;
 // std::vector<odb::dbSite> filled_sites;    
 // std::string default_tapcell_prefix = "TAP_";
 // std::string default_endcap_prefix = "PHY_";
@@ -195,7 +195,7 @@ void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::strin
   //odb::inDbRowDestroy(row);
 }
 
-int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, std::string prefix) {
+int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<const char*> cnrcap_masters, const char* prefix) {
   int phy_idx;
   int start_phy_idx = phy_idx;
   odb::dbBlock *block = db_->getChip()->getBlock();
@@ -209,18 +209,18 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
 
   if (cnrcap_masters.size() == 2) {
     //lassign $cnrcap_masters cnrcap_nwin_master_name cnrcap_nwout_master_name
-    std::string cnrcap_nwin_master_name = cnrcap_masters[0];
-    std::string cnrcap_nwout_master_name = cnrcap_masters[1];
+    const char* cnrcap_nwin_master_name = cnrcap_masters[0];
+    const char* cnrcap_nwout_master_name = cnrcap_masters[1];
     if (cnrcap_nwin_master_name == "INVALID" || cnrcap_nwout_master_name == "INVALID") {
       do_corners = 0;
     } else {
       do_corners = 1;
 
-      cnrcap_nwin_master = db_->findMaster(cnrcap_nwin_master_name.c_str());
+      cnrcap_nwin_master = db_->findMaster(cnrcap_nwin_master_name);
       if ( cnrcap_nwin_master == nullptr ) {
-        logger_->error(utl::TAP, 12, "Master" + cnrcap_nwin_master_name + "not found.");
+        logger_->error(utl::TAP, 12, "Master cnrcap_nwin_master_name not found.");
       }
-      cnrcap_nwout_master = db_->findMaster(cnrcap_nwout_master_name.c_str());
+      cnrcap_nwout_master = db_->findMaster(cnrcap_nwout_master_name);
 
       if ( cnrcap_nwout_master == nullptr ) {
         logger_->error(utl::TAP, 13, "Master $cnrcap_nwout_master_name not found.");

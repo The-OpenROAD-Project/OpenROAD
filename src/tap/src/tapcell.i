@@ -127,7 +127,7 @@ std::vector<std::vector<odb::dbRow*>> organize_rows()
   return getTapcell()->organize_rows();
 }
 
-int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, std::string prefix)
+int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<const char*> cnrcap_masters, const char* prefix)
 {
   return getTapcell()->insert_endcaps(rows, endcap_master, cnrcap_masters, prefix);
 }
