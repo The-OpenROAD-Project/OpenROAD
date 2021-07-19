@@ -89,7 +89,7 @@ met5       Horizontal       2888          1443          50.03%
 
 [INFO GRT-0111] Final number of vias: 127
 [INFO GRT-0112] Final usage 3D: 573
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
