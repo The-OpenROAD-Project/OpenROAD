@@ -69,6 +69,7 @@ Site Map
    contrib/DatabaseMath
    contrib/GettingInvolved
    contrib/Logger
+   contrib/Metrics
    user/FAQS
 
 
