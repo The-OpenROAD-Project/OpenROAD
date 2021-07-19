@@ -1494,6 +1494,8 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
   }
 
   minl = (DTYPE)INT_MAX;
+  bestt1.branch.clear();
+  bestt2.branch.clear();
   for (i = 0; i < acc; i++) {
     maxbp = 0;
     for (bp = 1; bp < nbp; bp++)
@@ -1570,7 +1572,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
       bestt1 = t1;
       bestt2 = t2;
       bestbp = maxbp;
-    } else {
     }
   }
 

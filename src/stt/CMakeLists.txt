@@ -35,10 +35,8 @@
 
 include("openroad")
 
-project(stt)
-
-set(FLUTE_HOME ${PROJECT_SOURCE_DIR}/src/flt)
-set(PDR_HOME ${PROJECT_SOURCE_DIR}/src/pdr)
+set(FLUTE_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/flt)
+set(PDR_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/pdr)
 
 set(POWV9_DAT ${FLUTE_HOME}/etc/POWV9.dat)
 set(POST9_DAT ${FLUTE_HOME}/etc/POST9.dat)
