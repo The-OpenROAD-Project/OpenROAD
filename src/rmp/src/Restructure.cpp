@@ -230,23 +230,24 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                unsigned max_depth)
 {
   auto sta_state = open_sta_->search();
-  sta::VertexSet*  path_ends  = sta_state->endpoints();
-  std::size_t path_found = path_ends->size();
+  sta::VertexSet*  end_points  = sta_state->endpoints();
+  std::size_t path_found = end_points->size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  for (auto& path_end : *path_ends) {
+  //TODO: Sort?
+  for (auto& end_point : *end_points) {
     if (opt_mode_ >= Mode::DELAY_1) {
-      /* How to get PathExpanded from vertex?
-      sta::PathExpanded expanded(path_end->path(), open_sta_);
+      sta::Path* path = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max()).path();
+      sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
-        ends.insert(path_end->vertex(sta_state)->pin());
+        ends.insert(end_point->pin());
       }
       // Consider only 5 timing paths exceeding path depth to limit blob size for timing
       if (ends.size() > 5)
-        break;*/
+        break;
     } else {
-      ends.insert(path_end->pin());
+      ends.insert(end_point->pin());
     }
   }
 
