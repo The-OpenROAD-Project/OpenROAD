@@ -230,45 +230,13 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                unsigned max_depth)
 {
   auto sta_state = open_sta_->search();
-  int path_count = 100000;
-  float min_slack = -sta::INF;
-  float max_slack = area_mode ? sta::INF : 0;
-
-  
   sta::VertexSet*  path_ends  = sta_state->endpoints();
-  
-  /*sta::PathEndSeq* path_ends
-      = open_sta_->findPathEnds(  // from, thrus, to, unconstrained
-          nullptr,
-          nullptr,
-          nullptr,
-          false,
-          // corner, min_max,
-          open_sta_->findCorner("default"),
-          sta::MinMaxAll::max(),
-          // group_count, endpoint_count, unique_pins
-          path_count,
-          1,
-          true,
-          min_slack,
-          max_slack,  // slack_min, slack_max,
-          true,       // sort_by_slack
-          nullptr,    // group_names
-          // setup, hold, recovery, removal,
-          true,
-          true,
-          false,
-          false,
-          // clk_gating_setup, clk_gating_hold
-          false,
-          false);
-  */
-
   std::size_t path_found = path_ends->size();
   logger_->report("Number of paths for restructure are {}", path_found);
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
-      /*sta::PathExpanded expanded(path_end->path(), open_sta_);
+      /* How to get PathExpanded from vertex?
+      sta::PathExpanded expanded(path_end->path(), open_sta_);
       // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
