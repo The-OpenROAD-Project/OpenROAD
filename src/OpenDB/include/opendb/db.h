@@ -8290,7 +8290,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   int getMaxSpacing(std::string cutClass, bool SIDE) const;
 
-  int getMaxSpacing(std::string cutClass1, std::string cutClass2) const;
+  int getMaxSpacing(std::string cutClass1, std::string cutClass2, short strategy = 2) const;
 
   int getSpacing(std::string class1,
                  bool SIDE1,

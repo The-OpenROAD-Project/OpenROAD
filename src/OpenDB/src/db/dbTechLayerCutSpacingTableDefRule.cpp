@@ -912,12 +912,13 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass,
 
 int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(
     std::string cutClass1,
-    std::string cutClass2) const
+    std::string cutClass2,
+    short strategy) const
 {
-  auto spc1 = getSpacing(cutClass1, true, cutClass2, true);
-  auto spc2 = getSpacing(cutClass1, true, cutClass2, false);
-  auto spc3 = getSpacing(cutClass1, false, cutClass2, true);
-  auto spc4 = getSpacing(cutClass1, false, cutClass2, false);
+  auto spc1 = getSpacing(cutClass1, true, cutClass2, true, strategy);
+  auto spc2 = getSpacing(cutClass1, true, cutClass2, false, strategy);
+  auto spc3 = getSpacing(cutClass1, false, cutClass2, true, strategy);
+  auto spc4 = getSpacing(cutClass1, false, cutClass2, false, strategy);
 
   return std::max(std::max(spc1, spc2), std::max(spc3, spc4));
 }

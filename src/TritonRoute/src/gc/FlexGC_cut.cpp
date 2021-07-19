@@ -99,7 +99,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(const gtl::rectangle_d
 
   auto orient1 = gtl::guess_orientation(edgeRect1);
   auto orient2 = gtl::guess_orientation(edgeRect2);
-  if (orient1 == orient1) {
+  if (orient1 == orient2) {
     gtl::rectangle_data<frCoord> checkRect(edgeRect1);
     gtl::generalized_intersect(checkRect, edgeRect2);
     // check for prl
