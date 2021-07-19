@@ -183,7 +183,7 @@ void AntennaRepair::legalizePlacedCells()
   AntennaCbk* cbk = new AntennaCbk(grouter_);
   cbk->addOwner(block_);
 
-  opendp_->detailedPlacement(0);
+  opendp_->detailedPlacement(0, 0);
   opendp_->checkPlacement(false);
 
   cbk->removeOwner();

@@ -2,7 +2,7 @@
   "instance_count" : "27907.2"
  ,"design_area" : "375542.4"
  ,"utilization" : "12.48"
- ,"worst_slack_min" : "-0.3638356337969218"
+ ,"worst_slack_min" : "-0.2818356337969218"
  ,"worst_slack_max" : "-1.1515393008303692"
  ,"tns_max" : "-734.2519492048351"
  ,"clock_skew" : "1.5839114468326947"

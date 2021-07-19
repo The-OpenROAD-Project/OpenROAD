@@ -230,9 +230,12 @@ class DisplayControls : public QDockWidget, public Options
                           odb::dbTechLayer* tech_layer = nullptr);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
+  void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);
 
   QTreeView* view_;
   QStandardItemModel* model_;
+
+  bool ignore_callback_;
 
   // Categories in the model
   ModelRow layers_group_;

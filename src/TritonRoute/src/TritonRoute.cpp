@@ -342,6 +342,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
   VERBOSE = params.verbose;
+  ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   if (params.drouteViaInPinBottomLayerNum > 0) {
     VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;
