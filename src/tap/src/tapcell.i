@@ -117,6 +117,11 @@ using std::string;
 
 namespace tap {
 
+void run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const char* cnrcap_nwin_master, const char* cnrcap_nwout_master, const char* endcap_prefix, int add_boundary_cell, const char* tap_nwintie_master, const char* tap_nwin2_master, const char* tap_nwin3_master, const char* tap_nwouttie_master, const char* tap_nwout2_master, const char* tap_nwout3_master, const char* incnrcap_nwin_master, const char* incnrcap_nwout_master, const char* tapcell_master, int dist, const char* tap_prefix)
+{
+  getTapcell()->run(endcap_master, halo_x, halo_y, cnrcap_nwin_master, cnrcap_nwout_master, endcap_prefix, add_boundary_cell, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, incnrcap_nwin_master, incnrcap_nwout_master, tapcell_master, dist, tap_prefix);
+}
+
 void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
   getTapcell()->cut_rows(endcap_master, blockages, halo_x, halo_y);
@@ -150,6 +155,11 @@ int remove_cells(const char* prefix)
 std::vector<odb::dbInst*> find_blockages()
 {
   return getTapcell()->find_blockages();
+}
+
+int insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_master, int dist, std::string prefix)
+{
+  return getTapcell()->insert_tapcells(rows, tapcell_master, dist, prefix);
 }
 
 } // namespace

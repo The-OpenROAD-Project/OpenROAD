@@ -45,10 +45,6 @@
 #include <utility>
 #include <string>
 
-// namespace sta {
-// // Tcl files encoded into strings.
-// extern const char *tap_tcl_inits[];
-// }
 
 namespace tap {
 
@@ -57,9 +53,6 @@ using std::max;
 using std::min;
 using std::vector;
 
-// extern "C" {
-// extern int Tap_Init(Tcl_Interp *interp);
-// }
 
 Tapcell::Tapcell()
   : db_(nullptr)
@@ -103,6 +96,52 @@ void Tapcell::init(odb::dbDatabase *db, utl::Logger* logger)
 //   filled_sites.clear();
 // }
 
+int phy_idx;
+//variable filled_sites
+
+void Tapcell::run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const char* cnrcap_nwin_master, const char* cnrcap_nwout_master, const char* endcap_prefix, int add_boundary_cell, const char* tap_nwintie_master, const char* tap_nwin2_master, const char* tap_nwin3_master, const char* tap_nwouttie_master, const char* tap_nwout2_master, const char* tap_nwout3_master, const char* incnrcap_nwin_master, const char* incnrcap_nwout_master, const char* tapcell_master, int dist, const char* tap_prefix)
+{
+  cut_rows(endcap_master, find_blockages(), halo_x, halo_y);
+
+  std::vector<std::vector<odb::dbRow*>> rows = organize_rows();
+
+  std::vector<const char*> cnrcap_masters;
+  cnrcap_masters.push_back(cnrcap_nwin_master);
+  //logger_->info(utl::TAP, 0, "Name is: {} ", halo_x);
+  cnrcap_masters.push_back(cnrcap_nwout_master);
+
+  phy_idx = 0;
+  //set tap::filled_sites []
+  //if { [info exists keys(-endcap_master)] } {
+    insert_endcaps(rows, endcap_master, cnrcap_masters, endcap_prefix);
+  //}
+
+  if (add_boundary_cell) {
+    std::vector<std::string> tap_nw_masters;
+    tap_nw_masters.push_back(tap_nwintie_master);
+    tap_nw_masters.push_back(tap_nwin2_master);
+    tap_nw_masters.push_back(tap_nwin3_master);
+    tap_nw_masters.push_back(tap_nwouttie_master);
+    tap_nw_masters.push_back(tap_nwout2_master);
+    tap_nw_masters.push_back(tap_nwout3_master);
+
+    std::vector<std::string> tap_macro_masters;
+    tap_macro_masters.push_back(incnrcap_nwin_master);
+    tap_macro_masters.push_back(tap_nwin2_master);
+    tap_macro_masters.push_back(tap_nwin3_master);
+    tap_macro_masters.push_back(tap_nwintie_master);
+    tap_macro_masters.push_back(incnrcap_nwout_master);
+    tap_macro_masters.push_back(tap_nwout2_master);
+    tap_macro_masters.push_back(tap_nwout3_master);
+    tap_macro_masters.push_back(tap_nwouttie_master);
+
+    insert_at_top_bottom(rows, tap_nw_masters, db_->findMaster(cnrcap_nwin_master), endcap_prefix);
+    insert_around_macros(rows, tap_macro_masters, db_->findMaster(cnrcap_nwin_master), endcap_prefix);
+  }
+
+  insert_tapcells(rows, tapcell_master, dist, tap_prefix);
+}
+
 void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -139,9 +178,9 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
     cut_row(block, row, row_blockages, min_row_width, halo_x, halo_y);
   }
   int cut_rows_count = block->getRows().size()-rows_count;
-  logger_->info(utl::TAP, 1, "Macro blocks found: ", block_count);
-  logger_->info(utl::TAP, 2, "Original rows: ", rows_count);
-  logger_->info(utl::TAP, 3, "Created rows: ", cut_rows_count);
+  logger_->info(utl::TAP, 1, "Macro blocks found: {} ", block_count);
+  logger_->info(utl::TAP, 2, "Original rows: {} ", rows_count);
+  logger_->info(utl::TAP, 3, "Created rows: {} ", cut_rows_count);
 }
 
 void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>> row_blockages, int min_row_width, int halo_x, int halo_y) {
@@ -218,12 +257,12 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
 
       cnrcap_nwin_master = db_->findMaster(cnrcap_nwin_master_name);
       if ( cnrcap_nwin_master == nullptr ) {
-        logger_->error(utl::TAP, 12, "Master cnrcap_nwin_master_name not found.");
+        logger_->error(utl::TAP, 12, "Master {} not found.", cnrcap_nwin_master_name);
       }
       cnrcap_nwout_master = db_->findMaster(cnrcap_nwout_master_name);
 
       if ( cnrcap_nwout_master == nullptr ) {
-        logger_->error(utl::TAP, 13, "Master $cnrcap_nwout_master_name not found.");
+        logger_->error(utl::TAP, 13, "Master {} not found.", cnrcap_nwout_master_name);
       }
       //get_min_max_x?????
       std::pair<int, int> min_max_x;
@@ -282,7 +321,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
       int loc_2_x = urx - master_x;
       int loc_2_y = ury - master_y;
       if (llx == loc_2_x && lly == loc_2_y) {
-        logger_->warn(utl::TAP, 9, "row" + subrow->getName() + " have enough space for only one endcap.");
+        logger_->warn(utl::TAP, 9, "row {} have enough space for only one endcap.", subrow->getName());
         continue;
       }
 
@@ -297,7 +336,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
   }
 
   int endcap_count = phy_idx - start_phy_idx;
-  logger_->info(utl::TAP, 4, "Endcaps inserted:" + endcap_count);
+  logger_->info(utl::TAP, 4, "Endcaps inserted: {}", endcap_count);
   return endcap_count;
 }
 
@@ -354,7 +393,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
 
   odb::dbMaster* master = db_->findMaster(tapcell_master.c_str());
   if (master == nullptr) {
-    logger_->error(utl::TAP, 11, "Master" + tapcell_master + "not found.");
+    logger_->error(utl::TAP, 11, "Master {} not found.", tapcell_master);
   }
   int tap_width = master->getWidth();
 
@@ -488,7 +527,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
     }
   }
   int tapcell_count = phy_idx - start_phy_idx;
-  logger_->info(utl::TAP, 5, "Tapcells inserted:" + std::to_string(tapcell_count));
+  logger_->info(utl::TAP, 5, "Tapcells inserted: {}", tapcell_count);
   return tapcell_count;
 }
 
@@ -543,15 +582,15 @@ int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, st
 
   odb::dbMaster* tap_nwintie_master = db_->findMaster(tap_nwintie_master_name.c_str());
   if (tap_nwintie_master == nullptr) {
-    logger_->error(utl::TAP, 18, "Master $tap_nwintie_master_name not found.");
+    logger_->error(utl::TAP, 18, "Master {} not found.", tap_nwintie_master_name);
   }
   odb::dbMaster* tap_nwin2_master = db_->findMaster(tap_nwin2_master_name.c_str());
   if (tap_nwin2_master == nullptr) {
-    logger_->error(utl::TAP, 19, "Master $tap_nwin2_master_name not found.");
+    logger_->error(utl::TAP, 19, "Master {} not found.", tap_nwin2_master_name);
   }
   odb::dbMaster* tap_nwin3_master = db_->findMaster(tap_nwin3_master_name.c_str());
   if (tap_nwin3_master == nullptr) {
-    logger_->error(utl::TAP, 20, "Master $tap_nwin3_master_name not found.");
+    logger_->error(utl::TAP, 20, "Master {} not found.", tap_nwin3_master_name);
   }
   odb::dbMaster* tap_nwouttie_master = db_->findMaster(tap_nwouttie_master_name.c_str());
   if (tap_nwouttie_master == nullptr) {
@@ -559,11 +598,11 @@ int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, st
   }
   odb::dbMaster* tap_nwout2_master = db_->findMaster(tap_nwout2_master_name.c_str());
   if (tap_nwout2_master == nullptr) {
-    logger_->error(utl::TAP, 22, "Master $tap_nwout2_master_name not found.");
+    logger_->error(utl::TAP, 22, "Master {} not found.", tap_nwout2_master_name);
   }
   odb::dbMaster* tap_nwout3_master = db_->findMaster(tap_nwout3_master_name.c_str());
   if (tap_nwout3_master == nullptr) {
-    logger_->error(utl::TAP, 23, "Master $tap_nwout3_master_name not found.");
+    logger_->error(utl::TAP, 23, "Master {} not found.", tap_nwout3_master_name);
   }
 
   int tbtiewidth = tap_nwintie_master->getWidth();
@@ -595,7 +634,7 @@ int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, st
     }
   }
   int topbottom_cnt = phy_idx - start_phy_idx;
-  logger_->info(utl::TAP, 6, "Top/bottom cells inserted: $topbottom_cnt");
+  logger_->info(utl::TAP, 6, "Top/bottom cells inserted: {}", topbottom_cnt);
   return topbottom_cnt;
 }
 
@@ -704,35 +743,35 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
   
   odb::dbMaster* tap_nwintie_master = db_->findMaster(tap_nwintie_master_name.c_str());
   if (tap_nwintie_master == nullptr) {
-    logger_->error(utl::TAP, 24, "Master $tap_nwintie_master_name not found.");
+    logger_->error(utl::TAP, 24, "Master {} not found.", tap_nwintie_master_name);
   }
   odb::dbMaster* tap_nwin2_master = db_->findMaster(tap_nwin2_master_name.c_str());
   if (tap_nwin2_master == nullptr) {
-    logger_->error(utl::TAP, 25, "Master $tap_nwin2_master_name not found.");
+    logger_->error(utl::TAP, 25, "Master {} not found.", tap_nwin2_master_name);
   }
   odb::dbMaster* tap_nwin3_master = db_->findMaster(tap_nwin3_master_name.c_str());
   if (tap_nwin3_master == nullptr) {
-    logger_->error(utl::TAP, 26, "Master $tap_nwin3_master_name not found.");
+    logger_->error(utl::TAP, 26, "Master {} not found.", tap_nwin3_master_name);
   }
   odb::dbMaster* tap_nwouttie_master = db_->findMaster(tap_nwouttie_master_name.c_str());
   if (tap_nwouttie_master == nullptr) {
-    logger_->error(utl::TAP, 27, "Master $tap_nwouttie_master_name not found.");
+    logger_->error(utl::TAP, 27, "Master {} not found.", tap_nwouttie_master_name);
   }
   odb::dbMaster* tap_nwout2_master = db_->findMaster(tap_nwout2_master_name.c_str());
   if (tap_nwout2_master == nullptr) {
-    logger_->error(utl::TAP, 28, "Master $tap_nwout2_master_name not found.");
+    logger_->error(utl::TAP, 28, "Master {} not found.", tap_nwout2_master_name);
   }
   odb::dbMaster* tap_nwout3_master = db_->findMaster(tap_nwout3_master_name.c_str());
   if (tap_nwout3_master == nullptr) {
-    logger_->error(utl::TAP, 29, "Master $tap_nwout3_master_name not found.");
+    logger_->error(utl::TAP, 29, "Master {} not found.", tap_nwout3_master_name);
   }
   odb::dbMaster* incnrcap_nwin_master = db_->findMaster(incnrcap_nwin_master_name.c_str());
   if (incnrcap_nwin_master == nullptr) {
-    logger_->error(utl::TAP, 30, "Master $incnrcap_nwin_master_name not found.");
+    logger_->error(utl::TAP, 30, "Master {} not found.", incnrcap_nwin_master_name);
   }
   odb::dbMaster* incnrcap_nwout_master = db_->findMaster(incnrcap_nwout_master_name.c_str());
   if (incnrcap_nwout_master == nullptr) {
-    logger_->error(utl::TAP, 31, "Master $incnrcap_nwout_master_name not found.");
+    logger_->error(utl::TAP, 31, "Master {} not found.", incnrcap_nwout_master_name);
   }
   
   // find macro outlines
@@ -850,7 +889,7 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
     }
   }
   int blkgs_cnt = phy_idx - start_phy_idx;
-  logger_->info(utl::TAP, 7, "Cells inserted near blkgs: $blkgs_cnt");
+  logger_->info(utl::TAP, 7, "Cells inserted near blkgs: {}", blkgs_cnt);
   return blkgs_cnt;
 }
 
@@ -989,7 +1028,7 @@ std::vector<odb::dbInst*> Tapcell::find_blockages () {
   for( odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->isBlock()) {
       if (!inst->isPlaced()) {
-        logger_->warn(utl::TAP, 32, "Macro" + inst->getName() + "is not placed");
+        logger_->warn(utl::TAP, 32, "Macro {} is not placed", inst->getName());
         continue;
       }
       blockages.push_back(inst);
