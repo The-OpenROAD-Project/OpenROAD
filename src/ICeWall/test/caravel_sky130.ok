@@ -142,9 +142,11 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/lef/
 [INFO ODB-0134] Finished DEF file: caravel_sky130/chip_io.def
 Loading library data
 Extracting footprint
-[WARNING PAD-0046] No power nets found in design
-[WARNING PAD-0047] No ground nets found in design
-No differences found.
+[WARNING PAD-0046] No power nets found in design.
+[WARNING PAD-0047] No ground nets found in design.
+Differences found at line 4.
+  Type wirebond
+  Type Wirebond
 Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_ef_io__corner_pad has no liberty cell.
@@ -156,11 +158,11 @@ Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
 [INFO IFP-0001] Added 1898 rows of 7775 sites.
-[WARNING PAD-0050] Multiple nets found on VSSA in pad ring
-[WARNING PAD-0050] Multiple nets found on VCCD in pad ring
-[WARNING PAD-0050] Multiple nets found on VCCD in pad ring
-[WARNING PAD-0050] Multiple nets found on VSSD in pad ring
-[WARNING PAD-0050] Multiple nets found on VDDA in pad ring
-[WARNING PAD-0050] Multiple nets found on VDDA in pad ring
-[INFO PAD-0053] Creating pad ring nets: VSSA, VCCD_0, VCCD_2, VSSD, VDDA_0, VDDA_2
+[WARNING PAD-0050] Multiple nets found on VSSA in padring.
+[WARNING PAD-0050] Multiple nets found on VCCD in padring.
+[WARNING PAD-0050] Multiple nets found on VCCD in padring.
+[WARNING PAD-0050] Multiple nets found on VSSD in padring.
+[WARNING PAD-0050] Multiple nets found on VDDA in padring.
+[WARNING PAD-0050] Multiple nets found on VDDA in padring.
+[INFO PAD-0053] Creating padring nets: VSSA, VCCD_0, VCCD_2, VSSD, VDDA_0, VDDA_2.
 No differences found.
