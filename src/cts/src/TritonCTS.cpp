@@ -626,17 +626,6 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     }
   });
 
-  std::string fanoutDistString
-      = "    Fanout distribution for the current clock = ";
-  std::string fanout = "";
-  for (auto const& x : fanoutcount) {
-    fanout = fanout + std::to_string(x.first) + ':' + std::to_string(x.second)
-             + ", ";
-  }
-
-  fanoutDistString
-      = fanoutDistString + fanout.substr(0, fanout.size() - 2) + ".";
-
   if (_options->writeOnlyClockNets()) {
     removeNonClockNets();
   }
@@ -667,7 +656,15 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
   long int totalNets = _options->getNumClockSubnets() + _numClkNets;
   _options->setNumClockSubnets(totalNets);
 
-  _logger->info(CTS, 16, "{}", fanoutDistString);
+  std::string fanout = "";
+  for (auto const& x : fanoutcount) {
+    fanout += std::to_string(x.first) + ':' + std::to_string(x.second) + ", ";
+  }
+
+  _logger->info(CTS,
+                16,
+                "    Fanout distribution for the current clock = {}.",
+                fanout.substr(0, fanout.size() - 2) + ".");
   _logger->info(CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
 }
 
