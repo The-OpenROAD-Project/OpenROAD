@@ -10,8 +10,8 @@
 [INFO ODB-0133]     Created 103 nets and 242 connections.
 [INFO ODB-0134] Finished DEF file: rcon.def
 Design area 0 u^2 100% utilization.
-Removed 2 instances with constant outputs.
-Number of paths for restructure are 19
+Removed 27 instances with constant outputs.
+Number of paths for restructure are 10
 Found 10 end points for restructure
 Found 123 pins in extracted logic
 Found 41 instances for restructuring.

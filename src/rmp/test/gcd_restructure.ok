@@ -14,7 +14,7 @@
 worst slack 1.29
 Design area 700 u^2 11% utilization.
 Removed 0 instances with constant outputs.
-Number of paths for restructure are 105
+Number of paths for restructure are 53
 Found 53 end points for restructure
 Found 1290 pins in extracted logic
 Found 422 instances for restructuring.

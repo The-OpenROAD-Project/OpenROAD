@@ -229,15 +229,13 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,
                                unsigned max_depth)
 {
-  open_sta_->ensureGraph();
-  open_sta_->searchPreamble();
   auto sta_state = open_sta_->search();
   int path_count = 100000;
-  float min_slack = area_mode ? -sta::INF : -sta::INF;
+  float min_slack = -sta::INF;
   float max_slack = area_mode ? sta::INF : 0;
 
   sta::PathEndSeq* path_ends
-      = sta_state->findPathEnds(  // from, thrus, to, unconstrained
+      = open_sta_->findPathEnds(  // from, thrus, to, unconstrained
           nullptr,
           nullptr,
           nullptr,
@@ -247,7 +245,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
           sta::MinMaxAll::max(),
           // group_count, endpoint_count, unique_pins
           path_count,
-          2,
+          1,
           true,
           min_slack,
           max_slack,  // slack_min, slack_max,
@@ -264,16 +262,16 @@ void Restructure::getEndPoints(sta::PinSet& ends,
 
   std::size_t path_found = path_ends->size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  int end_count = 0;
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
+      // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
         ends.insert(path_end->vertex(sta_state)->pin());
-        end_count++;
       }
-      if (end_count > 5)  // limit blob size for timing
+      // Consider only 5 timing paths exceeding path depth to limit blob size for timing
+      if (ends.size() > 5)
         break;
     } else {
       ends.insert(path_end->vertex(sta_state)->pin());
@@ -289,7 +287,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                        false /*loops*/,
                                        false /*generated_clks*/);
   debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
-  if (errors.size() && errors[0]->size() > 1) {
+  if (!errors.empty() && errors[0]->size() > 1) {
     sta::CheckError* error = errors[0];
     bool first = true;
     for (auto pinName : *error) {
