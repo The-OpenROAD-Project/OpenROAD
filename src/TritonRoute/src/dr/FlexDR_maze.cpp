@@ -1924,6 +1924,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
       modCutSpacingCost(box, bi.z(), type);
       modInterLayerCutSpacingCost(box, bi.z(), type, true);
       modInterLayerCutSpacingCost(box, bi.z(), type, false);
+      modLef58InterLayerCutSpacingCost(box, bi.z(), type, true);
+      modLef58InterLayerCutSpacingCost(box, bi.z(), type, false);
     }
   }
 }
