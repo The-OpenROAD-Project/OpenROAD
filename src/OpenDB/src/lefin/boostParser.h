@@ -28,7 +28,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim_all.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/config/warning_disable.hpp>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container.hpp>
@@ -48,8 +48,11 @@ namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
 
+using namespace boost::placeholders;
+
 using ascii::char_;
 using boost::fusion::at_c;
+using boost::spirit::ascii::alpha;
 using boost::spirit::ascii::space_type;
 using boost::spirit::ascii::string;
 using boost::spirit::qi::lit;
