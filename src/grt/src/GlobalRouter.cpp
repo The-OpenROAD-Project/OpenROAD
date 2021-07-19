@@ -90,7 +90,15 @@ GlobalRouter::GlobalRouter() :
   routing_tracks_(new std::vector<RoutingTracks>),
   grid_(new Grid),
   nets_(new std::vector<Net>),
-  routing_layers_(new std::vector<RoutingLayer>)
+  routing_layers_(new std::vector<RoutingLayer>),
+  openroad_(nullptr),
+  logger_(nullptr),
+  gui_(nullptr),
+  fastroute_(nullptr),
+  groute_renderer_(nullptr),
+  sta_(nullptr),
+  db_(nullptr),
+  block_(nullptr)
 {
 }
 
