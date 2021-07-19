@@ -61,6 +61,7 @@
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "ord/OpenRoad.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -81,7 +82,6 @@ GlobalRouter::GlobalRouter() :
   allow_congestion_(false),
   macro_extension_(0),
   verbose_(0),
-  alpha_(0.3),
   seed_(0),
   caps_perturbation_percentage_(0),
   perturbation_amount_(1),
@@ -108,8 +108,9 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   logger_ = openroad->getLogger();
   // Broken gui api missing openroad accessor.
   gui_ = gui::Gui::get();
+  stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
-  fastroute_ = new FastRouteCore(db_, logger_);
+  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = openroad_->getSta();
 }
 
@@ -727,10 +728,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       if (pins_on_grid.size() > 1 && !on_grid_local) {
-        float net_alpha = alpha_;
-        if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
-          net_alpha = net_alpha_map_[net->getName()];
-        }
         bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int num_layers = grid_->getNumLayers();
@@ -739,7 +736,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
         int netID = fastroute_->addNet(net->getDbNet(),
                                        pins_on_grid.size(),
-                                       net_alpha,
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,
@@ -1307,11 +1303,6 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
   max_layer_for_clock_ = max_layer;
 }
 
-void GlobalRouter::setAlpha(const float alpha)
-{
-  alpha_ = alpha;
-}
-
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
 {
   initAdjustments();
@@ -1336,12 +1327,6 @@ void GlobalRouter::addRegionAdjustment(int min_x,
 {
   region_adjustments_.push_back(
       RegionAdjustment(min_x, min_y, max_x, max_y, layer, reduction_percentage));
-}
-
-void GlobalRouter::addAlphaForNet(char* netName, float alpha)
-{
-  std::string name(netName);
-  net_alpha_map_[name] = alpha;
 }
 
 void GlobalRouter::setVerbose(const int v)

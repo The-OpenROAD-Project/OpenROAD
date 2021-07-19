@@ -47,6 +47,9 @@ class Logger;
 namespace gui {
 class Gui;
 }
+namespace stt {
+class SteinerTreeBuilder;
+}
 namespace triton_route {
 
 typedef struct {
@@ -72,7 +75,10 @@ class TritonRoute
  public:
   TritonRoute();
   ~TritonRoute();
-  void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger);
+  void init(Tcl_Interp* tcl_interp,
+            odb::dbDatabase* db,
+            utl::Logger* logger,
+            stt::SteinerTreeBuilder* stt_builder);
 
   fr::frDesign* getDesign() const { return design_.get(); }
 
@@ -98,6 +104,7 @@ class TritonRoute
   std::unique_ptr<fr::frDebugSettings> debug_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  stt::SteinerTreeBuilder* stt_builder_;
   int num_drvs_;
   gui::Gui* gui_;
 

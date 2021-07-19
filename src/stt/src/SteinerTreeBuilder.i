@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,13 +33,82 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+%{
+
+#include "stt/SteinerTreeBuilder.h"
+#include "stt/pdrev.h"
+#include "gui/gui.h"
+#include "ord/OpenRoad.hh"
+#include "opendb/db.h"
+#include <vector>
 
 namespace ord {
+// Defined in OpenRoad.i
+stt::SteinerTreeBuilder* getSteinerTreeBuilder();
+utl::Logger* getLogger();
+}  // namespace ord
 
-class OpenRoad;
+using ord::getSteinerTreeBuilder;
+using odb::dbNet;
+%}
+
+%include "../../Exception.i"
+
+%import <std_vector.i>
+namespace std {
+%template(pdrev_xy) vector<int>;
+}
+
+%inline %{
+
+namespace stt {
 
 void
-initPdrev(OpenRoad *openroad);
+set_routing_alpha_cmd(float alpha)
+{
+  getSteinerTreeBuilder()->setAlpha(alpha);
+}
+
+void
+set_net_alpha(odb::dbNet* net, float alpha)
+{
+  getSteinerTreeBuilder()->setNetAlpha(net, alpha);
+}
+
+void
+report_pd_tree(std::vector<int> x,
+               std::vector<int> y,
+               int drvr_index,
+               float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  pdr::reportSteinerTree(tree, logger);
+}
+
+void
+highlight_pd_tree(std::vector<int> x,
+                  std::vector<int> y,
+                  int drvr_index,
+                  float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  gui::Gui *gui = gui::Gui::get();
+  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
+  pdr::highlightSteinerTree(tree, gui);
+}
+
+void
+report_pdII_tree(std::vector<int> x,
+                 std::vector<int> y,
+                 int drvr_index,
+                 float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
+  pdr::reportSteinerTree(tree, logger);
+}
 
 } // namespace
+
+%} // inline

@@ -62,27 +62,6 @@ proc set_global_routing_layer_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_alpha" { alpha \
-                                          [-net net_name] }
-
-proc set_routing_alpha { args } {
-  sta::parse_key_args "set_routing_alpha" args \
-                 keys {-net}
-
-  set alpha [lindex $args 0]
-  if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
-    utl::error GRT 29 "The alpha value must be between 0.0 and 1.0."
-  }
-  if { [info exists keys(-net)] } {
-    set net_name $keys(-net)
-    grt::set_alpha_for_net $net_name $alpha
-  } elseif { [llength $args] == 1 } {
-    grt::set_routing_alpha_cmd $alpha
-  } else {
-    utl::error GRT 46 "set_routing_alpha: Wrong number of arguments."
-  }
-}
-
 sta::define_cmd_args "set_global_routing_region_adjustment" { region \
                                                               [-layer layer] \
                                                               [-adjustment adjustment] \

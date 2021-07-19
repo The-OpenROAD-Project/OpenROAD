@@ -49,7 +49,6 @@
 #include <utility>
 
 #include "DataType.h"
-#include "flute.h"
 #include "utl/Logger.h"
 #include "opendb/db.h"
 
@@ -57,7 +56,7 @@ namespace grt {
 
 using utl::GRT;
 
-FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log) :
+FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder) :
   new_net_id_(0),
   seg_count_(0),
   pin_ind_(0),
@@ -67,6 +66,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log) :
   num_nets_(0),
   max_degree_(0),
   logger_(log),
+  stt_builder_(stt_builder),
   db_(db),
   allow_overflow_(false),
   overflow_iterations_(0),
@@ -331,7 +331,6 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
                           int num_pins,
-                          float alpha,
                           bool is_clock,
                           int driver_idx,
                           int cost,
@@ -343,7 +342,6 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->db_net = db_net;
   net->numPins = num_pins;
   net->deg = pin_ind_;
-  net->alpha = alpha;
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
   net->edgeCost = cost;

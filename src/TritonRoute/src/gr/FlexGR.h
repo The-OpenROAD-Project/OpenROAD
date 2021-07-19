@@ -35,12 +35,14 @@
 
 #include "FlexGRCMap.h"
 #include "db/grObj/grNet.h"
-#include "flute.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "gr/FlexGRGridGraph.h"
 namespace odb {
 class dbDatabase;
+}
+namespace stt {
+class SteinerTreeBuilder;
 }
 namespace fr {
 
@@ -48,8 +50,8 @@ class FlexGR
 {
  public:
   // constructors
-  FlexGR(frDesign* designIn, Logger* logger)
-      : design_(designIn), cmap_(nullptr), cmap2D_(nullptr), logger_(logger)
+  FlexGR(frDesign* designIn, Logger* logger, stt::SteinerTreeBuilder* stt_builder)
+      : design_(designIn), cmap_(nullptr), cmap2D_(nullptr), logger_(logger), stt_builder_(stt_builder)
   {
   }
 
@@ -74,6 +76,7 @@ class FlexGR
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
   Logger* logger_;
+  stt::SteinerTreeBuilder* stt_builder_;
   std::map<frNet*,
            std::map<std::pair<int, int>, std::vector<frNode*>>,
            frBlockObjectComp>

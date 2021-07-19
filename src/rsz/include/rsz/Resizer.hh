@@ -42,12 +42,9 @@
 #include "BufferedNet.hh"
 
 #include "utl/Logger.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
-
-namespace grt {
-class GlobalRouter;
-}
 
 namespace rsz {
 
@@ -58,7 +55,6 @@ using std::vector;
 using ord::OpenRoad;
 using utl::Logger;
 using gui::Gui;
-using grt::GlobalRouter;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -66,6 +62,8 @@ using odb::dbNet;
 using odb::dbMaster;
 using odb::dbBlock;
 using odb::dbTechLayer;
+
+using stt::SteinerTreeBuilder;
 
 using sta::StaState;
 using sta::Sta;
@@ -134,7 +132,7 @@ public:
             Gui *gui,
             dbDatabase *db,
             dbSta *sta,
-            GlobalRouter *grt);
+            SteinerTreeBuilder *stt_builder);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -300,7 +298,6 @@ public:
 protected:
   void init();
   void ensureBlock();
-  float routingAlpha() const;
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
   Instance *bufferInput(Pin *top_pin,
@@ -610,9 +607,9 @@ protected:
 
   OpenRoad *openroad_;
   Logger *logger_;
+  SteinerTreeBuilder *stt_builder_;
   Gui *gui_;
   dbSta *sta_;
-  GlobalRouter *grt_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
