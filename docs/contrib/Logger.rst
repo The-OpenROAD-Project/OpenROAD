@@ -42,7 +42,7 @@ b. Abbreviations and Shortcuts
    i. Use single-word versions when well-accepted / well-understood by users+developers. 
    Examples, stdcell, cutline, wirelength, stdcell, flipchip, padring, bondpad, wirebond, libcell, viarule etc.
    
-   ii. Do not abbreviate English words, expand for the sake of clarity . 
+   ii. Do not abbreviate English words, expand for the sake of clarity. 
    Incorrect: Num, # , Correct: Number
    Incorrect: Tot., Correct: Total
    
@@ -323,15 +323,6 @@ All uses of the tcl functions ord::error and ord::warn should be updated
 call the utl::error/warn with a Tool ID and message ID. For
 compatibility these are defaulted to 'UKN' and '0000' until they are
 updated.
-
-Do no use "puts", i.e, (print) errors in regression tests. Use the report
-function to ensure proper logging of the message.
-  Logger::report(const std::string& message,
-                  const Args&... args)
-
-Init floorplan, openroad/src, init floorplan, dbSta, resizer, and opendp
-have been updated to use the Logger if you need examples of how to
-initialize and use it.
 
 Regression tests should not have any ``UKN-0000`` messages in their ok
 files. A simple grep should indicate that you still have pending calls
