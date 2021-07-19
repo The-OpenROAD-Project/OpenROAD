@@ -66,8 +66,6 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
-#include "grt/GlobalRouter.h"
-
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -182,7 +180,6 @@ Resizer::init(OpenRoad *openroad,
               Gui *gui,
               dbDatabase *db,
               dbSta *sta,
-              GlobalRouter *grt,
               SteinerTreeBuilder *stt_builder)
 {
   openroad_ = openroad;
@@ -191,7 +188,6 @@ Resizer::init(OpenRoad *openroad,
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
-  grt_ = grt;
   stt_builder_ = stt_builder;
   db_network_ = sta->getDbNetwork();
   copyState(sta);

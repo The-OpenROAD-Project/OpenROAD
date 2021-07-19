@@ -46,10 +46,6 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 
-namespace grt {
-class GlobalRouter;
-}
-
 namespace rsz {
 
 using std::array;
@@ -59,7 +55,6 @@ using std::vector;
 using ord::OpenRoad;
 using utl::Logger;
 using gui::Gui;
-using grt::GlobalRouter;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -137,7 +132,6 @@ public:
             Gui *gui,
             dbDatabase *db,
             dbSta *sta,
-            GlobalRouter *grt,
             SteinerTreeBuilder *stt_builder);
 
   void setLayerRC(dbTechLayer *layer,
@@ -616,7 +610,6 @@ protected:
   SteinerTreeBuilder *stt_builder_;
   Gui *gui_;
   dbSta *sta_;
-  GlobalRouter *grt_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;

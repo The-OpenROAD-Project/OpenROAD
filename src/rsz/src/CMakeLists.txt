@@ -62,7 +62,6 @@ target_link_libraries(rsz
     opendb
     OpenSTA
     dbSta
-    grt
     gui
     utl
 )
