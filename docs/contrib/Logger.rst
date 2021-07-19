@@ -1,7 +1,7 @@
 Using the logging infrastructure
 ================================
 
-OpenROAD provides spdlog as part of logging infrastructure in order to ensure a clear, consistent messaging and complete messaging interface. 
+OpenROAD uses spdlog as part of logging infrastructure in order to ensure a clear, consistent messaging and complete messaging interface. 
 A wrapper formats the prefix in the reccommended messaging style and limit. 
 A message format is as follows:
 <tool id> <message id> : <Message body>.
@@ -30,11 +30,11 @@ Messaging Guidelines
 In addition to the proper use of message types, follow the guidelines below to compose messages for clarity, consistency and other guidelines:
 
 a. Grammar
-   i. Start with a capital letter, end with period besides well-known exceptions. Use capital letters for file formats and tool names. e.g., 
+   i. Start with a capital letter and end with period besides well-known exceptions. Use capital letters for file formats and tool names. e.g., 
       LEF, DEF, SPICE.
    ii. After the first word’s capitalization, do not use capital letters (aside from obvious exceptions - RSMT, hCut, etc.
    iii. Do not use exclamations. Severity must be communicated by message severity and clear implied or explicit action.
-   iv. Avoid long, verbose messages. Use commas to list and  separate clauses in messages.
+   iv. Avoid long, verbose messages. Use commas to list and separate clauses in messages.
    v. Spellcheck all messages using American English spellings.
    vii. Use ellipsis (...) only to indicate a pause, as when some tool is running or being intialized
    
@@ -133,7 +133,7 @@ Error
 Error messages should be used for indicating correctness problems.
 Problems with command arguments are a good example of errors. Errors
 exit the current command by throwing an exception that can be caught in a Tcl
-command script. Errors that occur while reading a command file stop,
+command script. Errors that occur while reading a command file stop
 executing the script commands.
 
 Example Error messages:
