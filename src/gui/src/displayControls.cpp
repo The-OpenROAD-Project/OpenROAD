@@ -143,6 +143,7 @@ DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(parent)),
       model_(new QStandardItemModel(0, 4, parent)),
+      ignore_callback_(false),
       tech_inited_(false)
 {
   setObjectName("layers");  // for settings
@@ -305,9 +306,41 @@ void DisplayControls::toggleAllChildren(bool checked,
   emit changed();
 }
 
+void DisplayControls::toggleParent(const QStandardItem* parent,
+                                   QStandardItem* parent_flag,
+                                   int column)
+{
+  if (parent == nullptr || parent_flag == nullptr) {
+    return;
+  }
+
+  bool at_least_one_checked = false;
+  bool all_checked = true;
+
+  for (int row = 0; row < parent->rowCount(); ++row) {
+    bool checked = parent->child(row, column)->checkState() == Qt::Checked;
+    at_least_one_checked |= checked;
+    all_checked &= checked;
+  }
+
+  ignore_callback_ = true;
+  Qt::CheckState new_state;
+  if (all_checked) {
+    new_state = Qt::Checked;
+  }
+  else if (at_least_one_checked) {
+    new_state = Qt::PartiallyChecked;
+  }
+  else {
+    new_state = Qt::Unchecked;
+  }
+  parent_flag->setCheckState(new_state);
+  ignore_callback_ = false;
+}
+
 void DisplayControls::itemChanged(QStandardItem* item)
 {
-  if (item->isCheckable() == false) {
+  if (item->isCheckable() == false || ignore_callback_) {
     emit changed();
     return;
   }
@@ -315,6 +348,13 @@ void DisplayControls::itemChanged(QStandardItem* item)
   Callback callback = item->data().value<Callback>();
   if (callback.action) {
     callback.action(checked);
+  }
+  QModelIndex item_index = item->index();
+  QModelIndex parent_index = item_index.parent();
+  if (parent_index.isValid()) {
+    toggleParent(model_->item(parent_index.row(), 0), // parent row
+        model_->item(parent_index.row(), item_index.column()), // selected column
+        item_index.column());
   }
   emit changed();
 }

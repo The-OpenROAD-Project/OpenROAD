@@ -1522,11 +1522,15 @@ void FastRouteCore::routeLVEnew(int netID, int edgeID, int threshold, int enlarg
 {
   int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2, grid, xGrid_1,
       deg, yminorig, ymaxorig;
-  int vedge, hedge, bestp1x, bestp1y;
+  int vedge, hedge;
+  int bestp1x = 0;
+  int bestp1y = 0;
   std::vector<int> gridsX(x_range_ + y_range_);
   std::vector<int> gridsY(x_range_ + y_range_);
   float tmp1, tmp2, tmp3, tmp4, tmp, best;
-  bool LH1, LH2, BL1, BL2;
+  bool LH1, LH2;
+  bool BL1 = false;
+  bool BL2 = false;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
