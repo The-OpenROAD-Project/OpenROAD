@@ -97,11 +97,11 @@ proc write_def { args } {
   if { [info exists keys(-version)] } {
     set version $keys(-version)
     if { !($version == "5.8" \
-	     || $version == "5.6" \
-	     || $version == "5.5" \
-	     || $version == "5.4" \
-	     || $version == "5.3") } {
-      utl::error "ORD" 6 "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
+        || $version == "5.6" \
+        || $version == "5.5" \
+        || $version == "5.4" \
+        || $version == "5.3") } {
+      utl::error "ORD" 6 "DEF versions 5.8, 5.6, 5.5, 5.4, 5.3 supported."
     }
   }
 
