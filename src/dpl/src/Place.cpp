@@ -654,12 +654,9 @@ Opendp::refineMove(Cell *cell)
   int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
-    double dist = abs(grid_x - pixel_pt.pt.getX()) * site_width_
-      + abs(grid_y - pixel_pt.pt.getY()) * row_height_;
-    if (max_displacement_constraint_ != 0
-        && (dist / row_height_ > max_displacement_constraint_)) {
+    if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
+        || abs(grid_y - pixel_pt.pt.getY()) > max_displacement_y_)
       return false;
-    }
 
     int dist_change = distChange(cell,
                                  pixel_pt.pt.getX() * site_width_,
@@ -670,7 +667,6 @@ Opendp::refineMove(Cell *cell)
       paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
       return true;
     }
-    return false;
   }
   return false;
 }
@@ -695,10 +691,10 @@ Opendp::diamondSearch(const Cell *cell,
                       int y) const
 {
   // Diamond search limits.
-  int x_min = x - diamond_search_width_;
-  int y_min = y - diamond_search_height_;
-  int x_max = x + diamond_search_width_;
-  int y_max = y + diamond_search_height_;
+  int x_min = x - max_displacement_x_;
+  int y_min = y - max_displacement_y_;
+  int x_max = x + max_displacement_x_;
+  int y_max = y + max_displacement_y_;
 
   // Restrict search to group boundary.
   Group *group = cell->group_;
@@ -731,59 +727,69 @@ Opendp::diamondSearch(const Cell *cell,
 
   // Check the bin at the initial position first.
   PixelPt avail_pt = binSearch(x, cell, x, y);
-  if (avail_pt.pixel) {
+  if (avail_pt.pixel)
     return avail_pt;
-  }
 
-  for (int i = 1; i < diamond_search_height_; i++) {
+  for (int i = 1; i < std::max(max_displacement_y_, max_displacement_x_); i++) {
     PixelPt best_pt;
     int best_dist = 0;
-    // right side
+    // left side
     for (int j = 1; j < i * 2; j++) {
       int x_offset = -((j + 1) / 2);
       int y_offset = (i * 2 - j) / 2;
-      if (j % 2 == 1)
-        y_offset = -y_offset;
-
-      int bin_x = min(x_max, max(x_min, x + x_offset * bin_search_width_));
-      int bin_y = min(y_max, max(y_min, y + y_offset));
-      debugPrint(logger_, DPL, "place", 1, " bin ({}, {})", bin_x, bin_y);
-      PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
-      if (avail_pt.pixel) {
-        int avail_dist = abs(x - avail_pt.pt.getX()) * site_width_
-          + abs(y - avail_pt.pt.getY()) * row_height_;
-        if (best_pt.pixel == nullptr
-            || avail_dist < best_dist) {
-          best_pt = avail_pt;
-          best_dist = avail_dist;
-        }
+      if (abs(x_offset) < max_displacement_x_
+          && abs(y_offset) < max_displacement_y_) {
+        if (j % 2 == 1)
+          y_offset = -y_offset;
+        diamondSearchSide(cell, x, y, x_min, y_min, x_max, y_max, x_offset, y_offset,
+                          best_pt, best_dist);
       }
     }
 
-    // left side
+    // right side
     for (int j = 1; j < (i + 1) * 2; j++) {
       int x_offset = (j - 1) / 2;
       int y_offset = ((i + 1) * 2 - j) / 2;
-      if (j % 2 == 1)
-        y_offset = -y_offset;
-
-      int bin_x = min(x_max, max(x_min, x + x_offset * bin_search_width_));
-      int bin_y = min(y_max, max(y_min, y + y_offset));
-      PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
-      if (avail_pt.pixel) {
-        int avail_dist = abs(x - avail_pt.pt.getX()) * site_width_
-          + abs(y - avail_pt.pt.getY()) * row_height_;
-        if (best_pt.pixel == nullptr
-            || avail_dist < best_dist) {
-          best_pt = avail_pt;
-          best_dist = avail_dist;
-        }
+      if (abs(x_offset) < max_displacement_x_
+          && abs(y_offset) < max_displacement_y_) {
+        if (j % 2 == 1)
+          y_offset = -y_offset;
+        diamondSearchSide(cell, x, y, x_min, y_min, x_max, y_max, x_offset, y_offset,
+                          best_pt, best_dist);
       }
     }
     if (best_pt.pixel)
-      return best_pt;;
+      return best_pt;
   }
   return PixelPt();
+}
+
+void
+Opendp::diamondSearchSide(const Cell *cell,
+                          int x,
+                          int y,
+                          int x_min,
+                          int y_min,
+                          int x_max,
+                          int y_max,
+                          int x_offset,
+                          int y_offset,
+                          // Return values
+                          PixelPt &best_pt,
+                          int &best_dist) const
+{
+  int bin_x = min(x_max, max(x_min, x + x_offset * bin_search_width_));
+  int bin_y = min(y_max, max(y_min, y + y_offset));
+  PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
+  if (avail_pt.pixel) {
+    int avail_dist = abs(x - avail_pt.pt.getX()) * site_width_
+      + abs(y - avail_pt.pt.getY()) * row_height_;
+    if (best_pt.pixel == nullptr
+        || avail_dist < best_dist) {
+      best_pt = avail_pt;
+      best_dist = avail_dist;
+    }
+  }
 }
 
 PixelPt
@@ -792,8 +798,8 @@ Opendp::binSearch(int x,
                   int bin_x,
                   int bin_y) const
 {
-  debugPrint(logger_, DPL, "place", 1,
-             " Bin Search {} ({:4} {}>{:4},{:4})",
+  debugPrint(logger_, DPL, "place", 3,
+             " Bin Search {} ({:4} {}> {:4},{:4})",
              cell->name(),
              x > bin_x ? bin_x + bin_search_width_ - 1 : bin_x,
              x > bin_x ? "-" : "+",

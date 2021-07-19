@@ -91,10 +91,11 @@ tclListSeqdbMaster(Tcl_Obj *const source,
 namespace dpl {
 
 void
-detailed_placement_cmd(int max_displacment)
+detailed_placement_cmd(int max_displacment_x,
+                       int max_displacment_y)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y);
 }
 
 void

@@ -374,7 +374,7 @@ void RouteBase::getGlobalRouterResult()
   grouter_->setAllowCongestion(true);
   grouter_->setOverflowIterations(0);
 
-  grouter_->globalRoute();
+  grouter_->run();
 
   updateRoute();
 }
