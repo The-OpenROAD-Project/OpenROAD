@@ -234,7 +234,10 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   float min_slack = -sta::INF;
   float max_slack = area_mode ? sta::INF : 0;
 
-  sta::PathEndSeq* path_ends
+  
+  sta::VertexSet*  path_ends  = sta_state->endpoints();
+  
+  /*sta::PathEndSeq* path_ends
       = open_sta_->findPathEnds(  // from, thrus, to, unconstrained
           nullptr,
           nullptr,
@@ -259,12 +262,13 @@ void Restructure::getEndPoints(sta::PinSet& ends,
           // clk_gating_setup, clk_gating_hold
           false,
           false);
+  */
 
   std::size_t path_found = path_ends->size();
   logger_->report("Number of paths for restructure are {}", path_found);
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
-      sta::PathExpanded expanded(path_end->path(), open_sta_);
+      /*sta::PathExpanded expanded(path_end->path(), open_sta_);
       // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
@@ -272,9 +276,9 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       }
       // Consider only 5 timing paths exceeding path depth to limit blob size for timing
       if (ends.size() > 5)
-        break;
+        break;*/
     } else {
-      ends.insert(path_end->vertex(sta_state)->pin());
+      ends.insert(path_end->pin());
     }
   }
 
