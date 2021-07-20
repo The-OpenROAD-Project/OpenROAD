@@ -18,7 +18,7 @@ continuing to develop it in TCL, we should make it simpler, rely on the
 sta and delay calculator C++ APIs more, and characterize the look up
 tables needed for the dynamic programming on the fly at tool startup.
 
-The current architecture is using 1980’s style software architecture
+The current architecture is using 1980's style software architecture
 assumptions by not relying on the ability to call OpenSTA in an
 integrated app during CTS but rather trying to pull out everything that
 might ever be needed from OpenSTA up front. In OpenROAD this is not

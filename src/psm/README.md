@@ -1,8 +1,4 @@
 # PDNSim
-[![Standard](https://img.shields.io/badge/C%2B%2B-17-blue)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
-[![Download](https://img.shields.io/badge/Download-here-red)](https://github.com/VidyaChhabria/PDNA/archive/master.zip)
-[![Version](https://img.shields.io/badge/version-0.1-green)](https://github.com/VidyaChhabria/PDNA/tree/master)
-[![AskMe](https://img.shields.io/badge/ask-me-yellow)](https://github.com/VidyaChhabria/PDNA/issues)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 PDNSim is an open-source static IR analyzer. This branch of the PDNSim
@@ -14,7 +10,7 @@ repository must be used internal to the OpenROAD integrated app.
 ## Getting Started
 
 You can find usage information inside the OpenROAD app repository in the PDN
-analysis section of the [README file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/openroad/README.md).
+analysis section of the [README file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/README.md).
 
 
 ## Cite this Work

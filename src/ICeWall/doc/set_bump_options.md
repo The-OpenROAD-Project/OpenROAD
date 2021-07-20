@@ -1,6 +1,6 @@
-## set_bump_options
+# set_bump_options
 
-### Synopsis
+## Synopsis
 ```
   % set_bump_options \
         [-pitch pitch] \
@@ -16,7 +16,7 @@
         [-rdl_cover_file_name rdl_file_name]
 ```
 
-### Description
+## Description
 The set_bump_options command is used to provide detailed information about how to handle bumps and the redistribution layer (RDL) connections.
 
 Use the -pitch options to set the center-to-center spacing of bumps.
@@ -33,7 +33,7 @@ Details about the redistribution layer, name, width and spacing are specified wi
 
 The -rdl_cover_file_name is used to specify the name of the file to contain the RDL routing. The use of this option is deprecated, as the RDL routes are written to the database
 
-### Options
+## Options
 
 | Option | Description |
 | --- | --- |
@@ -49,7 +49,7 @@ The -rdl_cover_file_name is used to specify the name of the file to contain the 
 | -rdl_spacing | The required spacing between RDL wires |
 | -rdl_cover_file_name | Specify the name of the file to which the routing of the redistribution layer is to be written. If not specified, no cover def file will be written. In the previous release, the openroad database did not support 45 degree lines used by RDL routing, and this cover.def allowed for the RDL to be added at the end of the flow, without being added to the database. Now that the database allows 45 degree lines, this option is deprecated, and may be removed in a later version of openroad. |
 
-### Examples
+## Examples
 ```
 set_bump_options \
   -pitch 160 \

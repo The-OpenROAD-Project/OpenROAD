@@ -1,5 +1,5 @@
-## set_padring_options
-### Synopsis
+# set_padring_options
+## Synopsis
 ```
   % set_padring_options \
       -type (flipchip|wirebond) \
@@ -11,7 +11,7 @@
       [-pin_layer pin_layer_name] \
       [-connect_by_abutment signal_list]
 ```
-### Description
+## Description
 
 This command is used to specify general options used to define the padring for a chip. The -type option is required, all others are optional.
 
@@ -25,7 +25,7 @@ The -pad_pin_pattern option is used to define a pattern that is to be used to de
 
 The -connect_by_abutment option is used to define the list of signals that are connected by abutment through the padring. The placement of breaker cells within the padring can result in these signals being split into a number of different nets.
 
-### Options
+## Options
 
 | Option | Description |
 | --- | --- |
@@ -40,7 +40,7 @@ The -connect_by_abutment option is used to define the list of signals that are c
 | -pin_layer | Specify the layer which is to be used to create a top level pin over the pin of the padcell. The creation of a physical pin at this location identifies pin locations for LVS. |
 | -connect_by_abutment | Specify the list of signals that connect by abutment in the padring, the placement of breaker cells in the padring will split these signals into separate nets as required. |
 
-### Examples
+## Examples
 ```
 set_padring_options \
   -type wirebond \

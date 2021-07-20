@@ -1,5 +1,6 @@
-## define_pad_cell
-### Synopsis
+# define_pad_cell
+
+## Synopsis
 ```
   % define_pad_cell \
         [-name name] \
@@ -10,7 +11,8 @@
         [-break_signals signal_list] \
         [-physical_only]
 ```
-### Description
+
+## Description
 
 In order to create a padring, additional information about the padcells needs to be provided in order to be able to proceed. The define_pad_cell command is used to specify this additional information.
 
@@ -18,7 +20,7 @@ When specifying the orientation of padcells on a per side basis, use keys bottom
 
 One or more libcells can be defined as type filli, when filling a gap between padcells, the largest fill cell that is has a width less than or equal to the gap width will be added, if the gap is too small to fit any fill cell, then the smallest fill cell will be added anyway, on the assumption that the library is designed such that the smallest fill cell is allowed to overlap with padcell instances. At least one libcell of type corner must be defined. For a wirebnd deisgn, if the library uses separate bondpad instance from the padcells, then a bondpad type must be defined. If the design is flipchip, then one libcell definition must be of type bump.
 
-### Options
+## Options
 
 | Option | Description |
 | --- | --- |
@@ -34,7 +36,7 @@ One or more libcells can be defined as type filli, when filling a gap between pa
 | -breaks | For cells which break the signals which connect by abutment through the padring, specifies the names of the signals that are affected. This is specified as a list of key value pairs, where the key is the name of the signal being broken, and the value is a list of the pins on the left and right hand side of the breaker cell that break this signal. Specify this as an empty list if the breaker cell does not have pins for broken signals |
 | -physical_only | Defines the cell to be physical only |
 
-### Examples
+## Examples
 ```
 define_pad_cell \
   -name PADCELL_SIG \

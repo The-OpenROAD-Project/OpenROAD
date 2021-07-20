@@ -15,8 +15,8 @@ Use the place_cell command to pre-place additional cells in the floorplan
 
 
 Full examples of how to use these commands together to build a chip
- - Example for chip with [wirebond padring](../test/tcl_interface.example.tcl)
- - Example for chip with [flipchip bumps](../test/tcl_interface.flipchip.example.tcl)
+ - Example for chip with [wirebond padring](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ICeWall/test/tcl_interface.example.tcl)
+ - Example for chip with [flipchip bumps](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ICeWall/test/tcl_interface.flipchip.example.tcl)
 
 
 Alternatively, the information needed to build chip level pad rings can be [bundled up into a separate file and loaded in batch fashion](README.md)

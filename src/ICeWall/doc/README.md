@@ -33,7 +33,7 @@ The following keys need to be defined in the dictionary
 * breakers
 * cells
 
-The types entry associates types used in the package data file with cells defined in the cells section, and in addition requires the definition of the the corner cell to be used and the list of pad filler cells to be used ordered by cell width.
+The types entry associates types used in the package data file with cells defined in the cells section, and in addition requires the definition of the corner cell to be used and the list of pad filler cells to be used ordered by cell width.
 
 The connect_by_abutment key defines the list of pins on the edges of the IO cells that are connected by abutment forming a ring of these signals around the die. ICeWall will connect these abutted signals together into SPECIAL nets, so that the router will not try to add wiring for these pins.
 
@@ -75,7 +75,7 @@ Details on the [TCL command interface](TCL_Interface.md)
 
 As an alternative to using TCL commands, the definition of the padring can be done using a padring strategy file, which allows for batch loading of the padcell data all at once.
 
-For an example of what a padring strategy file looks like refer to [../test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy](../test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy).
+For an example of what a padring strategy file looks like refer to [../test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ICeWall/test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy).
 
 ### Signal mapping
 
@@ -93,5 +93,3 @@ v18_1    DVDD_0
 v18_2    DVDD_0
 v18_3    DVDD_0
 ```
-
-

@@ -1,8 +1,10 @@
 git+https://github.com/SymbiFlow/sphinx_materialdesign_theme.git#egg=sphinx-symbiflow-theme
+git+https://github.com/executablebooks/sphinx-external-toc
 
 docutils
 sphinx
 sphinx-autobuild
+m2r2
 
 symbolator
 

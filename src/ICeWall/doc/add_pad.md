@@ -1,6 +1,6 @@
-## add_pad
+# add_pad
 
-### Synopsis
+## Synopsis
 ```
   % add_pad [-name <name>] \
                     [-type <type>] \
@@ -12,7 +12,7 @@
                     [-bondpad {(center|origin) {x <value> y <value>}}] \
                     [-inst_name <instance_name>]
 ```
-### Description
+## Description
 
 Use the add_pad command to add a padcell to the footprint definition. Use this command before calling the init_footprint command. Use this command as a replacement for the padcell strategy file, or to supplement definitions in an existing padcell strategy file.
 
@@ -26,7 +26,7 @@ Use the -inst_name option to associate the padcell with a particular instance in
 
 The -edge option is used to determine the orientation of the padcell, the actual orientation of a padcell on a given edge is specified in the library definitions file. The co-ordinates specified for the location of the padcell are cross-checked against the orientation determined from the -edge option. Similarly, if orient is defined by the -location option, this too will be cross-checked against the value of the edge option. If the -edge option is not defined then -location setting is used to determine the side on which the padcell appears, hence determining the orientation of the cell. Once again the orient setting merely serves to act as a cross-check
 
-### Options
+## Options
 
 
 | Switch_Name | Description |
@@ -41,7 +41,7 @@ The -edge option is used to determine the orientation of the padcell, the actual
 | -bondpad | For wirebond designs where the pad cells have separate bondpad instances, use this option to specify the location of the associated bondpad |
 | -inst_name | Specify the name of the padcell instance in the design. This takes precedence over the -pad_inst_pattern method described in the set_padring_options command |
 
-### Examples
+## Examples
 ```
 add_pad -edge bottom                    -signal p_ddr_dm_2_o -type sig   -location {center {x 2742.000 y  105.000}} -bondpad {center {x 2742.000 y   63.293}}
 add_pad -edge bottom -inst_name u_vss_0 -signal VSS          -type vss   -location {center {x  397.000 y  105.000}} -bondpad {center {x  397.000 y  149.893}}

@@ -1,6 +1,7 @@
-### Restructure
+# Restructure
+
 **Restructure** is an interface to ABC for re-synthesis. The package allows
-re-structuring targetting area or timing. It extracts cloud of logic using
+re-structuring targeting area or timing. It extracts cloud of logic using
 timing engine and passes to ABC through blif interface. Multiple recipes
 for area or timing are run to get best desirable structure from ABC.
 ABC output is read back by blif reader which is integrated to OpenDB.
@@ -11,11 +12,12 @@ by user as per interface given below.
 
 ## Usage
 Restructuring can be done in 2 modes area or delay
-# Area Mode
+
+### Area Mode
 restructure -liberty_file <liberty_file> -target "area" \
         -tielo_pin  tielo_pin_name -tiehi_pin  tiehi_pin_name
 
-# Timing Mode
+### Timing Mode
 restructure -liberty_file <liberty_file> -target "delay" \
         -slack_threshold slack_val -depth_threshold depth_threshold\
         -tielo_pin  tielo_pin_name -tiehi_pin  tiehi_pin_name
@@ -27,11 +29,10 @@ Argument Description
 - ``-depth_threshold`` specifies the path depth above which a timing path would be considered for restructuring
 - ``tielo_pin`` specifies tie cell pin which can drive constant zero. Format is lib/cell/pin
 - ``tiehi_pin`` specifies tie cell pin which can drive constant one. Format is lib/cell/pin
- 
-### Authors
+
+## Authors
 Sanjiv Mathur
 Ahmad El Rouby
 
-## License ##
-* [BSD 3-clause License](LICENSE) 
-
+## License
+* [BSD 3-clause License](LICENSE.md)

@@ -1,0 +1,129 @@
+root: docs/index
+entries:
+
+- file: CODE_OF_CONDUCT
+  title: Code of Conduct
+- file: docs/contrib/GettingInvolved
+  title: Getting Involved
+- file: docs/user/FAQS
+  title: FAQs
+
+- file: docs/contrib/DeveloperGuide
+  title: Developer Guide
+  entries:
+  - file: docs/contrib/CodingPractices
+    title: Coding Practices
+  - file: docs/contrib/DatabaseMath
+    title: Database Math
+  - file: docs/contrib/Logger
+    title: Logger
+
+
+- file: README
+  title: Getting Started with OpenROAD App
+  entries:
+  - file: src/README
+    title: OpenROAD TCL
+  - file: src/OpenDB/README
+    title: OpenDB
+  - file: src/rcx/README
+    title: OpenRCX
+    entries:
+    - file: src/rcx/doc/calibration
+      title: Calibration
+  - file: src/rmp/README
+    title: Restructure
+  - file: src/ifp/README
+    title: Floorplan Initialization
+  - file: src/ppl/README
+    title: ioPlacer
+  - file: src/ICeWall/README
+    title: ICeWall
+    entries:
+    - file: src/ICeWall/doc/README
+      title: ICeWall Documentation
+      entries:
+      - file: src/ICeWall/doc/add_pad
+        title: Add Pad
+      - file: src/ICeWall/doc/define_pad_cell
+        title: Define Pad Cell
+      - file: src/ICeWall/doc/initialize_padring
+        title: Initialize Padring
+      - file: src/ICeWall/doc/place_cell
+        title: Place Cell
+      - file: src/ICeWall/doc/set_bump
+        title: Set Bump
+      - file: src/ICeWall/doc/set_bump_options
+        title: Set Bump Options
+      - file: src/ICeWall/doc/set_padring_options
+        title: Set Padring Options
+      - file: src/ICeWall/doc/TCL_Interface
+        title: TCL Interface
+  - file: src/mpl/README
+    title: TritonMacroPlacer
+  - file: src/tap/README
+    title: Tapcell
+  - file: src/pdn/README
+    title: OpenROAD-pdn
+    entries:
+    - file: src/pdn/doc/README
+      title: OpenROAD-pdn Documentation
+      entries:
+      - file: src/pdn/doc/PDN
+        title: PDN
+  - file: src/psm/README
+    title: PDNSim
+    entries:
+    - file: src/psm/doc/Vsrc_description
+      title: VSRC description
+  - file: src/replace/README
+    title: RePlAce
+    entries:
+    - file: src/replace/doc/TclCommands
+      title: Tclcommands
+  - file: docs/ext/OpenSTA
+    title: OpenSTA
+    entries:
+    - file: src/sta/README
+      title: OpenSTA (external)
+  - file: src/rsz/README
+    title: Gate Resizer
+  - file: src/dpl/README
+    title: OpenDP
+  - file: src/cts/README
+    title: Triton CTS 2.0
+    entries:
+    - file: src/cts/doc/cts_lut_characterization.md
+      title: CTS LUT Characterization
+  - file: src/grt/README
+    title: FastRoute
+  - file: src/ant/README
+    title: Antenna Checker
+  - file: src/TritonRoute/README
+    title: TritonRoute
+  - file: src/fin/README
+    title: Metal Fill
+
+  - file: src/stt/src/flt/README
+    title: Flute
+  - file: src/stt/src/pdr/README
+    title: PDRev
+  - file: src/par/README
+    title: Partition Manager
+
+- file: docs/user/GettingStarted
+  title: Getting Started with OpenROAD Flow
+  entries:
+  - file: docs/user/UserGuide
+    title: User Guide
+  - file: docs/contrib/Metrics
+    title: Metrics
+  - file: docs/user/ToolLimitations
+    title: Tool Limitations
+
+# - file: docs/misc/CTS_LUT_Discussion
+#   title: CTS LUT Discussion
+# - file: docs/releases/Alpha2Process
+#   title: Alpha2 Process
+# - file: docs/releases/PostAlpha2.1BranchMethodology
+#   title: Post Alpha2 Branch Methodology

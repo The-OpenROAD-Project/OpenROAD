@@ -42,8 +42,8 @@ src/defout - DEF writer
 
 ## Database API
 
-:bangbang: We are still working on documenting the APIs. 
-We have over 1,800 objects and functions that we are still documenting (for both TCL and Python). 
+We are still working on documenting the APIs.
+We have over 1,800 objects and functions that we are still documenting (for both TCL and Python).
 **Contributions are very welcome in this effort**. Find starting points below.
 
 ### TCL
@@ -81,7 +81,7 @@ The full set of the Python classes exposed can be found under `./build/src/swig/
 All public database classes are defined in `db.h`. These class
 definitions provide all functions for examining and modifying the
 database objects. The database is an object itself so multiple
-database objects can exist simultaineously (no global state).
+database objects can exist simultaneously (no global state).
 
 `dbTypes.h` defines types returned by database class member functions.
 
