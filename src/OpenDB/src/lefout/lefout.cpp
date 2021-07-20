@@ -280,7 +280,7 @@ void lefout::writeBlock(dbBlock* db_block)
   fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
   fprintf(_out, "  CLASS BLOCK ;\n");
   fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
-  fprintf(_out, "  SIZE %g %g ;\n", size_x, size_y);
+  fprintf(_out, "  SIZE %g BY %g ;\n", size_x, size_y);
   writePins(db_block);
   writeObstructions(db_block);
   fprintf(_out, "END %s\n", db_block->getName().c_str());
