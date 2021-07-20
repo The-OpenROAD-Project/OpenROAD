@@ -105,17 +105,18 @@ void Tapcell::run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const ch
   cut_rows(endcap_master, find_blockages(), halo_x, halo_y);
 
   std::vector<std::vector<odb::dbRow*>> rows = organize_rows();
-  std::vector<const char*> cnrcap_masters;
-  cnrcap_masters.push_back(cnrcap_nwin_master);
+  std::vector<std::string> cnrcap_masters;
+  std::string cnrcap_nwin_master_string(cnrcap_nwin_master);
+  std::string cnrcap_nwout_master_string(cnrcap_nwout_master);
+  cnrcap_masters.push_back(cnrcap_nwin_master_string);
   //logger_->info(utl::TAP, 0, "Name is: {} ", tap_nwin3_master);
-  cnrcap_masters.push_back(cnrcap_nwout_master);
+  cnrcap_masters.push_back(cnrcap_nwout_master_string);
 
   phy_idx = 0;
   //set tap::filled_sites []
-  //if { [info exists keys(-endcap_master)] } {
+  if (endcap_master != nullptr ) {
     insert_endcaps(rows, endcap_master, cnrcap_masters, endcap_prefix);
-  logger_->info(utl::TAP, 45, "Test is: {} ", halo_x);
-  //}
+  }
   if (add_boundary_cell) {
     //logger_->info(utl::TAP, 40, "boundary is: {} ", add_boundary_cell);
     std::vector<std::string> tap_nw_masters;
@@ -178,9 +179,9 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
     cut_row(block, row, row_blockages, min_row_width, halo_x, halo_y);
   }
   int cut_rows_count = block->getRows().size()-rows_count;
-  logger_->info(utl::TAP, 1, "Macro blocks found: {} ", block_count);
-  logger_->info(utl::TAP, 2, "Original rows: {} ", rows_count);
-  logger_->info(utl::TAP, 3, "Created rows: {} ", cut_rows_count);
+  logger_->info(utl::TAP, 1, "Macro blocks found: {}", block_count);
+  logger_->info(utl::TAP, 2, "Original rows: {}", rows_count);
+  logger_->info(utl::TAP, 3, "Created rows: {}", cut_rows_count);
 }
 
 void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>> row_blockages, int min_row_width, int halo_x, int halo_y) {
@@ -234,8 +235,7 @@ void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::strin
   //odb::inDbRowDestroy(row);
 }
 
-int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<const char*> cnrcap_masters, const char* prefix) {
-  int phy_idx;
+int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, const char* prefix) {
   int start_phy_idx = phy_idx;
   odb::dbBlock *block = db_->getChip()->getBlock();
   int do_corners;
@@ -248,18 +248,19 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
 
   if (cnrcap_masters.size() == 2) {
     //lassign $cnrcap_masters cnrcap_nwin_master_name cnrcap_nwout_master_name
-    const char* cnrcap_nwin_master_name = cnrcap_masters[0];
-    const char* cnrcap_nwout_master_name = cnrcap_masters[1];
-    if (cnrcap_nwin_master_name == "INVALID" || cnrcap_nwout_master_name == "INVALID") {
+    std::string cnrcap_nwin_master_name = cnrcap_masters[0];
+    std::string cnrcap_nwout_master_name = cnrcap_masters[1];
+    std::string invalid = "INVALID";
+    if (cnrcap_nwin_master_name.compare("INVALID") == 0 || cnrcap_nwout_master_name.compare("INVALID") == 0) {
       do_corners = 0;
     } else {
       do_corners = 1;
 
-      cnrcap_nwin_master = db_->findMaster(cnrcap_nwin_master_name);
+      cnrcap_nwin_master = db_->findMaster(cnrcap_nwin_master_name.c_str());
       if ( cnrcap_nwin_master == nullptr ) {
         logger_->error(utl::TAP, 12, "Master {} not found.", cnrcap_nwin_master_name);
       }
-      cnrcap_nwout_master = db_->findMaster(cnrcap_nwout_master_name);
+      cnrcap_nwout_master = db_->findMaster(cnrcap_nwout_master_name.c_str());
 
       if ( cnrcap_nwout_master == nullptr ) {
         logger_->error(utl::TAP, 13, "Master {} not found.", cnrcap_nwout_master_name);
@@ -278,7 +279,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
   for (int cur_row = bottom_row;  cur_row <= top_row; cur_row++) {
     //foreach subrow [lindex $rows $cur_row] {
     for(odb::dbRow* subrow : rows[cur_row]) {
-      if (check_symmetry(endcap_master, subrow->getOrient())) {
+      if (!(check_symmetry(endcap_master, subrow->getOrient()))) {
         continue;
       }
       odb::Rect row_bb;
@@ -383,11 +384,10 @@ odb::dbMaster* Tapcell::pick_corner_master(int top_bottom, odb::dbOrientType ori
 }
 
 int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_master, int dist, std::string prefix) {
-  int phy_idx;
   int start_phy_idx = phy_idx;
   std::vector<int> xs;
   std::vector<int> prev_x;
-  std::vector<int> merged_placements;
+  std::vector<vector<int>> merged_placements;
   odb::dbBlock* block = db_->getChip()->getBlock();
 
   odb::dbMaster* master = db_->findMaster(tapcell_master.c_str());
@@ -400,7 +400,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
   int dist1 = dist*(db_->getTech()->getLefUnits());
   int dist2 = 2*dist*(db_->getTech()->getLefUnits());
   int y;
-  std::map<int, std::vector<int>> row_fills;
+  std::map<int, std::vector<vector<int>>> row_fills;
   for(std::vector<int> placement : filled_sites) {
     y = placement[0];
     int x_start = placement[1];
@@ -408,38 +408,35 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
     std::vector<int> x_start_end;
     x_start_end.push_back(x_start);
     x_start_end.push_back(x_end);
-    row_fills.insert(std::pair<int, std::vector<int>> (y, x_start_end));
+    std::vector<vector<int>> vector2;
+    vector2.push_back(x_start_end);
+    row_fills.insert(std::pair<int, std::vector<vector<int>>> (y, vector2));
     //dict lappend row_fills $y "$x_start $x_end"
   }
 
   //for(int i=0; i<row_fills.size(); i++) {
-  for(std::map<int, std::vector<int>>::iterator iter = row_fills.begin(); iter != row_fills.end(); ++iter) {
+  for(std::map<int, std::vector<vector<int>>>::iterator iter = row_fills.begin(); iter != row_fills.end(); ++iter) {
     int x = iter->first;
-    //for(std::vector<int> xs : row_fills[x]) {
-    xs = row_fills[x];
+    for(std::vector<int> xs : row_fills[x]) {
+    //xs = row_fills[x];
       if (prev_x.size() == 0) {
         prev_x = xs;
       } else {
         if (xs[0] == prev_x[1]) {
           prev_x[1] = xs[0];
         } else {
-          for(int i=0; i<prev_x.size(); i++) {
-            merged_placements.push_back(prev_x[i]);
-          }
+            merged_placements.push_back(prev_x);
           prev_x = xs;
         }
       }
+    }
     if (prev_x.size() != 0) {
-      for(int i=0; i<prev_x.size(); i++) {
-            merged_placements.push_back(prev_x[i]);
-          }
+            merged_placements.push_back(prev_x);
       //merged_placements.push_back(prev_x);
     }
     if (prev_x.size() == 0) {
       //merged_placements.push_back(xs);
-      for(int i=0; i<xs.size(); i++) {
-            merged_placements.push_back(xs[i]);
-          }
+            merged_placements.push_back(xs);
     }
     //std::map<int, std::vector<int>>::iterator itr;
     //row_fills.find(y);
@@ -474,7 +471,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
     std::vector<vector<int>> row_fill_check;
     int row_y = rowbb.yMin();
     if (row_fills.find(row_y)!=row_fills.end()) {
-      row_fill_check.push_back(row_fills[row_y]);
+      row_fill_check = row_fills[row_y];
     } else {
       row_fill_check.clear();
     }
@@ -556,7 +553,6 @@ bool Tapcell::check_if_filled(int x, int width, odb::dbOrientType orient, std::v
 }
 
 int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix) {
-  int phy_idx;
   int row_info;
   int start_phy_idx = phy_idx;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -1121,17 +1117,18 @@ std::vector<std::vector<odb::dbRow*>> Tapcell::organize_rows() {
 
 int Tapcell::remove_cells(const char* prefix) {
   odb::dbBlock* block = db_->getChip()->getBlock();
+  std::string prefix_string(prefix);
   //odb::dbBlock* block = getOpenRoad()->getDb()->getChip()->getBlock();
   int removed = 0;
 
-  if (std::strlen(prefix) == 0) {
+  if (prefix_string.size() == 0) {
   //if (prefix.length() == 0) {
     // no prefix is given, this will result in all cells being removed
     return 0;
   }
 
   for(odb::dbInst* inst : block->getInsts()) {
-    if (prefix == inst->getName()) {
+    if (prefix_string.compare(inst->getName()) == 0) {
       odb::dbInst::destroy(inst);
       removed++;
     }
