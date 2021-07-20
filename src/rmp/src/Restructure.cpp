@@ -217,15 +217,17 @@ void Restructure::runABC()
               = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
 
         pid_t child_pid = fork();
-        if (child_pid == 0) {
+        if (child_pid == 0) { // Begin child
+          // Run in child process
           int ret = execlp("sh", "sh", "-c", abc_command.c_str(), 0);
+          // Execution of command failed
           logger_->warn(RMP,
                         31,
                         "Failed to run ABC with exit code {}. Please check the "
                         "messages for details.",
                         ret);
           exit(ret);
-        }
+        } // End child
 
         if (child_pid > 0) {
           child_proc[temp_mode_idx] = child_pid;
