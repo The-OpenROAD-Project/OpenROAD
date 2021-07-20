@@ -13,6 +13,7 @@
 [WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
 worst slack 1.29
 Design area 700 u^2 11% utilization.
+[INFO ORD-0030] Using 3 thread(s)
 Removed 0 instances with constant outputs.
 Number of paths for restructure are 105
 Found 53 end points for restructure
