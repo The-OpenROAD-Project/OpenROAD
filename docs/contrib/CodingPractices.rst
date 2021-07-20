@@ -2,6 +2,7 @@ Coding Practices
 ================
 
 .. note::
+
       This is a compilation of many idioms in openroad code that I consider
       undesirable. Obviously other programmers have different opinions or
       they would not be so pervasive. James Cherry 04/2020
@@ -28,23 +29,23 @@ Don't use prefixes on function names or variables. That's what namespaces are fo
 
 .. code-block:: cpp
 
-namespace fr {
-class frConstraint
-class frLef58CutClassConstraint
-class frShortConstraint
-class frNonSufficientMetalConstraint
-class frOffGridConstraint
-class frMinEnclosedAreaConstraint
-class frMinStepConstraint
-class frMinimumcutConstraint
-class frAreaConstraint
-class frMinWidthConstraint
-class frLef58SpacingEndOfLineWithinEndToEndConstraint
-class frLef58SpacingEndOfLineWithinParallelEdgeConstraint
-class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint
-class frLef58SpacingEndOfLineWithinConstraint
-class frLef58SpacingEndOfLineConstraint
-}
+  namespace fr {
+    class frConstraint
+    class frLef58CutClassConstraint
+    class frShortConstraint
+    class frNonSufficientMetalConstraint
+    class frOffGridConstraint
+    class frMinEnclosedAreaConstraint
+    class frMinStepConstraint
+    class frMinimumcutConstraint
+    class frAreaConstraint
+    class frMinWidthConstraint
+    class frLef58SpacingEndOfLineWithinEndToEndConstraint
+    class frLef58SpacingEndOfLineWithinParallelEdgeConstraint
+    class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint
+    class frLef58SpacingEndOfLineWithinConstraint
+    class frLef58SpacingEndOfLineConstraint
+  }
 
 Practice #3
 -----------
@@ -60,14 +61,14 @@ with prototypes.
 
 .. code-block:: cpp
 
-namespace fr {
-extern frCoord getGCELLGRIDX();
-extern frCoord
-getGCELLGRIDY();
-extern frCoord getGCELLOFFSETX();
-extern frCoord
-getGCELLOFFSETY();
-}
+  namespace fr {
+    extern frCoord getGCELLGRIDX();
+    extern frCoord
+    getGCELLGRIDY();
+    extern frCoord getGCELLOFFSETX();
+    extern frCoord
+    getGCELLOFFSETY();
+  }
 
 Practice #5
 -----------
@@ -76,7 +77,7 @@ Don't use prefixes on file names. That's what directories are for.
 
 .. code-block:: shell
 
-      frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
+  frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
 
 Practice #6
 -----------
@@ -345,6 +346,7 @@ headers should NEVER be in <>'s.
 - https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename
 
 These are all wrong:
+
 .. code-block:: cpp
 
   #include <opendb/db.h>
@@ -595,7 +597,7 @@ directories.
 
 .. code-block:: cmake
 
-      target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
+   target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
 
 Practice #37
 ------------
