@@ -30,29 +30,22 @@ Messaging Guidelines
 In addition to the proper use of message types, follow the guidelines below to compose messages for clarity, consistency and other guidelines:
 
 a. Grammar
-   i. Start with a capital letter and end with period besides well-known exceptions. Use capital letters for file formats and tool names. e.g., 
-      LEF, DEF, SPICE.
+
+   i. Start with a capital letter and end with period besides well-known exceptions. Use capital letters for file formats and tool names. e.g., LEF, DEF, SPICE.
    ii. After the first word’s capitalization, do not use capital letters (aside from obvious exceptions - RSMT, hCut, etc.
    iii. Do not use exclamations. Severity must be communicated by message severity and clear implied or explicit action.
    iv. Avoid long, verbose messages. Use commas to list and separate clauses in messages.
    v. Spellcheck all messages using American English spellings.
-   vii. Use ellipsis (...) only to indicate a pause, as when some tool is running or being intialized
+   vi. Use ellipsis (...) only to indicate a pause, as when some tool is running or being intialized
    
 b. Abbreviations and Shortcuts
-   i. Use single-word versions when well-accepted / well-understood by users and developers. 
-   Examples, stdcell, cutline, wirelength, stdcell, flipchip, padring, bondpad, wirebond, libcell, viarule etc.
-   
-   ii. Do not abbreviate English words, expand for the sake of clarity. 
-   Incorrect: Num, # , Correct: Number
-   Incorrect: Tot., Correct: Total
-   
+
+   i. Use single-word versions when well-accepted / well-understood by users and developers. Examples, stdcell, cutline, wirelength, stdcell, flipchip, padring, bondpad, wirebond, libcell, viarule etc.
+   ii. Do not abbreviate English words, expand for the sake of clarity.  Incorrect: Num, # , Correct: Number Incorrect: Tot., Correct: Total
    iii. Use acceptable, well-understood abbreviations for brevity. Examples, db, tech, lib, inst, term, params, etc.
-  
-   iv. Avoid contractions of action words
-   Incorrect: Can't, Don't, Can not
-   Correct: Cannot, Do not
+   iv. Avoid contractions of action words Incorrect: Can't, Don't, Can not Correct: Cannot, Do not
    
-b. Actionability
+c. Actionability
    Messages should have clear, implied or an explicit action that is necessary for flow continuation or quality of results. 
    Correct: A value for core_area must specified in the footprint specification, or in the environment variable CORE_AREA
    
@@ -60,7 +53,7 @@ d. Clarity
    Messages must be clear and complete so as to communicate necessary and sufficient information and action. Elaborate variable, option, parameter numbers.
    Correct: Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer, -rdl_width, -rdl_spacing
    
-  i. Specify objects clearly in the local context
+   i. Specify objects clearly in the local context
   
    Correct: cutWithin is smaller than cutSpacing for ADJACENTCUTS on layer {}, please check your rule definition.
    Incomplete: Warning: {} does not have viaDef aligned with layer.
@@ -77,12 +70,12 @@ d. Clarity
    
  
 Message Types
- ~~~~~~~~~~~~~
- OpenROAD supports the following levels of severity through the logger:
- Report, Debug, Informtion, Error, Warning and Critical.
+~~~~~~~~~~~~~
+OpenROAD supports the following levels of severity through the logger:
+Report, Debug, Informtion, Error, Warning and Critical.
   
 Report
-~~~~~~
+++++++
 
 Reports are tool output in the form of a report to the user. Examples
 include timing paths or power analysis results. 
@@ -93,13 +86,13 @@ Example Report message:
     Path startpoint: $startpoint
 
 Debug
-~~~~~
++++++
 
 Debug messages are only of use to tool developers and not to end users.
 These messages are not shown unless explicitly enabled.
 
 Information
-~~~~~~~~~~~
++++++++++++
 
 Information messages may be used for reporting metrics, quality of
 results, or program status to the user. Any message which indicates
@@ -115,7 +108,7 @@ Example Information messages:
    Current cell site utilization: 57.1567%
 
 Warning
-~~~~~~~
++++++++
 
 Warnings should be used for indicating atypical runtime conditions that
 may affect quality, but not correctness of the output. Any conditions
@@ -130,7 +123,7 @@ Example Warning messages:
    Pin ‘A[0]’ on instance ‘mem01’ does not contain antenna information and will not be checked for antenna violations.
 
 Error
-~~~~~
++++++
 
 Error messages should be used for indicating correctness problems.
 Problems with command arguments are a good example of errors. Errors
@@ -147,7 +140,7 @@ Example Error messages:
    Argument ‘max_routing_layer’ expects an integer value from 1 to 10.
 
 Critical
-~~~~~~~~
+++++++++
 
 Critical messages should be used for indicating correctness problems
 that the program is not able to work around or ignore, and require
