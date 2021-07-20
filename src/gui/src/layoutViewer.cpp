@@ -715,6 +715,10 @@ void LayoutViewer::drawRows(dbBlock* block,
     int spacing = row->getSpacing();
     int w = site->getWidth();
     int h = site->getHeight();
+
+    bool w_visible = w >= min_resolution;
+    bool h_visible = h >= min_resolution;
+
     switch (row->getOrient()) {
       case dbOrientType::R0:
       case dbOrientType::R180:
@@ -732,7 +736,7 @@ void LayoutViewer::drawRows(dbBlock* block,
 
     dbRowDir dir = row->getDirection();
     int count = row->getSiteCount();
-    if (w < min_resolution) {
+    if (!w_visible) {
       // individual sites not visible, just draw the row
       if (dir == dbRowDir::HORIZONTAL) {
         w = spacing*count;
@@ -742,7 +746,7 @@ void LayoutViewer::drawRows(dbBlock* block,
       }
       count = 1;
     }
-    if (h >= min_resolution) {
+    if (h_visible) {
       // row height can be seen
       for (int i = 0; i < count; ++i) {
         const Rect row(x, y, x + w, y + h);
