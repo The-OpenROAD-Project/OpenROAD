@@ -3474,7 +3474,10 @@ Resizer::ensureDesignArea()
     design_area_ = 0.0;
     for (dbInst *inst : block_->getInsts()) {
       dbMaster *master = inst->getMaster();
-      design_area_ += area(master);
+      // Don't count fillers otherwise you'll always get 100% utilization
+      if (!master->isFiller()) {
+        design_area_ += area(master);
+      }
     }
   }
 }
