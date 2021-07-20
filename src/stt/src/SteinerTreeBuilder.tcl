@@ -1,10 +1,8 @@
-################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
-##          (Advisor: Ricardo Reis)
+###############################################################################
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, Federal University of Rio Grande do Sul (UFRGS)
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -32,32 +30,48 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-################################################################################
+##
+###############################################################################
 
-include("openroad")
+sta::define_cmd_args "set_routing_alpha" { alpha \
+                                          [-net net_name] }
 
-swig_lib(NAME      pdr
-         NAMESPACE pdr
-         I_FILE    src/pdrev.i
-)
+proc set_routing_alpha { args } {
+  sta::parse_key_args "set_routing_alpha" args \
+                 keys {-net}
 
-target_sources(pdr
-  PRIVATE
-  src/MakePdrev.cpp
-  src/pdrev.cpp
-  src/graph.cpp
-  src/node.cpp
-  src/edge.cpp
-)
+  set alpha [lindex $args 0]
+  if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
+    utl::error STT 1 "The alpha value must be between 0.0 and 1.0."
+  }
+  if { [info exists keys(-net)] } {
+    set net_names $keys(-net)
+    set nets [stt::parse_net_names "set_routing_alpha" $net_names]
+    foreach net $nets {
+      stt::set_net_alpha $net $alpha
+    }
+  } elseif { [llength $args] == 1 } {
+    stt::set_routing_alpha_cmd $alpha
+  } else {
+    utl::error STT 2 "set_routing_alpha: Wrong number of arguments."
+  }
+}
 
-target_include_directories(pdr
-  PUBLIC
-    include
-)
+namespace eval stt {
 
-target_link_libraries(pdr
-  PUBLIC
-    stt
-    utl
-    gui
-)
+proc parse_net_names {cmd names} {
+  set dbBlock [ord::get_db_block]
+  set net_list {}
+  foreach net [get_nets $names] {
+    lappend net_list [sta::sta_to_db_net $net]
+  }
+
+  if {[llength $net_list] == 0} {
+    utl::error STT 3 "Nets for $cmd command were not found"
+  }
+
+  return $net_list
+}
+
+# stt namespace end
+}

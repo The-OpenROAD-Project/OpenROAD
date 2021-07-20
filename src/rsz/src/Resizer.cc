@@ -66,8 +66,6 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
-#include "grt/GlobalRouter.h"
-
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -182,7 +180,7 @@ Resizer::init(OpenRoad *openroad,
               Gui *gui,
               dbDatabase *db,
               dbSta *sta,
-              GlobalRouter *grt)
+              SteinerTreeBuilder *stt_builder)
 {
   openroad_ = openroad;
   logger_ = logger;
@@ -190,7 +188,7 @@ Resizer::init(OpenRoad *openroad,
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
-  grt_ = grt;
+  stt_builder_ = stt_builder;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
@@ -200,12 +198,6 @@ Resizer::init(OpenRoad *openroad,
 }
 
 ////////////////////////////////////////////////////////////////
-
-float
-Resizer::routingAlpha() const
-{
-  return grt_->getAlpha();
-}
 
 double
 Resizer::coreArea() const
@@ -796,8 +788,8 @@ Resizer::repairNet(Net *net,
                    int &length_violations)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                      db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true,
+                                      db_network_, logger_, stt_builder_);
   if (tree) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
@@ -1758,7 +1750,16 @@ Resizer::findTargetLoads()
       LibertyCell *cell = cell_iter.next();
       if (isLinkCell(cell)) {
         LibertyCell *corner_cell = cell->cornerCell(lib_ap_index);
-        findTargetLoad(corner_cell);
+        float tgt_load;
+        bool exists;
+        target_load_map_->findKey(corner_cell, tgt_load, exists);
+        if (!exists) {
+          tgt_load = findTargetLoad(corner_cell);
+          (*target_load_map_)[corner_cell] = tgt_load;
+        }
+        // Map link cell to corner cell target load.
+        if (cell != corner_cell)
+          (*target_load_map_)[cell] = tgt_load;
       }
     }
   }
@@ -1771,10 +1772,12 @@ Resizer::targetLoadCap(LibertyCell *cell)
   float load_cap = 0.0;
   bool exists;
   target_load_map_->findKey(cell, load_cap, exists);
+  if (!exists)
+    logger_->error(RSZ, 68, "missing target load cap.");
   return load_cap;
 }
 
-void
+float
 Resizer::findTargetLoad(LibertyCell *cell)
 {
   LibertyCellTimingArcSetIterator arc_set_iter(cell);
@@ -1806,11 +1809,10 @@ Resizer::findTargetLoad(LibertyCell *cell)
     }
   }
   float target_load = arc_count ? target_load_sum / arc_count : 0.0;
-  (*target_load_map_)[cell] = target_load;
-
   debugPrint(logger_, RSZ, "target_load", 2, "{} target_load = {:.2e}",
              cell->name(),
              target_load);
+  return target_load;
 }
 
 // Find the load capacitance that will cause the output slew
@@ -2924,8 +2926,8 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                      db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true,
+                                      db_network_, logger_, stt_builder_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
     delete tree;
@@ -3676,7 +3678,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, routingAlpha(), false, db_network_, logger_);
+      tree = makeSteinerTree(drvr, false, db_network_, logger_, stt_builder_);
     steiner_renderer_->highlight(tree);
   }
 }

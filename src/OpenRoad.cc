@@ -61,7 +61,6 @@
 #include "db_sta/dbNetwork.hh"
 
 #include "ord/InitOpenRoad.hh"
-#include "stt/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"
 #include "ppl/MakeIoplacer.h"
@@ -82,7 +81,7 @@
 #include "ant/MakeAntennaChecker.hh"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
-#include "pdr/MakePdrev.h"
+#include "stt/MakeSteinerTreeBuilder.h"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -140,6 +139,7 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr), 
     partitionMgr_(nullptr),
     pdngen_(nullptr),
+    stt_builder_(nullptr),
     threads_(1)
 {
   db_ = dbDatabase::create();
@@ -166,7 +166,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
-  stt::deleteLUT();
+  deleteSteinerTreeBuilder(stt_builder_);
   delete logger_;
 }
 
@@ -227,6 +227,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  stt_builder_ = makeSteinerTreeBuilder();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -237,7 +238,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initGui(this); // first so we can register our sink with the logger
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
-  stt::readLUT();
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);
@@ -257,7 +257,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
-  initPdrev(this);
+  initSteinerTreeBuilder(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

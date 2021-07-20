@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,22 +33,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ord/OpenRoad.hh"
+#pragma once
 
-extern "C" {
-extern int Pdr_Init(Tcl_Interp *interp);
+namespace stt {
+class SteinerTreeBuilder;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-void
-initPdrev(OpenRoad *openroad)
-{
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  Pdr_Init(interp);
-}
+stt::SteinerTreeBuilder* makeSteinerTreeBuilder();
 
-} // namespace
+void initSteinerTreeBuilder(OpenRoad* openroad);
+
+void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder);
+
+}  // namespace ord

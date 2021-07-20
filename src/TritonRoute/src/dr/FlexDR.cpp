@@ -32,6 +32,7 @@
 #include <chrono>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include "db/infra/frTime.h"
 #include "dr/FlexDR.h"

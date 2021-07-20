@@ -11,6 +11,7 @@ record_tests {
   est_rc1
   est_rc2
   gcd
+  gcd_flute
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls

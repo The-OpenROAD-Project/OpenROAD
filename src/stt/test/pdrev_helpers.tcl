@@ -97,9 +97,9 @@ proc report_pdrev_net { net alpha use_pd } {
     lappend ys $y
   }
   if { $use_pd } {
-    pdr::report_pd_tree $xs $ys $drvr_index $alpha
+    stt::report_pd_tree $xs $ys $drvr_index $alpha
   } else {
-    pdr::report_pdII_tree $xs $ys $drvr_index $alpha
+    stt::report_pdII_tree $xs $ys $drvr_index $alpha
   }
 }
 
@@ -131,5 +131,5 @@ proc highlight_pd_net { net alpha } {
     lappend xs $x
     lappend ys $y
   }
-  pdr::highlight_pd_tree $xs $ys $drvr_index $alpha
+  stt::highlight_pd_tree $xs $ys $drvr_index $alpha
 }

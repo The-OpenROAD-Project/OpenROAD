@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,43 +30,45 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
-#include "flute.h"
+#include "stt/MakeSteinerTreeBuilder.h"
 
-namespace utl {
-class Logger;
+#include "stt/SteinerTreeBuilder.h"
+#include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
+
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* stt_tcl_inits[];
+}  // namespace sta
+
+extern "C" {
+extern int Stt_Init(Tcl_Interp* interp);
 }
-namespace gui {
-class Gui;
+
+namespace ord {
+
+stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
+{
+  return new stt::SteinerTreeBuilder();
 }
 
-namespace pdr {
+void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
+{
+  stt::flt::deleteLUT();
+  delete stt_builder;
+}
 
-using utl::Logger;
-using stt::Tree;
+void initSteinerTreeBuilder(OpenRoad* openroad)
+{
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  Stt_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
+  openroad->getSteinerTreeBuilder()->init(openroad->getDb(), openroad->getLogger());
+  stt::flt::readLUT();
+}
 
-Tree
-primDijkstra(std::vector<int> x,
-             std::vector<int> y,
-             int drvr_index,
-             float alpha,
-             Logger* logger);
-
-Tree
-primDijkstraRevII(std::vector<int> x,
-                  std::vector<int> y,
-                  int drvr_index,
-                  float alpha,
-                  Logger* logger);
-
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger);
-void
-highlightSteinerTree(stt::Tree &tree,
-                     gui::Gui *gui);
-
-}  // namespace PD
+}  // namespace ord

@@ -29,9 +29,33 @@
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <vector>
+#include "utl/Logger.h"
+
 #pragma once
 
 namespace stt {
+typedef int DTYPE;
+
+typedef struct {
+  DTYPE x, y;  // starting point of the branch
+  int n;       // index of neighbor
+} Branch;
+
+typedef struct {
+  int deg;         // degree
+  DTYPE length;    // total wirelength
+  std::vector<Branch> branch;  // array of tree branches
+
+  void printTree(utl::Logger* logger);
+  int branchCount() const { return deg * 2 - 2; }
+} Tree;
+
+namespace flt {
+
+using stt::DTYPE;
+using stt::Branch;
+using stt::Tree;
 
 /*****************************/
 /*  User-Defined Parameters  */
@@ -45,30 +69,14 @@ namespace stt {
 #define FLUTE_POSTFILE "POST9.dat"  // LUT for POST (Steiner Tree)
 #define FLUTE_D 9                   // LUT is used for d <= FLUTE_D, FLUTE_D <= 9
 
-typedef int DTYPE;
-
-typedef struct {
-  DTYPE x, y;  // starting point of the branch
-  int n;       // index of neighbor
-} Branch;
-
-typedef struct {
-  int deg;         // degree
-  DTYPE length;    // total wirelength
-  Branch *branch;  // array of tree branches
-} Tree;
-
 // User-Callable Functions
 void readLUT();
 void deleteLUT();
 DTYPE flute_wl(int d, DTYPE x[], DTYPE y[], int acc);
 Tree flute(int d, DTYPE x[], DTYPE y[], int acc);
 DTYPE wirelength(Tree t);
-void printtree(Tree t);
-inline int branch_count(const Tree &t) { return t.deg * 2 - 2; }
 void plottree(Tree t);
 void write_svg(Tree t, const char *filename);
-void free_tree(Tree t);
 
 // Other useful functions
 DTYPE flutes_wl_LD(int d, DTYPE xs[], DTYPE ys[], int s[]);
@@ -123,4 +131,6 @@ inline Tree flutes_LMD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
   }
 }
 
-}  // namespace
+} // namespace flt
+
+} // namespace stt
