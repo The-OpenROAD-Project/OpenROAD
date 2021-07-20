@@ -2,6 +2,7 @@ Coding Practices
 ================
 
 .. note::
+
       This is a compilation of many idioms in openroad code that I consider
       undesirable. Obviously other programmers have different opinions or
       they would not be so pervasive. James Cherry 04/2020
@@ -28,23 +29,23 @@ Don't use prefixes on function names or variables. That's what namespaces are fo
 
 .. code-block:: cpp
 
-namespace fr {
-class frConstraint
-class frLef58CutClassConstraint
-class frShortConstraint
-class frNonSufficientMetalConstraint
-class frOffGridConstraint
-class frMinEnclosedAreaConstraint
-class frMinStepConstraint
-class frMinimumcutConstraint
-class frAreaConstraint
-class frMinWidthConstraint
-class frLef58SpacingEndOfLineWithinEndToEndConstraint
-class frLef58SpacingEndOfLineWithinParallelEdgeConstraint
-class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint
-class frLef58SpacingEndOfLineWithinConstraint
-class frLef58SpacingEndOfLineConstraint
-}
+  namespace fr {
+    class frConstraint
+    class frLef58CutClassConstraint
+    class frShortConstraint
+    class frNonSufficientMetalConstraint
+    class frOffGridConstraint
+    class frMinEnclosedAreaConstraint
+    class frMinStepConstraint
+    class frMinimumcutConstraint
+    class frAreaConstraint
+    class frMinWidthConstraint
+    class frLef58SpacingEndOfLineWithinEndToEndConstraint
+    class frLef58SpacingEndOfLineWithinParallelEdgeConstraint
+    class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint
+    class frLef58SpacingEndOfLineWithinConstraint
+    class frLef58SpacingEndOfLineConstraint
+  }
 
 Practice #3
 -----------
@@ -60,14 +61,14 @@ with prototypes.
 
 .. code-block:: cpp
 
-namespace fr {
-extern frCoord getGCELLGRIDX();
-extern frCoord
-getGCELLGRIDY();
-extern frCoord getGCELLOFFSETX();
-extern frCoord
-getGCELLOFFSETY();
-}
+  namespace fr {
+    extern frCoord getGCELLGRIDX();
+    extern frCoord
+    getGCELLGRIDY();
+    extern frCoord getGCELLOFFSETX();
+    extern frCoord
+    getGCELLOFFSETY();
+  }
 
 Practice #5
 -----------
@@ -76,7 +77,7 @@ Don't use prefixes on file names. That's what directories are for.
 
 .. code-block:: shell
 
-      frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
+  frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
 
 Practice #6
 -----------
@@ -152,7 +153,7 @@ Do not use continue. Wrap the body in an if instead.
 
 
 Practice #10
------------
+------------
 
 Don't put magic numbers in the code. Use a variable with a name that
 captures the intent. Document the units if they exist.
@@ -160,14 +161,15 @@ captures the intent. Document the units if they exist.
 examples of unnamed magic numbers:
 
 .. code-block:: cpp
+
   referenceHpwl_= 446000000;
   coeffV = 1.36;
   coeffV = 1.2;
   double nearest_dist = 99999999999;
-  if(dist < rowHeight \* 2) {}
-  for(int i = 9; i > -1; i–) {}
-  if(design_util > 0.6 \|\| num_fixed_nodes > 0) div = 1;
-  avail_region_area += (theRect->xUR - theRect->xLL - (int)theRect->xUR % 200 + (int)t  heRect->xLL % 200 - 200) \* (theRect->yUR - theRect->yLL - (int)theRect->yUR % 2000 + (int)theRect->yLL % 2000 - 2000);
+  if (dist < rowHeight * 2) {}
+  for(int i = 9; i > -1; i--) {}
+  if(design_util > 0.6 || num_fixed_nodes > 0) div = 1;
+  avail_region_area += (theRect->xUR - theRect->xLL - (int)theRect->xUR % 200 + (int)t  heRect->xLL % 200 - 200) * (theRect->yUR - theRect->yLL - (int)theRect->yUR % 2000 + (int)theRect->yLL % 2000 - 2000);
 
 
 Practice #11
@@ -181,7 +183,7 @@ Don't copy code fragments. Write functions.
   int x_pos = (int)floor(theCell->x_coord / wsite + 0.5);
   // 15x
   int y_pos = (int)floor(y_coord / rowHeight + 0.5);
-  
+
   // This
   nets[newnetID]->netIDorg = netID;
   nets[newnetID]->numPins = numPins;
@@ -190,7 +192,7 @@ Don't copy code fragments. Write functions.
   nets[newnetID]->pinY = (short *)malloc(pinInd* sizeof(short));
   nets[newnetID]->pinL = (short *)malloc(pinInd* sizeof(short));
   nets[newnetID]->alpha = alpha;
-  
+
   // Should factor out the array lookup.
   Net *net = nets[newnetID];
   net->netIDorg = netID;
@@ -200,7 +202,7 @@ Don't copy code fragments. Write functions.
   net->pinY = (short *)malloc(pinInd* sizeof(short));
   net->pinL = (short *)malloc(pinInd* sizeof(short));
   net->alpha = alpha;
-  
+
   // Same here:
   if (grid[j][k].group != UINT_MAX) {
     if (grid[j][k].isValid) {
@@ -219,7 +221,7 @@ Don't use logical operators to test for null pointers.
   if (!net) {
     // code
   }
-  
+
   // should be
   if (net != nullptr) {
     // code
@@ -321,7 +323,7 @@ Don't nest if statements. Use && on the clauses instead.
   if(grid[j][k].group != UINT_MAX)
     if(grid[j][k].isValid == true)
       if(groups[grid[j][k].group].name == theGroup->name)
-  
+
 is simply
 
 .. code-block:: cpp
@@ -344,6 +346,7 @@ headers should NEVER be in <>'s.
 - https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename
 
 These are all wrong:
+
 .. code-block:: cpp
 
   #include <opendb/db.h>
@@ -393,7 +396,7 @@ the header file.
   #include <stdlib.h>
   #include <math.h>
   #include <limits.h>
-  
+
   unsigned num_nets = 1000;
   unsigned num_terminals = 64;
   unsigned verbose = 0;
@@ -408,7 +411,7 @@ the header file.
   float beta = 1.4;
   bool runOneNet = false;
   unsigned net_num = 0;
-  
+
 Practice #24
 ------------
 
@@ -517,12 +520,12 @@ Don't std::pow for powers of 2 or for decimal constants.
   double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12));
   // Should be
   double newCapPerSqr = _options->getCapPerSqr() * 1E-12;
-  
+
   // This
   unsigned numberOfTopologies = std::pow(2, numberOfNodes);
   // Should be
   unsigned numberOfTopologies = 1 << numberOfNodes;
-      
+
 Git
 ***
 
@@ -572,7 +575,7 @@ Compiled Static libraries
 `\*.lai \*.la \*.a \*.lib`
 
 CMAKE
-****
+*****
 
 Practice #35
 ------------
@@ -594,7 +597,7 @@ directories.
 
 .. code-block:: cmake
 
-      target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
+   target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
 
 Practice #37
 ------------
