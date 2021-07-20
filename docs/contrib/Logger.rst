@@ -12,7 +12,7 @@ For Example,
 All output from OpenROAD tools should be directed through the logging
 API to ensure that redirection, file logging and execution control flow is
 handled consistently. This also includes messages from a third party tool integration.
-Use one of the logging functions in the ‘ord’ namespace to issue the message.
+Use one of the logging functions in the "ord" namespace to issue the message.
 
 The logging infrastructure also supports generating a `JSON
 <https://www.json.org>`__ file containing design metrics (e.g. area,
@@ -76,14 +76,16 @@ d. Clarity
    Incorrect: No orientation available for orientation of $cell_ref.
    
  
- Message Types
+Message Types
  ~~~~~~~~~~~~~
+ OpenROAD supports the following levels of severity through the logger:
+ Report, Debug, Informtion, Error, Warning and Critical.
   
 Report
 ~~~~~~
 
 Reports are tool output in the form of a report to the user. Examples
-are timing paths, or power analysis results. 
+include timing paths or power analysis results. 
 
 Example Report message:
 
