@@ -819,7 +819,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              int depth,
                              const QTransform& base_tx)
 {
-  int pixel = 1 / pixels_per_dbu_;  // 1 pixel in DBU
+  int pixel = minimumViewableResolution();  // 1 pixel in DBU
   LayerBoxes boxes;
   QTransform initial_xfm = painter->transform();
 
@@ -1546,6 +1546,11 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
   // This happens when initialize_floorplan is run and it make sense
   // to fit as current zoom will be on a zero sized block.
   fit();
+}
+
+int LayoutViewer::minimumViewableResolution()
+{
+  return 1 / pixels_per_dbu_;
 }
 
 }  // namespace gui
