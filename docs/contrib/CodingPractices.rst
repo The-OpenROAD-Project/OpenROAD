@@ -152,7 +152,7 @@ Do not use continue. Wrap the body in an if instead.
 
 
 Practice #10
------------
+------------
 
 Don't put magic numbers in the code. Use a variable with a name that
 captures the intent. Document the units if they exist.
@@ -160,14 +160,15 @@ captures the intent. Document the units if they exist.
 examples of unnamed magic numbers:
 
 .. code-block:: cpp
+
   referenceHpwl_= 446000000;
   coeffV = 1.36;
   coeffV = 1.2;
   double nearest_dist = 99999999999;
-  if(dist < rowHeight \* 2) {}
-  for(int i = 9; i > -1; i–) {}
-  if(design_util > 0.6 \|\| num_fixed_nodes > 0) div = 1;
-  avail_region_area += (theRect->xUR - theRect->xLL - (int)theRect->xUR % 200 + (int)t  heRect->xLL % 200 - 200) \* (theRect->yUR - theRect->yLL - (int)theRect->yUR % 2000 + (int)theRect->yLL % 2000 - 2000);
+  if (dist < rowHeight * 2) {}
+  for(int i = 9; i > -1; i--) {}
+  if(design_util > 0.6 || num_fixed_nodes > 0) div = 1;
+  avail_region_area += (theRect->xUR - theRect->xLL - (int)theRect->xUR % 200 + (int)t  heRect->xLL % 200 - 200) * (theRect->yUR - theRect->yLL - (int)theRect->yUR % 2000 + (int)theRect->yLL % 2000 - 2000);
 
 
 Practice #11
