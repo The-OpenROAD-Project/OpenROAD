@@ -1422,9 +1422,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frVia via(viaDef);
   frBox viaBox(0, 0, 0, 0);
   via.getCutBBox(viaBox);
-  auto cutClass1 = cutLayer->getCutClass(box.width(), box.length())->getName();
-  auto cutClass2
-      = cutLayer->getCutClass(viaBox.width(), viaBox.length())->getName();
 
   // spacing value needed
   frCoord bloatDist = 0;
@@ -1434,10 +1431,17 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       bloatDist = max(bloatDist, con->getCutWithin());
     }
   }
-  for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
-    bloatDist = max(bloatDist,
-                    con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+  frString cutClass1, cutClass2;
+  if(!cutLayer->getLef58CutSpacingTableConstraints().empty()) {
+    cutClass1 = cutLayer->getCutClass(box.width(), box.length())->getName();
+    cutClass2
+        = cutLayer->getCutClass(viaBox.width(), viaBox.length())->getName();
+    for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
+      bloatDist = max(bloatDist,
+                      con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+    }
   }
+  
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
@@ -1473,8 +1477,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
+        hasViol = false;
         for (auto con : cutLayer->getCutSpacing()) {
-          hasViol = false;
           reqDistSquare = con->getCutSpacing();
           reqDistSquare *= con->getCutSpacing();
           currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
@@ -1528,63 +1532,64 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             break;
           }
         }
-        for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
-          auto dbRule = con->getODBRule();
-          if (dbRule->isLayerValid())
-            continue;
-          hasViol = false;
-          auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
-          if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-              && dbRule->isNoPrl()) {
-            reqDistSquare
-                = dbRule->getSpacing(cutClass1, false, cutClass2, false, 2);
-            reqDistSquare *= reqDistSquare;
-            if (c2cSquare < reqDistSquare) {
+        if(!hasViol) {
+          for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
+            auto dbRule = con->getODBRule();
+            if (dbRule->isLayerValid())
+              continue;
+            auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
+            if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
+                && dbRule->isNoPrl()) {
               reqDistSquare
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 3);
+                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 2);
               reqDistSquare *= reqDistSquare;
-              if (distSquare < reqDistSquare)
+              if (c2cSquare < reqDistSquare) {
+                reqDistSquare
+                    = dbRule->getSpacing(cutClass1, false, cutClass2, false, 3);
+                reqDistSquare *= reqDistSquare;
+                if (distSquare < reqDistSquare)
+                  hasViol = true;
+              }
+            } else {
+              if (prl > reqPrl)
+                reqDistSquare
+                    = dbRule->getSpacing(cutClass1, false, cutClass2, false, 1);
+              else
+                reqDistSquare
+                    = dbRule->getSpacing(cutClass1, false, cutClass2, false, 0);
+
+              if (dbRule->isCenterToCenter(cutClass1, cutClass2))
+                currDistSquare = c2cSquare;
+              else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
+                      && (frCoord) reqDistSquare
+                              == dbRule->getSpacing(
+                                  cutClass1, false, cutClass2, false, 2))
+                currDistSquare = c2cSquare;
+              else
+                currDistSquare = distSquare;
+
+              reqDistSquare *= reqDistSquare;
+              if (currDistSquare < reqDistSquare)
                 hasViol = true;
             }
-          } else {
-            if (prl > reqPrl)
-              reqDistSquare
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 1);
-            else
-              reqDistSquare
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 0);
-
-            if (dbRule->isCenterToCenter(cutClass1, cutClass2))
-              currDistSquare = c2cSquare;
-            else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                     && reqDistSquare
-                            == dbRule->getSpacing(
-                                cutClass1, false, cutClass2, false, 2))
-              currDistSquare = c2cSquare;
-            else
-              currDistSquare = distSquare;
-
-            reqDistSquare *= reqDistSquare;
-            if (currDistSquare < reqDistSquare)
-              hasViol = true;
-          }
-          if (hasViol) {
-            switch (type) {
-              case 0:
-                gridGraph_.subRouteShapeCostVia(i, j, z);  // safe access
-                break;
-              case 1:
-                gridGraph_.addRouteShapeCostVia(i, j, z);  // safe access
-                break;
-              case 2:
-                gridGraph_.subFixedShapeCostVia(i, j, z);  // safe access
-                break;
-              case 3:
-                gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
-                break;
-              default:;
+            if (hasViol) {
+              switch (type) {
+                case 0:
+                  gridGraph_.subRouteShapeCostVia(i, j, z);  // safe access
+                  break;
+                case 1:
+                  gridGraph_.addRouteShapeCostVia(i, j, z);  // safe access
+                  break;
+                case 2:
+                  gridGraph_.subFixedShapeCostVia(i, j, z);  // safe access
+                  break;
+                case 3:
+                  gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
+                  break;
+                default:;
+              }
+              break;
             }
-            break;
           }
         }
       }
@@ -1711,18 +1716,26 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   auto z2 = isUpperVia ? z + 1 : z - 1;
 
   frViaDef* viaDef = nullptr;
+  frLayer* higherLayer;
+  frLayer* lowerLayer;
   if (isUpperVia) {
     viaDef = (cutLayerNum2 <= getTech()->getTopLayerNum())
                  ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
                  : nullptr;
+    higherLayer = getTech()->getLayer(cutLayerNum2);
+    lowerLayer = getTech()->getLayer(cutLayerNum1);
   } else {
     viaDef = (cutLayerNum2 >= getTech()->getBottomLayerNum())
                  ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
                  : nullptr;
+    lowerLayer = getTech()->getLayer(cutLayerNum2);
+    higherLayer = getTech()->getLayer(cutLayerNum1);
   }
-  if (viaDef == nullptr) {
+  if (viaDef == nullptr)
     return;
-  }
+  
+  if(higherLayer->getLef58CutSpacingTableConstraints().empty())
+    return;
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
@@ -1736,29 +1749,15 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   FlexMazeIdx mIdx2;
   frString cutClass1, cutClass2;
   frCoord bloatDist = 0;
-  frLayer* higherLayer;
-  frLayer* lowerLayer;
   if (isUpperVia) {
-    higherLayer = getTech()->getLayer(cutLayerNum2);
-    lowerLayer = getTech()->getLayer(cutLayerNum1);
-    cutClass1 = getTech()
-                    ->getLayer(cutLayerNum2)
-                    ->getCutClass(viaBox.width(), viaBox.length())
+    cutClass1 = higherLayer->getCutClass(viaBox.width(), viaBox.length())
                     ->getName();
-    cutClass2 = getTech()
-                    ->getLayer(cutLayerNum1)
-                    ->getCutClass(box.width(), box.length())
+    cutClass2 = lowerLayer->getCutClass(box.width(), box.length())
                     ->getName();
   } else {
-    lowerLayer = getTech()->getLayer(cutLayerNum2);
-    higherLayer = getTech()->getLayer(cutLayerNum1);
-    cutClass2 = getTech()
-                    ->getLayer(cutLayerNum2)
-                    ->getCutClass(viaBox.width(), viaBox.length())
+    cutClass2 = lowerLayer->getCutClass(viaBox.width(), viaBox.length())
                     ->getName();
-    cutClass1 = getTech()
-                    ->getLayer(cutLayerNum1)
-                    ->getCutClass(box.width(), box.length())
+    cutClass1 = higherLayer->getCutClass(box.width(), box.length())
                     ->getName();
   }
   for (auto con : higherLayer->getLef58CutSpacingTableConstraints()) {
@@ -1832,7 +1831,7 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
             if (dbRule->isCenterToCenter(cutClass1, cutClass2))
               currDistSquare = c2cSquare;
             else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                     && reqDistSquare
+                     && (frCoord) reqDistSquare
                             == dbRule->getSpacing(
                                 cutClass1, false, cutClass2, false, 2))
               currDistSquare = c2cSquare;
