@@ -89,11 +89,12 @@ inline frSquaredDistance getCenterToCenterDist(gcSegment* viaEdge1,
   return gtl::distance_squared(centerPt1, centerPt2);
 }
 
-bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(const gtl::rectangle_data<frCoord>& edgeRect1,
-                                                          const gtl::rectangle_data<frCoord>& edgeRect2,
-                                                          std::string cutClass1,
-                                                          std::string cutClass2,
-                                                          odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(
+    const gtl::rectangle_data<frCoord>& edgeRect1,
+    const gtl::rectangle_data<frCoord>& edgeRect2,
+    std::string cutClass1,
+    std::string cutClass2,
+    odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
   auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
 
@@ -113,7 +114,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(const gtl::rectangle_d
       dist = gtl::euclidean_distance(checkRect, edgeRect2, gtl::HORIZONTAL);
       prl = gtl::delta(checkRect, gtl::HORIZONTAL);
     }
-    if (dist == 0 && prl > reqPrl){
+    if (dist == 0 && prl > reqPrl) {
       return true;
     }
   }
@@ -143,7 +144,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
                                      viaEdge2->high().y());
   auto dbRule = con->getODBRule();
   bool viol = false;
-  auto prlValid = checkLef58CutSpacingTbl_prlValid(rect1, rect2, class1, class2, dbRule);
+  auto prlValid
+      = checkLef58CutSpacingTbl_prlValid(rect1, rect2, class1, class2, dbRule);
   if (dbRule->isNoPrl() && dbRule->isCenterAndEdge(class1, class2)) {
     frSquaredDistance spcSqr
         = dbRule->getSpacing(class1, isSide1, class2, isSide2, 2);
@@ -158,15 +160,15 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
         viol = true;
     }
   } else {
-    //check PRLALIGNED
+    // check PRLALIGNED
     short spcIdx = prlValid ? 1 : 0;
-    if(prlValid && dbRule->isPrlForAlignedCutClasses(class1, class2))
-    {
-      box_t qb(point_t(gtl::xl(rect2), gtl::yl(rect2)), point_t(gtl::xh(rect2), gtl::yh(rect2)));
+    if (prlValid && dbRule->isPrlForAlignedCutClasses(class1, class2)) {
+      box_t qb(point_t(gtl::xl(rect2), gtl::yl(rect2)),
+               point_t(gtl::xh(rect2), gtl::yh(rect2)));
       vector<pair<segment_t, gcSegment*>> results;
       auto& workerRegionQuery = getWorkerRegionQuery();
       workerRegionQuery.queryPolygonEdge(qb, layerNum2 + 1, results);
-      if(results.size() == 0)
+      if (results.size() == 0)
         spcIdx = 0;
     }
 
@@ -176,19 +178,21 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     bool useCenter;
     if (dbRule->isCenterToCenter(class1, class2))
       useCenter = true;
-    else if(dbRule->isCenterAndEdge(class1, class2) && reqSpc == dbRule->getSpacing(class1, isSide1, class2, isSide2, 2))
+    else if (dbRule->isCenterAndEdge(class1, class2)
+             && reqSpc
+                    == dbRule->getSpacing(class1, isSide1, class2, isSide2, 2))
       useCenter = true;
     else
       useCenter = false;
 
-    if(useCenter) {
+    if (useCenter) {
       if (getCenterToCenterDist(viaEdge1, viaEdge2) < spcSqr)
         viol = true;
     } else {
-      if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2) < spcSqr)
+      if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2)
+          < spcSqr)
         viol = true;
     }
-
   }
   if (viol) {
     // violation
@@ -215,19 +219,17 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
         = max(viaEdge1->getLowCorner()->x(), viaEdge1->getHighCorner()->x());
     frCoord ury
         = max(viaEdge1->getLowCorner()->y(), viaEdge1->getHighCorner()->y());
-    marker->addVictim(net1->getOwner(),
-                      make_tuple(layerNum1,
-                                 frBox(llx, lly, urx, ury),
-                                 viaEdge1->isFixed()));
+    marker->addVictim(
+        net1->getOwner(),
+        make_tuple(layerNum1, frBox(llx, lly, urx, ury), viaEdge1->isFixed()));
     marker->addSrc(net2->getOwner());
     llx = min(viaEdge2->getLowCorner()->x(), viaEdge2->getHighCorner()->x());
     lly = min(viaEdge2->getLowCorner()->y(), viaEdge2->getHighCorner()->y());
     urx = max(viaEdge2->getLowCorner()->x(), viaEdge2->getHighCorner()->x());
     ury = max(viaEdge2->getLowCorner()->y(), viaEdge2->getHighCorner()->y());
-    marker->addAggressor(net2->getOwner(),
-                         make_tuple(layerNum2,
-                                    frBox(llx, lly, urx, ury),
-                                    viaEdge2->isFixed()));
+    marker->addAggressor(
+        net2->getOwner(),
+        make_tuple(layerNum2, frBox(llx, lly, urx, ury), viaEdge2->isFixed()));
     addMarker(std::move(marker));
   }
 }
@@ -242,8 +244,10 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   auto cutClass = getCutClass(layer1, viaEdge);
   auto dbRule = con->getODBRule();
   frLayerNum queryLayerNum;
-  if(dbRule->isLayerValid())
-    queryLayerNum = getTech()->getLayer(dbRule->getSecondLayer()->getName())->getLayerNum();
+  if (dbRule->isLayerValid())
+    queryLayerNum = getTech()
+                        ->getLayer(dbRule->getSecondLayer()->getName())
+                        ->getLayerNum();
   else
     queryLayerNum = layerNum1;
   auto maxSpc = dbRule->getMaxSpacing(cutClass, isSide);

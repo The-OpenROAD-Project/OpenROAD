@@ -37,7 +37,7 @@
 #include "gc/FlexGC.h"
 
 namespace odb {
-  class dbTechLayerCutSpacingTableDefRule;
+class dbTechLayerCutSpacingTableDefRule;
 }
 
 namespace fr {
@@ -379,17 +379,21 @@ class FlexGCWorker::Impl
 
   void checkCutSpacing();
   void checkCutSpacing_main(gcRect* rect);
-  void checkLef58CutSpacingTbl(gcSegment* viaEdge, frLef58CutSpacingTableConstraint* con);
-  bool checkLef58CutSpacingTbl_prlValid(const gtl::rectangle_data<frCoord>& edgeRect1,
-                                        const gtl::rectangle_data<frCoord>& edgeRect2,
-                                        std::string cutClass1,
-                                        std::string cutClass2,
-                                        odb::dbTechLayerCutSpacingTableDefRule* dbRule);
-  void checkLef58CutSpacingTbl_main(gcSegment* viaEdge1, gcSegment* viaEdge2, frLef58CutSpacingTableConstraint* con);
+  void checkLef58CutSpacingTbl(gcSegment* viaEdge,
+                               frLef58CutSpacingTableConstraint* con);
+  bool checkLef58CutSpacingTbl_prlValid(
+      const gtl::rectangle_data<frCoord>& edgeRect1,
+      const gtl::rectangle_data<frCoord>& edgeRect2,
+      std::string cutClass1,
+      std::string cutClass2,
+      odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
+                                    gcSegment* viaEdge2,
+                                    frLef58CutSpacingTableConstraint* con);
   void getLef58CutSpacingTblQueryBox(gcSegment* edge,
-                                    frCoord spc,
-                                    box_t& queryBox,
-                                    gtl::rectangle_data<frCoord>& queryRect);
+                                     frCoord spc,
+                                     box_t& queryBox,
+                                     gtl::rectangle_data<frCoord>& queryRect);
   void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
   bool checkCutSpacing_main_hasAdjCuts(gcRect* rect,
                                        frCutSpacingConstraint* con);

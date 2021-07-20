@@ -905,15 +905,16 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass,
     return obj->default_;
   auto colIdx = obj->col_map_[classDir];
   auto spc = 0;
-  for(int rowIdx = 0; rowIdx < obj->spacing_tbl_.size(); rowIdx++)
-    spc = std::max(spc, std::max(obj->spacing_tbl_[rowIdx][colIdx].first,obj->spacing_tbl_[rowIdx][colIdx].second));
+  for (int rowIdx = 0; rowIdx < obj->spacing_tbl_.size(); rowIdx++)
+    spc = std::max(spc,
+                   std::max(obj->spacing_tbl_[rowIdx][colIdx].first,
+                            obj->spacing_tbl_[rowIdx][colIdx].second));
   return spc;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(
-    std::string cutClass1,
-    std::string cutClass2,
-    short strategy) const
+int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass1,
+                                                     std::string cutClass2,
+                                                     short strategy) const
 {
   auto spc1 = getSpacing(cutClass1, true, cutClass2, true, strategy);
   auto spc2 = getSpacing(cutClass1, true, cutClass2, false, strategy);
@@ -940,8 +941,9 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1,
   return false;
 }
 
-bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCutClasses(std::string cutClass1,
-                                                           std::string cutClass2)
+bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCutClasses(
+    std::string cutClass1,
+    std::string cutClass2)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1009,7 +1011,7 @@ int dbTechLayerCutSpacingTableDefRule::getSpacing(std::string c1,
     c2 += "/END";
   std::pair<int, int> res;
   if (obj->row_map_.find(c2) != obj->row_map_.end()
-           && obj->col_map_.find(c1) != obj->col_map_.end())
+      && obj->col_map_.find(c1) != obj->col_map_.end())
     res = obj->spacing_tbl_[obj->row_map_[c2]][obj->col_map_[c1]];
   else
     res = {obj->default_, obj->default_};

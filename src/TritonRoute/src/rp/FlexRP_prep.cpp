@@ -611,9 +611,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   if (!viaDef1 || !viaDef2) {
     return;
   }
-  if(viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum())
-  {
-    //swap
+  if (viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum()) {
+    // swap
     frViaDef* temp = viaDef2;
     viaDef2 = viaDef1;
     viaDef1 = temp;
@@ -639,14 +638,17 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   frCoord reqSpcVal = 0;
   auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
-  for(auto con : layer1->getLef58CutSpacingTableConstraints())
-  {
-    auto cutClass1 = layer1->getCutClass(cutBox1.width(), cutBox1.length())->getName();
-    auto cutClass2 = layer2->getCutClass(cutBox2.width(), cutBox2.length())->getName();
+  for (auto con : layer1->getLef58CutSpacingTableConstraints()) {
+    auto cutClass1
+        = layer1->getCutClass(cutBox1.width(), cutBox1.length())->getName();
+    auto cutClass2
+        = layer2->getCutClass(cutBox2.width(), cutBox2.length())->getName();
     auto dbRule = con->getODBRule();
-    if(dbRule->isLayerValid() && layer2->getName() != dbRule->getSecondLayer()->getName())
+    if (dbRule->isLayerValid()
+        && layer2->getName() != dbRule->getSecondLayer()->getName())
       continue;
-    if(!dbRule->isLayerValid() && layer2->getLayerNum() != layer1->getLayerNum())
+    if (!dbRule->isLayerValid()
+        && layer2->getLayerNum() != layer1->getLayerNum())
       continue;
     reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
     if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {

@@ -2958,9 +2958,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
       }
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& poly : pin->getPolygonEdges())
-            for(auto& edge : poly)
-              for (auto con : currLayer->getLef58CutSpacingTableConstraints())
-                checkLef58CutSpacingTbl(edge.get(), con.get());
+          for (auto& edge : poly)
+            for (auto con : currLayer->getLef58CutSpacingTableConstraints())
+              checkLef58CutSpacingTbl(edge.get(), con.get());
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkCutSpacing_main(maxrect.get());
         }
@@ -2979,7 +2979,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           for (auto& poly : pin->getPolygonEdges())
-            for(auto& edge : poly)
+            for (auto& edge : poly)
               for (auto con : currLayer->getLef58CutSpacingTableConstraints())
                 checkLef58CutSpacingTbl(edge.get(), con.get());
           for (auto& maxrect : pin->getMaxRectangles()) {
