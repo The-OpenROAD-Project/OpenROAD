@@ -11,8 +11,8 @@ For Example,
 
 All output from OpenROAD tools should be directed through the logging
 API to ensure that redirection, file logging and execution control flow is
-handled consistently. This also includes messages from a third party tool integration.
-Use one of the logging functions in the "ord" namespace to issue the message.
+handled consistently. This also includes messages from a third party tool.
+Use the 'ord' message ID for third party tools.
 
 The logging infrastructure also supports generating a `JSON
 <https://www.json.org>`__ file containing design metrics (e.g. area,
