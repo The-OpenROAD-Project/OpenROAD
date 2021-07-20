@@ -27,7 +27,6 @@
  */
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 
 #include "dr/FlexDR.h"
 #include "frRTree.h"
@@ -36,7 +35,7 @@ using namespace std;
 using namespace fr;
 namespace bgi = boost::geometry::index;
 
-using Rectangle = boost::polygon::rectangle_data<int>;
+
 
 void FlexDRWorker::initNetObjs_pathSeg(
     frPathSeg* pathSeg,
@@ -826,6 +825,25 @@ void FlexDRWorker::initNets_searchRepair(
   }
 }
 
+void FlexDRWorker::getTrackLocsRestrRouting(frLayerNum startLayerNum,
+                                            Rectangle& pinRect,
+                                            std::set<frCoord>& xLocs,
+                                            std::set<frCoord>& yLocs) {
+    using namespace boost::polygon::operators;
+    for (frLayerNum lNum = startLayerNum; lNum < getTech()->getTopLayerNum();
+                                                                    lNum += 2) {
+        frPrefRoutingDirEnum currPrefRouteDir
+                                        = getTech()->getLayer(lNum)->getDir();
+        if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+            getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
+        } else {
+            getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
+        }
+        if (!xLocs.empty() || !yLocs.empty())
+            return;
+    }
+}
+
 void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
 {
   using namespace boost::polygon::operators;
@@ -871,46 +889,38 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           // get intersecting tracks if any
           if (currPrefRouteDir == frcHorzPrefRoutingDir) {
-            getTrackLocs(
-                design, true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+            getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(design,
-                           false,
+              getTrackLocs(false,
                            currLayerNum + 2,
                            xl(pinRect),
                            xh(pinRect),
                            xLocs);
             } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(design,
-                           false,
+              getTrackLocs(false,
                            currLayerNum - 2,
                            xl(pinRect),
                            xh(pinRect),
                            xLocs);
             } else {
-              getTrackLocs(
-                  design, false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
+              getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
             }
           } else {
-            getTrackLocs(
-                design, false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
+            getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(design,
-                           false,
+              getTrackLocs(false,
                            currLayerNum + 2,
                            yl(pinRect),
                            yh(pinRect),
                            yLocs);
             } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(design,
-                           false,
+              getTrackLocs(false,
                            currLayerNum - 2,
                            yl(pinRect),
                            yh(pinRect),
                            yLocs);
             } else {
-              getTrackLocs(
-                  design, false, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+              getTrackLocs(false, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
             }
           }
           // gen new temp on-track access point if any
@@ -963,85 +973,89 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
         // horizontal tracks == yLocs
         std::set<frCoord> xLocs, yLocs;
         if (pinFig->typeId() == frcRect) {
-          auto rpinRect = static_cast<frRect*>(pinFig);
-          frLayerNum currLayerNum = rpinRect->getLayerNum();
-          if (getTech()->getLayer(currLayerNum)->getType()
-              != frLayerTypeEnum::ROUTING) {
-            continue;
-          }
-          frRect instPinRect(*rpinRect);
-          instPinRect.move(xform);
-          frBox instPinRectBBox;
-          instPinRect.getBBox(instPinRectBBox);
-          Rectangle pinRect(instPinRectBBox.left(),
-                            instPinRectBBox.bottom(),
-                            instPinRectBBox.right(),
-                            instPinRectBBox.top());
-          if (!boost::polygon::intersect(pinRect, routeRect)) {
-            continue;
-          }
+            auto rpinRect = static_cast<frRect*>(pinFig);
+            frLayerNum currLayerNum = rpinRect->getLayerNum();
+            frLayer* layer = getTech()->getLayer(currLayerNum);
+            if (layer->getType()
+                != frLayerTypeEnum::ROUTING) {
+              continue;
+            }
+            frRect instPinRect(*rpinRect);
+            instPinRect.move(xform);
+            frBox instPinRectBBox;
+            instPinRect.getBBox(instPinRectBBox);
+            Rectangle pinRect(instPinRectBBox.left(),
+                              instPinRectBBox.bottom(),
+                              instPinRectBBox.right(),
+                              instPinRectBBox.top());
+            if (!boost::polygon::intersect(pinRect, routeRect)) {
+              continue;
+            }
 
-          // pinRect now equals intersection of pinRect and routeRect
-          auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
-          // get intersecting tracks if any
-          if (currPrefRouteDir == frcHorzPrefRoutingDir) {
-            getTrackLocs(
-                design, true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+            // pinRect now equals intersection of pinRect and routeRect
+            auto currPrefRouteDir = layer->getDir();
+            bool restrictedRouting = currLayerNum < BOTTOM_ROUTING_LAYER || 
+                      currLayerNum > TOP_ROUTING_LAYER || layer->isUnidirectional();
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(design,
-                           false,
-                           currLayerNum + 2,
-                           xl(pinRect),
-                           xh(pinRect),
-                           xLocs);
-            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(design,
-                           false,
-                           currLayerNum - 2,
-                           xl(pinRect),
-                           xh(pinRect),
-                           xLocs);
-            } else {
-              getTrackLocs(
-                  design, false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
+              restrictedRouting = restrictedRouting || 
+                                currLayerNum + 2 < BOTTOM_ROUTING_LAYER || 
+                                currLayerNum + 2 > TOP_ROUTING_LAYER || 
+                                getTech()->getLayer(currLayerNum + 2)->isUnidirectional();
             }
-          } else {
-            getTrackLocs(
-                design, false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
-            if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(design,
-                           false,
-                           currLayerNum + 2,
-                           yl(pinRect),
-                           yh(pinRect),
-                           yLocs);
-            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(design,
-                           false,
-                           currLayerNum - 2,
-                           yl(pinRect),
-                           yh(pinRect),
-                           yLocs);
+            // get intersecting tracks if any
+            if (restrictedRouting) {
+                getTrackLocsRestrRouting(currLayerNum + 2, pinRect, xLocs, yLocs);
+            } else if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+              getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
+                getTrackLocs(false,
+                             currLayerNum + 2,
+                             xl(pinRect),
+                             xh(pinRect),
+                             xLocs);
+              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
+                getTrackLocs(false,
+                             currLayerNum - 2,
+                             xl(pinRect),
+                             xh(pinRect),
+                             xLocs);
+              } else {
+                getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
+              }
             } else {
-              getTrackLocs(
-                  design, false, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+              getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
+              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
+                getTrackLocs(false,
+                             currLayerNum + 2,
+                             yl(pinRect),
+                             yh(pinRect),
+                             yLocs);
+              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
+                getTrackLocs(false,
+                             currLayerNum - 2,
+                             yl(pinRect),
+                             yh(pinRect),
+                             yLocs);
+              } else {
+                getTrackLocs(false, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+              }
             }
-          }
-          // gen new temp on-track access point if any
-          frCoord xLoc, yLoc;
-          // xLoc
-          if (!xLocs.empty() && !isInitDR()) {
-            xLoc = *(xLocs.begin());
-          } else {
-            xLoc = (xl(pinRect) + xh(pinRect)) / 2;
-          }
-          // xLoc
-          if (!yLocs.empty() && !isInitDR()) {
-            yLoc = *(yLocs.begin());
-          } else {
-            yLoc = (yl(pinRect) + yh(pinRect)) / 2;
-          }
-          if (!isInitDR() || (xLoc != xh(routeRect) || yLoc != yh(routeRect))) {
+            if (xLocs.empty() && yLocs.empty() && restrictedRouting)
+                continue;
+            // gen new temp on-track access point if any
+            frCoord xLoc, yLoc;
+            // xLoc
+            if (!xLocs.empty()) {
+              xLoc = *(xLocs.begin());
+            } else { 
+              xLoc = (xl(pinRect) + xh(pinRect)) / 2;
+            }
+            // xLoc
+            if (!yLocs.empty()) {
+              yLoc = *(yLocs.begin());
+            } else {
+              yLoc = (yl(pinRect) + yh(pinRect)) / 2;
+            }
             // TODO: update as drAccessPattern updated
             auto uap = std::make_unique<drAccessPattern>();
             frPoint pt(xLoc, yLoc);
@@ -1073,7 +1087,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
 
             dPin->addAccessPattern(std::move(uap));
             break;
-          }
         } else {
           cout << "Error: initNet_termGenAp_new unsupported pinFig\n";
         }
@@ -1118,50 +1131,42 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           if (!useCenterLine) {
             // get intersecting tracks if any
             if (currPrefRouteDir == frcHorzPrefRoutingDir) {
-              getTrackLocs(
-                  design, true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
+              getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum + 2,
                              xl(pinRect),
                              xh(pinRect),
                              xLocs);
               } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum - 2,
                              xl(pinRect),
                              xh(pinRect),
                              xLocs);
               } else {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum,
                              xl(pinRect),
                              xh(pinRect),
                              xLocs);
               }
             } else {
-              getTrackLocs(
-                  design, false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
+              getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum + 2,
                              yl(pinRect),
                              yh(pinRect),
                              yLocs);
               } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum - 2,
                              yl(pinRect),
                              yh(pinRect),
                              yLocs);
               } else {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum,
                              yl(pinRect),
                              yh(pinRect),
@@ -1182,8 +1187,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                 didUseCenterline = true;
               }
               if (!didUseCenterline) {
-                getTrackLocs(design,
-                             true,
+                getTrackLocs(true,
                              currLayerNum,
                              yl(pinRect),
                              yh(pinRect),
@@ -1191,22 +1195,19 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
               }
               if (didUseCenterline) {
                 if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum + 2,
                                xl(pinRect),
                                xh(pinRect),
                                xLocs);
                 } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum - 2,
                                xl(pinRect),
                                xh(pinRect),
                                xLocs);
                 } else {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum,
                                xl(pinRect),
                                xh(pinRect),
@@ -1220,22 +1221,19 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                   upperBoundX -= layerWidth;
                 }
                 if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum + 2,
                                lowerBoundX,
                                upperBoundX,
                                xLocs);
                 } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum - 2,
                                lowerBoundX,
                                upperBoundX,
                                xLocs);
                 } else {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum,
                                lowerBoundX,
                                upperBoundX,
@@ -1253,8 +1251,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                 didUseCenterline = true;
               }
               if (!didUseCenterline) {
-                getTrackLocs(design,
-                             false,
+                getTrackLocs(false,
                              currLayerNum,
                              xl(pinRect),
                              xh(pinRect),
@@ -1262,22 +1259,19 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
               }
               if (didUseCenterline) {
                 if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum + 2,
                                yl(pinRect),
                                yh(pinRect),
                                yLocs);
                 } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum - 2,
                                yl(pinRect),
                                yh(pinRect),
                                yLocs);
                 } else {
-                  getTrackLocs(design,
-                               false,
+                  getTrackLocs(false,
                                currLayerNum,
                                yl(pinRect),
                                yh(pinRect),
@@ -1290,23 +1284,20 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                   lowerBoundY += layerWidth;
                   upperBoundY -= layerWidth;
                   if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                    getTrackLocs(design,
-                                 false,
+                    getTrackLocs(false,
                                  currLayerNum + 2,
                                  lowerBoundY,
                                  upperBoundY,
                                  yLocs);
                   } else if (currLayerNum - 2
                              >= getTech()->getBottomLayerNum()) {
-                    getTrackLocs(design,
-                                 false,
+                    getTrackLocs(false,
                                  currLayerNum - 2,
                                  lowerBoundY,
                                  upperBoundY,
                                  yLocs);
                   } else {
-                    getTrackLocs(design,
-                                 false,
+                    getTrackLocs(false,
                                  currLayerNum,
                                  lowerBoundY,
                                  upperBoundY,
@@ -1450,8 +1441,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
 }
 
 // when isHorzTracks == true, it means track loc == y loc
-void FlexDRWorker::getTrackLocs(const frDesign* design,
-                                bool isHorzTracks,
+void FlexDRWorker::getTrackLocs(bool isHorzTracks,
                                 frLayerNum currLayerNum,
                                 frCoord low,
                                 frCoord high,
@@ -1459,7 +1449,7 @@ void FlexDRWorker::getTrackLocs(const frDesign* design,
 {
   frPrefRoutingDirEnum currPrefRouteDir
       = getTech()->getLayer(currLayerNum)->getDir();
-  for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
+  for (auto& tp : design_->getTopBlock()->getTrackPatterns(currLayerNum)) {
     if ((tp->isHorizontal() && currPrefRouteDir == frcVertPrefRoutingDir)
         || (!tp->isHorizontal() && currPrefRouteDir == frcHorzPrefRoutingDir)) {
       int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();

@@ -344,9 +344,6 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
           draw_gCostEdges || draw_blockedEdges)) {
     const frMIdx z = grid_graph_->getMazeZIdx(layerNum);
     const int offset = design_->getTech()->getLayer(2)->getPitch() / 8;
-    const bool prefIsVert
-        = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
-
     frMIdx x_dim, y_dim, z_dim;
     grid_graph_->getDim(x_dim, y_dim, z_dim);
 
@@ -366,8 +363,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                 if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
                     painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
                 }
-                if (draw_gCostEdges && grid_graph_->hasGridCostE(x, y, z) ||
-                    draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::E)) {
+                if ((draw_gCostEdges && grid_graph_->hasGridCostE(x, y, z)) ||
+                    (draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::E))) {
                     painter.setBrush(color);
                     painter.setPen(color, true, offset/10);
                     painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
@@ -381,8 +378,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                 if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::N)) {
                     painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
                 }
-                if (draw_gCostEdges && grid_graph_->hasGridCostN(x, y, z) ||
-                    draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::N)) {
+                if ((draw_gCostEdges && grid_graph_->hasGridCostN(x, y, z)) ||
+                    (draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::N))) {
                     painter.setBrush(color);
                     painter.setPen(color, true, offset/10);
                     painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
@@ -415,7 +412,9 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
               || (draw_gCostEdges
                   && grid_graph_->hasGridCostU(x, y, z))
               || (draw_blockedEdges
-                  && grid_graph_->isBlocked(x, y, z, frDirEnum::U));
+                  && grid_graph_->isBlocked(x, y, z, frDirEnum::U))
+              || (draw_edges
+                  && grid_graph_->hasEdge(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);
@@ -510,7 +509,6 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
     }
 
     default: {}
-//      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
   }
 }
 
