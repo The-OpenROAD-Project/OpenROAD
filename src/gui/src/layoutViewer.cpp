@@ -634,33 +634,56 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
+  int min_resolution = 2*minimumViewableResolution();
+  Rect block_bounds;
+  block->getBBox()->getBox(block_bounds);
+  const Rect draw_bounds = block_bounds.intersect(bounds);
+
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;
   if ((!is_horizontal && options_->arePrefTracksVisible())
       || (is_horizontal && options_->areNonPrefTracksVisible())) {
-    grid->getGridX(grids);
-    for (int x : grids) {
-      if (x < bounds.xMin()) {
-        continue;
+    bool show_grid = true;
+    for (int i = 0; i < grid->getNumGridPatternsX(); i++) {
+      int origin, line_count, step;
+      grid->getGridPatternX(i, origin, line_count, step);
+      show_grid &= step > min_resolution;
+    }
+
+    if (show_grid) {
+      grid->getGridX(grids);
+      for (int x : grids) {
+        if (x < draw_bounds.xMin()) {
+          continue;
+        }
+        if (x > draw_bounds.xMax()) {
+          break;
+        }
+        painter->drawLine(x, draw_bounds.yMin(), x, draw_bounds.yMax());
       }
-      if (x > bounds.xMax()) {
-        break;
-      }
-      painter->drawLine(x, bounds.yMin(), x, bounds.yMax());
     }
   }
 
   if ((is_horizontal && options_->arePrefTracksVisible())
       || (!is_horizontal && options_->areNonPrefTracksVisible())) {
-    grid->getGridY(grids);
-    for (int y : grids) {
-      if (y < bounds.yMin()) {
-        continue;
+    bool show_grid = true;
+    for (int i = 0; i < grid->getNumGridPatternsY(); i++) {
+      int origin, line_count, step;
+      grid->getGridPatternY(i, origin, line_count, step);
+      show_grid &= step > min_resolution;
+    }
+
+    if (show_grid) {
+      grid->getGridY(grids);
+      for (int y : grids) {
+        if (y < draw_bounds.yMin()) {
+          continue;
+        }
+        if (y > draw_bounds.yMax()) {
+          break;
+        }
+        painter->drawLine(draw_bounds.xMin(), y, draw_bounds.xMax(), y);
       }
-      if (y > bounds.yMax()) {
-        break;
-      }
-      painter->drawLine(bounds.xMin(), y, bounds.xMax(), y);
     }
   }
 }
