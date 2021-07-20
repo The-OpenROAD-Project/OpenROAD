@@ -699,8 +699,7 @@ void LayoutViewer::drawRows(dbBlock* block,
   // three possible draw cases:
   // 1) resolution allows for individual sites -> draw all
   // 2) individual sites too small -> just draw row outlines
-  // 3) row is too small -> draw rows outline
-  std::vector<Rect> rows_for_outline;
+  // 3) row is too small -> dont draw anything
 
   QPen pen(QColor(0, 0xff, 0, 0x70));
   pen.setCosmetic(true);
@@ -762,96 +761,7 @@ void LayoutViewer::drawRows(dbBlock* block,
         }
       }
     }
-    else {
-      const Rect row(x, y, x + w, y + h);
-      if (row.intersects(bounds)) {
-        rows_for_outline.push_back(row);
-      }
-    }
   }
-  if (!rows_for_outline.empty()) {
-    // draw outline of rows
-    std::map<Point, int> row_points_counter;
-    for (const Rect& row : rows_for_outline) {
-      row_points_counter[row.ll()]++;
-      row_points_counter[row.lr()]++;
-      row_points_counter[row.ur()]++;
-      row_points_counter[row.ul()]++;
-    }
-
-    // find corners of row blocks
-    std::set<Point> corners;
-    for (const auto& [pt, count] : row_points_counter) {
-      if (count == 1) {
-        corners.insert(pt);
-      }
-    }
-
-    QPolygon outline;
-    do {
-      outline = getRowOutline(corners);
-      painter->drawPolygon(outline);
-    } while (!outline.isEmpty());
-  }
-}
-
-const QPolygon LayoutViewer::getRowOutline(std::set<Point>& corners)
-{
-  // "walk" around the corners to build a complete polygon
-  if (corners.size() < 4) {
-    return QPolygon();
-  }
-  std::vector<Point> path;
-  path.push_back(*corners.begin());
-  corners.erase(path.back());
-  bool look_for_x = true;
-  bool is_closed = false;
-  while (!is_closed && !corners.empty()) {
-    std::set<Point> candidates;
-    const Point last_point = path.back();
-    // find candidate corners
-    for (const Point& pt : corners) {
-      if (look_for_x) {
-        if (pt.y() == last_point.y()) {
-          candidates.insert(pt);
-        }
-      }
-      else {
-        if (pt.x() == last_point.x()) {
-          candidates.insert(pt);
-        }
-      }
-    }
-    Point use_pt = *candidates.begin();
-    candidates.erase(use_pt);
-
-    // find closest corner
-    for (const Point& c_pt : candidates) {
-      if (std::abs(c_pt.x() - last_point.x())+std::abs(c_pt.y() - last_point.y()) <
-          std::abs(use_pt.x() - last_point.x())+std::abs(use_pt.y() - last_point.y())) {
-        use_pt = c_pt;
-      }
-    }
-    path.push_back(use_pt);
-    corners.erase(use_pt);
-
-    if (look_for_x) {
-      is_closed = path.front().x() == path.back().x();
-    }
-    else {
-      is_closed = path.front().y() == path.back().y();
-    }
-
-    look_for_x = !look_for_x;
-  }
-
-  QPolygon outline;
-  for (const Point& pt : path) {
-    outline.append(QPoint(pt.x(), pt.y()));
-  }
-  // close polygon
-  outline.append(outline.front());
-  return outline;
 }
 
 void LayoutViewer::drawSelected(Painter& painter)
