@@ -182,7 +182,7 @@ Don't copy code fragments. Write functions.
   int x_pos = (int)floor(theCell->x_coord / wsite + 0.5);
   // 15x
   int y_pos = (int)floor(y_coord / rowHeight + 0.5);
-  
+
   // This
   nets[newnetID]->netIDorg = netID;
   nets[newnetID]->numPins = numPins;
@@ -191,7 +191,7 @@ Don't copy code fragments. Write functions.
   nets[newnetID]->pinY = (short *)malloc(pinInd* sizeof(short));
   nets[newnetID]->pinL = (short *)malloc(pinInd* sizeof(short));
   nets[newnetID]->alpha = alpha;
-  
+
   // Should factor out the array lookup.
   Net *net = nets[newnetID];
   net->netIDorg = netID;
@@ -201,7 +201,7 @@ Don't copy code fragments. Write functions.
   net->pinY = (short *)malloc(pinInd* sizeof(short));
   net->pinL = (short *)malloc(pinInd* sizeof(short));
   net->alpha = alpha;
-  
+
   // Same here:
   if (grid[j][k].group != UINT_MAX) {
     if (grid[j][k].isValid) {
@@ -220,7 +220,7 @@ Don't use logical operators to test for null pointers.
   if (!net) {
     // code
   }
-  
+
   // should be
   if (net != nullptr) {
     // code
@@ -322,7 +322,7 @@ Don't nest if statements. Use && on the clauses instead.
   if(grid[j][k].group != UINT_MAX)
     if(grid[j][k].isValid == true)
       if(groups[grid[j][k].group].name == theGroup->name)
-  
+
 is simply
 
 .. code-block:: cpp
@@ -394,7 +394,7 @@ the header file.
   #include <stdlib.h>
   #include <math.h>
   #include <limits.h>
-  
+
   unsigned num_nets = 1000;
   unsigned num_terminals = 64;
   unsigned verbose = 0;
@@ -409,7 +409,7 @@ the header file.
   float beta = 1.4;
   bool runOneNet = false;
   unsigned net_num = 0;
-  
+
 Practice #24
 ------------
 
@@ -518,12 +518,12 @@ Don't std::pow for powers of 2 or for decimal constants.
   double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12));
   // Should be
   double newCapPerSqr = _options->getCapPerSqr() * 1E-12;
-  
+
   // This
   unsigned numberOfTopologies = std::pow(2, numberOfNodes);
   // Should be
   unsigned numberOfTopologies = 1 << numberOfNodes;
-      
+
 Git
 ***
 
@@ -573,7 +573,7 @@ Compiled Static libraries
 `\*.lai \*.la \*.a \*.lib`
 
 CMAKE
-****
+*****
 
 Practice #35
 ------------
