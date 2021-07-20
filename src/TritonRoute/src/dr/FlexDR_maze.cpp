@@ -1432,7 +1432,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     }
   }
   frString cutClass1, cutClass2;
-  if(!cutLayer->getLef58CutSpacingTableConstraints().empty()) {
+  if (!cutLayer->getLef58CutSpacingTableConstraints().empty()) {
     cutClass1 = cutLayer->getCutClass(box.width(), box.length())->getName();
     cutClass2
         = cutLayer->getCutClass(viaBox.width(), viaBox.length())->getName();
@@ -1441,7 +1441,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                       con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
     }
   }
-  
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
@@ -1532,7 +1531,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             break;
           }
         }
-        if(!hasViol) {
+        if (!hasViol) {
           for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
             auto dbRule = con->getODBRule();
             if (dbRule->isLayerValid())
@@ -1561,7 +1560,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
               if (dbRule->isCenterToCenter(cutClass1, cutClass2))
                 currDistSquare = c2cSquare;
               else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                      && (frCoord) reqDistSquare
+                       && (frCoord) reqDistSquare
                               == dbRule->getSpacing(
                                   cutClass1, false, cutClass2, false, 2))
                 currDistSquare = c2cSquare;
@@ -1733,8 +1732,8 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   }
   if (viaDef == nullptr)
     return;
-  
-  if(higherLayer->getLef58CutSpacingTableConstraints().empty())
+
+  if (higherLayer->getLef58CutSpacingTableConstraints().empty())
     return;
   // obj1 = curr obj
   // obj2 = other obj
@@ -1750,15 +1749,13 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   frString cutClass1, cutClass2;
   frCoord bloatDist = 0;
   if (isUpperVia) {
-    cutClass1 = higherLayer->getCutClass(viaBox.width(), viaBox.length())
-                    ->getName();
-    cutClass2 = lowerLayer->getCutClass(box.width(), box.length())
-                    ->getName();
+    cutClass1
+        = higherLayer->getCutClass(viaBox.width(), viaBox.length())->getName();
+    cutClass2 = lowerLayer->getCutClass(box.width(), box.length())->getName();
   } else {
-    cutClass2 = lowerLayer->getCutClass(viaBox.width(), viaBox.length())
-                    ->getName();
-    cutClass1 = higherLayer->getCutClass(box.width(), box.length())
-                    ->getName();
+    cutClass2
+        = lowerLayer->getCutClass(viaBox.width(), viaBox.length())->getName();
+    cutClass1 = higherLayer->getCutClass(box.width(), box.length())->getName();
   }
   for (auto con : higherLayer->getLef58CutSpacingTableConstraints()) {
     if (con->getODBRule()->isLayerValid())
