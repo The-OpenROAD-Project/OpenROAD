@@ -695,6 +695,12 @@ void LayoutViewer::drawRows(dbBlock* block,
   if (!options_->areRowsVisible()) {
     return;
   }
+  int min_resolution = 3*minimumViewableResolution();
+  // three possible draw cases:
+  // 1) resolution allows for individual sites -> draw all
+  // 2) individual sites too small -> just draw row outlines
+  // 3) row is too small -> dont draw anything
+
   QPen pen(QColor(0, 0xff, 0, 0x70));
   pen.setCosmetic(true);
   painter->setPen(pen);
@@ -725,12 +731,30 @@ void LayoutViewer::drawRows(dbBlock* block,
 
     dbRowDir dir = row->getDirection();
     int count = row->getSiteCount();
-    for (int i = 0; i < count; ++i) {
-      painter->drawRect(QRect(QPoint(x, y), QPoint(x + w, y + h)));
+    if (w < min_resolution) {
+      // individual sites not visible, just draw the row
       if (dir == dbRowDir::HORIZONTAL) {
-        x += spacing;
-      } else {
-        y += spacing;
+        w = spacing*count;
+      }
+      else {
+        h = spacing*count;
+      }
+      count = 1;
+    }
+    if (h >= min_resolution) {
+      // row height can be seen
+      for (int i = 0; i < count; ++i) {
+        const Rect row(x, y, x + w, y + h);
+        if (row.intersects(bounds)) {
+          // only paint rows that can be seen
+          painter->drawRect(QRect(QPoint(x, y), QPoint(x + w, y + h)));
+        }
+
+        if (dir == dbRowDir::HORIZONTAL) {
+          x += spacing;
+        } else {
+          y += spacing;
+        }
       }
     }
   }
