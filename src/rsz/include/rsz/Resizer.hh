@@ -311,7 +311,7 @@ protected:
   void findBuffers();
   bool isLinkCell(LibertyCell *cell);
   void findTargetLoads();
-  void findTargetLoad(LibertyCell *cell);
+  float findTargetLoad(LibertyCell *cell);
   float findTargetLoad(LibertyCell *cell,
                        TimingArc *arc,
                        Slew in_slew,
