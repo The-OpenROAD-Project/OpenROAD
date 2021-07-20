@@ -217,6 +217,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   int minimumViewableResolution();
 
+  const QPolygon getRowOutline(std::set<odb::Point>& corners);
+
   void addMenuAndActions();
   void updateShapes();
 
