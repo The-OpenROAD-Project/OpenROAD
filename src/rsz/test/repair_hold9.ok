@@ -10,10 +10,10 @@
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 [INFO ODB-0134] Finished DEF file: gcd_nangate45_placed.def
-Design area 700 u^2 11% utilization.
+Design area 670 u^2 10% utilization.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
 [INFO RSZ-0032] Inserted 20 hold buffers.
 [ERROR RSZ-0060] Max buffer count reached.
 RSZ-0060
-Design area 725 u^2 11% utilization.
+Design area 695 u^2 11% utilization.
