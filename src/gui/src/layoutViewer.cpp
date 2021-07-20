@@ -763,7 +763,10 @@ void LayoutViewer::drawRows(dbBlock* block,
       }
     }
     else {
-      rows_for_outline.push_back({x, y, x + w, y + h});
+      const Rect row(x, y, x + w, y + h);
+      if (row.intersects(bounds)) {
+        rows_for_outline.push_back(row);
+      }
     }
   }
   if (!rows_for_outline.empty()) {
@@ -787,10 +790,8 @@ void LayoutViewer::drawRows(dbBlock* block,
     QPolygon outline;
     do {
       outline = getRowOutline(corners);
-      if (!outline.isEmpty()) {
-        painter->drawPolygon(outline);
-      }
-    } while (!outline.isEmpty() && !corners.empty());
+      painter->drawPolygon(outline);
+    } while (!outline.isEmpty());
   }
 }
 
