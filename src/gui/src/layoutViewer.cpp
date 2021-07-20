@@ -634,7 +634,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  int min_resolution = 2*minimumViewableResolution();
+  int min_resolution = 5*minimumViewableResolution();
   Rect block_bounds;
   block->getBBox()->getBox(block_bounds);
   const Rect draw_bounds = block_bounds.intersect(bounds);
@@ -695,7 +695,7 @@ void LayoutViewer::drawRows(dbBlock* block,
   if (!options_->areRowsVisible()) {
     return;
   }
-  int min_resolution = 3*minimumViewableResolution();
+  int min_resolution = 5*minimumViewableResolution();
   // three possible draw cases:
   // 1) resolution allows for individual sites -> draw all
   // 2) individual sites too small -> just draw row outlines
