@@ -183,7 +183,7 @@ void Restructure::runABC()
              RMP,
              "remap",
              1,
-             "Running abc with number of threads = {}",
+             "Running ABC with number of threads = {}.",
              max_threads);
 
   for (int curr_mode_idx = 0; curr_mode_idx < modes.size();) {
@@ -208,7 +208,7 @@ void Restructure::runABC()
                  RMP,
                  "remap",
                  1,
-                 "Writing ABC script file {}",
+                 "Writing ABC script file {}.",
                  abc_script_file);
       if (writeAbcScript(abc_script_file)) {
         std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
@@ -221,7 +221,7 @@ void Restructure::runABC()
           // Run in child process
           int ret = execlp("sh", "sh", "-c", abc_command.c_str(), 0);
           // Execution of command failed
-          logger_->warn(RMP,
+          logger_->error(RMP,
                         31,
                         "Failed to run ABC with exit code {}. Please check the "
                         "messages for details.",
@@ -259,7 +259,7 @@ void Restructure::runABC()
         logger_->warn(
             RMP,
             15,
-            "ABC ({}) failed with code {}, please check messages for details.",
+            "ABC ({}) failed with code {}. Please check messages for details.",
             child_idx,
             return_status);
       }
@@ -282,7 +282,7 @@ void Restructure::runABC()
     int num_instances = 0;
     bool status
         = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
-    logger_->report("Optimized to {} instances in iteration {}",
+    logger_->report("Optimized to {} instances in iteration {}.",
                     num_instances,
                     curr_mode_idx);
     if (status && num_instances < best_inst_count) {
@@ -294,13 +294,13 @@ void Restructure::runABC()
 
   if (best_inst_count < std::numeric_limits<int>::max()) {
     // read back netlist
-    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
+    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);
     debugPrint(logger_,
                utl::RMP,
                "remap",
                1,
-               "Number constants after restructure {}",
+               "Number constants after restructure {}.",
                countConsts(block_));
   }
 
