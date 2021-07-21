@@ -49,7 +49,6 @@
 #include <utility>
 
 #include "DataType.h"
-#include "flute.h"
 #include "utl/Logger.h"
 #include "opendb/db.h"
 
@@ -57,24 +56,50 @@ namespace grt {
 
 using utl::GRT;
 
-FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
+FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder) :
+  new_net_id_(0),
+  seg_count_(0),
+  pin_ind_(0),
+  num_adjust_(0),
+  v_capacity_(0),
+  h_capacity_(0),
+  num_nets_(0),
+  max_degree_(0),
+  logger_(log),
+  stt_builder_(stt_builder),
+  db_(db),
+  allow_overflow_(false),
+  overflow_iterations_(0),
+  layer_orientation_(0),
+  sttrees_(nullptr),
+  heap1_(nullptr),
+  heap2_(nullptr),
+  x_range_(0),
+  y_range_(0),
+  x_grid_(0),
+  y_grid_(0),
+  x_corner_(0),
+  y_corner_(0),
+  w_tile_(0),
+  h_tile_(0),
+  enlarge_(0),
+  costheight_(0),
+  ahth_(0),
+  num_valid_nets_(0),
+  num_layers_(0),
+  total_overflow_(0),
+  grid_hv_(0),
+  grid_h_(0),
+  grid_v_(0),
+  verbose_(0),
+  via_cost_(0),
+  mazeedge_threshold_(0),
+  v_capacity_lb_(0),
+  h_capacity_lb_(0),
+  sttrees_bk_(nullptr),
+  heap1_3D_(nullptr),
+  heap2_3D_(nullptr)
 {
-  new_net_id_ = 0;
-  seg_count_ = 0;
-  pin_ind_ = 0;
-  num_adjust_ = 0;
-  v_capacity_ = 0;
-  h_capacity_ = 0;
-  num_nets_ = 0;
-  max_degree_ = 0;
-  logger_ = log;
-  db_ = db;
-  allow_overflow_ = false;
-  overflow_iterations_ = 0;
-  layer_orientation_ = 0;
-  sttrees_ = nullptr;
-  heap1_ = nullptr;
-  heap2_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -306,12 +331,9 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
                           int num_pins,
-                          float alpha,
                           bool is_clock,
                           int driver_idx,
                           int cost,
-                          int min_layer,
-                          int max_layer,
                           std::vector<int> edge_cost_per_layer)
 {
   int netID = new_net_id_;
@@ -320,12 +342,9 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->db_net = db_net;
   net->numPins = num_pins;
   net->deg = pin_ind_;
-  net->alpha = alpha;
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
   net->edgeCost = cost;
-  net->minLayer = min_layer;
-  net->maxLayer = max_layer;
   net->edge_cost_per_layer = edge_cost_per_layer;
 
   seglist_index_[new_net_id_] = seg_count_;

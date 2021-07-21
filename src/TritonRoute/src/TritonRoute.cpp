@@ -44,6 +44,7 @@
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
 
 using namespace std;
@@ -121,10 +122,12 @@ int TritonRoute::getNumDRVs() const
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,
                        odb::dbDatabase* db,
-                       Logger* logger)
+                       Logger* logger,
+                       stt::SteinerTreeBuilder* stt_builder)
 {
   db_ = db;
   logger_ = logger;
+  stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
   Tritonroute_Init(tcl_interp);
@@ -195,7 +198,7 @@ void TritonRoute::prep()
 
 void TritonRoute::gr()
 {
-  FlexGR gr(getDesign(), logger_);
+  FlexGR gr(getDesign(), logger_, stt_builder_);
   gr.main(db_);
 }
 
@@ -342,6 +345,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
   VERBOSE = params.verbose;
+  ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   if (params.drouteViaInPinBottomLayerNum > 0) {
     VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;

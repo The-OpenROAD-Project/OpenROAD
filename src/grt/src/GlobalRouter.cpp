@@ -61,6 +61,7 @@
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "ord/OpenRoad.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -81,7 +82,6 @@ GlobalRouter::GlobalRouter() :
   allow_congestion_(false),
   macro_extension_(0),
   verbose_(0),
-  alpha_(0.3),
   seed_(0),
   caps_perturbation_percentage_(0),
   perturbation_amount_(1),
@@ -90,7 +90,15 @@ GlobalRouter::GlobalRouter() :
   routing_tracks_(new std::vector<RoutingTracks>),
   grid_(new Grid),
   nets_(new std::vector<Net>),
-  routing_layers_(new std::vector<RoutingLayer>)
+  routing_layers_(new std::vector<RoutingLayer>),
+  openroad_(nullptr),
+  logger_(nullptr),
+  gui_(nullptr),
+  fastroute_(nullptr),
+  groute_renderer_(nullptr),
+  sta_(nullptr),
+  db_(nullptr),
+  block_(nullptr)
 {
 }
 
@@ -100,8 +108,9 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   logger_ = openroad->getLogger();
   // Broken gui api missing openroad accessor.
   gui_ = gui::Gui::get();
+  stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
-  fastroute_ = new FastRouteCore(db_, logger_);
+  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = openroad_->getSta();
 }
 
@@ -183,9 +192,38 @@ void GlobalRouter::applyAdjustments(int min_routing_layer, int max_routing_layer
   fastroute_->initAuxVar();
 }
 
+void GlobalRouter::globalRouteClocksSeparately()
+{
+  // route clock nets
+  std::vector<Net*> clock_nets
+      = startFastRoute(min_layer_for_clock_, max_layer_for_clock_, NetType::Clock);
+  reportResources();
+
+  logger_->report("Routing clock nets...");
+  routes_ = findRouting(clock_nets, min_layer_for_clock_, max_layer_for_clock_);
+  Capacities clk_capacities
+      = saveCapacities(min_layer_for_clock_, max_layer_for_clock_);
+  clearObjects();
+  logger_->info(GRT, 10, "Routed clock nets: {}", routes_.size());
+
+  if (max_routing_layer_ == -1) {
+    max_routing_layer_ = computeMaxRoutingLayer();
+  }
+  // route signal nets
+  std::vector<Net*> signalNets
+      = startFastRoute(min_routing_layer_, max_routing_layer_, NetType::Signal);
+  restoreCapacities(clk_capacities, min_layer_for_clock_, max_layer_for_clock_);
+  reportResources();
+
+  // Store results in a temporary map, allowing to keep previous
+  // routing result from clock nets
+  NetRouteMap result
+      = findRouting(signalNets, min_routing_layer_, max_routing_layer_);
+  routes_.insert(result.begin(), result.end());
+}
+
 void GlobalRouter::globalRoute()
 {
-  clear();
   if (max_routing_layer_ == -1) {
     max_routing_layer_ = computeMaxRoutingLayer();
   }
@@ -195,6 +233,19 @@ void GlobalRouter::globalRoute()
   reportResources();
 
   routes_ = findRouting(nets, min_routing_layer_, max_routing_layer_);
+}
+
+void GlobalRouter::run()
+{
+  clear();
+
+  bool route_clocks = min_layer_for_clock_ > 0 && max_layer_for_clock_ > 0;
+
+  if (route_clocks) {
+    globalRouteClocksSeparately();
+  } else {
+    globalRoute();
+  }
 
   reportCongestion();
   computeWirelength();
@@ -677,33 +728,17 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       if (pins_on_grid.size() > 1 && !on_grid_local) {
-        float net_alpha = alpha_;
-        if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
-          net_alpha = net_alpha_map_[net->getName()];
-        }
         bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int num_layers = grid_->getNumLayers();
         std::vector<int> edge_cost_per_layer(num_layers + 1, 1);
         int edge_cost_for_net = computeTrackConsumption(net, edge_cost_per_layer);
 
-        // set layer restriction only to clock nets that are not connected to leaf iterms
-        bool has_leaf = clockHasLeafITerm(net->getDbNet());
-        int min_layer = (is_clock && min_layer_for_clock_ > 0 &&
-                         !has_leaf) ?
-                         min_layer_for_clock_ : min_routing_layer_;
-        int max_layer = (is_clock && max_layer_for_clock_ > 0 &&
-                         !has_leaf) ?
-                        max_layer_for_clock_ : max_routing_layer_;
-
         int netID = fastroute_->addNet(net->getDbNet(),
                                        pins_on_grid.size(),
-                                       net_alpha,
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,
-                                       min_layer-1,
-                                       max_layer-1,
                                        edge_cost_per_layer);
         for (RoutePt& pin_pos : pins_on_grid) {
           fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer()-1);
@@ -1268,11 +1303,6 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
   max_layer_for_clock_ = max_layer;
 }
 
-void GlobalRouter::setAlpha(const float alpha)
-{
-  alpha_ = alpha;
-}
-
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
 {
   initAdjustments();
@@ -1297,12 +1327,6 @@ void GlobalRouter::addRegionAdjustment(int min_x,
 {
   region_adjustments_.push_back(
       RegionAdjustment(min_x, min_y, max_x, max_y, layer, reduction_percentage));
-}
-
-void GlobalRouter::addAlphaForNet(char* netName, float alpha)
-{
-  std::string name(netName);
-  net_alpha_map_[name] = alpha;
 }
 
 void GlobalRouter::setVerbose(const int v)
@@ -2545,24 +2569,24 @@ Net* GlobalRouter::getNet(odb::dbNet* db_net)
 
 void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
 {
-  if (type == NetType::Antenna) {
+  if (type == NetType::Clock || type == NetType::Signal) {
+    bool get_clock = type == NetType::Clock;
+    for (Net net : *nets_) {
+      if ((get_clock && net.getSignalType() == odb::dbSigType::CLOCK
+           && !clockHasLeafITerm(net.getDbNet()))
+          || (!get_clock
+              && (net.getSignalType() != odb::dbSigType::CLOCK
+                  || clockHasLeafITerm(net.getDbNet())))) {
+        nets.push_back(db_net_map_[net.getDbNet()]);
+      }
+    }
+  } else if (type == NetType::Antenna) {
     for (odb::dbNet* db_net : dirty_nets_) {
       nets.push_back(db_net_map_[db_net]);
     }
   } else {
-    // add clock nets not connected to a leaf first    
     for (Net net : *nets_) {
-      bool has_leaf = clockHasLeafITerm(net.getDbNet());
-      if ((net.getSignalType() == odb::dbSigType::CLOCK && !has_leaf)) {
-        nets.push_back(db_net_map_[net.getDbNet()]);
-      }
-    }
-
-    for (Net net : *nets_) {
-      bool has_leaf = clockHasLeafITerm(net.getDbNet());
-      if ((net.getSignalType() != odb::dbSigType::CLOCK || has_leaf)) {
-        nets.push_back(db_net_map_[net.getDbNet()]);
-      }
+      nets.push_back(db_net_map_[net.getDbNet()]);
     }
   }
 }

@@ -97,18 +97,6 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_routing_alpha_cmd(float alpha)
-{
-  getGlobalRouter()->setAlpha(alpha);
-}
-
-void
-set_alpha_for_net(char* netName, float alpha)
-{
-  getGlobalRouter()->addAlphaForNet(netName, alpha);
-}
-
-void
 set_verbose(int v)
 {
   getGlobalRouter()->setVerbose(v);
@@ -164,9 +152,21 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-run()
+global_route()
 {
   getGlobalRouter()->globalRoute();
+}
+
+void
+global_route_clocks_separately()
+{
+  getGlobalRouter()->globalRouteClocksSeparately();
+}
+
+void
+run()
+{
+  getGlobalRouter()->run();
 }
 
 void

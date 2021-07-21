@@ -86,12 +86,9 @@ typedef struct
   std::vector<int> pinX;  // array of X coordinates of pins
   std::vector<int> pinY;  // array of Y coordinates of pins
   std::vector<int> pinL;  // array of L coordinates of pins
-  float alpha;              // alpha for pdrev when routing clock nets
   bool is_clock;             // flag that indicates if net is a clock net
   int driver_idx;
   int edgeCost;
-  int minLayer;
-  int maxLayer;
   std::vector<int> edge_cost_per_layer;
 } FrNet;                    // A Net is a set of connected MazePoints
 

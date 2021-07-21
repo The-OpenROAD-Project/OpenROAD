@@ -87,4 +87,4 @@ us via email openroad at eng.ucsd.edu
 .. _`test directory`: https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test
 .. _`examples`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/test/gcd_nangate45.tcl
 .. _`cmake file`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt
-.. _`tcl code`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdngen/src/PdnGen.tcl
+.. _`tcl code`: https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/PdnGen.tcl

@@ -42,7 +42,7 @@
 
 #include "grt/GRoute.h"
 #include "DataType.h"
-#include "flute.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "boost/multi_array.hpp"
 
 namespace utl {
@@ -53,6 +53,10 @@ namespace odb{
 class dbDatabase;
 }
 
+namespace stt {
+class SteinerTreeBuilder;
+}
+
 using boost::multi_array;
 
 namespace grt {
@@ -60,7 +64,7 @@ namespace grt {
 class FastRouteCore
 {
  public:
-  FastRouteCore(odb::dbDatabase* db, utl::Logger* log);
+  FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -78,12 +82,9 @@ class FastRouteCore
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
              int num_pins,
-             float alpha,
              bool is_clock,
              int driver_idx,
              int cost,
-             int min_layer,
-             int max_layer,
              std::vector<int> edge_cost_per_layer);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
@@ -455,6 +456,7 @@ class FastRouteCore
   float **heap1_;
 
   utl::Logger* logger_;
+  stt::SteinerTreeBuilder* stt_builder_;
 };
 
 }  // namespace grt

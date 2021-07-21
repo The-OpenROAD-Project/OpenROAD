@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,60 +33,64 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
+#pragma once
 
+#include <map>
+#include <string>
+#include <utility>
 #include <vector>
-#include "pdr/pdrev.h"
-#include "gui/gui.h"
+
+#include "flute.h"
+#include "pdrev.h"
+#include "opendb/db.h"
 
 namespace ord {
-utl::Logger *
-getLogger();
+class OpenRoad;
 }
 
-%}
+namespace stt {
 
-%include "../../Exception.i"
+using utl::Logger;
 
-%import <std_vector.i>
-namespace std {
-%template(pdrev_xy) vector<int>;
-}
-
-%inline %{
-
-void
-report_pd_tree(const std::vector<int> &x,
-               const std::vector<int> &y,
-               int drvr_index,
-               float alpha)
+class SteinerTreeBuilder
 {
-  utl::Logger *logger = ord::getLogger();
-  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
-  pdr::reportSteinerTree(tree, logger);
-}
+ public:
+  SteinerTreeBuilder();
+  ~SteinerTreeBuilder() = default;
 
-void
-highlight_pd_tree(const std::vector<int> &x,
-                  const std::vector<int> &y,
-                  int drvr_index,
-                  float alpha)
-{
-  utl::Logger *logger = ord::getLogger();
-  gui::Gui *gui = gui::Gui::get();
-  stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
-  pdr::highlightSteinerTree(tree, gui);
-}
+  void init(odb::dbDatabase* db, Logger* logger);
 
-void
-report_pdII_tree(const std::vector<int> &x,
-                 const std::vector<int> &y,
-                 int drvr_index,
-                 float alpha)
-{
-  utl::Logger *logger = ord::getLogger();
-  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
-  pdr::reportSteinerTree(tree, logger);
-}
+  Tree makeSteinerTree(std::vector<int>& x,
+                       std::vector<int>& y,
+                       int drvr_index);
+  Tree makeSteinerTree(odb::dbNet* net,
+                       std::vector<int>& x,
+                       std::vector<int>& y,
+                       int drvr_index);
+  // API only for FastRoute, that requires the use of flutes in its
+  // internal flute implementation
+  Tree makeSteinerTree(int num_pins,
+                       int xs[],
+                       int ys[],
+                       int s[],
+                       int acc);
+  float getAlpha() const { return alpha_; }
+  void setAlpha(float alpha) { alpha_ = alpha; }
+  float getAlpha(const odb::dbNet* net) const;
+  void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
 
-%} // inline
+ private:
+  Tree makeTree(std::vector<int>& x,
+                std::vector<int>& y,
+                int drvr_index,
+                float alpha);
+
+  const int flute_accuracy = 3;
+  float alpha_;
+  std::map<const odb::dbNet*, float> net_alpha_map_;
+
+  Logger* logger_;
+  odb::dbDatabase* db_;
+};
+
+}  // namespace stt

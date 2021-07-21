@@ -71,7 +71,6 @@ target_link_libraries(cts
     OpenSTA
     rsz
     stt
-    pdr
     utl
  )
 

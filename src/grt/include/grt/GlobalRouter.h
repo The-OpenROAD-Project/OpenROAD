@@ -65,6 +65,10 @@ class dbDatabase;
 class dbTechLayer;
 }  // namespace odb
 
+namespace stt {
+class SteinerTreeBuilder;
+}
+
 namespace sta {
 class dbSta;
 class dbNetwork;
@@ -137,8 +141,6 @@ class GlobalRouter
   void setMaxRoutingLayer(const int max_layer);
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
-  void setAlpha(const float alpha);
-  float getAlpha() const { return alpha_; }
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,
@@ -147,7 +149,6 @@ class GlobalRouter
                            int max_y,
                            int layer,
                            float reduction_percentage);
-  void addAlphaForNet(char* netName, float alpha);
   void setVerbose(const int v);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
@@ -159,6 +160,8 @@ class GlobalRouter
   void writeGuides(const char* file_name);
   std::vector<Net*> startFastRoute(int min_routing_layer, int max_routing_layer, NetType type);
   void estimateRC();
+  void run();
+  void globalRouteClocksSeparately();
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
@@ -283,6 +286,7 @@ class GlobalRouter
   ord::OpenRoad* openroad_;
   utl::Logger *logger_;
   gui::Gui *gui_;
+  stt::SteinerTreeBuilder *stt_builder_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
@@ -313,9 +317,7 @@ class GlobalRouter
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
 
-  float alpha_;
   int verbose_;
-  std::map<std::string, float> net_alpha_map_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
 

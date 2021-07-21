@@ -37,9 +37,21 @@
 #include <math.h>
 #include <string>
 #include <algorithm>
-#include "flute.h"
+#include "stt/flute.h"
 
 namespace stt {
+void Tree::printTree(utl::Logger* logger)
+{
+  for (int i = 0; i < deg; i++)
+    logger->report(" {:2d}:  x={:4g}  y={:4g}  e={}",
+           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+  for (int i = deg; i < 2 * deg - 2; i++)
+    logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
+           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+  logger->report("");
+}
+
+namespace flt {
 
 #if FLUTE_D <= 7
 #define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
@@ -1004,7 +1016,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
   if (d == 2) {
     t.deg = 2;
     t.length = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
-    t.branch = (Branch *)malloc(2 * sizeof(Branch));
+    t.branch.resize(2);
     t.branch[0].x = x[0];
     t.branch[0].y = y[0];
     t.branch[0].n = 1;
@@ -1018,7 +1030,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
     ys = (DTYPE *)malloc(sizeof(DTYPE) * (d));
     s = (int *)malloc(sizeof(int) * (d));
     pt = (struct point *)malloc(sizeof(struct point) * (d + 1));
-    ptp = (struct point **)malloc(sizeof(struct point *) * (d + 1));
+    std::vector<point*> ptp(d+1);
 
     for (i = 0; i < d; i++) {
       pt[i].x = x[i];
@@ -1042,7 +1054,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
         ptp[minidx] = tmpp;
       }
     } else {
-      qsort(ptp, d, sizeof(struct point *), orderx);
+      std::stable_sort(ptp.begin(), ptp.end(), orderx);
     }
 
 #if FLUTE_REMOVE_DUPLICATE_PIN == 1
@@ -1082,7 +1094,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
       ys[d - 1] = ptp[d - 1]->y;
       s[d - 1] = ptp[d - 1]->o;
     } else {
-      qsort(ptp, d, sizeof(struct point *), ordery);
+      std::stable_sort(ptp.begin(), ptp.end(), ordery);
       for (i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
         s[i] = ptp[i]->o;
@@ -1095,7 +1107,6 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
     free(ys);
     free(s);
     free(pt);
-    free(ptp);
   }
 
   return t;
@@ -1146,7 +1157,7 @@ Tree flutes_LD(int d, DTYPE xs[], DTYPE ys[], int s[]) {
   Tree t;
 
   t.deg = d;
-  t.branch = (Branch *)malloc((2 * d - 2) * sizeof(Branch));
+  t.branch.resize(2 * d - 2);
   if (d == 2) {
     minl = xs[1] - xs[0] + ys[1] - ys[0];
     t.branch[0].x = xs[s[0]];
@@ -1329,8 +1340,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
       t1 = flutes_LMD(ms + 2, x1, y1, s1, acc);
       t2 = flutes_LMD(d - ms, xs + ms, ys + ms, s2, acc);
       t = dmergetree(t1, t2);
-      free(t1.branch);
-      free(t2.branch);
                         
       free(score);
       free(penalty);
@@ -1370,8 +1379,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
       t1 = flutes_LMD(d + 1 - ms, x1, y1, s1, acc);
       t2 = flutes_LMD(ms + 1, xs, ys + d - 1 - ms, s2, acc);
       t = dmergetree(t1, t2);
-      free(t1.branch);
-      free(t2.branch);
                         
       free(score);
       free(penalty);
@@ -1487,7 +1494,8 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
   }
 
   minl = (DTYPE)INT_MAX;
-  bestt1.branch = bestt2.branch = NULL;
+  bestt1.branch.clear();
+  bestt2.branch.clear();
   for (i = 0; i < acc; i++) {
     maxbp = 0;
     for (bp = 1; bp < nbp; bp++)
@@ -1561,14 +1569,9 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
     }
     if (minl > ll) {
       minl = ll;
-      free(bestt1.branch);
-      free(bestt2.branch);
       bestt1 = t1;
       bestt2 = t2;
       bestbp = maxbp;
-    } else {
-      free(t1.branch);
-      free(t2.branch);
     }
   }
 
@@ -1588,8 +1591,6 @@ Tree flutes_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc)
   }
 #endif
 
-  free(bestt1.branch);
-  free(bestt2.branch);
 
   free(score);
   free(penalty);
@@ -1612,7 +1613,7 @@ Tree dmergetree(Tree t1, Tree t2) {
 
   t.deg = d = t1.deg + t2.deg - 2;
   t.length = t1.length + t2.length;
-  t.branch = (Branch *)malloc((2 * d - 2) * sizeof(Branch));
+  t.branch.resize(2 * d - 2);
   offset1 = t2.deg - 2;
   offset2 = 2 * t1.deg - 4;
 
@@ -1663,7 +1664,7 @@ Tree hmergetree(Tree t1, Tree t2, int s[]) {
 
   t.deg = t1.deg + t2.deg - 1;
   t.length = t1.length + t2.length;
-  t.branch = (Branch *)malloc((2 * t.deg - 2) * sizeof(Branch));
+  t.branch.resize(2 * t.deg - 2);
   offset1 = t2.deg - 1;
   offset2 = 2 * t1.deg - 3;
 
@@ -1737,7 +1738,7 @@ Tree vmergetree(Tree t1, Tree t2) {
 
   t.deg = t1.deg + t2.deg - 1;
   t.length = t1.length + t2.length;
-  t.branch = (Branch *)malloc((2 * t.deg - 2) * sizeof(Branch));
+  t.branch.resize(2 * t.deg - 2);
   offset1 = t2.deg - 1;
   offset2 = 2 * t1.deg - 3;
 
@@ -1892,7 +1893,6 @@ void local_refinement(int deg, Tree *tp, int p) {
       tp->branch[index[ii]].y = tt.branch[ii].y;
       tp->branch[index[ii]].n = index[tt.branch[ii].n];
     }
-    free(tt.branch);
   }
 
   free(SteinerPin);
@@ -1915,18 +1915,6 @@ DTYPE wirelength(Tree t) {
   }
 
   return l;
-}
-
-void printtree(Tree t) {
-  int i;
-
-  for (i = 0; i < t.deg; i++)
-    printf(" %-2d:  x=%4g  y=%4g  e=%d\n",
-           i, (float)t.branch[i].x, (float)t.branch[i].y, t.branch[i].n);
-  for (i = t.deg; i < 2 * t.deg - 2; i++)
-    printf("s%-2d:  x=%4g  y=%4g  e=%d\n",
-           i, (float)t.branch[i].x, (float)t.branch[i].y, t.branch[i].n);
-  printf("\n");
 }
 
 // Output in a format that can be plotted by gnuplot
@@ -1978,12 +1966,6 @@ void write_svg(Tree t,
   }
 }
 
-void free_tree(Tree t) {
-  if(t.deg > 0){
-    free(t.branch);
-  }
-        
-  t.deg = 0 ;
-}
+} // namespace flt
 
-}  // namespace
+} // namespace stt
