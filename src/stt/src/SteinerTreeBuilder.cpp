@@ -136,21 +136,31 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
   int max_y = std::numeric_limits<int>::min();
 
   for (odb::dbITerm* iterm : net->getITerms()) {
-    int x, y;
-    iterm->getAvgXY(&x, &y);
-    min_x = std::min(min_x, x);
-    max_x = std::max(max_x, x);
-    min_y = std::min(min_y, y);
-    max_y = std::max(max_y, y);
+    if (iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::NONE ||
+        iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::UNPLACED) {
+      int x, y;
+      iterm->getAvgXY(&x, &y);
+      min_x = std::min(min_x, x);
+      max_x = std::max(max_x, x);
+      min_y = std::min(min_y, y);
+      max_y = std::max(max_y, y);
+    } else {
+      logger_->error(utl::STT, 4, "Net {} has instances not placed.", net->getName());
+    }
   }
 
   for (odb::dbBTerm* bterm : net->getBTerms()) {
-    int x, y;
-    bterm->getFirstPinLocation(x, y);
-    min_x = std::min(min_x, x);
-    max_x = std::max(max_x, x);
-    min_y = std::min(min_y, y);
-    max_y = std::max(max_y, y);
+    if (bterm->getFirstPinPlacementStatus() != odb::dbPlacementStatus::NONE ||
+        bterm->getFirstPinPlacementStatus() != odb::dbPlacementStatus::UNPLACED) {
+      int x, y;
+      bterm->getFirstPinLocation(x, y);
+      min_x = std::min(min_x, x);
+      max_x = std::max(max_x, x);
+      min_y = std::min(min_y, y);
+      max_y = std::max(max_y, y);
+    } else {
+      logger_->error(utl::STT, 5, "Net {} has pins not placed.", net->getName());
+    }
   }
 
   int hpwl = (max_x - min_x) + (max_y - min_y);
