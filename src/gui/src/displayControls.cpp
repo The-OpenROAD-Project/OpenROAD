@@ -545,82 +545,40 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 {
-  switch (inst->getMaster()->getType()) {
-  case dbMasterType::RING:
-  case dbMasterType::BLOCK:
-  case dbMasterType::BLOCK_BLACKBOX:
-  case dbMasterType::BLOCK_SOFT:
-    return instances_.blocks.visible->checkState() == Qt::Checked;
-  case dbMasterType::COVER:
-  case dbMasterType::COVER_BUMP:
-    return instances_.cover.visible->checkState() == Qt::Checked;
-  case dbMasterType::PAD:
-  case dbMasterType::PAD_INPUT:
-  case dbMasterType::PAD_OUTPUT:
-  case dbMasterType::PAD_INOUT:
-  case dbMasterType::PAD_POWER:
-  case dbMasterType::PAD_SPACER:
-  case dbMasterType::PAD_AREAIO:
-  case dbMasterType::ENDCAP_TOPLEFT:
-  case dbMasterType::ENDCAP_TOPRIGHT:
-  case dbMasterType::ENDCAP_BOTTOMLEFT:
-  case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    return instances_.pads.visible->checkState() == Qt::Checked;
-  case dbMasterType::CORE:
-  case dbMasterType::CORE_FEEDTHRU:
-  case dbMasterType::CORE_TIEHIGH:
-  case dbMasterType::CORE_TIELOW:
-  case dbMasterType::CORE_ANTENNACELL:
-  case dbMasterType::CORE_WELLTAP:
-  case dbMasterType::ENDCAP:
-  case dbMasterType::ENDCAP_PRE:
-  case dbMasterType::ENDCAP_POST:
-    return instances_.core.visible->checkState() == Qt::Checked;
-  case dbMasterType::CORE_SPACER:
+  dbMaster* master = inst->getMaster();
+  if (master->isEndCap()) {
+    return instances_.endcap.visible->checkState() == Qt::Checked;
+  } else if (master->isFiller()) {
     return instances_.fill.visible->checkState() == Qt::Checked;
-  case dbMasterType::NONE:
-  default:
+  } else if (master->isCore()) {
+    return instances_.core.visible->checkState() == Qt::Checked;
+  } else if (master->isBlock()) {
+    return instances_.blocks.visible->checkState() == Qt::Checked;
+  } else if (master->isPad()) {
+    return instances_.pads.visible->checkState() == Qt::Checked;
+  } else if (master->getType() == dbMasterType::COVER || master->getType() == dbMasterType::COVER_BUMP) {
+    return instances_.cover.visible->checkState() == Qt::Checked;
+  } else {
     return true;
   }
 }
 
 bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 {
-  switch (inst->getMaster()->getType()) {
-  case dbMasterType::RING:
-  case dbMasterType::BLOCK:
-  case dbMasterType::BLOCK_BLACKBOX:
-  case dbMasterType::BLOCK_SOFT:
-    return instances_.blocks.selectable->checkState() == Qt::Checked;
-  case dbMasterType::COVER:
-  case dbMasterType::COVER_BUMP:
-    return instances_.cover.selectable->checkState() == Qt::Checked;
-  case dbMasterType::PAD:
-  case dbMasterType::PAD_INPUT:
-  case dbMasterType::PAD_OUTPUT:
-  case dbMasterType::PAD_INOUT:
-  case dbMasterType::PAD_POWER:
-  case dbMasterType::PAD_SPACER:
-  case dbMasterType::PAD_AREAIO:
-  case dbMasterType::ENDCAP_TOPLEFT:
-  case dbMasterType::ENDCAP_TOPRIGHT:
-  case dbMasterType::ENDCAP_BOTTOMLEFT:
-  case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    return instances_.pads.selectable->checkState() == Qt::Checked;
-  case dbMasterType::CORE:
-  case dbMasterType::CORE_FEEDTHRU:
-  case dbMasterType::CORE_TIEHIGH:
-  case dbMasterType::CORE_TIELOW:
-  case dbMasterType::CORE_ANTENNACELL:
-  case dbMasterType::CORE_WELLTAP:
-  case dbMasterType::ENDCAP:
-  case dbMasterType::ENDCAP_PRE:
-  case dbMasterType::ENDCAP_POST:
-    return instances_.core.selectable->checkState() == Qt::Checked;
-  case dbMasterType::CORE_SPACER:
+  dbMaster* master = inst->getMaster();
+  if (master->isEndCap()) {
+    return instances_.endcap.selectable->checkState() == Qt::Checked;
+  } else if (master->isFiller()) {
     return instances_.fill.selectable->checkState() == Qt::Checked;
-  case dbMasterType::NONE:
-  default:
+  } else if (master->isCore()) {
+    return instances_.core.selectable->checkState() == Qt::Checked;
+  } else if (master->isBlock()) {
+    return instances_.blocks.selectable->checkState() == Qt::Checked;
+  } else if (master->isPad()) {
+    return instances_.pads.selectable->checkState() == Qt::Checked;
+  } else if (master->getType() == dbMasterType::COVER || master->getType() == dbMasterType::COVER_BUMP) {
+    return instances_.cover.selectable->checkState() == Qt::Checked;
+  } else {
     return true;
   }
 }
