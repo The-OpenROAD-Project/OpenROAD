@@ -1176,6 +1176,7 @@ class FlexGridGraph
   bool hasAlignedUpDefTrack(frLayerNum layerNum,
                             const map<frLayerNum, frTrackPattern*>& xSubMap,
                             const map<frLayerNum, frTrackPattern*>& ySubMap);
+
  private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
   bool isWorkerBorder(frMIdx v, bool isVert);

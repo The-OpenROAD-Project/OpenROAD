@@ -103,24 +103,26 @@ bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
   return yCoords_[v] == drWorker_->getRouteBox().bottom()
          || yCoords_[v] == drWorker_->getRouteBox().top();
 }
-bool FlexGridGraph::hasAlignedUpDefTrack(frLayerNum layerNum,
-                            const map<frLayerNum, frTrackPattern*>& xSubMap,
-                            const map<frLayerNum, frTrackPattern*>& ySubMap) {
-    
-    for (frLayerNum lNum = layerNum + 2; lNum < (int)getTech()->getLayers().size(); 
-                                                                    lNum += 2) {
-        auto it = xSubMap.find(lNum);
-        if (it != xSubMap.end()) {   //has x track in lNum
-            if (it->second)     //has track pattern, i.e., the track is default
-                return true;
-        }
-        it = ySubMap.find(lNum);
-        if (it != xSubMap.end()) {   //has y track in lNum
-            if (it->second)     //has track pattern, i.e., the track is default
-                return true;
-        }
+bool FlexGridGraph::hasAlignedUpDefTrack(
+    frLayerNum layerNum,
+    const map<frLayerNum, frTrackPattern*>& xSubMap,
+    const map<frLayerNum, frTrackPattern*>& ySubMap)
+{
+  for (frLayerNum lNum = layerNum + 2;
+       lNum < (int) getTech()->getLayers().size();
+       lNum += 2) {
+    auto it = xSubMap.find(lNum);
+    if (it != xSubMap.end()) {  // has x track in lNum
+      if (it->second)           // has track pattern, i.e., the track is default
+        return true;
     }
-    return false;
+    it = ySubMap.find(lNum);
+    if (it != xSubMap.end()) {  // has y track in lNum
+      if (it->second)           // has track pattern, i.e., the track is default
+        return true;
+    }
+  }
+  return false;
 }
 
 void FlexGridGraph::initEdges(
@@ -147,12 +149,13 @@ void FlexGridGraph::initEdges(
       nonPrefLayerNum = layerNum;
     }
     const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
-    bool restrictedRouting = layerNum < BOTTOM_ROUTING_LAYER || 
-                    layerNum > TOP_ROUTING_LAYER || layer->isUnidirectional();
-    restrictedRouting = restrictedRouting || 
-                    nonPrefLayerNum < BOTTOM_ROUTING_LAYER || 
-                    nonPrefLayerNum > TOP_ROUTING_LAYER || 
-                    nonPrefLayer->isUnidirectional();
+    bool restrictedRouting = layerNum < BOTTOM_ROUTING_LAYER
+                             || layerNum > TOP_ROUTING_LAYER
+                             || layer->isUnidirectional();
+    restrictedRouting = restrictedRouting
+                        || nonPrefLayerNum < BOTTOM_ROUTING_LAYER
+                        || nonPrefLayerNum > TOP_ROUTING_LAYER
+                        || nonPrefLayer->isUnidirectional();
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
       auto yIt = ySubMap.find(layerNum);
@@ -186,9 +189,9 @@ void FlexGridGraph::initEdges(
           }
           // via to upper layer
           if (xFound2) {
-            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_) && 
-                    (!restrictedRouting || (yIt->second && xIt2->second) ||
-                    hasAlignedUpDefTrack(layerNum, xSubMap, ySubMap))) {
+            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)
+                && (!restrictedRouting || (yIt->second && xIt2->second)
+                    || hasAlignedUpDefTrack(layerNum, xSubMap, ySubMap))) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
@@ -211,9 +214,9 @@ void FlexGridGraph::initEdges(
           }
           // via to upper layer
           if (yFound2) {
-            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_) && 
-                    (!restrictedRouting || (xIt->second && yIt2->second) ||
-                    hasAlignedUpDefTrack(layerNum, xSubMap, ySubMap))) {
+            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)
+                && (!restrictedRouting || (xIt->second && yIt2->second)
+                    || hasAlignedUpDefTrack(layerNum, xSubMap, ySubMap))) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
