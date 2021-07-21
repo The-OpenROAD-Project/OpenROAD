@@ -36,7 +36,7 @@
 sta::define_cmd_args "set_routing_alpha" { alpha \
                                           [-net net_name] \
                                           [-min_fanout fanout] \
-                                          [-min_hpwl bbox]}
+                                          [-min_hpwl hpwl]}
 
 proc set_routing_alpha { args } {
   sta::parse_key_args "set_routing_alpha" args \

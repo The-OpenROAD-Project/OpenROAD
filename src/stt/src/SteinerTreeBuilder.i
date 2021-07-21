@@ -82,9 +82,9 @@ set_min_fanout_alpha(int num_pins, float alpha)
 }
 
 void
-set_min_hpwl_alpha(int bbox_hp, float alpha)
+set_min_hpwl_alpha(int hpwl, float alpha)
 {
-  getSteinerTreeBuilder()->setMinHPWLAlpha(bbox_hp, alpha);
+  getSteinerTreeBuilder()->setMinHPWLAlpha(hpwl, alpha);
 }
 
 
