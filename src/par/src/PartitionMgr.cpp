@@ -1302,7 +1302,7 @@ void PartitionMgr::readPartitioningFile(std::string filename)
     }
     file.close();
   } else {
-    _logger->error(PAR, 22, "Unable to open file {}.", filename.c_str());
+    _logger->error(PAR, 22, "Unable to open file {}.", filename);
   }
   currentResults.addAssignment(partitions, 0, 1);
   _results.push_back(currentResults);
