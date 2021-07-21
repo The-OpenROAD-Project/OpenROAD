@@ -56,6 +56,7 @@ namespace odb {
 class dbDatabase;
 class dbBlock;
 class dbNet;
+class dbInst;
 }  // namespace odb
 
 namespace gui {
@@ -140,6 +141,8 @@ class DisplayControls : public QDockWidget, public Options
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
+  bool isInstanceVisible(odb::dbInst* inst) override;
+  bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areFillsVisible() override;
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
@@ -204,6 +207,15 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow clock;
   };
 
+  struct InstanceModels
+  {
+    ModelRow core;
+    ModelRow blocks;
+    ModelRow fill;
+    ModelRow pads;
+    ModelRow cover;
+  };
+
   struct TrackModels
   {
     ModelRow pref;
@@ -242,10 +254,12 @@ class DisplayControls : public QDockWidget, public Options
   ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
+  ModelRow instance_group_;
   ModelRow misc_group_;
 
   // Object controls
   NetModels nets_;
+  InstanceModels instances_;
   ModelRow rows_;
   ModelRow congestion_map_;
   ModelRow pin_markers_;

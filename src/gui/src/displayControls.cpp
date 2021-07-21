@@ -183,6 +183,25 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked);
 
+  // Instance group
+  auto instances_parent = makeItem(
+      instance_group_,
+      "Instances",
+      model_,
+      Qt::Checked,
+      [this](bool visible) {
+        toggleAllChildren(visible, instance_group_.name, Visible);
+      },
+      [this](bool selectable) {
+        toggleAllChildren(selectable, instance_group_.name, Selectable);
+      });
+
+  makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+  makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+  makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+  makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+  makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+
   // Rows
   makeItem(rows_, "Rows", model_, Qt::Unchecked);
 
@@ -245,6 +264,19 @@ void DisplayControls::readSettings(QSettings* settings)
   nets_.clock.visible->setCheckState(getChecked(settings, "clock_visible"));
   settings->endGroup();  // nets
 
+  settings->beginGroup("instances");
+  instances_.core.visible->setCheckState(getChecked(settings, "stdcell_visible"));
+  instances_.core.selectable->setCheckState(getChecked(settings, "stdcell_selectable"));
+  instances_.blocks.visible->setCheckState(getChecked(settings, "blocks_visible"));
+  instances_.blocks.selectable->setCheckState(getChecked(settings, "blocks_selectable"));
+  instances_.fill.visible->setCheckState(getChecked(settings, "fill_visible"));
+  instances_.fill.selectable->setCheckState(getChecked(settings, "fill_selectable"));
+  instances_.pads.visible->setCheckState(getChecked(settings, "pads_visible"));
+  instances_.pads.selectable->setCheckState(getChecked(settings, "pads_selectable"));
+  instances_.cover.visible->setCheckState(getChecked(settings, "cover_visible"));
+  instances_.cover.selectable->setCheckState(getChecked(settings, "cover_selectable"));
+  settings->endGroup();  // nets
+
   rows_.visible->setCheckState(getChecked(settings, "rows_visible"));
   congestion_map_.visible->setCheckState(
       getChecked(settings, "congestion_map_visible"));
@@ -277,6 +309,19 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("ground_visible", asBool(nets_.ground.visible));
   settings->setValue("clock_visible", asBool(nets_.clock.visible));
   settings->endGroup();  // nets
+
+  settings->beginGroup("instances");
+  settings->setValue("stdcell_visible", asBool(instances_.core.visible));
+  settings->setValue("stdcell_selectable", asBool(instances_.core.selectable));
+  settings->setValue("blocks_visible", asBool(instances_.blocks.visible));
+  settings->setValue("blocks_selectable", asBool(instances_.blocks.selectable));
+  settings->setValue("fill_visible", asBool(instances_.fill.visible));
+  settings->setValue("fill_selectable", asBool(instances_.fill.selectable));
+  settings->setValue("pads_visible", asBool(instances_.pads.visible));
+  settings->setValue("pads_selectable", asBool(instances_.pads.selectable));
+  settings->setValue("cover_visible", asBool(instances_.cover.visible));
+  settings->setValue("cover_selectable", asBool(instances_.cover.selectable));
+  settings->endGroup();  // instances
 
   settings->setValue("rows_visible", asBool(rows_.visible));
   settings->setValue("congestion_map_visible", asBool(congestion_map_.visible));
@@ -491,6 +536,88 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
     return it->second.visible->checkState() == Qt::Checked;
   }
   return false;
+}
+
+bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
+{
+  switch (inst->getMaster()->getType()) {
+  case dbMasterType::RING:
+  case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
+    return instances_.blocks.visible->checkState() == Qt::Checked;
+  case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
+    return instances_.cover.visible->checkState() == Qt::Checked;
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+  case dbMasterType::PAD_AREAIO:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    return instances_.pads.visible->checkState() == Qt::Checked;
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_ANTENNACELL:
+  case dbMasterType::CORE_WELLTAP:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+    return instances_.core.visible->checkState() == Qt::Checked;
+  case dbMasterType::CORE_SPACER:
+    return instances_.fill.visible->checkState() == Qt::Checked;
+  case dbMasterType::NONE:
+  default:
+    return true;
+  }
+}
+
+bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
+{
+  switch (inst->getMaster()->getType()) {
+  case dbMasterType::RING:
+  case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
+    return instances_.blocks.selectable->checkState() == Qt::Checked;
+  case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
+    return instances_.cover.selectable->checkState() == Qt::Checked;
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+  case dbMasterType::PAD_AREAIO:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    return instances_.pads.selectable->checkState() == Qt::Checked;
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_ANTENNACELL:
+  case dbMasterType::CORE_WELLTAP:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+    return instances_.core.selectable->checkState() == Qt::Checked;
+  case dbMasterType::CORE_SPACER:
+    return instances_.fill.selectable->checkState() == Qt::Checked;
+  case dbMasterType::NONE:
+  default:
+    return true;
+  }
 }
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
