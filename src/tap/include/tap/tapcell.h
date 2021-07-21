@@ -56,6 +56,8 @@ namespace tap {
 class Tapcell
 {
 public:
+  int phy_idx;
+  std::vector<std::vector<int>> filled_sites;
   Tapcell();
   ~Tapcell();
   void init(odb::dbDatabase *db, utl::Logger* logger);
@@ -86,6 +88,7 @@ public:
 private:
   odb::dbDatabase *db_;
   utl::Logger* logger_;
+
 };
 
 }
