@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcdl.a  CMakeFiles/cdl.dir/cdl.cpp.o
+/usr/bin/ranlib libcdl.a

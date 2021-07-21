@@ -1,0 +1,2 @@
+/usr/bin/ar qc rmp.a  CMakeFiles/rmp.dir/CMakeFiles/rmp.dir/rmpTCL_wrap.cxx.o CMakeFiles/rmp.dir/rmp-tclInitVar.cc.o CMakeFiles/rmp.dir/blifParser.cpp.o CMakeFiles/rmp.dir/blif.cpp.o CMakeFiles/rmp.dir/Restructure.cpp.o CMakeFiles/rmp.dir/MakeRestructure.cpp.o
+/usr/bin/ranlib rmp.a

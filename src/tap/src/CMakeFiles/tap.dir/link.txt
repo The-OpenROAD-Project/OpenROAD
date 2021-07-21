@@ -1,0 +1,2 @@
+/usr/bin/ar qc tap.a  CMakeFiles/tap.dir/CMakeFiles/tap.dir/tapcellTCL_wrap.cxx.o CMakeFiles/tap.dir/tap-tclInitVar.cc.o CMakeFiles/tap.dir/tapcell.cpp.o CMakeFiles/tap.dir/MakeTapcell.cpp.o
+/usr/bin/ranlib tap.a

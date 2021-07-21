@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/stephano/OpenROAD/src/Exception.i
+
+/home/stephano/OpenROAD/src/utl/src/Logger.i
+utl/Logger.h
+/home/stephano/OpenROAD/src/utl/src/utl/Logger.h
+../../Exception.i
+/home/stephano/OpenROAD/src/Exception.i
+

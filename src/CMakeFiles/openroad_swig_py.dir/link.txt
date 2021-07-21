@@ -1,0 +1,2 @@
+/usr/bin/ar qc _openroad_swig_py.a  CMakeFiles/openroad_swig_py.dir/CMakeFiles/openroad_swig_py.dir/OpenRoad-pyPYTHON_wrap.cxx.o CMakeFiles/openroad_swig_py.dir/openroad_swig_py-pythonInitVar.cc.o
+/usr/bin/ranlib _openroad_swig_py.a

@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/stephano/OpenROAD/src/Exception.i
+
+/home/stephano/OpenROAD/src/OpenRoad.i
+opendb/db.h
+/home/stephano/OpenROAD/src/opendb/db.h
+opendb/lefin.h
+/home/stephano/OpenROAD/src/opendb/lefin.h
+opendb/defin.h
+/home/stephano/OpenROAD/src/opendb/defin.h
+opendb/defout.h
+/home/stephano/OpenROAD/src/opendb/defout.h
+sta/Report.hh
+/home/stephano/OpenROAD/src/sta/Report.hh
+sta/Network.hh
+/home/stephano/OpenROAD/src/sta/Network.hh
+db_sta/dbSta.hh
+/home/stephano/OpenROAD/src/db_sta/dbSta.hh
+db_sta/dbNetwork.hh
+/home/stephano/OpenROAD/src/db_sta/dbNetwork.hh
+db_sta/dbReadVerilog.hh
+/home/stephano/OpenROAD/src/db_sta/dbReadVerilog.hh
+ord/Version.hh
+/home/stephano/OpenROAD/src/ord/Version.hh
+utl/Logger.h
+/home/stephano/OpenROAD/src/utl/Logger.h
+ord/OpenRoad.hh
+/home/stephano/OpenROAD/src/ord/OpenRoad.hh
+Exception.i
+/home/stephano/OpenROAD/src/Exception.i
+

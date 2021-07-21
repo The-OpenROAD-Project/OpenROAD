@@ -1,0 +1,2 @@
+/usr/bin/ar qc par.a  CMakeFiles/par.dir/CMakeFiles/par.dir/partitionmgrTCL_wrap.cxx.o CMakeFiles/par.dir/par-tclInitVar.cc.o CMakeFiles/par.dir/src/Hypergraph.cpp.o CMakeFiles/par.dir/src/MakePartitionMgr.cpp.o CMakeFiles/par.dir/src/PartitionMgr.cpp.o CMakeFiles/par.dir/src/HypergraphDecomposition.cpp.o CMakeFiles/par.dir/src/PartitionNetwork.cpp.o CMakeFiles/par.dir/src/PartOptions.cpp.o CMakeFiles/par.dir/src/autocluster.cpp.o
+/usr/bin/ranlib par.a

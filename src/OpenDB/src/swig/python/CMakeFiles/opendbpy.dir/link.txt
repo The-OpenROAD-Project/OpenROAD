@@ -1,0 +1,2 @@
+/usr/bin/ar qc _opendbpy.a  CMakeFiles/opendbpy.dir/CMakeFiles/opendbpy.dir/opendbPYTHON_wrap.cxx.o CMakeFiles/opendbpy.dir/opendbpy-pythonInitVar.cc.o
+/usr/bin/ranlib _opendbpy.a

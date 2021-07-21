@@ -1,0 +1,2 @@
+/usr/bin/ar qc mpl.a  CMakeFiles/mpl.dir/CMakeFiles/mpl.dir/MacroPlacerTCL_wrap.cxx.o CMakeFiles/mpl.dir/mpl-tclInitVar.cc.o CMakeFiles/mpl.dir/src/Partition.cpp.o CMakeFiles/mpl.dir/src/MacroPlacer.cpp.o CMakeFiles/mpl.dir/src/MakeMacroPlacer.cpp.o CMakeFiles/mpl.dir/src/graphics.cpp.o
+/usr/bin/ranlib mpl.a

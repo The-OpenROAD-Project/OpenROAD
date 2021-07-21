@@ -1,0 +1,2 @@
+/usr/bin/ar qc ifp.a  CMakeFiles/ifp.dir/CMakeFiles/ifp.dir/InitFloorplanTCL_wrap.cxx.o CMakeFiles/ifp.dir/ifp-tclInitVar.cc.o CMakeFiles/ifp.dir/InitFloorplan.cc.o CMakeFiles/ifp.dir/MakeInitFloorplan.cc.o
+/usr/bin/ranlib ifp.a

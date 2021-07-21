@@ -1,0 +1,2 @@
+/usr/bin/ar qc dpl.a  CMakeFiles/dpl.dir/CMakeFiles/dpl.dir/OpendpTCL_wrap.cxx.o CMakeFiles/dpl.dir/dpl-tclInitVar.cc.o CMakeFiles/dpl.dir/src/Opendp.cpp.o CMakeFiles/dpl.dir/src/dbToOpendp.cpp.o CMakeFiles/dpl.dir/src/MakeOpendp.cpp.o CMakeFiles/dpl.dir/src/Grid.cpp.o CMakeFiles/dpl.dir/src/CheckPlacement.cpp.o CMakeFiles/dpl.dir/src/Place.cpp.o CMakeFiles/dpl.dir/src/FillerPlacement.cpp.o CMakeFiles/dpl.dir/src/OptMirror.cpp.o
+/usr/bin/ranlib dpl.a

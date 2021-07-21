@@ -1,0 +1,2 @@
+/usr/bin/ar qc stt.a  CMakeFiles/stt.dir/CMakeFiles/stt.dir/SteinerTreeBuilderTCL_wrap.cxx.o CMakeFiles/stt.dir/stt-tclInitVar.cc.o CMakeFiles/stt.dir/src/SteinerTreeBuilder.cpp.o CMakeFiles/stt.dir/src/MakeSteinerTreeBuilder.cpp.o CMakeFiles/stt.dir/src/flt/flute.cpp.o CMakeFiles/stt.dir/POWV9.cpp.o CMakeFiles/stt.dir/POST9.cpp.o CMakeFiles/stt.dir/src/pdr/src/pdrev.cpp.o CMakeFiles/stt.dir/src/pdr/src/graph.cpp.o CMakeFiles/stt.dir/src/pdr/src/node.cpp.o CMakeFiles/stt.dir/src/pdr/src/edge.cpp.o
+/usr/bin/ranlib stt.a
