@@ -2284,15 +2284,21 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->report("");
     frBox dieBox;
     design->getTopBlock()->getDieBox(dieBox);
-    logger->report("Design:               {}", design->getTopBlock()->getName());
-    logger->report("Die area:             {}", dieBox);
-    logger->report("trackPts:             {}",
+    logger->report("Design:                   {}",
+                   design->getTopBlock()->getName());
+    logger->report("Die area:                 {}", dieBox);
+    logger->report("Number of track patterns: {}",
                    design->getTopBlock()->getTrackPatterns().size());
-    logger->report("defVias:              {}", tech->vias.size() - numLefVia);
-    logger->report("Number of components: {}", design->getTopBlock()->insts_.size());
-    logger->report("Number of terminals:  {}", design->getTopBlock()->terms_.size());
-    logger->report("Number of snets:      {}", design->getTopBlock()->snets_.size());
-    logger->report("Number of nets:       {}", design->getTopBlock()->nets_.size());
+    logger->report("Number of DEF vias:       {}",
+                   tech->vias.size() - numLefVia);
+    logger->report("Number of components:     {}",
+                   design->getTopBlock()->insts_.size());
+    logger->report("Number of terminals:      {}",
+                   design->getTopBlock()->terms_.size());
+    logger->report("Number of snets:          {}",
+                   design->getTopBlock()->snets_.size());
+    logger->report("Number of nets:           {}",
+                   design->getTopBlock()->nets_.size());
     logger->report("");
   }
 }
@@ -2336,7 +2342,7 @@ void io::Parser::readGuide()
       // cout <<endl;
 
       if (vLine.size() == 0) {
-        logger->error(DRT, 152, "Error reading guide file.");
+        logger->error(DRT, 152, "Error reading guide file {}.", GUIDE_FILE);
       } else if (vLine.size() == 1) {
         netName = vLine[0];
         if (design->topBlock_->name2net_.find(vLine[0])
@@ -2382,12 +2388,12 @@ void io::Parser::readGuide()
         }
 
       } else {
-        logger->error(DRT, 158, "Error reading guide file.");
+        logger->error(DRT, 158, "Error reading guide file {}.", GUIDE_FILE);
       }
     }
     fin.close();
   } else {
-    logger->error(DRT, 159, "Failed to open guide file.");
+    logger->error(DRT, 159, "Failed to open guide file {}.", GUIDE_FILE);
   }
 
   if (VERBOSE > 0) {

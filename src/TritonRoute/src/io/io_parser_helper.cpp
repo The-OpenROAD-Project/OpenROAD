@@ -291,7 +291,7 @@ void io::Parser::initCutLayerWidth()
           logger->warn(DRT,
                        241,
                        "CUT layer {} does not have single-cut via, cut layer "
-                       "width may be set incorrectlye.",
+                       "width may be set incorrectly.",
                        layer->getName());
         }
       } else {

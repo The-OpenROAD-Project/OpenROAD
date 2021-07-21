@@ -1038,7 +1038,7 @@ bool io::Parser::genGuides_astar(
       && !forceFeedThrough && retry) {
     logger->warn(DRT,
                  225,
-                 "{} {} pin not visited, fall back to feedtrough mode.",
+                 "{} {} pin not visited, fall back to feedthrough mode.",
                  net->getName(),
                  nCnt - gCnt - pinVisited);
   }
