@@ -199,6 +199,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
   makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
   makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+  makeItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
   makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
   makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
 
@@ -271,6 +272,8 @@ void DisplayControls::readSettings(QSettings* settings)
   instances_.blocks.selectable->setCheckState(getChecked(settings, "blocks_selectable"));
   instances_.fill.visible->setCheckState(getChecked(settings, "fill_visible"));
   instances_.fill.selectable->setCheckState(getChecked(settings, "fill_selectable"));
+  instances_.endcap.visible->setCheckState(getChecked(settings, "endcap_visible"));
+  instances_.endcap.selectable->setCheckState(getChecked(settings, "endcap_selectable"));
   instances_.pads.visible->setCheckState(getChecked(settings, "pads_visible"));
   instances_.pads.selectable->setCheckState(getChecked(settings, "pads_selectable"));
   instances_.cover.visible->setCheckState(getChecked(settings, "cover_visible"));
@@ -317,6 +320,8 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("blocks_selectable", asBool(instances_.blocks.selectable));
   settings->setValue("fill_visible", asBool(instances_.fill.visible));
   settings->setValue("fill_selectable", asBool(instances_.fill.selectable));
+  settings->setValue("endcap_visible", asBool(instances_.endcap.visible));
+  settings->setValue("endcap_selectable", asBool(instances_.endcap.selectable));
   settings->setValue("pads_visible", asBool(instances_.pads.visible));
   settings->setValue("pads_selectable", asBool(instances_.pads.selectable));
   settings->setValue("cover_visible", asBool(instances_.cover.visible));
