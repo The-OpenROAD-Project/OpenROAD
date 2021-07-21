@@ -144,9 +144,7 @@ Loading library data
 Extracting footprint
 [WARNING PAD-0046] No power nets found in design.
 [WARNING PAD-0047] No ground nets found in design.
-Differences found at line 4.
-  Type wirebond
-  Type Wirebond
+No differences found.
 Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_ef_io__corner_pad has no liberty cell.
