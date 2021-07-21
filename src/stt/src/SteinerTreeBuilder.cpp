@@ -45,7 +45,8 @@ namespace stt{
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
-  min_fanout_alpha_({-1, -1})
+  min_fanout_alpha_({-1, -1}),
+  min_hpwl_alpha_({-1, -1})
 {
 }
 
@@ -71,10 +72,16 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
 {
   float net_alpha = alpha_;
 
-  int num_pins = net->getTermCount();
   if (min_fanout_alpha_.first >= 0) {
+    int num_pins = net->getTermCount();
     net_alpha = num_pins >= min_fanout_alpha_.first ?
                 net_alpha = min_fanout_alpha_.second : net_alpha;
+  }
+
+  if (min_hpwl_alpha_.first >= 0) {
+    int hp_wire_length = computeHPWL(net);
+    net_alpha = hp_wire_length >= min_hpwl_alpha_.first ?
+                net_alpha = min_hpwl_alpha_.second : net_alpha;
   }
 
   net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
@@ -123,6 +130,36 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
   }
 
   return tree;
+}
+
+int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
+{
+  int min_x = std::numeric_limits<int>::max();
+  int min_y = std::numeric_limits<int>::max();
+  int max_x = std::numeric_limits<int>::min();
+  int max_y = std::numeric_limits<int>::min();
+
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    int x, y;
+    iterm->getAvgXY(&x, &y);
+    min_x = std::min(min_x, x);
+    max_x = std::max(max_x, x);
+    min_y = std::min(min_y, y);
+    max_y = std::max(max_y, y);
+  }
+
+  for (odb::dbBTerm* bterm : net->getBTerms()) {
+    int x, y;
+    bterm->getFirstPinLocation(x, y);
+    min_x = std::min(min_x, x);
+    max_x = std::max(max_x, x);
+    min_y = std::min(min_y, y);
+    max_y = std::max(max_y, y);
+  }
+
+  int hpwl = (max_x - min_x) + (max_y - min_y);
+
+  return hpwl;
 }
 
 }

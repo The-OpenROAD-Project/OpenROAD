@@ -83,17 +83,20 @@ class SteinerTreeBuilder
   float getAlpha(const odb::dbNet* net) const;
   void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
   void setMinFanoutAlpha(int min_fanout, float alpha) { min_fanout_alpha_ = {min_fanout, alpha}; }
+  void setMinHPWLAlpha(int min_hpwl, float alpha) { min_hpwl_alpha_ = {min_hpwl, alpha}; }
 
  private:
   Tree makeTree(std::vector<int>& x,
                 std::vector<int>& y,
                 int drvr_index,
                 float alpha);
+  int computeHPWL(odb::dbNet* net);
 
   const int flute_accuracy = 3;
   float alpha_;
   std::map<const odb::dbNet*, float> net_alpha_map_;
   std::pair<int, float> min_fanout_alpha_;
+  std::pair<int, float> min_hpwl_alpha_;
 
   Logger* logger_;
   odb::dbDatabase* db_;

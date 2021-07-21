@@ -82,6 +82,13 @@ set_min_fanout_alpha(int num_pins, float alpha)
 }
 
 void
+set_min_hpwl_alpha(int bbox_hp, float alpha)
+{
+  getSteinerTreeBuilder()->setMinHPWLAlpha(bbox_hp, alpha);
+}
+
+
+void
 report_pd_tree(std::vector<int> x,
                std::vector<int> y,
                int drvr_index,

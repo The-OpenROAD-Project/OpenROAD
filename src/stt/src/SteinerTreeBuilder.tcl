@@ -35,11 +35,12 @@
 
 sta::define_cmd_args "set_routing_alpha" { alpha \
                                           [-net net_name] \
-                                          [-min_fanout fanout] \ }
+                                          [-min_fanout fanout] \
+                                          [-min_hpwl bbox]}
 
 proc set_routing_alpha { args } {
   sta::parse_key_args "set_routing_alpha" args \
-                 keys {-net -min_fanout}
+                 keys {-net -min_fanout -min_hpwl}
 
   set alpha [lindex $args 0]
   if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
@@ -52,9 +53,12 @@ proc set_routing_alpha { args } {
     foreach net $nets {
       stt::set_net_alpha $net $alpha
     }
-  } elseif {[info exists keys(-min_fanout)]} {
+  } elseif { [info exists keys(-min_fanout)] } {
     set fanout $keys(-min_fanout)
     stt::set_min_fanout_alpha $fanout $alpha
+  } elseif { [info exists keys(-min_hpwl)] } {
+    set hpwl [ord::microns_to_dbu $keys(-min_hpwl)]
+    stt::set_min_hpwl_alpha $hpwl $alpha
   } elseif { [llength $args] == 1 } {
     stt::set_routing_alpha_cmd $alpha
   } else {
