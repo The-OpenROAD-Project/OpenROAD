@@ -356,6 +356,22 @@ void DisplayControls::itemChanged(QStandardItem* item)
         model_->item(parent_index.row(), item_index.column()), // selected column
         item_index.column());
   }
+  // disable selectable column if visible is unchecked
+  if (item_index.column() == Visible) {
+    QStandardItem* selectable = nullptr;
+    if (!parent_index.isValid()) {
+      selectable = model_->item(item_index.row(), Selectable);
+    }
+    else {
+      if (item->parent() != nullptr) {
+        selectable = item->parent()->child(item_index.row(), Selectable);
+      }
+    }
+
+    if (selectable != nullptr) {
+      selectable->setEnabled(item->checkState() != Qt::Unchecked);
+    }
+  }
   emit changed();
 }
 
