@@ -361,8 +361,7 @@ void DisplayControls::itemChanged(QStandardItem* item)
     QStandardItem* selectable = nullptr;
     if (!parent_index.isValid()) {
       selectable = model_->item(item_index.row(), Selectable);
-    }
-    else {
+    } else {
       if (item->parent() != nullptr) {
         selectable = item->parent()->child(item_index.row(), Selectable);
       }
