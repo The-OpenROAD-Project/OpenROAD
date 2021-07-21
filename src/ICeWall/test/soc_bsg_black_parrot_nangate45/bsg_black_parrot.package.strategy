@@ -1,7 +1,7 @@
 source soc_bsg_black_parrot_nangate45/dummy_gpio.nangate45.strategy
 
 Footprint definition {
-  Type Wirebond
+  Type wirebond
 
   die_area {0 0 3000.000 3000.000}
   core_area {180.012 180.096 2819.964 2819.712}

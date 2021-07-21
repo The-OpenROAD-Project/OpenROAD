@@ -3,7 +3,7 @@ source coyote_tc/library.sky130_io.tcl
 
 puts "Loaded library IO cell data"
 Footprint definition {
-  Type Wirebond
+  Type wirebond
 
   die_area {0 0 5400.000 4616.000}
   core_area {200.0 200.0 5200.0 4416.0}

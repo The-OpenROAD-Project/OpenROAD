@@ -116,8 +116,8 @@ read_verilog soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.v
 
 link_design soc_bsg_black_parrot
 
-catch {set_padring_options -type Wirebond -power_nets  {VDD DVDD_0 DVDD_1} -ground_nets {VSS DVSS_0 DVSS_1} -offsets 35 -pin_layer metal10 -pad_inst_pattern "%s"}
-catch {set_padring_options -type Wirebond -offsets {35 36 37} -pin_layer metal10 -pad_inst_pattern "%s"}
+catch {set_padring_options -type wirebond -power_nets  {VDD DVDD_0 DVDD_1} -ground_nets {VSS DVSS_0 DVSS_1} -offsets 35 -pin_layer metal10 -pad_inst_pattern "%s"}
+catch {set_padring_options -type wirebond -offsets {35 36 37} -pin_layer metal10 -pad_inst_pattern "%s"}
 
 catch {set_padring_options \
   -type wirebond \
