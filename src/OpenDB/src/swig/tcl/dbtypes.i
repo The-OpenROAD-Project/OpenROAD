@@ -222,6 +222,9 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
   }
 }
 
+%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
+
+
 // Wrap containers
 WRAP_DB_CONTAINER(odb::dbProperty)
 WRAP_DB_CONTAINER(odb::dbLib)
@@ -232,6 +235,7 @@ WRAP_DB_CONTAINER(odb::dbITerm)
 WRAP_DB_CONTAINER(odb::dbInst)
 WRAP_DB_CONTAINER(odb::dbObstruction)
 WRAP_DB_CONTAINER(odb::dbBlockage)
+WRAP_DB_CONTAINER(odb::dbWire)
 WRAP_DB_CONTAINER(odb::dbNet)
 WRAP_DB_CONTAINER(odb::dbCapNode)
 WRAP_DB_CONTAINER(odb::dbRSeg)
