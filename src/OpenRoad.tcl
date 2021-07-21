@@ -83,7 +83,7 @@ proc read_def { args } {
   set floorplan_init [info exists flags(-floorplan_initialize)]
   set incremental [info exists flags(-incremental)]
   if { $floorplan_init && $incremental } {
-    utl::error ORD 16 "Options -incremental and -floorplan_initialization are both set. Use one option."
+    utl::error ORD 16 "Options -incremental and -floorplan_initialization are both set. At most one should be used."
   }
   ord::read_def_cmd $filename $continue_on_errors $floorplan_init $incremental
 }

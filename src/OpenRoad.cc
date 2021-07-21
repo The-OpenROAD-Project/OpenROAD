@@ -136,7 +136,7 @@ OpenRoad::OpenRoad()
     detailed_router_(nullptr),
     antenna_checker_(nullptr),
     replace_(nullptr),
-    pdnsim_(nullptr), 
+    pdnsim_(nullptr),
     partitionMgr_(nullptr),
     pdngen_(nullptr),
     stt_builder_(nullptr),
@@ -276,9 +276,9 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
 void
 OpenRoad::readLef(const char *filename,
-		  const char *lib_name,
-		  bool make_tech,
-		  bool make_library)
+                  const char *lib_name,
+                  bool make_tech,
+                  bool make_library)
 {
   odb::lefin lef_reader(db_, logger_, false);
   dbLib *lib = nullptr;
@@ -302,9 +302,9 @@ OpenRoad::readLef(const char *filename,
 
 void
 OpenRoad::readDef(const char *filename,
-		  bool continue_on_errors,
-      bool floorplan_init,
-      bool incremental)
+                  bool continue_on_errors,
+                  bool floorplan_init,
+                  bool incremental)
 {
   odb::defin::MODE mode = odb::defin::DEFAULT;
   if(floorplan_init)
@@ -340,13 +340,12 @@ stringToDefVersion(string version)
     return odb::defout::Version::DEF_5_4;
   else if (version == "5.3")
     return odb::defout::Version::DEF_5_3;
-  else 
+  else
     return odb::defout::Version::DEF_5_8;
 }
 
 void
-OpenRoad::writeDef(const char *filename,
-		   string version)
+OpenRoad::writeDef(const char *filename, string version)
 {
   odb::dbChip *chip = db_->getChip();
   if (chip) {
@@ -359,7 +358,7 @@ OpenRoad::writeDef(const char *filename,
   }
 }
 
-void 
+void
 OpenRoad::writeCdl(const char* filename, bool includeFillers)
 {
   odb::dbChip *chip = db_->getChip();
@@ -369,7 +368,7 @@ OpenRoad::writeCdl(const char* filename, bool includeFillers)
       odb::cdl::writeCdl(block, filename, includeFillers);
     }
   }
-  
+
 }
 
 void
@@ -416,12 +415,12 @@ OpenRoad::linkDesign(const char *design_name)
 
 void
 OpenRoad::writeVerilog(const char *filename,
-		       bool sort,
-		       bool include_pwr_gnd,
-		       std::vector<sta::LibertyCell*> *remove_cells)
+                       bool sort,
+                       bool include_pwr_gnd,
+                       std::vector<sta::LibertyCell*> *remove_cells)
 {
   sta::writeVerilog(filename, sort, include_pwr_gnd,
-		    remove_cells, sta_->network());
+                    remove_cells, sta_->network());
 }
 
 bool
@@ -469,10 +468,10 @@ OpenRoad::setThreadCount(int threads, bool printInfo) {
   int max_threads = std::thread::hardware_concurrency();
   if (max_threads == 0) {
     logger_->warn(ORD,
-        31,
-        "Unable to determine maximum number of threads.\n"
-        "Will use single thread."
-        );
+                  31,
+                  "Unable to determine maximum number of threads.\n"
+                  "One thread will be used."
+                  );
     max_threads = 1;
   }
   if (threads <= 0) { // max requested
@@ -527,17 +526,14 @@ getCore(dbBlock *block)
 
 // Return the point inside rect that is closest to pt.
 Point
-closestPtInRect(Rect rect,
-		Point pt)
+closestPtInRect(Rect rect, Point pt)
 {
   return Point(min(max(pt.getX(), rect.xMin()), rect.xMax()),
                min(max(pt.getY(), rect.yMin()), rect.yMax()));
 }
 
 Point
-closestPtInRect(Rect rect,
-		int x,
-		int y)
+closestPtInRect(Rect rect, int x, int y)
 {
   return Point(min(max(x, rect.xMin()), rect.xMax()),
                min(max(y, rect.yMin()), rect.yMax()));
