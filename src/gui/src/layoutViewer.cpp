@@ -397,9 +397,11 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       = search_.searchInsts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
   // Just return the first one
-
-  if (insts.begin() != insts.end()) {
-    return makeSelected_(std::get<2>(*insts.begin()));
+  for (const auto& inst : insts) {
+    dbInst* inst_ptr = std::get<2>(inst);
+    if (options_->isInstanceVisible(inst_ptr) && options_->isInstanceSelectable(inst_ptr)) {
+      return makeSelected_(inst_ptr);
+    }
   }
   return Selected();
 }
@@ -899,7 +901,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   std::vector<dbInst*> insts;
   insts.reserve(10000);
   for (auto& [box, poly, inst] : inst_range) {
-    insts.push_back(inst);
+    if (options_->isInstanceVisible(inst)) {
+      insts.push_back(inst);
+    }
   }
 
   // Draw the instances bounds
