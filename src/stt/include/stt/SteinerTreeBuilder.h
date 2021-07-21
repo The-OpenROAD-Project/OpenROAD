@@ -42,11 +42,15 @@
 
 #include "flute.h"
 #include "pdrev.h"
-#include "opendb/db.h"
 
 namespace ord {
 class OpenRoad;
 }
+
+namespace odb {
+class dbDatabase;
+class dbNet;
+}  // namespace odb
 
 namespace stt {
 
@@ -78,6 +82,7 @@ class SteinerTreeBuilder
   void setAlpha(float alpha) { alpha_ = alpha; }
   float getAlpha(const odb::dbNet* net) const;
   void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
+  void setMinFanoutAlpha(int min_fanout, float alpha) { min_fanout_alpha_ = {min_fanout, alpha}; }
 
  private:
   Tree makeTree(std::vector<int>& x,
@@ -88,6 +93,7 @@ class SteinerTreeBuilder
   const int flute_accuracy = 3;
   float alpha_;
   std::map<const odb::dbNet*, float> net_alpha_map_;
+  std::pair<int, float> min_fanout_alpha_;
 
   Logger* logger_;
   odb::dbDatabase* db_;

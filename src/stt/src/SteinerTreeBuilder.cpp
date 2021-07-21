@@ -39,11 +39,13 @@
 #include <vector>
 
 #include "ord/OpenRoad.hh"
+#include "opendb/db.h"
 
 namespace stt{
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
-  alpha_(0.3)
+  alpha_(0.3),
+  min_fanout_alpha_({-1, -1})
 {
 }
 
@@ -67,8 +69,16 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
                                          std::vector<int>& y,
                                          int drvr_index)
 {
-  float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
-                    net_alpha_map_[net] : alpha_;
+  float net_alpha = alpha_;
+
+  int num_pins = net->getTermCount();
+  if (min_fanout_alpha_.first >= 0) {
+    net_alpha = num_pins >= min_fanout_alpha_.first ?
+                net_alpha = min_fanout_alpha_.second : net_alpha;
+  }
+
+  net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
+              net_alpha_map_[net] : net_alpha;
 
   Tree tree = makeTree(x, y, drvr_index, net_alpha);
 
