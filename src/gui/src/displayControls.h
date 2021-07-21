@@ -140,6 +140,7 @@ class DisplayControls : public QDockWidget, public Options
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
+  bool isNetSelectable(odb::dbNet* net) override;
   bool areFillsVisible() override;
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
