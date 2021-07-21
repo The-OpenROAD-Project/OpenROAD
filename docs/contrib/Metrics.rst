@@ -16,12 +16,11 @@ result).
 2. `rules.json` which holds a set of rules that we use to evaluate new
 executions when a change is made.
 
+Checking against golden
+-----------------------
 
 The evaluation checks for key metrics (e.g., worst slack, number of DRCs)
 to ensure that changes do not degrade too much w.r.t. the "golden" values.
-
-Checking against golden
------------------------
 
 After you make a significant change, e.g., fixed a bug in a piece of code,
 or changed some configuration variable (`PLACE_DENSITY`), you should review
@@ -30,6 +29,7 @@ you will need to run the following command:
 
 .. code-block:: shell
 
+      cd OpenROAD-flow-scripts/flow
       # the clean_metadata is only required if you need to re-run
       make [clean_metadata] metadata
 
@@ -50,6 +50,7 @@ To update all the reference files:
 
 .. code-block:: shell
 
+      cd OpenROAD-flow-scripts/flow
       make update_ok
 
 In case you have a special reason to only update one of the files, you can
