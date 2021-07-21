@@ -1,2 +1,0 @@
-/usr/bin/ar qc pdn.a  CMakeFiles/pdn.dir/CMakeFiles/pdn.dir/PdnGenTCL_wrap.cxx.o CMakeFiles/pdn.dir/pdn-tclInitVar.cc.o CMakeFiles/pdn.dir/PdnGen.cc.o CMakeFiles/pdn.dir/MakePdnGen.cc.o
-/usr/bin/ranlib pdn.a

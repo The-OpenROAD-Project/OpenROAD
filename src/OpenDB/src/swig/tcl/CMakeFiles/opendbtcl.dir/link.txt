@@ -1,2 +1,0 @@
-/usr/bin/ar qc opendbtcl.a  CMakeFiles/opendbtcl.dir/CMakeFiles/opendbtcl.dir/opendbTCL_wrap.cxx.o
-/usr/bin/ranlib opendbtcl.a

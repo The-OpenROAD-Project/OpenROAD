@@ -1,2 +1,0 @@
-/usr/bin/ar qc fin.a  CMakeFiles/fin.dir/CMakeFiles/fin.dir/finaleTCL_wrap.cxx.o CMakeFiles/fin.dir/fin-tclInitVar.cc.o CMakeFiles/fin.dir/src/Finale.cpp.o CMakeFiles/fin.dir/src/MakeFinale.cpp.o CMakeFiles/fin.dir/src/DensityFill.cpp.o CMakeFiles/fin.dir/src/graphics.cpp.o
-/usr/bin/ranlib fin.a

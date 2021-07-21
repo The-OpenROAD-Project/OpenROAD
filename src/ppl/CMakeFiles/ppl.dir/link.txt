@@ -1,2 +1,0 @@
-/usr/bin/ar qc ppl.a  CMakeFiles/ppl.dir/CMakeFiles/ppl.dir/IOPlacerTCL_wrap.cxx.o CMakeFiles/ppl.dir/ppl-tclInitVar.cc.o CMakeFiles/ppl.dir/src/Core.cpp.o CMakeFiles/ppl.dir/src/HungarianMatching.cpp.o CMakeFiles/ppl.dir/src/IOPlacer.cpp.o CMakeFiles/ppl.dir/src/MakeIoplacer.cpp.o CMakeFiles/ppl.dir/src/Netlist.cpp.o
-/usr/bin/ranlib ppl.a

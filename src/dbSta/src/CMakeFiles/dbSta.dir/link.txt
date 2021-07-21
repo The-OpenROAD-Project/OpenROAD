@@ -1,2 +1,0 @@
-/usr/bin/ar qc dbSta.a  CMakeFiles/dbSta.dir/CMakeFiles/dbSta.dir/dbStaTCL_wrap.cxx.o CMakeFiles/dbSta.dir/dbSta-tclInitVar.cc.o CMakeFiles/dbSta.dir/dbSta.cc.o CMakeFiles/dbSta.dir/dbNetwork.cc.o CMakeFiles/dbSta.dir/dbSdcNetwork.cc.o CMakeFiles/dbSta.dir/dbReadVerilog.cc.o
-/usr/bin/ranlib dbSta.a

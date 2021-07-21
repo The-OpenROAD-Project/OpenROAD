@@ -1,2 +1,0 @@
-/usr/bin/ar qc libopendb_swig_common.a  CMakeFiles/opendb_swig_common.dir/swig_common.cpp.o
-/usr/bin/ranlib libopendb_swig_common.a

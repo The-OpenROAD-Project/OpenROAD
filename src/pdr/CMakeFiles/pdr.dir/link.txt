@@ -1,2 +1,0 @@
-/usr/bin/ar qc pdr.a  CMakeFiles/pdr.dir/CMakeFiles/pdr.dir/pdrevTCL_wrap.cxx.o CMakeFiles/pdr.dir/src/MakePdrev.cpp.o CMakeFiles/pdr.dir/src/pdrev.cpp.o CMakeFiles/pdr.dir/src/graph.cpp.o CMakeFiles/pdr.dir/src/node.cpp.o CMakeFiles/pdr.dir/src/edge.cpp.o
-/usr/bin/ranlib pdr.a

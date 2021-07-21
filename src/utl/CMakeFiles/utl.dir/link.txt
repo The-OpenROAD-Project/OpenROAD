@@ -1,2 +1,0 @@
-/usr/bin/ar qc utl.a  CMakeFiles/utl.dir/CMakeFiles/utl.dir/LoggerTCL_wrap.cxx.o CMakeFiles/utl.dir/src/Logger.cpp.o CMakeFiles/utl.dir/src/MakeLogger.cpp.o
-/usr/bin/ranlib utl.a

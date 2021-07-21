@@ -1,2 +1,0 @@
-/usr/bin/ar qc libtm.a  CMakeFiles/tm.dir/tm.cpp.o CMakeFiles/tm.dir/ZFactory.cpp.o CMakeFiles/tm.dir/ZNamespace.cpp.o
-/usr/bin/ranlib libtm.a

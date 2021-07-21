@@ -1,2 +1,0 @@
-/usr/bin/ar qc liblefout.a  CMakeFiles/lefout.dir/lefout.cpp.o
-/usr/bin/ranlib liblefout.a

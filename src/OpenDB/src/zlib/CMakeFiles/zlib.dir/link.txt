@@ -1,2 +1,0 @@
-/usr/bin/ar qc libzlib.a  CMakeFiles/zlib.dir/ZException.cpp.o
-/usr/bin/ranlib libzlib.a

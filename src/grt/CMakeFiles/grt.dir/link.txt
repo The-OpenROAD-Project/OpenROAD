@@ -1,2 +1,0 @@
-/usr/bin/ar qc grt.a  CMakeFiles/grt.dir/CMakeFiles/grt.dir/GlobalRouterTCL_wrap.cxx.o CMakeFiles/grt.dir/grt-tclInitVar.cc.o CMakeFiles/grt.dir/src/AntennaRepair.cpp.o CMakeFiles/grt.dir/src/GlobalRouter.cpp.o CMakeFiles/grt.dir/src/Grid.cpp.o CMakeFiles/grt.dir/src/MakeGlobalRouter.cpp.o CMakeFiles/grt.dir/src/Net.cpp.o CMakeFiles/grt.dir/src/Pin.cpp.o CMakeFiles/grt.dir/src/MakeWireParasitics.cpp.o
-/usr/bin/ranlib grt.a

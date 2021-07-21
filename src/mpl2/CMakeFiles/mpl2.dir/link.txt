@@ -1,2 +1,0 @@
-/usr/bin/ar qc mpl2.a  CMakeFiles/mpl2.dir/CMakeFiles/mpl2.dir/mplTCL_wrap.cxx.o CMakeFiles/mpl2.dir/mpl2-tclInitVar.cc.o CMakeFiles/mpl2.dir/src/MakeMacroPlacer.cpp.o CMakeFiles/mpl2.dir/src/rtl_mp.cpp.o CMakeFiles/mpl2.dir/src/pin_alignment.cpp.o CMakeFiles/mpl2.dir/src/block_placement.cpp.o CMakeFiles/mpl2.dir/src/shape_engine.cpp.o CMakeFiles/mpl2.dir/src/util.cpp.o
-/usr/bin/ranlib mpl2.a
