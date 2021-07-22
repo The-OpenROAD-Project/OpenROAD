@@ -34,22 +34,31 @@
 ###############################################################################
 
 sta::define_cmd_args "set_routing_alpha" { alpha \
-                                          [-net net_name] }
+                                          [-net net_name] \
+                                          [-min_fanout fanout] \
+                                          [-min_hpwl hpwl]}
 
 proc set_routing_alpha { args } {
   sta::parse_key_args "set_routing_alpha" args \
-                 keys {-net}
+                 keys {-net -min_fanout -min_hpwl}
 
   set alpha [lindex $args 0]
   if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
     utl::error STT 1 "The alpha value must be between 0.0 and 1.0."
   }
+
   if { [info exists keys(-net)] } {
     set net_names $keys(-net)
     set nets [stt::parse_net_names "set_routing_alpha" $net_names]
     foreach net $nets {
       stt::set_net_alpha $net $alpha
     }
+  } elseif { [info exists keys(-min_fanout)] } {
+    set fanout $keys(-min_fanout)
+    stt::set_min_fanout_alpha $fanout $alpha
+  } elseif { [info exists keys(-min_hpwl)] } {
+    set hpwl [ord::microns_to_dbu $keys(-min_hpwl)]
+    stt::set_min_hpwl_alpha $hpwl $alpha
   } elseif { [llength $args] == 1 } {
     stt::set_routing_alpha_cmd $alpha
   } else {

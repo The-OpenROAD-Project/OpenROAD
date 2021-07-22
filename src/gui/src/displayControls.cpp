@@ -171,17 +171,21 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   // Nets group
   auto nets_parent = makeItem(
-      nets_group_, "Nets", model_, Qt::Checked, [this](bool visible) {
+      nets_group_,
+      "Nets", model_,
+      Qt::Checked,
+      [this](bool visible) {
         toggleAllChildren(visible, nets_group_.name, Visible);
+      },
+      [this](bool selectable) {
+        toggleAllChildren(selectable, nets_group_.name, Selectable);
       });
 
-  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked);
-
-  makeItem(nets_.power, "Power", nets_parent, Qt::Checked);
-
-  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked);
-
-  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked);
+  // make net items, non-null last argument to create checkbox
+  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
 
   // Instance group
   auto instances_parent = makeItem(
@@ -261,9 +265,13 @@ void DisplayControls::readSettings(QSettings* settings)
 
   settings->beginGroup("nets");
   nets_.signal.visible->setCheckState(getChecked(settings, "signal_visible"));
+  nets_.signal.selectable->setCheckState(getChecked(settings, "signal_selectable"));
   nets_.power.visible->setCheckState(getChecked(settings, "power_visible"));
+  nets_.power.selectable->setCheckState(getChecked(settings, "power_selectable"));
   nets_.ground.visible->setCheckState(getChecked(settings, "ground_visible"));
+  nets_.ground.selectable->setCheckState(getChecked(settings, "ground_selectable"));
   nets_.clock.visible->setCheckState(getChecked(settings, "clock_visible"));
+  nets_.clock.selectable->setCheckState(getChecked(settings, "clock_selectable"));
   settings->endGroup();  // nets
 
   settings->beginGroup("instances");
@@ -309,9 +317,13 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   settings->beginGroup("nets");
   settings->setValue("signal_visible", asBool(nets_.signal.visible));
+  settings->setValue("signal_selectable", asBool(nets_.signal.selectable));
   settings->setValue("power_visible", asBool(nets_.power.visible));
+  settings->setValue("power_selectable", asBool(nets_.power.selectable));
   settings->setValue("ground_visible", asBool(nets_.ground.visible));
+  settings->setValue("ground_selectable", asBool(nets_.ground.selectable));
   settings->setValue("clock_visible", asBool(nets_.clock.visible));
+  settings->setValue("clock_selectable", asBool(nets_.clock.selectable));
   settings->endGroup();  // nets
 
   settings->beginGroup("instances");
@@ -610,6 +622,22 @@ bool DisplayControls::isNetVisible(odb::dbNet* net)
       return nets_.ground.visible->checkState() == Qt::Checked;
     case dbSigType::CLOCK:
       return nets_.clock.visible->checkState() == Qt::Checked;
+    default:
+      return true;
+  }
+}
+
+bool DisplayControls::isNetSelectable(odb::dbNet* net)
+{
+  switch (net->getSigType()) {
+    case dbSigType::SIGNAL:
+      return nets_.signal.selectable->checkState() == Qt::Checked;
+    case dbSigType::POWER:
+      return nets_.power.selectable->checkState() == Qt::Checked;
+    case dbSigType::GROUND:
+      return nets_.ground.selectable->checkState() == Qt::Checked;
+    case dbSigType::CLOCK:
+      return nets_.clock.selectable->checkState() == Qt::Checked;
     default:
       return true;
   }

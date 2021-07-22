@@ -14,4 +14,7 @@ report_pdrev_net $dup3 $alpha 1
 
 # 2 duplicate points
 set dup4 {dup4 0 {p0 10 10} {p1 10 10}}
-report_pdrev_net $dup4 .4 1
+report_pdrev_net $dup4 $alpha 1
+
+set one {one 0 {p0 10 10}}
+report_pdrev_net $one $alpha 1
