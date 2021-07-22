@@ -1,14 +1,14 @@
 source "helpers.tcl"
 
 read_lef ../../../test/Nangate45/Nangate45.lef
-read_def gcd_M7_pin/floorplan.def
+read_def gcd_dual_rails/floorplan.def
 
 # Stdcell power/ground pins
 add_global_connection -net VDD -pin_pattern {^VDD$} -power
 add_global_connection -net VSS -pin_pattern {^VSS$} -ground
 
 # RAM power ground pins
-add_global_connection -net VDD -pin_pattern {^VDDPE$} 
+add_global_connection -net VDD -pin_pattern {^VDDPE$}
 add_global_connection -net VDD -pin_pattern {^VDDCE$}
 add_global_connection -net VSS -pin_pattern {^VSSE$}
 
@@ -27,7 +27,7 @@ add_pdn_connect -name main_grid -layers {metal4 metal7}
 
 pdngen -verbose
 
-set def_file results/test_gcd_M7_pin.def
+set def_file results/test_gcd_dual_rails.def
 write_def $def_file 
 
-diff_files $def_file test_gcd_M7_pin.defok
+diff_files $def_file test_gcd_dual_rails.defok
