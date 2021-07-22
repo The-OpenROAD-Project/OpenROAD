@@ -479,7 +479,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     }
     updateDbInstLocations();
   } else
-    logger_->warn(MPL, 72, "No partition solutions found..");
+    logger_->warn(MPL, 72, "No partition solutions found.");
 }
 
 int MacroPlacer::weight(int idx1, int idx2)
