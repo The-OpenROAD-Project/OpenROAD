@@ -390,13 +390,13 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
 
 void DisplayControls::itemChanged(QStandardItem* item)
 {
-  if (item->isCheckable() == false || ignore_callback_) {
+  if (item->isCheckable() == false) {
     emit changed();
     return;
   }
   bool checked = item->checkState() == Qt::Checked;
   Callback callback = item->data().value<Callback>();
-  if (callback.action) {
+  if (callback.action && !ignore_callback_) {
     callback.action(checked);
   }
   QModelIndex item_index = item->index();
