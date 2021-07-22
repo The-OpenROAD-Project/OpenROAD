@@ -508,7 +508,9 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
       break;
     }
 
-    default: {}
+    default: {
+      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+    }
   }
 }
 

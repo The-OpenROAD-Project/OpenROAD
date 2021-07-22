@@ -825,11 +825,10 @@ void FlexDRWorker::initNets_searchRepair(
   }
 }
 
-void FlexDRWorker::getTrackLocsRestrRouting(frLayerNum startLayerNum,
+void FlexDRWorker::getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
                                             Rectangle& pinRect,
                                             std::set<frCoord>& xLocs,
                                             std::set<frCoord>& yLocs) {
-    using namespace boost::polygon::operators;
     for (frLayerNum lNum = startLayerNum; lNum < getTech()->getTopLayerNum();
                                                                     lNum += 2) {
         frPrefRoutingDirEnum currPrefRouteDir
@@ -1004,7 +1003,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             }
             // get intersecting tracks if any
             if (restrictedRouting) {
-                getTrackLocsRestrRouting(currLayerNum + 2, pinRect, xLocs, yLocs);
+                getTrackLocsRestrictedRouting(currLayerNum + 2, pinRect, xLocs, yLocs);
             } else if (currPrefRouteDir == frcHorzPrefRoutingDir) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {

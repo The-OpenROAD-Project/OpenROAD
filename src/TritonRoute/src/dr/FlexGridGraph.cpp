@@ -151,11 +151,11 @@ void FlexGridGraph::initEdges(
     const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
     bool restrictedRouting = layerNum < BOTTOM_ROUTING_LAYER
                              || layerNum > TOP_ROUTING_LAYER
-                             || layer->isUnidirectional();
-    restrictedRouting = restrictedRouting
-                        || nonPrefLayerNum < BOTTOM_ROUTING_LAYER
-                        || nonPrefLayerNum > TOP_ROUTING_LAYER
-                        || nonPrefLayer->isUnidirectional();
+                             || layer->isUnidirectional()
+                             || nonPrefLayerNum < BOTTOM_ROUTING_LAYER
+                             || nonPrefLayerNum > TOP_ROUTING_LAYER
+                             || nonPrefLayer->isUnidirectional();
+                        
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
       auto yIt = ySubMap.find(layerNum);

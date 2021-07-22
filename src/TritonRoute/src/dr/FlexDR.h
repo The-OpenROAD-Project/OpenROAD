@@ -665,7 +665,7 @@ class FlexDRWorker
                     frCoord low,
                     frCoord high,
                     std::set<frCoord>& trackLocs);
-  void getTrackLocsRestrRouting(frLayerNum startLayerNum,
+  void getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
                                 Rectangle& pinRect,
                                 std::set<frCoord>& xLocs,
                                 std::set<frCoord>& yLocs);
