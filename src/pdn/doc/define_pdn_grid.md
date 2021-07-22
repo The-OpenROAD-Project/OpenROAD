@@ -32,7 +32,7 @@ Rules for adding stdcell rails and supply straps can be added to the grid specif
 Rules for adding rings around the grid can be added to the grid specification using the [add_pdn_ring](add_pdn_ring.md) command.
 Connections between layers are specified using the [add_pdn_connect](add_pdn_connect.md) command.
 
-The -name argument is used to create a name for the grid that can be used in subsequent add_pdn_* commands
+The -name argument is used to create a name for the grid that can be used in subsequent add_pdn_* commands. If the -name argument is not provided, then a name will be created in the form <voltage_domain1>(_<voltage_domainN>)_(stdcell|macro)_<idx>
 
 The -pins argument is used to create power and ground pins on the power and ground stripes of the specified layers.
 
