@@ -233,17 +233,22 @@ class DisplayControls : public QDockWidget, public Options
 
   void techInit();
 
-  template <typename T>
-  QStandardItem* makeItem(ModelRow& row,
-                          const QString& text,
-                          T* parent,
-                          Qt::CheckState checked,
-                          const CallbackFunction& visibility_action
-                          = CallbackFunction(),
-                          const CallbackFunction& select_action
-                          = CallbackFunction(),
-                          const QColor& color = Qt::transparent,
-                          odb::dbTechLayer* tech_layer = nullptr);
+  QStandardItem* makeParentItem(ModelRow& row,
+                                const QString& text,
+                                QStandardItemModel* parent,
+                                Qt::CheckState checked,
+                                const CallbackFunction& visibility_action
+                                = CallbackFunction(),
+                                const CallbackFunction& select_action
+                                = CallbackFunction());
+
+  void makeLeafItem(ModelRow& row,
+                    const QString& text,
+                    QStandardItem* parent,
+                    Qt::CheckState checked,
+                    bool add_selectable = false,
+                    const QColor& color = Qt::transparent,
+                    odb::dbTechLayer* tech_layer = nullptr);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
   void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);

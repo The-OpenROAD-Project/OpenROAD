@@ -156,7 +156,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   header->setSectionResizeMode(Visible, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Selectable, QHeaderView::ResizeToContents);
 
-  auto layers = makeItem(
+  auto layers = makeParentItem(
       layers_group_,
       "Layers",
       model_,
@@ -170,7 +170,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   view_->expand(layers->index());
 
   // Nets group
-  auto nets_parent = makeItem(
+  auto nets_parent = makeParentItem(
       nets_group_,
       "Nets",
       model_,
@@ -183,13 +183,13 @@ DisplayControls::DisplayControls(QWidget* parent)
       });
 
   // make net items, non-null last argument to create checkbox
-  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
-  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
-  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
-  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
+  makeLeafItem(nets_.signal, "Signal", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.power, "Power", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.ground, "Ground", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
 
   // Instance group
-  auto instances_parent = makeItem(
+  auto instances_parent = makeParentItem(
       instance_group_,
       "Instances",
       model_,
@@ -202,36 +202,36 @@ DisplayControls::DisplayControls(QWidget* parent)
       });
 
   // make instance items, non-null last argument to create checkbox
-  makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
-  makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
-  makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
-  makeItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
-  makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
-  makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
+  makeLeafItem(instances_.core, "StdCells", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.fill, "Fill", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
 
   // Rows
-  makeItem(rows_, "Rows", model_, Qt::Unchecked);
+  makeParentItem(rows_, "Rows", model_, Qt::Unchecked);
 
   // Rows
-  makeItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
-  makeItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
+  makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
+  makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
 
   // Track patterns group
-  auto tracks = makeItem(
+  auto tracks = makeParentItem(
       tracks_group_, "Tracks", model_, Qt::Unchecked, [this](bool visible) {
         toggleAllChildren(visible, tracks_group_.name, Visible);
       });
 
-  makeItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
-  makeItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
+  makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
+  makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
 
   // Misc group
-  auto misc = makeItem(
+  auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked, [this](bool visible) {
         toggleAllChildren(visible, misc_group_.name, Visible);
       });
 
-  makeItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
 
   setWidget(view_);
   connect(model_,
@@ -493,13 +493,12 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
-      makeItem(
+      makeLeafItem(
           layer_controls_[layer],
           QString::fromStdString(layer->getName()),
           layers_group_.name,
           Qt::Checked,
-          CallbackFunction(),
-          [this](bool selectable) {},  // non-null to create checkbox
+          true,
           color(layer),
           type == dbTechLayerType::CUT ? NULL : layer);
     }
@@ -510,14 +509,35 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   emit changed();
 }
 
-template <typename T>
-QStandardItem* DisplayControls::makeItem(
+QStandardItem* DisplayControls::makeParentItem(
     ModelRow& row,
     const QString& text,
-    T* parent,
+    QStandardItemModel* parent,
     Qt::CheckState checked,
     const CallbackFunction& visibility_action,
-    const CallbackFunction& select_action,
+    const CallbackFunction& select_action)
+{
+  bool add_selectable = false;
+  if (select_action) {
+    add_selectable = true;
+  }
+
+  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable);
+
+  row.visible->setData(QVariant::fromValue(Callback({visibility_action})));
+  if (add_selectable) {
+    row.selectable->setData(QVariant::fromValue(Callback({select_action})));
+  }
+
+  return row.name;
+}
+
+void DisplayControls::makeLeafItem(
+    ModelRow& row,
+    const QString& text,
+    QStandardItem* parent,
+    Qt::CheckState checked,
+    bool add_selectable,
     const QColor& color,
     odb::dbTechLayer* tech_layer)
 {
@@ -539,18 +559,15 @@ QStandardItem* DisplayControls::makeItem(
   row.visible->setCheckable(true);
   row.visible->setEditable(false);
   row.visible->setCheckState(checked);
-  row.visible->setData(QVariant::fromValue(Callback({visibility_action})));
 
-  if (select_action) {
+  if (add_selectable) {
     row.selectable = new QStandardItem("");
     row.selectable->setCheckable(true);
     row.selectable->setEditable(false);
     row.selectable->setCheckState(checked);
-    row.selectable->setData(QVariant::fromValue(Callback({select_action})));
   }
 
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
-  return row.name;
 }
 
 QColor DisplayControls::color(const odb::dbTechLayer* layer)
@@ -688,14 +705,14 @@ void DisplayControls::addCustomVisibilityControl(const std::string& name,
 {
   auto q_name = QString::fromStdString(name);
   auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
-  makeItem(custom_controls_[name],
-           q_name,
-           model_,
-           checked,
-           [this, name](bool visible) {
-             custom_controls_[name].visible->setCheckState(
-                 visible ? Qt::Checked : Qt::Unchecked);
-           });
+  makeParentItem(custom_controls_[name],
+                 q_name,
+                 model_,
+                 checked,
+                 [this, name](bool visible) {
+                   custom_controls_[name].visible->setCheckState(
+                       visible ? Qt::Checked : Qt::Unchecked);
+                 });
 }
 
 bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
