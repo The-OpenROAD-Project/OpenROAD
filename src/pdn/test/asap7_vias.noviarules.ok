@@ -26,7 +26,7 @@ Type: stdcell, grid
       Layer: M3  -  width: 0.936  pitch: 31.680  spacing: 1.512  offset: 1.872 
       Layer: M6  -  width: 1.152  pitch: 56.320  spacing: 2.688  offset: 6.408 
     Connect: 
-      {M1 M2 constraints {cut_pitch 0.288} foxed_vias VIA12} 
+      {M1 M2 constraints {cut_pitch 0.288} fixed_vias VIA12} 
       {M2 M3 fixed_vias {VIA23}} 
       {M3 M6 fixed_vias {VIA34 VIA45 VIA56}} 
     
