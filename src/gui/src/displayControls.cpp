@@ -182,10 +182,10 @@ DisplayControls::DisplayControls(QWidget* parent)
       });
 
   // make net items, non-null last argument to create checkbox
-  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
-  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
-  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
-  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
+  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
+  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
+  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, CallbackFunction(), [](bool) {});
 
   // Instance group
   auto instances_parent = makeItem(
@@ -201,12 +201,12 @@ DisplayControls::DisplayControls(QWidget* parent)
       });
 
   // make instance items, non-null last argument to create checkbox
-  makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
-  makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
-  makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
-  makeItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
-  makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
-  makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
+  makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
+  makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
+  makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
+  makeItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
+  makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
+  makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, CallbackFunction(), [](bool){});
 
   // Rows
   makeItem(rows_, "Rows", model_, Qt::Unchecked);
@@ -497,7 +497,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           QString::fromStdString(layer->getName()),
           layers_group_.name,
           Qt::Checked,
-          std::function<void(bool)>(),
+          CallbackFunction(),
           [this](bool selectable) {},  // non-null to create checkbox
           color(layer),
           type == dbTechLayerType::CUT ? NULL : layer);
@@ -515,8 +515,8 @@ QStandardItem* DisplayControls::makeItem(
     const QString& text,
     T* parent,
     Qt::CheckState checked,
-    const std::function<void(bool)>& visibility_action,
-    const std::function<void(bool)>& select_action,
+    const CallbackFunction& visibility_action,
+    const CallbackFunction& select_action,
     const QColor& color,
     odb::dbTechLayer* tech_layer)
 {

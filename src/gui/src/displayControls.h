@@ -61,9 +61,11 @@ class dbInst;
 
 namespace gui {
 
+using CallbackFunction = std::function<void(bool)>;
+
 struct Callback
 {
-  std::function<void(bool)> action;
+  CallbackFunction action;
 };
 
 class PatternButton : public QRadioButton
@@ -236,10 +238,10 @@ class DisplayControls : public QDockWidget, public Options
                           const QString& text,
                           T* parent,
                           Qt::CheckState checked,
-                          const std::function<void(bool)>& visibility_action
-                          = std::function<void(bool)>(),
-                          const std::function<void(bool)>& select_action
-                          = std::function<void(bool)>(),
+                          const CallbackFunction& visibility_action
+                          = CallbackFunction(),
+                          const CallbackFunction& select_action
+                          = CallbackFunction(),
                           const QColor& color = Qt::transparent,
                           odb::dbTechLayer* tech_layer = nullptr);
 
