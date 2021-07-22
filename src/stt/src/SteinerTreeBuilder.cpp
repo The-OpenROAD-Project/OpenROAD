@@ -145,7 +145,9 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
       min_y = std::min(min_y, y);
       max_y = std::max(max_y, y);
     } else {
-      logger_->error(utl::STT, 4, "Net {} has instances not placed.", net->getName());
+      logger_->error(utl::STT, 4, "Net {} is connected to unplaced instance {}.",
+                     net->getName(),
+                     iterm->getInst()->getName());
     }
   }
 
@@ -159,7 +161,9 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
       min_y = std::min(min_y, y);
       max_y = std::max(max_y, y);
     } else {
-      logger_->error(utl::STT, 5, "Net {} has pins not placed.", net->getName());
+      logger_->error(utl::STT, 5, "Net {} is connected to unplaced pin {}.",
+                     net->getName(),
+                     bterm->getName());
     }
   }
 
