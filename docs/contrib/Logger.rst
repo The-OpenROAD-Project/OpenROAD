@@ -8,7 +8,7 @@ message format is as follows:
 
 .. code-block:: text
 
-   <tool id> <message id> : <Message body>.
+   <tool id>-<message id>  <Message body>.
 
 For Example,
 
@@ -30,7 +30,7 @@ Handling Messages
 ------------------
 
 OpenROAD supports multiple levels of severity for message outputs as:
-Critical, Error, Warning, Information, Debug. These are supported by
+critical, error, warning, information and debug. These are supported by
 automatic calls to the logger which will then prefix the appropriate severity
 type to the message.
 
@@ -48,7 +48,7 @@ exceptions. Use capital letters for file formats and tool names. e.g., LEF,
 DEF, SPICE.
 
 After the first word's capitalization, do not use capital letters (aside
-from obvious exceptions - RSMT, hCut, etc.
+from obvious exceptions) - RSMT, hCut, etc.
 
 Do not use exclamations. Severity must be communicated by message severity
 and clear implied or explicit action.
@@ -141,7 +141,7 @@ Message Types
 ~~~~~~~~~~~~~
 
 OpenROAD supports the following levels of severity through the logger:
-Report, Debug, Information, Error, Warning and Critical.
+report, debug, information, error, warning and critical.
 
 Report
 ++++++
@@ -149,7 +149,7 @@ Report
 Reports are tool output in the form of a report to the user. Examples
 include timing paths or power analysis results.
 
-Example Report message:
+Example report message:
 
 .. code-block:: text
 
@@ -169,7 +169,7 @@ results, or program status to the user. Any message which indicates
 runtime problems, such as potential faulty input or other internal
 program issues, should be issued at a higher status level.
 
-Example Information messages:
+Example information messages:
 
 .. code-block:: text
 
@@ -184,7 +184,7 @@ Warnings should be used for indicating atypical runtime conditions that
 may affect quality, but not correctness of the output. Any conditions
 that affect correctness should be issued at a higher status level.
 
-Example Warning messages:
+Example warning messages:
 
 .. code-block:: text
 
@@ -199,11 +199,11 @@ Error
 
 Error messages should be used for indicating correctness problems.
 Problems with command arguments are a good example of errors. Errors
-exit the current command by throwing an exception that can be caught in a Tcl
+exit the current command by throwing an exception that is converted to a tcl
 command script. Errors that occur while reading a command file stop
 executing the script commands.
 
-Example Error messages:
+Example error messages:
 
 .. code-block:: text
 
@@ -220,7 +220,7 @@ Critical messages should be used for indicating correctness problems
 that the program is not able to work around or ignore, and require
 immediate exiting of the program (abort).
 
-Example Critical messages:
+Example critical messages:
 
 .. code-block:: text
 
@@ -433,7 +433,7 @@ ioPlacer         ppl
 OpenDB           odb
 opendp           dpl
 OpenRCX          rcx
-OpenROAD         ord
+*OpenROAD*         ord
 OpenSTA          sta
 PartMgr          par
 pdngen           pdn
