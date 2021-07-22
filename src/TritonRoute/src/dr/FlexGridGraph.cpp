@@ -106,7 +106,7 @@ bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
 bool FlexGridGraph::hasAlignedUpDefTrack(
     frLayerNum layerNum,
     const map<frLayerNum, frTrackPattern*>& xSubMap,
-    const map<frLayerNum, frTrackPattern*>& ySubMap)
+    const map<frLayerNum, frTrackPattern*>& ySubMap) const
 {
   for (frLayerNum lNum = layerNum + 2;
        lNum < (int) getTech()->getLayers().size();

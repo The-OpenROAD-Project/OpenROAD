@@ -1174,8 +1174,8 @@ class FlexGridGraph
               const FlexMazeIdx& dstMazeIdx2,
               const frPoint& centerPt);
   bool hasAlignedUpDefTrack(frLayerNum layerNum,
-                            const map<frLayerNum, frTrackPattern*>& xSubMap,
-                            const map<frLayerNum, frTrackPattern*>& ySubMap);
+                        const map<frLayerNum, frTrackPattern*>& xSubMap,
+                        const map<frLayerNum, frTrackPattern*>& ySubMap) const;
 
  private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
