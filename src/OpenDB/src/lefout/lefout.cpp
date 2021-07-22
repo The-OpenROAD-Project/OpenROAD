@@ -32,71 +32,184 @@
 
 #include "lefout.h"
 
+#include <dbShape.h>
 #include <stdio.h>
 
 #include <algorithm>
-#include <unordered_map>
 
 #include "db.h"
 #include "dbTransform.h"
 
 using namespace odb;
 
-void lefout::writeBoxes(void* boxes, const char* indent)
+void lefout::writeVersion(const char* version)
 {
-  dbSet<dbBox>* geoms = (dbSet<dbBox>*) boxes;
-  dbSet<dbBox>::iterator bitr;
+  fprintf(_out, "VERSION %s ;\n", version);
+}
+
+template <typename GenericBox>
+void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
+{
   dbTechLayer* cur_layer = NULL;
 
-  for (bitr = geoms->begin(); bitr != geoms->end(); ++bitr) {
-    dbBox* box = *bitr;
+  for (GenericBox* generic_box : boxes) {
+    if (generic_box == nullptr) {
+      continue;
+    }
+
+    dbBox* box = generic_box;
     dbTechLayer* layer = box->getTechLayer();
 
-    if (box->isVia()) {
-      dbTechVia* via = box->getTechVia();
-      assert(via);
+    // Checks if the box is either a tech via or a block via.
+    if (box->getTechVia() || box->getBlockVia()) {
+      std::string via_name;
+      if (box->getTechVia()) {
+        via_name = box->getTechVia()->getName();
+      }
+      if (box->getBlockVia()) {
+        via_name = box->getBlockVia()->getName();
+      }
+
       int x, y;
       box->getViaXY(x, y);
-      std::string n = via->getName();
       fprintf(_out,
               "%sVIA %g %g %s ;\n",
               indent,
               lefdist(x),
               lefdist(y),
-              n.c_str());
+              via_name.c_str());
       cur_layer = NULL;
     } else {
-      int x1 = box->xMin();
-      int y1 = box->yMin();
-      int x2 = box->xMax();
-      int y2 = box->yMax();
-
-      std::string n;
+      std::string layer_name;
       if (_use_alias && layer->hasAlias())
-        n = layer->getAlias();
+        layer_name = layer->getAlias();
       else
-        n = layer->getName();
+        layer_name = layer->getName();
 
       if (cur_layer != layer) {
-        std::string n;
-
-        if (_use_alias && layer->hasAlias())
-          n = layer->getAlias();
-        else
-          n = layer->getName();
-
-        fprintf(_out, "%sLAYER %s ;\n", indent, n.c_str());
+        fprintf(_out, "%sLAYER %s ;\n", indent, layer_name.c_str());
         cur_layer = layer;
       }
 
-      fprintf(_out,
-              "%s  RECT  %g %g %g %g ;\n",
-              indent,
-              lefdist(x1),
-              lefdist(y1),
-              lefdist(x2),
-              lefdist(y2));
+      writeBox(indent, box);
     }
+  }
+}
+
+void lefout::writeBox(std::string indent, dbBox* box)
+{
+  int x1 = box->xMin();
+  int y1 = box->yMin();
+  int x2 = box->xMax();
+  int y2 = box->yMax();
+
+  fprintf(_out,
+          "%s  RECT  %g %g %g %g ;\n",
+          indent.c_str(),
+          lefdist(x1),
+          lefdist(y1),
+          lefdist(x2),
+          lefdist(y2));
+}
+
+void lefout::writeHeader(dbBlock* db_block)
+{
+  char left_bus_delimeter = 0;
+  char right_bus_delimeter = 0;
+  char hier_delimeter = db_block->getHierarchyDelimeter();
+
+  db_block->getBusDelimeters(left_bus_delimeter, right_bus_delimeter);
+
+  if (left_bus_delimeter == 0)
+    left_bus_delimeter = '[';
+
+  if (right_bus_delimeter == 0)
+    right_bus_delimeter = ']';
+
+  if (hier_delimeter == 0)
+    hier_delimeter = '|';
+
+  writeVersion("5.8");
+  writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
+  writeDividerChar(hier_delimeter);
+  writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
+}
+
+void lefout::writeObstructions(dbBlock* db_block)
+{
+  std::set<dbTechLayer*> obstruction_layers;
+  getTechLayerObstructions(db_block, obstruction_layers);
+
+  fprintf(_out, "  OBS\n");
+  dbBox* block_bounding_box = db_block->getBBox();
+  for (dbTechLayer* tech_layer : obstruction_layers) {
+    fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
+    writeBox("  ", block_bounding_box);
+  }
+  fprintf(_out, "  END\n");
+}
+
+void lefout::getTechLayerObstructions(
+    dbBlock* db_block,
+    std::set<dbTechLayer*>& obstruction_layers) const
+{
+  for (dbNet* net : db_block->getNets()) {
+    findSWireLayerObstructions(obstruction_layers, net);
+    findWireLayerObstructions(obstruction_layers, net);
+  }
+}
+
+void lefout::findSWireLayerObstructions(
+    std::set<dbTechLayer*>& obstruction_layers,
+    dbNet* net) const
+{  // Find all layers where an swire exists
+  for (dbSWire* swire : net->getSWires()) {
+    for (dbSBox* box : swire->getWires()) {
+      if (box->isVia()) {
+        // In certain power grid arrangements there may be a metal layer that
+        // isn't directly used for straps or stripes just punching vias through.
+        // In these cases the metal layer should still be blocked even though
+        // we can't find any metal wires on the layer.
+        // https://github.com/The-OpenROAD-Project/OpenROAD/pull/725#discussion_r669927312
+        findLayerViaObstructions(obstruction_layers, box);
+      } else {
+        obstruction_layers.insert(box->getTechLayer());
+      }
+    }
+  }
+}
+void lefout::findLayerViaObstructions(
+    std::set<dbTechLayer*>& obstruction_layers,
+    dbSBox* box) const
+{
+  std::vector<dbShape> via_shapes;
+  box->getViaBoxes(via_shapes);
+  for (dbShape db_shape : via_shapes) {
+    if (db_shape.isViaBox()) {
+      continue;
+    }
+    obstruction_layers.insert(db_shape.getTechLayer());
+  }
+}
+void lefout::findWireLayerObstructions(
+    std::set<dbTechLayer*>& obstruction_layers,
+    dbNet* net) const
+{
+  // Find all metal layers where a wire exists.
+  dbWire* wire = net->getWire();
+
+  if (wire == nullptr) {
+    return;
+  }
+
+  dbWireShapeItr wire_shape_itr;
+  dbShape shape;
+
+  for (wire_shape_itr.begin(wire); wire_shape_itr.next(shape);) {
+    if (shape.isVia()) {
+      continue;
+    }
+    obstruction_layers.insert(shape.getTechLayer());
   }
 }
 
@@ -104,8 +217,10 @@ void lefout::writeHeader(dbLib* lib)
 {
   dbTech* tech = lib->getDb()->getTech();
 
-  char left_bus_delimeter;
-  char right_bus_delimeter;
+  char left_bus_delimeter = 0;
+  char right_bus_delimeter = 0;
+  char hier_delimeter = lib->getHierarchyDelimeter();
+
   lib->getBusDelimeters(left_bus_delimeter, right_bus_delimeter);
 
   if (left_bus_delimeter == 0)
@@ -114,26 +229,102 @@ void lefout::writeHeader(dbLib* lib)
   if (right_bus_delimeter == 0)
     right_bus_delimeter = ']';
 
-  char hier_delimeter = lib->getHierarchyDelimeter();
-
   if (hier_delimeter == 0)
     hier_delimeter = '|';
 
-  fprintf(_out, "VERSION %s ;\n", tech->getLefVersionStr());
-  fprintf(_out,
-          "NAMESCASESENSITIVE %s ;\n",
-          tech->getNamesCaseSensitive().getString());
+  writeVersion(tech->getLefVersionStr());
+  writeNameCaseSensitive(tech->getNamesCaseSensitive());
+  writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
+  writeDividerChar(hier_delimeter);
+  writePropertyDefinitions(lib);
+
+  if (lib->getLefUnits()) {
+    writeUnits(lib->getLefUnits());
+  }
+}
+
+void lefout::writeDividerChar(char hier_delimeter)
+{
+  fprintf(_out, "DIVIDERCHAR \"%c\" ;\n", hier_delimeter);
+}
+
+void lefout::writeUnits(int database_units)
+{
+  fprintf(_out, "UNITS\n");
+  fprintf(_out, "    DATABASE MICRONS %d ;\n", database_units);
+  fprintf(_out, "END UNITS\n");
+}
+
+void lefout::writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter)
+{
   fprintf(_out,
           "BUSBITCHARS \"%c%c\" ;\n",
           left_bus_delimeter,
           right_bus_delimeter);
-  fprintf(_out, "DIVIDERCHAR \"%c\" ;\n", hier_delimeter);
-  writePropertyDefinitions(lib);
+}
 
-  if (lib->getLefUnits()) {
-    fprintf(_out, "UNITS\n");
-    fprintf(_out, "    DATABASE MICRONS %d ;\n", lib->getLefUnits());
-    fprintf(_out, "END UNITS\n");
+void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
+{
+  fprintf(_out, "NAMESCASESENSITIVE %s ;\n", on_off_type.getString());
+}
+
+void lefout::writeBlock(dbBlock* db_block)
+{
+  dbBox* bounding_box = db_block->getBBox();
+  double origin_x = lefdist(bounding_box->xMin());
+  double origin_y = lefdist(bounding_box->xMin());
+  double size_x = lefdist(bounding_box->getDX());
+  double size_y = lefdist(bounding_box->getDY());
+
+  fprintf(_out, "MACRO %s\n", db_block->getName().c_str());
+  fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
+  fprintf(_out, "  CLASS BLOCK ;\n");
+  fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
+  fprintf(_out, "  SIZE %g BY %g ;\n", size_x, size_y);
+  writePins(db_block);
+  writeObstructions(db_block);
+  fprintf(_out, "END %s\n", db_block->getName().c_str());
+}
+
+void lefout::writePins(dbBlock* db_block)
+{
+  writePowerPins(db_block);
+  writeBlockTerms(db_block);
+}
+
+void lefout::writeBlockTerms(dbBlock* db_block)
+{
+  for (dbBTerm* b_term : db_block->getBTerms()) {
+    fprintf(_out, "  PIN %s\n", b_term->getName().c_str());
+    fprintf(_out, "    DIRECTION %s ;\n", b_term->getIoType().getString());
+    fprintf(_out, "    USE %s ;\n", b_term->getSigType().getString());
+    for (dbBPin* db_b_pin : b_term->getBPins()) {
+      fprintf(_out, "    PORT\n");
+      dbSet<dbBox> term_pins = db_b_pin->getBoxes();
+      writeBoxes(term_pins, "      ");
+      fprintf(_out, "    END\n");
+    }
+    fprintf(_out, "  END %s\n", b_term->getName().c_str());
+  }
+}
+
+void lefout::writePowerPins(dbBlock* db_block)
+{  // Power Ground.
+  for (dbNet* net : db_block->getNets()) {
+    if (!net->getSigType().isSupply()) {
+      continue;
+    }
+    fprintf(_out, "  PIN %s\n", net->getName().c_str());
+    fprintf(_out, "    USE %s ;\n", net->getSigType().getString());
+    fprintf(
+        _out, "    DIRECTION %s ;\n", dbIoType(dbIoType::INOUT).getString());
+    for (dbSWire* special_wire : net->getSWires()) {
+      fprintf(_out, "    PORT\n");
+      dbSet<dbSBox> wires = special_wire->getWires();
+      writeBoxes(wires, /*indent=*/"      ");
+      fprintf(_out, "    END\n");
+    }
+    fprintf(_out, "  END %s\n", net->getName().c_str());
   }
 }
 
@@ -593,7 +784,7 @@ void lefout::writeVia(dbTechVia* via)
 
   if (rule == NULL) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(&boxes, "    ");
+    writeBoxes(boxes, "    ");
   } else {
     std::string rname = rule->getName();
     fprintf(_out, "\n    VIARULE %s \n", rname.c_str());
@@ -778,7 +969,7 @@ void lefout::writeMaster(dbMaster* master)
 
   if (obs.begin() != obs.end()) {
     fprintf(_out, "    OBS\n");
-    writeBoxes(&obs, "      ");
+    writeBoxes(obs, "      ");
     fprintf(_out, "    END\n");
   }
 
@@ -812,7 +1003,7 @@ void lefout::writeMTerm(dbMTerm* mterm)
 
     if (geoms.begin() != geoms.end()) {
       fprintf(_out, "        PORT\n");
-      writeBoxes(&geoms, "            ");
+      writeBoxes(geoms, "            ");
       fprintf(_out, "        END\n");
     }
   }
@@ -963,7 +1154,7 @@ bool lefout::writeTech(dbTech* tech, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    fprintf(stderr, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1015, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -981,7 +1172,7 @@ bool lefout::writeLib(dbLib* lib, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    fprintf(stderr, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1033, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -999,7 +1190,7 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   _out = fopen(lef_file, "w");
 
   if (_out == NULL) {
-    fprintf(stderr, "Cannot open LEF file %s\n", lef_file);
+    logger_->error(utl::ODB, 1051, "Cannot open LEF file %s\n", lef_file);
     return false;
   }
 
@@ -1011,6 +1202,28 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   writeLib(lib);
   fprintf(_out, "END LIBRARY\n");
   fclose(_out);
+
+  return true;
+}
+
+bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
+{
+  _out = fopen(lef_file, "w");
+  if (_out == nullptr) {
+    logger_->error(utl::ODB, 1072, "Cannot open LEF file %s\n", lef_file);
+  }
+
+  double temporary_dist_factor = _dist_factor;
+  _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
+  _area_factor = _dist_factor * _dist_factor;
+
+  writeHeader(db_block);
+  writeBlock(db_block);
+  fprintf(_out, "END LIBRARY\n");
+  fclose(_out);
+
+  _dist_factor = temporary_dist_factor;
+  _area_factor = _dist_factor * _dist_factor;
 
   return true;
 }
