@@ -172,7 +172,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   // Nets group
   auto nets_parent = makeItem(
       nets_group_,
-      "Nets", model_,
+      "Nets",
+      model_,
       Qt::Checked,
       [this](bool visible) {
         toggleAllChildren(visible, nets_group_.name, Visible);
