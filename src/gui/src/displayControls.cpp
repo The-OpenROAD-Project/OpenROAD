@@ -602,7 +602,7 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
     return instances_.blocks.visible->checkState() == Qt::Checked;
   } else if (master->isPad()) {
     return instances_.pads.visible->checkState() == Qt::Checked;
-  } else if (master->getType() == dbMasterType::COVER || master->getType() == dbMasterType::COVER_BUMP) {
+  } else if (master->isCover()) {
     return instances_.cover.visible->checkState() == Qt::Checked;
   } else {
     return true;
@@ -622,7 +622,7 @@ bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
     return instances_.blocks.selectable->checkState() == Qt::Checked;
   } else if (master->isPad()) {
     return instances_.pads.selectable->checkState() == Qt::Checked;
-  } else if (master->getType() == dbMasterType::COVER || master->getType() == dbMasterType::COVER_BUMP) {
+  } else if (master->isCover()) {
     return instances_.cover.selectable->checkState() == Qt::Checked;
   } else {
     return true;
