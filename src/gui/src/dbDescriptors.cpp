@@ -309,8 +309,15 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
 {
   auto gui = Gui::get();
   auto iterm = std::any_cast<odb::dbITerm*>(object);
+  auto net = iterm->getNet();
+  std::any net_value;
+  if (net != nullptr) {
+    net_value = gui->makeSelected(net);
+  } else {
+    net_value = "<none>";
+  }
   return Properties({{"Instance", gui->makeSelected(iterm->getInst())},
-                     {"Net", gui->makeSelected(iterm->getNet())},
+                     {"Net", net_value},
                      {"MTerm", iterm->getMTerm()->getConstName()}});
 }
 
