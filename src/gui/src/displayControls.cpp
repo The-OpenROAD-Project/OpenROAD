@@ -156,60 +156,63 @@ DisplayControls::DisplayControls(QWidget* parent)
   header->setSectionResizeMode(Visible, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Selectable, QHeaderView::ResizeToContents);
 
-  auto layers = makeItem(
+  auto layers = makeParentItem(
       layers_group_,
       "Layers",
       model_,
       Qt::Checked,
-      [this](bool visible) {
-        toggleAllChildren(visible, layers_group_.name, Visible);
-      },
-      [this](bool selectable) {
-        toggleAllChildren(selectable, layers_group_.name, Selectable);
-      });
+      true);
   view_->expand(layers->index());
 
   // Nets group
-  auto nets_parent = makeItem(
+  auto nets_parent = makeParentItem(
       nets_group_,
-      "Nets", model_,
+      "Nets",
+      model_,
       Qt::Checked,
-      [this](bool visible) {
-        toggleAllChildren(visible, nets_group_.name, Visible);
-      },
-      [this](bool selectable) {
-        toggleAllChildren(selectable, nets_group_.name, Selectable);
-      });
+      true);
 
   // make net items, non-null last argument to create checkbox
-  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
-  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
-  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
-  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeLeafItem(nets_.signal, "Signal", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.power, "Power", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.ground, "Ground", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
+
+  // Instance group
+  auto instances_parent = makeParentItem(
+      instance_group_,
+      "Instances",
+      model_,
+      Qt::Checked,
+      true);
+
+  // make instance items, non-null last argument to create checkbox
+  makeLeafItem(instances_.core, "StdCells", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.fill, "Fill", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
 
   // Rows
-  makeItem(rows_, "Rows", model_, Qt::Unchecked);
+  makeParentItem(rows_, "Rows", model_, Qt::Unchecked);
 
   // Rows
-  makeItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
-  makeItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
+  makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
+  makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
 
   // Track patterns group
-  auto tracks = makeItem(
-      tracks_group_, "Tracks", model_, Qt::Unchecked, [this](bool visible) {
-        toggleAllChildren(visible, tracks_group_.name, Visible);
-      });
+  auto tracks = makeParentItem(
+      tracks_group_, "Tracks", model_, Qt::Unchecked);
 
-  makeItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
-  makeItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
+  makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
+  makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
 
   // Misc group
-  auto misc = makeItem(
-      misc_group_, "Misc", model_, Qt::Unchecked, [this](bool visible) {
-        toggleAllChildren(visible, misc_group_.name, Visible);
-      });
+  auto misc = makeParentItem(
+      misc_group_, "Misc", model_, Qt::Unchecked);
 
-  makeItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
 
   setWidget(view_);
   connect(model_,
@@ -253,6 +256,21 @@ void DisplayControls::readSettings(QSettings* settings)
   nets_.clock.selectable->setCheckState(getChecked(settings, "clock_selectable"));
   settings->endGroup();  // nets
 
+  settings->beginGroup("instances");
+  instances_.core.visible->setCheckState(getChecked(settings, "stdcell_visible"));
+  instances_.core.selectable->setCheckState(getChecked(settings, "stdcell_selectable"));
+  instances_.blocks.visible->setCheckState(getChecked(settings, "blocks_visible"));
+  instances_.blocks.selectable->setCheckState(getChecked(settings, "blocks_selectable"));
+  instances_.fill.visible->setCheckState(getChecked(settings, "fill_visible"));
+  instances_.fill.selectable->setCheckState(getChecked(settings, "fill_selectable"));
+  instances_.endcap.visible->setCheckState(getChecked(settings, "endcap_visible"));
+  instances_.endcap.selectable->setCheckState(getChecked(settings, "endcap_selectable"));
+  instances_.pads.visible->setCheckState(getChecked(settings, "pads_visible"));
+  instances_.pads.selectable->setCheckState(getChecked(settings, "pads_selectable"));
+  instances_.cover.visible->setCheckState(getChecked(settings, "cover_visible"));
+  instances_.cover.selectable->setCheckState(getChecked(settings, "cover_selectable"));
+  settings->endGroup();  // nets
+
   rows_.visible->setCheckState(getChecked(settings, "rows_visible"));
   congestion_map_.visible->setCheckState(
       getChecked(settings, "congestion_map_visible"));
@@ -289,6 +307,21 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("clock_visible", asBool(nets_.clock.visible));
   settings->setValue("clock_selectable", asBool(nets_.clock.selectable));
   settings->endGroup();  // nets
+
+  settings->beginGroup("instances");
+  settings->setValue("stdcell_visible", asBool(instances_.core.visible));
+  settings->setValue("stdcell_selectable", asBool(instances_.core.selectable));
+  settings->setValue("blocks_visible", asBool(instances_.blocks.visible));
+  settings->setValue("blocks_selectable", asBool(instances_.blocks.selectable));
+  settings->setValue("fill_visible", asBool(instances_.fill.visible));
+  settings->setValue("fill_selectable", asBool(instances_.fill.selectable));
+  settings->setValue("endcap_visible", asBool(instances_.endcap.visible));
+  settings->setValue("endcap_selectable", asBool(instances_.endcap.selectable));
+  settings->setValue("pads_visible", asBool(instances_.pads.visible));
+  settings->setValue("pads_selectable", asBool(instances_.pads.selectable));
+  settings->setValue("cover_visible", asBool(instances_.cover.visible));
+  settings->setValue("cover_selectable", asBool(instances_.cover.selectable));
+  settings->endGroup();  // instances
 
   settings->setValue("rows_visible", asBool(rows_.visible));
   settings->setValue("congestion_map_visible", asBool(congestion_map_.visible));
@@ -352,13 +385,13 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
 
 void DisplayControls::itemChanged(QStandardItem* item)
 {
-  if (item->isCheckable() == false || ignore_callback_) {
+  if (item->isCheckable() == false) {
     emit changed();
     return;
   }
   bool checked = item->checkState() == Qt::Checked;
   Callback callback = item->data().value<Callback>();
-  if (callback.action) {
+  if (callback.action && !ignore_callback_) {
     callback.action(checked);
   }
   QModelIndex item_index = item->index();
@@ -441,13 +474,12 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
-      makeItem(
+      makeLeafItem(
           layer_controls_[layer],
           QString::fromStdString(layer->getName()),
           layers_group_.name,
           Qt::Checked,
-          std::function<void(bool)>(),
-          [this](bool selectable) {},  // non-null to create checkbox
+          true,
           color(layer),
           type == dbTechLayerType::CUT ? NULL : layer);
     }
@@ -458,14 +490,37 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   emit changed();
 }
 
-template <typename T>
-QStandardItem* DisplayControls::makeItem(
+QStandardItem* DisplayControls::makeParentItem(
     ModelRow& row,
     const QString& text,
-    T* parent,
+    QStandardItemModel* parent,
     Qt::CheckState checked,
-    const std::function<void(bool)>& visibility_action,
-    const std::function<void(bool)>& select_action,
+    bool add_selectable)
+{
+  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable);
+
+  row.visible->setData(QVariant::fromValue(Callback({
+    [this, row](bool visible) {
+      toggleAllChildren(visible, row.name, Visible);
+    }
+  })));
+  if (add_selectable) {
+    row.selectable->setData(QVariant::fromValue(Callback({
+      [this, row](bool selectable) {
+        toggleAllChildren(selectable, row.name, Selectable);
+      }
+    })));
+  }
+
+  return row.name;
+}
+
+void DisplayControls::makeLeafItem(
+    ModelRow& row,
+    const QString& text,
+    QStandardItem* parent,
+    Qt::CheckState checked,
+    bool add_selectable,
     const QColor& color,
     odb::dbTechLayer* tech_layer)
 {
@@ -487,18 +542,15 @@ QStandardItem* DisplayControls::makeItem(
   row.visible->setCheckable(true);
   row.visible->setEditable(false);
   row.visible->setCheckState(checked);
-  row.visible->setData(QVariant::fromValue(Callback({visibility_action})));
 
-  if (select_action) {
+  if (add_selectable) {
     row.selectable = new QStandardItem("");
     row.selectable->setCheckable(true);
     row.selectable->setEditable(false);
     row.selectable->setCheckState(checked);
-    row.selectable->setData(QVariant::fromValue(Callback({select_action})));
   }
 
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
-  return row.name;
 }
 
 QColor DisplayControls::color(const odb::dbTechLayer* layer)
@@ -518,6 +570,46 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
     return it->second.visible->checkState() == Qt::Checked;
   }
   return false;
+}
+
+bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
+{
+  dbMaster* master = inst->getMaster();
+  if (master->isEndCap()) {
+    return instances_.endcap.visible->checkState() == Qt::Checked;
+  } else if (master->isFiller()) {
+    return instances_.fill.visible->checkState() == Qt::Checked;
+  } else if (master->isCore()) {
+    return instances_.core.visible->checkState() == Qt::Checked;
+  } else if (master->isBlock()) {
+    return instances_.blocks.visible->checkState() == Qt::Checked;
+  } else if (master->isPad()) {
+    return instances_.pads.visible->checkState() == Qt::Checked;
+  } else if (master->isCover()) {
+    return instances_.cover.visible->checkState() == Qt::Checked;
+  } else {
+    return true;
+  }
+}
+
+bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
+{
+  dbMaster* master = inst->getMaster();
+  if (master->isEndCap()) {
+    return instances_.endcap.selectable->checkState() == Qt::Checked;
+  } else if (master->isFiller()) {
+    return instances_.fill.selectable->checkState() == Qt::Checked;
+  } else if (master->isCore()) {
+    return instances_.core.selectable->checkState() == Qt::Checked;
+  } else if (master->isBlock()) {
+    return instances_.blocks.selectable->checkState() == Qt::Checked;
+  } else if (master->isPad()) {
+    return instances_.pads.selectable->checkState() == Qt::Checked;
+  } else if (master->isCover()) {
+    return instances_.cover.selectable->checkState() == Qt::Checked;
+  } else {
+    return true;
+  }
 }
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
@@ -596,14 +688,10 @@ void DisplayControls::addCustomVisibilityControl(const std::string& name,
 {
   auto q_name = QString::fromStdString(name);
   auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
-  makeItem(custom_controls_[name],
-           q_name,
-           model_,
-           checked,
-           [this, name](bool visible) {
-             custom_controls_[name].visible->setCheckState(
-                 visible ? Qt::Checked : Qt::Unchecked);
-           });
+  makeParentItem(custom_controls_[name],
+                 q_name,
+                 model_,
+                 checked);
 }
 
 bool DisplayControls::checkCustomVisibilityControl(const std::string& name)

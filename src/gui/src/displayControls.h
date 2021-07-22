@@ -56,13 +56,16 @@ namespace odb {
 class dbDatabase;
 class dbBlock;
 class dbNet;
+class dbInst;
 }  // namespace odb
 
 namespace gui {
 
+using CallbackFunction = std::function<void(bool)>;
+
 struct Callback
 {
-  std::function<void(bool)> action;
+  CallbackFunction action;
 };
 
 class PatternButton : public QRadioButton
@@ -141,6 +144,8 @@ class DisplayControls : public QDockWidget, public Options
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
   bool isNetSelectable(odb::dbNet* net) override;
+  bool isInstanceVisible(odb::dbInst* inst) override;
+  bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areFillsVisible() override;
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
@@ -205,6 +210,16 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow clock;
   };
 
+  struct InstanceModels
+  {
+    ModelRow core;
+    ModelRow blocks;
+    ModelRow fill;
+    ModelRow endcap;
+    ModelRow pads;
+    ModelRow cover;
+  };
+
   struct TrackModels
   {
     ModelRow pref;
@@ -218,17 +233,19 @@ class DisplayControls : public QDockWidget, public Options
 
   void techInit();
 
-  template <typename T>
-  QStandardItem* makeItem(ModelRow& row,
-                          const QString& text,
-                          T* parent,
-                          Qt::CheckState checked,
-                          const std::function<void(bool)>& visibility_action
-                          = std::function<void(bool)>(),
-                          const std::function<void(bool)>& select_action
-                          = std::function<void(bool)>(),
-                          const QColor& color = Qt::transparent,
-                          odb::dbTechLayer* tech_layer = nullptr);
+  QStandardItem* makeParentItem(ModelRow& row,
+                                const QString& text,
+                                QStandardItemModel* parent,
+                                Qt::CheckState checked,
+                                bool add_selectable = false);
+
+  void makeLeafItem(ModelRow& row,
+                    const QString& text,
+                    QStandardItem* parent,
+                    Qt::CheckState checked,
+                    bool add_selectable = false,
+                    const QColor& color = Qt::transparent,
+                    odb::dbTechLayer* tech_layer = nullptr);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
   void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);
@@ -243,10 +260,12 @@ class DisplayControls : public QDockWidget, public Options
   ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
+  ModelRow instance_group_;
   ModelRow misc_group_;
 
   // Object controls
   NetModels nets_;
+  InstanceModels instances_;
   ModelRow rows_;
   ModelRow congestion_map_;
   ModelRow pin_markers_;
