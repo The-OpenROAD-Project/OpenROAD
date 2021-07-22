@@ -28,7 +28,7 @@
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "pdngen" {[-verbose] config_file}
+sta::define_cmd_args "pdngen" {[-verbose] [config_file]}
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -60,6 +60,10 @@ proc add_global_connection {args} {
     keys {-net -inst_pattern -pin_pattern} \
     flags {-power -ground}
 
+  if {[llength $args] > 0} {
+    utl::error PDN 131 "Unexpected argument [lindex $args 0] for add_global_connection command"
+  }
+
   if {[info exists flags(-power)] && [info exists flags(-ground)]} {
     utl::error PDN 92 "The flags -power and -ground of the add_global_connection command are mutually exclusive "
   }
@@ -70,10 +74,18 @@ proc add_global_connection {args} {
 
   if {![info exists keys(-inst_pattern)]} {
     set keys(-inst_pattern) {.*}
+  } else {
+    if {[catch {regexp $keys(-inst_pattern) ""}]} {
+      utl::error PDN 142 "The -inst_pattern argument ($keys(-inst_pattern)) is not a valid regular expression"
+    }
   }
 
-  if {![info exists keys(-pin_pattern)]} {
+  if {![info exists keys(-pin_pattern)]} { 
     utl::error PDN 94 "The -pin_pattern option of the add_global_connection command is required"
+  } else {
+    if {[catch {regexp $keys(-pin_pattern) ""}]} {
+      utl::error PDN 157 "The -pin_pattern argument ($keys(-pin_pattern)) is not a valid regular expression"
+    }
   }
 
   if {[info exists flags(-power)]} {
@@ -85,6 +97,12 @@ proc add_global_connection {args} {
   }
 
   dict lappend pdngen::global_connections $keys(-net) [list inst_name $keys(-inst_pattern) pin_name $keys(-pin_pattern)]
+
+  if {[set net [[ord::get_db_block] findNet $keys(-net)]] == "NULL"} {
+    set net [odb::dbNet_create [ord::get_db_block] $keys(-net)]
+  }
+  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net
+  pdn::global_connect [ord::get_db_block]
 }
 
 # define_pdn_grid -name main_grid -pins {metal7} -voltage_domains {CORE VIN}
@@ -92,12 +110,11 @@ proc add_global_connection {args} {
 
 sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-macro] \
-                                        [-voltage_domains] \
+                                        [-voltage_domains <list_of_voltage_domains>] \
                                         [-orient <list_of_valid_orientations>] \
                                         [-instances <list_of_instances>] \
-                                        [-cell_names <list_of_cell_names> ] \
+                                        [-cells <list_of_cell_names> ] \
                                         [-pin_direction (horizontal|vertical)] \
-                                        [-block <list_of_blocked_layers>] \
                                         [-pins <list_of_pin_layers>] \
                                         [-starts_with (POWER|GROUND)]}
 
@@ -105,7 +122,16 @@ proc define_pdn_grid {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "define_pdn_grid" args \
-    keys {-name -type -orient -power_pins -ground_pins -blockages -rails -straps -pins -connect -starts_with}
+    keys {-name -voltage_domains -orient -instances -cells -pin_direction -pins -starts_with} \
+    flags {-macro}
+
+  if {[llength $args] > 0} {
+    utl::error PDN 132 "Unexpected argument [lindex $args 0] for define_pdn_grid command"
+  }
+
+  if {[info exists flags(-macro)]} {
+    set keys(-macro) 1
+  }
 
   if {[llength $args] > 0} {
     utl::error PDN 73 "Unrecognised argument [lindex $args 0] for define_pdn_grid"
@@ -117,19 +143,35 @@ proc define_pdn_grid {args} {
 # set_voltage_domain -name CORE -power_net VDD  -ground_net VSS
 # set_voltage_domain -name VIN  -region_name TEMP_ANALOG -power_net VPWR -ground_net VSS
 
-sta::define_cmd_args "set_voltage_domain" {[-name domain_name] \
+sta::define_cmd_args "set_voltage_domain" {-name domain_name \
                                            [-region region_name] \
-                                           -power_net power_net_name \
-                                           -ground_net ground_net_name}
+                                           -power power_net_name \
+                                           -ground ground_net_name}
 
 proc set_voltage_domain {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -power_net -ground_net}
+    keys {-name -region -power -ground}
 
   if {[llength $args] > 0} {
-    utl::error PDN 73 "Unrecognised argument [lindex $args 0] for set_voltage_domain"
+    utl::error PDN 133 "Unexpected argument [lindex $args 0] for set_voltage_domain command"
+  }
+
+  if {![info exists keys(-name)]} {
+    utl::error PDN 97 "The -name argument is required"
+  }
+
+  if {![info exists keys(-power)]} {
+    utl::error PDN 98 "The -power argument is required"
+  }
+
+  if {![info exists keys(-ground)]} {
+    utl::error PDN 99 "The -ground argument is required"
+  }
+
+  if {[llength $args] > 0} {
+    utl::error PDN 120 "Unrecognised argument [lindex $args 0] for set_voltage_domain"
   }
 
   pdngen::set_voltage_domain {*}[array get keys]
@@ -137,12 +179,13 @@ proc set_voltage_domain {args} {
 
 # add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins
 # add_pdn_stripe -name main_grid -layer metal2 -width 0.17 -followpins
-# add pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
+# add_pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
 # add_pdn_stripe -name main_grid -layer metal7 -width 1.40 -pitch 40.0 -offset 2 -starts_with POWER
 sta::define_cmd_args "add_pdn_stripe" {[-name grid_name] \
                                        -layer layer_name \
                                        -width width_value \
                                        [-followpins] \
+                                       [-extend_to_core_ring] \
                                        [-pitch pitch_value] \
                                        [-spacing spacing_value] \
                                        [-offset offset_value] \
@@ -152,11 +195,33 @@ proc add_pdn_stripe {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_stripe" args \
-    keys {-name -layer -width -pitch -spacing -offset -starts_with -followpins} \
-    flags {-followpins}
+    keys {-name -layer -width -pitch -spacing -offset -starts_with} \
+    flags {-followpins -extend_to_core_ring}
 
-  if {[info exists flags(followpins)]} {
-    set array keys(-followpins) 1
+  if {[llength $args] > 0} {
+    utl::error PDN 134 "Unexpected argument [lindex $args 0] for add_pdn_stripe command"
+  }
+
+  if {![info exists keys(-layer)]} {
+    utl::error PDN 100 "The -layer argument is required"
+  }
+
+  if {![info exists keys(-width)]} {
+    utl::error PDN 101 "The -width argument is required"
+  }
+
+  if {![info exists flags(-followpins)] && ![info exists keys(-pitch)]} {
+    utl::error PDN 102 "The -pitch argument is required for non-followpins stripes"
+  }
+
+  if {[info exists flags(-followpins)]} {
+    set keys(stripe) rails
+  } else {
+    set keys(stripe) straps
+  }
+
+  if {[info exists flags(-extend_to_core_ring)]} {
+    set keys(-extend_to_core_ring) 1
   }
 
   pdngen::add_pdn_stripe {*}[array get keys]
@@ -166,17 +231,61 @@ proc add_pdn_stripe {args} {
 # add_pdn_ring   -name main_grid -layer metal7 -width 5.0 -spacing  3.0 -core_offset 5
 
 sta::define_cmd_args "add_pdn_ring" {[-name grid_name] \
-                                     -layer layer_name \
-                                     -width width_value \
-                                     -spacing spacing_value \
-                                     [-core_offset offset_value] \
-                                     [-pad_offset offset_value]}
+                                     -layers list_of_2_layer_names \
+                                     -widths (width_value|list_of_width_values) \
+                                     -spacings (spacing_value|list_of_spacing_values) \
+                                     [-core_offsets (offset_value|list_of_offset_values)] \
+                                     [-pad_offsets (offset_value|list_of_offset_values)] \
+                                     [-power_pads list_of_core_power_padcells] \
+                                     [-ground_pads list_of_core_ground_padcells]}
 
 proc add_pdn_ring {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_ring" args \
-    keys {-name -layer -width -spacing -core_offset -pad_offset}} 
+    keys {-name -layers -widths -spacings -core_offsets -pad_offsets -power_pads -ground_pads} 
+
+  if {[llength $args] > 0} {
+    utl::error PDN 135 "Unexpected argument [lindex $args 0] for add_pdn_ring command"
+  }
+
+  if {![info exists keys(-layers)]} {
+    utl::error PDN 103 "The -layers argument is required"
+  }
+
+  if {[llength $keys(-layers)] != 2} {
+    utl::error PDN 137 "Expecting a list of 2 elements for -layers option of add_pdn_ring command, found [llength $keys(-layers)]"
+  }
+
+  if {![info exists keys(-widths)]} {
+    utl::error PDN 104 "The -widths argument is required"
+  }
+
+  if {![info exists keys(-spacings)]} {
+    utl::error PDN 105 "The -spacings argument is required"
+  }
+
+  if {[info exists keys(-core_offsets)] && [info exists keys(-pad_offsets)]} {
+    utl::error PDN 106 "Only one of -pad_offsets or -core_offsets can be specified"
+  }
+
+  if {![info exists keys(-core_offsets)] && ![info exists keys(-pad_offsets)]} {
+    utl::error PDN 107 "One of -pad_offsets or -core_offsets must be specified"
+  }
+
+  if {[info exists keys(-pad_offsets)]} {
+    if {![info exists keys(-power_pads)]} {
+      utl::error PDN 143 "The -power_pads option is required when the -pad_offsets option is used" 
+    }
+
+    if {![info exists keys(-ground_pads)]} {
+      utl::error PDN 144 "The -ground_pads option is required when the -pad_offsets option is used"
+    }
+  } else {
+    if {[info exists keys(-power_pads)] || [info exists keys(-ground_pads)]} {
+      utl::warn PDN 145 "Options -power_pads and -ground_pads are only used when the -pad_offsets option is specified"
+    }
+  }
 
   pdngen::add_pdn_ring {*}[array get keys]
 }
@@ -192,8 +301,16 @@ sta::define_cmd_args "add_pdn_connect" {[-name grid_name] \
 proc add_pdn_connect {args} {
   pdngen::check_design_state
 
-  sta::parse_key_args "add_pdn_stripe" args \
+  sta::parse_key_args "add_pdn_connect" args \
     keys {-name -layers -cut_pitch} \
+
+  if {[llength $args] > 0} {
+    utl::error PDN 136 "Unexpected argument [lindex $args 0] for add_pdn_connect command"
+  }
+
+  if {![info exists keys(-layers)]} {
+    utl::error PDN 108 "The -layers argument is required"
+  }
 
   pdngen::add_pdn_connect {*}[array get keys]
 }
@@ -261,17 +378,6 @@ proc check_layer_spacing {layer_name spacing} {
   return $spacing
 }
 
-proc check_layer_pitch {layer_name pitch} {
-  set tech [ord::get_db_tech]
-
-  set layer [$tech findLayer $layer_name]
-  set minSpacing [$layer getSpacing]
-  if {[ord::microns_to_dbu $spacing] < $minSpacing} {
-    utl::error "PDN" 80 "Spacing ($spacing) specified for layer $layer_name is less than minimum spacing ([ord::dbu_to_microns $minSpacing])"
-  }
-  return $pitch
-}
-
 proc check_rails {rails_spec} {
   if {[llength $rails_spec] % 2 == 1} {
     utl::error "PDN" 81 "Expected an even number of elements in the list for -rails option, got [llength $rails_spec]"
@@ -284,20 +390,13 @@ proc check_rails {rails_spec} {
     if {[dict exists $rails_spec $layer_name spacing]} {
       check_layer_spacing $layer_name [dict get $rails_spec $layer_name spacing]
     }
-    if {[dict exists $rails_spec $layer_name pitch]} {
-      if {[dict exists $rails_spec $layer_name spacing]} {
-        if {[dict get $rails_spec $layer_name pitch] < [dict get $rails_spec $layer_name width] + [dict get $rails_spec $layer_name spacing]} {
-          utl::error "PDN" 82 "The value of pitch ([dict get $rails_spec $layer_name pitch]) should be greater than width + spacing ([dict get $rails_spec $layer_name width] + [dict get $rails_spec $layer_name spacing])"
-        }
-      }
-    }
   }
   return $rails_spec
 }
 
 proc check_straps {straps_spec} {
   if {[llength $straps_spec] % 2 == 1} {
-    utl::error "PDN" 83 "Expected an even number of elements in the list for -straps option, got [llength $straps_spec]"
+    utl::error "PDN" 83 "Expected an even number of elements in the list for straps specification, got [llength $straps_spec]"
   }
   check_layer_names [dict keys $straps_spec]
   foreach layer_name [dict keys $straps_spec] {
@@ -327,17 +426,95 @@ proc check_straps {straps_spec} {
   return $straps_spec
 }
 
-proc check_connect {connect_spec} {
+proc check_connect {grid connect_spec} {
   foreach connect_statement $connect_spec {
     if {[llength $connect_statement] < 2} {
       utl::error PDN 87 "Connect statement must consist of at least 2 entries"
     }
     check_layer_names [lrange $connect_statement 0 1]
+    dict set layers [lindex $connect_statement 0] 1
+    dict set layers [lindex $connect_statement 1] 1
   }
+
+  if {[dict get $grid type] == "macro"} {
+    set pin_layer_defined 0
+    set actual_layers {}
+    foreach layer_name [dict keys $layers] {
+      if {[regexp {(.*)_PIN_(hor|ver)$} $layer_name - layer]} {
+        lappend actual_layers $layer
+      } else {
+        lappend actual_layers $layer_name
+    }
+  
+    if {![dict exists $grid pin_direction]} {
+      utl::warn PDN 161 "Pin direction has not been specified for macro connections of [dict get $grid name] "
+    } else {
+      set pin_direction [dict get $grid pin_direction]
+      set lowest_layer [lindex $actual_layers 0]
+      set layer_idx [get_layer_number $lowest_layer]
+      foreach layer [lrange $actual_layers 1 end] {
+        set layer_number [get_layer_number $layer]
+        if {$layer_number < $layer_idx} {
+          set layer_idx $layer_number
+          set lowest_layer $layer
+        }
+      }
+      set updated_spec {}
+      foreach connect $connect_spec {
+        set idx [lsearch $connect $lowest_layer]
+        if {$idx > 0 && $idx < 2} {
+          lreplace $connect $idx $idx "${lowest_layer}_PIN_[string range $pin_direction 0 2]"
+        }
+        lappend updated_spec $connect
+      }
+      set connect_spec $updated_spec
+    }
+  }
+  debug $connect_spec
   return $connect_spec
 }
 
 proc check_core_ring {core_ring_spec} {
+  if {[llength $core_ring_spec] % 2 == 1} {
+    utl::error "PDN" 109 "Expected an even number of elements in the list for core_ring specification, got [llength $core_ring_spec]"
+  }
+  set layer_directions {}
+  check_layer_names [dict keys $core_ring_spec]
+  foreach layer_name [dict keys $core_ring_spec] {
+    if {[dict exists $core_ring_spec $layer_name width]} {
+      check_layer_width $layer_name [dict get $core_ring_spec $layer_name width]
+    } else {
+      utl::error PDN 121 "Missing width specification for strap on layer $layer_name"
+    }
+    set width [ord::microns_to_dbu [dict get $core_ring_spec $layer_name width]]
+
+    if {![dict exists $core_ring_spec $layer_name spacing]} {
+      dict set core_ring_spec $layer_name spacing [expr [dict get $core_ring_spec $layer_name pitch] / 2.0]
+    }
+    check_layer_spacing $layer_name [dict get $core_ring_spec $layer_name spacing]
+    set spacing [ord::microns_to_dbu [dict get $core_ring_spec $layer_name spacing]]
+    dict set layer_directions [get_dir $layer_name] $layer_name
+
+    if {[dict exists $core_ring_spec $layer_name core_offset]} {
+      check_layer_spacing $layer_name [dict get $core_ring_spec $layer_name core_offset]
+    } elseif {[dict exists $core_ring_spec $layer_name pad_offset]} {
+      check_layer_spacing $layer_name [dict get $core_ring_spec $layer_name pad_offset]
+    } else {
+      utl::error PDN 146 "Must specifu a pad_offset or core_offset for rings"
+    }
+  }
+  if {[llength [dict keys $layer_directions]] == 0} {
+    utl::error PDN 139 "No direction defiend for layers [dict keys $core_ring_spec]" 
+  } elseif {[llength [dict keys $layer_directions]] == 1} {
+    set dir [dict keys $layer_directions]
+    set direction [expr $dir == "ver" ? "vertical" : "horizontal"]
+    set missing_direction [expr $dir == "ver" ? "horizontal" : "vertical"]
+    
+    utl::error PDN 140 "Layers [dict keys $core_ring_spec] are both $direction, missing layer in direction $other_direction" 
+  } elseif {[llength [dict keys $layer_directions]] > 2} {
+    utl::error PDN 141 "Unexpected number of directions found for layers [dict keys $core_ring_spec], ([dict keys $layer_directions])" 
+  }
+
   return $core_ring_spec
 }
 
@@ -349,35 +526,505 @@ proc check_starts_with {value} {
   return $value
 }
 
-proc define_pdn_grid {args} {
+proc check_voltage_domains {domains} {
+  variable voltage_domains
+
+  foreach domain $domains {
+    if {[lsearch [dict keys $voltage_domains] $domain] == -1} {
+      utl::error PDN 110 "Voltage domain $domain has not been specified, use set_voltage_domain to create this voltage domain"
+    }
+  }
+
+  return $domains
+}
+
+proc check_instances {instances} {
+  variable $block
+
+  foreach instance $instances {
+    if {[$block findInst $instance] == "NULL"} {
+      utl::error PDN 111 "Instance $instance does not exist in the design"
+    }
+  }
+
+  return $instances
+}
+
+proc check_cells {cells} {
+  foreach cell $cells {
+    if {[[ord::get_db] findMaster $cell] == "NULL"} {
+      utl::error PDN 112 "Cell $cell not loaded into the database"
+    }
+  }
+
+  return $cells
+}
+
+proc check_region {region_name} {
+  set block [ord::get_db_block]
+
+  if {[$block findRegion $region_name] == "NULL"} {
+    utl::error PDN 127 "No region $region_name found in the design for voltage_domain"
+  }
+
+  return $region_name
+}
+
+proc check_power {power_net_name} {
+  set block [ord::get_db_block]
+
+  if {[set net [$block findNet $power_net_name]] == "NULL"} {
+    set net [odb::dbNet_create $block $power_net_name]
+    $net setSpecial
+    $net setSigType "POWER"
+  } else {
+    if {[$net getSigType] != "POWER"} {
+      utl::error PDN 128 "Net $power_net_name already exists in the design, but is of signal type [$net getSigType]"
+    }
+  }
+  return $power_net_name
+}
+
+proc check_ground {ground_net_name} {
+  set block [ord::get_db_block]
+
+  if {[set net [$block findNet $ground_net_name]] == "NULL"} {
+    set net [odb::dbNet_create $block $ground_net_name]
+    $net setSpecial
+    $net setSigType "GROUND"
+  } else {
+    if {[$net getSigType] != "GROUND"} {
+      utl::error PDN 129 "Net $ground_net_name already exists in the design, but is of signal type [$net getSigType]"
+    }
+  }
+  return $ground_net_name
+}
+
+proc set_voltage_domain {args} {
+  variable voltage_domains
+
+  set voltage_domain {}
   set process_args $args
   while {[llength $process_args] > 0} {
     set arg [lindex $process_args 0]
     set value [lindex $process_args 1]
 
     switch $arg {
-      -name        {dict set grid name $value}
-      -type        {dict set grid type $value}
-      -orient      {dict set grid orient [check_orientations $value]}
-      -power_pins  {dict set grid power_pins $value}
-      -ground_pins {dict set grid ground_pins $value}
-      -blockages   {dict set grid blockages [check_layer_names $value]}
-      -rails       {dict set grid rails [check_rails $value]}
-      -straps      {dict set grid straps [check_straps $value]}
-      -connect     {dict set grid connect [check_connect $value]}
-      -core_ring   {dict set grid core_ring [check_core_ring $value]}
-      -pins        {dict set grid pins [check_layer_names $value]}
-      -starts_with {dict set grid starts_with [check_starts_with $value]}
-      default {utl::error PDN 88 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect"}
+      -name            {dict set voltage_domain name $value}
+      -power           {dict set voltage_domain primary_power [check_power $value]}
+      -ground          {dict set voltage_domain primary_ground [check_ground $value]}
+      -region          {dict set voltage_domain region [check_region $value]}
+      default          {utl::error PDN 130 "Unrecognized argument $arg, should be one of -name, -power, -ground -region"}
     }
 
     set process_args [lrange $process_args 2 end]
   }
 
-  if {[dict exists $grid type]} {
-    specify_grid [dict get $grid type] $grid
-  } else {
-    utl::error PDN 89 "The -type option is required for the define_pdn_grid command"
+  dict set voltage_domains [dict get $voltage_domain name] $voltage_domain
+}
+
+proc check_direction {direction} {
+  if {$direction != "horizontal" && $direction != "vertical"} {
+    utl::error PDN 138 "Unexpected value for direction ($direction), should be horizontal or vertical"
+  }
+  return $direction
+}
+
+proc define_pdn_grid {args} {
+  variable current_grid
+
+  set grid {}
+
+  set process_args $args
+  while {[llength $process_args] > 0} {
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
+      -name            {dict set grid name $value}
+      -voltage_domains {dict set grid voltage_domains [check_voltage_domains $value]}
+      -macro           {dict set grid type macro}
+      -orient          {dict set grid orient [check_orientations $value]}
+      -instances       {dict set grid instances [check_instances $value]}
+      -cells           {dict set grid macros [check_cells $value]}
+      -pins            {dict set grid pins [check_layer_names $value]}
+      -starts_with     {dict set grid starts_with [check_starts_with $value]}
+      -pin_direction   {dict set grid pin_direction [check_direction $value]}
+      default          {utl::error PDN 88 "Unrecognized argument $arg, should be one of -name, -orient, -instances -cells -pins -starts_with"}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+
+  set current_grid [verify_grid $grid]
+}
+
+proc get_grid {grid_name} {
+  variable design_data
+
+  if {[dict exists $design_data grid]} {
+    dict for {type grids} [dict get $design_data grid] {
+      dict for {name grid} $grids {
+        if {$name == $grid_name} {
+          return $grid
+        }
+      }
+    }
+  }
+
+  return {}
+}
+
+proc check_grid {grid} {
+  if {$grid == {}} {
+    utl::error PDN  113 "The grid $grid_name has not been defined"
+  }
+  return $grid
+}
+
+proc check_power_ground {value} {
+  if {$value == "POWER" || $value == "GROUND"} {
+    return $value
+  }
+  utl::error PDN 114 "Unexpected value ($value), must be either POWER or GROUND"
+}
+
+proc add_pdn_stripe {args} {
+  variable current_grid
+
+  if {[dict exists $args -name]} {
+    set current_grid [check_grid [get_grid [dict get $args -name]]]
+  }
+  set grid $current_grid
+
+  set stripe [dict get $args stripe]
+  set layer [check_layer_names [dict get $args -layer]]
+
+  set process_args $args
+  while {[llength $process_args] > 0} {
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
+      -name            {;}
+      -layer           {;}
+      -width           {dict set grid $stripe $layer width $value}
+      -spacing         {dict set grid $stripe $layer spacing $value}
+      -offset          {dict set grid $stripe $layer offset $value}
+      -pitch           {dict set grid $stripe $layer pitch $value}
+      -starts_with     {dict set grid $stripe $layer starts_with [check_power_ground $value]}
+      -extend_to_core_ring {dict set grid $stripe $layer extend_to_core_ring 1}
+      stripe           {;}
+      default          {utl::error PDN 124 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect"}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+
+  set current_grid [verify_grid $grid]
+}
+
+proc check_max_length {values max_length} {
+  if {[llength $values] > $max_length} {
+    error "[llength $values] provided, maximum of $max_length values allowed"
+  }
+}
+
+proc check_grid_voltage_domains {grid} {
+  if {![dict exists $grid voltage_domains]} {
+    utl::error PDN 158 "No voltage domains defined for grid"
+  }
+}
+
+proc get_voltage_domain_by_name {domain_name} {
+  variable voltage_domains
+
+  if {[dict exists $voltage_domains $domain_name]} {
+    return [dict get $voltage_domains $domain_name]
+  }
+
+  utl::error PDN 159 "Voltage domains $domain_name has not been defined"
+}
+
+proc match_inst_connection {inst net_name} {
+  variable global_connections
+
+  foreach pattern [dict get $global_connections $net_name] {
+    if {[regexp [dict get $pattern inst_name] [$inst getName]]} {
+      foreach pin [[$inst getMaster] getMTerms] {
+        if {[regexp [dict get $pattern pin_name] [$pin getName]]} {
+          return 1
+        }
+      }
+    }
+  }
+  return 0
+}
+
+proc is_inst_in_voltage_domain {inst domain_name} {
+  set voltage_domain [get_voltage_domain_by_name $domain_name]
+
+  # The instance is in the voltage domain if it connected to both related power and ground nets
+  set power_net [dict get $voltage_domain primary_power]
+  set ground_net [dict get $voltage_domain primary_ground]
+
+  return [match_inst_connection $inst $power_net] && [match_inst_connection $inst $ground_net]
+}
+
+variable block_masters {}
+proc get_block_inst_masters {} {
+  variable block_masters
+
+  if {[llength $block_masters] == 0} {
+    foreach inst [[ord::get_db_block] getInsts] {
+      if {[lsearch $block_masters [[$inst getMaster] getName]] == -1} {
+        lappend block_masters [[$inst getMaster] getName]
+      }
+    }
+  }
+  return $block_masters
+}
+
+proc is_cell_present {cell_name} {
+  return [lsearch [get_block_inst_masters] $cell_name] > -1
+}
+
+proc check_pwr_pads {grid cells} {
+  check_grid_voltage_domains $grid
+  set voltage_domains [dict get $grid voltage_domains]
+  set pwr_pads {}
+  set inst_example {}
+  foreach voltage_domain $voltage_domains {
+    debug $voltage_domain
+
+    set net_name [get_voltage_domain_power $voltage_domain]
+    if {[set net [[ord::get_db_block] findNet $net_name]] == "NULL"} {
+      utl::error PDN 149 "Power net $net_name not found"
+    }
+    set find_cells $cells
+    foreach inst [[ord::get_db_block] getInsts] {
+      if {[set idx [lsearch $find_cells [[$inst getMaster] getName]]] > -1} {
+        if {![is_inst_in_voltage_domain $inst $voltage_domain]} {continue}
+        # Only need one example of each cell
+        set cell_name [lindex $find_cells $idx]
+        set find_cells [lreplace $find_cells $idx $idx]
+        dict set inst_example $cell_name $inst
+      }
+      if {[llength $find_cells] == 0} {break}
+    }
+    if {[llength $find_cells] > 0} {
+      utl::warn PDN 150 "Cannot find cells ([join $find_cells {, }]) in voltage domain $voltage_domain"
+    } else {
+      dict for {cell inst} $inst_example {
+        set pin_name [get_inst_pin_connected_to_net $inst $net]
+        dict lappend pwr_pads $pin_name $cell
+      }
+    }
+  }
+
+  debug $pwr_pads
+  return $pwr_pads
+}
+
+proc check_gnd_pads {grid cells} {
+  check_grid_voltage_domains $grid
+  set voltage_domains [dict get $grid voltage_domains]
+  set gnd_pads {}
+  set inst_example {}
+  foreach voltage_domain $voltage_domains {
+    set net_name [get_voltage_domain_ground $voltage_domain]
+    if {[set net [[ord::get_db_block] findNet $net_name]] == "NULL"} {
+      utl::error PDN 151 "Ground net $net_name not found"
+    }
+    set find_cells $cells
+    foreach inst [[ord::get_db_block] getInsts] {
+      if {[set idx [lsearch $find_cells [[$inst getMaster] getName]]] > -1} {
+        if {![is_inst_in_voltage_domain $inst $voltage_domain]} {continue}
+        # Only need one example of each cell
+        set cell_name [lindex $find_cells $idx]
+        set find_cells [lreplace $find_cells $idx $idx]
+        dict set inst_example $cell_name $inst
+      }
+      if {[llength $find_cells] == 0} {break}
+    }
+    if {[llength $find_cells] > 0} {
+      utl::warn PDN 152 "Cannot find cells ([join $find_cells {, }]) in voltage domain $voltage_domain"
+    } else {
+      dict for {cell inst} $inst_example {
+        set pin_name [get_inst_pin_connected_to_net $inst $net]
+        dict lappend gnd_pads $pin_name $cell
+      }
+    }
+  }
+  return $gnd_pads
+}
+
+proc add_pdn_ring {args} {
+  variable current_grid
+
+  if {[dict exists $args -name]} {
+    set current_grid [check_grid [get_grid [dict get $args -name]]]
+  }
+  set grid $current_grid
+  set layers [check_layer_names [dict get $args -layers]]
+
+  set process_args $args
+  while {[llength $process_args] > 0} {
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
+      -name            {;}
+      -layers          {;}
+      -widths {
+        if {[catch {check_max_length $value 2} msg]} {
+          utl::error PDN 115 "Unexpected number of values for -widths, $msg"
+        }
+        if {[llength $value] == 1} {
+          set values [list $value $value]
+        } else {
+          set values $value
+        }
+        foreach layer $layers width $values {
+          dict set grid core_ring $layer width $width
+        }
+      }
+      -spacings {
+        if {[catch {check_max_length $value 2} msg]} {
+          utl::error PDN 116 "Unexpected number of values for -spacings, $msg"
+        }
+        if {[llength $value] == 1} {
+          set values [list $value $value]
+        } else {
+          set values $value
+        }
+        foreach layer $layers spacing $values {
+          dict set grid core_ring $layer spacing $spacing
+        }
+      }
+      -core_offsets {
+        if {[catch {check_max_length $value 2} msg]} {
+          utl::error PDN 117 "Unexpected number of values for -core_offsets, $msg"
+        }
+        if {[llength $value] == 1} {
+          set values [list $value $value]
+        } else {
+          set values $value
+        }
+        foreach layer $layers offset $values {
+          dict set grid core_ring $layer core_offset $offset
+        }
+      }
+      -pad_offsets {
+        if {[catch {check_max_length $value 2} msg]} {
+          utl::error PDN 118 "Unexpected number of values for -pad_offsets, $msg"
+        }
+        if {[llength $value] == 1} {
+          set values [list $value $value]
+        } else {
+          set values $value
+        }
+        foreach layer $layers offset $values {
+          dict set grid core_ring $layer pad_offset $offset
+        }
+      }
+      -power_pads      {dict set grid pwr_pads [check_pwr_pads $grid $value]}
+      -ground_pads     {dict set grid gnd_pads [check_gnd_pads $grid $value]}
+      default          {utl::error PDN 125 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect"}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+
+  set current_grid [verify_grid $grid]
+}
+
+proc check_fixed_vias {via_names} {
+  variable tech
+
+  foreach via_name $via_names {
+    if {[set via [$tech findVia $via_name]] == "NULL"} {
+      utl::error "PDN" 119 "Via $via_name specified in the grid specification does not exist in this technology"
+    }
+  }
+
+  return $via_names
+}
+
+proc add_pdn_connect {args} {
+  variable current_grid
+
+  if {[dict exists $args -name]} {
+    set current_grid [check_grid [get_grid [dict get $args -name]]]
+  }
+  set grid $current_grid
+
+  set layers [check_layer_names [dict get $args -layers]]
+
+  set process_args $args
+  while {[llength $process_args] > 0} {
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
+      -name            {;}
+      -layers          {;}
+      -cut_pitch       {dict set layers constraints cut_pitch $value}
+      -fixed_vias      {dict set layers fixed_vias [check_fixed_vias $values]}
+      default          {utl::error PDN 126 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect"}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+
+  dict lappend grid connect $layers
+  set current_grid [verify_grid $grid]
+}
+
+proc convert_grid_to_def_units {grid} {
+  if {![dict exists $grid units]} {
+    if {[dict exists $grid core_ring]} {
+      dict for {layer data} [dict get $grid core_ring] {
+        dict set grid core_ring $layer [convert_layer_spec_to_def_units $data]
+      }
+    }
+  
+    if {[dict exists $grid rails]} {
+      dict for {layer data} [dict get $grid rails] {
+        dict set grid rails $layer [convert_layer_spec_to_def_units $data]
+        if {[dict exists $grid template]} {
+          foreach template [dict get $grid template names] {
+            if {[dict exists $grid layers $layer $template]} {
+              dict set grid rails $layer $template [convert_layer_spec_to_def_units [dict get $grid rails $layer $template]]
+            }
+          }
+        }
+      }
+    }
+    if {[dict exists $grid straps]} {
+      dict for {layer data} [dict get $grid straps] {
+        dict set grid straps $layer [convert_layer_spec_to_def_units $data]
+        if {[dict exists $grid template]} {
+          foreach template [dict get $grid template names] {
+            if {[dict exists $grid straps $layer $template]} {
+              dict set grid straps $layer $template [convert_layer_spec_to_def_units [dict get $grid straps $layer $template]]
+            }
+          }
+        }
+      }
+    }
+    dict set grid units "db"
+  }
+
+  return $grid
+}
+
+proc get_inst_pin_connected_to_net {inst net} {
+  foreach iterm [$inst getITerms] {
+    debug "[$inst getName] [$iterm getNet] == $net"
+    if {[$iterm getNet] == $net} {
+      return [[$iterm getMTerm] getName]
+    }
   }
 }
 
@@ -385,49 +1032,71 @@ proc verify_grid {grid} {
   variable design_data
 
   if {![dict exists $grid type]} {
-    utl::error PDN 96 "No type attribute specified for grid $grid_name"
+    dict set grid type stdcell
   }
   set type [dict get $grid type]
 
+  if {![dict exists $grid voltage_domains]} {
+    dict set grid voltage_domains "CORE"
+  }
+  set voltage_domains [dict get $grid voltage_domains]
+
   if {![dict exists $grid name]} {
-    if {[dict exists $design_data grid $type]} {
-      set index [expr [dict size [dict get $design_data grid $type]] + 1]
-    } else {
-      set index 1
+    set idx 1
+    set name "[join [dict get $grid voltage_domains] {_}]_${type}_grid_$idx"
+    while {[get_grid $name] != {}} {
+      incr idx
+      set name "[join [dict get $grid voltage_domains] {_}]_${type}_grid_$idx"
     }
-    dict set grid name "${type}_$index"
+    dict set grid name $name
   }
   set grid_name [dict get $grid name]
 
   if {[dict exists $grid core_ring]} {
-    dict for {layer data} [dict get $grid core_ring] {
-      dict set grid core_ring $layer [convert_layer_spec_to_def_units $data]
+    check_core_ring [dict get $grid core_ring]
+    set layer [lindex [dict keys [dict get $grid core_ring]]]
+    if {[dict exist $grid core_ring $layer pad_offset]} {
+      if {![dict exists $grid pwr_pads]} {
+        utl::error PDN 147 "No definition of power padcells provided, required when using pad_offset"
+      }
+      if {![dict exists $grid gnd_pads]} {
+        utl::error PDN 148 "No definition of ground padcells provided, required when using pad_offset"
+      }
+    }
+  }
+
+  if {[dict exists $grid pwr_pads]} {
+    dict for {pin_name cells} [dict get $grid pwr_pads] {
+      foreach cell $cells {
+        if {[set master [[ord::get_db] findMaster $cell]] == "NULL"} {
+          utl::error PDN 153  "Core power padcell ($cell) not found in the database"
+        } 
+        if {[$master findMTerm $pin_name] == "NULL"} {
+          utl::error PDN 154 "Cannot find pin ($pin_name) on core power padcell ($cell)"
+        }
+      } 
+    }
+  }
+
+  if {[dict exists $grid gnd_pads]} {
+    dict for {pin_name cells} [dict get $grid gnd_pads] {
+      foreach cell $cells {
+        if {[set master [[ord::get_db] findMaster $cell]] == "NULL"} {
+          utl::error PDN 155  "Core ground padcell ($cell) not found in the database"
+        } 
+        if {[$master findMTerm $pin_name] == "NULL"} {
+          utl::error PDN 156 "Cannot find pin ($pin_name) on core ground padcell ($cell)"
+        }
+      } 
     }
   }
   
   if {[dict exists $grid rails]} {
-    dict for {layer data} [dict get $grid rails] {
-      dict set grid rails $layer [convert_layer_spec_to_def_units $data]
-      if {[dict exists $grid template]} {
-        foreach template [dict get $grid template names] {
-          if {[dict exists $grid layers $layer $template]} {
-            dict set grid rails $layer $template [convert_layer_spec_to_def_units [dict get $grid rails $layer $template]]
-          }
-        }
-      }
-    }
+    check_rails [dict get $grid rails]
   }
+
   if {[dict exists $grid straps]} {
-    dict for {layer data} [dict get $grid straps] {
-      dict set grid straps $layer [convert_layer_spec_to_def_units $data]
-      if {[dict exists $grid template]} {
-        foreach template [dict get $grid template names] {
-          if {[dict exists $grid straps $layer $template]} {
-            dict set grid straps $layer $template [convert_layer_spec_to_def_units [dict get $grid straps $layer $template]]
-          }
-        }
-      }
-    }
+    check_straps [dict get $grid straps]
   }
 
   if {[dict exists $grid template]} {
@@ -440,26 +1109,52 @@ proc verify_grid {grid} {
     }
   }
 
-  if {[dict exists $grid ground_pins]} {
-  }
-
-  if {[dict exists $grid power_pins]} {
-  }
-
-  if {[dict exists $grid blockages]} {
-    check_layer_names [dict get $grid blockages]
-  }
-
-  if {[dict exists $grid rails]} {
-  }
-
-  if {[dict exists $grid straps]} {
-  }
-
   if {[dict exists $grid connect]} {
+    dict set grid connect [check_connect $grid [dict get $grid connect]]
   }
+
+  if {$type == "macro"} {
+    if {![dict exists $grid _related_instances]} {
+      set macro_names [dict keys [get_macro_blocks]]
+
+      if {[dict exists $grid macros]} {
+        set selected_macro_names {}
+        foreach macro [dict exists $grid macros] {
+          if {[lsearch -exact $macro_names $macro] == -1} {
+            utl::warn PDN 162 "Macro block $macro not present in the database"
+          }
+          lappend selected_macro_names $macro
+        }
+      } else {
+        set selected_macro_names $macro_names
+      }
+
+      set instances [find_instances_of $selected_macro_names]
+      if {[dict exists $grid instances]} {
+        foreach inst_name [dict keys $instances] {
+          if {[lsearch [dict get $grid instances] $inst_name] == -1} {
+            set grid [dict remove $grid instances $inst_name]
+          }
+        }
+      }
+
+      if {[dict exists $grid orient]} {
+        foreach inst_name [dict keys $instances] {
+          set orient [dict get $instances $inst_name orient]
+          if {[lsearch [dict get $grid orient] $orient] == -1} {
+            set grid [dict remove $grid instances $inst_name]
+          }
+        }
+      }
+
+      dict set grid _related_instances $instances
+    }
+  }
+
+  # debug $grid
 
   dict set design_data grid $type $grid_name $grid
+  return $grid
 }
 
 variable logical_viarules {}
@@ -522,6 +1217,10 @@ proc lmap {args} {
 
 proc get_dir {layer_name} {
   variable layers
+
+  if {$layers == ""} {
+    init_metal_layers
+  }
 
   if {[regexp {.*_PIN_(hor|ver)} $layer_name - dir]} {
     return $dir
@@ -2386,10 +3085,10 @@ proc generate_lower_metal_followpin_rails {} {
           }
         } else {
           #Create lower metal followpin rails for voltage domains where the starting positions are not stdcell_min_x
-          set core_power [get_domain_power [dict get $design_data core_domain]]
-          set core_ground [get_domain_ground [dict get $design_data core_domain]]
-          set domain_power [get_domain_power $voltage_domain]
-          set domain_ground [get_domain_ground $voltage_domain]
+          set core_power [get_voltage_domain_power [dict get $design_data core_domain]]
+          set core_ground [get_voltage_domain_ground [dict get $design_data core_domain]]
+          set domain_power [get_voltage_domain_power $voltage_domain]
+          set domain_ground [get_voltage_domain_ground $voltage_domain]
 
           set first_rect [lindex [[$block findRegion $voltage_domain] getBoundaries] 0]
           set domain_xMin [$first_rect xMin]
@@ -2407,16 +3106,16 @@ proc generate_lower_metal_followpin_rails {} {
       set width [dict get $grid_data rails $lay width]
       # debug "VDD: $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]"
       set vdd_box [::odb::newSetFromRect $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]]
-      set vdd_name [get_domain_power [get_voltage_domain $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]]]
+      set vdd_name [get_voltage_domain_power [get_voltage_domain $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]]]
       set vss_box [::odb::newSetFromRect $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]
-      set vss_name [get_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
+      set vss_name [get_voltage_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
-      if {$vdd_name == [get_domain_power [dict get $design_data core_domain]]} {
+      if {$vdd_name == [get_voltage_domain_power [dict get $design_data core_domain]]} {
         add_stripe $lay "POWER" $vdd_box
       } else {
         add_stripe $lay "POWER_$vdd_name" $vdd_box
       }
-      if {$vss_name == [get_domain_ground [dict get $design_data core_domain]]} {
+      if {$vss_name == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
         add_stripe $lay "GROUND" $vss_box
       } else {
         add_stripe $lay "GROUND_$vss_name" $vss_box
@@ -2427,12 +3126,14 @@ proc generate_lower_metal_followpin_rails {} {
 
 proc starts_with {lay} {
   variable grid_data
+  variable stripes_start_with
+
   if {[dict exists $grid_data straps $lay starts_with]} {
     set starts_with [dict get $grid_data straps $lay starts_with]
   } elseif {[dict exists $grid_data starts_with]} {
     set starts_with [dict get $grid_data starts_with]
   } else {
-    set starts_with $::stripes_start_with
+    set starts_with $stripes_start_with
   }
   return $starts_with
 }
@@ -2546,8 +3247,8 @@ proc generate_stripes {tag net_name} {
       }
       # debug "area=$area (spec area=[dict get $grid_data area])"
       #Create stripes for core domain's pwr/gnd nets
-      if {$net_name == [get_domain_power [dict get $design_data core_domain]] ||
-          $net_name == [get_domain_ground [dict get $design_data core_domain]]} {
+      if {$net_name == [get_voltage_domain_power [dict get $design_data core_domain]] ||
+          $net_name == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
         generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
         #Split core domains pwr/gnd nets when they cross other voltage domains that have different pwr/gnd nets
         update_mesh_stripes_with_volatge_domains $tag $lay $net_name
@@ -2563,8 +3264,8 @@ proc generate_stripes {tag net_name} {
         set domain_xMax [$rect xMax]
         set domain_yMax [$rect yMax]
         #Do not create duplicate stripes if the voltage domain has the same pwr/gnd nets as the core domain
-        if {($net_name == [get_domain_power $domain_name] && $net_name != [get_domain_power [dict get $design_data core_domain]]) ||
-              ($net_name == [get_domain_ground $domain_name] && $net_name != [get_domain_ground [dict get $design_data core_domain]])} {
+        if {($net_name == [get_voltage_domain_power $domain_name] && $net_name != [get_voltage_domain_power [dict get $design_data core_domain]]) ||
+              ($net_name == [get_voltage_domain_ground $domain_name] && $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]])} {
           set rail_width [get_rails_max_width]
           set area [list $domain_xMin [expr $domain_yMin - $rail_width / 2] $domain_xMax [expr $domain_yMax + $rail_width / 2]]
           set area [adjust_area_for_core_rings $lay $area]
@@ -2612,8 +3313,8 @@ proc generate_grid_vias {tag net_name} {
   variable grid_data
   variable design_data
 
-  if {$net_name != [get_domain_power [dict get $design_data core_domain]] &&
-      $net_name != [get_domain_ground [dict get $design_data core_domain]]} {
+  if {$net_name != [get_voltage_domain_power [dict get $design_data core_domain]] &&
+      $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]]} {
     set tag "$tag\_$net_name"
   }
 
@@ -2968,14 +3669,15 @@ proc get_rail_width {} {
   return $max_width
 }
 
-proc import_macro_boundaries {} {
-  variable libs
+variable macros {}
+
+proc get_macro_blocks {} {
   variable macros
-  variable instances
+
+  if {[llength $macros] > 0} {return $macros}
 
   # debug "start"
-  set macros {}
-  foreach lib $libs {
+  foreach lib [[ord::get_db] getLibs] {
     foreach cell [$lib getMasters] {
       if {![$cell isBlock]} {continue}
 
@@ -2986,7 +3688,15 @@ proc import_macro_boundaries {} {
     }
   }
 
-  set instances [import_def_components [dict keys $macros]]
+  return $macros
+}
+
+proc import_macro_boundaries {} {
+  variable libs
+  variable instances
+
+  set macros [get_macro_blocks]
+  set instances [find_instances_of [dict keys $macros]]
 
   set boundary [odb::newSetFromRect {*}[get_core_area]]
 
@@ -3022,12 +3732,12 @@ proc import_macro_boundaries {} {
 
 }
 
-proc import_def_components {macros} {
+proc find_instances_of {macros} {
   variable design_data
   variable block
-  set instances {}
-  # debug "$macros"
 
+  # debug "$macros"
+  set instances {}
   foreach inst [$block getInsts] {
     set macro_name [[$inst getMaster] getName]
     if {[lsearch -exact $macros $macro_name] != -1} {
@@ -3206,8 +3916,8 @@ proc export_opendb_specialnet {net_name signal_type} {
     $net setWildConnected
   }
   set swire [odb::dbSWire_create $net "ROUTED"]
-  if {$net_name != [get_domain_power [dict get $design_data core_domain]] &&
-      $net_name != [get_domain_ground [dict get $design_data core_domain]]} {
+  if {$net_name != [get_voltage_domain_power [dict get $design_data core_domain]] &&
+      $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]]} {
     set signal_type "$signal_type\_$net_name"
   }
 
@@ -3313,8 +4023,8 @@ proc export_opendb_power_pin {net_name signal_type} {
     }
   }
 
-  if {$net_name != [get_domain_power [dict get $design_data core_domain]] &&
-      $net_name != [get_domain_ground [dict get $design_data core_domain]]} {
+  if {$net_name != [get_voltage_domain_power [dict get $design_data core_domain]] &&
+      $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]]} {
     set signal_type "$signal_type\_$net_name"
   }
 
@@ -3495,9 +4205,10 @@ proc init_tech {} {
   variable def_units
 
   set db [ord::get_db]
-  set tech [$db getTech]
+  set tech [ord::get_db_tech]
   set libs [$db getLibs]
-  set block [[$db getChip] getBlock]
+  set block [ord::get_db_block]
+
   set def_units [$block getDefUnits]
 
   init_metal_layers
@@ -3560,6 +4271,12 @@ proc init {args} {
       utl::error "PDN" 28 "File $PDN_cfg is empty"
     }
     source $PDN_cfg
+  }
+
+  dict for {type grid_types} [dict get $design_data grid] {
+    dict for {name grid} $grid_types {
+      dict set design_data grid $type $name [convert_grid_to_def_units $grid]
+    }
   }
 
   write_pdn_strategy 
@@ -3819,7 +4536,7 @@ proc connect_pads_to_core_ring {type pin_name pads} {
   variable grid_data
   variable pad_cell_blockages
   # debug "start - pads $pads"
-  dict for {inst_name instance} [import_def_components $pads] {
+  dict for {inst_name instance} [find_instances_of $pads] {
     # debug "inst $inst_name"
     set side [get_design_quadrant [dict get $instance x] [dict get $instance y]]
     # debug "inst [dict get $instance name] x [dict get $instance x] y [dict get $instance y] side $side"
@@ -4279,8 +4996,8 @@ proc add_grid {} {
     apply_padcell_blockages
   }
 
-    set area [dict get $grid_data area]
-    # debug "Area $area"
+  set area [dict get $grid_data area]
+  # debug "Area $area"
   # debug "Adding stdcell rails"
   # debug "area: [dict get $grid_data area]"
   if {[dict exists $grid_data rails]} {
@@ -4412,12 +5129,21 @@ proc get_pitch {layer} {
   }
 }
 
+proc get_layer_number {layer_name} {
+  set layer [[ord::get_db_tech] findLayer $layer_name]
+  if {$layer == "NULL"} {
+    utl::error PDN 160 "Cannot find layer $layer_name"
+  }
+  return [$layer getNumber]
+}
+
 proc init_metal_layers {} {
-  variable tech
   variable metal_layers
   variable layers
   variable block
 
+  set tech [ord::get_db_tech]
+  set block [ord::get_db_block]
   set metal_layers {}
 
   foreach layer [$tech getLayers] {
@@ -4729,9 +5455,9 @@ proc repair_channel {channel layer_name} {
   }
 
   set vdd_stripe [odb::newSetFromRect [expr $vdd_routing_grid - $width / 2] $yMin [expr $vdd_routing_grid + $width / 2] $yMax]
-  set vdd_name [get_domain_power [get_voltage_domain [expr $vdd_routing_grid - $width / 2] $yMin [expr $vdd_routing_grid + $width / 2] $yMax]]
+  set vdd_name [get_voltage_domain_power [get_voltage_domain [expr $vdd_routing_grid - $width / 2] $yMin [expr $vdd_routing_grid + $width / 2] $yMax]]
   set vss_stripe [odb::newSetFromRect [expr $vss_routing_grid - $width / 2] $yMin [expr $vss_routing_grid + $width / 2] $yMax]
-  set vss_name [get_domain_ground [get_voltage_domain [expr $vss_routing_grid - $width / 2] $yMin [expr $vss_routing_grid + $width / 2] $yMax]]
+  set vss_name [get_voltage_domain_ground [get_voltage_domain [expr $vss_routing_grid - $width / 2] $yMin [expr $vss_routing_grid + $width / 2] $yMax]]
 
   add_stripe $layer_name "POWER_$vdd_name"  $vdd_stripe
   add_stripe $layer_name "GROUND_$vss_name" $vss_stripe
@@ -4811,6 +5537,7 @@ proc get_stdcell_area {} {
   set minY [$first_row yMin]
   set maxY [$first_row yMax]
   set stdcell_area [odb::newSetFromRect $minX $minY $maxX $maxY]
+
   set stdcell_plus_area [odb::newSetFromRect $minX [expr $minY - $rails_width / 2] $maxX [expr $maxY + $rails_width / 2]]
 
   foreach row [lrange $rows 1 end] {
@@ -4883,13 +5610,13 @@ proc get_voltage_domain {llx lly urx ury} {
   return $name
 }
 
-proc get_domain_power {domain} {
+proc get_voltage_domain_power {domain} {
   variable voltage_domains
 
   return [dict get $voltage_domains $domain primary_power]
 }
 
-proc get_domain_ground {domain} {
+proc get_voltage_domain_ground {domain} {
   variable voltage_domains
 
   return [dict get $voltage_domains $domain primary_ground]
@@ -5001,8 +5728,8 @@ proc update_mesh_stripes_with_volatge_domains {tag lay snet_name} {
 
     for {set i 0} {$i < [llength $stripes($lay,$tag)]} {incr i} {
       set updated_polygonSet [lindex $stripes($lay,$tag) $i]
-      if {$snet_name == [get_domain_ground $domain_name] ||
-          $snet_name == [get_domain_power $domain_name]} {
+      if {$snet_name == [get_voltage_domain_ground $domain_name] ||
+          $snet_name == [get_voltage_domain_power $domain_name]} {
         set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box_for_crossing_core_net]
       } else {
         set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box]
@@ -5051,8 +5778,8 @@ proc generate_voltage_domain_rings {core_ring_data} {
     if {$domain_name == [dict get $design_data core_domain]} {continue}
     set domain [$block findRegion $domain_name]
     set rect [lindex [$domain getBoundaries] 0]
-    set power_net [get_domain_power $domain_name]
-    set ground_net [get_domain_ground $domain_name]
+    set power_net [get_voltage_domain_power $domain_name]
+    set ground_net [get_voltage_domain_ground $domain_name]
 
     set domain_xMin [$rect xMin]
     set domain_yMin [$rect yMin]
@@ -5106,14 +5833,14 @@ proc generate_voltage_domain_rings {core_ring_data} {
             [expr $outer_uy + $width / 2] \
           ]
 
-        if {$power_net == [get_domain_power [dict get $design_data core_domain]]} {
+        if {$power_net == [get_voltage_domain_power [dict get $design_data core_domain]]} {
           add_stripe $layer "POWER" $lower_inner_ring
           add_stripe $layer "POWER" $upper_inner_ring
         } else {
           add_stripe $layer "POWER_$power_net" $lower_inner_ring
           add_stripe $layer "POWER_$power_net" $upper_inner_ring
         }
-        if {$ground_net == [get_domain_ground [dict get $design_data core_domain]]} {
+        if {$ground_net == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
           add_stripe $layer "GROUND" $lower_outer_ring
           add_stripe $layer "GROUND" $upper_outer_ring
         } else {
@@ -5150,14 +5877,14 @@ proc generate_voltage_domain_rings {core_ring_data} {
             [expr $outer_uy + $width / 2] \
           ]
 
-        if {$power_net == [get_domain_power [dict get $design_data core_domain]]} {
+        if {$power_net == [get_voltage_domain_power [dict get $design_data core_domain]]} {
           add_stripe $layer "POWER" $lhs_inner_ring
           add_stripe $layer "POWER" $rhs_inner_ring
         } else {
           add_stripe $layer "POWER_$power_net" $lhs_inner_ring
           add_stripe $layer "POWER_$power_net" $rhs_inner_ring
         }
-        if {$ground_net == [get_domain_ground [dict get $design_data core_domain]]} {
+        if {$ground_net == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
           add_stripe $layer "GROUND" $lhs_outer_ring
           add_stripe $layer "GROUND" $rhs_outer_ring
         } else {
@@ -5330,31 +6057,33 @@ proc add_blockages {more_blockages} {
 }
 
 proc add_macro_based_grids {} {
-  variable instances
   variable grid_data
   variable design_data
   variable verbose
 
-  set_blockages {}
-  if {[llength [dict keys $instances]] > 0} {
-    utl::info "PDN" 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
-    foreach instance [dict keys $instances] {
-      if {$verbose == 1} {
-        utl::info "PDN" 34 "  - grid for instance $instance"
-      }
-      # debug "$instance [get_instance_specification $instance]"
-      set grid_data [get_instance_specification $instance]
-      # debug "area=[dict get $grid_data area]"
-      add_grid
+  foreach grid_data [dict get $design_data grid macro] {
+    set instances [dict get $design_data grid macro _related_instances]
+    set_blockages {}
+    if {[llength [dict keys $instances]] > 0} {
+      utl::info "PDN" 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
+      foreach instance [dict keys $instances] {
+        if {$verbose == 1} {
+          utl::info "PDN" 34 "  - grid for instance $instance"
+        }
+        # debug "$instance [get_instance_specification $instance]"
+        # set grid_data [get_instance_specification $instance]
+        # debug "area=[dict get $grid_data area]"
+        add_grid
 
-      # debug "Generate vias for [dict get $design_data power_nets] [dict get $design_data ground_nets]"
-      foreach pwr_net [dict get $design_data power_nets] {
-        # debug "Generate vias for $pwr_net"
-        generate_grid_vias "POWER" $pwr_net
-      }
-      foreach gnd_net [dict get $design_data ground_nets] {
-        # debug "Generate vias for $gnd_net"
-        generate_grid_vias "GROUND" $gnd_net
+        # debug "Generate vias for [dict get $design_data power_nets] [dict get $design_data ground_nets]"
+        foreach pwr_net [dict get $design_data power_nets] {
+          # debug "Generate vias for $pwr_net"
+          generate_grid_vias "POWER" $pwr_net
+        }
+        foreach gnd_net [dict get $design_data ground_nets] {
+          # debug "Generate vias for $gnd_net"
+          generate_grid_vias "GROUND" $gnd_net
+        }
       }
     }
   }
@@ -5440,6 +6169,7 @@ proc apply {args} {
   }
 
   init {*}$args
+
   plan_grid
 
   opendb_update_grid
