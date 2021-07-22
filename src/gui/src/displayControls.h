@@ -237,10 +237,7 @@ class DisplayControls : public QDockWidget, public Options
                                 const QString& text,
                                 QStandardItemModel* parent,
                                 Qt::CheckState checked,
-                                const CallbackFunction& visibility_action
-                                = CallbackFunction(),
-                                const CallbackFunction& select_action
-                                = CallbackFunction());
+                                bool add_selectable = false);
 
   void makeLeafItem(ModelRow& row,
                     const QString& text,

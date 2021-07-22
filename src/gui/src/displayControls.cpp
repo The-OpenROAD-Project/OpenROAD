@@ -161,12 +161,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       "Layers",
       model_,
       Qt::Checked,
-      [this](bool visible) {
-        toggleAllChildren(visible, layers_group_.name, Visible);
-      },
-      [this](bool selectable) {
-        toggleAllChildren(selectable, layers_group_.name, Selectable);
-      });
+      true);
   view_->expand(layers->index());
 
   // Nets group
@@ -175,12 +170,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       "Nets",
       model_,
       Qt::Checked,
-      [this](bool visible) {
-        toggleAllChildren(visible, nets_group_.name, Visible);
-      },
-      [this](bool selectable) {
-        toggleAllChildren(selectable, nets_group_.name, Selectable);
-      });
+      true);
 
   // make net items, non-null last argument to create checkbox
   makeLeafItem(nets_.signal, "Signal", nets_parent, Qt::Checked, true);
@@ -194,12 +184,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       "Instances",
       model_,
       Qt::Checked,
-      [this](bool visible) {
-        toggleAllChildren(visible, instance_group_.name, Visible);
-      },
-      [this](bool selectable) {
-        toggleAllChildren(selectable, instance_group_.name, Selectable);
-      });
+      true);
 
   // make instance items, non-null last argument to create checkbox
   makeLeafItem(instances_.core, "StdCells", instances_parent, Qt::Checked, true);
@@ -218,18 +203,14 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   // Track patterns group
   auto tracks = makeParentItem(
-      tracks_group_, "Tracks", model_, Qt::Unchecked, [this](bool visible) {
-        toggleAllChildren(visible, tracks_group_.name, Visible);
-      });
+      tracks_group_, "Tracks", model_, Qt::Unchecked);
 
   makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
   makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
 
   // Misc group
   auto misc = makeParentItem(
-      misc_group_, "Misc", model_, Qt::Unchecked, [this](bool visible) {
-        toggleAllChildren(visible, misc_group_.name, Visible);
-      });
+      misc_group_, "Misc", model_, Qt::Unchecked);
 
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
 
@@ -514,19 +495,21 @@ QStandardItem* DisplayControls::makeParentItem(
     const QString& text,
     QStandardItemModel* parent,
     Qt::CheckState checked,
-    const CallbackFunction& visibility_action,
-    const CallbackFunction& select_action)
+    bool add_selectable)
 {
-  bool add_selectable = false;
-  if (select_action) {
-    add_selectable = true;
-  }
-
   makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable);
 
-  row.visible->setData(QVariant::fromValue(Callback({visibility_action})));
+  row.visible->setData(QVariant::fromValue(Callback({
+    [this, row](bool visible) {
+      toggleAllChildren(visible, row.name, Visible);
+    }
+  })));
   if (add_selectable) {
-    row.selectable->setData(QVariant::fromValue(Callback({select_action})));
+    row.selectable->setData(QVariant::fromValue(Callback({
+      [this, row](bool selectable) {
+        toggleAllChildren(selectable, row.name, Selectable);
+      }
+    })));
   }
 
   return row.name;
@@ -708,11 +691,7 @@ void DisplayControls::addCustomVisibilityControl(const std::string& name,
   makeParentItem(custom_controls_[name],
                  q_name,
                  model_,
-                 checked,
-                 [this, name](bool visible) {
-                   custom_controls_[name].visible->setCheckState(
-                       visible ? Qt::Checked : Qt::Unchecked);
-                 });
+                 checked);
 }
 
 bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
