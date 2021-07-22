@@ -181,10 +181,11 @@ DisplayControls::DisplayControls(QWidget* parent)
         toggleAllChildren(selectable, nets_group_.name, Selectable);
       });
 
-  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, [](bool) {}, [](bool) {});
-  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, [](bool) {}, [](bool) {});
-  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, [](bool) {}, [](bool) {});
-  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, [](bool) {}, [](bool) {});
+  // make net items, non-null last argument to create checkbox
+  makeItem(nets_.signal, "Signal", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.power, "Power", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.ground, "Ground", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
+  makeItem(nets_.clock, "Clock", nets_parent, Qt::Checked, std::function<void(bool)>(), [](bool) {});
 
   // Rows
   makeItem(rows_, "Rows", model_, Qt::Unchecked);
