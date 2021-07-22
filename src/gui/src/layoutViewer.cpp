@@ -378,7 +378,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     // Just return the first one
     for (auto iter : shapes) {
       dbNet* net = std::get<2>(iter);
-      if (options_->isNetVisible(net)) {
+      if (options_->isNetVisible(net) && options_->isNetSelectable(net)) {
         return makeSelected_(net);
       }
     }

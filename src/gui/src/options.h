@@ -52,6 +52,7 @@ class Options
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
   virtual bool isNetVisible(odb::dbNet* net) = 0;
+  virtual bool isNetSelectable(odb::dbNet* net) = 0;
   virtual bool areFillsVisible() = 0;
   virtual bool areRowsVisible() = 0;
   virtual bool arePrefTracksVisible() = 0;
