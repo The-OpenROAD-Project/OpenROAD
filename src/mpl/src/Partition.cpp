@@ -126,14 +126,12 @@ void Partition::fillNetlistTable(MacroPartMap& macroPartMap)
             int weight = macro_placer_->weight(global_idx1, GLOBAL_WEST_IDX);
             if (partClass == PartClass::NE) {
               for (auto& macro_idx : macroPartMap[PartClass::NW]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             if (partClass == PartClass::SE) {
               for (auto& macro_idx : macroPartMap[PartClass::SW]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             net_tbl_[i * macro_edge_count + j] = weight;
@@ -141,14 +139,12 @@ void Partition::fillNetlistTable(MacroPartMap& macroPartMap)
             int weight = macro_placer_->weight(global_idx1, GLOBAL_EAST_IDX);
             if (partClass == PartClass::NW) {
               for (auto& macro_idx : macroPartMap[PartClass::NE]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             if (partClass == PartClass::SW) {
               for (auto& macro_idx : macroPartMap[PartClass::SE]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             net_tbl_[i * macro_edge_count + j] = weight;
@@ -156,14 +152,12 @@ void Partition::fillNetlistTable(MacroPartMap& macroPartMap)
             int weight = macro_placer_->weight(global_idx1, GLOBAL_NORTH_IDX);
             if (partClass == PartClass::SE) {
               for (auto& macro_idx : macroPartMap[PartClass::SE]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             if (partClass == PartClass::SW) {
               for (auto& macro_idx : macroPartMap[PartClass::NW]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             net_tbl_[i * macro_edge_count + j] = weight;
@@ -172,14 +166,12 @@ void Partition::fillNetlistTable(MacroPartMap& macroPartMap)
 
             if (partClass == PartClass::NE) {
               for (auto& macro_idx : macroPartMap[PartClass::SE]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             if (partClass == PartClass::NW) {
               for (auto& macro_idx : macroPartMap[PartClass::SW]) {
-                int global_idx = globalIndex(macro_idx);
-                weight += macro_placer_->weight(global_idx1, global_idx);
+                weight += macro_placer_->weight(global_idx1, macro_idx);
               }
             }
             net_tbl_[i * macro_edge_count + j] = weight;

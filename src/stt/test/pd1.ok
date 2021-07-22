@@ -24,3 +24,5 @@ WL = 54
 3 (65 38) neighbor 3 length 0
 Net dup4
 WL = 0
+Net one
+WL = 0
