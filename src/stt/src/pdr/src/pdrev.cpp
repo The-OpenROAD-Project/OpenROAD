@@ -224,21 +224,28 @@ Tree PdRev::translateTree()
   }
 
   Tree tree;
-  tree.deg = graph_->num_terminals;
-  int branch_count = tree.branchCount();
-  if (graph_->nodes.size() != branch_count)
-    logger_->error(PDR, 666, "steiner branch count inconsistent");
-  tree.branch.resize(branch_count);
-  tree.length = graph_->calc_tree_wl_pd();
-  for (int i = 0; i < graph_->nodes.size(); ++i) {
-    Node& child = graph_->nodes[i];
-    int parent = child.parent;
-    if (parent >= graph_->nodes.size())
-      logger_->error(PDR, 667, "steiner branch node out of bounds");
-    Branch& newBranch = tree.branch[i];
-    newBranch.x = child.x;
-    newBranch.y = child.y;
-    newBranch.n = parent;
+  int num_terminals = graph_->num_terminals;
+  tree.deg = num_terminals;
+  if (num_terminals < 2) {
+    tree.branch.resize(0);
+    tree.length = 0;
+  }
+  else {
+    int branch_count = tree.branchCount();
+    tree.branch.resize(branch_count);
+    tree.length = graph_->calc_tree_wl_pd();
+    if (graph_->nodes.size() != branch_count)
+      logger_->error(PDR, 666, "steiner branch count inconsistent");
+    for (int i = 0; i < graph_->nodes.size(); ++i) {
+      Node& child = graph_->nodes[i];
+      int parent = child.parent;
+      if (parent >= graph_->nodes.size())
+        logger_->error(PDR, 667, "steiner branch node out of bounds");
+      Branch& newBranch = tree.branch[i];
+      newBranch.x = child.x;
+      newBranch.y = child.y;
+      newBranch.n = parent;
+    }
   }
   return tree;
 }
