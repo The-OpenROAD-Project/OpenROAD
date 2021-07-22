@@ -196,12 +196,13 @@ DisplayControls::DisplayControls(QWidget* parent)
         toggleAllChildren(selectable, instance_group_.name, Selectable);
       });
 
-  makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
-  makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
-  makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
-  makeItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
-  makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
-  makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, [this](bool){}, [this](bool){});
+  // make instance items, non-null last argument to create checkbox
+  makeItem(instances_.core, "StdCells", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
+  makeItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
+  makeItem(instances_.fill, "Fill", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
+  makeItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
+  makeItem(instances_.pads, "Pads", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
+  makeItem(instances_.cover, "Cover", instances_parent, Qt::Checked, std::function<void(bool)>(), [](bool){});
 
   // Rows
   makeItem(rows_, "Rows", model_, Qt::Unchecked);
