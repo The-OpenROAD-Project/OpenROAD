@@ -199,8 +199,8 @@ Error
 
 Error messages should be used for indicating correctness problems.
 Problems with command arguments are a good example of errors. Errors
-exit the current command by throwing an exception that is converted to a tcl
-command script. Errors that occur while reading a command file stop
+exit the current command by throwing an exception that is converted to an error in Tcl. 
+Errors that occur while reading a command file stop
 executing the script commands.
 
 Example error messages:
