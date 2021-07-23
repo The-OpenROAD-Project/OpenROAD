@@ -120,7 +120,7 @@ void FastRouteCore::deleteComponents()
         delete net;
       net = nullptr;
     }
-  
+
     nets_.clear();
   }
 
@@ -170,7 +170,7 @@ void FastRouteCore::deleteComponents()
     delete[] sttrees_;
     sttrees_ = nullptr;
   }
-  
+
   parent_x1_.resize(boost::extents[0][0]);
   parent_y1_.resize(boost::extents[0][0]);
   parent_x3_.resize(boost::extents[0][0]);
@@ -195,7 +195,7 @@ void FastRouteCore::deleteComponents()
   hyper_v_.resize(boost::extents[0][0]);
   hyper_h_.resize(boost::extents[0][0]);
   corr_edge_.resize(boost::extents[0][0]);
-  
+
   in_region_.resize(boost::extents[0][0]);
 
   d1_3D_.resize(boost::extents[0][0][0]);
@@ -724,7 +724,7 @@ void FastRouteCore::updateDbCongestion()
   if(db_gcell == nullptr)
   {
     db_gcell = block->getGCellGrid();
-    logger_->warn(utl::GRT, 211, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+    logger_->warn(utl::GRT, 211, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
@@ -733,7 +733,7 @@ void FastRouteCore::updateDbCongestion()
     auto layer = db_->getTech()->findRoutingLayer(k+1);
     if(layer == nullptr)
     {
-      logger_->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
+      logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k+1);
       continue;
     }
 
@@ -1121,7 +1121,8 @@ NetRouteMap FastRouteCore::run()
   if (overflow_increases > max_overflow_increases_) {
     logger_->warn(GRT,
                  230,
-                 "Congestion iterations reached the maximum number of total overflow increases.");
+                 "Congestion iterations cannot increase overflow, reached the "
+                 "maximum number of times the total overflow can bee increased.");
   }
 
   freeRR();
