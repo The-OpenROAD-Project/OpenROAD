@@ -216,7 +216,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
     slots[slot_idx].blocked = true;
     io_pin.setLayer(slots[slot_idx].layer);
     assignment_.push_back(io_pin);
-    sections_[0].net.addIONet(io_pin, instPins);
+    sections_[0].pin_indices.push_back(pin_idx);
     io_idx++;
   }
 }
@@ -660,17 +660,13 @@ int IOPlacer::assignGroupToSection(const std::vector<int> &io_group,
         std::vector<int> group;
         for (int pin_idx : io_group) {
           IOPin &io_pin = net.getIoPin(pin_idx);
-
-          std::vector<InstancePin> inst_pins_vector;
-          net.getSinksOfIO(pin_idx, inst_pins_vector);
-
-          sections[i].net.addIONet(io_pin, inst_pins_vector);
-          group.push_back(sections[i].net.numIOPins()-1);
+          sections[i].pin_indices.push_back(pin_idx);
+          group.push_back(pin_idx);
           sections[i].used_slots++;
           io_pin.assignToSection();
         }
         total_pins_assigned += group_size;
-        sections[i].net.addIOGroup(group);
+        sections[i].pin_groups.push_back(group);
         group_assigned = true;
         break;
       }
@@ -721,15 +717,13 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
 
   if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()) {
     std::vector<int> dst(sections.size());
-    std::vector<InstancePin> inst_pins_vector;
     for (int i = 0; i < sections.size(); i++) {
       dst[i] = net.computeIONetHPWL(
           idx, sections[i].pos);
     }
-    net.getSinksOfIO(idx, inst_pins_vector);
     for (auto i : sortIndexes(dst)) {
       if (sections[i].used_slots < sections[i].num_slots) {
-        sections[i].net.addIONet(io_pin, inst_pins_vector);
+        sections[i].pin_indices.push_back(idx);
         sections[i].used_slots++;
         pin_assigned = true;
         io_pin.assignToSection();
@@ -1096,12 +1090,12 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
 {
   std::vector<HungarianMatching> hg_vec;
   for (int idx = 0; idx < sections.size(); idx++) {
-    if (sections[idx].net.numIOPins() > 0) {
+    if (sections[idx].pin_indices.size() > 0) {
       if (sections[idx].edge == Edge::invalid) {
-        HungarianMatching hg(sections[idx], top_layer_slots_, logger_);
+        HungarianMatching hg(sections[idx], netlist_io_pins_, top_layer_slots_, logger_);
         hg_vec.push_back(hg);
       } else {
-        HungarianMatching hg(sections[idx], slots_, logger_);
+        HungarianMatching hg(sections[idx], netlist_io_pins_, slots_, logger_);
         hg_vec.push_back(hg);
       }
     }
@@ -1161,7 +1155,7 @@ void IOPlacer::run(bool random_mode)
     for (Constraint &constraint : constraints_) {
       std::vector<Section> sections_for_constraint = assignConstrainedPinsToSections(constraint);
       for (Section& sec : sections_for_constraint) {
-        constrained_pins_cnt += sec.net.numIOPins();
+        constrained_pins_cnt += sec.pin_indices.size();
       }
 
       findPinAssignment(sections_for_constraint);
@@ -1188,7 +1182,7 @@ void IOPlacer::run(bool random_mode)
 
   if (report_hpwl_) {
     for (int idx = 0; idx < sections_.size(); idx++) {
-      total_hpwl += returnIONetsHPWL(sections_[idx].net);
+      total_hpwl += returnIONetsHPWL(netlist_io_pins_);
     }
     delta_hpwl = init_hpwl - total_hpwl;
     logger_->info(PPL, 11, "HPWL before ioPlacer: {}", init_hpwl);
