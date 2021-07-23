@@ -40,11 +40,14 @@
 namespace ppl {
 
 HungarianMatching::HungarianMatching(Section& section,
+                                     Netlist& netlist,
                                      std::vector<Slot>& slots,
                                      Logger* logger)
-    : netlist_(section.net), slots_(slots)
+    : netlist_(netlist), slots_(slots),
+      pin_indices_(section.pin_indices),
+      pin_groups_(section.pin_groups)
 {
-  num_io_pins_ = netlist_.numIOPins();
+  num_io_pins_ = section.pin_indices.size();
   num_pin_groups_ = netlist_.numIOGroups();
   begin_slot_ = section.begin_slot;
   end_slot_ = section.end_slot;
@@ -73,14 +76,13 @@ void HungarianMatching::createMatrix()
       continue;
     }
     hungarian_matrix_[slot_index].resize(num_io_pins_);
-    int idx = 0;
-    for (IOPin& io_pin : netlist_.getIOPins()) {
+    for (int idx : pin_indices_) {
+      const IOPin& io_pin = netlist_.getIoPin(idx);
       if (!io_pin.isInGroup()) {
         int hpwl = netlist_.computeIONetHPWL(idx, newPos);
         hungarian_matrix_[slot_index][pinIndex] = hpwl;
         pinIndex++;
       }
-      idx++;
     }
     slot_index++;
   }
@@ -96,7 +98,8 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   size_t rows = non_blocked_slots_;
   size_t col = 0;
   int slot_index = 0;
-  for (IOPin& io_pin : netlist_.getIOPins()) {
+  for (int idx : pin_indices_) {
+    IOPin& io_pin = netlist_.getIoPin(idx);
     if (!io_pin.isInGroup()) {
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
@@ -134,7 +137,7 @@ void HungarianMatching::findAssignmentForGroups()
 
 void HungarianMatching::createMatrixForGroups()
 {
-  for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+  for (std::vector<int>& io_group : pin_groups_) {
     group_size_ = std::max(static_cast<int>(io_group.size()), group_size_);
   }
 
@@ -168,7 +171,7 @@ void HungarianMatching::createMatrixForGroups()
       }
 
       hungarian_matrix_[slot_index].resize(num_pin_groups_);
-      for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+      for (std::vector<int>& io_group : pin_groups_) {
         int group_hpwl = 0;
         for (int io_idx : io_group) {
           int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos);
@@ -195,7 +198,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
   size_t rows = group_slots_;
   size_t col = 0;
   int slot_index = 0;
-  for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+  for (std::vector<int>& io_group : pin_groups_) {
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
       while (slots_[slot_index].blocked && slot_index < slots_.size())
@@ -206,7 +209,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
       }
       int pin_cnt = 0;
       for (int pin_idx : io_group) {
-        IOPin io_pin = netlist_.getIoPin(pin_idx);
+        IOPin& io_pin = netlist_.getIoPin(pin_idx);
         io_pin.setPos(slots_[slot_index + pin_cnt].pos);
         io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
         assigment.push_back(io_pin);
