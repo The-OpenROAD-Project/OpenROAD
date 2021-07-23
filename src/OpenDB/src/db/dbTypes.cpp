@@ -841,6 +841,44 @@ bool dbMasterType::isEndCap() const
   return false;
 }
 
+bool dbMasterType::isCover() const
+{
+  switch (_value) {
+    case COVER:
+    case COVER_BUMP:
+      return true;
+    case NONE:
+    case RING:
+    case BLOCK:
+    case BLOCK_BLACKBOX:
+    case BLOCK_SOFT:
+    case PAD:
+    case PAD_INPUT:
+    case PAD_OUTPUT:
+    case PAD_INOUT:
+    case PAD_POWER:
+    case PAD_SPACER:
+    case PAD_AREAIO:
+    case CORE:
+    case CORE_FEEDTHRU:
+    case CORE_TIEHIGH:
+    case CORE_TIELOW:
+    case CORE_SPACER:
+    case CORE_ANTENNACELL:
+    case CORE_WELLTAP:
+    case ENDCAP:
+    case ENDCAP_PRE:
+    case ENDCAP_POST:
+    case ENDCAP_TOPLEFT:
+    case ENDCAP_TOPRIGHT:
+    case ENDCAP_BOTTOMLEFT:
+    case ENDCAP_BOTTOMRIGHT:
+      return false;
+  }
+  assert(false);
+  return false;
+}
+
 dbTechLayerType::dbTechLayerType(const char* value)
 {
   if (strcasecmp(value, "ROUTING") == 0)

@@ -76,6 +76,19 @@ set_net_alpha(odb::dbNet* net, float alpha)
 }
 
 void
+set_min_fanout_alpha(int num_pins, float alpha)
+{
+  getSteinerTreeBuilder()->setMinFanoutAlpha(num_pins, alpha);
+}
+
+void
+set_min_hpwl_alpha(int hpwl, float alpha)
+{
+  getSteinerTreeBuilder()->setMinHPWLAlpha(hpwl, alpha);
+}
+
+
+void
 report_pd_tree(std::vector<int> x,
                std::vector<int> y,
                int drvr_index,

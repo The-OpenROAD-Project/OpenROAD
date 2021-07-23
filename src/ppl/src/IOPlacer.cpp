@@ -183,10 +183,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
   double shift = is_group ? 1 : num_slots / double(num_i_os);
   int idx = 0;
   std::vector<int> vSlots(num_slots);
-  std::vector<int> vIOs(num_i_os);
+  std::vector<int> io_pin_indices(num_i_os);
 
   std::vector<InstancePin> instPins;
-  netlist_.getSinksOfIO(idx, instPins);
   if (sections_.size() < 1) {
     Section s = {Point(0, 0)};
     sections_.push_back(s);
@@ -195,28 +194,30 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
   std::mt19937 g;
   g.seed(seed);
 
-  for (size_t i = 0; i < vIOs.size(); ++i) {
-    vIOs[i] = i;
+  for (size_t i = 0; i < io_pin_indices.size(); ++i) {
+    io_pin_indices[i] = i;
   }
 
-  if (vIOs.size() > 1 && !is_group) {
-    utl::shuffle(vIOs.begin(), vIOs.end(), g);
+  if (io_pin_indices.size() > 1 && !is_group) {
+    utl::shuffle(io_pin_indices.begin(), io_pin_indices.end(), g);
   }
 
   std::vector<Slot> &slots = top_layer ? top_layer_slots_ : slots_;
 
+  std::vector<IOPin>& io_pins = netlist_.getIOPins();
+  int io_idx = 0;
   for (int pin_idx : pin_indices) {
-    int b = vIOs[0];
+    int b = io_pin_indices[io_idx];
     int slot_idx = slot_indices[floor(b * shift)];
-    IOPin& io_pin = netlist_.getIoPin(pin_idx);
-    io_pin.setPos(slots.at(slot_idx).pos);
+    IOPin& io_pin = io_pins[pin_idx];
+    io_pin.setPos(slots[slot_idx].pos);
     io_pin.setPlaced();
-    slots.at(slot_idx).used = true;
-    slots.at(slot_idx).blocked = true;
-    io_pin.setLayer(slots.at(slot_idx).layer);
+    slots[slot_idx].used = true;
+    slots[slot_idx].blocked = true;
+    io_pin.setLayer(slots[slot_idx].layer);
     assignment_.push_back(io_pin);
     sections_[0].net.addIONet(io_pin, instPins);
-    vIOs.erase(vIOs.begin());
+    io_idx++;
   }
 }
 

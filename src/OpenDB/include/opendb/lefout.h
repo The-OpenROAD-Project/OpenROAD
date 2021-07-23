@@ -35,8 +35,10 @@
 #include <string>
 #include <unordered_map>
 
+#include "db.h"
 #include "dbObject.h"
 #include "odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -63,12 +65,16 @@ class lefout
   bool _write_marked_masters;
   double _dist_factor;
   double _area_factor;
+  utl::Logger* logger_;
 
-  void writeBoxes(void* boxes, const char* indent);
+  template<typename GenericBox>
+  void writeBoxes(dbSet<GenericBox>& boxes, const char* indent);
+
   void writeTech(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
   void writeHeader(dbLib* lib);
+  void writeHeader(dbBlock* db_block);
   void writeLib(dbLib* lib);
   void writeMaster(dbMaster* master);
   void writeMTerm(dbMTerm* mterm);
@@ -80,6 +86,27 @@ class lefout
   void writeTechViaGenerateRule(dbTechViaGenerateRule* rule);
   void writePropertyDefinition(dbProperty* prop);
   void writePropertyDefinitions(dbLib* lib);
+  void writeVersion(const char* version);
+  void writeNameCaseSensitive(const dbOnOffType on_off_type);
+  void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
+  void writeUnits(int database_units);
+  void writeDividerChar(char hier_delimeter);
+  void writeObstructions(dbBlock* db_block);
+  void getTechLayerObstructions(
+      dbBlock* db_block,
+      std::set<dbTechLayer*>& obstruction_layers) const;
+  void writeBox(std::string indent, dbBox* box);
+  void findWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
+                                 dbNet* net) const;
+  void findSWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
+                                  dbNet* net) const;
+  void writeBlock(dbBlock* db_block);
+  void writePins(dbBlock* db_block);
+  void writePowerPins(dbBlock* db_block);
+  void writeBlockTerms(dbBlock* db_block);
+  void findLayerViaObstructions(std::set<dbTechLayer*>& obstruction_layers,
+                                dbSBox* box) const;
+
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
       std::unordered_map<std::string, short>& propertiesMap);
@@ -89,12 +116,13 @@ class lefout
 
   double lefarea(int value) { return ((double) value * _area_factor); }
 
-  lefout()
+  lefout(utl::Logger* logger)
   {
     _out = nullptr;
     _write_marked_masters = _use_alias = _use_master_ids = false;
     _dist_factor = 0.001;
     _area_factor = 0.000001;
+    logger_ = logger;
   }
 
   ~lefout() {}
@@ -106,8 +134,8 @@ class lefout
   bool writeTech(dbTech* tech, const char* lef_file);
   bool writeLib(dbLib* lib, const char* lef_file);
   bool writeTechAndLib(dbLib* lib, const char* lef_file);
+  bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
 
   FILE* out() { return _out; }
 };
-
 }  // namespace odb
