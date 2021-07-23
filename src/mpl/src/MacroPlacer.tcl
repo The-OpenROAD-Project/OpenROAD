@@ -46,7 +46,7 @@ proc macro_placement { args } {
   if { [info exists keys(-halo)] } {
     set halo $keys(-halo)
     if { [llength $halo] != 2 } {
-      utl::error "MPL" 92 "-halo is not a list of 2 values."
+      utl::error "MPL" 92 "-halo receives a list with 2 values, [llength $halo] given."
     }
     lassign $halo halo_x halo_y
     sta::check_positive_float "-halo x" $halo_x
@@ -57,7 +57,7 @@ proc macro_placement { args } {
   if { [info exists keys(-channel)] } {
     set channel $keys(-channel)
     if { [llength $channel] != 2 } {
-      utl::error "MPL" 93 "-channel is not a list of 2 values."
+      utl::error "MPL" 93 "-channel receives a list with 2 values, [llength $channel] given."
     }
     lassign $channel channel_x channel_y
     sta::check_positive_float "-channel x" $channel_x
@@ -73,14 +73,14 @@ proc macro_placement { args } {
   set core_ly [ord::dbu_to_microns [$core yMin]]
   set core_ux [ord::dbu_to_microns [$core xMax]]
   set core_uy [ord::dbu_to_microns [$core yMax]]
-  
+
   if { [info exists keys(-fence_region)] } {
     set fence_region $keys(-fence_region)
     if { [llength $fence_region] != 4 } {
-      utl::error "MPL" 94 "-fence_region is not a list of 4 values."
+      utl::error "MPL" 94 "-fence_region receives a list with 4 values, [llength $fence_region] given."
     }
     lassign $fence_region lx ly ux uy
-    
+
     if { $lx < $core_lx || $ly < $core_ly || $ux > $core_ux || $uy > $core_uy } {
       utl::warn "MPL" 85 "fence_region outside of core area. Using core area."
       mpl::set_fence_region $core_lx $core_ly $core_ux $core_uy
@@ -99,7 +99,7 @@ proc macro_placement { args } {
   set tech [ord::get_db_tech]
   set layer [$tech findRoutingLayer $snap_layer]
   if { $layer == "NULL" } {
-    utl::error "MPL" 95 "snap layer $snap_layer is not a routing layer."
+    utl::error "MPL" 95 "Snap layer $snap_layer is not a routing layer."
   }
   mpl::set_snap_layer $layer
 
@@ -112,7 +112,7 @@ proc macro_placement { args } {
   } elseif { $style == "corner_min_wl" } {
     mpl::place_macros_corner_min_wl
   } else {
-    utl::error MPL 96 "Unknown placement style."
+    utl::error MPL 96 "Unknown placement style. Use one of corner_max_wl or corner_min_wl."
   }
 }
 
