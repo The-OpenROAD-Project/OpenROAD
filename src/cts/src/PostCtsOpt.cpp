@@ -87,7 +87,7 @@ void PostCtsOpt::fixSourceSinkDists()
     fixNetSourceSinkDists(subNet);
   });
 
-  _logger->info(CTS, 37, " Number of outlier sinks: {}", _numViolatingSinks);
+  _logger->info(CTS, 37, " Number of outlier sinks: {}.", _numViolatingSinks);
 }
 
 void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
