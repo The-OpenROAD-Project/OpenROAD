@@ -1395,8 +1395,10 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   logger_->info(
       PAR,
       402,
-      "Traversed Logical Hierarchy \n\t Number of std cell instances: {}\n\t "
-      "Total Area: {}\n\t Number of Hard Macros: {}\n\t ",
+      "Traversed logical hierarchy\n"
+      "\tNumber of std cell instances: {}\n"
+      "\tTotal area: {}\n"
+      "\tNumber of hard macros: {}",
       metric.num_inst,
       metric.area,
       metric.num_macro);
@@ -1623,7 +1625,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
           //    || cluster_map_[iter->first]->getNumMacro() > 0) {
           //  weight += virtual_weight_;
           //}
-            
+
           if(weight < ignore_net_threshold) {
               weight = 0;
           }
