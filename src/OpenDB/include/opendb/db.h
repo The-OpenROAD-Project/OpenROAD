@@ -5301,6 +5301,11 @@ class dbMaster : public dbObject
   bool isEndCap() const { return getType().isEndCap(); }
 
   ///
+  /// Is the master's type COVER or any of its subtypes
+  ///
+  bool isCover() const { return getType().isCover(); };
+
+  ///
   /// This master can be placed automatically in the core.
   /// Pad, ring, cover, and none are false.
   ///

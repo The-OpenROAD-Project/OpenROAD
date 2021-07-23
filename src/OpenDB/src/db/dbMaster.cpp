@@ -772,30 +772,41 @@ dbMaster* dbMaster::getMaster(dbLib* lib_, uint dbid_)
 bool dbMaster::isFiller()
 {
   _dbMaster* master = (_dbMaster*) this;
-  // dbMasterType type= dbMasterType(master->_flags._type);
-
-  if (getMTermCount() == 2) {
-    bool signal = false;
-    dbSet<dbMTerm>::iterator itr;
-    dbSet<dbMTerm> mterms = getMTerms();
-    for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-      dbMTerm* mt = *itr;
-      if (!((mt->getSigType() == dbSigType::GROUND)
-            || (mt->getSigType() == dbSigType::POWER))) {
-        signal = true;
-        break;
-      }
-    }
-    if (!signal)
-      return true;
-  }
 
   switch (master->_flags._type) {
     case dbMasterType::CORE_SPACER:
       return true;
-    default:
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+    case dbMasterType::NONE:
       return false;
   }
+  // gcc warning
+  return false;
 }
 
 bool dbMaster::isCoreAutoPlaceable()

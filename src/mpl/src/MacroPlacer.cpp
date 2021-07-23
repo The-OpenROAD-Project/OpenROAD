@@ -211,7 +211,7 @@ void MacroPlacer::placeMacrosCornerMinWL()
   partition.macros_ = macros_;
 
   MacroPartMap globalMacroPartMap;
-  updateMacroPartMap(partition, globalMacroPartMap);
+  makeMacroPartMap(partition, globalMacroPartMap);
 
   if (connection_driven_) {
     partition.fillNetlistTable(globalMacroPartMap);
@@ -287,7 +287,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   vector<vector<Partition>> allSets;
 
   MacroPartMap globalMacroPartMap;
-  updateMacroPartMap(top_partition, globalMacroPartMap);
+  makeMacroPartMap(top_partition, globalMacroPartMap);
 
   if (connection_driven_) {
     top_partition.fillNetlistTable(globalMacroPartMap);
@@ -317,75 +317,75 @@ void MacroPlacer::placeMacrosCornerMaxWl()
       // Zero case handling when east_partitions = 0
       if (east_partitions.empty() && !west_partitions.empty()) {
         for (size_t i = 0; i < west_partitions.size(); i++) {
-          vector<Partition> partition_set;
+          vector<Partition> partition_set2;
 
           // one set is composed of two subblocks
-          partition_set.push_back(west_partitions[i].first);
-          partition_set.push_back(west_partitions[i].second);
+          partition_set2.push_back(west_partitions[i].first);
+          partition_set2.push_back(west_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
           MacroPartMap macroPartMap;
-          for (auto& partition_set : partition_set) {
-            updateMacroPartMap(partition_set, macroPartMap);
+          for (auto& partition : partition_set2) {
+            makeMacroPartMap(partition, macroPartMap);
           }
 
           if (connection_driven_) {
-            for (auto& partition_set : partition_set) {
-              partition_set.fillNetlistTable(macroPartMap);
+            for (auto& partition : partition_set2) {
+              partition.fillNetlistTable(macroPartMap);
             }
           }
 
-          allSets.push_back(partition_set);
+          allSets.push_back(partition_set2);
         }
       }
       // Zero case handling when west_partitions = 0
       else if (!east_partitions.empty() && west_partitions.empty()) {
         for (size_t i = 0; i < east_partitions.size(); i++) {
-          vector<Partition> partition_set;
+          vector<Partition> partition_set2;
 
           // one set is composed of two subblocks
-          partition_set.push_back(east_partitions[i].first);
-          partition_set.push_back(east_partitions[i].second);
+          partition_set2.push_back(east_partitions[i].first);
+          partition_set2.push_back(east_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
           MacroPartMap macroPartMap;
-          for (auto& partition_set : partition_set) {
-            updateMacroPartMap(partition_set, macroPartMap);
+          for (auto& partition : partition_set2) {
+            makeMacroPartMap(partition, macroPartMap);
           }
 
           if (connection_driven_) {
-            for (auto& partition_set : partition_set) {
-              partition_set.fillNetlistTable(macroPartMap);
+            for (auto& partition : partition_set2) {
+              partition.fillNetlistTable(macroPartMap);
             }
           }
 
-          allSets.push_back(partition_set);
+          allSets.push_back(partition_set2);
         }
       } else {
         // for all possible partition combinations
         for (size_t i = 0; i < east_partitions.size(); i++) {
           for (size_t j = 0; j < west_partitions.size(); j++) {
-            vector<Partition> partition_set;
+            vector<Partition> partition_set2;
 
             // one set is composed of four subblocks
-            partition_set.push_back(east_partitions[i].first);
-            partition_set.push_back(east_partitions[i].second);
-            partition_set.push_back(west_partitions[j].first);
-            partition_set.push_back(west_partitions[j].second);
+            partition_set2.push_back(east_partitions[i].first);
+            partition_set2.push_back(east_partitions[i].second);
+            partition_set2.push_back(west_partitions[j].first);
+            partition_set2.push_back(west_partitions[j].second);
 
             MacroPartMap macroPartMap;
-            for (auto& partition_set : partition_set) {
-              updateMacroPartMap(partition_set, macroPartMap);
+            for (auto& partition : partition_set2) {
+              makeMacroPartMap(partition, macroPartMap);
             }
 
             if (connection_driven_) {
-              for (auto& partition_set : partition_set) {
-                partition_set.fillNetlistTable(macroPartMap);
+              for (auto& partition : partition_set2) {
+                partition.fillNetlistTable(macroPartMap);
               }
             }
-            allSets.push_back(partition_set);
+            allSets.push_back(partition_set2);
           }
         }
       }
@@ -527,14 +527,14 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
 //
 // first: macro partition class info
 // second: macro candidates.
-void MacroPlacer::updateMacroPartMap(Partition& part,
-                                     MacroPartMap& macroPartMap)
+void MacroPlacer::makeMacroPartMap(const Partition& part,
+                                   MacroPartMap& macroPartMap) const
 {
   // This does not look like it actually does anything -cherry
   vector<int> macros = macroPartMap[part.partClass];
   // convert macro Information into macroIdx
   for (auto& macro : part.macros_) {
-    int macro_index = macro_inst_map_[macro.dbInstPtr];
+    int macro_index = macro_inst_map_.at(macro.dbInstPtr);
     macros.push_back(macro_index);
   }
   macroPartMap[part.partClass] = macros;
@@ -842,7 +842,7 @@ void MacroPlacer::updateMacroLocations(Partition& part)
     macro.lx = macroX;
     macro.ly = macroY;
     // Update Macro Location
-    int macroIdx = macro_inst_map_[macro.dbInstPtr];
+    int macroIdx = macro_inst_map_.at(macro.dbInstPtr);
     macros_[macroIdx].lx = macroX;
     macros_[macroIdx].ly = macroY;
   }
@@ -1255,7 +1255,7 @@ string MacroPlacer::macroIndexName(int index)
 
 int MacroPlacer::macroIndex(dbInst* inst)
 {
-  return macro_inst_map_[inst];
+  return macro_inst_map_.at(inst);
 }
 
 bool MacroPlacer::macroIndexIsEdge(Macro* macro)

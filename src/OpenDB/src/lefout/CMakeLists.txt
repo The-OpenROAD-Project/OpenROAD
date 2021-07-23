@@ -8,6 +8,10 @@ target_include_directories(lefout
         ${TCL_INCLUDE_PATH}
 )
 
+target_link_libraries(lefout
+    utl
+)
+
 set_target_properties(lefout
   PROPERTIES
     # python requirement
