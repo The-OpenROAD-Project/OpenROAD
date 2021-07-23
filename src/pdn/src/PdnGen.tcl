@@ -817,6 +817,7 @@ proc determine_num_via_columns {via_info constraints} {
   }
   if {[dict exists $constraints cut_pitch]} {set xcut_pitch [expr round([dict get $constraints cut_pitch] * $def_units)]}
 
+  # Use less than equal to potentially fit in one more via
   while {$via_width_lower <= $lower_width && $via_width_upper <= $upper_width} {
     incr i
     if {$lower_dir == "hor"} {
