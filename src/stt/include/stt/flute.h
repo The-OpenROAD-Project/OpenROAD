@@ -37,19 +37,19 @@
 namespace stt {
 typedef int DTYPE;
 
-typedef struct {
+struct Branch {
   DTYPE x, y;  // starting point of the branch
   int n;       // index of neighbor
-} Branch;
+};
 
-typedef struct {
+struct Tree {
   int deg;         // degree
   DTYPE length;    // total wirelength
   std::vector<Branch> branch;  // array of tree branches
 
   void printTree(utl::Logger* logger);
   int branchCount() const { return deg * 2 - 2; }
-} Tree;
+};
 
 namespace flt {
 
