@@ -173,7 +173,7 @@ void IOPlacer::randomPlacement()
 void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer, bool is_group)
 {
   if (pin_indices.size() > slot_indices.size()) {
-    logger_->error(PPL, 72, "Number of pins ({}) exceed number of valid positions ({})", pin_indices.size(), slot_indices.size());
+    logger_->error(PPL, 72, "Number of pins ({}) exceed number of valid positions ({}).", pin_indices.size(), slot_indices.size());
   }
 
   const double seed = parms_->getRandSeed();
@@ -478,7 +478,7 @@ void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>&
     Section n_sec = {slots_.at(half_length_pt).pos};
     n_sec.num_slots = end_slot - begin - blocked_slots + 1;
     if (n_sec.num_slots < 0) {
-      logger_->error(PPL, 40, "Negative number of slots");
+      logger_->error(PPL, 40, "Negative number of slots.");
     }
     n_sec.begin_slot = begin;
     n_sec.end_slot = end_slot;
@@ -587,7 +587,7 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(Constraint &const
   }
 
   std::vector<int> pin_indices = findPinsForConstraint(constraint, netlist);
-  
+
   if (pin_indices.size() > total_slots_count) {
     logger_->error(PPL, 74, "Number of pins ({}) exceed number of valid positions ({}) for constraint.", pin_indices.size(), total_slots_count);
   }
@@ -679,7 +679,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int> &io_group,
         break;
     }
     if (!group_assigned) {
-      logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
+      logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
     }
   }
 
@@ -690,7 +690,7 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 {
   Netlist& net = netlist_io_pins_;
   std::vector<Section>& sections = sections_;
-  
+
   createSections();
 
   int total_pins_assigned = assignGroupsToSections();
@@ -706,10 +706,10 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   total_pins_assigned += assigned_pins_count;
 
   if (total_pins_assigned == net.numIOPins()) {
-    logger_->report("Successfully assigned I/O pins");
+    logger_->report("Successfully assigned I/O pins.");
     return true;
   } else {
-    logger_->report("Unsuccessfully assigned I/O pins ({} out of {})", total_pins_assigned, net.numIOPins());
+    logger_->report("Unsuccessfully assigned I/O pins ({} out of {}).", total_pins_assigned, net.numIOPins());
     return false;
   }
 }
@@ -740,7 +740,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
         break;
     }
   }
-  
+
   return pin_assigned;
 }
 
@@ -763,7 +763,7 @@ void IOPlacer::setupSections(int assigned_pins_count)
   int i = 0;
 
   do {
-    logger_->info(PPL, 10, "Tentative {} to set up sections", i++);
+    logger_->info(PPL, 10, "Tentative {} to set up sections.", i++);
     printConfig();
 
     all_assigned = assignPinsToSections(assigned_pins_count);
@@ -774,7 +774,7 @@ void IOPlacer::setupSections(int assigned_pins_count)
                     36,
                     "Number of sections is {}"
                     " while the maximum recommended value is {}"
-                    " this may negatively affect performance",
+                    " this may negatively affect performance.",
                     sections_.size(),
                     MAX_SECTIONS_RECOMMENDED);
     }
@@ -783,7 +783,7 @@ void IOPlacer::setupSections(int assigned_pins_count)
                     37,
                     "Number of slots per sections is {}"
                     " while the maximum recommended value is {}"
-                    " this may negatively affect performance",
+                    " this may negatively affect performance.",
                     slots_per_section_,
                     MAX_SLOTS_RECOMMENDED);
     }
@@ -830,7 +830,7 @@ void IOPlacer::updateOrientation(IOPin& pin)
 void IOPlacer::updatePinArea(IOPin& pin)
 {
   const int mfg_grid = tech_->getManufacturingGrid();
-  
+
   if (mfg_grid == 0) {
     logger_->error(PPL, 20, "Manufacturing grid is not defined.");
   }
@@ -1011,7 +1011,11 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint &constraint, N
     if (!io_pin.isPlaced() && !io_pin.isAssignedToSection()) {
       pin_indices.push_back(idx);
     } else if (!io_pin.isInGroup()) {
-      logger_->warn(PPL, 75, "Pin {} is assigned to more than one constraints. Using last defined constraint.", io_pin.getName());
+      logger_->warn(PPL,
+                    75,
+                    "Pin {} is assigned to more than one constraint, "
+                    "using last defined constraint.",
+                    io_pin.getName());
     }
   }
 
@@ -1181,7 +1185,7 @@ void IOPlacer::run(bool random_mode)
   if (assignment_.size() != static_cast<int>(netlist_.numIOPins())) {
     logger_->error(PPL,
                    39,
-                   "Assigned {} pins out of {} IO pins",
+                   "Assigned {} pins out of {} IO pins.",
                    assignment_.size(),
                    netlist_.numIOPins());
   }
@@ -1222,7 +1226,12 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
 
   commitIOPinToDB(io_pin);
 
-  logger_->info(PPL, 70, "Pin {} placed at ({}um, {}um)", bterm->getName(), x/tech_->getLefUnits(), y/tech_->getLefUnits());
+  logger_->info(PPL,
+                70,
+                "Pin {} placed at ({}um, {}um).",
+                bterm->getName(),
+                x/tech_->getLefUnits(),
+                y/tech_->getLefUnits());
 }
 
 // db functions
@@ -1236,7 +1245,7 @@ void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx,
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
   }
-  
+
   initCore(hor_layer_idx, ver_layer_idx);
   initNetlist();
 }
@@ -1485,7 +1494,7 @@ void IOPlacer::initNetlist()
     }
     odb::dbNet* net = b_term->getNet();
     if (net == nullptr) {
-      logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
+      logger_->warn(PPL, 38, "Pin {} without net.", b_term->getConstName());
       continue;
     }
 
@@ -1537,7 +1546,7 @@ void IOPlacer::initNetlist()
 
   int group_idx = 0;
   for (PinGroup pin_group : pin_groups_) {
-    int group_created = netlist_.createIOGroup(pin_group); 
+    int group_created = netlist_.createIOGroup(pin_group);
     if(group_created == pin_group.size()) {
       group_idx++;
     }
