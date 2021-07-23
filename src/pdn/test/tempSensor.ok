@@ -19,8 +19,8 @@
 [INFO ODB-0134] Finished DEF file: tempSensor/2_5_floorplan_tapcell.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: tempSensor/pdn.cfg
-[INFO PDN-0008] Design name is tempsenseInst
-[INFO PDN-0009] Reading technology data
+[INFO PDN-0008] Design name is tempsenseInst.
+[INFO PDN-0009] Reading technology data.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Core Rings
@@ -39,6 +39,6 @@ Type: macro, macro_2
     Macro orientation: R90 R270 MXR90 MYR90
     Connect: {met4_PIN_hor met5}
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
 No differences found.
