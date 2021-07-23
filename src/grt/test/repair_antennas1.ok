@@ -125,7 +125,7 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0009] Nets to reroute: 6.
 [INFO GRT-0111] Final number of vias: 56
 [INFO GRT-0112] Final usage 3D: 274
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0014] Routed nets: 411
 No differences found.
 No differences found.

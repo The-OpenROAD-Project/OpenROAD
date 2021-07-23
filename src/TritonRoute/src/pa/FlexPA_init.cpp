@@ -93,7 +93,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
         || maxLayerNum > getDesign()->getTech()->getTopLayerNum()) {
       logger_->warn(DRT,
                     66,
-                    "instAnalysis skips {} due to no pin shapes",
+                    "instAnalysis skips {} due to no pin shapes.",
                     refBlock->getName());
       continue;
     }

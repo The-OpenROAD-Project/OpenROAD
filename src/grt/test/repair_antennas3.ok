@@ -141,7 +141,7 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0009] Nets to reroute: 1.
 [INFO GRT-0111] Final number of vias: 4
 [INFO GRT-0112] Final usage 3D: 33
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0006] Repairing antennas, iteration 2.
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.

@@ -215,7 +215,7 @@ void FlexPAGraphics::setViaAP(
     marker->getBBox(bbox);
     logger_->info(DRT,
                   119,
-                  "marker {} at ({}, {}) ({}, {})",
+                  "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
                   bbox.left(),
                   bbox.bottom(),
@@ -250,7 +250,7 @@ void FlexPAGraphics::setMarkersAndShapes(
     marker->getBBox(bbox);
     logger_->info(DRT,
                   257,
-                  "marker {} at ({}, {}) ({}, {})",
+                  "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
                   bbox.left(),
                   bbox.bottom(),

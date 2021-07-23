@@ -144,7 +144,7 @@ void HTreeBuilder::preSinkClustering(
   if (clusterCount)
     _treeBufLevels++;
 
-  _logger->info(CTS, 19, " Total number of sinks after clustering: {}", _topLevelSinksClustered.size());
+  _logger->info(CTS, 19, " Total number of sinks after clustering: {}.", _topLevelSinksClustered.size());
 }
 
 void HTreeBuilder::initSinkRegion()
@@ -153,19 +153,19 @@ void HTreeBuilder::initSinkRegion()
   int dbUnits = _options->getDbUnits();
   _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
-  _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um)",
+  _logger->info(CTS, 20, " Wire segment unit: {}  dbu ({} um).",
                 _wireSegmentUnit, wireSegmentUnitInMicron);
 
   if (_options->isSimpleSegmentEnabled()) {
     int remainingLength
         = _options->getBufferDistance() / (wireSegmentUnitInMicron * 2);
-    _logger->info(CTS, 21, " Distance between buffers: {} units ({} um)",
+    _logger->info(CTS, 21, " Distance between buffers: {} units ({} um).",
                   remainingLength,
                   static_cast<int>(_options->getBufferDistance()));
     if (_options->isVertexBuffersEnabled()) {
       int vertexBufferLength
           = _options->getVertexBufferDistance() / (wireSegmentUnitInMicron * 2);
-      _logger->info(CTS, 22, " Branch length for Vertex Buffer: {} units ({} um)",
+      _logger->info(CTS, 22, " Branch length for Vertex Buffer: {} units ({} um).",
                     vertexBufferLength,
                     static_cast<int>(_options->getVertexBufferDistance()));
     }
@@ -181,7 +181,7 @@ void HTreeBuilder::initSinkRegion()
       topLevelSinks, sinkInsts, maxDiameter, _options->getSizeSinkClustering());
   if (topLevelSinks.size() <= min_clustering_sinks || !(_options->getSinkClustering())) {
     Box<int> sinkRegionDbu = _clock.computeSinkRegion();
-    _logger->info(CTS, 23, " Original sink region: {}", sinkRegionDbu);
+    _logger->info(CTS, 23, " Original sink region: {}.", sinkRegionDbu);
 
     _sinkRegion = sinkRegionDbu.normalize(1.0 / _wireSegmentUnit);
   } else {
@@ -196,24 +196,24 @@ void HTreeBuilder::initSinkRegion()
     }
     _sinkRegion = _clock.computeSinkRegionClustered(_topLevelSinksClustered);
   }
-  _logger->info(CTS, 24, " Normalized sink region: {}", _sinkRegion);
-  _logger->info(CTS, 25, "    Width:  {:.4f}", _sinkRegion.getWidth());
-  _logger->info(CTS, 26, "    Height: {:.4f}", _sinkRegion.getHeight());
+  _logger->info(CTS, 24, " Normalized sink region: {}.", _sinkRegion);
+  _logger->info(CTS, 25, "    Width:  {:.4f}.", _sinkRegion.getWidth());
+  _logger->info(CTS, 26, "    Height: {:.4f}.", _sinkRegion.getHeight());
 }
 
 void HTreeBuilder::run()
 {
-  _logger->info(CTS, 27, "Generating H-Tree topology for net {}", _clock.getName());
-  _logger->info(CTS, 28, " Total number of sinks: {}", _clock.getNumSinks());
+  _logger->info(CTS, 27, "Generating H-Tree topology for net {}.", _clock.getName());
+  _logger->info(CTS, 28, " Total number of sinks: {}.", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
     if (_options->getSinkClusteringUseMaxCap()) {
       _logger->info(CTS, 90, " Sinks will be clustered based on buffer max cap.");
     } else {
-      _logger->info(CTS, 29, " Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um",
+      _logger->info(CTS, 29, " Sinks will be clustered in groups of up to {} and with maximum cluster diameter of {:.1f} um.",
                   _options->getSizeSinkClustering(), _options->getMaxDiameter());
     }
   }
-  _logger->info(CTS, 30, " Number of static layers: {}", _options->getNumStaticLayers());
+  _logger->info(CTS, 30, " Number of static layers: {}.", _options->getNumStaticLayers());
 
   _clockTreeMaxDepth = _options->getClockTreeMaxDepth();
   _minInputCap = _techChar->getActualMinInputCap();
@@ -236,7 +236,7 @@ void HTreeBuilder::run()
         _minLengthSinkRegion = 1;
         stopCriterionFound = false;
       } else {
-        _logger->info(CTS, 31, " Stop criterion found. Min length of sink region is ({})", _minLengthSinkRegion);
+        _logger->info(CTS, 31, " Stop criterion found. Min length of sink region is ({}).", _minLengthSinkRegion);
         break;
       }
     }
@@ -245,7 +245,7 @@ void HTreeBuilder::run()
 
     stopCriterionFound = isNumberOfSinksTooSmall(numSinksPerSubRegion);
     if (stopCriterionFound) {
-      _logger->info(CTS, 32, " Stop criterion found. Max number of sinks is {}",
+      _logger->info(CTS, 32, " Stop criterion found. Max number of sinks is {}.",
                     _numMaxLeafSinks);
       break;
     }
@@ -315,7 +315,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
 
   LevelTopology topology(segmentLength);
 
-  _logger->info(CTS, 34, "    Segment length (rounded): {}", segmentLength);
+  _logger->info(CTS, 34, "    Segment length (rounded): {}.", segmentLength);
 
   int vertexBufferLength
       = _options->getVertexBufferDistance() / (_techChar->getLengthUnit() * 2);
@@ -736,7 +736,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
     }
   }
   if (movedSinks>0)
-    _logger->report(" Out of {} sinks, {} sinks closer to other cluster", sinks.size(), movedSinks);
+    _logger->report(" Out of {} sinks, {} sinks closer to other cluster.", sinks.size(), movedSinks);
 
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
@@ -842,7 +842,7 @@ void HTreeBuilder::createClockSubNets()
         }
       });
 
-  _logger->info(CTS, 35, " Number of sinks covered: {}", numSinks);
+  _logger->info(CTS, 35, " Number of sinks covered: {}.", numSinks);
 }
 
 void HTreeBuilder::createSingleBufferClockNet()
@@ -950,7 +950,7 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
         y = (isLowToHiY) ? (_root.getY() + (connectionLength - lengthX))
                          : (_root.getY() - (connectionLength - lengthX));
       }
-      
+
       std::string buffMaster = (forceBuffer != "") ? forceBuffer : wireSegment.getBufferMaster(buffer);
       ClockInst& newBuffer
           = _clock->addClockBuffer(_instPrefix + std::to_string(_numBufferLevels),

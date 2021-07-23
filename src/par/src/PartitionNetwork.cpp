@@ -375,7 +375,7 @@ void PartitionMgr::writePartitionVerilog(const char* path,
   for (dbInst* inst : block->getInsts()) {
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
-      _logger->warn(PAR, 15, "Property not found for inst {}", inst->getName());
+      _logger->warn(PAR, 15, "Property 'partition_id' not found for inst {}.", inst->getName());
     }
     else {
       long partition = prop_id->getValue();

@@ -227,7 +227,7 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond)
 void GMat::InitializeGmatDok(int t_numC4)
 {
   if (m_n_nodes <= 0) {
-    m_logger->error(utl::PSM, 49, "No nodes in object initialization stopped.");
+    m_logger->error(utl::PSM, 49, "No nodes in object, initialization stopped.");
   } else {
     m_G_mat_dok.num_cols = m_n_nodes + t_numC4;
     m_G_mat_dok.num_rows = m_n_nodes + t_numC4;
@@ -503,7 +503,7 @@ double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
     m_logger->error(utl::PSM,
                     51,
-                    "Index out of bound for getting G matrix conductance. \n",
+                    "Index out of bound for getting G matrix conductance. ",
                     "Ensure object is initialized to the correct size first.");
   }
   GMatLoc                        key = make_pair(t_col, t_row);
@@ -530,7 +530,7 @@ void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond)
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
     m_logger->error(utl::PSM,
                     52,
-                    "Index out of bound for getting G matrix conductance. \n",
+                    "Index out of bound for getting G matrix conductance. ",
                     "Ensure object is initialized to the correct size first.");
   }
   GMatLoc key             = make_pair(t_col, t_row);
