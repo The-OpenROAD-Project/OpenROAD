@@ -8,15 +8,15 @@
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
 [INFO ODB-0134] Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
+[WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
 [WARNING DRT-0160] Warning: Metal5 does not have viaDef aligned with layer direction, generating new viaDef Via5_FR.
 [WARNING DRT-0160] Warning: Metal6 does not have viaDef aligned with layer direction, generating new viaDef Via6_FR.
 [WARNING DRT-0160] Warning: Metal7 does not have viaDef aligned with layer direction, generating new viaDef Via7_FR.
@@ -37,45 +37,45 @@
     default via: Via7_FR
   Layer Via8
     default via: VIA8_0_VH
-[INFO DRT-0168] Init region query ...
-[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0
-[INFO DRT-0033] FR_VIA shape region query size = 0
-[INFO DRT-0033] Metal1 shape region query size = 344
-[INFO DRT-0033] Via1 shape region query size = 0
-[INFO DRT-0033] Metal2 shape region query size = 0
-[INFO DRT-0033] Via2 shape region query size = 0
-[INFO DRT-0033] Metal3 shape region query size = 0
-[INFO DRT-0033] Via3 shape region query size = 0
-[INFO DRT-0033] Metal4 shape region query size = 0
-[INFO DRT-0033] Via4 shape region query size = 0
-[INFO DRT-0033] Metal5 shape region query size = 0
-[INFO DRT-0033] Via5 shape region query size = 0
-[INFO DRT-0033] Metal6 shape region query size = 0
-[INFO DRT-0033] Via6 shape region query size = 0
-[INFO DRT-0033] Metal7 shape region query size = 0
-[INFO DRT-0033] Via7 shape region query size = 0
-[INFO DRT-0033] Metal8 shape region query size = 0
-[INFO DRT-0033] Via8 shape region query size = 0
-[INFO DRT-0033] Metal9 shape region query size = 0
-[INFO DRT-0178] init guide query ...
-[INFO DRT-0036] FR_MASTERSLICE guide region query size = 0
-[INFO DRT-0036] FR_VIA guide region query size = 0
-[INFO DRT-0036] Metal1 guide region query size = 22
-[INFO DRT-0036] Via1 guide region query size = 0
-[INFO DRT-0036] Metal2 guide region query size = 22
-[INFO DRT-0036] Via2 guide region query size = 0
-[INFO DRT-0036] Metal3 guide region query size = 10
-[INFO DRT-0036] Via3 guide region query size = 0
-[INFO DRT-0036] Metal4 guide region query size = 0
-[INFO DRT-0036] Via4 guide region query size = 0
-[INFO DRT-0036] Metal5 guide region query size = 0
-[INFO DRT-0036] Via5 guide region query size = 0
-[INFO DRT-0036] Metal6 guide region query size = 0
-[INFO DRT-0036] Via6 guide region query size = 0
-[INFO DRT-0036] Metal7 guide region query size = 0
-[INFO DRT-0036] Via7 guide region query size = 0
-[INFO DRT-0036] Metal8 guide region query size = 0
-[INFO DRT-0036] Via8 guide region query size = 0
-[INFO DRT-0036] Metal9 guide region query size = 0
-[INFO DRT-0179] init gr pin query ...
+[INFO DRT-0168] Init region query.
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
+[INFO DRT-0033] FR_VIA shape region query size = 0.
+[INFO DRT-0033] Metal1 shape region query size = 344.
+[INFO DRT-0033] Via1 shape region query size = 0.
+[INFO DRT-0033] Metal2 shape region query size = 0.
+[INFO DRT-0033] Via2 shape region query size = 0.
+[INFO DRT-0033] Metal3 shape region query size = 0.
+[INFO DRT-0033] Via3 shape region query size = 0.
+[INFO DRT-0033] Metal4 shape region query size = 0.
+[INFO DRT-0033] Via4 shape region query size = 0.
+[INFO DRT-0033] Metal5 shape region query size = 0.
+[INFO DRT-0033] Via5 shape region query size = 0.
+[INFO DRT-0033] Metal6 shape region query size = 0.
+[INFO DRT-0033] Via6 shape region query size = 0.
+[INFO DRT-0033] Metal7 shape region query size = 0.
+[INFO DRT-0033] Via7 shape region query size = 0.
+[INFO DRT-0033] Metal8 shape region query size = 0.
+[INFO DRT-0033] Via8 shape region query size = 0.
+[INFO DRT-0033] Metal9 shape region query size = 0.
+[INFO DRT-0178] Init guide query.
+[INFO DRT-0036] FR_MASTERSLICE guide region query size = 0.
+[INFO DRT-0036] FR_VIA guide region query size = 0.
+[INFO DRT-0036] Metal1 guide region query size = 22.
+[INFO DRT-0036] Via1 guide region query size = 0.
+[INFO DRT-0036] Metal2 guide region query size = 22.
+[INFO DRT-0036] Via2 guide region query size = 0.
+[INFO DRT-0036] Metal3 guide region query size = 10.
+[INFO DRT-0036] Via3 guide region query size = 0.
+[INFO DRT-0036] Metal4 guide region query size = 0.
+[INFO DRT-0036] Via4 guide region query size = 0.
+[INFO DRT-0036] Metal5 guide region query size = 0.
+[INFO DRT-0036] Via5 guide region query size = 0.
+[INFO DRT-0036] Metal6 guide region query size = 0.
+[INFO DRT-0036] Via6 guide region query size = 0.
+[INFO DRT-0036] Metal7 guide region query size = 0.
+[INFO DRT-0036] Via7 guide region query size = 0.
+[INFO DRT-0036] Metal8 guide region query size = 0.
+[INFO DRT-0036] Via8 guide region query size = 0.
+[INFO DRT-0036] Metal9 guide region query size = 0.
+[INFO DRT-0179] Init gr pin query.
 No differences found.
