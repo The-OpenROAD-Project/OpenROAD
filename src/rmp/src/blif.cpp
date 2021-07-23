@@ -92,7 +92,7 @@ bool Blif::writeBlif(const char* file_name)
   std::ofstream f(file_name);
 
   if (f.bad()) {
-    logger_->error(RMP, 1, "cannot open file {}", file_name);
+    logger_->error(RMP, 1, "Cannot open file {}.", file_name);
     return false;
   }
 
@@ -351,7 +351,7 @@ bool Blif::inspectBlif(const char* file_name, int& numInstances)
 {
   std::ifstream f(file_name);
   if (f.bad()) {
-    logger_->error(RMP, 3, "cannot open file {}", file_name);
+    logger_->error(RMP, 3, "Cannot open file {}.", file_name);
     return false;
   }
 
@@ -374,7 +374,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 {
   std::ifstream f(file_name);
   if (f.bad()) {
-    logger_->error(RMP, 4, "cannot open file {}", file_name);
+    logger_->error(RMP, 4, "Cannot open file {}.", file_name);
     return false;
   }
 
@@ -398,12 +398,12 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   // Remove and disconnect old instances
   logger_->info(RMP,
                 5,
-                "blif parsed successfully, destroying {} existing instances...",
+                "Blif parsed successfully, will destroy {} existing instances.",
                 instances_to_optimize.size());
   logger_->info(RMP,
                 6,
-                "Found {} Inputs, {} Outputs, {} Clocks, {} Combinational "
-                "gates, {} Registers after parsing the blif file.",
+                "Found {} inputs, {} outputs, {} clocks, {} combinational "
+                "gates, {} registers after parsing the blif file.",
                 blif.getInputs().size(),
                 blif.getOutputs().size(),
                 blif.getClocks().size(),
@@ -425,7 +425,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
   // Create and connect new instances
   auto gates = blif.getGates();
-  logger_->info(RMP, 7, "inserting {} new instances...", gates.size());
+  logger_->info(RMP, 7, "Inserting {} new instances.", gates.size());
   std::map<std::string, int> instIds;
 
   for (auto&& gate : gates) {
@@ -445,7 +445,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       if (connections.size() < 1) {
         logger_->info(RMP,
                       8,
-                      "Const driver {} doesn't have any connected nets\n",
+                      "Const driver {} doesn't have any connected nets.",
                       masterName.c_str());
         continue;
       }
@@ -480,7 +480,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     if (master == NULL) {
       logger_->info(RMP,
                     9,
-                    "Master ({}) not found while stitching back instances\n",
+                    "Master ({}) not found while stitching back instances.",
                     masterName.c_str());
       // return false;
       continue;
@@ -494,7 +494,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     if (newInst == NULL) {
       logger_->error(RMP,
                      76,
-                     "Could not create new instance of type {} with name {}",
+                     "Could not create new instance of type {} with name {}.",
                      masterName,
                      instName);
       continue;
@@ -527,7 +527,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         if (equalSignPos == connection.length() - 1) {
           logger_->info(RMP,
                         10,
-                        "{} connection parsing failed for {} instance",
+                        "Connection {} parsing failed for {} instance.",
                         connection,
                         masterName);
           continue;
