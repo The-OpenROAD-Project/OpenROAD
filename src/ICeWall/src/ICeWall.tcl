@@ -3390,9 +3390,38 @@ namespace eval ICeWall {
   proc has_padcell_location {padcell} {
     variable footprint
     return  [dict exists $footprint padcell $padcell cell centre] || [dict exists $footprint padcell $padcell cell scaled_centre] || \
-                 [dict exists $footprint padcell $padcell cell origin] || [dict exists $footprint padcell $padcell cell scaled_origin]
+            [dict exists $footprint padcell $padcell cell origin] || [dict exists $footprint padcell $padcell cell scaled_origin]
   }
+
+  proc get_padcell_centre {padcell {type cell}} {
+    variable footprint
+
+    if {![dict exists $footprint padcell $padcell $type centre]} {
+       utl::error PAD 231 "No centre specified for $inst_name"
+    }
+   
+    return [dict get $footprint padcell $padcell $type centre]
+  }  
   
+  proc set_padcell_origin {padcell centre} {
+    variable footprint
+    set side_name [get_padcell_side_name $padcell]
+    set orient [get_padcell_orient $padcell]
+    set name [get_padcell_inst_name $padcell]
+    set type [get_padcell_type $padcell]
+    set cell [get_cell $type $side_name]
+    set cell_height [ord::dbu_to_microns [expr max([$cell getHeight],[$cell getWidth])]]
+    set cell_width  [ord::dbu_to_microns [expr min([$cell getHeight],[$cell getWidth])]]
+
+    #debug "padcell: $padcell centre: $centre width: $cell_width height: $cell_height orient: $orient"  
+    set origin  [get_origin $centre $cell_width $cell_height $orient]
+    dict set footprint padcell $padcell cell origin $origin
+    return  $origin
+  }
+  proc set_padcell_scaled_origin {padcell} {
+    variable footprint   
+    dict set footprint padcell $padcell cell scaled_origin [get_scaled_origin $padcell]
+  }   
   
   proc place_padring {} {
     variable block
@@ -3425,10 +3454,9 @@ namespace eval ICeWall {
           set fill_end   [expr $edge_bottom_offset + [corner_height corner_ll]]
 	}
 
-       debug "$side_name: fill_start = $fill_start"
-       debug "$side_name: fill_end   = $fill_end"
+      # debug "$side_name: fill_start = $fill_start"
+       #debug "$side_name: fill_end   = $fill_end"
       # debug "padcells: [get_footprint_padcells_by_side $side_name]"
-       # debug "[has_padcell_location $padcell]"   
        # debug " [dict exists $footprint padcell $padcell cell centre]"
 
       set bbox {}
@@ -3451,7 +3479,7 @@ namespace eval ICeWall {
       set siteStart $fill_start
       set gridSnap 1000
       set PadSpacing [expr  $sideWidth / (1 + $sideCount) / $gridSnap * $gridSnap ]
-      debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end"   
+      #debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end"   
       foreach padcell [get_footprint_padcells_by_side $side_name] {
         set name [get_padcell_inst_name $padcell]
         set type [get_padcell_type $padcell]
@@ -3483,10 +3511,18 @@ namespace eval ICeWall {
             set pad_centre_x [expr $edge_left_offset + round (0.5 * $cell_height)]
             set pad_centre_y [expr $siteStart - ($PadSpacing * $padOrder) ]
           }
-	 debug "$padOrder target pad_centre_x $pad_centre_x  pad_centre_y $pad_centre_y	"
+	 #debug "padOrder: $padOrder pad_centre_x: $pad_centre_x  pad_centre_y: $pad_centre_y"
 	
-	 
-	set_padcell_scaled_centre $padcell $pad_centre_x $pad_centre_y
+	if {![has_padcell_location $padcell]} { 
+	  set pad_centre_x_microns [ord::dbu_to_microns $pad_centre_x]
+	  set pad_centre_y_microns [ord::dbu_to_microns $pad_centre_y]
+	  set_padcell_centre $padcell $pad_centre_x_microns $pad_centre_y_microns
+	  set_padcell_scaled_centre $padcell $pad_centre_x $pad_centre_y	
+	  set_padcell_origin $padcell [get_padcell_centre $padcell]	
+	  set_padcell_scaled_origin $padcell 	
+	  #debug  " pad_cell has origin: [get_padcell_origin $padcell] ,  scaled_origin: [get_padcell_scaled_origin $padcell] , centre: [get_padcell_centre $padcell]] , scaled_centre [get_padcell_scaled_centre $padcell]]"
+        }
+	
 	#debug "$padcell is located at side: $side_name , with order $padOrder , cell_height : $cell_height , cell_width : $cell_width"
         #debug "[get_padcell_origin $padcell]"
         #debug "[get_padcell_orient $padcell]"
