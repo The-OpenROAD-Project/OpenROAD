@@ -1308,7 +1308,7 @@ void FlexDR::init()
   ProfileTask profile("DR:init");
   frTime t;
   if (VERBOSE > 0) {
-    logger_->info(DRT, 187, "start routing data preparation");
+    logger_->info(DRT, 187, "Start routing data preparation.");
   }
   initGCell2BoundaryPin();
   getRegionQuery()->initDRObj();  // first init in postProcess
@@ -1411,7 +1411,7 @@ void FlexDR::searchRepair(int iter,
       suffix = "th";
     }
     logger_->info(
-        DRT, 195, "start {}{} optimization iteration ...", iter, suffix);
+        DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
   }
   if (graphics_) {
     graphics_->startIter(iter);
@@ -1509,12 +1509,11 @@ void FlexDR::searchRepair(int iter,
                   isExceed = true;
                 }
                 prev_perc += 10;
-                // if (true) {
                 if (isExceed) {
-                  logger_->report("    completing {}% with {} violations",
+                  logger_->report("    Completing {}% with {} violations.",
                                   prev_perc,
                                   getDesign()->getTopBlock()->getNumMarkers());
-                  logger_->report("    {}", t);
+                  logger_->report("    {}.", t);
                 }
               }
             }
@@ -1541,12 +1540,11 @@ void FlexDR::searchRepair(int iter,
         isExceed = true;
       }
       prev_perc += 10;
-      // if (true) {
       if (isExceed) {
-        logger_->report("    completing {}% with {} violations",
+        logger_->report("    Completing {}% with {} violations.",
                         prev_perc,
                         getDesign()->getTopBlock()->getNumMarkers());
-        logger_->report("    {}", t);
+        logger_->report("    {}.", t);
       }
     }
   }
@@ -1555,7 +1553,7 @@ void FlexDR::searchRepair(int iter,
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,
-                  "  number of violations = {}",
+                  "  Number of violations = {}.",
                   getDesign()->getTopBlock()->getNumMarkers());
     t.print(logger_);
     cout << flush;
@@ -1602,27 +1600,27 @@ void FlexDR::end(bool writeMetrics)
   }
 
   if (VERBOSE > 0) {
-    logger_->report("total wire length = {} um",
+    logger_->report("Total wire length = {} um.",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
       if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::ROUTING) {
-        logger_->report("total wire length on LAYER {} = {} um",
+        logger_->report("Total wire length on LAYER {} = {} um.",
                         getTech()->getLayer(i)->getName(),
                         wlen[i] / getDesign()->getTopBlock()->getDBUPerUU());
       }
     }
-    logger_->report("total number of vias = {}", totSCut + totMCut);
+    logger_->report("Total number of vias = {}.", totSCut + totMCut);
     if (totMCut > 0) {
-      logger_->report("total number of multi-cut vias = {} ({:5.1f}%)",
+      logger_->report("Total number of multi-cut vias = {} ({:5.1f}%).",
                       totMCut,
                       totMCut * 100.0 / (totSCut + totMCut));
-      logger_->report("total number of single-cut vias = {} ({:5.1f}%)",
+      logger_->report("Total number of single-cut vias = {} ({:5.1f}%).",
                       totSCut,
                       totSCut * 100.0 / (totSCut + totMCut));
     }
-    logger_->report("up-via summary (total {}):", totSCut + totMCut);
+    logger_->report("Up-via summary (total {}):.", totSCut + totMCut);
     int nameLen = 0;
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
@@ -1931,7 +1929,7 @@ int FlexDR::main()
   init();
   frTime t;
   if (VERBOSE > 0) {
-    logger_->info(DRT, 194, "start detail routing ...");
+    logger_->info(DRT, 194, "Start detail routing.");
   }
 
   int iterNum = 0;
@@ -2292,7 +2290,7 @@ int FlexDR::main()
     reportDRC();
   }
   if (VERBOSE > 0) {
-    logger_->info(DRT, 198, "complete detail routing");
+    logger_->info(DRT, 198, "Complete detail routing.");
     end(/* writeMetrics */ true);
   }
   if (VERBOSE > 0) {

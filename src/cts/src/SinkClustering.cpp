@@ -128,7 +128,7 @@ unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
     return 3;
   }
 
-  _logger->error(CTS, 58, "Invalid parameters in {}", __func__ );
+  _logger->error(CTS, 58, "Invalid parameters in {}.", __func__ );
 
   // avoid warn message
   return 4;
@@ -195,7 +195,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   findBestMatching(groupSize);
   if (_logger->debugCheck(CTS, "Stree", 1))
     writePlotFile(groupSize);
-  
+
 }
 
 void SinkClustering::writePlotFile()

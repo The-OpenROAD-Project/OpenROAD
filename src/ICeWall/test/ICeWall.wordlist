@@ -1,4 +1,3 @@
-centres
 num
 libcell
 floorplan
@@ -28,7 +27,6 @@ bondpad
 bondpads
 brk
 bsg
-centre
 ddr
 dm
 dq

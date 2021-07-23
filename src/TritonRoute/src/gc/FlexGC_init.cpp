@@ -154,7 +154,7 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design)
   }
 
   if (design->getTech() != tech_) {
-    logger_->error(DRT, 253, "Design and tech mismatch");
+    logger_->error(DRT, 253, "Design and tech mismatch.");
   }
 
   auto& extBox = getExtBox();

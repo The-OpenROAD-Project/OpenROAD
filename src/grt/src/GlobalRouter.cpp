@@ -2640,7 +2640,7 @@ void GlobalRouter::makeItermPins(Net* net,
 
     if (master->getType() == odb::dbMasterType::COVER
         || master->getType() == odb::dbMasterType::COVER_BUMP) {
-      logger_->warn(GRT, 34, "Net connected with instance of class COVER added for routing.");
+      logger_->warn(GRT, 34, "Net connected to instance of class COVER added for routing.");
     }
 
     bool connected_to_pad = master->getType().isPad();

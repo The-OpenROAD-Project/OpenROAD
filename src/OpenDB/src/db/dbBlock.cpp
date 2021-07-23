@@ -3306,16 +3306,8 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 
 void dbBlock::saveLef(char* filename)
 {
-  lefout writer;
-  dbLib* lib = getChip()->getDb()->findLib("lib");
-  if (lib == NULL) {
-    getImpl()->getLogger()->warn(utl::ODB, 15, "Library lib does not exist");
-    return;
-  }
-  if (!writer.writeTechAndLib(lib, filename)) {
-    getImpl()->getLogger()->warn(
-        utl::ODB, 16, "Failed to write lef file {}", filename);
-  }
+  lefout writer(getImpl()->getLogger());
+  writer.writeAbstractLef(this, filename);
 }
 
 //
