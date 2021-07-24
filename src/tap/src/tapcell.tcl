@@ -224,8 +224,7 @@ proc tapcell_ripup { args } {
   utl::info TAP 101 "Endcaps removed: $endcaps_removed"
 
   # Reset global parameters 
-  set tap::phy_idx 0
-  set tap::filled_sites []
+  tap::reset
 }
 
 namespace eval tap {
@@ -239,8 +238,7 @@ proc clear { tap_prefix endcap_prefix } {
   set endcaps_removed [tap::remove_cells $endcap_prefix]
 
   # Reset global parameters 
-  set tap::phy_idx 0
-  set tap::filled_sites []
+  tap::reset
 }
 
 # namespace end

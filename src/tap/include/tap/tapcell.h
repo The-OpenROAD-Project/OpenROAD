@@ -64,6 +64,7 @@ public:
   //void run();
   //void clear (std::string tap_prefix, std::string endcap_prefix);
   void run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const char* cnrcap_nwin_master, const char* cnrcap_nwout_master, const char* endcap_prefix, int add_boundary_cell, const char* tap_nwintie_master, const char* tap_nwin2_master, const char* tap_nwin3_master, const char* tap_nwouttie_master, const char* tap_nwout2_master, const char* tap_nwout3_master, const char* incnrcap_nwin_master, const char* incnrcap_nwout_master, const char* tapcell_master, int dist, const char* tap_prefix);
+  void reset();
   void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y);
   int remove_cells(const char* prefix);
   bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int halo_x, int halo_y);

@@ -122,6 +122,11 @@ void run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const char* cnrca
   getTapcell()->run(endcap_master, halo_x, halo_y, cnrcap_nwin_master, cnrcap_nwout_master, endcap_prefix, add_boundary_cell, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, incnrcap_nwin_master, incnrcap_nwout_master, tapcell_master, dist, tap_prefix);
 }
 
+void reset()
+{
+  getTapcell()->reset();
+}
+
 void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
   getTapcell()->cut_rows(endcap_master, blockages, halo_x, halo_y);

@@ -67,13 +67,13 @@ void Tapcell::init(odb::dbDatabase *db, utl::Logger* logger)
 {
   db_ = db;
   logger_ = logger;
-
-  // Define swig TCL commands.
-  //Tap_Init(tcl_interp);
-  // Eval encoded sta TCL sources.
-  //sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
 }
 
+void Tapcell::reset()
+{
+  Tapcell::phy_idx = 0;
+  Tapcell::filled_sites.clear();
+}
 
 //}
 
@@ -113,7 +113,7 @@ void Tapcell::run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const ch
   cnrcap_masters.push_back(cnrcap_nwout_master_string);
 
   Tapcell::phy_idx = 0;
-  //set tap::filled_sites []
+  Tapcell::filled_sites.clear();
   if (endcap_master != nullptr ) {
     insert_endcaps(rows, endcap_master, cnrcap_masters, endcap_prefix);
   }
@@ -149,9 +149,11 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
   int rows_count = (block->getRows()).size();
   int block_count = blockages.size();
   int min_row_width;
+  int cut_rows_count;
+  int end_width;
 
   if (endcap_master != nullptr) {
-    int end_width = endcap_master->getWidth();
+    end_width = endcap_master->getWidth();
     min_row_width = 2*end_width;
   } else {
     min_row_width = 0;
@@ -178,7 +180,7 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
   for(odb::dbRow* row : blocked_rows) {
     cut_row(block, row, row_blockages, min_row_width, halo_x, halo_y);
   }
-  int cut_rows_count = block->getRows().size()-rows_count;
+  cut_rows_count = (block->getRows()).size()-rows_count;
   logger_->info(utl::TAP, 1, "Macro blocks found: {}", block_count);
   logger_->info(utl::TAP, 2, "Original rows: {}", rows_count);
   logger_->info(utl::TAP, 3, "Created rows: {}", cut_rows_count);
@@ -389,22 +391,27 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
   std::vector<int> prev_x;
   std::vector<vector<int>> merged_placements;
   odb::dbBlock* block = db_->getChip()->getBlock();
+  int tap_width;
+  int dist1;
+  int dist2;
+  int y;
+  int x_start;
+  int x_end;
+  int x;
 
   odb::dbMaster* master = db_->findMaster(tapcell_master.c_str());
   if (master == nullptr) {
     logger_->error(utl::TAP, 11, "Master {} not found.", tapcell_master);
   }
-  int tap_width = master->getWidth();
+  tap_width = master->getWidth();
 
-  //int dist1 = odb::Rect::microns_to_dbu(dist);
-  int dist1 = dist*(db_->getTech()->getLefUnits());
-  int dist2 = 2*dist*(db_->getTech()->getLefUnits());
-  int y;
+  dist1 = dist*(db_->getTech()->getLefUnits());
+  dist2 = 2*dist*(db_->getTech()->getLefUnits());
   std::map<int, std::vector<vector<int>>> row_fills;
   for(std::vector<int> placement : filled_sites) {
     y = placement[0];
-    int x_start = placement[1];
-    int x_end = placement[2];
+    x_start = placement[1];
+    x_end = placement[2];
     std::vector<int> x_start_end;
     x_start_end.push_back(x_start);
     x_start_end.push_back(x_end);
@@ -416,7 +423,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
 
   //for(int i=0; i<row_fills.size(); i++) {
   for(std::map<int, std::vector<vector<int>>>::iterator iter = row_fills.begin(); iter != row_fills.end(); ++iter) {
-    int x = iter->first;
+    x = iter->first;
     for(std::vector<int> xs : row_fills[x]) {
     //xs = row_fills[x];
       if (prev_x.size() == 0) {
@@ -463,20 +470,28 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
       }
     }
   }
-
+  int row_y;
+  int gaps_above_below;
+  int llx; 
+  int lly; 
+  int urx; 
+  int ury; 
+  odb::dbOrientType ori;
+  int offset;
+  int pitch; 
   for(int row_idx = 0; row_idx < rows.size(); row_idx++) {
     std::vector<odb::dbRow*> subrows = rows[row_idx];
     odb::Rect rowbb;
     subrows[0]->getBBox(rowbb);
     std::vector<vector<int>> row_fill_check;
-    int row_y = rowbb.yMin();
+    row_y = rowbb.yMin();
     if (row_fills.find(row_y)!=row_fills.end()) {
       row_fill_check = row_fills[row_y];
     } else {
       row_fill_check.clear();
     }
 
-    int gaps_above_below = 0;
+    gaps_above_below = 0;
     if (rows_with_macros[0] == row_idx) {
       gaps_above_below = 1;
       rows_with_macros.erase(0);
@@ -489,14 +504,14 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
       int site_x = row->getSite()->getWidth();
       odb::Rect row_bb;
       row->getBBox(row_bb);
-      int llx = row_bb.xMin();
-      int lly = row_bb.yMin();
-      int urx = row_bb.xMax();
-      int ury = row_bb.yMax();
-      auto ori = row->getOrient();
+      llx = row_bb.xMin();
+      lly = row_bb.yMin();
+      urx = row_bb.xMax();
+      ury = row_bb.yMax();
+      ori = row->getOrient();
 
-      int offset = 0;
-      int pitch = -1;
+      offset = 0;
+      pitch = -1;
 
       if ((row_idx % 2) == 0) {
         offset = dist1;
@@ -556,6 +571,8 @@ bool Tapcell::check_if_filled(int x, int width, odb::dbOrientType orient, std::v
 int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix) {
   int row_info;
   int start_phy_idx = Tapcell::phy_idx;
+  logger_->info(utl::TAP, 46, "Test: {}", Tapcell::phy_idx);
+
   odb::dbBlock* block = db_->getChip()->getBlock();
   std::string tap_nwintie_master_name;
   std::string tap_nwin2_master_name;
@@ -1045,11 +1062,11 @@ void Tapcell::build_cell( odb::dbBlock* block, odb::dbMaster* master, odb::dbOri
   if (inst == nullptr) {
     return;
   }
-  odb::dbSourceType DIST;
+  //odb::dbSourceType DIST;
   inst->setOrient(orientation);
   inst->setLocation(x, y);
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
-  inst->setSourceType(DIST);
+  inst->setSourceType(odb::dbSourceType::DIST);
 
   odb::dbBox* inst_bb = inst->getBBox();
   std::vector<int> filled_sites_vector;
