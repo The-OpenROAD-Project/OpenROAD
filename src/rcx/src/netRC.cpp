@@ -1716,13 +1716,13 @@ extCorner::extCorner() {
 void extMain::getExtractedCorners() {
   if (_prevControl == NULL)
     return;
-  if (_prevControl->_extractedCornerList == NULL)
+  if (_prevControl->_extractedCornerList.empty())
     return;
   if (_processCornerTable != NULL)
     return;
 
   Ath__parser parser;
-  uint pCornerCnt = parser.mkWords(_prevControl->_extractedCornerList, " ");
+  uint pCornerCnt = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
   if (pCornerCnt <= 0)
     return;
 
@@ -1739,12 +1739,12 @@ void extMain::getExtractedCorners() {
     _processCornerTable->add(t);
   }
 
-  if (_prevControl->_derivedCornerList == NULL) {
+  if (_prevControl->_derivedCornerList.empty()) {
     makeCornerMapFromExtControl();
     return;
   }
 
-  uint sCornerCnt = parser.mkWords(_prevControl->_derivedCornerList, " ");
+  uint sCornerCnt = parser.mkWords(_prevControl->_derivedCornerList.c_str(), " ");
   if (sCornerCnt <= 0)
     return;
 
@@ -1770,20 +1770,20 @@ void extMain::getExtractedCorners() {
   }
   Ath__array1D<double> A;
 
-  parser.mkWords(_prevControl->_resFactorList, " ");
+  parser.mkWords(_prevControl->_resFactorList.c_str(), " ");
   parser.getDoubleArray(&A, 0);
   for (ii = 0; ii < sCornerCnt; ii++) {
     extCorner* t = _scaledCornerTable->get(ii);
     t->_resFactor = A.get(ii);
   }
-  parser.mkWords(_prevControl->_ccFactorList, " ");
+  parser.mkWords(_prevControl->_ccFactorList.c_str(), " ");
   A.resetCnt();
   parser.getDoubleArray(&A, 0);
   for (ii = 0; ii < sCornerCnt; ii++) {
     extCorner* t = _scaledCornerTable->get(ii);
     t->_ccFactor = A.get(ii);
   }
-  parser.mkWords(_prevControl->_gndcFactorList, " ");
+  parser.mkWords(_prevControl->_gndcFactorList.c_str(), " ");
   A.resetCnt();
   parser.getDoubleArray(&A, 0);
   for (ii = 0; ii < sCornerCnt; ii++) {
@@ -1793,7 +1793,7 @@ void extMain::getExtractedCorners() {
   makeCornerMapFromExtControl();
 }
 void extMain::makeCornerMapFromExtControl() {
-  if (_prevControl->_cornerIndexList == NULL)
+  if (_prevControl->_cornerIndexList.empty())
     return;
   if (_processCornerTable == NULL)
     return;
@@ -1801,7 +1801,7 @@ void extMain::makeCornerMapFromExtControl() {
   //	return;
 
   Ath__parser parser;
-  uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList, " ");
+  uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
   if (wordCnt <= 0)
     return;
 
@@ -2090,18 +2090,10 @@ void extMain::makeCornerNameMap() {
       sprintf(ccList, "%s %g", ccList, s->_ccFactor);
       sprintf(gndcList, "%s %g", gndcList, s->_gndFactor);
     }
-    if (_prevControl->_derivedCornerList)
-      free(_prevControl->_derivedCornerList);
-    if (_prevControl->_resFactorList)
-      free(_prevControl->_resFactorList);
-    if (_prevControl->_ccFactorList)
-      free(_prevControl->_ccFactorList);
-    if (_prevControl->_gndcFactorList)
-      free(_prevControl->_gndcFactorList);
-    _prevControl->_derivedCornerList = strdup(extList);
-    _prevControl->_resFactorList = strdup(resList);
-    _prevControl->_ccFactorList = strdup(ccList);
-    _prevControl->_gndcFactorList = strdup(gndcList);
+    _prevControl->_derivedCornerList = extList;
+    _prevControl->_resFactorList = resList;
+    _prevControl->_ccFactorList = ccList;
+    _prevControl->_gndcFactorList = gndcList;
   }
   if (_processCornerTable != NULL) {
     char extList[128];
@@ -2123,9 +2115,7 @@ void extMain::makeCornerNameMap() {
 
       sprintf(extList, "%s %d", extList, s->_model);
     }
-    if (_prevControl->_extractedCornerList)
-      free(_prevControl->_extractedCornerList);
-    _prevControl->_extractedCornerList = strdup(extList);
+    _prevControl->_extractedCornerList = extList;
   }
   // if (_extDbCnt<=0) {
   // 	delete [] map;
@@ -2137,9 +2127,7 @@ void extMain::makeCornerNameMap() {
   for (uint k = 0; k < _cornerCnt; k++) {
     sprintf(aList, "%s %d", aList, A[k]);
   }
-  if (_prevControl->_cornerIndexList)
-    free(_prevControl->_cornerIndexList);
-  _prevControl->_cornerIndexList = strdup(aList);
+  _prevControl->_cornerIndexList = aList;
 
   char buff[1024];
   if (map[0] == NULL)
@@ -2291,10 +2279,8 @@ void extMain::updatePrevControl() {
   _prevControl->_CCnoPowerSource = _CCnoPowerSource;
   _prevControl->_CCnoPowerTarget = _CCnoPowerTarget;
   _prevControl->_usingMetalPlanes = _usingMetalPlanes;
-  if (_prevControl->_ruleFileName)
-    free(_prevControl->_ruleFileName);
   if (_currentModel && _currentModel->getRuleFileName())
-    _prevControl->_ruleFileName = strdup(_currentModel->getRuleFileName());
+    _prevControl->_ruleFileName = _currentModel->getRuleFileName();
 }
 
 void extMain::getPrevControl() {
@@ -2429,7 +2415,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
   int ttttRemoveGs = 1;
   int setBlockPtfile = 0;
   std::vector<dbNet*> inets;
-  if ((_prevControl->_ruleFileName == NULL) &&
+  if ((_prevControl->_ruleFileName.empty()) &&
       (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
     logger_->warn(RCX, 127,
                   "No RC model was read with command <load_model>, "
@@ -2471,7 +2457,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
   // if ( _extRun==0 || (!re_extract && !eco )) {
   if ((_processCornerTable != NULL) ||
       ((_processCornerTable == NULL) && (extRules != NULL))) {
-    char* rulesfile = extRules ? (char*)extRules : _prevControl->_ruleFileName;
+    const char* rulesfile = extRules ? extRules : _prevControl->_ruleFileName.c_str();
     if (debug != 777) {
       if (!setCorners(rulesfile,
                       cmp_file)) {  // DKF:12/22 -- cmp_file for testing,
