@@ -17,7 +17,9 @@
 		obj = PyString_FromString("MX");
 	} else if ($1.getValue() == odb::dbOrientType::Value::MXR90) {
 		obj = PyString_FromString("MXR90");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown orientation");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbOrientType, dbOrientType {
@@ -38,6 +40,8 @@
 		$1 = odb::dbOrientType::Value::MX;
 	} else if (strcasecmp(str, "MXR90") == 0) {
 		$1 = odb::dbOrientType::Value::MXR90;
+        } else {
+                SWIG_exception(SWIG_ValueError, "Unknown orientation");
 	}
 }
 %typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER) odb::dbOrientType, dbOrientType {
@@ -86,7 +90,9 @@
 		obj = PyString_FromString("SCAN");
 	} else if ($1.getValue() == odb::dbSigType::Value::TIEOFF) {
 		obj = PyString_FromString("TIEOFF");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown sigType");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbSigType, dbSigType {
@@ -107,7 +113,9 @@
 		$1 = odb::dbSigType::Value::SCAN;
 	} else if (strcasecmp(str, "TIEOFF") == 0) {
 		$1 = odb::dbSigType::Value::TIEOFF;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown sigType");
+        }          
 }
 %typemap(typecheck) odb::dbSigType, dbSigType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -147,7 +155,9 @@
 		obj = PyString_FromString("INOUT");
 	} else if ($1.getValue() == odb::dbIoType::Value::FEEDTHRU) {
 		obj = PyString_FromString("FEEDTHRU");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown ioType");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbIoType, dbIoType {
@@ -160,7 +170,9 @@
 		$1 = odb::dbIoType::Value::INOUT;
 	} else if (strcasecmp(str, "FEEDTHRU") == 0) {
 		$1 = odb::dbIoType::Value::FEEDTHRU;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown ioType");
+        }          
 }
 %typemap(typecheck) odb::dbIoType, dbIoType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -198,7 +210,9 @@
 		obj = PyString_FromString("FIRM");
 	} else if ($1.getValue() == odb::dbPlacementStatus::Value::COVER) {
 		obj = PyString_FromString("COVER");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown placement status");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbPlacementStatus, dbPlacementStatus {
@@ -217,7 +231,9 @@
 		$1 = odb::dbPlacementStatus::Value::FIRM;
 	} else if (strcasecmp(str, "COVER") == 0) {
 		$1 = odb::dbPlacementStatus::Value::COVER;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown placement status");
+        }          
 }
 %typemap(typecheck) odb::dbPlacementStatus, dbPlacementStatus {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -303,7 +319,9 @@
 		obj = PyString_FromString("ENDCAP_BOTTOMLEFT");
 	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_BOTTOMRIGHT) {
 		obj = PyString_FromString("ENDCAP_BOTTOMRIGHT");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown master type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbMasterType, dbMasterType {
@@ -364,7 +382,9 @@
 		$1 = odb::dbMasterType::Value::ENDCAP_BOTTOMLEFT;
 	} else if (strcasecmp(str, "ENDCAP_BOTTOMRIGHT") == 0) {
 		$1 = odb::dbMasterType::Value::ENDCAP_BOTTOMRIGHT;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown master type");
+        }          
 }
 %typemap(typecheck) odb::dbMasterType, dbMasterType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -448,7 +468,9 @@
 		obj = PyString_FromString("IMPLANT");
 	} else if ($1.getValue() == odb::dbTechLayerType::Value::NONE) {
 		obj = PyString_FromString("NONE");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown layer type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbTechLayerType, dbTechLayerType {
@@ -465,7 +487,9 @@
 		$1 = odb::dbTechLayerType::Value::IMPLANT;
 	} else if (strcasecmp(str, "NONE") == 0) {
 		$1 = odb::dbTechLayerType::Value::NONE;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown layer type");
+        }          
 }
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -499,7 +523,9 @@
 		obj = PyString_FromString("HORIZONTAL");
 	} else if ($1.getValue() == odb::dbTechLayerDir::Value::VERTICAL) {
 		obj = PyString_FromString("VERTICAL");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown layer dir");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbTechLayerDir, dbTechLayerDir {
@@ -510,7 +536,9 @@
 		$1 = odb::dbTechLayerDir::Value::HORIZONTAL;
 	} else if (strcasecmp(str, "VERTICAL") == 0) {
 		$1 = odb::dbTechLayerDir::Value::VERTICAL;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown layer dir");
+        }          
 }
 %typemap(typecheck) odb::dbTechLayerDir, dbTechLayerDir {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -536,7 +564,9 @@
 		obj = PyString_FromString("HORIZONTAL");
 	} else if ($1.getValue() == odb::dbRowDir::Value::VERTICAL) {
 		obj = PyString_FromString("VERTICAL");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown row dir");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbRowDir, dbRowDir {
@@ -545,7 +575,9 @@
 		$1 = odb::dbRowDir::Value::HORIZONTAL;
 	} else if (strcasecmp(str, "VERTICAL") == 0) {
 		$1 = odb::dbRowDir::Value::VERTICAL;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown row dir");
+        }          
 }
 %typemap(typecheck) odb::dbRowDir, dbRowDir {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -591,7 +623,9 @@
 		obj = PyString_FromString("REGION");
 	} else if ($1.getValue() == odb::dbBoxOwner::Value::BPIN) {
 		obj = PyString_FromString("BPIN");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown box owner");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbBoxOwner, dbBoxOwner {
@@ -622,7 +656,9 @@
 		$1 = odb::dbBoxOwner::Value::REGION;
 	} else if (strcasecmp(str, "BPIN") == 0) {
 		$1 = odb::dbBoxOwner::Value::BPIN;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown box owner");
+        }          
 }
 %typemap(typecheck) odb::dbBoxOwner, dbBoxOwner {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -672,7 +708,9 @@
 		obj = PyString_FromString("OBSTRUCTION");
 	} else if ($1.getValue() == odb::dbPolygonOwner::Value::SWIRE) {
 		obj = PyString_FromString("SWIRE");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown polygon owner");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbPolygonOwner, dbPolygonOwner {
@@ -685,7 +723,9 @@
 		$1 = odb::dbPolygonOwner::Value::OBSTRUCTION;
 	} else if (strcasecmp(str, "SWIRE") == 0) {
 		$1 = odb::dbPolygonOwner::Value::SWIRE;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown polygon owner");
+        }          
 }
 %typemap(typecheck) odb::dbPolygonOwner, dbPolygonOwner {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -721,7 +761,9 @@
 		obj = PyString_FromString("SHIELD");
 	} else if ($1.getValue() == odb::dbWireType::Value::NOSHIELD) {
 		obj = PyString_FromString("NOSHIELD");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown wire type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbWireType, dbWireType {
@@ -738,7 +780,9 @@
 		$1 = odb::dbWireType::Value::SHIELD;
 	} else if (strcasecmp(str, "NOSHIELD") == 0) {
 		$1 = odb::dbWireType::Value::NOSHIELD;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown wire type");
+        }
 }
 %typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER) odb::dbWireType, dbWireType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -790,7 +834,9 @@
 		obj = PyString_FromString("FILLWIRE");
 	} else if ($1.getValue() == odb::dbWireShapeType::Value::DRCFILL) {
 		obj = PyString_FromString("DRCFILL");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown shape type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbWireShapeType, dbWireShapeType {
@@ -819,7 +865,9 @@
 		$1 = odb::dbWireShapeType::Value::FILLWIRE;
 	} else if (strcasecmp(str, "DRCFILL") == 0) {
 		$1 = odb::dbWireShapeType::Value::DRCFILL;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown shape type");
+        }          
 }
 %typemap(typecheck) odb::dbWireShapeType, dbWireShapeType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -865,7 +913,9 @@
 		obj = PyString_FromString("PAD");
 	} else if ($1.getValue() == odb::dbSiteClass::Value::CORE) {
 		obj = PyString_FromString("CORE");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown site class");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbSiteClass, dbSiteClass {
@@ -876,7 +926,9 @@
 		$1 = odb::dbSiteClass::Value::PAD;
 	} else if (strcasecmp(str, "CORE") == 0) {
 		$1 = odb::dbSiteClass::Value::CORE;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown site class");
+        }          
 }
 %typemap(typecheck) odb::dbSiteClass, dbSiteClass {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -902,7 +954,9 @@
 		obj = PyString_FromString("OFF");
 	} else if ($1.getValue() == odb::dbOnOffType::Value::ON) {
 		obj = PyString_FromString("ON");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown on off type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbOnOffType, dbOnOffType {
@@ -911,7 +965,9 @@
 		$1 = odb::dbOnOffType::Value::OFF;
 	} else if (strcasecmp(str, "ON") == 0) {
 		$1 = odb::dbOnOffType::Value::ON;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown on off type");
+        }          
 }
 %typemap(typecheck) odb::dbOnOffType, dbOnOffType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -935,7 +991,9 @@
 		obj = PyString_FromString("EUCLIDEAN");
 	} else if ($1.getValue() == odb::dbClMeasureType::Value::MAXXY) {
 		obj = PyString_FromString("MAXXY");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown cl measure");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbClMeasureType, dbClMeasureType {
@@ -944,7 +1002,9 @@
 		$1 = odb::dbClMeasureType::Value::EUCLIDEAN;
 	} else if (strcasecmp(str, "MAXXY") == 0) {
 		$1 = odb::dbClMeasureType::Value::MAXXY;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown cl measure");
+        }          
 }
 %typemap(typecheck) odb::dbClMeasureType, dbClMeasureType {
 	char *str = PyString_AsString($input);
@@ -972,7 +1032,9 @@
 		obj = PyString_FromString("ADD");
 	} else if ($1.getValue() == odb::dbJournalEntryType::Value::DESTROY) {
 		obj = PyString_FromString("DESTROY");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown journal entry");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbJournalEntryType, dbJournalEntryType {
@@ -985,7 +1047,9 @@
 		$1 = odb::dbJournalEntryType::Value::ADD;
 	} else if (strcasecmp(str, "DESTROY") == 0) {
 		$1 = odb::dbJournalEntryType::Value::DESTROY;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown journal entry");
+        }
 }
 %typemap(typecheck) odb::dbJournalEntryType, dbJournalEntryType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -1019,7 +1083,9 @@
 		obj = PyString_FromString("SOUTH");
 	} else if ($1.getValue() == odb::dbDirection::Value::WEST) {
 		obj = PyString_FromString("WEST");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown direction");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbDirection, dbDirection {
@@ -1034,7 +1100,9 @@
 		$1 = odb::dbDirection::Value::SOUTH;
 	} else if (strcasecmp(str, "WEST") == 0) {
 		$1 = odb::dbDirection::Value::WEST;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown direction");
+        }
 }
 %typemap(typecheck) odb::dbDirection, dbDirection {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -1066,7 +1134,9 @@
 		obj = PyString_FromString("EXCLUSIVE");
 	} else if ($1.getValue() == odb::dbRegionType::Value::SUGGESTED) {
 		obj = PyString_FromString("SUGGESTED");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown region type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbRegionType, dbRegionType {
@@ -1077,7 +1147,9 @@
 		$1 = odb::dbRegionType::Value::EXCLUSIVE;
 	} else if (strcasecmp(str, "SUGGESTED") == 0) {
 		$1 = odb::dbRegionType::Value::SUGGESTED;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown region type");
+        }
 }
 %typemap(typecheck) odb::dbRegionType, dbRegionType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -1111,7 +1183,9 @@
 		obj = PyString_FromString("TIMING");
 	} else if ($1.getValue() == odb::dbSourceType::Value::TEST) {
 		obj = PyString_FromString("TEST");
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown source type");
+        }
 	$result=obj;
 }
 %typemap(in) odb::dbSourceType, dbSourceType {
@@ -1128,7 +1202,9 @@
 		$1 = odb::dbSourceType::Value::TIMING;
 	} else if (strcasecmp(str, "TEST") == 0) {
 		$1 = odb::dbSourceType::Value::TEST;
-	}
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown source type");
+        }
 }
 %typemap(typecheck) odb::dbSourceType, dbSourceType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
@@ -1154,33 +1230,34 @@
 		$1 = 0;
 	}
 }
-%typemap(out) odb::dbGroup::dbGroupType, dbGroupType {
+%typemap(out) odb::dbGroupType, dbGroupType {
 	PyObject *obj;
-	switch ($1) {
-		case odb::dbGroup::dbGroupType::PHYSICAL_CLUSTER:
-			obj = PyString_FromString("PHYSICAL_CLUSTER");
-			break;
-	 	case odb::dbGroup::dbGroupType::VOLTAGE_DOMAIN:
-			obj = PyString_FromString("VOLTAGE_DOMAIN");
-			break;
-	}
+	if ($1.getValue() == odb::dbGroupType::PHYSICAL_CLUSTER) {
+		obj = PyString_FromString("PHYSICAL_CLUSTER");
+	} else if ($1.getValue() == odb::dbGroupType::VOLTAGE_DOMAIN) {
+		obj = PyString_FromString("VOLTAGE_DOMAIN");
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown group type");
+        }
 	$result=obj;
 }
-%typemap(in) odb::dbGroup::dbGroupType, dbGroupType {
+%typemap(in) odb::dbGroupType, dbGroupType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
 	if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
-		$1 = odb::dbGroup::dbGroupType::PHYSICAL_CLUSTER;
+               $1 = odb::dbGroupType::PHYSICAL_CLUSTER;
 	} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
-		$1 = odb::dbGroup::dbGroupType::VOLTAGE_DOMAIN;
-	}
+               $1 = odb::dbGroupType::VOLTAGE_DOMAIN;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown group type");
+        }
 }
-%typemap(typecheck) odb::dbGroup::dbGroupType, dbGroupType {
+%typemap(typecheck) odb::dbGroupType, dbGroupType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
 	bool found = false;
 	if (str) {
 		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
 			found = true;
-		} 	else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+		} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
 			found = true;
 		}
 	}
