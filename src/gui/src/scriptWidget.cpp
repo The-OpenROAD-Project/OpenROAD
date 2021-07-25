@@ -181,7 +181,13 @@ void ScriptWidget::executeCommand()
   // Show the command that we executed
   addCommandToOutput(command);
 
-  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
+  int return_code;
+  try {
+    return_code = Tcl_Eval(interp_, command.toLatin1().data());
+  } catch (const std::runtime_error& e) {
+    // logger throw an error, which will be in the logger
+    return_code = TCL_ERROR;
+  }
 
   // Show its output
   addTclResultToOutput(return_code);
