@@ -49,6 +49,8 @@ using utl::PDN;
 
 %}
 
+%include "../../Exception.i"
+
 %inline %{
 
 namespace pdn {
