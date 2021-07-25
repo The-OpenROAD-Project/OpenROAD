@@ -2626,7 +2626,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     getResCapTable(true);
   }
 
-  logger_->info(RCX, 436, "RC segment generation {} (max_merge_res {}) ...",
+  logger_->info(RCX, 436, "RC segment generation {} (max_merge_res {:.1f}) ...",
                 getBlock()->getName().c_str(), _mergeResBound);
   uint itermCntEst = 3 * bnets.size();
   setupMapping(itermCntEst);
