@@ -265,6 +265,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (dbRule->isLayerValid() && ptr->getNet() == viaEdge->getNet())
       continue;
+    if(viaEdge->getDir() != ptr->getDir() && (frUInt4) viaEdge->getDir() + (frUInt4) ptr->getDir() != OPPOSITEDIR)
+      continue;
     checkLef58CutSpacingTbl_main(viaEdge, ptr, con);
   }
 }
