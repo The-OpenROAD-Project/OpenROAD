@@ -233,13 +233,7 @@ variable filled_sites
 variable default_tapcell_prefix "TAP_"
 variable default_endcap_prefix "PHY_"
 
-proc clear { tap_prefix endcap_prefix } {
-  set taps_removed [tap::remove_cells $tap_prefix]
-  set endcaps_removed [tap::remove_cells $endcap_prefix]
 
-  # Reset global parameters 
-  tap::reset
-}
 
 # namespace end
 }
