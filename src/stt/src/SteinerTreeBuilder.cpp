@@ -90,13 +90,12 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
   return tree;
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(int num_pins,
-                                         int x[],
-                                         int y[],
-                                         int s[],
+Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
+                                         std::vector<int>& y,
+                                         std::vector<int>& s,
                                          int accuracy)
 {
-  Tree tree = flt::flutes(num_pins, x, y, s, accuracy);
+  Tree tree = flt::flutes(x, y, s, accuracy);
   return tree;
 }
 
@@ -117,14 +116,7 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
   if (alpha > 0.0) {
     tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
   } else {
-    int pin_count = x.size();
-    int x_arr[pin_count];
-    int y_arr[pin_count];
-
-    std::copy(x.begin(), x.end(), x_arr);
-    std::copy(y.begin(), y.end(), y_arr);
-
-    tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
+    tree = flt::flute(x, y, flute_accuracy);
   }
 
   return tree;
