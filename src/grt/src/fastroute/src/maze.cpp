@@ -1007,7 +1007,7 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
 
 void FastRouteCore::reInitTree(int netID)
 {
-  int deg, numEdges, edgeID, d, j;
+  int deg, numEdges, edgeID, j;
   TreeEdge* treeedge;
   Tree rsmt;
 
@@ -1025,18 +1025,14 @@ void FastRouteCore::reInitTree(int netID)
   delete[] sttrees_[netID].nodes;
   delete[] sttrees_[netID].edges;
 
-  d = nets_[netID]->deg;
-  int x[d];
-  int y[d];
+  fluteCongest(netID,
+               nets_[netID]->pinX,
+               nets_[netID]->pinY,
+               2,
+               1.2,
+               &rsmt);
 
-  for (j = 0; j < d; j++) {
-    x[j] = nets_[netID]->pinX[j];
-    y[j] = nets_[netID]->pinY[j];
-  }
-
-  fluteCongest(netID, d, x, y, 2, 1.2, &rsmt);
-
-  if (d > 3) {
+  if (nets_[netID]->deg > 3) {
     edgeShiftNew(&rsmt, netID);
   }
 
