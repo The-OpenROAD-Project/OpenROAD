@@ -67,10 +67,10 @@ TechChar::TechChar(CtsOptions* options,
   _options(options),
   _openroad(openroad),
   _db(db),
-  _db_network(db_network),
+  _resizer(resizer),
   _openSta(sta),
   _openStaChar(nullptr),
-  _resizer(resizer),
+  _db_network(db_network),
   _logger(logger)
 {
 }
@@ -654,7 +654,6 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   unsigned numberOfTopologies = 1 << numberOfNodes;
   std::vector<SolutionData> topologiesVector;
   odb::dbNet* net = nullptr;
-  odb::dbWire* wire = nullptr;
 
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
@@ -668,7 +667,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                           + solutionCounter.to_string() + "_"
                           + std::to_string(wireCounter);
     net = odb::dbNet::create(_charBlock, netName.c_str());
-    wire = odb::dbWire::create(net);
+    odb::dbWire::create(net);
     net->setSigType(odb::dbSigType::SIGNAL);
     // Creates the input port.
     std::string inPortName
@@ -710,7 +709,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                               + solutionCounter.to_string() + "_"
                               + std::to_string(wireCounter);
         net = odb::dbNet::create(_charBlock, netName.c_str());
-        wire = odb::dbWire::create(net);
+        odb::dbWire::create(net);
         odb::dbITerm::connect(bufInstanceOutPin, net);
         net->setSigType(odb::dbSigType::SIGNAL);
         // Updates the topology wih the new instance and the current topology
@@ -1073,8 +1072,6 @@ void TechChar::create()
       odb::dbNet* lastNet = solution.netVector.back();
       sta::Pin* inPin = _db_network->dbToSta(inBTerm);
       sta::Pin* outPin = _db_network->dbToSta(outBTerm);
-      sta::Port* inPort = _db_network->port(inPin);
-      sta::Port* outPort = _db_network->port(outPin);
       sta::Vertex* outPinVert = graph->pinLoadVertex(outPin);
       sta::Vertex* inPinVert = graph->pinDrvrVertex(inPin);
 

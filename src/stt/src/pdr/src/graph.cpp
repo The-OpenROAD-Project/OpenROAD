@@ -125,15 +125,6 @@ Graph::Graph(vector<int>& x,
   }
 }
 
-static bool comp_xn(const Node1& i, const Node1& j)
-{
-  if (i.x == j.x) {
-    return (i.y < j.y);
-  } else {
-    return (i.x < j.x);
-  }
-}
-
 // increasing order
 
 static bool comp_xi(const Node1& i, const Node1& j)
@@ -175,15 +166,6 @@ static bool comp_yd(const Node1& i, const Node1& j)
     return (i.x < j.x);
   } else {
     return (i.y > j.y);
-  }
-}
-
-static bool comp_yn(const Node1& i, const Node1& j)
-{
-  if (i.y == j.y) {
-    return (i.x < j.x);
-  } else {
-    return (i.y < j.y);
   }
 }
 
@@ -306,7 +288,6 @@ void Graph::UpdateMaxPLToChild(int cIdx)
 {
   queue<int> myqueue;
   myqueue.push(cIdx);
-  int cPL = nodes[cIdx].src_to_sink_dist;
   int maxPL = 0;
   while (!myqueue.empty()) {
     int cIdx = myqueue.front();
@@ -1178,7 +1159,6 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
-      Node& rrN = cN;
       int ref = cN.x;
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].x;
@@ -1230,7 +1210,6 @@ bool Graph::IsSameDir(int cIdx, int nIdx)
 {
   Node& cN = nodes[nIdx];
   int pIdx = nodes[nIdx].parent;
-  bool isSameDir = false;
   int pId = 0;
   int cId = 0;
   for (int i = 0; i < cN.N.size(); ++i) {
@@ -1396,7 +1375,6 @@ void Graph::removeNeighbor(int pIdx, int cIdx)
 int Graph::ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape)
 {
   int WL = 0;
-  int delta = 0;
   debugPrint(logger_, PDR, "pdrev", 3, "loc: {}", IdentLoc(pIdx, cIdx));
   debugPrint(logger_, PDR, "pdrev", 3, "pNode: {}", nodes[pIdx]);
   debugPrint(logger_, PDR, "pdrev", 3, "cNode: {}", nodes[cIdx]);
@@ -1700,11 +1678,6 @@ static bool comp_y(const Node& i, const Node& j)
     return (i.y < j.y);
 }
 
-static bool comp_det_cost(const Node& i, const Node& j)
-{
-  return (i.det_cost_node > j.det_cost_node);
-}
-
 bool
 Graph::nodeLessY(int i, int j)
 {
@@ -1727,7 +1700,6 @@ void Graph::buildNearestNeighbors_single_node(int node_idx)
   vector<int> llux;
   vector<int> lllx;
 
-  int node_count = nodes.size();
   // sort in y-axis
   sort(sorted_.begin(), sorted_.end(), [=] (int i, int j) { return nodeLessY(i, j); });
 
@@ -2891,7 +2863,6 @@ void Graph::fix_max_dc()
   constructSteiner();
 
   float st_wl = calc_tree_wl_pd();
-  float st_dc = calc_tree_det_cost();
 
   int use_nn = 0;
 
@@ -2909,8 +2880,7 @@ void Graph::fix_max_dc()
       int new_edge_len, nn2, det_cost_new_edge, size = 0, new_tree_wl = 0,
                                                 diff_in_wl, diff_in_dc = 0;
       float new_dc, min_dc = cnode_dc;
-      int min_dc_nn = -1, min_dc_new_tree_wl = 0,
-          min_dc_edge_len = edge_len_to_par;
+      int min_dc_nn = -1, min_dc_new_tree_wl = 0;
 
       if (use_nn == 1) {
         size = nn_[cnode].size();
@@ -2942,7 +2912,6 @@ void Graph::fix_max_dc()
               if (new_dc < min_dc) {
                 min_dc = new_dc;
                 min_dc_nn = nn2;
-                min_dc_edge_len = new_edge_len;
                 min_dc_new_tree_wl = new_tree_wl;
               }
             }
@@ -3421,7 +3390,7 @@ double Graph::length(std::vector<std::pair<double, double>> l)
 
 int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
 {
-  int max_ov = 0, tmp_ov = 0;
+  int max_ov = 0;
   typedef std::pair<double, double> s_point;
   Node curr_node = set_of_nodes[0][0];
   vector<Node> all_pts, sorted_x, sorted_y;
@@ -3443,8 +3412,6 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
       std::vector<s_point> output;
 
       intersection(line1, line2, output);
-
-      tmp_ov = (int) length(output);
 
       //            Known Problem - output-double, when converting to int for
       //            output_nodes, 232 becomes 231 for somereason

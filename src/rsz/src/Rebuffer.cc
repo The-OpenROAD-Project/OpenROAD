@@ -566,7 +566,6 @@ Resizer::makeBufferedNetWire(SteinerTree *tree,
     const Corner *corner = end->ref()->requiredPath().dcalcAnalysisPt(sta_)->corner();
     double wire_length = dbuToMeters(wire_length_dbu);
     double wire_cap = wire_length * wireSignalCapacitance(corner);
-    double wire_res = wire_length * wireSignalResistance(corner);
 
     return new BufferedNet(BufferedNetType::wire,
                            from_loc,

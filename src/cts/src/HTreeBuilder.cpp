@@ -698,7 +698,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
-  double targetDist = branchPt2.computeDist(rootLocation);
 
   std::vector<std::pair<float, float>> means;
   means.emplace_back(branchPt1.getX(), branchPt1.getY());
@@ -823,7 +822,6 @@ void HTreeBuilder::createClockSubNets()
   }
 
   LevelTopology& leafTopology = _topologyForEachLevel.back();
-  unsigned levelIdx = _topologyForEachLevel.size() - 1;
   unsigned numSinks = 0;
   leafTopology.forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
@@ -923,7 +921,6 @@ void HTreeBuilder::plotSolution()
 void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
 {
   double lengthX = std::abs(_root.getX() - _target.getX());
-  double lengthY = std::abs(_root.getY() - _target.getY());
   bool isLowToHiX = _root.getX() < _target.getX();
   bool isLowToHiY = _root.getY() < _target.getY();
 

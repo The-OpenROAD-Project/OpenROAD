@@ -161,9 +161,6 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     QPlainTextEdit::keyPressEvent(e);
   }
   else {
-    bool has_shift    = e->modifiers().testFlag(Qt::ShiftModifier);
-    bool has_modifier = e->modifiers() != Qt::NoModifier;
-
     bool is_completer_shortcut = has_control && key == Qt::Key_E; // CTRL+E
     if (!is_completer_shortcut) {
       // forward keypress if it is not the completer shortcut
