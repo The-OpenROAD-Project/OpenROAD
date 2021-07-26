@@ -379,21 +379,27 @@ class FlexGCWorker::Impl
 
   void checkCutSpacing();
   void checkCutSpacing_main(gcRect* rect);
-  void checkLef58CutSpacingTbl(gcSegment* viaEdge,
+  void checkLef58CutSpacingTbl(gcRect* viaRect,
                                frLef58CutSpacingTableConstraint* con);
   bool checkLef58CutSpacingTbl_prlValid(
-      const gtl::rectangle_data<frCoord>& edgeRect1,
-      const gtl::rectangle_data<frCoord>& edgeRect2,
+      const gtl::rectangle_data<frCoord>& viaRect1,
+      const gtl::rectangle_data<frCoord>& viaRect2,
       std::string cutClass1,
       std::string cutClass2,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);
-  void checkLef58CutSpacingTbl_main(gcSegment* viaEdge1,
-                                    gcSegment* viaEdge2,
+  void checkLef58CutSpacingTbl_main(gcRect* viaRect1,
+                                    gcRect* viaRect2,
                                     frLef58CutSpacingTableConstraint* con);
-  void getLef58CutSpacingTblQueryBox(gcSegment* edge,
-                                     frCoord spc,
-                                     box_t& queryBox,
-                                     gtl::rectangle_data<frCoord>& queryRect);
+  bool checkLef58CutSpacingTbl_helper(
+      gcRect* viaRect1,
+      gcRect* viaRect2,
+      frString cutClass1,
+      frString cutClass2,
+      const frDirEnum dir,
+      frSquaredDistance distSquare,
+      frSquaredDistance c2cSquare,
+      bool prlValid,
+      odb::dbTechLayerCutSpacingTableDefRule* dbRule);
   void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
   bool checkCutSpacing_main_hasAdjCuts(gcRect* rect,
                                        frCutSpacingConstraint* con);
