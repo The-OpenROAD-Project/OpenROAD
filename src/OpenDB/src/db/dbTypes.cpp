@@ -186,6 +186,50 @@ dbOrientType dbOrientType::flipY() const
   return R0;
 }
 
+dbGroupType::dbGroupType(const char* orient)
+{
+  if (strcasecmp(orient, "PHYSICAL_CLUSTER") == 0)
+    _value = PHYSICAL_CLUSTER;
+
+  else if (strcasecmp(orient, "VOLTAGE_DOMAIN") == 0)
+    _value = VOLTAGE_DOMAIN;
+
+  else
+    _value = PHYSICAL_CLUSTER;
+}
+
+dbGroupType::dbGroupType(Value orient)
+{
+  _value = orient;
+}
+
+dbGroupType::dbGroupType()
+{
+  _value = PHYSICAL_CLUSTER;
+}
+
+dbGroupType::dbGroupType(const dbGroupType& type)
+{
+  _value = type._value;
+}
+
+const char* dbGroupType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case PHYSICAL_CLUSTER:
+      value = "PHYSICAL_CLUSTER";
+      break;
+
+    case VOLTAGE_DOMAIN:
+      value = "VOLTAGE_DOMAIN";
+      break;
+  }
+
+  return value;
+}
+
 dbSigType::dbSigType(const char* value)
 {
   if (strcasecmp(value, "SIGNAL") == 0)
