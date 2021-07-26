@@ -244,7 +244,8 @@ Opendp::distToRect(const Cell *cell, const Rect *rect) const
   int x = init.getX();
   int y = init.getY();
 
-  int dist_x, dist_y;
+  int dist_x = 0;
+  int dist_y = 0;
   if (x < rect->xMin()) {
     dist_x = rect->xMin() - x;
   }

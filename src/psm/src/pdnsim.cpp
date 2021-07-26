@@ -156,10 +156,10 @@ void PDNSim::write_pg_spice()
     int check_spice = irsolve_h->PrintSpice();
     if (check_spice) {
       _logger->info(
-          utl::PSM, 6, "Spice file is written at: {}.", _spice_out_file);
+          utl::PSM, 6, "SPICE file is written at: {}.", _spice_out_file);
     } else {
       _logger->error(
-          utl::PSM, 7, "Falied to write out spice file: {}.", _spice_out_file);
+          utl::PSM, 7, "Failed to write out spice file: {}.", _spice_out_file);
     }
   }
 }

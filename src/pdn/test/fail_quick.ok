@@ -11,7 +11,7 @@
 [INFO ODB-0134] Finished DEF file: fail_quick/floorplan.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: fail_quick/PDN.cfg
-[INFO PDN-0008] Design name is gcd
-[INFO PDN-0009] Reading technology data
+[INFO PDN-0008] Design name is gcd.
+[INFO PDN-0009] Reading technology data.
 [ERROR PDN-0030] Layer specified for stdcell rails 'M1' not in list of layers.
 Execution stopped

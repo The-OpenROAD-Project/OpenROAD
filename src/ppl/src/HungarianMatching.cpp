@@ -113,7 +113,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
           logger_->warn(utl::PPL,
                         33,
                         "I/O pin {} cannot be placed in the specified region. "
-                        "Not enough space",
+                        "Not enough space.",
                         io_pin.getName().c_str());
         }
         io_pin.setPos(slots_[slot_index].pos);

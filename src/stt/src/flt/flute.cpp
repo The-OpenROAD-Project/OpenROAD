@@ -39,6 +39,19 @@
 #include <algorithm>
 #include "stt/flute.h"
 
+// Use flute LUT file reader.
+#define LUT_FILE 1
+// Init LUTs from base64 encoded string variables.
+#define LUT_VAR 2
+// Init LUTs from base64 encoded string variables
+// and check against LUTs from file reader.
+#define LUT_VAR_CHECK 3
+
+// Set this to LUT_FILE, LUT_VAR, or LUT_VAR_CHECK.
+//#define LUT_SOURCE LUT_FILE
+//#define LUT_SOURCE LUT_VAR_CHECK
+#define LUT_SOURCE LUT_VAR
+
 namespace stt {
 void Tree::printTree(utl::Logger* logger)
 {
@@ -218,19 +231,6 @@ checkLUT(LUT_TYPE LUT1,
 // LUTs are initialized to this order at startup.
 static constexpr int lut_initial_d = 8;
 static int lut_valid_d = 0;
-
-// Use flute LUT file reader.
-#define LUT_FILE 1
-// Init LUTs from base64 encoded string variables.
-#define LUT_VAR 2
-// Init LUTs from base64 encoded string variables
-// and check against LUTs from file reader.
-#define LUT_VAR_CHECK 3
-
-// Set this to LUT_FILE, LUT_VAR, or LUT_VAR_CHECK.
-//#define LUT_SOURCE LUT_FILE
-//#define LUT_SOURCE LUT_VAR_CHECK
-#define LUT_SOURCE LUT_VAR
 
 extern std::string post9;
 extern std::string powv9;
@@ -1010,7 +1010,7 @@ Tree flute(int d, DTYPE x[], DTYPE y[], int acc) {
   DTYPE *xs, *ys, minval;
   int *s;
   int i, j, minidx;
-  struct point *pt, **ptp, *tmpp;
+  struct point *pt, *tmpp;
   Tree t;
 
   if (d == 2) {

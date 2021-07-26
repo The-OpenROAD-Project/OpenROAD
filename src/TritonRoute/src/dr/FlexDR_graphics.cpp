@@ -340,7 +340,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const bool draw_blockedEdges
       = gui_->checkCustomVisibilityControl(blocked_edges_visible_);
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
-      && (draw_edges || draw_drc || draw_marker || draw_shape || 
+      && (draw_edges || draw_drc || draw_marker || draw_shape ||
           draw_gCostEdges || draw_blockedEdges)) {
     const frMIdx z = grid_graph_->getMazeZIdx(layerNum);
     const int offset = design_->getTech()->getLayer(2)->getPitch() / 8;
@@ -359,7 +359,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
             if (x != x_dim - 1) {
                 frPoint pt2;
                 grid_graph_->getPoint(pt2, x + 1, y);
-                
+
                 if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
                     painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
                 }
@@ -509,7 +509,7 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
     }
 
     default: {
-      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+      logger_->debug(DRT, 1, "Unknown fig type {} in drawLayer.", fig->typeId());
     }
   }
 }
@@ -681,15 +681,15 @@ void FlexDRGraphics::startNet(drNet* net)
   status("Start net: " + net->getFrNet()->getName() + " "
          + workerOrigin(worker_, design_));
   logger_->info(
-      DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
+      DRT, 249, "Net {} (id = {}).", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {
-    logger_->info(DRT, 250, "  Pin {}", pin->getName());
+    logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
       frPoint pt;
       ap->getPoint(pt);
       logger_->info(DRT,
                     275,
-                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
+                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {}).",
                     pt.x() / (double) dbu_per_uu_,
                     pt.y() / (double) dbu_per_uu_,
                     ap->getBeginLayerNum(),

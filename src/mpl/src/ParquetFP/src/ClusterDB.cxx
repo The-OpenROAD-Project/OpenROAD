@@ -240,15 +240,11 @@ void ClusterDB::cluster1Layer(unsigned layerNum,
           float largeNodeMinAR = nextNode.getminAR();
           float largeNodeMaxAR = nextNode.getmaxAR();
           float smallNodeArea = currNodeArea;
-          float smallNodeMinAR = currNode.getminAR();
-          float smallNodeMaxAR = currNode.getmaxAR();
           if (currNodeArea > nextNodeArea) {
             largeNodeArea = currNodeArea;
             largeNodeMinAR = currNode.getminAR();
             largeNodeMaxAR = currNode.getmaxAR();
             smallNodeArea = nextNodeArea;
-            smallNodeMinAR = nextNode.getminAR();
-            smallNodeMaxAR = nextNode.getmaxAR();
           }
 
           // float newNodeMinAR = 0.75;

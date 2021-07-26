@@ -413,7 +413,6 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     return;
   }
   
-  int dbu_height = getBounds(block).yMax();
   mouse_press_pos_ = event->pos();
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
@@ -484,10 +483,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
       if (rect.width() < 10 && rect.height() < 10)
         return;
-      int dbu_height = getBounds(block).yMax();
       auto mouse_release_pos = screenToDBU(event->pos());
       auto mouse_press_pos = screenToDBU(mouse_press_pos_);
-      qreal to_dbu = block->getDbUnitsPerMicron();
 
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
@@ -1055,8 +1052,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
         const auto& ur = std::get<0>(i).max_corner();
-        int w = ur.x() - ll.x();
-        int h = ur.y() - ll.y();
         painter->drawRect(
             QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
       }
@@ -1375,7 +1370,6 @@ void LayoutViewer::addMenuAndActions()
   // Create Top Level Menu for the context Menu
   auto select_menu = layout_context_menu_->addMenu(tr("Select"));
   auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
-  auto congestion_menu = layout_context_menu_->addMenu(tr("Congestion"));
   auto view_menu = layout_context_menu_->addMenu(tr("View"));
   auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
   // Create Actions

@@ -1,4 +1,4 @@
-sta::define_cmd_args "analyze_power_grid" { 
+sta::define_cmd_args "analyze_power_grid" {
   [-vsrc vsrc_file ]
   [-outfile out_file]
   [-enable_em]
@@ -18,7 +18,7 @@ proc analyze_power_grid { args } {
     } else {
       utl::error PSM 53 "Cannot read $vsrc_file."
     }
-  } 
+  }
   if { [info exists keys(-net)] } {
     set net $keys(-net)
     psm::set_power_net $net
@@ -44,17 +44,17 @@ proc analyze_power_grid { args } {
     if { $enable_em } {
       psm::import_em_out_file_cmd $em_out_file
     } else {
-      utl::error PSM 55 "EM outfile defined without EM enable flag. Add -enable_em."  
+      utl::error PSM 55 "EM outfile defined without EM enable flag. Add -enable_em."
     }
   }
   if { [ord::db_has_rows] } {
     psm::analyze_power_grid_cmd
   } else {
-    utl::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows." 
+    utl::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows."
   }
 }
 
-sta::define_cmd_args "check_power_grid" { 
+sta::define_cmd_args "check_power_grid" {
   [-net power_net]}
 
 proc check_power_grid { args } {
@@ -70,11 +70,11 @@ proc check_power_grid { args } {
     set res [psm::check_connectivity_cmd]
     return $res
   } else {
-    utl::error PSM 58 "No rows defined in design. Use initialize_floorplan to add rows." 
+    utl::error PSM 58 "No rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
-sta::define_cmd_args "write_pg_spice" { 
+sta::define_cmd_args "write_pg_spice" {
   [-vsrc vsrc_file ]
   [-outfile out_file]
   [-net net_name]
@@ -92,7 +92,7 @@ proc write_pg_spice { args } {
     } else {
       utl::error PSM 59 "Cannot read $vsrc_file."
     }
-  } 
+  }
   if { [info exists keys(-outfile)] } {
     set out_file $keys(-outfile)
      psm::import_spice_out_file_cmd $out_file
@@ -115,11 +115,11 @@ proc write_pg_spice { args } {
   if { [ord::db_has_rows] } {
     psm::write_pg_spice_cmd
   } else {
-    utl::error PSM 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN." 
+    utl::error PSM 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN."
   }
 }
 
-sta::define_cmd_args "set_pdnsim_net_voltage" { 
+sta::define_cmd_args "set_pdnsim_net_voltage" {
   [-net net_name]
   [-voltage volt]}
 
@@ -131,9 +131,6 @@ proc set_pdnsim_net_voltage { args } {
     set voltage $keys(-voltage)
     psm::set_net_voltage_cmd $net $voltage
   } else {
-    utl::error PSM 62 "Argument -net or -voltage not specified. Please specifiy both -net and -voltage arguments."
+    utl::error PSM 62 "Argument -net or -voltage not specified. Please specify both -net and -voltage arguments."
   }
 }
-
-
-

@@ -190,7 +190,7 @@ void MacroPlacer::reportEdgePinCounts()
   }
   for (int i = 0; i < core_edge_count; i++) {
     CoreEdge edge = coreEdgeFromIndex(i);
-    logger_->info(MPL, 9, "{} pins {}", coreEdgeString(edge), counts[i]);
+    logger_->info(MPL, 9, "{} pins {}.", coreEdgeString(edge), counts[i]);
   }
 }
 
@@ -200,7 +200,7 @@ void MacroPlacer::placeMacrosCornerMinWL()
   init();
 
   double wl = getWeightedWL();
-  logger_->info(MPL, 67, "Initial weighted wire length {:g}", wl);
+  logger_->info(MPL, 67, "Initial weighted wire length {:g}.", wl);
 
   // All of this partitioning garbage is unnecessary but survives to support
   // the multiple partition algorithm.
@@ -222,7 +222,7 @@ void MacroPlacer::placeMacrosCornerMinWL()
     setDbInstLocations(partition);
 
     double curWwl = getWeightedWL();
-    logger_->info(MPL, 68, "Placed weighted wire length {:g}", curWwl);
+    logger_->info(MPL, 68, "Placed weighted wire length {:g}.", curWwl);
   } else
     logger_->warn(MPL, 66, "Partitioning failed.");
 }
@@ -269,7 +269,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   init();
 
   double wl = getWeightedWL();
-  logger_->info(MPL, 69, "Initial weighted wire length {:g}", wl);
+  logger_->info(MPL, 69, "Initial weighted wire length {:g}.", wl);
 
   Layout layout(lx_, ly_, ux_, uy_);
   bool horizontal = true;
@@ -277,11 +277,11 @@ void MacroPlacer::placeMacrosCornerMaxWl()
       PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
   top_partition.macros_ = macros_;
 
-  logger_->report("Begin One Level Partition");
+  logger_->report("Begin one level partition.");
 
   TwoPartitions oneLevelPart = getPartitions(layout, top_partition, horizontal);
 
-  logger_->report("End One Level Partition");
+  logger_->report("End one level partition.");
   TwoPartitions east_partitions, west_partitions;
 
   vector<vector<Partition>> allSets;
@@ -300,19 +300,19 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   allSets.push_back(layoutSet);
   for (auto& partition_set : oneLevelPart) {
     if (horizontal) {
-      logger_->report("Begin Horizontal Partition");
+      logger_->report("Begin horizontal partition.");
       Layout eastInfo(layout, partition_set.first);
       Layout westInfo(layout, partition_set.second);
 
-      logger_->report("Begin East Partition");
+      logger_->report("Begin east partition.");
       TwoPartitions east_partitions
           = getPartitions(eastInfo, partition_set.first, !horizontal);
-      logger_->report("End East Partition");
+      logger_->report("End east partition.");
 
-      logger_->report("Begin West Partition");
+      logger_->report("Begin west partition.");
       TwoPartitions west_partitions
           = getPartitions(westInfo, partition_set.second, !horizontal);
-      logger_->report("End West Partition");
+      logger_->report("End west partition.");
 
       // Zero case handling when east_partitions = 0
       if (east_partitions.empty() && !west_partitions.empty()) {
@@ -389,12 +389,12 @@ void MacroPlacer::placeMacrosCornerMaxWl()
           }
         }
       }
-      logger_->report("End Horizontal Partition");
+      logger_->report("End horizontal partition.");
     } else {
       // Vertical partition support MIA
     }
   }
-  logger_->info(MPL, 70, "Using {} partition sets", allSets.size() - 1);
+  logger_->info(MPL, 70, "Using {} partition sets.", allSets.size() - 1);
 
   std::unique_ptr<Graphics> graphics;
   if (gui_debug_ && Graphics::guiActive()) {
@@ -444,7 +444,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     double curWwl = getWeightedWL();
     logger_->info(MPL,
                   71,
-                  "Solution {} weighted wire length {:g}",
+                  "Solution {} weighted wire length {:g}.",
                   solution_count_ + 1,
                   curWwl);
     bool is_best = false;
@@ -472,7 +472,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   }
 
   if (found_best) {
-    logger_->info(MPL, 73, "Best weighted wire length {:g}", bestWwl);
+    logger_->info(MPL, 73, "Best weighted wire length {:g}.", bestWwl);
     std::vector<Partition> best_set = allSets[best_setIdx];
     for (auto& best_partition : best_set) {
       updateMacroLocations(best_partition);
@@ -557,7 +557,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
     const Partition& partition,
     bool horizontal)
 {
-  logger_->info(MPL, 76, "Partition {} macros", partition.macros_.size());
+  logger_->info(MPL, 76, "Partition {} macros.", partition.macros_.size());
 
   vector<pair<Partition, Partition>> partitions;
 
@@ -610,7 +610,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
               : layout.ly() + (layout.uy() - layout.ly()) / hardLimit * i);
     }
   }
-  logger_->info(MPL, 77, "Using {} cut lines", cutlines.size());
+  logger_->info(MPL, 77, "Using {} cut lines.", cutlines.size());
 
   // Macro checker array
   // 0 for uninitialize
@@ -622,7 +622,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
   for (auto& cutLine : cutlines) {
     cutRoundUp(layout, cutLine, horizontal);
 
-    logger_->info(MPL, 79, "Cut line {:.2f}", cutLine);
+    logger_->info(MPL, 79, "Cut line {:.2f}.", cutLine);
 
     // chkArr initialize
     for (size_t i = 0; i < partition.macros_.size(); i++) {
@@ -691,7 +691,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
         uClass = SE;
         break;
       default:
-        logger_->error(MPL, 12, "unhandled partition class");
+        logger_->error(MPL, 12, "Unhandled partition class.");
         lClass = W;
         uClass = E;
         break;
@@ -792,7 +792,7 @@ void MacroPlacer::findMacros()
           || dps == dbPlacementStatus::UNPLACED) {
         logger_->error(MPL,
                        3,
-                       "Macro {} is unplaced. Use global_placement to get an "
+                       "Macro {} is unplaced, use global_placement to get an "
                        "initial placement before macro placement.",
                        inst->getConstName());
       }
@@ -814,7 +814,7 @@ void MacroPlacer::findMacros()
     logger_->error(MPL, 4, "No macros found.");
   }
 
-  logger_->info(MPL, 5, "Found {} macros", macros_.size());
+  logger_->info(MPL, 5, "Found {} macros.", macros_.size());
 }
 
 static bool isWithIn(int val, int min, int max)
@@ -1272,7 +1272,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
     logger_->warn(
-        MPL, 11, "pin {} is not placed. Using west.", bTerm->getConstName());
+        MPL, 11, "Pin {} is not placed, using west.", bTerm->getConstName());
     return CoreEdge::West;
   } else {
     const double dbu = db_->getTech()->getDbUnitsPerMicron();

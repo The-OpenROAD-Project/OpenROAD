@@ -77,7 +77,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
     if (tech->name2layer.find(track->getTechLayer()->getName())
         == tech->name2layer.end())
       logger->error(
-          DRT, 94, "cannot find layer: {}", track->getTechLayer()->getName());
+          DRT, 94, "Cannot find layer: {}.", track->getTechLayer()->getName());
     int xPatternSize = track->getNumGridPatternsX();
     int yPatternSize = track->getNumGridPatternsY();
     for (int i = 0; i < xPatternSize; i++) {
@@ -140,10 +140,10 @@ void io::Parser::setInsts(odb::dbBlock* block)
     if (design->name2refBlock_.find(inst->getMaster()->getName())
         == design->name2refBlock_.end())
       logger->error(
-          DRT, 95, "library cell {} not found", inst->getMaster()->getName());
+          DRT, 95, "Library cell {} not found.", inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
-      logger->error(DRT, 96, "same cell name: {}", inst->getName());
+      logger->error(DRT, 96, "Same cell name: {}.", inst->getName());
     frBlock* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
     auto uInst = make_unique<frInst>(inst->getName(), refBlock);
     auto tmpInst = uInst.get();
@@ -222,7 +222,7 @@ void io::Parser::setVias(odb::dbBlock* block)
           == tech->name2layer.end())
         logger->error(DRT,
                       97,
-                      "cannot find cut layer {}",
+                      "Cannot find cut layer {}.",
                       params.getCutLayer()->getName());
       else
         cutLayerNum = tech->name2layer.find(params.getCutLayer()->getName())
@@ -232,7 +232,7 @@ void io::Parser::setVias(odb::dbBlock* block)
           == tech->name2layer.end())
         logger->error(DRT,
                       98,
-                      "cannot find bottom layer {}",
+                      "Cannot find bottom layer {}.",
                       params.getBottomLayer()->getName());
       else
         botLayerNum = tech->name2layer.find(params.getBottomLayer()->getName())
@@ -242,7 +242,7 @@ void io::Parser::setVias(odb::dbBlock* block)
           == tech->name2layer.end())
         logger->error(DRT,
                       99,
-                      "cannot find top layer {}",
+                      "Cannot find top layer {}.",
                       params.getTopLayer()->getName());
       else
         topLayerNum = tech->name2layer.find(params.getTopLayer()->getName())
@@ -324,10 +324,10 @@ void io::Parser::setVias(odb::dbBlock* block)
         lNum2Int[layerNum].insert(box);
       }
       if ((int) lNum2Int.size() != 3)
-        logger->error(DRT, 100, "unsupported via: {}", via->getName());
+        logger->error(DRT, 100, "Unsupported via: {}.", via->getName());
       if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first)
         logger->error(
-            DRT, 101, "non-consecutive layers for via: {}", via->getName());
+            DRT, 101, "Non-consecutive layers for via: {}.", via->getName());
       auto viaDef = make_unique<frViaDef>(via->getName());
       int cnt = 0;
       for (auto& [layerNum, boxes] : lNum2Int) {
@@ -362,8 +362,8 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   if (design->tech_->getNondefaultRule(ndr->getName())) {
     logger->warn(DRT,
                  256,
-                 "Skipping NDR { } because another rule with the same name "
-                 "already exists\n",
+                 "Skipping NDR {} because another rule with the same name "
+                 "already exists.",
                  ndr->getName());
     return;
   }
@@ -466,7 +466,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
         y2 -= dw;
         assert(y1 == y2);
       } else
-        logger->error(DRT, 102, "odd dimension in both directions");
+        logger->error(DRT, 102, "Odd dimension in both directions.");
       break;
     }
     case odb::dbSBox::HORIZONTAL: {
@@ -495,7 +495,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
       break;
     }
     default:
-      logger->error(DRT, 103, "unknown direction");
+      logger->error(DRT, 103, "Unknown direction.");
       break;
   }
   beginX = defdist(block, x1);
@@ -519,7 +519,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     for (auto term : net->getBTerms()) {
       if (tmpBlock->name2term_.find(term->getName())
           == tmpBlock->name2term_.end())
-        logger->error(DRT, 104, "term {} not found", term->getName());
+        logger->error(DRT, 104, "Terminal {} not found.", term->getName());
       auto frterm = tmpBlock->name2term_[term->getName()];  // frTerm*
       frterm->addToNet(netIn);
       netIn->addTerm(frterm);
@@ -535,14 +535,14 @@ void io::Parser::setNets(odb::dbBlock* block)
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end())
         logger->error(
-            DRT, 105, "component {} not found", term->getInst()->getName());
+            DRT, 105, "Component {} not found.", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
       auto frterm = inst->getRefBlock()->getTerm(term->getMTerm()->getName());
       if (frterm == nullptr)
         logger->error(DRT,
                       106,
-                      "component pin {}/{} not found",
+                      "Component pin {}/{} not found.",
                       term->getInst()->getName(),
                       term->getMTerm()->getName());
       int idx = frterm->getOrderId();
@@ -611,7 +611,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             case odb::dbWireDecoder::VWIRE:
               layerName = decoder.getLayer()->getName();
               if (tech->name2layer.find(layerName) == tech->name2layer.end())
-                logger->error(DRT, 107, "unsupported layer {}", layerName);
+                logger->error(DRT, 107, "Unsupported layer {}.", layerName);
               break;
             case odb::dbWireDecoder::POINT:
 
@@ -721,7 +721,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
         if (viaName != "") {
           if (tech->name2via.find(viaName) == tech->name2via.end()) {
-            logger->error(DRT, 108, "unsupported via in db");
+            logger->error(DRT, 108, "Unsupported via in db.");
           } else {
             frPoint p;
             if (hasEndPoint) {
@@ -784,7 +784,7 @@ void io::Parser::setNets(odb::dbBlock* block)
               viaName = box->getBlockVia()->getName();
 
             if (tech->name2via.find(viaName) == tech->name2via.end())
-              logger->error(DRT, 109, "unsupported via in db");
+              logger->error(DRT, 109, "Unsupported via in db.");
             else {
               int x, y;
               box->getViaXY(x, y);
@@ -814,7 +814,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         netType = frNetEnum::frcGroundNet;
         break;
       default:
-        logger->error(DRT, 110, "unsupported NET USE in def");
+        logger->error(DRT, 110, "Unsupported NET USE in def.");
         break;
     }
     netIn->setType(netType);
@@ -843,7 +843,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         termType = frTermEnum::frcClockTerm;
         break;
       default:
-        logger->error(DRT, 111, "unsupported PIN USE in db");
+        logger->error(DRT, 111, "Unsupported PIN USE in db.");
         break;
     }
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
@@ -874,7 +874,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end())
           logger->error(
-              DRT, 112, "unsupported layer {}", box->getTechLayer()->getName());
+              DRT, 112, "Unsupported layer {}.", box->getTechLayer()->getName());
         frLayerNum layerNum
             = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
         frCoord xl = defdist(block, box->xMin());
@@ -898,10 +898,10 @@ void io::Parser::readDesign(odb::dbDatabase* db)
 {
   ProfileTask profile("IO:readDesign");
   if (db->getChip() == nullptr)
-    logger->error(DRT, 116, "load design first");
+    logger->error(DRT, 116, "Load design first.");
   odb::dbBlock* block = db->getChip()->getBlock();
   if (block == nullptr)
-    logger->error(DRT, 117, "load design first");
+    logger->error(DRT, 117, "Load design first.");
   tmpBlock = make_unique<frBlock>(string(block->getName()));
   tmpBlock->trackPatterns_.clear();
   tmpBlock->trackPatterns_.resize(tech->layers.size());
@@ -1013,7 +1013,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
       logger->warn(utl::DRT,
                    265,
-                   "unsupported LEF58_SPACING rule for layer {}",
+                   "Unsupported LEF58_SPACING rule for layer {}.",
                    layer->getName());
       continue;
     }
@@ -1260,48 +1260,48 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
         logger->warn(utl::DRT,
                      258,
-                     "unsupported LEF58_SPACING rule for layer {} of type AREA",
+                     "Unsupported LEF58_SPACING rule for layer {} of type AREA.",
                      layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY:
         logger->warn(
             utl::DRT,
             161,
-            "unsupported LEF58_SPACING rule for layer {} of type MAXXY",
+            "Unsupported LEF58_SPACING rule for layer {} of type MAXXY.",
             layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMASK:
         logger->warn(
             utl::DRT,
             259,
-            "unsupported LEF58_SPACING rule for layer {} of type SAMEMASK",
+            "Unsupported LEF58_SPACING rule for layer {} of type SAMEMASK.",
             layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP:
         logger->warn(utl::DRT,
                      260,
-                     "unsupported LEF58_SPACING rule for layer {} of type "
-                     "PARALLELOVERLAP",
+                     "Unsupported LEF58_SPACING rule for layer {} of type "
+                     "PARALLELOVERLAP.",
                      layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
         logger->warn(utl::DRT,
                      261,
-                     "unsupported LEF58_SPACING rule for layer {} of type "
-                     "PARALLELWITHIN",
+                     "Unsupported LEF58_SPACING rule for layer {} of type "
+                     "PARALLELWITHIN.",
                      layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE:
         logger->warn(utl::DRT,
                      262,
-                     "unsupported LEF58_SPACING rule for layer {} of type "
-                     "SAMEMETALSHAREDEDGE",
+                     "Unsupported LEF58_SPACING rule for layer {} of type "
+                     "SAMEMETALSHAREDEDGE.",
                      layer->getName());
         break;
       default:
         logger->warn(utl::DRT,
                      263,
-                     "unsupported LEF58_SPACING rule for layer {}",
+                     "Unsupported LEF58_SPACING rule for layer {}.",
                      layer->getName());
         break;
     }
@@ -1326,7 +1326,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       if (tech->name2layer.find(secondLayerName) == tech->name2layer.end()) {
         logger->warn(utl::DRT,
                      264,
-                     "layer {} is not found to layer {} LEF58_SPACINGTABLE",
+                     "Layer {} is not found to layer {} LEF58_SPACINGTABLE.",
                      secondLayerName,
                      layer->getName());
         continue;
@@ -1426,7 +1426,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     logger->warn(
         DRT,
         210,
-        "layer {} minWidth is larger than width. Using width as minWidth",
+        "Layer {} minWidth is larger than width. Using width as minWidth.",
         layer->getName());
   tmpLayer->setMinWidth(std::min(layer->getMinWidth(), layer->getWidth()));
   // add minWidth constraint
@@ -1520,7 +1520,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       logger->warn(
           DRT,
           139,
-          "minEnclosedArea constraint with width is not supported, skipped");
+          "minEnclosedArea constraint with width is not supported, skipped.");
       continue;
     }
     frUInt4 _minEnclosedArea;
@@ -1549,13 +1549,13 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     frCoord eolWidth(_eolWidth), eolWithin(_eolWithin), parSpace(_parSpace),
         parWithin(_parWithin);
     if (rule->hasRange()) {
-      logger->warn(DRT, 140, "SpacingRange unsupported");
+      logger->warn(DRT, 140, "SpacingRange unsupported.");
     } else if (rule->hasLengthThreshold()) {
-      logger->warn(DRT, 141, "SpacingLengthThreshold unsupported");
+      logger->warn(DRT, 141, "SpacingLengthThreshold unsupported.");
     } else if (rule->hasSpacingNotchLength()) {
-      logger->warn(DRT, 142, "SpacingNotchLength unsupported");
+      logger->warn(DRT, 142, "SpacingNotchLength unsupported.");
     } else if (rule->hasSpacingEndOfNotchWidth()) {
-      logger->warn(DRT, 143, "SpacingEndOfNotchWidth unsupported");
+      logger->warn(DRT, 143, "SpacingEndOfNotchWidth unsupported.");
     } else if (hasSpacingEndOfLine) {
       unique_ptr<frConstraint> uCon
           = make_unique<frSpacingEndOfLineConstraint>();
@@ -1577,8 +1577,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       auto rptr = uCon.get();
       tech->addUConstraint(std::move(uCon));
       if (tmpLayer->hasSpacingSamenet()) {
-        logger->warn(
-            DRT, 138, "new SPACING SAMENET overrides old SPACING SAMENET rule");
+        logger->warn(DRT,
+                     138,
+                     "New SPACING SAMENET overrides old"
+                     "SPACING SAMENET rule.");
       }
       tmpLayer->setSpacingSamenet(
           static_cast<frSpacingSamenetConstraint*>(rptr));
@@ -1591,8 +1593,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
       tech->addUConstraint(std::move(uCon));
       if (tmpLayer->getMinSpacing())
-        logger->warn(
-            DRT, 144, "new SPACING SAMENET overrides old SPACING SAMENET rule");
+        logger->warn(DRT,
+                     144,
+                     "New SPACING SAMENET overrides old"
+                     "SPACING SAMENET rule.");
       tmpLayer->setMinSpacing(rptr);
     }
   }
@@ -1646,7 +1650,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       logger->warn(
           DRT,
           145,
-          "new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule");
+          "New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.");
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -1672,7 +1676,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
       logger->warn(
-          DRT, 146, "new SPACINGTABLE TWOWIDTHS overrides old SPACING rule");
+          DRT, 146, "New SPACINGTABLE TWOWIDTHS overrides old SPACING rule.");
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -1768,7 +1772,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
       logger->warn(DRT,
                    147,
                    "cutWithin is smaller than cutSpacing for ADJACENTCUTS on "
-                   "layer {}, please check your rule definition",
+                   "layer {}, please check your rule definition.",
                    layer->getName());
     }
     cutSpacingConstraint = make_shared<frCutSpacingConstraint>(cutSpacing,
@@ -1937,7 +1941,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         } else if (str == "GROUND") {
           termType = frTermEnum::frcGroundTerm;
         } else {
-          logger->error(DRT, 120, "unsupported PIN USE in lef");
+          logger->error(DRT, 120, "Unsupported PIN USE in lef.");
         }
         term->setType(termType);
         frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
@@ -1953,7 +1957,10 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         } else if (str == "FEEDTHRU") {
           termDirection = frTermDirectionEnum::FEEDTHRU;
         } else {
-          logger->error(DRT, 121, "unsupported term direction {} in lef", str);
+          logger->error(DRT,
+                        121,
+                        "Unsupported terminal direction {} in lef.",
+                        str);
         }
         term->setDirection(termDirection);
 
@@ -1970,7 +1977,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
                   || type == odb::dbTechLayerType::CUT)
                 logger->warn(DRT,
                              122,
-                             "layer {} is skipped for {}/{}",
+                             "Layer {} is skipped for {}/{}.",
                              layer,
                              tmpBlock->getName(),
                              _term->getName());
@@ -2002,7 +2009,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
               || type == odb::dbTechLayerType::CUT)
             logger->warn(DRT,
                          123,
-                         "layer {} is skipped for {}/OBS",
+                         "Layer {} is skipped for {}/OBS.",
                          layer,
                          tmpBlock->getName());
           continue;
@@ -2042,7 +2049,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
   for (auto rule : _tech->getViaGenerateRules()) {
     int count = rule->getViaLayerRuleCount();
     if (count != 3)
-      logger->error(DRT, 128, "unsupported viarule {}", rule->getName());
+      logger->error(DRT, 128, "Unsupported viarule {}.", rule->getName());
     map<frLayerNum, int> lNum2Int;
     for (int i = 0; i < count; i++) {
       auto layerRule = rule->getViaLayerRule(i);
@@ -2050,7 +2057,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
       if (tech->name2layer.find(layerName) == tech->name2layer.end())
         logger->error(DRT,
                       129,
-                      "unknown layer {} for viarule {}",
+                      "Unknown layer {} for viarule {}.",
                       layerName,
                       rule->getName());
       frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
@@ -2062,7 +2069,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
     }
     if (lNum2Int.begin()->first + count - 1 != (--lNum2Int.end())->first) {
       logger->error(
-          DRT, 130, "non consecutive layers for viarule {}", rule->getName());
+          DRT, 130, "Non-consecutive layers for viarule {}.", rule->getName());
     }
     auto viaRuleGen = make_unique<frViaRuleGenerate>(rule->getName());
     if (rule->isDefault()) {
@@ -2085,7 +2092,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
             logger->warn(DRT,
                          131,
                          "cutLayer cannot have overhangs in viarule {}, "
-                         "skipping enclosure",
+                         "skipping enclosure.",
                          rule->getName());
             break;
           default:
@@ -2106,7 +2113,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
             logger->warn(
                 DRT,
                 132,
-                "botLayer cannot have rect in viarule {}, skipping rect",
+                "botLayer cannot have rect in viarule {}, skipping rect.",
                 rule->getName());
             break;
           case 2:
@@ -2116,7 +2123,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
             logger->warn(
                 DRT,
                 133,
-                "topLayer cannot have rect in viarule {}, skipping rect",
+                "topLayer cannot have rect in viarule {}, skipping rect.",
                 rule->getName());
             break;
         }
@@ -2131,7 +2138,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
             logger->warn(
                 DRT,
                 134,
-                "botLayer cannot have spacing in viarule {}, skipping spacing",
+                "botLayer cannot have spacing in viarule {}, skipping spacing.",
                 rule->getName());
             break;
           case 2:
@@ -2141,7 +2148,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
             logger->warn(
                 DRT,
                 135,
-                "botLayer cannot have spacing in viarule {}, skipping spacing",
+                "botLayer cannot have spacing in viarule {}, skipping spacing.",
                 rule->getName());
             break;
         }
@@ -2161,7 +2168,7 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
       if (tech->name2layer.find(layerName) == tech->name2layer.end()) {
         logger->warn(DRT,
                      124,
-                     "via {} with unused layer {} will be ignored",
+                     "Via {} with unused layer {} will be ignored.",
                      layerName,
                      via->getName());
         has_unknown_layer = true;
@@ -2174,7 +2181,7 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
       continue;
     }
     if (lNum2Int.size() != 3)
-      logger->error(DRT, 125, "unsupported via {}", via->getName());
+      logger->error(DRT, 125, "Unsupported via {}.", via->getName());
     int curOrder = 0;
     for (auto [lnum, i] : lNum2Int) {
       lNum2Int[lnum] = ++curOrder;
@@ -2182,7 +2189,7 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
 
     if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first) {
       logger->error(
-          DRT, 126, "non consecutive layers for via {}", via->getName());
+          DRT, 126, "Non-consecutive layers for via {}.", via->getName());
     }
     auto viaDef = make_unique<frViaDef>(via->getName());
     if (via->isDefault())
@@ -2192,7 +2199,7 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
       string layer = box->getTechLayer()->getName();
       if (tech->name2layer.find(layer) == tech->name2layer.end())
         logger->error(
-            DRT, 127, "unknown layer {} for via {}", layer, via->getName());
+            DRT, 127, "Unknown layer {} for via {}.", layer, via->getName());
       else
         layerNum = tech->name2layer.at(layer)->getLayerNum();
       frCoord xl = box->xMin();
@@ -2238,7 +2245,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 {
   auto _tech = db->getTech();
   if (_tech == nullptr)
-    logger->error(DRT, 136, "load design first");
+    logger->error(DRT, 136, "Load design first.");
   tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
   USEMINSPACING_OBS = _tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
   tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
@@ -2252,23 +2259,23 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 void io::Parser::readDb(odb::dbDatabase* db)
 {
   if (VERBOSE > 0) {
-    logger->info(DRT, 149, "Reading Tech And Libs");
+    logger->info(DRT, 149, "Reading tech and libs.");
   }
   readTechAndLibs(db);
   if (VERBOSE > 0) {
     logger->report("");
-    logger->report("units:       {}", tech->getDBUPerUU());
-    logger->report("#layers:     {}", tech->layers.size());
-    logger->report("#macros:     {}", design->refBlocks_.size());
-    logger->report("#vias:       {}", tech->vias.size());
-    logger->report("#viarulegen: {}", tech->viaRuleGenerates.size());
+    logger->report("Units:                {}", tech->getDBUPerUU());
+    logger->report("Number of layers:     {}", tech->layers.size());
+    logger->report("Number of macros:     {}", design->refBlocks_.size());
+    logger->report("Number of vias:       {}", tech->vias.size());
+    logger->report("Number of viarulegen: {}", tech->viaRuleGenerates.size());
     logger->report("");
   }
 
   auto numLefVia = tech->vias.size();
 
   if (VERBOSE > 0) {
-    logger->info(DRT, 150, "Reading Design");
+    logger->info(DRT, 150, "Reading design.");
   }
 
   readDesign(db);
@@ -2277,15 +2284,21 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->report("");
     frBox dieBox;
     design->getTopBlock()->getDieBox(dieBox);
-    logger->report("design:      {}", design->getTopBlock()->getName());
-    logger->report("die area:    {}", dieBox);
-    logger->report("trackPts:    {}",
+    logger->report("Design:                   {}",
+                   design->getTopBlock()->getName());
+    logger->report("Die area:                 {}", dieBox);
+    logger->report("Number of track patterns: {}",
                    design->getTopBlock()->getTrackPatterns().size());
-    logger->report("defvias:     {}", tech->vias.size() - numLefVia);
-    logger->report("#components: {}", design->getTopBlock()->insts_.size());
-    logger->report("#terminals:  {}", design->getTopBlock()->terms_.size());
-    logger->report("#snets:      {}", design->getTopBlock()->snets_.size());
-    logger->report("#nets:       {}", design->getTopBlock()->nets_.size());
+    logger->report("Number of DEF vias:       {}",
+                   tech->vias.size() - numLefVia);
+    logger->report("Number of components:     {}",
+                   design->getTopBlock()->insts_.size());
+    logger->report("Number of terminals:      {}",
+                   design->getTopBlock()->terms_.size());
+    logger->report("Number of snets:          {}",
+                   design->getTopBlock()->snets_.size());
+    logger->report("Number of nets:           {}",
+                   design->getTopBlock()->nets_.size());
     logger->report("");
   }
 }
@@ -2295,7 +2308,7 @@ void io::Parser::readGuide()
   ProfileTask profile("IO:readGuide");
 
   if (VERBOSE > 0) {
-    logger->info(DRT, 151, "Reading Guide");
+    logger->info(DRT, 151, "Reading guide.");
   }
 
   int numGuides = 0;
@@ -2329,17 +2342,17 @@ void io::Parser::readGuide()
       // cout <<endl;
 
       if (vLine.size() == 0) {
-        logger->error(DRT, 152, "Error reading guide file!");
+        logger->error(DRT, 152, "Error reading guide file {}.", GUIDE_FILE);
       } else if (vLine.size() == 1) {
         netName = vLine[0];
         if (design->topBlock_->name2net_.find(vLine[0])
             == design->topBlock_->name2net_.end()) {
-          logger->error(DRT, 153, "cannot find net {}", vLine[0]);
+          logger->error(DRT, 153, "Cannot find net {}.", vLine[0]);
         }
         net = design->topBlock_->name2net_[netName];
       } else if (vLine.size() == 5) {
         if (tech->name2layer.find(vLine[4]) == tech->name2layer.end()) {
-          logger->error(DRT, 154, "cannot find layer {}", vLine[4]);
+          logger->error(DRT, 154, "Cannot find layer {}.", vLine[4]);
         }
         layerNum = tech->name2layer[vLine[4]]->getLayerNum();
 
@@ -2347,9 +2360,9 @@ void io::Parser::readGuide()
             || layerNum > TOP_ROUTING_LAYER)
           logger->error(DRT,
                         155,
-                        "guide in net {} uses layer {} ({})"
+                        "Guide in net {} uses layer {} ({})"
                         " that is outside the allowed routing range "
-                        "[{} ({}), ({})]",
+                        "[{} ({}), ({})].",
                         netName,
                         vLine[4],
                         layerNum,
@@ -2366,26 +2379,26 @@ void io::Parser::readGuide()
         ++numGuides;
         if (numGuides < 1000000) {
           if (numGuides % 100000 == 0) {
-            logger->info(DRT, 156, "guideIn read {} guides", numGuides);
+            logger->info(DRT, 156, "guideIn read {} guides.", numGuides);
           }
         } else {
           if (numGuides % 1000000 == 0) {
-            logger->info(DRT, 157, "guideIn read {} guides", numGuides);
+            logger->info(DRT, 157, "guideIn read {} guides.", numGuides);
           }
         }
 
       } else {
-        logger->error(DRT, 158, "Error reading guide file!");
+        logger->error(DRT, 158, "Error reading guide file {}.", GUIDE_FILE);
       }
     }
     fin.close();
   } else {
-    logger->error(DRT, 159, "failed to open guide file");
+    logger->error(DRT, 159, "Failed to open guide file {}.", GUIDE_FILE);
   }
 
   if (VERBOSE > 0) {
     logger->report("");
-    logger->report("#guides:     {}", numGuides);
+    logger->report("Number of guides:     {}", numGuides);
     logger->report("");
   }
 }
@@ -2408,7 +2421,7 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
           logger->warn(
               DRT,
               247,
-              "io::Writer::fillConnFigs_net does not support this type");
+              "io::Writer::fillConnFigs_net does not support this type.");
         }
       }
     }
@@ -2473,7 +2486,7 @@ void io::Writer::splitVia_helper(
 void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
 {
   // if (VERBOSE > 0) {
-  //   cout <<endl <<"merge and split ..." <<endl;
+  //   cout <<endl << "merge and split." <<endl;
   // }
   //  initialzie pathseg and via map
   map<tuple<frLayerNum, bool, frCoord>,
@@ -2487,7 +2500,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
       pathSeg->getPoints(begin, end);
       frLayerNum layerNum = pathSeg->getLayerNum();
       if (begin == end) {
-        // std::cout << "Warning: 0 length connfig\n";
+        // std::cout << "Warning: 0 length connFig\n";
         continue;  // if segment length = 0, ignore
       } else {
         // std::cout << "xxx\n";
@@ -2725,7 +2738,7 @@ void io::Writer::fillConnFigs(bool isTA)
 {
   connFigs.clear();
   if (VERBOSE > 0) {
-    logger->info(DRT, 180, "post processing ...");
+    logger->info(DRT, 180, "Post processing.");
   }
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     fillConnFigs_net(net.get(), isTA);
@@ -2752,7 +2765,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
       logger->error(DRT,
                     113,
-                    "techlayers for via {} not found in db tech",
+                    "Tech layers for via {} not found in db tech.",
                     via->getName());
     }
     odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
@@ -2875,7 +2888,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
             _wire_encoder.clear();
             logger->error(DRT,
                           114,
-                          "unknown connfig type while writing net {}",
+                          "Unknown connFig type while writing net {}.",
                           net->getName());
           }
         }
@@ -2890,12 +2903,12 @@ void io::Writer::updateDb(odb::dbDatabase* db)
   fillConnFigs(false);
   fillViaDefs();
   if (db->getChip() == nullptr)
-    logger->error(DRT, 3, "load design first");
+    logger->error(DRT, 3, "Load design first.");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(DRT, 4, "load design first");
+    logger->error(DRT, 4, "Load design first.");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);
