@@ -81,15 +81,11 @@ void IOPlacer::initNetlistAndCore(std::set<int> hor_layer_idx,
 
 void IOPlacer::initParms()
 {
-  report_hpwl_ = false;
   slots_per_section_ = 200;
   slots_increase_factor_ = 0.01f;
   netlist_ = Netlist();
   netlist_io_pins_ = Netlist();
 
-  if (parms_->getReportHPWL()) {
-    report_hpwl_ = true;
-  }
   if (parms_->getNumSlots() > -1) {
     slots_per_section_ = parms_->getNumSlots();
   }
@@ -689,10 +685,10 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   total_pins_assigned += assigned_pins_count;
 
   if (total_pins_assigned == net.numIOPins()) {
-    logger_->report("Successfully assigned I/O pins.");
+    logger_->info(PPL, 8, "Successfully assigned pins to sections.");
     return true;
   } else {
-    logger_->report("Unsuccessfully assigned I/O pins ({} out of {}).", total_pins_assigned, net.numIOPins());
+    logger_->info(PPL, 9, "Unsuccessfully assigned pins to sections ({} out of {}).", total_pins_assigned, net.numIOPins());
     return false;
   }
 }
@@ -1130,9 +1126,8 @@ void IOPlacer::run(bool random_mode)
 
   initConstraints();
 
-  if (report_hpwl_) {
-    init_hpwl = returnIONetsHPWL(netlist_);
-  }
+  init_hpwl = returnIONetsHPWL(netlist_);
+
   if (random_mode) {
     logger_->info(PPL, 7, "Random pin placement.");
     randomPlacement();
@@ -1166,14 +1161,12 @@ void IOPlacer::run(bool random_mode)
                    netlist_.numIOPins());
   }
 
-  if (report_hpwl_) {
-    for (int idx = 0; idx < sections_.size(); idx++) {
-      total_hpwl += returnIONetsHPWL(netlist_io_pins_);
-    }
+  if (!random_mode) {
+    total_hpwl += returnIONetsHPWL(netlist_io_pins_);
     delta_hpwl = init_hpwl - total_hpwl;
-    logger_->info(PPL, 11, "HPWL before ioPlacer: {}", init_hpwl);
-    logger_->info(PPL, 12, "HPWL after  ioPlacer: {}", total_hpwl);
-    logger_->info(PPL, 13, "HPWL delta  ioPlacer: {}", delta_hpwl);
+    logger_->info(PPL, 11, "HPWL before pin placement: {}", init_hpwl);
+    logger_->info(PPL, 12, "HPWL after  pin placement: {}", total_hpwl);
+    logger_->info(PPL, 13, "HPWL delta  pin placement: {}", delta_hpwl);
   }
 
   commitIOPlacementToDB(assignment_);

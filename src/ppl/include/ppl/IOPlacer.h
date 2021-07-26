@@ -166,7 +166,6 @@ class IOPlacer
   Netlist netlist_;
   Core core_;
   std::vector<IOPin> assignment_;
-  bool report_hpwl_;
 
   int slots_per_section_;
   float slots_increase_factor_;
