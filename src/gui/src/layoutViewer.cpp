@@ -99,13 +99,13 @@ class GuiPainter : public Painter
   GuiPainter(QPainter* painter,
              Options* options,
              const QTransform& base_transform,
-             int dbu_height,
+             const QPoint& centering_shift,
              qreal pixels_per_dbu,
              int dbu_per_micron)
       : painter_(painter),
         options_(options),
         base_transform_(base_transform),
-        dbu_height_(dbu_height),
+        centering_shift_(centering_shift),
         pixels_per_dbu_(pixels_per_dbu),
         dbu_per_micron_(dbu_per_micron)
   {
@@ -198,8 +198,8 @@ class GuiPainter : public Painter
   {
     painter_->save();
     painter_->setTransform(base_transform_);
-    int sx = x * pixels_per_dbu_;
-    int sy = (dbu_height_ - y) * pixels_per_dbu_;
+    int sx = centering_shift_.x() + x * pixels_per_dbu_;
+    int sy = centering_shift_.y() - y * pixels_per_dbu_;
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
     painter_->drawText(sx, sy, QString::fromStdString(s));
@@ -231,7 +231,7 @@ class GuiPainter : public Painter
   QPainter* painter_;
   Options* options_;
   const QTransform base_transform_;
-  int dbu_height_;
+  const QPoint centering_shift_;
   qreal pixels_per_dbu_;
   int dbu_per_micron_;
 };
@@ -295,21 +295,57 @@ dbBlock* LayoutViewer::getBlock()
   return block;
 }
 
-void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
+Rect LayoutViewer::getPaddedRect(const Rect& rect, double factor)
 {
-  pixels_per_dbu_ = pixels_per_dbu;
+  const int margin = factor * std::max(rect.dx(), rect.dy());
+  return Rect(
+      rect.xMin() - margin,
+      rect.yMin() - margin,
+      rect.xMax() + margin,
+      rect.yMax() + margin
+      );
+}
+
+qreal LayoutViewer::computePixelsPerDBU(const QSize& size, const Rect& dbu_rect)
+{
+  return std::min(
+      size.width()  / (double) dbu_rect.dx(),
+      size.height() / (double) dbu_rect.dy());
+}
+
+void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize)
+{
   dbBlock* block = getBlock();
   if (!block) {
     return;
   }
 
-  Rect bbox = getBounds(block);
+  const Rect fitted_bb = getPaddedRect(getBounds(block));
+  // ensure max size is not exceeded
+  qreal maximum_pixels_per_dbu_ = 0.98*computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX), fitted_bb);
+  pixels_per_dbu_ = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
-  QSize size(ceil(bbox.xMax() * pixels_per_dbu),
-             ceil(bbox.yMax() * pixels_per_dbu));
-  resize(size);
-  setMinimumSize(size);  // needed by scroll area
+  if (do_resize) {
+    const QSize new_size(
+        ceil(fitted_bb.dx() * pixels_per_dbu_),
+        ceil(fitted_bb.dy() * pixels_per_dbu_));
+    resize(new_size);
+    setMinimumSize(new_size);  // needed by scroll area
+  }
   update();
+}
+
+void LayoutViewer::setCenteringShift()
+{
+  dbBlock* block = getBlock();
+  if (block != nullptr) {
+    const Rect block_bb = getBounds(block);
+    const QSize actual_size = size();
+
+    centering_shift_ = QPoint(
+        (actual_size.width()  - block_bb.dx()*pixels_per_dbu_)/2,
+        (actual_size.height() + block_bb.dy()*pixels_per_dbu_)/2);
+  }
 }
 
 void LayoutViewer::zoomIn()
@@ -355,12 +391,9 @@ void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_foc
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
-  QSize viewport = scroller_->maximumViewportSize();
-  qreal pixels_per_dbu = std::min(viewport.width() / (double) rect_dbu.dx(),
-                                  viewport.height() / (double) rect_dbu.dy());
-  setPixelsPerDBU(pixels_per_dbu);
-
-  QRectF screen_rect = dbuToScreen(rect_dbu);
+  const Rect padded_rect = getPaddedRect(rect_dbu);
+  setPixelsPerDBU(computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
+  QRectF screen_rect = dbuToScreen(padded_rect);
 
   // Center the region
   int w = (scroller_->width() - screen_rect.width()) / 2;
@@ -502,9 +535,11 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
       return;  // ignore clicks not intended to be drags
     }
 
+    const Rect block_bounds = getBounds(block);
+
     Rect rubber_band_dbu = screenToDBU(rect);
     // Clip to the block bounds
-    Rect bbox = getBounds(block);
+    Rect bbox = getPaddedRect(block_bounds);
 
     rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox.xMin()));
     rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox.yMin()));
@@ -544,10 +579,9 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
   dbBlock* block = getBlock();
-  if (block) {
-    Rect bbox = getBounds(block);
-    pixels_per_dbu_ = std::min(event->size().width() / (double) bbox.xMax(),
-                               event->size().height() / (double) bbox.yMax());
+  if (block != nullptr) {
+    setPixelsPerDBU(computePixelsPerDBU(event->size(), getPaddedRect(getBounds(block))), false);
+    setCenteringShift();
   }
 }
 
@@ -908,7 +942,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   GuiPainter gui_painter(painter,
                          options_,
                          base_tx,
-                         getBounds(block).yMax(),
+                         centering_shift_,
                          pixels_per_dbu_,
                          block->getDbUnitsPerMicron());
 
@@ -1189,48 +1223,38 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
 
 odb::Point LayoutViewer::screenToDBU(const QPoint& point)
 {
-  return Point(point.x() / pixels_per_dbu_,
-               (height() - point.y()) / pixels_per_dbu_);
+  // Flip the y-coordinate (see file level comments)
+  return Point((point.x()-centering_shift_.x()) / pixels_per_dbu_,
+               (centering_shift_.y()-point.y()) / pixels_per_dbu_);
 }
 
 Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 {
-  int dbu_left = (int) floor(screen_rect.left() / pixels_per_dbu_);
-  int dbu_right = (int) ceil(screen_rect.right() / pixels_per_dbu_);
-  int dbu_top = (int) floor(screen_rect.top() / pixels_per_dbu_);
-  int dbu_bottom = (int) ceil(screen_rect.bottom() / pixels_per_dbu_);
-
+  int dbu_left = (int) floor((screen_rect.left()-centering_shift_.x()) / pixels_per_dbu_);
+  int dbu_right = (int) ceil((screen_rect.right()-centering_shift_.x()) / pixels_per_dbu_);
   // Flip the y-coordinate (see file level comments)
-  dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).yMax();
-  dbu_top = dbu_height - dbu_top;
-  dbu_bottom = dbu_height - dbu_bottom;
+  int dbu_top = (int) floor((centering_shift_.y()-screen_rect.top()) / pixels_per_dbu_);
+  int dbu_bottom = (int) ceil((centering_shift_.y()-screen_rect.bottom()) / pixels_per_dbu_);
 
   return Rect(dbu_left, dbu_bottom, dbu_right, dbu_top);
 }
 
 QPointF LayoutViewer::dbuToScreen(const Point& dbu_point)
 {
-  dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).yMax();
-
   // Flip the y-coordinate (see file level comments)
-  qreal x = dbu_point.x() * pixels_per_dbu_;
-  qreal y = (dbu_height - dbu_point.y()) * pixels_per_dbu_;
+  qreal x = centering_shift_.x() + dbu_point.x() * pixels_per_dbu_;
+  qreal y = centering_shift_.y() - dbu_point.y() * pixels_per_dbu_;
 
   return QPointF(x, y);
 }
 
 QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 {
-  dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).yMax();
-
   // Flip the y-coordinate (see file level comments)
-  qreal screen_left = dbu_rect.xMin() * pixels_per_dbu_;
-  qreal screen_right = dbu_rect.xMax() * pixels_per_dbu_;
-  qreal screen_top = (dbu_height - dbu_rect.yMax()) * pixels_per_dbu_;
-  qreal screen_bottom = (dbu_height - dbu_rect.yMin()) * pixels_per_dbu_;
+  qreal screen_left   = centering_shift_.x() + dbu_rect.xMin() * pixels_per_dbu_;
+  qreal screen_right  = centering_shift_.x() + dbu_rect.xMax() * pixels_per_dbu_;
+  qreal screen_top    = centering_shift_.y() - dbu_rect.yMax() * pixels_per_dbu_;
+  qreal screen_bottom = centering_shift_.y() - dbu_rect.yMin() * pixels_per_dbu_;
 
   return QRectF(QPointF(screen_left, screen_top),
                 QPointF(screen_right, screen_bottom));
@@ -1263,7 +1287,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   // Coordinate system setup (see file level comments)
   const QTransform base_transform = painter.transform();
   painter.save();
-  painter.translate(0, height());
+  painter.translate(centering_shift_);
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   Rect dbu_bounds = screenToDBU(event->rect());
@@ -1319,16 +1343,12 @@ void LayoutViewer::fit()
   }
 
   Rect bbox = getBounds(block);
-  if (bbox.xMax() == 0 || bbox.yMax() == 0) {
+  if (bbox.dx() == 0 || bbox.dy() == 0) {
     return;
   }
 
-  QSize viewport = scroller_->maximumViewportSize();
-  qreal pixels_per_dbu
-      = std::min((viewport.width() * 0.98) / (double) bbox.xMax(),
-                 (viewport.height() * 0.98) / (double) bbox.yMax());
-  setPixelsPerDBU(pixels_per_dbu);
-  fit_pixels_per_dbu_ = pixels_per_dbu;
+  zoomTo(bbox);
+  fit_pixels_per_dbu_ = pixels_per_dbu_;
 }
 
 void LayoutViewer::selectHighlightConnectedInst(bool select_flag)

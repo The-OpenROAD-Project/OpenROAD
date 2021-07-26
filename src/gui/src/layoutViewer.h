@@ -192,7 +192,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   odb::dbBlock* getBlock();
-  void setPixelsPerDBU(qreal pixels_per_dbu);
+  void setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize = true);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
@@ -254,6 +254,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
+
+  QPoint centering_shift_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 };
