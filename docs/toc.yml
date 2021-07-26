@@ -118,12 +118,6 @@ entries:
     title: User Guide
   - file: docs/contrib/Metrics
     title: Metrics
-  - file: docs/user/ToolLimitations
-    title: Tool Limitations
 
-# - file: docs/misc/CTS_LUT_Discussion
-#   title: CTS LUT Discussion
-# - file: docs/releases/Alpha2Process
-#   title: Alpha2 Process
-# - file: docs/releases/PostAlpha2.1BranchMethodology
-#   title: Post Alpha2 Branch Methodology
+- file: user/FAQS
+  title: FAQs

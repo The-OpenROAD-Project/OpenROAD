@@ -28,5 +28,3 @@ cmake-build-debug/
 
 coverage-output
 messages.txt
-
-_build
