@@ -61,7 +61,7 @@ static int ordery(const struct pnt* a, const struct pnt* b)
 }
 
 // binary search to map the new coordinates to original coordinates
-int mapxy(int nx, std::vector<int> xs, std::vector<int> nxs, int d)
+int mapxy(int nx, const std::vector<int> &xs, const std::vector<int> &nxs, int d)
 {
   int max, min, mid;
 
@@ -154,8 +154,8 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
 }
 
 void FastRouteCore::fluteNormal(int netID,
-                 std::vector<DTYPE> x,
-                 std::vector<DTYPE> y,
+                 const std::vector<DTYPE> &x,
+                 const std::vector<DTYPE> &y,
                  int acc,
                  float coeffV,
                  Tree* t)
@@ -329,8 +329,8 @@ void FastRouteCore::fluteNormal(int netID,
 }
 
 void FastRouteCore::fluteCongest(int netID,
-                  std::vector<DTYPE> x,
-                  std::vector<DTYPE> y,
+                  const std::vector<DTYPE> &x,
+                  const std::vector<DTYPE> &y,
                   int acc,
                   float coeffV,
                   Tree* t)

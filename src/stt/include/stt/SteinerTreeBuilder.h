@@ -73,9 +73,9 @@ class SteinerTreeBuilder
                        int drvr_index);
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
-  Tree makeSteinerTree(std::vector<int>& x,
-                       std::vector<int>& y,
-                       std::vector<int>& s,
+  Tree makeSteinerTree(const std::vector<int>& x,
+                       const std::vector<int>& y,
+                       const std::vector<int>& s,
                        int acc);
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha) { alpha_ = alpha; }

@@ -101,7 +101,7 @@ struct point {
 };
 
 Tree dmergetree(Tree t1, Tree t2);
-Tree hmergetree(Tree t1, Tree t2, std::vector<int> s);
+Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s);
 Tree vmergetree(Tree t1, Tree t2);
 void local_refinement(int deg, Tree *tp, int p);
 
@@ -500,7 +500,7 @@ base64_decode(std::string const& encoded_string) {
 
 ////////////////////////////////////////////////////////////////
 
-DTYPE flute_wl(int d, std::vector<DTYPE> x, std::vector<DTYPE> y, int acc) {
+DTYPE flute_wl(int d, const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
   DTYPE minval, l, xu, xl, yu, yl;
   std::vector<DTYPE> xs, ys;
   int i, j, minidx;
@@ -637,7 +637,7 @@ DTYPE flutes_wl_RDP(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::ve
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-DTYPE flutes_wl_LD(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vector<int> s) {
+DTYPE flutes_wl_LD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>& ys, const std::vector<int>& s) {
   int k, pi, i, j;
   struct csoln *rlist;
   DTYPE dd[2 * FLUTE_D - 2];  // 0..FLUTE_D-2 for v, FLUTE_D-1..2*D-3 for h
@@ -696,7 +696,7 @@ DTYPE flutes_wl_LD(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vec
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-DTYPE flutes_wl_MD(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vector<int> s, int acc) {
+DTYPE flutes_wl_MD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>& ys, const std::vector<int>& s, int acc) {
   float pnlty, dx, dy;
   float *score, *penalty;
   DTYPE xydiff;
@@ -981,7 +981,7 @@ static int ordery(const void *a, const void *b) {
   return 0;
 }
 
-Tree flute(std::vector<DTYPE> x, std::vector<DTYPE> y, int acc) {
+Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
   std::vector<DTYPE> xs, ys;
   DTYPE minval;
   std::vector<int> s;
@@ -1122,7 +1122,7 @@ Tree flutes_RDP(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vector
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-Tree flutes_LD(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vector<int> s) {
+Tree flutes_LD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>& ys, const std::vector<int>& s) {
   int k, pi, i, j;
   struct csoln *rlist, *bestrlist;
   DTYPE dd[2 * FLUTE_D - 2];  // 0..D-2 for v, D-1..2*D-3 for h
@@ -1266,7 +1266,7 @@ Tree flutes_LD(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vector<
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-Tree flutes_MD(int d, std::vector<DTYPE> xs, std::vector<DTYPE> ys, std::vector<int> s, int acc) 
+Tree flutes_MD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>& ys, const std::vector<int>& s, int acc) 
 {
   float *score, *penalty, pnlty, dx, dy;
   int ms, mins, maxs, minsi, maxsi;
@@ -1610,7 +1610,7 @@ Tree dmergetree(Tree t1, Tree t2) {
   return t;
 }
 
-Tree hmergetree(Tree t1, Tree t2, std::vector<int> s) {
+Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s) {
   int i, prev, curr, next, extra, offset1, offset2;
   int p, n1, n2;
   int nn1 = 0;

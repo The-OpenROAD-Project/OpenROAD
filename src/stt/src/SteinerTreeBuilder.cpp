@@ -90,9 +90,9 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
   return tree;
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
-                                         std::vector<int>& y,
-                                         std::vector<int>& s,
+Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
+                                         const std::vector<int>& y,
+                                         const std::vector<int>& s,
                                          int accuracy)
 {
   Tree tree = flt::flutes(x, y, s, accuracy);
