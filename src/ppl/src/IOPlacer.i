@@ -133,18 +133,6 @@ set_slots_factor(float factor)
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
 }
 
-void
-set_force_spread(bool force)
-{
-  getIOPlacer()->getParameters()->setForceSpread(force);
-}
-
-void
-set_usage_factor(float usage)
-{
-  getIOPlacer()->getParameters()->setUsageFactor(usage);
-}
-
 Edge
 get_edge(const char* edge)
 {

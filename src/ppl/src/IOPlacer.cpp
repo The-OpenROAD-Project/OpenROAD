@@ -84,18 +84,11 @@ void IOPlacer::initParms()
   report_hpwl_ = false;
   slots_per_section_ = 200;
   slots_increase_factor_ = 0.01f;
-  usage_increase_factor_ = 0.01f;
-  force_pin_spread_ = true;
   netlist_ = Netlist();
   netlist_io_pins_ = Netlist();
 
   if (parms_->getReportHPWL()) {
     report_hpwl_ = true;
-  }
-  if (parms_->getForceSpread()) {
-    force_pin_spread_ = true;
-  } else {
-    force_pin_spread_ = false;
   }
   if (parms_->getNumSlots() > -1) {
     slots_per_section_ = parms_->getNumSlots();
@@ -103,9 +96,6 @@ void IOPlacer::initParms()
 
   if (parms_->getSlotsFactor() > -1) {
     slots_increase_factor_ = parms_->getSlotsFactor();
-  }
-  if (parms_->getUsageFactor() > -1) {
-    usage_increase_factor_ = parms_->getUsageFactor();
   }
 }
 
@@ -670,9 +660,6 @@ int IOPlacer::assignGroupToSection(const std::vector<int> &io_group,
         group_assigned = true;
         break;
       }
-      // Try to add pin just to first
-      if (!force_pin_spread_)
-        break;
     }
     if (!group_assigned) {
       logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
@@ -729,9 +716,6 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
         io_pin.assignToSection();
         break;
       }
-      // Try to add pin just to first
-      if (!force_pin_spread_)
-        break;
     }
   }
 
@@ -747,8 +731,6 @@ void IOPlacer::printConfig()
   logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
   logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
   logger_->info(PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
-  logger_->info(PPL, 8, "Usage increase factor    {:.1}", usage_increase_factor_);
-  logger_->info(PPL, 9, "Force pin spread         {}", force_pin_spread_);
 }
 
 void IOPlacer::setupSections(int assigned_pins_count)

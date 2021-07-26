@@ -170,9 +170,7 @@ class IOPlacer
 
   int slots_per_section_;
   float slots_increase_factor_;
-  float usage_increase_factor_;
 
-  bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
