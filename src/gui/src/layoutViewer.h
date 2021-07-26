@@ -223,7 +223,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
-  void setCenteringShift();
+
+  // Compute and store the offset necessary to center the block in the viewport.
+  void computeCenteringOffset();
+
 
   int minimumViewableResolution();
 

@@ -42,11 +42,18 @@ using utl::GUI;
 
 bool check_gui(const char* command)
 {
+  auto logger = ord::OpenRoad::openRoad()->getLogger(); 
   auto gui = gui::Gui::get();
   if (gui == nullptr) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
+    logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
+
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  if (db == nullptr) {
+    logger->error(GUI, 2, "No database loaded");
+  }
+
   return true;
 }
 
@@ -55,15 +62,15 @@ odb::dbBlock* get_block()
   auto logger = ord::OpenRoad::openRoad()->getLogger();
   auto db = ord::OpenRoad::openRoad()->getDb();
   if (db == nullptr) {
-    logger->error(GUI, 2, "No database loaded");
+    logger->error(GUI, 3, "No database loaded");
   }
   auto chip = db->getChip();
   if (chip == nullptr) {
-    logger->error(GUI, 3, "No chip loaded");
+    logger->error(GUI, 5, "No chip loaded");
   }
   auto block = chip->getBlock();
   if (block == nullptr) {
-    logger->error(GUI, 5, "No block loaded");
+    logger->error(GUI, 6, "No block loaded");
   }
   return block;
 }

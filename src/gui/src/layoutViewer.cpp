@@ -335,7 +335,7 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize)
   update();
 }
 
-void LayoutViewer::setCenteringShift()
+void LayoutViewer::computeCenteringOffset()
 {
   dbBlock* block = getBlock();
   if (block != nullptr) {
@@ -581,7 +581,7 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   dbBlock* block = getBlock();
   if (block != nullptr) {
     setPixelsPerDBU(computePixelsPerDBU(event->size(), getPaddedRect(getBounds(block))), false);
-    setCenteringShift();
+    computeCenteringOffset();
   }
 }
 
