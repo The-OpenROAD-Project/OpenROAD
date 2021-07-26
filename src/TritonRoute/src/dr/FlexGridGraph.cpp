@@ -117,7 +117,7 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
         return true;
     }
     it = ySubMap.find(lNum);
-    if (it != xSubMap.end()) {  // has y track in lNum
+    if (it != ySubMap.end()) {  // has y track in lNum
       if (it->second)           // has track pattern, i.e., the track is default
         return true;
     }
