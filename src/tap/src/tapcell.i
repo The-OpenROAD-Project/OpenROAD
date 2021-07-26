@@ -53,63 +53,8 @@ using std::vector;
 using std::set;
 using std::string;
 
-// template <class TYPE>
-// vector<TYPE> *
-// tclListStdSeq(Tcl_Obj *const source,
-// 	      swig_type_info *swig_type,
-// 	      Tcl_Interp *interp)
-// {
-//   int argc;
-//   Tcl_Obj **argv;
-
-//   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
-//       && argc > 0) {
-//     vector<TYPE> *seq = new vector<TYPE>;
-//     for (int i = 0; i < argc; i++) {
-//       void *obj;
-//       // Ignore returned TCL_ERROR because can't get swig_type_info.
-//       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
-//       seq->push_back(reinterpret_cast<TYPE>(obj));
-//     }
-//     return seq;
-//   }
-//   else
-//     return nullptr;
-// }
-
-// template <class TYPE>
-// set<TYPE> *
-// tclSetStdSeq(Tcl_Obj *const source,
-//         swig_type_info *swig_type,
-//         Tcl_Interp *interp)
-// {
-//   int argc;
-//   Tcl_Obj **argv;
-
-//   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
-//       && argc > 0) {
-//     set<TYPE> *seq = new set<TYPE>;
-//     for (int i = 0; i < argc; i++) {
-//       void *obj;
-//       // Ignore returned TCL_ERROR because can't get swig_type_info.
-//       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
-//       seq->insert(reinterpret_cast<TYPE>(obj));
-//     }
-//     return seq;
-//   }
-//   else
-//     return nullptr;
-// }
-
 %}
 
-// %typemap(in) PinGroup* {
-//   $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
-// }
-
-// %typemap(in) PinList* {
-//   $1 = tclSetStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
-// }
 
 %include "../../Exception.i"
 
@@ -133,42 +78,42 @@ void reset()
 
 void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
-  getTapcell()->cut_rows(endcap_master, blockages, halo_x, halo_y);
+  getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
 }
 
 std::vector<std::vector<odb::dbRow*>> organize_rows()
 {
-  return getTapcell()->organize_rows();
+  return getTapcell()->organizeRows();
 }
 
 int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, const char* prefix)
 {
-  return getTapcell()->insert_endcaps(rows, endcap_master, cnrcap_masters, prefix);
+  return getTapcell()->insertEndcaps(rows, endcap_master, cnrcap_masters, prefix);
 }
 
 int insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix)
 {
-  return getTapcell()->insert_at_top_bottom(rows, masters, endcap_master, prefix);
+  return getTapcell()->insertAtTopBottom(rows, masters, endcap_master, prefix);
 }
 
 int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix)
 {
-  return getTapcell()->insert_around_macros(rows, masters, corner_master, prefix);
+  return getTapcell()->insertAroundMacros(rows, masters, corner_master, prefix);
 }
 
 int remove_cells(const char* prefix)
 {
-  return getTapcell()->remove_cells(prefix);
+  return getTapcell()->removeCells(prefix);
 }
 
 std::vector<odb::dbInst*> find_blockages()
 {
-  return getTapcell()->find_blockages();
+  return getTapcell()->findBlockages();
 }
 
 int insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_master, int dist, std::string prefix)
 {
-  return getTapcell()->insert_tapcells(rows, tapcell_master, dist, prefix);
+  return getTapcell()->insertTapcells(rows, tapcell_master, dist, prefix);
 }
 
 } // namespace

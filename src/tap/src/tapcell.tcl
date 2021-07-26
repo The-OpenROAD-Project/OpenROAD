@@ -195,7 +195,6 @@ proc tapcell { args } {
 
   tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $endcap_prefix $add_boundary_cell $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist $tap_prefix
 
-  set tap::filled_sites []
 }
 
 sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\

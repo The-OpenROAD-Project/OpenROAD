@@ -79,17 +79,9 @@ void Tapcell::reset()
 
 //---------------------------------------------------------------
 
-//namespace evaltap{
-// int phy_idx;
-// std::vector<std::vector<int>> filled_sites;
-//utl::Logger *logger_;
-// std::vector<odb::dbSite> filled_sites;    
-// std::string default_tapcell_prefix = "TAP_";
-// std::string default_endcap_prefix = "PHY_";
-
 void Tapcell::clear (const char* tap_prefix, const char* endcap_prefix) {
-  int taps_removed = remove_cells(tap_prefix);
-  int endcaps_removed = remove_cells(endcap_prefix);
+  int taps_removed = removeCells(tap_prefix);
+  int endcaps_removed = removeCells(endcap_prefix);
 
 
   // Reset global parameters 
@@ -97,15 +89,10 @@ void Tapcell::clear (const char* tap_prefix, const char* endcap_prefix) {
   Tapcell::filled_sites.clear();
 }
 
-//int phy_idx;
-//std::vector<std::vector<int>> filled_sites;
-//variable filled_sites
-
 void Tapcell::run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const char* cnrcap_nwin_master, const char* cnrcap_nwout_master, const char* endcap_prefix, int add_boundary_cell, const char* tap_nwintie_master, const char* tap_nwin2_master, const char* tap_nwin3_master, const char* tap_nwouttie_master, const char* tap_nwout2_master, const char* tap_nwout3_master, const char* incnrcap_nwin_master, const char* incnrcap_nwout_master, const char* tapcell_master, int dist, const char* tap_prefix)
 {
-  cut_rows(endcap_master, find_blockages(), halo_x, halo_y);
-
-  std::vector<std::vector<odb::dbRow*>> rows = organize_rows();
+  cutRows(endcap_master, findBlockages(), halo_x, halo_y);
+  std::vector<std::vector<odb::dbRow*>> rows = organizeRows();
   std::vector<std::string> cnrcap_masters;
   std::string cnrcap_nwin_master_string(cnrcap_nwin_master);
   std::string cnrcap_nwout_master_string(cnrcap_nwout_master);
@@ -116,7 +103,7 @@ void Tapcell::run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const ch
   Tapcell::phy_idx = 0;
   Tapcell::filled_sites.clear();
   if (endcap_master != nullptr ) {
-    insert_endcaps(rows, endcap_master, cnrcap_masters, endcap_prefix);
+    insertEndcaps(rows, endcap_master, cnrcap_masters, endcap_prefix);
   }
   if (add_boundary_cell) {
     //logger_->info(utl::TAP, 40, "boundary is: {} ", add_boundary_cell);
@@ -138,14 +125,14 @@ void Tapcell::run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const ch
     tap_macro_masters.push_back(tap_nwout3_master);
     tap_macro_masters.push_back(tap_nwouttie_master);
 
-    insert_at_top_bottom(rows, tap_nw_masters, db_->findMaster(cnrcap_nwin_master), endcap_prefix);
-    insert_around_macros(rows, tap_macro_masters, db_->findMaster(cnrcap_nwin_master), endcap_prefix);
+    insertAtTopBottom(rows, tap_nw_masters, db_->findMaster(cnrcap_nwin_master), endcap_prefix);
+    insertAroundMacros(rows, tap_macro_masters, db_->findMaster(cnrcap_nwin_master), endcap_prefix);
   }
-  insert_tapcells(rows, tapcell_master, dist, tap_prefix);
+  insertTapcells(rows, tapcell_master, dist, tap_prefix);
   Tapcell::filled_sites.clear();
 }
 
-void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
+void Tapcell::cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   int rows_count = (block->getRows()).size();
@@ -165,10 +152,11 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
   std::vector<odb::dbRow*> blocked_rows;   
   std::map<std::string, std::vector<odb::dbBox*>> row_blockages;
   std::vector<odb::dbBox*> row_blockages_bbox;
+  std::string row_name;
   for (odb::dbInst* blockage : blockages) {
     for(odb::dbRow* row : block->getRows()) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
-        std::string  row_name = row->getName();
+        row_name = row->getName();
         if (row_blockages.find(row_name) == row_blockages.end()) {
           blocked_rows.push_back(row);
         } 
@@ -180,7 +168,7 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
   
   // cut rows around macros
   for(odb::dbRow* row : blocked_rows) {
-    cut_row(block, row, row_blockages, min_row_width, halo_x, halo_y);
+    cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
   }
   cut_rows_count = (block->getRows()).size()-rows_count;
   logger_->info(utl::TAP, 1, "Macro blocks found: {}", block_count);
@@ -188,10 +176,8 @@ void Tapcell::cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> b
   logger_->info(utl::TAP, 3, "Created rows: {}", cut_rows_count);
 }
 
-void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>> row_blockages, int min_row_width, int halo_x, int halo_y) {
+void  Tapcell::cutRow(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>> row_blockages, int min_row_width, int halo_x, int halo_y) {
   std::string row_name = row->getName();
-  //odb::Rect &row_bb;
-  //ASK
   odb::Rect row_bb;
   row->getBBox(row_bb);
 
@@ -212,8 +198,7 @@ void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::strin
   std::vector<odb::dbBox*> row_blockage_bboxs = row_blockages[row_name];
   //set row_blockage_xs []
   std::vector<std::pair<int,int>> row_blockage_xs;
-  //WRONG WHAT'S RIGHT?????
-  for(odb::dbBox* row_blockage_bbox : row_blockages[row_name]) {
+  for(odb::dbBox* row_blockage_bbox : row_blockage_bboxs) {
     row_blockage_xs.push_back(std::make_pair(row_blockage_bbox->xMin(), row_blockage_bbox->xMax()));
   }
   std::vector<int> Data;
@@ -227,22 +212,19 @@ void  Tapcell::cut_row(odb::dbBlock* block, odb::dbRow* row, std::map<std::strin
     blockage_x1 = blockage.second;
     //blockage = {blockage_x0, blockage_x1};
     // ensure rows are an integer length of sitewidth
-    new_row_end_x = make_site_loc(blockage_x0 - halo_x, site_width, -1, start_origin_x);
-    build_row(block, row_name + "_" + std::to_string(row_sub_idx), row_site, start_origin_x, new_row_end_x, start_origin_y, orient, direction, curr_min_row_width);
+    new_row_end_x = makeSiteLoc(blockage_x0 - halo_x, site_width, -1, start_origin_x);
+    buildRow(block, row_name + "_" + std::to_string(row_sub_idx), row_site, start_origin_x, new_row_end_x, start_origin_y, orient, direction, curr_min_row_width);
     row_sub_idx++;
-    
-    start_origin_x = make_site_loc(blockage_x1 + halo_x, site_width, 1, start_origin_x);
+    start_origin_x = makeSiteLoc(blockage_x1 + halo_x, site_width, 1, start_origin_x);
   }
-
   // Make last row
-  build_row(block, row_name + "_" + std::to_string(row_sub_idx), row_site, start_origin_x, row_bb.xMax(), start_origin_y, orient, direction, curr_min_row_width);
-  
+  buildRow(block, row_name + "_" + std::to_string(row_sub_idx), row_site, start_origin_x, row_bb.xMax(), start_origin_y, orient, direction, curr_min_row_width);
   // Remove current row
   odb::dbRow::destroy(row);
   //odb::inDbRowDestroy(row);
 }
 
-int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, const char* prefix) {
+int Tapcell::insertEndcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, const char* prefix) {
   int start_phy_idx = Tapcell::phy_idx;
   odb::dbBlock *block = db_->getChip()->getBlock();
   int do_corners;
@@ -274,7 +256,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
       }
       //get_min_max_x?????
       std::pair<int, int> min_max_x;
-      min_max_x = get_min_max_x(rows); 
+      min_max_x = getMinMaxX(rows); 
     }
   } else {
      do_corners = 0;
@@ -286,7 +268,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
   for (int cur_row = bottom_row;  cur_row <= top_row; cur_row++) {
     //foreach subrow [lindex $rows $cur_row] {
     for(odb::dbRow* subrow : rows[cur_row]) {
-      if (!(check_symmetry(endcap_master, subrow->getOrient()))) {
+      if (!(checkSymmetry(endcap_master, subrow->getOrient()))) {
         continue;
       }
       odb::Rect row_bb;
@@ -301,16 +283,16 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
       if (do_corners) {
         if (cur_row == top_row) {
           //pick_corner_master????
-          masterl = pick_corner_master(1, row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
+          masterl = pickCornerMaster(1, row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
           masterr = masterl;
         } else if(cur_row == bottom_row) {
-          masterl = pick_corner_master(-1, row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
+          masterl = pickCornerMaster(-1, row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
           masterr = masterl;
         } else {
           auto rows_above = rows[cur_row + 1];
           auto rows_below = rows[cur_row - 1];
-          masterl = pick_corner_master(is_x_corner(llx, rows_above, rows_below), row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
-          masterr = pick_corner_master(is_x_corner(urx, rows_above, rows_below), row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
+          masterl = pickCornerMaster(isXCorner(llx, rows_above, rows_below), row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
+          masterr = pickCornerMaster(isXCorner(urx, rows_above, rows_below), row_ori, cnrcap_nwin_master, cnrcap_nwout_master, endcap_master);
         }
       } else {
         masterl = endcap_master;
@@ -321,7 +303,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
         continue;
       }
 
-      build_cell(block, masterl, row_ori, llx, lly, prefix);
+      buildCell(block, masterl, row_ori, llx, lly, prefix);
 
       int master_x = masterr->getWidth();
       int master_y = masterr->getHeight();
@@ -339,7 +321,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
       } else if ( row_ori == odb::dbOrientType::R0) {
         right_ori = odb::dbOrientType::MY;
       }
-      build_cell(block, masterr, right_ori, loc_2_x, loc_2_y, prefix);
+      buildCell(block, masterr, right_ori, loc_2_x, loc_2_y, prefix);
     }
   }
 
@@ -348,7 +330,7 @@ int Tapcell::insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbM
   return endcap_count;
 }
 
-bool Tapcell::is_x_in_row(int x, std::vector<odb::dbRow*> subrow) {
+bool Tapcell::isXInRow(int x, std::vector<odb::dbRow*> subrow) {
   for(odb::dbRow* row : subrow) {
     odb::Rect row_bb;
     row->getBBox(row_bb);
@@ -359,9 +341,9 @@ bool Tapcell::is_x_in_row(int x, std::vector<odb::dbRow*> subrow) {
   return 0;
 }
 
-bool Tapcell::is_x_corner(int x, std::vector<odb::dbRow*> rows_above, std::vector<odb::dbRow*>  rows_below) {
-  int in_above = is_x_in_row(x, rows_above);
-  int in_below = is_x_in_row(x, rows_below);
+bool Tapcell::isXCorner(int x, std::vector<odb::dbRow*> rows_above, std::vector<odb::dbRow*>  rows_below) {
+  int in_above = isXInRow(x, rows_above);
+  int in_below = isXInRow(x, rows_below);
 
   if (in_above && !in_below) {
     return -1;
@@ -372,7 +354,7 @@ bool Tapcell::is_x_corner(int x, std::vector<odb::dbRow*> rows_above, std::vecto
   return 0;
 }
 
-odb::dbMaster* Tapcell::pick_corner_master(int top_bottom, odb::dbOrientType ori, odb::dbMaster* cnrcap_nwin_master, odb::dbMaster* cnrcap_nwout_master, odb::dbMaster* endcap_master) {
+odb::dbMaster* Tapcell::pickCornerMaster(int top_bottom, odb::dbOrientType ori, odb::dbMaster* cnrcap_nwin_master, odb::dbMaster* cnrcap_nwout_master, odb::dbMaster* endcap_master) {
   if (top_bottom == 1 ) {
     if (ori == odb::dbOrientType::MX ) {
       return cnrcap_nwin_master;
@@ -390,7 +372,7 @@ odb::dbMaster* Tapcell::pick_corner_master(int top_bottom, odb::dbOrientType ori
   }
 }
 
-int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_master, int dist, std::string prefix) {
+int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_master, int dist, std::string prefix) {
   int start_phy_idx = Tapcell::phy_idx;
   std::vector<int> xs;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -410,6 +392,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
   odb::dbOrientType ori;
   int offset;
   int pitch; 
+  int site_x;
 
   odb::dbMaster* master = db_->findMaster(tapcell_master.c_str());
   if (master == nullptr) {
@@ -428,9 +411,13 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
     std::vector<int> x_start_end;
     x_start_end.push_back(x_start);
     x_start_end.push_back(x_end);
-    std::vector<vector<int>> vector2;
-    vector2.push_back(x_start_end);
-    row_fills.insert(std::pair<int, std::vector<vector<int>>> (y, vector2));
+    if(row_fills.find(y)==row_fills.end()) {
+      std::vector<vector<int>> vector2;
+      vector2.push_back(x_start_end);
+      row_fills.insert(std::pair<int, std::vector<vector<int>>> (y, vector2));
+    } else {
+      row_fills[y].push_back(x_start_end);
+    }
     //dict lappend row_fills $y "$x_start $x_end"
   }
 
@@ -454,10 +441,8 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
     }
     if (prev_x.size() != 0) {
         merged_placements.push_back(prev_x);
-      //merged_placements.push_back(prev_x);
     }
     if (prev_x.size() == 0) {
-      //merged_placements.push_back(xs);
         merged_placements.push_back(xs);
     }
     //std::map<int, std::vector<int>>::iterator itr;
@@ -470,7 +455,7 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
   std::map<int, int> rows_with_macros;
   //ASK
   //for(auto macro_rows : get_macro_outlines(rows)) {
-  std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> macro_outlines = get_macro_outlines(rows);
+  std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> macro_outlines = getMacroOutlines(rows);
   for(std::map<std::pair<int, int>, std::vector<std::pair<int, int>>>::iterator iter = macro_outlines.begin(); iter != macro_outlines.end(); ++iter) {
     //foreach {bot_row top_row} $macro_rows {
     for(auto bot_top_row : iter->second) {
@@ -505,10 +490,10 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
     }
 
     for(odb::dbRow* row:subrows) {
-      if (!check_symmetry(master, row->getOrient())) {
+      if (!checkSymmetry(master, row->getOrient())) {
         continue;
       }
-      int site_x = row->getSite()->getWidth();
+      site_x = row->getSite()->getWidth();
       odb::Rect row_bb;
       row->getBBox(row_bb);
       llx = row_bb.xMin();
@@ -517,8 +502,8 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
       ury = row_bb.yMax();
       ori = row->getOrient();
 
-      int offset = 0;
-      int pitch = -1;
+      offset = 0;
+      pitch = -1;
 
       if ((row_idx % 2) == 0) {
         offset = dist1;
@@ -535,12 +520,12 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
 
       //int x;
       for (int x = llx+offset; x < urx; x = x+pitch) {
-        x = make_site_loc(x, site_x, -1, llx);
+        x = makeSiteLoc(x, site_x, -1, llx);
 
         //check if site is filled
-        bool overlap = check_if_filled(x, tap_width, ori, row_fill_check);
+        bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
         if (overlap == 0) {
-          build_cell(block, master, ori, x, lly, prefix);
+          buildCell(block, master, ori, x, lly, prefix);
         }
       }
     }
@@ -552,9 +537,11 @@ int Tapcell::insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string 
 
 // //ASK
 // //TYPE OF RETURN??
-bool Tapcell::check_if_filled(int x, int width, odb::dbOrientType orient, std::vector<std::vector<int>> row_insts) {
+bool Tapcell::checkIfFilled(int x, int width, odb::dbOrientType orient, std::vector<std::vector<int>> row_insts) {
   int x_start;
   int x_end;
+  int left_x;
+  int right_x;
   if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
     x_start = x-width;
     x_end = x;
@@ -565,8 +552,8 @@ bool Tapcell::check_if_filled(int x, int width, odb::dbOrientType orient, std::v
   
   for(auto placement : row_insts) {
     if (x_end > placement[0] && x_start < placement[1]) {
-      int left_x = placement[0] - width;
-      int right_x = placement[1];
+      left_x = placement[0] - width;
+      right_x = placement[1];
       std::vector<std::pair<int, int>> value;
       //ASK: RETURN CORRECT?
       return left_x+right_x;
@@ -575,7 +562,7 @@ bool Tapcell::check_if_filled(int x, int width, odb::dbOrientType orient, std::v
   return 0;
 }
 
-int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix) {
+int Tapcell::insertAtTopBottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix) {
   int row_info;
   int start_phy_idx = Tapcell::phy_idx;
   logger_->info(utl::TAP, 46, "Test: {}", Tapcell::phy_idx);
@@ -656,7 +643,7 @@ int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, st
       x_start = llx+endcapwidth;
       x_end = urx-endcapwidth;
 
-      insert_at_top_bottom_helper(block, cur_row, 0, ori, x_start, x_end, lly, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
+      insertAtTopBottomHelper(block, cur_row, 0, ori, x_start, x_end, lly, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
     }
   }
   int topbottom_cnt = Tapcell::phy_idx - start_phy_idx;
@@ -664,7 +651,7 @@ int Tapcell::insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, st
   return topbottom_cnt;
 }
 
-void Tapcell::insert_at_top_bottom_helper(odb::dbBlock* block, int top_bottom, bool is_macro, odb::dbOrientType ori, int x_start, int x_end, int lly, odb::dbMaster* tap_nwintie_master, odb::dbMaster* tap_nwin2_master, odb::dbMaster* tap_nwin3_master, odb::dbMaster* tap_nwouttie_master, odb::dbMaster* tap_nwout2_master, odb::dbMaster* tap_nwout3_master, std::string prefix) {
+void Tapcell::insertAtTopBottomHelper(odb::dbBlock* block, int top_bottom, bool is_macro, odb::dbOrientType ori, int x_start, int x_end, int lly, odb::dbMaster* tap_nwintie_master, odb::dbMaster* tap_nwin2_master, odb::dbMaster* tap_nwin3_master, odb::dbMaster* tap_nwouttie_master, odb::dbMaster* tap_nwout2_master, odb::dbMaster* tap_nwout3_master, std::string prefix) {
   odb::dbMaster* master;
   odb::dbMaster* tb2_master;
   odb::dbMaster* tb3_master;
@@ -712,8 +699,8 @@ void Tapcell::insert_at_top_bottom_helper(odb::dbBlock* block, int top_bottom, b
   //insert tb tie
   x = x_start;
   for (int n = 0; n < tbtiecount ; n++) {
-    if (check_symmetry(master, ori)) {
-      build_cell(block, master, ori, x, lly, prefix);
+    if (checkSymmetry(master, ori)) {
+      buildCell(block, master, ori, x, lly, prefix);
     }
     x = x+tbtiewidth;
   }
@@ -728,21 +715,21 @@ void Tapcell::insert_at_top_bottom_helper(odb::dbBlock* block, int top_bottom, b
   
   // fill with 3s
   for (int n=0; n < tb3tiecount; n++) {
-    if (check_symmetry(tb3_master, ori)) {
-      build_cell(block,tb3_master, ori, x, lly, prefix);
+    if (checkSymmetry(tb3_master, ori)) {
+      buildCell(block,tb3_master, ori, x, lly, prefix);
     }
     x = x+tap3_master_width;
   }
   
   // fill with 2s
   for (x=x; x < x_end; x = x+tap2_master_width) {
-    if (check_symmetry(tb2_master, ori)) {
-      build_cell(block, tb2_master, ori, x, lly, prefix);
+    if (checkSymmetry(tb2_master, ori)) {
+      buildCell(block, tb2_master, ori, x, lly, prefix);
     }
   }
 }
 
-int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix) {
+int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix) {
   //int phy_idx;
   int start_phy_idx = Tapcell::phy_idx;
   int x_start;
@@ -809,7 +796,7 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
     logger_->error(utl::TAP, 31, "Master {} not found.", incnrcap_nwout_master_name);
   }
   
-  std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> macro_outlines = get_macro_outlines(rows);
+  std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> macro_outlines = getMacroOutlines(rows);
   
   int corner_cell_width = corner_master->getWidth();
   
@@ -849,7 +836,7 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
           row_end = row_end - corner_cell_width;
         }
         // do top row
-        insert_at_top_bottom_helper(block, 1, 1, top_row_ori, row_start, row_end, top_row_y, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
+        insertAtTopBottomHelper(block, 1, 1, top_row_ori, row_start, row_end, top_row_y, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
         // do corners
         if (top_row_ori == odb::dbOrientType::R0 ) {
           incnr_master = incnrcap_nwin_master;
@@ -860,12 +847,12 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
         }
         
         // NE corner
-        if (check_symmetry(incnr_master, top_row_ori)) {
-          build_cell(block, incnr_master, top_row_ori, x_end, top_row_y, prefix);
+        if (checkSymmetry(incnr_master, top_row_ori)) {
+          buildCell(block, incnr_master, top_row_ori, x_end, top_row_y, prefix);
         }
         // NW corner
-        if (check_symmetry(incnr_master, west_ori)) {
-          build_cell(block, incnr_master, west_ori, x_start - incnr_master->getWidth(), top_row_y, prefix);
+        if (checkSymmetry(incnr_master, west_ori)) {
+          buildCell(block, incnr_master, west_ori, x_start - incnr_master->getWidth(), top_row_y, prefix);
         }
       }
       if(outline.first >= 1) {
@@ -893,7 +880,7 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
         }
         
         // do bottom row
-        insert_at_top_bottom_helper(block, 0, 1, bot_row_ori, row_start, row_end, bot_row_y, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
+        insertAtTopBottomHelper(block, 0, 1, bot_row_ori, row_start, row_end, bot_row_y, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
         
         // do corners
         if (bot_row_ori == odb::dbOrientType::MX ) {
@@ -905,12 +892,12 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
         }
         
         // SE corner
-        if (check_symmetry(incnr_master, bot_row_ori)) {
-          build_cell(block, incnr_master, bot_row_ori, x_end, bot_row_y, prefix);
+        if (checkSymmetry(incnr_master, bot_row_ori)) {
+          buildCell(block, incnr_master, bot_row_ori, x_end, bot_row_y, prefix);
         }
         // SW corner
-        if (check_symmetry(incnr_master, west_ori)) {
-          build_cell(block, incnr_master, west_ori, x_start - incnr_master->getWidth(), bot_row_y, prefix);
+        if (checkSymmetry(incnr_master, west_ori)) {
+          buildCell(block, incnr_master, west_ori, x_start - incnr_master->getWidth(), bot_row_y, prefix);
         }
       }
     }
@@ -920,7 +907,7 @@ int Tapcell::insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, st
   return blkgs_cnt;
 }
 
-std::pair<int, int> Tapcell::get_min_max_x(std::vector<std::vector<odb::dbRow*>> rows) {
+std::pair<int, int> Tapcell::getMinMaxX(std::vector<std::vector<odb::dbRow*>> rows) {
   int min_x = -1;
   int max_x = -1;
   int new_min_x;
@@ -947,7 +934,7 @@ std::pair<int, int> Tapcell::get_min_max_x(std::vector<std::vector<odb::dbRow*>>
   return min_max_x;
 }
 
-std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> Tapcell::get_macro_outlines(std::vector<std::vector<odb::dbRow*>> rows) {
+std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> Tapcell::getMacroOutlines(std::vector<std::vector<odb::dbRow*>> rows) {
   std::map<std::pair<int, int>, int> macro_outlines;
   std::pair<int, int> min_max_x;
   std::vector<int> all_rows;
@@ -956,7 +943,7 @@ std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> Tapcell::get_mac
   int subrow_count;
   int macro0;
   int macro1;
-  min_max_x = get_min_max_x(rows); 
+  min_max_x = getMinMaxX(rows); 
 
   for(int cur_row = 0; cur_row < rows.size(); cur_row++) {
     std::vector<odb::dbRow*> subrows = rows[cur_row];
@@ -1053,11 +1040,11 @@ bool Tapcell::overlaps(odb::dbInst* blockage, odb::dbRow* row, int halo_x, int h
   return 1;
 }
 
-std::vector<odb::dbInst*> Tapcell::find_blockages () {
+std::vector<odb::dbInst*> Tapcell::findBlockages () {
   odb::dbBlock* block = db_->getChip()->getBlock();
   std::vector<odb::dbInst*> blockages;
 
-  for( odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+  for(odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->isBlock()) {
       if (!inst->isPlaced()) {
         logger_->warn(utl::TAP, 32, "Macro {} is not placed", inst->getName());
@@ -1070,7 +1057,7 @@ std::vector<odb::dbInst*> Tapcell::find_blockages () {
   return blockages;
 }
 
-int Tapcell::make_site_loc( int x, double site_x, int dirc=1, int offset=0) {
+int Tapcell::makeSiteLoc( int x, double site_x, int dirc, int offset) {
   double site_int = (x - offset) / site_x;
   if (dirc == 1) {
     site_int = ceil(site_int);
@@ -1081,7 +1068,7 @@ int Tapcell::make_site_loc( int x, double site_x, int dirc=1, int offset=0) {
   return site_int2;
 }
 
-void Tapcell::build_cell( odb::dbBlock* block, odb::dbMaster* master, odb::dbOrientType orientation, int x, int y, std::string prefix) {
+void Tapcell::buildCell( odb::dbBlock* block, odb::dbMaster* master, odb::dbOrientType orientation, int x, int y, std::string prefix) {
 
   if (x < 0 || y < 0) {
     return;
@@ -1109,18 +1096,18 @@ void Tapcell::build_cell( odb::dbBlock* block, odb::dbMaster* master, odb::dbOri
   Tapcell::phy_idx++;
 }
 
-void Tapcell::build_row(odb::dbBlock* block, std::string name, odb::dbSite* site, int start_x, int end_x, int y, odb::dbOrientType orient, odb::dbRowDir direction, int min_row_width) {
+void Tapcell::buildRow(odb::dbBlock* block, std::string name, odb::dbSite* site, int start_x, int end_x, int y, odb::dbOrientType orient, odb::dbRowDir direction, int min_row_width) {
   int site_width = site->getWidth();
 
-  double new_row_num_sites = (end_x - start_x)/site_width;
-  double new_row_width = new_row_num_sites*site_width;
+  int new_row_num_sites = (end_x - start_x)/site_width;
+  int new_row_width = new_row_num_sites*site_width;
 
   if (new_row_num_sites > 0 && new_row_width >= min_row_width) {
     odb::dbRow::create(block, name.c_str(), site, start_x, y, orient, direction, new_row_num_sites, site_width);
   }
 }
 
-std::vector<std::vector<odb::dbRow*>> Tapcell::organize_rows() {
+std::vector<std::vector<odb::dbRow*>> Tapcell::organizeRows() {
   std::map<int, std::vector<odb::dbRow*>> rows_dict;
   for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
     odb::Rect rowBB;
@@ -1162,7 +1149,7 @@ std::vector<std::vector<odb::dbRow*>> Tapcell::organize_rows() {
   return rows;
 }
 
-int Tapcell::remove_cells(const char* prefix) {
+int Tapcell::removeCells(const char* prefix) {
   odb::dbBlock* block = db_->getChip()->getBlock();
   std::string prefix_string(prefix);
   //odb::dbBlock* block = getOpenRoad()->getDb()->getChip()->getBlock();
@@ -1186,7 +1173,7 @@ int Tapcell::remove_cells(const char* prefix) {
   return removed;
 }
 
-bool Tapcell::check_symmetry( odb::dbMaster* master, odb::dbOrientType ori) {
+bool Tapcell::checkSymmetry( odb::dbMaster* master, odb::dbOrientType ori) {
   bool symmetry_x = master->getSymmetryX();
   bool symmetry_y = master->getSymmetryY();
 
