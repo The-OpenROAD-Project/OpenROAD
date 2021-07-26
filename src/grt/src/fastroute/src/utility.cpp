@@ -998,8 +998,6 @@ void FastRouteCore::StNetOrder()
   TreeEdge *treeedges, *treeedge;
   StTree* stree;
 
-  int numTreeedges = 0;
-
   tree_order_cong_.clear();
 
   tree_order_cong_.resize(num_valid_nets_);

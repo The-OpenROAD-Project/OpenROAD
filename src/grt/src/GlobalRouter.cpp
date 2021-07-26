@@ -73,31 +73,31 @@ namespace grt {
 using utl::GRT;
 
 GlobalRouter::GlobalRouter() :
+  openroad_(nullptr),
+  logger_(nullptr),
+  gui_(nullptr),
+  stt_builder_(nullptr),
+  fastroute_(nullptr),
+  grid_origin_(0, 0),
+  groute_renderer_(nullptr),
+  nets_(new std::vector<Net>),
+  grid_(new Grid),
+  routing_layers_(new std::vector<RoutingLayer>),
+  routing_tracks_(new std::vector<RoutingTracks>),
   adjustment_(0.0),
   min_routing_layer_(1),
   max_routing_layer_(-1),
-  min_layer_for_clock_(-1),
-  max_layer_for_clock_(-2),
+  layer_for_guide_dimension_(3),
   overflow_iterations_(50),
   allow_congestion_(false),
   macro_extension_(0),
   verbose_(0),
+  min_layer_for_clock_(-1),
+  max_layer_for_clock_(-2),
   seed_(0),
   caps_perturbation_percentage_(0),
   perturbation_amount_(1),
-  layer_for_guide_dimension_(3),
-  grid_origin_(0, 0),
-  routing_tracks_(new std::vector<RoutingTracks>),
-  grid_(new Grid),
-  nets_(new std::vector<Net>),
-  routing_layers_(new std::vector<RoutingLayer>),
-  openroad_(nullptr),
-  logger_(nullptr),
-  gui_(nullptr),
-  fastroute_(nullptr),
-  groute_renderer_(nullptr),
   sta_(nullptr),
-  stt_builder_(nullptr),
   db_(nullptr),
   block_(nullptr)
 {
@@ -1054,7 +1054,6 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
 
-  odb::dbTech* tech = db_->getTech();
   for (int layer = 1; layer <= max_routing_layer; layer++) {
     float adjustment = adjustments_[layer];
     if (adjustment != 0) {

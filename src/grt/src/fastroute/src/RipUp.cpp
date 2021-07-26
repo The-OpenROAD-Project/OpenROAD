@@ -149,9 +149,6 @@ void FastRouteCore::newRipup(TreeEdge* treeedge,
     return;  // not ripup for degraded edge
   }
 
-  int n1 = treeedge->n1;
-  int n2 = treeedge->n2;
-
   ripuptype = treeedge->route.type;
   if (y1 < y2) {
     ymin = y1;

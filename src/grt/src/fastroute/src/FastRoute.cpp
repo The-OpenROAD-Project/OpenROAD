@@ -57,25 +57,20 @@ namespace grt {
 using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder) :
+  max_degree_(0),
+  db_(db),
+  allow_overflow_(false),
+  overflow_iterations_(0),
+  num_nets_(0),
+  layer_orientation_(0),
+  x_range_(0),
+  y_range_(0),
   new_net_id_(0),
   seg_count_(0),
   pin_ind_(0),
   num_adjust_(0),
   v_capacity_(0),
   h_capacity_(0),
-  num_nets_(0),
-  max_degree_(0),
-  logger_(log),
-  stt_builder_(stt_builder),
-  db_(db),
-  allow_overflow_(false),
-  overflow_iterations_(0),
-  layer_orientation_(0),
-  sttrees_(nullptr),
-  heap1_(nullptr),
-  heap2_(nullptr),
-  x_range_(0),
-  y_range_(0),
   x_grid_(0),
   y_grid_(0),
   x_corner_(0),
@@ -96,9 +91,14 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::Steiner
   mazeedge_threshold_(0),
   v_capacity_lb_(0),
   h_capacity_lb_(0),
+  sttrees_(nullptr),
   sttrees_bk_(nullptr),
   heap1_3D_(nullptr),
-  heap2_3D_(nullptr)
+  heap2_3D_(nullptr),
+  heap2_(nullptr),
+  heap1_(nullptr),
+  logger_(log),
+  stt_builder_(stt_builder)
 {
 }
 
@@ -365,7 +365,6 @@ void FastRouteCore::init_usage()
 void FastRouteCore::initEdges()
 {
   const float LB = 0.9;
-  const float UB = 1.3;
   v_capacity_lb_ = LB * v_capacity_;
   h_capacity_lb_ = LB * h_capacity_;
 
@@ -782,7 +781,6 @@ NetRouteMap FastRouteCore::run()
   dcor_.resize(max_degree_);
   net_eo_.reserve(max_degree_);
 
-  int SLOPE = 5;
   int THRESH_M = 20;
   int ENLARGE = 15;     // 5
   int ESTEP1 = 10;  // 10
@@ -866,7 +864,6 @@ NetRouteMap FastRouteCore::run()
 
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
-  clock_t t3 = clock();
   InitEstUsage();
 
   int i = 1;
@@ -1058,7 +1055,6 @@ NetRouteMap FastRouteCore::run()
         bmfl = past_cong;
 
         L = 0;
-        SLOPE = BIG_INT;
         mazeRouteMSMD(i,
                       enlarge_,
                       costheight_,
@@ -1077,7 +1073,6 @@ NetRouteMap FastRouteCore::run()
           bmfl = past_cong;
         }
         L = 1;
-        SLOPE = 5;
         if (minofl > past_cong) {
           minofl = past_cong;
           minoflrnd = i;
