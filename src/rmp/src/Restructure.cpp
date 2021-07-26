@@ -362,9 +362,6 @@ void Restructure::removeConstCells()
       continue;
 
     for (auto&& iterm : inst->getITerms()) {
-      auto mterm = iterm->getMTerm();
-      auto net = iterm->getNet();
-
       if (iterm->getSigType() == odb::dbSigType::POWER
           || iterm->getSigType() == odb::dbSigType::GROUND)
         continue;

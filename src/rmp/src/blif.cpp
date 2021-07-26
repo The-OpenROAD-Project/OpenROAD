@@ -118,7 +118,6 @@ bool Blif::writeBlif(const char* file_name)
         = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
     std::string currentConnections = "", currentClock = "";
     std::set<std::string> currentClocks;
-    int totalOutPins = 0, totalOutConstPins = 0;
 
     auto iterms = inst->getITerms();
 
@@ -134,11 +133,6 @@ bool Blif::writeBlif(const char* file_name)
       auto pin_ = open_sta_->getDbNetwork()->dbToSta(iterm);
       open_sta_->getDbNetwork()->graph()->pinVertices(
           pin_, vertex, bidirect_drvr_vertex);
-      sta::LogicValue pinVal
-          = ((vertex)
-                 ? vertex->simValue()
-                 : ((bidirect_drvr_vertex) ? bidirect_drvr_vertex->simValue()
-                                           : sta::LogicValue::unknown));
       auto network_ = open_sta_->network();
       auto port_ = network_->libertyPort(pin_);
       if (port_->isClock()) {
@@ -432,7 +426,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     GateType masterType = gate.type_;
     std::string masterName = gate.master_;
     std::vector<std::string> connections = gate.connections_;
-    odb::dbMaster* master;
+    odb::dbMaster* master = nullptr;
 
     for (auto&& lib : block->getDb()->getLibs()) {
       master = lib->findMaster(masterName.c_str());

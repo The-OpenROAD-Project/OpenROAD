@@ -356,8 +356,6 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
         dbRow *row = *row_itr;
         Rect row_bbox;
         row->getBBox(row_bbox);
-        int row_xMin = row_bbox.xMin();
-        int row_xMax = row_bbox.xMax();
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
 
