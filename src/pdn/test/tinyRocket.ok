@@ -19,12 +19,6 @@
   config: tinyRocket/PDN.cfg
 [INFO PDN-0008] Design name is RocketTile
 [INFO PDN-0009] Reading technology data
-[WARNING PDN-0037] Cannot find pin VDDPE on instance dcache.data.data_arrays_0.data_arrays_0_ext.mem (fakeram45_64x32)
-[WARNING PDN-0037] Cannot find pin VDDCE on instance dcache.data.data_arrays_0.data_arrays_0_ext.mem (fakeram45_64x32)
-[WARNING PDN-0037] Cannot find pin VSSE on instance dcache.data.data_arrays_0.data_arrays_0_ext.mem (fakeram45_64x32)
-[WARNING PDN-0037] Cannot find pin VDDPE on instance frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem (fakeram45_64x32)
-[WARNING PDN-0037] Cannot find pin VDDCE on instance frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem (fakeram45_64x32)
-[WARNING PDN-0037] Cannot find pin VSSE on instance frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem (fakeram45_64x32)
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
