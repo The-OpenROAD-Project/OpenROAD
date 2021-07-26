@@ -23,9 +23,7 @@ Footprint library {
     pin_name PAD
     spacing_to_edge 127
     cell_name {
-      140 DUMMY_BUMP_small
-      150 DUMMY_BUMP_large
-      180 DUMMY_BUMP_large
+      140 DUMMY_BUMP_large
     }
   }
   
@@ -51,6 +49,7 @@ Footprint library {
   
   cells {
     PAD {
+      pad_pin_name PAD
       orient {bottom R0 right R90 top R180 left R270}
       type bonpad
     }
@@ -88,6 +87,7 @@ Footprint library {
       pad_pin_name DVSS
     }
     PADCELL_PWRDET {
+      physical_only 1
       cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H}
       orient {bottom R0 right R90 top R180 left R270}
       is_control 1
@@ -125,15 +125,6 @@ Footprint library {
     PAD_CORNER {
       orient {ll R0 lr R90 ur R180 ul R270}
       physical_only 1
-    }
-    DUMMY_BUMP_small {
-      width 35
-    }
-    DUMMY_BUMP_medium {
-      width 45
-    }
-    DUMMY_BUMP_large {
-      width 71
     }
   }
 }

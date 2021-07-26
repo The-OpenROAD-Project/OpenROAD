@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <list>
 #include <string>
 
@@ -42,7 +43,6 @@
 #include "lefrReader.hpp"
 #include "lefzlib.hpp"
 #include "utl/Logger.h"
-#include <boost/algorithm/string/predicate.hpp>
 
 namespace odb {
 
@@ -543,17 +543,16 @@ bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
   lefrSetDeltaNumberLines(1000000);
   lefrInit();
   int res;
-  if(boost::algorithm::ends_with(file_name, ".gz"))
-  {
+  if (boost::algorithm::ends_with(file_name, ".gz")) {
     auto zfile = lefGZipOpen(file_name, "r");
     if (zfile == NULL) {
-      logger->warn(utl::ODB, 270, "error: Cannot open zipped LEF file {}", file_name);
+      logger->warn(
+          utl::ODB, 270, "error: Cannot open zipped LEF file {}", file_name);
       return false;
     }
     res = lefrReadGZip(zfile, file_name, (void*) lef);
     lefGZipClose(zfile);
-  }
-  else{
+  } else {
     FILE* file = fopen(file_name, "r");
     if (file == NULL) {
       logger->warn(utl::ODB, 240, "error: Cannot open LEF file {}", file_name);

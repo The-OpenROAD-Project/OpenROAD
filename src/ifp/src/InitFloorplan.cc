@@ -87,6 +87,7 @@ using odb::dbTransform;
 using odb::dbBox;
 using odb::dbTechLayerType;
 using odb::dbGroup;
+using odb::dbGroupType;
 using odb::dbRegion;
 
 class InitFloorplan
@@ -332,7 +333,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
   
   // checks if a group is defined as a voltage domain, if so it creates a region 
   for (dbGroup *group: block_->getGroups()) {
-    if (group->getType() == dbGroup::VOLTAGE_DOMAIN) {
+    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
       dbRegion *domain_region = dbRegion::create(block_, group->getName());
 
       string domain_name = group->getName();
@@ -355,8 +356,6 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
         dbRow *row = *row_itr;
         Rect row_bbox;
         row->getBBox(row_bbox);
-        int row_xMin = row_bbox.xMin();
-        int row_xMax = row_bbox.xMax();
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
 

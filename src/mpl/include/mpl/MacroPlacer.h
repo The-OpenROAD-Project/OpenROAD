@@ -162,7 +162,7 @@ class MacroPlacer
   // Update Macro Location from Partition info
   void updateMacroLocations(Partition& part);
   void updateDbInstLocations();
-  void updateMacroPartMap(Partition& part, MacroPartMap& macroPartMap);
+  void makeMacroPartMap(const Partition& part, MacroPartMap& macroPartMap) const;
   vector<pair<Partition, Partition>> getPartitions(const Layout& layout,
                                                    const Partition& partition,
                                                    bool isHorizontal);

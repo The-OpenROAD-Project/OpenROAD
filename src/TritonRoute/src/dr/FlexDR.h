@@ -38,6 +38,9 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
+#include <boost/polygon/polygon.hpp>
+
+using Rectangle = boost::polygon::rectangle_data<int>;
 
 namespace odb {
 class dbDatabase;
@@ -341,9 +344,9 @@ class FlexDRWorker
  public:
   // constructors
   FlexDRWorker(const FlexDRViaData* via_data,
-               frTechObject* tech,
+               frDesign* design,
                Logger* logger)
-      : tech_(tech),
+      : design_(design),
         logger_(logger),
         graphics_(nullptr),
         via_data_(via_data),
@@ -368,7 +371,7 @@ class FlexDRWorker
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
         nets_(),
         owner2nets_(),
-        gridGraph_(tech, this),
+        gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
         gcWorker_(nullptr) /*, drcWorker(drIn->getDesign())*/
@@ -442,7 +445,7 @@ class FlexDRWorker
   }
 
   // getters
-  frTechObject* getTech() const { return tech_; }
+  frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(frBox& boxIn) const { boxIn.set(routeBox_); }
   const frBox& getRouteBox() const { return routeBox_; }
   frBox& getRouteBox() { return routeBox_; }
@@ -468,6 +471,7 @@ class FlexDRWorker
       return nullptr;
     }
   }
+  frDesign* getDesign() { return design_; }
   const std::vector<frMarker>& getMarkers() const { return markers_; }
   std::vector<frMarker>& getMarkers() { return markers_; }
   const std::vector<frMarker>& getBestMarkers() const { return bestMarkers_; }
@@ -492,7 +496,7 @@ class FlexDRWorker
     int numReroute;
     bool doRoute;
   } RouteQueueEntry;
-
+  frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
@@ -656,12 +660,15 @@ class FlexDRWorker
                         std::vector<frBlockObject*>& terms);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
   void initNet_addNet(std::unique_ptr<drNet> in);
-  void getTrackLocs(const frDesign* design,
-                    bool isHorzTracks,
+  void getTrackLocs(bool isHorzTracks,
                     frLayerNum currLayerNum,
                     frCoord low,
                     frCoord high,
                     std::set<frCoord>& trackLocs);
+  void getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
+                                Rectangle& pinRect,
+                                std::set<frCoord>& xLocs,
+                                std::set<frCoord>& yLocs);
   void initNet_boundary(drNet* net,
                         std::vector<std::unique_ptr<drConnFig>>& extObjs);
   void initNets_regionQuery();
@@ -856,8 +863,9 @@ class FlexDRWorker
   void routeNet_postAstarWritePath(
       drNet* net,
       std::vector<FlexMazeIdx>& points,
-      const std::set<FlexMazeIdx>& apMazeIdx,
-      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox);
+      const std::set<FlexMazeIdx>& realPinApMazeIdx,
+      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
+      const set<FlexMazeIdx>& apMazeIdx);
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,
@@ -888,12 +896,16 @@ class FlexDRWorker
                       frMIdx endX,
                       frMIdx endY,
                       frMIdx z,
-                      const set<FlexMazeIdx>& apMazeIdx,
+                      const set<FlexMazeIdx>& realApMazeIdx,
                       drNet* net,
                       bool vertical,
                       bool taper,
                       int i,
-                      vector<FlexMazeIdx>& points);
+                      vector<FlexMazeIdx>& points,
+                      const set<FlexMazeIdx>& apMazeIdx);
+  void checkPathSegStyle(drPathSeg* ps, bool isBegin, frSegStyle& style);
+  void checkViaConnectivityToAP(drVia* ps, bool isBottom, frNet* net);
+  bool hasAccessPoint(const frPoint& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
       const std::vector<FlexMazeIdx>& path,

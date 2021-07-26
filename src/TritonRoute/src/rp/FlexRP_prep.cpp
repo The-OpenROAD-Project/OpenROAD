@@ -939,7 +939,7 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(
       if (samenetCon) {
         logger_->warn(DRT,
                       92,
-                      "duplicate diff layer samenet cut spacing, skipping cut "
+                      "Duplicate diff layer samenet cut spacing, skipping cut "
                       "spacing from {} to {}.",
                       layerNum2,
                       layerNum1);
@@ -963,7 +963,7 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(
         if (samenetCon) {
           logger_->warn(DRT,
                         93,
-                        "duplicate diff layer diffnet cut spacing, skipping "
+                        "Duplicate diff layer diffnet cut spacing, skipping "
                         "cut spacing from {} to {}.",
                         layerNum2,
                         layerNum1);

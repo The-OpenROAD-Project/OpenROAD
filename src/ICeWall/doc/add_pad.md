@@ -7,9 +7,9 @@
                     [-cell <library_cell>] \
                     [-signal <signal_name>] \
                     [-edge (bottom|right|top|left)] \
-                    [-location {(centre|origin) {x <value> y <value>} [orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)]}] \
+                    [-location {(center|origin) {x <value> y <value>} [orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)]}] \
                     [-bump {row <number> col <number>}] \
-                    [-bondpad {(centre|origin) {x <value> y <value>}}] \
+                    [-bondpad {(center|origin) {x <value> y <value>}}] \
                     [-inst_name <instance_name>]
 ```
 ### Description
@@ -36,16 +36,16 @@ The -edge option is used to determine the orientation of the padcell, the actual
 | -cell  |
 | -signal | The name of the signal in the design that is connected to the bondpad/bump of the padcell. Except for nets which have been defined as power or ground nets, only padcell can be associated with a particular signal, and this signal must be a pin at the top level of the design. |
 | -edge | Specify which edge of the design the padcell is to be placed on. Valid choices are bottom, right, top or left |
-| -location | Specify the location of the centre or origin of the padcell |
+| -location | Specify the location of the center or origin of the padcell |
 | -bump | For flipchip designs, declare that the padcell is associated with the bump at the specified row/col location on the die |
 | -bondpad | For wirebond designs where the pad cells have separate bondpad instances, use this option to specify the location of the associated bondpad |
-| -inst_name | Specify the name of the padcell instance in the design |
+| -inst_name | Specify the name of the padcell instance in the design. This takes precedence over the -pad_inst_pattern method described in the set_padring_options command |
 
 ### Examples
 ```
-add_pad -edge bottom                    -signal p_ddr_dm_2_o -type sig   -location {centre {x 2742.000 y  105.000}} -bondpad {centre {x 2742.000 y   63.293}}
-add_pad -edge bottom -inst_name u_vss_0 -signal VSS          -type vss   -location {centre {x  397.000 y  105.000}} -bondpad {centre {x  397.000 y  149.893}}
-add_pad -edge top    -inst_name u_brk0                       -type fbk   -location {centre {x 1587.500 y 2895.000}}
+add_pad -edge bottom                    -signal p_ddr_dm_2_o -type sig   -location {center {x 2742.000 y  105.000}} -bondpad {center {x 2742.000 y   63.293}}
+add_pad -edge bottom -inst_name u_vss_0 -signal VSS          -type vss   -location {center {x  397.000 y  105.000}} -bondpad {center {x  397.000 y  149.893}}
+add_pad -edge top    -inst_name u_brk0                       -type fbk   -location {center {x 1587.500 y 2895.000}}
 
 ```
 

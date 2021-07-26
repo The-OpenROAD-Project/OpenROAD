@@ -58,28 +58,7 @@ proc set_global_routing_layer_adjustment { args } {
       grt::add_layer_adjustment $layer_idx $adj
     }
   } else {
-    utl::error GRT 44 "set_global_routing_layer_adjustment: Wrong number of arguments."
-  }
-}
-
-sta::define_cmd_args "set_routing_alpha" { alpha \
-                                          [-net net_name] }
-
-proc set_routing_alpha { args } {
-  sta::parse_key_args "set_routing_alpha" args \
-                 keys {-net}
-
-  set alpha [lindex $args 0]
-  if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
-    utl::error GRT 29 "The alpha value must be between 0.0 and 1.0."
-  }
-  if { [info exists keys(-net)] } {
-    set net_name $keys(-net)
-    grt::set_alpha_for_net $net_name $alpha
-  } elseif { [llength $args] == 1 } {
-    grt::set_routing_alpha_cmd $alpha
-  } else {
-    utl::error GRT 46 "set_routing_alpha: Wrong number of arguments."
+    utl::error GRT 44 "Command set_global_routing_layer_adjustment takes two arguments: layer adj."
   }
 }
 
@@ -93,7 +72,7 @@ proc set_global_routing_region_adjustment { args } {
                  keys {-layer -adjustment}
 
   if { ![ord::db_has_tech] } {
-    utl::error GRT 47 "missing dbTech."
+    utl::error GRT 47 "Missing dbTech."
   }
   set tech [ord::get_db_tech]
   set lef_units [$tech getLefUnits]
@@ -101,13 +80,13 @@ proc set_global_routing_region_adjustment { args } {
   if { [info exists keys(-layer)] } {
     set layer $keys(-layer)
   } else {
-    utl::error GRT 48 "set_global_routing_region_adjustment: Missing layer."
+    utl::error GRT 48 "Command set_global_routing_region_adjustment is missing -layer argument."
   }
 
   if { [info exists keys(-adjustment)] } {
     set adjustment $keys(-adjustment)
   } else {
-    utl::error GRT 49 "set_global_routing_region_adjustment: Missing adjustment."
+    utl::error GRT 49 "Command set_global_routing_region_adjustment is missing -adjustment argument."
   }
 
   sta::check_argc_eq1 "set_global_routing_region_adjustment" $args
@@ -130,7 +109,7 @@ proc set_global_routing_region_adjustment { args } {
 
     grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
   } else {
-    utl::error GRT 50 "set_global_routing_region_adjustment: Wrong number of arguments to define a region."
+    utl::error GRT 50 "Command set_global_routing_region_adjustment needs four arguments to define a region: lower_x lower_y upper_x upper_y."
   }
 }
 
@@ -159,7 +138,7 @@ proc set_macro_extension { args } {
     sta::check_positive_integer "macro_extension" $extension
     grt::set_macro_extension $extension
   } else {
-    utl::error GRT 219 "set_macro_extension: Wrong number of arguments."
+    utl::error GRT 219 "Command set_macro_extension needs one argument: extension."
   }
 }
 
@@ -202,18 +181,18 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -verbose \ 
+    keys {-guide_file -verbose \
           -congestion_iterations \
           -overflow_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow}
 
   if { ![ord::db_has_tech] } {
-    utl::error GRT 51 "missing dbTech."
+    utl::error GRT 51 "Missing dbTech."
   }
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GRT 52 "missing dbBlock."
+    utl::error GRT 52 "Missing dbBlock."
   }
 
   if { [info exists keys(-verbose) ] } {
@@ -244,14 +223,14 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-overflow_iterations)] } {
-    utl::war GRT 147 "-overflow_iterations is deprecated. Use -congestion_iterations."
+    utl::war GRT 147 "Argument -overflow_iterations is deprecated. Use -congestion_iterations."
     set iterations $keys(-overflow_iterations)
     sta::check_positive_integer "-overflow_iterations" $iterations
     grt::set_overflow_iterations $iterations
   }
 
   if { [info exists flags(-allow_overflow)] } {
-    utl::warn GRT 146 "-allow_overflow is deprecated. Use -allow_congestion."
+    utl::warn GRT 146 "Argument -allow_overflow is deprecated. Use -allow_congestion."
   }
 
   set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
@@ -309,39 +288,39 @@ proc estimate_rc_cmd {} {
   if { [have_routes] } {
     estimate_rc
   } else {
-    utl::error GRT 58 "run global_route before estimating parasitics for global routing."
+    utl::error GRT 58 "Run global_route before estimating parasitics for global routing."
   }
 }
 
 proc check_routing_layer { layer } {
   if { ![ord::db_has_tech] } {
-    utl::error GRT 59 "no technology has been read."
+    utl::error GRT 59 "Missing technology file."
   }
   sta::check_positive_integer "layer" $layer
 
   set tech [ord::get_db_tech]
   set max_routing_layer [$tech getRoutingLayerCount]
   set tech_layer [$tech findRoutingLayer $layer]
-  
+
   set min_tech_layer [$tech findRoutingLayer 1]
   set max_tech_layer [$tech findRoutingLayer $max_routing_layer]
-  
+
   if {$layer > $max_routing_layer} {
-    utl::error GRT 60 "layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName])."
+    utl::error GRT 60 "Layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName])."
   }
   if {$layer < 1} {
-    utl::error GRT 61 "layer [$tech_layer getConstName] is lesser than the min routing layer ([$min_tech_layer getConstName])."
+    utl::error GRT 61 "Layer [$tech_layer getConstName] is lesser than the min routing layer ([$min_tech_layer getConstName])."
   }
 }
 
 proc parse_layer_name { layer_name } {
   if { ![ord::db_has_tech] } {
-    utl::error GRT 222 "no technology has been read."
+    utl::error GRT 222 "No technology has been read."
   }
   set tech [ord::get_db_tech]
   set tech_layer [$tech findLayer $layer_name]
   if { $tech_layer == "NULL" } {
-    utl::error GRT 5 "layer $layer_name not found."
+    utl::error GRT 5 "Layer $layer_name not found."
   }
   set layer_idx [$tech_layer getRoutingLevel]
 
@@ -363,7 +342,7 @@ proc parse_layer_range { cmd layer_range } {
 proc check_region { lower_x lower_y upper_x upper_y } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GRT 63 "missing dbBlock."
+    utl::error GRT 63 "Missing dbBlock."
   }
 
   set core_area [$block getDieArea]
@@ -388,7 +367,7 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 proc highlight_route { net_name } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GRT 223 "missing dbBlock."
+    utl::error GRT 223 "Missing dbBlock."
   }
   set net [$block findNet $net_name]
   if { $net != "NULL" } {
@@ -408,7 +387,7 @@ proc define_layer_range { layers } {
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 57 "missing track structure."
+      utl::error GRT 57 "Missing track structure."
     }
   }
 }
@@ -422,7 +401,7 @@ proc define_clock_layer_range { layers } {
   if { $min_clock_layer < $max_clock_layer } {
     grt::set_clock_layer_range $min_clock_layer $max_clock_layer
   } else {
-    utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
+    utl::error GRT 56 "In argument -clock_layers, min routing layer is greater than max routing layer."
   }
 }
 

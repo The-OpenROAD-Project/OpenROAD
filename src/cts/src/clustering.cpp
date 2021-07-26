@@ -121,9 +121,6 @@ void clustering::iterKmeans(unsigned ITER,
       outFile << "TRAY " << i << " " << _means[i].first << " "
               << _means[i].second << std::endl;
     }
-    for (long int i = 0; i < flops.size(); ++i) {
-      flop* f = &flops[i];
-    }
     outFile.close();
   }
 
@@ -281,7 +278,7 @@ float clustering::Kmeans(unsigned N,
     this->clusters = clusters;
 
     if (TEST_LAYOUT == 1 || TEST_ITER == 1) {
-      float silh = calcSilh(means, CAP, IDX);
+      calcSilh(means, CAP, IDX);
     }
 
     if (iter > MAX || delta < 0.5)
@@ -308,7 +305,6 @@ float clustering::calcSilh(const std::vector<std::pair<float, float>>& means,
       float _y = means[j].second;
       if (f->match_idx[IDX].first == j) {
         // within the cluster
-        unsigned k = f->match_idx[IDX].second;
         in_d = calcDist(std::make_pair(_x, _y), f);
       } else {
         // outside of the cluster

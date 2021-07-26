@@ -177,8 +177,9 @@ public:
   void init(dbDatabase *db,
             Logger *logger);
   // legalize/report
-  // max_displacment is in rows, 0 for unconstrained
-  void detailedPlacement(int max_displacment);
+  // max_displacment is in sites. use zero for defaults.
+  void detailedPlacement(int max_displacement_x,
+                         int max_displacement_y);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
@@ -238,6 +239,18 @@ private:
                         // grid indices
                         int x,
                         int y) const;
+  void diamondSearchSide(const Cell *cell,
+                         int x,
+                         int y,
+                         int x_min,
+                         int y_min,
+                         int x_max,
+                         int y_max,
+                         int x_offset,
+                         int y_offset,
+                         // Return values
+                         PixelPt &best_pt,
+                         int &best_dist) const;
   PixelPt binSearch(int x,
                     const Cell *cell,
                     int bin_x,
@@ -392,11 +405,12 @@ private:
   bool row0_top_power_is_vdd_;
   Power macro_top_power_;
   int row_height_;  // dbu
-  int site_width_;
+  int site_width_;  // dbu
   int row_count_;
   int row_site_count_;
   int have_multi_row_cells_;
-  int max_displacement_constraint_;  // rows
+  int max_displacement_x_;           // sites
+  int max_displacement_y_;           // sites
 
   // 2D pixel grid
   Grid *grid_;
@@ -414,8 +428,6 @@ private:
   int64_t displacement_max_;
 
   // Magic numbers
-  int diamond_search_height_;  // grid units
-  int diamond_search_width_;   // grid units
   static constexpr int bin_search_width_ = 10;
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;

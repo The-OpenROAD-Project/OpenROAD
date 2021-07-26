@@ -14,11 +14,11 @@
 [INFO ODB-0134] Finished DEF file: soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.init.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: soc_bsg_black_parrot_nangate45/PDN.cfg
-[INFO PDN-0008] Design name is soc_bsg_black_parrot
-[INFO PDN-0009] Reading technology data
-[WARNING PDN-0037] Cannot find pin VDDPE on instance u_marker0 (MARKER)
-[WARNING PDN-0037] Cannot find pin VDDCE on instance u_marker0 (MARKER)
-[WARNING PDN-0037] Cannot find pin VSSE on instance u_marker0 (MARKER)
+[INFO PDN-0008] Design name is soc_bsg_black_parrot.
+[INFO PDN-0009] Reading technology data.
+[WARNING PDN-0037] Cannot find pin VDDPE on instance u_marker0 (MARKER).
+[WARNING PDN-0037] Cannot find pin VDDCE on instance u_marker0 (MARKER).
+[WARNING PDN-0037] Cannot find pin VSSE on instance u_marker0 (MARKER).
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Core Rings
@@ -48,8 +48,8 @@ Type: macro, bumps
 Type: macro, cdmm
     Macro: MARKER
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0010] Inserting macro grid for 1 macros
-[INFO PDN-0034]   - grid for instance u_marker0
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0010] Inserting macro grid for 1 macros.
+[INFO PDN-0034]   - grid for instance u_marker0.
+[INFO PDN-0015] Writing to database.
 No differences found.

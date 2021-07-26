@@ -61,6 +61,7 @@
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "ord/OpenRoad.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -71,53 +72,47 @@ namespace grt {
 
 using utl::GRT;
 
+GlobalRouter::GlobalRouter() :
+  openroad_(nullptr),
+  logger_(nullptr),
+  gui_(nullptr),
+  stt_builder_(nullptr),
+  fastroute_(nullptr),
+  grid_origin_(0, 0),
+  groute_renderer_(nullptr),
+  nets_(new std::vector<Net>),
+  grid_(new Grid),
+  routing_layers_(new std::vector<RoutingLayer>),
+  routing_tracks_(new std::vector<RoutingTracks>),
+  adjustment_(0.0),
+  min_routing_layer_(1),
+  max_routing_layer_(-1),
+  layer_for_guide_dimension_(3),
+  overflow_iterations_(50),
+  allow_congestion_(false),
+  macro_extension_(0),
+  verbose_(0),
+  min_layer_for_clock_(-1),
+  max_layer_for_clock_(-2),
+  seed_(0),
+  caps_perturbation_percentage_(0),
+  perturbation_amount_(1),
+  sta_(nullptr),
+  db_(nullptr),
+  block_(nullptr)
+{
+}
+
 void GlobalRouter::init(ord::OpenRoad* openroad)
 {
   openroad_ = openroad;
   logger_ = openroad->getLogger();
   // Broken gui api missing openroad accessor.
   gui_ = gui::Gui::get();
-  init();
-}
-
-void GlobalRouter::init()
-{
-  makeComponents();
-  // Initialize variables
-  adjustment_ = 0.0;
-  min_routing_layer_ = 1;
-  max_routing_layer_ = -1;
-  overflow_iterations_ = 50;
-  allow_congestion_ = false;
-  macro_extension_ = 0;
-  verbose_ = 0;
-  alpha_ = 0.3;
-  seed_ = 0;
-  caps_perturbation_percentage_ = 0;
-  perturbation_amount_ = 1;
-}
-
-void GlobalRouter::makeComponents()
-{
-  // Allocate memory for objects
-  routing_tracks_ = new std::vector<RoutingTracks>;
+  stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
-  fastroute_ = new FastRouteCore(db_, logger_);
-  grid_ = new Grid;
-  grid_origin_ = new odb::Point(0, 0);
-  nets_ = new std::vector<Net>;
+  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = openroad_->getSta();
-  routing_layers_ = new std::vector<RoutingLayer>;
-}
-
-void GlobalRouter::deleteComponents()
-{
-  delete routing_tracks_;
-  delete fastroute_;
-  delete grid_;
-  delete grid_origin_;
-  delete nets_;
-  delete routing_layers_;
 }
 
 void GlobalRouter::clear()
@@ -139,7 +134,11 @@ void GlobalRouter::clearObjects()
 
 GlobalRouter::~GlobalRouter()
 {
-  deleteComponents();
+  delete routing_tracks_;
+  delete fastroute_;
+  delete grid_;
+  delete nets_;
+  delete routing_layers_;
 }
 
 std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
@@ -148,8 +147,8 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
 {
   initAdjustments();
 
-  if (max_routing_layer < selected_metal_) {
-    setSelectedMetal(max_routing_layer);
+  if (max_routing_layer < layer_for_guide_dimension_) {
+    layer_for_guide_dimension_ = max_routing_layer;
   }
 
   fastroute_->setVerbose(verbose_);
@@ -730,10 +729,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       }
 
       if (pins_on_grid.size() > 1 && !on_grid_local) {
-        float net_alpha = alpha_;
-        if (net_alpha_map_.find(net->getName()) != net_alpha_map_.end()) {
-          net_alpha = net_alpha_map_[net->getName()];
-        }
         bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
         int num_layers = grid_->getNumLayers();
@@ -742,7 +737,6 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
         int netID = fastroute_->addNet(net->getDbNet(),
                                        pins_on_grid.size(),
-                                       net_alpha,
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,
@@ -1060,7 +1054,6 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
 
-  odb::dbTech* tech = db_->getTech();
   for (int layer = 1; layer <= max_routing_layer; layer++) {
     float adjustment = adjustments_[layer];
     if (adjustment != 0) {
@@ -1310,11 +1303,6 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
   max_layer_for_clock_ = max_layer;
 }
 
-void GlobalRouter::setAlpha(const float alpha)
-{
-  alpha_ = alpha;
-}
-
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
 {
   initAdjustments();
@@ -1341,12 +1329,6 @@ void GlobalRouter::addRegionAdjustment(int min_x,
       RegionAdjustment(min_x, min_y, max_x, max_y, layer, reduction_percentage));
 }
 
-void GlobalRouter::addAlphaForNet(char* netName, float alpha)
-{
-  std::string name(netName);
-  net_alpha_map_[name] = alpha;
-}
-
 void GlobalRouter::setVerbose(const int v)
 {
   verbose_ = v;
@@ -1359,7 +1341,7 @@ void GlobalRouter::setOverflowIterations(int iterations)
 
 void GlobalRouter::setGridOrigin(long x, long y)
 {
-  *grid_origin_ = odb::Point(x, y);
+  grid_origin_ = odb::Point(x, y);
 }
 
 void GlobalRouter::setAllowCongestion(bool allow_congestion)
@@ -1433,8 +1415,8 @@ void GlobalRouter::writeGuides(const char* file_name)
   }
   RoutingLayer ph_layer_final;
 
-  int offset_x = grid_origin_->x();
-  int offset_y = grid_origin_->y();
+  int offset_x = grid_origin_.x();
+  int offset_y = grid_origin_.y();
 
   logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   int final_layer;
@@ -2152,10 +2134,10 @@ void GlobalRouter::initGrid(int max_layer)
 {
   odb::dbTech* tech = db_->getTech();
 
-  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(selected_metal_);
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_guide_dimension_);
 
   if (tech_layer == nullptr) {
-    logger_->error(GRT, 81, "Layer {} not found.", selected_metal_);
+    logger_->error(GRT, 81, "Layer {} not found.", layer_for_guide_dimension_);
   }
 
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
@@ -2658,7 +2640,7 @@ void GlobalRouter::makeItermPins(Net* net,
 
     if (master->getType() == odb::dbMasterType::COVER
         || master->getType() == odb::dbMasterType::COVER_BUMP) {
-      logger_->warn(GRT, 34, "Net connected with instance of class COVER added for routing.");
+      logger_->warn(GRT, 34, "Net connected to instance of class COVER added for routing.");
     }
 
     bool connected_to_pad = master->getType().isPad();
@@ -3244,7 +3226,7 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer, int max_routing_la
   logger_->info(GRT, 20, "Min routing layer: {}", min_layer->getName());
   logger_->info(GRT, 21, "Max routing layer: {}", max_layer->getName());
   logger_->info(GRT, 22, "Global adjustment: {}%", int(adjustment_ * 100));
-  logger_->info(GRT, 23, "Grid origin: ({}, {})", grid_origin_->x(), grid_origin_->y());
+  logger_->info(GRT, 23, "Grid origin: ({}, {})", grid_origin_.x(), grid_origin_.y());
 }
 
 void GlobalRouter::reportResources()

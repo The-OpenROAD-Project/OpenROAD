@@ -42,7 +42,7 @@ frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
     auto inst = getInst();
     inst->getTransform(shiftXform);
     x = x - shiftXform.xOffset();
-    x = y - shiftXform.yOffset();
+    y = y - shiftXform.yOffset();
     return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());
     
 }

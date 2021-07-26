@@ -215,6 +215,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   odb::Point screenToDBU(const QPoint& point);
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
+  int minimumViewableResolution();
+
   void addMenuAndActions();
   void updateShapes();
 

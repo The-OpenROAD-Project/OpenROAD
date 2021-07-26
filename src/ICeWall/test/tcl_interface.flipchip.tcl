@@ -20,7 +20,7 @@ define_pad_cell \
   -name PAD \
   -orient {bottom R0 right R90 top R180 left R270} \
   -type bondpad \
-  -pad_pin_name PAD 
+  -pad_pin_name PAD
 
 define_pad_cell \
   -name PADCELL_SIG \
@@ -28,7 +28,7 @@ define_pad_cell \
   -cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -pad_pin_name PAD
-  
+
 define_pad_cell \
   -name PADCELL_VDD \
   -type vdd \
@@ -63,14 +63,14 @@ define_pad_cell \
   -cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB}} \
-  -physical_only 
-  
+  -physical_only
+
 define_pad_cell \
   -name PADCELL_PWRDET \
   -type pdt \
   -cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
-  -physical_only 
+  -physical_only
 
 define_pad_cell \
   -name PADCELL_FBRK \
@@ -78,38 +78,39 @@ define_pad_cell \
   -cell_name {bottom PADCELL_FBRK_V right PADCELL_FBRK_H top PADCELL_FBRK_V left PADCELL_FBRK_H} \
   -orient {bottom R0 right R90 top R180 left R270} \
   -break_signals {RETN {RETNA RETNB} SNS {SNSA SNSB} DVDD {DVDDA DVDDB} DVSS {DVSSA DVSSB}} \
-  -physical_only 
+  -physical_only
 
 define_pad_cell \
   -name PAD_FILL5 \
   -type fill \
   -cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H} \
   -orient {bottom R0 right MY top R180 left MX} \
-  -physical_only 
-  
+  -physical_only
+
 define_pad_cell \
   -name PAD_FILL1 \
   -type fill \
   -cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H} \
   -orient {bottom R0 right MY top R180 left MX} \
-  -physical_only 
-  
+  -physical_only
+
 define_pad_cell \
   -name PAD_CORNER \
   -type corner \
   -orient {ll R0 lr R90 ur R180 ul R270} \
-  -physical_only 
-  
+  -physical_only
+
 define_pad_cell \
   -name DUMMY_BUMP \
   -cell_name DUMMY_BUMP \
   -type bump \
-  -physical_only 
-  
+  -physical_only
+
 set_bump_options \
   -pitch 160 \
   -bump_pin_name PAD \
-  -spacing_to_edge 165 \
+  -array_size {17 17} \
+  -offset {210.0 215.0} \
   -cell_name DUMMY_BUMP \
   -num_pads_per_tile 5 \
   -rdl_layer metal10 \
@@ -122,19 +123,19 @@ set_padring_options \
   -ground {VSS DVSS_0 DVSS_1} \
   -offsets 35 \
   -pin_layer metal10 \
-  -pad_inst_name "%s" \
-  -pad_pin_name "PAD" \
+  -pad_inst_pattern "%s" \
+  -pad_pin_pattern "p_%s" \
   -connect_by_abutment {SNS RETN DVDD DVSS}
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM
 
 puts "Trigger errors"
 # Trigger errors
-catch {add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {centre {x  292.000 y  105.000}} -bondpad {centre {x  292.000 y   63.293}}}
+catch {add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {center {x  292.000 y  105.000}} -bondpad {center {x  292.000 y   63.293}}}
 puts "No more errors expected"
 
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
-# 
+#
 add_pad -edge bottom -inst_name u_cbrk0                 -type cbk   -location {origin {x  140 y   35}}
 catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 23 col 1}}
 catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 0}}
@@ -418,6 +419,56 @@ add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {o
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  525}} -bump {row 15 col 1}
 add_pad -edge left   -signal UNASSIGNED                 -type sig   -location {origin {x   35 y  395}} -bump {row 16 col 1}
 
+set_bump -row  6 -col  6 -power  VDD2
+set_bump -row  7 -col  6 -power  VDD2
+set_bump -row  8 -col  6 -power  VDD1
+set_bump -row  9 -col  6 -remove
+set_bump -row 10 -col  6 -power  VDD1
+set_bump -row 11 -col  6 -power  VDD1
+set_bump -row 12 -col  6 -power  VDD1
+set_bump -row  6 -col  7 -ground VSS2
+set_bump -row  7 -col  7 -ground VSS2
+set_bump -row  8 -col  7 -ground VSS1
+set_bump -row  9 -col  7 -remove
+set_bump -row 10 -col  7 -ground VSS1
+set_bump -row 11 -col  7 -ground VSS1
+set_bump -row 12 -col  7 -ground VSS1
+set_bump -row  6 -col  8 -power  VDD2
+set_bump -row  7 -col  8 -power  VDD2
+set_bump -row  8 -col  8 -power  VDD2
+set_bump -row  9 -col  8 -remove
+set_bump -row 10 -col  8 -power  VDD1
+set_bump -row 11 -col  8 -power  VDD1
+set_bump -row 12 -col  8 -power  VDD1
+set_bump -row  6 -col  9 -remove
+set_bump -row  7 -col  9 -remove
+set_bump -row  8 -col  9 -remove
+set_bump -row  9 -col  9 -remove
+set_bump -row 10 -col  9 -remove
+set_bump -row 11 -col  9 -remove
+set_bump -row 12 -col  9 -remove
+set_bump -row  6 -col 10 -power  VDD3
+set_bump -row  7 -col 10 -power  VDD3
+set_bump -row  8 -col 10 -power  VDD3
+set_bump -row  9 -col 10 -remove
+set_bump -row 10 -col 10 -power  VDD4
+set_bump -row 11 -col 10 -power  VDD4
+set_bump -row 12 -col 10 -power  VDD4
+set_bump -row  6 -col 11 -ground VSS3
+set_bump -row  7 -col 11 -ground VSS3
+set_bump -row  8 -col 11 -ground VSS3
+set_bump -row  9 -col 11 -remove
+set_bump -row 10 -col 11 -ground VSS4
+set_bump -row 11 -col 11 -ground VSS4
+set_bump -row 12 -col 11 -ground VSS4
+set_bump -row  6 -col 12 -power  VDD3
+set_bump -row  7 -col 12 -power  VDD3
+set_bump -row  8 -col 12 -power  VDD3
+set_bump -row  9 -col 12 -remove
+set_bump -row 10 -col 12 -power  VDD4
+set_bump -row 11 -col 12 -power  VDD4
+set_bump -row 12 -col 12 -power  VDD4
+
 puts "Trigger errors for incorrect bump options"
 set_bump_options -rdl_layer metal10 -rdl_width 0.5 -rdl_spacing 1
 catch {initialize_padring}
@@ -439,4 +490,3 @@ set def_file  [make_result_file "tcl_interface.flipchip.def"]
 write_def $def_file1
 exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" $def_file1 > $def_file
 diff_files $def_file "tcl_interface.flipchip.defok"
-

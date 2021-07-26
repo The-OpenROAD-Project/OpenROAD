@@ -10,7 +10,7 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
 Found 0 macro blocks.
-[INFO PPL-0010] Tentative 0 to set up sections
+[INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          2494
 [INFO PPL-0002] Number of I/O            54
 [INFO PPL-0003] Number of I/O w/sink     54
@@ -19,9 +19,9 @@ Found 0 macro blocks.
 [INFO PPL-0006] Slots increase factor    0.01
 [INFO PPL-0008] Usage increase factor    0.01
 [INFO PPL-0009] Force pin spread         true
-Successfully assigned I/O pins
+Successfully assigned I/O pins.
 Found 0 macro blocks.
-[INFO PPL-0010] Tentative 0 to set up sections
+[INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          2494
 [INFO PPL-0002] Number of I/O            54
 [INFO PPL-0003] Number of I/O w/sink     54
@@ -30,5 +30,5 @@ Found 0 macro blocks.
 [INFO PPL-0006] Slots increase factor    0.01
 [INFO PPL-0008] Usage increase factor    0.01
 [INFO PPL-0009] Force pin spread         true
-Successfully assigned I/O pins
+Successfully assigned I/O pins.
 No differences found.

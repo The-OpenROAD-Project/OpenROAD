@@ -27,6 +27,4 @@ foreach buf [get_cells clkbuf_*_clk] {
   }
 }
 
-puts "#unconnected buffers: $unconnected_buffers"
-
-exit
+puts "Found $unconnected_buffers unconnected buffers."

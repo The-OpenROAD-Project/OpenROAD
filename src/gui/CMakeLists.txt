@@ -19,6 +19,7 @@ if (Qt5_FOUND AND BUILD_GUI)
   swig_lib(NAME      gui
            NAMESPACE gui
            I_FILE    src/gui.i
+           RUNTIME_HEADER tclSwig.h
   )
 
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
