@@ -1169,12 +1169,8 @@ void IOPlacer::run(bool random_mode)
   if (!random_mode) {
     total_hpwl += returnIONetsHPWL(netlist_io_pins_);
     delta_hpwl = init_hpwl - total_hpwl;
-    logger_->info(PPL, 11, "HPWL before pin placement: {:.2f} um",
-                  static_cast<float>(dbuToMicrons(init_hpwl)));
-    logger_->info(PPL, 12, "HPWL after  pin placement: {:.2f} um",
+    logger_->info(PPL, 12, "I/O nets HPWL: {:.2f} um.",
                   static_cast<float>(dbuToMicrons(total_hpwl)));
-    logger_->info(PPL, 13, "HPWL delta  pin placement: {:.2f} um",
-                  static_cast<float>(dbuToMicrons(delta_hpwl)));
   }
 
   commitIOPlacementToDB(assignment_);
