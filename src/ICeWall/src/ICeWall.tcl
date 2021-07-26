@@ -3136,8 +3136,15 @@ namespace eval ICeWall {
   }
     # Connect up pads in the corner regions
     # Connect group of padcells up to the column of allocated bumps
-  proc get_anchor_points {} {
-  
+  proc get_side_anchor_points {side_name} {
+    set anchor_points ""
+    foreach padcell [get_footprint_padcells_by_side $side_name] {
+      if {[has_padcell_location $padcell]} {
+        lappend anchor_points $padcell
+	#debug "$padcell is an anchor point"
+      }
+    }
+    return $anchor_points 
   } 
   proc has_padcell_location {padcell} {
     variable footprint
@@ -3173,8 +3180,180 @@ namespace eval ICeWall {
   proc set_padcell_scaled_origin {padcell} {
     variable footprint   
     dict set footprint padcell $padcell cell scaled_origin [get_scaled_origin $padcell]
-  }   
+  }  
+     
+  proc get_padcell_width {padcell} {
+    set side_name [get_padcell_side_name $padcell]
+    set type [get_padcell_type $padcell]
+    set cell [get_cell $type $side_name]
+    return [expr min([$cell getHeight],[$cell getWidth])]
+  } 
+  proc get_padcell_height {padcell} {
+    set side_name [get_padcell_side_name $padcell]
+    set type [get_padcell_type $padcell]
+    set cell [get_cell $type $side_name]
+    return [expr max([$cell getHeight],[$cell getWidth])]
+  } 
   
+  proc assign_locations {} {
+    variable footprint
+    variable pad_ring     
+    foreach side_name {bottom right top left} {
+      switch $side_name \
+        "bottom" {
+	  set anchor_corner_a corner_ll
+          set anchor_corner_b corner_lr
+        } \
+        "right"  {
+	  set anchor_corner_a corner_lr
+          set anchor_corner_b corner_ur        
+	} \
+        "top"    {
+	  set anchor_corner_a corner_ur
+          set anchor_corner_b corner_ul        
+        } \
+        "left"   {
+	  set anchor_corner_a corner_ul
+          set anchor_corner_b corner_ll
+	}   
+      set unplaced_pads {}
+      set anchor_cell_a $anchor_corner_a
+      set anchor_cell_b $anchor_corner_b
+      foreach padcell [get_footprint_padcells_by_side $side_name] {
+	if {![has_padcell_location $padcell]} {
+          lappend unplaced_pads $padcell
+        } else {	
+	  set anchor_cell_b $padcell
+          add_locations $side_name  $unplaced_pads $anchor_cell_a $anchor_cell_b 
+	  #debug "$side_name  $unplaced_pads $anchor_cell_a $anchor_cell_b" 
+	  set unplaced_pads {}
+	  set anchor_cell_a $anchor_cell_b	  
+	}
+      }
+      add_locations $side_name  $unplaced_pads $anchor_cell_a $anchor_corner_b
+      #debug "$side_name  $unplaced_pads $anchor_cell_a $anchor_cell_b"  
+    }  
+  }
+  
+  proc add_locations {side_name  unplaced_pads anchor_cell_a anchor_cell_b } {
+    variable pad_ring     
+    variable chip_width 
+    variable chip_height
+    variable edge_bottom_offset 
+    variable edge_right_offset 
+    variable edge_top_offset 
+    variable edge_left_offset
+        
+    switch $side_name \
+      "bottom" {
+        if {[regexp corner_ $anchor_cell_a ]} {
+          set inst [dict get $pad_ring $anchor_cell_a]
+	  set start [[$inst getBBox] xMax]           
+        } else {     
+          set cell_width_a [get_padcell_width $anchor_cell_a]
+          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+        } 
+        if {[regexp corner_ $anchor_cell_b]} {
+          set inst [dict get $pad_ring $anchor_cell_b]            
+	  set end [[$inst getBBox] xMin]           
+        } else {     
+          set cell_width_b [get_padcell_width $anchor_cell_b]
+          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+        } 
+      } \
+      "right"  {
+        if {[regexp corner_ $anchor_cell_a]} {
+          set inst [dict get $pad_ring $anchor_cell_a]
+	  set start [[$inst getBBox] yMax]           
+        } else {     
+          set cell_width_a [get_padcell_width $anchor_cell_a]
+          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+        } 
+        if {[regexp corner_ $anchor_cell_b]} {
+          set inst [dict get $pad_ring $anchor_cell_b]            
+	  set end [[$inst getBBox] yMin]           
+        } else {     
+          set cell_width_b [get_padcell_width $anchor_cell_b]
+          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+        } 
+      } \
+      "top"    {
+        if {[regexp corner_ $anchor_cell_a]} {
+          set inst [dict get $pad_ring $anchor_cell_a]
+	  set start [[$inst getBBox] xMin]           
+        } else {     
+          set cell_width_a [get_padcell_width $anchor_cell_a]
+          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+        } 
+        if {[regexp corner_ $anchor_cell_b]} {
+          set inst [dict get $pad_ring $anchor_cell_b]            
+	  set end [[$inst getBBox] xMax]           
+        } else {     
+          set cell_width_b [get_padcell_width $anchor_cell_b]
+          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+        } 
+      } \
+      "left"   {
+      
+        if {[regexp corner_ $anchor_cell_a]} {
+          set inst [dict get $pad_ring $anchor_cell_a]
+	  set start [[$inst getBBox] yMin]           
+        } else {     
+          set cell_width_a [get_padcell_width $anchor_cell_a]
+          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+        } 
+        if {[regexp corner_ $anchor_cell_b]} {
+          set inst [dict get $pad_ring $anchor_cell_b]            
+	  set end [[$inst getBBox] yMax]           
+        } else {     
+          set cell_width_b [get_padcell_width $anchor_cell_b]
+          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+        }
+      } 
+
+    set sideCount [llength $unplaced_pads]
+    set sidePadWidth 0
+    set sideWidth [ expr abs($end - $start) ]
+    foreach padcell $unplaced_pads {
+      set sidePadWidth [expr $sidePadWidth +  [get_padcell_width $padcell]]
+    }	   
+    set siteStart $start
+    set gridSnap 1000
+    set PadSpacing [expr  $sideWidth / (1 + $sideCount) / $gridSnap * $gridSnap ]
+    #debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end" 
+    debug "$side_name: segment starts with $anchor_cell_a  and ends with $anchor_cell_b , start is: $start , and end is $end"   
+    foreach padcell $unplaced_pads {
+      set padOrder [ expr 1 + [lsearch $unplaced_pads $padcell]] 
+
+      switch $side_name \
+    	"bottom" {
+    	  set pad_centre_x [expr $siteStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_centre_y [expr $edge_bottom_offset + round (0.5 * [get_padcell_height $padcell]) ]
+    	} \
+    	"right"  {
+    	  set pad_centre_x [expr $chip_width - $edge_right_offset - round (0.5 * [get_padcell_height $padcell]) ]
+    	  set pad_centre_y [expr $siteStart + ($PadSpacing * $padOrder) ] 
+    	} \
+    	"top" {
+    	  set pad_centre_x [expr $siteStart - ($PadSpacing * $padOrder) ] 
+    	  set pad_centre_y [expr $chip_height - $edge_bottom_offset - round (0.5 * [get_padcell_height $padcell])  ]
+    	} \
+    	"left" {
+    	  set pad_centre_x [expr $edge_left_offset + round (0.5 * [get_padcell_height $padcell])]
+    	  set pad_centre_y [expr $siteStart - ($PadSpacing * $padOrder) ]
+    	}
+      #debug "padOrder: $padOrder pad_centre_x: $pad_centre_x  pad_centre_y: $pad_centre_y"
+
+      set pad_centre_x_microns [ord::dbu_to_microns $pad_centre_x]
+      set pad_centre_y_microns [ord::dbu_to_microns $pad_centre_y]
+      set_padcell_centre $padcell $pad_centre_x_microns $pad_centre_y_microns
+      set_padcell_scaled_centre $padcell $pad_centre_x $pad_centre_y	    
+      set_padcell_origin $padcell [get_padcell_centre $padcell]     
+      set_padcell_scaled_origin $padcell       
+      #debug  " pad_cell has origin: [get_padcell_origin $padcell] ,  scaled_origin: [get_padcell_scaled_origin $padcell] , centre: [get_padcell_centre $padcell]] , scaled_centre [get_padcell_scaled_centre $padcell]]"
+    }        
+  } 
+   
   proc place_padring {} {
     variable block
     variable tech
@@ -3185,7 +3364,6 @@ namespace eval ICeWall {
     variable edge_top_offset 
     variable edge_left_offset
     variable pad_ring
-    place_corners
  
     foreach side_name {bottom right top left} {
       switch $side_name \
@@ -3195,17 +3373,23 @@ namespace eval ICeWall {
         } \
         "right"  {
           set fill_start [expr $edge_bottom_offset + [corner_height corner_lr]]
-          set fill_end   [expr $chip_height - $edge_top_offset - [corner_height corner_ur]]
-        } \
+          set fill_end   [expr $chip_height - $edge_top_offset - [corner_height corner_ur]]        
+	} \
         "top"    {
           set fill_start [expr $chip_width - $edge_right_offset - [corner_width corner_ur]]
-          set fill_end   [expr $edge_left_offset + [corner_width corner_ul]]
-        } \
+          set fill_end   [expr $edge_left_offset + [corner_width corner_ul]]       
+	} \
         "left"   {
           set fill_start [expr $chip_height - $edge_top_offset - [corner_height corner_ul]]
           set fill_end   [expr $edge_bottom_offset + [corner_height corner_ll]]
-        }
+	}
 
+
+      #debug "side:$side_name has anchor_point_a  [$anchor_point_a getName] , anchor_point_b  [$anchor_point_b getName]"
+      #debug "side:$side_name has the following anchor_points: [get_side_anchor_points $side_name]"
+      #split_iopad_side $side_name
+      
+      
       # debug "$side_name: fill_start = $fill_start"
        #debug "$side_name: fill_end   = $fill_end"
       # debug "padcells: [get_footprint_padcells_by_side $side_name]"
@@ -3216,9 +3400,6 @@ namespace eval ICeWall {
       if {[llength $padcells_on_side] == 0} {
         utl::error "PAD" 15 "No cells found on $side_name side"
       }
-      set sideCount [llength [get_footprint_padcells_by_side $side_name]]
-      set sidePadWidth 0
-      set sideWidth [ expr abs($fill_end - $fill_start) ]
       foreach padcell [get_footprint_padcells_by_side $side_name] {
         set name [get_padcell_inst_name $padcell]
         set type [get_padcell_type $padcell]
@@ -3226,54 +3407,6 @@ namespace eval ICeWall {
         # debug "name: $name, type: $type, cell: $cell"
         set cell_height [expr max([$cell getHeight],[$cell getWidth])]
         set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
-        set sidePadWidth [expr $sidePadWidth + $cell_width]
-      }
-      set siteStart $fill_start
-      set gridSnap 1000
-      set PadSpacing [expr  $sideWidth / (1 + $sideCount) / $gridSnap * $gridSnap ]
-      #debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end"   
-      foreach padcell [get_footprint_padcells_by_side $side_name] {
-        set name [get_padcell_inst_name $padcell]
-        set type [get_padcell_type $padcell]
-        set cell [get_cell $type $side_name]
-        # debug "name: $name, type: $type, cell: $cell"
-        set cell_height [expr max([$cell getHeight],[$cell getWidth])]
-        set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
-	set padOrder [ expr 1 + [lsearch [get_footprint_padcells_by_side $side_name] $padcell]]
-       # debug " [dict exists $footprint padcell $padcell cell centre]"
-       # debug "[has_padcell_location $padcell]"   
-	
-       # if {![dict exists $footprint padcell $padcell cell centre]} {
-       #   debug "centre doesn't exist"
-        #}
-        switch $side_name \
-          "bottom" {
-            set pad_centre_x [expr $siteStart + ($PadSpacing * $padOrder) ] 
-            set pad_centre_y [expr $edge_bottom_offset + round (0.5 * $cell_height) ]
-          } \
-          "right"  {
-            set pad_centre_x [expr $chip_width - $edge_right_offset - round (0.5 * $cell_height) ]
-            set pad_centre_y [expr $siteStart + ($PadSpacing * $padOrder) ] 
-          } \
-          "top" {
-            set pad_centre_x [expr $siteStart - ($PadSpacing * $padOrder) ] 
-            set pad_centre_y [expr $chip_height - $edge_bottom_offset - round (0.5 * $cell_height)  ]
-          } \
-          "left" {
-            set pad_centre_x [expr $edge_left_offset + round (0.5 * $cell_height)]
-            set pad_centre_y [expr $siteStart - ($PadSpacing * $padOrder) ]
-          }
-	 #debug "padOrder: $padOrder pad_centre_x: $pad_centre_x  pad_centre_y: $pad_centre_y"
-	
-	if {![has_padcell_location $padcell]} { 
-	  set pad_centre_x_microns [ord::dbu_to_microns $pad_centre_x]
-	  set pad_centre_y_microns [ord::dbu_to_microns $pad_centre_y]
-	  set_padcell_centre $padcell $pad_centre_x_microns $pad_centre_y_microns
-	  set_padcell_scaled_centre $padcell $pad_centre_x $pad_centre_y	
-	  set_padcell_origin $padcell [get_padcell_centre $padcell]	
-	  set_padcell_scaled_origin $padcell 	
-	  #debug  " pad_cell has origin: [get_padcell_origin $padcell] ,  scaled_origin: [get_padcell_scaled_origin $padcell] , centre: [get_padcell_centre $padcell]] , scaled_centre [get_padcell_scaled_centre $padcell]]"
-        }
 	
 	#debug "$padcell is located at side: $side_name , with order $padOrder , cell_height : $cell_height , cell_width : $cell_width"
         #debug "[get_padcell_origin $padcell]"
@@ -3722,6 +3855,8 @@ namespace eval ICeWall {
     
     
     place_padcells
+    place_corners
+    assign_locations
     place_padring
     connect_by_abutment
 
