@@ -4,19 +4,22 @@
 For specifying a power grid over the stdcell area
 ```
   % define_pdn_grid
-    [-name name] \
-    [-pins list_of_pin_layers] \
+    [-name <name>] \
+    [-pins <list_of_pin_layers>] \
     [-starts_with (POWER|GROUND)] \
-    [-voltage_domain list_of_domain_names]    
+    [-voltage_domain <list_of_domain_names>] \
+    [-starts_with (POWER|GROUND)]
 ```
 For specifying a power grid over macros in the design
 ```
   % define_pdn_grid
     -macro \
     [-name name] \
-    [-orient list_of_valid_orientations>] \
-    [-instances list_of_instances>] \
-    [-cells list_of_cells>] \
+    [-orient <list_of_valid_orientations>] \
+    [-instances <list_of_instances] \
+    [-cells <list_of_cells>] \
+    [-halo <list_of_halo_values>] \
+    [-voltage_domain <list_of_domain_names>] \
     [-starts_with (POWER|GROUND)]    
 ```
 
@@ -46,6 +49,8 @@ The -instances argument filters the list of instances for which this grid applie
 The -cells argument filters the list of instance for which this grid applies, such that only instances of the specified cells are retained.
 The -orient argument filters the list of instances for which this grid applies, such that only instances of the specified orientation are retained.
 
+A halo value is used to specify the minimum distance between this macro and any adjacent cell. If there is a halo value specified for the macro cell in the LEF, then this value will be used. Otherwise the value specified with the -halo option will be used to define the halo. The value for halo can be 1, 2 or 4 numbers; if 1 number is specified, this will be used for all four sides of the macro; if 2 numbers are specified, the first will be used for the separation on left/right sides and the second number will be used for the top/bottom sides; if 4 numbers are specified then these correspond to halos on left, bottom, right and top sides respectively.
+
 Each of the -instances, -cells and -orient acts as an independent filter applied in succession to the list of macros.
 
 
@@ -61,6 +66,7 @@ Each of the -instances, -cells and -orient acts as an independent filter applied
 | -instances | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification |
 | -cells | For a macro, defines a set of valid orientations. Macros which are instances of one of these cells will use this grid specification |
 | -orient | For a macro, defines a set of valid orientations. Macros with one of the valid orientations will use this grid specification |
+| -halo | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively.(Default: 0) |
 
 
 ### Examples
