@@ -384,6 +384,7 @@ class FlexGCWorker::Impl
   bool checkLef58CutSpacingTbl_prlValid(
       const gtl::rectangle_data<frCoord>& viaRect1,
       const gtl::rectangle_data<frCoord>& viaRect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
       std::string cutClass1,
       std::string cutClass2,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);

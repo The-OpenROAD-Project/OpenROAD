@@ -2909,19 +2909,19 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect,
 void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
 {
   auto layerNum = rect->getLayerNum();
-
+  auto layer = getTech()->getLayer(layerNum);
   // CShort
   // diff net same layer
-  for (auto con : getTech()->getLayer(layerNum)->getCutSpacing(false)) {
+  for (auto con : layer->getCutSpacing(false)) {
     checkCutSpacing_main(rect, con);
   }
   // same net same layer
-  for (auto con : getTech()->getLayer(layerNum)->getCutSpacing(true)) {
+  for (auto con : layer->getCutSpacing(true)) {
     checkCutSpacing_main(rect, con);
   }
   // diff net diff layer
   for (auto con :
-       getTech()->getLayer(layerNum)->getInterLayerCutSpacingConstraint(
+       layer->getInterLayerCutSpacingConstraint(
            false)) {
     if (con) {
       checkCutSpacing_main(rect, con);
@@ -2932,16 +2932,19 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   bool skipDiffNet = false;
   // samenet rule
   for (auto con :
-       getTech()->getLayer(layerNum)->getLef58CutSpacingConstraints(true)) {
+       layer->getLef58CutSpacingConstraints(true)) {
     // skipSameNet if same-net rule exists
     skipDiffNet = true;
     checkLef58CutSpacing_main(rect, con, false);
   }
   // diffnet rule
   for (auto con :
-       getTech()->getLayer(layerNum)->getLef58CutSpacingConstraints(false)) {
+       layer->getLef58CutSpacingConstraints(false)) {
     checkLef58CutSpacing_main(rect, con, skipDiffNet);
   }
+
+  for (auto con : layer->getLef58CutSpacingTableConstraints())
+    checkLef58CutSpacingTbl(rect, con.get());
 }
 
 void FlexGCWorker::Impl::checkCutSpacing()
@@ -2959,8 +2962,6 @@ void FlexGCWorker::Impl::checkCutSpacing()
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkCutSpacing_main(maxrect.get());
-          for (auto con : currLayer->getLef58CutSpacingTableConstraints())
-            checkLef58CutSpacingTbl(maxrect.get(), con.get());
         }
       }
     }
@@ -2978,8 +2979,6 @@ void FlexGCWorker::Impl::checkCutSpacing()
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
             checkCutSpacing_main(maxrect.get());
-            for (auto con : currLayer->getLef58CutSpacingTableConstraints())
-              checkLef58CutSpacingTbl(maxrect.get(), con.get());
           }
         }
       }

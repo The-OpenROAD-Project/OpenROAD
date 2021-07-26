@@ -44,21 +44,19 @@ inline frSquaredDistance getC2CDistSquare(
 bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(
     const gtl::rectangle_data<frCoord>& viaRect1,
     const gtl::rectangle_data<frCoord>& viaRect2,
+    const gtl::rectangle_data<frCoord>& markerRect,
     std::string cutClass1,
     std::string cutClass2,
     odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
   auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
 
-  gtl::rectangle_data<frCoord> checkRect(viaRect1);
-  gtl::generalized_intersect(checkRect, viaRect2);
   // check for prl
-  auto distX = gtl::euclidean_distance(checkRect, viaRect2, gtl::HORIZONTAL);
-  auto distY = gtl::euclidean_distance(checkRect, viaRect2, gtl::VERTICAL);
+  auto distX = gtl::euclidean_distance(viaRect1, viaRect2, gtl::HORIZONTAL);
+  auto distY = gtl::euclidean_distance(viaRect1, viaRect2, gtl::VERTICAL);
 
-  gtl::generalized_intersect(checkRect, viaRect2);
-  auto prlX = gtl::delta(checkRect, gtl::HORIZONTAL);
-  auto prlY = gtl::delta(checkRect, gtl::VERTICAL);
+  auto prlX = gtl::delta(markerRect, gtl::HORIZONTAL);
+  auto prlY = gtl::delta(markerRect, gtl::VERTICAL);
 
   if (distX) {
     prlX = -prlX;
@@ -161,10 +159,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     gcRect* viaRect2,
     frLef58CutSpacingTableConstraint* con)
 {
+  gtl::rectangle_data<frCoord> markerRect(*viaRect1);
+  gtl::generalized_intersect(markerRect, *viaRect2);
   frSquaredDistance distSquare
       = gtl::square_euclidean_distance(*viaRect1, *viaRect2);
   if (distSquare == 0)
-    return;  // short checked elsewhere
+    checkCutSpacing_short(viaRect1, viaRect2, markerRect);
+
   frSquaredDistance c2cSquare = getC2CDistSquare(*viaRect1, *viaRect2);
 
   auto layerNum1 = viaRect1->getLayerNum();
@@ -191,7 +192,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   auto dbRule = con->getODBRule();
   bool viol = false;
   auto prlValid = checkLef58CutSpacingTbl_prlValid(
-      *viaRect1, *viaRect2, class1, class2, dbRule);
+      *viaRect1, *viaRect2, markerRect, class1, class2, dbRule);
 
   if (isUp || isDown) {
     frDirEnum secondToFirstDir = isUp ? frDirEnum::N : frDirEnum::S;
@@ -220,8 +221,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 
   if (viol) {
     // violation
-    gtl::rectangle_data<frCoord> markerRect(*viaRect1);
-    gtl::generalized_intersect(markerRect, *viaRect2);
     auto net1 = viaRect1->getNet();
     auto net2 = viaRect2->getNet();
     auto marker = make_unique<frMarker>();
