@@ -232,6 +232,7 @@ class IOPlacer
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
+  double dbuToMicrons(int64_t dbu);
 
   // db functions
   void populateIOPlacer(std::set<int> hor_layer_idx,
