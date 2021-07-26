@@ -745,6 +745,7 @@ namespace eval ICeWall {
     dict set footprint padcell $padcell cell centre y $y
   }
 
+
   proc set_padcell_scaled_centre {padcell x y } {
     variable footprint
 
@@ -3398,6 +3399,7 @@ namespace eval ICeWall {
             [dict exists $footprint padcell $padcell cell origin] || [dict exists $footprint padcell $padcell cell scaled_origin]
   }
 
+
   proc get_padcell_centre {padcell {type cell}} {
     variable footprint
 
@@ -3603,12 +3605,13 @@ namespace eval ICeWall {
   proc place_padring {} {
     variable block
     variable tech
-    variable chip_width
+    variable chip_width 
     variable chip_height
-    variable edge_bottom_offset
-    variable edge_right_offset
-    variable edge_top_offset
+    variable edge_bottom_offset 
+    variable edge_right_offset 
+    variable edge_top_offset 
     variable edge_left_offset
+
     variable pad_ring
  
     foreach side_name {bottom right top left} {
@@ -3629,6 +3632,7 @@ namespace eval ICeWall {
           set fill_start [expr $chip_height - $edge_top_offset - [corner_height corner_ul]]
           set fill_end   [expr $edge_bottom_offset + [corner_height corner_ll]]
 	}
+
 
 
       #debug "side:$side_name has anchor_point_a  [$anchor_point_a getName] , anchor_point_b  [$anchor_point_b getName]"
