@@ -249,16 +249,14 @@ class FastRouteCore
                     bool newType,
                     bool noADJ);
   void fluteNormal(int netID,
-                   int d,
-                   DTYPE x[],
-                   DTYPE y[],
+                   std::vector<DTYPE> x,
+                   std::vector<DTYPE> y,
                    int acc,
                    float coeffV,
                    Tree* t);
   void fluteCongest(int netID,
-                    int d,
-                    DTYPE x[],
-                    DTYPE y[],
+                    std::vector<DTYPE> x,
+                    std::vector<DTYPE> y,
                     int acc,
                     float coeffV,
                     Tree* t);

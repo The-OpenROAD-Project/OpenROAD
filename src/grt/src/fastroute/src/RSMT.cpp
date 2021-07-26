@@ -61,7 +61,7 @@ static int ordery(const struct pnt* a, const struct pnt* b)
 }
 
 // binary search to map the new coordinates to original coordinates
-int mapxy(int nx, int xs[], int nxs[], int d)
+int mapxy(int nx, std::vector<int> xs, std::vector<int> nxs, int d)
 {
   int max, min, mid;
 
@@ -154,18 +154,19 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
 }
 
 void FastRouteCore::fluteNormal(int netID,
-                 int d,
-                 DTYPE x[],
-                 DTYPE y[],
+                 std::vector<DTYPE> x,
+                 std::vector<DTYPE> y,
                  int acc,
                  float coeffV,
                  Tree* t)
 {
-  DTYPE *xs, *ys, minval, x_max, x_min, x_mid, y_max, y_min, y_mid, *tmp_xs,
-      *tmp_ys;
-  int* s;
+  std::vector<DTYPE> xs, ys, tmp_xs, tmp_ys;
+  DTYPE minval, x_max, x_min, x_mid, y_max, y_min, y_mid; 
+  std::vector<int> s;
   int i, j, minidx;
   struct pnt *pt, *tmpp;
+
+  int d = x.size();
 
   if (d == 2) {
     t->deg = 2;
@@ -238,13 +239,13 @@ void FastRouteCore::fluteNormal(int netID,
     t->branch[3].n = 3;
   } else {
     stt::Tree fluteTree;
-    xs = new DTYPE[d];
-    ys = new DTYPE[d];
+    xs.resize(d);
+    ys.resize(d);
 
-    tmp_xs = new DTYPE[d];
-    tmp_ys = new DTYPE[d];
+    tmp_xs.resize(d);
+    tmp_ys.resize(d);
 
-    s = new int[d];
+    s.resize(d);
     pt = new struct pnt[d];
     std::vector<struct pnt*> ptp(d);
 
@@ -315,7 +316,7 @@ void FastRouteCore::fluteNormal(int netID,
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
-    fluteTree = stt_builder_->makeSteinerTree(d, tmp_xs, tmp_ys, s, acc);
+    fluteTree = stt_builder_->makeSteinerTree(tmp_xs, tmp_ys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     for (i = 0; i < 2 * d - 2; i++) {
@@ -323,30 +324,26 @@ void FastRouteCore::fluteNormal(int netID,
       t->branch[i].y = t->branch[i].y / ((int) (100 * coeffV));
     }
 
-    delete[] xs;
-    delete[] ys;
-    delete[] tmp_xs;
-    delete[] tmp_ys;
-    delete[] s;
     delete[] pt;
   }
 }
 
 void FastRouteCore::fluteCongest(int netID,
-                  int d,
-                  DTYPE x[],
-                  DTYPE y[],
+                  std::vector<DTYPE> x,
+                  std::vector<DTYPE> y,
                   int acc,
                   float coeffV,
                   Tree* t)
 {
-  DTYPE *xs, *ys, *nxs, *nys, *x_seg, *y_seg, x_max, x_min, x_mid,
-      y_max, y_min, y_mid;
-  int* s;
+  std::vector<DTYPE> xs, ys, nxs, nys, x_seg, y_seg;
+  DTYPE x_max, x_min, x_mid, y_max, y_min, y_mid;
+  std::vector<int> s;
   int i, j, k, grid;
   DTYPE height, width;
   int usageH, usageV;
   float coeffH = 1;
+
+  int d = x.size();
 
   if (d == 2) {
     t->deg = 2;
@@ -419,13 +416,13 @@ void FastRouteCore::fluteCongest(int netID,
     t->branch[3].n = 3;
   } else {
     stt::Tree fluteTree;
-    xs = new DTYPE[d];
-    ys = new DTYPE[d];
-    nxs = new DTYPE[d];
-    nys = new DTYPE[d];
-    x_seg = new DTYPE[d - 1];
-    y_seg = new DTYPE[d - 1];
-    s = new int[d];
+    xs.resize(d);
+    ys.resize(d);
+    nxs.resize(d);
+    nys.resize(d);
+    x_seg.resize(d - 1);
+    y_seg.resize(d - 1);
+    s.resize(d);
 
     for (i = 0; i < d; i++) {
       xs[i] = gxs_[netID][i];
@@ -476,7 +473,7 @@ void FastRouteCore::fluteCongest(int netID,
       nys[i + 1] = nys[i] + y_seg[i];
     }
 
-    fluteTree = stt_builder_->makeSteinerTree(d, nxs, nys, s, acc);
+    fluteTree = stt_builder_->makeSteinerTree(nxs, nys, s, acc);
     (*t) = fluteToTree(fluteTree);
 
     // map the new coordinates back to original coordinates
@@ -484,17 +481,7 @@ void FastRouteCore::fluteCongest(int netID,
       t->branch[i].x = mapxy(t->branch[i].x, xs, nxs, d);
       t->branch[i].y = mapxy(t->branch[i].y, ys, nys, d);
     }
-
-    delete[] xs;
-    delete[] ys;
-    delete[] nxs;
-    delete[] nys;
-    delete[] x_seg;
-    delete[] y_seg;
-    delete[] s;
   }
-
-  // return t;
 }
 
 bool FastRouteCore::netCongestion(int netID)
@@ -713,8 +700,6 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     FrNet* net = nets_[i];
     coeffV = 1.36;
     int sizeV = net->numPins;
-    int x[sizeV];
-    int y[sizeV];
 
     if (congestionDriven) {
       coeffV = coeffADJ(i);
@@ -727,10 +712,6 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     }
 
     d = net->deg;
-    for (j = 0; j < d; j++) {
-      x[j] = net->pinX[j];
-      y[j] = net->pinY[j];
-    }
 
     if (reRoute) {
       if (newType) {
@@ -772,16 +753,16 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
         if (cong) {
-          fluteCongest(i, d, x, y, flute_accuracy, coeffV, &rsmt);
+          fluteCongest(i, net->pinX, net->pinY, flute_accuracy, coeffV, &rsmt);
         } else {
-          fluteNormal(i, d, x, y, flute_accuracy, coeffV, &rsmt);
+          fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, &rsmt);
         }
         if (d > 3) {
           numShift += edgeShiftNew(&rsmt, i);
         }
       } else {
         // call FLUTE to generate RSMT for each net
-        fluteNormal(i, d, x, y, flute_accuracy, coeffV, &rsmt);
+        fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, &rsmt);
       }
     }
 
