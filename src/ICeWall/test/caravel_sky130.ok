@@ -142,8 +142,8 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/lef/
 [INFO ODB-0134] Finished DEF file: caravel_sky130/chip_io.def
 Loading library data
 Extracting footprint
-[WARNING PAD-0046] No power nets found in design
-[WARNING PAD-0047] No ground nets found in design
+[WARNING PAD-0046] No power nets found in design.
+[WARNING PAD-0047] No ground nets found in design.
 No differences found.
 Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
@@ -155,27 +155,12 @@ Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
-[INFO IFP-0001] Added 1899 rows of 7776 sites.
-[WARNING PAD-0050] Multiple nets found on VSSA in pad ring
-[INFO PAD-0053] Creating pad ring net: VSSA
-[WARNING PAD-0018] No term VSSA found on brk_vdda_0
-[WARNING PAD-0018] No term VSSA found on brk_vdda_1
-[WARNING PAD-0018] No term VSSA found on brk_vdda_2
-[WARNING PAD-0050] Multiple nets found on VCCD in pad ring
-[INFO PAD-0053] Creating pad ring net: VCCD
-[WARNING PAD-0018] No term VCCD found on brk_vccd_0
-[WARNING PAD-0018] No term VCCD found on brk_vccd_1
-[WARNING PAD-0018] No term VCCD found on brk_vccd_2
-[WARNING PAD-0050] Multiple nets found on VSSD in pad ring
-[INFO PAD-0053] Creating pad ring net: VSSD
-[WARNING PAD-0018] No term VSSD found on brk_vccd_0
-[WARNING PAD-0018] No term VSSD found on brk_vccd_1
-[WARNING PAD-0018] No term VSSD found on brk_vccd_2
-[WARNING PAD-0050] Multiple nets found on VDDA in pad ring
-[INFO PAD-0053] Creating pad ring net: VDDA
-[WARNING PAD-0018] No term VDDA found on brk_vdda_0
-[WARNING PAD-0018] No term VDDA found on brk_vdda_1
-[WARNING PAD-0018] No term VDDA found on brk_vdda_2
-Differences found at line 7.
-ROW ROW_1898 unithd 5520 5173440 N DO 7776 BY 1 STEP 460 0 ;
-ROW ROW_1898 unithd 5520 5173440 FS DO 7776 BY 1 STEP 460 0 ;
+[INFO IFP-0001] Added 1898 rows of 7775 sites.
+[WARNING PAD-0050] Multiple nets found on VSSA in padring.
+[WARNING PAD-0050] Multiple nets found on VCCD in padring.
+[WARNING PAD-0050] Multiple nets found on VCCD in padring.
+[WARNING PAD-0050] Multiple nets found on VSSD in padring.
+[WARNING PAD-0050] Multiple nets found on VDDA in padring.
+[WARNING PAD-0050] Multiple nets found on VDDA in padring.
+[INFO PAD-0053] Creating padring nets: VSSA, VCCD_0, VCCD_2, VSSD, VDDA_0, VDDA_2.
+No differences found.

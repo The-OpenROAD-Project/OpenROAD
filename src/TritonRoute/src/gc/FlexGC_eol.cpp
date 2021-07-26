@@ -55,7 +55,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
       eolWidth = con->getExtensionTable().getMaxRow();
     } break;
     default:
-      logger_->error(DRT, 269, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 269, "Unsupported endofline spacing rule.");
       break;
   }
   // skip if >= eolWidth
@@ -229,7 +229,7 @@ void FlexGCWorker::Impl::
                      ->getParSpace();
     } break;
     default:
-      logger_->error(DRT, 270, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 270, "Unsupported endofline spacing rule.");
       break;
   }
 
@@ -399,7 +399,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
       break;
     }
     default:
-      logger_->error(DRT, 271, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 271, "Unsupported endofline spacing rule.");
       break;
   }
 
@@ -438,7 +438,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       eolSpace = con->getEolSpace();
     } break;
     default:
-      logger_->error(DRT, 226, "Unsupported endofline spacing rule");
+      logger_->error(DRT, 226, "Unsupported endofline spacing rule.");
       break;
   }
 
@@ -667,6 +667,67 @@ void FlexGCWorker::Impl::getEolKeepOutQueryBox(
   gtl::xh(queryRect, queryBox.max_corner().x());
   gtl::yh(queryRect, queryBox.max_corner().y());
 }
+
+void FlexGCWorker::Impl::getEolKeepOutExceptWithinRects(
+    gcSegment* edge,
+    frLef58EolKeepOutConstraint* constraint,
+    gtl::rectangle_data<frCoord>& rect1,
+    gtl::rectangle_data<frCoord>& rect2)
+{
+  frCoord forward = constraint->getForwardExt();
+  frCoord backward = constraint->getBackwardExt();
+  frCoord withinLow = constraint->getWithinLow();
+  frCoord withinHigh = constraint->getWithinHigh();
+  switch (edge->getDir()) {
+    case frDirEnum::S:
+      gtl::xl(rect1, edge->low().x() - forward);
+      gtl::yl(rect1, edge->low().y() + withinLow);
+      gtl::xh(rect1, edge->low().x() + backward);
+      gtl::yh(rect1, edge->low().y() + withinHigh);
+
+      gtl::xl(rect2, edge->high().x() - forward);
+      gtl::yl(rect2, edge->high().y() - withinHigh);
+      gtl::xh(rect2, edge->high().x() + backward);
+      gtl::yh(rect2, edge->high().y() - withinLow);
+      break;
+    case frDirEnum::N:
+      gtl::xl(rect1, edge->low().x() - backward);
+      gtl::yl(rect1, edge->low().y() - withinHigh);
+      gtl::xh(rect1, edge->low().x() + forward);
+      gtl::yh(rect1, edge->low().y() - withinLow);
+
+      gtl::xl(rect2, edge->high().x() - backward);
+      gtl::yl(rect2, edge->high().y() + withinLow);
+      gtl::xh(rect2, edge->high().x() + forward);
+      gtl::yh(rect2, edge->high().y() + withinHigh);
+      break;
+    case frDirEnum::E:
+      gtl::xl(rect1, edge->low().x() - withinHigh);
+      gtl::yl(rect1, edge->low().y() - forward);
+      gtl::xh(rect1, edge->low().x() - withinLow);
+      gtl::yh(rect1, edge->low().y() + backward);
+
+      gtl::xl(rect2, edge->high().x() + withinLow);
+      gtl::yl(rect2, edge->high().y() - forward);
+      gtl::xh(rect2, edge->high().x() + withinHigh);
+      gtl::yh(rect2, edge->high().y() + backward);
+      break;
+    case frDirEnum::W:
+      gtl::xl(rect1, edge->low().x() + withinLow);
+      gtl::yl(rect1, edge->low().y() - backward);
+      gtl::xh(rect1, edge->low().x() + withinHigh);
+      gtl::yh(rect1, edge->low().y() + forward);
+
+      gtl::xl(rect2, edge->high().x() - withinHigh);
+      gtl::yl(rect2, edge->high().y() - backward);
+      gtl::xh(rect2, edge->high().x() - withinLow);
+      gtl::yh(rect2, edge->high().y() + forward);
+      break;
+    default:
+      break;
+  }
+}
+
 void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
     gcSegment* edge,
     gcRect* rect,
@@ -694,6 +755,18 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
       rect->setRect(
           gtl::xh(*rect), gtl::yh(*rect), gtl::xh(*rect), gtl::yh(*rect));
     } else
+      return;
+  }
+  /*
+  If EXCEPTWITHIN, we get the side rectangles according to the rule.
+  If the metal rectangle intersects with any of the side rects, it is not a
+  violation.
+  */
+  if (constraint->isExceptWithin()) {
+    gtl::rectangle_data<frCoord> rect1, rect2;
+    getEolKeepOutExceptWithinRects(edge, constraint, rect1, rect2);
+    if (gtl::intersects(rect1, *rect, false)
+        || gtl::intersects(rect2, *rect, false))
       return;
   }
   // mark violation
@@ -746,7 +819,6 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
   box_t queryBox;
   gtl::rectangle_data<frCoord> queryRect;
   getEolKeepOutQueryBox(edge, constraint, queryBox, queryRect);
-
   if (constraint->isCornerOnly()) {
     // For corners, we query polygon edges to make sure we catch concave corners
     vector<pair<segment_t, gcSegment*>> results;

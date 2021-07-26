@@ -44,7 +44,7 @@
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
-#include "pdr/pdrev.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
 
@@ -75,7 +75,8 @@ SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
                 bool find_left_rights,
                 dbNetwork *network,
-                Logger *logger)
+                Logger *logger,
+                SteinerTreeBuilder *stt_builder)
 {
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
@@ -114,25 +115,12 @@ makeSteinerTree(const Pin *drvr_pin,
       tree->locAddPin(loc, pin);
     }
     if (is_placed) {
-      stt::Tree ftree;
-      bool use_pd = false;
-      bool use_pdrevII = false;
-      float alpha = 0.4;
-      if (use_pd || use_pdrevII) {
-        std::vector<int> x1(x, x + pin_count);
-        std::vector<int> y1(y, y + pin_count);
-        float alpha = 0.4;
-        if (use_pd)
-          ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
-        else
-          ftree = pdr::primDijkstraRevII(x1, y1, drvr_idx, alpha, logger);
-      }
-      else {
-        int flute_accuracy = 3;
-        ftree = stt::flute(pin_count, x, y, flute_accuracy);
-      }
+      std::vector<int> x1(x, x + pin_count);
+      std::vector<int> y1(y, y + pin_count);
+      stt::Tree ftree = stt_builder->makeSteinerTree(network->staToDb(net), x1, y1, drvr_idx);
+      
       if (debug->check("steiner", 3))
-        stt::printtree(ftree);
+        ftree.printTree(logger);
       tree->setTree(ftree, network);
       if (find_left_rights)
         tree->findLeftRights(network, logger);
@@ -170,7 +158,7 @@ SteinerTree::setTree(stt::Tree tree,
   Point drvr_loc = network->location(drvr_pin_);
   int drvr_x = drvr_loc.getX();
   int drvr_y = drvr_loc.getY();
-  int branch_count = stt::branch_count(tree_);
+  int branch_count = tree_.branchCount();
   for (int i = 0; i < branch_count; i++) {
     stt::Branch &pt1 = tree_.branch[i];
     if (pt1.x == drvr_x
@@ -182,20 +170,14 @@ SteinerTree::setTree(stt::Tree tree,
 }
 
 SteinerTree::SteinerTree(const Pin *drvr_pin) :
-  drvr_pin_(drvr_pin),
-  tree_({0, 0, nullptr})
+  drvr_pin_(drvr_pin)
 {
-}
-
-SteinerTree::~SteinerTree()
-{
-  stt::free_tree(tree_);
 }
 
 int
 SteinerTree::branchCount() const
 {
-  return stt::branch_count(tree_);
+  return tree_.branchCount();
 }
 
 void
@@ -291,7 +273,7 @@ SteinerTree::drvrPt(const Network *network) const
 Point
 SteinerTree::location(SteinerPt pt) const
 {
-  stt::Branch &branch_pt = tree_.branch[pt];
+  stt::Branch branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
 }
 

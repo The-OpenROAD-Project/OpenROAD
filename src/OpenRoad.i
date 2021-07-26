@@ -118,6 +118,13 @@ getResizer()
   return openroad->getResizer();
 }
 
+rmp::Restructure *
+getRestructure()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getRestructure();
+}
+
 cts::TritonCTS *
 getTritonCts()
 {
@@ -130,6 +137,13 @@ getMacroPlacer()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getMacroPlacer();
+}
+
+mpl::MacroPlacer2 *
+getMacroPlacer2()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getMacroPlacer2();
 }
 
 gpl::Replace*
@@ -161,10 +175,10 @@ getPDNSim()
 }
 
 grt::GlobalRouter*
-getFastRoute()
+getGlobalRouter()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getFastRoute();
+  return openroad->getGlobalRouter();
 }
 
 ppl::IOPlacer*
@@ -186,6 +200,13 @@ getPdnGen()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getPdnGen();
+}
+
+stt::SteinerTreeBuilder*
+getSteinerTreeBuilder()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getSteinerTreeBuilder();
 }
 
 } // namespace ord

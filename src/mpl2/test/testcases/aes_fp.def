@@ -1,0 +1,1687 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN aes_cipher_top ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 304010 304010 ) ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 3800 2800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 3800 5600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_2 FreePDK45_38x28_10R_NP_162NW_34O 3800 8400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_3 FreePDK45_38x28_10R_NP_162NW_34O 3800 11200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_4 FreePDK45_38x28_10R_NP_162NW_34O 3800 14000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_5 FreePDK45_38x28_10R_NP_162NW_34O 3800 16800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_6 FreePDK45_38x28_10R_NP_162NW_34O 3800 19600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_7 FreePDK45_38x28_10R_NP_162NW_34O 3800 22400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_8 FreePDK45_38x28_10R_NP_162NW_34O 3800 25200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_9 FreePDK45_38x28_10R_NP_162NW_34O 3800 28000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_10 FreePDK45_38x28_10R_NP_162NW_34O 3800 30800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_11 FreePDK45_38x28_10R_NP_162NW_34O 3800 33600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_12 FreePDK45_38x28_10R_NP_162NW_34O 3800 36400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_13 FreePDK45_38x28_10R_NP_162NW_34O 3800 39200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_14 FreePDK45_38x28_10R_NP_162NW_34O 3800 42000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_15 FreePDK45_38x28_10R_NP_162NW_34O 3800 44800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_16 FreePDK45_38x28_10R_NP_162NW_34O 3800 47600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_17 FreePDK45_38x28_10R_NP_162NW_34O 3800 50400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_18 FreePDK45_38x28_10R_NP_162NW_34O 3800 53200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_19 FreePDK45_38x28_10R_NP_162NW_34O 3800 56000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_20 FreePDK45_38x28_10R_NP_162NW_34O 3800 58800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_21 FreePDK45_38x28_10R_NP_162NW_34O 3800 61600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_22 FreePDK45_38x28_10R_NP_162NW_34O 3800 64400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_23 FreePDK45_38x28_10R_NP_162NW_34O 3800 67200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_24 FreePDK45_38x28_10R_NP_162NW_34O 3800 70000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_25 FreePDK45_38x28_10R_NP_162NW_34O 3800 72800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_26 FreePDK45_38x28_10R_NP_162NW_34O 3800 75600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_27 FreePDK45_38x28_10R_NP_162NW_34O 3800 78400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_28 FreePDK45_38x28_10R_NP_162NW_34O 3800 81200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_29 FreePDK45_38x28_10R_NP_162NW_34O 3800 84000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_30 FreePDK45_38x28_10R_NP_162NW_34O 3800 86800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_31 FreePDK45_38x28_10R_NP_162NW_34O 3800 89600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_32 FreePDK45_38x28_10R_NP_162NW_34O 3800 92400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_33 FreePDK45_38x28_10R_NP_162NW_34O 3800 95200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_34 FreePDK45_38x28_10R_NP_162NW_34O 3800 98000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_35 FreePDK45_38x28_10R_NP_162NW_34O 3800 100800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_36 FreePDK45_38x28_10R_NP_162NW_34O 3800 103600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_37 FreePDK45_38x28_10R_NP_162NW_34O 3800 106400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_38 FreePDK45_38x28_10R_NP_162NW_34O 3800 109200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_39 FreePDK45_38x28_10R_NP_162NW_34O 3800 112000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_40 FreePDK45_38x28_10R_NP_162NW_34O 3800 114800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_41 FreePDK45_38x28_10R_NP_162NW_34O 3800 117600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_42 FreePDK45_38x28_10R_NP_162NW_34O 3800 120400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_43 FreePDK45_38x28_10R_NP_162NW_34O 3800 123200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_44 FreePDK45_38x28_10R_NP_162NW_34O 3800 126000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_45 FreePDK45_38x28_10R_NP_162NW_34O 3800 128800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_46 FreePDK45_38x28_10R_NP_162NW_34O 3800 131600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_47 FreePDK45_38x28_10R_NP_162NW_34O 3800 134400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_48 FreePDK45_38x28_10R_NP_162NW_34O 3800 137200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_49 FreePDK45_38x28_10R_NP_162NW_34O 3800 140000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_50 FreePDK45_38x28_10R_NP_162NW_34O 3800 142800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_51 FreePDK45_38x28_10R_NP_162NW_34O 3800 145600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_52 FreePDK45_38x28_10R_NP_162NW_34O 3800 148400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_53 FreePDK45_38x28_10R_NP_162NW_34O 3800 151200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_54 FreePDK45_38x28_10R_NP_162NW_34O 3800 154000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_55 FreePDK45_38x28_10R_NP_162NW_34O 3800 156800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_56 FreePDK45_38x28_10R_NP_162NW_34O 3800 159600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_57 FreePDK45_38x28_10R_NP_162NW_34O 3800 162400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_58 FreePDK45_38x28_10R_NP_162NW_34O 3800 165200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_59 FreePDK45_38x28_10R_NP_162NW_34O 3800 168000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_60 FreePDK45_38x28_10R_NP_162NW_34O 3800 170800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_61 FreePDK45_38x28_10R_NP_162NW_34O 3800 173600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_62 FreePDK45_38x28_10R_NP_162NW_34O 3800 176400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_63 FreePDK45_38x28_10R_NP_162NW_34O 3800 179200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_64 FreePDK45_38x28_10R_NP_162NW_34O 3800 182000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_65 FreePDK45_38x28_10R_NP_162NW_34O 3800 184800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_66 FreePDK45_38x28_10R_NP_162NW_34O 3800 187600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_67 FreePDK45_38x28_10R_NP_162NW_34O 3800 190400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_68 FreePDK45_38x28_10R_NP_162NW_34O 3800 193200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_69 FreePDK45_38x28_10R_NP_162NW_34O 3800 196000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_70 FreePDK45_38x28_10R_NP_162NW_34O 3800 198800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_71 FreePDK45_38x28_10R_NP_162NW_34O 3800 201600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_72 FreePDK45_38x28_10R_NP_162NW_34O 3800 204400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_73 FreePDK45_38x28_10R_NP_162NW_34O 3800 207200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_74 FreePDK45_38x28_10R_NP_162NW_34O 3800 210000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_75 FreePDK45_38x28_10R_NP_162NW_34O 3800 212800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_76 FreePDK45_38x28_10R_NP_162NW_34O 3800 215600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_77 FreePDK45_38x28_10R_NP_162NW_34O 3800 218400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_78 FreePDK45_38x28_10R_NP_162NW_34O 3800 221200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_79 FreePDK45_38x28_10R_NP_162NW_34O 3800 224000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_80 FreePDK45_38x28_10R_NP_162NW_34O 3800 226800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_81 FreePDK45_38x28_10R_NP_162NW_34O 3800 229600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_82 FreePDK45_38x28_10R_NP_162NW_34O 3800 232400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_83 FreePDK45_38x28_10R_NP_162NW_34O 3800 235200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_84 FreePDK45_38x28_10R_NP_162NW_34O 3800 238000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_85 FreePDK45_38x28_10R_NP_162NW_34O 3800 240800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_86 FreePDK45_38x28_10R_NP_162NW_34O 3800 243600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_87 FreePDK45_38x28_10R_NP_162NW_34O 3800 246400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_88 FreePDK45_38x28_10R_NP_162NW_34O 3800 249200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_89 FreePDK45_38x28_10R_NP_162NW_34O 3800 252000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_90 FreePDK45_38x28_10R_NP_162NW_34O 3800 254800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_91 FreePDK45_38x28_10R_NP_162NW_34O 3800 257600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_92 FreePDK45_38x28_10R_NP_162NW_34O 3800 260400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_93 FreePDK45_38x28_10R_NP_162NW_34O 3800 263200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_94 FreePDK45_38x28_10R_NP_162NW_34O 3800 266000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_95 FreePDK45_38x28_10R_NP_162NW_34O 3800 268800 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_96 FreePDK45_38x28_10R_NP_162NW_34O 3800 271600 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_97 FreePDK45_38x28_10R_NP_162NW_34O 3800 274400 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_98 FreePDK45_38x28_10R_NP_162NW_34O 3800 277200 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_99 FreePDK45_38x28_10R_NP_162NW_34O 3800 280000 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_100 FreePDK45_38x28_10R_NP_162NW_34O 3800 282800 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_101 FreePDK45_38x28_10R_NP_162NW_34O 3800 285600 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_102 FreePDK45_38x28_10R_NP_162NW_34O 3800 288400 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_103 FreePDK45_38x28_10R_NP_162NW_34O 3800 291200 FS DO 779 BY 1 STEP 380 0 ;
+ROW ROW_104 FreePDK45_38x28_10R_NP_162NW_34O 3800 294000 N DO 779 BY 1 STEP 380 0 ;
+ROW ROW_105 FreePDK45_38x28_10R_NP_162NW_34O 3800 296800 FS DO 779 BY 1 STEP 380 0 ;
+TRACKS X 190 DO 800 STEP 380 LAYER metal1 ;
+TRACKS Y 140 DO 1086 STEP 280 LAYER metal1 ;
+TRACKS X 190 DO 800 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 1086 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 800 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 1086 STEP 280 LAYER metal3 ;
+TRACKS X 190 DO 543 STEP 560 LAYER metal4 ;
+TRACKS Y 140 DO 543 STEP 560 LAYER metal4 ;
+TRACKS X 190 DO 543 STEP 560 LAYER metal5 ;
+TRACKS Y 140 DO 543 STEP 560 LAYER metal5 ;
+TRACKS X 190 DO 543 STEP 560 LAYER metal6 ;
+TRACKS Y 140 DO 543 STEP 560 LAYER metal6 ;
+TRACKS X 190 DO 190 STEP 1600 LAYER metal7 ;
+TRACKS Y 140 DO 190 STEP 1600 LAYER metal7 ;
+TRACKS X 190 DO 190 STEP 1600 LAYER metal8 ;
+TRACKS Y 140 DO 190 STEP 1600 LAYER metal8 ;
+TRACKS X 190 DO 95 STEP 3200 LAYER metal9 ;
+TRACKS Y 140 DO 95 STEP 3200 LAYER metal9 ;
+TRACKS X 190 DO 95 STEP 3200 LAYER metal10 ;
+TRACKS Y 140 DO 95 STEP 3200 LAYER metal10 ;
+PINS 388 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 191100 ) N ;
+    - done + NET done + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 116060 ) N ;
+    - key_0_ + NET key_0_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 190540 ) N ;
+    - key_100_ + NET key_100_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 189980 ) N ;
+    - key_101_ + NET key_101_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 189420 ) N ;
+    - key_102_ + NET key_102_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 188860 ) N ;
+    - key_103_ + NET key_103_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 188300 ) N ;
+    - key_104_ + NET key_104_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 187740 ) N ;
+    - key_105_ + NET key_105_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 187180 ) N ;
+    - key_106_ + NET key_106_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 186620 ) N ;
+    - key_107_ + NET key_107_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 186060 ) N ;
+    - key_108_ + NET key_108_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 185500 ) N ;
+    - key_109_ + NET key_109_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 184940 ) N ;
+    - key_10_ + NET key_10_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 184380 ) N ;
+    - key_110_ + NET key_110_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 183820 ) N ;
+    - key_111_ + NET key_111_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 183260 ) N ;
+    - key_112_ + NET key_112_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 182700 ) N ;
+    - key_113_ + NET key_113_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 182140 ) N ;
+    - key_114_ + NET key_114_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 181580 ) N ;
+    - key_115_ + NET key_115_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 181020 ) N ;
+    - key_116_ + NET key_116_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 180460 ) N ;
+    - key_117_ + NET key_117_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 179900 ) N ;
+    - key_118_ + NET key_118_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 179340 ) N ;
+    - key_119_ + NET key_119_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 178780 ) N ;
+    - key_11_ + NET key_11_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 178220 ) N ;
+    - key_120_ + NET key_120_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 177660 ) N ;
+    - key_121_ + NET key_121_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 177100 ) N ;
+    - key_122_ + NET key_122_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 176540 ) N ;
+    - key_123_ + NET key_123_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 175980 ) N ;
+    - key_124_ + NET key_124_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 175420 ) N ;
+    - key_125_ + NET key_125_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 174860 ) N ;
+    - key_126_ + NET key_126_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 174300 ) N ;
+    - key_127_ + NET key_127_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 173740 ) N ;
+    - key_12_ + NET key_12_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 173180 ) N ;
+    - key_13_ + NET key_13_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 172620 ) N ;
+    - key_14_ + NET key_14_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 172060 ) N ;
+    - key_15_ + NET key_15_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 171500 ) N ;
+    - key_16_ + NET key_16_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 170940 ) N ;
+    - key_17_ + NET key_17_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 170380 ) N ;
+    - key_18_ + NET key_18_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 169820 ) N ;
+    - key_19_ + NET key_19_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 169260 ) N ;
+    - key_1_ + NET key_1_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 168700 ) N ;
+    - key_20_ + NET key_20_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 168140 ) N ;
+    - key_21_ + NET key_21_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 167580 ) N ;
+    - key_22_ + NET key_22_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 167020 ) N ;
+    - key_23_ + NET key_23_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 166460 ) N ;
+    - key_24_ + NET key_24_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 165900 ) N ;
+    - key_25_ + NET key_25_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 165340 ) N ;
+    - key_26_ + NET key_26_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 164780 ) N ;
+    - key_27_ + NET key_27_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 164220 ) N ;
+    - key_28_ + NET key_28_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 163660 ) N ;
+    - key_29_ + NET key_29_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 163100 ) N ;
+    - key_2_ + NET key_2_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 162540 ) N ;
+    - key_30_ + NET key_30_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 161980 ) N ;
+    - key_31_ + NET key_31_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 161420 ) N ;
+    - key_32_ + NET key_32_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 160860 ) N ;
+    - key_33_ + NET key_33_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 160300 ) N ;
+    - key_34_ + NET key_34_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 159740 ) N ;
+    - key_35_ + NET key_35_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 159180 ) N ;
+    - key_36_ + NET key_36_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 158620 ) N ;
+    - key_37_ + NET key_37_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 158060 ) N ;
+    - key_38_ + NET key_38_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 157500 ) N ;
+    - key_39_ + NET key_39_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 156940 ) N ;
+    - key_3_ + NET key_3_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 156380 ) N ;
+    - key_40_ + NET key_40_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 155820 ) N ;
+    - key_41_ + NET key_41_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 155260 ) N ;
+    - key_42_ + NET key_42_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 154700 ) N ;
+    - key_43_ + NET key_43_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 154140 ) N ;
+    - key_44_ + NET key_44_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 153580 ) N ;
+    - key_45_ + NET key_45_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 153020 ) N ;
+    - key_46_ + NET key_46_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 152460 ) N ;
+    - key_47_ + NET key_47_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 151900 ) N ;
+    - key_48_ + NET key_48_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 151340 ) N ;
+    - key_49_ + NET key_49_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 150780 ) N ;
+    - key_4_ + NET key_4_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 150220 ) N ;
+    - key_50_ + NET key_50_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 149660 ) N ;
+    - key_51_ + NET key_51_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 149100 ) N ;
+    - key_52_ + NET key_52_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 148540 ) N ;
+    - key_53_ + NET key_53_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 147980 ) N ;
+    - key_54_ + NET key_54_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 147420 ) N ;
+    - key_55_ + NET key_55_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 146860 ) N ;
+    - key_56_ + NET key_56_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 146300 ) N ;
+    - key_57_ + NET key_57_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 145740 ) N ;
+    - key_58_ + NET key_58_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 145180 ) N ;
+    - key_59_ + NET key_59_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 144620 ) N ;
+    - key_5_ + NET key_5_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 144060 ) N ;
+    - key_60_ + NET key_60_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 143500 ) N ;
+    - key_61_ + NET key_61_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 142940 ) N ;
+    - key_62_ + NET key_62_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 142380 ) N ;
+    - key_63_ + NET key_63_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 141820 ) N ;
+    - key_64_ + NET key_64_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 141260 ) N ;
+    - key_65_ + NET key_65_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 140700 ) N ;
+    - key_66_ + NET key_66_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 140140 ) N ;
+    - key_67_ + NET key_67_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 139580 ) N ;
+    - key_68_ + NET key_68_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 139020 ) N ;
+    - key_69_ + NET key_69_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 138460 ) N ;
+    - key_6_ + NET key_6_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 137900 ) N ;
+    - key_70_ + NET key_70_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 137340 ) N ;
+    - key_71_ + NET key_71_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 136780 ) N ;
+    - key_72_ + NET key_72_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 136220 ) N ;
+    - key_73_ + NET key_73_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 135660 ) N ;
+    - key_74_ + NET key_74_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 135100 ) N ;
+    - key_75_ + NET key_75_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 134540 ) N ;
+    - key_76_ + NET key_76_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 133980 ) N ;
+    - key_77_ + NET key_77_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 133420 ) N ;
+    - key_78_ + NET key_78_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 132860 ) N ;
+    - key_79_ + NET key_79_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 132300 ) N ;
+    - key_7_ + NET key_7_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 131740 ) N ;
+    - key_80_ + NET key_80_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 131180 ) N ;
+    - key_81_ + NET key_81_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 130620 ) N ;
+    - key_82_ + NET key_82_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 130060 ) N ;
+    - key_83_ + NET key_83_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 129500 ) N ;
+    - key_84_ + NET key_84_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 128940 ) N ;
+    - key_85_ + NET key_85_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 128380 ) N ;
+    - key_86_ + NET key_86_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 127820 ) N ;
+    - key_87_ + NET key_87_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 127260 ) N ;
+    - key_88_ + NET key_88_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 126700 ) N ;
+    - key_89_ + NET key_89_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 126140 ) N ;
+    - key_8_ + NET key_8_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 125580 ) N ;
+    - key_90_ + NET key_90_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 125020 ) N ;
+    - key_91_ + NET key_91_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 124460 ) N ;
+    - key_92_ + NET key_92_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 123900 ) N ;
+    - key_93_ + NET key_93_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 123340 ) N ;
+    - key_94_ + NET key_94_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 122780 ) N ;
+    - key_95_ + NET key_95_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 122220 ) N ;
+    - key_96_ + NET key_96_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 121660 ) N ;
+    - key_97_ + NET key_97_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 121100 ) N ;
+    - key_98_ + NET key_98_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 120540 ) N ;
+    - key_99_ + NET key_99_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 119980 ) N ;
+    - key_9_ + NET key_9_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 119420 ) N ;
+    - ld + NET ld + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 118860 ) N ;
+    - rst + NET rst + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 118300 ) N ;
+    - text_in_0_ + NET text_in_0_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 117740 ) N ;
+    - text_in_100_ + NET text_in_100_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 117180 ) N ;
+    - text_in_101_ + NET text_in_101_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 116620 ) N ;
+    - text_in_102_ + NET text_in_102_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 116060 ) N ;
+    - text_in_103_ + NET text_in_103_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 115500 ) N ;
+    - text_in_104_ + NET text_in_104_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 114940 ) N ;
+    - text_in_105_ + NET text_in_105_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 114380 ) N ;
+    - text_in_106_ + NET text_in_106_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 113820 ) N ;
+    - text_in_107_ + NET text_in_107_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 113260 ) N ;
+    - text_in_108_ + NET text_in_108_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 112700 ) N ;
+    - text_in_109_ + NET text_in_109_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 112140 ) N ;
+    - text_in_10_ + NET text_in_10_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 111580 ) N ;
+    - text_in_110_ + NET text_in_110_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 111020 ) N ;
+    - text_in_111_ + NET text_in_111_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 110460 ) N ;
+    - text_in_112_ + NET text_in_112_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 109900 ) N ;
+    - text_in_113_ + NET text_in_113_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 109340 ) N ;
+    - text_in_114_ + NET text_in_114_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 108780 ) N ;
+    - text_in_115_ + NET text_in_115_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 108220 ) N ;
+    - text_in_116_ + NET text_in_116_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 107660 ) N ;
+    - text_in_117_ + NET text_in_117_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 107100 ) N ;
+    - text_in_118_ + NET text_in_118_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 106540 ) N ;
+    - text_in_119_ + NET text_in_119_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105980 ) N ;
+    - text_in_11_ + NET text_in_11_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105420 ) N ;
+    - text_in_120_ + NET text_in_120_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 104860 ) N ;
+    - text_in_121_ + NET text_in_121_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 104300 ) N ;
+    - text_in_122_ + NET text_in_122_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 103740 ) N ;
+    - text_in_123_ + NET text_in_123_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 103180 ) N ;
+    - text_in_124_ + NET text_in_124_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102620 ) N ;
+    - text_in_125_ + NET text_in_125_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102060 ) N ;
+    - text_in_126_ + NET text_in_126_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 101500 ) N ;
+    - text_in_127_ + NET text_in_127_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100940 ) N ;
+    - text_in_12_ + NET text_in_12_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100380 ) N ;
+    - text_in_13_ + NET text_in_13_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 99820 ) N ;
+    - text_in_14_ + NET text_in_14_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 99260 ) N ;
+    - text_in_15_ + NET text_in_15_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98700 ) N ;
+    - text_in_16_ + NET text_in_16_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98140 ) N ;
+    - text_in_17_ + NET text_in_17_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 97580 ) N ;
+    - text_in_18_ + NET text_in_18_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 97020 ) N ;
+    - text_in_19_ + NET text_in_19_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 96460 ) N ;
+    - text_in_1_ + NET text_in_1_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95900 ) N ;
+    - text_in_20_ + NET text_in_20_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95340 ) N ;
+    - text_in_21_ + NET text_in_21_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 94780 ) N ;
+    - text_in_22_ + NET text_in_22_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 94220 ) N ;
+    - text_in_23_ + NET text_in_23_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93660 ) N ;
+    - text_in_24_ + NET text_in_24_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93100 ) N ;
+    - text_in_25_ + NET text_in_25_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 92540 ) N ;
+    - text_in_26_ + NET text_in_26_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91980 ) N ;
+    - text_in_27_ + NET text_in_27_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91420 ) N ;
+    - text_in_28_ + NET text_in_28_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 90860 ) N ;
+    - text_in_29_ + NET text_in_29_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 90300 ) N ;
+    - text_in_2_ + NET text_in_2_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 89740 ) N ;
+    - text_in_30_ + NET text_in_30_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 89180 ) N ;
+    - text_in_31_ + NET text_in_31_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88620 ) N ;
+    - text_in_32_ + NET text_in_32_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88060 ) N ;
+    - text_in_33_ + NET text_in_33_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 87500 ) N ;
+    - text_in_34_ + NET text_in_34_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86940 ) N ;
+    - text_in_35_ + NET text_in_35_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86380 ) N ;
+    - text_in_36_ + NET text_in_36_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85820 ) N ;
+    - text_in_37_ + NET text_in_37_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85260 ) N ;
+    - text_in_38_ + NET text_in_38_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 84700 ) N ;
+    - text_in_39_ + NET text_in_39_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 84140 ) N ;
+    - text_in_3_ + NET text_in_3_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 83580 ) N ;
+    - text_in_40_ + NET text_in_40_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 83020 ) N ;
+    - text_in_41_ + NET text_in_41_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 82460 ) N ;
+    - text_in_42_ + NET text_in_42_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 81900 ) N ;
+    - text_in_43_ + NET text_in_43_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 81340 ) N ;
+    - text_in_44_ + NET text_in_44_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 80780 ) N ;
+    - text_in_45_ + NET text_in_45_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 80220 ) N ;
+    - text_in_46_ + NET text_in_46_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 79660 ) N ;
+    - text_in_47_ + NET text_in_47_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 224140 ) N ;
+    - text_in_48_ + NET text_in_48_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 191660 ) N ;
+    - text_in_49_ + NET text_in_49_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 192220 ) N ;
+    - text_in_4_ + NET text_in_4_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 192780 ) N ;
+    - text_in_50_ + NET text_in_50_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 193340 ) N ;
+    - text_in_51_ + NET text_in_51_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 193900 ) N ;
+    - text_in_52_ + NET text_in_52_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 194460 ) N ;
+    - text_in_53_ + NET text_in_53_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 195020 ) N ;
+    - text_in_54_ + NET text_in_54_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 195580 ) N ;
+    - text_in_55_ + NET text_in_55_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 196140 ) N ;
+    - text_in_56_ + NET text_in_56_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 196700 ) N ;
+    - text_in_57_ + NET text_in_57_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 197260 ) N ;
+    - text_in_58_ + NET text_in_58_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 197820 ) N ;
+    - text_in_59_ + NET text_in_59_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 198380 ) N ;
+    - text_in_5_ + NET text_in_5_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 198940 ) N ;
+    - text_in_60_ + NET text_in_60_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 199500 ) N ;
+    - text_in_61_ + NET text_in_61_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 200060 ) N ;
+    - text_in_62_ + NET text_in_62_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 200620 ) N ;
+    - text_in_63_ + NET text_in_63_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 201180 ) N ;
+    - text_in_64_ + NET text_in_64_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 201740 ) N ;
+    - text_in_65_ + NET text_in_65_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 202300 ) N ;
+    - text_in_66_ + NET text_in_66_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 202860 ) N ;
+    - text_in_67_ + NET text_in_67_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 203420 ) N ;
+    - text_in_68_ + NET text_in_68_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 203980 ) N ;
+    - text_in_69_ + NET text_in_69_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 204540 ) N ;
+    - text_in_6_ + NET text_in_6_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 205100 ) N ;
+    - text_in_70_ + NET text_in_70_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 205660 ) N ;
+    - text_in_71_ + NET text_in_71_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 206220 ) N ;
+    - text_in_72_ + NET text_in_72_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 206780 ) N ;
+    - text_in_73_ + NET text_in_73_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 207340 ) N ;
+    - text_in_74_ + NET text_in_74_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 207900 ) N ;
+    - text_in_75_ + NET text_in_75_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 208460 ) N ;
+    - text_in_76_ + NET text_in_76_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 209020 ) N ;
+    - text_in_77_ + NET text_in_77_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 209580 ) N ;
+    - text_in_78_ + NET text_in_78_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 210140 ) N ;
+    - text_in_79_ + NET text_in_79_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 210700 ) N ;
+    - text_in_7_ + NET text_in_7_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 211260 ) N ;
+    - text_in_80_ + NET text_in_80_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 211820 ) N ;
+    - text_in_81_ + NET text_in_81_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 212380 ) N ;
+    - text_in_82_ + NET text_in_82_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 212940 ) N ;
+    - text_in_83_ + NET text_in_83_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 213500 ) N ;
+    - text_in_84_ + NET text_in_84_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 214060 ) N ;
+    - text_in_85_ + NET text_in_85_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 214620 ) N ;
+    - text_in_86_ + NET text_in_86_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 215180 ) N ;
+    - text_in_87_ + NET text_in_87_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 215740 ) N ;
+    - text_in_88_ + NET text_in_88_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 216300 ) N ;
+    - text_in_89_ + NET text_in_89_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 216860 ) N ;
+    - text_in_8_ + NET text_in_8_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 217420 ) N ;
+    - text_in_90_ + NET text_in_90_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 217980 ) N ;
+    - text_in_91_ + NET text_in_91_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 218540 ) N ;
+    - text_in_92_ + NET text_in_92_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 219100 ) N ;
+    - text_in_93_ + NET text_in_93_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 219660 ) N ;
+    - text_in_94_ + NET text_in_94_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 220220 ) N ;
+    - text_in_95_ + NET text_in_95_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 220780 ) N ;
+    - text_in_96_ + NET text_in_96_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 221340 ) N ;
+    - text_in_97_ + NET text_in_97_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 221900 ) N ;
+    - text_in_98_ + NET text_in_98_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 222460 ) N ;
+    - text_in_99_ + NET text_in_99_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 223020 ) N ;
+    - text_in_9_ + NET text_in_9_ + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 223580 ) N ;
+    - text_out_0_ + NET text_out_0_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 151900 ) N ;
+    - text_out_100_ + NET text_out_100_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 151340 ) N ;
+    - text_out_101_ + NET text_out_101_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 170380 ) N ;
+    - text_out_102_ + NET text_out_102_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 150780 ) N ;
+    - text_out_103_ + NET text_out_103_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 150220 ) N ;
+    - text_out_104_ + NET text_out_104_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 158060 ) N ;
+    - text_out_105_ + NET text_out_105_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 153020 ) N ;
+    - text_out_106_ + NET text_out_106_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 170940 ) N ;
+    - text_out_107_ + NET text_out_107_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 148540 ) N ;
+    - text_out_108_ + NET text_out_108_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 147980 ) N ;
+    - text_out_109_ + NET text_out_109_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 153580 ) N ;
+    - text_out_10_ + NET text_out_10_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 180460 ) N ;
+    - text_out_110_ + NET text_out_110_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 171500 ) N ;
+    - text_out_111_ + NET text_out_111_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 146300 ) N ;
+    - text_out_112_ + NET text_out_112_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 181020 ) N ;
+    - text_out_113_ + NET text_out_113_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 145740 ) N ;
+    - text_out_114_ + NET text_out_114_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 145180 ) N ;
+    - text_out_115_ + NET text_out_115_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 172060 ) N ;
+    - text_out_116_ + NET text_out_116_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 154700 ) N ;
+    - text_out_117_ + NET text_out_117_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 149100 ) N ;
+    - text_out_118_ + NET text_out_118_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 143500 ) N ;
+    - text_out_119_ + NET text_out_119_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 184940 ) N ;
+    - text_out_11_ + NET text_out_11_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 172620 ) N ;
+    - text_out_120_ + NET text_out_120_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 142380 ) N ;
+    - text_out_121_ + NET text_out_121_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 141820 ) N ;
+    - text_out_122_ + NET text_out_122_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 141260 ) N ;
+    - text_out_123_ + NET text_out_123_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 155820 ) N ;
+    - text_out_124_ + NET text_out_124_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 173180 ) N ;
+    - text_out_125_ + NET text_out_125_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 140700 ) N ;
+    - text_out_126_ + NET text_out_126_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 186620 ) N ;
+    - text_out_127_ + NET text_out_127_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 156380 ) N ;
+    - text_out_12_ + NET text_out_12_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 139020 ) N ;
+    - text_out_13_ + NET text_out_13_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 173740 ) N ;
+    - text_out_14_ + NET text_out_14_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 181580 ) N ;
+    - text_out_15_ + NET text_out_15_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 156940 ) N ;
+    - text_out_16_ + NET text_out_16_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 137340 ) N ;
+    - text_out_17_ + NET text_out_17_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 175980 ) N ;
+    - text_out_18_ + NET text_out_18_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 174300 ) N ;
+    - text_out_19_ + NET text_out_19_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 157500 ) N ;
+    - text_out_1_ + NET text_out_1_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 135660 ) N ;
+    - text_out_20_ + NET text_out_20_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 135100 ) N ;
+    - text_out_21_ + NET text_out_21_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 134540 ) N ;
+    - text_out_22_ + NET text_out_22_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 174860 ) N ;
+    - text_out_23_ + NET text_out_23_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 187740 ) N ;
+    - text_out_24_ + NET text_out_24_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 133420 ) N ;
+    - text_out_25_ + NET text_out_25_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 137900 ) N ;
+    - text_out_26_ + NET text_out_26_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 158620 ) N ;
+    - text_out_27_ + NET text_out_27_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 132300 ) N ;
+    - text_out_28_ + NET text_out_28_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 175420 ) N ;
+    - text_out_29_ + NET text_out_29_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 182140 ) N ;
+    - text_out_2_ + NET text_out_2_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 159180 ) N ;
+    - text_out_30_ + NET text_out_30_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 130620 ) N ;
+    - text_out_31_ + NET text_out_31_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 142940 ) N ;
+    - text_out_32_ + NET text_out_32_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 185500 ) N ;
+    - text_out_33_ + NET text_out_33_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 159740 ) N ;
+    - text_out_34_ + NET text_out_34_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 128940 ) N ;
+    - text_out_35_ + NET text_out_35_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 128380 ) N ;
+    - text_out_36_ + NET text_out_36_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 147420 ) N ;
+    - text_out_37_ + NET text_out_37_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 160300 ) N ;
+    - text_out_38_ + NET text_out_38_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 131740 ) N ;
+    - text_out_39_ + NET text_out_39_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 129500 ) N ;
+    - text_out_3_ + NET text_out_3_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 126700 ) N ;
+    - text_out_40_ + NET text_out_40_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 160860 ) N ;
+    - text_out_41_ + NET text_out_41_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 182700 ) N ;
+    - text_out_42_ + NET text_out_42_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 127820 ) N ;
+    - text_out_43_ + NET text_out_43_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 176540 ) N ;
+    - text_out_44_ + NET text_out_44_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 161420 ) N ;
+    - text_out_45_ + NET text_out_45_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 125580 ) N ;
+    - text_out_46_ + NET text_out_46_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 136220 ) N ;
+    - text_out_47_ + NET text_out_47_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 132860 ) N ;
+    - text_out_48_ + NET text_out_48_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 161980 ) N ;
+    - text_out_49_ + NET text_out_49_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 138460 ) N ;
+    - text_out_4_ + NET text_out_4_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 177100 ) N ;
+    - text_out_50_ + NET text_out_50_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 154140 ) N ;
+    - text_out_51_ + NET text_out_51_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 183260 ) N ;
+    - text_out_52_ + NET text_out_52_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 124460 ) N ;
+    - text_out_53_ + NET text_out_53_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 123900 ) N ;
+    - text_out_54_ + NET text_out_54_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 144620 ) N ;
+    - text_out_55_ + NET text_out_55_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 163100 ) N ;
+    - text_out_56_ + NET text_out_56_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 123340 ) N ;
+    - text_out_57_ + NET text_out_57_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 146860 ) N ;
+    - text_out_58_ + NET text_out_58_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 122780 ) N ;
+    - text_out_59_ + NET text_out_59_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 163660 ) N ;
+    - text_out_5_ + NET text_out_5_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 177660 ) N ;
+    - text_out_60_ + NET text_out_60_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 122220 ) N ;
+    - text_out_61_ + NET text_out_61_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 121660 ) N ;
+    - text_out_62_ + NET text_out_62_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 164220 ) N ;
+    - text_out_63_ + NET text_out_63_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 121100 ) N ;
+    - text_out_64_ + NET text_out_64_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 152460 ) N ;
+    - text_out_65_ + NET text_out_65_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 120540 ) N ;
+    - text_out_66_ + NET text_out_66_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 164780 ) N ;
+    - text_out_67_ + NET text_out_67_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 139580 ) N ;
+    - text_out_68_ + NET text_out_68_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 169260 ) N ;
+    - text_out_69_ + NET text_out_69_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 131180 ) N ;
+    - text_out_6_ + NET text_out_6_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 165340 ) N ;
+    - text_out_70_ + NET text_out_70_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 178220 ) N ;
+    - text_out_71_ + NET text_out_71_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 183820 ) N ;
+    - text_out_72_ + NET text_out_72_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 119420 ) N ;
+    - text_out_73_ + NET text_out_73_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 165900 ) N ;
+    - text_out_74_ + NET text_out_74_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 186060 ) N ;
+    - text_out_75_ + NET text_out_75_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 125020 ) N ;
+    - text_out_76_ + NET text_out_76_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 162540 ) N ;
+    - text_out_77_ + NET text_out_77_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 166460 ) N ;
+    - text_out_78_ + NET text_out_78_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 130060 ) N ;
+    - text_out_79_ + NET text_out_79_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 178780 ) N ;
+    - text_out_7_ + NET text_out_7_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 118860 ) N ;
+    - text_out_80_ + NET text_out_80_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 167020 ) N ;
+    - text_out_81_ + NET text_out_81_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 169820 ) N ;
+    - text_out_82_ + NET text_out_82_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 117180 ) N ;
+    - text_out_83_ + NET text_out_83_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 127260 ) N ;
+    - text_out_84_ + NET text_out_84_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 167580 ) N ;
+    - text_out_85_ + NET text_out_85_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 155260 ) N ;
+    - text_out_86_ + NET text_out_86_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 118300 ) N ;
+    - text_out_87_ + NET text_out_87_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 149660 ) N ;
+    - text_out_88_ + NET text_out_88_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 168140 ) N ;
+    - text_out_89_ + NET text_out_89_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 116620 ) N ;
+    - text_out_8_ + NET text_out_8_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 179340 ) N ;
+    - text_out_90_ + NET text_out_90_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 119980 ) N ;
+    - text_out_91_ + NET text_out_91_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 168700 ) N ;
+    - text_out_92_ + NET text_out_92_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 136780 ) N ;
+    - text_out_93_ + NET text_out_93_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 187180 ) N ;
+    - text_out_94_ + NET text_out_94_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 144060 ) N ;
+    - text_out_95_ + NET text_out_95_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 184380 ) N ;
+    - text_out_96_ + NET text_out_96_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 133980 ) N ;
+    - text_out_97_ + NET text_out_97_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 126140 ) N ;
+    - text_out_98_ + NET text_out_98_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 117740 ) N ;
+    - text_out_99_ + NET text_out_99_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 179900 ) N ;
+    - text_out_9_ + NET text_out_9_ + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 303940 140140 ) N ;
+END PINS
+END DESIGN

@@ -66,6 +66,16 @@ void lefTechLayerEolKeepOutRuleParser::setClass(
   rule->setClassName(val);
   rule->setClassValid(true);
 }
+
+void lefTechLayerEolKeepOutRuleParser::setExceptWithin(
+    const boost::fusion::vector<double, double>& params,
+    odb::dbTechLayerEolKeepOutRule* rule)
+{
+  rule->setExceptWithin(true);
+  rule->setWithinLow(lefin_->dbdist(at_c<0>(params)));
+  rule->setWithinHigh(lefin_->dbdist(at_c<1>(params)));
+}
+
 void lefTechLayerEolKeepOutRuleParser::setInt(
     double val,
     odb::dbTechLayerEolKeepOutRule* rule,
@@ -80,6 +90,9 @@ bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
   _string %= lexeme[+(char_ - ' ')];
   odb::dbTechLayerEolKeepOutRule* rule
       = odb::dbTechLayerEolKeepOutRule::create(layer);
+  qi::rule<std::string::iterator, space_type> EXCEPTWITHIN
+      = (lit("EXCEPTWITHIN") >> double_ >> double_)[boost::bind(
+          &lefTechLayerEolKeepOutRuleParser::setExceptWithin, this, _1, rule)];
   qi::rule<std::string::iterator, space_type> CLASS
       = (lit("CLASS")
          >> _string[boost::bind(&lefTechLayerEolKeepOutRuleParser::setClass,
@@ -110,15 +123,16 @@ bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
                                 _1,
                                 rule,
                                 &odb::dbTechLayerEolKeepOutRule::setForwardExt)]
-         >> -CLASS 
-         >> -lit("CORNERONLY")[boost::bind(&odb::dbTechLayerEolKeepOutRule::setCornerOnly,
-                                            rule,
-                                            true)]
+         >> -EXCEPTWITHIN >> -CLASS >> -lit("CORNERONLY")[boost::bind(
+             &odb::dbTechLayerEolKeepOutRule::setCornerOnly, rule, true)]
          >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, EOLKEEPOUT, space);
-  return valid && first == last;
+  bool valid
+      = qi::phrase_parse(first, last, EOLKEEPOUT, space) && first == last;
+  if (!valid)
+    odb::dbTechLayerEolKeepOutRule::destroy(rule);
+  return valid;
 }
 
 }  // namespace odb

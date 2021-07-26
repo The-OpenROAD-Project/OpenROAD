@@ -46,7 +46,7 @@
 
 #include "db_sta/dbNetwork.hh"
 
-#include "flute.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
 
@@ -62,6 +62,8 @@ using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
 using sta::hashIncr;
+
+using stt::SteinerTreeBuilder;
 
 class SteinerTree;
 
@@ -97,7 +99,8 @@ SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
                 bool find_left_rights,
                 dbNetwork *network,
-                Logger *logger);
+                Logger *logger,
+                SteinerTreeBuilder *stt_builder);
 
 // Wrapper for stt::Tree
 //
@@ -113,7 +116,6 @@ class SteinerTree
 {
 public:
   SteinerTree(const Pin *drvr_pin);
-  ~SteinerTree();
   PinSeq &pins() { return pins_; }
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
@@ -174,7 +176,8 @@ protected:
   friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
                                       bool find_left_rights,
                                       dbNetwork *network,
-                                      Logger *logger);
+                                      Logger *logger,
+                                      SteinerTreeBuilder *stt_builder);
 };
 
 } // namespace

@@ -633,7 +633,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
 {
   if (db->getChip() == nullptr || db->getChip()->getBlock() == nullptr
       || db->getTech() == nullptr)
-    logger_->error(utl::DRT, 201, "design isn't loaded before global routing");
+    logger_->error(utl::DRT, 201, "Must load design before global routing.");
   auto block = db->getChip()->getBlock();
   auto tech = db->getTech();
   auto gcell = block->getGCellGrid();
@@ -643,7 +643,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
     logger_->warn(
         utl::DRT,
         203,
-        "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+        "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
     gcell->resetGrid();
   }
   auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
@@ -664,7 +664,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
     if (layer == nullptr) {
       logger_->warn(utl::DRT,
                     202,
-                    "skipping layer {} not found in db for congestion map",
+                    "Skipping layer {} not found in db for congestion map.",
                     layerName);
       cmapLayerIdx++;
       continue;
@@ -1438,7 +1438,11 @@ void FlexGR::initGR_initObj_net(frNet* net)
 {
   deque<frNode*> nodeQ;
 
-  nodeQ.push_back(net->getRoot());
+  frNode* root = net->getRoot();
+  if (root == nullptr) {
+    return; // dangling net with no connections
+  }
+  nodeQ.push_back(root);
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -1823,9 +1827,10 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   }
 
   // sanity check
-  for (frNode* node : nodes) {
-    if (node->getParent() == nullptr) {
-      cout << "Error: non-root node does not have parent\n";
+  for (size_t i = 1; i < nodes.size(); i++) {
+    if (nodes[i]->getParent() == nullptr) {
+      cout << "Error: non-root node does not have parent in "
+           << net->getName() << '\n';
     }
   }
   if (nodes.size() > 1 && nodes[0]->getChildren().size() == 0) {

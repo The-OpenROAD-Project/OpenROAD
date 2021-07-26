@@ -371,7 +371,7 @@ void RouteBase::getGlobalRouterResult()
   nb_->updateDbGCells();
 
   // these two options must be on
-  grouter_->setAllowOverflow(true);
+  grouter_->setAllowCongestion(true);
   grouter_->setOverflowIterations(0);
 
   grouter_->run();

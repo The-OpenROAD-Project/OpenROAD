@@ -36,3 +36,17 @@ frString frInstTerm::getName() const
 {
   return getInst()->getName() + '/' + getTerm()->getName();
 }
+
+frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum) {
+    frTransform shiftXform;
+    auto inst = getInst();
+    inst->getTransform(shiftXform);
+    x = x - shiftXform.xOffset();
+    y = y - shiftXform.yOffset();
+    return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());
+    
+}
+
+bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum) {
+    return getAccessPoint(x, y, lNum) != nullptr;
+}

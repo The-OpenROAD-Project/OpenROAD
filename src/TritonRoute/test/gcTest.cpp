@@ -671,7 +671,7 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
   frCoord x_extra = 0;
   if (legal)
     x_extra = 200;
-  makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
+  makePathseg(n1, 2, {400 + x_extra, 700}, {700 + x_extra, 700});
 
   runGC();
 
@@ -686,6 +686,22 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
                frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
                frBox(450, 500, 550, 650));
   }
+}
+
+BOOST_AUTO_TEST_CASE(eol_keepout_except_within)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2, false, true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  makePathseg(n1, 2, {400, 700}, {700, 700});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 0);
 }
 
 // Check for eol keepout violation CORNERONLY.

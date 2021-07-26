@@ -1112,7 +1112,7 @@ class dbBlock : public dbObject
   ///
   /// Set corner name list
   ///
-  void setCornerNameList(char* name_list);
+  void setCornerNameList(const char* name_list);
 
   ///
   /// Get corner name list
@@ -3195,8 +3195,6 @@ class dbInst : public dbObject
 class dbITerm : public dbObject
 {
  public:
-  void print(FILE* fp = NULL, const char* trail = "");
-
   ///
   /// Get the instance of this instance-terminal.
   ///
@@ -5255,7 +5253,7 @@ class dbMaster : public dbObject
   ///
   /// Get the width of this master cell.
   ///
-  uint getWidth();
+  uint getWidth() const;
 
   ///
   /// Set the width of this master cell.
@@ -5265,7 +5263,7 @@ class dbMaster : public dbObject
   ///
   /// Get the height of this master cell.
   ///
-  uint getHeight();
+  uint getHeight() const;
 
   ///
   /// Set the height of this master cell.
@@ -5301,6 +5299,11 @@ class dbMaster : public dbObject
   /// Is the type ENDCAP or any of its subtypes
   ///
   bool isEndCap() const { return getType().isEndCap(); }
+
+  ///
+  /// Is the master's type COVER or any of its subtypes
+  ///
+  bool isCover() const { return getType().isCover(); };
 
   ///
   /// This master can be placed automatically in the core.
@@ -7769,6 +7772,14 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   int getSideExt() const;
 
+  void setWithinLow(int within_low);
+
+  int getWithinLow() const;
+
+  void setWithinHigh(int within_high);
+
+  int getWithinHigh() const;
+
   void setClassName(std::string class_name);
 
   std::string getClassName() const;
@@ -7780,6 +7791,10 @@ class dbTechLayerEolKeepOutRule : public dbObject
   void setCornerOnly(bool corner_only);
 
   bool isCornerOnly() const;
+
+  void setExceptWithin(bool except_within);
+
+  bool isExceptWithin() const;
 
   // User Code Begin dbTechLayerEolKeepOutRule
   static dbTechLayerEolKeepOutRule* create(dbTechLayer* layer);
@@ -8612,11 +8627,6 @@ class dbModInst : public dbObject
 class dbGroup : public dbObject
 {
  public:
-  enum dbGroupType
-  {
-    PHYSICAL_CLUSTER,
-    VOLTAGE_DOMAIN
-  };
   // User Code Begin dbGroupEnums
   // User Code End dbGroupEnums
 
@@ -8630,7 +8640,7 @@ class dbGroup : public dbObject
 
   // User Code Begin dbGroup
 
-  void setType(dbGroupType _type);
+  void setType(dbGroupType type);
 
   dbGroupType getType() const;
 

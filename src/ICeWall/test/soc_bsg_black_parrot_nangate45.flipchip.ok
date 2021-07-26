@@ -6,51 +6,12 @@
 [INFO ODB-0222] Reading LEF file: dummy_pads.lef
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
-[INFO IFP-0001] Added 1886 rows of 13894 sites.
-[INFO PAD-0053] Creating pad ring net: SNS_17
-[INFO PAD-0053] Creating pad ring net: SNS_0
-[INFO PAD-0053] Creating pad ring net: SNS_1
-[INFO PAD-0053] Creating pad ring net: SNS_2
-[INFO PAD-0053] Creating pad ring net: SNS_3
-[INFO PAD-0053] Creating pad ring net: SNS_4
-[INFO PAD-0053] Creating pad ring net: SNS_5
-[INFO PAD-0053] Creating pad ring net: SNS_6
-[INFO PAD-0053] Creating pad ring net: SNS_7
-[INFO PAD-0053] Creating pad ring net: SNS_8
-[INFO PAD-0053] Creating pad ring net: SNS_10
-[INFO PAD-0053] Creating pad ring net: SNS_9
-[INFO PAD-0053] Creating pad ring net: SNS_11
-[INFO PAD-0053] Creating pad ring net: SNS_12
-[INFO PAD-0053] Creating pad ring net: SNS_13
-[INFO PAD-0053] Creating pad ring net: SNS_14
-[INFO PAD-0053] Creating pad ring net: SNS_15
-[INFO PAD-0053] Creating pad ring net: SNS_16
-[INFO PAD-0053] Creating pad ring net: DVDD_0
-[INFO PAD-0053] Creating pad ring net: DVDD_1
-[INFO PAD-0053] Creating pad ring net: DVSS_0
-[INFO PAD-0053] Creating pad ring net: DVSS_1
-[INFO PAD-0053] Creating pad ring net: RETN_0
-[INFO PAD-0053] Creating pad ring net: RETN_10
-[INFO PAD-0053] Creating pad ring net: RETN_1
-[INFO PAD-0053] Creating pad ring net: RETN_11
-[INFO PAD-0053] Creating pad ring net: RETN_2
-[INFO PAD-0053] Creating pad ring net: RETN_12
-[INFO PAD-0053] Creating pad ring net: RETN_3
-[INFO PAD-0053] Creating pad ring net: RETN_13
-[INFO PAD-0053] Creating pad ring net: RETN_4
-[INFO PAD-0053] Creating pad ring net: RETN_14
-[INFO PAD-0053] Creating pad ring net: RETN_5
-[INFO PAD-0053] Creating pad ring net: RETN_15
-[INFO PAD-0053] Creating pad ring net: RETN_6
-[INFO PAD-0053] Creating pad ring net: RETN_16
-[INFO PAD-0053] Creating pad ring net: RETN_7
-[INFO PAD-0053] Creating pad ring net: RETN_17
-[INFO PAD-0053] Creating pad ring net: RETN_8
-[INFO PAD-0053] Creating pad ring net: RETN_9
-[INFO PAD-0051] Creating pad ring net: VSS
-[INFO PAD-0051] Creating pad ring net: VDD
-[INFO PAD-0052] Creating pad ring net: _UNASSIGNED_0
-[INFO PAD-0052] Creating pad ring net: _UNASSIGNED_1
-[INFO PAD-0052] Creating pad ring net: _UNASSIGNED_2
-[INFO PDN-0015] Writing to database
+[INFO IFP-0001] Added 1885 rows of 13893 sites.
+[INFO PAD-0053] Creating padring nets: SNS_17, SNS_0, SNS_1, SNS_2, SNS_3, SNS_4, SNS_5, SNS_6, SNS_7, SNS_8, SNS_10, SNS_9, SNS_11, SNS_12, SNS_13, SNS_14, SNS_15, SNS_16, DVDD_0, DVDD_1, DVSS_0, DVSS_1, RETN_0, RETN_10, RETN_1, RETN_11, RETN_2, RETN_12, RETN_3, RETN_13, RETN_4, RETN_14, RETN_5, RETN_15, RETN_6, RETN_16, RETN_7, RETN_17, RETN_8, RETN_9.
+[INFO PAD-0051] Creating padring net: VSS.
+[INFO PAD-0051] Creating padring net: VDD.
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_1 for sig136 to associate with bondpad bump_15_1_UNASSIGNED_1.
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_0 for sig135 to associate with bondpad bump_15_2_UNASSIGNED_0.
+[WARNING PAD-0012] Cannot find a terminal UNASSIGNED_2 for sig137 to associate with bondpad bump_16_1_UNASSIGNED_2.
+[INFO PDN-0015] Writing to database.
 No differences found.

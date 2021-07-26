@@ -73,35 +73,8 @@
 [INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
 Loading library IO cell meta-data
 Loaded library IO cell data
-[INFO IFP-0001] Added 1266 rows of 10417 sites.
-[WARNING PAD-0011] Expected instance u_en_i for padcell sig2 not found
-[WARNING PAD-0011] Expected instance u_TDI for padcell sig155 not found
-[WARNING PAD-0011] Expected instance u_TCK for padcell sig157 not found
-[WARNING PAD-0011] Expected instance u_TRST for padcell sig158 not found
-[WARNING PAD-0011] Expected instance u_TMS for padcell sig159 not found
-[INFO PAD-0053] Creating pad ring net: VSSIO
-[INFO PAD-0053] Creating pad ring net: VSSA
-[INFO PAD-0053] Creating pad ring net: VDDIO_Q
-[INFO PAD-0053] Creating pad ring net: VCCD
-[INFO PAD-0053] Creating pad ring net: VSSD
-[INFO PAD-0053] Creating pad ring net: VSSIO_Q
-[WARNING PAD-0050] Multiple nets found on AMUXBUS_A in pad ring
-[INFO PAD-0053] Creating pad ring net: AMUXBUS_A
-[WARNING PAD-0050] Multiple nets found on AMUXBUS_B in pad ring
-[INFO PAD-0053] Creating pad ring net: AMUXBUS_B
-[INFO PAD-0053] Creating pad ring net: VDDIO
-[INFO PAD-0053] Creating pad ring net: VDDA
-[INFO PAD-0053] Creating pad ring net: VCCHIB
-[INFO PAD-0053] Creating pad ring net: VSWITCH
-[WARNING PAD-0048] No padcell instance found for sig2
-[WARNING PAD-0048] No padcell instance found for sig155
-[WARNING PAD-0048] No padcell instance found for sig157
-[WARNING PAD-0048] No padcell instance found for sig158
-[WARNING PAD-0048] No padcell instance found for sig159
-[WARNING PAD-0048] No padcell instance found for sig160
-[WARNING PAD-0048] No padcell instance found for sig161
-[WARNING PAD-0048] No padcell instance found for sig162
-[WARNING PAD-0048] No padcell instance found for sig163
-Differences found at line 7.
-ROW ROW_0 unit 199680 199800 N DO 10417 BY 1 STEP 480 0 ;
-ROW ROW_0 unit 199680 199800 FS DO 10417 BY 1 STEP 480 0 ;
+[INFO IFP-0001] Added 1265 rows of 10416 sites.
+[WARNING PAD-0050] Multiple nets found on AMUXBUS_A in padring.
+[WARNING PAD-0050] Multiple nets found on AMUXBUS_B in padring.
+[INFO PAD-0053] Creating padring nets: VSSIO, VSSA, VDDIO_Q, VCCD, VSSD, VSSIO_Q, AMUXBUS_A, AMUXBUS_B, VDDIO, VDDA, VCCHIB, VSWITCH.
+No differences found.

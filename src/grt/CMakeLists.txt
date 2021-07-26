@@ -50,7 +50,7 @@ target_sources(grt
     src/AntennaRepair.cpp
     src/GlobalRouter.cpp
     src/Grid.cpp
-    src/MakeFastRoute.cpp
+    src/MakeGlobalRouter.cpp
     src/Net.cpp
     src/Pin.cpp
     src/MakeWireParasitics.cpp
@@ -64,11 +64,11 @@ target_include_directories(grt
 target_link_libraries(grt
     utl
     FastRoute4.1
-    pdr
     ant
     dpl
     dbSta
     gui
+    stt
     OpenSTA
     Boost::boost
 )

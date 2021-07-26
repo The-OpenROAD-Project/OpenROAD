@@ -54,6 +54,9 @@ bool _dbTechLayerEolKeepOutRule::operator==(
   if (flags_.corner_only_ != rhs.flags_.corner_only_)
     return false;
 
+  if (flags_.except_within_ != rhs.flags_.except_within_)
+    return false;
+
   if (eol_width_ != rhs.eol_width_)
     return false;
 
@@ -64,6 +67,12 @@ bool _dbTechLayerEolKeepOutRule::operator==(
     return false;
 
   if (side_ext_ != rhs.side_ext_)
+    return false;
+
+  if (within_low_ != rhs.within_low_)
+    return false;
+
+  if (within_high_ != rhs.within_high_)
     return false;
 
   if (class_name_ != rhs.class_name_)
@@ -89,10 +98,13 @@ void _dbTechLayerEolKeepOutRule::differences(
 
   DIFF_FIELD(flags_.class_valid_);
   DIFF_FIELD(flags_.corner_only_);
+  DIFF_FIELD(flags_.except_within_);
   DIFF_FIELD(eol_width_);
   DIFF_FIELD(backward_ext_);
   DIFF_FIELD(forward_ext_);
   DIFF_FIELD(side_ext_);
+  DIFF_FIELD(within_low_);
+  DIFF_FIELD(within_high_);
   DIFF_FIELD(class_name_);
   // User Code Begin Differences
   // User Code End Differences
@@ -105,10 +117,13 @@ void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_.class_valid_);
   DIFF_OUT_FIELD(flags_.corner_only_);
+  DIFF_OUT_FIELD(flags_.except_within_);
   DIFF_OUT_FIELD(eol_width_);
   DIFF_OUT_FIELD(backward_ext_);
   DIFF_OUT_FIELD(forward_ext_);
   DIFF_OUT_FIELD(side_ext_);
+  DIFF_OUT_FIELD(within_low_);
+  DIFF_OUT_FIELD(within_high_);
   DIFF_OUT_FIELD(class_name_);
 
   // User Code Begin Out
@@ -119,6 +134,13 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
+  eol_width_ = 0;
+  backward_ext_ = 0;
+  forward_ext_ = 0;
+  side_ext_ = 0;
+  within_low_ = 0;
+  within_high_ = 0;
+  class_name_ = "";
   // User Code Begin Constructor
   // User Code End Constructor
 }
@@ -128,11 +150,14 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
 {
   flags_.class_valid_ = r.flags_.class_valid_;
   flags_.corner_only_ = r.flags_.corner_only_;
+  flags_.except_within_ = r.flags_.except_within_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   eol_width_ = r.eol_width_;
   backward_ext_ = r.backward_ext_;
   forward_ext_ = r.forward_ext_;
   side_ext_ = r.side_ext_;
+  within_low_ = r.within_low_;
+  within_high_ = r.within_high_;
   class_name_ = r.class_name_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
@@ -146,6 +171,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
   stream >> obj.backward_ext_;
   stream >> obj.forward_ext_;
   stream >> obj.side_ext_;
+  stream >> obj.within_low_;
+  stream >> obj.within_high_;
   stream >> obj.class_name_;
   // User Code Begin >>
   // User Code End >>
@@ -159,6 +186,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   stream << obj.backward_ext_;
   stream << obj.forward_ext_;
   stream << obj.side_ext_;
+  stream << obj.within_low_;
+  stream << obj.within_high_;
   stream << obj.class_name_;
   // User Code Begin <<
   // User Code End <<
@@ -232,6 +261,32 @@ int dbTechLayerEolKeepOutRule::getSideExt() const
   return obj->side_ext_;
 }
 
+void dbTechLayerEolKeepOutRule::setWithinLow(int within_low)
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+
+  obj->within_low_ = within_low;
+}
+
+int dbTechLayerEolKeepOutRule::getWithinLow() const
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  return obj->within_low_;
+}
+
+void dbTechLayerEolKeepOutRule::setWithinHigh(int within_high)
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+
+  obj->within_high_ = within_high;
+}
+
+int dbTechLayerEolKeepOutRule::getWithinHigh() const
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  return obj->within_high_;
+}
+
 void dbTechLayerEolKeepOutRule::setClassName(std::string class_name)
 {
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
@@ -271,6 +326,20 @@ bool dbTechLayerEolKeepOutRule::isCornerOnly() const
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
 
   return obj->flags_.corner_only_;
+}
+
+void dbTechLayerEolKeepOutRule::setExceptWithin(bool except_within)
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+
+  obj->flags_.except_within_ = except_within;
+}
+
+bool dbTechLayerEolKeepOutRule::isExceptWithin() const
+{
+  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+
+  return obj->flags_.except_within_;
 }
 
 // User Code Begin dbTechLayerEolKeepOutRulePublicMethods

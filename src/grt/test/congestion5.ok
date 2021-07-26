@@ -1,0 +1,66 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: gcd.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO ODB-0134] Finished DEF file: gcd.def
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0224] Chose via via1_4 as default.
+[INFO GRT-0224] Chose via via2_8 as default.
+[INFO GRT-0224] Chose via via3_2 as default.
+[INFO GRT-0224] Chose via via4_0 as default.
+[INFO GRT-0224] Chose via via5_0 as default.
+[INFO GRT-0224] Chose via via6_0 as default.
+[INFO GRT-0224] Chose via via7_0 as default.
+[INFO GRT-0224] Chose via via8_0 as default.
+[INFO GRT-0224] Chose via via9_0 as default.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0017] Processing 8469 blockages on layer metal1.
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        24816          3008          87.88%
+metal3     Horizontal      33840          2806          91.71%
+metal4     Vertical        15792           564          96.43%
+metal5     Horizontal      15792           276          98.25%
+metal6     Vertical        15792           564          96.43%
+metal7     Horizontal       4512            46          98.98%
+metal8     Vertical         4512           188          95.83%
+metal9     Horizontal       2256             0          100.00%
+metal10    Vertical         2256            47          97.92%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0103] Extra Run for hard benchmark.
+[INFO GRT-0104] Minimal overflow 1078 occurring at round 14.
+[WARNING GRT-0230] Congestion iterations cannot increase overflow, reached the maximum number of times the total overflow can bee increased.
+[INFO GRT-0111] Final number of vias: 2707
+[INFO GRT-0112] Final usage 3D: 13598
+[ERROR GRT-0118] Routing congestion too high.
+GRT-0118

@@ -99,6 +99,69 @@ class dbOrientType
   ///
   operator Value() const { return _value; }
 
+  ///
+  /// Returns the orientation after flipping about the x-axis
+  ///
+  dbOrientType flipX() const;
+
+  ///
+  /// Returns the orientation after flipping about the y-axis
+  ///
+  dbOrientType flipY() const;
+
+ private:
+  Value _value;
+};
+
+///
+/// The dbGroup's basis.
+///
+class dbGroupType
+{
+ public:
+  enum Value
+  {
+    PHYSICAL_CLUSTER,
+    VOLTAGE_DOMAIN
+  };
+
+  ///
+  /// Create a dbGroupType instance with an explicit type..
+  /// The explicit orientation must be a string of one of the
+  ///  following values: "PHYSICAL_CLUSTER", "VOLTAGE_DOMAIN".
+  ///
+  dbGroupType(const char* type);
+
+  ///
+  /// Create a dbGroupType instance with an explicit type..
+  ///
+  dbGroupType(Value type);
+
+  ///
+  /// Create a dbGroupType instance with type "PHYSICAL_CLUSTER"".
+  ///
+  dbGroupType();
+
+  ///
+  /// Copy constructor.
+  ///
+  dbGroupType(const dbGroupType& type);
+
+  ///
+  /// Returns the orientation
+  ///
+  Value getValue() const { return _value; }
+
+  ///
+  /// Returns the orientation as a string
+  ///
+  const char* getString() const;
+
+  ///
+  /// Cast operator
+  ///
+  operator Value() const { return _value; }
+
  private:
   Value _value;
 };
@@ -393,6 +456,11 @@ class dbMasterType
   /// Is the type ENDCAP or any of its subtypes
   ///
   bool isEndCap() const;
+
+  ///
+  /// Is the type COVER or any of its subtypes
+  ///
+  bool isCover() const;
 
  private:
   Value _value;

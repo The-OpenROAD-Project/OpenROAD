@@ -922,6 +922,29 @@ class FlexGridGraph
     wavefront_.fit();
   }
 
+  void printNode(frMIdx x, frMIdx y, frMIdx z) {
+      Node& n = nodes_[getIdx(x, y, z)];
+      cout << "\nNode ( " << x << " " << y << " " << z << " ) (idx) / " << 
+                " ( " << xCoords_[x] << " " << yCoords_[y] << " ) (coords)\n";
+      cout << "hasEastEdge " << n.hasEastEdge << "\n";
+      cout << "hasNorthEdge " << n.hasNorthEdge << "\n";
+      cout << "hasUpEdge " << n.hasUpEdge << "\n";
+      cout << "isBlockedEast " << n.isBlockedEast << "\n";
+      cout << "isBlockedNorth " << n.isBlockedNorth << "\n";
+      cout << "isBlockedUp " << n.isBlockedUp << "\n";
+      cout << "hasSpecialVia " << n.hasSpecialVia << "\n";
+      cout << "overrideShapeCostVia " << n.overrideShapeCostVia << "\n";
+      cout << "hasGridCostEast " << n.hasGridCostEast << "\n";
+      cout << "hasGridCostNorth " << n.hasGridCostNorth << "\n";
+      cout << "hasGridCostUp " << n.hasGridCostUp << "\n";
+      cout << "routeShapeCostPlanar " << n.routeShapeCostPlanar << "\n";
+      cout << "routeShapeCostVia " << n.routeShapeCostVia << "\n";
+      cout << "markerCostPlanar " << n.markerCostPlanar << "\n";
+      cout << "markerCostVia " << n.markerCostVia << "\n";
+      cout << "fixedShapeCostVia " << n.fixedShapeCostVia << "\n";
+      cout << "fixedShapeCostPlanar " << n.fixedShapeCostPlanar << "\n";
+  }
+  
  protected:
   frTechObject* tech_;
   FlexDRWorker* drWorker_;
@@ -1150,6 +1173,9 @@ class FlexGridGraph
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
               const frPoint& centerPt);
+  bool hasAlignedUpDefTrack(frLayerNum layerNum,
+                        const map<frLayerNum, frTrackPattern*>& xSubMap,
+                        const map<frLayerNum, frTrackPattern*>& ySubMap) const;
 
  private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);

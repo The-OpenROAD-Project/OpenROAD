@@ -1,0 +1,17 @@
+[INFO ODB-0222] Reading LEF file: ../../../test/Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ../../../test/Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: fail_quick/floorplan.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[INFO ODB-0134] Finished DEF file: fail_quick/floorplan.def
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: fail_quick/PDN.cfg
+[INFO PDN-0008] Design name is gcd.
+[INFO PDN-0009] Reading technology data.
+[ERROR PDN-0030] Layer specified for stdcell rails 'M1' not in list of layers.
+Execution stopped

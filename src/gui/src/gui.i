@@ -41,6 +41,8 @@
 using utl::GUI;
 %}
 
+%include "../../Exception.i"
+
 %inline %{
 
 bool enabled()

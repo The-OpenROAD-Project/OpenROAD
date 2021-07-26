@@ -50,6 +50,8 @@ using ord::getOpenRCX;
 using rcx::Ext;
 %}
 
+%include "../../Exception.i"
+
 %inline %{
 
 void

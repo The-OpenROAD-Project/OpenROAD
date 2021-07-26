@@ -32,25 +32,28 @@ proc define_tool_script { tool script } {
   dict set tool_scripts [string tolower $tool] $script
 }
 
+# roughly flow order
+define_tool_script "OpenDB" "src/OpenDB/test/regression"
+define_tool_script "stt" "src/stt/test/regression"
 define_tool_script "ifp" "src/ifp/test/regression"
-define_tool_script "dbSta" "src/dbSta/test/regression"
+define_tool_script "tap" "src/tap/test/regression"
 define_tool_script "ppl" "src/ppl/test/regression"
-define_tool_script "PDNgen" "src/pdngen/test/regression"
+define_tool_script "pdn" "src/pdn/test/regression"
 define_tool_script "ICeWall" "src/ICeWall/test/regression"
 define_tool_script "mpl" "src/mpl/test/regression"
-define_tool_script "rsz" "src/rsz/test/regression"
+# requires par LOAD_PARTITIONERS compile option
+#define_tool_script "mpl2" "src/mpl2/test/regression"
+define_tool_script "par" "src/par/test/regression"
 define_tool_script "Replace" "src/replace/test/regression"
-define_tool_script "TritonCTS" "src/TritonCTS/test/regression"
+define_tool_script "rsz" "src/rsz/test/regression"
+define_tool_script "cts" "src/cts/test/regression"
 define_tool_script "dpl" "src/dpl/test/regression"
-define_tool_script "psm" "src/psm/test/regression"
 define_tool_script "grt" "src/grt/test/regression"
-define_tool_script "tap" "src/tap/test/regression"
 define_tool_script "ant" "src/ant/test/regression"
-define_tool_script "OpenDB" "src/OpenDB/test/regression"
 define_tool_script "rcx" "src/rcx/test/regression"
-define_tool_script "PartitionMgr" "src/PartitionMgr/test/regression"
+define_tool_script "psm" "src/psm/test/regression"
 define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
-define_tool_script "pdr" "src/pdr/test/regression"
+define_tool_script "rmp" "src/rmp/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
@@ -67,7 +70,11 @@ proc run_tool_tests { tool } {
   puts "------------------------------------------------------"
   puts $tool
   set script [dict get $tool_scripts $tool]
-  if { [catch "exec [file join $openroad_dir $script] >@stdout"] } {
+  set test [file join $openroad_dir $script]
+  if { ![file exists $test] } {
+    puts "Error: $script not found."
+    incr tool_errors
+  } elseif { [catch "exec $test >@stdout"] } {
     incr tool_errors
   }
 }

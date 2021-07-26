@@ -140,6 +140,96 @@ const char* dbOrientType::getString() const
   return value;
 }
 
+dbOrientType dbOrientType::flipX() const
+{
+  switch (_value) {
+    case R0:
+      return MX;
+    case R90:
+      return MYR90;
+    case R180:
+      return MY;
+    case R270:
+      return MXR90;
+    case MY:
+      return R180;
+    case MYR90:
+      return R90;
+    case MX:
+      return R0;
+    case MXR90:
+      return R270;
+  }
+  return R0;
+}
+
+dbOrientType dbOrientType::flipY() const
+{
+  switch (_value) {
+    case R0:
+      return MY;
+    case R90:
+      return MXR90;
+    case R180:
+      return MX;
+    case R270:
+      return MYR90;
+    case MY:
+      return R0;
+    case MYR90:
+      return R270;
+    case MX:
+      return R180;
+    case MXR90:
+      return R90;
+  }
+  return R0;
+}
+
+dbGroupType::dbGroupType(const char* orient)
+{
+  if (strcasecmp(orient, "PHYSICAL_CLUSTER") == 0)
+    _value = PHYSICAL_CLUSTER;
+
+  else if (strcasecmp(orient, "VOLTAGE_DOMAIN") == 0)
+    _value = VOLTAGE_DOMAIN;
+
+  else
+    _value = PHYSICAL_CLUSTER;
+}
+
+dbGroupType::dbGroupType(Value orient)
+{
+  _value = orient;
+}
+
+dbGroupType::dbGroupType()
+{
+  _value = PHYSICAL_CLUSTER;
+}
+
+dbGroupType::dbGroupType(const dbGroupType& type)
+{
+  _value = type._value;
+}
+
+const char* dbGroupType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case PHYSICAL_CLUSTER:
+      value = "PHYSICAL_CLUSTER";
+      break;
+
+    case VOLTAGE_DOMAIN:
+      value = "VOLTAGE_DOMAIN";
+      break;
+  }
+
+  return value;
+}
+
 dbSigType::dbSigType(const char* value)
 {
   if (strcasecmp(value, "SIGNAL") == 0)
@@ -789,6 +879,44 @@ bool dbMasterType::isEndCap() const
     case CORE_SPACER:
     case CORE_ANTENNACELL:
     case CORE_WELLTAP:
+      return false;
+  }
+  assert(false);
+  return false;
+}
+
+bool dbMasterType::isCover() const
+{
+  switch (_value) {
+    case COVER:
+    case COVER_BUMP:
+      return true;
+    case NONE:
+    case RING:
+    case BLOCK:
+    case BLOCK_BLACKBOX:
+    case BLOCK_SOFT:
+    case PAD:
+    case PAD_INPUT:
+    case PAD_OUTPUT:
+    case PAD_INOUT:
+    case PAD_POWER:
+    case PAD_SPACER:
+    case PAD_AREAIO:
+    case CORE:
+    case CORE_FEEDTHRU:
+    case CORE_TIEHIGH:
+    case CORE_TIELOW:
+    case CORE_SPACER:
+    case CORE_ANTENNACELL:
+    case CORE_WELLTAP:
+    case ENDCAP:
+    case ENDCAP_PRE:
+    case ENDCAP_POST:
+    case ENDCAP_TOPLEFT:
+    case ENDCAP_TOPRIGHT:
+    case ENDCAP_BOTTOMLEFT:
+    case ENDCAP_BOTTOMRIGHT:
       return false;
   }
   assert(false);

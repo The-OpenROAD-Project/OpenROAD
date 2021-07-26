@@ -64,9 +64,7 @@ Footprint library {
     pin_name PAD
     spacing_to_edge {151 + 14}
     cell_name {
-      140 DUMMY_BUMP_small
-      150 DUMMY_BUMP_medium
-      180 DUMMY_BUMP_large
+      140 DUMMY_BUMP
     }
   }
   
@@ -76,7 +74,7 @@ Footprint library {
   }
 
   rdl {
-    layer_name LB
+    layer_name metal10
     width 10.0
     spacing 10.0
   }
@@ -93,8 +91,9 @@ Footprint library {
   
   cells {
     PAD {
+      pad_pin_name PAD
       orient {bottom R0 right R90 top R180 left R270}
-      type bonpad
+      type bondpad
     }
     PADCELL_SIG {
       cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H}
@@ -177,6 +176,7 @@ Footprint library {
       }
     }
     PADCELL_PWRDET {
+      physical_only 1
       cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H}
       orient {bottom R0 right R90 top R180 left R270}
       is_control 1
@@ -214,21 +214,6 @@ Footprint library {
     PAD_CORNER {
       orient {ll R0 lr R90 ur R180 ul R270}
       physical_only 1
-    }
-    DUMMY_BUMP_small {
-      width 35
-      edge_width 12.4
-      corner_width 8.8
-    }
-    DUMMY_BUMP_medium {
-      width 45
-      edge_width 19.5
-      corner_width 13.75
-    }
-    DUMMY_BUMP_large {
-      width 45
-      edge_width 27.4
-      corner_width 19.3      
     }
   }
 }

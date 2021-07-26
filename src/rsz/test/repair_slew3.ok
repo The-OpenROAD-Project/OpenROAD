@@ -18,5 +18,4 @@ u3/A                                    0.03    0.06   -0.03 (VIOLATED)
 u2/Z                                    0.03    0.06   -0.03 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 853um.
-[INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+[INFO RSZ-0039] Resized 1 instances.

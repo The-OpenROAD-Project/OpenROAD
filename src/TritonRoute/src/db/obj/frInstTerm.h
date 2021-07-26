@@ -68,6 +68,8 @@ class frInstTerm : public frBlockObject
   void addAccessPoint(frAccessPoint* in) { ap_.push_back(in); }
   // others
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
+  frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
+  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
 
  protected:
   frInst* inst_;
