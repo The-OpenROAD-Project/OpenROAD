@@ -5,7 +5,7 @@ read_def "gcd.def"
 
 set guide_file [make_result_file pd3.guide]
 
-set_routing_alpha 0.9 -min_fanout 10
+set_routing_alpha 0.9 -min_fanout 9
 
 global_route
 

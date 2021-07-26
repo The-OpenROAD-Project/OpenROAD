@@ -74,7 +74,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
 {
   float net_alpha = alpha_;
 
-  if (net->getTermCount() >= min_fanout_alpha_.first) {
+  if (net->getTermCount()-1 >= min_fanout_alpha_.first) {
     net_alpha = min_fanout_alpha_.second;
   }
 
