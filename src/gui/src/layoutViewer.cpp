@@ -314,12 +314,43 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 
 void LayoutViewer::zoomIn()
 {
-  setPixelsPerDBU(pixels_per_dbu_ * 1.2);
+  zoomIn(screenToDBU(visibleRegion().boundingRect().center()), false);
+}
+
+void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
+{
+  zoom(focus, 1 * zoom_scale_factor_, do_delta_focus);
 }
 
 void LayoutViewer::zoomOut()
 {
-  setPixelsPerDBU(pixels_per_dbu_ / 1.2);
+  zoomOut(screenToDBU(visibleRegion().boundingRect().center()), false);
+}
+
+void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
+{
+  zoom(focus, 1 / zoom_scale_factor_, do_delta_focus);
+}
+
+void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_focus)
+{
+  qreal old_pixels_per_dbu = getPixelsPerDBU();
+  int scrollbar_x = scroller_->horizontalScrollBar()->value();
+  int scrollbar_y = scroller_->verticalScrollBar()->value();
+  QPointF old_pos_in_widget = dbuToScreen(focus);
+
+  setPixelsPerDBU(pixels_per_dbu_ * factor);
+
+  if (do_delta_focus) {
+    qreal new_pixels_per_dbu = getPixelsPerDBU();
+    QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * old_pos_in_widget;
+    scroller_->horizontalScrollBar()->setValue(scrollbar_x + delta.x());
+    scroller_->verticalScrollBar()->setValue(scrollbar_y + delta.y());
+  } else {
+    QPointF new_pos_in_widget = dbuToScreen(focus);
+    scroller_->horizontalScrollBar()->setValue(new_pos_in_widget.x() - scroller_->horizontalScrollBar()->pageStep()/2);
+    scroller_->verticalScrollBar()->setValue(new_pos_in_widget.y() - scroller_->verticalScrollBar()->pageStep()/2);
+  }
 }
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
@@ -1178,6 +1209,18 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
   return Rect(dbu_left, dbu_bottom, dbu_right, dbu_top);
 }
 
+QPointF LayoutViewer::dbuToScreen(const Point& dbu_point)
+{
+  dbBlock* block = getBlock();
+  int dbu_height = getBounds(block).yMax();
+
+  // Flip the y-coordinate (see file level comments)
+  qreal x = dbu_point.x() * pixels_per_dbu_;
+  qreal y = (dbu_height - dbu_point.y()) * pixels_per_dbu_;
+
+  return QPointF(x, y);
+}
+
 QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
@@ -1484,45 +1527,15 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
     return;
   }
 
+  const odb::Point mouse_pos = viewer_->screenToDBU(viewer_->mapFromGlobal(QCursor::pos()));
   if (event->angleDelta().y() > 0) {
-    zoomIn();
+    viewer_->zoomIn(mouse_pos, true);
   } else {
-    zoomOut();
+    viewer_->zoomOut(mouse_pos, true);
   }
-}
-
-void LayoutScroll::zoomIn()
-{
-  qreal old_pixels_per_dbu = viewer_->getPixelsPerDBU();
-
-  int scrollbar_x = horizontalScrollBar()->value();
-  int scrollbar_y = verticalScrollBar()->value();
-  QPointF pos_in_widget = mapFromGlobal(QCursor::pos()) - widget()->pos();
-
-  viewer_->zoomIn();
-
-  qreal new_pixels_per_dbu = viewer_->getPixelsPerDBU();
-  QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * pos_in_widget;
-
-  horizontalScrollBar()->setValue(scrollbar_x + delta.x());
-  verticalScrollBar()->setValue(scrollbar_y + delta.y());
-}
-
-void LayoutScroll::zoomOut()
-{
-  qreal old_pixels_per_dbu = viewer_->getPixelsPerDBU();
-
-  int scrollbar_x = horizontalScrollBar()->value();
-  int scrollbar_y = verticalScrollBar()->value();
-  QPointF pos_in_widget = mapFromGlobal(QCursor::pos()) - widget()->pos();
-
-  viewer_->zoomOut();
-
-  qreal new_pixels_per_dbu = viewer_->getPixelsPerDBU();
-  QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * pos_in_widget;
-
-  horizontalScrollBar()->setValue(scrollbar_x + delta.x());
-  verticalScrollBar()->setValue(scrollbar_y + delta.y());
+  // ensure changes are processed before the next wheel event to prevent zoomIn and Out
+  // from jumping around on the ScrollBars
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 void LayoutViewer::inDbNetDestroy(dbNet* net)
