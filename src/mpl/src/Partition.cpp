@@ -253,7 +253,8 @@ bool Partition::anneal()
     for (int i = 0; i < core_edge_count; i++) {
       CoreEdge core_edge = coreEdgeFromIndex(i);
       pfp::Node pin(coreEdgeString(core_edge), 0, 1, 1, indexTerm++, true);
-      double x, y;
+      double x = 0.0;
+      double y = 0.0;
       switch (core_edge) {
         case CoreEdge::West:
           x = 0.0;

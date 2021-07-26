@@ -213,7 +213,6 @@ Tree PdRev::translateTree()
     }
     int nNodes = graph_->nodes.size();
     for (int i = graph_->num_terminals; i < nNodes; ++i) {
-      Node& child = graph_->nodes[i];
       while (graph_->nodes[i].children.size() > 3
              || (graph_->nodes[i].parent != i
                  && graph_->nodes[i].children.size() == 3)) {
