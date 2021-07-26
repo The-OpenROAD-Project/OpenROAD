@@ -46,7 +46,9 @@ namespace stt{
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
   min_fanout_alpha_({std::numeric_limits<int>::max(), -1}),
-  min_hpwl_alpha_({std::numeric_limits<int>::max(), -1})
+  min_hpwl_alpha_({std::numeric_limits<int>::max(), -1}),
+  logger_(nullptr),
+  db_(nullptr)
 {
 }
 
@@ -120,7 +122,7 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
     int y_arr[pin_count];
 
     std::copy(x.begin(), x.end(), x_arr);
-    std::copy(y.begin(), y.end(), x_arr);
+    std::copy(y.begin(), y.end(), y_arr);
 
     tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
   }

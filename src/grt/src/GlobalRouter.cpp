@@ -97,6 +97,7 @@ GlobalRouter::GlobalRouter() :
   fastroute_(nullptr),
   groute_renderer_(nullptr),
   sta_(nullptr),
+  stt_builder_(nullptr),
   db_(nullptr),
   block_(nullptr)
 {
