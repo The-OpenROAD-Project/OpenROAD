@@ -156,7 +156,7 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
     } else
-      logger_->warn(GRT, 25, "non wire or via route found on net {}.",
+      logger_->warn(GRT, 25, "Non wire or via route found on net {}.",
                     net->getConstName());
     parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
     parasitics_->makeResistor(nullptr, n1, n2, res, analysis_point_);
@@ -194,7 +194,7 @@ void MakeWireParasitics::makeParasiticsToGrid(Pin& pin,
         nullptr, pin_node, grid_node, res, analysis_point_);
     parasitics_->incrCap(grid_node, cap / 2.0, analysis_point_);
   } else {
-    logger_->warn(GRT, 26, "missing route to pin {}.", pin.getName());
+    logger_->warn(GRT, 26, "Missing route to pin {}.", pin.getName());
   }
 }
 

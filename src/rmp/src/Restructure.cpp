@@ -121,7 +121,7 @@ void Restructure::getBlob(unsigned max_depth)
   if (ends.size()) {
     sta::PinSet fanin_fanouts = resizer_->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
-    logger_->report("Found {} pins in extracted logic", fanin_fanouts.size());
+    logger_->report("Found {} pins in extracted logic.", fanin_fanouts.size());
     for (sta::Pin* pin : fanin_fanouts) {
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
@@ -362,9 +362,6 @@ void Restructure::removeConstCells()
       continue;
 
     for (auto&& iterm : inst->getITerms()) {
-      auto mterm = iterm->getMTerm();
-      auto net = iterm->getNet();
-
       if (iterm->getSigType() == odb::dbSigType::POWER
           || iterm->getSigType() == odb::dbSigType::GROUND)
         continue;
@@ -397,7 +394,7 @@ void Restructure::removeConstCells()
             odb::dbITerm::disconnect(iterm);
             odb::dbITerm::connect(new_inst->getITerm(const_port), net);
           } else
-            logger_->warn(RMP, 35, "Could not create instance {}", inst_name);
+            logger_->warn(RMP, 35, "Could not create instance {}.", inst_name);
         }
         const_outputs++;
         const_cnt++;

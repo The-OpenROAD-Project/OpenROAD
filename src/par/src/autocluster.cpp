@@ -518,7 +518,6 @@ void AutoClusterMgr::calculateBufferNetConnection()
     }
 
     if (driver_id != 0 && loads_id.size() > 0) {
-      Cluster* driver_cluster = cluster_map_[driver_id];
       for (int i = 0; i < loads_id.size(); i++) {
         cluster_map_[driver_id]->addOutputConnection(loads_id[i]);
         cluster_map_[loads_id[i]]->addInputConnection(driver_id);
@@ -571,7 +570,6 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
       }
 
       if (driver_id != 0 && loads_id.size() > 0) {
-        Cluster* driver_cluster = cluster_map_[driver_id];
         for (int i = 0; i < loads_id.size(); i++) {
           cluster_map_[driver_id]->addOutputConnection(loads_id[i]);
           cluster_map_[loads_id[i]]->addInputConnection(driver_id);
@@ -605,7 +603,6 @@ void AutoClusterMgr::merge(string parent_name)
 
   unsigned int num_inst = calculateClusterNumInst(merge_cluster_list_);
   unsigned int num_macro = calculateClusterNumMacro(merge_cluster_list_);
-  int iteration = 0;
   int merge_index = 0;
   while (num_inst > max_num_inst_ || num_macro > max_num_macro_) {
     int num_merge_cluster = merge_cluster_list_.size();
@@ -1683,8 +1680,10 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   logger_->info(
       PAR,
       402,
-      "Traversed Logical Hierarchy \n\t Number of std cell instances: {}\n\t "
-      "Total Area: {}\n\t Number of Hard Macros: {}\n\t ",
+      "Traversed logical hierarchy\n"
+      "\tNumber of std cell instances: {}\n"
+      "\tTotal area: {}\n"
+      "\tNumber of hard macros: {}",
       metric.num_inst,
       metric.area,
       metric.num_macro);
@@ -1915,7 +1914,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
           //    || cluster_map_[iter->first]->getNumMacro() > 0) {
           //  weight += virtual_weight_;
           //}
-            
+
           if(weight < ignore_net_threshold) {
               weight = 0;
           }

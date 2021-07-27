@@ -67,17 +67,17 @@ TechChar::TechChar(CtsOptions* options,
   _options(options),
   _openroad(openroad),
   _db(db),
-  _db_network(db_network),
+  _resizer(resizer),
   _openSta(sta),
   _openStaChar(nullptr),
-  _resizer(resizer),
+  _db_network(db_network),
   _logger(logger)
 {
 }
 
 void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
 {
-  _logger->info(CTS, 84, "Compiling LUT");
+  _logger->info(CTS, 84, "Compiling LUT.");
   initLengthUnits();
 
   _minSegmentLength = toInternalLengthUnit(_minSegmentLength);
@@ -132,17 +132,17 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
   }
 
   if (noSlewDegradationCount > 0) {
-    _logger->warn(CTS, 43, "{} wires are pure wire and no slew degration.\n"
+    _logger->warn(CTS, 43, "{} wires are pure wire and no slew degradation.\n"
                   "TritonCTS forced slew degradation on these wires.",
                   noSlewDegradationCount);
   }
 
-  _logger->info(CTS, 46, "    Number of wire segments: {}",
+  _logger->info(CTS, 46, "    Number of wire segments: {}.",
                 _wireSegments.size());
-  _logger->info(CTS, 47, "    Number of keys in characterization LUT: {}",
+  _logger->info(CTS, 47, "    Number of keys in characterization LUT: {}.",
                 _keyToWireSegments.size());
 
-  _logger->info(CTS, 48, "    Actual min input cap: {}",
+  _logger->info(CTS, 48, "    Actual min input cap: {}.",
                 _actualMinInputCap);
 }
 
@@ -158,7 +158,7 @@ inline void TechChar::reportCharacterizationBounds() const
   _logger->report("Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew");
 
   _logger->report("{:<12}{:<12}{:<12}{:<12}{:<12}{:<12}",
-                  _minSegmentLength, _maxSegmentLength, 
+                  _minSegmentLength, _maxSegmentLength,
                   _minCapacitance, _maxCapacitance, _minSlew, _maxSlew);
 }
 
@@ -169,9 +169,12 @@ inline void TechChar::checkCharacterizationBounds() const
       || _minCapacitance > MAX_NORMALIZED_VAL
       || _maxCapacitance > MAX_NORMALIZED_VAL || _minSlew > MAX_NORMALIZED_VAL
       || _maxSlew > MAX_NORMALIZED_VAL) {
-    _logger->error(CTS, 65, "Normalized values in the LUT should be in the range [1, {}"
-                   "\n Check the table above to see the normalization ranges and check "
-                   "your characterization configuration.", std::to_string(MAX_NORMALIZED_VAL));
+    _logger->error(CTS,
+        65,
+        "Normalized values in the LUT should be in the range [1, {}\n"
+        "    Check the table above to see the normalization ranges and your "
+        "    characterization configuration.",
+        std::to_string(MAX_NORMALIZED_VAL));
   }
 }
 
@@ -280,7 +283,7 @@ void TechChar::write(const std::string& filename) const
   std::ofstream file(filename.c_str());
 
   if (!file.is_open()) {
-    _logger->error(CTS, 59, "Could not open characterization file.");
+    _logger->error(CTS, 59, "Could not open characterization file {}.", filename.c_str());
   }
 
   file << _minSegmentLength << " " << _maxSegmentLength << " "
@@ -312,7 +315,7 @@ void TechChar::writeSol(const std::string& filename) const
   std::ofstream file(filename.c_str());
 
   if (!file.is_open()) {
-    _logger->error(CTS, 60, " Could not open characterization file.");
+    _logger->error(CTS, 60, " Could not open characterization file {}.", filename.c_str());
   }
 
   file.precision(15);
@@ -555,8 +558,9 @@ void TechChar::initCharacterization()
   }
 
   if (_wirelengthsToTest.size() < 1) {
-    _logger->error(CTS, 75,  "Error generating the wirelengths to test. Check your -wire_unit "
-        "parameter or technology files.");
+    _logger->error(CTS, 75,
+        "Error generating the wirelengths to test.\n"
+        "    Check the -wire_unit parameter or the technology files.");
   }
 
   setLenghthUnit(_charBuf->getHeight() * 10 / 2 / dbUnitsPerMicron);
@@ -579,7 +583,7 @@ void TechChar::initCharacterization()
                              maxCap, maxCapExist);
       if (!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
         _logger->warn(CTS, 67,
-              "Could not find max slew/max cap values for buffer {}. Using library values", bufMasterName);
+              "Could not find max slew/max cap values for buffer {}. Using library values.", bufMasterName);
         sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
         staLib->defaultMaxSlew(maxSlew, maxSlewExist);
         staLib->defaultMaxCapacitance(maxCap, maxCapExist);
@@ -603,7 +607,7 @@ void TechChar::initCharacterization()
                              maxCapExist, true);
       if (!maxCapExist) { //In case buffer does not have tables
         _logger->warn(CTS, 66,
-              "Could not get maxSlew/maxCap values from buffer {}", _options->getSinkBuffer());
+              "Could not get maxSlew/maxCap values from buffer {}.", _options->getSinkBuffer());
         _options->setSinkBufferMaxCap(_charMaxCap);
       } else {
         _options->setSinkBufferMaxCap(maxCap);
@@ -631,9 +635,10 @@ void TechChar::initCharacterization()
   }
 
   if ((_loadsToTest.size() < 1) || (_slewsToTest.size() < 1)) {
-    _logger->error(CTS, 78,  "Error generating the wirelengths to test. "
-        "Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter "
-        "or technology files.");
+    _logger->error(CTS, 78,
+        "Error generating the wirelengths to test.\n"
+        "    Check the parameters -max_cap/-max_slew/-cap_inter/-slew_inter\n"
+        "          or the technology files.");
   }
 }
 
@@ -649,7 +654,6 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   unsigned numberOfTopologies = 1 << numberOfNodes;
   std::vector<SolutionData> topologiesVector;
   odb::dbNet* net = nullptr;
-  odb::dbWire* wire = nullptr;
 
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
@@ -663,7 +667,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                           + solutionCounter.to_string() + "_"
                           + std::to_string(wireCounter);
     net = odb::dbNet::create(_charBlock, netName.c_str());
-    wire = odb::dbWire::create(net);
+    odb::dbWire::create(net);
     net->setSigType(odb::dbSigType::SIGNAL);
     // Creates the input port.
     std::string inPortName
@@ -705,7 +709,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                               + solutionCounter.to_string() + "_"
                               + std::to_string(wireCounter);
         net = odb::dbNet::create(_charBlock, netName.c_str());
-        wire = odb::dbWire::create(net);
+        odb::dbWire::create(net);
         odb::dbITerm::connect(bufInstanceOutPin, net);
         net->setSigType(odb::dbSigType::SIGNAL);
         // Updates the topology wih the new instance and the current topology
@@ -1068,8 +1072,6 @@ void TechChar::create()
       odb::dbNet* lastNet = solution.netVector.back();
       sta::Pin* inPin = _db_network->dbToSta(inBTerm);
       sta::Pin* outPin = _db_network->dbToSta(outBTerm);
-      sta::Port* inPort = _db_network->port(inPin);
-      sta::Port* outPort = _db_network->port(outPin);
       sta::Vertex* outPinVert = graph->pinLoadVertex(outPin);
       sta::Vertex* inPinVert = graph->pinDrvrVertex(inPin);
 

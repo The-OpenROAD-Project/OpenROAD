@@ -156,50 +156,40 @@ public:
 private:
   bool nodeLessY(const int i, const int j);
 
-  float alpha2;
-  float alpha3;
-  float alpha4;
-  float beta;
-  int distance;
-  float M;
+  float alpha2_;
+  float alpha3_;
+  float alpha4_;
+  float beta_;
+  int distance_;
+  float m_;
 
-  vector<Edge> edges;
-  vector<int> dag;
-  int maxPL;  // max source to sink pathlength
-  float maxPLRatio;
-  vector<vector<int>> ManhDist;
-  float PLmargin;
-  int root_idx;
+  vector<Edge> edges_;
+  vector<int> dag_;
+  int max_pl_;  // max source to sink pathlength
+  float max_pl_ratio_;
+  vector<vector<int>> manh_dist_;
+  float pl_margin_;
+  int root_idx_;
 
-  // All of these should be local variables to buildNearestNeighborsForSPT -cherry 06/16/2021
-  vector<int> urux;
-  vector<int> urlx;
-  vector<int> ulux;
-  vector<int> ullx;
-  vector<int> lrux;
-  vector<int> lrlx;
-  vector<int> llux;
-  vector<int> lllx;
-
-  vector<Node> sheared;
-  vector<Node> hanan;
+  vector<Node> sheared_;
+  vector<Node> hanan_;
   // nearest neighbor in some undocumented sense -cherry 06/14/2021
-  vector<vector<int>> nn;
-  float avgNN;
-  vector<vector<int>> nn_hanan;
-  vector<int> sorted;
-  vector<int> sorted_hanan;
-  vector<int> aux;
+  vector<vector<int>> nn_;
+  float avg_nn_;
+  vector<vector<int>> nn_hanan_;
+  vector<int> sorted_;
+  vector<int> sorted_hanan_;
+  vector<int> aux_;
 
-  vector<vector<int>> tree_struct;
-  vector<int> tree_struct_1darr;
+  vector<vector<int>> tree_struct_;
+  vector<int> tree_struct_1darr_;
 
-  vector<int> heap_key;
+  vector<int> heap_key_;
   //   0 empty
   //  -1 visited (removed)
-  vector<int> heap_idx;
-  vector<int> heap_elt;
-  int heap_size;
+  vector<int> heap_idx_;
+  vector<int> heap_elt_;
+  int heap_size_;
 
   Logger* logger_;
 };

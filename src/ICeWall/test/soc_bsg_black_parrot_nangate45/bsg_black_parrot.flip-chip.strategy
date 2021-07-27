@@ -12,17 +12,17 @@ Footprint definition {
   offsets 35
   tracks track.info
   pin_layer metal10
-  
+
   pad_inst_name "u_%s"
   pad_pin_name "p_%s"
 
   rdl_cover_file_name results/cover.def
 
   place {
-    marker0 {type marker inst_name u_marker_0 cell {centre {x 1200.000 y 1200.000} orient R0}}
+    marker0 {type marker inst_name u_marker_0 cell {center {x 1200.000 y 1200.000} orient R0}}
   }
 
-  padcell {                     
+  padcell {
     cbrk0      {type cbk   cell {origin {x  140 y   35}}}
     sig0       {type sig   cell {origin {x  205 y   35}} bump {row 17 col 1}}
     sig1       {type sig   cell {origin {x  335 y   35}} bump {row 16 col 2}}
@@ -161,44 +161,44 @@ Footprint definition {
     pwrdet8    {type pdt   cell {origin {x 2965 y 2445}}}
     sig68      {type sig   cell {origin {x 2965 y 2450}} bump {row 3 col 17}}
     sig69      {type sig   cell {origin {x 2965 y 2605}} bump {row 2 col 17}}
-    
-    
+
+
     vzz_17     {type vssio cell {origin {x 2795 y 2965}} bump {row 1 col 17}}
-    
+
     v18_17     {type vddio cell {origin {x 2665 y 2965}} bump {row 2 col 16}}
     sig70      {type sig   cell {origin {x 2635 y 2965}} bump {row 1 col 16}}
-    
+
     sig71      {type sig   cell {origin {x 2505 y 2965}} bump {row 2 col 15}}
     vdd_8      {type vdd   cell {origin {x 2475 y 2965}} bump {row 1 col 15}}
     vss_8      {type vss   cell {origin {x 2445 y 2965}} bump {row 3 col 15}}
     cbrk9      {type cbk   cell {origin {x 2380 y 2965}}}
-    
+
     sig72      {type sig   cell {origin {x 2375 y 2965}} bump {row 4 col 14}}
     sig73      {type sig   cell {origin {x 2345 y 2965}} bump {row 2 col 14}}
     vzz_18     {type vssio cell {origin {x 2315 y 2965}} bump {row 1 col 14}}
     v18_18     {type vddio cell {origin {x 2285 y 2965}} bump {row 3 col 14}}
-    
+
     sig74      {type sig   cell {origin {x 2220 y 2965}} bump {row 4 col 13}}
     sig75      {type sig   cell {origin {x 2190 y 2965}} bump {row 2 col 13}}
     pwrdet9    {type pdt   cell {origin {x 2160 y 2965}}}
     sig76      {type sig   cell {origin {x 2155 y 2965}} bump {row 1 col 13}}
     sig77      {type sig   cell {origin {x 2125 y 2965}} bump {row 3 col 13}}
     vzz_19     {type vssio cell {origin {x 2095 y 2965}} bump {row 5 col 13}}
-    
+
     v18_19     {type vddio cell {origin {x 2060 y 2965}} bump {row 4 col 12}}
     sig78      {type sig   cell {origin {x 2030 y 2965}} bump {row 2 col 12}}
     sig79      {type sig   cell {origin {x 2000 y 2965}} bump {row 1 col 12}}
     cbrk11     {type cbk   cell {origin {x 1970 y 2965}}}
     sig80      {type sig   cell {origin {x 1965 y 2965}} bump {row 3 col 12}}
     vdd_9      {type vdd   cell {origin {x 1935 y 2965}} bump {row 5 col 12}}
-    
+
     vss_9      {type vss   cell {origin {x 1900 y 2965}} bump {row 4 col 11}}
     sig81      {type sig   cell {origin {x 1870 y 2965}} bump {row 2 col 11}}
     pwrdet10   {type pdt   cell {origin {x 1840 y 2965}}}
     v18_20     {type vddio cell {origin {x 1835 y 2965}} bump {row 1 col 11}}
     vzz_20     {type vssio cell {origin {x 1805 y 2965}} bump {row 3 col 11}}
     sig82      {type sig   cell {origin {x 1775 y 2965}} bump {row 5 col 11}}
-    
+
     sig83      {type sig   cell {origin {x 1740 y 2965}} bump {row 4 col 10}}
     brk0       {type fbk   cell {origin {x 1710 y 2965}}}
     sig84      {type sig   cell {origin {x 1705 y 2965}} bump {row 2 col 10}}
@@ -206,48 +206,48 @@ Footprint definition {
     sig85      {type sig   cell {origin {x 1645 y 2965}} bump {row 3 col 10}}
     vdd_pll    {type vda   cell {origin {x 1615 y 2965}} bump {row 5 col 10}}
     pwrdet11   {type pdt   cell {origin {x 1685 y 2965}}}
-    sig86      {type sig   cell {origin {x 1580 y 2965}} bump {row 4 col 9}} 
+    sig86      {type sig   cell {origin {x 1580 y 2965}} bump {row 4 col 9}}
     vzz_21     {type vssio cell {origin {x 1550 y 2965}} bump {row 2 col 9}}
     sig87      {type sig   cell {origin {x 1520 y 2965}} bump {row 1 col 9}}
     v18_21     {type vddio cell {origin {x 1490 y 2965}} bump {row 3 col 9}}
     brk1       {type fbk   cell {origin {x 1460 y 2965}}}
     sig88      {type sig   cell {origin {x 1455 y 2965}} bump {row 5 col 9}}
-    
-    sig89      {type sig   cell {origin {x 1415 y 2965}} bump {row 4 col 8}} 
+
+    sig89      {type sig   cell {origin {x 1415 y 2965}} bump {row 4 col 8}}
     vdd_10     {type vdd   cell {origin {x 1385 y 2965}} bump {row 2 col 8}}
     vss_10     {type vss   cell {origin {x 1355 y 2965}} bump {row 1 col 8}}
     vzz_22     {type vssio cell {origin {x 1325 y 2965}} bump {row 3 col 8}}
     v18_22     {type vddio cell {origin {x 1295 y 2965}} bump {row 5 col 8}}
-    
-    sig90      {type sig   cell {origin {x 1260 y 2965}} bump {row 4 col 7}} 
+
+    sig90      {type sig   cell {origin {x 1260 y 2965}} bump {row 4 col 7}}
     sig91      {type sig   cell {origin {x 1230 y 2965}} bump {row 2 col 7}}
     pwrdet12   {type pdt   cell {origin {x 1200 y 2965}}}
     sig92      {type sig   cell {origin {x 1195 y 2965}} bump {row 1 col 7}}
     sig93      {type sig   cell {origin {x 1165 y 2965}} bump {row 3 col 7}}
     vzz_23     {type vssio cell {origin {x 1135 y 2965}} bump {row 5 col 7}}
-    
-    v18_23     {type vddio cell {origin {x 1100 y 2965}} bump {row 4 col 6}} 
+
+    v18_23     {type vddio cell {origin {x 1100 y 2965}} bump {row 4 col 6}}
     sig94      {type sig   cell {origin {x 1070 y 2965}} bump {row 2 col 6}}
     sig95      {type sig   cell {origin {x 1040 y 2965}} bump {row 1 col 6}}
     cbrk12     {type cbk   cell {origin {x 1010 y 2965}}}
     sig96      {type sig   cell {origin {x 1005 y 2965}} bump {row 3 col 6}}
     sig97      {type sig   cell {origin {x  975 y 2965}} bump {row 5 col 6}}
-    
-    vzz_24     {type vssio cell {origin {x  935 y 2965}} bump {row 4 col 5}} 
+
+    vzz_24     {type vssio cell {origin {x  935 y 2965}} bump {row 4 col 5}}
     v18_24     {type vddio cell {origin {x  905 y 2965}} bump {row 2 col 5}}
     sig98      {type sig   cell {origin {x  875 y 2965}} bump {row 1 col 5}}
     vdd_11     {type vdd   cell {origin {x  845 y 2965}} bump {row 3 col 5}}
-    
-    vss_11     {type vss   cell {origin {x  750 y 2965}} bump {row 2 col 4}} 
+
+    vss_11     {type vss   cell {origin {x  750 y 2965}} bump {row 2 col 4}}
     sig99      {type sig   cell {origin {x  720 y 2965}} bump {row 1 col 4}}
     pwrdet13   {type pdt   cell {origin {x  690 y 2965}}}
     sig100     {type sig   cell {origin {x  685 y 2965}} bump {row 3 col 4}}
-    
-    sig101     {type sig   cell {origin {x  585 y 2965}} bump {row 2 col 3}} 
+
+    sig101     {type sig   cell {origin {x  585 y 2965}} bump {row 2 col 3}}
     vzz_25     {type vssio cell {origin {x  555 y 2965}} bump {row 1 col 3}}
-    
-    v18_25     {type vddio cell {origin {x  395 y 2965}} bump {row 1 col 2}} 
-    
+
+    v18_25     {type vddio cell {origin {x  395 y 2965}} bump {row 1 col 2}}
+
     sig102     {type sig   cell {origin {x   35 y 2795}} bump {row 1 col 1}}
     sig103     {type sig   cell {origin {x   35 y 2670}} bump {row 2 col 2}}
     cbrk13     {type cbk   cell {origin {x   35 y 2640}}}
@@ -266,7 +266,7 @@ Footprint definition {
     v18_27     {type vddio cell {origin {x   35 y 2125}} bump {row 5 col 3}}
     sig110     {type sig   cell {origin {x   35 y 2095}} bump {row 5 col 5}}
     sig111     {type sig   cell {origin {x   35 y 2060}} bump {row 6 col 4}}
-    cbrk15     {type cbk   cell {origin {x   35 y 2030}}}                        
+    cbrk15     {type cbk   cell {origin {x   35 y 2030}}}
     sig112     {type sig   cell {origin {x   35 y 2025}} bump {row 6 col 2}}
     sig113     {type sig   cell {origin {x   35 y 1995}} bump {row 6 col 1}}
     vzz_28     {type vssio cell {origin {x   35 y 1965}} bump {row 6 col 3}}
@@ -282,7 +282,7 @@ Footprint definition {
     v18_29     {type vddio cell {origin {x   35 y 1675}} bump {row 8 col 1}}
     sig118     {type sig   cell {origin {x   35 y 1645}} bump {row 8 col 3}}
     sig119     {type sig   cell {origin {x   35 y 1615}} bump {row 8 col 5}}
-    cbrk16     {type cbk   cell {origin {x   35 y 1580}}}                          
+    cbrk16     {type cbk   cell {origin {x   35 y 1580}}}
     sig120     {type sig   cell {origin {x   35 y 1575}} bump {row 9 col 4}}
     sig121     {type sig   cell {origin {x   35 y 1545}} bump {row 9 col 2}}
     vzz_30     {type vssio cell {origin {x   35 y 1515}} bump {row 9 col 1}}
@@ -318,4 +318,3 @@ Footprint definition {
     sig137     {type sig   cell {origin {x   35 y  395}} bump {row 16 col 1}}
   }
 }
-                                                              

@@ -13,42 +13,42 @@
 [INFO ODB-0133]     Created 2 nets and 41 connections.
 [INFO ODB-0134] Finished DEF file: max_cap.def
 [INFO CTS-0039] Number of created patterns = 10440.
-[INFO CTS-0084] Compiling LUT
+[INFO CTS-0084] Compiling LUT.
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
 2           8           1           33          1           201         
-[WARNING CTS-0043] 1392 wires are pure wire and no slew degration.
+[WARNING CTS-0043] 1392 wires are pure wire and no slew degradation.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Number of wire segments: 10440
-[INFO CTS-0047]     Number of keys in characterization LUT: 1722
-[INFO CTS-0048]     Actual min input cap: 2
-[INFO CTS-0007] Net "clk1" found for clock "clk1"
-[INFO CTS-0010]  Clock net "clk1" has 20 sinks
+[INFO CTS-0046]     Number of wire segments: 10440.
+[INFO CTS-0047]     Number of keys in characterization LUT: 1722.
+[INFO CTS-0048]     Actual min input cap: 2.
+[INFO CTS-0007] Net "clk1" found for clock "clk1".
+[INFO CTS-0010]  Clock net "clk1" has 20 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
-[INFO CTS-0097] Chacterization used 1 buffer(s) types.
-[INFO CTS-0027] Generating H-Tree topology for net clk1
-[INFO CTS-0028]  Total number of sinks: 20
-[INFO CTS-0030]  Number of static layers: 0
-[INFO CTS-0020]  Wire segment unit: 16000  dbu (16 um)
-[INFO CTS-0023]  Original sink region: [(315, 1540), (600315, 801540)]
-[INFO CTS-0024]  Normalized sink region: [(0.0196875, 0.09625), (37.5197, 50.0962)]
-[INFO CTS-0025]     Width:  37.5000
-[INFO CTS-0026]     Height: 50.0000
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0027] Generating H-Tree topology for net clk1.
+[INFO CTS-0028]  Total number of sinks: 20.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 16000  dbu (16 um).
+[INFO CTS-0023]  Original sink region: [(315, 1540), (600315, 801540)].
+[INFO CTS-0024]  Normalized sink region: [(0.0196875, 0.09625), (37.5197, 50.0962)].
+[INFO CTS-0025]     Width:  37.5000.
+[INFO CTS-0026]     Height: 50.0000.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 10
     Sub-region size: 37.5000 X 25.0000
-[INFO CTS-0034]     Segment length (rounded): 12
+[INFO CTS-0034]     Segment length (rounded): 12.
     Key: 312 outSlew: 14 load: 1 length: 8 isBuffered: true
     Key: 42 outSlew: 8 load: 1 length: 4 isBuffered: true
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15
-[INFO CTS-0035]  Number of sinks covered: 20
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 20.
 [INFO CTS-0036]  Average source sink dist: 344000.30 dbu.
-[INFO CTS-0037]  Number of outlier sinks: 0
+[INFO CTS-0037]  Number of outlier sinks: 0.
 [INFO CTS-0018]     Created 5 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
 [INFO CTS-0015]     Created 5 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 10:2.
+[INFO CTS-0016]     Fanout distribution for the current clock = 10:2..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk1"
 [INFO CTS-0099]  Sinks 20

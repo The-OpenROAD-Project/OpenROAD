@@ -217,12 +217,15 @@ bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
 
 //////////////////////////////////////////////////
 
-const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
+const char* FlexDRGraphics::graph_edges_visible_ = "Graph Edges";
+const char* FlexDRGraphics::grid_cost_edges_visible_ = "Grid Cost Edges";
+const char* FlexDRGraphics::blocked_edges_visible_ = "Blocked Edges";
 const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
 const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
 const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
+const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
 
 static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
 {
@@ -259,19 +262,22 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     }
   }
 
-  gui_->addCustomVisibilityControl(grid_graph_visible_);
+  gui_->addCustomVisibilityControl(graph_edges_visible_);
+  gui_->addCustomVisibilityControl(grid_cost_edges_visible_);
+  gui_->addCustomVisibilityControl(blocked_edges_visible_);
   gui_->addCustomVisibilityControl(route_shape_cost_visible_);
   gui_->addCustomVisibilityControl(marker_cost_visible_);
   gui_->addCustomVisibilityControl(fixed_shape_cost_visible_);
   gui_->addCustomVisibilityControl(route_guides_visible_, true);
   gui_->addCustomVisibilityControl(routing_objs_visible_, true);
+  gui_->addCustomVisibilityControl(maze_search_visible_, true);
 
   gui_->registerRenderer(this);
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  if (points_by_layer_.empty())
+  if (layer_map_.empty())
         return;
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
@@ -287,7 +293,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     if (drawWholeDesign_) {
       design_->getTopBlock()->getDieBox(box);
       fr::frRegionQuery::Objects<frBlockObject> figs;
-      design_->getRegionQuery()->query(box, layerNum, figs);
+      design_->getRegionQuery()->queryDRObj(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
@@ -313,11 +319,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
   painter.setPen(layer, /* cosmetic */ true);
-  for (frPoint& pt : points_by_layer_[layerNum]) {
-    painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
-    painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+  if (gui_->checkCustomVisibilityControl(maze_search_visible_) &&
+        !points_by_layer_.empty()) {
+    for (frPoint& pt : points_by_layer_[layerNum]) {
+      painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
+      painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+    }
   }
-
   // Draw graphs
   const bool draw_drc
       = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
@@ -325,39 +333,60 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       = gui_->checkCustomVisibilityControl(marker_cost_visible_);
   const bool draw_shape
       = gui_->checkCustomVisibilityControl(fixed_shape_cost_visible_);
-  const bool draw_graph
-      = gui_->checkCustomVisibilityControl(grid_graph_visible_);
+  const bool draw_edges
+      = gui_->checkCustomVisibilityControl(graph_edges_visible_);
+  const bool draw_gCostEdges
+      = gui_->checkCustomVisibilityControl(grid_cost_edges_visible_);
+  const bool draw_blockedEdges
+      = gui_->checkCustomVisibilityControl(blocked_edges_visible_);
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
-      && (draw_graph || draw_drc || draw_marker || draw_shape)) {
+      && (draw_edges || draw_drc || draw_marker || draw_shape ||
+          draw_gCostEdges || draw_blockedEdges)) {
     const frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    const int offset = 25;
-    const bool prefIsVert
-        = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
-
+    const int offset = design_->getTech()->getLayer(2)->getPitch() / 8;
     frMIdx x_dim, y_dim, z_dim;
     grid_graph_->getDim(x_dim, y_dim, z_dim);
 
+    auto color = painter.getPenColor();
+    auto prevColor = color;
+    color.a = 255;
     for (frMIdx x = 0; x < x_dim; ++x) {
       for (frMIdx y = 0; y < y_dim; ++y) {
         frPoint pt;
         grid_graph_->getPoint(pt, x, y);
+        //draw edges
+        if (draw_edges || draw_gCostEdges || draw_blockedEdges) {
+            if (x != x_dim - 1) {
+                frPoint pt2;
+                grid_graph_->getPoint(pt2, x + 1, y);
 
-        if (draw_graph && x != x_dim - 1
-            && (!grid_graph_->hasEdge(x, y, z, frDirEnum::E)
-                || grid_graph_->isBlocked(x, y, z, frDirEnum::E)
-                || (!prefIsVert && grid_graph_->hasGridCostE(x, y, z)))) {
-          frPoint pt2;
-          grid_graph_->getPoint(pt2, x + 1, y);
-          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
-        }
-
-        if (draw_graph && y != y_dim - 1
-            && (!grid_graph_->hasEdge(x, y, z, frDirEnum::N)
-                || grid_graph_->isBlocked(x, y, z, frDirEnum::N)
-                || (prefIsVert && grid_graph_->hasGridCostN(x, y, z)))) {
-          frPoint pt2;
-          grid_graph_->getPoint(pt2, x, y + 1);
-          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                if ((draw_gCostEdges && grid_graph_->hasGridCostE(x, y, z)) ||
+                    (draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::E))) {
+                    painter.setBrush(color);
+                    painter.setPen(color, true, offset/10);
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                painter.setBrush(prevColor);
+                painter.setPen(layer, true);
+            }
+            if (y != y_dim - 1) {
+                frPoint pt2;
+                grid_graph_->getPoint(pt2, x, y + 1);
+                if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::N)) {
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                if ((draw_gCostEdges && grid_graph_->hasGridCostN(x, y, z)) ||
+                    (draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::N))) {
+                    painter.setBrush(color);
+                    painter.setPen(color, true, offset/10);
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                painter.setBrush(prevColor);
+                painter.setPen(layer, true);
+            }
         }
         // Planar doesn't distinguish E vs N so just use one
         bool planar
@@ -379,7 +408,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
               || (draw_marker
                   && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U))
+              || (draw_gCostEdges
+                  && grid_graph_->hasGridCostU(x, y, z))
+              || (draw_blockedEdges
+                  && grid_graph_->isBlocked(x, y, z, frDirEnum::U))
+              || (draw_edges
+                  && grid_graph_->hasEdge(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);
@@ -414,12 +449,33 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
 {
   frBox box;
   switch (fig->typeId()) {
+    case frcPathSeg: {
+        auto seg = (frPathSeg*) fig;
+        if (seg->getLayerNum() == layerNum) {
+          seg->getBBox(box);
+          painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        }
+        break;
+    }
     case drcPathSeg: {
       auto seg = (drPathSeg*) fig;
       if (seg->getLayerNum() == layerNum) {
         seg->getBBox(box);
         painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       }
+      break;
+    }
+    case frcVia: {
+      auto via = (frVia*) fig;
+      auto viadef = via->getViaDef();
+      if (viadef->getLayer1Num() == layerNum) {
+        via->getLayer1BBox(box);
+      } else if (viadef->getLayer2Num() == layerNum) {
+        via->getLayer2BBox(box);
+      } else {
+        return;
+      }
+      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       break;
     }
     case drcVia: {
@@ -435,6 +491,14 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       break;
     }
+    case frcPatchWire: {
+      auto patch = (frPatchWire*) fig;
+      if (patch->getLayerNum() == layerNum) {
+        patch->getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
+      break;
+    }
     case drcPatchWire: {
       auto patch = (drPatchWire*) fig;
       if (patch->getLayerNum() == layerNum) {
@@ -444,8 +508,9 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
       break;
     }
 
-    default:
-      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+    default: {
+      logger_->debug(DRT, 1, "Unknown fig type {} in drawLayer.", fig->typeId());
+    }
   }
 }
 
@@ -475,8 +540,9 @@ void FlexDRGraphics::show() {
 
 void FlexDRGraphics::update()
 {
-  if (settings_->draw)
+  if (settings_->draw) {
     gui_->redraw();
+  }
 }
 
 void FlexDRGraphics::pause(drNet* net)
@@ -496,6 +562,7 @@ void FlexDRGraphics::debugWholeDesign()
   drawWholeDesign_ = true;
   update();
   gui_->pause();
+  drawWholeDesign_ = false;
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
@@ -614,15 +681,15 @@ void FlexDRGraphics::startNet(drNet* net)
   status("Start net: " + net->getFrNet()->getName() + " "
          + workerOrigin(worker_, design_));
   logger_->info(
-      DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
+      DRT, 249, "Net {} (id = {}).", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {
-    logger_->info(DRT, 250, "  Pin {}", pin->getName());
+    logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
       frPoint pt;
       ap->getPoint(pt);
       logger_->info(DRT,
                     275,
-                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
+                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {}).",
                     pt.x() / (double) dbu_per_uu_,
                     pt.y() / (double) dbu_per_uu_,
                     ap->getBeginLayerNum(),

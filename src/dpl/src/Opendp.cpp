@@ -124,11 +124,11 @@ Group::Group() :
 }
 
 Opendp::Opendp() :
-  pad_right_(0),
   pad_left_(0),
-  grid_(nullptr),
+  pad_right_(0),
   max_displacement_x_(0),
-  max_displacement_y_(0)
+  max_displacement_y_(0),
+  grid_(nullptr)
 {
   dummy_cell_.is_placed_ = true;
 }

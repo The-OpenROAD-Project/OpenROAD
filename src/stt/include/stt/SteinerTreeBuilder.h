@@ -42,11 +42,15 @@
 
 #include "flute.h"
 #include "pdrev.h"
-#include "opendb/db.h"
 
 namespace ord {
 class OpenRoad;
 }
+
+namespace odb {
+class dbDatabase;
+class dbNet;
+}  // namespace odb
 
 namespace stt {
 
@@ -69,25 +73,29 @@ class SteinerTreeBuilder
                        int drvr_index);
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
-  Tree makeSteinerTree(int num_pins,
-                       int xs[],
-                       int ys[],
-                       int s[],
+  Tree makeSteinerTree(const std::vector<int>& x,
+                       const std::vector<int>& y,
+                       const std::vector<int>& s,
                        int acc);
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha) { alpha_ = alpha; }
   float getAlpha(const odb::dbNet* net) const;
   void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
+  void setMinFanoutAlpha(int min_fanout, float alpha) { min_fanout_alpha_ = {min_fanout, alpha}; }
+  void setMinHPWLAlpha(int min_hpwl, float alpha) { min_hpwl_alpha_ = {min_hpwl, alpha}; }
 
  private:
   Tree makeTree(std::vector<int>& x,
                 std::vector<int>& y,
                 int drvr_index,
                 float alpha);
+  int computeHPWL(odb::dbNet* net);
 
   const int flute_accuracy = 3;
   float alpha_;
   std::map<const odb::dbNet*, float> net_alpha_map_;
+  std::pair<int, float> min_fanout_alpha_;
+  std::pair<int, float> min_hpwl_alpha_;
 
   Logger* logger_;
   odb::dbDatabase* db_;

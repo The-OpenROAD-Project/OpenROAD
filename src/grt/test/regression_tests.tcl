@@ -20,6 +20,8 @@ record_tests {
   no_tracks
   pd1
   pd2
+  pd3
+  pd4
   region_adjustment
   repair_antennas1
   repair_antennas2

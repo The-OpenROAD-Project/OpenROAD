@@ -38,6 +38,8 @@
 
 %}
 
+%include "../../Exception.i"
+
 %inline %{
 
 void
