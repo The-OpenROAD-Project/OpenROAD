@@ -167,7 +167,6 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices, std::vector<int> sl
   int num_i_os = pin_indices.size();
   int num_slots = slot_indices.size();
   double shift = is_group ? 1 : num_slots / double(num_i_os);
-  int idx = 0;
   std::vector<int> vSlots(num_slots);
   std::vector<int> io_pin_indices(num_i_os);
 
