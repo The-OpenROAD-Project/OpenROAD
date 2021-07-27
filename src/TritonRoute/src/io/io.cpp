@@ -873,8 +873,10 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       for (auto box : pin->getBoxes()) {
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end())
-          logger->error(
-              DRT, 112, "Unsupported layer {}.", box->getTechLayer()->getName());
+          logger->error(DRT,
+                        112,
+                        "Unsupported layer {}.",
+                        box->getTechLayer()->getName());
         frLayerNum layerNum
             = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
         frCoord xl = defdist(block, box->xMin());
@@ -1258,10 +1260,11 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         break;
       }
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
-        logger->warn(utl::DRT,
-                     258,
-                     "Unsupported LEF58_SPACING rule for layer {} of type AREA.",
-                     layer->getName());
+        logger->warn(
+            utl::DRT,
+            258,
+            "Unsupported LEF58_SPACING rule for layer {} of type AREA.",
+            layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY:
         logger->warn(
@@ -1887,10 +1890,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         } else if (str == "FEEDTHRU") {
           termDirection = frTermDirectionEnum::FEEDTHRU;
         } else {
-          logger->error(DRT,
-                        121,
-                        "Unsupported terminal direction {} in lef.",
-                        str);
+          logger->error(
+              DRT, 121, "Unsupported terminal direction {} in lef.", str);
         }
         term->setDirection(termDirection);
 
