@@ -2080,7 +2080,7 @@ namespace eval ICeWall {
 
     # debug "start"
     if {[catch {set ch [open $signal_map_file "w"]} msg]} {
-       utl::error 44 "Cannot open file $signal_map_file."
+       utl::error PAD 44 "Cannot open file $signal_map_file."
     }
 
     foreach padcell [dict keys [dict get $footprint padcell]] {
@@ -2096,7 +2096,7 @@ namespace eval ICeWall {
 
     # debug "start"
     if {[catch {set ch [open $footprint_file "w"]} msg]} {
-      utl::error 45 "Cannot open file $footprint_file."
+      utl::error PAD 45 "Cannot open file $footprint_file."
     }
 
     puts $ch "source \$::env(FOOTPRINT_LIBRARY)"
@@ -3779,7 +3779,7 @@ namespace eval ICeWall {
     variable library
 
     if {![dict exists $library types]} {
-      utl::error 29 "No types specified in the library."
+      utl::error PAD 29 "No types specified in the library."
     }
 
     return [dict keys [dict get $library types]]
@@ -5548,7 +5548,7 @@ proc place_cell {args} {
   if {[info exists keys(-inst_name)]} {
     set inst_name [lindex $keys(-inst_name) 0]
   } else {
-    utl::err PAD 190 "-inst_name is a required argument to the place_cell command."
+    utl::error PAD 190 "-inst_name is a required argument to the place_cell command."
   }
 
   # Verify cell orientation
