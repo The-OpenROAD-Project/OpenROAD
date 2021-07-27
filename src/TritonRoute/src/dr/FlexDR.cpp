@@ -26,16 +26,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
 #include <chrono>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 #include "db/infra/frTime.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -878,10 +879,8 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
     auto layer = getTech()->getLayer(viaDef1->getCutLayerNum());
-    auto samenetCons
-        = layer->getCutSpacing(true);
-    auto diffnetCons
-        = layer->getCutSpacing(false);
+    auto samenetCons = layer->getCutSpacing(true);
+    auto diffnetCons = layer->getCutSpacing(false);
     if (!samenetCons.empty()) {
       // check samenet spacing rule if exists
       for (auto con : samenetCons) {
@@ -921,8 +920,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       }
     }
     // TODO: diff layer
-  } 
-  else {
+  } else {
     auto layerNum1 = viaDef1->getCutLayerNum();
     auto layerNum2 = viaDef2->getCutLayerNum();
     frCutSpacingConstraint* samenetCon = nullptr;
@@ -974,7 +972,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       sol = max(sol, reqSpcVal);
     }
   }
-  //LEF58_SPACINGTABLE
+  // LEF58_SPACINGTABLE
   if (viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum()) {
     // swap
     frViaDef* temp = viaDef2;
@@ -986,9 +984,9 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.width(), cutBox1.length());
   auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.width(), cutBox2.length());
   frString cutClass1, cutClass2;
-  if(cutClassIdx1 != -1)
+  if (cutClassIdx1 != -1)
     cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
-  if(cutClassIdx2!= -1)
+  if (cutClassIdx2 != -1)
     cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
   for (auto con : layer1->getLef58CutSpacingTableConstraints()) {
     auto dbRule = con->getODBRule();
@@ -999,7 +997,8 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         && layer2->getLayerNum() != layer1->getLayerNum())
       continue;
     frCoord reqSpcVal;
-    if(cutBox1.width() == cutBox1.length() && cutBox2.width() == cutBox2.length())
+    if (cutBox1.width() == cutBox1.length()
+        && cutBox2.width() == cutBox2.length())
       reqSpcVal = dbRule->getSpacing(cutClass1, false, cutClass2, false);
     else
       reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
@@ -1447,8 +1446,7 @@ void FlexDR::searchRepair(int iter,
     } else {
       suffix = "th";
     }
-    logger_->info(
-        DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
+    logger_->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
   }
   if (graphics_) {
     graphics_->startIter(iter);

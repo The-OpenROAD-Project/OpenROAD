@@ -1715,24 +1715,27 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   auto z2 = isUpperVia ? z + 1 : z - 1;
 
   frViaDef* viaDef = nullptr;
-  frLayer* higherLayer;
-  frLayer* lowerLayer;
   if (isUpperVia) {
     viaDef = (cutLayerNum2 <= getTech()->getTopLayerNum())
                  ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
                  : nullptr;
-    higherLayer = getTech()->getLayer(cutLayerNum2);
-    lowerLayer = getTech()->getLayer(cutLayerNum1);
   } else {
     viaDef = (cutLayerNum2 >= getTech()->getBottomLayerNum())
                  ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
                  : nullptr;
-    lowerLayer = getTech()->getLayer(cutLayerNum2);
-    higherLayer = getTech()->getLayer(cutLayerNum1);
   }
   if (viaDef == nullptr)
     return;
 
+  frLayer* higherLayer;
+  frLayer* lowerLayer;
+  if (isUpperVia) {
+    higherLayer = getTech()->getLayer(cutLayerNum2);
+    lowerLayer = getTech()->getLayer(cutLayerNum1);
+  } else {
+    lowerLayer = getTech()->getLayer(cutLayerNum2);
+    higherLayer = getTech()->getLayer(cutLayerNum1);
+  }
   if (higherLayer->getLef58CutSpacingTableConstraints().empty())
     return;
   // obj1 = curr obj
