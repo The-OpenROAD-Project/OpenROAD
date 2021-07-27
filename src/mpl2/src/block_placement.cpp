@@ -743,7 +743,11 @@ void SimulatedAnnealingCore::AlignMacro()
       } else {
         ; // do nothing
       }
-
+   
+      if(CalculateOverlap() == true) {
+        blocks_[i].SetX(lx);
+      }
+  
       if(ly < boundary_threshold) {
         blocks_[i].SetY(0.0);
       } else if(uy < outline_height_ && outline_height_ - uy < boundary_threshold) {
@@ -753,7 +757,6 @@ void SimulatedAnnealingCore::AlignMacro()
       }
 
       if(CalculateOverlap() == true) {
-        blocks_[i].SetX(lx);
         blocks_[i].SetY(ly);
       }
     }
@@ -815,9 +818,10 @@ void SimulatedAnnealingCore::AlignMacro()
         if(lx_b >= ux && lx_b <= ux + boundary_threshold) {
           blocks_[macro_id].SetX(ux);  
         } else if(lx_b < ux && lx_b >= ux - boundary_threshold) {
-          blocks_[macro_id].SetX(ux - (ux_b - lx_b));
+          //blocks_[macro_id].SetX(ux - (ux_b - lx_b));
+           blocks_[macro_id].SetX(ux);
         } else if(ux_b > lx && ux_b >= lx + boundary_threshold) {
-          blocks_[macro_id].SetX(lx); 
+          blocks_[macro_id].SetX(lx - (ux_b - lx_b)); 
         } else if(ux_b <= lx && ux_b >= lx - boundary_threshold) {
           blocks_[macro_id].SetX(lx - (ux_b - lx_b));
         } else {
@@ -897,9 +901,9 @@ void SimulatedAnnealingCore::AlignMacro()
         if(ly_b >= uy && ly_b <= uy + boundary_threshold) {
           blocks_[macro_id].SetY(uy);  
         } else if(ly_b < uy && ly_b >= uy - boundary_threshold) {
-          blocks_[macro_id].SetY(uy - (uy_b - ly_b));
+          blocks_[macro_id].SetY(uy);
         } else if(uy_b > ly && uy_b >= ly + boundary_threshold) {
-          blocks_[macro_id].SetY(ly); 
+          blocks_[macro_id].SetY(ly - (uy_b - ly_b)); 
         } else if(uy_b <= ly && uy_b >= ly - boundary_threshold) {
           blocks_[macro_id].SetY(ly - (uy_b - ly_b));
         } else {
