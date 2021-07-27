@@ -568,7 +568,7 @@ InitFloorplan::metersToDbu(double dist) const
 {
   dbTech *tech = db_->getTech();
   int dbu = tech->getDbUnitsPerMicron();
-  return dist * 1e+6 * dbu;
+  return (dist * 1e+6 * dbu) + 0.5;
 }
 
 } // namespace
