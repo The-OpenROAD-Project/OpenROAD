@@ -56,11 +56,11 @@ class PostCtsOpt
              CtsOptions* options,
              TechChar* techChar,
              Logger* logger)
-      : _builder((HTreeBuilder*) builder),
-        _clock(&(builder->getClock())),
-        _techChar(techChar),
+      : _clock(&(builder->getClock())),
         _options(options),
-        _logger(logger)
+        _techChar(techChar),
+        _logger(logger),
+        _builder((HTreeBuilder*) builder)
   {
     _bufDistRatio = _options->getBufDistRatio();
   }

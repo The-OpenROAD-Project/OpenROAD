@@ -38,6 +38,9 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
+#include <boost/polygon/polygon.hpp>
+
+using Rectangle = boost::polygon::rectangle_data<int>;
 
 namespace odb {
 class dbDatabase;
@@ -468,6 +471,7 @@ class FlexDRWorker
       return nullptr;
     }
   }
+  frDesign* getDesign() { return design_; }
   const std::vector<frMarker>& getMarkers() const { return markers_; }
   std::vector<frMarker>& getMarkers() { return markers_; }
   const std::vector<frMarker>& getBestMarkers() const { return bestMarkers_; }
@@ -656,12 +660,15 @@ class FlexDRWorker
                         std::vector<frBlockObject*>& terms);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
   void initNet_addNet(std::unique_ptr<drNet> in);
-  void getTrackLocs(const frDesign* design,
-                    bool isHorzTracks,
+  void getTrackLocs(bool isHorzTracks,
                     frLayerNum currLayerNum,
                     frCoord low,
                     frCoord high,
                     std::set<frCoord>& trackLocs);
+  void getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
+                                Rectangle& pinRect,
+                                std::set<frCoord>& xLocs,
+                                std::set<frCoord>& yLocs);
   void initNet_boundary(drNet* net,
                         std::vector<std::unique_ptr<drConnFig>>& extObjs);
   void initNets_regionQuery();

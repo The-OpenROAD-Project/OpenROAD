@@ -78,7 +78,7 @@ static void get_param(const unordered_map<string, string>& params,
     std::istringstream s(iter->second);
     s >> param;
   }
-  logger->info(MPL, 9, "RTL_MP  Param: {}: {}", name, param);
+  logger->info(MPL, 9, "RTL-MP param: {}: {}.", name, param);
 }
 
 bool rtl_macro_placer(const char* config_file,
@@ -87,7 +87,7 @@ bool rtl_macro_placer(const char* config_file,
                       const char* report_directory,
                       const char* report_file)
 {
-  logger->report("*** In RTLMP ***");
+  logger->report("Start RTL-MP");
 
   string block_file = string(report_directory) + '/' + report_file + ".block";
   string net_file = string(report_directory) + '/' + report_file + ".net";
@@ -242,7 +242,7 @@ bool rtl_macro_placer(const char* config_file,
       clusters, logger, report_directory, halo_width, num_thread, num_run, seed);
 
   if (success_flag == false) {
-    logger->report("*** RTLMP Failed ***");
+    logger->report("RTL-MP failed");
     return false;
   }
 
@@ -381,7 +381,7 @@ bool rtl_macro_placer(const char* config_file,
 
   file.close();
 
-  logger->report("*** Exit RTLMP ***");
+  logger->report("Finish RTL-MP");
 
   return true;
 }

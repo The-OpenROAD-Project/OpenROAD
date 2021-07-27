@@ -153,12 +153,19 @@ Resizer::Resizer() :
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
   max_area_(0.0),
+  openroad_(nullptr),
+  logger_(nullptr),
   gui_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
   db_(nullptr),
+  block_(nullptr),
   core_exists_(false),
+  design_area_(0.0),
   max_(MinMax::max()),
+  buffer_lowest_drive_(nullptr),
+  buffer_med_drive_(nullptr),
+  buffer_highest_drive_(nullptr),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
   level_drvr_vertices_valid_(false),
@@ -168,8 +175,10 @@ Resizer::Resizer() :
   unique_net_index_(1),
   unique_inst_index_(1),
   resize_count_(0),
-  design_area_(0.0),
-  steiner_renderer_(nullptr)
+  inserted_buffer_count_(0),
+  max_wire_length_(0),
+  steiner_renderer_(nullptr),
+  rebuffer_net_count_(0)
 {
 }
 
@@ -828,7 +837,6 @@ Resizer::repairNet(Net *net,
     bool repair_cap = false;
     bool repair_fanout = false;
     bool repair_wire = false;
-    bool using_repeater_cap_limit = false;
     const Corner *corner = sta_->cmdCorner();
     if (check_cap) {
       float cap1, max_cap1, cap_slack1;
@@ -1023,7 +1031,6 @@ Resizer::gateSlewDiff(LibertyPort *drvr_port,
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap)
 {
-  const Pvt *pvt = dcalc_ap->operatingConditions();
   ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
@@ -1133,7 +1140,6 @@ Resizer::repairNet(SteinerTree *tree,
   for (Pin *load_pin : loads_right)
     load_pins.push_back(load_pin);
 
-  Net *buffer_out = nullptr;
   // Steiner pt pin is the net driver if prev_pt is null.
   if (prev_pt != SteinerTree::null_pt) {
     const PinSeq *pt_pins = tree->pins(pt);
@@ -1399,7 +1405,6 @@ Resizer::resizeToTargetSlew()
     Vertex *drvr = level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
-    Instance *inst = network_->instance(drvr_pin);
     if (net
         && !drvr->isConstant()
         && hasFanout(drvr)
@@ -1456,7 +1461,6 @@ bool
 Resizer::resizeToTargetSlew(const Pin *drvr_pin,
                             bool update_count)
 {
-  NetworkEdit *network = networkEdit();
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
   if (cell) {
@@ -1980,7 +1984,6 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   InstanceSeq insts;
   findCellInstances(tie_cell, insts);
   int tie_count = 0;
-  Instance *parent = db_network_->topInstance();
   int separation_dbu = metersToDbu(separation);
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
@@ -2180,7 +2183,6 @@ Resizer::repairSetup(PathRef &path,
   if (expanded.size() > 1) {
     int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
-    int end_index = path_length - 1;
     int start_index = expanded.startIndex();
     PathRef *prev_path = expanded.path(start_index - 1);
     const DcalcAnalysisPt *dcalc_ap = path.dcalcAnalysisPt(sta_);
@@ -2212,7 +2214,6 @@ Resizer::repairSetup(PathRef &path,
          });
     for (auto index_delay : load_delays) {
       int drvr_index = index_delay.first;
-      Delay load_delay = index_delay.second;
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       Pin *drvr_pin = drvr_vertex->pin();
@@ -2259,7 +2260,6 @@ Resizer::repairSetup(PathRef &path,
         prev_drive = 0.0;
         LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
         if (prev_drvr_port) {
-          LibertyPort *corner_prev_drvr_port = prev_drvr_port->cornerPort(lib_ap);
           prev_drive = prev_drvr_port->driveResistance();
         }
       }
@@ -2312,9 +2312,6 @@ Resizer::splitLoads(PathRef *drvr_path,
 
   Pin *drvr_pin = drvr_vertex->pin();
   Net *net = network_->net(drvr_pin);
-  Instance *drvr = network_->instance(drvr_pin);
-  LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-  LibertyCell *drvr_cell = network_->libertyCell(drvr);
 
   string buffer_name = makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
@@ -2410,7 +2407,6 @@ Resizer::repairHold(float slack_margin,
 {
   init();
   LibertyCell *buffer_cell = findHoldBuffer();
-  Unit *time_unit = units_->timeUnit();
   sta_->findRequireds();
   VertexSet *ends = sta_->search()->endpoints();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
@@ -2448,7 +2444,6 @@ Resizer::findHoldBuffer()
 {
   LibertyCell *max_buffer = nullptr;
   float max_delay = 0.0;
-  LibertyCell *max_delay_cell = nullptr;
   for (LibertyCell *buffer : buffer_cells_) {
     float buffer_min_delay = bufferHoldDelay(buffer);
     if (max_buffer == nullptr
@@ -2551,7 +2546,6 @@ Resizer::findHoldViolations(VertexSet *ends,
                             Slack &worst_slack,
                             VertexSet &hold_violations)
 {
-  Search *search = sta_->search();
   worst_slack = INF;
   hold_violations.clear();
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
@@ -2679,7 +2673,6 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
 VertexSet
 Resizer::findHoldFanins(VertexSet &ends)
 {
-  Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
@@ -2888,7 +2881,6 @@ Resizer::findLongWires(VertexSeq &drvrs)
     Vertex *vertex = vertex_iter.next();
     if (vertex->isDriver(network_)) {
       Pin *pin = vertex->pin();
-      Net *net = network_->net(pin);
       // Hands off the clock nets.
       if (!sta_->isClock(pin)
           && !vertex->isConstant()
@@ -2914,7 +2906,6 @@ Resizer::findLongWiresSteiner(VertexSeq &drvrs)
     Vertex *vertex = vertex_iter.next();
     if (vertex->isDriver(network_)) {
       Pin *pin = vertex->pin();
-      Net *net = network_->net(pin);
       // Hands off the clock nets.
       if (!sta_->isClock(pin)
           && !vertex->isConstant())
@@ -3357,7 +3348,6 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
         while (arc_iter.hasNext()) {
           TimingArc *arc = arc_iter.next();
           RiseFall *in_rf = arc->fromTrans()->asRiseFall();
-          int out_rf_index = arc->toTrans()->asRiseFall()->index();
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
           Slew drvr_slew;
@@ -3759,7 +3749,6 @@ Resizer::findFaninFanouts(VertexSet &ends)
 VertexSet
 Resizer::findFaninRoots(VertexSet &ends)
 {
-  Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
@@ -3797,7 +3786,6 @@ VertexSet
 Resizer::findFanouts(VertexSet &reg_outs)
 {
   VertexSet fanouts;
-  Search *search = sta_->search();
   sta::SearchPredNonLatch2 pred(sta_);
   BfsFwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *reg_out : reg_outs)

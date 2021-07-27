@@ -354,6 +354,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = getBlock()->getDataBase()->getTech();
+  std::vector<Selected> selections;
   // dbSet doesn't provide a reverse iterator so we have to copy it.
   std::deque<dbTechLayer*> rev_layers;
   for (auto layer : tech->getLayers()) {
@@ -368,7 +369,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     for (auto* renderer : renderers) {
       Selected selected = renderer->select(layer, pt_dbu);
       if (selected) {
-        return selected;
+        selections.push_back(selected);
       }
     }
 
@@ -378,8 +379,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     // Just return the first one
     for (auto iter : shapes) {
       dbNet* net = std::get<2>(iter);
-      if (options_->isNetVisible(net)) {
-        return makeSelected_(net);
+      if (options_->isNetVisible(net) && options_->isNetSelectable(net)) {
+        selections.push_back(makeSelected_(net));
       }
     }
   }
@@ -388,7 +389,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   for (auto* renderer : renderers) {
     Selected selected = renderer->select(nullptr, pt_dbu);
     if (selected) {
-      return selected;
+      selections.push_back(selected);
     }
   }
 
@@ -396,10 +397,46 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   auto insts
       = search_.searchInsts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
-  // Just return the first one
+  for (auto& inst : insts) {
+    dbInst* inst_ptr = std::get<2>(inst);
+    if (options_->isInstanceVisible(inst_ptr) && options_->isInstanceSelectable(inst_ptr)) {
+      selections.push_back(makeSelected_(inst_ptr));
+    }
+  }
 
-  if (insts.begin() != insts.end()) {
-    return makeSelected_(std::get<2>(*insts.begin()));
+  if (!selections.empty()) {
+    if (selections.size() == 1) {
+      // one one item possible, so return that
+      return selections[0];
+    }
+
+    // more than one item possible, so return the "next" one
+    // method: look for the last selected item in the list and select the next one
+    // that will emulate a circular queue so we don't just oscillate between the first two
+    std::vector<bool> is_selected;
+    for (auto& sel : selections) {
+      is_selected.push_back(selected_.count(sel) != 0);
+    }
+    if (std::all_of(is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
+      // everything is selected, so just return first item
+      return selections[0];
+    }
+    is_selected.push_back(is_selected[0]); // add first element to make it a "loop"
+
+    int next_selection_idx;
+    // start at end of list and look for the selection item that is directly after a selected item.
+    for (next_selection_idx = selections.size(); next_selection_idx > 0; next_selection_idx--) {
+      // looking for true followed by false
+      if (is_selected[next_selection_idx-1] && !is_selected[next_selection_idx]) {
+        break;
+      }
+    }
+    if (next_selection_idx == selections.size()) {
+      // found at the end of the list, loop around
+      next_selection_idx = 0;
+    }
+
+    return selections[next_selection_idx];
   }
   return Selected();
 }
@@ -411,7 +448,6 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     return;
   }
   
-  int dbu_height = getBounds(block).yMax();
   mouse_press_pos_ = event->pos();
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
@@ -482,10 +518,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
       if (rect.width() < 10 && rect.height() < 10)
         return;
-      int dbu_height = getBounds(block).yMax();
       auto mouse_release_pos = screenToDBU(event->pos());
       auto mouse_press_pos = screenToDBU(mouse_press_pos_);
-      qreal to_dbu = block->getDbUnitsPerMicron();
 
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
@@ -899,7 +933,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   std::vector<dbInst*> insts;
   insts.reserve(10000);
   for (auto& [box, poly, inst] : inst_range) {
-    insts.push_back(inst);
+    if (options_->isInstanceVisible(inst)) {
+      insts.push_back(inst);
+    }
   }
 
   // Draw the instances bounds
@@ -1051,8 +1087,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
         const auto& ur = std::get<0>(i).max_corner();
-        int w = ur.x() - ll.x();
-        int h = ur.y() - ll.y();
         painter->drawRect(
             QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
       }
@@ -1371,7 +1405,6 @@ void LayoutViewer::addMenuAndActions()
   // Create Top Level Menu for the context Menu
   auto select_menu = layout_context_menu_->addMenu(tr("Select"));
   auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
-  auto congestion_menu = layout_context_menu_->addMenu(tr("Congestion"));
   auto view_menu = layout_context_menu_->addMenu(tr("View"));
   auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
   // Create Actions
