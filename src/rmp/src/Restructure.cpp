@@ -179,12 +179,8 @@ void Restructure::runABC()
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
 
-  debugPrint(logger_,
-             RMP,
-             "remap",
-             1,
-             "Running ABC with number of threads = {}.",
-             max_threads);
+  debugPrint(
+      logger_, RMP, "remap", 1, "Running ABC with {} threads.", max_threads);
 
   for (int curr_mode_idx = 0; curr_mode_idx < modes.size();) {
     int max_parallel_runs = (max_threads < modes.size() - curr_mode_idx)
@@ -217,25 +213,27 @@ void Restructure::runABC()
               = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
 
         pid_t child_pid = fork();
-        if (child_pid == 0) { // Begin child
+        if (child_pid == 0) {  // Begin child
           // Run in child process
           int ret = execlp("sh", "sh", "-c", abc_command.c_str(), 0);
           // Execution of command failed
-          logger_->error(RMP,
-                        31,
-                        "Failed to run ABC with exit code {}. Please check the "
-                        "messages for details.",
-                        ret);
+          logger_->error(
+              RMP,
+              31,
+              "Failed to run ABC with exit code {}. Please check the "
+              "messages for details.",
+              ret);
           exit(ret);
-        } // End child
+        }  // End child
 
         if (child_pid > 0) {
           child_proc[temp_mode_idx] = child_pid;
         } else if (child_pid < 0) {
-          logger_->warn(RMP,
-                        29,
-                        "Failed to create new ABC process. Please check the "
-                        "messages for details.");
+          logger_->warn(
+              RMP,
+              29,
+              "Failed to create new ABC process, could not fork parent "
+              "process. Please check OS messages for details.");
         }
 
         files_to_remove.emplace_back(abc_script_file);
@@ -259,7 +257,7 @@ void Restructure::runABC()
         logger_->warn(
             RMP,
             15,
-            "ABC ({}) failed with code {}. Please check messages for details.",
+            "ABC failed with code {}. Please check abc log files for details.",
             child_idx,
             return_status);
       }
