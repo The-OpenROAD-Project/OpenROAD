@@ -715,18 +715,18 @@ void SimulatedAnnealingCore::CalculateLocationPenalty()
 
 void SimulatedAnnealingCore::AlignMacro()
 {
-  float boundary_threshold = 20.0;
-  for (int i = 0; i < blocks_.size(); i++) {
-    int weight = blocks_[i].GetNumMacro();
-    if (weight > 0) {
-      float width = blocks_[i].GetWidth();
-      float height = blocks_[i].GetHeight();
-      boundary_threshold = min(boundary_threshold, width);
-      boundary_threshold = min(boundary_threshold, height);
-    }
-  }
-
-  boundary_threshold = boundary_threshold * 0.99;
+  float boundary_threshold = 100.0;
+  //float boundary_threshold = 20.0;
+  //for (int i = 0; i < blocks_.size(); i++) {
+  //  int weight = blocks_[i].GetNumMacro();
+  //  if (weight > 0) {
+  //    float width = blocks_[i].GetWidth();
+  //    float height = blocks_[i].GetHeight();
+  //    boundary_threshold = min(boundary_threshold, width);
+  //    boundary_threshold = min(boundary_threshold, height);
+  //  }
+  //}
+  //boundary_threshold = boundary_threshold * 0.99;
   // Alignment macros to boundaries
   for (int i = 0; i < blocks_.size(); i++) {
     int weight = blocks_[i].GetNumMacro();
@@ -751,9 +751,26 @@ void SimulatedAnnealingCore::AlignMacro()
       } else {
         ; // do nothing
       }
+
+      if(CalculateOverlap() == true) {
+        blocks_[i].SetX(lx);
+        blocks_[i].SetY(ly);
+      }
     }
   }
 
+  for (int i = 0; i < blocks_.size(); i++) {
+    int weight = blocks_[i].GetNumMacro();
+    if (weight > 0) {
+      float width = blocks_[i].GetWidth();
+      float height = blocks_[i].GetHeight();
+      boundary_threshold = min(boundary_threshold, width);
+      boundary_threshold = min(boundary_threshold, height);
+    }
+  }
+
+  boundary_threshold = boundary_threshold * 0.99;
+ 
   // Align macros according to X
   //sort(blocks_.begin(), blocks_.end(), CompareBlockX);
   vector<int> macro_id_list;
@@ -788,6 +805,33 @@ void SimulatedAnnealingCore::AlignMacro()
         float ly_b = blocks_[macro_id].GetY();
         float ux_b = lx_b + blocks_[macro_id].GetWidth();
         float uy_b = ly_b + blocks_[macro_id].GetHeight();
+        bool y_flag = abs(ly - ly_b) <= boundary_threshold ||
+                      abs(uy - uy_b) <= boundary_threshold ||
+                      abs(ly - uy_b) <= boundary_threshold ||
+                      abs(uy - ly_b) <= boundary_threshold;
+        if(y_flag == false)
+          continue;
+        
+        if(lx_b >= ux && lx_b <= ux + boundary_threshold) {
+          blocks_[macro_id].SetX(ux);  
+        } else if(lx_b < ux && lx_b >= ux - boundary_threshold) {
+          blocks_[macro_id].SetX(ux - (ux_b - lx_b));
+        } else if(ux_b > lx && ux_b >= lx + boundary_threshold) {
+          blocks_[macro_id].SetX(lx); 
+        } else if(ux_b <= lx && ux_b >= lx - boundary_threshold) {
+          blocks_[macro_id].SetX(lx - (ux_b - lx_b));
+        } else {
+          ; // do nothing
+        }
+       
+        if(CalculateOverlap() == true) {
+          blocks_[macro_id].SetX(lx_b);
+        } else {
+          macro_queue.push(macro_id);
+          blocks_[macro_id].SetFlag(true);
+        }
+      
+        /*
         if(lx_b >= ux && lx_b <= ux + boundary_threshold && 
           (abs(ly - ly_b) <= boundary_threshold || abs(uy - uy_b) <= boundary_threshold)) 
         {
@@ -803,6 +847,8 @@ void SimulatedAnnealingCore::AlignMacro()
         } else {
           ; // do nothing  
         }
+        */
+
       }
     }
   }
@@ -841,6 +887,34 @@ void SimulatedAnnealingCore::AlignMacro()
         float ly_b = blocks_[macro_id].GetY();
         float ux_b = lx_b + blocks_[macro_id].GetWidth();
         float uy_b = ly_b + blocks_[macro_id].GetHeight();
+        bool x_flag = abs(lx - lx_b) <= boundary_threshold ||
+                      abs(ux - ux_b) <= boundary_threshold ||
+                      abs(lx - ux_b) <= boundary_threshold ||
+                      abs(ux - lx_b) <= boundary_threshold;
+        if(x_flag == false)
+          continue;
+        
+        if(ly_b >= uy && ly_b <= uy + boundary_threshold) {
+          blocks_[macro_id].SetY(uy);  
+        } else if(ly_b < uy && ly_b >= uy - boundary_threshold) {
+          blocks_[macro_id].SetY(uy - (uy_b - ly_b));
+        } else if(uy_b > ly && uy_b >= ly + boundary_threshold) {
+          blocks_[macro_id].SetY(ly); 
+        } else if(uy_b <= ly && uy_b >= ly - boundary_threshold) {
+          blocks_[macro_id].SetY(ly - (uy_b - ly_b));
+        } else {
+          ; // do nothing
+        }
+       
+        if(CalculateOverlap() == true) {
+          blocks_[macro_id].SetY(ly_b);
+        } else {
+          macro_queue.push(macro_id);
+          blocks_[macro_id].SetFlag(true);
+        }
+      
+        
+        /*
         if(ly_b >= uy && ly_b <= uy + boundary_threshold && 
           (abs(lx - lx_b) <= boundary_threshold || abs(ux - ux_b) <= boundary_threshold)) 
         {
@@ -856,6 +930,7 @@ void SimulatedAnnealingCore::AlignMacro()
         } else {
           ; // do nothing  
         }
+        */
       }
     }
   }
@@ -1060,6 +1135,46 @@ void SimulatedAnnealingCore::ShrinkBlocks()
     }
   }
 }
+
+
+bool SimulatedAnnealingCore::CalculateOverlap()
+{
+  vector<pair<float, float>> macro_block_x_list;
+  vector<pair<float, float>> macro_block_y_list;
+
+  for (int i = 0; i < blocks_.size(); i++) {
+    if (blocks_[i].GetNumMacro() > 0) {
+      float lx = blocks_[i].GetX();
+      float ux = lx + blocks_[i].GetWidth();
+      float ly = blocks_[i].GetY();
+      float uy = ly + blocks_[i].GetHeight();
+      macro_block_x_list.push_back(pair<float, float>(lx, ux));
+      macro_block_y_list.push_back(pair<float, float>(ly, uy));
+    }
+  }
+
+  float overlap = 0.0;
+  for (int i = 0; i < macro_block_x_list.size(); i++) {
+    for (int j = i + 1; j < macro_block_x_list.size(); j++) {
+      float x1 = max(macro_block_x_list[i].first, macro_block_x_list[j].first);
+      float x2
+          = min(macro_block_x_list[i].second, macro_block_x_list[j].second);
+      float y1 = max(macro_block_y_list[i].first, macro_block_y_list[j].first);
+      float y2
+          = min(macro_block_y_list[i].second, macro_block_y_list[j].second);
+      float x = 0.0;
+      float y = 0.0;
+      overlap += max(x2 - x1, x) * max(y2 - y1, y);
+    }
+  }
+  
+  if(overlap > 0.0)
+      return true;
+  else
+      return false;
+
+}
+
 
 bool SimulatedAnnealingCore::FitFloorplan()
 {

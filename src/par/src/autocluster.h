@@ -201,6 +201,7 @@ class AutoClusterMgr
                        unsigned int ignore_net_threshold,
                        unsigned int num_hops,
                        unsigned int timing_weight,
+                       bool std_cell_timing_flag,
                        const char* report_directory,
                        const char* file_name);
 
@@ -217,6 +218,7 @@ class AutoClusterMgr
   unsigned int net_threshold_ = 0;
   unsigned int virtual_weight_ = 10000;
   unsigned int num_buffer_ = 0;
+  bool std_cell_timing_flag_ = false;
   float area_buffer_ = 0;
 
   float dbu_ = 0.0;
@@ -244,6 +246,7 @@ class AutoClusterMgr
   unsigned int num_hops_;
   unsigned int timing_weight_;
   std::vector<sta::Instance*> macros_;
+  std::vector<sta::Instance*> inst_seeds_;
   std::unordered_map<sta::Vertex*, std::unordered_map<int, int> > vertex_fanins_;
   std::unordered_map<int, std::unordered_map<int, int> > virtual_timing_map_;
   void findAdjacencies();
@@ -253,7 +256,10 @@ class AutoClusterMgr
   void copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs);
   void addTimingWeight(float weight);
   void addFanin(sta::Vertex* vertex, int fanin_id, int num_bit);
-  void addWeight(int src_id, int target_id);
+  void addWeight(int src_id, int target_id, int weight);
+  void calculateSeedConnection(sta::Instance* inst);
+  void calculateSeedBufferNetConnection();
+  void calculateSeed();
 
 
   std::vector<Cluster*> cluster_list_;

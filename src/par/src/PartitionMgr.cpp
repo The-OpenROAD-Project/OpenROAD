@@ -1376,6 +1376,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int virtual_weight,
                                    unsigned int num_hops,
                                    unsigned int timing_weight,
+                                   bool std_cell_timing_flag,
                                    const char* report_directory,
                                    const char* file_name)
 {
@@ -1395,6 +1396,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              virtual_weight,
                              num_hops,
                              timing_weight,
+                             std_cell_timing_flag,
                              report_directory,
                              file_name);
 }

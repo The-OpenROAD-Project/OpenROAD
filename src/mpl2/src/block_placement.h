@@ -273,6 +273,7 @@ class SimulatedAnnealingCore
   void CalculateMacroBlockagePenalty();
   void CalculateLocationPenalty();
   void CalculateWirelength();
+  bool CalculateOverlap();
   float NormCost(float area,
                  float wirelength,
                  float outline_penalty,

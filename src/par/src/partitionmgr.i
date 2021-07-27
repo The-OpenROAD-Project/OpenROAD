@@ -227,6 +227,7 @@ partition_design_cmd(unsigned int max_num_macro, unsigned int min_num_macro,
                      unsigned int net_threshold, unsigned int virtual_weight,
                      unsigned int ignore_net_threshold,
                      unsigned int num_hops, unsigned int timing_weight,
+                     bool std_cell_timing_flag,
                      const char* report_directory, const char* file_name)
 {
   getPartitionMgr()->partitionDesign(max_num_macro, min_num_macro,
@@ -234,6 +235,7 @@ partition_design_cmd(unsigned int max_num_macro, unsigned int min_num_macro,
                                      net_threshold, virtual_weight,
                                      ignore_net_threshold, 
                                      num_hops, timing_weight,
+                                     std_cell_timing_flag,
                                      report_directory,
                                      file_name);
 }

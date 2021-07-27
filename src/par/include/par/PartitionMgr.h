@@ -319,6 +319,7 @@ class PartitionMgr
                        unsigned int virtual_weight,
                        unsigned int num_hops,
                        unsigned int timing_weight,
+                       bool std_cell_timing_flag_,
                        const char* report_directory,
                        const char* file_name);
 
