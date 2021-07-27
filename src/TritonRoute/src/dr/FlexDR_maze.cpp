@@ -1462,7 +1462,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frPoint boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
   frSquaredDistance currDistSquare = 0;
-  bool hasViol = false;
+  bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
@@ -1507,29 +1507,11 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                 && currDistSquare < reqDistSquare) {
               hasViol = true;
             }
-          } else {
-            if (currDistSquare < reqDistSquare) {
-              hasViol = true;
-            }
+          } else if (currDistSquare < reqDistSquare) {
+            hasViol = true;
           }
-          if (hasViol) {
-            switch (type) {
-              case 0:
-                gridGraph_.subRouteShapeCostVia(i, j, z);  // safe access
-                break;
-              case 1:
-                gridGraph_.addRouteShapeCostVia(i, j, z);  // safe access
-                break;
-              case 2:
-                gridGraph_.subFixedShapeCostVia(i, j, z);  // safe access
-                break;
-              case 3:
-                gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
-                break;
-              default:;
-            }
+          if (hasViol)
             break;
-          }
         }
         if (!hasViol) {
           for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
@@ -1571,24 +1553,26 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
               if (currDistSquare < reqDistSquare)
                 hasViol = true;
             }
-            if (hasViol) {
-              switch (type) {
-                case 0:
-                  gridGraph_.subRouteShapeCostVia(i, j, z);  // safe access
-                  break;
-                case 1:
-                  gridGraph_.addRouteShapeCostVia(i, j, z);  // safe access
-                  break;
-                case 2:
-                  gridGraph_.subFixedShapeCostVia(i, j, z);  // safe access
-                  break;
-                case 3:
-                  gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
-                  break;
-                default:;
-              }
+            if (hasViol)
               break;
-            }
+          }
+        }
+
+        if (hasViol) {
+          switch (type) {
+            case 0:
+              gridGraph_.subRouteShapeCostVia(i, j, z);  // safe access
+              break;
+            case 1:
+              gridGraph_.addRouteShapeCostVia(i, j, z);  // safe access
+              break;
+            case 2:
+              gridGraph_.subFixedShapeCostVia(i, j, z);  // safe access
+              break;
+            case 3:
+              gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
+              break;
+            default:;
           }
         }
       }
@@ -1786,7 +1770,7 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   frPoint boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
   frSquaredDistance currDistSquare = 0;
-  bool hasViol = false;
+  bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
@@ -1800,8 +1784,8 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
+        hasViol = false;
         for (auto con : higherLayer->getLef58CutSpacingTableConstraints()) {
-          hasViol = false;
           auto dbRule = con->getODBRule();
           if (!dbRule->isLayerValid())
             continue;
@@ -1821,44 +1805,46 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
                 hasViol = true;
             }
           } else {
+            frCoord reqDist;
             if (prl > reqPrl)
-              reqDistSquare
+              reqDist
                   = dbRule->getSpacing(cutClass1, false, cutClass2, false, 1);
             else
-              reqDistSquare
+              reqDist
                   = dbRule->getSpacing(cutClass1, false, cutClass2, false, 0);
 
             if (dbRule->isCenterToCenter(cutClass1, cutClass2))
               currDistSquare = c2cSquare;
             else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                     && (frCoord) reqDistSquare
+                     && reqDist
                             == dbRule->getSpacing(
                                 cutClass1, false, cutClass2, false, 2))
               currDistSquare = c2cSquare;
             else
               currDistSquare = distSquare;
 
-            reqDistSquare *= reqDistSquare;
+            reqDistSquare = (frSquaredDistance) reqDist * reqDist;
             if (currDistSquare < reqDistSquare)
               hasViol = true;
           }
-          if (hasViol) {
-            switch (type) {
-              case 0:
-                gridGraph_.subRouteShapeCostVia(i, j, z2);  // safe access
-                break;
-              case 1:
-                gridGraph_.addRouteShapeCostVia(i, j, z2);  // safe access
-                break;
-              case 2:
-                gridGraph_.subFixedShapeCostVia(i, j, z2);  // safe access
-                break;
-              case 3:
-                gridGraph_.addFixedShapeCostVia(i, j, z2);  // safe access
-                break;
-              default:;
-            }
+          if (hasViol)
             break;
+        }
+        if (hasViol) {
+          switch (type) {
+            case 0:
+              gridGraph_.subRouteShapeCostVia(i, j, z2);  // safe access
+              break;
+            case 1:
+              gridGraph_.addRouteShapeCostVia(i, j, z2);  // safe access
+              break;
+            case 2:
+              gridGraph_.subFixedShapeCostVia(i, j, z2);  // safe access
+              break;
+            case 3:
+              gridGraph_.addFixedShapeCostVia(i, j, z2);  // safe access
+              break;
+            default:;
           }
         }
       }
