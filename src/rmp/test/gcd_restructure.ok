@@ -12,17 +12,17 @@
 [INFO ODB-0134] Finished DEF file: gcd_placed.def
 [WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
 worst slack 1.29
-Design area 700 u^2 11% utilization.
+Design area 670 u^2 10% utilization.
 Removed 0 instances with constant outputs.
 Number of paths for restructure are 105
 Found 53 end points for restructure
-Found 1290 pins in extracted logic
+Found 1290 pins in extracted logic.
 Found 422 instances for restructuring.
 [INFO RMP-0002] Blif writer successfully dumped file with 422 instances.
-Optimized to 241 instances in iteration 0
-Optimized to 257 instances in iteration 1
-Optimized to 255 instances in iteration 2
-[INFO RMP-0005] blif parsed successfully, destroying 422 existing instances...
-[INFO RMP-0006] Found 89 Inputs, 52 Outputs, 0 Clocks, 241 Combinational gates, 0 Registers after parsing the blif file.
-[INFO RMP-0007] inserting 241 new instances...
-Design area 523 u^2 8% utilization.
+Optimized to 256 instances in iteration 0
+Optimized to 250 instances in iteration 1
+Optimized to 257 instances in iteration 2
+[INFO RMP-0005] Blif parsed successfully, will destroy 422 existing instances.
+[INFO RMP-0006] Found 89 inputs, 52 outputs, 0 clocks, 250 combinational gates, 0 registers after parsing the blif file.
+[INFO RMP-0007] Inserting 250 new instances.
+Design area 489 u^2 8% utilization.
