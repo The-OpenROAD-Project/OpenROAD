@@ -151,7 +151,6 @@ void Tapcell::cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> bl
   //Gather rows needing to be cut up front
   std::vector<odb::dbRow*> blocked_rows;   
   std::map<std::string, std::vector<odb::dbBox*>> row_blockages;
-  std::vector<odb::dbBox*> row_blockages_bbox;
   std::string row_name;
   for (odb::dbInst* blockage : blockages) {
     for(odb::dbRow* row : block->getRows()) {
@@ -159,18 +158,22 @@ void Tapcell::cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> bl
         row_name = row->getName();
         if (row_blockages.find(row_name) == row_blockages.end()) {
           blocked_rows.push_back(row);
-        } 
-        row_blockages_bbox.push_back(blockage->getBBox());
-        row_blockages.insert(std::pair<std::string, vector<odb::dbBox*>>(row_name, row_blockages_bbox));
+          std::vector<odb::dbBox*> row_blockages_bbox;
+          row_blockages_bbox.push_back(blockage->getBBox());
+          row_blockages.insert(std::pair<std::string, vector<odb::dbBox*>>(row_name, row_blockages_bbox));
+        } else {
+          row_blockages[row_name].push_back(blockage->getBBox()); 
+        }
       }
     }
   }
   
   // cut rows around macros
   for(odb::dbRow* row : blocked_rows) {
+    //logger_->info(utl::TAP, 73, "Test rows: {}", blocked_rows.size());
     cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
   }
-  cut_rows_count = (block->getRows()).size()-rows_count;
+  cut_rows_count = ((block->getRows()).size())-rows_count;
   logger_->info(utl::TAP, 1, "Macro blocks found: {}", block_count);
   logger_->info(utl::TAP, 2, "Original rows: {}", rows_count);
   logger_->info(utl::TAP, 3, "Created rows: {}", cut_rows_count);
@@ -209,9 +212,6 @@ void  Tapcell::cutRow(odb::dbBlock* block, odb::dbRow* row, std::map<std::string
   for( std::pair<int,int> blockage : row_blockage_xs) {
     blockage_x0 = blockage.first;
     blockage_x1 = blockage.second;
-    //logger_->info(utl::TAP, 74, "TESTT: {}", blockage_x1);
-    //blockage = {blockage_x0, blockage_x1};
-    // ensure rows are an integer length of sitewidth
     new_row_end_x = makeSiteLoc(blockage_x0 - halo_x, site_width, -1, start_origin_x);
     buildRow(block, row_name + "_" + std::to_string(row_sub_idx), row_site, start_origin_x, new_row_end_x, start_origin_y, orient, direction, curr_min_row_width);
     row_sub_idx++;
@@ -419,16 +419,13 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>> rows, std::string t
     } else {
       row_fills[y].push_back(x_start_end);
     }
-    //dict lappend row_fills $y "$x_start $x_end"
   }
 
-  //for(int i=0; i<row_fills.size(); i++) {
   for(std::map<int, std::vector<vector<int>>>::iterator iter = row_fills.begin(); iter != row_fills.end(); ++iter) {
     y = iter->first;
     std::vector<int> prev_x;
     std::vector<vector<int>> merged_placements;
     for(std::vector<int> xs : row_fills[y]) {
-    //xs = row_fills[x];
       std::sort(xs.begin(), xs.end());
       if (prev_x.size() == 0) {
         prev_x = xs;
@@ -540,10 +537,10 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>> rows, std::string t
       //     buildCell(block, master, ori, x, lly, prefix);
       //   }
       // }
-      if(row_idx == rows.size()-1 && rows.size()==30) {
-        x = makeSiteLoc(x, site_x, -1, llx);
-        buildCell(block, master, ori, x, lly, prefix);
-      }
+      // if(row_idx == rows.size()-1 && rows.size()==30) {
+      //   x = makeSiteLoc(x, site_x, -1, llx);
+      //   buildCell(block, master, ori, x, lly, prefix);
+      // }
     }
   }
   int tapcell_count = Tapcell::phy_idx - start_phy_idx;
@@ -737,10 +734,16 @@ void Tapcell::insertAtTopBottomHelper(odb::dbBlock* block, int top_bottom, bool 
   }
   
   // fill with 2s
-  for (x=x; x < x_end; x = x+tap2_master_width) {
+  // for (x=x; x < x_end; x = x+tap2_master_width) {
+  //   if (checkSymmetry(tb2_master, ori)) {
+  //     buildCell(block, tb2_master, ori, x, lly, prefix);
+  //   }
+  // }
+  while(x < x_end) {
     if (checkSymmetry(tb2_master, ori)) {
       buildCell(block, tb2_master, ori, x, lly, prefix);
     }
+    x = x+tap2_master_width;
   }
 }
 
@@ -812,7 +815,6 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
   }
   
   std::map<std::pair<int, int>, std::vector<std::vector<int>>> macro_outlines = getMacroOutlines(rows);
-  
   int corner_cell_width = corner_master->getWidth();
   
   int total_rows = rows.size();
@@ -825,6 +827,9 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
       // move to actual rows
       outline[0]--;
       outline.back()++;
+      logger_->info(utl::TAP, 76, "TEST 1: {}", outline[0]);
+      logger_->info(utl::TAP, 74, "TEST 2: {}", outline.back());
+      logger_->info(utl::TAP, 75, "TEST 3: {}", outline[1]);
       // incr bot_row -1
       // incr top_row
       
@@ -845,9 +850,9 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
         }
         if (row_end == -1) {
           //set row_end [[[lindex $rows $top_row end] getBBox] xMax]
-          odb::Rect rowbb;
-          rows[outline.back()].back()->getBBox(rowbb);
-          row_end = rowbb.xMax();
+          odb::Rect rowbb_;
+          rows[outline.back()].back()->getBBox(rowbb_);
+          row_end = rowbb_.xMax();
           row_end = row_end - corner_cell_width;
         }
         // do top row
@@ -953,7 +958,7 @@ std::map<std::pair<int, int>, std::vector<std::vector<int>>> Tapcell::getMacroOu
   std::map<std::pair<int, int>, std::vector<int>> macro_outlines;
   std::pair<int, int> min_max_x;
   std::vector<int> all_rows;
-  std::vector<int> new_rows;
+  //std::vector<int> new_rows;
   //std::pair<int, int> new_rows_pair;
   int subrow_count;
   int macro0;
@@ -1011,26 +1016,15 @@ std::map<std::pair<int, int>, std::vector<std::vector<int>>> Tapcell::getMacroOu
     std::pair<int, int> k =  iter->first;
   //for key [dict keys $macro_outlines] {
     all_rows = macro_outlines[k];
-    //new_rows_pair;
-    // new_rows_pair.first=all_rows[0];
-    // new_rows_pair.second=all_rows[0];
-    //new_rows.push_back(all_rows[0]);
+    std::vector<int> new_rows;
     new_rows.push_back(all_rows[0]);
     for (int i=1 ; i < all_rows.size()-1; i++) {
       if (all_rows[i]+1 == all_rows[i+1]) {
         continue;
       }
-      //new_rows_pair;
-      // new_rows_pair.first=all_rows[i];
-      // new_rows_pair.second=all_rows[i+1];
       new_rows.push_back(all_rows[i]);
       new_rows.push_back(all_rows[i+1]);
-      // new_rows.push_back(all_rows[i]);
-      // new_rows.push_back(all_rows[i+1]);
     }
-    // new_rows_pair;
-    // new_rows_pair.first=all_rows.back();
-    // new_rows_pair.second=all_rows.back();
     new_rows.push_back(all_rows.back());
     //new_rows.push_back(all_rows.back());
     if(macro_outlines_array.find(k)==macro_outlines_array.end()) {
