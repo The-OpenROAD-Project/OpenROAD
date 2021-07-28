@@ -234,5 +234,24 @@ void fit()
   auto gui = gui::Gui::get();
   gui->fit();
 }
+
+void save_image(const char* filename)
+{
+  if (!check_gui("save_image")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveImage(filename);
+}
+
+void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi)
+{
+  if (!check_gui("save_image")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi));
+}
+
 %} // inline
 

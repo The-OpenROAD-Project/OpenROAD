@@ -343,6 +343,9 @@ class Gui
   void zoomOut();
   void zoomOut(const odb::Point& focus_dbu);
 
+  // Save layout to an image file
+  void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
+
   // Force an immediate redraw.
   void redraw();
 

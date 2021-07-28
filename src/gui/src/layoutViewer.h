@@ -94,6 +94,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     VIEW_ZOOMOUT_ACT,
     VIEW_ZOOMFIT_ACT,
 
+    SAVE_WHOLE_IMAGE_ACT,
+    SAVE_VISIBLE_IMAGE_ACT,
+
     CLEAR_SELECTIONS_ACT,
     CLEAR_HIGHLIGHTS_ACT,
     CLEAR_RULERS_ACT,
@@ -119,6 +122,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   odb::Point screenToDBU(const QPoint& point);
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
   QPointF dbuToScreen(const odb::Point& dbu_point);
+
+  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect());
 
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;
@@ -261,6 +266,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPoint centering_shift_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
+
+  const QColor background_ = Qt::black;
 };
 
 // The LayoutViewer widget can become quite large as you zoom
