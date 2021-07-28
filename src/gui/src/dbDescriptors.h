@@ -75,7 +75,7 @@ class DbNetDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
  private:
-  const int max_iterms_ = 10000;
+  static const int max_iterms_ = 10000;
 };
 
 class DbITermDescriptor : public Descriptor

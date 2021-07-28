@@ -237,7 +237,7 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   int iterm_size = net->getITerms().size();
   std::any iterm_item;
   if (iterm_size > max_iterms_) {
-    iterm_item = std::to_string(iterm_size)+" items";
+    iterm_item = std::to_string(iterm_size) + " items";
   } else {
     SelectionSet iterms;
     for (auto iterm : net->getITerms()) {
