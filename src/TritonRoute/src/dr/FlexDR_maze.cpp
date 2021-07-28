@@ -475,6 +475,24 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
       bloatDistEolX = max(bloatDistEolX, eolSpace);
     }
   }
+  for (auto con : getTech()->getLayer(lNum)->getLef58SpacingEndOfLineConstraints()) {
+    auto eolSpace = con->getEolSpace();
+    auto eolWidth = con->getEolWidth();
+    // eol up and down
+    if (viaDefL && viaBoxL.right() - viaBoxL.left() < eolWidth) {
+      bloatDistEolY = max(bloatDistEolY, eolSpace);
+    }
+    if (viaDefU && viaBoxU.right() - viaBoxU.left() < eolWidth) {
+      bloatDistEolY = max(bloatDistEolY, eolSpace);
+    }
+    // eol left and right
+    if (viaDefL && viaBoxL.top() - viaBoxL.bottom() < eolWidth) {
+      bloatDistEolX = max(bloatDistEolX, eolSpace);
+    }
+    if (viaDefU && viaBoxU.top() - viaBoxU.bottom() < eolWidth) {
+      bloatDistEolX = max(bloatDistEolX, eolSpace);
+    }
+  }
 
   frCoord bloatDist = max(max(bloatDistPlanar, bloatDistViaL), bloatDistViaU);
 
@@ -732,6 +750,43 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const frBox& box,
       }
     }
   }
+  for (auto eolCon : getTech()->getLayer(lNum)->getLef58SpacingEndOfLineConstraints()) {
+      auto eolSpace = eolCon->getEolSpace();
+      auto eolWidth = eolCon->getEolWidth();
+      auto eolWithin = eolCon->getWithinConstraint()->getEolWithin();
+      // eol to up and down
+      if (tmpBx.right() - tmpBx.left() < eolWidth) {
+        testBox.set(tmpBx.left() - eolWithin,
+                    tmpBx.top(),
+                    tmpBx.right() + eolWithin,
+                    tmpBx.top() + eolSpace);
+        modMinSpacingCostVia_eol_helper(
+            box, testBox, type, isUpperVia, i, j, z);
+
+        testBox.set(tmpBx.left() - eolWithin,
+                    tmpBx.bottom() - eolSpace,
+                    tmpBx.right() + eolWithin,
+                    tmpBx.bottom());
+        modMinSpacingCostVia_eol_helper(
+            box, testBox, type, isUpperVia, i, j, z);
+      }
+      // eol to left and right
+      if (tmpBx.top() - tmpBx.bottom() < eolWidth) {
+        testBox.set(tmpBx.right(),
+                    tmpBx.bottom() - eolWithin,
+                    tmpBx.right() + eolSpace,
+                    tmpBx.top() + eolWithin);
+        modMinSpacingCostVia_eol_helper(
+            box, testBox, type, isUpperVia, i, j, z);
+
+        testBox.set(tmpBx.left() - eolSpace,
+                    tmpBx.bottom() - eolWithin,
+                    tmpBx.left(),
+                    tmpBx.top() + eolWithin);
+        modMinSpacingCostVia_eol_helper(
+            box, testBox, type, isUpperVia, i, j, z);
+      }
+    }
 }
 
 void FlexDRWorker::modMinimumcutCostVia(const frBox& box,
@@ -966,6 +1021,18 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frCoord bloatDistEolY = 0;
   for (auto con : getTech()->getLayer(lNum)->getEolSpacing()) {
     auto eolSpace = con->getMinSpacing();
+    auto eolWidth = con->getEolWidth();
+    // eol up and down
+    if (viaBox.right() - viaBox.left() < eolWidth) {
+      bloatDistEolY = max(bloatDistEolY, eolSpace);
+    }
+    // eol left and right
+    if (viaBox.top() - viaBox.bottom() < eolWidth) {
+      bloatDistEolX = max(bloatDistEolX, eolSpace);
+    }
+  }
+  for (auto con : getTech()->getLayer(lNum)->getLef58SpacingEndOfLineConstraints()) {
+    auto eolSpace = con->getEolSpace();
     auto eolWidth = con->getEolWidth();
     // eol up and down
     if (viaBox.right() - viaBox.left() < eolWidth) {
