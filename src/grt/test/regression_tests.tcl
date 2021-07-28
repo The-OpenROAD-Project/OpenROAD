@@ -11,6 +11,7 @@ record_tests {
   est_rc1
   est_rc2
   gcd
+  gcd_flute
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
@@ -19,6 +20,8 @@ record_tests {
   no_tracks
   pd1
   pd2
+  pd3
+  pd4
   region_adjustment
   repair_antennas1
   repair_antennas2

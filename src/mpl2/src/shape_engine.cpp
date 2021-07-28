@@ -634,7 +634,7 @@ void ParseBlockFile(vector<Cluster*>& clusters,
       float area = stof(temp_words[temp_words.size() - 1]);
       float block_area = 0.0;
       i++;
-      while (i < content.size() & (Split(content[i])).size() != 0) {
+      while (i < content.size() && (Split(content[i])).size() != 0) {
         temp_words = Split(content[i]);
         string macro_name = temp_words[0];
         float macro_width = stof(temp_words[1]);
@@ -665,12 +665,12 @@ void ParseBlockFile(vector<Cluster*>& clusters,
   float std_cell_util
       = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
 
-  logger->info(MPL, 1001, "Shape_Engine Outline width:  {}", outline_width);
-  logger->info(MPL, 1002, "Shape_Engine Outline height: {}", outline_height);
-  logger->info(MPL, 1003, "Shape_Engine Chip area: {}", chip_area);
-  logger->info(MPL, 1004, "Shape_Engine Macro area:  {}", macro_area);
-  logger->info(MPL, 1005, "Shape_Engine Std cell area: {}", std_cell_area);
-  logger->info(MPL, 1006, "Shape_Engine Std cell util: {}", std_cell_util);
+  logger->info(MPL, 1001, "Shape engine outline width: {}", outline_width);
+  logger->info(MPL, 1002, "Shape engine outline height: {}", outline_height);
+  logger->info(MPL, 1003, "Shape engine chip area: {}", chip_area);
+  logger->info(MPL, 1004, "Shape engine macro area: {}", macro_area);
+  logger->info(MPL, 1005, "Shape engine stdcell area: {}", std_cell_area);
+  logger->info(MPL, 1006, "Shape engine stdcell util: {}", std_cell_util);
 
   for (int j = 0; j < clusters.size(); j++) {
     if (clusters[j]->GetNumMacro() == 0) {
@@ -777,7 +777,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       output_info += ") ";
     }
 
-    logger->info(MPL,  1007, "Shape_Engine {}", output_info);
+    logger->info(MPL,  1007, "Shape Engine {}.", output_info);
   }
 
   return clusters;

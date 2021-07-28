@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "pdr/pdrev.h"
+#include "stt/pdrev.h"
 
 #include "graph.h"
 #include "utl/Logger.h"
@@ -48,8 +48,8 @@ using utl::PDR;
 class PdRev
 {
 public:
-  PdRev(std::vector<int> x,
-        std::vector<int> y,
+  PdRev(std::vector<int>& x,
+        std::vector<int>& y,
         int root_index,
         Logger* logger);
   ~PdRev();
@@ -69,8 +69,8 @@ private:
 };
 
 Tree
-primDijkstra(std::vector<int> x,
-             std::vector<int> y,
+primDijkstra(std::vector<int>& x,
+             std::vector<int>& y,
              int drvr_index,
              float alpha,
              Logger* logger)
@@ -91,8 +91,8 @@ primDijkstra(std::vector<int> x,
 }
 
 Tree
-primDijkstraRevII(std::vector<int> x,
-                  std::vector<int> y,
+primDijkstraRevII(std::vector<int>& x,
+                  std::vector<int>& y,
                   int drvr_index,
                   float alpha,
                   Logger* logger)
@@ -111,8 +111,8 @@ primDijkstraRevII(std::vector<int> x,
   return tree;
 }
 
-PdRev::PdRev(std::vector<int> x,
-             std::vector<int> y,
+PdRev::PdRev(std::vector<int>& x,
+             std::vector<int>& y,
              int root_index,
              Logger* logger) :
   logger_(logger)
@@ -213,7 +213,6 @@ Tree PdRev::translateTree()
     }
     int nNodes = graph_->nodes.size();
     for (int i = graph_->num_terminals; i < nNodes; ++i) {
-      Node& child = graph_->nodes[i];
       while (graph_->nodes[i].children.size() > 3
              || (graph_->nodes[i].parent != i
                  && graph_->nodes[i].children.size() == 3)) {
@@ -224,21 +223,28 @@ Tree PdRev::translateTree()
   }
 
   Tree tree;
-  tree.deg = graph_->num_terminals;
-  int branch_count = stt::branch_count(tree);
-  if (graph_->nodes.size() != branch_count)
-    logger_->error(PDR, 666, "steiner branch count inconsistent");
-  tree.branch = (Branch*) malloc(branch_count * sizeof(Branch));
-  tree.length = graph_->calc_tree_wl_pd();
-  for (int i = 0; i < graph_->nodes.size(); ++i) {
-    Node& child = graph_->nodes[i];
-    int parent = child.parent;
-    if (parent >= graph_->nodes.size())
-      logger_->error(PDR, 667, "steiner branch node out of bounds");
-    Branch& newBranch = tree.branch[i];
-    newBranch.x = child.x;
-    newBranch.y = child.y;
-    newBranch.n = parent;
+  int num_terminals = graph_->num_terminals;
+  tree.deg = num_terminals;
+  if (num_terminals < 2) {
+    tree.branch.resize(0);
+    tree.length = 0;
+  }
+  else {
+    int branch_count = tree.branchCount();
+    tree.branch.resize(branch_count);
+    tree.length = graph_->calc_tree_wl_pd();
+    if (graph_->nodes.size() != branch_count)
+      logger_->error(PDR, 666, "steiner branch count inconsistent");
+    for (int i = 0; i < graph_->nodes.size(); ++i) {
+      Node& child = graph_->nodes[i];
+      int parent = child.parent;
+      if (parent >= graph_->nodes.size())
+        logger_->error(PDR, 667, "steiner branch node out of bounds");
+      Branch& newBranch = tree.branch[i];
+      newBranch.x = child.x;
+      newBranch.y = child.y;
+      newBranch.n = parent;
+    }
   }
   return tree;
 }
@@ -272,7 +278,7 @@ reportSteinerTree(stt::Tree &tree,
                   Logger *logger)
 {
   printf("WL = %d\n", tree.length);
-  for (int i = 0; i < stt::branch_count(tree); i++) {
+  for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
     int parent = tree.branch[i].n;
@@ -350,8 +356,8 @@ highlightSteinerTree(Tree &tree,
       gui->registerRenderer(lines_renderer);
     }
     std::vector<std::pair<odb::Point, odb::Point>> lines;
-    for (int i = 0; i < branch_count(tree); i++) {
-      stt::Branch &branch = tree.branch[i];
+    for (int i = 0; i < tree.branchCount(); i++) {
+      stt::Branch branch = tree.branch[i];
       int x1 = branch.x;
       int y1 = branch.y;
       stt::Branch &neighbor = tree.branch[branch.n];

@@ -6,7 +6,7 @@
 [INFO ODB-0222] Reading LEF file: dummy_pads.lef
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
-[ERROR PAD-0220] Unrecognized arguments (type) specified for define_pad_cell
+[ERROR PAD-0220] Unrecognized arguments (type) specified for define_pad_cell.
 define_pad_cell [-name name] [-type cell_type|-fill|-corner|-bondpad|-bump]
    [-cell_name cell_names_per_side] [-orient orientation_per_side]
    [-pad_pin_name pad_pin_name] [-break_signals signal_list] [-physical_only]
@@ -26,40 +26,40 @@ add_pad [-name name] [-type type] [-cell library_cell] [-signal signal_name]
    [-inst_name inst_name]
 initialize_padring [-signal_assignment_file signal_assigment_file]
 [ERROR STA-0402] set_padring_options -power_nets is not a known keyword or flag.
-[ERROR PAD-0205] Incorrect number of values specified for offsets (3), expected 1, 2 or 4
-[ERROR PAD-0219] Unrecognized arguments (offsets) specified for set_padring_options
+[ERROR PAD-0205] Incorrect number of values specified for offsets (3), expected 1, 2 or 4.
+[ERROR PAD-0219] Unrecognized arguments (offsets) specified for set_padring_options.
 Trigger errors
-[ERROR PAD-0094] Value for -edge_name (other) not permitted, choose one of bottom, right, top or left
-[ERROR PAD-0091] No signal dr_dm_1_o defined for padcell
-[ERROR PAD-0095] Value for -type (sign) does not match any library types (bondpad sig vdd vss vddio vssio cbk pdt fbk fill corner bump)
-[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (somewhere)
-[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (centre)
-[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin)
-[ERROR PAD-0102] Incorrect value specified for -location centre (292.000 105.000), expecting a 4 element list in the form "x number y number"
-[ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 Y  105.000), no value specified for x
-[ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 Y  105.000), no value specified for y
-[ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 y  105.000), no value specified for x
-[ERROR PAD-0106] Specification of bumps is only allowed for Flipchip padring layouts
-[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin)
-[ERROR PAD-0103] Incorrect value specified for -location origin (292.000 105.000), expecting a 4 element list in the form "x number y number"
-[ERROR PAD-0103] Incorrect value specified for -location origin (X  292.000 Y  105.000), no value specified for x
-[ERROR PAD-0102] Incorrect value specified for -location centre (x  292.000 Y  105.000), no value specified for y
-[ERROR PAD-0102] Incorrect value specified for -location centre (X  292.000 y  105.000), no value specified for x
-[ERROR PAD-0099] Invalid orientation no, must be one of "R0 R90 R180 R270 MX MY MXR90 MYR90"
-[ERROR PAD-0008] Cannot find cell SIG in the database
-[ERROR PAD-0130] Cell PADCELL_VDD not loaded into design
-[ERROR PAD-0130] Cell PADCELL_SIG not loaded into design
+[ERROR PAD-0094] Value for -edge_name (other) not permitted, choose one of bottom, right, top or left.
+[ERROR PAD-0091] No signal dr_dm_1_o defined for padcell.
+[ERROR PAD-0095] Value for -type (sign) does not match any library types (bondpad sig vdd vss vddio vssio cbk pdt fbk fill corner bump).
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (somewhere).
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (center).
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin).
+[ERROR PAD-0102] Incorrect value specified for -location center (292.000 105.000), expecting a 4 element list in the form "x number y number".
+[ERROR PAD-0102] Incorrect value specified for -location center (X  292.000 Y  105.000), no value specified for x.
+[ERROR PAD-0102] Incorrect value specified for -location center (x  292.000 Y  105.000), no value specified for y.
+[ERROR PAD-0102] Incorrect value specified for -location center (X  292.000 y  105.000), no value specified for x.
+[ERROR PAD-0106] Specification of bumps is only allowed for flipchip padring layouts.
+[ERROR PAD-0100] Incorrect number of arguments for location, expected an even number, got 1 (origin).
+[ERROR PAD-0103] Incorrect value specified for -location origin (292.000 105.000), expecting a 4 element list in the form "x number y number".
+[ERROR PAD-0103] Incorrect value specified for -location origin (X  292.000 Y  105.000), no value specified for x.
+[ERROR PAD-0102] Incorrect value specified for -location center (x  292.000 Y  105.000), no value specified for y.
+[ERROR PAD-0102] Incorrect value specified for -location center (X  292.000 y  105.000), no value specified for x.
+[ERROR PAD-0099] Invalid orientation no, must be one of "R0 R90 R180 R270 MX MY MXR90 MYR90".
+[ERROR PAD-0008] Cannot find cell SIG in the database.
+[ERROR PAD-0130] Cell PADCELL_VDD not loaded into design.
+[ERROR PAD-0130] Cell PADCELL_SIG not loaded into design.
 This one is correct
 Detect duplicates
-[ERROR PAD-0112] Padcell sig_19 already defined to use p_ddr_dm_1_o
-[ERROR PAD-0221] Unrecognized arguments (bondpad) specified for add_pad
+[ERROR PAD-0112] Padcell sig_19 already defined to use p_ddr_dm_1_o.
+[ERROR PAD-0221] Unrecognized arguments (bondpad) specified for add_pad.
 No more errors expected
 Detect duplicate signal name (not power/ground) specified
-[ERROR PAD-0112] Padcell sig_154 already defined to use p_ddr_dq_8_io
+[ERROR PAD-0112] Padcell sig_154 already defined to use p_ddr_dq_8_io.
 Detect duplicate inst_name specified
-[ERROR PAD-0217] Attribute instance u_cbrk14 for padcell cbk_15 has already been used for padcell cbk_14
+[ERROR PAD-0217] Attribute instance u_cbrk14 for padcell cbk_15 has already been used for padcell cbk_14.
 [INFO IFP-0001] Added 1885 rows of 13893 sites.
-[INFO PAD-0053] Creating pad ring nets: RETN_10, RETN_11, RETN_12, RETN_13, RETN_14, RETN_15, RETN_16, RETN_17, RETN_18, RETN_19, RETN_20, RETN_0, RETN_1, RETN_2, RETN_3, RETN_4, RETN_5, RETN_6, RETN_7, RETN_8, RETN_9, SNS_10, SNS_11, SNS_12, SNS_13, SNS_14, SNS_15, SNS_16, SNS_0, SNS_17, SNS_1, SNS_18, SNS_2, SNS_19, SNS_20, SNS_3, SNS_4, SNS_5, SNS_6, SNS_7, SNS_8, SNS_9, DVSS_0, DVSS_1, DVDD_0, DVDD_1
-[INFO PAD-0051] Creating pad ring net: VSS
-[INFO PAD-0051] Creating pad ring net: VDD
+[INFO PAD-0053] Creating padring nets: RETN_10, RETN_11, RETN_12, RETN_13, RETN_14, RETN_15, RETN_16, RETN_17, RETN_18, RETN_19, RETN_20, RETN_0, RETN_1, RETN_2, RETN_3, RETN_4, RETN_5, RETN_6, RETN_7, RETN_8, RETN_9, SNS_10, SNS_11, SNS_12, SNS_13, SNS_14, SNS_15, SNS_16, SNS_0, SNS_17, SNS_1, SNS_18, SNS_2, SNS_19, SNS_20, SNS_3, SNS_4, SNS_5, SNS_6, SNS_7, SNS_8, SNS_9, DVSS_0, DVSS_1, DVDD_0, DVDD_1.
+[INFO PAD-0051] Creating padring net: VSS.
+[INFO PAD-0051] Creating padring net: VDD.
 No differences found.

@@ -37,7 +37,6 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
-#include "flute.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -149,9 +148,6 @@ void FastRouteCore::newRipup(TreeEdge* treeedge,
   if (treeedge->len == 0) {
     return;  // not ripup for degraded edge
   }
-
-  int n1 = treeedge->n1;
-  int n2 = treeedge->n2;
 
   ripuptype = treeedge->route.type;
   if (y1 < y2) {

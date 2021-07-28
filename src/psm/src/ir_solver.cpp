@@ -122,12 +122,8 @@ void IRSolver::SolveIR()
                    "IR Solver may not be accurate. LVS may also fail.");
   }
   int        unit_micron = (m_db->getTech())->getDbUnitsPerMicron();
-  clock_t    t1, t2;
   CscMatrix* Gmat = m_Gmat->GetGMat();
   // fill A
-  int                       nnz     = Gmat->nnz;
-  int                       m       = Gmat->num_rows;
-  int                       n       = Gmat->num_cols;
   double*                   values  = &(Gmat->values[0]);
   int*                      row_idx = &(Gmat->row_idx[0]);
   int*                      col_ptr = &(Gmat->col_ptr[0]);
@@ -275,14 +271,12 @@ bool IRSolver::AddC4Bump()
   if (m_C4Bumps.size() == 0) {
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
-  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}",m_C4Bumps.size());
+  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}.", m_C4Bumps.size());
   for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
     double  voltage_value = m_C4Nodes[it].second;
-    Node*        c4_node = m_Gmat->GetNode(node_loc);
     m_Gmat->AddC4Bump(node_loc, it);  // add the 0th bump
     m_J.push_back(voltage_value);     // push back first vdd
-    NodeLoc c4_node_loc = c4_node->GetLoc();
   }
   return true;
 }
@@ -322,7 +316,7 @@ void IRSolver::ReadC4Data()
   } else {
     m_logger->warn(utl::PSM,
                    16,
-                   "Voltage pad location (vsrc) file not specified, defaulting "
+                   "Voltage pad location (VSRC) file not specified, defaulting "
                    "pad location to checkerboard pattern on core area.");
     dbChip*   chip  = m_db->getChip();
     dbBlock*  block = chip->getBlock();
@@ -332,8 +326,6 @@ void IRSolver::ReadC4Data()
     int       coreL = coreRect.yMax() - coreRect.yMin();
     odb::Rect dieRect;
     block->getDieArea(dieRect);
-    int dieW     = dieRect.xMax() - dieRect.xMin();
-    int dieL     = dieRect.xMax() - dieRect.xMin();
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {
@@ -387,10 +379,16 @@ void IRSolver::ReadC4Data()
     int x_cor, y_cor;
     if (coreW < m_bump_pitch_x || coreL < m_bump_pitch_y) {
       float to_micron = 1.0f/unit_micron;
-      m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of " 
-           "{:4.3f}. Changing bump location to the center of the die at ({:4.3f}, {:4.3f})",
-           m_bump_pitch_x * to_micron, m_bump_pitch_y * to_micron, 
-           coreW * to_micron, coreL * to_micron, (coreW * to_micron)/2, (coreL * to_micron)/2);
+      m_logger->warn(utl::PSM,
+                     63,
+                     "Specified bump pitches of {:4.3f} and {:4.3f} are less "
+                     "than core width of {:4.3f} or core height of {:4.3f}. "
+                     "Changing bump location to the center of the die at "
+                     "({:4.3f}, {:4.3f}).",
+                     m_bump_pitch_x * to_micron, m_bump_pitch_y * to_micron,
+                     coreW * to_micron, coreL * to_micron,
+                     (coreW * to_micron)/2,
+                     (coreL * to_micron)/2);
       x_cor = coreW/2;
       y_cor = coreL/2;
       m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src));
@@ -399,11 +397,12 @@ void IRSolver::ReadC4Data()
     int num_b_y = coreL / m_bump_pitch_y;
     m_logger->warn(utl::PSM,
                    65,
-                   "VSRC location not specified using default checkerboard pattern with one VDD every"
-                   "size bumps in x-direction and one in two bumps in the y-direction");
+                   "VSRC location not specified, using default checkerboard "
+                   "pattern with one VDD every size bumps in x-direction and "
+                   "one in two bumps in the y-direction");
     for (int i = 0; i < num_b_y; i++) {
       for (int j = 0; j < num_b_x; j=j+6) {
-        x_cor = (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) 
+        x_cor = (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x)
                 + offset_x;
         y_cor = (m_bump_pitch_y * i) + offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
@@ -430,7 +429,7 @@ bool IRSolver::CreateJ()
     dbInst* inst = block->findInst(it->first.c_str());
     if (inst == NULL) {
       m_logger->warn(
-          utl::PSM, 23, "Instance {} not found within database.", it->first);
+          utl::PSM, 23, "Instance {} not found in the database.", it->first);
       continue;
     }
     int x, y;
@@ -443,7 +442,7 @@ bool IRSolver::CreateJ()
         || abs(node_loc.second - y) > m_node_density) {
       m_logger->warn(utl::PSM,
                      24,
-                     "Instance {} curent node at ({}, {}) at layer {} have "
+                     "Instance {}, current node at ({}, {}) at layer {} have "
                      "been moved from ({}, {}).",
                      it->first,
                      node_loc.first,
@@ -465,7 +464,7 @@ bool IRSolver::CreateJ()
     }
   }
   debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Created J vector");
-  //m_logger->info(utl::PSM, 25, "Created J vector");
+  //m_logger->info(utl::PSM, 25, "Created J vector.");
   return true;
 }
 
@@ -483,12 +482,11 @@ bool IRSolver::CreateGmat(bool connection_only)
   m_Gmat                 = new GMat(num_routing_layers, m_logger);
   dbChip*      chip      = m_db->getChip();
   dbBlock*     block     = chip->getBlock();
-  dbSet<dbNet> nets      = block->getNets();
   dbNet*       power_net = block->findNet(m_power_net.data());
   if (power_net == NULL) {
     m_logger->error(utl::PSM,
                     27,
-                    " Cannot find net {} in the design. Please provide a valid "
+                    "Cannot find net {} in the design. Please provide a valid "
                     "VDD/VSS net.",
                     m_power_net);
   }
@@ -690,7 +688,9 @@ bool IRSolver::CreateGmat(bool connection_only)
       double  old_size = ((double) size) / ((double) unit_micron);
       m_logger->warn(utl::PSM,
                      30,
-                     "Vsrc location at ({:4.3f}um, {:4.3f}um) and size ={:4.3f}um, is not located on a power stripe. Moving to closest stripe at ({:4.3f}um, {:4.3f}um).",
+                     "VSRC location at ({:4.3f}um, {:4.3f}um) "
+                     "and size {:4.3f}um, is not located on a power stripe. "
+                     "Moving to closest stripe at ({:4.3f}um, {:4.3f}um).",
                      old_loc1,
                      old_loc2,
                      old_size,
@@ -753,9 +753,6 @@ bool IRSolver::CreateGmat(bool connection_only)
             x_top_enclosure    = params.getXTopEnclosure();
             y_top_enclosure    = params.getYTopEnclosure();
           }
-          dbBox* via_bBox = via->getBBox();
-          BBox   bBox
-              = make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
           int x, y;
           curWire->getViaXY(x, y);
           dbTechLayer* via_layer = via->getBottomLayer();
@@ -765,7 +762,10 @@ bool IRSolver::CreateGmat(bool connection_only)
           R        = R / (num_via_rows * num_via_cols);
           if (!CheckValidR(R) && !connection_only) {
             m_logger->error(utl::PSM,
-                35, "{} resistance not found in DB. Check the LEF or set it with set_layer_rc command.", via_layer->getName());
+                            35,
+                            "{} resistance not found in DB. Check the LEF or "
+                            "set it using the 'set_layer_rc' command.",
+                            via_layer->getName());
           }
           bool    top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
           Node*   node_bot      = m_Gmat->GetNode(x, y, l, top_or_bottom);
@@ -803,9 +803,9 @@ bool IRSolver::CreateGmat(bool connection_only)
             m_logger->error(
                 utl::PSM,
                 34,
-                "Unxpected condition. Null pointer received for node.");
+                "Unexpected condition. Null pointer received for node.");
           } else {
-            if (R <= 1e-12) {  // if the resitance was not set.
+            if (R <= 1e-12) {  // if the resistance was not set.
               m_Gmat->SetConductance(node_bot, node_top, 0);
             } else {
               m_Gmat->SetConductance(node_bot, node_top, 1 / R);
@@ -818,8 +818,12 @@ bool IRSolver::CreateGmat(bool connection_only)
           if (l != m_bottom_layer) {
             double rho = via_layer->getResistance();
             if (!CheckValidR(rho) && !connection_only) {
-              m_logger->error( utl::PSM,
-                    36, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",via_layer->getName());
+              m_logger->error(utl::PSM,
+                              36,
+                              "Layer {} per-unit resistance not found in DB. "
+                              "Check the LEF or set it using the command "
+                              "'set_layer_rc -layer'.",
+                              via_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -847,8 +851,12 @@ bool IRSolver::CreateGmat(bool connection_only)
           if (l != m_top_layer) {
             double rho = via_layer->getResistance();
             if (!CheckValidR(rho) && !connection_only) {
-              m_logger->error( utl::PSM,
-                    37, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",via_layer->getName());
+              m_logger->error(utl::PSM,
+                              37,
+                              "Layer {} per-unit resistance not found in DB. "
+                              "Check the LEF or set it using the command "
+                              "'set_layer_rc -layer'.",
+                              via_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -876,11 +884,15 @@ bool IRSolver::CreateGmat(bool connection_only)
           int          l          = wire_layer->getRoutingLevel();
           double       rho        = wire_layer->getResistance();
           if (!CheckValidR(rho) && !connection_only) {
-            m_logger->error( utl::PSM,
-                  66, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",wire_layer->getName());
+            m_logger->error(utl::PSM,
+                            66,
+                            "Layer {} per-unit resistance not found in DB. "
+                            "Check the LEF or set it using the command "
+                            "'set_layer_rc -layer'.",
+                            wire_layer->getName());
           }
           dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
-          if (l == m_bottom_layer) {  // ensure that the bootom layer(rail) is
+          if (l == m_bottom_layer) {  // ensure that the bottom layer(rail) is
                                       // horizontal
             layer_dir = dbTechLayerDir::Value::HORIZONTAL;
           }
@@ -914,7 +926,7 @@ bool IRSolver::CreateGmat(bool connection_only)
       }
     }
   }
-  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "G matrix created sucessfully.");
+  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "G matrix created successfully.");
   return true;
 }
 
@@ -926,7 +938,6 @@ bool IRSolver::CheckValidR(double R) {
 bool IRSolver::CheckConnectivity()
 {
   vector<pair<NodeIdx, double>>::iterator c4_node_it;
-  int                                     x, y;
   CscMatrix*                              Amat      = m_Gmat->GetAMat();
   int                                     num_nodes = m_Gmat->GetNumNodes();
 
@@ -966,9 +977,7 @@ bool IRSolver::CheckConnectivity()
     }
   }
   int                     uncon_err_cnt   = 0;
-  int                     uncon_err_flag  = 0;
   int                     uncon_inst_cnt  = 0;
-  int                     uncon_inst_flag = 0;
   vector<Node*>           node_list       = m_Gmat->GetAllNodes();
   vector<Node*>::iterator node_list_it;
   bool                    unconnected_node = false;
@@ -987,7 +996,7 @@ bool IRSolver::CheckConnectivity()
         vector<dbInst*>::iterator inst_it;
         for (inst_it = insts.begin(); inst_it != insts.end(); inst_it++) {
           uncon_inst_cnt++;
-          m_logger->warn(utl::PSM, 39,"Unconnected Instance {} at location ({:4.3f}um, {:4.3f}um) layer: {}.", 
+          m_logger->warn(utl::PSM, 39,"Unconnected instance {} at location ({:4.3f}um, {:4.3f}um) layer: {}.",
             (*inst_it)->getName(), loc_x, loc_y, (*node_list_it)->GetLayerNum());
         }
       }
@@ -1043,7 +1052,7 @@ int IRSolver::PrintSpice()
     m_logger->error(
         utl::PSM,
         41,
-        "Spice file {} did not open. Please check if it is a valid path.",
+        "Could not open SPICE file {}. Please check if it is a valid path.",
         m_spice_out_file);
   }
   vector<double> J                 = GetJ();

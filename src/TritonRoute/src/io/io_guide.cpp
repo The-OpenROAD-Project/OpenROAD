@@ -114,7 +114,7 @@ void io::Parser::genGuides_merge(
                   make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum - 2));
             } else {
               logger->error(
-                  DRT, 228, "genGuides_merge cannot find touching layer");
+                  DRT, 228, "genGuides_merge cannot find touching layer.");
             }
           }
         }
@@ -242,7 +242,7 @@ void io::Parser::genGuides_split(
           if (lineIdx.empty()) {
             logger->error(DRT,
                           229,
-                          "genGuides_split lineIdx is empty on {}",
+                          "genGuides_split lineIdx is empty on {}.",
                           design->getTech()->getLayer(layerNum)->getName());
           } else if (lineIdx.size() == 1) {
             auto x = *(lineIdx.begin());
@@ -333,7 +333,7 @@ void io::Parser::genGuides_gCell2TermMap(
                 logger->warn(DRT,
                              230,
                              "genGuides_gCell2TermMap avoid condition2, may "
-                             "result in guide open: {}",
+                             "result in guide open: {}.",
                              name);
               }
             } else if (condition3
@@ -348,7 +348,7 @@ void io::Parser::genGuides_gCell2TermMap(
                 logger->warn(DRT,
                              231,
                              "genGuides_gCell2TermMap avoid condition3, may "
-                             "result in guide open: {}",
+                             "result in guide open: {}.",
                              name);
               }
             } else {
@@ -357,7 +357,7 @@ void io::Parser::genGuides_gCell2TermMap(
           }
         }
       } else {
-        logger->error(DRT, 232, "genGuides_gCell2TermMap unsupoprted pinfig");
+        logger->error(DRT, 232, "genGuides_gCell2TermMap unsupoprted pinfig.");
       }
     }
   }
@@ -636,7 +636,7 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
     // filter pin2GCellMap with aps
 
     if (pin2GCellMap.empty()) {
-      logger->warn(DRT, 214, "genGuides empty pin2GCellMap");
+      logger->warn(DRT, 214, "genGuides empty pin2GCellMap.");
       debugPrint(
           logger, DRT, "io", 1, "gcell2pin.size() = {}", gCell2PinMap.size());
     }
@@ -646,15 +646,15 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
           auto ptr = static_cast<frInstTerm*>(obj);
           logger->warn(DRT,
                        215,
-                       "pin {}/{} not covered by guide",
+                       "Pin {}/{} not covered by guide.",
                        ptr->getInst()->getName(),
                        ptr->getTerm()->getName());
         } else if (obj->typeId() == frcTerm) {
           auto ptr = static_cast<frTerm*>(obj);
           logger->warn(
-              DRT, 216, "pin PIN/{} not covered by guide", ptr->getName());
+              DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
         } else {
-          logger->warn(DRT, 217, "genGuides unknown type");
+          logger->warn(DRT, 217, "genGuides unknown type.");
         }
       }
     }
@@ -689,10 +689,10 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
                 net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
             break;
           } else {
-            logger->error(DRT, 218, "Guide is not connected to design");
+            logger->error(DRT, 218, "Guide is not connected to design.");
           }
         } else {
-          logger->error(DRT, 219, "Guide is not connected to design");
+          logger->error(DRT, 219, "Guide is not connected to design.");
         }
       } else {
         retry = true;
@@ -739,7 +739,7 @@ void io::Parser::genGuides_final(
         pinIdx2GCellUpdated[pinIdx].push_back(
             make_pair(box.upperRight(), lNum));
       } else {
-        logger->warn(DRT, 220, "genGuides_final error 1");
+        logger->warn(DRT, 220, "genGuides_final error 1.");
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     } else if (i >= gCnt && adjPrevIdx[i] >= 0 && adjPrevIdx[i] < gCnt) {
@@ -759,14 +759,14 @@ void io::Parser::genGuides_final(
         pinIdx2GCellUpdated[pinIdx].push_back(
             make_pair(box.upperRight(), lNum));
       } else {
-        logger->warn(DRT, 221, "genGuides_final error 2");
+        logger->warn(DRT, 221, "genGuides_final error 2.");
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     }
   }
   for (auto& guides : pinIdx2GCellUpdated) {
     if (guides.empty()) {
-      logger->warn(DRT, 222, "genGuides_final pin not in any guide");
+      logger->warn(DRT, 222, "genGuides_final pin not in any guide.");
     }
   }
 
@@ -820,7 +820,7 @@ void io::Parser::genGuides_final(
       } else {
         logger->error(DRT,
                       223,
-                      "pin dangling id {} ({},{}) {}",
+                      "Pin dangling id {} ({},{}) {}.",
                       idx,
                       pt.x(),
                       pt.y(),
@@ -1028,7 +1028,7 @@ bool io::Parser::genGuides_astar(
       && (ALLOW_PIN_AS_FEEDTHROUGH || forceFeedThrough) && retry) {
     logger->warn(DRT,
                  224,
-                 "{} {} pin not visited #guides = {}",
+                 "{} {} pin not visited, number of guides = {}.",
                  net->getName(),
                  nCnt - gCnt - pinVisited,
                  gCnt);
@@ -1038,7 +1038,7 @@ bool io::Parser::genGuides_astar(
       && !forceFeedThrough && retry) {
     logger->warn(DRT,
                  225,
-                 "{} {} pin not visited, fall back to feedrough mode",
+                 "{} {} pin not visited, fall back to feedthrough mode.",
                  net->getName(),
                  nCnt - gCnt - pinVisited);
   }

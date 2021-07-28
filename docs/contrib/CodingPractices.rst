@@ -2,6 +2,7 @@ Coding Practices
 ================
 
 .. note::
+
       This is a compilation of many idioms in openroad code that I consider
       undesirable. Obviously other programmers have different opinions or
       they would not be so pervasive. James Cherry 04/2020
@@ -28,23 +29,23 @@ Don't use prefixes on function names or variables. That's what namespaces are fo
 
 .. code-block:: cpp
 
-      namespace fr {
-            class frConstraint
-            class frLef58CutClassConstraint
-            class frShortConstraint
-            class frNonSufficientMetalConstraint
-            class frOffGridConstraint
-            class frMinEnclosedAreaConstraint
-            class frMinStepConstraint
-            class frMinimumcutConstraint
-            class frAreaConstraint
-            class frMinWidthConstraint
-            class frLef58SpacingEndOfLineWithinEndToEndConstraint
-            class frLef58SpacingEndOfLineWithinParallelEdgeConstraint
-            class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint
-            class frLef58SpacingEndOfLineWithinConstraint
-            class frLef58SpacingEndOfLineConstraint
-      }
+  namespace fr {
+    class frConstraint
+    class frLef58CutClassConstraint
+    class frShortConstraint
+    class frNonSufficientMetalConstraint
+    class frOffGridConstraint
+    class frMinEnclosedAreaConstraint
+    class frMinStepConstraint
+    class frMinimumcutConstraint
+    class frAreaConstraint
+    class frMinWidthConstraint
+    class frLef58SpacingEndOfLineWithinEndToEndConstraint
+    class frLef58SpacingEndOfLineWithinParallelEdgeConstraint
+    class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint
+    class frLef58SpacingEndOfLineWithinConstraint
+    class frLef58SpacingEndOfLineConstraint
+  }
 
 Practice #3
 -----------
@@ -60,14 +61,14 @@ with prototypes.
 
 .. code-block:: cpp
 
-      namespace fr {
-            extern frCoord getGCELLGRIDX();
-            extern frCoord
-            getGCELLGRIDY();
-            extern frCoord getGCELLOFFSETX();
-            extern frCoord
-            getGCELLOFFSETY();
-      }
+  namespace fr {
+    extern frCoord getGCELLGRIDX();
+    extern frCoord
+    getGCELLGRIDY();
+    extern frCoord getGCELLOFFSETX();
+    extern frCoord
+    getGCELLOFFSETY();
+  }
 
 Practice #5
 -----------
@@ -76,7 +77,7 @@ Don't use prefixes on file names. That's what directories are for.
 
 .. code-block:: shell
 
-      frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
+  frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
 
 Practice #6
 -----------
@@ -86,12 +87,12 @@ extraneous verbage. Just use thingy.
 
 .. code-block:: cpp
 
-            float currXSize;
-            float currYSize;
-            float currArea;
-            float currWS;
-            float currWL;
-            float currWLnoWts;
+  float currXSize;
+  float currYSize;
+  float currArea;
+  float currWS;
+  float currWL;
+  float currWLnoWts;
 
 Practice #7
 -----------
@@ -104,23 +105,23 @@ reference.
 
 .. code-block:: cpp
 
-      extern std::string DEF_FILE;
-      extern std::string GUIDE_FILE;
-      extern std::string OUTGUIDE_FILE;
-      extern std::string LEF_FILE;
-      extern std::string OUTTA_FILE;
-      extern std::string OUT_FILE;
-      extern std::string DBPROCESSNODE;
-      extern std::string OUT_MAZE_FILE;
-      extern std::string DRC_RPT_FILE;
-      extern int MAX_THREADS ;
-      extern int VERBOSE ;
-      extern int BOTTOM_ROUTING_LAYER;
-      extern bool ALLOW_PIN_AS_FEEDTHROUGH;
-      extern bool USENONPREFTRACKS;
-      extern bool USEMINSPACING_OBS;
-      extern bool RESERVE_VIA_ACCESS;
-      extern bool ENABLE_BOUNDARY_MAR_FIX;
+  extern std::string DEF_FILE;
+  extern std::string GUIDE_FILE;
+  extern std::string OUTGUIDE_FILE;
+  extern std::string LEF_FILE;
+  extern std::string OUTTA_FILE;
+  extern std::string OUT_FILE;
+  extern std::string DBPROCESSNODE;
+  extern std::string OUT_MAZE_FILE;
+  extern std::string DRC_RPT_FILE;
+  extern int MAX_THREADS ;
+  extern int VERBOSE ;
+  extern int BOTTOM_ROUTING_LAYER;
+  extern bool ALLOW_PIN_AS_FEEDTHROUGH;
+  extern bool USENONPREFTRACKS;
+  extern bool USEMINSPACING_OBS;
+  extern bool RESERVE_VIA_ACCESS;
+  extern bool ENABLE_BOUNDARY_MAR_FIX;
 
 Practice #8
 -----------
@@ -136,23 +137,23 @@ Do not use continue. Wrap the body in an if instead.
 
 .. code-block:: cpp
 
-      // instead of
-      for(dbInst* inst : block->getInsts() ) {
-            // Skip for standard cells
-            if( (int)inst->getBBox()->getDY() <= cellHeight) { continue; }
-            // code
-      }
-      // use
-      for(dbInst* inst : block->getInsts() ){
-            // Skip for standard cells
-            if( (int)inst->getBBox()->getDY() > cellHeight) {
-                  // code
-            }
-      }
+  // instead of
+  for(dbInst* inst : block->getInsts() ) {
+    // Skip for standard cells
+    if (inst->getBBox()->getDY() <= cellHeight) { continue; }
+    // code
+  }
+  // use
+  for(dbInst* inst : block->getInsts() ){
+    // Skip for standard cells
+    if (inst->getBBox()->getDY() > cellHeight) {
+      // code
+    }
+  }
 
 
 Practice #10
------------
+------------
 
 Don't put magic numbers in the code. Use a variable with a name that
 captures the intent. Document the units if they exist.
@@ -160,14 +161,15 @@ captures the intent. Document the units if they exist.
 examples of unnamed magic numbers:
 
 .. code-block:: cpp
-      referenceHpwl_= 446000000;
-      coeffV = 1.36;
-      coeffV = 1.2;
-      double nearest_dist = 99999999999;
-      if(dist < rowHeight \* 2) {}
-      for(int i = 9; i > -1; i–) {}
-      if(design_util > 0.6 \|\| num_fixed_nodes > 0) div = 1;
-      avail_region_area += (theRect->xUR - theRect->xLL - (int)theRect->xUR % 200 + (int)theRect->xLL % 200 - 200) \* (theRect->yUR - theRect->yLL - (int)theRect->yUR % 2000 + (int)theRect->yLL % 2000 - 2000);
+
+  referenceHpwl_= 446000000;
+  coeffV = 1.36;
+  coeffV = 1.2;
+  double nearest_dist = 99999999999;
+  if (dist < rowHeight * 2) {}
+  for(int i = 9; i > -1; i--) {}
+  if(design_util > 0.6 || num_fixed_nodes > 0) div = 1;
+  avail_region_area += (theRect->xUR - theRect->xLL - (int)theRect->xUR % 200 + (int)t  heRect->xLL % 200 - 200) * (theRect->yUR - theRect->yLL - (int)theRect->yUR % 2000 + (int)theRect->yLL % 2000 - 2000);
 
 
 Practice #11
@@ -177,38 +179,37 @@ Don't copy code fragments. Write functions.
 
 .. code-block:: cpp
 
-      // 10x
-      int x_pos = (int)floor(theCell->x_coord / wsite + 0.5);
-      // 15x
-      int y_pos = (int)floor(y_coord / rowHeight + 0.5);
+  // 10x
+  int x_pos = (int)floor(theCell->x_coord / wsite + 0.5);
+  // 15x
+  int y_pos = (int)floor(y_coord / rowHeight + 0.5);
 
-      // This
-      nets[newnetID]->netIDorg = netID;
-      nets[newnetID]->numPins = numPins;
-      nets[newnetID]->deg = pinInd;
-      nets[newnetID]->pinX = (short *)malloc(pinInd* sizeof(short));
-      nets[newnetID]->pinY = (short *)malloc(pinInd* sizeof(short));
-      nets[newnetID]->pinL = (short *)malloc(pinInd* sizeof(short));
-      nets[newnetID]->alpha = alpha;
+  // This
+  nets[newnetID]->netIDorg = netID;
+  nets[newnetID]->numPins = numPins;
+  nets[newnetID]->deg = pinInd;
+  nets[newnetID]->pinX = (short *)malloc(pinInd* sizeof(short));
+  nets[newnetID]->pinY = (short *)malloc(pinInd* sizeof(short));
+  nets[newnetID]->pinL = (short *)malloc(pinInd* sizeof(short));
+  nets[newnetID]->alpha = alpha;
 
-      // Should factor out the array lookup.
-      Net *net = nets[newnetID];
-      net->netIDorg = netID;
-      net->numPins = numPins;
-      net->deg = pinInd;
-      net->pinX = (short*)malloc(pinInd* sizeof(short));
-      net->pinY = (short *)malloc(pinInd* sizeof(short));
-      net->pinL = (short *)malloc(pinInd* sizeof(short));
-      net->alpha = alpha;
+  // Should factor out the array lookup.
+  Net *net = nets[newnetID];
+  net->netIDorg = netID;
+  net->numPins = numPins;
+  net->deg = pinInd;
+  net->pinX = (short*)malloc(pinInd* sizeof(short));
+  net->pinY = (short *)malloc(pinInd* sizeof(short));
+  net->pinL = (short *)malloc(pinInd* sizeof(short));
+  net->alpha = alpha;
 
-      // Same here:
-      if(grid[j][k].group != UINT_MAX) {
-        if(grid[j][k].isValid == true) {
-          if(groups[grid[j][k].group].name == theGroup->name)
-            area += wsite * rowHeight;
-        }
-      }
-
+  // Same here:
+  if (grid[j][k].group != UINT_MAX) {
+    if (grid[j][k].isValid) {
+      if (groups[grid[j][k].group].name == theGroup->name)
+        area += wsite * rowHeight;
+    }
+  }
 
 Practice #12
 ------------
@@ -217,14 +218,14 @@ Don't use logical operators to test for null pointers.
 
 .. code-block:: cpp
 
-      if (!net) {
-            // code
-      }
+  if (!net) {
+    // code
+  }
 
-      // should be
-      if (net != nullptr) {
-            // code
-      }
+  // should be
+  if (net != nullptr) {
+    // code
+  }
 
 Practice #13
 ------------
@@ -256,7 +257,7 @@ versions.
 
 .. code-block:: cpp
 
-      int size_x = (int)floor(theCell->width / wsite + 0.5);
+  int size_x = (int)floor(theCell->width / wsite + 0.5);
 
 Practice #17
 ------------
@@ -272,19 +273,19 @@ functions loops over every instance like this:
 
 .. code-block:: cpp
 
-      legal &= row_check(log);
-      legal &= site_check(log);
-      for(int i = 0; i < cells.size(); i++) {
-            cell* theCell = &cells[i];
-            legal &= power_line_check(log);
-            legal &= edge_check(log);
-            legal &= placed_check(log);
-            legal &= overlap_check(log);
-      }
-      // with this loop
-      for(int i = 0; i < cells.size(); i++) {
-            cell* theCell = &cells[i];
-      }
+  legal &= row_check(log);
+  legal &= site_check(log);
+  for(int i = 0; i < cells.size(); i++) {
+    cell* theCell = &cells[i];
+    legal &= power_line_check(log);
+    legal &= edge_check(log);
+    legal &= placed_check(log);
+    legal &= overlap_check(log);
+  }
+  // with this loop
+  for(int i = 0; i < cells.size(); i++) {
+    cell* theCell = &cells[i];
+  }
 
 Instead make one pass over the instances doing each check.
 
@@ -292,25 +293,25 @@ Practice #19
 ------------
 
 Don't use == true, or == false.
-Boolean expressions have a value of true or false already.
+Boolean expressions already have a value of true or false.
 
 .. code-block:: cpp
 
-      if(found.first == true) {
-            // code
-      }
-      // is simply
-      if(found.first) {
-            // code
-      }
-      // and
-      if(found.first == false) {
-            // code
-      }
-      // is simply
-      if(!found.first) {
-            // code
-      }
+  if(found.first == true) {
+    // code
+  }
+  // is simply
+  if(found.first) {
+    // code
+  }
+  // and
+  if(found.first == false) {
+    // code
+  }
+  // is simply
+  if(!found.first) {
+   // code
+  }
 
 Practice #20
 ------------
@@ -319,19 +320,17 @@ Don't nest if statements. Use && on the clauses instead.
 
 .. code-block:: cpp
 
-       if(grid[j][k].group != UINT_MAX)
-         if(grid[j][k].isValid == true)
-           if(groups[grid[j][k].group].name == theGroup->name)
+  if(grid[j][k].group != UINT_MAX)
+    if(grid[j][k].isValid == true)
+      if(groups[grid[j][k].group].name == theGroup->name)
 
 is simply
 
 .. code-block:: cpp
 
-       if(grid[j][k].group != UINT_MAX
-          && grid[j][k].isValid
-          && groups[grid[j][k].group].name == theGroup->name)
-
-
+  if(grid[j][k].group != UINT_MAX
+     && grid[j][k].isValid
+     && groups[grid[j][k].group].name == theGroup->name)
 
 Practice #21
 ------------
@@ -347,16 +346,17 @@ headers should NEVER be in <>'s.
 - https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename
 
 These are all wrong:
+
 .. code-block:: cpp
 
-      #include <opendb/db.h>
-      #include <ABKCommon/uofm_alloc.h>
-      #include <OpenSTA/liberty/Liberty.hh>
-      #include <opendb/db.h>
-      #include <opendb/dbTypes.h>
-      #include <opendb/defin.h>
-      #include <opendb/defout.h>
-      #include <opendb/lefin.h>
+  #include <opendb/db.h>
+  #include <ABKCommon/uofm_alloc.h>
+  #include <OpenSTA/liberty/Liberty.hh>
+  #include <opendb/db.h>
+  #include <opendb/dbTypes.h>
+  #include <opendb/defin.h>
+  #include <opendb/defout.h>
+  #include <opendb/lefin.h>
 
 
 
@@ -370,17 +370,17 @@ needs.
 
 .. code-block:: cpp
 
-      // Types.hpp
-      #include <OpenSTA/liberty/Liberty.hh>
-      #include <opendb/db.h>
-      #include <opendb/dbTypes.h>
-      // It should be obvious that every source file is not reading def.
-      #include <opendb/defin.h>
-      // or writing it.
-      #include <opendb/defout.h>
-      #include <opendb/lefin.h>
-      #include "db_sta/dbNetwork.hh"
-      #include "db_sta/dbSta.hh"
+  // Types.hpp
+  #include <OpenSTA/liberty/Liberty.hh>
+  #include <opendb/db.h>
+  #include <opendb/dbTypes.h>
+  // It should be obvious that every source file is not reading def.
+  #include <opendb/defin.h>
+  // or writing it.
+  #include <opendb/defout.h>
+  #include <opendb/lefin.h>
+  #include "db_sta/dbNetwork.hh"
+  #include "db_sta/dbSta.hh"
 
 Note this example also incorrectly uses <>'s around openroad headers.
 
@@ -392,26 +392,25 @@ the header file.
 
 .. code-block:: cpp
 
-      #include <stdio.h>
-      #include <stdlib.h>
-      #include <math.h>
-      #include <limits.h>
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <math.h>
+  #include <limits.h>
 
-      unsigned num_nets = 1000;
-      unsigned num_terminals = 64;
-      unsigned verbose = 0;
-      float alpha1 = 1;
-      float alpha2 = 0.45;
-      float alpha3 = 0;
-      float alpha4 = 0;
-      float margin = 1.1;
-      unsigned seed = 0;
-      unsigned root_idx = 0;
-      unsigned dist = 2;
-      float beta = 1.4;
-      bool runOneNet = false;
-      unsigned net_num = 0;
-
+  unsigned num_nets = 1000;
+  unsigned num_terminals = 64;
+  unsigned verbose = 0;
+  float alpha1 = 1;
+  float alpha2 = 0.45;
+  float alpha3 = 0;
+  float alpha4 = 0;
+  float margin = 1.1;
+  unsigned seed = 0;
+  unsigned root_idx = 0;
+  unsigned dist = 2;
+  float beta = 1.4;
+  bool runOneNet = false;
+  unsigned net_num = 0;
 
 Practice #24
 ------------
@@ -422,9 +421,9 @@ reduce the code the compiler has to process.
 
 .. code-block:: cpp
 
-      class Network;
-      // instead of
-      #include "Network.hh"
+  class Network;
+  // instead of
+  #include "Network.hh"
 
 Practice #25
 ------------
@@ -435,12 +434,12 @@ to guarantee.
 
 .. code-block:: cpp
 
-      // Instead of:
-      #ifndef __MACRO_PLACER_HASH_UTIL__
-            #define __MACRO_PLACER_HASH_UTIL__
-      #endif
-      // use
-      #pragma once
+  // Instead of:
+  #ifndef __MACRO_PLACER_HASH_UTIL__
+  #define __MACRO_PLACER_HASH_UTIL__
+  #endif
+  // use
+  #pragma once
 
 Practice #26
 ------------
@@ -470,9 +469,9 @@ symbols in code that is already in the MacroPlace namespace.
 
 .. code-block:: cpp
 
-      using namespace MacroPlace;
+  using namespace MacroPlace;
 
-      namespace MacroPlace { }
+  namespace MacroPlace { }
 
 Practice #29
 ------------
@@ -487,16 +486,16 @@ Use range iteration. C++ iterators are ugly and verbose.
 
 .. code-block:: cpp
 
-      // Instead of
-      odb::dbSet::iterator nIter;
-      for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
-            odb::dbNet* currNet = *nIter;
-            // code
-      }
-      // use
-      for (odb::dbNet* currNet : nets) {
-            // code
-      }
+  // Instead of
+  odb::dbSet::iterator nIter;
+  for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
+    odb::dbNet* currNet = *nIter;
+    // code
+  }
+  // use
+  for (odb::dbNet* currNet : nets) {
+    // code
+  }
 
 Practice #34
 ------------
@@ -506,9 +505,9 @@ assume that the person reading your code has a 60" monitor.
 
 .. code-block:: cpp
 
-      for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edges completely inside the adjust region according the percentage of reduction
-            // code
-      }
+  for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edges completely inside the adjust region according the percentage of reduction
+    // code
+  }
 
 Practice #35
 ------------
@@ -517,16 +516,16 @@ Don't std::pow for powers of 2 or for decimal constants.
 
 .. code-block:: cpp
 
-      // This
-      double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12));
-      // Should be
-      double newCapPerSqr = _options->getCapPerSqr() * 1E-12;
+  // This
+  double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12));
+  // Should be
+  double newCapPerSqr = _options->getCapPerSqr() * 1E-12;
 
-      // This
-      unsigned numberOfTopologies = std::pow(2, numberOfNodes);
-      // Should be
-      unsigned numberOfTopologies = 1 << numberOfNodes;
-      
+  // This
+  unsigned numberOfTopologies = std::pow(2, numberOfNodes);
+  // Should be
+  unsigned numberOfTopologies = 1 << numberOfNodes;
+
 Git
 ***
 
@@ -576,7 +575,7 @@ Compiled Static libraries
 `\*.lai \*.la \*.a \*.lib`
 
 CMAKE
-****
+*****
 
 Practice #35
 ------------
@@ -586,9 +585,9 @@ level and should not be overriden.
 
 .. code-block:: cmake
 
-      set(CMAKE_CXX_FLAGS "-O3")
-      set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
-      set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+  set(CMAKE_CXX_FLAGS "-O3")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 Practice #36
 ------------
@@ -598,7 +597,7 @@ directories.
 
 .. code-block:: cmake
 
-      target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
+   target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
 
 Practice #37
 ------------
@@ -607,9 +606,9 @@ Don't use glob. Explictly list the files in a group.
 
 .. code-block:: cmake
 
-      # Instead of
-      file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-      # should be
-      list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp)
-      list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h)
-      list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.cpp)
+  # Instead of
+  file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+  # should be
+  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp)
+    list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h)
+    list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.cpp)

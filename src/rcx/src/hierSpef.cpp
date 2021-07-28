@@ -192,7 +192,6 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef) {
 
   uint* capNodeMap = new uint[2 * blockCapSize + 1];
 
-  bool foreign = false;
   uint spefCnt = 0;
   uint flatCnt = 0;
   uint gCnt = 0;
@@ -359,8 +358,6 @@ uint extMain::createCapNodes(odb::dbNet* net, odb::dbNet* parentNet,
              maxCap, net->getConstName(), parentNet->getConstName());
 
   uint gCnt = 0;
-  bool foreign = false;
-  char buf[1024];
   odb::dbSet<odb::dbCapNode> capNodes = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator cap_node_itr = capNodes.begin();
   for (; cap_node_itr != capNodes.end(); ++cap_node_itr) {
@@ -375,7 +372,6 @@ uint extMain::createCapNodes(odb::dbNet* net, odb::dbNet* parentNet,
 uint extMain::printRSegs(odb::dbNet* net, Logger* logger) {
   logger->info(RCX, 236, "\t\t\tprintRSegs: {}", net->getConstName());
   odb::dbSet<odb::dbRSeg> rsegs = net->getRSegs();
-  uint rsize = rsegs.size();
 
   uint rCnt = 0;
   odb::dbSet<odb::dbRSeg>::iterator rseg_itr = rsegs.begin();
@@ -398,7 +394,6 @@ uint extMain::createRSegs(odb::dbNet* net, odb::dbNet* parentNet,
   // extMain::printRSegs(parentNet);
 
   odb::dbSet<odb::dbRSeg> rsegs = net->getRSegs();
-  uint rsize = rsegs.size();
 
   uint rCnt = 0;
   odb::dbSet<odb::dbRSeg>::iterator rseg_itr = rsegs.begin();
@@ -487,7 +482,6 @@ uint extMain::createCCsegs(odb::dbNet* net, odb::dbNet* parentNet,
              maxCap, net->getConstName(), parentNet->getConstName());
 
   odb::dbBlock* pblock = parentNet->getBlock();
-  uint ccCnt = 0;
 
   odb::dbSet<odb::dbCapNode> nodeSet = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator rc_itr;

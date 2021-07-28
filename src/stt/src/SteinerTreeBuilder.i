@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,15 +35,21 @@
 
 %{
 
-#include <vector>
-#include "pdr/pdrev.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "stt/pdrev.h"
 #include "gui/gui.h"
+#include "ord/OpenRoad.hh"
+#include "opendb/db.h"
+#include <vector>
 
 namespace ord {
-utl::Logger *
-getLogger();
-}
+// Defined in OpenRoad.i
+stt::SteinerTreeBuilder* getSteinerTreeBuilder();
+utl::Logger* getLogger();
+}  // namespace ord
 
+using ord::getSteinerTreeBuilder;
+using odb::dbNet;
 %}
 
 %include "../../Exception.i"
@@ -55,9 +61,36 @@ namespace std {
 
 %inline %{
 
+namespace stt {
+
 void
-report_pd_tree(const std::vector<int> &x,
-               const std::vector<int> &y,
+set_routing_alpha_cmd(float alpha)
+{
+  getSteinerTreeBuilder()->setAlpha(alpha);
+}
+
+void
+set_net_alpha(odb::dbNet* net, float alpha)
+{
+  getSteinerTreeBuilder()->setNetAlpha(net, alpha);
+}
+
+void
+set_min_fanout_alpha(int num_pins, float alpha)
+{
+  getSteinerTreeBuilder()->setMinFanoutAlpha(num_pins, alpha);
+}
+
+void
+set_min_hpwl_alpha(int hpwl, float alpha)
+{
+  getSteinerTreeBuilder()->setMinHPWLAlpha(hpwl, alpha);
+}
+
+
+void
+report_pd_tree(std::vector<int> x,
+               std::vector<int> y,
                int drvr_index,
                float alpha)
 {
@@ -67,8 +100,8 @@ report_pd_tree(const std::vector<int> &x,
 }
 
 void
-highlight_pd_tree(const std::vector<int> &x,
-                  const std::vector<int> &y,
+highlight_pd_tree(std::vector<int> x,
+                  std::vector<int> y,
                   int drvr_index,
                   float alpha)
 {
@@ -79,8 +112,8 @@ highlight_pd_tree(const std::vector<int> &x,
 }
 
 void
-report_pdII_tree(const std::vector<int> &x,
-                 const std::vector<int> &y,
+report_pdII_tree(std::vector<int> x,
+                 std::vector<int> y,
                  int drvr_index,
                  float alpha)
 {
@@ -88,5 +121,7 @@ report_pdII_tree(const std::vector<int> &x,
   stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
   pdr::reportSteinerTree(tree, logger);
 }
+
+} // namespace
 
 %} // inline

@@ -38,7 +38,6 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
-#include "flute.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -999,8 +998,6 @@ void FastRouteCore::StNetOrder()
   TreeEdge *treeedges, *treeedge;
   StTree* stree;
 
-  int numTreeedges = 0;
-
   tree_order_cong_.clear();
 
   tree_order_cong_.resize(num_valid_nets_);
@@ -1582,7 +1579,7 @@ stt::Tree FastRouteCore::treeToFlute(Tree tree)
   stt::Tree fluteTree;
   fluteTree.deg = tree.deg;
   fluteTree.length = (stt::DTYPE) tree.length;
-  fluteTree.branch = new stt::Branch[tree.totalDeg];
+  fluteTree.branch.resize(tree.totalDeg);
   for (int i = 0; i < tree.totalDeg; i++) {
     fluteTree.branch[i].x = (stt::DTYPE) tree.branch[i].x;
     fluteTree.branch[i].y = (stt::DTYPE) tree.branch[i].y;

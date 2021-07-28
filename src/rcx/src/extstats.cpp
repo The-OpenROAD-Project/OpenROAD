@@ -100,12 +100,12 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist) {
 }
 void extDistRC::debugRC(const char* debugWord, const char* from, int width,
                         int level) {
-  char tmp[32];
-  sprintf(tmp, " ");
-  if (level > 0)
-    sprintf(tmp, "%d", level);
-  if (width > 0)
-    sprintf(tmp, "%s %d", tmp, width);
+  // char tmp[32];
+  // sprintf(tmp, " ");
+  // if (level > 0)
+  //   sprintf(tmp, "%d", level);
+  // if (width > 0)
+  //   sprintf(tmp, "%s %d", tmp, width);
 
   // debug(debugWord, "C", "%s: %s, tC %g  CC %g F %g D %g   R %g  Sep %d\n",
   //		from, tmp, _coupling+_fringe+_diag, _coupling,  _fringe, _diag,
@@ -137,7 +137,6 @@ uint extMain::calcMinMaxRC() {
       dist = layer->getPitch() - layer->getWidth();
 
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
-      uint modelIndex = _modelMap.get(jj);
       resetMinMaxRC(met, jj);
 
       extDistRC* rcMin = _currentModel->getMinRC(met, width);
@@ -164,7 +163,7 @@ uint extMain::getExtStats(odb::dbNet* net, uint corner, int& wlen,
   via_res = 0;
   wlen = 0;
   uint cnt = 0;
-  sprintf(_tmpLenStats, "");
+  _tmpLenStats.clear();
 
   odb::dbWire* wire = net->getWire();
   if (wire == NULL)
@@ -175,7 +174,6 @@ uint extMain::getExtStats(odb::dbNet* net, uint corner, int& wlen,
   for (shapes.begin(wire); shapes.next(s);) {
     //		uint level= 0;
 
-    int shapeId = shapes.getShapeId();
     if (s.isVia()) {
       // if (!_skip_via_wires)
       //    continue;
@@ -213,7 +211,9 @@ uint extMain::getExtStats(odb::dbNet* net, uint corner, int& wlen,
       if (dy > dx)
         len = dy;
     }
-    sprintf(_tmpLenStats, "%s,M%d:%d", _tmpLenStats, met, len);
+    char buf[64];
+    sprintf(buf, ",M%d:%d", met, len);
+    _tmpLenStats += buf;
     wlen += len;
 
     min_res += len * _minResTable[met][corner];

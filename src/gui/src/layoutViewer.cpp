@@ -354,6 +354,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = getBlock()->getDataBase()->getTech();
+  std::vector<Selected> selections;
   // dbSet doesn't provide a reverse iterator so we have to copy it.
   std::deque<dbTechLayer*> rev_layers;
   for (auto layer : tech->getLayers()) {
@@ -368,7 +369,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     for (auto* renderer : renderers) {
       Selected selected = renderer->select(layer, pt_dbu);
       if (selected) {
-        return selected;
+        selections.push_back(selected);
       }
     }
 
@@ -378,8 +379,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     // Just return the first one
     for (auto iter : shapes) {
       dbNet* net = std::get<2>(iter);
-      if (options_->isNetVisible(net)) {
-        return makeSelected_(net);
+      if (options_->isNetVisible(net) && options_->isNetSelectable(net)) {
+        selections.push_back(makeSelected_(net));
       }
     }
   }
@@ -388,7 +389,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   for (auto* renderer : renderers) {
     Selected selected = renderer->select(nullptr, pt_dbu);
     if (selected) {
-      return selected;
+      selections.push_back(selected);
     }
   }
 
@@ -396,10 +397,46 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   auto insts
       = search_.searchInsts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
-  // Just return the first one
+  for (auto& inst : insts) {
+    dbInst* inst_ptr = std::get<2>(inst);
+    if (options_->isInstanceVisible(inst_ptr) && options_->isInstanceSelectable(inst_ptr)) {
+      selections.push_back(makeSelected_(inst_ptr));
+    }
+  }
 
-  if (insts.begin() != insts.end()) {
-    return makeSelected_(std::get<2>(*insts.begin()));
+  if (!selections.empty()) {
+    if (selections.size() == 1) {
+      // one one item possible, so return that
+      return selections[0];
+    }
+
+    // more than one item possible, so return the "next" one
+    // method: look for the last selected item in the list and select the next one
+    // that will emulate a circular queue so we don't just oscillate between the first two
+    std::vector<bool> is_selected;
+    for (auto& sel : selections) {
+      is_selected.push_back(selected_.count(sel) != 0);
+    }
+    if (std::all_of(is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
+      // everything is selected, so just return first item
+      return selections[0];
+    }
+    is_selected.push_back(is_selected[0]); // add first element to make it a "loop"
+
+    int next_selection_idx;
+    // start at end of list and look for the selection item that is directly after a selected item.
+    for (next_selection_idx = selections.size(); next_selection_idx > 0; next_selection_idx--) {
+      // looking for true followed by false
+      if (is_selected[next_selection_idx-1] && !is_selected[next_selection_idx]) {
+        break;
+      }
+    }
+    if (next_selection_idx == selections.size()) {
+      // found at the end of the list, loop around
+      next_selection_idx = 0;
+    }
+
+    return selections[next_selection_idx];
   }
   return Selected();
 }
@@ -411,7 +448,6 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     return;
   }
   
-  int dbu_height = getBounds(block).yMax();
   mouse_press_pos_ = event->pos();
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
@@ -482,10 +518,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
       if (rect.width() < 10 && rect.height() < 10)
         return;
-      int dbu_height = getBounds(block).yMax();
       auto mouse_release_pos = screenToDBU(event->pos());
       auto mouse_press_pos = screenToDBU(mouse_press_pos_);
-      qreal to_dbu = block->getDbUnitsPerMicron();
 
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
@@ -634,33 +668,56 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
+  int min_resolution = 5*minimumViewableResolution();
+  Rect block_bounds;
+  block->getBBox()->getBox(block_bounds);
+  const Rect draw_bounds = block_bounds.intersect(bounds);
+
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;
   if ((!is_horizontal && options_->arePrefTracksVisible())
       || (is_horizontal && options_->areNonPrefTracksVisible())) {
-    grid->getGridX(grids);
-    for (int x : grids) {
-      if (x < bounds.xMin()) {
-        continue;
+    bool show_grid = true;
+    for (int i = 0; i < grid->getNumGridPatternsX(); i++) {
+      int origin, line_count, step;
+      grid->getGridPatternX(i, origin, line_count, step);
+      show_grid &= step > min_resolution;
+    }
+
+    if (show_grid) {
+      grid->getGridX(grids);
+      for (int x : grids) {
+        if (x < draw_bounds.xMin()) {
+          continue;
+        }
+        if (x > draw_bounds.xMax()) {
+          break;
+        }
+        painter->drawLine(x, draw_bounds.yMin(), x, draw_bounds.yMax());
       }
-      if (x > bounds.xMax()) {
-        break;
-      }
-      painter->drawLine(x, bounds.yMin(), x, bounds.yMax());
     }
   }
 
   if ((is_horizontal && options_->arePrefTracksVisible())
       || (!is_horizontal && options_->areNonPrefTracksVisible())) {
-    grid->getGridY(grids);
-    for (int y : grids) {
-      if (y < bounds.yMin()) {
-        continue;
+    bool show_grid = true;
+    for (int i = 0; i < grid->getNumGridPatternsY(); i++) {
+      int origin, line_count, step;
+      grid->getGridPatternY(i, origin, line_count, step);
+      show_grid &= step > min_resolution;
+    }
+
+    if (show_grid) {
+      grid->getGridY(grids);
+      for (int y : grids) {
+        if (y < draw_bounds.yMin()) {
+          continue;
+        }
+        if (y > draw_bounds.yMax()) {
+          break;
+        }
+        painter->drawLine(draw_bounds.xMin(), y, draw_bounds.xMax(), y);
       }
-      if (y > bounds.yMax()) {
-        break;
-      }
-      painter->drawLine(bounds.xMin(), y, bounds.xMax(), y);
     }
   }
 }
@@ -672,6 +729,12 @@ void LayoutViewer::drawRows(dbBlock* block,
   if (!options_->areRowsVisible()) {
     return;
   }
+  int min_resolution = 5*minimumViewableResolution();
+  // three possible draw cases:
+  // 1) resolution allows for individual sites -> draw all
+  // 2) individual sites too small -> just draw row outlines
+  // 3) row is too small -> dont draw anything
+
   QPen pen(QColor(0, 0xff, 0, 0x70));
   pen.setCosmetic(true);
   painter->setPen(pen);
@@ -685,6 +748,10 @@ void LayoutViewer::drawRows(dbBlock* block,
     int spacing = row->getSpacing();
     int w = site->getWidth();
     int h = site->getHeight();
+
+    bool w_visible = w >= min_resolution;
+    bool h_visible = h >= min_resolution;
+
     switch (row->getOrient()) {
       case dbOrientType::R0:
       case dbOrientType::R180:
@@ -702,12 +769,30 @@ void LayoutViewer::drawRows(dbBlock* block,
 
     dbRowDir dir = row->getDirection();
     int count = row->getSiteCount();
-    for (int i = 0; i < count; ++i) {
-      painter->drawRect(QRect(QPoint(x, y), QPoint(x + w, y + h)));
+    if (!w_visible) {
+      // individual sites not visible, just draw the row
       if (dir == dbRowDir::HORIZONTAL) {
-        x += spacing;
-      } else {
-        y += spacing;
+        w = spacing*count;
+      }
+      else {
+        h = spacing*count;
+      }
+      count = 1;
+    }
+    if (h_visible) {
+      // row height can be seen
+      for (int i = 0; i < count; ++i) {
+        const Rect row(x, y, x + w, y + h);
+        if (row.intersects(bounds)) {
+          // only paint rows that can be seen
+          painter->drawRect(QRect(QPoint(x, y), QPoint(x + w, y + h)));
+        }
+
+        if (dir == dbRowDir::HORIZONTAL) {
+          x += spacing;
+        } else {
+          y += spacing;
+        }
       }
     }
   }
@@ -819,7 +904,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              int depth,
                              const QTransform& base_tx)
 {
-  int pixel = 1 / pixels_per_dbu_;  // 1 pixel in DBU
+  int pixel = minimumViewableResolution();  // 1 pixel in DBU
   LayerBoxes boxes;
   QTransform initial_xfm = painter->transform();
 
@@ -848,7 +933,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   std::vector<dbInst*> insts;
   insts.reserve(10000);
   for (auto& [box, poly, inst] : inst_range) {
-    insts.push_back(inst);
+    if (options_->isInstanceVisible(inst)) {
+      insts.push_back(inst);
+    }
   }
 
   // Draw the instances bounds
@@ -1000,8 +1087,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
         const auto& ur = std::get<0>(i).max_corner();
-        int w = ur.x() - ll.x();
-        int h = ur.y() - ll.y();
         painter->drawRect(
             QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
       }
@@ -1320,7 +1405,6 @@ void LayoutViewer::addMenuAndActions()
   // Create Top Level Menu for the context Menu
   auto select_menu = layout_context_menu_->addMenu(tr("Select"));
   auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
-  auto congestion_menu = layout_context_menu_->addMenu(tr("Congestion"));
   auto view_menu = layout_context_menu_->addMenu(tr("View"));
   auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
   // Create Actions
@@ -1546,6 +1630,11 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
   // This happens when initialize_floorplan is run and it make sense
   // to fit as current zoom will be on a zero sized block.
   fit();
+}
+
+int LayoutViewer::minimumViewableResolution()
+{
+  return 1 / pixels_per_dbu_;
 }
 
 }  // namespace gui

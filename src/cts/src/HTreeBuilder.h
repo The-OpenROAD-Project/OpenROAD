@@ -71,8 +71,9 @@ class SegmentBuilder
         _clock(&clock),
         _drivingSubNet(&drivingSubNet),
         _techChar(&techChar),
+        _tree(tree),
         _techCharDistUnit(techCharDistUnit),
-        _tree(tree)
+        _forceBuffer(false)
   {
   }
 

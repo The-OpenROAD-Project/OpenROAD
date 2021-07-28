@@ -93,7 +93,7 @@ int FlexPA::main()
 
   frTime t;
   if (VERBOSE > 0) {
-    logger_->info(DRT, 165, "start pin access");
+    logger_->info(DRT, 165, "Start pin access.");
   }
 
   init();
@@ -131,7 +131,7 @@ int FlexPA::main()
   }
 
   if (VERBOSE > 0) {
-    logger_->info(DRT, 166, "complete pin access");
+    logger_->info(DRT, 166, "Complete pin access.");
     t.print(logger_);
   }
   return 0;

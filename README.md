@@ -167,6 +167,7 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
+write_abstract_lef filename
 ```
 
 Use the Tcl `source` command to read commands from a file.
@@ -215,6 +216,21 @@ link_design top
 # Write the db for future runs.
 write_db reg1.db
 ```
+
+#### Abstract Lef Support
+OpenROAD contains an abstract lef writer that can take your current design
+and emit an abstract lef representing the external pins of your design and metal
+obstructions.
+
+
+```tcl
+read reg1.db
+write_abstract_lef reg1_abstract.lef
+```
+
+##### Limitations of the Abstract Lef Writer
+Currently the writer will place an obstruction over the entire block area on any
+metal layer if there is any object on that metal layer.
 
 #### Example Scripts
 
@@ -539,7 +555,7 @@ to legal locations after global placement.
 ```
 set_placement_padding -global|-instances insts|-masters masters
                       [-left pad_left] [-right pad_right]
-detailed_placement [-max_displacement rows]
+detailed_placement [-max_displacement disp|{disp_x disp_y}]
 check_placement [-verbose]
 filler_placement [-prefix prefix] filler_masters
 optimimize_mirroring
@@ -556,6 +572,10 @@ master, use the `-filter "ref_name == <name>" option to `get_cells`.
 
 The `set_power_net` command is used to set the power and ground
 special net names. The defaults are `VDD` and `VSS`.
+
+The `-max_displacement` argument to `detailed_placement` specifies how far to
+move an instance to find a site to place it. The default values are `{500 100}`
+sites. The x/y displacement arguments are in microns.
 
 The `check_placement` command checks the placement legality. It returns `0` if the
 placement is legal.

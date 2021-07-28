@@ -10,44 +10,44 @@
 [INFO ODB-0133]     Created 1 nets and 301 connections.
 [INFO ODB-0134] Finished DEF file: ./results/clustered_test.def
 [INFO CTS-0039] Number of created patterns = 2376.
-[INFO CTS-0084] Compiling LUT
+[INFO CTS-0084] Compiling LUT.
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
 2           4           1           34          1           26          
-[WARNING CTS-0043] 792 wires are pure wire and no slew degration.
+[WARNING CTS-0043] 792 wires are pure wire and no slew degradation.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Number of wire segments: 2376
-[INFO CTS-0047]     Number of keys in characterization LUT: 832
-[INFO CTS-0048]     Actual min input cap: 1
-[INFO CTS-0007] Net "clk" found for clock "clk"
-[INFO CTS-0010]  Clock net "clk" has 301 sinks
+[INFO CTS-0046]     Number of wire segments: 2376.
+[INFO CTS-0047]     Number of keys in characterization LUT: 832.
+[INFO CTS-0048]     Actual min input cap: 1.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0010]  Clock net "clk" has 301 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
-[INFO CTS-0097] Chacterization used 1 buffer(s) types.
-[INFO CTS-0027] Generating H-Tree topology for net clk
-[INFO CTS-0028]  Total number of sinks: 301
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 301.
 [INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
-[INFO CTS-0030]  Number of static layers: 1
-[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um)
-[INFO CTS-0021]  Distance between buffers: 7 units (100 um)
-[INFO CTS-0019]  Total number of sinks after clustering: 28
-[INFO CTS-0024]  Normalized sink region: [(0.843948, 2.15129), (13.9751, 16.0974)]
-[INFO CTS-0025]     Width:  13.1312
-[INFO CTS-0026]     Height: 13.9461
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0019]  Total number of sinks after clustering: 28.
+[INFO CTS-0024]  Normalized sink region: [(0.843948, 2.15129), (13.9751, 16.0974)].
+[INFO CTS-0025]     Width:  13.1312.
+[INFO CTS-0026]     Height: 13.9461.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 14
     Sub-region size: 13.1312 X 6.9731
-[INFO CTS-0034]     Segment length (rounded): 4
+[INFO CTS-0034]     Segment length (rounded): 4.
     Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
- Out of 28 sinks, 2 sinks closer to other cluster
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15
-[INFO CTS-0035]  Number of sinks covered: 28
+ Out of 28 sinks, 2 sinks closer to other cluster.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 28.
 [INFO CTS-0036]  Average source sink dist: 36812.45 dbu.
-[INFO CTS-0037]  Number of outlier sinks: 1
+[INFO CTS-0037]  Number of outlier sinks: 1.
 [INFO CTS-0018]     Created 35 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 7.
 [INFO CTS-0015]     Created 35 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 9:3, 10:1, 11:24, 12:1, 16:1.
+[INFO CTS-0016]     Fanout distribution for the current clock = 9:3, 10:1, 11:24, 12:1, 16:1..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 301

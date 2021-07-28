@@ -59,10 +59,10 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          BufferedNet *ref2) :
   type_(type),
   cap_(cap),
-  load_pin_(load_pin),
+  location_(location),
   required_path_(required_path),
   required_delay_(required_delay),
-  location_(location),
+  load_pin_(load_pin),
   buffer_cell_(buffer),
   ref_(ref),
   ref2_(ref2)
@@ -77,8 +77,8 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          BufferedNet *ref2) :
   type_(type),
   cap_(cap),
-  load_pin_(load_pin),
   location_(location),
+  load_pin_(load_pin),
   buffer_cell_(nullptr),
   ref_(ref),
   ref2_(ref2)

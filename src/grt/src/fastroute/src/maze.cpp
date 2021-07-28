@@ -40,7 +40,6 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
-#include "flute.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -1008,7 +1007,7 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
 
 void FastRouteCore::reInitTree(int netID)
 {
-  int deg, numEdges, edgeID, d, j;
+  int deg, numEdges, edgeID, j;
   TreeEdge* treeedge;
   Tree rsmt;
 
@@ -1026,18 +1025,14 @@ void FastRouteCore::reInitTree(int netID)
   delete[] sttrees_[netID].nodes;
   delete[] sttrees_[netID].edges;
 
-  d = nets_[netID]->deg;
-  int x[d];
-  int y[d];
+  fluteCongest(netID,
+               nets_[netID]->pinX,
+               nets_[netID]->pinY,
+               2,
+               1.2,
+               &rsmt);
 
-  for (j = 0; j < d; j++) {
-    x[j] = nets_[netID]->pinX[j];
-    y[j] = nets_[netID]->pinY[j];
-  }
-
-  fluteCongest(netID, d, x, y, 2, 1.2, &rsmt);
-
-  if (d > 3) {
+  if (nets_[netID]->deg > 3) {
     edgeShiftNew(&rsmt, netID);
   }
 
@@ -1957,17 +1952,17 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   }
 
   if (verbose_ > 1) {
-    logger_->info(GRT, 135, "Overflow Report:");
-    logger_->info(GRT, 136, "Total hCap        : {}", hCap);
-    logger_->info(GRT, 137, "Total vCap        : {}", vCap);
-    logger_->info(GRT, 138, "Total usage       : {}", total_usage);
-    logger_->info(GRT, 139, "Max H overflow    : {}", max_H_overflow);
-    logger_->info(GRT, 140, "Max V overflow    : {}", max_V_overflow);
-    logger_->info(GRT, 141, "Max overflow      : {}", max_overflow);
-    logger_->info(GRT, 142, "Num overflow edges: {}", numedges);
-    logger_->info(GRT, 143, "H   overflow      : {}", H_overflow);
-    logger_->info(GRT, 144, "V   overflow      : {}", V_overflow);
-    logger_->info(GRT, 145, "Final overflow    : {}\n", total_overflow_);
+    logger_->info(GRT, 135, "Overflow report.");
+    logger_->info(GRT, 136, "Total hCap               : {}", hCap);
+    logger_->info(GRT, 137, "Total vCap               : {}", vCap);
+    logger_->info(GRT, 138, "Total usage              : {}", total_usage);
+    logger_->info(GRT, 139, "Max H overflow           : {}", max_H_overflow);
+    logger_->info(GRT, 140, "Max V overflow           : {}", max_V_overflow);
+    logger_->info(GRT, 141, "Max overflow             : {}", max_overflow);
+    logger_->info(GRT, 142, "Number of overflow edges : {}", numedges);
+    logger_->info(GRT, 143, "H   overflow             : {}", H_overflow);
+    logger_->info(GRT, 144, "V   overflow             : {}", V_overflow);
+    logger_->info(GRT, 145, "Final overflow           : {}\n", total_overflow_);
   }
 
   return total_overflow_;

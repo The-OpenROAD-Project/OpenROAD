@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,43 +30,23 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
-#include "flute.h"
+#pragma once
 
-namespace utl {
-class Logger;
-}
-namespace gui {
-class Gui;
+namespace stt {
+class SteinerTreeBuilder;
 }
 
-namespace pdr {
+namespace ord {
 
-using utl::Logger;
-using stt::Tree;
+class OpenRoad;
 
-Tree
-primDijkstra(std::vector<int> x,
-             std::vector<int> y,
-             int drvr_index,
-             float alpha,
-             Logger* logger);
+stt::SteinerTreeBuilder* makeSteinerTreeBuilder();
 
-Tree
-primDijkstraRevII(std::vector<int> x,
-                  std::vector<int> y,
-                  int drvr_index,
-                  float alpha,
-                  Logger* logger);
+void initSteinerTreeBuilder(OpenRoad* openroad);
 
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger);
-void
-highlightSteinerTree(stt::Tree &tree,
-                     gui::Gui *gui);
+void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder);
 
-}  // namespace PD
+}  // namespace ord

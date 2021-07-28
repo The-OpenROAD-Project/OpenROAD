@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,13 +33,42 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stt/MakeSteinerTreeBuilder.h"
+
+#include "stt/SteinerTreeBuilder.h"
+#include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
+
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* stt_tcl_inits[];
+}  // namespace sta
+
+extern "C" {
+extern int Stt_Init(Tcl_Interp* interp);
+}
 
 namespace ord {
 
-class OpenRoad;
+stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
+{
+  return new stt::SteinerTreeBuilder();
+}
 
-void
-initPdrev(OpenRoad *openroad);
+void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
+{
+  stt::flt::deleteLUT();
+  delete stt_builder;
+}
 
-} // namespace
+void initSteinerTreeBuilder(OpenRoad* openroad)
+{
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  Stt_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
+  openroad->getSteinerTreeBuilder()->init(openroad->getDb(), openroad->getLogger());
+  stt::flt::readLUT();
+}
+
+}  // namespace ord

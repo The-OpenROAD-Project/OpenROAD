@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2018, The Regents of the University of California
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,25 +29,43 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ord/OpenRoad.hh"
+#include <vector>
+#include "flute.h"
 
-extern "C" {
-extern int Pdr_Init(Tcl_Interp *interp);
+namespace utl {
+class Logger;
+}
+namespace gui {
+class Gui;
 }
 
-namespace ord {
+namespace pdr {
 
-class OpenRoad;
+using utl::Logger;
+using stt::Tree;
 
+Tree
+primDijkstra(std::vector<int>& x,
+             std::vector<int>& y,
+             int drvr_index,
+             float alpha,
+             Logger* logger);
+
+Tree
+primDijkstraRevII(std::vector<int>& x,
+                  std::vector<int>& y,
+                  int drvr_index,
+                  float alpha,
+                  Logger* logger);
+
+// Used by regressions.
 void
-initPdrev(OpenRoad *openroad)
-{
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  Pdr_Init(interp);
-}
+reportSteinerTree(stt::Tree &tree,
+                  Logger *logger);
+void
+highlightSteinerTree(stt::Tree &tree,
+                     gui::Gui *gui);
 
-} // namespace
+}  // namespace PD

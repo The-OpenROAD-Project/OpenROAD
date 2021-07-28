@@ -87,7 +87,7 @@ void PostCtsOpt::fixSourceSinkDists()
     fixNetSourceSinkDists(subNet);
   });
 
-  _logger->info(CTS, 37, " Number of outlier sinks: {}", _numViolatingSinks);
+  _logger->info(CTS, 37, " Number of outlier sinks: {}.", _numViolatingSinks);
 }
 
 void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
@@ -119,7 +119,6 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
   Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
                         (float) sink->getY() / wireSegmentUnit);
   unsigned wireLength = driverLoc.computeDist(sinkLoc);
-  unsigned remainingLength = wireLength;
   const unsigned slewThreshold = _options->getMaxSlew();
   const unsigned tolerance = 1;
   std::vector<unsigned> segments;

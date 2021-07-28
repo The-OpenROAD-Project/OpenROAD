@@ -11,8 +11,8 @@
 [INFO ODB-0134] Finished DEF file: gcd_dual_rails/floorplan.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: gcd_dual_rails/PDN.cfg
-[INFO PDN-0008] Design name is gcd
-[INFO PDN-0009] Reading technology data
+[INFO PDN-0008] Design name is gcd.
+[INFO PDN-0009] Reading technology data.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
@@ -38,6 +38,6 @@ Type: macro, CORE_macro_grid_2
       Layer: metal6  -  width: 0.930  pitch: 40.000  offset: 2.000 
     Connect: {metal4_PIN_hor metal6} {metal6 metal7}
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
 No differences found.
