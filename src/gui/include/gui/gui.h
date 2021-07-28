@@ -338,6 +338,10 @@ class Gui
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
+  void zoomIn();
+  void zoomIn(const odb::Point& focus_dbu);
+  void zoomOut();
+  void zoomOut(const odb::Point& focus_dbu);
 
   // Force an immediate redraw.
   void redraw();
