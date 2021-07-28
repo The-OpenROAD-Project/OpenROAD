@@ -218,7 +218,7 @@ proc tapcell_ripup { args } {
   }
 
   set taps_removed [tap::remove_cells $tap_prefix]
-  utl::info TAP 100 "Tap cells removed: $taps_removed"
+  utl::info TAP 100 "Tapcells removed: $taps_removed"
   set endcaps_removed [tap::remove_cells $endcap_prefix]
   utl::info TAP 101 "Endcaps removed: $endcaps_removed"
 
@@ -227,8 +227,6 @@ proc tapcell_ripup { args } {
 }
 
 namespace eval tap {
-variable phy_idx
-variable filled_sites
 variable default_tapcell_prefix "TAP_"
 variable default_endcap_prefix "PHY_"
 
