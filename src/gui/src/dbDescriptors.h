@@ -73,6 +73,9 @@ class DbNetDescriptor : public Descriptor
   Properties getProperties(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+ private:
+  const int max_iterms_ = 10000;
 };
 
 class DbITermDescriptor : public Descriptor
