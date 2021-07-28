@@ -466,7 +466,9 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const frBox& box,
   for (auto eolCon : getTech()->getLayer(lNum)->getLef58SpacingEndOfLineConstraints()) {
       auto eolSpace = eolCon->getEolSpace();
       auto eolWidth = eolCon->getEolWidth();
-      auto eolWithin = eolCon->getWithinConstraint()->getEolWithin();
+      frCoord eolWithin = 0;
+      if(eolCon->hasWithinConstraint())
+        eolWithin = eolCon->getWithinConstraint()->getEolWithin();
       // eol to up and down
       if (tmpBx.right() - tmpBx.left() < eolWidth) {
         testBox.set(tmpBx.left() - eolWithin,
