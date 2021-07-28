@@ -10,16 +10,16 @@
 [INFO ODB-0133]     Created 103 nets and 242 connections.
 [INFO ODB-0134] Finished DEF file: rcon.def
 Design area 0 u^2 100% utilization.
-Removed 2 instances with constant outputs.
+Removed 27 instances with constant outputs.
 Number of paths for restructure are 19
 Found 10 end points for restructure
-Found 123 pins in extracted logic
+Found 123 pins in extracted logic.
 Found 41 instances for restructuring.
 [INFO RMP-0002] Blif writer successfully dumped file with 41 instances.
 Optimized to 36 instances in iteration 0
 Optimized to 37 instances in iteration 1
 Optimized to 36 instances in iteration 2
-[INFO RMP-0005] blif parsed successfully, destroying 41 existing instances...
-[INFO RMP-0006] Found 8 Inputs, 14 Outputs, 0 Clocks, 36 Combinational gates, 0 Registers after parsing the blif file.
-[INFO RMP-0007] inserting 36 new instances...
+[INFO RMP-0005] Blif parsed successfully, will destroy 41 existing instances.
+[INFO RMP-0006] Found 8 inputs, 14 outputs, 0 clocks, 36 combinational gates, 0 registers after parsing the blif file.
+[INFO RMP-0007] Inserting 36 new instances.
 Design area 0 u^2 100% utilization.

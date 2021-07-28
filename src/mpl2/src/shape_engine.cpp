@@ -634,7 +634,7 @@ void ParseBlockFile(vector<Cluster*>& clusters,
       float area = stof(temp_words[temp_words.size() - 1]);
       float block_area = 0.0;
       i++;
-      while (i < content.size() & (Split(content[i])).size() != 0) {
+      while (i < content.size() && (Split(content[i])).size() != 0) {
         temp_words = Split(content[i]);
         string macro_name = temp_words[0];
         float macro_width = stof(temp_words[1]);

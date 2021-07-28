@@ -11,6 +11,8 @@
     obj = PyString_FromString("DEF_5_6");
   } else if ($1 == odb::defout::Version::DEF_5_8) {
     obj = PyString_FromString("DEF_5_8");
+  } else {
+    SWIG_exception(SWIG_ValueError, "Unknown DEF version");
   }
   $result = obj;
 }
@@ -28,6 +30,8 @@
     $1 = odb::defout::Version::DEF_5_6;
   } else if (strcasecmp(str, "DEF_5_8") == 0 || strcasecmp(str, "5.8") == 0) {
     $1 = odb::defout::Version::DEF_5_8;
+  } else {
+    SWIG_exception(SWIG_ValueError, "Unknown DEF version");
   }
 }
 

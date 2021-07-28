@@ -264,17 +264,15 @@ void Restructure::getEndPoints(sta::PinSet& ends,
 
   std::size_t path_found = path_ends->size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  int end_count = 0;
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
         ends.insert(path_end->vertex(sta_state)->pin());
-        end_count++;
       }
-      if (end_count > 5)  // limit blob size for timing
-        break;
+      // Use only one end point to limit blob size for timing
+      break;
     } else {
       ends.insert(path_end->vertex(sta_state)->pin());
     }
@@ -482,37 +480,37 @@ void Restructure::writeOptCommands(std::ofstream& script)
       break;
     }
     case Mode::DELAY_2: {
-      script << choice << std::endl;
+      script << "choice" << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
-      script << choice << std::endl;
+      script << "choice" << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
     case Mode::DELAY_3: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
     case Mode::DELAY_4: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
     case Mode::AREA_2:
     case Mode::AREA_3: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
     }
     case Mode::AREA_1:
     default: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
     }
@@ -524,20 +522,10 @@ void Restructure::writeOptCommands(std::ofstream& script)
 
 void Restructure::setMode(const char* mode_name)
 {
-  if (!strcmp(mode_name, "delay1") || !strcmp(mode_name, "delay"))
+  if (!strcmp(mode_name, "timing"))
     opt_mode_ = Mode::DELAY_1;
-  else if (!strcmp(mode_name, "delay2"))
-    opt_mode_ = Mode::DELAY_2;
-  else if (!strcmp(mode_name, "delay3"))
-    opt_mode_ = Mode::DELAY_3;
-  else if (!strcmp(mode_name, "delay4"))
-    opt_mode_ = Mode::DELAY_4;
-  else if (!strcmp(mode_name, "area1") || !strcmp(mode_name, "area"))
+  else if (!strcmp(mode_name, "area"))
     opt_mode_ = Mode::AREA_1;
-  else if (!strcmp(mode_name, "area2"))
-    opt_mode_ = Mode::AREA_2;
-  else if (!strcmp(mode_name, "area3"))
-    opt_mode_ = Mode::AREA_3;
   else {
     logger_->report("Mode {} note recognized.", mode_name);
   }

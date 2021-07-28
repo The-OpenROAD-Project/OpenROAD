@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   makePathseg(n1, 2, {0, 0}, {600, 0});
   auto block = makeMacro("OBS");
   makeMacroObs(block, 450, -50, 750, 200, 2);
-  auto pin = makeMacroPin(block, "in", 450, 40, 550, 90, 2);
+  makeMacroPin(block, "in", 450, 40, 550, 90, 2);
   auto i1 = makeInst("i1", block, 0, 0);
   auto instTerm = i1->getInstTerms()[0].get();
   instTerm->addToNet(n1);
@@ -285,8 +285,6 @@ BOOST_AUTO_TEST_CASE(corner_eol_no_violation)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
-
   BOOST_TEST(worker.getMarkers().size() == 0);
 }
 
@@ -305,8 +303,6 @@ BOOST_AUTO_TEST_CASE(corner_prl_no_violation)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
-
   BOOST_TEST(worker.getMarkers().size() == 0);
 }
 
@@ -861,7 +857,7 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
 
   makePathseg(n1, 4, {500, 0}, {500, 500});
   makePathseg(n1, 4, {0, 700}, {1000, 700});
-  auto v = makeVia(vd, n1, {400, y});
+  makeVia(vd, n1, {400, y});
   runGC();
   auto& markers = worker.getMarkers();
   if (legal)

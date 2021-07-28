@@ -53,7 +53,6 @@ std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta)
   float                       power_voltage_;
   float                       gnd_voltage_;
   default_library = network->defaultLibertyLibrary();
-  bool exists;
 
   const sta::Pvt* pvt = dcalc_ap->operatingConditions();
   if (pvt == nullptr)

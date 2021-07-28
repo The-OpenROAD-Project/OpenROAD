@@ -17,7 +17,6 @@ Found 0 macro blocks.
 [INFO PPL-0004] Number of I/O w/o sink   0
 [INFO PPL-0005] Slots per section        200
 [INFO PPL-0006] Slots increase factor    0.01
-[INFO PPL-0008] Usage increase factor    0.01
-[INFO PPL-0009] Force pin spread         true
-Successfully assigned I/O pins.
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 1174.14 um.
 No differences found.
