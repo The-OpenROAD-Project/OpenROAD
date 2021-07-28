@@ -434,14 +434,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
   pe.setNesterovBase(nb_);
   pe.setLogger(log_);
   pe.Init();
-  if (PlotEnv::isPlotEnabled()) {
-      pe.SaveCellPlotAsJPEG("Nesterov - BeforeStart", true,
-         "cell_0");
-      pe.SaveBinPlotAsJPEG("Nesterov - BeforeStart",
-         "bin_0");
-      pe.SaveArrowPlotAsJPEG("Nesterov - BeforeStart",
-         "arrow_0");
-  }
+  plot("Nesterov - BeforeStart", 0);
 #endif
 
   if (graphics_) {
@@ -598,17 +591,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
           iter+1, sumOverflow_, prevHpwl_);
 
 #ifdef ENABLE_CIMG_LIB
-      if (PlotEnv::isPlotEnabled()) {
-        pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(iter+1)), true,
-            string("cell_") +
-            getZeroFillStr(iter+1));
-        pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(iter+1)),
-            string("bin_") +
-            getZeroFillStr(iter+1));
-        pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(iter+1)),
-            string("arrow_") +
-            getZeroFillStr(iter+1));
-      }
+      plot("Nesterov - Iter: " + std::to_string(iter + 1), iter + 1);
 #endif
     }
 
@@ -943,11 +926,17 @@ getSecondNorm(const vector<FloatPoint>& a) {
 }
 
 #ifdef ENABLE_CIMG_LIB
-static std::string
-getZeroFillStr(int iterNum) {
-  std::ostringstream str;
-  str << std::setw(4) << std::setfill('0') << iterNum;
-  return str.str();
+void
+NesterovPlace::plot(const std::string& title, int iteration)
+{
+  if (PlotEnv::isPlotEnabled()) {
+    std::ostringstream iter_str;
+    iter_str << std::setw(4) << std::setfill('0') << iteration;
+
+    pe.SaveCellPlotAsJPEG(title, true, "cell_" + iter_str.str());
+    pe.SaveBinPlotAsJPEG(title, "bin_" + iter_str.str());
+    pe.SaveArrowPlotAsJPEG(title, "arrow_" + iter_str.str());
+  }
 }
 #endif
 
