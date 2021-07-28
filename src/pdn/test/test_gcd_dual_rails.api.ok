@@ -3,12 +3,12 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  ../../../test/Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: gcd_M7_pin/floorplan.def
+[INFO ODB-0127] Reading DEF file: gcd_dual_rails/floorplan.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 482 components and 2074 component-terminals.
 [INFO ODB-0133]     Created 385 nets and 1110 connections.
-[INFO ODB-0134] Finished DEF file: gcd_M7_pin/floorplan.def
+[INFO ODB-0134] Finished DEF file: gcd_dual_rails/floorplan.def
 [INFO PDN-0008] Design name is gcd
 [INFO PDN-0009] Reading technology data
 [WARNING PDN-0018] No macro grid specifications found - no straps added

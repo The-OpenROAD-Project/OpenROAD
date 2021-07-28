@@ -14,12 +14,11 @@ add_global_connection -net VSS -pin_pattern {^VSSE$}
 
 set_voltage_domain -name CORE -power VDD  -ground VSS
 
-define_pdn_grid -name main_grid -pins {metal7} -voltage_domains CORE
+define_pdn_grid -name main_grid -voltage_domains CORE
 add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins
 add_pdn_stripe -name main_grid -layer metal2 -width 0.17 -followpins
 add_pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
 add_pdn_stripe -name main_grid -layer metal7 -width 1.40 -pitch 40.0 -offset 2 -starts_with POWER
-add_pdn_ring   -name main_grid -layers {metal6 metal7} -widths 5.0 -spacings  3.0 -core_offsets 5
 
 add_pdn_connect -name main_grid -layers {metal1 metal2} -cut_pitch 0.16
 add_pdn_connect -name main_grid -layers {metal2 metal4}

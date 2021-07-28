@@ -1,0 +1,30 @@
+[INFO ODB-0222] Reading LEF file: asap7_vias/asap7_tech_1x_201209.noviarules.lef
+[INFO ODB-0223]     Created 25 technology layers
+[INFO ODB-0224]     Created 9 technology vias
+[INFO ODB-0226] Finished LEF file:  asap7_vias/asap7_tech_1x_201209.noviarules.lef
+[INFO ODB-0222] Reading LEF file: asap7_vias/asap7sc7p5t_27_R_1x_201211.lef
+[INFO ODB-0225]     Created 212 library cells
+[INFO ODB-0226] Finished LEF file:  asap7_vias/asap7sc7p5t_27_R_1x_201211.lef
+[INFO ODB-0127] Reading DEF file: asap7_vias/2_5_floorplan_tapcell.def
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 20552 components and 98219 component-terminals.
+[INFO ODB-0133]     Created 14627 nets and 57115 connections.
+[INFO ODB-0134] Finished DEF file: asap7_vias/2_5_floorplan_tapcell.def
+[WARNING PDN-0035] No track information found for layer Pad
+[INFO PDN-0008] Design name is aes_cipher_top
+[INFO PDN-0009] Reading technology data
+[WARNING PDN-0018] No macro grid specifications found - no straps added
+[INFO PDN-0011] ****** INFO ******
+Type: stdcell, grid
+    Stdcell Rails
+      Layer: M1  -  width: 0.072  offset: 0.000 
+      Layer: M2  -  width: 0.072  offset: 0.000 
+    Straps
+      Layer: M3  -  width: 0.936  pitch: 31.680  spacing: 1.512  offset: 1.872 
+      Layer: M6  -  width: 1.152  pitch: 56.320  spacing: 2.688  offset: 6.408 
+    Connect: {M1 M2 constraints {cut_pitch 0.288} fixed_vias VIA12} {M2 M3 fixed_vias VIA23} {M3 M6 fixed_vias {VIA34 VIA45 VIA56}}
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid
+[INFO PDN-0015] Writing to database
+No differences found.

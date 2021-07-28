@@ -15,14 +15,12 @@
 [INFO ODB-0131]     Created 41868 components and 209139 component-terminals.
 [INFO ODB-0133]     Created 42811 nets and 125379 connections.
 [INFO ODB-0134] Finished DEF file: tinyRocket/2_5_floorplan_tapcell.def
-[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
-  config: tinyRocket/PDN.cfg
 [INFO PDN-0008] Design name is RocketTile
 [INFO PDN-0009] Reading technology data
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
-      Layer: metal1  -  width: 0.170  pitch: 2.400  offset: 0.000 
+      Layer: metal1  -  width: 0.170 
     Straps
       Layer: metal4  -  width: 0.480  pitch: 56.000  offset: 2.000 
       Layer: metal7  -  width: 1.400  pitch: 40.000  offset: 2.000 
@@ -37,7 +35,7 @@ Type: macro, CORE_macro_grid_2
     Macro orientation: R90 R270 MXR90 MYR90
     Straps
       Layer: metal6  -  width: 0.930  pitch: 10.000  offset: 2.000 
-    Connect: {metal4_PIN_hor metal6} {metal6 metal7}
+    Connect: {metal4 metal6} {metal6 metal7}
 [INFO PDN-0012] **** END INFO ****
 [INFO PDN-0013] Inserting stdcell grid - grid
 [INFO PDN-0010] Inserting macro grid for 2 macros
