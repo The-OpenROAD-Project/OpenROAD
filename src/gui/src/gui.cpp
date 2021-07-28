@@ -314,6 +314,16 @@ bool Gui::checkCustomVisibilityControl(const std::string& name)
   return main_window->getControls()->checkCustomVisibilityControl(name);
 }
 
+void Gui::setDisplayControlsVisible(const std::string& name, bool value)
+{
+  main_window->getControls()->setControlByPath(name, true, value ? Qt::Checked : Qt::Unchecked);
+}
+
+void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
+{
+  main_window->getControls()->setControlByPath(name, false, value ? Qt::Checked : Qt::Unchecked);
+}
+
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
   main_window->zoomTo(rect_dbu);

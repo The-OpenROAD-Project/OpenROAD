@@ -43,6 +43,8 @@
 #include "displayControls.h"
 #include "ord/InitOpenRoad.hh"
 
+#include "utl/Logger.h"
+
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 
 namespace gui {
@@ -144,6 +146,8 @@ DisplayControls::DisplayControls(QWidget* parent)
       view_(new QTreeView(parent)),
       model_(new QStandardItemModel(0, 4, parent)),
       ignore_callback_(false),
+      db_(nullptr),
+      logger_(nullptr),
       tech_inited_(false)
 {
   setObjectName("layers");  // for settings
@@ -459,6 +463,46 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
   }
 }
 
+// path is separated by "/", so setting Standard Cells, would be Instances/StdCells
+void DisplayControls::setControlByPath(const std::string& path,
+                                       bool is_visible,
+                                       Qt::CheckState value)
+{
+  QStandardItem* item = findControlInItem(model_->invisibleRootItem(),
+                                          path,
+                                          is_visible ? Visible : Selectable);
+
+  if (item == nullptr) {
+    logger_->error(utl::GUI,
+                   13,
+                   "Unable to find {} display control at {}.",
+                   is_visible ? "visible" : "select",
+                   path);
+  } else {
+    item->setCheckState(value);
+  }
+}
+
+QStandardItem* DisplayControls::findControlInItem(const QStandardItem* parent,
+                                                  const std::string& name,
+                                                  Column column)
+{
+  auto next_level = name.find_first_of("/");
+  bool at_end_of_path = next_level == std::string::npos;
+  const QString item_name = name.substr(0, next_level).c_str();
+  for (int i = 0; i < parent->rowCount(); i++) {
+    auto child = parent->child(i, Name);
+    if (child != nullptr && child->text().compare(item_name, Qt::CaseInsensitive) == 0) {
+      if (at_end_of_path) {
+        return parent->child(i, column);
+      } else {
+        return findControlInItem(child, name.substr(next_level+1), column);
+      }
+    }
+  }
+  return nullptr;
+}
+
 void DisplayControls::setDb(odb::dbDatabase* db)
 {
   db_ = db;
@@ -490,6 +534,11 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   for (int i = 0; i < 4; i++)
     view_->resizeColumnToContents(i);
   emit changed();
+}
+
+void DisplayControls::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 QStandardItem* DisplayControls::makeParentItem(

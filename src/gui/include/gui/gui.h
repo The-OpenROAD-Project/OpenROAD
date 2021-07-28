@@ -346,6 +346,10 @@ class Gui
   // Save layout to an image file
   void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
 
+  // modify display controls
+  void setDisplayControlsVisible(const std::string& name, bool value);
+  void setDisplayControlsSelectable(const std::string& name, bool value);
+
   // Force an immediate redraw.
   void redraw();
 
