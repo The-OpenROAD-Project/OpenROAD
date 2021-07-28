@@ -1,9 +1,9 @@
 # Restructure
 
 **Restructure** is an interface to ABC for re-synthesis. The package allows
-re-structuring targeting area or timing. It extracts cloud of logic using
-timing engine and passes to ABC through blif interface. Multiple recipes
-for area or timing are run to get best desirable structure from ABC.
+logic restructuring targeting area or timing. It extracts cloud of logic
+using timing engine and passes to ABC through blif interface. Multiple
+recipes for area or timing are run to get best desirable structure from ABC.
 ABC output is read back by blif reader which is integrated to OpenDB.
 Blif writer and reader also supports constants from and to OpenDB. Reading
 back of constants required insertion of tie cells which should be provided
