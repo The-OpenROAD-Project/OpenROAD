@@ -234,5 +234,17 @@
   ],
   "cpp_includes": [
     "dbTechLayer.h"
+  ],
+  "enums" : [
+    {
+      "name" : "LOOKUP_STRATEGY",
+      "values" : [
+        "FIRST",
+        "SECOND",
+        "MAX",
+        "MIN"
+      ],
+      "public": true
+    }
   ]
 }

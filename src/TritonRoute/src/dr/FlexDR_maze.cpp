@@ -1521,30 +1521,50 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
             if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
                 && dbRule->isNoPrl()) {
-              reqDistSquare
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 2);
+              reqDistSquare = dbRule->getSpacing(
+                  cutClass1,
+                  false,
+                  cutClass2,
+                  false,
+                  odb::dbTechLayerCutSpacingTableDefRule::MAX);
               reqDistSquare *= reqDistSquare;
               if (c2cSquare < reqDistSquare) {
-                reqDistSquare
-                    = dbRule->getSpacing(cutClass1, false, cutClass2, false, 3);
+                reqDistSquare = dbRule->getSpacing(
+                    cutClass1,
+                    false,
+                    cutClass2,
+                    false,
+                    odb::dbTechLayerCutSpacingTableDefRule::MIN);
                 reqDistSquare *= reqDistSquare;
                 if (distSquare < reqDistSquare)
                   hasViol = true;
               }
             } else {
               if (prl > reqPrl)
-                reqDistSquare
-                    = dbRule->getSpacing(cutClass1, false, cutClass2, false, 1);
+                reqDistSquare = dbRule->getSpacing(
+                    cutClass1,
+                    false,
+                    cutClass2,
+                    false,
+                    odb::dbTechLayerCutSpacingTableDefRule::SECOND);
               else
-                reqDistSquare
-                    = dbRule->getSpacing(cutClass1, false, cutClass2, false, 0);
+                reqDistSquare = dbRule->getSpacing(
+                    cutClass1,
+                    false,
+                    cutClass2,
+                    false,
+                    odb::dbTechLayerCutSpacingTableDefRule::FIRST);
 
               if (dbRule->isCenterToCenter(cutClass1, cutClass2))
                 currDistSquare = c2cSquare;
               else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
                        && (frCoord) reqDistSquare
                               == dbRule->getSpacing(
-                                  cutClass1, false, cutClass2, false, 2))
+                                  cutClass1,
+                                  false,
+                                  cutClass2,
+                                  false,
+                                  odb::dbTechLayerCutSpacingTableDefRule::MAX))
                 currDistSquare = c2cSquare;
               else
                 currDistSquare = distSquare;
@@ -1794,12 +1814,20 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
           auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
           if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
               && dbRule->isNoPrl()) {
-            reqDistSquare
-                = dbRule->getSpacing(cutClass1, false, cutClass2, false, 2);
+            reqDistSquare = dbRule->getSpacing(
+                cutClass1,
+                false,
+                cutClass2,
+                false,
+                odb::dbTechLayerCutSpacingTableDefRule::MAX);
             reqDistSquare *= reqDistSquare;
             if (c2cSquare < reqDistSquare) {
-              reqDistSquare
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 3);
+              reqDistSquare = dbRule->getSpacing(
+                  cutClass1,
+                  false,
+                  cutClass2,
+                  false,
+                  odb::dbTechLayerCutSpacingTableDefRule::MIN);
               reqDistSquare *= reqDistSquare;
               if (distSquare < reqDistSquare)
                 hasViol = true;
@@ -1807,18 +1835,30 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
           } else {
             frCoord reqDist;
             if (prl > reqPrl)
-              reqDist
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 1);
+              reqDist = dbRule->getSpacing(
+                  cutClass1,
+                  false,
+                  cutClass2,
+                  false,
+                  odb::dbTechLayerCutSpacingTableDefRule::SECOND);
             else
-              reqDist
-                  = dbRule->getSpacing(cutClass1, false, cutClass2, false, 0);
+              reqDist = dbRule->getSpacing(
+                  cutClass1,
+                  false,
+                  cutClass2,
+                  false,
+                  odb::dbTechLayerCutSpacingTableDefRule::FIRST);
 
             if (dbRule->isCenterToCenter(cutClass1, cutClass2))
               currDistSquare = c2cSquare;
             else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
                      && reqDist
                             == dbRule->getSpacing(
-                                cutClass1, false, cutClass2, false, 2))
+                                cutClass1,
+                                false,
+                                cutClass2,
+                                false,
+                                odb::dbTechLayerCutSpacingTableDefRule::MAX))
               currDistSquare = c2cSquare;
             else
               currDistSquare = distSquare;

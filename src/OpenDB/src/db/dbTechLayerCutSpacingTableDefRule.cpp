@@ -914,7 +914,7 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass,
 
 int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass1,
                                                      std::string cutClass2,
-                                                     short strategy) const
+                                                     LOOKUP_STRATEGY strategy) const
 {
   auto spc1 = getSpacing(cutClass1, true, cutClass2, true, strategy);
   auto spc2 = getSpacing(cutClass1, true, cutClass2, false, strategy);
@@ -996,7 +996,7 @@ int dbTechLayerCutSpacingTableDefRule::getSpacing(std::string c1,
                                                   bool SIDE1,
                                                   std::string c2,
                                                   bool SIDE2,
-                                                  short strategy) const
+                                                  LOOKUP_STRATEGY strategy) const
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1016,13 +1016,13 @@ int dbTechLayerCutSpacingTableDefRule::getSpacing(std::string c1,
   else
     res = {obj->default_, obj->default_};
   switch (strategy) {
-    case 0:
+    case FIRST:
       return res.first;
-    case 1:
+    case SECOND:
       return res.second;
-    case 2:
+    case MAX:
       return std::max(res.first, res.second);
-    case 3:
+    case MIN:
       return std::min(res.first, res.second);
     default:
       return 0;

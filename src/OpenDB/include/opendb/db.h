@@ -8145,7 +8145,21 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerCutSpacingTableDefRule : public dbObject
 {
  public:
+  enum LOOKUP_STRATEGY
+  {
+    FIRST,
+    SECOND,
+    MAX,
+    MIN
+  };
   // User Code Begin dbTechLayerCutSpacingTableDefRuleEnums
+  /*
+  LOOKUP_STRATEGY:
+  * FIRST     : first spacing value
+  * SECOND    : second spacing value
+  * MAX       : max spacing value
+  * MIN       : min spacing value
+  */
   // User Code End dbTechLayerCutSpacingTableDefRuleEnums
 
   void setDefault(int spacing);
@@ -8297,20 +8311,13 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   int getMaxSpacing(std::string cutClass1,
                     std::string cutClass2,
-                    short strategy = 2) const;
+                    LOOKUP_STRATEGY strategy = MAX) const;
 
   int getSpacing(std::string class1,
                  bool SIDE1,
                  std::string class2,
                  bool SIDE2,
-                 short strategy = 2) const;
-  /*
-  strategy:
-  * 0       : first spacing value
-  * 1       : second spacing value
-  * 2       : max spacing value
-  * 3       : min spacing value
-  */
+                 LOOKUP_STRATEGY strategy = MAX) const;
 
   dbTechLayer* getTechLayer() const;
 

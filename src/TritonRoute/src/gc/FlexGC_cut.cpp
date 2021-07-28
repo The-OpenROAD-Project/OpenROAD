@@ -30,6 +30,7 @@
 #include "gc/FlexGC_impl.h"
 #include "opendb/db.h"
 using namespace fr;
+typedef odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY LOOKUP_STRATEGY;
 
 inline frSquaredDistance getC2CDistSquare(
     const gtl::rectangle_data<frCoord>& rect1,
@@ -97,20 +98,29 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
   }
 
   if (dbRule->isNoPrl() && dbRule->isCenterAndEdge(class1, class2)) {
-    reqSpcSqr = dbRule->getSpacing(class1, isSide1, class2, isSide2, 2);
+    reqSpcSqr = dbRule->getSpacing(class1,
+                                   isSide1,
+                                   class2,
+                                   isSide2,
+                                   odb::dbTechLayerCutSpacingTableDefRule::MAX);
     reqSpcSqr *= reqSpcSqr;
     if (c2cSquare < reqSpcSqr) {
       return true;
     } else {
-      reqSpcSqr = dbRule->getSpacing(class1, isSide1, class2, isSide2, 3);
+      reqSpcSqr
+          = dbRule->getSpacing(class1,
+                               isSide1,
+                               class2,
+                               isSide2,
+                               odb::dbTechLayerCutSpacingTableDefRule::MIN);
       reqSpcSqr *= reqSpcSqr;
       if (distSquare < reqSpcSqr)
         return true;
     }
     return false;
   }
-
-  short spcIdx = prlValid ? 1 : 0;
+  LOOKUP_STRATEGY spcIdx
+      = prlValid ? LOOKUP_STRATEGY::SECOND : LOOKUP_STRATEGY::FIRST;
   // check PRLALIGNED
   if (prlValid && dbRule->isPrlForAlignedCutClasses(class1, class2)) {
     gtl::rectangle_data<frCoord> edgeRect2;
@@ -135,7 +145,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
     workerRegionQuery.queryPolygonEdge(
         qb, viaRect2->getLayerNum() + 1, results);
     if (results.size() == 0)
-      spcIdx = 0;
+      spcIdx = LOOKUP_STRATEGY::FIRST;
   }
 
   frCoord reqSpc = dbRule->getSpacing(class1, isSide1, class2, isSide2, spcIdx);
@@ -145,7 +155,8 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
       = dbRule->isCenterToCenter(class1, class2)
         || (dbRule->isCenterAndEdge(class1, class2)
             && reqSpc
-                   == dbRule->getSpacing(class1, isSide1, class2, isSide2, 2));
+                   == dbRule->getSpacing(
+                       class1, isSide1, class2, isSide2, LOOKUP_STRATEGY::MAX));
   if (useCenter) {
     if (c2cSquare < reqSpcSqr)
       return true;
