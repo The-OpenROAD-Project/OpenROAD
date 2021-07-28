@@ -48,63 +48,6 @@ namespace rcx {
 
 using utl::RCX;
 
-static int read_total_cap_file(const char* file, double* ctotV, double* rtotV,
-                               int nmax, dbBlock* block, Logger* logger) {
-#ifndef BILL_WAY
-  Ath__parser parser;
-  parser.openFile((char*)file);
-
-  logger->info(RCX, 67, "Reading ref_file {} ... ... ", file);
-
-  while (parser.parseNextLine() > 0) {
-    parser.printWords(stdout);
-
-    uint netid = 0;
-    if (parser.isDigit(0, 0))
-      netid = parser.getInt(0);
-    else {
-      char* netName = parser.get(0);
-      if (block != NULL) {
-        dbNet* net = block->findNet(netName);
-        if (net == NULL)
-          logger->warn(RCX, 66, "Can't find net {} in db", netName);
-      }
-    }
-    double rtot = 0.0;
-    if (parser.getWordCnt() > 2)
-      rtot = parser.getDouble(2);
-
-    double ctot = parser.getDouble(1);
-
-    ctotV[netid] = ctot;
-    rtotV[netid] = rtot;
-  }
-#else
-  FILE* fp = fopen(file, "r");
-  if (!fp) {
-    logger_->warn(RCX, 379, "Can't open {}", file);
-    return 0;
-  }
-
-  char line[256];
-  int netid;
-  double ctot, rtot;
-  while (fgets(line, 256, fp)) {
-    if (3 == sscanf(line, "%d %lf %lf", &netid, &ctot, &rtot)) {
-      if (netid < 0 || netid >= nmax) {
-        logger_->warn(RCX, 186, "Net id {} out of range in {}", netid, file);
-        fclose(fp);
-        return 0;
-      }
-      ctotV[netid] = ctot;
-      rtotV[netid] = rtot;
-    }
-  }
-  fclose(fp);
-#endif
-  return 1;
-}
-
 typedef struct {
   int netid;
   double ctot;
@@ -114,16 +57,6 @@ typedef struct {
   double rref;
   double rdif;
 } ext_rctot;
-
-static int ext_rctot_cmp_c(const void* a, const void* b) {
-  ext_rctot* x = (ext_rctot*)a;
-  ext_rctot* y = (ext_rctot*)b;
-  if (x->cdif < y->cdif)
-    return 1;
-  if (x->cdif > y->cdif)
-    return -1;
-  return 0;
-}
 
 void extMain::initIncrementalSpef(const char* origp, const char* newp,
                                   const char* excludeC, bool noBackSlash) {
@@ -148,7 +81,7 @@ void extMain::initIncrementalSpef(const char* origp, const char* newp,
     _bufSpefCnt = 1;
   _incrNoBackSlash = noBackSlash;
 }
-#ifndef DEFAULT_BILL_WAY
+
 void extMain::reportTotalCap(const char* file, bool icap, bool ires,
                              double ccmult, const char* ref,
                              const char* rd_file) {
@@ -175,9 +108,8 @@ void extMain::reportTotalCap(const char* file, bool icap, bool ires,
       // parser.printWords(stdout);
 
       dbNet* net = NULL;
-      uint netid = 0;
       if (parser.isDigit(0, 0))
-        netid = parser.getInt(0);
+        parser.getInt(0);
       else {
         char* netName = parser.get(0);
         if (_block != NULL) {
@@ -216,275 +148,6 @@ void extMain::reportTotalCap(const char* file, bool icap, bool ires,
   if (file != NULL)
     fclose(fp);
 }
-#else
-void extMain::reportTotalCap(const char* file, bool icap, bool ires,
-                             double ccmult, const char* ref,
-                             const char* rd_file) {
-  bool cap = icap;
-  bool res = ires;
-  if (!res && !cap)
-    res = cap = true;
-  if (ccmult != 1.0)
-    logger_->info(RCX, 187, "Cc multiplier {}", ccmult);
-
-  int j, nn = 2 + _block->getNets().size();
-  double* ctotV = (double*)malloc(nn * sizeof(double));
-  double* rtotV = (double*)malloc(nn * sizeof(double));
-  for (j = 0; j < nn; j++)
-    ctotV[j] = rtotV[j] = 0.0;
-
-  dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator nitr;
-  dbNet* net;
-  dbCapNode* node;
-  if (rd_file && rd_file[0]) {
-    if (!read_total_cap_file(rd_file, ctotV, rtotV, nn, _block)) {
-      logger_->warn(RCX, 428, "Can't read {}", rd_file);
-      return;
-    }
-  } else
-    for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-      net = *nitr;
-      dbSet<dbCapNode> nodeSet = net->getCapNodes();
-      dbSet<dbCapNode>::iterator c_itr;
-      bool has_foreign = false;
-      double ctot = 0.0;
-      for (c_itr = nodeSet.begin(); c_itr != nodeSet.end(); ++c_itr) {
-        node = *c_itr;
-        if (node->isForeign())
-          has_foreign = true;
-        ctot += node->getCapacitance(0);
-      }
-      double rtot = 0.0;
-      dbSet<dbRSeg> rSet = net->getRSegs();
-      dbSet<dbRSeg>::iterator r_itr;
-      for (r_itr = rSet.begin(); r_itr != rSet.end(); ++r_itr) {
-        dbRSeg* r = *r_itr;
-        rtot += r->getResistance(0);
-        if (!has_foreign)
-          ctot += r->getCapacitance(0);
-      }
-      double cctot = net->getTotalCouplingCap(0);
-
-      ctot += ccmult * cctot;
-      ctot *= 1e-3;
-      rtotV[net->getId()] = rtot;
-      ctotV[net->getId()] = ctot;
-    }
-
-  double* crefV = NULL;
-  double* rrefV = NULL;
-  if (ref && ref[0]) {
-    crefV = (double*)malloc(nn * sizeof(double));
-    rrefV = (double*)malloc(nn * sizeof(double));
-    for (j = 0; j < nn; j++)
-      crefV[j] = rrefV[j] = 0.0;
-    if (!read_total_cap_file(ref, crefV, rrefV, nn, _block)) {
-      logger_->warn(RCX, 429, "Can't read {}", ref);
-      free(crefV);
-      crefV = NULL;
-      free(rrefV);
-      rrefV = NULL;
-    }
-  }
-
-  FILE* fp = NULL;
-  if (file && file[0])
-    fp = fopen(file, "w");
-  if (fp && !crefV) {
-    for (j = 0; j < nn; j++)
-      if (ctotV[j] > 0.0 || rtotV[j] > 0.0) {
-        if (cap && res)
-          fprintf(fp, "%d %g %.2f\n", j, ctotV[j], rtotV[j]);
-        else if (cap)
-          fprintf(fp, "%d %g\n", j, ctotV[j]);
-        else
-          fprintf(fp, "%d %.2f\n", j, rtotV[j]);
-      }
-  } else if (crefV) {
-    double max_abs_c = 0.0;
-    double max_abs_r = 0.0;
-    double abs_cthresh = 0.001;    // pf
-    double abs_cthresh2 = 0.0005;  // pf
-    double abs_rthresh = 1.0;      // ohms
-
-    double rel_cfloor = 0.010;   // 10 ff
-    double rel_cfloor2 = 0.001;  // 1 ff
-    double max_rel_c = 0.0;
-    double max_rel_c2 = 0.0;
-    uint max_rel_c_id = 0;
-    uint max_rel_c_id2 = 0;
-    double rel_cthresh = 0.02;  // 2 percent
-    int rel_cn = 0;             // number over rel_cthresh
-    int rel_cn2 = 0;
-
-    ext_rctot* rctotV = (ext_rctot*)malloc(nn * sizeof(ext_rctot));
-    int rctotN = 0;
-    ext_rctot* rctot;
-    double cdif, rdif, cdif_avg = 0.0, rdif_avg = 0.0;
-    double crel, cden;
-    int ncdif = 0, nrdif = 0, ncdif2 = 0;
-    int crel_cnt = 0, crel_cnt2 = 0;
-    for (j = 0; j < nn; j++) {
-      if (ctotV[j] == 0.0 && rtotV[j] == 0.0 && crefV[j] == 0.0 &&
-          rrefV[j] == 0.0)
-        continue;
-      cdif = ctotV[j] - crefV[j];
-      rdif = rtotV[j] - rrefV[j];
-      cdif_avg += cdif;
-      rdif_avg += rdif;
-      if (cdif >= abs_cthresh || cdif <= -abs_cthresh)
-        ncdif++;
-      if (cdif >= abs_cthresh2 || cdif <= -abs_cthresh2)
-        ncdif2++;
-      if (rdif >= abs_rthresh || rdif <= -abs_rthresh)
-        nrdif++;
-      rctot = rctotV + rctotN++;
-      rctot->netid = j;
-      rctot->ctot = ctotV[j];
-      rctot->cref = crefV[j];
-      rctot->cdif = cdif;
-      rctot->rtot = rtotV[j];
-      rctot->rref = rrefV[j];
-      rctot->rdif = rdif;
-
-      if (cdif < 0.0)
-        cdif = -cdif;
-      if (cdif > max_abs_c) {
-        max_abs_c = cdif;
-      }
-      if (rdif < 0.0)
-        rdif = -rdif;
-      if (rdif > max_abs_r) {
-        max_abs_r = rdif;
-      }
-      cden = (crefV[j] >= ctotV[j] ? crefV[j] : ctotV[j]);
-      if (cden >= rel_cfloor) {
-        crel_cnt++;
-        crel = cdif / cden;
-        if (crel > max_rel_c) {
-          max_rel_c = crel;
-          max_rel_c_id = j;
-        }
-        if (crel >= rel_cthresh) {
-          rel_cn++;
-        }
-      }
-      if (cden >= rel_cfloor2) {
-        crel_cnt2++;
-        crel = cdif / cden;
-        if (crel > max_rel_c2) {
-          max_rel_c2 = crel;
-          max_rel_c_id2 = j;
-        }
-        if (crel >= rel_cthresh) {
-          rel_cn2++;
-        }
-      }
-    }
-    logger_->info(
-        RCX, 188,
-        "Comparing all {} signal nets worst abs ctot diff = {:.4f) pF "
-        "worst abs rtot diff = {:.2f) ohms",
-        rctotN, max_abs_c, max_abs_r);
-
-    logger_->info(RCX, 426,
-                  "Comparing nets with c>={:.4f}, {} nets"
-                  " worst percent ctot diff = {:.1f} %% for c>={:.4f}",
-                  rel_cfloor, crel_cnt, 100.0 * max_rel_c, rel_cfloor);
-    if (max_rel_c_id) {
-      j = max_rel_c_id;
-      net = dbNet::getNet(_block, j);
-      logger_->info(
-          RCX, 423,
-          "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
-          net->getId(), net->getName().c_str(), ctotV[j], crefV[j], rtotV[j],
-          rrefV[j]);
-    }
-    logger_->info(RCX, 422,
-                  "\t{} nets have ctot diff >= {:.1f} %% for c>={:.4f}", rel_cn,
-                  100.0 * rel_cthresh, rel_cfloor);
-
-    logger_->info(RCX, 427,
-                  "Comparing nets with c>={:.4f}, {} nets"
-                  " worst percent ctot diff = {:.1f} %% for c>={:.4f}",
-                  rel_cfloor2, crel_cnt2, 100.0 * max_rel_c2, rel_cfloor2);
-
-    if (max_rel_c_id2) {
-      j = max_rel_c_id2;
-      net = dbNet::getNet(_block, j);
-      logger_->info(
-          RCX, 424,
-          "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
-          net->getId(), net->getName().c_str(), ctotV[j], crefV[j], rtotV[j],
-          rrefV[j]);
-    }
-
-    logger_->info(RCX, 189,
-                  "Comparing nets with c>={:.4f}, {} nets"
-                  " worst percent ctot diff = {:.1f} %% for c>={:.4f}",
-                  rel_cfloor2, crel_cnt2, 100.0 * max_rel_c2, rel_cfloor2);
-
-    if (rctotN > 0) {
-      cdif_avg /= rctotN;
-      rdif_avg /= rctotN;
-      qsort(rctotV, rctotN, sizeof(ext_rctot), ext_rctot_cmp_c);
-      rctot = rctotV;
-      if (rctot->cdif > 0.0) {
-        logger_->info(RCX, 191, "Max c_tot diff vs ref = {:.4f} pF",
-                      rctot->cdif);
-        net = dbNet::getNet(_block, rctot->netid);
-        logger_->info(
-            RCX, 425,
-            "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
-            net->getId(), net->getName().c_str(), rctot->ctot, rctot->cref,
-            rctot->rtot, rctot->rref);
-      }
-      rctot = rctotV + rctotN - 1;
-      if (rctot->cdif < 0.0) {
-        logger_->info(RCX, 192, "Min c_tot diff vs ref = {:.4f} pF",
-                      rctot->cdif);
-        net = dbNet::getNet(_block, rctot->netid);
-        logger_->info(
-            RCX, 190,
-            "\tNet {} {}  c_tot {:.4f} c_ref {:.4f} r_tot {:.2f} r_ref {:.2f}",
-            net->getId(), net->getName().c_str(), rctot->ctot, rctot->cref,
-            rctot->rtot, rctot->rref);
-      }
-      logger_->info(RCX, 193,
-                    "Avg ctot diff vs ref = {:.4f} pf"
-                    "\nAvg rtot diff vs ref = {:.2f} ohms"
-                    "\n{} nets have absolute ctot diff >= {:.4f}",
-                    cdif_avg, rdif_avg, ncdif, abs_cthresh);
-      logger_->info(RCX, 194, "{} nets have absolute ctot diff >= {:.4f}",
-                    ncdif2, abs_cthresh2);
-      logger_->info(RCX, 195, "{} nets have absolute rtot diff >= :.2f}", nrdif,
-                    abs_rthresh);
-      if (fp && ncdif + nrdif) {
-        fprintf(fp, "# netid cdif ctot cref rdif rtot rref\n");
-        for (j = 0; j < rctotN; j++) {
-          rctot = rctotV + j;
-          if (rctot->cdif < abs_cthresh2 && rctot->cdif > -abs_cthresh2 &&
-              rctot->rdif < abs_rthresh && rctot->rdif > -abs_rthresh)
-            continue;
-          fprintf(fp, "%6d %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f\n", rctot->netid,
-                  rctot->cdif, rctot->ctot, rctot->cref, rctot->rdif,
-                  rctot->rtot, rctot->rref);
-        }
-      }
-    }
-    free(rctotV);
-  }
-  free(ctotV);
-  free(rtotV);
-  if (crefV)
-    free(crefV);
-  if (rrefV)
-    free(rrefV);
-  if (fp)
-    fclose(fp);
-}
-#endif
 
 /////////////////////////////////////////////////////
 
@@ -924,13 +587,13 @@ bool extMain::printNetDB(char* buff, dbNet* net, extNetStats* st) {
     return false;
 
   char buf1[256];
-
-  sprintf(buf1, "%s", "\0");
+  std::string str;
 
   ii = 1;
   for (; ii < 12; ii++) {
     if (layerTable[ii] > 0) {
-      sprintf(buf1, "%s%d", buf1, ii);
+      sprintf(buf1, "%d", ii);
+      str += buf1;
       break;
     }
   }
@@ -939,10 +602,11 @@ bool extMain::printNetDB(char* buff, dbNet* net, extNetStats* st) {
     if (layerTable[ii] == 0)
       continue;
 
-    sprintf(buf1, "%s.%d", buf1, ii);
+    sprintf(buf1, ".%d", ii);
+    str += buf1;
   }
   sprintf(buff, "V %d Wc %d  L %d  %dM%s T %d B %d", viaCnt, wireCnt,
-          len / 1000, layerCnt, buf1, termCnt, btermCnt);
+          len / 1000, layerCnt, str.c_str(), termCnt, btermCnt);
   return true;
 }
 
