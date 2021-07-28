@@ -420,11 +420,10 @@ uint extMain::addObsShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag,
 
     uint level = s.getTechLayer()->getRoutingLevel();
 
-    uint n = 0;
     if (!rotatedFlag)
-      n = _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
+      _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
     else
-      n = addShapeOnGs(&s, swap_coords);
+      addShapeOnGs(&s, swap_coords);
   }
   return cnt;
 }

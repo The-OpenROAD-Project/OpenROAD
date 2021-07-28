@@ -460,11 +460,6 @@ uint extDistRCTable::readRules(Ath__parser* parser, AthPool<extDistRC>* rcPool,
     rc->readRC(parser, dbFactor);
     table->add(rc);
   }
-  bool SCALE_RES_ON_MAX_DIST = true;
-  if (SCALE_RES_ON_MAX_DIST) {
-    double SUB_MULT_RES = 0.5;
-    // ScaleRes(SUB_MULT_RES, table);
-  }
   if (ignore)
     return cnt;
 
@@ -2311,7 +2306,6 @@ FILE* extRCModel::openFile(const char* topDir, const char* name,
 uint extRCModel::getCapValues(uint lastNode, double& cc1, double& cc2,
                               double& fr, double& tot, extMeasure* m) {
   double totCap = 0.0;
-  uint wireNum = m->_wireCnt / 2 + 1;  // assume odd numebr
   if (m->_diag && _diagModel == 2) {
     fr = m->_capMatrix[1][0];   // diag
     cc1 = m->_capMatrix[1][1];  // left cc in diag side
@@ -2643,7 +2637,7 @@ uint extRCModel::readCapacitanceBench(bool readCapLog, extMeasure* m) {
   return cnt;
 }
 uint extRCModel::readCapacitanceBenchDiag(bool readCapLog, extMeasure* m) {
-  int met;
+  int met = 0;
   if (m->_overMet > 0)
     met = m->_overMet;
   else if (m->_underMet > 0)
@@ -2844,13 +2838,6 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix) {
   } else
     sprintf(overUnder, "Unknown");
 
-  double w = m->_w_m;
-  double s = m->_s_m;
-  double r = m->_r;
-  double w2 = m->_w2_m;
-  double s2 = m->_s2_m;
-
-  int n = get_nm(m, m->_s_m);
   sprintf(_wireDirName, "%s_%s_W%gW%g_S%gS%g", _patternName, overUnder,
           get_nm(m, m->_w_m), get_nm(m, m->_w2_m), get_nm(m, m->_s_m),
           get_nm(m, m->_s2_m));
@@ -3242,7 +3229,7 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure) {
   }
 
   if (measure->_diag) {
-    int met;
+    int met = 0;
     if (measure->_overMet > 0)
       met = measure->_overMet;
     else if (measure->_underMet > 0)
@@ -3356,8 +3343,6 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure) {
   return cnt;
 }
 void extRCModel::writeRaphaelCaps(FILE* fp, extMeasure* measure, uint wireCnt) {
-  extMasterConductor* m = _process->getMasterConductor(measure->_met);
-
   fprintf(fp, "\nOPTIONS SET_GRID=10000;\n\n");
   fprintf(fp, "POTENTIAL\n");
   /*
@@ -4830,7 +4815,7 @@ uint extRCModel::linesDiagUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
          overMet++) {  // the max overMet need to be the same as in functions
                        // writeRulesDiagUnder readRulesDiagUnder
       measure.setMets(met, 0, overMet);
-      uint cnt1;
+      uint cnt1 = 0;
       if (_diagModel == 2) {
         getDiagTables(&measure, widthCnt, spaceCnt);
         setDiagUnderTables(&measure);
