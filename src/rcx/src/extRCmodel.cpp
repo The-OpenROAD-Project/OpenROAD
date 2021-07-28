@@ -56,7 +56,7 @@ static int getMetIndexOverUnder(int met, int mUnder, int mOver,
   int n = layerCnt - met - 1;
   n *= mUnder - 1;
   n += mOver - met - 1;
-  
+
   if ((n < 0) || (n >= maxCnt)) {
     return -1;
   }
@@ -2292,13 +2292,12 @@ FILE* extRCModel::openFile(const char* topDir, const char* name,
                            const char* suffix, const char* permissions) {
   char filename[2048];
 
+  filename[0] = '\0';
   if (topDir != NULL)
-    sprintf(filename, "%s", topDir);
-
-  if (suffix == NULL)
-    sprintf(filename, "%s/%s", filename, name);
-  else
-    sprintf(filename, "%s/%s%s", filename, name, suffix);
+    sprintf(filename, "%s/", topDir);
+  strcat(filename, name);
+  if (suffix != NULL)
+    strcat(filename, suffix);
 
   FILE* fp = fopen(filename, permissions);
   if (fp == NULL) {
