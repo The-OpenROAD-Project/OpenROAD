@@ -114,6 +114,10 @@ entries:
 - file: user/GettingStarted
   title: Getting Started with OpenROAD Flow
   entries:
+  - file: user/BuildWithDocker
+    title: Build With Docker
+  - file: user/BuildLocally
+    title: Build Locally
   - file: user/UserGuide
     title: User Guide
   - file: contrib/Metrics

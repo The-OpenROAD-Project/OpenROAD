@@ -1,71 +1,17 @@
-# Getting Started
+# Getting Started with OpenROAD Flow
 
-## Prerequisites
+OpenROAD Flow is a full RTL-to-GDS flow built entirely on open-source tools.
+The project aims for automated, no-human-in-the-loop digital circuit design
+with 24-hour turnaround time.
 
-Before proceeding to the next step:
+## Setup
 
-1.  Install [Docker](https://docs.docker.com/engine/install) on your
-    machine, OR
-2.  Check that build dependencies for all tools are installed on your
-    machine. During initial Setup or if you have installed on a new
-    machine, run this script:
+There are currently two options to get OpenROAD Flow setup:
 
-``` shell
-./etc/DependencyInstaller.sh
-```
+- Build from sources using Docker, [instructions here](./BuildWithDocker.md).
+- Build from sources locally, [instructions here](./BuildLocally.md).
 
-## Get the tools
-
-There are currently two options to get OpenROAD tools.
-
-### Option 1: Build from sources using Docker
-
-#### Clone and Build
-
-``` shell
-$ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
-$ cd OpenROAD-flow-scripts
-$ ./build_openroad.sh
-```
-
-#### Verify Installation
-
-The binaries should be available on your `$PATH` after setting up the
-environment.
-
-``` shell
-$ docker run -it -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd)/flow/platforms:/OpenROAD-flow-scripts/flow/platforms:ro openroad/flow-scripts
-[inside docker] $ source ./setup_env.sh
-[inside docker] $ yosys -help
-[inside docker] $ openroad -help
-[inside docker] $ cd flow
-[inside docker] $ make
-[inside docker] $ exit
-```
-
-### Option 2: Build from sources locally
-
-#### Clone and Build
-
-``` shell
-$ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
-$ cd OpenROAD-flow-scripts
-$ ./build_openroad.sh --local
-```
-
-#### Verify Installation
-
-The binaries should be available on your `$PATH` after setting up the
-environment.
-
-``` shell
-$ source ./setup_env.sh
-$ yosys -help
-$ openroad -help
-$ exit
-```
-
-## Designs
+## Running a Design
 
 Sample design configurations are available in the `designs` directory.
 You can select a design using either of the following methods:
@@ -83,8 +29,11 @@ export DESIGN_CONFIG=./designs/nangate45/swerv/config.mk
 make
 ```
 
-By default, the simple design gcd is selected. We recommend implementing
-this design first to validate your flow and tool setup.
+By default, the `gcd` design is selected using the
+`nangate45` platform. The resulting GDS will be available at
+`flow/results/nangate45/gcd/6_final.gds`. The flow should take only a few
+minutes to produce a GDS for this design.  We recommend implementing this
+design first to validate your flow and tool setup.
 
 ### Adding a New Design
 
@@ -93,15 +42,20 @@ examples of how to set one up.
 
 ## Platforms
 
-OpenROAD-flow-scripts supports Verilog to GDS for the following open
-platforms: Nangate45 / FreePDK45
+OpenROAD-flow-scripts supports Verilog to GDS for the following open platforms:
+
+- ASAP7
+- Nangate45 / FreePDK45
+- SKY130
 
 These platforms have a permissive license which allows us to
 redistribute the PDK and OpenROAD platform-specific files. The platform
 files and license(s) are located in `platforms/{platform}`.
 
 OpenROAD-flow-scripts also supports the following commercial platforms:
-TSMC65LP / GF12.
+
+- GF12
+- TSMC65LP
 
 The PDKs and platform-specific files for these kits cannot be provided
 due to NDA restrictions. However, if you are able to access these
