@@ -3007,61 +3007,49 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       continue;
     }
     auto lNum = marker->getLayerNum();
-    if (lNum != 10) {
+    int z = lNum/2 - 1;
+    if (!tech_->hasVia2ViaMinStepViolAt(z)) {
       continue;
     }
-
     // bool isPatchable = false;
     // TODO: check whether there is empty space for patching
     // isPatchable = true;
 
     frBox markerBBox;
     frPoint origin;
-    frPoint patchLL, patchUR;
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
-    frPoint markerCenter((markerBBox.left() + markerBBox.right()) / 2,
-                         (markerBBox.bottom() + markerBBox.top()) / 2);
     workerRegionQuery.query(markerBBox, lNum, results);
     for (auto& connFig : results) {
-      if (connFig->typeId() != drcVia) {
-        continue;
-      }
-      auto obj = static_cast<drVia*>(connFig);
-      if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
-        continue;
-      }
-      if (obj->getViaDef()->getLayer1Num() == lNum) {
-        obj->getOrigin(origin);
-        if (origin.x() != markerCenter.x() && origin.y() != markerCenter.y()) {
+        if (connFig->typeId() != drcVia) {
           continue;
         }
+        auto obj = static_cast<drVia*>(connFig);
+        if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
+          continue;
+        }
+        obj->getOrigin(origin);
         net = obj->getNet();
         break;
-      }
     }
-
     if (!net) {
       continue;
     }
-
-    // calculate patch location
-    gtl::rectangle_data<frCoord> markerRect(markerBBox.left(),
-                                            markerBBox.bottom(),
-                                            markerBBox.right(),
-                                            markerBBox.top());
-    gtl::point_data<frCoord> boostOrigin(origin.x(), origin.y());
-    gtl::encompass(markerRect, boostOrigin);
-    patchLL.set(gtl::xl(markerRect) - origin.x(),
-                gtl::yl(markerRect) - origin.y());
-    patchUR.set(gtl::xh(markerRect) - origin.x(),
-                gtl::yh(markerRect) - origin.y());
-
+    frBox const* chosenPatch = nullptr;
+    markerBBox.shift(-origin.x(), -origin.y());
+    for (auto& patch : tech_->getVia2ViaMinStepPatches()[z]) {
+        if (patch.overlaps(markerBBox)) {
+            chosenPatch = &patch;
+            break;
+        }
+    }
+    if (!chosenPatch)
+        continue;
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
-    frBox box(frBox(patchLL, patchUR));
+    frBox box(*chosenPatch);
     patch->setOffsetBox(box);
     patch->addToNet(net);
 
@@ -3079,7 +3067,7 @@ int FlexGCWorker::Impl::main()
   // printMarker = true;
   //  minStep patching for GF14
   if (surgicalFixEnabled_ && getDRWorker()
-      && DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+      && tech_->hasVia2ViaMinStep()) { //DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
     patchMetalShape();
   }
   // incremental updates
