@@ -114,6 +114,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
+  // conversion functions
+  odb::Rect screenToDBU(const QRect& rect);
+  odb::Point screenToDBU(const QPoint& point);
+  QRectF dbuToScreen(const odb::Rect& dbu_rect);
+  QPointF dbuToScreen(const odb::Point& dbu_point);
+
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;
   virtual void resizeEvent(QResizeEvent* event) override;
@@ -145,7 +151,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
  public slots:
   void zoomIn();
+  void zoomIn(const odb::Point& focus, bool do_delta_focus = false);
   void zoomOut();
+  void zoomOut(const odb::Point& focus, bool do_delta_focus = false);
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
@@ -184,7 +192,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   odb::dbBlock* getBlock();
-  void setPixelsPerDBU(qreal pixels_per_dbu);
+  void setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize = true);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
@@ -211,9 +219,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawRulers(Painter& painter);
   Selected selectAtPoint(odb::Point pt_dbu);
 
-  odb::Rect screenToDBU(const QRect& rect);
-  odb::Point screenToDBU(const QPoint& point);
-  QRectF dbuToScreen(const odb::Rect& dbu_rect);
+  void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
+
+  qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
+  odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+
+  // Compute and store the offset necessary to center the block in the viewport.
+  void computeCenteringOffset();
+
 
   int minimumViewableResolution();
 
@@ -244,6 +257,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
+
+  QPoint centering_shift_;
+
+  static constexpr qreal zoom_scale_factor_ = 1.2;
 };
 
 // The LayoutViewer widget can become quite large as you zoom
@@ -253,10 +270,6 @@ class LayoutScroll : public QScrollArea
   Q_OBJECT
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
-
- public slots:
-  void zoomIn();
-  void zoomOut();
 
  protected:
   void wheelEvent(QWheelEvent* event) override;

@@ -39,6 +39,58 @@
 #include "gui/gui.h"
 
 using utl::GUI;
+
+bool check_gui(const char* command)
+{
+  auto logger = ord::OpenRoad::openRoad()->getLogger(); 
+  auto gui = gui::Gui::get();
+  if (gui == nullptr) {
+    logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
+    return false;
+  }
+
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  if (db == nullptr) {
+    logger->error(GUI, 2, "No database loaded");
+  }
+
+  return true;
+}
+
+odb::dbBlock* get_block()
+{
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  if (db == nullptr) {
+    logger->error(GUI, 3, "No database loaded");
+  }
+  auto chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(GUI, 5, "No chip loaded");
+  }
+  auto block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(GUI, 6, "No block loaded");
+  }
+  return block;
+}
+
+// converts from microns to DBU
+odb::Rect make_rect(double xlo, double ylo, double xhi, double yhi)
+{
+  auto block = get_block();
+  int dbuPerUU = block->getDbUnitsPerMicron();
+  return odb::Rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
+}
+
+// converts from microns to DBU
+odb::Point make_point(double x, double y)
+{
+  auto block = get_block();
+  int dbuPerUU = block->getDbUnitsPerMicron();
+  return odb::Point(x * dbuPerUU, y * dbuPerUU);
+}
+
 %}
 
 %include "../../Exception.i"
@@ -54,123 +106,132 @@ bool enabled()
 void
 selection_add_net(const char* name)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 13, "Command selection_add_net is not usable in non-GUI mode");
+  if (!check_gui("selection_add_net")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->addSelectedNet(name);
 }
 
 void
 selection_add_nets(const char* name)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 5, "Command selection_add_nets is not usable in non-GUI mode");
+  if (!check_gui("selection_add_nets")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->addSelectedNets(name);
 }
 
 void
 selection_add_inst(const char* name)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 6, "Command selection_add_inst is not usable in non-GUI mode");
+  if (!check_gui("selection_add_inst")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->addSelectedInst(name);
 }
 
 void
 selection_add_insts(const char* name)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 7, "Command selection_add_insts is not usable in non-GUI mode");
+  if (!check_gui("selection_add_insts")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->addSelectedInsts(name);
 }
 
 void highlight_inst(const char* name, int highlightGroup)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 8, "Command highlight_inst is not usable in non-GUI mode");
+  if (!check_gui("highlight_inst")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->addInstToHighlightSet(name, highlightGroup);
 }
 
 void highlight_net(const char* name, int highlightGroup=0)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 9, "Command highlight_net is not usable in non-GUI mode");
+  if (!check_gui("highlight_net")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->addNetToHighlightSet(name, highlightGroup);
 }
 
-void add_ruler(int x0, int y0, int x1, int y1)
+void add_ruler(double x0, double y0, double x1, double y1)
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 10, "Command add_ruler is not usable in non-GUI mode");
-    return ;
+  if (!check_gui("add_ruler")) {
+    return;
   }
-  gui->addRuler(x0, y0, x1, y1);  
+  odb::Point ll = make_point(x0, y0);
+  odb::Point ur = make_point(x1, y1);
+  auto gui = gui::Gui::get();
+  gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y());  
 }
 
-// converts from microns to DBU
 void zoom_to(double xlo, double ylo, double xhi, double yhi)
 {
+  if (!check_gui("zoom_to")) {
+    return;
+  }
   auto gui = gui::Gui::get();
-  auto logger = ord::OpenRoad::openRoad()->getLogger();
-  if (!gui) {
-    logger->info(GUI, 11, "Command zoom_to is not usable in non-GUI mode");
-    return ;
-  }
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  if (!db) {
-    logger->error(GUI, 1, "No database loaded");
-  }
-  auto chip = db->getChip();
-  if (!chip) {
-    logger->error(GUI, 2, "No chip loaded");
-  }
-  auto block = chip->getBlock();
-  if (!block) {
-    logger->error(GUI, 3, "No block loaded");
-  }
+  gui->zoomTo(make_rect(xlo, ylo, xhi, yhi));
+}
 
-  int dbuPerUU = block->getDbUnitsPerMicron();
-  odb::Rect rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
-  gui->zoomTo(rect);
+void zoom_in()
+{
+  if (!check_gui("zoom_in")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->zoomIn();
+}
+
+void zoom_in(double x, double y)
+{
+  if (!check_gui("zoom_in")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->zoomIn(make_point(x, y));
+}
+
+void zoom_out()
+{
+  if (!check_gui("zoom_out")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->zoomOut();
+}
+
+void zoom_out(double x, double y)
+{
+  if (!check_gui("zoom_out")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->zoomIn(make_point(x, y));
 }
 
 void design_created()
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    auto logger = ord::OpenRoad::openRoad()->getLogger();
-    logger->info(GUI, 12, "Command design_created is not usable in non-GUI mode");
+  if (!check_gui("design_created")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->load_design();
 }
 
 void fit()
 {
-  auto gui = gui::Gui::get();
-  if (!gui) {
-    auto logger = ord::OpenRoad::openRoad()->getLogger();
-    logger->info(GUI, 14, "Command fit is not usable in non-GUI mode");
+  if (!check_gui("fit")) {
     return;
   }
+  auto gui = gui::Gui::get();
   gui->fit();
 }
 %} // inline

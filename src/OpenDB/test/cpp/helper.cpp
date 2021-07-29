@@ -29,13 +29,12 @@ dbDatabase* createSimpleDB()
   dbDatabase*  db   = dbDatabase::create();
   db->setLogger(logger);
   dbTech*      tech = dbTech::create(db);
-  dbTechLayer* layer
-      = dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
+  dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   dbLib*    lib   = dbLib::create(db, "lib1", ',');
   dbChip*   chip  = dbChip::create(db);
-  dbBlock*  block = dbBlock::create(chip, "simple_block");
-  dbMaster* and2  = createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
-  dbMaster* or2   = createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
+  dbBlock::create(chip, "simple_block");
+  createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
+  createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
   return db;
 }
 
@@ -89,8 +88,8 @@ dbDatabase* create2LevetDbWithBTerms()
   dbBTerm*    IN1   = dbBTerm::create(n1, "IN1");
   IN1->setIoType(dbIoType::INPUT);
   dbBTerm* IN2 = dbBTerm::create(n2, "IN2");
-  IN1->setIoType(dbIoType::INPUT);
+  IN2->setIoType(dbIoType::INPUT);
   dbBTerm* OUT = dbBTerm::create(n7, "IN3");
-  IN1->setIoType(dbIoType::OUTPUT);
+  OUT->setIoType(dbIoType::OUTPUT);
   return db;
 }

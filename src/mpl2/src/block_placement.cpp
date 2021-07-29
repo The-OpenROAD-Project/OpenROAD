@@ -1280,7 +1280,6 @@ void SimulatedAnnealingCore::FastSA()
   int step = 1;
   float rej_num = 0.0;
   float T = init_T_;
-  float rej_threshold = rej_ratio_ * perturb_per_step_;
 
   int max_num_restart = 2;
   int num_restart = 0;
@@ -1667,7 +1666,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     heat_count = heat_count * heat_rate;
     vector<SimulatedAnnealingCore*> sa_vec;
     vector<thread> threads;
-    float cooling_rate_step = (0.995 - 0.985) / num_worker;
     for (int j = 0; j < num_worker; j++) {
       float cooling_rate = 0.995;
       if (num_worker >= 2) {

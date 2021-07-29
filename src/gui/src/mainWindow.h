@@ -171,6 +171,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void showTimingDialog();
 
   DisplayControls* getControls() const { return controls_; }
+  LayoutViewer* getLayoutViewer() const { return viewer_; }
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);

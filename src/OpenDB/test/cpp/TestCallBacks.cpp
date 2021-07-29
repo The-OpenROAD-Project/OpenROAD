@@ -39,8 +39,7 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   cb->pause();
   dbRegion* parent_region = dbRegion::create(block, "parent");
   cb->unpause();
-  dbInst* i2
-      = dbInst::create(block, db->findMaster("and2"), "i2", parent_region);
+  dbInst::create(block, db->findMaster("and2"), "i2", parent_region);
   BOOST_TEST(cb->events.size() == 4);
   BOOST_TEST(cb->events[0] == "Create inst i2 in region parent");
   BOOST_TEST(cb->events[1] == "Create iterm a of inst i2");
@@ -143,7 +142,7 @@ BOOST_AUTO_TEST_CASE(test_blockage)
   db    = create2LevetDbWithBTerms();
   block = db->getChip()->getBlock();
   cb->addOwner(block);
-  dbBlockage* blockage = dbBlockage::create(block, 0, 0, 100, 100);
+  dbBlockage::create(block, 0, 0, 100, 100);
   BOOST_TEST(cb->events.size() == 1);
   BOOST_TEST(cb->events[0] == "Create blockage (0,0) (100,100)");
   tearDown();
@@ -171,7 +170,7 @@ BOOST_AUTO_TEST_CASE(test_region)
   block = db->getChip()->getBlock();
   cb->addOwner(block);
   dbRegion* parent_region = dbRegion::create(block, "parent");
-  dbRegion* child_region  = dbRegion::create(parent_region, "child");
+  dbRegion::create(parent_region, "child");
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "Create region parent");
   BOOST_TEST(cb->events[1] == "Create region child");
@@ -253,14 +252,14 @@ BOOST_AUTO_TEST_CASE(test_swire)
   BOOST_TEST(cb->events.size() == 1);
   BOOST_TEST(cb->events[0] == "Create swire");
   cb->clearEvents();
-  dbSBox* box = dbSBox::create(wire,
-                               db->getTech()->findLayer("L1"),
-                               0,
-                               100,
-                               100,
-                               100,
-                               dbWireShapeType::IOWIRE,
-                               dbSBox::Direction::HORIZONTAL);
+  dbSBox::create(wire,
+                 db->getTech()->findLayer("L1"),
+                 0,
+                 100,
+                 100,
+                 100,
+                 dbWireShapeType::IOWIRE,
+                 dbSBox::Direction::HORIZONTAL);
 
   dbSWire::destroy(wire);
   BOOST_TEST(cb->events.size() == 3);

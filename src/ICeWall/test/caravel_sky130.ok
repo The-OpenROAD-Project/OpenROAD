@@ -155,7 +155,7 @@ Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
 [WARNING ORD-1011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
-[INFO IFP-0001] Added 1898 rows of 7775 sites.
+[INFO IFP-0001] Added 1899 rows of 7776 sites.
 [WARNING PAD-0050] Multiple nets found on VSSA in padring.
 [WARNING PAD-0050] Multiple nets found on VCCD in padring.
 [WARNING PAD-0050] Multiple nets found on VCCD in padring.

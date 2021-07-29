@@ -611,7 +611,6 @@ void PartitionMgr::evaluatePartitioning()
 void PartitionMgr::computePartitionResult(unsigned partitionId,
                                           std::string function)
 {
-  odb::dbBlock* block = getDbBlock();
   std::vector<unsigned long> setSizes;
   std::vector<unsigned long> setAreas;
   int weightModel = _options.getWeightModel();
@@ -627,7 +626,6 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
     std::vector<unsigned long> currentAssignment
         = currentResults.getAssignment(idx);
     unsigned long currentRuntime = currentResults.getRuntime(idx);
-    int currentSeed = currentResults.getSeed(idx);
 
     unsigned long terminalCounter = 0;
     unsigned long cutCounter = 0;
@@ -651,7 +649,6 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
           int currentVertex = hyperedgeNets[currentIndex];
           unsigned long currentPartition = currentAssignment[currentVertex];
           netPartitions.insert(currentPartition);
-          unsigned long currentVertexWeight = _hypergraph->getVertexWeight(idx);
           netVertices.push_back(currentVertex);
           if (computedVertices.find(currentVertex)
               == computedVertices

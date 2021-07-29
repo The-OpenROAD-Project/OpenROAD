@@ -1071,24 +1071,10 @@ uint extMain::addNetShapesOnSearch(dbNet* net, uint dir, int* bb_ll, int* bb_ur,
 }
 
 uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype) {
-  int rcid = getShapeProperty(net, shapeId);
   wtype = 5;  // Via Type
 
   bool USE_DB_UNITS = false;
   uint cnt = 0;
-
-  int X1[2] = {0, 0};
-  int X2[2] = {0, 0};
-  int Y1[2] = {0, 0};
-  int Y2[2] = {0, 0};
-  int id[2] = {0, 0};
-  int LEN[2] = {0, 0};
-
-  int botLevel = 0;
-  int topLevel = 0;
-
-  const char* tcut = "tcut";
-  const char* bcut = "bcut";
 
   std::vector<dbShape> shapes;
   dbShape::getViaBoxes(sVia, shapes);
@@ -1107,13 +1093,10 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype) {
     int dx = x2 - x1;
     int dy = y2 - y1;
 
-    uint track_num;
     uint level = s.getTechLayer()->getRoutingLevel();
     uint width = s.getTechLayer()->getWidth();
 
-    int len = dx;
     if (s.getTechLayer()->getDirection() == dbTechLayerDir::VERTICAL) {
-      len = dy;
       if (width != dx)
         continue;
     } else {
@@ -1122,12 +1105,11 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype) {
     }
 
     if (USE_DB_UNITS) {
-      track_num = _search->addBox(GetDBcoords2(x1), GetDBcoords2(y1),
-                                  GetDBcoords2(x2), GetDBcoords2(y2), level,
-                                  net->getId(), shapeId, wtype);
+      _search->addBox(GetDBcoords2(x1), GetDBcoords2(y1),
+                      GetDBcoords2(x2), GetDBcoords2(y2), level,
+                      net->getId(), shapeId, wtype);
     } else {
-      track_num =
-          _search->addBox(x1, y1, x2, y2, level, net->getId(), shapeId, wtype);
+      _search->addBox(x1, y1, x2, y2, level, net->getId(), shapeId, wtype);
     }
     // if (net->getId()==_debug_net_id) {
     //	debug("Search", "W", "addViaBoxes: L%d  DX=%3d DY=%d %d %d  %d %d --
@@ -1463,13 +1445,7 @@ uint extMain::addShapeOnGS(dbNet* net, uint sId, Rect& r, bool plane,
                            int dir, bool specialWire,
                            dbCreateNetUtil* createDbNet) {
   if (dir >= 0) {
-    if (plane) {
-      uint rdir = 0;
-      if (layer->getDirection() == dbTechLayerDir::HORIZONTAL)
-        rdir = 1;
-      // if (rdir==dir)
-      // return 0;
-    } else {
+    if (!plane) {
       if (matchDir(dir, r))
         return 0;
     }
@@ -2821,10 +2797,9 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet) {
     if ((net->getSigType().isSupply()))
       continue;
 
-    int dstNetId = 0;
     if (setMainNet) {
       parser.mkWords(net->getConstName());
-      dstNetId = parser.getInt(0, 1);
+      parser.getInt(0, 1);
     }
 
     dbWire* wire = net->getWire();
@@ -2962,8 +2937,6 @@ uint extMain::rcGenTile(dbBlock* blk) {
 uint extMain::couplingWindowFlow(bool rlog, Rect& extRect, uint trackStep,
                                  uint ccFlag, bool doExt, extMeasure* m,
                                  CoupleAndCompute coupleAndCompute) {
-  bool single_gs = false;
-
   extWindow* W = initWindowSearch(extRect, trackStep, ccFlag,
                                   _currentModel->getLayerCnt(), m);
 
@@ -3008,7 +2981,6 @@ uint extMain::couplingWindowFlow(bool rlog, Rect& extRect, uint trackStep,
     if (rlog)
       AthResourceLog("Making net tables ", 0);
   }
-  uint totalWiresExtracted = 0;
 
   FILE* boundFP = fopen("window.bounds", "w");
   FILE* limitFP = fopen("window.limits", "w");
@@ -3086,9 +3058,6 @@ uint extMain::couplingWindowFlow(bool rlog, Rect& extRect, uint trackStep,
     _seqPool = m->_seqPool;
   }
 
-  // uint prevDir= 10;
-  bool useSdbTable = true;
-
   FILE* bndFP = fopen("window.bounds.new", "w");
   FILE* limFP = fopen("window.limits.after", "w");
 
@@ -3121,7 +3090,7 @@ uint extMain::couplingWindowFlow(bool rlog, Rect& extRect, uint trackStep,
           w, w->_lo_sdb, w->_hi_sdb, sdbTable_ll, sdbTable_ur, sdbBucketSize,
           &sdbPowerTable, &tmpNetIdTable, sdbSignalTable, &m->_create_net_util);
 
-      uint signalWireCnt = createNetShapePropertires(extBlock);
+      createNetShapePropertires(extBlock);
       logger_->info(RCX, 471, "Block {} has {} signal wires",
                     extBlock->getConstName(), processWireCnt);
 
@@ -3168,11 +3137,6 @@ uint extMain::extractWindow(bool rlog, extWindow* W, Rect& extRect,
   limitArray = new int* [W->_layerCnt];
   for (uint k = 0; k < W->_layerCnt; k++)
     limitArray[k] = new int[10];
-
-  uint prevDir = 10;
-
-  //	if (W->_num!=0)
-  //		return 1;
 
   disableRotatedFlag();
   if (W->_currentDir == 0)
@@ -3226,7 +3190,7 @@ uint extMain::extractWindow(bool rlog, extWindow* W, Rect& extRect,
   fillWindowGs(W, sdbTable_ll, sdbTable_ur, sdbBucketSize, sdbPowerTable,
                tmpNetIdTable, sdbSignalTable, gsInstTable);
 
-  uint processWireCnt = fillWindowSearch(
+  fillWindowSearch(
       W, W->_lo_sdb, W->_hi_sdb, sdbTable_ll, sdbTable_ur, sdbBucketSize,
       sdbPowerTable, tmpNetIdTable, sdbSignalTable);
 
@@ -3446,7 +3410,6 @@ uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt,
     if (rseg2 == NULL)
       continue;
 
-    uint rsgeId1 = rseg1->getId();
     updateRseg(rseg1, rseg2, cornerCnt);
 
     rcCnt++;
@@ -3532,8 +3495,6 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger) {
       continue;
 
     dbWire* wire = net->getWire();
-
-    uint netId = dstNet->getId();
 
     if (wire == NULL)
       continue;
@@ -3678,8 +3639,6 @@ uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts) {
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    uint netId = net->getId();
-
     if ((net->getSigType().isSupply())) {
       if (!skipPower)
         _tiles->_powerTable->add(net->getId());
@@ -3736,8 +3695,8 @@ uint extMain::mkTileNets(uint dir, int* lo_sdb, int* hi_sdb, bool powerNets,
   uint hi_index = getBucketNum(_tiles->_ll[dir], _tiles->_ur[dir],
                                _tiles->_tileSize[dir], hi_sdb[dir]);
 
-  FILE* fp = NULL;
 #ifdef TEST_SIGNAL_TABLE
+  FILE* fp = NULL;
   char filename[64];
   sprintf(filename, "new/%d.%d.%d.sig.sdb", dir, lo_sdb[dir], hi_sdb[dir]);
   fp = fopen(filename, "w");
@@ -3778,9 +3737,7 @@ uint extMain::mkTileNets(uint dir, int* lo_sdb, int* hi_sdb, bool powerNets,
 
       cnt1 += cnt;
 
-      bool inside = false;
       if ((ur[dir] <= hi_sdb[dir]) && (ll[dir] >= lo_sdb[dir])) {
-        inside = true;
         local += cnt;
       }
 
@@ -3871,9 +3828,8 @@ uint extMain::mkTilePowerNets(uint dir, int* lo_sdb, int* hi_sdb,
 }
 
 uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
-                              uint ccFlag, uint use_bin_tables) {
-  bool single_gs = false;
-
+                              uint ccFlag, uint use_bin_tables)
+{
   extWindow* W = initWindowSearch(extRect, trackStep, ccFlag, 0, NULL);
 
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
@@ -3886,7 +3842,6 @@ uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
       _dgContextBaseTrack, _dgContextLowTrack, _dgContextHiTrack,
       _dgContextTrackBase, NULL);
 
-  extWindow* windowTable[1000];
   uint windowCnt = 0;
 
   int** limitArray;
@@ -3902,10 +3857,7 @@ uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
   uint binCnt[2];
   AthPool<extWire>* wpool = NULL;
 
-  bool use_signal_tables = false;
   if ((use_bin_tables == 1) || (use_bin_tables == 2)) {
-    use_signal_tables = true;
-
     logger_->info(RCX, 88, "Signal_table= {} ----------------------------- ",
                   _use_signal_tables);
 
@@ -3924,7 +3876,7 @@ uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
     _tiles = new extTileSystem(extRect, W->_step_nm);
     bool skipPower = false;
     bool skipInsts = false;
-    uint wireCnt = mkTileBoundaries(skipPower, skipInsts);
+    mkTileBoundaries(skipPower, skipInsts);
   }
 
   for (int dir = 1; dir >= 0; dir--) {
@@ -3936,13 +3888,12 @@ uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
     //_search->initCouplingCapLoops(dir, ccFlag, coupleAndCompute, m);
     _search->initCouplingCapLoops(dir, ccFlag, NULL, NULL);
 
-    uint stepNum = 0;
     int hiXY = W->setExtBoundaries(dir);
     for (; hiXY <= W->_ur[dir]; hiXY += W->_step_nm[dir]) {
       hiXY = W->adjust_hiXY(hiXY);
 
       uint extractedWireCnt = 0;
-      int extractLimit = W->set_extractLimit();
+      W->set_extractLimit();
       W->_minExtracted = _search->couplingCaps(
           W->_extractLimit, W->_ccDist, W->_currentDir, extractedWireCnt, NULL,
           NULL, _getBandWire, limitArray);
@@ -3953,11 +3904,11 @@ uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
       W->updateExtLimits(limitArray);
 
       extWindow* W1 = new extWindow(W, windowCnt, logger_);
-      windowTable[windowCnt++] = W1;
+      windowCnt++;
 
       W->updateLoBounds(false /*report*/);
 
-      dbBlock* extBlock = W1->createExtBlock(NULL, _block, extRect);
+      W1->createExtBlock(NULL, _block, extRect);
     }
   }
   return 1;
@@ -4004,9 +3955,8 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables) {
   if (use_signal_tables == 0) {
     fillWindowGs(W, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &createNetUtil);
 
-    uint processWireCnt =
-        fillWindowSearch(W, W->_lo_sdb, W->_hi_sdb, NULL, NULL, NULL, NULL,
-                         NULL, NULL, &createNetUtil);
+    fillWindowSearch(W, W->_lo_sdb, W->_hi_sdb, NULL, NULL, NULL, NULL,
+                     NULL, NULL, &createNetUtil);
   } else if (use_signal_tables == 3) {
     bool powerNets = true;
 
@@ -4024,13 +3974,11 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables) {
         addNets3(W->_currentDir, W->_lo_sdb, W->_hi_sdb, W->_ll, W->_ur,
                  W->_maxPitch * W->_ccDist, _wireBinTable, &createNetUtil);
 
-    uint cntxCnt =
-        addNets3GS(W->_currentDir, W->_lo_gs, W->_hi_gs, W->_ll, W->_ur,
-                   W->_step_nm[0], _cntxBinTable, &createNetUtil);
+    addNets3GS(W->_currentDir, W->_lo_gs, W->_hi_gs, W->_ll, W->_ur,
+               W->_step_nm[0], _cntxBinTable, &createNetUtil);
 
-    uint instCnt =
-        addInsts(W->_currentDir, W->_lo_gs, W->_hi_gs, W->_ll, W->_ur,
-                 W->_maxPitch * W->_ccDist, _cntxInstTable, &createNetUtil);
+    addInsts(W->_currentDir, W->_lo_gs, W->_hi_gs, W->_ll, W->_ur,
+             W->_maxPitch * W->_ccDist, _cntxInstTable, &createNetUtil);
     uint signalWireCnt = createNetShapePropertires(extBlock);
     logger_->info(RCX, 96, "Block {} has {} signal wires",
                   extBlock->getConstName(), signalWireCnt);
@@ -4133,8 +4081,6 @@ void extMain::writeMapping(dbBlock* block) {
   char buf[1024];
   sprintf(buf, "%s.netMap", block->getConstName());
   FILE* fp = fopen(buf, "w");
-
-  uint cnt = 0;
 
   dbSet<dbNet> bnets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
