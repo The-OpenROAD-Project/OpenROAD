@@ -26,6 +26,8 @@ usage: $0 [CMD] [OPTIONS]
                                   'builder': os + packages to compile app +
                                              copy source code and build app
                                   'runtime': os + packages to run a compiled app
+                                  'binary': os + packages to run a compiled
+                                            app + binary set as entrypoint
   -threads                      Max number of threads to use if compiling.
                                   Default = \$(nproc)
   -sha                          Use git commit sha as the tag image. Default is
@@ -79,6 +81,12 @@ _setup() {
             ;;
         "runtime" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
+            context="etc"
+            copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
+            buildArgs="--build-arg copyImage=${copyImage}"
+            ;;
+        "binary" )
+            fromImage="${FROM_IMAGE_OVERRIDE:-${org}/${os}-runtime}:${imageTag}"
             context="etc"
             copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
             buildArgs="--build-arg copyImage=${copyImage}"
