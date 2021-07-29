@@ -9,9 +9,9 @@
 [INFO ODB-0131]     Created 482 components and 2074 component-terminals.
 [INFO ODB-0133]     Created 385 nets and 1110 connections.
 [INFO ODB-0134] Finished DEF file: gcd_dual_rails/floorplan.def
-[INFO PDN-0008] Design name is gcd
-[INFO PDN-0009] Reading technology data
-[WARNING PDN-0018] No macro grid specifications found - no straps added
+[INFO PDN-0008] Design name is gcd.
+[INFO PDN-0009] Reading technology data.
+[WARNING PDN-0018] No macro grid specifications found - no straps added.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, main_grid
     Stdcell Rails
@@ -22,6 +22,6 @@ Type: stdcell, main_grid
       Layer: metal7  -  width: 1.400  pitch: 40.000  offset: 2.000 
     Connect: {metal1 metal2 constraints {cut_pitch 0.16}} {metal2 metal4} {metal4 metal7}
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - main_grid
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - main_grid.
+[INFO PDN-0015] Writing to database.
 No differences found.

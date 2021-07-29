@@ -15,8 +15,8 @@
 [INFO ODB-0131]     Created 41868 components and 209139 component-terminals.
 [INFO ODB-0133]     Created 42811 nets and 125379 connections.
 [INFO ODB-0134] Finished DEF file: tinyRocket/2_5_floorplan_tapcell.def
-[INFO PDN-0008] Design name is RocketTile
-[INFO PDN-0009] Reading technology data
+[INFO PDN-0008] Design name is RocketTile.
+[INFO PDN-0009] Reading technology data.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
@@ -37,9 +37,9 @@ Type: macro, CORE_macro_grid_2
       Layer: metal6  -  width: 0.930  pitch: 10.000  offset: 2.000 
     Connect: {metal4 metal6} {metal6 metal7}
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0010] Inserting macro grid for 2 macros
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0010] Inserting macro grid for 2 macros.
 [INFO PDN-0034]   - grid CORE_macro_grid_1 for instance dcache.data.data_arrays_0.data_arrays_0_ext.mem
 [INFO PDN-0034]   - grid CORE_macro_grid_1 for instance frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem
-[INFO PDN-0015] Writing to database
+[INFO PDN-0015] Writing to database.
 No differences found.

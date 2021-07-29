@@ -11,10 +11,10 @@
 [INFO ODB-0131]     Created 20552 components and 98219 component-terminals.
 [INFO ODB-0133]     Created 14627 nets and 57115 connections.
 [INFO ODB-0134] Finished DEF file: asap7_vias/2_5_floorplan_tapcell.def
-[WARNING PDN-0035] No track information found for layer Pad
-[INFO PDN-0008] Design name is aes_cipher_top
-[INFO PDN-0009] Reading technology data
-[WARNING PDN-0018] No macro grid specifications found - no straps added
+[WARNING PDN-0035] No track information found for layer Pad.
+[INFO PDN-0008] Design name is aes_cipher_top.
+[INFO PDN-0009] Reading technology data.
+[WARNING PDN-0018] No macro grid specifications found - no straps added.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
@@ -25,6 +25,6 @@ Type: stdcell, grid
       Layer: M6  -  width: 1.152  pitch: 56.320  spacing: 2.688  offset: 6.408 
     Connect: {M1 M2 constraints {cut_pitch 0.288} fixed_vias VIA12} {M2 M3 fixed_vias VIA23} {M3 M6 fixed_vias {VIA34 VIA45 VIA56}}
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
 No differences found.

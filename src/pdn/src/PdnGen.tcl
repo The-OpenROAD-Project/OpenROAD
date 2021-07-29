@@ -65,7 +65,7 @@ proc add_global_connection {args} {
   }
 
   if {[info exists flags(-power)] && [info exists flags(-ground)]} {
-    utl::error PDN 92 "The flags -power and -ground of the add_global_connection command are mutually exclusive "
+    utl::error PDN 92 "The flags -power and -ground of the add_global_connection command are mutually exclusive."
   }
 
   if {![info exists keys(-net)]} {
@@ -111,7 +111,7 @@ proc add_global_connection {args} {
   dict lappend pdngen::global_connections $keys(-net) [list inst_name $keys(-inst_pattern) pin_name $keys(-pin_pattern)]
 
   if {[set net [[ord::get_db_block] findNet $keys(-net)]] == "NULL"} {
-    utl::warn PDN 167 "Net created for $keys(-net), if intended as power or ground net add the -power/-ground switch as appropriate"
+    utl::warn PDN 167 "Net created for $keys(-net), if intended as power or ground net add the -power/-ground switch as appropriate."
     set net [odb::dbNet_create [ord::get_db_block] $keys(-net)]
   }
   pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net
@@ -148,7 +148,7 @@ proc define_pdn_grid {args} {
   }
 
   if {[llength $args] > 0} {
-    utl::error PDN 73 "Unrecognised argument [lindex $args 0] for define_pdn_grid."
+    utl::error PDN 73 "Unrecognized argument [lindex $args 0] for define_pdn_grid."
   }
 
   if {[info exists keys(-halo)]} {
@@ -194,7 +194,7 @@ proc set_voltage_domain {args} {
   }
 
   if {[llength $args] > 0} {
-    utl::error PDN 120 "Unrecognised argument [lindex $args 0] for set_voltage_domain."
+    utl::error PDN 120 "Unrecognized argument [lindex $args 0] for set_voltage_domain."
   }
 
   pdngen::set_voltage_domain {*}[array get keys]
@@ -306,7 +306,7 @@ proc add_pdn_ring {args} {
     }
   } else {
     if {[info exists keys(-power_pads)] || [info exists keys(-ground_pads)]} {
-      utl::warn PDN 145 "Options -power_pads and -ground_pads are only used when the -pad_offsets option is specified"
+      utl::warn PDN 145 "Options -power_pads and -ground_pads are only used when the -pad_offsets option is specified."
     }
   }
 
@@ -879,7 +879,7 @@ proc check_pwr_pads {grid cells} {
       if {[llength $find_cells] == 0} {break}
     }
     if {[llength $find_cells] > 0} {
-      utl::warn PDN 150 "Cannot find cells ([join $find_cells {, }]) in voltage domain $voltage_domain"
+      utl::warn PDN 150 "Cannot find cells ([join $find_cells {, }]) in voltage domain $voltage_domain."
     }
     dict for {cell inst} $inst_example {
       set pin_name [get_inst_pin_connected_to_net $inst $net]
@@ -912,7 +912,7 @@ proc check_gnd_pads {grid cells} {
       if {[llength $find_cells] == 0} {break}
     }
     if {[llength $find_cells] > 0} {
-      utl::warn PDN 152 "Cannot find cells ([join $find_cells {, }]) in voltage domain $voltage_domain"
+      utl::warn PDN 152 "Cannot find cells ([join $find_cells {, }]) in voltage domain $voltage_domain."
     }
     dict for {cell inst} $inst_example {
       set pin_name [get_inst_pin_connected_to_net $inst $net]
@@ -6225,7 +6225,7 @@ proc add_macro_based_grids {} {
 
     set_blockages {}
     if {[llength [dict keys $instances]] > 0} {
-      utl::info "PDN" 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
+      utl::info "PDN" 10 "Inserting macro grid for [llength [dict keys $instances]] macros."
       foreach instance [dict keys $instances] {
         if {$verbose == 1} {
           utl::info "PDN" 34 "  - grid [dict get $grid_data name] for instance $instance"
