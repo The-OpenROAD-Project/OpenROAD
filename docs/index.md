@@ -4,12 +4,13 @@ The OpenROAD ("Foundations and Realization of Open, Accessible Design")
 project was launched in June 2018 within the DARPA IDEA program. OpenROAD
 aims to bring down the barriers of cost, expertise and unpredictability that
 currently block designers' access to hardware implementation in advanced
-technologies. The project team UC San Diego is developing a fully autonomous,
-open-source tool chain for digital layout generation across die, package
-and board, with initial focus on the RTL-to-GDSII phase of system-on-chip
-design. Thus, OpenROAD holistically attacks the multiple facets of today's
-design cost crisis: engineering resources, design tool licenses, project
-schedule, and risk.
+technologies. The project team (Qualcomm, Arm and multiple universities and
+partners, led by UC San Diego) is developing a fully autonomous, open-source
+tool chain for digital layout generation across die, package and board,
+with initial focus on the RTL-to-GDSII phase of system-on-chip design. Thus,
+OpenROAD holistically attacks the multiple facets of today's design cost
+crisis: engineering resources, design tool licenses, project schedule,
+and risk.
 
 The IDEA program targets no-human-in-loop (NHIL) design, with 24-hour
 turnaround time and zero loss of power-performance-area (PPA) design quality.
