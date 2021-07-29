@@ -707,10 +707,12 @@ Resizer::repairClkNets(double max_wire_length) // max_wire_length zero for none 
   int max_length = metersToDbu(max_wire_length);
   for (Clock *clk : sdc_->clks()) {
     for (const Pin *clk_pin : *sta_->pins(clk)) {
-      if (network_->isDriver(clk_pin)) {
-        Net *net = network_->isTopLevelPort(clk_pin)
-          ? network_->net(network_->term(clk_pin))
-          : network_->net(clk_pin);
+      Net *net = network_->isTopLevelPort(clk_pin)
+        ? network_->net(network_->term(clk_pin))
+        : network_->net(clk_pin);
+      if (network_->isDriver(clk_pin)
+          // Hands off special nets.
+          && !db_network_->isSpecial(net)) {
         Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
         // Do not resize clock tree gates.
         repairNet(net, drvr, 0.0, 0.0,
