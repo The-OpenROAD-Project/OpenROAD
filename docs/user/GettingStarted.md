@@ -6,6 +6,24 @@ with 24-hour turnaround time.
 
 ## Setup
 
+### System Requirements
+
+To build the binaries and run `gcd` through the flow:
+
+- Minimum: 1 CPU core and 4GB RAM.
+- Recommend: 4 CPU cores and 16GB of RAM.
+
+---
+
+**NOTE**
+
+`gcd` is a small design, thus requires less computational power.
+Larger designs may require better hardware.
+
+---
+
+### Building and Installing the Software
+
 There are currently two options to get OpenROAD Flow setup:
 
 - Build from sources using Docker, [instructions here](./BuildWithDocker.md).
