@@ -73,7 +73,6 @@ typedef struct
   short x1, y1, x2, y2;  // coordinates of two endpoints
   int netID;             // the netID of the net this segment belonging to
   short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
-  short* route;          // array of H and V Edges to implement this Segment
   int numEdges;          // number of H and V Edges to implement this Segment
 } Segment;               // A Segment is a 2-pin connection
 
