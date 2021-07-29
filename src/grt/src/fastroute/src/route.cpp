@@ -1149,10 +1149,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
       }  // yl>yr
       treeedge->route.routelen = cnt - 1;
 
-      treeedge->route.gridsX
-          = (short*) realloc(treeedge->route.gridsX, cnt * sizeof(short));
-      treeedge->route.gridsY
-          = (short*) realloc(treeedge->route.gridsY, cnt * sizeof(short));
+      treeedge->route.gridsX.resize(cnt);
+      treeedge->route.gridsY.resize(cnt);
       if (x1 != gridsX[0] || y1 != gridsY[0])  // gridsX[] and gridsY[] store
                                                // the path from n2 to n1
       {
@@ -1809,13 +1807,11 @@ void FastRouteCore::routeLVEnew(int netID, int edgeID, int threshold, int enlarg
       cnt++;
 
       treeedge->route.routelen = cnt - 1;
-      if (treeedge->route.gridsX)
-        free(treeedge->route.gridsX);
-      if (treeedge->route.gridsY)
-        free(treeedge->route.gridsY);
+      treeedge->route.gridsX.clear();
+      treeedge->route.gridsY.clear();
 
-      treeedge->route.gridsX = (short*) calloc(cnt, sizeof(short));
-      treeedge->route.gridsY = (short*) calloc(cnt, sizeof(short));
+      treeedge->route.gridsX.resize(cnt);
+      treeedge->route.gridsY.resize(cnt);
 
       for (i = 0; i < cnt; i++) {
         treeedge->route.gridsX[i] = gridsX[i];

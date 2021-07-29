@@ -140,13 +140,13 @@ typedef struct
   bool HVH;      // valid for ZRoute, TRUE - the route is HVH shape, false - VHV
                  // shape
   short Zpoint;  // valid for ZRoute, the position of turn point for Z-shape
-  short*
+  std::vector<short>
       gridsX;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short*
+  std::vector<short>
       gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short* gridsL;  // n
+  std::vector<short> gridsL;  // n
   int routelen;   // valid for MazeRoute, the number of edges in the route
                   // Edge3D *edge;       // list of 3D edges the route go
                   // through;

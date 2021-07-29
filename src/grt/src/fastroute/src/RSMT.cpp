@@ -133,9 +133,9 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
         treeedges[edgecnt].n1 = n;
         treeedges[edgecnt].n2 = i;
       }
-      treeedges[edgecnt].route.gridsX = nullptr;
-      treeedges[edgecnt].route.gridsY = nullptr;
-      treeedges[edgecnt].route.gridsL = nullptr;
+      treeedges[edgecnt].route.gridsX.clear();
+      treeedges[edgecnt].route.gridsY.clear();
+      treeedges[edgecnt].route.gridsL.clear();
       treenodes[i].nbr[nbrcnt[i]] = n;
       treenodes[i].edge[nbrcnt[i]] = edgecnt;
       treenodes[n].nbr[nbrcnt[n]] = i;

@@ -145,15 +145,9 @@ void FastRouteCore::deleteComponents()
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
         if (treeedge->len > 0) {
-          if (treeedge->route.gridsX != nullptr)
-            free(treeedge->route.gridsX);
-          if (treeedge->route.gridsY != nullptr)
-            free(treeedge->route.gridsY);
-          if (treeedge->route.gridsL != nullptr)
-            free(treeedge->route.gridsL);
-          treeedge->route.gridsX = nullptr;
-          treeedge->route.gridsY = nullptr;
-          treeedge->route.gridsL = nullptr;
+          treeedge->route.gridsX.clear();
+          treeedge->route.gridsY.clear();
+          treeedge->route.gridsL.clear();
         }
       }
 
@@ -687,9 +681,9 @@ NetRouteMap FastRouteCore::getRoutes()
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
-        short* gridsX = treeedge->route.gridsX;
-        short* gridsY = treeedge->route.gridsY;
-        short* gridsL = treeedge->route.gridsL;
+        std::vector<short>& gridsX = treeedge->route.gridsX;
+        std::vector<short>& gridsY = treeedge->route.gridsY;
+        std::vector<short>& gridsL = treeedge->route.gridsL;
         int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL = gridsL[0];
