@@ -23,6 +23,8 @@ build
 test/results
 flow
 
+docs/main
+
 .idea/
 cmake-build-debug/
 

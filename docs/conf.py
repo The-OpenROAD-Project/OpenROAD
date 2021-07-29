@@ -149,8 +149,14 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
 
-# def setup(app):
-#     from m2r2 import parse_from_file
-#     output = parse_from_file('../README.md')
-#     with open('intro.rst', 'w') as f:
-#         f.write(output)
+def setup(app):
+    import os
+    if not os.path.exists('main'):
+        os.symlink('..', 'main')
+    prefix = '(../'
+    newPath = '(./main/'
+    with open('index.md', 'r') as f:
+        lines = f.read()
+    lines = lines.replace(prefix, newPath)
+    with open('index.md', 'wt') as f:
+        f.write(lines)

@@ -36,7 +36,7 @@ Other publications and presentations are
 
 ## Code of conduct
 
-Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).
+Please read our code of conduct [here](../CODE_OF_CONDUCT.md).
 
 ## Documentation
 
@@ -47,7 +47,7 @@ The OpenROAD Project has two releases:
 The application is a standalone binary capable to perform chip design
 from the floorplan to detailed route with metal fill.
 
-See documentation for the [application here](main/README.md).
+See documentation for the [application here](../README.md).
 
 ### [Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 
