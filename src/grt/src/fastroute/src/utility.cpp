@@ -1372,7 +1372,7 @@ void FastRouteCore::copyRS(void)
 {
   int i, j, netID, edgeID, numEdges, numNodes;
 
-  if (sttrees_bk_ != NULL) {
+  if (!sttrees_bk_.empty()) {
     for (netID = 0; netID < num_valid_nets_; netID++) {
       numEdges = 2 * sttrees_bk_[netID].deg - 3;
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1384,10 +1384,10 @@ void FastRouteCore::copyRS(void)
       delete[] sttrees_bk_[netID].nodes;
       delete[] sttrees_bk_[netID].edges;
     }
-    delete[] sttrees_bk_;
+    sttrees_bk_.clear();
   }
 
-  sttrees_bk_ = new StTree[num_valid_nets_];
+  sttrees_bk_.resize(num_valid_nets_);
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
     numNodes = 2 * sttrees_[netID].deg - 2;
@@ -1438,7 +1438,7 @@ void FastRouteCore::copyBR(void)
   short *gridsX, *gridsY;
   int i, j, netID, edgeID, numEdges, numNodes, grid, min_y, min_x;
 
-  if (sttrees_bk_ != NULL) {
+  if (!sttrees_bk_.empty()) {
     for (netID = 0; netID < num_valid_nets_; netID++) {
       numEdges = 2 * sttrees_[netID].deg - 3;
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1450,9 +1450,9 @@ void FastRouteCore::copyBR(void)
       delete[] sttrees_[netID].nodes;
       delete[] sttrees_[netID].edges;
     }
-    delete[] sttrees_;
+    sttrees_.clear();
 
-    sttrees_ = new StTree[num_valid_nets_];
+    sttrees_.resize(num_valid_nets_);
 
     for (netID = 0; netID < num_valid_nets_; netID++) {
       numNodes = 2 * sttrees_bk_[netID].deg - 2;
@@ -1543,7 +1543,7 @@ void FastRouteCore::copyBR(void)
 void FastRouteCore::freeRR(void)
 {
   int netID, edgeID, numEdges;
-  if (sttrees_bk_ != NULL) {
+  if (!sttrees_bk_.empty()) {
     for (netID = 0; netID < num_valid_nets_; netID++) {
       numEdges = 2 * sttrees_bk_[netID].deg - 3;
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1555,7 +1555,7 @@ void FastRouteCore::freeRR(void)
       delete[] sttrees_bk_[netID].nodes;
       delete[] sttrees_bk_[netID].edges;
     }
-    delete[] sttrees_bk_;
+    sttrees_bk_.clear();
   }
 }
 

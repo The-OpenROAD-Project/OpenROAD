@@ -444,8 +444,8 @@ class FastRouteCore
   multi_array<bool, 2> hyper_h_;
   multi_array<bool, 2> in_region_;
 
-  StTree* sttrees_;    // the Steiner trees
-  StTree* sttrees_bk_;
+  std::vector<StTree> sttrees_;    // the Steiner trees
+  std::vector<StTree> sttrees_bk_;
 
   int** heap1_3D_;
   short** heap2_3D_;

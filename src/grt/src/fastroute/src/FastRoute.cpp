@@ -91,8 +91,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::Steiner
   mazeedge_threshold_(0),
   v_capacity_lb_(0),
   h_capacity_lb_(0),
-  sttrees_(nullptr),
-  sttrees_bk_(nullptr),
   heap1_3D_(nullptr),
   heap2_3D_(nullptr),
   heap2_(nullptr),
@@ -140,7 +138,7 @@ void FastRouteCore::deleteComponents()
   h_edges_3D_.clear();
   v_edges_3D_.clear();
 
-  if (sttrees_ != nullptr) {
+  if (!sttrees_.empty()) {
     for (int i = 0; i < num_valid_nets_; i++) {
       int deg = sttrees_[i].deg;
       int numEdges = 2 * deg - 3;
@@ -167,8 +165,7 @@ void FastRouteCore::deleteComponents()
         delete[] sttrees_[i].edges;
       sttrees_[i].edges = nullptr;
     }
-    delete[] sttrees_;
-    sttrees_ = nullptr;
+    sttrees_.clear();
   }
 
   parent_x1_.resize(boost::extents[0][0]);
@@ -651,7 +648,7 @@ void FastRouteCore::initAuxVar()
 
   seglist_cnt_.resize(num_valid_nets_);
   seglist_.resize(seg_count_);
-  sttrees_ = new StTree[num_valid_nets_];
+  sttrees_.resize(num_valid_nets_);
   gxs_.resize(num_valid_nets_);
   gys_.resize(num_valid_nets_);
   gs_.resize(num_valid_nets_);
@@ -674,8 +671,6 @@ void FastRouteCore::initAuxVar()
   // allocate memory for priority queue
   heap1_ = new float*[y_grid_ * x_grid_];
   heap2_ = new float*[y_grid_ * x_grid_];
-
-  sttrees_bk_ = NULL;
 }
 
 NetRouteMap FastRouteCore::getRoutes()
