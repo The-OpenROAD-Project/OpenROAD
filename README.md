@@ -12,9 +12,11 @@ Centos7 and Ubuntu 20.04. You need root access to correctly install the
 dependencies with the script.
 
 ``` shell
-$ ./etc/DependencyInstaller.sh -help
-usage: ./etc/DependencyInstaller.sh -run[time]      # installs dependencies to run a pre-compiled binary
+./etc/DependencyInstaller.sh -help
+
+Usage: ./etc/DependencyInstaller.sh -run[time]      # installs dependencies to run a pre-compiled binary
        ./etc/DependencyInstaller.sh -dev[elopment]  # installs dependencies to compile the openroad binary
+
 ```
 
 ## Build
@@ -45,10 +47,10 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 ### Build by hand
 
 ``` shell
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
+mkdir build
+cd build
+cmake ..
+make
 ```
 
 The default install directory is `/usr/local`.
@@ -67,16 +69,16 @@ make DESTDIR=<prefix_path> install
 ### Build using support script
 
 ``` shell
-$ ./etc/Build.sh
+./etc/Build.sh
 # To build with debug option enabled and if the Tcl library is not on the default path
-$ ./etc/Build.sh --cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+./etc/Build.sh --cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 The default install directory is `/usr/local`.
 To install in a different directory use:
 
 ``` shell
-$ ./etc/Build.sh --cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
+./etc/Build.sh --cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
 ## Regression Tests

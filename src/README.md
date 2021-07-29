@@ -3,7 +3,7 @@
 OpenROAD is run using Tcl scripts. The following commands are used to read
 and write design data.
 
-```shell
+``` shell
 read_lef [-tech] [-library] filename
 read_def filename
 write_def [-version 5.8|5.6|5.5|5.4|5.3] filename
@@ -16,7 +16,7 @@ write_abstract_lef filename
 
 Use the Tcl `source` command to read commands from a file.
 
-```shell
+``` shell
 source [-echo] file
 ```
 
@@ -41,7 +41,7 @@ the MACROs in the LEF file.  If neither of the `-tech` and `-library`
 flags are specified they default to `-tech -library` if no technology
 has been read and `-library` if a technology exists in the database.
 
-```shell
+``` shell
 read_lef liberty1.lef
 read_def reg1.def
 # Write the db for future runs.
@@ -53,7 +53,7 @@ shown below. Multiple verilog files for a hierarchical design can be
 read.  The `link_design` command is used to flatten the design
 and make a database.
 
-```shell
+``` shell
 read_lef liberty1.lef
 read_verilog reg1.v
 link_design top
@@ -68,7 +68,7 @@ can be found in /test. Flow tests taking sample designs from synthesis
 verilog to routed design in the open source technologies Nangate45 and
 Sky130 are shown below.
 
-```shell
+``` shell
 gcd_nangate45.tcl
 aes_nangate45.tcl
 tinyRocket_nangate45.tcl
@@ -85,7 +85,7 @@ and emit an abstract lef representing the external pins of your design and metal
 obstructions.
 
 
-```tcl
+``` tcl
 read reg1.db
 write_abstract_lef reg1_abstract.lef
 ```

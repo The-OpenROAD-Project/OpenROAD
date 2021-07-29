@@ -32,9 +32,9 @@ OpenROAD Flow requires [KLayout](https://www.klayout.de) `v0.27.1`.
 ## Clone and Build
 
 ``` shell
-$ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
-$ cd OpenROAD-flow-scripts
-$ ./build_openroad.sh --local
+git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+cd OpenROAD-flow-scripts
+./build_openroad.sh --local
 ```
 
 ## Verify Installation
@@ -43,8 +43,8 @@ The binaries should be available on your `$PATH` after setting up the
 environment.
 
 ``` shell
-$ source ./setup_env.sh
-$ yosys -help
-$ openroad -help
-$ exit
+source ./setup_env.sh
+yosys -help
+openroad -help
+exit
 ```

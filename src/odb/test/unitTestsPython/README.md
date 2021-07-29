@@ -4,21 +4,21 @@
 
 For running the python unit tests you will need to install first *testtools* and *unittest-parallel* which enables concurrent unit testing
 
-```shell
+``` shell
 pip3 install testtools
 pip3 install unittest-parallel
 ```
 
 Then, you can run the unit tests  in sequence by running
 
-```shell
-./../unitTests.sh
+``` shell
+../unitTests.sh
 ```
 
 or in parallel by running
 
-```shell
-./../unitTests.sh parallel
+``` shell
+../unitTests.sh parallel
 ```
 
 **Note**: The test cases within each Unit Test run in parallel in both situations
@@ -43,7 +43,7 @@ This includes `TestCase` class which inherits from `unittest.TestCase` with addi
 
   So, in the end, the expected behavior is:
 
-```python
+``` python
 obj.SetterName(*args)
 
 assert(obj.GetterName()==expectedVal)

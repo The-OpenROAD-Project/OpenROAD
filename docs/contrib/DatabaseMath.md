@@ -71,10 +71,10 @@ the calculation can be done with a simple divide using `int`s, which
 layer the following can be used.
 
 ``` cpp
-    int x, y;
-    inst->getOrigin(x, y);
-    int pitch = layer->getPitch();
-    int x_snap = (x / pitch) * pitch;
+int x, y;
+inst->getOrigin(x, y);
+int pitch = layer->getPitch();
+int x_snap = (x / pitch) * pitch;
 ```
 
 The use of rounding in existing code that uses floating point

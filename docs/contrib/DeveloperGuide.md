@@ -110,9 +110,9 @@ internals or include a gigantic header file.
 `MakeTool.hh` defines the following:
 
 ``` cpp
-    Tool *makeTool();
-    void initTool(OpenRoad *openroad);
-    void deleteTool(Tool *tool);
+Tool *makeTool();
+void initTool(OpenRoad *openroad);
+void deleteTool(Tool *tool);
 ```
 
 The `OpenRoad::init()` function calls all of the `makeTool` functions and
@@ -174,15 +174,15 @@ The Nangate45 open source library data used by many tests is in
 command
 
 ``` shell
-    cd tool/test
-    ln -s ../../../test/Nangate45
+cd tool/test
+ln -s ../../../test/Nangate45
 ```
 
 After the link is installed, the test script can read the liberty file
 with the command shown below.
 
 ``` tcl
-    read_liberty Nangate45/Nangate45_typ.lib
+read_liberty Nangate45/Nangate45_typ.lib
 ```
 
 ## Building
@@ -205,8 +205,8 @@ submodule (git clone --recursive does not check out a branch, just a
 specific commit).
 
 ``` shell
-    cd src/<tool>
-    git checkout <branch>
+cd src/<tool>
+git checkout <branch>
 ```
 
 `<branch>` is the branch used for development of the tool when it is
@@ -216,9 +216,9 @@ After making changes inside the tool source tree, stage and commit them
 to the tool repo and push them to the remote repo.
 
 ``` shell
-    git add [...]
-    git commit -m "massive improvement"
-    git push
+git add [...]
+git commit -m "massive improvement"
+git push
 ```
 
 If instead you have done development in a different branch or source
@@ -228,10 +228,10 @@ Once the changes are in the OpenROAD submodule source tree it will show
 them as a diff in the hash for the directory.
 
 ``` shell
-    cd openroad
-    git stage <tool_submodule_dir>
-    git commit -m "merge tool massive improvement"
-    git push
+cd openroad
+git stage <tool_submodule_dir>
+git commit -m "merge tool massive improvement"
+git push
 ```
 
 ## Example of Adding a Tool to OpenROAD
@@ -240,9 +240,9 @@ The patch file "add_tool.patch" illustrates how to add a tool to
 OpenROAD. Use
 
 ``` shell
-    patch -p < doc/add_tool.patch`
-    cd src/tool/test
-    ln -s ../../../test/regression.tcl regression.tcl
+patch -p < doc/add_tool.patch`
+cd src/tool/test
+ln -s ../../../test/regression.tcl regression.tcl
 ```
 
 To add the sample tool. This adds a directory `OpenRoad/src/tool` that
@@ -251,20 +251,20 @@ and defines a command to run the tool with keyword and flag arguments as
 illustrated below:
 
 ``` tcl
-    % toolize foo
-    Helping 23/6
-    Gotta pos_arg1 foo
-    Gotta param1 0.000000
-    Gotta flag1 false
+% toolize foo
+Helping 23/6
+Gotta pos_arg1 foo
+Gotta param1 0.000000
+Gotta flag1 false
 
-    % toolize -flag1 -key1 2.0 bar
-    Helping 23/6
-    Gotta pos_arg1 bar
-    Gotta param1 2.000000
-    Gotta flag1 true
+% toolize -flag1 -key1 2.0 bar
+Helping 23/6
+Gotta pos_arg1 bar
+Gotta param1 2.000000
+Gotta flag1 true
 
-    % help toolize
-    toolize [-key1 key1] [-flag1] pos_arg1
+% help toolize
+toolize [-key1 key1] [-flag1] pos_arg1
 ```
 
 ## Documentation

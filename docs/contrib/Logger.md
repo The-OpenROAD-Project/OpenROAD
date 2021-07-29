@@ -253,7 +253,7 @@ contain embedded new lines.
 
 Some examples:
 
-``` c++
+``` cpp
 logger->report("Path startpoint: {}", startpoint);
 logger->error(ODB, 25, "Unable to open LEF file {}.", file_name);
 logger->info(DRT, 42, "Routed {} nets in {:3.2f}s.", net_count, elapsed_time);
@@ -264,7 +264,7 @@ file `OpenRoad.i`. The message is simply a Tcl string (no C++20
 formatting). The logger for Tcl functions The above examples in Tcl are
 shown below.
 
-``` c++
+``` cpp
 utl::report "Path startpoint: $startpoint"
 utl::error ODB 25 "Unable to open LEF file $file_name."
 utl::info DRT 42 "Routed $net_count nets in [format %3.2f $elapsed_time]."
@@ -291,7 +291,7 @@ swig command before `%inline`.
 
 The logger functions are shown below.
 
-``` c++
+``` cpp
 Logger::report(const std::string& message,
                const Args&... args)
 Logger::info(ToolId tool,
@@ -334,7 +334,7 @@ execution. For this reason such messages are issued by using the
 debugPrint macro. This macro will avoid evaluating its arguments if they
 are not going to be printed. The API is:
 
-``` c++
+``` cpp
 debugPrint(logger, tool, group, level, message, ...);
 ```
 
@@ -355,7 +355,7 @@ Debug messages are enabled with the tcl command:
 The metrics logging uses a more restricted API since JSON only supports
 specific types. There are a set of overloaded methods of the form:
 
-``` c++
+``` cpp
 metric(ToolId tool,
        const std::string_view metric,
        <type> value)

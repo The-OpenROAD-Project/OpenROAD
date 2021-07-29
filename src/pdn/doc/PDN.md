@@ -18,12 +18,12 @@ The ```apply_pdn``` command requires the following global variables to exist
 
 
 ## Power grid strategy definitions
-A set of power grid specifications are provided by calling the ```pdngen::specify_grid``` command. 
+A set of power grid specifications are provided by calling the ```pdngen::specify_grid``` command.
 At least one power grid specification must be defined.
 
 The command has the following form
 
-```TCL
+``` tcl
 pdngen::specify_grid (stdcell|macro) <specification>
 ```
 
@@ -54,7 +54,7 @@ A separate grid is built for each macro. The list of macro specifications that h
 ### Examples of grid specifications
 
 1. Stdcell grid specification
-```TCL
+``` tcl
 pdngen::specify_grid stdcell {
     name grid
     rails {
@@ -71,7 +71,7 @@ pdngen::specify_grid stdcell {
 This specification adds a grid over the stdcell area, with an metal1 followpin width of 0.17,connecting to metal4 stripes of 0.48um every 56.0um, connecting in turn to metal7 stripes, also 1.40um wide and 40.0 pitch
 
 2. Macro grid specification
-```TCL
+``` tcl
 pdngen::specify_grid macro {
     orient {R0 R180 MX MY}
     power_pins "VDD VDDPE VDDCE"
@@ -94,7 +94,7 @@ For macros that have their pins oriented in non-preferred routing direction the 
 
 We define blockages on metal1 to metal6 - although the macro itself only blocks from metal1 to metal4, we need to consider metal5 and metal6 to be blocked in case the stdcell grid specification tries to use those layers for its power straps. In that case we need those straps to be cut in order to keep the space for the macro grid.
 
-```TCL
+``` tcl
 pdngen::specify_grid macro {
     orient {R90 R270 MXR90 MYR90}
     power_pins "VDD VDDPE VDDCE"
@@ -125,7 +125,7 @@ Further constraints can be applied for the connections between layers that have 
 
 ### Examples
 
-```TCL
+``` tcl
 pdngen::specify_grid stdcell {
     name grid
     rails {
@@ -144,7 +144,7 @@ Normally pdngen uses VIARULEs defined in the LEF, along with design rules for sp
 
 ### Example
 
-```TCL
+``` tcl
 pdngen::specify_grid stdcell {
     name grid
     rails {
@@ -160,13 +160,13 @@ pdngen::specify_grid stdcell {
 
 ## Additional features for top level power grid
 
-At the top level of the SoC, there is often a requirement to connect the core power and ground pads to the core power grid. This is done by specifying a core power ground ring around between the stdcell area and the pad cell placement. 
+At the top level of the SoC, there is often a requirement to connect the core power and ground pads to the core power grid. This is done by specifying a core power ground ring around between the stdcell area and the pad cell placement.
 
 ### Example
 
-```TCL
+``` tcl
 pdngen::specify_grid stdcell {
-  name grid                   
+  name grid
 
   pwr_pads {PADCELL_VDD_V PADCELL_VDD_H}
   gnd_pads {PADCELL_VSS_V PADCELL_VSS_H}
@@ -186,7 +186,7 @@ pdngen::specify_grid stdcell {
     metal10 {width 1.40 pitch 40.0 offset 2}
   }
   connect {
-    {metal1 metal4} 
+    {metal1 metal4}
     {metal4 metal7}
     {metal7 metal8}
     {metal8 metal9}
@@ -198,11 +198,11 @@ pdngen::specify_grid stdcell {
 
 When inserting a grid for a hierarchical sub-block, the top layers are omitted to be added at the SoC leve. So, at the SoC level, we have straps for layers metal8 to metal 10. We also specify core rings for two of the layers. The core rings are constructed as concentric rings around the stdcell area using the specified metals in their preferred routing directions. Straps from the stdcell area in the these layers will be extended out to connect to the core rings.
 
-The stdcell rails may also be extended out to the core rings by using the extend_to_core_rings property in the rail definition. 
+The stdcell rails may also be extended out to the core rings by using the extend_to_core_rings property in the rail definition.
 
 ### Example
 
-```TCL
+``` tcl
 pdngen::specify_grid stdcell {
   name grid
 
@@ -225,4 +225,3 @@ pdngen::specify_grid stdcell {
 
 
 It is assumed that the power pads specified have core facing pins for power/ground in the same layers used in the core rings. Straps, the same width as the pins are used to connect to the core rings. These connections from the pad cells have priority over connections from the core area power straps.
-
