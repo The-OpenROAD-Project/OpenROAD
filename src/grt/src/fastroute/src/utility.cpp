@@ -1565,7 +1565,7 @@ Tree FastRouteCore::fluteToTree(stt::Tree fluteTree)
   tree.deg = fluteTree.deg;
   tree.totalDeg = 2 * fluteTree.deg - 2;
   tree.length = (DTYPE) fluteTree.length;
-  tree.branch = new Branch[tree.totalDeg];
+  tree.branch.resize(tree.totalDeg);
   for (int i = 0; i < tree.totalDeg; i++) {
     tree.branch[i].x = (DTYPE) fluteTree.branch[i].x;
     tree.branch[i].y = (DTYPE) fluteTree.branch[i].y;

@@ -61,7 +61,7 @@ typedef struct
   int deg;
   int totalDeg;
   DTYPE length;
-  Branch* branch;
+  std::vector<Branch> branch;
 } Tree;
 
 typedef struct
