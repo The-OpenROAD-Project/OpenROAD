@@ -681,9 +681,9 @@ NetRouteMap FastRouteCore::getRoutes()
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
-        std::vector<short>& gridsX = treeedge->route.gridsX;
-        std::vector<short>& gridsY = treeedge->route.gridsY;
-        std::vector<short>& gridsL = treeedge->route.gridsL;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
         int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL = gridsL[0];

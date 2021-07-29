@@ -1694,7 +1694,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
 
                 n1 = treeedge->n1;
                 n2 = treeedge->n2;
-                std::vector<short>& gridsLtmp = treeedge->route.gridsL;
+                const std::vector<short>& gridsLtmp = treeedge->route.gridsL;
 
                 n1a = treenodes[n1].stackAlias;
 

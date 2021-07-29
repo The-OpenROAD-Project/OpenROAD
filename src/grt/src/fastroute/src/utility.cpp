@@ -83,9 +83,9 @@ void FastRouteCore::ConvertToFull3DType2()
       if (treeedge->len > 0) {
         newCNT = 0;
         routeLen = treeedge->route.routelen;
-        std::vector<short>& gridsX = treeedge->route.gridsX;
-        std::vector<short>& gridsY = treeedge->route.gridsY;
-        std::vector<short>& gridsL = treeedge->route.gridsL;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
         // finish from n1->real route
         for (j = 0; j < routeLen; j++) {
           tmpX[newCNT] = gridsX[j];
@@ -208,9 +208,9 @@ void FastRouteCore::fillVIA()
       if (treeedge->len > 0) {
         newCNT = 0;
         routeLen = treeedge->route.routelen;
-        std::vector<short>& gridsX = treeedge->route.gridsX;
-        std::vector<short>& gridsY = treeedge->route.gridsY;
-        std::vector<short>& gridsL = treeedge->route.gridsL;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
 
         n1a = treeedge->n1a;
         n2a = treeedge->n2a;
@@ -304,7 +304,7 @@ int FastRouteCore::threeDVIA()
 
       if (treeedge->len > 0) {
         routeLen = treeedge->route.routelen;
-        std::vector<short>& gridsL = treeedge->route.gridsL;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
 
         for (j = 0; j < routeLen; j++) {
           if (gridsL[j] != gridsL[j + 1]) {
@@ -330,8 +330,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   treenodes = sttrees_[netID].nodes;
   treeedge = &(treeedges[edgeID]);
 
-  std::vector<short>& gridsX = treeedge->route.gridsX;
-  std::vector<short>& gridsY = treeedge->route.gridsY;
+  const std::vector<short>& gridsX = treeedge->route.gridsX;
+  const std::vector<short>& gridsY = treeedge->route.gridsY;
   std::vector<short>& gridsL = treeedge->route.gridsL;
 
   routelen = treeedge->route.routelen;
@@ -710,7 +710,7 @@ void FastRouteCore::newLayerAssignmentV4()
 
         n1 = treeedge->n1;
         n2 = treeedge->n2;
-        std::vector<short>& gridsL = treeedge->route.gridsL;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
 
         n1a = treenodes[n1].stackAlias;
         n2a = treenodes[n2].stackAlias;
@@ -906,9 +906,9 @@ void FastRouteCore::checkRoute3D()
       y1 = treenodes[n1].y;
       x2 = treenodes[n2].x;
       y2 = treenodes[n2].y;
-      std::vector<short>& gridsX = treeedge->route.gridsX;
-      std::vector<short>& gridsY = treeedge->route.gridsY;
-      std::vector<short>& gridsL = treeedge->route.gridsL;
+      const std::vector<short>& gridsX = treeedge->route.gridsX;
+      const std::vector<short>& gridsY = treeedge->route.gridsY;
+      const std::vector<short>& gridsL = treeedge->route.gridsL;
 
       gridFlag = false;
 
@@ -1007,8 +1007,8 @@ void FastRouteCore::StNetOrder()
       treeedges = stree->edges;
       treeedge = &(treeedges[ind]);
 
-      std::vector<short>& gridsX = treeedge->route.gridsX;
-      std::vector<short>& gridsY = treeedge->route.gridsY;
+      const std::vector<short>& gridsX = treeedge->route.gridsX;
+      const std::vector<short>& gridsY = treeedge->route.gridsY;
       for (i = 0; i < treeedge->route.routelen; i++) {
         if (gridsX[i] == gridsX[i + 1])  // a vertical edge
         {
@@ -1048,9 +1048,9 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
 
   treenodes = sttrees_[netID].nodes;
 
-  std::vector<short>& gridsX = treeedge->route.gridsX;
-  std::vector<short>& gridsY = treeedge->route.gridsY;
-  std::vector<short>& gridsL = treeedge->route.gridsL;
+  const std::vector<short>& gridsX = treeedge->route.gridsX;
+  const std::vector<short>& gridsY = treeedge->route.gridsY;
+  const std::vector<short>& gridsL = treeedge->route.gridsL;
 
   n1a = treeedge->n1a;
   n2a = treeedge->n2a;
@@ -1288,8 +1288,8 @@ bool FastRouteCore::checkRoute2DTree(int netID)
     y1 = treenodes[n1].y;
     x2 = treenodes[n2].x;
     y2 = treenodes[n2].y;
-    std::vector<short>& gridsX = treeedge->route.gridsX;
-    std::vector<short>& gridsY = treeedge->route.gridsY;
+    const std::vector<short>& gridsX = treeedge->route.gridsX;
+    const std::vector<short>& gridsY = treeedge->route.gridsY;
 
     if (treeedge->len < 0) {
       logger_->warn(
@@ -1512,8 +1512,8 @@ void FastRouteCore::copyBR(void)
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_[netID].edges[edgeID].len > 0) {
-          std::vector<short>& gridsX = sttrees_[netID].edges[edgeID].route.gridsX;
-          std::vector<short>& gridsY = sttrees_[netID].edges[edgeID].route.gridsY;
+          const std::vector<short>& gridsX = sttrees_[netID].edges[edgeID].route.gridsX;
+          const std::vector<short>& gridsY = sttrees_[netID].edges[edgeID].route.gridsY;
           for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
