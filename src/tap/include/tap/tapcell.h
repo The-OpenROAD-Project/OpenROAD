@@ -84,7 +84,7 @@ public:
   int insertAtTopBottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix);
   void insertAtTopBottomHelper(odb::dbBlock* block, int top_bottom, bool is_macro, odb::dbOrientType ori, int x_start, int x_end, int lly, odb::dbMaster* tap_nwintie_master, odb::dbMaster* tap_nwin2_master, odb::dbMaster* tap_nwin3_master, odb::dbMaster* tap_nwouttie_master, odb::dbMaster* tap_nwout2_master, odb::dbMaster* tap_nwout3_master, std::string prefix);
   int insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix);
-  std::map<std::pair<int, int>, std::vector<std::vector<int>>> getMacroOutlines(std::vector<std::vector<odb::dbRow*>> rows);
+  std::map<std::pair<int, int>, std::vector<int>> getMacroOutlines(std::vector<std::vector<odb::dbRow*>> rows);
   std::vector<odb::dbInst*> findBlockages();
 private:
   odb::dbDatabase *db_;

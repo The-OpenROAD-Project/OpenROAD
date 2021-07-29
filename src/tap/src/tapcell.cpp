@@ -449,12 +449,13 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>> rows, std::string t
   }
 
   std::map<int, int> rows_with_macros;
-  std::map<std::pair<int, int>, std::vector<std::vector<int>>> macro_outlines = getMacroOutlines(rows);
-  for(std::map<std::pair<int, int>, std::vector<std::vector<int>>>::iterator iter = macro_outlines.begin(); iter != macro_outlines.end(); ++iter) {
+  std::map<std::pair<int, int>, std::vector<int>> macro_outlines = getMacroOutlines(rows);
+  for(std::map<std::pair<int, int>, std::vector<int>>::iterator iter = macro_outlines.begin(); iter != macro_outlines.end(); ++iter) {
     //foreach {bot_row top_row} $macro_rows {
-    for(std::vector<int> bot_top_row : iter->second) {
-      bot_top_row[0]--;
-      bot_top_row.back()++;
+    std::vector<int> bot_top_row = iter->second;
+    for(int i=0; i<bot_top_row.size(); i+=2) {
+      bot_top_row[i]--;
+      bot_top_row[i+1]++;
 
       if (bot_top_row[0] >= 0) {
         rows_with_macros.insert(std::pair<int, int>(bot_top_row[0],0));
@@ -802,18 +803,19 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
     logger_->error(utl::TAP, 31, "Master {} not found.", incnrcap_nwout_master_name);
   }
   
-  std::map<std::pair<int, int>, std::vector<std::vector<int>>> macro_outlines = getMacroOutlines(rows);
+  std::map<std::pair<int, int>, std::vector<int>> macro_outlines = getMacroOutlines(rows);
   int corner_cell_width = corner_master->getWidth();
   
   int total_rows = rows.size();
 
-  for(std::map<std::pair<int, int>, std::vector<std::vector<int>>>::iterator iter = macro_outlines.begin(); iter != macro_outlines.end(); ++iter){
+  for(std::map<std::pair<int, int>, std::vector<int>>::iterator iter = macro_outlines.begin(); iter != macro_outlines.end(); ++iter){
     x_start = iter->first.first;
     x_end = iter->first.second;
     //foreach {bot_row top_row} $outlines {
-    for(std::vector<int> outline : iter->second) {
-      int bot_row = outline.front();
-      int top_row = outline.back();
+    std::vector<int> outline = iter->second;
+    for(int i=0; i<outline.size(); i+=2) {
+      int bot_row = outline[i];
+      int top_row = outline[i+1];
       bot_row--;
       top_row++;
       if (top_row < total_rows-1) {
@@ -909,7 +911,7 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
     }
   }
   int blkgs_cnt = Tapcell::phy_idx - start_phy_idx;
-  logger_->info(utl::TAP, 7, "Cells inserted near blkgs: {}", blkgs_cnt);
+  logger_->info(utl::TAP, 7, "Cells inserted near blockages: {}", blkgs_cnt);
   return blkgs_cnt;
 }
 
@@ -940,7 +942,7 @@ std::pair<int, int> Tapcell::getMinMaxX(std::vector<std::vector<odb::dbRow*>> ro
   return min_max_x;
 }
 
-std::map<std::pair<int, int>, std::vector<std::vector<int>>> Tapcell::getMacroOutlines(std::vector<std::vector<odb::dbRow*>> rows) {
+std::map<std::pair<int, int>, std::vector<int>> Tapcell::getMacroOutlines(std::vector<std::vector<odb::dbRow*>> rows) {
   std::map<std::pair<int, int>, std::vector<int>> macro_outlines;
   std::pair<int, int> min_max_x;
   std::vector<int> all_rows;
@@ -996,7 +998,7 @@ std::map<std::pair<int, int>, std::vector<std::vector<int>>> Tapcell::getMacroOu
     }
   }
 
-  std::map<std::pair<int, int>, std::vector<std::vector<int>>> macro_outlines_array;
+  std::map<std::pair<int, int>, std::vector<int>> macro_outlines_array;
   for(std::map<std::pair<int, int>, std::vector<int>>::iterator iter = macro_outlines.begin(); iter != macro_outlines.end(); ++iter)
   {
     std::pair<int, int> k =  iter->first;
@@ -1014,11 +1016,11 @@ std::map<std::pair<int, int>, std::vector<std::vector<int>>> Tapcell::getMacroOu
     new_rows.push_back(all_rows.back());
     //new_rows.push_back(all_rows.back());
     if(macro_outlines_array.find(k)==macro_outlines_array.end()) {
-      std::vector<std::vector<int>> macro_vector;
-      macro_vector.push_back(new_rows);
-      macro_outlines_array.insert(std::pair<std::pair<int, int>, std::vector<std::vector<int>>>(k, macro_vector));
+      //std::vector<int> macro_vector;
+      //macro_vector.push_back(new_rows);
+      macro_outlines_array.insert(std::pair<std::pair<int, int>, std::vector<int>>(k, new_rows));
     } else {
-      macro_outlines_array[k].push_back(new_rows);
+      macro_outlines_array[k].insert(macro_outlines_array[k].end(), new_rows.begin(), new_rows.end());
     }
   }
 
