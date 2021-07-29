@@ -478,9 +478,9 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>> rows, std::string t
     }
 
     gaps_above_below = 0;
-    if (rows_with_macros[0] == row_idx) {
+    if (rows_with_macros.begin()->first == row_idx) {
       gaps_above_below = 1;
-      rows_with_macros.erase(0);
+      rows_with_macros.erase(rows_with_macros.begin()->first);
     }
 
     for(odb::dbRow* row:subrows) {
@@ -511,36 +511,24 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>> rows, std::string t
         pitch = dist2;
       }
       //int x;
-      x = llx+offset;
-      int count = 0;
-      while(x < urx) {
+      // while(x < urx) {
+      //   x = makeSiteLoc(x, site_x, -1, llx);
+      //   //check if site is filled
+      //   bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
+      //   if (overlap == 0) {
+      //     buildCell(block, master, ori, x, lly, prefix);
+      //   }
+      //   x = x+pitch;
+      //   count++;
+      // }
+      for (x = llx+offset; x < urx; x = x+pitch) {
         x = makeSiteLoc(x, site_x, -1, llx);
         //check if site is filled
         bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
         if (overlap == 0) {
           buildCell(block, master, ori, x, lly, prefix);
         }
-        x = x+pitch;
-        count++;
-        // if(row_idx == rows.size()-1)
-        // {
-        //   row_idx++;
-        // }
-        //x = llx+offset;
       }
-      // for (x = llx+offset; x < urx; x = x+pitch) {
-      //   x = makeSiteLoc(x, site_x, -1, llx);
-      //   logger_->info(utl::TAP, 99, "TESTT3 IS {}", x);
-      //   //check if site is filled
-      //   bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
-      //   if (overlap == 0) {
-      //     buildCell(block, master, ori, x, lly, prefix);
-      //   }
-      // }
-      // if(row_idx == rows.size()-1 && rows.size()==30) {
-      //   x = makeSiteLoc(x, site_x, -1, llx);
-      //   buildCell(block, master, ori, x, lly, prefix);
-      // }
     }
   }
   int tapcell_count = Tapcell::phy_idx - start_phy_idx;
@@ -734,17 +722,17 @@ void Tapcell::insertAtTopBottomHelper(odb::dbBlock* block, int top_bottom, bool 
   }
   
   // fill with 2s
-  // for (x=x; x < x_end; x = x+tap2_master_width) {
-  //   if (checkSymmetry(tb2_master, ori)) {
-  //     buildCell(block, tb2_master, ori, x, lly, prefix);
-  //   }
-  // }
-  while(x < x_end) {
+  for (x=x; x < x_end; x = x+tap2_master_width) {
     if (checkSymmetry(tb2_master, ori)) {
       buildCell(block, tb2_master, ori, x, lly, prefix);
     }
-    x = x+tap2_master_width;
   }
+  // while(x < x_end) {
+  //   if (checkSymmetry(tb2_master, ori)) {
+  //     buildCell(block, tb2_master, ori, x, lly, prefix);
+  //   }
+  //   x = x+tap2_master_width;
+  // }
 }
 
 int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix) {
@@ -769,14 +757,14 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
   std::string tap_nwouttie_master_name;
 
   if (masters.size() == 8) {
-    incnrcap_nwin_master_name = masters[0];
-    tap_nwin2_master_name = masters[1];
-    tap_nwin3_master_name = masters[2];
-    tap_nwintie_master_name = masters[3];
-    incnrcap_nwout_master_name = masters[4];
-    tap_nwout2_master_name = masters[5];
-    tap_nwout3_master_name = masters[6];
-    tap_nwouttie_master_name = masters[7];
+    incnrcap_nwin_master_name.assign(masters[0]);
+    tap_nwin2_master_name.assign(masters[1]);
+    tap_nwin3_master_name.assign(masters[2]);
+    tap_nwintie_master_name.assign(masters[3]);
+    incnrcap_nwout_master_name.assign(masters[4]);
+    tap_nwout2_master_name.assign(masters[5]);
+    tap_nwout3_master_name.assign(masters[6]);
+    tap_nwouttie_master_name.assign(masters[7]);
       // lassign $masters incnrcap_nwin_master_name tap_nwin2_master_name tap_nwin3_master_name tap_nwintie_master_name \
     // incnrcap_nwout_master_name tap_nwout2_master_name tap_nwout3_master_name tap_nwouttie_master_name
   }
@@ -824,18 +812,13 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
     x_end = iter->first.second;
     //foreach {bot_row top_row} $outlines {
     for(std::vector<int> outline : iter->second) {
-      // move to actual rows
-      outline[0]--;
-      outline.back()++;
-      logger_->info(utl::TAP, 76, "TEST 1: {}", outline[0]);
-      logger_->info(utl::TAP, 74, "TEST 2: {}", outline.back());
-      logger_->info(utl::TAP, 75, "TEST 3: {}", outline[1]);
-      // incr bot_row -1
-      // incr top_row
-      
-      if (outline.back() < total_rows-1) {
-        auto top_row_inst = rows[outline.back()][0];
-        auto top_row_ori = top_row_inst->getOrient();
+      int bot_row = outline.front();
+      int top_row = outline.back();
+      bot_row--;
+      top_row++;
+      if (top_row < total_rows-1) {
+        odb::dbRow* top_row_inst = rows[top_row].front();
+        odb::dbOrientType top_row_ori = top_row_inst->getOrient();
         odb::Rect row_bb;
         top_row_inst->getBBox(row_bb);
         top_row_y = row_bb.yMin();
@@ -843,15 +826,15 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
         row_start = x_start;
         row_end = x_end;
         if (row_start == -1) {
-          odb::Rect rowbb;
-          top_row_inst->getBBox(rowbb);
-          row_start = rowbb.xMin();
+          // odb::Rect rowbb;
+          // top_row_inst->getBBox(rowbb);
+          row_start = row_bb.xMin();
           row_start = row_start + corner_cell_width;
         }
         if (row_end == -1) {
           //set row_end [[[lindex $rows $top_row end] getBBox] xMax]
           odb::Rect rowbb_;
-          rows[outline.back()].back()->getBBox(rowbb_);
+          rows[top_row].back()->getBBox(rowbb_);
           row_end = rowbb_.xMax();
           row_end = row_end - corner_cell_width;
         }
@@ -859,8 +842,10 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
         insertAtTopBottomHelper(block, 1, 1, top_row_ori, row_start, row_end, top_row_y, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, prefix);
         // do corners
         if (top_row_ori == odb::dbOrientType::R0 ) {
+
           incnr_master = incnrcap_nwin_master;
           west_ori = odb::dbOrientType::MY;
+          
         } else {
           incnr_master = incnrcap_nwout_master;
           west_ori = odb::dbOrientType::R180;
@@ -872,13 +857,14 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
         }
         // NW corner
         if (checkSymmetry(incnr_master, west_ori)) {
-          buildCell(block, incnr_master, west_ori, x_start - incnr_master->getWidth(), top_row_y, prefix);
+          buildCell(block, incnr_master, west_ori, (x_start - incnr_master->getWidth()), top_row_y, prefix);
         }
       }
-      if(outline[0] >= 1) {
+
+      if(bot_row >= 1) {
         //set bot_row_inst [lindex $rows $bot_row 0]
-        auto bot_row_inst = rows[outline[0]][0];
-        auto bot_row_ori = bot_row_inst->getOrient();
+        odb::dbRow* bot_row_inst = rows[bot_row].front();
+        odb::dbOrientType bot_row_ori = bot_row_inst->getOrient();
         odb::Rect rowbb1;
         bot_row_inst->getBBox(rowbb1);
         bot_row_y = rowbb1.yMin();
@@ -886,15 +872,15 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
         row_start = x_start;
         row_end = x_end;
         if (row_start == -1) {
-          odb::Rect rowbb2;
-          bot_row_inst->getBBox(rowbb2);
-          row_start = rowbb2.xMin();
+          // odb::Rect rowbb2;
+          // bot_row_inst->getBBox(rowbb2);
+          row_start = rowbb1.xMin();
           row_start = row_start + corner_cell_width;
         }
         if (row_end == -1) {
           //set row_end [[[lindex $rows $bot_row end] getBBox] xMax]
           odb::Rect rowbb3;
-          rows[outline[0]].back()->getBBox(rowbb3);
+          rows[bot_row].back()->getBBox(rowbb3);
           row_end = rowbb3.xMax();
           row_end = row_end - corner_cell_width;
         }
@@ -917,7 +903,7 @@ int Tapcell::insertAroundMacros(std::vector<std::vector<odb::dbRow*>> rows, std:
         }
         // SW corner
         if (checkSymmetry(incnr_master, west_ori)) {
-          buildCell(block, incnr_master, west_ori, x_start - incnr_master->getWidth(), bot_row_y, prefix);
+          buildCell(block, incnr_master, west_ori, (x_start - incnr_master->getWidth()), bot_row_y, prefix);
         }
       }
     }
@@ -1017,7 +1003,7 @@ std::map<std::pair<int, int>, std::vector<std::vector<int>>> Tapcell::getMacroOu
   //for key [dict keys $macro_outlines] {
     all_rows = macro_outlines[k];
     std::vector<int> new_rows;
-    new_rows.push_back(all_rows[0]);
+    new_rows.push_back(all_rows.front());
     for (int i=1 ; i < all_rows.size()-1; i++) {
       if (all_rows[i]+1 == all_rows[i+1]) {
         continue;
