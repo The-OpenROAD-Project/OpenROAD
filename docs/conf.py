@@ -17,7 +17,7 @@ import re
 # -- Project information -----------------------------------------------------
 
 project = 'OpenROAD'
-copyright = 'The OpenROAD Project, 2021'
+copyright = 'The Regents of the University of California, 2021'
 author = 'OpenROAD Team'
 
 
@@ -50,7 +50,7 @@ myst_enable_extensions = [
     'html_image',
 ]
 
-external_toc_path = 'docs/toc.yml'
+external_toc_path = 'toc.yml'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -62,7 +62,7 @@ templates_path = ['_templates']
 source_suffix = ['.md']
 
 # The master toctree document.
-master_doc = 'docs/index'
+master_doc = 'index'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -73,6 +73,13 @@ exclude_patterns = [
     '.DS_Store',
     '**/LICENSE',
     '**/LICENSE.md',
+    'README.md',
+    'misc/NewToolDocExample.md',
+    'docs/releases/PostAlpha2.1BranchMethodology.md',
+    'main/src/OpenDB/src/def/README.md',
+    'main/src/OpenDB/src/def/doc/README.md',
+    'main/src/OpenDB/src/lef/README.md',
+    'main/docs',
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.

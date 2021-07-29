@@ -10,6 +10,8 @@ explain how the tool works.
 
 ### command_1
 
+Description.
+
 ```
     command_1 [-argA] [-argB] <file>
 ```
@@ -25,11 +27,11 @@ explain how the tool works.
 
 ## Regression tests
 
-| Test    | Description |
-|---------|-------------|
-| Test 1. | Argument A. |
-| Test 2. | Argument B. |
-| Test 3. | Input file. |
+| Test    | Description             |
+|---------|-------------------------|
+| Test 1. | Description for test 1. |
+| Test 2. | Description for test 2. |
+| Test 3. | Description for test 3. |
 
 ## Limitations
 

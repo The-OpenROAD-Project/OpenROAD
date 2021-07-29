@@ -9,14 +9,13 @@ The OpenROAD Project uses three tools to achieve RTL-to-GDS:
 3.  [KLayout](https://www.klayout.de/): GDS merge, DRC and LVS (public
     PDKs)
 
-To automate RTL-to-GDS we provide [OpenROAD
-Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
+To automate RTL-to-GDS we provide
+[OpenROAD Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
 which contains scripts that integrate the three tools.
 
 ## Code Organization
 
-The [OpenROAD
-Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+The [OpenROAD Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 repository serves as an example RTL-to-GDS flow using the OpenROAD
 tools. The script `build_openroad.sh` in the repository will
 automatically build the OpenROAD toolchain.

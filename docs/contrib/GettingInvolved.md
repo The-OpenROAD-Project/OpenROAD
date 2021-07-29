@@ -27,8 +27,8 @@ that all contributions will be BSD3, or some other permissive license.
 If you have new design or PDK information to contribute, please add this
 to the repo
 [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/).
-In the [flow
-directory](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow)
+In the
+[flow directory](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow)
 you will see a directory for
 [designs](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/designs)
 with Makefiles to run them, and one for PDK
@@ -38,21 +38,19 @@ least one design that uses it.
 
 ## Contributing Scripts and Code
 
-We follow the [Google C++ style
-guide](https://google.github.io/styleguide/cppguide.html). If you find
-code that is not following this guide, within each file that you edit,
-follow the style in that file. Please pay careful attention to the
-`tool-checklist`{.interpreted-text role="ref"} for all code. If you want
+We follow the [Google C++ style guide](https://google.github.io/styleguide/cppguide.html).
+If you find code that is not following this guide, within each file that
+you edit, follow the style in that file. Please pay careful attention to the
+[tool checklist](DeveloperGuide.md#Tool Checklist) for all code. If you want
 to add or improve functionality in OpenROAD please start with the top
 level [app](https://github.com/The-OpenROAD-Project/OpenROAD/) repo. You
 can see in the src directory that submodules exist pointing to tested
 versions of the other relevant repos in the project. Please look at the
-tool workflow in the developer guide
-`document <DeveloperGuide>`{.interpreted-text role="doc"} to work with
-the app and its submodule repos in an efficient way.
+tool workflow in the developer guide [document](DeveloperGuide.md)
+to work with the app and its submodule repos in an efficient way.
 
-Please pay attention to the [test
-directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test)
+Please pay attention to the
+[test directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test)
 and be sure to add tests for any code changes that you make with open
 sourceable PDK and design information. We provide the nandgate45 PDK in
 the OpenROAD-flow-scripts repo to help with this. Pull requests with
@@ -73,14 +71,26 @@ project like OpenROAD with many application sub components, the software
 architecture can quickly get out of control. Changes with lots of new
 dependencies which are not necessary are less likely to be integrated.
 
-If you want to add TCL code to define a new tool command look at pdngen
-as an example of how to do so. Take a look at the [cmake
-file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
-which automatically sources the tcl code and the [tcl
-code](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/PdnGen.tcl)
+If you want to add Tcl code to define a new tool command look at pdngen
+as an example of how to do so. Take a look at the
+[cmake file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
+which automatically sources the Tcl code and the
+[Tcl file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/PdnGen.tcl)
 itself.
+
+To accept contributions we require each commit to be made with a DCO attached.
+When you commit you add the `-s` flag to your commit. For example:
+
+``` shell
+git commit -s -m "test dco with -s"
+```
+
+This will append a statement to your commit comment promising the DCO. Github
+has built in the `-s` option to its command line since use of this is so
+pervasive. The promise is very basic, certifying that you know that you
+have the right to commit the code. Please read it the [full statement
+here](https://developercertificate.org/).
 
 ## Questions
 
-You can file git issues to ask questions, file issues or you can contact
-us via email openroad at eng.ucsd.edu
+Please refere to our [FAQs](../user/FAQS.md).

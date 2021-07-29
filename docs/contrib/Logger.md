@@ -229,7 +229,7 @@ Reporting is simply printing and does not require a tool or message ID.
 The tool ID comes from a fixed enumeration of all the tools in the
 system. This enumeration is in `Logger.h`. New abbreviations should be
 added after discussion with the system architects. The abbreviation
-matches the c++ namespace for the tool.
+matches the C++ namespace for the tool.
 
 Message IDs are integers. They are expected to be unique for each tool.
 This has the benefit that a message can be mapped to the source code
@@ -242,9 +242,8 @@ removing it from 'messages.txt'. See the utility
 `etc/find_messages.py` to scan a tool directory and write a
 `messages.txt` file.
 
-Spdlog comes with the `fmt` library which supports message formatting in
-a python / [C++20 like
-style](https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification).
+Spdlog comes with the `fmt` library which supports message formatting in a
+python or [C++20 like style](https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification).
 
 The message string should not include the tool ID or message ID which
 will automatically be prepended. A trailing new line will automatically
@@ -385,7 +384,7 @@ Regression tests should not have any `UKN-0000` messages in their ok
 files. A simple grep should indicate that you still have pending calls
 to pre-logger error/warn functions.
 
-The cmake file for the tool must also be updated to include spdlog in
+The `cmake` file for the tool must also be updated to include spdlog in
 the link libraries so it can find the header files if they are not in
 the normal system directories.
 

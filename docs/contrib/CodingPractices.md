@@ -95,7 +95,7 @@ float currWLnoWts;
 Do not use global varaibles. All state should be inside of classes.
 Global variables make multi-threading next to impossible and preclude
 having multiple copies of a tool running in the same process. The only
-global variable in OpenRoad should be the singleton that tcl commands
+global variable in `openroad` should be the singleton that tcl commands
 reference.
 
 ``` cpp
@@ -532,11 +532,11 @@ in student code:
 
 `*.lai *.la *.a *.lib`
 
-## CMAKE
+## CMake
 
 ### Practice #35
 
-Don't change compile flags in cmake files. These are set at the top
+Don't change compile flags in `cmake` files. These are set at the top
 level and should not be overriden.
 
 ``` cmake
@@ -547,8 +547,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 ### Practice #36
 
-Don't put /'s in cmake directory names. Cmake knows they are
-directories.
+Don't put /'s in CMake directory names. CMake knows they are directories.
 
 ``` cmake
 target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )

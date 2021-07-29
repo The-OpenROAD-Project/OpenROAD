@@ -27,52 +27,51 @@ and headers together.
     src/tool/test/regression
 ```
 
-OpenROAD repository
+OpenROAD repository:
 
 ```
-    CMakeLists.txt - top level cmake file
+    CMakeLists.txt - top level CMake file
     src/Main.cc
-    src/OpenROAD.cc - OpenROAD class functions
-    src/OpenROAD.i - top level swig, %includes tool swig files
-    src/OpenROAD.tcl - basic read/write lef/def/db commands
-    include/openroad/OpenRoad.hh - OpenROAD top level class, has instances of tools
-    include/openroad/Error.hh - Error reporting API
+    src/OpenRoad.cc - OpenROAD class functions
+    src/OpenRoad.i - top level swig, %includes tool swig files
+    src/OpenRoad.tcl - basic read/write lef/def/db commands
+    include/ord/OpenRoad.hh - OpenROAD top level class, has instances of tools
 ```
 
-Some tools such as OpenDB are submodules, which are simply
-subdirectories in /src that are pointers to the git submodule. They are
+Some tools such as OpenSTA are submodules, which are simply
+subdirectories in `src/` that are pointers to the git submodule. They are
 intentionally not segregated into a separate /module.
 
 The use of submodules for new code integrated into OpenROAD is strongly
 discouraged. Submodules make changes to the underlying infrastructure
-(OpenDB, OpenSTA etc) difficult to propagate across the dependent
-submodule repositories. Submodules: just say no.
+(i.e., OpenSTA) difficult to propagate across the dependent submodule
+repositories. Submodules: just say no.
 
 Where external/third party code that a tool depends on should be placed
 depends on the nature of the dependency.
 
-- Libraries - code packaged as a linkable library. Examples are tcl,
-    boost, zlib, eigen, lemon, spdlog.
+-   Libraries - code packaged as a linkable library. Examples are `tcl`,
+    `boost`, `zlib`, `eigen`, `lemon`, `spdlog`.
 
 These should be installed in the build environment and linked by
-OpenRoad. Document these dependencies in the top level README.md file.
-The Dockerfile should be updated to illustrate where to find the library
-and how to install it. Adding libraries to the build enviroment requires
-coodination with the sys admins for the continuous integration hosts to
+OpenROAD. Document these dependencies in the top level `README.md` file.
+The `Dockerfile` should be updated to illustrate where to find the library
+and how to install it. Adding libraries to the build environment requires
+coordination with the sysadmins for the continuous integration hosts to
 make sure the environments include the dependency. Advanced notification
 should also be given to the development team so their private build
 environments can be updated.
 
-Each tool cmake file builds a library that is linked by the OpenROAD
+Each tool CMake file builds a library that is linked by the OpenROAD
 application. The tools should not define a `main()` function. If the
-tool is tcl only and has no c++ code it does not need to have a cmake
-file. Tool cmake files should **not** include the following:
+tool is tcl only and has no C++ code it does not need to have a CMake
+file. Tool CMake files should **not** include the following:
 
-- cmake_minimum_required
-- GCC_COVERAGE_COMPILE_FLAGS
-- GCC_COVERAGE_LINK_FLAGS
-- CMAKE_CXX_FLAGS
-- CMAKE_EXE_LINKER_FLAGS
+- `cmake_minimum_required`
+- `GCC_COVERAGE_COMPILE_FLAGS`
+- `GCC_COVERAGE_LINK_FLAGS`
+- `CMAKE_CXX_FLAGS`
+- `CMAKE_EXE_LINKER_FLAGS`
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files. These functions are all provided by the OpenROAD
@@ -98,14 +97,14 @@ for user visible commands. Commands have an implicit argument of the
 current OpenROAD class object. Functions to get individual tools from
 the OpenROAD object can be defined.
 
-## Initialization (c++ tools only)
+## Initialization (C++ tools only)
 
-The OpenRoad class has pointers to each tools with functions to get each
+The OpenROAD class has pointers to each tools with functions to get each
 tool. Each tool has (at a minimum) a function to make an instance of the
 tool class, and an initialization function that is called after all of
-the tools have been made, and a funtion to delete the tool. This small
+the tools have been made, and a function to delete the tool. This small
 header does **not** include the class definition for the tool so that
-the OpenRoad framework does not have to know anything about the tool
+the OpenROAD framework does not have to know anything about the tool
 internals or include a gigantic header file.
 
 `MakeTool.hh` defines the following:
@@ -116,22 +115,22 @@ internals or include a gigantic header file.
     void deleteTool(Tool *tool);
 ```
 
-The OpenRoad::init() function calls all of the makeTool functions and
-then all of the initTool() functions. The init functions are called from
-the bottom of the tool dependences. Each init function grabs the state
-it needs out of the OpenRoad instance.
+The `OpenRoad::init()` function calls all of the `makeTool` functions and
+then all of the `initTool()` functions. The `init` functions are called from
+the bottom of the tool dependences. Each `init` function grabs the state
+it needs out of the `OpenRoad` instance.
 
 ## Commands
 
 Tools should provide Tcl commands to control them. Tcl object based tool
 interfaces are not user friendly. Define Tcl procedures that take
-keyword arguments that reference the OpenRoad object to get tool state.
-OpenSTA has Tcl utilities to parse keyword arguements
+keyword arguments that reference the `OpenRoad` object to get tool state.
+OpenSTA has Tcl utilities to parse keyword arguments
 (`sta::parse_keyword_args`). See `OpenSTA/tcl/*.tcl` for
 examples. Use swig to define internal functions to C++ functionality.
 
-Tcl files can be included by encoding them in cmake into a string that
-is evaluated at run time (See Resizer::init()).
+Tcl files can be included by encoding them in CMake into a string that
+is evaluated at run time (See `Resizer::init()`).
 
 ## Errors
 
@@ -147,8 +146,8 @@ variables is `false`.
 
 ## Test
 
-Each "tool" has a /test directory containing a script nameed
-"regression" to run "unit" tests. With no arguments it should run
+Each "tool" has a /test directory containing a script named
+`regression` to run "unit" tests. With no arguments it should run
 default unit tests.
 
 No database files should be in tests. Read LEF/DEF/Verilog to make a
@@ -156,15 +155,15 @@ database.
 
 The regression script should not depend on the current working
 directory. It should be able to be run from any directory. Use filenames
-relative to the script name rather the the current working directory.
+relative to the script name rather the current working directory.
 
-Regression scripts should print a consise summary of test failures. The
+Regression scripts should print a concise summary of test failures. The
 regression script should return an exit code of zero if there are no
 errors and 1 if there are errors. The script should **not** print
 thousands of lines of internal tool info.
 
 Regression scripts should pass the `-no_init` option to openroad so that
-a user's init file is not sourced before the tests runs.
+a user's `init` file is not sourced before the tests runs.
 
 Regression scripts should add output files or directories to
 `.gitignore` so that running does note leave the source repository
@@ -186,37 +185,9 @@ with the command shown below.
     read_liberty Nangate45/Nangate45_typ.lib
 ```
 
-## Builds
+## Building
 
-Checking out the OpenROAD repo with --recursive installs all of the
-OpenRoad tools and their submodules.
-
-``` shell
-    git clone --recusive https://github.com/The-OpenROAD-Project/OpenROAD.git
-    cd OpenROAD
-    mkdir build
-    cd build
-    cmake ..
-    make
-```
-
-All tools build using cmake and must have a CMakeLists.txt file in their
-tool directory.
-
-This builds the `openroad` executable in `/build`.
-
-Note that removing submodules from a repo when moving it into OpenROAD
-is less than obvious. Here are the steps:
-
-``` shell
-    git submodule deinit <path_to_submodule>
-    git rm <path_to_submodule>
-    git commit-m "Removed submodule "
-    rm -rf .git/modules/<path_to_submodule>
-```
-
-Tools should compile with no compile warnings in gcc or clang with
--Wall.
+Instructions for building are available [here](../user/GettingStarted.md).
 
 ## Tool Work Flow
 
@@ -263,10 +234,10 @@ them as a diff in the hash for the directory.
     git push
 ```
 
-## Example of Adding a Tool to OpenRoad
+## Example of Adding a Tool to OpenROAD
 
 The patch file "add_tool.patch" illustrates how to add a tool to
-OpenRoad. Use
+OpenROAD. Use
 
 ``` shell
     patch -p < doc/add_tool.patch`
@@ -274,7 +245,7 @@ OpenRoad. Use
     ln -s ../../../test/regression.tcl regression.tcl
 ```
 
-to add the sample tool. This adds a directory OpenRoad/src/tool that
+To add the sample tool. This adds a directory `OpenRoad/src/tool` that
 illustrates a tool named "Tool" that uses the file structure described
 and defines a command to run the tool with keyword and flag arguments as
 illustrated below:
@@ -298,8 +269,8 @@ illustrated below:
 
 ## Documentation
 
-Tool commands should be documented in the top level OpenROAD README.md
-file. Detailed documentation should be the tool/README.md file.
+Tool commands should be documented in the top level OpenROAD `README.md`
+file. Detailed documentation should be the `tool/README.md` file.
 
 ## Tool Flow
 
@@ -328,25 +299,25 @@ portable to many different compiler/operating system versions and
 dependencies make this vastly more complicated.
 
 1. OpenROAD submodules reference tool `openroad` branch head. No git `develop`, `openroad_app`, or `openroad_build` branches.
-1. Submodules used by more than one tool belong in /src, not duplicated in each tool repo.
-1. CMakeLists.txt does not use add_compile_options include_directories link_directories link_libraries Use target\_ versions instead. See <https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1>
-1. CMakeLists.txt does not use glob. Use explicit lists of source files and headers instead.
-1. CMakeLists.txt does not define CFLAGS CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE Let the top level and defaults control these.
-1. No main.cpp or main procedure.
-1. No compiler warnings for gcc or clang with optimization enabled.
-1. Does not call flute::readLUT (called once by OpenRoad).
-1. Tcl command(s) documented in top level README.md in flow order.
+1. Submodules used by more than one tool belong in `src/`, not duplicated in each tool repo.
+1. `CMakeLists.txt` does not use add_compile_options include_directories link_directories link_libraries Use target\_ versions instead. See <https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1>
+1. `CMakeLists.txt` does not use glob. Use explicit lists of source files and headers instead.
+1. `CMakeLists.txt` does not define `CFLAGS` `CMAKE_CXX_FLAGS` `CMAKE_CXX_FLAGS_DEBUG` `CMAKE_CXX_FLAGS_RELEASE` Let the top level and defaults control these.
+1. No `main.cpp` or main procedure.
+1. No compiler warnings for GCC or Clang with optimization enabled.
+1. Does not call `flute::readLUT` (called once by `openroad`).
+1. Tcl command(s) documented in top level `README.md` in flow order.
 1. Command line tool documentation in tool README.
 1. Conforms to Tcl command naming standards (no camel case).
 1. Does not read configuration files. Use command arguments or support commands.
-1. .clang-format at tool root directory to aid foreign programmers.
-1. No jenkins/, Jenkinsfile, Dockerfile in tool directory.
-1. regression script named `test/regression` with no arguments that runs tests. Not tests/regression-tcl.sh, not test/run_tests.py etc.
-1. regression script should run independent of current directory. For example, ../test/regression should work.
-1. regression should only print test results or summary, not belch 1000s of lines of output.
-1. Test scripts use OpenROAD tcl commands (not itcl, not internal accessors).
-1. regression script should only write files in a directory that is in the tool's .gitignore so the hierarchy does not have modified files in it as a result or running the regressions.
-1. Regressions report no memory errors with valgrind (stretch goal).
-1. Regressions report no memory leaks with valgrind (difficult).
+1. `.clang-format` at tool root directory to aid foreign programmers.
+1. No `jenkins/`, `Jenkinsfile`, `Dockerfile` in tool directory.
+1. `regression` script named `test/regression` with no arguments that runs tests. Not `tests/regression-tcl.sh`, not `test/run_tests.py` etc.
+1. `regression` script should run independent of current directory. For example, `../test/regression` should work.
+1. `regression` should only print test results or summary, not belch 1000s of lines of output.
+1. Test scripts use OpenROAD tcl commands (not `itcl`, not internal accessors).
+1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
+1. Regressions report no memory errors with `valgrind` (stretch goal).
+1. Regressions report no memory leaks with `valgrind` (difficult).
 
 James Cherry, Dec 2019

@@ -1,13 +1,13 @@
-# Welcome to OpenROAD\'s documentation!
+# Welcome to OpenROAD's documentation!
 
 The OpenROAD ("Foundations and Realization of Open, Accessible Design")
 project was launched in June 2018 within the DARPA IDEA program. OpenROAD
 aims to bring down the barriers of cost, expertise and unpredictability that
-currently block designers\' access to hardware implementation in advanced
+currently block designers' access to hardware implementation in advanced
 technologies. The project team UC San Diego is developing a fully autonomous,
 open-source tool chain for digital layout generation across die, package
 and board, with initial focus on the RTL-to-GDSII phase of system-on-chip
-design. Thus, OpenROAD holistically attacks the multiple facets of today\'s
+design. Thus, OpenROAD holistically attacks the multiple facets of today's
 design cost crisis: engineering resources, design tool licenses, project
 schedule, and risk.
 
@@ -36,22 +36,7 @@ Other publications and presentations are
 
 ## Code of conduct
 
-Please read our code of conduct [here](../CODE_OF_CONDUCT.md).
-
-## How to get in touch
-
-We maintain the following channels for communication:
-
--   Project homepage and news: <https://theopenroadproject.org>
--   Twitter: <https://twitter.com/OpenROAD_EDA>
--   Issues and bugs:
-    <https://github.com/The-OpenROAD-Project/OpenROAD/issues>
--   Gitter Community: <https://gitter.im/The-OpenROAD-Project/community>
--   Inquiries: [openroad@eng.ucsd.edu](mailto:openroad@eng.ucsd.edu)
-
-See also our [FAQs](user/FAQS.md) and
-[Capabilities/Limitations](user/ToolLimitations.md) for relevant
-background on the project.
+Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).
 
 ## Documentation
 
@@ -62,7 +47,7 @@ The OpenROAD Project has two releases:
 The application is a standalone binary capable to perform chip design
 from the floorplan to detailed route with metal fill.
 
-See documentation for the [application here](../README.md).
+See documentation for the [application here](main/README.md).
 
 ### [Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 
@@ -79,6 +64,23 @@ If you are willing to **contribute**, see the
 If you are a **developer** with EDA background, learn more about how you
 can use OpenROAD as the infrastructure for your tools in the
 [Developer Guide](contrib/DeveloperGuide.md) section.
+
+## How to get in touch
+
+We maintain the following channels for communication:
+
+-   Project homepage and news: <https://theopenroadproject.org>
+-   Twitter: <https://twitter.com/OpenROAD_EDA>
+-   Issues and bugs:
+    -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/issues>
+    -   OpenROAD Flow: <https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues>
+-   Discussions:
+    -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/discussions>
+    -   OpenROAD Flow: <https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/discussions>
+
+See also our [FAQs](user/FAQS.md).
+
+## Site Map
 
 ```{tableofcontents}
 ```

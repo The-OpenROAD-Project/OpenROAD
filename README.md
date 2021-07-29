@@ -2,7 +2,7 @@
 
 [![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
 
-The documentation is also available [here](https://openroad.readthedocs.io/en/latest/)
+The documentation is also available [here](https://openroad.readthedocs.io/en/latest/).
 
 ## Install dependencies
 
@@ -287,7 +287,7 @@ report_cts [-out_file "file.txt"]
 ``-out_file`` (optional) is the file containing the TritonCTS reports.
 If this parameter is omitted, the metrics are shown on the standard output.
 
-#### Global Routing
+- [OpenSTA](src/sta/README.md)
 
 Global router options and commands are described below. 
 
