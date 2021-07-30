@@ -200,11 +200,11 @@ proc set_voltage_domain {args} {
   pdngen::set_voltage_domain {*}[array get keys]
 }
 
-# add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins
-# add_pdn_stripe -name main_grid -layer metal2 -width 0.17 -followpins
-# add_pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
-# add_pdn_stripe -name main_grid -layer metal7 -width 1.40 -pitch 40.0 -offset 2 -starts_with POWER
-sta::define_cmd_args "add_pdn_stripe" {[-name grid_name] \
+# add_pdn_stripe -grid main_grid -layer metal1 -width 0.17 -followpins
+# add_pdn_stripe -grid main_grid -layer metal2 -width 0.17 -followpins
+# add_pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
+# add_pdn_stripe -grid main_grid -layer metal7 -width 1.40 -pitch 40.0 -offset 2 -starts_with POWER
+sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        -layer layer_name \
                                        -width width_value \
                                        [-followpins] \
@@ -218,7 +218,7 @@ proc add_pdn_stripe {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_stripe" args \
-    keys {-name -layer -width -pitch -spacing -offset -starts_with} \
+    keys {-grid -layer -width -pitch -spacing -offset -starts_with} \
     flags {-followpins -extend_to_core_ring}
 
   if {[llength $args] > 0} {
@@ -250,10 +250,10 @@ proc add_pdn_stripe {args} {
   pdngen::add_pdn_stripe {*}[array get keys]
 }
 
-# add_pdn_ring   -name main_grid -layer metal6 -width 5.0 -spacing  3.0 -core_offset 5
-# add_pdn_ring   -name main_grid -layer metal7 -width 5.0 -spacing  3.0 -core_offset 5
+# add_pdn_ring   -grid main_grid -layer metal6 -width 5.0 -spacing  3.0 -core_offset 5
+# add_pdn_ring   -grid main_grid -layer metal7 -width 5.0 -spacing  3.0 -core_offset 5
 
-sta::define_cmd_args "add_pdn_ring" {[-name grid_name] \
+sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      -layers list_of_2_layer_names \
                                      -widths (width_value|list_of_width_values) \
                                      -spacings (spacing_value|list_of_spacing_values) \
@@ -266,7 +266,7 @@ proc add_pdn_ring {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_ring" args \
-    keys {-name -layers -widths -spacings -core_offsets -pad_offsets -power_pads -ground_pads} 
+    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -power_pads -ground_pads} 
 
   if {[llength $args] > 0} {
     utl::error PDN 135 "Unexpected argument [lindex $args 0] for add_pdn_ring command."
@@ -313,20 +313,20 @@ proc add_pdn_ring {args} {
   pdngen::add_pdn_ring {*}[array get keys]
 }
 
-sta::define_cmd_args "add_pdn_connect" {[-name grid_name] \
+sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         -layers list_of_2_layers \
                                         [-cut_pitch pitch_value] \
                                         [-fixed_vias list_of_vias]}
 
-# add_pdn_connect -name main_grid -layers {metal1 metal2} -cut_pitch 0.16
-# add_pdn_connect -name main_grid -layers {metal2 metal4}
-# add_pdn_connect -name main_grid -layers {metal4 metal7}
+# add_pdn_connect -grid main_grid -layers {metal1 metal2} -cut_pitch 0.16
+# add_pdn_connect -grid main_grid -layers {metal2 metal4}
+# add_pdn_connect -grid main_grid -layers {metal4 metal7}
 
 proc add_pdn_connect {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_connect" args \
-    keys {-name -layers -cut_pitch -fixed_vias} \
+    keys {-grid -layers -cut_pitch -fixed_vias} \
 
   if {[llength $args] > 0} {
     utl::error PDN 136 "Unexpected argument [lindex $args 0] for add_pdn_connect command."
@@ -760,8 +760,8 @@ proc check_power_ground {value} {
 proc add_pdn_stripe {args} {
   variable current_grid
 
-  if {[dict exists $args -name]} {
-    set current_grid [check_grid [get_grid [dict get $args -name]]]
+  if {[dict exists $args -grid]} {
+    set current_grid [check_grid [get_grid [dict get $args -grid]]]
   }
   set grid $current_grid
 
@@ -774,7 +774,7 @@ proc add_pdn_stripe {args} {
     set value [lindex $process_args 1]
 
     switch $arg {
-      -name            {;}
+      -grid            {;}
       -layer           {;}
       -width           {dict set grid $stripe $layer width $value}
       -spacing         {dict set grid $stripe $layer spacing $value}
@@ -783,7 +783,7 @@ proc add_pdn_stripe {args} {
       -starts_with     {dict set grid $stripe $layer starts_with [check_power_ground $value]}
       -extend_to_core_ring {dict set grid $stripe $layer extend_to_core_ring 1}
       stripe           {;}
-      default          {utl::error PDN 124 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
+      default          {utl::error PDN 124 "Unrecognized argument $arg, should be one of -grid, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
     }
 
     set process_args [lrange $process_args 2 end]
@@ -925,8 +925,8 @@ proc check_gnd_pads {grid cells} {
 proc add_pdn_ring {args} {
   variable current_grid
 
-  if {[dict exists $args -name]} {
-    set current_grid [check_grid [get_grid [dict get $args -name]]]
+  if {[dict exists $args -grid]} {
+    set current_grid [check_grid [get_grid [dict get $args -grid]]]
   }
   set grid $current_grid
   set layers [check_layer_names [dict get $args -layers]]
@@ -937,7 +937,7 @@ proc add_pdn_ring {args} {
     set value [lindex $process_args 1]
 
     switch $arg {
-      -name            {;}
+      -grid            {;}
       -layers          {;}
       -widths {
         if {[catch {check_max_length $value 2} msg]} {
@@ -993,7 +993,7 @@ proc add_pdn_ring {args} {
       }
       -power_pads      {dict set grid pwr_pads [check_pwr_pads $grid $value]}
       -ground_pads     {dict set grid gnd_pads [check_gnd_pads $grid $value]}
-      default          {utl::error PDN 125 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
+      default          {utl::error PDN 125 "Unrecognized argument $arg, should be one of -grid, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
     }
 
     set process_args [lrange $process_args 2 end]
@@ -1017,8 +1017,8 @@ proc check_fixed_vias {via_names} {
 proc add_pdn_connect {args} {
   variable current_grid
 
-  if {[dict exists $args -name]} {
-    set current_grid [check_grid [get_grid [dict get $args -name]]]
+  if {[dict exists $args -grid]} {
+    set current_grid [check_grid [get_grid [dict get $args -grid]]]
   }
   set grid $current_grid
 
@@ -1030,11 +1030,11 @@ proc add_pdn_connect {args} {
     set value [lindex $process_args 1]
 
     switch $arg {
-      -name            {;}
+      -grid            {;}
       -layers          {;}
       -cut_pitch       {dict set layers constraints cut_pitch $value}
       -fixed_vias      {dict set layers fixed_vias [check_fixed_vias $value]}
-      default          {utl::error PDN 126 "Unrecognized argument $arg, should be one of -name, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
+      default          {utl::error PDN 126 "Unrecognized argument $arg, should be one of -grid, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
     }
 
     set process_args [lrange $process_args 2 end]
@@ -4538,13 +4538,15 @@ proc init {args} {
   }
 
   if {[info vars ::core_domain] == ""} {
-    set  ::core_domain "CORE"
-    if {![dict exists $voltage_domains $::core_domain primary_power]} {
-      dict set voltage_domains $::core_domain primary_power [lindex $power_nets 0]
+    set core_domain "CORE"
+    if {![dict exists $voltage_domains $core_domain primary_power]} {
+      dict set voltage_domains $core_domain primary_power [lindex $power_nets 0]
     }
-    if {![dict exists $voltage_domains $::core_domain primary_ground]} {
-      dict set voltage_domains $::core_domain primary_ground [lindex $ground_nets 0]
+    if {![dict exists $voltage_domains $core_domain primary_ground]} {
+      dict set voltage_domains $core_domain primary_ground [lindex $ground_nets 0]
     }
+  } else {
+    set core_domain $::core_domain
   }
 
   if {[info vars ::stripes_start_with] == ""} {
@@ -4555,7 +4557,7 @@ proc init {args} {
   
   dict set design_data power_nets $power_nets
   dict set design_data ground_nets $ground_nets
-  dict set design_data core_domain $::core_domain
+  dict set design_data core_domain $core_domain
 
   # Sourcing user inputs file
   #

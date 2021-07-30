@@ -24,7 +24,7 @@ The -power and -ground arguments are used to define the names of the nets to be 
 
 | Switch Name | Description |
 | ----- | ----- |
-| -name | Defines a name to use when referring to this grid definition |
+| -name | Defines the name of the voltage domain |
 | -power | Specifies the name of the power net for this voltage domain |
 | -ground | Specifies the name of the ground net for this voltage domain |
 | -region | Specifies a region of the design occupied by this voltage domain |

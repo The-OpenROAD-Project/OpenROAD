@@ -3,7 +3,7 @@
 ### Synopsis
 ```
   % add_pdn_stripe
-    [-name grid_name] \
+    [-grid grid_name] \
     -layer layer_name \
     -width width_value \
     [-pitch pitch_value] \
@@ -17,7 +17,7 @@
 
 Defines a pattern of power and ground stripes in a single layer to be added to a power grid.
 
-The -name argument defines the name of the grid to which this stripe specification will be added. If no -name argument is specified, the pattern will be added to the grid created with the previous [define_pdn_grid](define_pdn_grid.md) command.
+The -grid argument defines the name of the grid to which this stripe specification will be added. If no -grid argument is specified, the pattern will be added to the grid created with the previous [define_pdn_grid](define_pdn_grid.md) command.
 
 The -layer argument specifies the layer to be used for the specified stripe pattern.
 The -width argument defines the width of the stripes.
@@ -32,7 +32,7 @@ The -followpins flag defines the stripes to be stdcell rails. When -followpins i
 
 | Switch Name | Description |
 | ----- | ----- |
-| -name | Defines a name to use when referring to this grid definition |
+| -grid | Specifies the grid to which this stripe definition will be added. (Default: Last grid defined by define_pdn_grid) |
 | -layer | Specifies the name of the layer for these stripes |
 | -width | Value for the width of the stdcell rail |
 | -pitch | Value for the distance between each power/ground pair |
@@ -43,8 +43,8 @@ The -followpins flag defines the stripes to be stdcell rails. When -followpins i
 
 ### Examples
 ```
-add_pdn_stripe -name main_grid -layer metal1 -width 0.17 -followpins
-add_pdn_stripe -name main_grid -layer metal2 -width 0.17 -followpins
-add pdn_stripe -name main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
+add_pdn_stripe -grid main_grid -layer metal1 -width 0.17 -followpins
+add_pdn_stripe -grid main_grid -layer metal2 -width 0.17 -followpins
+add pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
 ```
 
