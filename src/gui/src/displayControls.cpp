@@ -247,104 +247,114 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(changed()));
 }
 
-void DisplayControls::readSettings(QSettings* settings)
+void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto getChecked = [](QSettings* settings, const char* name) {
-    return settings->value(name).toBool() ? Qt::Checked : Qt::Unchecked;
+  auto asBool
+      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
+
+  settings->beginGroup(row.name->text());
+  settings->setValue("visible", asBool(row.visible));
+  if (row.selectable != nullptr) {
+    settings->setValue("selectable", asBool(row.selectable));
+  }
+  settings->endGroup();
+}
+
+void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& row)
+{
+  auto getChecked = [](QSettings* settings, QString name, bool default_value) {
+    return settings->value(name, default_value).toBool() ? Qt::Checked : Qt::Unchecked;
   };
 
+  settings->beginGroup(row.name->text());
+  row.visible->setCheckState(getChecked(settings, "visible", row.visible->checkState() == Qt::Checked));
+  if (row.selectable != nullptr) {
+    row.selectable->setCheckState(getChecked(settings, "selectable", row.selectable->checkState() == Qt::Checked));
+  }
+  settings->endGroup();
+}
+
+void DisplayControls::readSettings(QSettings* settings)
+{
   settings->beginGroup("display_controls");
 
   settings->beginGroup("nets");
-  nets_.signal.visible->setCheckState(getChecked(settings, "signal_visible"));
-  nets_.signal.selectable->setCheckState(getChecked(settings, "signal_selectable"));
-  nets_.power.visible->setCheckState(getChecked(settings, "power_visible"));
-  nets_.power.selectable->setCheckState(getChecked(settings, "power_selectable"));
-  nets_.ground.visible->setCheckState(getChecked(settings, "ground_visible"));
-  nets_.ground.selectable->setCheckState(getChecked(settings, "ground_selectable"));
-  nets_.clock.visible->setCheckState(getChecked(settings, "clock_visible"));
-  nets_.clock.selectable->setCheckState(getChecked(settings, "clock_selectable"));
-  settings->endGroup();  // nets
+  readSettingsForRow(settings, nets_.signal);
+  readSettingsForRow(settings, nets_.power);
+  readSettingsForRow(settings, nets_.ground);
+  readSettingsForRow(settings, nets_.clock);
+  settings->endGroup();
 
+  // instances
   settings->beginGroup("instances");
-  instances_.core.visible->setCheckState(getChecked(settings, "stdcell_visible"));
-  instances_.core.selectable->setCheckState(getChecked(settings, "stdcell_selectable"));
-  instances_.blocks.visible->setCheckState(getChecked(settings, "blocks_visible"));
-  instances_.blocks.selectable->setCheckState(getChecked(settings, "blocks_selectable"));
-  instances_.fill.visible->setCheckState(getChecked(settings, "fill_visible"));
-  instances_.fill.selectable->setCheckState(getChecked(settings, "fill_selectable"));
-  instances_.endcap.visible->setCheckState(getChecked(settings, "endcap_visible"));
-  instances_.endcap.selectable->setCheckState(getChecked(settings, "endcap_selectable"));
-  instances_.pads.visible->setCheckState(getChecked(settings, "pads_visible"));
-  instances_.pads.selectable->setCheckState(getChecked(settings, "pads_selectable"));
-  instances_.cover.visible->setCheckState(getChecked(settings, "cover_visible"));
-  instances_.cover.selectable->setCheckState(getChecked(settings, "cover_selectable"));
-  settings->endGroup();  // nets
+  readSettingsForRow(settings, instances_.core);
+  readSettingsForRow(settings, instances_.blocks);
+  readSettingsForRow(settings, instances_.fill);
+  readSettingsForRow(settings, instances_.endcap);
+  readSettingsForRow(settings, instances_.pads);
+  readSettingsForRow(settings, instances_.cover);
+  settings->endGroup();
 
-  rows_.visible->setCheckState(getChecked(settings, "rows_visible"));
-  congestion_map_.visible->setCheckState(
-      getChecked(settings, "congestion_map_visible"));
-  pin_markers_.visible->setCheckState(
-      getChecked(settings, "pin_markers_visible"));
+  // rows
+  readSettingsForRow(settings, rows_);
+  // congestion map
+  readSettingsForRow(settings, congestion_map_);
+  // pin markers
+  readSettingsForRow(settings, pin_markers_);
 
+  // tracks
   settings->beginGroup("tracks");
-  tracks_.pref.visible->setCheckState(getChecked(settings, "pref_visible"));
-  tracks_.non_pref.visible->setCheckState(
-      getChecked(settings, "non_pref_visible"));
-  settings->endGroup();  // tracks
+  readSettingsForRow(settings, tracks_.pref);
+  readSettingsForRow(settings, tracks_.non_pref);
+  settings->endGroup();
 
+  // misc
   settings->beginGroup("misc");
-  misc_.fills.visible->setCheckState(getChecked(settings, "fills_visible"));
-  settings->endGroup();  // misc
+  readSettingsForRow(settings, misc_.fills);
+  settings->endGroup();
 
   settings->endGroup();
 }
 
 void DisplayControls::writeSettings(QSettings* settings)
 {
-  auto asBool
-      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
-
   settings->beginGroup("display_controls");
 
+  // nets
   settings->beginGroup("nets");
-  settings->setValue("signal_visible", asBool(nets_.signal.visible));
-  settings->setValue("signal_selectable", asBool(nets_.signal.selectable));
-  settings->setValue("power_visible", asBool(nets_.power.visible));
-  settings->setValue("power_selectable", asBool(nets_.power.selectable));
-  settings->setValue("ground_visible", asBool(nets_.ground.visible));
-  settings->setValue("ground_selectable", asBool(nets_.ground.selectable));
-  settings->setValue("clock_visible", asBool(nets_.clock.visible));
-  settings->setValue("clock_selectable", asBool(nets_.clock.selectable));
-  settings->endGroup();  // nets
+  writeSettingsForRow(settings, nets_.signal);
+  writeSettingsForRow(settings, nets_.power);
+  writeSettingsForRow(settings, nets_.ground);
+  writeSettingsForRow(settings, nets_.clock);
+  settings->endGroup();
 
+  // instances
   settings->beginGroup("instances");
-  settings->setValue("stdcell_visible", asBool(instances_.core.visible));
-  settings->setValue("stdcell_selectable", asBool(instances_.core.selectable));
-  settings->setValue("blocks_visible", asBool(instances_.blocks.visible));
-  settings->setValue("blocks_selectable", asBool(instances_.blocks.selectable));
-  settings->setValue("fill_visible", asBool(instances_.fill.visible));
-  settings->setValue("fill_selectable", asBool(instances_.fill.selectable));
-  settings->setValue("endcap_visible", asBool(instances_.endcap.visible));
-  settings->setValue("endcap_selectable", asBool(instances_.endcap.selectable));
-  settings->setValue("pads_visible", asBool(instances_.pads.visible));
-  settings->setValue("pads_selectable", asBool(instances_.pads.selectable));
-  settings->setValue("cover_visible", asBool(instances_.cover.visible));
-  settings->setValue("cover_selectable", asBool(instances_.cover.selectable));
-  settings->endGroup();  // instances
+  writeSettingsForRow(settings, instances_.core);
+  writeSettingsForRow(settings, instances_.blocks);
+  writeSettingsForRow(settings, instances_.fill);
+  writeSettingsForRow(settings, instances_.endcap);
+  writeSettingsForRow(settings, instances_.pads);
+  writeSettingsForRow(settings, instances_.cover);
+  settings->endGroup();
 
-  settings->setValue("rows_visible", asBool(rows_.visible));
-  settings->setValue("congestion_map_visible", asBool(congestion_map_.visible));
-  settings->setValue("pin_markers_visible", asBool(pin_markers_.visible));
+  // rows
+  writeSettingsForRow(settings, rows_);
+  // congestion map
+  writeSettingsForRow(settings, congestion_map_);
+  // pin markers
+  writeSettingsForRow(settings, pin_markers_);
 
+  // tracks
   settings->beginGroup("tracks");
-  settings->setValue("pref_visible", asBool(tracks_.pref.visible));
-  settings->setValue("non_pref_visible", asBool(tracks_.non_pref.visible));
-  settings->endGroup();  // tracks
+  writeSettingsForRow(settings, tracks_.pref);
+  writeSettingsForRow(settings, tracks_.non_pref);
+  settings->endGroup();
 
+  // misc
   settings->beginGroup("misc");
-  settings->setValue("fills_visible", asBool(misc_.fills.visible));
-  settings->endGroup();  // misc
+  writeSettingsForRow(settings, misc_.fills);
+  settings->endGroup();
 
   settings->endGroup();
 }

@@ -264,6 +264,9 @@ class DisplayControls : public QDockWidget, public Options
   void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);
   void toggleParent(ModelRow& row);
 
+  void readSettingsForRow(QSettings* settings, const ModelRow& row);
+  void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+
   QTreeView* view_;
   QStandardItemModel* model_;
 
