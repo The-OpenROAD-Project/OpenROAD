@@ -3383,7 +3383,6 @@ namespace eval ICeWall {
   }
     # Connect up pads in the corner regions
     # Connect group of padcells up to the column of allocated bumps
-
     
   proc get_side_anchor_points {side_name} {
     set anchor_points ""
