@@ -4215,6 +4215,8 @@ proc export_opendb_power_pin {net_name signal_type} {
   variable voltage_domains
   variable design_data
 
+  if {![dict exists $design_data grid stdcell]} {return}
+
   set pins_layers {}
   dict for {grid_name grid} [dict get $design_data grid stdcell] {
     if {[dict exists $grid pins]} {
@@ -4514,10 +4516,6 @@ proc init {args} {
   set physical_viarules {}
   set stdcell_area ""
  
-  if {$global_connections == {}} {
-    set global_connections $default_global_connections
-  }
-  
   set die_area [$block getDieArea]
   utl::info "PDN" 8 "Design name is $design_name."
   set def_output "${design_name}_pdn.def"
@@ -6051,6 +6049,11 @@ proc generate_voltage_domain_rings {core_ring_data} {
 # This proc detects pins used in pdn.cfg for global connections
 proc get_valid_mterms {net_name} {
   variable global_connections
+  variable default_global_connections
+  
+  if {$global_connections == {}} {
+    set global_connections $default_global_connections
+  }
 
   set mterms_list {}
   foreach pattern [dict get $global_connections $net_name] {
