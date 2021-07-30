@@ -738,19 +738,19 @@ namespace eval ICeWall {
     dict set footprint padcell $padcell side $side_name
   }
   
-  proc set_padcell_centre {padcell x y } {
+  proc set_padcell_center {padcell x y } {
     variable footprint
 
-    dict set footprint padcell $padcell cell centre x $x
-    dict set footprint padcell $padcell cell centre y $y
+    dict set footprint padcell $padcell cell center x $x
+    dict set footprint padcell $padcell cell center y $y
   }
 
 
-  proc set_padcell_scaled_centre {padcell x y } {
+  proc set_padcell_scaled_center {padcell x y } {
     variable footprint
 
-    dict set footprint padcell $padcell cell scaled_centre x $x
-    dict set footprint padcell $padcell cell scaled_centre y $y
+    dict set footprint padcell $padcell cell scaled_center x $x
+    dict set footprint padcell $padcell cell scaled_center y $y
   } 
    
   proc set_padcell_location {padcell location} {
@@ -1075,7 +1075,7 @@ namespace eval ICeWall {
   }
 
   proc get_cell {type {position "none"}} {
-     #debug "cell_name [get_library_cell_name $type $position]"
+    # debug "cell_name [get_library_cell_name $type $position]"
     return [get_cell_master [get_library_cell_name $type $position]]
   }
 
@@ -3384,6 +3384,7 @@ namespace eval ICeWall {
     # Connect up pads in the corner regions
     # Connect group of padcells up to the column of allocated bumps
 
+    
   proc get_side_anchor_points {side_name} {
     set anchor_points ""
     foreach padcell [get_footprint_padcells_by_side $side_name] {
@@ -3393,24 +3394,26 @@ namespace eval ICeWall {
       }
     }
     return $anchor_points 
-  } 
+  }
+   
   proc has_padcell_location {padcell} {
     variable footprint
-    return  [dict exists $footprint padcell $padcell cell centre] || [dict exists $footprint padcell $padcell cell scaled_centre] || \
+    return  [dict exists $footprint padcell $padcell cell center] || [dict exists $footprint padcell $padcell cell scaled_center] || \
             [dict exists $footprint padcell $padcell cell origin] || [dict exists $footprint padcell $padcell cell scaled_origin]
   }
 
-  proc get_padcell_centre {padcell {type cell}} {
+
+
+  proc get_padcell_center {padcell {type cell}} {
     variable footprint
 
-    if {![dict exists $footprint padcell $padcell $type centre]} {
-       utl::error PAD 231 "No centre specified for $inst_name"
-    }
-   
-    return [dict get $footprint padcell $padcell $type centre]
+    if {![dict exists $footprint padcell $padcell $type center]} {
+       utl::error PAD 231 "No center information specified for $inst_name."
+    }   
+    return [dict get $footprint padcell $padcell $type center]
   }  
   
-  proc set_padcell_origin {padcell centre} {
+  proc set_padcell_origin {padcell center} {
     variable footprint
     set side_name [get_padcell_side_name $padcell]
     set orient [get_padcell_orient $padcell]
@@ -3420,11 +3423,12 @@ namespace eval ICeWall {
     set cell_height [ord::dbu_to_microns [expr max([$cell getHeight],[$cell getWidth])]]
     set cell_width  [ord::dbu_to_microns [expr min([$cell getHeight],[$cell getWidth])]]
 
-    #debug "padcell: $padcell centre: $centre width: $cell_width height: $cell_height orient: $orient"  
-    set origin  [get_origin $centre $cell_width $cell_height $orient]
+    #debug "padcell: $padcell , center: $center , width: $cell_width , height: $cell_height , orient: $orient"  
+    set origin  [get_origin $center $cell_width $cell_height $orient]
     dict set footprint padcell $padcell cell origin $origin
     return  $origin
   }
+  
   proc set_padcell_scaled_origin {padcell} {
     variable footprint   
     dict set footprint padcell $padcell cell scaled_origin [get_scaled_origin $padcell]
@@ -3435,7 +3439,8 @@ namespace eval ICeWall {
     set type [get_padcell_type $padcell]
     set cell [get_cell $type $side_name]
     return [expr min([$cell getHeight],[$cell getWidth])]
-  } 
+  }
+   
   proc get_padcell_height {padcell} {
     set side_name [get_padcell_side_name $padcell]
     set type [get_padcell_type $padcell]
@@ -3463,7 +3468,8 @@ namespace eval ICeWall {
         "left"   {
 	  set anchor_corner_a corner_ul
           set anchor_corner_b corner_ll
-	}   
+	}
+	   
       set unplaced_pads {}
       set anchor_cell_a $anchor_corner_a
       set anchor_cell_b $anchor_corner_b
@@ -3473,13 +3479,12 @@ namespace eval ICeWall {
         } else {	
 	  set anchor_cell_b $padcell
           add_locations $side_name  $unplaced_pads $anchor_cell_a $anchor_cell_b 
-	  #debug "$side_name  $unplaced_pads $anchor_cell_a $anchor_cell_b" 
 	  set unplaced_pads {}
 	  set anchor_cell_a $anchor_cell_b	  
 	}
       }
       add_locations $side_name  $unplaced_pads $anchor_cell_a $anchor_corner_b
-      #debug "$side_name  $unplaced_pads $anchor_cell_a $anchor_cell_b"  
+      #debug "side_name: $side_name , anchor_cells: $anchor_cell_a $anchor_cell_b , unplaced_pads: $unplaced_pads"  
     }  
   }
   
@@ -3499,14 +3504,14 @@ namespace eval ICeWall {
 	  set start [[$inst getBBox] xMax]           
         } else {     
           set cell_width_a [get_padcell_width $anchor_cell_a]
-          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+          set start [expr [dict get [get_scaled_center $anchor_cell_a] x] + $cell_width_a / 2]
         } 
         if {[regexp corner_ $anchor_cell_b]} {
           set inst [dict get $pad_ring $anchor_cell_b]            
 	  set end [[$inst getBBox] xMin]           
         } else {     
           set cell_width_b [get_padcell_width $anchor_cell_b]
-          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+          set end [expr [dict get [get_scaled_center $anchor_cell_b] x] - $cell_width_b / 2]
         } 
       } \
       "right"  {
@@ -3515,14 +3520,14 @@ namespace eval ICeWall {
 	  set start [[$inst getBBox] yMax]           
         } else {     
           set cell_width_a [get_padcell_width $anchor_cell_a]
-          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+          set start [expr [dict get [get_scaled_center $anchor_cell_a] y] + $cell_width_a / 2]
         } 
         if {[regexp corner_ $anchor_cell_b]} {
           set inst [dict get $pad_ring $anchor_cell_b]            
 	  set end [[$inst getBBox] yMin]           
         } else {     
           set cell_width_b [get_padcell_width $anchor_cell_b]
-          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+          set end [expr [dict get [get_scaled_center $anchor_cell_b] y] - $cell_width_b / 2]
         } 
       } \
       "top"    {
@@ -3531,14 +3536,14 @@ namespace eval ICeWall {
 	  set start [[$inst getBBox] xMin]           
         } else {     
           set cell_width_a [get_padcell_width $anchor_cell_a]
-          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+          set start [expr [dict get [get_scaled_center $anchor_cell_a] x] + $cell_width_a / 2]
         } 
         if {[regexp corner_ $anchor_cell_b]} {
           set inst [dict get $pad_ring $anchor_cell_b]            
 	  set end [[$inst getBBox] xMax]           
         } else {     
           set cell_width_b [get_padcell_width $anchor_cell_b]
-          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+          set end [expr [dict get [get_scaled_center $anchor_cell_b] x] - $cell_width_b / 2]
         } 
       } \
       "left"   {
@@ -3548,14 +3553,14 @@ namespace eval ICeWall {
 	  set start [[$inst getBBox] yMin]           
         } else {     
           set cell_width_a [get_padcell_width $anchor_cell_a]
-          set start [expr [dict get [get_scaled_centre $anchor_cell_a] x] + $cell_width_a / 2]
+          set start [expr [dict get [get_scaled_center $anchor_cell_a] y] + $cell_width_a / 2]
         } 
         if {[regexp corner_ $anchor_cell_b]} {
           set inst [dict get $pad_ring $anchor_cell_b]            
 	  set end [[$inst getBBox] yMax]           
         } else {     
           set cell_width_b [get_padcell_width $anchor_cell_b]
-          set end [expr [dict get [get_scaled_centre $anchor_cell_b] x] - $cell_width_b / 2]
+          set end [expr [dict get [get_scaled_center $anchor_cell_b] y] - $cell_width_b / 2]
         }
       } 
 
@@ -3568,48 +3573,49 @@ namespace eval ICeWall {
     set siteStart $start
     set gridSnap 1000
     set PadSpacing [expr  $sideWidth / (1 + $sideCount) / $gridSnap * $gridSnap ]
-    #debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end" 
-    debug "$side_name: segment starts with $anchor_cell_a  and ends with $anchor_cell_b , start is: $start , and end is $end"   
+    # debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end" 
+    # debug "$side_name: segment starts with $anchor_cell_a  and ends with $anchor_cell_b , start is: $start , and end is $end"
+    if [expr ($sideWidth - $sidePadWidth) < 0] {utl::error PAD 232 "Cannot fit IO pads between the following anchor cells : $anchor_cell_a, $anchor_cell_b."}
     foreach padcell $unplaced_pads {
       set padOrder [ expr 1 + [lsearch $unplaced_pads $padcell]] 
 
       switch $side_name \
     	"bottom" {
-    	  set pad_centre_x [expr $siteStart + ($PadSpacing * $padOrder) ] 
-    	  set pad_centre_y [expr $edge_bottom_offset + round (0.5 * [get_padcell_height $padcell]) ]
+    	  set pad_center_x [expr $siteStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_center_y [expr $edge_bottom_offset + round (0.5 * [get_padcell_height $padcell]) ]
     	} \
     	"right"  {
-    	  set pad_centre_x [expr $chip_width - $edge_right_offset - round (0.5 * [get_padcell_height $padcell]) ]
-    	  set pad_centre_y [expr $siteStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_center_x [expr $chip_width - $edge_right_offset - round (0.5 * [get_padcell_height $padcell]) ]
+    	  set pad_center_y [expr $siteStart + ($PadSpacing * $padOrder) ] 
     	} \
     	"top" {
-    	  set pad_centre_x [expr $siteStart - ($PadSpacing * $padOrder) ] 
-    	  set pad_centre_y [expr $chip_height - $edge_bottom_offset - round (0.5 * [get_padcell_height $padcell])  ]
+    	  set pad_center_x [expr $siteStart - ($PadSpacing * $padOrder) ] 
+    	  set pad_center_y [expr $chip_height - $edge_bottom_offset - round (0.5 * [get_padcell_height $padcell])  ]
     	} \
     	"left" {
-    	  set pad_centre_x [expr $edge_left_offset + round (0.5 * [get_padcell_height $padcell])]
-    	  set pad_centre_y [expr $siteStart - ($PadSpacing * $padOrder) ]
+    	  set pad_center_x [expr $edge_left_offset + round (0.5 * [get_padcell_height $padcell])]
+    	  set pad_center_y [expr $siteStart - ($PadSpacing * $padOrder) ]
     	}
-      #debug "padOrder: $padOrder pad_centre_x: $pad_centre_x  pad_centre_y: $pad_centre_y"
+      #debug "padOrder: $padOrder pad_center_x: $pad_center_x  pad_center_y: $pad_center_y"
 
-      set pad_centre_x_microns [ord::dbu_to_microns $pad_centre_x]
-      set pad_centre_y_microns [ord::dbu_to_microns $pad_centre_y]
-      set_padcell_centre $padcell $pad_centre_x_microns $pad_centre_y_microns
-      set_padcell_scaled_centre $padcell $pad_centre_x $pad_centre_y	    
-      set_padcell_origin $padcell [get_padcell_centre $padcell]     
+      set pad_center_x_microns [ord::dbu_to_microns $pad_center_x]
+      set pad_center_y_microns [ord::dbu_to_microns $pad_center_y]
+      set_padcell_center $padcell $pad_center_x_microns $pad_center_y_microns
+      set_padcell_scaled_center $padcell $pad_center_x $pad_center_y	    
+      set_padcell_origin $padcell [get_padcell_center $padcell]     
       set_padcell_scaled_origin $padcell       
-      #debug  " pad_cell has origin: [get_padcell_origin $padcell] ,  scaled_origin: [get_padcell_scaled_origin $padcell] , centre: [get_padcell_centre $padcell]] , scaled_centre [get_padcell_scaled_centre $padcell]]"
+      #debug  " pad_cell has origin: [get_padcell_origin $padcell] ,  scaled_origin: [get_padcell_scaled_origin $padcell] , center: [get_padcell_center $padcell]] , scaled_center [get_padcell_scaled_center $padcell]]"
     }        
   } 
    
   proc place_padring {} {
     variable block
     variable tech
-    variable chip_width 
+    variable chip_width
     variable chip_height
-    variable edge_bottom_offset 
-    variable edge_right_offset 
-    variable edge_top_offset 
+    variable edge_bottom_offset
+    variable edge_right_offset
+    variable edge_top_offset
     variable edge_left_offset
     variable pad_ring
  
@@ -3621,27 +3627,21 @@ namespace eval ICeWall {
         } \
         "right"  {
           set fill_start [expr $edge_bottom_offset + [corner_height corner_lr]]
-          set fill_end   [expr $chip_height - $edge_top_offset - [corner_height corner_ur]]        
+          set fill_end   [expr $chip_height - $edge_top_offset - [corner_height corner_ur]]
 	} \
         "top"    {
           set fill_start [expr $chip_width - $edge_right_offset - [corner_width corner_ur]]
-          set fill_end   [expr $edge_left_offset + [corner_width corner_ul]]       
+          set fill_end   [expr $edge_left_offset + [corner_width corner_ul]]
 	} \
         "left"   {
           set fill_start [expr $chip_height - $edge_top_offset - [corner_height corner_ul]]
           set fill_end   [expr $edge_bottom_offset + [corner_height corner_ll]]
 	}
 
-
-      #debug "side:$side_name has anchor_point_a  [$anchor_point_a getName] , anchor_point_b  [$anchor_point_b getName]"
-      #debug "side:$side_name has the following anchor_points: [get_side_anchor_points $side_name]"
-      #split_iopad_side $side_name
-      
-      
+   
       # debug "$side_name: fill_start = $fill_start"
-       #debug "$side_name: fill_end   = $fill_end"
+      # debug "$side_name: fill_end   = $fill_end"
       # debug "padcells: [get_footprint_padcells_by_side $side_name]"
-       # debug " [dict exists $footprint padcell $padcell cell centre]"
 
       set bbox {}
       set padcells_on_side [get_footprint_padcells_by_side $side_name]
@@ -3653,20 +3653,10 @@ namespace eval ICeWall {
         set type [get_padcell_type $padcell]
         set cell [get_cell $type $side_name]
         # debug "name: $name, type: $type, cell: $cell"
+	
         set cell_height [expr max([$cell getHeight],[$cell getWidth])]
         set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
-	
-	#debug "$padcell is located at side: $side_name , with order $padOrder , cell_height : $cell_height , cell_width : $cell_width"
-        #debug "[get_padcell_origin $padcell]"
-        #debug "[get_padcell_orient $padcell]"
-        #debug "[get_padcell_scaled_centre $padcell]"
-	#debug "[dict get $footprint padcell $padcell side]"
-	#debug "[dict get $footprint padcell $padcell ]"
-	#if {[dict exists $footprint padcell $padcell cell centre]} {
-        #  #dict set footprint padcell $padcell $type scaled_origin [get_scaled_origin $padcell $type]
-        # debug "[ dict get  $footprint padcell $padcell cell centre]"
-        #}
-	
+		
         if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
           # debug "Skip padcell $padcell"
           continue
@@ -3679,7 +3669,7 @@ namespace eval ICeWall {
         # set location [transform_point {*}$offset [list 0 0] $orient]
         # set place_at [list [expr [dict get $origin x] - [lindex $location 0]] [expr [dict get $origin y] - [lindex $location 1]]]
         set place_at [list [dict get $origin x] [dict get $origin y]]
-        #debug "padcell: $padcell, origin: $origin, orient: $orient, place_at: $place_at"
+        # debug "padcell: $padcell, origin: $origin, orient: $orient, place_at: $place_at"
 
         $inst setOrigin {*}$place_at
         $inst setOrient $orient
@@ -3764,9 +3754,8 @@ namespace eval ICeWall {
     variable edge_right_offset
     variable edge_top_offset
     variable edge_left_offset
-     #debug start
+    
     dict set pad_ring corner_ll [set inst [odb::dbInst_create $block [set corner [get_cell corner ll]] "CORNER_LL"]]
-    #debug "$inst $corner $block "
     set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ll]
     set corner_origin [list $edge_left_offset $edge_bottom_offset]
@@ -4119,11 +4108,10 @@ namespace eval ICeWall {
 
     # Padring placement
     # debug "padring placement"
-    
-    
     place_padcells
     place_corners
     assign_locations
+    get_footprint_padcells_order
     place_padring
     connect_by_abutment
 
