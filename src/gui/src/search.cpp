@@ -168,12 +168,18 @@ void Search::addInst(odb::dbInst* inst)
   Polygon poly;
   bg::convert(box, poly);
   insts_.insert(std::make_tuple(box, poly, inst));
+
+  int x, y;
+  inst->getLocation(x, y);
+  instance_markers_.append({x, y});
 }
 
 void Search::clear()
 {
   insts_.clear();
+  instance_markers_.clear();
   shapes_.clear();
+  fills_.clear();
 }
 
 template <typename T>

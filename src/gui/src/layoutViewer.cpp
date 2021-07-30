@@ -1000,6 +1000,8 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     }
   }
   painter->setTransform(initial_xfm);
+
+  painter->drawPoints(search_.getInstanceMarkers());
 }
 
 // Draw the region of the block.  Depth is not yet used but

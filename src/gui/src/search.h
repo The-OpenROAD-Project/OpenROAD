@@ -34,6 +34,7 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <QPolygon>
 
 #include "db.h"
 
@@ -118,6 +119,8 @@ class Search
                         int y_hi,
                         int min_height = 0);
 
+  const QPolygon& getInstanceMarkers() { return instance_markers_; }
+
   void clear();
 
  private:
@@ -130,6 +133,9 @@ class Search
   std::map<odb::dbTechLayer*, Rtree<odb::dbNet*>> shapes_;
   std::map<odb::dbTechLayer*, Rtree<odb::dbFill*>> fills_;
   Rtree<odb::dbInst*> insts_;
+
+  // Holds a QVector of QPoints that can be used to draw a point at each instance
+  QPolygon instance_markers_;
 };
 
 }  // namespace gui
