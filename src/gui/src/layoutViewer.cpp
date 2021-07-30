@@ -421,6 +421,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = getBlock()->getDataBase()->getTech();
   std::vector<Selected> selections;
+
+  if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
+    auto blockages = search_.searchBlockages(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+    for (auto iter : blockages) {
+      selections.push_back(makeSelected_(std::get<2>(iter)));
+    }
+  }
+
   // dbSet doesn't provide a reverse iterator so we have to copy it.
   std::deque<dbTechLayer*> rev_layers;
   for (auto layer : tech->getLayers()) {
@@ -436,6 +444,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       Selected selected = renderer->select(layer, pt_dbu);
       if (selected) {
         selections.push_back(selected);
+      }
+    }
+
+    if (options_->areObstructionsVisible() && options_->areObstructionsSelectable()) {
+      auto obs = search_.searchObstructions(
+          layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+      for (auto iter : obs) {
+        selections.push_back(makeSelected_(std::get<2>(iter)));
       }
     }
 
@@ -1123,6 +1139,48 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   painter->setFont(initial_font);
 }
 
+void LayoutViewer::drawBlockages(QPainter* painter,
+                                 const Rect& bounds)
+{
+  if (!options_->areBlockagesVisible()) {
+    return;
+  }
+  painter->setPen(Qt::NoPen);
+  painter->setBrush(QBrush(options_->placementBlockageColor(), options_->placementBlockagePattern()));
+
+  auto blockage_range = search_.searchBlockages(
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+
+  for (auto& [box, poly, blockage] : blockage_range) {
+    Rect bbox;
+    blockage->getBBox()->getBox(bbox);
+    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+}
+
+void LayoutViewer::drawObstructions(dbTechLayer* layer,
+                                    QPainter* painter,
+                                    const Rect& bounds)
+{
+  if (!options_->areObstructionsVisible() || !options_->isVisible(layer)) {
+    return;
+  }
+
+  painter->setPen(Qt::NoPen);
+  QColor color = getColor(layer).darker();
+  Qt::BrushStyle brush_pattern = getPattern(layer);
+  painter->setBrush(QBrush(color, brush_pattern));
+
+  auto obstructions_range = search_.searchObstructions(
+      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+
+  for (auto& [box, poly, obs] : obstructions_range) {
+    Rect bbox;
+    obs->getBBox()->getBox(bbox);
+    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -1167,6 +1225,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawInstanceOutlines(painter, insts);
 
+  // draw blockages
+  drawBlockages(painter, bounds);
+
   dbTech* tech = block->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
     if (!options_->isVisible(layer)) {
@@ -1180,6 +1241,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     drawInstanceShapes(layer, painter, insts);
+
+    drawObstructions(layer, painter, bounds);
 
     // Now draw the shapes
     QColor color = getColor(layer);
@@ -1812,6 +1875,21 @@ void LayoutViewer::inDbSWireCreate(dbSWire* wire)
 }
 
 void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbBlockageCreate(odb::dbBlockage* blockage)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbObstructionCreate(odb::dbObstruction* obs)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbObstructionDestroy(odb::dbObstruction* obs)
 {
   updateShapes();
 }

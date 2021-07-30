@@ -147,6 +147,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void inDbSWireCreate(odb::dbSWire* wire) override;
   virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
   virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
+  virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
+  virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
+  virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
 
  signals:
   void location(qreal x, qreal y);
@@ -220,6 +223,11 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawInstanceNames(QPainter* painter,
                          int font_size,
                          const std::vector<odb::dbInst*>& insts);
+  void drawBlockages(QPainter* painter,
+                     const odb::Rect& bounds);
+  void drawObstructions(odb::dbTechLayer* layer,
+                        QPainter* painter,
+                        const odb::Rect& bounds);
   void drawRows(odb::dbBlock* block,
                 QPainter* painter,
                 const odb::Rect& bounds);

@@ -50,6 +50,8 @@ class Options
   virtual ~Options() {}
   virtual QColor color(const odb::dbTechLayer* layer) = 0;
   virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
+  virtual QColor placementBlockageColor() = 0;
+  virtual Qt::BrushStyle placementBlockagePattern() = 0;
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
   virtual bool isNetVisible(odb::dbNet* net) = 0;
@@ -58,6 +60,10 @@ class Options
   virtual bool isInstanceSelectable(odb::dbInst* inst) = 0;
   virtual bool areInstanceNamesVisible() = 0;
   virtual bool areFillsVisible() = 0;
+  virtual bool areBlockagesVisible() = 0;
+  virtual bool areBlockagesSelectable() = 0;
+  virtual bool areObstructionsVisible() = 0;
+  virtual bool areObstructionsSelectable() = 0;
   virtual bool areRowsVisible() = 0;
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
