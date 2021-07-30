@@ -1,0 +1,237 @@
+puts "Loading library IO cell meta-data"
+source coyote_tc/library.sky130_io.tcl
+
+puts "Loaded library IO cell data"
+Footprint definition {
+  Type Wirebond
+
+  die_area {0 0 5400.000 4616.000}
+  core_area {200.0 200.0 5200.0 4416.0}
+
+  power_nets  "VDD VDDIO"
+  ground_nets "VSS VSSIO"
+
+  offsets 0
+  tracks results/sky130.track.info
+  pin_layer met5
+  
+  pad_inst_name "u_%s"
+  pad_pin_name "%s"
+
+  padcell {
+    sig0     {type sig       cell {center {x  240.000 y  100.000}}  side bottom }
+    sig1     {type sig       cell {center {x  320.000 y  100.000}}  side bottom }
+    vzz_0    {type vssio_hvc cell {center {x  400.000 y  100.000}}  side bottom }
+    v18_0    {type vddio_hvc                                        side bottom }
+    sig3     {type sig                                              side bottom }
+    sig4     {type sig                                              side bottom }
+    sig5     {type sig                                              side bottom }
+    sig6     {type sig                                              side bottom }
+    sig7     {type sig                                              side bottom }
+    sig8     {type sig       cell {center {x 1040.000 y  100.000}}  side bottom }
+    sig9     {type sig                                              side bottom }
+    vzz_1    {type vssio_hvc                                        side bottom }
+    v18_1    {type vddio_hvc                                        side bottom }
+    sig10    {type sig       cell {center {x 1360.000 y  100.000}}  side bottom }
+    sig11    {type sig       cell {center {x 1440.000 y  100.000}}  side bottom }
+    sig12    {type sig                                              side bottom }
+    vss_0    {type vssd_hvc                                         side bottom }
+    vdd_0    {type vccd_hvc                                         side bottom }
+    sig13    {type sig                                              side bottom }
+    sig14    {type sig                                              side bottom }
+    sig15    {type sig                                              side bottom }
+    sig16    {type sig                                              side bottom }
+    sig17    {type sig       cell {center {x 2080.000 y  100.000}}  side bottom }
+    vzz_2    {type vssio_hvc cell {center {x 2160.000 y  100.000}}  side bottom }
+    v18_2    {type vddio_hvc cell {center {x 2240.000 y  100.000}}  side bottom }
+    sig18    {type sig                                              side bottom }
+    sig19    {type sig                                              side bottom }
+    sig20    {type sig                                              side bottom }
+    sig21    {type sig                                              side bottom }
+    sig22    {type sig                                              side bottom }
+    sig23    {type sig                                              side bottom }
+    sig24    {type sig                                              side bottom }
+    sig25    {type sig                                              side bottom }
+    vzz_3    {type vssio_hvc                                        side bottom }
+    v18_3    {type vddio_hvc                                        side bottom }
+    sig26    {type sig                                              side bottom }
+    sig27    {type sig       cell {center {x 3200.000 y  100.000}}  side bottom }
+    sig28    {type sig       cell {center {x 3280.000 y  100.000}}  side bottom }
+    sig29    {type sig                                              side bottom }
+    sig30    {type sig                                              side bottom }
+    vss_1    {type vssd_hvc                                         side bottom }
+    vdd_1    {type vccd_hvc                                         side bottom }
+    sig31    {type sig       cell {center {x 3680.000 y  100.000}}  side bottom }
+    sig32    {type sig       cell {center {x 3760.000 y  100.000}}  side bottom }
+    sig33    {type sig                                              side bottom }
+    vzz_4    {type vssio_hvc                                        side bottom }
+    v18_4    {type vddio_hvc                                        side bottom }
+    sig34    {type sig                                              side bottom }
+    sig35    {type sig                                              side bottom }
+    sig36    {type sig                                              side bottom }
+    sig37    {type sig                                              side bottom }
+    sig38    {type sig                                              side bottom }
+    sig39    {type sig                                              side bottom }
+    sig40    {type sig                                              side bottom }
+    sig41    {type sig       cell {center {x 4640.000 y  100.000}}  side bottom }
+    vzz_5    {type vssio_hvc cell {center {x 4720.000 y  100.000}}  side bottom }
+    v18_5    {type vddio_hvc cell {center {x 4800.000 y  100.000}}  side bottom }
+    sig42    {type sig                                              side bottom }
+    sig43    {type sig                                              side bottom }
+    sig44    {type sig                                              side right }
+    sig45    {type sig                                              side right }
+    sig46    {type sig                                              side right }
+    sig47    {type sig                                              side right }
+    vzz_6    {type vssio_hvc                                        side right }
+    v18_6    {type vddio_hvc                                        side right }
+    vss_2    {type vssd_hvc                                         side right }
+    vdd_2    {type vccd_hvc                                         side right }
+    sig48    {type sig                                              side right }
+    sig49    {type sig                                              side right }
+    sig50    {type sig                                              side right }
+    sig51    {type sig                                              side right }
+    sig52    {type sig                                              side right }
+    sig53    {type sig                                              side right }
+    sig54    {type sig                                              side right }
+    sig55    {type sig       cell {center {x 5300.000 y 1440.000}}  side right }
+    vzz_7    {type vssio_hvc cell {center {x 5300.000 y 1520.000}}  side right }
+    v18_7    {type vddio_hvc cell {center {x 5300.000 y 1600.000}}  side right }
+    sig56    {type sig       cell {center {x 5300.000 y 1680.000}}  side right }
+    sig57    {type sig                                              side right }
+    sig58    {type sig                                              side right }
+    sig59    {type sig                                              side right }
+    sig60    {type sig                                              side right }
+    sig61    {type sig                                              side right }
+    sig62    {type sig                                              side right }
+    sig63    {type sig                                              side right }
+    vzz_8    {type vssio_hvc                                        side right }
+    v18_8    {type vddio_hvc                                        side right }
+    sig64    {type sig                                              side right }
+    sig65    {type sig                                              side right }
+    sig66    {type sig                                              side right }
+    vss_3    {type vssd_hvc                                         side right }
+    vdd_3    {type vccd_hvc                                         side right }
+    sig67    {type sig                                              side right }
+    sig68    {type sig                                              side right }
+    sig69    {type sig                                              side right }
+    sig70    {type sig                                              side right }
+    sig71    {type sig                                              side right }
+    vzz_9    {type vssio_hvc cell {center {x 5300.000 y 3280.000}}  side right }
+    v18_9    {type vddio_hvc                                        side right }
+    sig72    {type sig                                              side right }
+    sig73    {type sig                                              side right }
+    sig74    {type sig                                              side right }
+    sig75    {type sig                                              side right }
+    sig76    {type sig                                              side right }
+    sig77    {type sig                                              side right }
+    sig78    {type sig                                              side right }
+    sig79    {type sig       cell {center {x 5300.000 y 4000.000}}  side right }
+    vzz_10   {type vssio_hvc                                        side right }
+    v18_10   {type vddio_hvc                                        side right }
+    sig80    {type sig                                              side right }
+    sig81    {type sig       cell {center {x 5300.000 y 4320.000}}  side right }
+    sig82    {type sig       cell {center {x 4960.000 y 4516.000}}  side top }
+    sig83    {type sig                                              side top }
+    sig84    {type sig                                              side top }
+    sig85    {type sig                                              side top }
+    vss_4    {type vssd_hvc                                         side top }
+    vdd_4    {type vccd_hvc                                         side top }
+    sig86    {type sig                                              side top }
+    sig87    {type sig                                              side top }
+    vzz_11   {type vssio_hvc                                        side top }
+    v18_11   {type vddio_hvc                                        side top }
+    sig88    {type sig                                              side top }
+    sig89    {type sig                                              side top }
+    sig90    {type sig                                              side top }
+    sig91    {type sig                                              side top }
+    sig92    {type sig                                              side top }
+    sig93    {type sig                                              side top }
+    sig94    {type sig                                              side top }
+    sig95    {type sig                                              side top }
+    vzz_12   {type vssio_hvc                                        side top }
+    v18_12   {type vddio_hvc                                        side top }
+    sig96    {type sig                                              side top }
+    sig97    {type sig                                              side top }
+    sig98    {type sig                                              side top }
+    sig99    {type sig                                              side top }
+    sig100   {type sig                                              side top }
+    sig101   {type sig                                              side top }
+    sig102   {type sig                                              side top }
+    sig103   {type sig                                              side top }
+    vzz_13   {type vssio_hvc                                        side top }
+    v18_13   {type vddio_hvc                                        side top }
+    vss_5    {type vssd_hvc                                         side top }
+    vdd_5    {type vccd_hvc                                         side top }
+    sig104   {type sig                                              side top }
+    sig105   {type sig                                              side top }
+    sig106   {type sig                                              side top }
+    sig107   {type sig                                              side top }
+    sig108   {type sig                                              side top }
+    sig109   {type sig       cell {center {x 2000.000 y 4516.000}}  side top }
+    sig110   {type sig       cell {center {x 1920.000 y 4516.000}}  side top }
+    sig111   {type sig       cell {center {x 1840.000 y 4516.000}}  side top }
+    vzz_14   {type vssio_hvc                                        side top }
+    v18_14   {type vddio_hvc                                        side top }
+    sig112   {type sig                                              side top }
+    sig113   {type sig                                              side top }
+    sig114   {type sig                                              side top }
+    sig115   {type sig                                              side top }
+    sig116   {type sig                                              side top }
+    sig117   {type sig                                              side top }
+    sig118   {type sig                                              side top }
+    sig119   {type sig                                              side top }
+    vzz_15   {type vssio_hvc                                        side top }
+    v18_15   {type vddio_hvc                                        side top }
+    sig120   {type sig                                              side top }
+    sig121   {type sig                                              side top }
+    vdd_6    {type vssd_hvc                                         side top }
+    vss_6    {type vccd_hvc                                         side top }
+    sig122   {type sig                                              side top }
+    sig123   {type sig                                              side top }
+    sig124   {type sig                                              side top }
+    sig125   {type sig                                              side top }
+    sig126   {type sig       cell {center {x  100.000 y 4320.000}}  side left }
+    sig127   {type sig       cell {center {x  100.000 y 4240.000}}  side left }
+    vzz_16   {type vssio_hvc cell {center {x  100.000 y 4160.000}}  side left }
+    v18_16   {type vddio_hvc                                        side left }
+    sig128   {type sig                                              side left }
+    sig129   {type sig                                              side left }
+    sig130   {type sig                                              side left }
+    sig131   {type sig                                              side left }
+    sig132   {type sig                                              side left }
+    sig133   {type sig                                              side left }
+    sig134   {type sig                                              side left }
+    sig135   {type sig                                              side left }
+    vzz_17   {type vssio_hvc                                        side left }
+    v18_17   {type vddio_hvc                                        side left }
+    sig136   {type sig                                              side left }
+    sig137   {type sig       cell {center {x  100.000 y 3120.000}}  side left }
+    sig138   {type sig       cell {center {x  100.000 y 3040.000}}  side left }
+    sig139   {type sig       cell {center {x  100.000 y 2960.000}}  side left }
+    sig140   {type sig                                              side left }
+    sig141   {type sig                                              side left }
+    vss_7    {type vssd_hvc                                         side left }
+    vdd_7    {type vccd_hvc                                         side left }
+    sig142   {type sig                                              side left }
+    sig143   {type sig       cell {center {x  100.000 y 2480.000}}  side left }
+    vzz_18   {type vssio_hvc                                        side left }
+    v18_18   {type vddio_hvc                                        side left }
+    sig144   {type sig                                              side left }
+    sig145   {type sig                                              side left }
+    sig146   {type sig                                              side left }
+    sig147   {type sig                                              side left }
+    sig148   {type sig                                              side left }
+    sig149   {type sig                                              side left }
+    sig150   {type sig       cell {center {x  100.000 y 1760.000}}  side left }
+    sig151   {type sig       cell {center {x  100.000 y 1680.000}}  side left }
+    vzz_19   {type vssio_hvc                                        side left }
+    v18_19   {type vddio_hvc                                        side left }
+    sig152   {type sig                                              side left }
+    sig153   {type sig                                              side left }
+    sig154   {type sig       cell {center {x  100.000 y 1280.000}}  side left }
+    vdd_8    {type vccd_hvc                                         side left }
+    vss_8    {type vssd_hvc                                         side left }
+    vzz_20   {type vssio_hvc                                        side left }
+    v18_20   {type vddio_hvc                                        side left }
+  }
+}                                                             
