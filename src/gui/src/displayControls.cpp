@@ -221,6 +221,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
+  makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
@@ -310,6 +311,7 @@ void DisplayControls::readSettings(QSettings* settings)
 
   // misc
   settings->beginGroup("misc");
+  readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.fills);
   settings->endGroup();
 
@@ -353,6 +355,7 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   // misc
   settings->beginGroup("misc");
+  writeSettingsForRow(settings, misc_.instance_names);
   writeSettingsForRow(settings, misc_.fills);
   settings->endGroup();
 
@@ -728,6 +731,11 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
     return it->second.selectable->checkState() == Qt::Checked;
   }
   return false;
+}
+
+bool DisplayControls::areInstanceNamesVisible()
+{
+  return misc_.instance_names.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::areFillsVisible()

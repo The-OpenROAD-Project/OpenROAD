@@ -153,6 +153,7 @@ class DisplayControls : public QDockWidget, public Options
   bool isNetSelectable(odb::dbNet* net) override;
   bool isInstanceVisible(odb::dbInst* inst) override;
   bool isInstanceSelectable(odb::dbInst* inst) override;
+  bool areInstanceNamesVisible() override;
   bool areFillsVisible() override;
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
@@ -235,6 +236,7 @@ class DisplayControls : public QDockWidget, public Options
 
   struct MiscModels
   {
+    ModelRow instance_names;
     ModelRow fills;
   };
 
