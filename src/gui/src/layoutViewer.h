@@ -207,6 +207,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                   QPainter* painter,
                   const odb::Rect& bounds);
 
+  void drawInstanceOutlines(QPainter* painter,
+                            const odb::Rect& bounds,
+                            const std::vector<odb::dbInst*>& insts);
   void drawRows(odb::dbBlock* block,
                 QPainter* painter,
                 const odb::Rect& bounds);

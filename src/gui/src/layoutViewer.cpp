@@ -961,6 +961,47 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   }
 }
 
+// Draw the instances bounds
+void LayoutViewer::drawInstanceOutlines(QPainter* painter,
+                                        const Rect& bounds,
+                                        const std::vector<dbInst*>& insts)
+{
+  int pixel = minimumViewableResolution();  // 1 pixel in DBU
+  int min_height_for_tag = 5 * pixel;
+
+  const QTransform initial_xfm = painter->transform();
+
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // setup the instance's transform
+    QTransform xfm = initial_xfm;
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // draw bbox
+    Rect master_box;
+    master->getPlacementBoundary(master_box);
+    painter->drawRect(
+        master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
+
+    // Draw an orientation tag in corner if useful in size
+    int master_h = master->getHeight();
+    if (master_h >= min_height_for_tag) {
+      qreal master_w = master->getWidth();
+      qreal tag_size = 0.1 * master_h;
+      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
+      qreal tag_y = master_box.yMin() + tag_size;
+      painter->drawLine(QPointF(tag_x, master_box.yMin()),
+                        QPointF(master_box.xMin(), tag_y));
+    }
+  }
+  painter->setTransform(initial_xfm);
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -1004,35 +1045,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   // Draw the instances bounds
-  for (auto inst : insts) {
-    dbMaster* master = inst->getMaster();
-    // setup the instance's transform
-    QTransform xfm = painter->transform();
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-    addInstTransform(xfm, inst_xfm);
-    painter->setTransform(xfm);
-
-    // draw bbox
-    painter->setPen(QPen(Qt::gray, 0));
-    painter->setBrush(QBrush());
-    Rect master_box;
-    master->getPlacementBoundary(master_box);
-    painter->drawRect(
-        master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
-
-    // Draw an orientation tag in corner if useful in size
-    int master_h = master->getHeight();
-    if (master_h >= 5 * pixel) {
-      qreal master_w = master->getWidth();
-      qreal tag_size = 0.1 * master_h;
-      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-      qreal tag_y = master_box.yMin() + tag_size;
-      painter->drawLine(QPointF(tag_x, master_box.yMin()),
-                        QPointF(master_box.xMin(), tag_y));
-    }
-    painter->setTransform(initial_xfm);
-  }
+  drawInstanceOutlines(painter, bounds, insts);
 
   dbTech* tech = block->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
