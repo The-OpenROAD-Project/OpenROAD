@@ -214,6 +214,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
+  makeLeafItem(misc_.instance_markers, "Instance markers", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
 
   setWidget(view_);
@@ -286,6 +287,7 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->endGroup();  // tracks
 
   settings->beginGroup("misc");
+  misc_.instance_markers.visible->setCheckState(getChecked(settings, "instance_markers_visible"));
   misc_.fills.visible->setCheckState(getChecked(settings, "fills_visible"));
   settings->endGroup();  // misc
 
@@ -335,6 +337,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->endGroup();  // tracks
 
   settings->beginGroup("misc");
+  settings->setValue("instance_markers_visible", asBool(misc_.instance_markers.visible));
   settings->setValue("fills_visible", asBool(misc_.fills.visible));
   settings->endGroup();  // misc
 
@@ -653,6 +656,11 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
     return it->second.selectable->checkState() == Qt::Checked;
   }
   return false;
+}
+
+bool DisplayControls::areInstanceMarkersVisible()
+{
+  return misc_.instance_markers.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::areFillsVisible()

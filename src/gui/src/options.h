@@ -56,6 +56,7 @@ class Options
   virtual bool isNetSelectable(odb::dbNet* net) = 0;
   virtual bool isInstanceVisible(odb::dbInst* inst) = 0;
   virtual bool isInstanceSelectable(odb::dbInst* inst) = 0;
+  virtual bool areInstanceMarkersVisible() = 0;
   virtual bool areFillsVisible() = 0;
   virtual bool areRowsVisible() = 0;
   virtual bool arePrefTracksVisible() = 0;
