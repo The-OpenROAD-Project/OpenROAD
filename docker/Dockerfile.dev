@@ -1,7 +1,10 @@
 # create image with dependencies needed to compile openroad app
 # NOTE: don't use this file directly unless you know what you are doing,
 # instead use etc/DockerHelper.sh
+
+# https://github.com/moby/moby/issues/38379#issuecomment-448445652
 ARG fromImage=centos:centos7
+
 FROM $fromImage
 
 COPY DependencyInstaller.sh /tmp/.
