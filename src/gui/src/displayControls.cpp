@@ -183,6 +183,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(nets_.power, "Power", nets_parent, Qt::Checked, true);
   makeLeafItem(nets_.ground, "Ground", nets_parent, Qt::Checked, true);
   makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
+  toggleParent(nets_group_);
 
   // Instance group
   auto instances_parent = makeParentItem(
@@ -199,6 +200,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
+  toggleParent(instance_group_);
 
   // Rows
   makeParentItem(rows_, "Rows", model_, Qt::Unchecked);
@@ -213,12 +215,14 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
   makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
+  toggleParent(tracks_group_);
 
   // Misc group
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  toggleParent(misc_group_);
 
   setWidget(view_);
   connect(model_,
@@ -389,6 +393,14 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
   ignore_callback_ = false;
 }
 
+void DisplayControls::toggleParent(ModelRow& row)
+{
+  toggleParent(row.name, row.visible, Visible);
+  if (row.selectable != nullptr) {
+    toggleParent(row.name, row.selectable, Selectable);
+  }
+}
+
 void DisplayControls::itemChanged(QStandardItem* item)
 {
   if (item->isCheckable() == false) {
@@ -530,6 +542,8 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           type == dbTechLayerType::CUT ? NULL : layer);
     }
   }
+
+  toggleParent(layers_group_);
 
   for (int i = 0; i < 4; i++)
     view_->resizeColumnToContents(i);
