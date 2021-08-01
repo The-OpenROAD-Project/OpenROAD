@@ -454,14 +454,12 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     display_dialog.exec();
     QColor chosen_color = display_dialog.getSelectedColor();
     if (chosen_color.isValid()) {
-      QPixmap swatch(20, 20);
-      swatch.fill(chosen_color);
-      color_item->setIcon(QIcon(swatch));
+      color_item->setIcon(makeSwatchIcon(chosen_color));
       auto cut_layer_index
           = model_->sibling(index.row() + 1, index.column(), index);
       if (cut_layer_index.isValid()) {
         auto cut_color_item = model_->itemFromIndex(cut_layer_index);
-        cut_color_item->setIcon(QIcon(swatch));
+        cut_color_item->setIcon(makeSwatchIcon(chosen_color));
       }
       if (chosen_color != color_val
           || layer_pattern_[tech_layer]
@@ -539,7 +537,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           Qt::Checked,
           true,
           color(layer),
-          type == dbTechLayerType::CUT ? NULL : layer);
+          type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(static_cast<void*>(layer)));
     }
   }
 
@@ -587,20 +585,16 @@ void DisplayControls::makeLeafItem(
     Qt::CheckState checked,
     bool add_selectable,
     const QColor& color,
-    odb::dbTechLayer* tech_layer)
+    const QVariant& user_data)
 {
   row.name = new QStandardItem(text);
   row.name->setEditable(false);
 
-  QPixmap swatch(20, 20);
-  swatch.fill(color);
-  row.swatch = new QStandardItem(QIcon(swatch), "");
+  row.swatch = new QStandardItem(makeSwatchIcon(color), "");
   row.swatch->setEditable(false);
   row.swatch->setCheckable(false);
-  if (tech_layer != nullptr) {
-    QVariant tech_layer_data(
-        QVariant::fromValue(static_cast<void*>(tech_layer)));
-    row.swatch->setData(tech_layer_data, Qt::UserRole);
+  if (user_data.isValid()) {
+    row.swatch->setData(user_data, Qt::UserRole);
   }
 
   row.visible = new QStandardItem("");
@@ -616,6 +610,14 @@ void DisplayControls::makeLeafItem(
   }
 
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
+}
+
+const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
+{
+  QPixmap swatch(20, 20);
+  swatch.fill(color);
+
+  return QIcon(swatch);
 }
 
 QColor DisplayControls::color(const odb::dbTechLayer* layer)

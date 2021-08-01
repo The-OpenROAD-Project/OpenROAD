@@ -256,7 +256,9 @@ class DisplayControls : public QDockWidget, public Options
                     Qt::CheckState checked,
                     bool add_selectable = false,
                     const QColor& color = Qt::transparent,
-                    odb::dbTechLayer* tech_layer = nullptr);
+                    const QVariant& user_data = QVariant());
+
+  const QIcon makeSwatchIcon(const QColor& color);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
   void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);
