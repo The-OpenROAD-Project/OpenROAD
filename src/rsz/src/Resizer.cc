@@ -675,7 +675,9 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
-        && !drvr->isConstant())
+        && !drvr->isConstant()
+        // Hands off special nets.
+        && !db_network_->isSpecial(net))
       repairNet(net, drvr, max_slew_margin, max_cap_margin,
                 true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
