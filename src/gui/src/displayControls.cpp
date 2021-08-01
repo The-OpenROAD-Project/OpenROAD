@@ -64,7 +64,8 @@ void PatternButton::paintEvent(QPaintEvent* event)
   auto brush = QBrush(QColor("black"), pattern_);
   qp.setBrush(brush);
   auto button_rect = rect();
-  button_rect.adjust(18, 2, -1, -1);
+  // adjust by height of radio button + 4 pixels
+  button_rect.adjust(button_rect.height()+4, 2, -1, -2);
   qp.drawRect(button_rect);
   qp.end();
 }
@@ -114,7 +115,6 @@ void DisplayColorDialog::buildUI()
 
   setLayout(main_layout_);
   setWindowTitle("Layer Config");
-  setFixedSize(600, width() - 20);
 }
 
 DisplayColorDialog::~DisplayColorDialog()
