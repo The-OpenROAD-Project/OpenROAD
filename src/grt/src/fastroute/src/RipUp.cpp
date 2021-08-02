@@ -132,12 +132,12 @@ void FastRouteCore::ripupSegZ(Segment* seg)
 }
 
 void FastRouteCore::newRipup(TreeEdge* treeedge,
-              TreeNode* treenodes,
-              int x1,
-              int y1,
-              int x2,
-              int y2,
-              int netID)
+                             TreeNode* treenodes,
+                             int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int netID)
 {
   short *gridsX, *gridsY;
   int i, grid, Zpoint, ymin, ymax, xmin;
@@ -224,13 +224,13 @@ void FastRouteCore::newRipup(TreeEdge* treeedge,
 }
 
 bool FastRouteCore::newRipupType2(TreeEdge* treeedge,
-                   TreeNode* treenodes,
-                   int x1,
-                   int y1,
-                   int x2,
-                   int y2,
-                   int deg,
-                   int netID)
+                                  TreeNode* treenodes,
+                                  int x1,
+                                  int y1,
+                                  int x2,
+                                  int y2,
+                                  int deg,
+                                  int netID)
 {
   int i, grid, ymin, ymax, n1, n2;
   RouteType ripuptype;
@@ -263,14 +263,16 @@ bool FastRouteCore::newRipupType2(TreeEdge* treeedge,
       }
 
       for (i = ymin; i < ymax; i++) {
-        if (v_edges_[i * x_grid_ + x2].est_usage > v_edges_[i * x_grid_ + x2].cap) {
+        if (v_edges_[i * x_grid_ + x2].est_usage
+            > v_edges_[i * x_grid_ + x2].cap) {
           needRipup = true;
           break;
         }
       }
     } else {
       for (i = ymin; i < ymax; i++) {
-        if (v_edges_[i * x_grid_ + x1].est_usage > v_edges_[i * x_grid_ + x1].cap) {
+        if (v_edges_[i * x_grid_ + x1].est_usage
+            > v_edges_[i * x_grid_ + x1].cap) {
           needRipup = true;
           break;
         }
@@ -320,13 +322,13 @@ bool FastRouteCore::newRipupType2(TreeEdge* treeedge,
 }
 
 bool FastRouteCore::newRipupCheck(TreeEdge* treeedge,
-                   int x1,
-                   int y1,
-                   int x2,
-                   int y2,
-                   int ripup_threshold,
-                   int netID,
-                   int edgeID)
+                                  int x1,
+                                  int y1,
+                                  int x2,
+                                  int y2,
+                                  int ripup_threshold,
+                                  int netID,
+                                  int edgeID)
 {
   short *gridsX, *gridsY;
   int i, grid, ymin, xmin;
@@ -388,8 +390,7 @@ bool FastRouteCore::newRipupCheck(TreeEdge* treeedge,
 bool FastRouteCore::newRipup3DType3(int netID, int edgeID)
 {
   short *gridsX, *gridsY, *gridsL;
-  int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid,
-      deg;
+  int i, k, grid, ymin, xmin, n1a, n2a, hl, bl, hid, bid, deg;
   std::vector<int> edge_cost_per_layer = nets_[netID]->edge_cost_per_layer;
 
   TreeEdge *treeedges, *treeedge;
@@ -609,8 +610,10 @@ void FastRouteCore::newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges_[gridsY[i] * (x_grid_ - 1) + xmin].est_usage -= edgeCost;
           } else {
-            logger_->error(GRT, 123, "Maze ripup wrong in newRipupNet for net {}.",
-                          netName(nets_[netID]));
+            logger_->error(GRT,
+                           123,
+                           "Maze ripup wrong in newRipupNet for net {}.",
+                           netName(nets_[netID]));
           }
         }
       }

@@ -33,10 +33,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iomanip>
-#include <sstream>
 
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -289,7 +289,10 @@ void extractMin(float** array, int arrayLen)
  * round : the number of maze route stages runned
  */
 
-void FastRouteCore::updateCongestionHistory(int round, int upType, bool stopDEC, int &max_adj)
+void FastRouteCore::updateCongestionHistory(int round,
+                                            int upType,
+                                            bool stopDEC,
+                                            int& max_adj)
 {
   int i, j, grid, maxlimit, overflow;
 
@@ -467,13 +470,13 @@ void FastRouteCore::updateCongestionHistory(int round, int upType, bool stopDEC,
 // heap1_   - the heap storing the addresses for d1_[][]
 // heap2_   - the heap storing the addresses for d2_[][]
 void FastRouteCore::setupHeap(int netID,
-               int edgeID,
-               int* heapLen1,
-               int* heapLen2,
-               int regionX1,
-               int regionX2,
-               int regionY1,
-               int regionY2)
+                              int edgeID,
+                              int* heapLen1,
+                              int* heapLen2,
+                              int regionX1,
+                              int regionX2,
+                              int regionY1,
+                              int regionY2)
 {
   int i, j, d, numNodes, n1, n2, x1, y1, x2, y2;
   int nbr, nbrX, nbrY, cur, edge;
@@ -689,7 +692,7 @@ void FastRouteCore::setupHeap(int netID,
       }                     // while queue is not empty
       *heapLen2 = heapcnt;  // record the length of heap2_
     }                       // else n2 is not a Pin node
-  }  // net with more than two pins
+  }                         // net with more than two pins
 
   for (i = regionY1; i <= regionY2; i++) {
     for (j = regionX1; j <= regionX2; j++)
@@ -698,12 +701,12 @@ void FastRouteCore::setupHeap(int netID,
 }
 
 int FastRouteCore::copyGrids(TreeNode* treenodes,
-              int n1,
-              int n2,
-              TreeEdge* treeedges,
-              int edge_n1n2,
-              std::vector<int>& gridsX_n1n2,
-              std::vector<int>& gridsY_n1n2)
+                             int n1,
+                             int n2,
+                             TreeEdge* treeedges,
+                             int edge_n1n2,
+                             std::vector<int>& gridsX_n1n2,
+                             std::vector<int>& gridsY_n1n2)
 {
   int i, cnt;
   int n1x, n1y;
@@ -749,14 +752,14 @@ int FastRouteCore::copyGrids(TreeNode* treenodes,
 }
 
 void FastRouteCore::updateRouteType1(TreeNode* treenodes,
-                      int n1,
-                      int A1,
-                      int A2,
-                      int E1x,
-                      int E1y,
-                      TreeEdge* treeedges,
-                      int edge_n1A1,
-                      int edge_n1A2)
+                                     int n1,
+                                     int A1,
+                                     int A2,
+                                     int E1x,
+                                     int E1y,
+                                     TreeEdge* treeedges,
+                                     int edge_n1A1,
+                                     int edge_n1A2)
 {
   int i, cnt, A1x, A1y, A2x, A2y;
   int cnt_n1A1, cnt_n1A2, E1_pos;
@@ -879,23 +882,23 @@ void FastRouteCore::updateRouteType1(TreeNode* treenodes,
 }
 
 void FastRouteCore::updateRouteType2(TreeNode* treenodes,
-                      int n1,
-                      int A1,
-                      int A2,
-                      int C1,
-                      int C2,
-                      int E1x,
-                      int E1y,
-                      TreeEdge* treeedges,
-                      int edge_n1A1,
-                      int edge_n1A2,
-                      int edge_C1C2)
+                                     int n1,
+                                     int A1,
+                                     int A2,
+                                     int C1,
+                                     int C2,
+                                     int E1x,
+                                     int E1y,
+                                     TreeEdge* treeedges,
+                                     int edge_n1A1,
+                                     int edge_n1A2,
+                                     int edge_C1C2)
 {
   int i, cnt, A1x, A1y, A2x, A2y, C1x, C1y, C2x, C2y;
   int edge_n1C1, edge_n1C2, edge_A1A2;
   int cnt_n1A1, cnt_n1A2, cnt_C1C2, E1_pos;
   int len_A1A2, len_n1C1, len_n1C2;
-  
+
   std::vector<int> gridsX_n1A1(x_range_ + y_range_);
   std::vector<int> gridsY_n1A1(x_range_ + y_range_);
   std::vector<int> gridsX_n1A2(x_range_ + y_range_);
@@ -1025,12 +1028,7 @@ void FastRouteCore::reInitTree(int netID)
   delete[] sttrees_[netID].nodes;
   delete[] sttrees_[netID].edges;
 
-  fluteCongest(netID,
-               nets_[netID]->pinX,
-               nets_[netID]->pinY,
-               2,
-               1.2,
-               &rsmt);
+  fluteCongest(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, &rsmt);
 
   if (nets_[netID]->deg > 3) {
     edgeShiftNew(&rsmt, netID);
@@ -1042,16 +1040,16 @@ void FastRouteCore::reInitTree(int netID)
 }
 
 void FastRouteCore::mazeRouteMSMD(int iter,
-                   int expand,
-                   float costHeight,
-                   int ripup_threshold,
-                   int mazeedgeThreshold,
-                   bool Ordering,
-                   int cost_type,
-                   float LOGIS_COF,
-                   int VIA,
-                   int slope,
-                   int L)
+                                  int expand,
+                                  float costHeight,
+                                  int ripup_threshold,
+                                  int mazeedgeThreshold,
+                                  bool Ordering,
+                                  int cost_type,
+                                  float LOGIS_COF,
+                                  int VIA,
+                                  int slope,
+                                  int L)
 {
   int grid, netID, nidRPC;
   float forange;
@@ -1255,14 +1253,15 @@ void FastRouteCore::mazeRouteMSMD(int iter,
               if ((preY == curY) || (d1_[curY][curX] == 0)) {
                 tmp = d1_[curY][curX]
                       + h_cost_table_[h_edges_[grid].usage + h_edges_[grid].red
-                                    + L * h_edges_[grid].last_usage];
+                                      + L * h_edges_[grid].last_usage];
               } else {
                 if (curX < regionX2 - 1) {
                   tmp_grid = curY * (x_grid_ - 1) + curX;
-                  tmp_cost = d1_[curY][curX + 1]
-                             + h_cost_table_[h_edges_[tmp_grid].usage
-                                           + h_edges_[tmp_grid].red
-                                           + L * h_edges_[tmp_grid].last_usage];
+                  tmp_cost
+                      = d1_[curY][curX + 1]
+                        + h_cost_table_[h_edges_[tmp_grid].usage
+                                        + h_edges_[tmp_grid].red
+                                        + L * h_edges_[tmp_grid].last_usage];
 
                   if (tmp_cost < d1_[curY][curX] + VIA) {
                     hyper_h_[curY][curX] = true;
@@ -1270,7 +1269,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 }
                 tmp = d1_[curY][curX] + VIA
                       + h_cost_table_[h_edges_[grid].usage + h_edges_[grid].red
-                                    + L * h_edges_[grid].last_usage];
+                                      + L * h_edges_[grid].last_usage];
               }
               tmpX = curX - 1;  // the left neighbor
 
@@ -1285,7 +1284,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 heapLen1++;
                 updateHeap(heap1_, heapLen1, heapLen1 - 1);
               } else if (d1_[curY][tmpX] > tmp)  // left neighbor been put into
-                                                // heap1_ but needs update
+                                                 // heap1_ but needs update
               {
                 d1_[curY][tmpX] = tmp;
                 parent_x3_[curY][tmpX] = curX;
@@ -1304,14 +1303,15 @@ void FastRouteCore::mazeRouteMSMD(int iter,
               if ((preY == curY) || (d1_[curY][curX] == 0)) {
                 tmp = d1_[curY][curX]
                       + h_cost_table_[h_edges_[grid].usage + h_edges_[grid].red
-                                    + L * h_edges_[grid].last_usage];
+                                      + L * h_edges_[grid].last_usage];
               } else {
                 if (curX > regionX1 + 1) {
                   tmp_grid = curY * (x_grid_ - 1) + curX - 1;
-                  tmp_cost = d1_[curY][curX - 1]
-                             + h_cost_table_[h_edges_[tmp_grid].usage
-                                           + h_edges_[tmp_grid].red
-                                           + L * h_edges_[tmp_grid].last_usage];
+                  tmp_cost
+                      = d1_[curY][curX - 1]
+                        + h_cost_table_[h_edges_[tmp_grid].usage
+                                        + h_edges_[tmp_grid].red
+                                        + L * h_edges_[tmp_grid].last_usage];
 
                   if (tmp_cost < d1_[curY][curX] + VIA) {
                     hyper_h_[curY][curX] = true;
@@ -1319,7 +1319,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 }
                 tmp = d1_[curY][curX] + VIA
                       + h_cost_table_[h_edges_[grid].usage + h_edges_[grid].red
-                                    + L * h_edges_[grid].last_usage];
+                                      + L * h_edges_[grid].last_usage];
               }
               tmpX = curX + 1;  // the right neighbor
 
@@ -1334,7 +1334,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 heapLen1++;
                 updateHeap(heap1_, heapLen1, heapLen1 - 1);
               } else if (d1_[curY][tmpX] > tmp)  // right neighbor been put into
-                                                // heap1_ but needs update
+                                                 // heap1_ but needs update
               {
                 d1_[curY][tmpX] = tmp;
                 parent_x3_[curY][tmpX] = curX;
@@ -1354,14 +1354,15 @@ void FastRouteCore::mazeRouteMSMD(int iter,
               if ((preX == curX) || (d1_[curY][curX] == 0)) {
                 tmp = d1_[curY][curX]
                       + v_cost_table_[v_edges_[grid].usage + v_edges_[grid].red
-                                    + L * v_edges_[grid].last_usage];
+                                      + L * v_edges_[grid].last_usage];
               } else {
                 if (curY < regionY2 - 1) {
                   tmp_grid = curY * x_grid_ + curX;
-                  tmp_cost = d1_[curY + 1][curX]
-                             + v_cost_table_[v_edges_[tmp_grid].usage
-                                           + v_edges_[tmp_grid].red
-                                           + L * v_edges_[tmp_grid].last_usage];
+                  tmp_cost
+                      = d1_[curY + 1][curX]
+                        + v_cost_table_[v_edges_[tmp_grid].usage
+                                        + v_edges_[tmp_grid].red
+                                        + L * v_edges_[tmp_grid].last_usage];
 
                   if (tmp_cost < d1_[curY][curX] + VIA) {
                     hyper_v_[curY][curX] = true;
@@ -1369,7 +1370,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 }
                 tmp = d1_[curY][curX] + VIA
                       + v_cost_table_[v_edges_[grid].usage + v_edges_[grid].red
-                                    + L * v_edges_[grid].last_usage];
+                                      + L * v_edges_[grid].last_usage];
               }
               tmpY = curY - 1;  // the bottom neighbor
               if (d1_[tmpY][curX]
@@ -1382,8 +1383,8 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 heap1_[heapLen1] = &d1_[tmpY][curX];
                 heapLen1++;
                 updateHeap(heap1_, heapLen1, heapLen1 - 1);
-              } else if (d1_[tmpY][curX] > tmp)  // bottom neighbor been put into
-                                                // heap1_ but needs update
+              } else if (d1_[tmpY][curX] > tmp)  // bottom neighbor been put
+                                                 // into heap1_ but needs update
               {
                 d1_[tmpY][curX] = tmp;
                 parent_x1_[tmpY][curX] = curX;
@@ -1403,14 +1404,15 @@ void FastRouteCore::mazeRouteMSMD(int iter,
               if ((preX == curX) || (d1_[curY][curX] == 0)) {
                 tmp = d1_[curY][curX]
                       + v_cost_table_[v_edges_[grid].usage + v_edges_[grid].red
-                                    + L * v_edges_[grid].last_usage];
+                                      + L * v_edges_[grid].last_usage];
               } else {
                 if (curY > regionY1 + 1) {
                   tmp_grid = (curY - 1) * x_grid_ + curX;
-                  tmp_cost = d1_[curY - 1][curX]
-                             + v_cost_table_[v_edges_[tmp_grid].usage
-                                           + v_edges_[tmp_grid].red
-                                           + L * v_edges_[tmp_grid].last_usage];
+                  tmp_cost
+                      = d1_[curY - 1][curX]
+                        + v_cost_table_[v_edges_[tmp_grid].usage
+                                        + v_edges_[tmp_grid].red
+                                        + L * v_edges_[tmp_grid].last_usage];
 
                   if (tmp_cost < d1_[curY][curX] + VIA) {
                     hyper_v_[curY][curX] = true;
@@ -1418,7 +1420,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 }
                 tmp = d1_[curY][curX] + VIA
                       + v_cost_table_[v_edges_[grid].usage + v_edges_[grid].red
-                                    + L * v_edges_[grid].last_usage];
+                                      + L * v_edges_[grid].last_usage];
               }
               tmpY = curY + 1;  // the top neighbor
               if (d1_[tmpY][curX]
@@ -1432,7 +1434,7 @@ void FastRouteCore::mazeRouteMSMD(int iter,
                 heapLen1++;
                 updateHeap(heap1_, heapLen1, heapLen1 - 1);
               } else if (d1_[tmpY][curX] > tmp)  // top neighbor been put into
-                                                // heap1_ but needs update
+                                                 // heap1_ but needs update
               {
                 d1_[tmpY][curX] = tmp;
                 parent_x1_[tmpY][curX] = curX;
@@ -1813,7 +1815,6 @@ void FastRouteCore::mazeRouteMSMD(int iter,
     }      // loop edgeID
   }
 
-  
   h_cost_table_.clear();
   v_cost_table_.clear();
 }
