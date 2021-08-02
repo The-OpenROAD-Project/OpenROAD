@@ -769,10 +769,6 @@ void SimulatedAnnealingCore::AlignMacro()
       if(blocks_[i].GetX() == 0.0) {
         macro_queue.push(i);
         blocks_[i].SetFlag(true);
-      } else if(blocks_[i].GetX() + blocks_[i].GetWidth() >= outline_width_) {
-        blocks_[i].SetFlag(true);  
-      } else {
-        ; // do nothing   
       }
     }
   }
@@ -799,10 +795,10 @@ void SimulatedAnnealingCore::AlignMacro()
          
         bool x_flag = false;
 
-        if (lx_b >= lx && lx_b <= lx + threshold_H) {
+        if(abs(lx - lx_b) < threshold_H) {
           blocks_[macro_id].SetX(lx);  
           x_flag = true;
-        } else if(lx_b >= ux && lx_b <= ux + threshold_H) {
+        } else if(abs(ux - lx_b) < threshold_H) {
           blocks_[macro_id].SetX(ux);
           x_flag = true;
         } else {
@@ -828,10 +824,6 @@ void SimulatedAnnealingCore::AlignMacro()
     if(blocks_[macro_id].GetX() + blocks_[macro_id].GetWidth() >= outline_width_) {
       blocks_[macro_id].SetFlag(true);  
       macro_queue.push(macro_id);
-    } else if(blocks_[macro_id].GetX() == 0.0) {
-      blocks_[macro_id].SetFlag(true);  
-    } else {
-      ; // do nothing  
     }
   }
 
@@ -857,10 +849,10 @@ void SimulatedAnnealingCore::AlignMacro()
          
         bool x_flag = false;
     
-        if(ux_b <= ux && ux_b >= ux - threshold_H) {
+        if(abs(ux - ux_b) < threshold_H) {
           blocks_[macro_id].SetX(ux - (ux_b - lx_b));  
           x_flag = true;
-        } else if(ux_b <= lx && ux_b >= lx - threshold_H) {
+        } else if(abs(lx - ux_b) < threshold_H) {
           blocks_[macro_id].SetX(lx - (ux_b - lx_b));
           x_flag = true;
         } else {
@@ -885,10 +877,6 @@ void SimulatedAnnealingCore::AlignMacro()
     if(blocks_[macro_id].GetY() == 0.0) {
       blocks_[macro_id].SetFlag(true);  
       macro_queue.push(macro_id);
-    } else if(blocks_[macro_id].GetY() + blocks_[macro_id].GetHeight() >= outline_height_) {
-      blocks_[macro_id].SetFlag(true);  
-    } else {
-      ; // do nothing  
     }
   }
 
@@ -914,10 +902,10 @@ void SimulatedAnnealingCore::AlignMacro()
    
         bool y_flag = false;
         
-        if(ly_b >= ly && ly_b <= ly + threshold_V) {
+        if(abs(ly - ly_b) < threshold_V) {
           blocks_[macro_id].SetY(ly);
           y_flag = true;
-        } else if(ly_b >= uy && ly_b <= uy + threshold_V) {
+        } else if(abs(uy - ly_b) < threshold_V) {
           blocks_[macro_id].SetY(uy);
           y_flag = true;
         } else {
@@ -942,10 +930,6 @@ void SimulatedAnnealingCore::AlignMacro()
     if(blocks_[macro_id].GetY() + blocks_[macro_id].GetHeight() >= outline_height_) {
       blocks_[macro_id].SetFlag(true);  
       macro_queue.push(macro_id);
-    } else if(blocks_[macro_id].GetY() == 0.0) {
-      blocks_[macro_id].SetFlag(true);  
-    } else {
-      ; // do nothing  
     }
   }
 
@@ -971,10 +955,10 @@ void SimulatedAnnealingCore::AlignMacro()
    
         bool y_flag = false;
         
-        if(uy_b <= uy && uy_b >= uy - threshold_V) {
+        if(abs(uy - uy_b) < threshold_V) {
           blocks_[macro_id].SetY(uy - (uy_b - ly_b));
           y_flag = true;
-        } else if(uy_b <= ly && uy_b >= ly - threshold_V) {
+        } else if(abs(ly - uy_b) < threshold_V) {
           blocks_[macro_id].SetY(ly - (uy_b - ly_b));
           y_flag = true;
         } else {
