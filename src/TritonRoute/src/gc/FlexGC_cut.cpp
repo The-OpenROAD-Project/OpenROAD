@@ -30,15 +30,6 @@
 #include "gc/FlexGC_impl.h"
 #include "opendb/db.h"
 
-#define DEBUG_RECT(rect, id)        \
-  logger_->info(utl::DRT,           \
-                id,                 \
-                "({},{}), ({},{})", \
-                gtl::xl(rect),      \
-                gtl::yl(rect),      \
-                gtl::xh(rect),      \
-                gtl::yh(rect));
-
 using namespace fr;
 typedef odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY LOOKUP_STRATEGY;
 
@@ -296,7 +287,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     gcRect* viaRect,
     frLef58CutSpacingTableConstraint* con)
 {
-  DEBUG_RECT(*viaRect, 9999);
   auto layerNum1 = viaRect->getLayerNum();
   auto layer1 = getTech()->getLayer(layerNum1);
   auto width = viaRect->width();
