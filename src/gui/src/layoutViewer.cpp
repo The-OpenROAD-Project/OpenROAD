@@ -651,15 +651,15 @@ void LayoutViewer::addInstTransform(QTransform& xfm,
       xfm.scale(-1, 1);
       break;
     case dbOrientType::MYR90:
-      xfm.scale(-1, 1);
       xfm.rotate(90);
+      xfm.scale(-1, 1);
       break;
     case dbOrientType::MX:
       xfm.scale(1, -1);
       break;
     case dbOrientType::MXR90:
-      xfm.scale(1, -1);
       xfm.rotate(90);
+      xfm.scale(1, -1);
       break;
     default:
       break;  // error
