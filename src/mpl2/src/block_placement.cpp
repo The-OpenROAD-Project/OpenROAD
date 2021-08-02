@@ -974,7 +974,6 @@ void SimulatedAnnealingCore::FastSA()
   int step = 1;
   float rej_num = 0.0;
   float T = init_T_;
-  float rej_threshold = rej_ratio_ * perturb_per_step_;
 
   int max_num_restart = 2;
   int num_restart = 0;
@@ -1205,7 +1204,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
                         float shrink_freq,
                         unsigned seed)
 {
-  logger->info(MPL, 2001, "Block_Placement Starts");
+  logger->info(MPL, 2001, "Block placement starts.");
 
   vector<Block> blocks;
   for (int i = 0; i < clusters.size(); i++) {
@@ -1289,7 +1288,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
                                                           seed_list[seed_id++]);
 
   sa->Initialize();
-  logger->info(MPL, 2002, "Block_Placement  Finish Initialization");
+  logger->info(MPL, 2002, "Block placement finish initialization.");
 
   SimulatedAnnealingCore* best_sa = nullptr;
   float best_cost = FLT_MAX;
@@ -1300,7 +1299,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   float norm_macro_blockage_penalty = sa->GetNormMacroBlockagePenalty();
   float init_T = sa->GetInitT();
 
-  logger->info(MPL, 2003, "Block_Placement Init_T: {}", init_T);
+  logger->info(MPL, 2003, "Block placement Init_T: {}.", init_T);
 
   blocks = sa->GetBlocks();
   vector<int> pos_seq = sa->GetPosSeq();
@@ -1313,7 +1312,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     heat_count = heat_count * heat_rate;
     vector<SimulatedAnnealingCore*> sa_vec;
     vector<thread> threads;
-    float cooling_rate_step = (0.995 - 0.985) / num_worker;
     for (int j = 0; j < num_worker; j++) {
       float cooling_rate = 0.995;
       if (num_worker >= 2) {
@@ -1396,7 +1394,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     output_info += "macro_blockage_penalty:  ";
     output_info += to_string(best_sa->GetMacroBlockagePenalty());
 
-    logger->info(MPL, 2004 + i, "Block_Placement {}", output_info);
+    logger->info(MPL, 2004 + i, "Block placement {}.", output_info);
 
     for (int j = 0; j < num_worker; j++) {
       if (best_cost < sa_vec[j]->GetCost()) {
@@ -1408,24 +1406,24 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   blocks = best_sa->GetBlocks();
   logger->info(MPL,
                2004 + num_level,
-               "Block_Placement Floorplan width: {}",
+               "Block placement floorplan width: {}.",
                best_sa->GetWidth());
   logger->info(MPL,
                2005 + num_level,
-               "Block_Placement Floorplan height: {}",
+               "Block placement floorplan height: {}.",
                best_sa->GetHeight());
   logger->info(MPL,
                2006 + num_level,
-               "Block_Placement Outline width: {}",
+               "Block placement outline width: {}.",
                outline_width);
   logger->info(MPL,
                2007 + num_level,
-               "Block_Placement Outline height: {}",
+               "Block placement outline height: {}.",
                outline_height);
 
   if (!(best_sa->IsFeasible()))
     logger->info(
-        MPL, 2008 + num_level, "Block_Placement No Feasible Floorplan");
+        MPL, 2008 + num_level, "Block placement no feasible floorplan.");
 
   return blocks;
 }

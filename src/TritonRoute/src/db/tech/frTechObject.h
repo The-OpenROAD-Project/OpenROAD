@@ -242,13 +242,13 @@ class frTechObject
   // debug
   void printAllConstraints(utl::Logger* logger)
   {
-    logger->report("Reporting Layer Properties");
+    logger->report("Reporting layer properties.");
     for (auto& layer : layers) {
       auto type = layer->getType();
       if (type == frLayerTypeEnum::CUT)
-        logger->report("Cut Layer {}", layer->getName());
+        logger->report("Cut layer {}.", layer->getName());
       else if (type == frLayerTypeEnum::ROUTING)
-        logger->report("Routing Layer {}", layer->getName());
+        logger->report("Routing layer {}.", layer->getName());
       layer->printAllConstraints(logger);
     }
   }

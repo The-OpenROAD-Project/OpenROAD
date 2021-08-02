@@ -108,12 +108,15 @@ class FlexDRGraphics : public gui::Renderer
   std::vector<std::vector<frPoint>> points_by_layer_;
 
   // Names for the custom visibility controls in the gui
-  static const char* grid_graph_visible_;
+  static const char* graph_edges_visible_;
+  static const char* grid_cost_edges_visible_;
+  static const char* blocked_edges_visible_;
   static const char* route_guides_visible_;
   static const char* routing_objs_visible_;
   static const char* route_shape_cost_visible_;
   static const char* marker_cost_visible_;
   static const char* fixed_shape_cost_visible_;
+  static const char* maze_search_visible_;
 
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };

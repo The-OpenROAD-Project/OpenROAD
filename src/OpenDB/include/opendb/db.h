@@ -1112,7 +1112,7 @@ class dbBlock : public dbObject
   ///
   /// Set corner name list
   ///
-  void setCornerNameList(char* name_list);
+  void setCornerNameList(const char* name_list);
 
   ///
   /// Get corner name list
@@ -5301,6 +5301,11 @@ class dbMaster : public dbObject
   bool isEndCap() const { return getType().isEndCap(); }
 
   ///
+  /// Is the master's type COVER or any of its subtypes
+  ///
+  bool isCover() const { return getType().isCover(); };
+
+  ///
   /// This master can be placed automatically in the core.
   /// Pad, ring, cover, and none are false.
   ///
@@ -8622,11 +8627,6 @@ class dbModInst : public dbObject
 class dbGroup : public dbObject
 {
  public:
-  enum dbGroupType
-  {
-    PHYSICAL_CLUSTER,
-    VOLTAGE_DOMAIN
-  };
   // User Code Begin dbGroupEnums
   // User Code End dbGroupEnums
 
@@ -8640,7 +8640,7 @@ class dbGroup : public dbObject
 
   // User Code Begin dbGroup
 
-  void setType(dbGroupType _type);
+  void setType(dbGroupType type);
 
   dbGroupType getType() const;
 

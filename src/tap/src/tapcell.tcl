@@ -146,24 +146,24 @@ proc tapcell { args } {
   if { [info exists keys(-tbtie_cpp)] } {
     utl::warn TAP 15 "tbtie_cpp option is deprecated."
   }
-  
+
   if {[info exists flags(-no_cell_at_top_bottom)]} {
     utl::warn TAP 16 "no_cell_at_top_bottom option is deprecated."
   }
   if {[info exists flags(-add_boundary_cell)]} {
     utl::warn TAP 17 "add_boundary_cell option is deprecated."
   }
-  
+
   set tap_prefix $tap::default_tapcell_prefix
   if { [info exists keys(-tap_prefix)] } {
       set tap_prefix $keys(-tap_prefix)
   }
-  
+
   set endcap_prefix $tap::default_endcap_prefix
   if { [info exists keys(-endcap_prefix)] } {
       set endcap_prefix $keys(-endcap_prefix)
   }
-  
+
   set add_boundary_cell 0
   if {$tap_nwintie_master != "INVALID" &&
       $tap_nwin2_master != "INVALID" &&
@@ -176,7 +176,7 @@ proc tapcell { args } {
   } {
       set add_boundary_cell 1
   }
-  
+
   set db [ord::get_db]
 
   set halo_y [ord::microns_to_dbu $halo_y]

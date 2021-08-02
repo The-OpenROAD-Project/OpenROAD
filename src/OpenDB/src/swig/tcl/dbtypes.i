@@ -215,23 +215,12 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
     Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), obj);
   }
 }
-%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
-
-// (dbGCellGrid|dbTrackGrid)::getGridPattern[XY]
-%apply int& OUTPUT { int& origin_x, int& origin_y, int& line_count, int& step };
-
-// (dbGCellGrid|dbTrackGrid)::getGrid[XY]
-%typemap(in, numinputs=0) std::vector<int> &OUTPUT  {
-   $1 = new std::vector<int>();
-}
 %typemap(argout) std::vector<int> &OUTPUT {
   for(auto it = $1->begin(); it != $1->end(); it++) {
     Tcl_Obj *obj = Tcl_NewIntObj(*it);
     Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), obj);
   }
 }
-%apply std::vector<int> &OUTPUT { std::vector<int> & x_grid,
-                                  std::vector<int> & y_grid };
 
 // Wrap containers
 WRAP_DB_CONTAINER(odb::dbProperty)

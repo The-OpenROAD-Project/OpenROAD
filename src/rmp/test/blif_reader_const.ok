@@ -9,7 +9,7 @@
 [INFO ODB-0131]     Created 8 components and 40 component-terminals.
 [INFO ODB-0133]     Created 17 nets and 24 connections.
 [INFO ODB-0134] Finished DEF file: ./design_in_out.def
-[INFO RMP-0005] blif parsed successfully, destroying 8 existing instances...
-[INFO RMP-0006] Found 2 Inputs, 1 Outputs, 0 Clocks, 5 Combinational gates, 0 Registers after parsing the blif file.
-[INFO RMP-0007] inserting 5 new instances...
+[INFO RMP-0005] Blif parsed successfully, will destroy 8 existing instances.
+[INFO RMP-0006] Found 2 inputs, 1 outputs, 0 clocks, 5 combinational gates, 0 registers after parsing the blif file.
+[INFO RMP-0007] Inserting 5 new instances.
 No differences found.

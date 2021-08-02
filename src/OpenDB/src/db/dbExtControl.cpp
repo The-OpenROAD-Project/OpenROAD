@@ -60,31 +60,6 @@ dbExtControl::dbExtControl()
   _CCnoPowerSource = 0;
   _CCnoPowerTarget = 0;
   _usingMetalPlanes = 0;
-  _ruleFileName = (char*) 0;
-  _extractedCornerList = (char*) 0;
-  _derivedCornerList = (char*) 0;
-  _cornerIndexList = (char*) 0;
-  _resFactorList = (char*) 0;
-  _gndcFactorList = (char*) 0;
-  _ccFactorList = (char*) 0;
-}
-dbExtControl::~dbExtControl()
-{
-  if (_ruleFileName)
-    free(_ruleFileName);
-
-  if (_extractedCornerList)
-    free(_extractedCornerList);
-  if (_derivedCornerList)
-    free(_derivedCornerList);
-  if (_cornerIndexList)
-    free(_cornerIndexList);
-  if (_resFactorList)
-    free(_resFactorList);
-  if (_gndcFactorList)
-    free(_gndcFactorList);
-  if (_ccFactorList)
-    free(_ccFactorList);
 }
 
 dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl)

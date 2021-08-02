@@ -112,13 +112,17 @@ void FlexDR::checkConnectivity_pin2epMap(
              << endl;
         cout << "  query bp" << endl;
       }
+      if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, bp, lNum, pin2epMap, true);
+      }
       if (enableOutput) {
         cout << "  query ep" << endl;
       }
+      if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         checkConnectivity_pin2epMap_helper(net, ep, lNum, pin2epMap, true);
       }
     }
+  }
   for (auto& connFig : netDRObjs) {
     if (connFig->typeId() == frcVia) {
       auto obj = static_cast<frVia*>(connFig);
@@ -131,10 +135,12 @@ void FlexDR::checkConnectivity_pin2epMap(
       if (enableOutput) {
         cout << "  query pt l1" << endl;
       }
+      if (obj->isBottomConnected())
         checkConnectivity_pin2epMap_helper(net, bp, l1Num, pin2epMap, false);
       if (enableOutput) {
         cout << "  query pt l2" << endl;
       }
+      if (obj->isTopConnected())
         checkConnectivity_pin2epMap_helper(net, bp, l2Num, pin2epMap, false);
       //} else if (connFig->typeId() == frcPatchWire) {
       //  ;
@@ -1280,11 +1286,11 @@ void FlexDR::checkConnectivity(int iter)
   }
 
   if (isWrong) {
-    auto writer = io::Writer(getDesign(), logger_);
-    writer.updateDb(db_);
-    if (graphics_.get()) {
+    if (graphics_) {
       graphics_->debugWholeDesign();
     }
-    logger_->error(utl::DRT, 206, "checkConnectivity error");
+    auto writer = io::Writer(getDesign(), logger_);
+    writer.updateDb(db_);
+    logger_->error(utl::DRT, 206, "checkConnectivity error.");
   }
 }

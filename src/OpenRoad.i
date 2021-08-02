@@ -209,6 +209,13 @@ getPdnGen()
   return openroad->getPdnGen();
 }
 
+stt::SteinerTreeBuilder*
+getSteinerTreeBuilder()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getSteinerTreeBuilder();
+}
+
 } // namespace ord
 
 namespace sta {

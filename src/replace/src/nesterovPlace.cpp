@@ -56,8 +56,10 @@ getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
 static float
 getSecondNorm(const vector<FloatPoint>& a);
 
+#ifdef ENABLE_CIMG_LIB
 static std::string
 getZeroFillStr(int iterNum);
+#endif
 
 NesterovPlaceVars::NesterovPlaceVars()
 {
@@ -86,8 +88,8 @@ NesterovPlaceVars::reset() {
 }
 
 NesterovPlace::NesterovPlace() 
-  : pb_(nullptr), nb_(nullptr), rb_(nullptr), tb_(nullptr), 
-  log_(nullptr), npVars_(), 
+  : pb_(nullptr), nb_(nullptr), log_(nullptr), rb_(nullptr), tb_(nullptr), 
+  npVars_(), 
   wireLengthGradSum_(0), 
   densityGradSum_(0),
   stepLength_(0),
@@ -95,9 +97,12 @@ NesterovPlace::NesterovPlace()
   baseWireLengthCoef_(0), 
   wireLengthCoefX_(0), 
   wireLengthCoefY_(0),
+  sumPhi_(0),
+  sumOverflow_(0),
   prevHpwl_(0),
   isDiverged_(false),
-  isRoutabilityNeed_(true) {}
+  isRoutabilityNeed_(true),
+  divergeCode_(0) {}
 
 NesterovPlace::NesterovPlace(
     NesterovPlaceVars npVars,
@@ -885,11 +890,13 @@ getSecondNorm(const vector<FloatPoint>& a) {
   return sqrt( norm / (2.0*a.size()) ); 
 }
 
+#ifdef ENABLE_CIMG_LIB
 static std::string
 getZeroFillStr(int iterNum) {
   std::ostringstream str;
   str << std::setw(4) << std::setfill('0') << iterNum;
   return str.str();
 }
+#endif
 
 }

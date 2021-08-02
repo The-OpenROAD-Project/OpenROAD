@@ -77,7 +77,6 @@ init_floorplan_core(double die_lx,
 		    const char *site_name)
 {
   odb::dbDatabase *db = ord::getDb();
-  sta::dbSta *sta = ord::getSta();
   utl::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
@@ -94,7 +93,6 @@ init_floorplan_util(double util,
                     const char *site_name)
 {
   odb::dbDatabase *db = ord::getDb();
-  sta::dbSta *sta = ord::getSta();
   utl::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::initFloorplan(util, aspect_ratio,
                      core_space_bottom, core_space_top,
@@ -106,7 +104,6 @@ void
 auto_place_pins_cmd(const char *pin_layer)
 {
   odb::dbDatabase *db = ord::getDb();
-  sta::dbSta *sta = ord::getSta();
   utl::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::autoPlacePins(pin_layer, db, logger);
 }

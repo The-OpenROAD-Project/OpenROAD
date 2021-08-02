@@ -45,8 +45,6 @@ initialize_floorplan \
   -site      unit
 make_tracks
 
-source ../../../test/sky130hs/sky130hs.tracks
-
 if {[catch {ICeWall init_footprint coyote_tc/coyote_tc.sigmap} msg]} {
   puts $errorInfo
   puts $msg

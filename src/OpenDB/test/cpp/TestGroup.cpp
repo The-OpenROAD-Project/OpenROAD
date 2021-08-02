@@ -93,10 +93,10 @@ BOOST_AUTO_TEST_CASE(test_group_default)
   domain->setBox(Rect(2,2,50,50));
   BOOST_TEST((domain->getBox() == Rect(2,2,50,50)));
   
-  BOOST_TEST(child1->getType() == dbGroup::PHYSICAL_CLUSTER);
-  BOOST_TEST(domain->getType() == dbGroup::VOLTAGE_DOMAIN);
-  domain->setType(dbGroup::PHYSICAL_CLUSTER);
-  BOOST_TEST(domain->getType() == dbGroup::PHYSICAL_CLUSTER);
+  BOOST_TEST(child1->getType() == dbGroupType::PHYSICAL_CLUSTER);
+  BOOST_TEST(domain->getType() == dbGroupType::VOLTAGE_DOMAIN);
+  domain->setType(dbGroupType::PHYSICAL_CLUSTER);
+  BOOST_TEST(domain->getType() == dbGroupType::PHYSICAL_CLUSTER);
 
 }
 BOOST_AUTO_TEST_CASE(test_group_modinst)

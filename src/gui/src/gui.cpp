@@ -44,6 +44,7 @@
 #include "defin.h"
 #include "displayControls.h"
 #include "geom.h"
+#include "layoutViewer.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
@@ -316,6 +317,26 @@ bool Gui::checkCustomVisibilityControl(const std::string& name)
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
   main_window->zoomTo(rect_dbu);
+}
+
+void Gui::zoomIn()
+{
+  main_window->getLayoutViewer()->zoomIn();
+}
+
+void Gui::zoomIn(const odb::Point& focus_dbu)
+{
+  main_window->getLayoutViewer()->zoomIn(focus_dbu);
+}
+
+void Gui::zoomOut()
+{
+  main_window->getLayoutViewer()->zoomOut();
+}
+
+void Gui::zoomOut(const odb::Point& focus_dbu)
+{
+  main_window->getLayoutViewer()->zoomOut(focus_dbu);
 }
 
 Renderer::~Renderer()

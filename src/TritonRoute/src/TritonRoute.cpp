@@ -44,6 +44,7 @@
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
 
 using namespace std;
@@ -121,10 +122,12 @@ int TritonRoute::getNumDRVs() const
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,
                        odb::dbDatabase* db,
-                       Logger* logger)
+                       Logger* logger,
+                       stt::SteinerTreeBuilder* stt_builder)
 {
   db_ = db;
   logger_ = logger;
+  stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
   Tritonroute_Init(tcl_interp);
@@ -154,7 +157,7 @@ void TritonRoute::init()
     } else {
       logger_->warn(utl::DRT,
                     272,
-                    "bottomRoutingLayer {} not found",
+                    "bottomRoutingLayer {} not found.",
                     BOTTOM_ROUTING_LAYER_NAME);
     }
   }
@@ -166,7 +169,7 @@ void TritonRoute::init()
     } else {
       logger_->warn(utl::DRT,
                     273,
-                    "topRoutingLayer {} not found",
+                    "topRoutingLayer {} not found.",
                     TOP_ROUTING_LAYER_NAME);
     }
   }
@@ -195,7 +198,7 @@ void TritonRoute::prep()
 
 void TritonRoute::gr()
 {
-  FlexGR gr(getDesign(), logger_);
+  FlexGR gr(getDesign(), logger_, stt_builder_);
   gr.main(db_);
 }
 
@@ -264,18 +267,18 @@ void TritonRoute::readParams(const string& fileName)
         string value = line.substr(pos + 1);
         stringstream ss(value);
         if (field == "lef") {
-          logger_->warn(utl::DRT, 148, "deprecated lef param in params file");
+          logger_->warn(utl::DRT, 148, "Deprecated lef param in params file.");
         } else if (field == "def") {
-          logger_->warn(utl::DRT, 227, "deprecated def param in params file");
+          logger_->warn(utl::DRT, 227, "Deprecated def param in params file.");
         } else if (field == "guide") {
           GUIDE_FILE = value;
           ++readParamCnt;
         } else if (field == "outputTA") {
           logger_->warn(
-              utl::DRT, 266, "deprecated outputTA param in params file");
+              utl::DRT, 266, "Deprecated outputTA param in params file.");
         } else if (field == "output") {
           logger_->warn(
-              utl::DRT, 205, "deprecated output param in params file");
+              utl::DRT, 205, "Deprecated output param in params file.");
         } else if (field == "outputguide") {
           OUTGUIDE_FILE = value;
           ++readParamCnt;
@@ -291,8 +294,8 @@ void TritonRoute::readParams(const string& fileName)
         } else if (field == "threads") {
           logger_->warn(utl::DRT,
                         274,
-                        "deprecated threads param in params file."
-                        " Use 'set_thread_count'");
+                        "Deprecated threads param in params file."
+                        " Use 'set_thread_count'.");
           ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());
@@ -330,7 +333,7 @@ void TritonRoute::readParams(const string& fileName)
   }
 
   if (readParamCnt < 2) {
-    logger_->error(DRT, 1, "Error reading param file: {}", fileName);
+    logger_->error(DRT, 1, "Error reading param file: {}.", fileName);
   }
 }
 
@@ -342,6 +345,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
   VERBOSE = params.verbose;
+  ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   if (params.drouteViaInPinBottomLayerNum > 0) {
     VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;

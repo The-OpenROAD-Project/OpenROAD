@@ -240,8 +240,8 @@ void MainWindow::createActions()
 
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
-  connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
-  connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
+  connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
+  connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
   connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));

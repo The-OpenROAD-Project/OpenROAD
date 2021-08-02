@@ -49,10 +49,12 @@ using namespace std;
 using utl::GPL;
 
 Replace::Replace()
-  : db_(nullptr), 
+  : db_(nullptr),
+  rs_(nullptr),
   fr_(nullptr),
   log_(nullptr),
   pb_(nullptr), nb_(nullptr), 
+  rb_(nullptr), tb_(nullptr), 
   ip_(nullptr), np_(nullptr),
   initialPlaceMaxIter_(20), 
   initialPlaceMinDiffLength_(1500),
@@ -68,8 +70,6 @@ Replace::Replace()
   referenceHpwl_(446000000),
   routabilityCheckOverflow_(0.20),
   routabilityMaxDensity_(0.99),
-  routabilityMaxBloatIter_(1),
-  routabilityMaxInflationIter_(4),
   routabilityTargetRcMetric_(1.25),
   routabilityInflationRatioCoef_(2.5),
   routabilityMaxInflationRatio_(2.5),
@@ -77,6 +77,8 @@ Replace::Replace()
   routabilityRcK2_(1.0),
   routabilityRcK3_(0.0),
   routabilityRcK4_(0.0),
+  routabilityMaxBloatIter_(1),
+  routabilityMaxInflationIter_(4),
   timingDrivenMode_(true),
   routabilityDrivenMode_(true),
   incrementalPlaceMode_(false),
