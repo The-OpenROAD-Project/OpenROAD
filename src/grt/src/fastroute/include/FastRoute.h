@@ -144,11 +144,11 @@ class FastRouteCore
                             int expand,
                             float height,
                             int ripup_threshold,
-                            int mazeedgeThreshold,
+                            int maze_edge_threshold,
                             bool ordering,
                             int cost_type,
-                            float LOGIS_COF,
-                            int VIA,
+                            float logis_cof,
+                            int via,
                             int slope,
                             int L);
   void convertToMazeroute();
@@ -160,14 +160,14 @@ class FastRouteCore
   void InitLastUsage(int upType);
   void InitEstUsage();
   void convertToMazerouteNet(int netID);
-  void setupHeap(int netID,
-                 int edgeID,
+  void setupHeap(const int netID,
+                 const int edgeID,
                  int* heapLen1,
                  int* heapLen2,
-                 int regionX1,
-                 int regionX2,
-                 int regionY1,
-                 int regionY2);
+                 const int regionX1,
+                 const int regionX2,
+                 const int regionY1,
+                 const int regionY2);
   int copyGrids(TreeNode* treenodes,
                 int n1,
                 int n2,
