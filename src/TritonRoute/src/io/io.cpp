@@ -1313,7 +1313,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     if (rule->isLayerValid() && tmpLayer->getLayerNum() == 1)
       continue;
     auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
-    tmpLayer->lef58CutSpacingTableConstraints.push_back(con);
+    tmpLayer->addLef58CutSpacingTableConstraint(con);
     tech->addConstraint(con);
   }
 }

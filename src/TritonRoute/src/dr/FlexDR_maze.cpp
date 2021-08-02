@@ -1444,6 +1444,9 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
       bloatDist = max(bloatDist,
                       con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+      if (cutClass1 == cutClass2)
+        bloatDist = max(bloatDist,
+                        con->getODBRule()->getExactAlignedSpacing(cutClass1));
     }
   }
 
@@ -1545,6 +1548,24 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                   hasViol = true;
               }
             } else {
+              if (cutClass1 == cutClass2 && box.width() == box.length()) {
+                bool exactlyAligned = false;
+                if (tmpBx.left() == box.left() && tmpBx.right() == box.right()
+                    && !dbRule->isHorizontal())
+                  exactlyAligned = true;
+                else if (tmpBx.bottom() == box.bottom()
+                         && tmpBx.top() == box.top() && !dbRule->isVertical())
+                  exactlyAligned = true;
+
+                auto exAlSpc = dbRule->getExactAlignedSpacing(cutClass1);
+                if (exactlyAligned && exAlSpc != -1) {
+                  reqDistSquare = (frSquaredDistance) exAlSpc * exAlSpc;
+                  if (distSquare < reqDistSquare) {
+                    hasViol = true;
+                    break;
+                  }
+                }
+              }
               if (prl > reqPrl)
                 reqDistSquare = dbRule->getSpacing(
                     cutClass1,

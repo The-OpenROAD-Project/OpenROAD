@@ -30,6 +30,8 @@
 
 #include <stdexcept>
 
+#include "opendb/db.h"
+
 using namespace fr;
 
 Fixture::Fixture()
@@ -478,6 +480,27 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
   cutEnc->setBelow(below);
   cutEnc->setAllCuts(allCuts);
   return cutEnc;
+}
+
+void Fixture::makeCutClass(frLayerNum layer_num,
+                           std::string name,
+                           frCoord width,
+                           frCoord height)
+{
+  auto cutClass = make_unique<frLef58CutClass>();
+  cutClass->setName(name);
+  cutClass->setViaWidth(width);
+  cutClass->setViaLength(height);
+  design->getTech()->addCutClass(layer_num, std::move(cutClass));
+}
+
+void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
+                                 odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+{
+  auto con = make_shared<frLef58CutSpacingTableConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addLef58CutSpacingTableConstraint(con);
+  design->getTech()->addConstraint(con);
 }
 
 frNet* Fixture::makeNet(const char* name)

@@ -8309,6 +8309,8 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   int getMaxSpacing(std::string cutClass, bool SIDE) const;
 
+  int getExactAlignedSpacing(std::string cutClass) const;
+
   int getMaxSpacing(std::string cutClass1,
                     std::string cutClass2,
                     LOOKUP_STRATEGY strategy = MAX) const;

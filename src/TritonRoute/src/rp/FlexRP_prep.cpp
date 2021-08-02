@@ -611,11 +611,13 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   if (!viaDef1 || !viaDef2) {
     return;
   }
+  bool swapped = false;
   if (viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum()) {
     // swap
     frViaDef* temp = viaDef2;
     viaDef2 = viaDef1;
     viaDef1 = temp;
+    swapped = true;
   }
   bool isCurrDirY = !isCurrDirX;
   frVia via1(viaDef1);
@@ -641,9 +643,9 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.width(), cutBox1.length());
   auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.width(), cutBox2.length());
   frString cutClass1, cutClass2;
-  if(cutClassIdx1 != -1)
+  if (cutClassIdx1 != -1)
     cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
-  if(cutClassIdx2!= -1)
+  if (cutClassIdx2 != -1)
     cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
   for (auto con : layer1->getLef58CutSpacingTableConstraints()) {
     auto dbRule = con->getODBRule();
@@ -653,13 +655,18 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     if (!dbRule->isLayerValid()
         && layer2->getLayerNum() != layer1->getLayerNum())
       continue;
-    if(cutBox1.width() == cutBox1.length() && cutBox2.width() == cutBox2.length())
+    if (cutBox1.width() == cutBox1.length()
+        && cutBox2.width() == cutBox2.length())
       reqSpcVal = dbRule->getSpacing(cutClass1, false, cutClass2, false);
     else
       reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
     if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
-      reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                              : (cutBox1.right() - cutBox1.left());
+      if (!swapped)
+        reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
+                                : (cutBox1.right() - cutBox1.left());
+      else
+        reqSpcVal += isCurrDirY ? (cutBox2.top() - cutBox2.bottom())
+                                : (cutBox2.right() - cutBox2.left());
     }
     forbiddenRanges.push_back(make_pair(0, reqSpcVal));
   }

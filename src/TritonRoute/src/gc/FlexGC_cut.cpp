@@ -29,6 +29,16 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 #include "opendb/db.h"
+
+#define DEBUG_RECT(rect, id)        \
+  logger_->info(utl::DRT,           \
+                id,                 \
+                "({},{}), ({},{})", \
+                gtl::xl(rect),      \
+                gtl::yl(rect),      \
+                gtl::xh(rect),      \
+                gtl::yh(rect));
+
 using namespace fr;
 typedef odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY LOOKUP_STRATEGY;
 
@@ -48,6 +58,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(
     const gtl::rectangle_data<frCoord>& markerRect,
     std::string cutClass1,
     std::string cutClass2,
+    frCoord& prl,
     odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
   auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
@@ -65,9 +76,10 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(
   if (distY) {
     prlY = -prlY;
   }
-  if (prlX > reqPrl || prlY > reqPrl)
+  if (prlX > reqPrl || prlY > reqPrl) {
+    prl = std::max(prlX, prlY);
     return true;
-  else
+  } else
     return false;
 }
 
@@ -80,6 +92,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
     frSquaredDistance distSquare,
     frSquaredDistance c2cSquare,
     bool prlValid,
+    frCoord prl,
     odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
   bool isSide1, isSide2;
@@ -118,6 +131,19 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
         return true;
     }
     return false;
+  }
+  if (class1 == class2 && !dbRule->isLayerValid()) {
+    bool exactlyAligned = false;
+    if (dir == frDirEnum::N || dir == frDirEnum::S)
+      exactlyAligned = (prl == deltaH1) && !dbRule->isHorizontal();
+    else
+      exactlyAligned = (prl == deltaV1) && !dbRule->isVertical();
+
+    auto exAlSpc = dbRule->getExactAlignedSpacing(class1);
+    if (exactlyAligned && exAlSpc != -1) {
+      reqSpcSqr = (frSquaredDistance) exAlSpc * exAlSpc;
+      return distSquare < reqSpcSqr;
+    }
   }
   LOOKUP_STRATEGY spcIdx
       = prlValid ? LOOKUP_STRATEGY::SECOND : LOOKUP_STRATEGY::FIRST;
@@ -202,8 +228,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 
   auto dbRule = con->getODBRule();
   bool viol = false;
+  frCoord prl = -1;
   auto prlValid = checkLef58CutSpacingTbl_prlValid(
-      *viaRect1, *viaRect2, markerRect, class1, class2, dbRule);
+      *viaRect1, *viaRect2, markerRect, class1, class2, prl, dbRule);
 
   if (isUp || isDown) {
     frDirEnum secondToFirstDir = isUp ? frDirEnum::N : frDirEnum::S;
@@ -215,6 +242,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
                                           distSquare,
                                           c2cSquare,
                                           prlValid,
+                                          prl,
                                           dbRule);
   }
   if (!viol && (isRight || isLeft)) {
@@ -227,6 +255,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
                                           distSquare,
                                           c2cSquare,
                                           prlValid,
+                                          prl,
                                           dbRule);
   }
 
@@ -267,6 +296,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     gcRect* viaRect,
     frLef58CutSpacingTableConstraint* con)
 {
+  DEBUG_RECT(*viaRect, 9999);
   auto layerNum1 = viaRect->getLayerNum();
   auto layer1 = getTech()->getLayer(layerNum1);
   auto width = viaRect->width();

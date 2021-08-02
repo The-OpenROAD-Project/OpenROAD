@@ -43,6 +43,7 @@
 #include "fixture.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include "opendb/db.h"
 
 using namespace fr;
 namespace bdata = boost::unit_test::data;
@@ -50,7 +51,11 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design->getTech(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get())
+  {
+    auto db = odb::dbDatabase::create();
+    tech = odb::dbTech::create(db);
+  }
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
@@ -82,6 +87,7 @@ struct GCFixture : public Fixture
   }
 
   FlexGCWorker worker;
+  odb::dbTech* tech;
 };
 
 BOOST_FIXTURE_TEST_SUITE(gc, GCFixture);
@@ -875,4 +881,34 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
                  frBox(450, 500, 550, 650));
   }
 }
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl,
+                     (bdata::make({0, 1})) ^ (bdata::make({1, 0})),
+                     x,
+                     viol)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
+  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  makeCutClass(3, "Vx", 100, 100);
+  auto layer = odb::dbTechLayer::create(tech, "v2", odb::dbTechLayerType::CUT);
+  auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
+  dbRule->setDefault(200);
+  dbRule->addExactElignedEntry("Vx", 250);
+  dbRule->setVertical(true);
+  makeLef58CutSpcTbl(3, dbRule);
+  frNet* n1 = makeNet("n1");
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {x, 300});
+
+  runGC();
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == viol);
+}
+
 BOOST_AUTO_TEST_SUITE_END();

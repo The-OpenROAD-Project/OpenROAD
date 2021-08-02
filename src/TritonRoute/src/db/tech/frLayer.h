@@ -219,6 +219,11 @@ class frLayer
   }
 
   // cut spacing table
+  void addLef58CutSpacingTableConstraint(
+      std::shared_ptr<frLef58CutSpacingTableConstraint> con)
+  {
+    lef58CutSpacingTableConstraints.push_back(con);
+  }
   bool hasLef58CutSpacingTableConstraints() const
   {
     return (lef58CutSpacingTableConstraints.size()) ? true : false;

@@ -177,6 +177,7 @@ target_include_directories(trTest
 
 target_link_libraries(trTest
   TritonRoute
+  opendb
 )
 
 # Use the shared library if found.  We need to pass this info to

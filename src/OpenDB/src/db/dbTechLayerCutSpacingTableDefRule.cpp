@@ -941,6 +941,17 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1,
   return false;
 }
 
+int dbTechLayerCutSpacingTableDefRule::getExactAlignedSpacing(std::string cutClass) const
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  for (auto& [cls, spc] : obj->exact_aligned_spacing_tbl_) {
+    if (cls == cutClass)
+      return spc;
+  }
+  return -1;
+}
+
 bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCutClasses(
     std::string cutClass1,
     std::string cutClass2)

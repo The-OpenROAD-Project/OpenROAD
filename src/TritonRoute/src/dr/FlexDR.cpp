@@ -875,7 +875,8 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
     via2.getLayer2BBox(viaBox2);
   }
   via2.getCutBBox(cutBox2);
-
+  auto boxLength = isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
+                              : (cutBox1.right() - cutBox1.left());
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
     auto layer = getTech()->getLayer(viaDef1->getCutLayerNum());
@@ -895,8 +896,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         }
         auto reqSpcVal = con->getCutSpacing();
         if (!con->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                                  : (cutBox1.right() - cutBox1.left());
+          reqSpcVal += boxLength;
         }
         sol = max(sol, reqSpcVal);
       }
@@ -913,8 +913,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         }
         auto reqSpcVal = con->getCutSpacing();
         if (!con->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                                  : (cutBox1.right() - cutBox1.left());
+          reqSpcVal += boxLength;
         }
         sol = max(sol, reqSpcVal);
       }
@@ -965,8 +964,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         ;
       } else {
         if (!samenetCon->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                                  : (cutBox1.right() - cutBox1.left());
+          reqSpcVal += boxLength;
         }
       }
       sol = max(sol, reqSpcVal);
@@ -974,10 +972,14 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   }
   // LEF58_SPACINGTABLE
   if (viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum()) {
-    // swap
-    frViaDef* temp = viaDef2;
+    // swap via defs
+    frViaDef* tempViaDef = viaDef2;
     viaDef2 = viaDef1;
-    viaDef1 = temp;
+    viaDef1 = tempViaDef;
+    // swap boxes
+    frBox tempCutBox(cutBox2);
+    cutBox2.set(cutBox1);
+    cutBox1.set(tempCutBox);
   }
   auto layer1 = getTech()->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = getTech()->getLayer(viaDef2->getCutLayerNum());
@@ -1003,8 +1005,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
     else
       reqSpcVal = dbRule->getMaxSpacing(cutClass1, cutClass2);
     if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
-      reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                              : (cutBox1.right() - cutBox1.left());
+      reqSpcVal += boxLength;
     }
     sol = max(sol, reqSpcVal);
   }

@@ -387,6 +387,7 @@ class FlexGCWorker::Impl
       const gtl::rectangle_data<frCoord>& markerRect,
       std::string cutClass1,
       std::string cutClass2,
+      frCoord& prl,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);
   void checkLef58CutSpacingTbl_main(gcRect* viaRect1,
                                     gcRect* viaRect2,
@@ -400,6 +401,7 @@ class FlexGCWorker::Impl
       frSquaredDistance distSquare,
       frSquaredDistance c2cSquare,
       bool prlValid,
+      frCoord prl,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);
   void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
   bool checkCutSpacing_main_hasAdjCuts(gcRect* rect,
