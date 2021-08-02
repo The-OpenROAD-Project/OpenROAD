@@ -257,9 +257,9 @@ void Restructure::runABC()
         logger_->warn(
             RMP,
             15,
-            "ABC failed with code {}. Please check abc log files for details.",
-            child_idx,
-            return_status);
+            "ABC failed with code {}. Please check {} log file for details.",
+            return_status,
+            logfile_ + std::to_string(child_idx));
       }
     }  // end wait
 
