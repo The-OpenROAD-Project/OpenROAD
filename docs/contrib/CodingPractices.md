@@ -15,12 +15,12 @@ would not be so pervasive. James Cherry 04/2020
 
 ### Practice #1
 
-Don't comment out code. Remove it. git provides a complete history of
+Don't comment out code. Remove it. `git` provides a complete history of
 the code if you want to look backwards. Huge chunks of commented out
 code that are stunningly common in student code makes it nearly
 impossible to read.
 
-FlexTa.cpp has 220 lines of code and 600 lines of commented out code.
+`FlexTa.cpp` has 220 lines of code and 600 lines of commented out code.
 
 ### Practice #2
 

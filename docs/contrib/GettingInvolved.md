@@ -44,7 +44,7 @@ you edit, follow the style in that file. Please pay careful attention to the
 [tool checklist](DeveloperGuide.md#Tool Checklist) for all code. If you want
 to add or improve functionality in OpenROAD please start with the top
 level [app](https://github.com/The-OpenROAD-Project/OpenROAD/) repo. You
-can see in the src directory that submodules exist pointing to tested
+can see in the `src` directory that submodules exist pointing to tested
 versions of the other relevant repos in the project. Please look at the
 tool workflow in the developer guide [document](DeveloperGuide.md)
 to work with the app and its submodule repos in an efficient way.
@@ -52,7 +52,7 @@ to work with the app and its submodule repos in an efficient way.
 Please pay attention to the
 [test directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test)
 and be sure to add tests for any code changes that you make with open
-sourceable PDK and design information. We provide the nandgate45 PDK in
+source PDK and design information. We provide the `nandgate45` PDK in
 the OpenROAD-flow-scripts repo to help with this. Pull requests with
 code changes are unlikely to be accepted without accompanying test
 cases. There are many
