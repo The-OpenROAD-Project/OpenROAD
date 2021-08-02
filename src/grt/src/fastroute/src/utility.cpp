@@ -119,9 +119,9 @@ void FastRouteCore::ConvertToFull3DType2()
           treeedges[edgeID].route.gridsY.clear();
           treeedges[edgeID].route.gridsL.clear();
         }
-        treeedge->route.gridsX.resize(newCNT);
-        treeedge->route.gridsY.resize(newCNT);
-        treeedge->route.gridsL.resize(newCNT);
+        treeedge->route.gridsX.resize(newCNT, 0);
+        treeedge->route.gridsY.resize(newCNT, 0);
+        treeedge->route.gridsL.resize(newCNT, 0);
         treeedge->route.type = RouteType::MazeRoute;
         treeedge->route.routelen = newCNT - 1;
 
@@ -264,9 +264,9 @@ void FastRouteCore::fillVIA()
             treeedges[edgeID].route.gridsY.clear();
             treeedges[edgeID].route.gridsL.clear();
           }
-          treeedge->route.gridsX.resize(newCNT);
-          treeedge->route.gridsY.resize(newCNT);
-          treeedge->route.gridsL.resize(newCNT);
+          treeedge->route.gridsX.resize(newCNT, 0);
+          treeedge->route.gridsY.resize(newCNT, 0);
+          treeedge->route.gridsL.resize(newCNT, 0);
           treeedge->route.type = RouteType::MazeRoute;
           treeedge->route.routelen = newCNT - 1;
 
@@ -628,7 +628,7 @@ void FastRouteCore::newLayerAssignmentV4()
       treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         routeLen = treeedge->route.routelen;
-        treeedge->route.gridsL.resize(routeLen + 1);
+        treeedge->route.gridsL.resize(routeLen + 1, 0);
         treeedge->assigned = false;
       }
     }
@@ -1410,9 +1410,9 @@ void FastRouteCore::copyRS(void)
         sttrees_bk_[netID].edges[edgeID].route.routelen
             = sttrees_[netID].edges[edgeID].route.routelen;
         sttrees_bk_[netID].edges[edgeID].route.gridsX.resize(
-            sttrees_[netID].edges[edgeID].route.routelen + 1);
+            sttrees_[netID].edges[edgeID].route.routelen + 1, 0);
         sttrees_bk_[netID].edges[edgeID].route.gridsY.resize(
-            sttrees_[netID].edges[edgeID].route.routelen + 1);
+            sttrees_[netID].edges[edgeID].route.routelen + 1, 0);
 
         for (i = 0; i <= sttrees_[netID].edges[edgeID].route.routelen; i++) {
           sttrees_bk_[netID].edges[edgeID].route.gridsX[i]
@@ -1480,9 +1480,9 @@ void FastRouteCore::copyBR(void)
           sttrees_[netID].edges[edgeID].route.routelen
               = sttrees_bk_[netID].edges[edgeID].route.routelen;
           sttrees_[netID].edges[edgeID].route.gridsX.resize(
-              sttrees_bk_[netID].edges[edgeID].route.routelen + 1);
+              sttrees_bk_[netID].edges[edgeID].route.routelen + 1, 0);
           sttrees_[netID].edges[edgeID].route.gridsY.resize(
-              sttrees_bk_[netID].edges[edgeID].route.routelen + 1);
+              sttrees_bk_[netID].edges[edgeID].route.routelen + 1, 0);
 
           for (i = 0; i <= sttrees_bk_[netID].edges[edgeID].route.routelen; i++) {
             sttrees_[netID].edges[edgeID].route.gridsX[i]

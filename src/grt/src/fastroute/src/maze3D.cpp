@@ -526,9 +526,9 @@ void FastRouteCore::updateRouteType13D(int netID,
     treeedges[edge_n1A1].route.gridsY.clear();
     treeedges[edge_n1A1].route.gridsL.clear();
   }
-  treeedges[edge_n1A1].route.gridsX.resize(E1_pos1 + 1);
-  treeedges[edge_n1A1].route.gridsY.resize(E1_pos1 + 1);
-  treeedges[edge_n1A1].route.gridsL.resize(E1_pos1 + 1);
+  treeedges[edge_n1A1].route.gridsX.resize(E1_pos1 + 1, 0);
+  treeedges[edge_n1A1].route.gridsY.resize(E1_pos1 + 1, 0);
+  treeedges[edge_n1A1].route.gridsL.resize(E1_pos1 + 1, 0);
 
   if (A1x <= E1x) {
     cnt = 0;
@@ -568,15 +568,15 @@ void FastRouteCore::updateRouteType13D(int netID,
 
   if (cnt_n1A2 > 1) {
     treeedges[edge_n1A2].route.gridsX.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1 +
-      abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]));
+      abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]), 0);
     treeedges[edge_n1A2].route.gridsY.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1 +
-      abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]));
+      abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]), 0);
     treeedges[edge_n1A2].route.gridsL.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1 +
-      abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]));
+      abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]), 0);
   } else {
-    treeedges[edge_n1A2].route.gridsX.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1);
-    treeedges[edge_n1A2].route.gridsY.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1);
-    treeedges[edge_n1A2].route.gridsL.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1);
+    treeedges[edge_n1A2].route.gridsX.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1, 0);
+    treeedges[edge_n1A2].route.gridsY.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1, 0);
+    treeedges[edge_n1A2].route.gridsL.resize(cnt_n1A1 + cnt_n1A2 - E1_pos2 - 1, 0);
   }
 
   if (E1x <= A2x) {
@@ -741,9 +741,9 @@ void FastRouteCore::updateRouteType23D(int netID,
       extraLen = abs(gridsL_n1A1[cnt_n1A1 - 1] - gridsL_n1A2[0]);
       len_A1A2 += extraLen;
     }
-    treeedges[edge_A1A2].route.gridsX.resize(len_A1A2);
-    treeedges[edge_A1A2].route.gridsY.resize(len_A1A2);
-    treeedges[edge_A1A2].route.gridsL.resize(len_A1A2);
+    treeedges[edge_A1A2].route.gridsX.resize(len_A1A2, 0);
+    treeedges[edge_A1A2].route.gridsY.resize(len_A1A2, 0);
+    treeedges[edge_A1A2].route.gridsL.resize(len_A1A2, 0);
     treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
     treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
@@ -821,9 +821,9 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
   len_n1C1 = E1_pos1 + 1;
 
-  treeedges[edge_n1C1].route.gridsX.resize(len_n1C1);
-  treeedges[edge_n1C1].route.gridsY.resize(len_n1C1);
-  treeedges[edge_n1C1].route.gridsL.resize(len_n1C1);
+  treeedges[edge_n1C1].route.gridsX.resize(len_n1C1, 0);
+  treeedges[edge_n1C1].route.gridsY.resize(len_n1C1, 0);
+  treeedges[edge_n1C1].route.gridsL.resize(len_n1C1, 0);
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
   treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
@@ -835,9 +835,9 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
   len_n1C2 = cnt_C1C2 - E1_pos2;
 
-  treeedges[edge_n1C2].route.gridsX.resize(len_n1C2);
-  treeedges[edge_n1C2].route.gridsY.resize(len_n1C2);
-  treeedges[edge_n1C2].route.gridsL.resize(len_n1C2);
+  treeedges[edge_n1C2].route.gridsX.resize(len_n1C2, 0);
+  treeedges[edge_n1C2].route.gridsY.resize(len_n1C2, 0);
+  treeedges[edge_n1C2].route.gridsL.resize(len_n1C2, 0);
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
   treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
@@ -1610,9 +1610,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
             treeedges[edge_n1n2].route.gridsL.clear();
           }
 
-          treeedges[edge_n1n2].route.gridsX.resize(newcnt_n1n2);
-          treeedges[edge_n1n2].route.gridsY.resize(newcnt_n1n2);
-          treeedges[edge_n1n2].route.gridsL.resize(newcnt_n1n2);
+          treeedges[edge_n1n2].route.gridsX.resize(newcnt_n1n2, 0);
+          treeedges[edge_n1n2].route.gridsY.resize(newcnt_n1n2, 0);
+          treeedges[edge_n1n2].route.gridsL.resize(newcnt_n1n2, 0);
           treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
           treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
           treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y- E2y);
