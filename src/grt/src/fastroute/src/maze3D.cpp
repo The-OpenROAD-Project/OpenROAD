@@ -1610,9 +1610,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
             treeedges[edge_n1n2].route.gridsL.clear();
           }
 
-          treeedges[edge_n1n2].route.gridsX.resize(newcnt_n1n2, 0);
-          treeedges[edge_n1n2].route.gridsY.resize(newcnt_n1n2, 0);
-          treeedges[edge_n1n2].route.gridsL.resize(newcnt_n1n2, 0);
+          if (newcnt_n1n2 > 0) {
+            treeedges[edge_n1n2].route.gridsX.resize(newcnt_n1n2, 0);
+            treeedges[edge_n1n2].route.gridsY.resize(newcnt_n1n2, 0);
+            treeedges[edge_n1n2].route.gridsL.resize(newcnt_n1n2, 0);
+          }
           treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
           treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
           treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y- E2y);
