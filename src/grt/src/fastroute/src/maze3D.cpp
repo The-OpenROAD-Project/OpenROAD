@@ -1610,6 +1610,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHu
             treeedges[edge_n1n2].route.gridsL.clear();
           }
 
+          // avoid resizing vector with negative value.
+          // this may happen when all elements of gridsX and gridsY are the same.
           if (newcnt_n1n2 > 0) {
             treeedges[edge_n1n2].route.gridsX.resize(newcnt_n1n2, 0);
             treeedges[edge_n1n2].route.gridsY.resize(newcnt_n1n2, 0);
