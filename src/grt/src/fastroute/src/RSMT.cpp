@@ -61,7 +61,10 @@ static int ordery(const struct pnt* a, const struct pnt* b)
 }
 
 // binary search to map the new coordinates to original coordinates
-int mapxy(int nx, const std::vector<int> &xs, const std::vector<int> &nxs, int d)
+int mapxy(int nx,
+          const std::vector<int>& xs,
+          const std::vector<int>& nxs,
+          int d)
 {
   int max, min, mid;
 
@@ -149,19 +152,24 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
   }
   if (edgecnt != numnodes - 1) {
-    logger_->error(GRT, 189, "Failure in copy tree. Number of edges: {}. Number of nodes: {}.", edgecnt, numnodes);
+    logger_->error(
+        GRT,
+        189,
+        "Failure in copy tree. Number of edges: {}. Number of nodes: {}.",
+        edgecnt,
+        numnodes);
   }
 }
 
 void FastRouteCore::fluteNormal(int netID,
-                 const std::vector<DTYPE> &x,
-                 const std::vector<DTYPE> &y,
-                 int acc,
-                 float coeffV,
-                 Tree* t)
+                                const std::vector<DTYPE>& x,
+                                const std::vector<DTYPE>& y,
+                                int acc,
+                                float coeffV,
+                                Tree* t)
 {
   std::vector<DTYPE> xs, ys, tmp_xs, tmp_ys;
-  DTYPE minval, x_max, x_min, x_mid, y_max, y_min, y_mid; 
+  DTYPE minval, x_max, x_min, x_mid, y_max, y_min, y_mid;
   std::vector<int> s;
   int i, j, minidx;
   struct pnt *pt, *tmpp;
@@ -329,11 +337,11 @@ void FastRouteCore::fluteNormal(int netID,
 }
 
 void FastRouteCore::fluteCongest(int netID,
-                  const std::vector<DTYPE> &x,
-                  const std::vector<DTYPE> &y,
-                  int acc,
-                  float coeffV,
-                  Tree* t)
+                                 const std::vector<DTYPE>& x,
+                                 const std::vector<DTYPE>& y,
+                                 int acc,
+                                 float coeffV,
+                                 Tree* t)
 {
   std::vector<DTYPE> xs, ys, nxs, nys, x_seg, y_seg;
   DTYPE x_max, x_min, x_mid, y_max, y_min, y_mid;
@@ -460,7 +468,8 @@ void FastRouteCore::fluteCongest(int netID,
           usageV += (v_edges_[grid + k].est_usage + v_edges_[grid + k].red);
       }
       if (y_seg[i] != 0 && usageV != 0) {
-        y_seg[i] *= coeffV * usageV / ((ys[i + 1] - ys[i]) * width * v_capacity_);
+        y_seg[i]
+            *= coeffV * usageV / ((ys[i + 1] - ys[i]) * width * v_capacity_);
         y_seg[i] = std::max(1, y_seg[i]);  // the segment len is at least 1 if
                                            // original segment len > 0
       }
@@ -491,7 +500,8 @@ bool FastRouteCore::netCongestion(int netID)
   //  bool Congested;
   Segment* seg;
 
-  for (j = seglist_index_[netID]; j < seglist_index_[netID] + seglist_cnt_[netID];
+  for (j = seglist_index_[netID];
+       j < seglist_index_[netID] + seglist_cnt_[netID];
        j++) {
     seg = &seglist_[j];
 
@@ -674,10 +684,10 @@ float FastRouteCore::coeffADJ(int netID)
 }
 
 void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
-                  bool reRoute,
-                  bool genTree,
-                  bool newType,
-                  bool noADJ)
+                                 bool reRoute,
+                                 bool genTree,
+                                 bool newType,
+                                 bool noADJ)
 {
   int i, j, d, n, n1, n2;
   int x1, y1, x2, y2;
@@ -733,7 +743,8 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
         }
       } else {
         // remove the est_usage due to the segments in this net
-        for (j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i]; j++) {
+        for (j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
+             j++) {
           ripupSegL(&seglist_[j]);
         }
       }
@@ -747,7 +758,8 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     // TODO: move this flute implementation to SteinerTreeBuilder
     float net_alpha = stt_builder_->getAlpha(net->db_net);
     if (net_alpha > 0.0) {
-      stt::Tree tree = stt_builder_->makeSteinerTree(net->db_net, net->pinX, net->pinY, net->driver_idx);
+      stt::Tree tree = stt_builder_->makeSteinerTree(
+          net->db_net, net->pinX, net->pinY, net->driver_idx);
       rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
