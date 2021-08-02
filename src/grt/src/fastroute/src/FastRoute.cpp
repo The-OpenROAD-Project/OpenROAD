@@ -49,54 +49,56 @@
 #include <utility>
 
 #include "DataType.h"
-#include "utl/Logger.h"
 #include "opendb/db.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
 using utl::GRT;
 
-FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder) :
-  max_degree_(0),
-  db_(db),
-  allow_overflow_(false),
-  overflow_iterations_(0),
-  num_nets_(0),
-  layer_orientation_(0),
-  x_range_(0),
-  y_range_(0),
-  new_net_id_(0),
-  seg_count_(0),
-  pin_ind_(0),
-  num_adjust_(0),
-  v_capacity_(0),
-  h_capacity_(0),
-  x_grid_(0),
-  y_grid_(0),
-  x_corner_(0),
-  y_corner_(0),
-  w_tile_(0),
-  h_tile_(0),
-  enlarge_(0),
-  costheight_(0),
-  ahth_(0),
-  num_valid_nets_(0),
-  num_layers_(0),
-  total_overflow_(0),
-  grid_hv_(0),
-  grid_h_(0),
-  grid_v_(0),
-  verbose_(0),
-  via_cost_(0),
-  mazeedge_threshold_(0),
-  v_capacity_lb_(0),
-  h_capacity_lb_(0),
-  heap1_3D_(nullptr),
-  heap2_3D_(nullptr),
-  heap2_(nullptr),
-  heap1_(nullptr),
-  logger_(log),
-  stt_builder_(stt_builder)
+FastRouteCore::FastRouteCore(odb::dbDatabase* db,
+                             utl::Logger* log,
+                             stt::SteinerTreeBuilder* stt_builder)
+    : max_degree_(0),
+      db_(db),
+      allow_overflow_(false),
+      overflow_iterations_(0),
+      num_nets_(0),
+      layer_orientation_(0),
+      x_range_(0),
+      y_range_(0),
+      new_net_id_(0),
+      seg_count_(0),
+      pin_ind_(0),
+      num_adjust_(0),
+      v_capacity_(0),
+      h_capacity_(0),
+      x_grid_(0),
+      y_grid_(0),
+      x_corner_(0),
+      y_corner_(0),
+      w_tile_(0),
+      h_tile_(0),
+      enlarge_(0),
+      costheight_(0),
+      ahth_(0),
+      num_valid_nets_(0),
+      num_layers_(0),
+      total_overflow_(0),
+      grid_hv_(0),
+      grid_h_(0),
+      grid_v_(0),
+      verbose_(0),
+      via_cost_(0),
+      mazeedge_threshold_(0),
+      v_capacity_lb_(0),
+      h_capacity_lb_(0),
+      heap1_3D_(nullptr),
+      heap2_3D_(nullptr),
+      heap2_(nullptr),
+      heap1_(nullptr),
+      logger_(log),
+      stt_builder_(stt_builder)
 {
 }
 
@@ -443,9 +445,11 @@ int FastRouteCore::getEdgeCurrentResource(long x1,
   } else if (x1 == x2) {
     grid = y1 * x_grid_ + x1 + k * x_grid_ * (y_grid_ - 1);
     resource = v_edges_3D_[grid].cap - v_edges_3D_[grid].usage;
-  } else
-  {
-    logger_->error(GRT, 212, "Cannot get edge resource: edge is not vertical or horizontal.");
+  } else {
+    logger_->error(
+        GRT,
+        212,
+        "Cannot get edge resource: edge is not vertical or horizontal.");
   }
 
   return resource;
@@ -468,9 +472,9 @@ int FastRouteCore::getEdgeCurrentUsage(long x1,
   } else if (x1 == x2) {
     grid = y1 * x_grid_ + x1 + k * x_grid_ * (y_grid_ - 1);
     usage = v_edges_3D_[grid].usage;
-  } else
-  {
-    logger_->error(GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
+  } else {
+    logger_->error(
+        GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
   }
 
   return usage;
@@ -500,7 +504,11 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger_->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger_->warn(GRT,
+                      113,
+                      "Underflow in reduce: cap, reducedCap: {}, {}",
+                      cap,
+                      reducedCap);
       }
       reduce = 0;
     } else {
@@ -527,7 +535,11 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger_->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger_->warn(GRT,
+                      114,
+                      "Underflow in reduce: cap, reducedCap: {}, {}",
+                      cap,
+                      reducedCap);
       }
       reduce = 0;
     } else {
@@ -567,9 +579,11 @@ int FastRouteCore::getEdgeCapacity(long x1,
   {
     int grid = y1 * x_grid_ + x1 + k * x_grid_ * (y_grid_ - 1);
     cap = v_edges_3D_[grid].cap;
-  } else
-  {
-    logger_->error(GRT, 214, "Cannot get edge capacity: edge is not vertical or horizontal.");
+  } else {
+    logger_->error(
+        GRT,
+        214,
+        "Cannot get edge capacity: edge is not vertical or horizontal.");
   }
 
   return cap;
@@ -709,19 +723,20 @@ void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
   auto db_gcell = odb::dbGCellGrid::create(block);
-  if(db_gcell == nullptr)
-  {
+  if (db_gcell == nullptr) {
     db_gcell = block->getGCellGrid();
-    logger_->warn(utl::GRT, 211, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
+    logger_->warn(
+        utl::GRT,
+        211,
+        "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
   db_gcell->addGridPatternY(y_corner_, y_grid_ + 1, h_tile_);
   for (int k = 0; k < num_layers_; k++) {
-    auto layer = db_->getTech()->findRoutingLayer(k+1);
-    if(layer == nullptr)
-    {
-      logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k+1);
+    auto layer = db_->getTech()->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k + 1);
       continue;
     }
 
@@ -730,7 +745,8 @@ void FastRouteCore::updateDbCongestion()
         int grid_h_ = y * (x_grid_ - 1) + x + k * (x_grid_ - 1) * y_grid_;
 
         unsigned short capH = h_capacity_3D_[k];
-        unsigned short blockageH = (h_capacity_3D_[k] - h_edges_3D_[grid_h_].cap);
+        unsigned short blockageH
+            = (h_capacity_3D_[k] - h_edges_3D_[grid_h_].cap);
         unsigned short usageH = h_edges_3D_[grid_h_].usage + blockageH;
 
         db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
@@ -744,7 +760,8 @@ void FastRouteCore::updateDbCongestion()
         int grid_v_ = y * x_grid_ + x + k * x_grid_ * (y_grid_ - 1);
 
         unsigned short capV = v_capacity_3D_[k];
-        unsigned short blockageV = (v_capacity_3D_[k] - v_edges_3D_[grid_v_].cap);
+        unsigned short blockageV
+            = (v_capacity_3D_[k] - v_edges_3D_[grid_v_].cap);
         unsigned short usageV = v_edges_3D_[grid_v_].usage + blockageV;
 
         db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
@@ -771,13 +788,13 @@ NetRouteMap FastRouteCore::run()
   net_eo_.reserve(max_degree_);
 
   int THRESH_M = 20;
-  int ENLARGE = 15;     // 5
-  int ESTEP1 = 10;  // 10
-  int ESTEP2 = 5;   // 5
-  int ESTEP3 = 5;   // 5
-  int CSTEP1 = 2;   // 5
-  int CSTEP2 = 2;   // 3
-  int CSTEP3 = 5;   // 15
+  int ENLARGE = 15;  // 5
+  int ESTEP1 = 10;   // 10
+  int ESTEP2 = 5;    // 5
+  int ESTEP3 = 5;    // 5
+  int CSTEP1 = 2;    // 5
+  int CSTEP2 = 2;    // 3
+  int CSTEP3 = 5;    // 15
   int COSHEIGHT = 4;
   int L = 0;
   int VIA = 2;
@@ -877,9 +894,8 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
-  while (total_overflow_ > 0 &&
-         i <= overflow_iterations_ &&
-         overflow_increases <= max_overflow_increases_) {
+  while (total_overflow_ > 0 && i <= overflow_iterations_
+         && overflow_increases <= max_overflow_increases_) {
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
     } else if (THRESH_M >= 2) {
@@ -983,7 +999,7 @@ NetRouteMap FastRouteCore::run()
 
     if (past_cong < 200 && i > 30 && upType == 2 && max_adj <= 20) {
       upType = 4;
-      stopDEC =true;
+      stopDEC = true;
     }
 
     if (maxOverflow < 150) {
@@ -1093,20 +1109,25 @@ NetRouteMap FastRouteCore::run()
       overflow_increases++;
     }
     last_total_overflow = total_overflow_;
-  } // end overflow iterations
+  }  // end overflow iterations
 
   bool has_2D_overflow = total_overflow_ > 0;
 
   if (minofl > 0) {
-    logger_->info(GRT, 104, "Minimal overflow {} occurring at round {}.", minofl, minoflrnd);
+    logger_->info(GRT,
+                  104,
+                  "Minimal overflow {} occurring at round {}.",
+                  minofl,
+                  minoflrnd);
     copyBR();
   }
 
   if (overflow_increases > max_overflow_increases_) {
-    logger_->warn(GRT,
-                 230,
-                 "Congestion iterations cannot increase overflow, reached the "
-                 "maximum number of times the total overflow can bee increased.");
+    logger_->warn(
+        GRT,
+        230,
+        "Congestion iterations cannot increase overflow, reached the "
+        "maximum number of times the total overflow can bee increased.");
   }
 
   freeRR();
@@ -1150,7 +1171,8 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
     }
     if (verbose_ > 1)
-      logger_->info(GRT, 109, "Post-processing finished.\n Starting via filling.");
+      logger_->info(
+          GRT, 109, "Post-processing finished.\n Starting via filling.");
   }
 
   fillVIA();
@@ -1198,7 +1220,8 @@ std::vector<int> FastRouteCore::getOriginalResources()
   std::vector<int> original_resources;
   original_resources.resize(num_layers_);
   for (int l = 0; l < num_layers_; l++) {
-    original_resources[l] += (v_capacity_3D_[l]+h_capacity_3D_[l])*y_grid_*x_grid_;
+    original_resources[l]
+        += (v_capacity_3D_[l] + h_capacity_3D_[l]) * y_grid_ * x_grid_;
   }
 
   return original_resources;
