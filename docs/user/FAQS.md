@@ -1,6 +1,6 @@
 # FAQs
 
-If cannot find your question/answere here, please file a GitHub issue to
+If you cannot find your question/answere here, please file a GitHub issue to
 the apropriated repository or start a discussion.
 
 -   Issues and bugs:
