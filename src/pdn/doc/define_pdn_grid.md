@@ -18,7 +18,7 @@ For specifying a power grid over macros in the design
     [-orient <list_of_valid_orientations>] \
     [-instances <list_of_instances] \
     [-cells <list_of_cells>] \
-    [-pin_direction (horizontalvertical)] \
+    [-pin_direction (horizontal|vertical)] \
     [-halo <list_of_halo_values>] \
     [-voltage_domain <list_of_domain_names>] \
     [-starts_with (POWER|GROUND)]    
