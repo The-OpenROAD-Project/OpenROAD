@@ -136,9 +136,9 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
         treeedges[edgecnt].n1 = n;
         treeedges[edgecnt].n2 = i;
       }
-      treeedges[edgecnt].route.gridsX = nullptr;
-      treeedges[edgecnt].route.gridsY = nullptr;
-      treeedges[edgecnt].route.gridsL = nullptr;
+      treeedges[edgecnt].route.gridsX.clear();
+      treeedges[edgecnt].route.gridsY.clear();
+      treeedges[edgecnt].route.gridsL.clear();
       treenodes[i].nbr[nbrcnt[i]] = n;
       treenodes[i].edge[nbrcnt[i]] = edgecnt;
       treenodes[n].nbr[nbrcnt[n]] = i;
@@ -179,7 +179,7 @@ void FastRouteCore::fluteNormal(int netID,
   if (d == 2) {
     t->deg = 2;
     t->length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
-    t->branch = new Branch[2];
+    t->branch.resize(2);
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 1;
@@ -232,7 +232,7 @@ void FastRouteCore::fluteNormal(int netID,
     }
 
     t->length = abs(x_max - x_min) + abs(y_max - y_min);
-    t->branch = new Branch[4];
+    t->branch.resize(4);
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 3;
@@ -356,7 +356,7 @@ void FastRouteCore::fluteCongest(int netID,
   if (d == 2) {
     t->deg = 2;
     t->length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
-    t->branch = new Branch[2];
+    t->branch.resize(2);
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 1;
@@ -409,7 +409,7 @@ void FastRouteCore::fluteCongest(int netID,
     }
 
     t->length = abs(x_max - x_min) + abs(y_max - y_min);
-    t->branch = new Branch[4];
+    t->branch.resize(4);
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 3;

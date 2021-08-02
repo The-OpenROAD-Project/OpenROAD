@@ -52,7 +52,6 @@ using utl::GRT;
 
 void FastRouteCore::convertToMazerouteNet(int netID)
 {
-  short *gridsX, *gridsY;
   int i, edgeID, edgelength;
   int n1, n2, x1, y1, x2, y2;
   int cnt, Zpoint;
@@ -69,11 +68,10 @@ void FastRouteCore::convertToMazerouteNet(int netID)
     y1 = treenodes[n1].y;
     x2 = treenodes[n2].x;
     y2 = treenodes[n2].y;
-    treeedge->route.gridsX = (short*) calloc((edgelength + 1), sizeof(short));
-    treeedge->route.gridsY = (short*) calloc((edgelength + 1), sizeof(short));
-    treeedge->route.gridsL = nullptr;
-    gridsX = treeedge->route.gridsX;
-    gridsY = treeedge->route.gridsY;
+    treeedge->route.gridsX.resize(edgelength + 1, 0);
+    treeedge->route.gridsY.resize(edgelength + 1, 0);
+    std::vector<short>& gridsX = treeedge->route.gridsX;
+    std::vector<short>& gridsY = treeedge->route.gridsY;
     treeedge->len = abs(x1 - x2) + abs(y1 - y2);
 
     cnt = 0;
@@ -801,13 +799,11 @@ void FastRouteCore::updateRouteType1(TreeNode* treenodes,
   if (treeedges[edge_n1A1].route.type
       == RouteType::MazeRoute)  // if originally allocated, free them first
   {
-    free(treeedges[edge_n1A1].route.gridsX);
-    free(treeedges[edge_n1A1].route.gridsY);
+    treeedges[edge_n1A1].route.gridsX.clear();
+    treeedges[edge_n1A1].route.gridsY.clear();
   }
-  treeedges[edge_n1A1].route.gridsX
-      = (short*) calloc((E1_pos + 1), sizeof(short));
-  treeedges[edge_n1A1].route.gridsY
-      = (short*) calloc((E1_pos + 1), sizeof(short));
+  treeedges[edge_n1A1].route.gridsX.resize(E1_pos + 1, 0);
+  treeedges[edge_n1A1].route.gridsY.resize(E1_pos + 1, 0);
 
   if (A1x <= E1x) {
     cnt = 0;
@@ -837,13 +833,11 @@ void FastRouteCore::updateRouteType1(TreeNode* treenodes,
   if (treeedges[edge_n1A2].route.type
       == RouteType::MazeRoute)  // if originally allocated, free them first
   {
-    free(treeedges[edge_n1A2].route.gridsX);
-    free(treeedges[edge_n1A2].route.gridsY);
+    treeedges[edge_n1A2].route.gridsX.clear();
+    treeedges[edge_n1A2].route.gridsY.clear();
   }
-  treeedges[edge_n1A2].route.gridsX
-      = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos - 1), sizeof(short));
-  treeedges[edge_n1A2].route.gridsY
-      = (short*) calloc((cnt_n1A1 + cnt_n1A2 - E1_pos - 1), sizeof(short));
+  treeedges[edge_n1A2].route.gridsX.resize(cnt_n1A1 + cnt_n1A2 - E1_pos - 1, 0);
+  treeedges[edge_n1A2].route.gridsY.resize(cnt_n1A1 + cnt_n1A2 - E1_pos - 1, 0);
 
   if (E1x <= A2x) {
     cnt = 0;
@@ -935,13 +929,13 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
   // combine grids on original (A1, n1) and (n1, A2) to new (A1, A2)
   // allocate memory for gridsX[] and gridsY[] of edge_A1A2
   if (treeedges[edge_A1A2].route.type == RouteType::MazeRoute) {
-    free(treeedges[edge_A1A2].route.gridsX);
-    free(treeedges[edge_A1A2].route.gridsY);
+    treeedges[edge_A1A2].route.gridsX.clear();
+    treeedges[edge_A1A2].route.gridsY.clear();
   }
   len_A1A2 = cnt_n1A1 + cnt_n1A2 - 1;
 
-  treeedges[edge_A1A2].route.gridsX = (short*) calloc(len_A1A2, sizeof(short));
-  treeedges[edge_A1A2].route.gridsY = (short*) calloc(len_A1A2, sizeof(short));
+  treeedges[edge_A1A2].route.gridsX.resize(len_A1A2, 0);
+  treeedges[edge_A1A2].route.gridsY.resize(len_A1A2, 0);
   treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
   treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
@@ -973,22 +967,22 @@ void FastRouteCore::updateRouteType2(TreeNode* treenodes,
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
   if (treeedges[edge_n1C1].route.type == RouteType::MazeRoute) {
-    free(treeedges[edge_n1C1].route.gridsX);
-    free(treeedges[edge_n1C1].route.gridsY);
+    treeedges[edge_n1C1].route.gridsX.clear();
+    treeedges[edge_n1C1].route.gridsY.clear();
   }
   len_n1C1 = E1_pos + 1;
-  treeedges[edge_n1C1].route.gridsX = (short*) calloc(len_n1C1, sizeof(short));
-  treeedges[edge_n1C1].route.gridsY = (short*) calloc(len_n1C1, sizeof(short));
+  treeedges[edge_n1C1].route.gridsX.resize(len_n1C1, 0);
+  treeedges[edge_n1C1].route.gridsY.resize(len_n1C1, 0);
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
   treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
   if (treeedges[edge_n1C2].route.type == RouteType::MazeRoute) {
-    free(treeedges[edge_n1C2].route.gridsX);
-    free(treeedges[edge_n1C2].route.gridsY);
+    treeedges[edge_n1C2].route.gridsX.clear();
+    treeedges[edge_n1C2].route.gridsY.clear();
   }
   len_n1C2 = cnt_C1C2 - E1_pos;
-  treeedges[edge_n1C2].route.gridsX = (short*) calloc(len_n1C2, sizeof(short));
-  treeedges[edge_n1C2].route.gridsY = (short*) calloc(len_n1C2, sizeof(short));
+  treeedges[edge_n1C2].route.gridsX.resize(len_n1C2, 0);
+  treeedges[edge_n1C2].route.gridsY.resize(len_n1C2, 0);
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
   treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
@@ -1021,8 +1015,8 @@ void FastRouteCore::reInitTree(int netID)
   for (edgeID = 0; edgeID < numEdges; edgeID++) {
     treeedge = &(sttrees_[netID].edges[edgeID]);
     if (treeedge->len > 0) {
-      delete[] treeedge->route.gridsX;
-      delete[] treeedge->route.gridsY;
+      treeedge->route.gridsX.clear();
+      treeedge->route.gridsY.clear();
     }
   }
   delete[] sttrees_[netID].nodes;
@@ -1775,13 +1769,11 @@ void FastRouteCore::mazeRouteMSMD(int iter,
 
           // update route for edge (n1, n2) and edge usage
           if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
-            free(treeedges[edge_n1n2].route.gridsX);
-            free(treeedges[edge_n1n2].route.gridsY);
+            treeedges[edge_n1n2].route.gridsX.clear();
+            treeedges[edge_n1n2].route.gridsY.clear();
           }
-          treeedges[edge_n1n2].route.gridsX
-              = (short*) calloc(cnt_n1n2, sizeof(short));
-          treeedges[edge_n1n2].route.gridsY
-              = (short*) calloc(cnt_n1n2, sizeof(short));
+          treeedges[edge_n1n2].route.gridsX.resize(cnt_n1n2, 0);
+          treeedges[edge_n1n2].route.gridsY.resize(cnt_n1n2, 0);
           treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
           treeedges[edge_n1n2].route.routelen = cnt_n1n2 - 1;
           treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);

@@ -93,8 +93,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
       h_capacity_lb_(0),
-      sttrees_(nullptr),
-      sttrees_bk_(nullptr),
       heap1_3D_(nullptr),
       heap2_3D_(nullptr),
       heap2_(nullptr),
@@ -142,22 +140,16 @@ void FastRouteCore::deleteComponents()
   h_edges_3D_.clear();
   v_edges_3D_.clear();
 
-  if (sttrees_ != nullptr) {
+  if (!sttrees_.empty()) {
     for (int i = 0; i < num_valid_nets_; i++) {
       int deg = sttrees_[i].deg;
       int numEdges = 2 * deg - 3;
       for (int edgeID = 0; edgeID < numEdges; edgeID++) {
         TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
         if (treeedge->len > 0) {
-          if (treeedge->route.gridsX != nullptr)
-            free(treeedge->route.gridsX);
-          if (treeedge->route.gridsY != nullptr)
-            free(treeedge->route.gridsY);
-          if (treeedge->route.gridsL != nullptr)
-            free(treeedge->route.gridsL);
-          treeedge->route.gridsX = nullptr;
-          treeedge->route.gridsY = nullptr;
-          treeedge->route.gridsL = nullptr;
+          treeedge->route.gridsX.clear();
+          treeedge->route.gridsY.clear();
+          treeedge->route.gridsL.clear();
         }
       }
 
@@ -169,8 +161,7 @@ void FastRouteCore::deleteComponents()
         delete[] sttrees_[i].edges;
       sttrees_[i].edges = nullptr;
     }
-    delete[] sttrees_;
-    sttrees_ = nullptr;
+    sttrees_.clear();
   }
 
   parent_x1_.resize(boost::extents[0][0]);
@@ -665,7 +656,7 @@ void FastRouteCore::initAuxVar()
 
   seglist_cnt_.resize(num_valid_nets_);
   seglist_.resize(seg_count_);
-  sttrees_ = new StTree[num_valid_nets_];
+  sttrees_.resize(num_valid_nets_);
   gxs_.resize(num_valid_nets_);
   gys_.resize(num_valid_nets_);
   gs_.resize(num_valid_nets_);
@@ -688,8 +679,6 @@ void FastRouteCore::initAuxVar()
   // allocate memory for priority queue
   heap1_ = new float*[y_grid_ * x_grid_];
   heap2_ = new float*[y_grid_ * x_grid_];
-
-  sttrees_bk_ = NULL;
 }
 
 NetRouteMap FastRouteCore::getRoutes()
@@ -706,9 +695,9 @@ NetRouteMap FastRouteCore::getRoutes()
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
-        short* gridsX = treeedge->route.gridsX;
-        short* gridsY = treeedge->route.gridsY;
-        short* gridsL = treeedge->route.gridsL;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
         int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL = gridsL[0];
