@@ -100,7 +100,7 @@ int Netlist::numIOPins()
   return io_pins_.size();
 }
 
-Rect Netlist::getBB(int idx, Point slot_pos)
+Rect Netlist::getBB(int idx, const Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -125,7 +125,7 @@ Rect Netlist::getBB(int idx, Point slot_pos)
   return net_b_box;
 }
 
-int Netlist::computeIONetHPWL(int idx, Point slot_pos)
+int Netlist::computeIONetHPWL(int idx, const Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -149,7 +149,7 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
   return (x + y);
 }
 
-int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
+int Netlist::computeDstIOtoPins(int idx, const Point& slot_pos)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];

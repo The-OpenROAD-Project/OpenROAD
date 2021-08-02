@@ -87,6 +87,8 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
   header->setSectionResizeMode(Value, QHeaderView::ResizeToContents);
+  // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
+  header->setStretchLastSection(false);
 
   setWidget(view_);
   connect(view_,

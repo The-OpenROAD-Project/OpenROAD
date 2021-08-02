@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
-#include "pdr/pdrev.h"
+#include "stt/SteinerTreeBuilder.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -47,6 +47,14 @@
 namespace cts {
 
 using utl::CTS;
+
+SinkClustering::SinkClustering(CtsOptions* options, TechChar* techChar) :
+    _options(options), _logger(options->getLogger()),
+    _techChar(techChar),
+    _maxInternalDiameter(10), _capPerUnit(0.0),
+    _useMaxCapLimit(options->getSinkClusteringUseMaxCap())
+{
+}
 
 void SinkClustering::normalizePoints(float maxDiameter)
 {
@@ -71,7 +79,7 @@ void SinkClustering::normalizePoints(float maxDiameter)
     p = Point<double>(xNorm, yNorm);
   }
   _maxInternalDiameter = maxDiameter / std::min(xSpan, ySpan);
-  _capPerUnit = _options->getCapPerSqr() * _scaleFactor * std::min(xSpan, ySpan);
+  _capPerUnit = _techChar->getCapPerDBU() * _scaleFactor * std::min(xSpan, ySpan);
 }
 
 void SinkClustering::computeAllThetas()
@@ -120,7 +128,7 @@ unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
     return 3;
   }
 
-  _logger->error(CTS, 58, "Invalid parameters in {}", __func__ );
+  _logger->error(CTS, 58, "Invalid parameters in {}.", __func__ );
 
   // avoid warn message
   return 4;
@@ -177,7 +185,7 @@ void SinkClustering::run()
     writePlotFile();
 }
 
-void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
+void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
 {
   _scaleFactor = scaleFactor;
 
@@ -187,7 +195,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFa
   findBestMatching(groupSize);
   if (_logger->debugCheck(CTS, "Stree", 1))
     writePlotFile(groupSize);
-  
+
 }
 
 void SinkClustering::writePlotFile()

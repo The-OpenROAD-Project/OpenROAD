@@ -934,7 +934,6 @@ class compareCC {
  public:
   bool operator()(odb::dbCCSeg* cc1, odb::dbCCSeg* cc2) {
     odb::dbBlock* block = cc1->getSourceNet()->getBlock();
-    uint cn1, cn2;
     uint net1, net2;
     uint id1, id2;
     odb::dbCapNode* cp1, *cp2;
@@ -947,8 +946,6 @@ class compareCC {
     */
     cp1 = cc1->getSourceCapNode();
     cp2 = cc2->getSourceCapNode();
-    cn1 = cp1->getId();
-    cn2 = cp2->getId();
 
     net1 = cp1->getNet()->getId();
     id1 = cp1->getNode();
@@ -984,8 +981,6 @@ class compareCC {
     */
     cp1 = cc1->getTargetCapNode();
     cp2 = cc2->getTargetCapNode();
-    cn1 = cp1->getId();
-    cn2 = cp2->getId();
 
     net1 = cp1->getNet()->getId();
     id1 = cp1->getNode();

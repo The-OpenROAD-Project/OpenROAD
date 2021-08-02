@@ -74,7 +74,7 @@ void io::Parser::initDefaultVias()
       if (layerNum >= BOTTOM_ROUTING_LAYER) {
         logger->error(DRT,
                       234,
-                      "{} does not have single-cut via",
+                      "{} does not have single-cut via.",
                       tech->getLayer(layerNum)->getName());
       }
     }
@@ -186,7 +186,7 @@ void io::Parser::initConstraintLayerIdx()
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
         logger->warn(
-            DRT, 235, "Second layer {} does not exist", secondLayerName);
+            DRT, 235, "Second layer {} does not exist.", secondLayerName);
         continue;
       }
       auto secondLayerNum
@@ -194,7 +194,7 @@ void io::Parser::initConstraintLayerIdx()
       con->setSecondLayerNum(secondLayerNum);
       logger->info(DRT,
                    236,
-                   "Updating diff-net cut spacing rule between {} and {}",
+                   "Updating diff-net cut spacing rule between {} and {}.",
                    design->getTech()->getLayer(layerNum)->getName(),
                    design->getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingConstraints[secondLayerNum] = con;
@@ -211,7 +211,7 @@ void io::Parser::initConstraintLayerIdx()
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
         logger->warn(
-            DRT, 237, "Second layer {} does not exist", secondLayerName);
+            DRT, 237, "Second layer {} does not exist.", secondLayerName);
         continue;
       }
       auto secondLayerNum
@@ -219,7 +219,7 @@ void io::Parser::initConstraintLayerIdx()
       con->setSecondLayerNum(secondLayerNum);
       logger->info(DRT,
                    238,
-                   "Updating same-net cut spacing rule between {} and {}",
+                   "Updating same-net cut spacing rule between {} and {}.",
                    design->getTech()->getLayer(layerNum)->getName(),
                    design->getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingSamenetConstraints[secondLayerNum] = con;
@@ -274,7 +274,7 @@ void io::Parser::initCutLayerWidth()
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
-          logger->error(DRT, 239, "Non-rect shape in via definition");
+          logger->error(DRT, 239, "Non-rectangular shape in via definition.");
         }
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
@@ -284,21 +284,21 @@ void io::Parser::initCutLayerWidth()
             logger->warn(DRT,
                          240,
                          "CUT layer {} does not have square single-cut via, "
-                         "cut layer width may be set incorrectly",
+                         "cut layer width may be set incorrectly.",
                          layer->getName());
           }
         } else {
           logger->warn(DRT,
                        241,
                        "CUT layer {} does not have single-cut via, cut layer "
-                       "width may be set incorrectly",
+                       "width may be set incorrectly.",
                        layer->getName());
         }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER) {
           logger->error(DRT,
                         242,
-                        "CUT layer {} does not have default via",
+                        "CUT layer {} does not have default via.",
                         layer->getName());
         }
       }
@@ -308,7 +308,7 @@ void io::Parser::initCutLayerWidth()
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
-          logger->error(DRT, 243, "Non-rect shape in via definition");
+          logger->error(DRT, 243, "Non-rectangular shape in via definition.");
         }
         auto cutRect = static_cast<frRect*>(cutFig);
         int viaWidth = cutRect->width();
@@ -316,7 +316,7 @@ void io::Parser::initCutLayerWidth()
           logger->warn(DRT,
                        244,
                        "CUT layer {} has smaller width defined in LEF compared "
-                       "to default via",
+                       "to default via.",
                        layer->getName());
         }
       }
@@ -650,7 +650,7 @@ void io::Parser::postProcess()
   instAnalysis();
 
   // init region query
-  logger->info(DRT, 168, "Init region query ...");
+  logger->info(DRT, 168, "Init region query.");
   design->getRegionQuery()->init();
   design->getRegionQuery()->print();
   design->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
@@ -660,7 +660,7 @@ void io::Parser::postProcessGuide()
 {
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
-    logger->info(DRT, 169, "Post process guides ...");
+    logger->info(DRT, 169, "Post process guides.");
   }
   buildGCellPatterns();
 
@@ -678,11 +678,11 @@ void io::Parser::postProcessGuide()
     if (VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          logger->report("  complete {} nets", cnt);
+          logger->report("  complete {} nets.", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          logger->report("  complete {} nets", cnt);
+          logger->report("  complete {} nets.", cnt);
         }
       }
     }
@@ -697,16 +697,16 @@ void io::Parser::postProcessGuide()
     }
   }
 
-  logger->info(DRT, 178, "init guide query ...");
+  logger->info(DRT, 178, "Init guide query.");
   design->getRegionQuery()->initGuide();
   design->getRegionQuery()->printGuide();
-  logger->info(DRT, 179, "init gr pin query ...");
+  logger->info(DRT, 179, "Init gr pin query.");
   design->getRegionQuery()->initGRPin(tmpGRPins);
 
   if (OUTGUIDE_FILE == string("")) {
     if (VERBOSE > 0) {
       logger->warn(
-          DRT, 245, "No output guide specified, skipped writing guide");
+          DRT, 245, "No output guide specified, skipped writing guide.");
     }
   } else {
     // if (VERBOSE > 0) {
@@ -720,7 +720,7 @@ void io::Parser::postProcessGuide()
 void io::Parser::initRPin()
 {
   if (VERBOSE > 0) {
-    logger->info(DRT, 185, "post process initialize RPin region query ...");
+    logger->info(DRT, 185, "Post process initialize RPin region query.");
   }
   initRPin_rpin();
   initRPin_rq();
@@ -754,7 +754,7 @@ void io::Parser::initRPin_rpin()
         if (prefAp == nullptr) {
           logger->warn(DRT,
                        246,
-                       "{}/{} from {} has nullptr as prefAP",
+                       "{}/{} from {} has nullptr as prefAP.",
                        instTerm->getInst()->getName(),
                        trueTerm->getName(),
                        net->getName());
@@ -850,12 +850,12 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
   if (tmpGCELLGRIDX != -1) {
     GCELLGRIDX = tmpGCELLGRIDX;
   } else {
-    logger->error(DRT, 170, "no GCELLGRIDX");
+    logger->error(DRT, 170, "No GCELLGRIDX.");
   }
   if (tmpGCELLGRIDY != -1) {
     GCELLGRIDY = tmpGCELLGRIDY;
   } else {
-    logger->error(DRT, 171, "no GCELLGRIDY");
+    logger->error(DRT, 171, "No GCELLGRIDY.");
   }
 }
 
@@ -910,12 +910,12 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   if (tmpGCELLOFFSETX != -1) {
     GCELLOFFSETX = tmpGCELLOFFSETX;
   } else {
-    logger->error(DRT, 172, "no GCELLGRIDX");
+    logger->error(DRT, 172, "No GCELLGRIDX.");
   }
   if (tmpGCELLOFFSETY != -1) {
     GCELLOFFSETY = tmpGCELLOFFSETY;
   } else {
-    logger->error(DRT, 173, "no GCELLGRIDY");
+    logger->error(DRT, 173, "No GCELLGRIDY.");
   }
 }
 
@@ -940,7 +940,7 @@ void io::Parser::buildGCellPatterns()
   xgp.setStartCoord(startCoordX);
   xgp.setSpacing(GCELLGRIDX);
   if ((dieBox.right() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
-    logger->error(DRT, 174, "gcell cnt x < 1");
+    logger->error(DRT, 174, "GCell cnt x < 1.");
   }
   xgp.setCount((dieBox.right() - (frCoord) startCoordX) / (frCoord) GCELLGRIDX);
 
@@ -956,7 +956,7 @@ void io::Parser::buildGCellPatterns()
   ygp.setStartCoord(startCoordY);
   ygp.setSpacing(GCELLGRIDY);
   if ((dieBox.top() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
-    logger->error(DRT, 175, "gcell cnt y < 1");
+    logger->error(DRT, 175, "GCell cnt y < 1.");
   }
   ygp.setCount((dieBox.top() - startCoordY) / (frCoord) GCELLGRIDY);
 

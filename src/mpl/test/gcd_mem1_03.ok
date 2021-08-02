@@ -13,11 +13,11 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 1124 connections.
 [INFO ODB-0134] Finished DEF file: gcd_mem1.def
-[INFO MPL-0005] Found 1 macros
-[INFO MPL-0009] West pins 22
-[INFO MPL-0009] East pins 9
-[INFO MPL-0009] North pins 12
-[INFO MPL-0009] South pins 18
-[INFO MPL-0067] Initial weighted wire length 689.719
-[INFO MPL-0068] Placed weighted wire length 745.141
+[INFO MPL-0005] Found 1 macros.
+[INFO MPL-0009] West pins 22.
+[INFO MPL-0009] East pins 9.
+[INFO MPL-0009] North pins 12.
+[INFO MPL-0009] South pins 18.
+[INFO MPL-0067] Initial weighted wire length 689.719.
+[INFO MPL-0068] Placed weighted wire length 745.141.
 No differences found.

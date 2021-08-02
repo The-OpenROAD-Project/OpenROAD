@@ -86,8 +86,8 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                        db_network_, logger_);
+    SteinerTree *tree = makeSteinerTree(drvr_pin, true,
+                                        db_network_, logger_, stt_builder_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
@@ -502,8 +502,8 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), true,
-                                        db_network_, logger_);
+    SteinerTree *tree = makeSteinerTree(drvr_pin, true,
+                                        db_network_, logger_, stt_builder_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       BufferedNet *bnet = makeBufferedNetWire(tree, drvr_pt, tree->left(drvr_pt), 0);
@@ -566,7 +566,6 @@ Resizer::makeBufferedNetWire(SteinerTree *tree,
     const Corner *corner = end->ref()->requiredPath().dcalcAnalysisPt(sta_)->corner();
     double wire_length = dbuToMeters(wire_length_dbu);
     double wire_cap = wire_length * wireSignalCapacitance(corner);
-    double wire_res = wire_length * wireSignalResistance(corner);
 
     return new BufferedNet(BufferedNetType::wire,
                            from_loc,

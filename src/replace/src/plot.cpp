@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef ENABLE_CIMG_LIB 
+#ifdef ENABLE_CIMG_LIB
 #include "CImg.h"
 
 #include "plot.h"
@@ -41,7 +41,7 @@
 
 
 
-// 
+//
 // The following structure/header will be removed.
 //
 // This is temporal implementation with CImg
@@ -72,23 +72,23 @@ std::unique_ptr<std::filesystem::path> PlotEnv::plotPath = nullptr;
 
 PlotEnv::PlotEnv()
 : pb_(nullptr), nb_(nullptr),
-  minLength(0), 
-  imageWidth(0), imageHeight(0), 
-  xMargin(0), yMargin(0), 
-  origWidth(0), 
+  minLength(0),
+  imageWidth(0), imageHeight(0),
+  xMargin(0), yMargin(0),
+  origWidth(0),
   origHeight(0),
-  unitX(0), unitY(0), 
-  dispWidth(0), dispHeight(0), 
+  unitX(0), unitY(0),
+  dispWidth(0), dispHeight(0),
   hasCellColor(false), log_(nullptr) {}
 
 PlotEnv::PlotEnv(
     std::shared_ptr<PlacerBase> pb,
-    std::shared_ptr<NesterovBase> nb) 
+    std::shared_ptr<NesterovBase> nb)
 : pb_(pb), nb_(nb),
-  minLength(1000), 
+  minLength(1000),
   imageWidth(0), imageHeight(0), // init later
-  xMargin(30), yMargin(30), 
-  origWidth(pb_->die().dieUx()-pb_->die().dieLx()), 
+  xMargin(30), yMargin(30),
+  origWidth(pb_->die().dieUx()-pb_->die().dieLx()),
   origHeight(pb_->die().dieUy()-pb_->die().dieLy()),
   unitX(0), unitY(0), // init later
   dispWidth(0), dispHeight(0), // init later
@@ -100,7 +100,7 @@ PlotEnv::PlotEnv(
 void PlotEnv::Init() {
   minLength = 1000;
   xMargin = yMargin = 30;
-  origWidth 
+  origWidth
     = pb_->die().dieUx()-pb_->die().dieLx();
 
   origHeight
@@ -111,9 +111,9 @@ void PlotEnv::Init() {
   // imageWidth & height setting
   // Set minimum length of picture as minLength
   if(origWidth < origHeight) {
-    imageHeight 
+    imageHeight
       = 1.0 * origHeight / (origWidth / minLength);
-    imageWidth 
+    imageWidth
       = minLength;
   }
   else {
@@ -176,18 +176,18 @@ void PlotEnv::InitCellColors(string cFileName) {
 //  for(int i=0; i<moduleCNT; i++) {
 //    new (&colors[i]) PlotColor();
 
-//    MODULE* curModule = &moduleInstance[i]; 
+//    MODULE* curModule = &moduleInstance[i];
 
     // Fill in the colorMap
 //    colorMap[curModule ->Name()] = i;
 //  }
-  
+
 //  std::ifstream cFile(cFileName);
 //  if( !cFile.good() ) {
 //    cout << "** ERROR : Cannot Open Colorset File : " << cFileName << endl;
 //    exit(1);
 //  }
-  
+
 //  string cellName = "";
 //  int r = 0, g = 0, b = 0;
 
@@ -196,9 +196,9 @@ void PlotEnv::InitCellColors(string cFileName) {
 //    auto gPtr = colorMap.find(cellName);
 //    if( gPtr == colorMap.end() ) {
 //      cout << "ERROR: Cannot find cell : " << cellName << endl;
-//    } 
+//    }
 
-    // save into colors vectors    
+    // save into colors vectors
 //    colors[gPtr->second] = PlotColor(r, g, b);
 //  }
 }
@@ -228,8 +228,8 @@ int PlotEnv::GetY(float coord) {
 }
 
 
-void 
-PlotEnv::DrawTerminal(CImgObj *img, 
+void
+PlotEnv::DrawTerminal(CImgObj *img,
     const unsigned char termColor[],
     const unsigned char pinColor[], float opacity) {
   int pinWidth = 300;
@@ -270,7 +270,7 @@ PlotEnv::DrawTerminal(CImgObj *img,
   }
 }
 
-void 
+void
 PlotEnv::DrawGcell(CImgObj *img, const unsigned char fillerColor[],
                const unsigned char cellColor[],
                const unsigned char macroColor[], float opacity) {
@@ -297,7 +297,7 @@ PlotEnv::DrawGcell(CImgObj *img, const unsigned char fillerColor[],
 //        color[j] = macroColor[j];
 //      }
 //    }
-      
+
     if( hasCellColor ) {
 //      color[0] = colors[i].r();
 //      color[1] = colors[i].g();
@@ -314,12 +314,12 @@ PlotEnv::DrawGcell(CImgObj *img, const unsigned char fillerColor[],
           color[j] = fillerColor[j];
         }
       }
-    } 
+    }
 
     if( gCell->isInstance() ) {
       img->draw_rectangle(x1, y1, x3, y3, color, opacity);
     }
-//    img->draw_text((x1+x3)/2, (y1+y3)/2, 
+//    img->draw_text((x1+x3)/2, (y1+y3)/2,
 //        string(to_string(gCell->dCx()) + " " + to_string(gCell->dCy())).c_str(), black, NULL, 1, 20);
   }
 }
@@ -354,7 +354,7 @@ void PlotEnv::DrawBinDensity(CImgObj *img, float opacity) {
     int y1 = GetY(bin->ly());
     int x3 = GetX(bin->ux());
     int y3 = GetY(bin->uy());
-    
+
     int color = bin->density()* 50 + 20;
 
     color = (color > 255) ? 255 : (color < 20) ? 20 : color;
@@ -367,7 +367,7 @@ void PlotEnv::DrawBinDensity(CImgObj *img, float opacity) {
   }
 }
 
-void 
+void
 PlotEnv::CimgDrawArrow(CImgObj *img, int x1, int y1, int x3, int y3, int thick,
                    const unsigned char color[], float opacity) {
   // ARROW HEAD DRAWING
@@ -428,7 +428,7 @@ PlotEnv::CimgDrawArrow(CImgObj *img, int x1, int y1, int x3, int y3, int thick,
   //    img.draw_arrow( x1, y1, x3, y3, color, opacity );
 }
 
-void 
+void
 PlotEnv::DrawArrowDensity(CImgObj *img, float opacity) {
   int binMaxX = nb_->binCntX();
   int binMaxY = nb_->binCntY();
@@ -616,7 +616,7 @@ to_string(int(100*curBin->den2)).c_str(), black, NULL, 1, 25);
   img.draw_text(50, 50, imgName.c_str(), black, NULL, 1, 30);
   img.save_jpeg(saveName.c_str(), 70);
   //  img.save_bmp( string(imgPosition + string(".bmp")).c_str() );
-  log_->info(GPL, 200, "{} image has been saved", saveName.c_str());
+  log_->info(GPL, 200, "Image file {} has been saved", saveName.c_str());
 }
 
 //
@@ -635,7 +635,7 @@ void PlotEnv::SaveBinPlotAsJPEG(string imgName, string imgPosition) {
   img.draw_text(50, 50, imgName.c_str(), black, NULL, 1, 30);
   img.save_jpeg(saveName.c_str(), 70);
   //  img.save_bmp( string(imgPosition + string(".bmp")).c_str() );
-  log_->info(GPL, 201, "{} image has been saved", saveName.c_str());
+  log_->info(GPL, 201, "Image file {} has been saved.", saveName.c_str());
 }
 //
 // save current circuit's as BMP file in imgPosition & iternumber
@@ -653,12 +653,12 @@ void PlotEnv::SaveArrowPlotAsJPEG(string imgName, string imgPosition) {
   img.draw_text(50, 50, imgName.c_str(), black, NULL, 1, 30);
   img.save_jpeg(saveName.c_str(), 70);
   //  img.save_bmp( string(imgPosition + string(".bmp")).c_str() );
-  log_->info(GPL, 202, "{} image has been saved", saveName.c_str());
+  log_->info(GPL, 202, "Image file {} has been saved", saveName.c_str());
 }
 
 void PlotEnv::setPlotPath(std::string path) {
-	if (path.empty()) PlotEnv::plotPath = nullptr;
-	else PlotEnv::plotPath = std::make_unique<std::filesystem::path>(path);
+  if (path.empty()) PlotEnv::plotPath = nullptr;
+  else PlotEnv::plotPath = std::make_unique<std::filesystem::path>(path);
 }
 
 

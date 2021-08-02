@@ -42,7 +42,7 @@
 
 #include "grt/GRoute.h"
 #include "DataType.h"
-#include "flute.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "boost/multi_array.hpp"
 
 namespace utl {
@@ -53,6 +53,10 @@ namespace odb{
 class dbDatabase;
 }
 
+namespace stt {
+class SteinerTreeBuilder;
+}
+
 using boost::multi_array;
 
 namespace grt {
@@ -60,7 +64,7 @@ namespace grt {
 class FastRouteCore
 {
  public:
-  FastRouteCore(odb::dbDatabase* db, utl::Logger* log);
+  FastRouteCore(odb::dbDatabase* db, utl::Logger* log, stt::SteinerTreeBuilder* stt_builder);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -78,7 +82,6 @@ class FastRouteCore
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
              int num_pins,
-             float alpha,
              bool is_clock,
              int driver_idx,
              int cost,
@@ -246,16 +249,14 @@ class FastRouteCore
                     bool newType,
                     bool noADJ);
   void fluteNormal(int netID,
-                   int d,
-                   DTYPE x[],
-                   DTYPE y[],
+                   const std::vector<DTYPE> &x,
+                   const std::vector<DTYPE> &y,
                    int acc,
                    float coeffV,
                    Tree* t);
   void fluteCongest(int netID,
-                    int d,
-                    DTYPE x[],
-                    DTYPE y[],
+                    const std::vector<DTYPE> &x,
+                    const std::vector<DTYPE> &y,
                     int acc,
                     float coeffV,
                     Tree* t);
@@ -453,6 +454,7 @@ class FastRouteCore
   float **heap1_;
 
   utl::Logger* logger_;
+  stt::SteinerTreeBuilder* stt_builder_;
 };
 
 }  // namespace grt

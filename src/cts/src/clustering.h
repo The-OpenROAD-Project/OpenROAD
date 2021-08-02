@@ -56,7 +56,7 @@ class flop
   std::vector<std::pair<int, int>> match_idx;
   std::vector<float> silhs;
   unsigned sinkIdx;
-  flop(const float x, const float y, unsigned idx) : x(x), y(y), sinkIdx(idx){};
+  flop(const float x, const float y, unsigned idx) : x(x), y(y), x_idx(0), y_idx(0), idx(0), sinkIdx(idx){};
 };
 
 class clustering

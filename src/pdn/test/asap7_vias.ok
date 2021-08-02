@@ -13,10 +13,10 @@
 [INFO ODB-0134] Finished DEF file: asap7_vias/2_5_floorplan_tapcell.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: asap7_vias/grid_strategy-M2-M4-M7.cfg
-[WARNING PDN-0035] No track information found for layer Pad
-[INFO PDN-0008] Design name is aes_cipher_top
-[INFO PDN-0009] Reading technology data
-[WARNING PDN-0018] No macro grid specifications found - no straps added
+[WARNING PDN-0035] No track information found for layer Pad.
+[INFO PDN-0008] Design name is aes_cipher_top.
+[INFO PDN-0009] Reading technology data.
+[WARNING PDN-0018] No macro grid specifications found - no straps added.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
@@ -31,6 +31,6 @@ Type: stdcell, grid
       {M3 M6 fixed_vias {VIA45 VIA56}} 
     
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
 No differences found.

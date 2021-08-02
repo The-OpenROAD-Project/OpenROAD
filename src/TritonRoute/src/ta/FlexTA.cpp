@@ -401,13 +401,13 @@ int FlexTA::main()
 
   frTime t;
   if (VERBOSE > 0) {
-    logger_->info(DRT, 181, "start track assignment");
+    logger_->info(DRT, 181, "Start track assignment.");
   }
   initTA(50);
   searchRepair(1, 50, 0);
 
   if (VERBOSE > 0) {
-    logger_->info(DRT, 182, "complete track assignment");
+    logger_->info(DRT, 182, "Complete track assignment.");
   }
   if (VERBOSE > 0) {
     t.print(logger_);

@@ -1049,23 +1049,12 @@ PlacerBase::printInfo() const {
 
   int maxFanout = INT_MIN;
   int sumFanout = 0;
-  dbNet* maxFanoutNet = nullptr;
   for(auto& net : nets_) {
     if( maxFanout < (int)net->pins().size() ) {
       maxFanout = (int)net->pins().size();
-      maxFanoutNet = net->dbNet();
     }
     sumFanout += (int)net->pins().size();
   }
-
-  /*
-  cout << "MaxFanout      : " << maxFanout << endl;
-  cout << "MaxFanoutNet   : " 
-    << maxFanoutNet->getConstName() << endl;
-  cout << "AvgFanout      : " 
-    << static_cast<float>(sumFanout) / nets_.size() << endl; 
-  cout << endl;
-  */
 
   log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy() );
   log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy() );

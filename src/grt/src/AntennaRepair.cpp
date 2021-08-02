@@ -38,12 +38,12 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <limits>
 
 #include "Net.h"
 #include "Pin.h"
@@ -125,7 +125,8 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
       odb::dbWire::destroy(wire);
     } else {
-      logger_->error(GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
+      logger_->error(
+          GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
     }
   }
 
@@ -183,7 +184,7 @@ void AntennaRepair::legalizePlacedCells()
   AntennaCbk* cbk = new AntennaCbk(grouter_);
   cbk->addOwner(block_);
 
-  opendp_->detailedPlacement(0);
+  opendp_->detailedPlacement(0, 0);
   opendp_->checkPlacement(false);
 
   cbk->removeOwner();
@@ -237,7 +238,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       = antenna_inst->findITerm(diode_mterm->getConstName());
   odb::dbBox* antenna_bbox = antenna_inst->getBBox();
   int antenna_width = antenna_bbox->xMax() - antenna_bbox->xMin();
-  
+
   odb::Rect core_area;
   block_->getCoreArea(core_area);
 
@@ -280,14 +281,17 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   antenna_inst->getBBox()->getBox(inst_rect);
 
   if (!legally_placed) {
-    logger_->warn(GRT, 54, "Placement of diode {} will be legalized by detailed placement.", antenna_inst_name);
+    logger_->warn(
+        GRT,
+        54,
+        "Placement of diode {} will be legalized by detailed placement.",
+        antenna_inst_name);
   }
 
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
-  if (core_area.contains(inst_rect) &&
-      !sink_inst->getMaster()->isBlock() &&
-      legally_placed) {
+  if (core_area.contains(inst_rect) && !sink_inst->getMaster()->isBlock()
+      && legally_placed) {
     antenna_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   } else {
     antenna_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);

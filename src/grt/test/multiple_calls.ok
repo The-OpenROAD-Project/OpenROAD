@@ -126,7 +126,7 @@ metal10    Vertical         2256            47          97.92%
 
 [INFO GRT-0111] Final number of vias: 276
 [INFO GRT-0112] Final usage 3D: 1489
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
