@@ -61,7 +61,7 @@ enum class Direction
   Down
 };
 
-typedef struct
+struct Segment  // A Segment is a 2-pin connection
 {
   bool xFirst;  // route x-direction first (only for L route)
   bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
@@ -71,9 +71,9 @@ typedef struct
   int netID;             // the netID of the net this segment belonging to
   short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
   int numEdges;          // number of H and V Edges to implement this Segment
-} Segment;               // A Segment is a 2-pin connection
+};
 
-typedef struct
+struct FrNet    // A Net is a set of connected MazePoints
 {
   odb::dbNet* db_net;
   int numPins;  // number of pins in the net
@@ -86,11 +86,11 @@ typedef struct
   int driver_idx;
   int edgeCost;
   std::vector<int> edge_cost_per_layer;
-} FrNet;                    // A Net is a set of connected MazePoints
+};
 
 const char* netName(FrNet* net);
 
-typedef struct
+struct Edge // An Edge is the routing track holder between two adjacent MazePoints
 {
   short congCNT;
   unsigned short cap;    // the capacity of the edge
@@ -98,16 +98,16 @@ typedef struct
   unsigned short red;
   short last_usage;
   float est_usage;  // the estimated usage of the edge
-} Edge;  // An Edge is the routing track holder between two adjacent MazePoints
+};
 
-typedef struct
+struct Edge3D
 {
   unsigned short cap;    // the capacity of the edge
   unsigned short usage;  // the usage of the edge
   unsigned short red;
-} Edge3D;
+};
 
-typedef struct TNode
+struct TreeNode
 {
   bool assigned;
 
@@ -126,9 +126,9 @@ typedef struct TNode
   int hID;
   int lID;
   int stackAlias;
-} TreeNode;
+};
 
-typedef struct
+struct Route
 {
   RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
   bool xFirst;   // valid for LRoute, TRUE - the route is horizontal first (x1,
@@ -148,9 +148,9 @@ typedef struct
                   // Edge3D *edge;       // list of 3D edges the route go
                   // through;
 
-} Route;
+};
 
-typedef struct
+struct TreeEdge
 {
   bool assigned;
 
@@ -159,39 +159,39 @@ typedef struct
   int n2, n2a;
   Route route;
 
-} TreeEdge;
+};
 
-typedef struct
+struct StTree
 {
   int deg;
   TreeNode* nodes;  // the nodes (pin and Steiner nodes) in the tree
   TreeEdge* edges;  // the tree edges
-} StTree;
+};
 
-typedef struct
+struct OrderNetPin
 {
   int treeIndex;
   int minX;
   float npv;  // net length over pin
-} OrderNetPin;
+};
 
-typedef struct
+struct OrderTree
 {
   int length;
   int treeIndex;
   int xmin;
-} OrderTree;
+};
 
-typedef struct
+struct parent3D
 {
   short l;
   int x, y;
-} parent3D;
+};
 
-typedef struct
+struct OrderNetEdge
 {
   int length;
   int edgeID;
-} OrderNetEdge;
+};
 
 }  // namespace grt
