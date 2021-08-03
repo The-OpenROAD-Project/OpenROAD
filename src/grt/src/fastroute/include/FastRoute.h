@@ -440,7 +440,7 @@ class FastRouteCore
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
-  multi_array<dirctionT, 3> directions_3D_;
+  multi_array<Direction, 3> directions_3D_;
   multi_array<parent3D, 3> pr_3D_;
   multi_array<int, 3> corr_edge_3D_;
   multi_array<int, 2> corr_edge_;

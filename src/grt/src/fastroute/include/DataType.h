@@ -50,6 +50,17 @@ enum class RouteType
   MazeRoute
 };
 
+enum class Direction
+{
+  North,
+  East,
+  South,
+  West,
+  Origin,
+  Up,
+  Down
+};
+
 typedef struct
 {
   bool xFirst;  // route x-direction first (only for L route)
@@ -182,23 +193,5 @@ typedef struct
   int length;
   int edgeID;
 } OrderNetEdge;
-
-typedef enum
-{
-  NORTH,
-  EAST,
-  SOUTH,
-  WEST,
-  ORIGIN,
-  UP,
-  DOWN
-} dirctionT;
-typedef enum
-{
-  NONE,
-  HORI,
-  VERT,
-  BID
-} viaST;
 
 }  // namespace grt
