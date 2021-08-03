@@ -133,7 +133,7 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
       // Check if command complete and attempt to execute, otherwise do nothing
       if (isCommandComplete(toPlainText().simplified().toStdString())) {
         // execute command
-        emit completeCommand();
+        emit completeCommand(text());
         return;
       }
     }
