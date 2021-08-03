@@ -19,6 +19,7 @@ if (Qt5_FOUND AND BUILD_GUI)
   swig_lib(NAME      gui
            NAMESPACE gui
            I_FILE    src/gui.i
+           SCRIPTS   src/gui.tcl
            RUNTIME_HEADER tclSwig.h
   )
 

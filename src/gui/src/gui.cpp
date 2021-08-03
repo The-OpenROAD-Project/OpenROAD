@@ -48,6 +48,7 @@
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
 
 namespace gui {
 
@@ -447,6 +448,11 @@ void Selected::highlight(Painter& painter,
 
 }  // namespace gui
 
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* gui_tcl_inits[];
+}  // namespace sta
+
 extern "C" {
 struct Tcl_Interp;
 }
@@ -461,6 +467,7 @@ void initGui(OpenRoad* openroad)
 {
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
+  sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
   if (gui::main_window) {
     using namespace gui;
     main_window->setLogger(openroad->getLogger());
