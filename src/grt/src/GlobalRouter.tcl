@@ -387,7 +387,9 @@ proc define_layer_range { layers } {
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 57 "Missing track structure."
+      set tech [ord::get_db_tech]
+      set layer_name [[$tech findRoutingLayer $layer] getName]
+      utl::error GRT 57 "Missing track structure for layer $layer_name."
     }
   }
 }
