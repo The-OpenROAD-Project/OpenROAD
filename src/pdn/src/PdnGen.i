@@ -85,7 +85,7 @@ add_global_connect(odb::dbBlock* block, const char* region_name, const char* ins
   
   odb::dbRegion* region = block->findRegion(region_name);
   if (region == nullptr) {
-    ord::getLogger()->error(PDN, 53, "Region not found: {}", region_name);
+    ord::getLogger()->error(PDN, 53, "Region {} not found.", region_name);
     return;
   }
   
@@ -115,7 +115,7 @@ global_connect_region(odb::dbBlock* block, const char* region_name, const char* 
 
   odb::dbRegion* region = block->findRegion(region_name);
   if (region == nullptr) {
-    ord::getLogger()->error(PDN, 54, "Region not found: {}", region_name);
+    ord::getLogger()->error(PDN, 54, "Region {} not found.", region_name);
     return;
   }
   std::shared_ptr<regex> instReg = std::make_shared<regex>(inst_pattern);
