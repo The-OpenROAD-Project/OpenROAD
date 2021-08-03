@@ -603,7 +603,7 @@ proc check_instances {instances} {
 proc check_cells {cells} {
   foreach cell $cells {
     if {[[ord::get_db] findMaster $cell] == "NULL"} {
-      utl::error PDN 112 "Cell $cell not loaded into the database."
+      utl::warn PDN 112 "Cell $cell not loaded into the database."
     }
   }
 
