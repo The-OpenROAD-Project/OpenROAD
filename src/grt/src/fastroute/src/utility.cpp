@@ -1553,35 +1553,6 @@ void FastRouteCore::freeRR(void)
   }
 }
 
-Tree FastRouteCore::fluteToTree(stt::Tree fluteTree)
-{
-  Tree tree;
-  tree.deg = fluteTree.deg;
-  tree.totalDeg = 2 * fluteTree.deg - 2;
-  tree.length = (DTYPE) fluteTree.length;
-  tree.branch.resize(tree.totalDeg);
-  for (int i = 0; i < tree.totalDeg; i++) {
-    tree.branch[i].x = (DTYPE) fluteTree.branch[i].x;
-    tree.branch[i].y = (DTYPE) fluteTree.branch[i].y;
-    tree.branch[i].n = fluteTree.branch[i].n;
-  }
-  return tree;
-}
-
-stt::Tree FastRouteCore::treeToFlute(Tree tree)
-{
-  stt::Tree fluteTree;
-  fluteTree.deg = tree.deg;
-  fluteTree.length = (stt::DTYPE) tree.length;
-  fluteTree.branch.resize(tree.totalDeg);
-  for (int i = 0; i < tree.totalDeg; i++) {
-    fluteTree.branch[i].x = (stt::DTYPE) tree.branch[i].x;
-    fluteTree.branch[i].y = (stt::DTYPE) tree.branch[i].y;
-    fluteTree.branch[i].n = tree.branch[i].n;
-  }
-  return fluteTree;
-}
-
 int FastRouteCore::edgeShift(Tree* t, int net)
 {
   int i, j, k, l, m, deg, root, x, y, n, n1, n2, n3;
