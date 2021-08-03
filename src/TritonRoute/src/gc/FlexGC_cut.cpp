@@ -93,7 +93,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
   auto deltaV2 = gtl::delta(*viaRect2, gtl::VERTICAL);
   frSquaredDistance reqSpcSqr;
 
-  if (dir == frDirEnum::S || dir == frDirEnum::S) {
+  if (dir == frDirEnum::N || dir == frDirEnum::S) {
     isSide1 = deltaH1 > deltaV1;
     isSide2 = deltaH2 > deltaV2;
   } else {
