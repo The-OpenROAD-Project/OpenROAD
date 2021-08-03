@@ -2112,7 +2112,7 @@ proc determine_num_via_columns {via_info constraints} {
   }
   if {[dict exists $constraints cut_pitch]} {set xcut_pitch [expr round([dict get $constraints cut_pitch] * $def_units)]}
 
-  while {$via_width_lower < $lower_width && $via_width_upper < $upper_width} {
+  while {$via_width_lower <= $lower_width && $via_width_upper <= $upper_width} {
     incr i
     if {$lower_dir == "hor"} {
       set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $max_lower_enclosure]
