@@ -61,6 +61,8 @@ using boost::multi_array;
 
 namespace grt {
 
+using stt::Tree;
+
 class FastRouteCore
 {
  public:
@@ -351,8 +353,6 @@ class FastRouteCore
   void copyBR(void);
   void copyRS(void);
   void freeRR(void);
-  Tree fluteToTree(stt::Tree fluteTree);
-  stt::Tree treeToFlute(Tree tree);
   int edgeShift(Tree* t, int net);
   int edgeShiftNew(Tree* t, int net);
 
