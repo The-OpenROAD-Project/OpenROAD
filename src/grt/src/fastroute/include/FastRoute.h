@@ -262,14 +262,14 @@ class FastRouteCore
                     bool newType,
                     bool noADJ);
   void fluteNormal(int netID,
-                   const std::vector<DTYPE>& x,
-                   const std::vector<DTYPE>& y,
+                   const std::vector<int>& x,
+                   const std::vector<int>& y,
                    int acc,
                    float coeffV,
                    Tree* t);
   void fluteCongest(int netID,
-                    const std::vector<DTYPE>& x,
-                    const std::vector<DTYPE>& y,
+                    const std::vector<int>& x,
+                    const std::vector<int>& y,
                     int acc,
                     float coeffV,
                     Tree* t);
@@ -428,11 +428,11 @@ class FastRouteCore
   std::vector<Edge> h_edges_;
   std::vector<Edge> v_edges_;
   std::vector<OrderNetEdge> net_eo_;
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gxs_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gys_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gs_;  // the copy of vertical sequence for nets, used for second FLUTE
   std::vector<Edge3D> h_edges_3D_;
   std::vector<Edge3D> v_edges_3D_;

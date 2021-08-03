@@ -46,7 +46,7 @@ using utl::GRT;
 
 struct pnt
 {
-  DTYPE x, y;
+  int x, y;
   int o;
 };
 
@@ -162,14 +162,14 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
 }
 
 void FastRouteCore::fluteNormal(int netID,
-                                const std::vector<DTYPE>& x,
-                                const std::vector<DTYPE>& y,
+                                const std::vector<int>& x,
+                                const std::vector<int>& y,
                                 int acc,
                                 float coeffV,
                                 Tree* t)
 {
-  std::vector<DTYPE> xs, ys, tmp_xs, tmp_ys;
-  DTYPE minval, x_max, x_min, x_mid, y_max, y_min, y_mid;
+  std::vector<int> xs, ys, tmp_xs, tmp_ys;
+  int minval, x_max, x_min, x_mid, y_max, y_min, y_mid;
   std::vector<int> s;
   int i, j, minidx;
   struct pnt *pt, *tmpp;
@@ -335,17 +335,17 @@ void FastRouteCore::fluteNormal(int netID,
 }
 
 void FastRouteCore::fluteCongest(int netID,
-                                 const std::vector<DTYPE>& x,
-                                 const std::vector<DTYPE>& y,
+                                 const std::vector<int>& x,
+                                 const std::vector<int>& y,
                                  int acc,
                                  float coeffV,
                                  Tree* t)
 {
-  std::vector<DTYPE> xs, ys, nxs, nys, x_seg, y_seg;
-  DTYPE x_max, x_min, x_mid, y_max, y_min, y_mid;
+  std::vector<int> xs, ys, nxs, nys, x_seg, y_seg;
+  int x_max, x_min, x_mid, y_max, y_min, y_mid;
   std::vector<int> s;
   int i, j, k, grid;
-  DTYPE height, width;
+  int height, width;
   int usageH, usageV;
   float coeffH = 1;
 

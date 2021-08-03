@@ -40,7 +40,6 @@ class dbNet;
 }
 
 namespace grt {
-typedef int DTYPE;
 
 enum class RouteType
 {
