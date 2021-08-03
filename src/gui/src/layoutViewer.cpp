@@ -34,9 +34,11 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QImageWriter>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPaintEvent>
@@ -1306,8 +1308,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.setRenderHints(QPainter::Antialiasing);
 
   // Fill draw region with black
-  painter.setPen(QPen(Qt::black, 0));
-  painter.setBrush(Qt::black);
+  painter.setPen(QPen(background_, 0));
+  painter.setBrush(background_);
   painter.drawRect(event->rect());
 
   if (!design_loaded_) {
@@ -1463,12 +1465,78 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
   scroller_ = scroller;
 }
 
+void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
+{
+  dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  QList<QByteArray> valid_extensions = QImageWriter::supportedImageFormats();
+
+  QString save_filepath;
+  if (filepath.isEmpty()) {
+    QString images_filter = "Images (";
+    for (const QString& ext : valid_extensions) {
+      images_filter += "*." + ext + " ";
+    }
+    images_filter += ")";
+
+    save_filepath = QFileDialog::getSaveFileName(
+        this,
+        tr("Save Layout"),
+        "",
+        images_filter);
+  } else {
+    save_filepath = filepath;
+  }
+
+  if (save_filepath.isEmpty()) {
+    return;
+  }
+
+  // check for a valid extension, if not found add .png
+  if (!std::any_of(
+      valid_extensions.begin(),
+      valid_extensions.end(),
+      [save_filepath](const QString& ext) {
+        return save_filepath.endsWith("."+ext);
+      })) {
+    save_filepath += ".png";
+    logger_->warn(utl::GUI, 10, "File path does not end with a valid extension, new path is: {}", save_filepath.toStdString());
+  }
+
+  QRegion save_region;
+  if (region.dx() == 0 || region.dy() == 0) {
+    // default to just that is currently visible
+    save_region = visibleRegion();
+  } else {
+    const QRectF screen_region = dbuToScreen(region);
+    save_region = QRegion(
+        screen_region.left(),  screen_region.top(),
+        screen_region.width(), screen_region.height());
+  }
+
+  const QRect bounding_rect = save_region.boundingRect();
+  QImage img(bounding_rect.width(), bounding_rect.height(), QImage::Format_ARGB32_Premultiplied);
+  if (!img.isNull()) {
+    img.fill(background_);
+    render(&img, {0, 0}, save_region);
+    if (!img.save(save_filepath)) {
+      logger_->warn(utl::GUI, 11, "Failed to write image: {}", save_filepath.toStdString());
+    }
+  } else {
+    logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
+  }
+}
+
 void LayoutViewer::addMenuAndActions()
 {
   // Create Top Level Menu for the context Menu
   auto select_menu = layout_context_menu_->addMenu(tr("Select"));
   auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
   auto view_menu = layout_context_menu_->addMenu(tr("View"));
+  auto save_menu = layout_context_menu_->addMenu(tr("Save"));
   auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
   // Create Actions
 
@@ -1495,6 +1563,10 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
   menu_actions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
   menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
+
+  // Save actions
+  menu_actions_[SAVE_VISIBLE_IMAGE_ACT] = save_menu->addAction(tr("Visible layout"));
+  menu_actions_[SAVE_WHOLE_IMAGE_ACT] = save_menu->addAction(tr("Entire layout"));
 
   // Clear Actions
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
@@ -1545,6 +1617,14 @@ void LayoutViewer::addMenuAndActions()
   });
   connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
     this->fit();
+  });
+
+  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
+    saveImage("");
+  });
+  connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
+    const QSize whole_size = size();
+    saveImage("", screenToDBU({0, 0, whole_size.width(), whole_size.height()}));
   });
 
   connect(

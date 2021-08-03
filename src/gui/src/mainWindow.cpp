@@ -563,6 +563,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 
 void MainWindow::setLogger(utl::Logger* logger)
 {
+  controls_->setLogger(logger);
   script_->setLogger(logger);
   viewer_->setLogger(logger);
 }
