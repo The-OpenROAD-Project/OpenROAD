@@ -63,8 +63,7 @@ public:
   void clear (const char* tap_prefix, const char* endcap_prefix);
   void run(odb::dbMaster* endcap_master, int& halo_x, int& halo_y, const char* cnrcap_nwin_master, const char* cnrcap_nwout_master, const char* endcap_prefix, int& add_boundary_cell, const char* tap_nwintie_master, const char* tap_nwin2_master, const char* tap_nwin3_master, const char* tap_nwouttie_master, const char* tap_nwout2_master, const char* tap_nwout3_master, const char* incnrcap_nwin_master, const char* incnrcap_nwout_master, const char* tapcell_master, int& dist, const char* tap_prefix);
   void reset();
-  void cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*>
-   blockages,int& halo_x, int& halo_y);
+  void cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbBox*>blockages,int& halo_x, int& halo_y);
   int removeCells(const char* prefix);
   int insertEndcaps(std::vector<std::vector<odb::dbRow*>>& rows, odb::dbMaster* endcap_master, std::vector<std::string>& cnrcap_masters, const char* prefix);
   std::vector<std::vector<odb::dbRow*>> organizeRows();
@@ -72,8 +71,8 @@ public:
   int insertAtTopBottom(std::vector<std::vector<odb::dbRow*>>& rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix);
   int insertAroundMacros(std::vector<std::vector<odb::dbRow*>>& rows, std::vector<std::string>& masters, odb::dbMaster* corner_master, std::string
    prefix);
-  bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int& halo_y);
-  std::vector<odb::dbInst*> findBlockages();
+  bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int& halo_x, int& halo_y);
+  std::vector<odb::dbBox*> findBlockages();
 private:
   odb::dbDatabase *db_;
   utl::Logger* logger_;
