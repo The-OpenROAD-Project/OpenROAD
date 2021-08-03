@@ -99,7 +99,8 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
     gcell_id_y--;
 
   int center_x = (gcell_id_x * tile_width_) + (tile_width_ / 2) + lower_left_x_;
-  int center_y = (gcell_id_y * tile_height_) + (tile_height_ / 2) + lower_left_y_;
+  int center_y
+      = (gcell_id_y * tile_height_) + (tile_height_ / 2) + lower_left_y_;
 
   return odb::Point(center_x, center_y);
 }
@@ -134,14 +135,14 @@ std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
   tiles = std::make_pair(first_tile, last_tile);
 
   odb::Point ll_first_tile = odb::Point(lower.x() - (getTileWidth() / 2),
-                                      lower.y() - (getTileHeight() / 2));
+                                        lower.y() - (getTileHeight() / 2));
   odb::Point ur_first_tile = odb::Point(lower.x() + (getTileWidth() / 2),
-                                      lower.y() + (getTileHeight() / 2));
+                                        lower.y() + (getTileHeight() / 2));
 
   odb::Point ll_last_tile = odb::Point(upper.x() - (getTileWidth() / 2),
-                                     upper.y() - (getTileHeight() / 2));
+                                       upper.y() - (getTileHeight() / 2));
   odb::Point ur_last_tile = odb::Point(upper.x() + (getTileWidth() / 2),
-                                     upper.y() + (getTileHeight() / 2));
+                                       upper.y() + (getTileHeight() / 2));
 
   if ((upper_right_x_ - ur_last_tile.x()) / getTileWidth() < 1) {
     ur_last_tile.setX(upper_right_x_);
@@ -192,7 +193,8 @@ odb::Point Grid::getMiddle()
 
 odb::Rect Grid::getGridArea() const
 {
-  return odb::Rect(lower_left_x_, lower_left_y_, upper_right_x_, upper_right_y_);
+  return odb::Rect(
+      lower_left_x_, lower_left_y_, upper_right_x_, upper_right_y_);
 }
 
 }  // namespace grt

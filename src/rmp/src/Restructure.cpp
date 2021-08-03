@@ -35,6 +35,11 @@
 
 #include "rmp/Restructure.h"
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include <fstream>
 
 #include "db_sta/dbNetwork.hh"
@@ -155,62 +160,145 @@ void Restructure::runABC()
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
-  bool area_mode = opt_mode_ <= Mode::AREA_3;
-  std::string abc_script_file = work_dir_name_ + "ord_abc_script.tcl";
+
+  int max_threads = ord::OpenRoad::openRoad()->getThreadCount();
+
+  std::vector<Mode> modes;
+  std::vector<pid_t> child_proc;
+
+  if (opt_mode_ <= Mode::AREA_3) {
+    // Area Mode
+    modes = {Mode::AREA_1, Mode::AREA_2, Mode::AREA_3};
+  } else {
+    // Delay Mode
+    modes = {Mode::DELAY_1, Mode::DELAY_2, Mode::DELAY_3, Mode::DELAY_4};
+  }
+
+  child_proc.resize(modes.size(), 0);
+
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  for (int opt_mode = static_cast<int>(area_mode)
-                          ? static_cast<int>(Mode::AREA_1)
-                          : static_cast<int>(Mode::DELAY_1);
-       opt_mode <= (static_cast<int>(area_mode)
-                        ? static_cast<int>(Mode::AREA_3)
-                        : static_cast<int>(Mode::DELAY_4));
-       opt_mode++) {
-    opt_mode_ = (Mode) opt_mode;
-    output_blif_file_name_ = work_dir_name_
-                             + std::string(block_->getConstName())
-                             + std::to_string(opt_mode) + "_crit_path_out.blif";
-    debugPrint(logger_,
-               RMP,
-               "remap",
-               1,
-               "Writing ABC script file {}",
-               abc_script_file);
-    if (writeAbcScript(abc_script_file)) {
-      std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
-      if (logfile_ != "")
-        abc_command = abc_command + " > " + logfile_;
-      int ret = std::system(abc_command.c_str());
-      if (ret) {
-        logger_->warn(
-            RMP,
-            11,
-            "ABC failed with code {}, please check messages for details.",
-            ret);
+
+  debugPrint(
+      logger_, RMP, "remap", 1, "Running ABC with {} threads.", max_threads);
+
+  for (int curr_mode_idx = 0; curr_mode_idx < modes.size();) {
+    int max_parallel_runs = (max_threads < modes.size() - curr_mode_idx)
+                                ? max_threads
+                                : modes.size() - curr_mode_idx;
+
+    // Spawn ABC process(es)
+    for (int curr_thread = 0; curr_thread < max_parallel_runs; ++curr_thread) {
+      int temp_mode_idx = curr_mode_idx + curr_thread;
+      output_blif_file_name_
+          = work_dir_name_ + std::string(block_->getConstName())
+            + std::to_string(temp_mode_idx) + "_crit_path_out.blif";
+
+      opt_mode_ = modes[temp_mode_idx];
+
+      std::string abc_script_file = work_dir_name_
+                                    + std::to_string(temp_mode_idx)
+                                    + "ord_abc_script.tcl";
+
+      debugPrint(logger_,
+                 RMP,
+                 "remap",
+                 1,
+                 "Writing ABC script file {}.",
+                 abc_script_file);
+      if (writeAbcScript(abc_script_file)) {
+        std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
+        if (logfile_ != "")
+          abc_command
+              = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
+
+        pid_t child_pid = fork();
+        if (child_pid == 0) {  // Begin child
+          // Run in child process
+          int ret = execlp("sh", "sh", "-c", abc_command.c_str(), 0);
+          // Execution of command failed
+          logger_->error(
+              RMP,
+              31,
+              "Failed to run ABC with exit code {}. Please check the "
+              "messages for details.",
+              ret);
+          exit(ret);
+        }  // End child
+
+        if (child_pid > 0) {
+          child_proc[temp_mode_idx] = child_pid;
+        } else if (child_pid < 0) {
+          logger_->warn(
+              RMP,
+              29,
+              "Failed to create new ABC process, could not fork parent "
+              "process. Please check OS messages for details.");
+        }
+
+        files_to_remove.emplace_back(abc_script_file);
+      }
+    }  // end spawn
+
+    // Wait for ABC process(es)
+    for (int curr_thread = 0; curr_thread < max_parallel_runs; ++curr_thread) {
+      int child_idx = curr_mode_idx + curr_thread;
+      pid_t child = child_proc[child_idx];
+
+      if (child == 0) {
         continue;
       }
+
+      int return_status;
+      waitpid(child, &return_status, 0);
+
+      if (return_status) {
+        child_proc[child_idx] = 0;
+        logger_->warn(
+            RMP,
+            15,
+            "ABC failed with code {}. Please check {} log file for details.",
+            return_status,
+            logfile_ + std::to_string(child_idx));
+      }
+    }  // end wait
+
+    curr_mode_idx += max_parallel_runs;
+  }  // end modes
+
+  // Inspect ABC results to choose blif with least instance count
+  for (int curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
+    // Skip failed ABC runs
+    if (child_proc[curr_mode_idx] == 0) {
+      continue;
     }
+
+    output_blif_file_name_
+        = work_dir_name_ + std::string(block_->getConstName())
+          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+
     int num_instances = 0;
     bool status
         = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
-    logger_->report(
-        "Optimized to {} instances in iteration {}", num_instances, opt_mode);
+    logger_->report("Optimized to {} instances in iteration {}.",
+                    num_instances,
+                    curr_mode_idx);
     if (status && num_instances < best_inst_count) {
       best_inst_count = num_instances;
       best_blif = output_blif_file_name_;
     }
     files_to_remove.emplace_back(output_blif_file_name_);
   }
-  files_to_remove.emplace_back(abc_script_file);
+
   if (best_inst_count < std::numeric_limits<int>::max()) {
     // read back netlist
-    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}", best_blif);
+    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);
     debugPrint(logger_,
                utl::RMP,
                "remap",
                1,
-               "Number constants after restructure {}",
+               "Number constants after restructure {}.",
                countConsts(block_));
   }
 
@@ -264,17 +352,15 @@ void Restructure::getEndPoints(sta::PinSet& ends,
 
   std::size_t path_found = path_ends->size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  int end_count = 0;
   for (auto& path_end : *path_ends) {
     if (opt_mode_ >= Mode::DELAY_1) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
         ends.insert(path_end->vertex(sta_state)->pin());
-        end_count++;
       }
-      if (end_count > 5)  // limit blob size for timing
-        break;
+      // Use only one end point to limit blob size for timing
+      break;
     } else {
       ends.insert(path_end->vertex(sta_state)->pin());
     }
@@ -482,37 +568,37 @@ void Restructure::writeOptCommands(std::ofstream& script)
       break;
     }
     case Mode::DELAY_2: {
-      script << choice << std::endl;
+      script << "choice" << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
-      script << choice << std::endl;
+      script << "choice" << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
     case Mode::DELAY_3: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "map" << std::endl << "topo" << std::endl;
       break;
     }
     case Mode::DELAY_4: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
       break;
     }
     case Mode::AREA_2:
     case Mode::AREA_3: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
     }
     case Mode::AREA_1:
     default: {
-      script << choice2 << std::endl;
+      script << "choice2" << std::endl;
       script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
       break;
     }
@@ -524,20 +610,10 @@ void Restructure::writeOptCommands(std::ofstream& script)
 
 void Restructure::setMode(const char* mode_name)
 {
-  if (!strcmp(mode_name, "delay1") || !strcmp(mode_name, "delay"))
+  if (!strcmp(mode_name, "timing"))
     opt_mode_ = Mode::DELAY_1;
-  else if (!strcmp(mode_name, "delay2"))
-    opt_mode_ = Mode::DELAY_2;
-  else if (!strcmp(mode_name, "delay3"))
-    opt_mode_ = Mode::DELAY_3;
-  else if (!strcmp(mode_name, "delay4"))
-    opt_mode_ = Mode::DELAY_4;
-  else if (!strcmp(mode_name, "area1") || !strcmp(mode_name, "area"))
+  else if (!strcmp(mode_name, "area"))
     opt_mode_ = Mode::AREA_1;
-  else if (!strcmp(mode_name, "area2"))
-    opt_mode_ = Mode::AREA_2;
-  else if (!strcmp(mode_name, "area3"))
-    opt_mode_ = Mode::AREA_3;
   else {
     logger_->report("Mode {} note recognized.", mode_name);
   }

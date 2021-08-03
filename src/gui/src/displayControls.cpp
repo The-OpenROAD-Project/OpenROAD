@@ -155,6 +155,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   header->setSectionResizeMode(Swatch, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Visible, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Selectable, QHeaderView::ResizeToContents);
+  // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
+  header->setStretchLastSection(false);
 
   auto layers = makeParentItem(
       layers_group_,
