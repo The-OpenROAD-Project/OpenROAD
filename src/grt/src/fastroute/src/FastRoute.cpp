@@ -776,7 +776,7 @@ NetRouteMap FastRouteCore::run()
 {
   int tUsage;
   int cost_step;
-  int maxOverflow;
+  int maxOverflow = 0;
   int minoflrnd = 0;
   int bwcnt = 0;
 
@@ -808,7 +808,7 @@ NetRouteMap FastRouteCore::run()
   int mazeRound = 500;
   int bmfl = BIG_INT;
   int minofl = BIG_INT;
-  float LOGIS_COF;
+  float LOGIS_COF = 0;
   int slope;
   int max_adj;
 

@@ -967,10 +967,10 @@ void FastRouteCore::reInitTree(const int netID)
   delete[] sttrees_[netID].edges;
 
   Tree rsmt;
-  fluteCongest(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, &rsmt);
+  fluteCongest(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, rsmt);
 
   if (nets_[netID]->deg > 3) {
-    edgeShiftNew(&rsmt, netID);
+    edgeShiftNew(rsmt, netID);
   }
 
   copyStTree(netID, rsmt);
