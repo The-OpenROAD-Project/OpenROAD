@@ -266,13 +266,13 @@ class FastRouteCore
                    const std::vector<int>& y,
                    int acc,
                    float coeffV,
-                   Tree* t);
+                   Tree& t);
   void fluteCongest(int netID,
                     const std::vector<int>& x,
                     const std::vector<int>& y,
                     int acc,
                     float coeffV,
-                    Tree* t);
+                    Tree& t);
   float coeffADJ(int netID);
   bool HTreeSuite(int netID);
   bool VTreeSuite(int netID);
@@ -353,8 +353,8 @@ class FastRouteCore
   void copyBR(void);
   void copyRS(void);
   void freeRR(void);
-  int edgeShift(Tree* t, int net);
-  int edgeShiftNew(Tree* t, int net);
+  int edgeShift(Tree& t, int net);
+  int edgeShiftNew(Tree& t, int net);
 
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;  // big integer used as infinity
