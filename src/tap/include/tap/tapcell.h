@@ -72,6 +72,7 @@ public:
   int insertAtTopBottom(std::vector<std::vector<odb::dbRow*>>& rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix);
   int insertAroundMacros(std::vector<std::vector<odb::dbRow*>>& rows, std::vector<std::string>& masters, odb::dbMaster* corner_master, std::string
    prefix);
+  bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int& halo_y);
   std::vector<odb::dbInst*> findBlockages();
 private:
   odb::dbDatabase *db_;
@@ -79,7 +80,6 @@ private:
   int phy_idx;
   std::vector<std::vector<int>> filled_sites;
 
-  bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int& halo_y);
   void  cutRow(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>>& row_blockages, int& min_row_width, int& halo_x, int& halo_y);
   int makeSiteLoc( int x, double site_x, int dirc, int& offset);
   void buildRow(odb::dbBlock* block, std::string name, odb::dbSite* site, int start_x, int end_x, int y, odb::dbOrientType& orient, odb::dbRowDir& direction, int& min_row_width);
