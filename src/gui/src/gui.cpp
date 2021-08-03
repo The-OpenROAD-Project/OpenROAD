@@ -302,6 +302,22 @@ void Gui::clearRulers()
   main_window->clearRulers();
 }
 
+const std::string Gui::addToolbarButton(const std::string& name,
+                                        const std::string& text,
+                                        const std::string& script,
+                                        bool echo)
+{
+  return main_window->addToolbarButton(name,
+                                       QString::fromStdString(text),
+                                       QString::fromStdString(script),
+                                       echo);
+}
+
+void Gui::removeToolbarButton(const std::string& name)
+{
+  main_window->removeToolbarButton(name);
+}
+
 void Gui::addCustomVisibilityControl(const std::string& name,
                                      bool initially_visible)
 {

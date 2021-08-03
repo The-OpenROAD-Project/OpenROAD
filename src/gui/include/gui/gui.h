@@ -350,6 +350,13 @@ class Gui
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
 
+  // adding custom buttons to toolbar
+  const std::string addToolbarButton(const std::string& name,
+                                     const std::string& text,
+                                     const std::string& script,
+                                     bool echo);
+  void removeToolbarButton(const std::string& name);
+
   // Force an immediate redraw.
   void redraw();
 

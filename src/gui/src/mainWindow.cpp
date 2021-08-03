@@ -285,6 +285,40 @@ void MainWindow::createToolbars()
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
+const std::string MainWindow::addToolbarButton(const std::string& name,
+                                               const QString& text,
+                                               const QString& script,
+                                               bool echo)
+{
+  auto action = view_tool_bar_->addAction(text);
+
+  connect(action, &QAction::triggered, [script, echo, this]() {
+    script_->executeCommand(script, echo);
+  });
+
+  // ensure key is unique
+  std::string key = name;
+  int key_idx = 0;
+  while (buttons_.count(key) != 0) {
+    key = name + std::to_string(key_idx);
+    key_idx++;
+  }
+
+  buttons_[key] = std::unique_ptr<QAction>(action);
+
+  return key;
+}
+
+void MainWindow::removeToolbarButton(const std::string& name)
+{
+  if (buttons_.count(name) == 0) {
+    return;
+  }
+
+  view_tool_bar_->removeAction(buttons_[name].get());
+  buttons_.erase(name);
+}
+
 void MainWindow::setDb(odb::dbDatabase* db)
 {
   db_ = db;
