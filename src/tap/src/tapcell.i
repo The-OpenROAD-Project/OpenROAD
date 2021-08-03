@@ -116,6 +116,10 @@ int insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_m
   return getTapcell()->insertTapcells(rows, tapcell_master, dist, prefix);
 }
 
+bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int& halo_y) {
+  return overlaps(blockage, row, halo_x, halo_y);
+}
+
 } // namespace
 
 %}
