@@ -141,6 +141,8 @@ bool rtl_macro_placer(const char* config_file,
   int max_num_step = 300;
   int perturb_per_step = 3000;
 
+  int snap_layer = 4;
+
   unordered_map<string, string> params = ParseConfigFile(config_file);
 
   get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
@@ -170,6 +172,7 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "rej_ratio", rej_ratio, logger);
   get_param(params, "k", k, logger);
   get_param(params, "c", c, logger);
+  get_param(params, "snap_layer", snap_layer, logger);
   get_param(params, "max_num_step", max_num_step, logger);
   get_param(params, "perturb_per_step", perturb_per_step, logger);
   get_param(params, "seed", seed, logger);
@@ -250,8 +253,14 @@ bool rtl_macro_placer(const char* config_file,
   // Get Block Placement Grid
   // The Block Placement Grid is based on the pitch of the bottom horizontal and 
   // vertical routing layers. The Block Placement Grid is one pitch wide and one pitch tall.
+  // TR requires the macro pins to be on grid.
   odb::dbTech* tech = db->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
+  float pitch_x = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX()) / dbu;
+  float pitch_y = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY()) / dbu;
+
+
+  /*
   int layer_numbers [] = {1, 2};
   float pitch_x = 0.0;
   float pitch_y = 0.0;
@@ -265,6 +274,7 @@ bool rtl_macro_placer(const char* config_file,
     else
       ;
   }
+  */
 
   string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
