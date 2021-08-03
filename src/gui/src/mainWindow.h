@@ -177,6 +177,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // request for user input
+  const std::string requestUserInput(const QString& title, const QString& question);
+
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
 

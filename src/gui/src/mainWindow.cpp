@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <QDesktopWidget>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
@@ -317,6 +318,14 @@ void MainWindow::removeToolbarButton(const std::string& name)
 
   view_tool_bar_->removeAction(buttons_[name].get());
   buttons_.erase(name);
+}
+
+const std::string MainWindow::requestUserInput(const QString& title, const QString& question)
+{
+  QString text = QInputDialog::getText(this,
+                                       title,
+                                       question);
+  return text.toStdString();
 }
 
 void MainWindow::setDb(odb::dbDatabase* db)

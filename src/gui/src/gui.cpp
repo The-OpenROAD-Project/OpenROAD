@@ -318,6 +318,11 @@ void Gui::removeToolbarButton(const std::string& name)
   main_window->removeToolbarButton(name);
 }
 
+const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
+{
+  return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
+}
+
 void Gui::addCustomVisibilityControl(const std::string& name,
                                      bool initially_visible)
 {

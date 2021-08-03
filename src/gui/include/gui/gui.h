@@ -357,6 +357,9 @@ class Gui
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // request for user input
+  const std::string requestUserInput(const std::string& title, const std::string& question);
+
   // Force an immediate redraw.
   void redraw();
 

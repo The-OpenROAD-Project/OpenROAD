@@ -322,5 +322,15 @@ void remove_toolbar_button(const char* name)
   gui->removeToolbarButton(name);
 }
 
+const char* input_dialog(const char* title, const char* question)
+{
+  if (!check_gui("input_dialog")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  auto value = gui->requestUserInput(title, question);
+  return value.c_str();
+}
+
 %} // inline
 
