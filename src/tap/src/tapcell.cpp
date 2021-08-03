@@ -130,7 +130,7 @@ void Tapcell::run(odb::dbMaster* endcap_master, int& halo_x, int& halo_y, const 
   Tapcell::filled_sites.clear();
 }
 
-void Tapcell::cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int& halo_x, int& halo_y)
+void Tapcell::cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbBox*> blockages,int& halo_x, int& halo_y)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   int rows_count = (block->getRows()).size();
@@ -150,17 +150,17 @@ void Tapcell::cutRows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> bl
   std::vector<odb::dbRow*> blocked_rows;   
   std::map<std::string, std::vector<odb::dbBox*>> row_blockages;
   std::string row_name;
-  for (odb::dbInst* blockage : blockages) {
+  for (odb::dbBox* blockage : blockages) {
     for(odb::dbRow* row : block->getRows()) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
         row_name = row->getName();
         if (row_blockages.find(row_name) == row_blockages.end()) {
           blocked_rows.push_back(row);
           std::vector<odb::dbBox*> row_blockages_bbox;
-          row_blockages_bbox.push_back(blockage->getBBox());
+          row_blockages_bbox.push_back(blockage);
           row_blockages.insert(std::pair<std::string, vector<odb::dbBox*>>(row_name, row_blockages_bbox));
         } else {
-          row_blockages[row_name].push_back(blockage->getBBox()); 
+          row_blockages[row_name].push_back(blockage); 
         }
       }
     }
@@ -975,14 +975,14 @@ std::map<std::pair<int, int>, std::vector<int>> Tapcell::getMacroOutlines(std::v
 }
 
 // // proc to detect if blockage overlaps with row
-bool Tapcell::overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int& halo_y) {
-  odb::dbBox* blockageBB = blockage->getBBox();
+bool Tapcell::overlaps(odb::dbBox* blockage, odb::dbRow* row, int& halo_x, int& halo_y) {
+  //odb::dbBox* blockageBB = blockage->getBBox();
   odb::Rect rowBB;
   row->getBBox(rowBB);
 
   // check if Y has overlap first since rows are long and skinny 
-  int blockage_lly = blockageBB->yMin() - halo_y;
-  int blockage_ury = blockageBB->yMax() + halo_y;
+  int blockage_lly = blockage->yMin() - halo_y;
+  int blockage_ury = blockage->yMax() + halo_y;
   int row_lly = rowBB.yMin();
   int row_ury = rowBB.yMax();
   
@@ -990,8 +990,8 @@ bool Tapcell::overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int&
     return 0;
   }
 
-  int blockage_llx = blockageBB->xMin() - halo_x;
-  int blockage_urx = blockageBB->xMax() + halo_x;
+  int blockage_llx = blockage->xMin() - halo_x;
+  int blockage_urx = blockage->xMax() + halo_x;
   int row_llx = rowBB.xMin();
   int row_urx = rowBB.xMax();
 
@@ -1002,17 +1002,17 @@ bool Tapcell::overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int&
   return 1;
 }
 
-std::vector<odb::dbInst*> Tapcell::findBlockages () {
+std::vector<odb::dbBox*> Tapcell::findBlockages () {
   odb::dbBlock* block = db_->getChip()->getBlock();
-  std::vector<odb::dbInst*> blockages;
+  std::vector<odb::dbBox*> blockages;
 
-  for(odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+  for(auto&& inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->isBlock()) {
       if (!inst->isPlaced()) {
         logger_->warn(utl::TAP, 32, "Macro {} is not placed", inst->getName());
         continue;
       }
-      blockages.push_back(inst);
+      blockages.push_back(inst->getBBox());
     }
   }
 

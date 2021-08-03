@@ -76,7 +76,7 @@ void reset()
   getTapcell()->reset();
 }
 
-void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbInst*> blockages,int halo_x, int halo_y)
+void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbBox*> blockages,int halo_x, int halo_y)
 {
   getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
 }
@@ -106,7 +106,7 @@ int remove_cells(const char* prefix)
   return getTapcell()->removeCells(prefix);
 }
 
-std::vector<odb::dbInst*> find_blockages()
+std::vector<odb::dbBox*> find_blockages()
 {
   return getTapcell()->findBlockages();
 }
@@ -116,7 +116,7 @@ int insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_m
   return getTapcell()->insertTapcells(rows, tapcell_master, dist, prefix);
 }
 
-bool overlaps(odb::dbInst* blockage, odb::dbRow* row, int& halo_x, int& halo_y) {
+bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int& halo_x, int& halo_y) {
   return overlaps(blockage, row, halo_x, halo_y);
 }
 
