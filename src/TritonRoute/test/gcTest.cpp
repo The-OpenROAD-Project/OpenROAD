@@ -883,6 +883,50 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
 }
 
 BOOST_DATA_TEST_CASE(cut_spc_tbl,
+                    (bdata::make({true, false})),
+                    viol)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
+  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  makeCutClass(3, "Vx", 100, 200);
+  auto layer = odb::dbTechLayer::create(tech, "v2", odb::dbTechLayerType::CUT);
+  auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
+  dbRule->setDefault(100);
+  dbRule->setVertical(true);
+  std::map<std::string, uint> row_map;
+  std::map<std::string, uint> col_map;
+  std::vector<std::vector<std::pair<int, int>>> table;
+  row_map["Vx/SIDE"] = 1;
+  row_map["Vx/END"] = 0;
+  col_map["Vx/SIDE"] = 1;
+  col_map["Vx/END"] = 0;
+  if(viol)
+  {
+    table.push_back({{300, 300}, {300, 300}});
+    table.push_back({{300, 300}, {300, 301}});
+  } else {
+    table.push_back({{301, 301}, {301, 301}});
+    table.push_back({{301, 301}, {301, 300}});
+  }
+
+  dbRule->setSpacingTable(table, row_map, col_map);
+  makeLef58CutSpcTbl(3, dbRule);
+  frNet* n1 = makeNet("n1");
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {200, 100});
+
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {0, 400});
+
+  runGC();
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == (viol ? 1 : 0));
+}
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
                      (bdata::make({0, 1})) ^ (bdata::make({1, 0})),
                      x,
                      viol)
