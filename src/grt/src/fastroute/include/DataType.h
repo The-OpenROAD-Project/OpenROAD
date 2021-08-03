@@ -52,20 +52,6 @@ enum class RouteType
 
 typedef struct
 {
-  DTYPE x, y;
-  int n;
-} Branch;
-
-typedef struct
-{
-  int deg;
-  int totalDeg;
-  DTYPE length;
-  std::vector<Branch> branch;
-} Tree;
-
-typedef struct
-{
   bool xFirst;  // route x-direction first (only for L route)
   bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
   bool maze;    // Whether this segment is routed by maze
