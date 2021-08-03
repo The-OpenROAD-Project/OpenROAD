@@ -61,7 +61,7 @@ typedef struct
   int deg;
   int totalDeg;
   DTYPE length;
-  Branch* branch;
+  std::vector<Branch> branch;
 } Tree;
 
 typedef struct
@@ -73,7 +73,6 @@ typedef struct
   short x1, y1, x2, y2;  // coordinates of two endpoints
   int netID;             // the netID of the net this segment belonging to
   short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
-  short* route;          // array of H and V Edges to implement this Segment
   int numEdges;          // number of H and V Edges to implement this Segment
 } Segment;               // A Segment is a 2-pin connection
 
@@ -141,13 +140,13 @@ typedef struct
   bool HVH;      // valid for ZRoute, TRUE - the route is HVH shape, false - VHV
                  // shape
   short Zpoint;  // valid for ZRoute, the position of turn point for Z-shape
-  short*
+  std::vector<short>
       gridsX;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short*
+  std::vector<short>
       gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short* gridsL;  // n
+  std::vector<short> gridsL;  // n
   int routelen;   // valid for MazeRoute, the number of edges in the route
                   // Edge3D *edge;       // list of 3D edges the route go
                   // through;

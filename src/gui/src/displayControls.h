@@ -59,6 +59,10 @@ class dbNet;
 class dbInst;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+} // namespace utl
+
 namespace gui {
 
 using CallbackFunction = std::function<void(bool)>;
@@ -133,9 +137,12 @@ class DisplayControls : public QDockWidget, public Options
   DisplayControls(QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
+  void setLogger(utl::Logger* logger);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
+
+  void setControlByPath(const std::string& path, bool is_visible, Qt::CheckState value);
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
@@ -233,6 +240,10 @@ class DisplayControls : public QDockWidget, public Options
 
   void techInit();
 
+  QStandardItem* findControlInItem(const QStandardItem* parent,
+                                   const std::string& path,
+                                   Column column);
+
   QStandardItem* makeParentItem(ModelRow& row,
                                 const QString& text,
                                 QStandardItemModel* parent,
@@ -276,6 +287,7 @@ class DisplayControls : public QDockWidget, public Options
   std::map<std::string, ModelRow> custom_controls_;
 
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   bool tech_inited_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
