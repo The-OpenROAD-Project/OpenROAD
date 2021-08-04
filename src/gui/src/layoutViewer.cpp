@@ -1086,6 +1086,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   static const int width_scalar = 4;
   static const int height_scalar = 20;
   static const int max_scalar = 50;
+  // text should not fill more than 90% of the instance width
+  static const double width_limit = 0.9;
 
   painter->setTransform(QTransform());
   for (auto inst : insts) {
@@ -1121,6 +1123,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
 
       inst_font.setPixelSize(scale_font * font_size);
       text_bbox = QFontMetrics(inst_font).boundingRect(name);
+    }
+    double inst_width_limit = width_limit * inst_width;
+    if (text_bbox.width() > inst_width_limit) {
+      // make 10% smaller than width of instance
+      double scale_font = inst_width_limit / text_bbox.width();
+      inst_font.setPixelSize(inst_font.pixelSize() * scale_font);
     }
     int final_size = inst_font.pixelSize() * pixels_per_dbu_;
     if (final_size == 0) {
