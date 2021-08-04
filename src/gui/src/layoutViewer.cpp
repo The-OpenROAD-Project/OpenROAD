@@ -918,22 +918,22 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   auto grid = block->getGCellGrid();
   if (grid == nullptr)
     return;
+
+  auto gcell_congestion_data = grid->getCongestionMap();
+  if (gcell_congestion_data.empty()) {
+    return;
+  }
+
   std::vector<int> x_grid, y_grid;
   uint x_grid_sz, y_grid_sz;
   grid->getGridX(x_grid);
   x_grid_sz = x_grid.size();
   grid->getGridY(y_grid);
   y_grid_sz = y_grid.size();
-  auto gcell_congestion_data = grid->getCongestionMap();
-
-  if (gcell_congestion_data.empty()) {
-    return;
-  }
 
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
-
   auto max_congestion_to_show = options_->getMaxCongestionToShow();
 
   for (auto& [key, cong_data] : gcell_congestion_data) {
