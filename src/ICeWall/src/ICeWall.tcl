@@ -3407,7 +3407,7 @@ namespace eval ICeWall {
     variable footprint
 
     if {![dict exists $footprint padcell $padcell $type center]} {
-       utl::error PAD 231 "No center information specified for $inst_name."
+       utl::error PAD 246 "No center information specified for $inst_name."
     }   
     return [dict get $footprint padcell $padcell $type center]
   }  
@@ -3569,31 +3569,33 @@ namespace eval ICeWall {
     foreach padcell $unplaced_pads {
       set sidePadWidth [expr $sidePadWidth +  [get_padcell_width $padcell]]
     }	   
-    set siteStart $start
+    set sideStart $start
     set gridSnap 1000
     set PadSpacing [expr  $sideWidth / (1 + $sideCount) / $gridSnap * $gridSnap ]
     # debug "side $side_name has $sideCount PADs , with PadSpacing: $PadSpacing, sideWidth $sideWidth sidePadWidth $sidePadWidth $fill_start $fill_end" 
     # debug "$side_name: segment starts with $anchor_cell_a  and ends with $anchor_cell_b , start is: $start , and end is $end"
-    if [expr ($sideWidth - $sidePadWidth) < 0] {utl::error PAD 232 "Cannot fit IO pads between the following anchor cells : $anchor_cell_a, $anchor_cell_b."}
+    if {($sideWidth - $sidePadWidth) < 0} {
+      utl::error PAD 247 "Cannot fit IO pads between the following anchor cells : $anchor_cell_a, $anchor_cell_b."
+    }
     foreach padcell $unplaced_pads {
       set padOrder [ expr 1 + [lsearch $unplaced_pads $padcell]] 
 
       switch $side_name \
     	"bottom" {
-    	  set pad_center_x [expr $siteStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_center_x [expr $sideStart + ($PadSpacing * $padOrder) ] 
     	  set pad_center_y [expr $edge_bottom_offset + round (0.5 * [get_padcell_height $padcell]) ]
     	} \
     	"right"  {
     	  set pad_center_x [expr $chip_width - $edge_right_offset - round (0.5 * [get_padcell_height $padcell]) ]
-    	  set pad_center_y [expr $siteStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_center_y [expr $sideStart + ($PadSpacing * $padOrder) ] 
     	} \
     	"top" {
-    	  set pad_center_x [expr $siteStart - ($PadSpacing * $padOrder) ] 
+    	  set pad_center_x [expr $sideStart - ($PadSpacing * $padOrder) ] 
     	  set pad_center_y [expr $chip_height - $edge_bottom_offset - round (0.5 * [get_padcell_height $padcell])  ]
     	} \
     	"left" {
     	  set pad_center_x [expr $edge_left_offset + round (0.5 * [get_padcell_height $padcell])]
-    	  set pad_center_y [expr $siteStart - ($PadSpacing * $padOrder) ]
+    	  set pad_center_y [expr $sideStart - ($PadSpacing * $padOrder) ]
     	}
       #debug "padOrder: $padOrder pad_center_x: $pad_center_x  pad_center_y: $pad_center_y"
 
