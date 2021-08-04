@@ -1553,36 +1553,7 @@ void FastRouteCore::freeRR(void)
   }
 }
 
-Tree FastRouteCore::fluteToTree(stt::Tree fluteTree)
-{
-  Tree tree;
-  tree.deg = fluteTree.deg;
-  tree.totalDeg = 2 * fluteTree.deg - 2;
-  tree.length = (DTYPE) fluteTree.length;
-  tree.branch.resize(tree.totalDeg);
-  for (int i = 0; i < tree.totalDeg; i++) {
-    tree.branch[i].x = (DTYPE) fluteTree.branch[i].x;
-    tree.branch[i].y = (DTYPE) fluteTree.branch[i].y;
-    tree.branch[i].n = fluteTree.branch[i].n;
-  }
-  return tree;
-}
-
-stt::Tree FastRouteCore::treeToFlute(Tree tree)
-{
-  stt::Tree fluteTree;
-  fluteTree.deg = tree.deg;
-  fluteTree.length = (stt::DTYPE) tree.length;
-  fluteTree.branch.resize(tree.totalDeg);
-  for (int i = 0; i < tree.totalDeg; i++) {
-    fluteTree.branch[i].x = (stt::DTYPE) tree.branch[i].x;
-    fluteTree.branch[i].y = (stt::DTYPE) tree.branch[i].y;
-    fluteTree.branch[i].n = tree.branch[i].n;
-  }
-  return fluteTree;
-}
-
-int FastRouteCore::edgeShift(Tree* t, int net)
+int FastRouteCore::edgeShift(Tree& t, int net)
 {
   int i, j, k, l, m, deg, root, x, y, n, n1, n2, n3;
   int maxX, minX, maxY, minY, maxX1, minX1, maxY1, minY1, maxX2, minX2, maxY2,
@@ -1600,10 +1571,10 @@ int FastRouteCore::edgeShift(Tree* t, int net)
   int costH[y_grid_];
   int costV[x_grid_];
 
-  deg = t->deg;
+  deg = t.deg;
   // find root of the tree
   for (i = deg; i < 2 * deg - 2; i++) {
-    if (t->branch[i].n == i) {
+    if (t.branch[i].n == i) {
       root = i;
       break;
     }
@@ -1614,7 +1585,7 @@ int FastRouteCore::edgeShift(Tree* t, int net)
     nbrCnt[i] = 0;
   // edges from pin to steiner
   for (i = 0; i < deg; i++) {
-    n = t->branch[i].n;
+    n = t.branch[i].n;
     nbr[n][nbrCnt[n]] = i;
     nbrCnt[n]++;
   }
@@ -1622,7 +1593,7 @@ int FastRouteCore::edgeShift(Tree* t, int net)
   for (i = deg; i < 2 * deg - 2; i++) {
     if (i != root)  // not the removed steiner nodes and root
     {
-      n = t->branch[i].n;
+      n = t.branch[i].n;
       nbr[i][nbrCnt[i]] = n;
       nbrCnt[i]++;
       nbr[n][nbrCnt[n]] = i;
@@ -1636,23 +1607,23 @@ int FastRouteCore::edgeShift(Tree* t, int net)
     // find all H or V edges (steiner pairs)
     pairCnt = 0;
     for (i = deg; i < 2 * deg - 2; i++) {
-      n = t->branch[i].n;
-      if (t->branch[i].x == t->branch[n].x) {
-        if (t->branch[i].y < t->branch[n].y) {
+      n = t.branch[i].n;
+      if (t.branch[i].x == t.branch[n].x) {
+        if (t.branch[i].y < t.branch[n].y) {
           pairN1[pairCnt] = i;
           pairN2[pairCnt] = n;
           pairCnt++;
-        } else if (t->branch[i].y > t->branch[n].y) {
+        } else if (t.branch[i].y > t.branch[n].y) {
           pairN1[pairCnt] = n;
           pairN2[pairCnt] = i;
           pairCnt++;
         }
-      } else if (t->branch[i].y == t->branch[n].y) {
-        if (t->branch[i].x < t->branch[n].x) {
+      } else if (t.branch[i].y == t.branch[n].y) {
+        if (t.branch[i].x < t.branch[n].x) {
           pairN1[pairCnt] = i;
           pairN2[pairCnt] = n;
           pairCnt++;
-        } else if (t->branch[i].x > t->branch[n].x) {
+        } else if (t.branch[i].x > t.branch[n].x) {
           pairN1[pairCnt] = n;
           pairN2[pairCnt] = i;
           pairCnt++;
@@ -1667,20 +1638,20 @@ int FastRouteCore::edgeShift(Tree* t, int net)
       // find the range of shifting for this pair
       n1 = pairN1[i];
       n2 = pairN2[i];
-      if (t->branch[n1].y == t->branch[n2].y)  // a horizontal edge
+      if (t.branch[n1].y == t.branch[n2].y)  // a horizontal edge
       {
         // find the shifting range for the edge (minY~maxY)
-        maxY1 = minY1 = t->branch[n1].y;
+        maxY1 = minY1 = t.branch[n1].y;
         for (j = 0; j < 3; j++) {
-          y = t->branch[nbr[n1][j]].y;
+          y = t.branch[nbr[n1][j]].y;
           if (y > maxY1)
             maxY1 = y;
           else if (y < minY1)
             minY1 = y;
         }
-        maxY2 = minY2 = t->branch[n2].y;
+        maxY2 = minY2 = t.branch[n2].y;
         for (j = 0; j < 3; j++) {
-          y = t->branch[nbr[n2][j]].y;
+          y = t.branch[nbr[n2][j]].y;
           if (y > maxY2)
             maxY2 = y;
           else if (y < minY2)
@@ -1695,7 +1666,7 @@ int FastRouteCore::edgeShift(Tree* t, int net)
           for (j = minY; j <= maxY; j++) {
             costH[j] = 0;
             grid = j * (x_grid_ - 1);
-            for (k = t->branch[n1].x; k < t->branch[n2].x; k++) {
+            for (k = t.branch[n1].x; k < t.branch[n2].x; k++) {
               costH[j] += h_edges_[grid + k].est_usage;
             }
             // add the cost of all edges adjacent to the two steiner nodes
@@ -1704,18 +1675,18 @@ int FastRouteCore::edgeShift(Tree* t, int net)
               if (n3 != n2)  // exclude current edge n1-n2
               {
                 cost1 = cost2 = 0;
-                if (t->branch[n1].x < t->branch[n3].x) {
-                  smallX = t->branch[n1].x;
-                  bigX = t->branch[n3].x;
+                if (t.branch[n1].x < t.branch[n3].x) {
+                  smallX = t.branch[n1].x;
+                  bigX = t.branch[n3].x;
                 } else {
-                  smallX = t->branch[n3].x;
-                  bigX = t->branch[n1].x;
+                  smallX = t.branch[n3].x;
+                  bigX = t.branch[n1].x;
                 }
-                if (j < t->branch[n3].y) {
+                if (j < t.branch[n3].y) {
                   smallY = j;
-                  bigY = t->branch[n3].y;
+                  bigY = t.branch[n3].y;
                 } else {
-                  smallY = t->branch[n3].y;
+                  smallY = t.branch[n3].y;
                   bigY = j;
                 }
                 grid1 = smallY * (x_grid_ - 1);
@@ -1738,18 +1709,18 @@ int FastRouteCore::edgeShift(Tree* t, int net)
               if (n3 != n1)  // exclude current edge n1-n2
               {
                 cost1 = cost2 = 0;
-                if (t->branch[n2].x < t->branch[n3].x) {
-                  smallX = t->branch[n2].x;
-                  bigX = t->branch[n3].x;
+                if (t.branch[n2].x < t.branch[n3].x) {
+                  smallX = t.branch[n2].x;
+                  bigX = t.branch[n3].x;
                 } else {
-                  smallX = t->branch[n3].x;
-                  bigX = t->branch[n2].x;
+                  smallX = t.branch[n3].x;
+                  bigX = t.branch[n2].x;
                 }
-                if (j < t->branch[n3].y) {
+                if (j < t.branch[n3].y) {
                   smallY = j;
-                  bigY = t->branch[n3].y;
+                  bigY = t.branch[n3].y;
                 } else {
-                  smallY = t->branch[n3].y;
+                  smallY = t.branch[n3].y;
                   bigY = j;
                 }
                 grid1 = smallY * (x_grid_ - 1);
@@ -1769,16 +1740,16 @@ int FastRouteCore::edgeShift(Tree* t, int net)
             }    // loop l
           }      // loop j
           bestCost = BIG_INT;
-          Pos = t->branch[n1].y;
+          Pos = t.branch[n1].y;
           for (j = minY; j <= maxY; j++) {
             if (costH[j] < bestCost) {
               bestCost = costH[j];
               Pos = j;
             }
           }
-          if (Pos != t->branch[n1].y)  // find a better position than current
+          if (Pos != t.branch[n1].y)  // find a better position than current
           {
-            benefit = costH[t->branch[n1].y] - bestCost;
+            benefit = costH[t.branch[n1].y] - bestCost;
             if (benefit > bestBenefit) {
               bestBenefit = benefit;
               bestPair = i;
@@ -1790,17 +1761,17 @@ int FastRouteCore::edgeShift(Tree* t, int net)
       } else  // a vertical edge
       {
         // find the shifting range for the edge (minX~maxX)
-        maxX1 = minX1 = t->branch[n1].x;
+        maxX1 = minX1 = t.branch[n1].x;
         for (j = 0; j < 3; j++) {
-          x = t->branch[nbr[n1][j]].x;
+          x = t.branch[nbr[n1][j]].x;
           if (x > maxX1)
             maxX1 = x;
           else if (x < minX1)
             minX1 = x;
         }
-        maxX2 = minX2 = t->branch[n2].x;
+        maxX2 = minX2 = t.branch[n2].x;
         for (j = 0; j < 3; j++) {
-          x = t->branch[nbr[n2][j]].x;
+          x = t.branch[nbr[n2][j]].x;
           if (x > maxX2)
             maxX2 = x;
           else if (x < minX2)
@@ -1814,7 +1785,7 @@ int FastRouteCore::edgeShift(Tree* t, int net)
         {
           for (j = minX; j <= maxX; j++) {
             costV[j] = 0;
-            for (k = t->branch[n1].y; k < t->branch[n2].y; k++) {
+            for (k = t.branch[n1].y; k < t.branch[n2].y; k++) {
               costV[j] += v_edges_[k * x_grid_ + j].est_usage;
             }
             // add the cost of all edges adjacent to the two steiner nodes
@@ -1823,19 +1794,19 @@ int FastRouteCore::edgeShift(Tree* t, int net)
               if (n3 != n2)  // exclude current edge n1-n2
               {
                 cost1 = cost2 = 0;
-                if (j < t->branch[n3].x) {
+                if (j < t.branch[n3].x) {
                   smallX = j;
-                  bigX = t->branch[n3].x;
+                  bigX = t.branch[n3].x;
                 } else {
-                  smallX = t->branch[n3].x;
+                  smallX = t.branch[n3].x;
                   bigX = j;
                 }
-                if (t->branch[n1].y < t->branch[n3].y) {
-                  smallY = t->branch[n1].y;
-                  bigY = t->branch[n3].y;
+                if (t.branch[n1].y < t.branch[n3].y) {
+                  smallY = t.branch[n1].y;
+                  bigY = t.branch[n3].y;
                 } else {
-                  smallY = t->branch[n3].y;
-                  bigY = t->branch[n1].y;
+                  smallY = t.branch[n3].y;
+                  bigY = t.branch[n1].y;
                 }
                 grid1 = smallY * (x_grid_ - 1);
                 grid2 = bigY * (x_grid_ - 1);
@@ -1857,19 +1828,19 @@ int FastRouteCore::edgeShift(Tree* t, int net)
               if (n3 != n1)  // exclude current edge n1-n2
               {
                 cost1 = cost2 = 0;
-                if (j < t->branch[n3].x) {
+                if (j < t.branch[n3].x) {
                   smallX = j;
-                  bigX = t->branch[n3].x;
+                  bigX = t.branch[n3].x;
                 } else {
-                  smallX = t->branch[n3].x;
+                  smallX = t.branch[n3].x;
                   bigX = j;
                 }
-                if (t->branch[n2].y < t->branch[n3].y) {
-                  smallY = t->branch[n2].y;
-                  bigY = t->branch[n3].y;
+                if (t.branch[n2].y < t.branch[n3].y) {
+                  smallY = t.branch[n2].y;
+                  bigY = t.branch[n3].y;
                 } else {
-                  smallY = t->branch[n3].y;
-                  bigY = t->branch[n2].y;
+                  smallY = t.branch[n3].y;
+                  bigY = t.branch[n2].y;
                 }
                 grid1 = smallY * (x_grid_ - 1);
                 grid2 = bigY * (x_grid_ - 1);
@@ -1888,16 +1859,16 @@ int FastRouteCore::edgeShift(Tree* t, int net)
             }    // loop l
           }      // loop j
           bestCost = BIG_INT;
-          Pos = t->branch[n1].x;
+          Pos = t.branch[n1].x;
           for (j = minX; j <= maxX; j++) {
             if (costV[j] < bestCost) {
               bestCost = costV[j];
               Pos = j;
             }
           }
-          if (Pos != t->branch[n1].x)  // find a better position than current
+          if (Pos != t.branch[n1].x)  // find a better position than current
           {
-            benefit = costV[t->branch[n1].x] - bestCost;
+            benefit = costV[t.branch[n1].x] - bestCost;
             if (benefit > bestBenefit) {
               bestBenefit = benefit;
               bestPair = i;
@@ -1914,14 +1885,14 @@ int FastRouteCore::edgeShift(Tree* t, int net)
       n1 = pairN1[bestPair];
       n2 = pairN2[bestPair];
 
-      if (t->branch[n1].y == t->branch[n2].y)  // horizontal edge
+      if (t.branch[n1].y == t.branch[n2].y)  // horizontal edge
       {
-        t->branch[n1].y = bestPos;
-        t->branch[n2].y = bestPos;
+        t.branch[n1].y = bestPos;
+        t.branch[n2].y = bestPos;
       }  // vertical edge
       else {
-        t->branch[n1].x = bestPos;
-        t->branch[n2].x = bestPos;
+        t.branch[n1].x = bestPos;
+        t.branch[n2].x = bestPos;
       }
       numShift++;
     }
@@ -1931,7 +1902,7 @@ int FastRouteCore::edgeShift(Tree* t, int net)
 }
 
 // exchange Steiner nodes at the same position, then call edgeShift()
-int FastRouteCore::edgeShiftNew(Tree* t, int net)
+int FastRouteCore::edgeShiftNew(Tree& t, int net)
 {
   int i, j, n;
   int deg, pairCnt, cur_pairN1, cur_pairN2;
@@ -1940,7 +1911,7 @@ int FastRouteCore::edgeShiftNew(Tree* t, int net)
   bool isPair;
 
   numShift = edgeShift(t, net);
-  deg = t->deg;
+  deg = t.deg;
 
   const int sizeV = nets_[net]->numPins;
   int pairN1[sizeV];
@@ -1954,9 +1925,9 @@ int FastRouteCore::edgeShiftNew(Tree* t, int net)
     // find all pairs of steiner node at the same position (steiner pairs)
     pairCnt = 0;
     for (i = deg; i < 2 * deg - 2; i++) {
-      n = t->branch[i].n;
-      if (n != i && n != t->branch[n].n && t->branch[i].x == t->branch[n].x
-          && t->branch[i].y == t->branch[n].y) {
+      n = t.branch[i].n;
+      if (n != i && n != t.branch[n].n && t.branch[i].x == t.branch[n].x
+          && t.branch[i].y == t.branch[n].y) {
         pairN1[pairCnt] = i;
         pairN2[pairCnt] = n;
         pairCnt++;
@@ -1984,50 +1955,50 @@ int FastRouteCore::edgeShiftNew(Tree* t, int net)
         // find the nodes directed to cur_pairN1(2 nodes) and cur_pairN2(1
         // nodes)
         for (j = 0; j < 2 * deg - 2; j++) {
-          n = t->branch[j].n;
+          n = t.branch[j].n;
           if (n == cur_pairN1) {
-            if (t->branch[j].x == t->branch[cur_pairN1].x
-                && t->branch[j].y != t->branch[cur_pairN1].y)
+            if (t.branch[j].x == t.branch[cur_pairN1].x
+                && t.branch[j].y != t.branch[cur_pairN1].y)
               N1nbrV = j;
-            else if (t->branch[j].y == t->branch[cur_pairN1].y
-                     && t->branch[j].x != t->branch[cur_pairN1].x)
+            else if (t.branch[j].y == t.branch[cur_pairN1].y
+                     && t.branch[j].x != t.branch[cur_pairN1].x)
               N1nbrH = j;
           } else if (n == cur_pairN2) {
-            if (t->branch[j].x == t->branch[cur_pairN2].x
-                && t->branch[j].y != t->branch[cur_pairN2].y)
+            if (t.branch[j].x == t.branch[cur_pairN2].x
+                && t.branch[j].y != t.branch[cur_pairN2].y)
               N2nbrV = j;
-            else if (t->branch[j].y == t->branch[cur_pairN2].y
-                     && t->branch[j].x != t->branch[cur_pairN2].x)
+            else if (t.branch[j].y == t.branch[cur_pairN2].y
+                     && t.branch[j].x != t.branch[cur_pairN2].x)
               N2nbrH = j;
           }
         }
         // find the node cur_pairN2 directed to
-        n = t->branch[cur_pairN2].n;
-        if (t->branch[n].x == t->branch[cur_pairN2].x
-            && t->branch[n].y != t->branch[cur_pairN2].y)
+        n = t.branch[cur_pairN2].n;
+        if (t.branch[n].x == t.branch[cur_pairN2].x
+            && t.branch[n].y != t.branch[cur_pairN2].y)
           N2nbrV = n;
-        else if (t->branch[n].y == t->branch[cur_pairN2].y
-                 && t->branch[n].x != t->branch[cur_pairN2].x)
+        else if (t.branch[n].y == t.branch[cur_pairN2].y
+                 && t.branch[n].x != t.branch[cur_pairN2].x)
           N2nbrH = n;
 
         if (N1nbrH >= 0 && N2nbrH >= 0) {
-          if (N2nbrH == t->branch[cur_pairN2].n) {
-            t->branch[N1nbrH].n = cur_pairN2;
-            t->branch[cur_pairN1].n = N2nbrH;
-            t->branch[cur_pairN2].n = cur_pairN1;
+          if (N2nbrH == t.branch[cur_pairN2].n) {
+            t.branch[N1nbrH].n = cur_pairN2;
+            t.branch[cur_pairN1].n = N2nbrH;
+            t.branch[cur_pairN2].n = cur_pairN1;
           } else {
-            t->branch[N1nbrH].n = cur_pairN2;
-            t->branch[N2nbrH].n = cur_pairN1;
+            t.branch[N1nbrH].n = cur_pairN2;
+            t.branch[N2nbrH].n = cur_pairN1;
           }
           numShift += edgeShift(t, net);
         } else if (N1nbrV >= 0 && N2nbrV >= 0) {
-          if (N2nbrV == t->branch[cur_pairN2].n) {
-            t->branch[N1nbrV].n = cur_pairN2;
-            t->branch[cur_pairN1].n = N2nbrV;
-            t->branch[cur_pairN2].n = cur_pairN1;
+          if (N2nbrV == t.branch[cur_pairN2].n) {
+            t.branch[N1nbrV].n = cur_pairN2;
+            t.branch[cur_pairN1].n = N2nbrV;
+            t.branch[cur_pairN2].n = cur_pairN1;
           } else {
-            t->branch[N1nbrV].n = cur_pairN2;
-            t->branch[N2nbrV].n = cur_pairN1;
+            t.branch[N1nbrV].n = cur_pairN2;
+            t.branch[N2nbrV].n = cur_pairN1;
           }
           numShift += edgeShift(t, net);
         }

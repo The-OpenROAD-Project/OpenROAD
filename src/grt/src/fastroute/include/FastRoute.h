@@ -61,6 +61,8 @@ using boost::multi_array;
 
 namespace grt {
 
+using stt::Tree;
+
 class FastRouteCore
 {
  public:
@@ -260,17 +262,17 @@ class FastRouteCore
                     bool newType,
                     bool noADJ);
   void fluteNormal(int netID,
-                   const std::vector<DTYPE>& x,
-                   const std::vector<DTYPE>& y,
+                   const std::vector<int>& x,
+                   const std::vector<int>& y,
                    int acc,
                    float coeffV,
-                   Tree* t);
+                   Tree& t);
   void fluteCongest(int netID,
-                    const std::vector<DTYPE>& x,
-                    const std::vector<DTYPE>& y,
+                    const std::vector<int>& x,
+                    const std::vector<int>& y,
                     int acc,
                     float coeffV,
-                    Tree* t);
+                    Tree& t);
   float coeffADJ(int netID);
   bool HTreeSuite(int netID);
   bool VTreeSuite(int netID);
@@ -351,10 +353,8 @@ class FastRouteCore
   void copyBR(void);
   void copyRS(void);
   void freeRR(void);
-  Tree fluteToTree(stt::Tree fluteTree);
-  stt::Tree treeToFlute(Tree tree);
-  int edgeShift(Tree* t, int net);
-  int edgeShiftNew(Tree* t, int net);
+  int edgeShift(Tree& t, int net);
+  int edgeShiftNew(Tree& t, int net);
 
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;  // big integer used as infinity
@@ -428,11 +428,11 @@ class FastRouteCore
   std::vector<Edge> h_edges_;
   std::vector<Edge> v_edges_;
   std::vector<OrderNetEdge> net_eo_;
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gxs_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gys_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gs_;  // the copy of vertical sequence for nets, used for second FLUTE
   std::vector<Edge3D> h_edges_3D_;
   std::vector<Edge3D> v_edges_3D_;
@@ -440,7 +440,7 @@ class FastRouteCore
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
-  multi_array<dirctionT, 3> directions_3D_;
+  multi_array<Direction, 3> directions_3D_;
   multi_array<parent3D, 3> pr_3D_;
   multi_array<int, 3> corr_edge_3D_;
   multi_array<int, 2> corr_edge_;

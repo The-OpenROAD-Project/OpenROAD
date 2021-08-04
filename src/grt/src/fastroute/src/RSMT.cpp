@@ -46,7 +46,7 @@ using utl::GRT;
 
 struct pnt
 {
-  DTYPE x, y;
+  int x, y;
   int o;
 };
 
@@ -162,14 +162,14 @@ void FastRouteCore::copyStTree(int ind, Tree rsmt)
 }
 
 void FastRouteCore::fluteNormal(int netID,
-                                const std::vector<DTYPE>& x,
-                                const std::vector<DTYPE>& y,
+                                const std::vector<int>& x,
+                                const std::vector<int>& y,
                                 int acc,
                                 float coeffV,
-                                Tree* t)
+                                Tree& t)
 {
-  std::vector<DTYPE> xs, ys, tmp_xs, tmp_ys;
-  DTYPE minval, x_max, x_min, x_mid, y_max, y_min, y_mid;
+  std::vector<int> xs, ys, tmp_xs, tmp_ys;
+  int minval, x_max, x_min, x_mid, y_max, y_min, y_mid;
   std::vector<int> s;
   int i, j, minidx;
   struct pnt *pt, *tmpp;
@@ -177,17 +177,17 @@ void FastRouteCore::fluteNormal(int netID,
   int d = x.size();
 
   if (d == 2) {
-    t->deg = 2;
-    t->length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
-    t->branch.resize(2);
-    t->branch[0].x = x[0];
-    t->branch[0].y = y[0];
-    t->branch[0].n = 1;
-    t->branch[1].x = x[1];
-    t->branch[1].y = y[1];
-    t->branch[1].n = 1;
+    t.deg = 2;
+    t.length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
+    t.branch.resize(2);
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 1;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 1;
   } else if (d == 3) {
-    t->deg = 3;
+    t.deg = 3;
     if (x[0] < x[1]) {
       if (x[0] < x[2]) {
         x_min = x[0];
@@ -231,22 +231,21 @@ void FastRouteCore::fluteNormal(int netID,
       }
     }
 
-    t->length = abs(x_max - x_min) + abs(y_max - y_min);
-    t->branch.resize(4);
-    t->branch[0].x = x[0];
-    t->branch[0].y = y[0];
-    t->branch[0].n = 3;
-    t->branch[1].x = x[1];
-    t->branch[1].y = y[1];
-    t->branch[1].n = 3;
-    t->branch[2].x = x[2];
-    t->branch[2].y = y[2];
-    t->branch[2].n = 3;
-    t->branch[3].x = x_mid;
-    t->branch[3].y = y_mid;
-    t->branch[3].n = 3;
+    t.length = abs(x_max - x_min) + abs(y_max - y_min);
+    t.branch.resize(4);
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 3;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 3;
+    t.branch[2].x = x[2];
+    t.branch[2].y = y[2];
+    t.branch[2].n = 3;
+    t.branch[3].x = x_mid;
+    t.branch[3].y = y_mid;
+    t.branch[3].n = 3;
   } else {
-    stt::Tree fluteTree;
     xs.resize(d);
     ys.resize(d);
 
@@ -324,12 +323,11 @@ void FastRouteCore::fluteNormal(int netID,
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
-    fluteTree = stt_builder_->makeSteinerTree(tmp_xs, tmp_ys, s, acc);
-    (*t) = fluteToTree(fluteTree);
+    t = stt_builder_->makeSteinerTree(tmp_xs, tmp_ys, s, acc);
 
     for (i = 0; i < 2 * d - 2; i++) {
-      t->branch[i].x = t->branch[i].x / 100;
-      t->branch[i].y = t->branch[i].y / ((int) (100 * coeffV));
+      t.branch[i].x = t.branch[i].x / 100;
+      t.branch[i].y = t.branch[i].y / ((int) (100 * coeffV));
     }
 
     delete[] pt;
@@ -337,34 +335,34 @@ void FastRouteCore::fluteNormal(int netID,
 }
 
 void FastRouteCore::fluteCongest(int netID,
-                                 const std::vector<DTYPE>& x,
-                                 const std::vector<DTYPE>& y,
+                                 const std::vector<int>& x,
+                                 const std::vector<int>& y,
                                  int acc,
                                  float coeffV,
-                                 Tree* t)
+                                 Tree& t)
 {
-  std::vector<DTYPE> xs, ys, nxs, nys, x_seg, y_seg;
-  DTYPE x_max, x_min, x_mid, y_max, y_min, y_mid;
+  std::vector<int> xs, ys, nxs, nys, x_seg, y_seg;
+  int x_max, x_min, x_mid, y_max, y_min, y_mid;
   std::vector<int> s;
   int i, j, k, grid;
-  DTYPE height, width;
+  int height, width;
   int usageH, usageV;
   float coeffH = 1;
 
   int d = x.size();
 
   if (d == 2) {
-    t->deg = 2;
-    t->length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
-    t->branch.resize(2);
-    t->branch[0].x = x[0];
-    t->branch[0].y = y[0];
-    t->branch[0].n = 1;
-    t->branch[1].x = x[1];
-    t->branch[1].y = y[1];
-    t->branch[1].n = 1;
+    t.deg = 2;
+    t.length = abs(x[0] - x[1]) + abs(y[0] - y[1]);
+    t.branch.resize(2);
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 1;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 1;
   } else if (d == 3) {
-    t->deg = 3;
+    t.deg = 3;
     if (x[0] < x[1]) {
       if (x[0] < x[2]) {
         x_min = x[0];
@@ -408,22 +406,21 @@ void FastRouteCore::fluteCongest(int netID,
       }
     }
 
-    t->length = abs(x_max - x_min) + abs(y_max - y_min);
-    t->branch.resize(4);
-    t->branch[0].x = x[0];
-    t->branch[0].y = y[0];
-    t->branch[0].n = 3;
-    t->branch[1].x = x[1];
-    t->branch[1].y = y[1];
-    t->branch[1].n = 3;
-    t->branch[2].x = x[2];
-    t->branch[2].y = y[2];
-    t->branch[2].n = 3;
-    t->branch[3].x = x_mid;
-    t->branch[3].y = y_mid;
-    t->branch[3].n = 3;
+    t.length = abs(x_max - x_min) + abs(y_max - y_min);
+    t.branch.resize(4);
+    t.branch[0].x = x[0];
+    t.branch[0].y = y[0];
+    t.branch[0].n = 3;
+    t.branch[1].x = x[1];
+    t.branch[1].y = y[1];
+    t.branch[1].n = 3;
+    t.branch[2].x = x[2];
+    t.branch[2].y = y[2];
+    t.branch[2].n = 3;
+    t.branch[3].x = x_mid;
+    t.branch[3].y = y_mid;
+    t.branch[3].n = 3;
   } else {
-    stt::Tree fluteTree;
     xs.resize(d);
     ys.resize(d);
     nxs.resize(d);
@@ -482,13 +479,12 @@ void FastRouteCore::fluteCongest(int netID,
       nys[i + 1] = nys[i] + y_seg[i];
     }
 
-    fluteTree = stt_builder_->makeSteinerTree(nxs, nys, s, acc);
-    (*t) = fluteToTree(fluteTree);
+    t = stt_builder_->makeSteinerTree(nxs, nys, s, acc);
 
     // map the new coordinates back to original coordinates
     for (i = 0; i < 2 * d - 2; i++) {
-      t->branch[i].x = mapxy(t->branch[i].x, xs, nxs, d);
-      t->branch[i].y = mapxy(t->branch[i].y, ys, nys, d);
+      t.branch[i].x = mapxy(t.branch[i].x, xs, nxs, d);
+      t.branch[i].y = mapxy(t.branch[i].y, ys, nys, d);
     }
   }
 }
@@ -758,23 +754,22 @@ void FastRouteCore::gen_brk_RSMT(bool congestionDriven,
     // TODO: move this flute implementation to SteinerTreeBuilder
     float net_alpha = stt_builder_->getAlpha(net->db_net);
     if (net_alpha > 0.0) {
-      stt::Tree tree = stt_builder_->makeSteinerTree(
+      rsmt = stt_builder_->makeSteinerTree(
           net->db_net, net->pinX, net->pinY, net->driver_idx);
-      rsmt = fluteToTree(tree);
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
         if (cong) {
-          fluteCongest(i, net->pinX, net->pinY, flute_accuracy, coeffV, &rsmt);
+          fluteCongest(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
         } else {
-          fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, &rsmt);
+          fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
         }
         if (d > 3) {
-          numShift += edgeShiftNew(&rsmt, i);
+          numShift += edgeShiftNew(rsmt, i);
         }
       } else {
         // call FLUTE to generate RSMT for each net
-        fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, &rsmt);
+        fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
       }
     }
 
