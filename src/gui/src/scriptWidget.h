@@ -81,10 +81,11 @@ class ScriptWidget : public QDockWidget
   // shutdown
   void tclExiting();
 
- private slots:
+ public slots:
   // Triggered when the user hits return in the line edit
-  void executeCommand();
+  void executeCommand(const QString& command, bool echo = true);
 
+ private slots:
   void outputChanged();
 
   void pause();

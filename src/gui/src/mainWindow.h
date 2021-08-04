@@ -170,6 +170,16 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // show Timing Dialog Box
   void showTimingDialog();
 
+  // add/remove toolbar button
+  const std::string addToolbarButton(const std::string& name,
+                                     const QString& text,
+                                     const QString& script,
+                                     bool echo);
+  void removeToolbarButton(const std::string& name);
+
+  // request for user input
+  const std::string requestUserInput(const QString& title, const QString& question);
+
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
 
@@ -189,6 +199,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   odb::dbBlock* getBlock();
 
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
   std::vector<QLine> rulers_;
@@ -226,6 +237,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, const Descriptor*> descriptors_;
+
+  // created button actions
+  std::map<const std::string, std::unique_ptr<QAction>> buttons_;
 };
 
 }  // namespace gui

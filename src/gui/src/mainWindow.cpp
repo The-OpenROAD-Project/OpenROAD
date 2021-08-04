@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <QDesktopWidget>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
@@ -48,12 +49,14 @@
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
+#include "utl/Logger.h"
 
 namespace gui {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
+      logger_(nullptr),
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, this)),
       viewer_(new LayoutViewer(
@@ -283,6 +286,56 @@ void MainWindow::createToolbars()
   view_tool_bar_->addAction(timing_debug_);
 
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
+}
+
+const std::string MainWindow::addToolbarButton(const std::string& name,
+                                               const QString& text,
+                                               const QString& script,
+                                               bool echo)
+{
+  // ensure key is unique
+  std::string key;
+  if (name.empty()) {
+    int key_idx = 0;
+    do {
+      // default to "buttonX" naming
+      key = "button" + std::to_string(key_idx);
+      key_idx++;
+    } while (buttons_.count(key) != 0);
+  } else {
+    if (buttons_.count(name) != 0) {
+      logger_->error(utl::GUI, 22, "Button {} already defined.", name);
+    }
+    key = name;
+  }
+
+  auto action = view_tool_bar_->addAction(text);
+
+  connect(action, &QAction::triggered, [script, echo, this]() {
+    script_->executeCommand(script, echo);
+  });
+
+  buttons_[key] = std::unique_ptr<QAction>(action);
+
+  return key;
+}
+
+void MainWindow::removeToolbarButton(const std::string& name)
+{
+  if (buttons_.count(name) == 0) {
+    return;
+  }
+
+  view_tool_bar_->removeAction(buttons_[name].get());
+  buttons_.erase(name);
+}
+
+const std::string MainWindow::requestUserInput(const QString& title, const QString& question)
+{
+  QString text = QInputDialog::getText(this,
+                                       title,
+                                       question);
+  return text.toStdString();
 }
 
 void MainWindow::setDb(odb::dbDatabase* db)
@@ -563,6 +616,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 
 void MainWindow::setLogger(utl::Logger* logger)
 {
+  logger_ = logger;
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewer_->setLogger(logger);
