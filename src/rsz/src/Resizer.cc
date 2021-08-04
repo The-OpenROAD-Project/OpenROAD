@@ -617,7 +617,7 @@ Resizer::bufferOutput(Pin *top_pin,
 // The whole enchilada.
 // max_wire_length zero for none (meters)
 void
-Resizer::repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
+Resizer::repairDesign(double max_wire_length,
                       double max_slew_margin,
                       double max_cap_margin)
 {
@@ -1127,10 +1127,10 @@ Resizer::repairNet(SteinerTree *tree,
   }
 
   if (repeater_left)
-    makeRepeater("left", tree, pt, net, buffer_lowest_drive_, level,
+    makeRepeater("left", tree, pt, buffer_lowest_drive_, level,
                  wire_length_left, pin_cap_left, fanout_left, loads_left);
   if (repeater_right)
-    makeRepeater("right", tree, pt, net, buffer_lowest_drive_, level,
+    makeRepeater("right", tree, pt, buffer_lowest_drive_, level,
                  wire_length_right, pin_cap_right, fanout_right, loads_right);
 
   wire_length = wire_length_left + wire_length_right;
@@ -1201,7 +1201,7 @@ Resizer::repairNet(SteinerTree *tree,
       double d = (length == 0) ? 0.0 : buf_dist / length;
       int buf_x = pt_x + d * dx;
       int buf_y = pt_y + d * dy;
-      makeRepeater("wire", buf_x, buf_y, net, buffer_lowest_drive_, level,
+      makeRepeater("wire", buf_x, buf_y, buffer_lowest_drive_, level,
                    wire_length, pin_cap, fanout, load_pins);
       // Update for the next round.
       length -= buf_dist;
@@ -1220,7 +1220,6 @@ void
 Resizer::makeRepeater(const char *where,
                       SteinerTree *tree,
                       SteinerPt pt,
-                      Net *net,
                       LibertyCell *buffer_cell,
                       int level,
                       int &wire_length,
@@ -1229,7 +1228,7 @@ Resizer::makeRepeater(const char *where,
                       PinSeq &load_pins)
 {
   Point pt_loc = tree->location(pt);
-  makeRepeater(where, pt_loc.getX(), pt_loc.getY(), net, buffer_cell, level,
+  makeRepeater(where, pt_loc.getX(), pt_loc.getY(), buffer_cell, level,
                wire_length, pin_cap, fanout, load_pins);
 }
 
@@ -1237,7 +1236,6 @@ void
 Resizer::makeRepeater(const char *where,
                       int x,
                       int y,
-                      Net *net,
                       LibertyCell *buffer_cell,
                       int level,
                       int &wire_length,
@@ -1260,15 +1258,23 @@ Resizer::makeRepeater(const char *where,
   // use the net name for input and output ports. This means the ports
   // cannot be moved to a different net.
 
+  // This cannot depend on the net in caller because the buffer may be inserted
+  // between the driver and the loads changing the net as the repair works its
+  // way from the loads to the driver.
+
+  Net *net, *in_net, *out_net;
   bool have_output_port_load = false;
   for (Pin *pin : load_pins) {
-    if (network_->isTopLevelPort(pin)
-        && network_->direction(pin)->isAnyOutput()) {
-      have_output_port_load = true;
-      break;
+    if (network_->isTopLevelPort(pin)) {
+      net = network_->net(network_->term(pin));
+      if (network_->direction(pin)->isAnyOutput()) {
+        have_output_port_load = true;
+        break;
+      }
     }
+    else
+      net = network_->net(pin);
   }
-  Net *in_net, *out_net;
   Instance *parent = db_network_->topInstance();
 
   // If the net is driven by an input port,
@@ -2944,7 +2950,10 @@ int
 Resizer::findMaxSteinerDist(SteinerTree *tree)
 {
   SteinerPt drvr_pt = tree->drvrPt(network_);
-  return findMaxSteinerDist(tree, drvr_pt, 0);
+  if (drvr_pt == SteinerTree::null_pt)
+    return 0;
+  else
+    return findMaxSteinerDist(tree, drvr_pt, 0);
 }
 
 // DFS of steiner tree.

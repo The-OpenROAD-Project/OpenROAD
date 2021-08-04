@@ -61,6 +61,8 @@ using boost::multi_array;
 
 namespace grt {
 
+using stt::Tree;
+
 class FastRouteCore
 {
  public:
@@ -253,28 +255,28 @@ class FastRouteCore
                           int edge_C1C2);
 
   // rsmt functions
-  void copyStTree(int ind, Tree rsmt);
-  void gen_brk_RSMT(bool congestionDriven,
-                    bool reRoute,
-                    bool genTree,
-                    bool newType,
-                    bool noADJ);
-  void fluteNormal(int netID,
-                   const std::vector<DTYPE>& x,
-                   const std::vector<DTYPE>& y,
-                   int acc,
-                   float coeffV,
-                   Tree* t);
-  void fluteCongest(int netID,
-                    const std::vector<DTYPE>& x,
-                    const std::vector<DTYPE>& y,
-                    int acc,
-                    float coeffV,
-                    Tree* t);
-  float coeffADJ(int netID);
-  bool HTreeSuite(int netID);
-  bool VTreeSuite(int netID);
-  bool netCongestion(int netID);
+  void copyStTree(const int ind, const Tree& rsmt);
+  void gen_brk_RSMT(const bool congestionDriven,
+                    const bool reRoute,
+                    const bool genTree,
+                    const bool newType,
+                    const bool noADJ);
+  void fluteNormal(const int netID,
+                   const std::vector<int>& x,
+                   const std::vector<int>& y,
+                   const int acc,
+                   const float coeffV,
+                   Tree& t);
+  void fluteCongest(const int netID,
+                    const std::vector<int>& x,
+                    const std::vector<int>& y,
+                    const int acc,
+                    const float coeffV,
+                    Tree& t);
+  float coeffADJ(const int netID);
+  bool HTreeSuite(const int netID);
+  bool VTreeSuite(const int netID);
+  bool netCongestion(const int netID);
 
   // route functions
   // old functions for segment list data structure
@@ -299,37 +301,37 @@ class FastRouteCore
   void routeLVEnew(int netID, int edgeID, int threshold, int enlarge);
 
   // ripup functions
-  void ripupSegL(Segment* seg);
-  void ripupSegZ(Segment* seg);
-  void newRipup(TreeEdge* treeedge,
-                TreeNode* treenodes,
-                int x1,
-                int y1,
-                int x2,
-                int y2,
-                int netID);
-  bool newRipupCheck(TreeEdge* treeedge,
-                     int x1,
-                     int y1,
-                     int x2,
-                     int y2,
-                     int ripup_threshold,
-                     int netID,
-                     int edgeID);
+  void ripupSegL(const Segment* seg);
+  void ripupSegZ(const Segment* seg);
+  void newRipup(const TreeEdge* treeedge,
+                const TreeNode* treenodes,
+                const int x1,
+                const int y1,
+                const int x2,
+                const int y2,
+                const int netID);
+  bool newRipupCheck(const TreeEdge* treeedge,
+                     const int x1,
+                     const int y1,
+                     const int x2,
+                     const int y2,
+                     const int ripup_threshold,
+                     const int netID,
+                     const int edgeID);
 
-  bool newRipupType2(TreeEdge* treeedge,
+  bool newRipupType2(const TreeEdge* treeedge,
                      TreeNode* treenodes,
-                     int x1,
-                     int y1,
-                     int x2,
-                     int y2,
-                     int deg,
-                     int netID);
-  bool newRipup3DType3(int netID, int edgeID);
-  void newRipupNet(int netID);
+                     const int x1,
+                     const int y1,
+                     const int x2,
+                     const int y2,
+                     const int deg,
+                     const int netID);
+  bool newRipup3DType3(const int netID, const int edgeID);
+  void newRipupNet(const int netID);
 
   // utility functions
-  void printEdge(int netID, int edgeID);
+  void printEdge(const int netID, const int edgeID);
   void ConvertToFull3DType2();
   void fillVIA();
   int threeDVIA();
@@ -351,10 +353,8 @@ class FastRouteCore
   void copyBR(void);
   void copyRS(void);
   void freeRR(void);
-  Tree fluteToTree(stt::Tree fluteTree);
-  stt::Tree treeToFlute(Tree tree);
-  int edgeShift(Tree* t, int net);
-  int edgeShiftNew(Tree* t, int net);
+  int edgeShift(Tree& t, int net);
+  int edgeShiftNew(Tree& t, int net);
 
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;  // big integer used as infinity
@@ -428,11 +428,11 @@ class FastRouteCore
   std::vector<Edge> h_edges_;
   std::vector<Edge> v_edges_;
   std::vector<OrderNetEdge> net_eo_;
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gxs_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gys_;  // the copy of xs for nets, used for second FLUTE
-  std::vector<std::vector<DTYPE>>
+  std::vector<std::vector<int>>
       gs_;  // the copy of vertical sequence for nets, used for second FLUTE
   std::vector<Edge3D> h_edges_3D_;
   std::vector<Edge3D> v_edges_3D_;
@@ -440,7 +440,7 @@ class FastRouteCore
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
-  multi_array<dirctionT, 3> directions_3D_;
+  multi_array<Direction, 3> directions_3D_;
   multi_array<parent3D, 3> pr_3D_;
   multi_array<int, 3> corr_edge_3D_;
   multi_array<int, 2> corr_edge_;

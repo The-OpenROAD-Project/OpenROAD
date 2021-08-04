@@ -50,36 +50,25 @@ using utl::GRT;
 // possible L for L segments
 void FastRouteCore::estimateOneSeg(Segment* seg)
 {
-  int i;
-  int ymin, ymax;
+  const int edgeCost = nets_[seg->netID]->edgeCost;
 
-  int edgeCost = nets_[seg->netID]->edgeCost;
-
-  if (seg->y1 < seg->y2) {
-    ymin = seg->y1;
-    ymax = seg->y2;
-  } else {
-    ymin = seg->y2;
-    ymax = seg->y1;
-  }
+  const int ymin = std::min(seg->y1, seg->y2);
+  const int ymax = std::max(seg->y1, seg->y2);
 
   // assign 0.5 to both Ls (x1,y1)-(x1,y2) + (x1,y2)-(x2,y2) + (x1,y1)-(x2,y1) +
   // (x2,y1)-(x2,y2)
-  if (seg->x1 == seg->x2)  // a vertical segment
-  {
-    for (i = ymin; i < ymax; i++)
+  if (seg->x1 == seg->x2) {  // a vertical segment
+    for (int i = ymin; i < ymax; i++)
       v_edges_[i * x_grid_ + seg->x1].est_usage += edgeCost;
-  } else if (seg->y1 == seg->y2)  // a horizontal segment
-  {
-    for (i = seg->x1; i < seg->x2; i++)
+  } else if (seg->y1 == seg->y2) {  // a horizontal segment
+    for (int i = seg->x1; i < seg->x2; i++)
       h_edges_[seg->y1 * (x_grid_ - 1) + i].est_usage += edgeCost;
-  } else  // a diagonal segment
-  {
-    for (i = ymin; i < ymax; i++) {
+  } else {  // a diagonal segment
+    for (int i = ymin; i < ymax; i++) {
       v_edges_[i * x_grid_ + seg->x1].est_usage += edgeCost / 2.0f;
       v_edges_[i * x_grid_ + seg->x2].est_usage += edgeCost / 2.0f;
     }
-    for (i = seg->x1; i < seg->x2; i++) {
+    for (int i = seg->x1; i < seg->x2; i++) {
       h_edges_[seg->y1 * (x_grid_ - 1) + i].est_usage += edgeCost / 2.0f;
       h_edges_[seg->y2 * (x_grid_ - 1) + i].est_usage += edgeCost / 2.0f;
     }
@@ -88,89 +77,70 @@ void FastRouteCore::estimateOneSeg(Segment* seg)
 
 void FastRouteCore::routeSegV(Segment* seg)
 {
-  int i;
-  int ymin, ymax;
+  const int edgeCost = nets_[seg->netID]->edgeCost;
 
-  int edgeCost = nets_[seg->netID]->edgeCost;
+  const int ymin = std::min(seg->y1, seg->y2);
+  const int ymax = std::max(seg->y1, seg->y2);
 
-  if (seg->y1 < seg->y2) {
-    ymin = seg->y1;
-    ymax = seg->y2;
-  } else {
-    ymin = seg->y2;
-    ymax = seg->y1;
-  }
-
-  for (i = ymin; i < ymax; i++)
+  for (int i = ymin; i < ymax; i++)
     v_edges_[i * x_grid_ + seg->x1].est_usage += edgeCost;
 }
 
 void FastRouteCore::routeSegH(Segment* seg)
 {
-  int i;
+  const int edgeCost = nets_[seg->netID]->edgeCost;
 
-  int edgeCost = nets_[seg->netID]->edgeCost;
-
-  for (i = seg->x1; i < seg->x2; i++)
+  for (int i = seg->x1; i < seg->x2; i++)
     h_edges_[seg->y1 * (x_grid_ - 1) + i].est_usage += edgeCost;
 }
 
 // L-route, based on previous L route
 void FastRouteCore::routeSegL(Segment* seg)
 {
-  int i, grid, grid1;
-  float costL1, costL2, tmp;
-  int ymin, ymax;
+  const int edgeCost = nets_[seg->netID]->edgeCost;
 
-  int edgeCost = nets_[seg->netID]->edgeCost;
-
-  if (seg->y1 < seg->y2) {
-    ymin = seg->y1;
-    ymax = seg->y2;
-  } else {
-    ymin = seg->y2;
-    ymax = seg->y1;
-  }
+  const int ymin = std::min(seg->y1, seg->y2);
+  const int ymax = std::max(seg->y1, seg->y2);
 
   if (seg->x1 == seg->x2)  // V route
     routeSegV(seg);
   else if (seg->y1 == seg->y2)  // H route
     routeSegH(seg);
-  else  // L route
-  {
-    costL1 = costL2 = 0;
+  else {  // L route
+    float costL1 = 0;
+    float costL2 = 0;
 
-    for (i = ymin; i < ymax; i++) {
-      grid = i * x_grid_;
-      tmp = v_edges_[grid + seg->x1].red + v_edges_[grid + seg->x1].est_usage
-            - v_capacity_lb_;
-      if (tmp > 0)
-        costL1 += tmp;
-      tmp = v_edges_[grid + seg->x2].red + v_edges_[grid + seg->x2].est_usage
-            - v_capacity_lb_;
-      if (tmp > 0)
-        costL2 += tmp;
+    for (int i = ymin; i < ymax; i++) {
+      const int grid = i * x_grid_;
+      const float tmp1 = v_edges_[grid + seg->x1].red
+                         + v_edges_[grid + seg->x1].est_usage - v_capacity_lb_;
+      if (tmp1 > 0)
+        costL1 += tmp1;
+      const float tmp2 = v_edges_[grid + seg->x2].red
+                         + v_edges_[grid + seg->x2].est_usage - v_capacity_lb_;
+      if (tmp2 > 0)
+        costL2 += tmp2;
     }
-    grid = seg->y2 * (x_grid_ - 1);
-    grid1 = seg->y1 * (x_grid_ - 1);
-    for (i = seg->x1; i < seg->x2; i++) {
-      tmp = h_edges_[grid + i].red + h_edges_[grid + i].est_usage
-            - h_capacity_lb_;
-      if (tmp > 0)
-        costL1 += tmp;
-      tmp = h_edges_[grid1 + i].red + h_edges_[grid1 + i].est_usage
-            - h_capacity_lb_;
-      if (tmp > 0)
-        costL2 += tmp;
+    int grid = seg->y2 * (x_grid_ - 1);
+    const int grid1 = seg->y1 * (x_grid_ - 1);
+    for (int i = seg->x1; i < seg->x2; i++) {
+      const float tmp1 = h_edges_[grid + i].red + h_edges_[grid + i].est_usage
+                         - h_capacity_lb_;
+      if (tmp1 > 0)
+        costL1 += tmp1;
+      const float tmp2 = h_edges_[grid1 + i].red + h_edges_[grid1 + i].est_usage
+                         - h_capacity_lb_;
+      if (tmp2 > 0)
+        costL2 += tmp2;
     }
 
     if (costL1 < costL2) {
       // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-      for (i = ymin; i < ymax; i++) {
+      for (int i = ymin; i < ymax; i++) {
         v_edges_[i * x_grid_ + seg->x1].est_usage += edgeCost;
       }
       grid = seg->y2 * (x_grid_ - 1);
-      for (i = seg->x1; i < seg->x2; i++) {
+      for (int i = seg->x1; i < seg->x2; i++) {
         h_edges_[grid + i].est_usage += edgeCost;
       }
       seg->xFirst = false;
@@ -178,10 +148,10 @@ void FastRouteCore::routeSegL(Segment* seg)
     else {
       // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
       grid = seg->y1 * (x_grid_ - 1);
-      for (i = seg->x1; i < seg->x2; i++) {
+      for (int i = seg->x1; i < seg->x2; i++) {
         h_edges_[grid + i].est_usage += edgeCost;
       }
-      for (i = ymin; i < ymax; i++) {
+      for (int i = ymin; i < ymax; i++) {
         v_edges_[i * x_grid_ + seg->x2].est_usage += edgeCost;
       }
       seg->xFirst = true;
@@ -192,58 +162,54 @@ void FastRouteCore::routeSegL(Segment* seg)
 // First time L-route, based on 0.5-0.5 estimation
 void FastRouteCore::routeSegLFirstTime(Segment* seg)
 {
-  int i, vedge, hedge;
-  float costL1, costL2, tmp;
-  int ymin, ymax;
+  const int ymin = std::min(seg->y1, seg->y2);
+  const int ymax = std::max(seg->y1, seg->y2);
 
-  int edgeCost = nets_[seg->netID]->edgeCost;
+  float costL1 = 0;
+  float costL2 = 0;
 
-  if (seg->y1 < seg->y2) {
-    ymin = seg->y1;
-    ymax = seg->y2;
-  } else {
-    ymin = seg->y2;
-    ymax = seg->y1;
-  }
-
-  costL1 = costL2 = 0;
-
-  for (i = ymin; i < ymax; i++) {
-    vedge = i * x_grid_ + seg->x1;
-    tmp = v_edges_[vedge].red + v_edges_[vedge].est_usage - v_capacity_lb_;
+  for (int i = ymin; i < ymax; i++) {
+    const int vedge = i * x_grid_ + seg->x1;
+    const float tmp
+        = v_edges_[vedge].red + v_edges_[vedge].est_usage - v_capacity_lb_;
     if (tmp > 0)
       costL1 += tmp;
   }
-  for (i = ymin; i < ymax; i++) {
-    vedge = i * x_grid_ + seg->x2;
-    tmp = v_edges_[vedge].red + v_edges_[vedge].est_usage - v_capacity_lb_;
+  for (int i = ymin; i < ymax; i++) {
+    const int vedge = i * x_grid_ + seg->x2;
+    const float tmp
+        = v_edges_[vedge].red + v_edges_[vedge].est_usage - v_capacity_lb_;
     if (tmp > 0)
       costL2 += tmp;
   }
 
-  for (i = seg->x1; i < seg->x2; i++) {
-    hedge = seg->y2 * (x_grid_ - 1) + i;
-    tmp = h_edges_[hedge].red + h_edges_[hedge].est_usage - h_capacity_lb_;
+  for (int i = seg->x1; i < seg->x2; i++) {
+    const int hedge = seg->y2 * (x_grid_ - 1) + i;
+    const float tmp
+        = h_edges_[hedge].red + h_edges_[hedge].est_usage - h_capacity_lb_;
     if (tmp > 0)
       costL1 += tmp;
   }
-  for (i = seg->x1; i < seg->x2; i++) {
-    hedge = seg->y1 * (x_grid_ - 1) + i;
-    tmp = h_edges_[hedge].red + h_edges_[hedge].est_usage - h_capacity_lb_;
+  for (int i = seg->x1; i < seg->x2; i++) {
+    const int hedge = seg->y1 * (x_grid_ - 1) + i;
+    const float tmp
+        = h_edges_[hedge].red + h_edges_[hedge].est_usage - h_capacity_lb_;
     if (tmp > 0)
       costL2 += tmp;
   }
+
+  const int edgeCost = nets_[seg->netID]->edgeCost;
 
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-    for (i = ymin; i < ymax; i++) {
-      vedge = i * x_grid_ + seg->x1;
+    for (int i = ymin; i < ymax; i++) {
+      int vedge = i * x_grid_ + seg->x1;
       v_edges_[vedge].est_usage += edgeCost / 2.0f;
       vedge += seg->x2 - seg->x1;
       v_edges_[vedge].est_usage -= edgeCost / 2.0f;
     }
-    for (i = seg->x1; i < seg->x2; i++) {
-      hedge = seg->y2 * (x_grid_ - 1) + i;
+    for (int i = seg->x1; i < seg->x2; i++) {
+      int hedge = seg->y2 * (x_grid_ - 1) + i;
       h_edges_[hedge].est_usage += edgeCost / 2.0f;
       hedge = seg->y1 * (x_grid_ - 1) + i;
       h_edges_[hedge].est_usage -= edgeCost / 2.0f;
@@ -251,14 +217,14 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
     seg->xFirst = false;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-    for (i = seg->x1; i < seg->x2; i++) {
-      hedge = seg->y1 * (x_grid_ - 1) + i;
+    for (int i = seg->x1; i < seg->x2; i++) {
+      int hedge = seg->y1 * (x_grid_ - 1) + i;
       h_edges_[hedge].est_usage += edgeCost / 2.0f;
       hedge = seg->y2 * (x_grid_ - 1) + i;
       h_edges_[hedge].est_usage -= edgeCost / 2.0f;
     }
-    for (i = ymin; i < ymax; i++) {
-      vedge = i * x_grid_ + seg->x2;
+    for (int i = ymin; i < ymax; i++) {
+      int vedge = i * x_grid_ + seg->x2;
       v_edges_[vedge].est_usage += edgeCost / 2.0f;
       vedge += seg->x1 - seg->x2;
       v_edges_[vedge].est_usage -= edgeCost / 2.0f;
@@ -271,20 +237,17 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
 // previous is L-route
 void FastRouteCore::routeLAll(bool firstTime)
 {
-  int i, j;
-
-  if (firstTime)  // no previous route
-  {
+  if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
-    for (i = 0; i < num_valid_nets_; i++) {
-      for (j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
+    for (int i = 0; i < num_valid_nets_; i++) {
+      for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
            j++) {
         estimateOneSeg(&seglist_[j]);
       }
     }
     // L route
-    for (i = 0; i < num_valid_nets_; i++) {
-      for (j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
+    for (int i = 0; i < num_valid_nets_; i++) {
+      for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
            j++) {
         // no need to reroute the H or V segs
         if (seglist_[j].x1 != seglist_[j].x2
@@ -292,10 +255,9 @@ void FastRouteCore::routeLAll(bool firstTime)
           routeSegLFirstTime(&seglist_[j]);
       }
     }
-  } else  // previous is L-route
-  {
-    for (i = 0; i < num_valid_nets_; i++) {
-      for (j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
+  } else {  // previous is L-route
+    for (int i = 0; i < num_valid_nets_; i++) {
+      for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
            j++) {
         // no need to reroute the H or V segs
         if (seglist_[j].x1 != seglist_[j].x2
@@ -311,41 +273,27 @@ void FastRouteCore::routeLAll(bool firstTime)
 // L-route, rip-up the previous route according to the ripuptype
 void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 {
-  int i, j, d, n1, n2, x1, y1, x2, y2, grid, grid1;
-  float costL1 = 0;
-  float costL2 = 0;
-  float tmp;
-  int ymin, ymax;
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
+  const int edgeCost = nets_[netID]->edgeCost;
 
-  int edgeCost = nets_[netID]->edgeCost;
-
-  d = sttrees_[netID].deg;
-  treeedges = sttrees_[netID].edges;
-  treenodes = sttrees_[netID].nodes;
+  const int d = sttrees_[netID].deg;
+  TreeEdge* treeedges = sttrees_[netID].edges;
+  TreeNode* treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges (2*d-3)
-  for (i = 0; i < 2 * d - 3; i++) {
-    if (sttrees_[netID].edges[i].len
-        > 0)  // only route the non-degraded edges (len>0)
-    {
-      treeedge = &(treeedges[i]);
+  for (int i = 0; i < 2 * d - 3; i++) {
+    // only route the non-degraded edges (len>0)
+    if (sttrees_[netID].edges[i].len > 0) {
+      TreeEdge* treeedge = &(treeedges[i]);
 
-      n1 = treeedge->n1;
-      n2 = treeedge->n2;
-      x1 = treenodes[n1].x;
-      y1 = treenodes[n1].y;
-      x2 = treenodes[n2].x;
-      y2 = treenodes[n2].y;
+      const int n1 = treeedge->n1;
+      const int n2 = treeedge->n2;
+      const int x1 = treenodes[n1].x;
+      const int y1 = treenodes[n1].y;
+      const int x2 = treenodes[n2].x;
+      const int y2 = treenodes[n2].y;
 
-      if (y1 < y2) {
-        ymin = y1;
-        ymax = y2;
-      } else {
-        ymin = y2;
-        ymax = y1;
-      }
+      const int ymin = std::min(y1, y2);
+      const int ymax = std::max(y1, y2);
 
       // ripup the original routing
       if (ripuptype > RouteType::NoRoute)  // it's been routed
@@ -354,7 +302,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
       treeedge->route.type = RouteType::LRoute;
       if (x1 == x2)  // V-routing
       {
-        for (j = ymin; j < ymax; j++)
+        for (int j = ymin; j < ymax; j++)
           v_edges_[j * x_grid_ + x1].est_usage += edgeCost;
         treeedge->route.xFirst = false;
         if (treenodes[n1].status % 2 == 0) {
@@ -365,7 +313,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
         }
       } else if (y1 == y2)  // H-routing
       {
-        for (j = x1; j < x2; j++)
+        for (int j = x1; j < x2; j++)
           h_edges_[y1 * (x_grid_ - 1) + j].est_usage += edgeCost;
         treeedge->route.xFirst = true;
         if (treenodes[n2].status < 2) {
@@ -376,6 +324,9 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
         }
       } else  // L-routing
       {
+        float costL1 = 0;
+        float costL2 = 0;
+
         if (viaGuided) {
           if (treenodes[n1].status == 0 || treenodes[n1].status == 3) {
             costL1 = costL2 = 0;
@@ -398,28 +349,28 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
           costL1 = costL2 = 0;
         }
 
-        for (j = ymin; j < ymax; j++) {
-          grid = j * x_grid_;
-          tmp = v_edges_[grid + x1].est_usage - v_capacity_lb_
-                + v_edges_[grid + x1].red;
-          if (tmp > 0)
-            costL1 += tmp;
-          tmp = v_edges_[grid + x2].est_usage - v_capacity_lb_
-                + v_edges_[grid + x2].red;
-          if (tmp > 0)
-            costL2 += tmp;
+        for (int j = ymin; j < ymax; j++) {
+          const int grid = j * x_grid_;
+          const float tmp1 = v_edges_[grid + x1].est_usage - v_capacity_lb_
+                             + v_edges_[grid + x1].red;
+          if (tmp1 > 0)
+            costL1 += tmp1;
+          const float tmp2 = v_edges_[grid + x2].est_usage - v_capacity_lb_
+                             + v_edges_[grid + x2].red;
+          if (tmp2 > 0)
+            costL2 += tmp2;
         }
-        grid = y2 * (x_grid_ - 1);
-        grid1 = y1 * (x_grid_ - 1);
-        for (j = x1; j < x2; j++) {
-          tmp = h_edges_[grid + j].est_usage - h_capacity_lb_
-                + h_edges_[grid + j].red;
-          if (tmp > 0)
-            costL1 += tmp;
-          tmp = h_edges_[grid1 + j].est_usage - h_capacity_lb_
-                + h_edges_[grid1 + j].red;
-          if (tmp > 0)
-            costL2 += tmp;
+        int grid = y2 * (x_grid_ - 1);
+        int grid1 = y1 * (x_grid_ - 1);
+        for (int j = x1; j < x2; j++) {
+          const float tmp1 = h_edges_[grid + j].est_usage - h_capacity_lb_
+                             + h_edges_[grid + j].red;
+          if (tmp1 > 0)
+            costL1 += tmp1;
+          const float tmp2 = h_edges_[grid1 + j].est_usage - h_capacity_lb_
+                             + h_edges_[grid1 + j].red;
+          if (tmp2 > 0)
+            costL2 += tmp2;
         }
 
         if (costL1 < costL2) {
@@ -431,11 +382,11 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
           }
 
           // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-          for (j = ymin; j < ymax; j++) {
+          for (int j = ymin; j < ymax; j++) {
             v_edges_[j * x_grid_ + x1].est_usage += edgeCost;
           }
           grid = y2 * (x_grid_ - 1);
-          for (j = x1; j < x2; j++) {
+          for (int j = x1; j < x2; j++) {
             h_edges_[grid + j].est_usage += edgeCost;
           }
           treeedge->route.xFirst = false;
@@ -450,10 +401,10 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 
           // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
           grid = y1 * (x_grid_ - 1);
-          for (j = x1; j < x2; j++) {
+          for (int j = x1; j < x2; j++) {
             h_edges_[grid + j].est_usage += edgeCost;
           }
-          for (j = ymin; j < ymax; j++) {
+          for (int j = ymin; j < ymax; j++) {
             v_edges_[j * x_grid_ + x2].est_usage += edgeCost;
           }
           treeedge->route.xFirst = true;
@@ -470,14 +421,12 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 // first
 void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
-  int i;
-
   if (firstTime) {
-    for (i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < num_valid_nets_; i++) {
       newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
-    for (i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < num_valid_nets_; i++) {
       newrouteL(i, RouteType::LRoute, viaGuided);
     }
   }

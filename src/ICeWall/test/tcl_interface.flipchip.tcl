@@ -484,9 +484,7 @@ if {[catch {initialize_padring} msg]} {
   return
 }
 
-set def_file1 [make_result_file "tcl_interface.flipchip.1.def"]
 set def_file  [make_result_file "tcl_interface.flipchip.def"]
 
-write_def $def_file1
-exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" $def_file1 > $def_file
+write_def $def_file
 diff_files $def_file "tcl_interface.flipchip.defok"
