@@ -32,10 +32,10 @@ Type: stdcell, grid
       Layer: met4  -  width: 1.600  pitch: 50.000  offset: 13.570 
       Layer: met5  -  width: 1.600  pitch: 27.200  offset: 13.600 
     Connect: {met1 met4} {met4 met5}
-Type: macro, CORE_macro_grid_1
+Type: macro, macro_1
     Macro orientation: R0 R180 MX MY
     Connect: {met4_PIN_ver met5}
-Type: macro, CORE_macro_grid_2
+Type: macro, macro_2
     Macro orientation: R90 R270 MXR90 MYR90
     Connect: {met4_PIN_hor met5}
 [INFO PDN-0012] **** END INFO ****
