@@ -52,7 +52,7 @@ proc create_toolbar_button { args } {
   } else {
     utl::error GUI 21 "The -script argument must be specified."
   }
-  set name $button_text
+  set name ""
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }

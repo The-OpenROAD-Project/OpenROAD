@@ -199,6 +199,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   odb::dbBlock* getBlock();
 
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
   std::vector<QLine> rulers_;

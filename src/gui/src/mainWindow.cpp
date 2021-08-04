@@ -49,12 +49,14 @@
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
+#include "utl/Logger.h"
 
 namespace gui {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
+      logger_(nullptr),
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, this)),
       viewer_(new LayoutViewer(
@@ -291,19 +293,27 @@ const std::string MainWindow::addToolbarButton(const std::string& name,
                                                const QString& script,
                                                bool echo)
 {
+  // ensure key is unique
+  std::string key;
+  if (name.empty()) {
+    int key_idx = 0;
+    do {
+      // default to "buttonX" naming
+      key = "button" + std::to_string(key_idx);
+      key_idx++;
+    } while (buttons_.count(key) != 0);
+  } else {
+    if (buttons_.count(name) != 0) {
+      logger_->error(utl::GUI, 22, "Button {} already defined.", name);
+    }
+    key = name;
+  }
+
   auto action = view_tool_bar_->addAction(text);
 
   connect(action, &QAction::triggered, [script, echo, this]() {
     script_->executeCommand(script, echo);
   });
-
-  // ensure key is unique
-  std::string key = name;
-  int key_idx = 0;
-  while (buttons_.count(key) != 0) {
-    key = name + std::to_string(key_idx);
-    key_idx++;
-  }
 
   buttons_[key] = std::unique_ptr<QAction>(action);
 
@@ -606,6 +616,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 
 void MainWindow::setLogger(utl::Logger* logger)
 {
+  logger_ = logger;
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewer_->setLogger(logger);
