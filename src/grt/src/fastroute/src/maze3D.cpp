@@ -50,17 +50,16 @@ using utl::GRT;
 #define RIGHT(i) 2 * i + 2
 
 // non recursive version of heapify-
-static void heapify3D(int** array, int heapSize, int i)
+static void heapify3D(int** array, const int heapSize, int i)
 {
-  int l, r, smallest;
-  int* tmp;
   bool STOP = false;
 
-  tmp = array[i];
+  int* tmp = array[i];
   do {
-    l = LEFT(i);
-    r = RIGHT(i);
+    const int l = LEFT(i);
+    const int r = RIGHT(i);
 
+    int smallest;
     if (l < heapSize && *(array[l]) < *tmp) {
       smallest = l;
       if (r < heapSize && *(array[r]) < *(array[l]))
@@ -80,14 +79,11 @@ static void heapify3D(int** array, int heapSize, int i)
   } while (!STOP);
 }
 
-static void updateHeap3D(int** array, int arrayLen, int i)
+static void updateHeap3D(int** array, const int arrayLen, int i)
 {
-  int parent;
-  int* tmpi;
-
-  tmpi = array[i];
+  int* tmpi = array[i];
   while (i > 0 && *(array[PARENT(i)]) > *tmpi) {
-    parent = PARENT(i);
+    const int parent = PARENT(i);
     array[i] = array[parent];
     i = parent;
   }
@@ -95,7 +91,7 @@ static void updateHeap3D(int** array, int arrayLen, int i)
 }
 
 // extract the entry with minimum distance from Priority queue
-static void extractMin3D(int** array, int arrayLen)
+static void extractMin3D(int** array, int const arrayLen)
 {
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);

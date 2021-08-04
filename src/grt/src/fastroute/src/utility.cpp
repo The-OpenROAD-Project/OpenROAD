@@ -44,14 +44,10 @@ namespace grt {
 
 using utl::GRT;
 
-void FastRouteCore::printEdge(int netID, int edgeID)
+void FastRouteCore::printEdge(int const netID, int const edgeID)
 {
-  int i;
-  TreeEdge edge;
-  TreeNode* nodes;
-
-  edge = sttrees_[netID].edges[edgeID];
-  nodes = sttrees_[netID].nodes;
+  const TreeEdge edge = sttrees_[netID].edges[edgeID];
+  const TreeNode* nodes = sttrees_[netID].nodes;
 
   logger_->report("edge {}: ({}, {})->({}, {})",
                   edgeID,
@@ -60,7 +56,7 @@ void FastRouteCore::printEdge(int netID, int edgeID)
                   nodes[edge.n2].x,
                   nodes[edge.n2].y);
   std::string routes_rpt;
-  for (i = 0; i <= edge.route.routelen; i++) {
+  for (int i = 0; i <= edge.route.routelen; i++) {
     routes_rpt = routes_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
                  + std::to_string(edge.route.gridsY[i]) + ") ";
   }
@@ -70,23 +66,21 @@ void FastRouteCore::printEdge(int netID, int edgeID)
 void FastRouteCore::ConvertToFull3DType2()
 {
   short tmpX[MAXLEN], tmpY[MAXLEN], tmpL[MAXLEN];
-  int k, netID, edgeID, routeLen;
-  int newCNT, deg, j;
-  TreeEdge *treeedges, *treeedge;
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
-    treeedges = sttrees_[netID].edges;
-    deg = sttrees_[netID].deg;
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    TreeEdge* treeedges = sttrees_[netID].edges;
+    const int deg = sttrees_[netID].deg;
 
-    for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      treeedge = &(treeedges[edgeID]);
+    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+      TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
-        newCNT = 0;
-        routeLen = treeedge->route.routelen;
+        int newCNT = 0;
+        const int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsX = treeedge->route.gridsX;
         const std::vector<short>& gridsY = treeedge->route.gridsY;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
         // finish from n1->real route
+        int j;
         for (j = 0; j < routeLen; j++) {
           tmpX[newCNT] = gridsX[j];
           tmpY[newCNT] = gridsY[j];
@@ -94,14 +88,14 @@ void FastRouteCore::ConvertToFull3DType2()
           newCNT++;
 
           if (gridsL[j] > gridsL[j + 1]) {
-            for (k = gridsL[j]; k > gridsL[j + 1]; k--) {
+            for (int k = gridsL[j]; k > gridsL[j + 1]; k--) {
               tmpX[newCNT] = gridsX[j + 1];
               tmpY[newCNT] = gridsY[j + 1];
               tmpL[newCNT] = k;
               newCNT++;
             }
           } else if (gridsL[j] < gridsL[j + 1]) {
-            for (k = gridsL[j]; k < gridsL[j + 1]; k++) {
+            for (int k = gridsL[j]; k < gridsL[j + 1]; k++) {
               tmpX[newCNT] = gridsX[j + 1];
               tmpY[newCNT] = gridsY[j + 1];
               tmpL[newCNT] = k;
@@ -125,7 +119,7 @@ void FastRouteCore::ConvertToFull3DType2()
         treeedge->route.type = RouteType::MazeRoute;
         treeedge->route.routelen = newCNT - 1;
 
-        for (k = 0; k < newCNT; k++) {
+        for (int k = 0; k < newCNT; k++) {
           treeedge->route.gridsX[k] = tmpX[k];
           treeedge->route.gridsY[k] = tmpY[k];
           treeedge->route.gridsL[k] = tmpL[k];
@@ -135,12 +129,12 @@ void FastRouteCore::ConvertToFull3DType2()
   }
 }
 
-static int comparePVMINX(const OrderNetPin a, const OrderNetPin b)
+static int comparePVMINX(const OrderNetPin& a, const OrderNetPin& b)
 {
   return a.minX < b.minX;
 }
 
-static int comparePVPV(const OrderNetPin a, const OrderNetPin b)
+static int comparePVPV(const OrderNetPin& a, const OrderNetPin& b)
 {
   return a.npv < b.npv;
 }
@@ -1515,8 +1509,10 @@ void FastRouteCore::copyBR(void)
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_[netID].edges[edgeID].len > 0) {
-          const std::vector<short>& gridsX = sttrees_[netID].edges[edgeID].route.gridsX;
-          const std::vector<short>& gridsY = sttrees_[netID].edges[edgeID].route.gridsY;
+          const std::vector<short>& gridsX
+              = sttrees_[netID].edges[edgeID].route.gridsX;
+          const std::vector<short>& gridsY
+              = sttrees_[netID].edges[edgeID].route.gridsY;
           for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
