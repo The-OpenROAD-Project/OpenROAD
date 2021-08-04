@@ -89,6 +89,9 @@ class RoutingTracks
   int getLocation() const { return location_; }
   int getNumTracks() const { return num_tracks_; }
   bool getOrientation() const { return orientation_; }
+
+  const static bool HORIZONTAL = 0;
+  const static bool VERTICAL = 1;
 };
 
 }  // namespace grt

@@ -164,7 +164,7 @@ int Grid::computeTileReduce(const odb::Rect& obs,
                             bool direction)
 {
   int reduce = -1;
-  if (direction == RoutingLayer::VERTICAL) {
+  if (direction == RoutingTracks::VERTICAL) {
     if (obs.xMin() >= tile.xMin() && obs.xMax() <= tile.xMax()) {
       reduce = ceil(std::abs(obs.xMax() - obs.xMin()) / track_space);
     } else if (first) {
