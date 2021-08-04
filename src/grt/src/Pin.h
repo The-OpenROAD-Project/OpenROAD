@@ -91,7 +91,10 @@ class Pin
   bool isPort() const { return is_port_; }
   bool isConnectedToPad() const { return connected_to_pad_; }
   const odb::Point& getOnGridPosition() const { return on_grid_position_; }
-  void setOnGridPosition(odb::Point on_grid_pos) { on_grid_position_ = on_grid_pos; }
+  void setOnGridPosition(odb::Point on_grid_pos)
+  {
+    on_grid_position_ = on_grid_pos;
+  }
   bool isDriver();
 
  private:
