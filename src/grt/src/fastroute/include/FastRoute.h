@@ -255,28 +255,28 @@ class FastRouteCore
                           int edge_C1C2);
 
   // rsmt functions
-  void copyStTree(int ind, Tree rsmt);
-  void gen_brk_RSMT(bool congestionDriven,
-                    bool reRoute,
-                    bool genTree,
-                    bool newType,
-                    bool noADJ);
-  void fluteNormal(int netID,
+  void copyStTree(const int ind, const Tree& rsmt);
+  void gen_brk_RSMT(const bool congestionDriven,
+                    const bool reRoute,
+                    const bool genTree,
+                    const bool newType,
+                    const bool noADJ);
+  void fluteNormal(const int netID,
                    const std::vector<int>& x,
                    const std::vector<int>& y,
-                   int acc,
-                   float coeffV,
+                   const int acc,
+                   const float coeffV,
                    Tree& t);
-  void fluteCongest(int netID,
+  void fluteCongest(const int netID,
                     const std::vector<int>& x,
                     const std::vector<int>& y,
-                    int acc,
-                    float coeffV,
+                    const int acc,
+                    const float coeffV,
                     Tree& t);
-  float coeffADJ(int netID);
-  bool HTreeSuite(int netID);
-  bool VTreeSuite(int netID);
-  bool netCongestion(int netID);
+  float coeffADJ(const int netID);
+  bool HTreeSuite(const int netID);
+  bool VTreeSuite(const int netID);
+  bool netCongestion(const int netID);
 
   // route functions
   // old functions for segment list data structure
@@ -301,37 +301,37 @@ class FastRouteCore
   void routeLVEnew(int netID, int edgeID, int threshold, int enlarge);
 
   // ripup functions
-  void ripupSegL(Segment* seg);
-  void ripupSegZ(Segment* seg);
-  void newRipup(TreeEdge* treeedge,
-                TreeNode* treenodes,
-                int x1,
-                int y1,
-                int x2,
-                int y2,
-                int netID);
-  bool newRipupCheck(TreeEdge* treeedge,
-                     int x1,
-                     int y1,
-                     int x2,
-                     int y2,
-                     int ripup_threshold,
-                     int netID,
-                     int edgeID);
+  void ripupSegL(const Segment* seg);
+  void ripupSegZ(const Segment* seg);
+  void newRipup(const TreeEdge* treeedge,
+                const TreeNode* treenodes,
+                const int x1,
+                const int y1,
+                const int x2,
+                const int y2,
+                const int netID);
+  bool newRipupCheck(const TreeEdge* treeedge,
+                     const int x1,
+                     const int y1,
+                     const int x2,
+                     const int y2,
+                     const int ripup_threshold,
+                     const int netID,
+                     const int edgeID);
 
-  bool newRipupType2(TreeEdge* treeedge,
+  bool newRipupType2(const TreeEdge* treeedge,
                      TreeNode* treenodes,
-                     int x1,
-                     int y1,
-                     int x2,
-                     int y2,
-                     int deg,
-                     int netID);
-  bool newRipup3DType3(int netID, int edgeID);
-  void newRipupNet(int netID);
+                     const int x1,
+                     const int y1,
+                     const int x2,
+                     const int y2,
+                     const int deg,
+                     const int netID);
+  bool newRipup3DType3(const int netID, const int edgeID);
+  void newRipupNet(const int netID);
 
   // utility functions
-  void printEdge(int netID, int edgeID);
+  void printEdge(const int netID, const int edgeID);
   void ConvertToFull3DType2();
   void fillVIA();
   int threeDVIA();
