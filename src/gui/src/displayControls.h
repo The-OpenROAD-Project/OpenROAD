@@ -91,7 +91,9 @@ class DisplayColorDialog : public QDialog
   Q_OBJECT
  public:
   DisplayColorDialog(QColor color,
-                     Qt::BrushStyle pattern = Qt::SolidPattern,
+                     Qt::BrushStyle pattern,
+                     QWidget* parent = nullptr);
+  DisplayColorDialog(QColor color,
                      QWidget* parent = nullptr);
   ~DisplayColorDialog();
 
@@ -105,6 +107,7 @@ class DisplayColorDialog : public QDialog
  private:
   QColor color_;
   Qt::BrushStyle pattern_;
+  bool show_brush_;
 
   QGroupBox* pattern_group_box_;
   QGridLayout* grid_layout_;
@@ -149,6 +152,7 @@ class DisplayControls : public QDockWidget, public Options
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
   QColor placementBlockageColor() override;
   Qt::BrushStyle placementBlockagePattern() override;
+  QColor instanceNameColor() override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
@@ -317,6 +321,8 @@ class DisplayControls : public QDockWidget, public Options
 
   QColor placement_blockage_color_;
   Qt::BrushStyle placement_blockage_pattern_;
+
+  QColor instance_name_color_;
 
   CongestionSetupDialog* congestion_dialog_;
 };

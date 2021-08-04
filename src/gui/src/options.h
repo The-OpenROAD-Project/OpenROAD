@@ -52,6 +52,7 @@ class Options
   virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
   virtual QColor placementBlockageColor() = 0;
   virtual Qt::BrushStyle placementBlockagePattern() = 0;
+  virtual QColor instanceNameColor() = 0;
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
   virtual bool isNetVisible(odb::dbNet* net) = 0;

@@ -73,7 +73,14 @@ void PatternButton::paintEvent(QPaintEvent* event)
 DisplayColorDialog::DisplayColorDialog(QColor color,
                                        Qt::BrushStyle pattern,
                                        QWidget* parent)
-    : QDialog(parent), color_(color), pattern_(pattern)
+    : QDialog(parent), color_(color), pattern_(pattern), show_brush_(true)
+{
+  buildUI();
+}
+
+DisplayColorDialog::DisplayColorDialog(QColor color,
+                                       QWidget* parent)
+    : QDialog(parent), color_(color), pattern_(Qt::SolidPattern), show_brush_(false)
 {
   buildUI();
 }
@@ -85,33 +92,38 @@ void DisplayColorDialog::buildUI()
   color_dialog_->setOption(QColorDialog::ShowAlphaChannel);
   color_dialog_->setWindowFlags(Qt::Widget);
   color_dialog_->setCurrentColor(color_);
-  pattern_group_box_ = new QGroupBox("Layer Pattern");
-  grid_layout_ = new QGridLayout();
-
-  grid_layout_->setColumnStretch(2, 4);
-
-  int row_index = 0;
-  for (auto& pattern_group : DisplayColorDialog::brush_patterns_) {
-    int col_index = 0;
-    for (auto pattern : pattern_group) {
-      PatternButton* pattern_button = new PatternButton(pattern);
-      pattern_buttons_.push_back(pattern_button);
-      if (pattern == pattern_)
-        pattern_button->setChecked(true);
-      else
-        pattern_button->setChecked(false);
-      grid_layout_->addWidget(pattern_button, row_index, col_index);
-      ++col_index;
-    }
-    ++row_index;
-  }
-  pattern_group_box_->setLayout(grid_layout_);
-  connect(color_dialog_, SIGNAL(accepted()), this, SLOT(acceptDialog()));
-  connect(color_dialog_, SIGNAL(rejected()), this, SLOT(rejectDialog()));
 
   main_layout_ = new QVBoxLayout();
-  main_layout_->addWidget(pattern_group_box_);
+
+  if (show_brush_) {
+    pattern_group_box_ = new QGroupBox("Layer Pattern");
+    grid_layout_ = new QGridLayout();
+
+    grid_layout_->setColumnStretch(2, 4);
+
+    int row_index = 0;
+    for (auto& pattern_group : DisplayColorDialog::brush_patterns_) {
+      int col_index = 0;
+      for (auto pattern : pattern_group) {
+        PatternButton* pattern_button = new PatternButton(pattern);
+        pattern_buttons_.push_back(pattern_button);
+        if (pattern == pattern_)
+          pattern_button->setChecked(true);
+        else
+          pattern_button->setChecked(false);
+        grid_layout_->addWidget(pattern_button, row_index, col_index);
+        ++col_index;
+      }
+      ++row_index;
+    }
+    pattern_group_box_->setLayout(grid_layout_);
+    main_layout_->addWidget(pattern_group_box_);
+  }
+
   main_layout_->addWidget(color_dialog_);
+
+  connect(color_dialog_, SIGNAL(accepted()), this, SLOT(acceptDialog()));
+  connect(color_dialog_, SIGNAL(rejected()), this, SLOT(rejectDialog()));
 
   setLayout(main_layout_);
   setWindowTitle("Layer Config");
@@ -231,7 +243,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
-  makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked);
+  instance_name_color_ = Qt::yellow;
+
+  makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
@@ -335,6 +349,8 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("misc");
   readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.fills);
+  instance_name_color_ = settings->value("instance_name_color", instance_name_color_).value<QColor>();
+  misc_.instance_names.swatch->setIcon(makeSwatchIcon(instance_name_color_));
   settings->endGroup();
 
   settings->endGroup();
@@ -388,6 +404,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->beginGroup("misc");
   writeSettingsForRow(settings, misc_.instance_names);
   writeSettingsForRow(settings, misc_.fills);
+  settings->setValue("instance_name_color", instance_name_color_);
   settings->endGroup();
 
   settings->endGroup();
@@ -494,6 +511,8 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (color_item == blockages_.blockages.swatch) {
       item_color = &placement_blockage_color_;
       item_pattern = &placement_blockage_pattern_;
+    } else if (color_item == misc_.instance_names.swatch) {
+      item_color = &instance_name_color_;
     } else {
       QVariant tech_layer_data = color_item->data(Qt::UserRole);
       if (!tech_layer_data.isValid()) {
@@ -509,13 +528,19 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       has_sibling = true;
     }
 
-    if (item_color == nullptr || item_pattern == nullptr) {
+    if (item_color == nullptr) {
       return;
     }
 
-    DisplayColorDialog display_dialog(*item_color, *item_pattern);
-    display_dialog.exec();
-    QColor chosen_color = display_dialog.getSelectedColor();
+
+    std::unique_ptr<DisplayColorDialog> display_dialog;
+    if (item_pattern != nullptr) {
+      display_dialog = std::make_unique<DisplayColorDialog>(*item_color, *item_pattern);
+    } else {
+      display_dialog = std::make_unique<DisplayColorDialog>(*item_color);
+    }
+    display_dialog->exec();
+    QColor chosen_color = display_dialog->getSelectedColor();
     if (chosen_color.isValid()) {
       color_item->setIcon(makeSwatchIcon(chosen_color));
 
@@ -528,7 +553,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
         }
       }
       *item_color = chosen_color;
-      *item_pattern = display_dialog.getSelectedPattern();
+      if (item_pattern != nullptr) {
+        *item_pattern = display_dialog->getSelectedPattern();
+      }
       view_->repaint();
       emit changed();
     }
@@ -700,6 +727,11 @@ QColor DisplayControls::placementBlockageColor()
 Qt::BrushStyle DisplayControls::placementBlockagePattern()
 {
   return placement_blockage_pattern_;
+}
+
+QColor DisplayControls::instanceNameColor()
+{
+  return instance_name_color_;
 }
 
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)

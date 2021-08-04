@@ -1075,8 +1075,9 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   int minimum_height = 5 * minimumViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
-  painter->setPen(QPen(Qt::yellow, 0));
-  painter->setBrush(QBrush(Qt::yellow));
+  const QColor text_color = options_->instanceNameColor();
+  painter->setPen(QPen(text_color, 0));
+  painter->setBrush(QBrush(text_color));
 
   const QFont initial_font = painter->font();
 
