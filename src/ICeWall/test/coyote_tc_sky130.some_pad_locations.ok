@@ -1,0 +1,80 @@
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130io_fill.lef
+[INFO ODB-0225]     Created 2 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
+Loading library IO cell meta-data
+Loaded library IO cell data
+[INFO IFP-0001] Added 1265 rows of 10416 sites.
+[WARNING PAD-0050] Multiple nets found on AMUXBUS_A in padring.
+[WARNING PAD-0050] Multiple nets found on AMUXBUS_B in padring.
+[INFO PAD-0053] Creating padring nets: VSSIO, VSSA, VDDIO_Q, VCCD, VSSD, VSSIO_Q, AMUXBUS_A, AMUXBUS_B, VDDIO, VDDA, VCCHIB, VSWITCH.
+No differences found.
