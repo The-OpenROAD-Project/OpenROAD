@@ -513,14 +513,22 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
   odb::Rect rect;
   obs->getBBox()->getBox(rect);
   double dbuPerUU = obs->getBlock()->getDbUnitsPerMicron();
-  return Properties({{"Instance", inst_value},
-                     {"Layer", obs->getBBox()->getTechLayer()->getName()},
-                     {"X", rect.xMin() / dbuPerUU},
-                     {"Y", rect.yMin() / dbuPerUU},
-                     {"Width", rect.dx() / dbuPerUU},
-                     {"Height", rect.dy() / dbuPerUU},
-                     {"Slot", obs->isSlotObstruction()},
-                     {"Fill", obs->isFillObstruction()}});
+  Properties props({{"Instance", inst_value},
+                    {"Layer", obs->getBBox()->getTechLayer()->getName()},
+                    {"X", rect.xMin() / dbuPerUU},
+                    {"Y", rect.yMin() / dbuPerUU},
+                    {"Width", rect.dx() / dbuPerUU},
+                    {"Height", rect.dy() / dbuPerUU},
+                    {"Slot", obs->isSlotObstruction()},
+                    {"Fill", obs->isFillObstruction()}});
+  if (obs->hasEffectiveWidth()) {
+    props.push_back({"Effective width", obs->getEffectiveWidth() / dbuPerUU});
+  }
+
+  if (obs->hasMinSpacing()) {
+    props.push_back({"Min spacing", obs->getMinSpacing() / dbuPerUU});
+  }
+return props;
 }
 
 Selected DbObstructionDescriptor::makeSelected(std::any object,
