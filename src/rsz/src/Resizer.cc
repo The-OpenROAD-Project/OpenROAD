@@ -2950,7 +2950,10 @@ int
 Resizer::findMaxSteinerDist(SteinerTree *tree)
 {
   SteinerPt drvr_pt = tree->drvrPt(network_);
-  return findMaxSteinerDist(tree, drvr_pt, 0);
+  if (drvr_pt == SteinerTree::null_pt)
+    return 0;
+  else
+    return findMaxSteinerDist(tree, drvr_pt, 0);
 }
 
 // DFS of steiner tree.
