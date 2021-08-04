@@ -37,11 +37,22 @@ void frLayer::printAllConstraints(utl::Logger* logger)
       c->report(logger);
     }
   }
-  for (auto& constraint : lef58CutSpacingTableConstraints) {
+  for (auto& constraint : lef58CutSpacingTableSameNetConstraints) {
     if (auto c = constraint.lock()) {
       c->report(logger);
     }
   }
+  for (auto& constraint : lef58CutSpacingTableDiffNetConstraints) {
+    if (auto c = constraint.lock()) {
+      c->report(logger);
+    }
+  }
+  if (lef58SameNetCutSpacingTableConstraint)
+    lef58SameNetCutSpacingTableConstraint->report(logger);
+  if (lef58SameMetalCutSpacingTableConstraint)
+    lef58SameMetalCutSpacingTableConstraint->report(logger);
+  if (lef58DefaultCutSpacingTableConstraint)
+    lef58DefaultCutSpacingTableConstraint->report(logger);
   for (auto& constraint : lef58SpacingEndOfLineConstraints) {
     if (auto c = constraint.lock()) {
       c->report(logger);

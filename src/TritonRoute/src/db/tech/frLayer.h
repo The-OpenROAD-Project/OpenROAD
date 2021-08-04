@@ -77,7 +77,10 @@ class frLayer
         minWidthConstraint(nullptr),
         minimumcutConstraints(),
         lef58RectOnlyConstraint(nullptr),
-        lef58RightWayOnGridOnlyConstraint(nullptr)
+        lef58RightWayOnGridOnlyConstraint(nullptr),
+        lef58SameNetCutSpacingTableConstraint(nullptr),
+        lef58SameMetalCutSpacingTableConstraint(nullptr),
+        lef58DefaultCutSpacingTableConstraint(nullptr)
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
@@ -220,22 +223,35 @@ class frLayer
 
   // cut spacing table
   void addLef58CutSpacingTableConstraint(
-      std::shared_ptr<frLef58CutSpacingTableConstraint> con)
+      std::shared_ptr<frLef58CutSpacingTableConstraint> con,
+      bool samenet = true)
   {
-    lef58CutSpacingTableConstraints.push_back(con);
+    if (samenet)
+      lef58CutSpacingTableSameNetConstraints.push_back(con);
+    else
+      lef58CutSpacingTableDiffNetConstraints.push_back(con);
   }
-  bool hasLef58CutSpacingTableConstraints() const
+  bool hasLef58CutSpacingTableConstraints(bool samenet = true) const
   {
-    return (lef58CutSpacingTableConstraints.size()) ? true : false;
+    if (samenet)
+      return (lef58CutSpacingTableSameNetConstraints.size()) ? true : false;
+    else
+      return (lef58CutSpacingTableDiffNetConstraints.size()) ? true : false;
   }
   frCollection<std::shared_ptr<frLef58CutSpacingTableConstraint>>
-  getLef58CutSpacingTableConstraints() const
+  getLef58CutSpacingTableConstraints(bool samenet = true) const
   {
     frCollection<std::shared_ptr<frLef58CutSpacingTableConstraint>> sol;
-    std::transform(lef58CutSpacingTableConstraints.begin(),
-                   lef58CutSpacingTableConstraints.end(),
-                   std::back_inserter(sol),
-                   [](auto& kv) { return kv.lock(); });
+    if (samenet)
+      std::transform(lef58CutSpacingTableSameNetConstraints.begin(),
+                     lef58CutSpacingTableSameNetConstraints.end(),
+                     std::back_inserter(sol),
+                     [](auto& kv) { return kv.lock(); });
+    else
+      std::transform(lef58CutSpacingTableDiffNetConstraints.begin(),
+                     lef58CutSpacingTableDiffNetConstraints.end(),
+                     std::back_inserter(sol),
+                     [](auto& kv) { return kv.lock(); });
     return sol;
   }
   // spacing end of line
@@ -564,6 +580,57 @@ class frLayer
     return (!lef58EolKeepOutConstraints.empty());
   }
 
+  void setLef58SameNetInterCutSpcTblConstraint(
+      frLef58CutSpacingTableConstraint* con)
+  {
+    lef58SameNetCutSpacingTableConstraint = con;
+  }
+
+  bool hasLef58SameNetInterCutSpcTblConstraint() const
+  {
+    return lef58SameNetCutSpacingTableConstraint != nullptr;
+  }
+
+  frLef58CutSpacingTableConstraint* getLef58SameNetInterCutSpcTblConstraint()
+      const
+  {
+    return lef58SameNetCutSpacingTableConstraint;
+  }
+
+  void setLef58SameMetalInterCutSpcTblConstraint(
+      frLef58CutSpacingTableConstraint* con)
+  {
+    lef58SameMetalCutSpacingTableConstraint = con;
+  }
+
+  bool hasLef58SameMetalInterCutSpcTblConstraint() const
+  {
+    return lef58SameMetalCutSpacingTableConstraint != nullptr;
+  }
+
+  frLef58CutSpacingTableConstraint* getLef58SameMetalInterCutSpcTblConstraint()
+      const
+  {
+    return lef58SameMetalCutSpacingTableConstraint;
+  }
+
+  void setLef58DefaultInterCutSpcTblConstraint(
+      frLef58CutSpacingTableConstraint* con)
+  {
+    lef58DefaultCutSpacingTableConstraint = con;
+  }
+
+  bool hasLef58DefaultInterCutSpcTblConstraint() const
+  {
+    return lef58DefaultCutSpacingTableConstraint != nullptr;
+  }
+
+  frLef58CutSpacingTableConstraint* getLef58DefaultInterCutSpcTblConstraint()
+      const
+  {
+    return lef58DefaultCutSpacingTableConstraint;
+  }
+
   void printAllConstraints(utl::Logger* logger);
 
  protected:
@@ -581,7 +648,10 @@ class frLayer
   std::map<std::string, int> name2CutClassIdxMap;
   frCollection<std::weak_ptr<frConstraint>> constraints;
   frCollection<std::weak_ptr<frLef58CutSpacingTableConstraint>>
-      lef58CutSpacingTableConstraints;
+      lef58CutSpacingTableSameNetConstraints;
+  frCollection<std::weak_ptr<frLef58CutSpacingTableConstraint>>
+      lef58CutSpacingTableDiffNetConstraints;
+
   frCollection<std::weak_ptr<frLef58SpacingEndOfLineConstraint>>
       lef58SpacingEndOfLineConstraints;
 
@@ -618,6 +688,11 @@ class frLayer
   std::vector<frMinimumcutConstraint*> minimumcutConstraints;
   frLef58RectOnlyConstraint* lef58RectOnlyConstraint;
   frLef58RightWayOnGridOnlyConstraint* lef58RightWayOnGridOnlyConstraint;
+
+  frLef58CutSpacingTableConstraint* lef58SameNetCutSpacingTableConstraint;
+  frLef58CutSpacingTableConstraint* lef58SameMetalCutSpacingTableConstraint;
+  frLef58CutSpacingTableConstraint* lef58DefaultCutSpacingTableConstraint;
+
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
 };

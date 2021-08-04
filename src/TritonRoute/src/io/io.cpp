@@ -1313,7 +1313,18 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     if (rule->isLayerValid() && tmpLayer->getLayerNum() == 1)
       continue;
     auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
-    tmpLayer->addLef58CutSpacingTableConstraint(con);
+    if (rule->isLayerValid()) {
+      if (rule->isSameMetal()) {
+        tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
+      } else if (rule->isSameNet()) {
+        tmpLayer->setLef58SameNetInterCutSpcTblConstraint(con.get());
+      } else {
+        tmpLayer->setLef58DefaultInterCutSpcTblConstraint(con.get());
+      }
+    } else if (rule->isSameNet() || rule->isSameMetal())
+      tmpLayer->addLef58CutSpacingTableConstraint(con, true);
+    else
+      tmpLayer->addLef58CutSpacingTableConstraint(con, false);
     tech->addConstraint(con);
   }
 }

@@ -1404,6 +1404,100 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   }
 }
 
+bool checkLef58CutSpacingViol(const frBox& box1,
+                              const frBox& box2,
+                              frString cutClass1,
+                              frString cutClass2,
+                              frCoord prl,
+                              frSquaredDistance distSquare,
+                              frSquaredDistance c2cSquare,
+                              bool isCurrDirY,
+                              odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+{
+  frSquaredDistance currDistSquare, reqDistSquare;
+  bool isSide1, isSide2;
+  if (isCurrDirY) {
+    isSide1 = (box1.right() - box1.left()) > (box1.top() - box1.bottom());
+    isSide2 = (box2.right() - box2.left()) > (box2.top() - box2.bottom());
+  } else {
+    isSide1 = (box1.right() - box1.left()) < (box1.top() - box1.bottom());
+    isSide2 = (box2.right() - box2.left()) < (box2.top() - box2.bottom());
+  }
+  auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
+  if (dbRule->isCenterAndEdge(cutClass1, cutClass2) && dbRule->isNoPrl()) {
+    reqDistSquare
+        = dbRule->getSpacing(cutClass1,
+                             isSide1,
+                             cutClass2,
+                             isSide2,
+                             odb::dbTechLayerCutSpacingTableDefRule::MAX);
+    reqDistSquare *= reqDistSquare;
+    if (c2cSquare < reqDistSquare)
+      return true;
+
+    reqDistSquare
+        = dbRule->getSpacing(cutClass1,
+                             isSide1,
+                             cutClass2,
+                             isSide2,
+                             odb::dbTechLayerCutSpacingTableDefRule::MIN);
+    reqDistSquare *= reqDistSquare;
+    if (distSquare < reqDistSquare)
+      return true;
+    return false;
+  }
+  if (cutClass1 == cutClass2 && box1.width() == box1.length()) {
+    bool exactlyAligned = false;
+    if (box2.left() == box1.left() && box2.right() == box1.right()
+        && !dbRule->isHorizontal())
+      exactlyAligned = true;
+    else if (box2.bottom() == box1.bottom() && box2.top() == box1.top()
+             && !dbRule->isVertical())
+      exactlyAligned = true;
+
+    auto exAlSpc = dbRule->getExactAlignedSpacing(cutClass1);
+    if (exactlyAligned && exAlSpc != -1) {
+      reqDistSquare = (frSquaredDistance) exAlSpc * exAlSpc;
+      if (distSquare < reqDistSquare) {
+        return true;
+      }
+    }
+  }
+  if (prl > reqPrl)
+    reqDistSquare
+        = dbRule->getSpacing(cutClass1,
+                             isSide1,
+                             cutClass2,
+                             isSide2,
+                             odb::dbTechLayerCutSpacingTableDefRule::SECOND);
+  else
+    reqDistSquare
+        = dbRule->getSpacing(cutClass1,
+                             isSide1,
+                             cutClass2,
+                             isSide2,
+                             odb::dbTechLayerCutSpacingTableDefRule::FIRST);
+
+  if (dbRule->isCenterToCenter(cutClass1, cutClass2))
+    currDistSquare = c2cSquare;
+  else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
+           && (frCoord) reqDistSquare
+                  == dbRule->getSpacing(
+                      cutClass1,
+                      isSide1,
+                      cutClass2,
+                      isSide2,
+                      odb::dbTechLayerCutSpacingTableDefRule::MAX))
+    currDistSquare = c2cSquare;
+  else
+    currDistSquare = distSquare;
+
+  reqDistSquare *= reqDistSquare;
+  if (currDistSquare < reqDistSquare)
+    return true;
+  return false;
+}
+
 /*inline*/ void FlexDRWorker::modCutSpacingCost(const frBox& box,
                                                 frMIdx z,
                                                 int type,
@@ -1412,7 +1506,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
   if (!cutLayer->hasCutSpacing()
-      && cutLayer->getLef58CutSpacingTableConstraints().empty()) {
+      && !cutLayer->hasLef58CutSpacingTableConstraints(true)
+      && !cutLayer->hasLef58CutSpacingTableConstraints(false)) {
     return;
   }
   // obj1 = curr obj
@@ -1423,6 +1518,16 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frBox viaBox(0, 0, 0, 0);
   via.getCutBBox(viaBox);
 
+  frString cutClass1 = "";
+  frString cutClass2 = "";
+  int cutClassIdx1, cutClassIdx2;
+  cutClassIdx1 = cutLayer->getCutClassIdx(box.width(), box.length());
+  cutClassIdx2 = cutLayer->getCutClassIdx(viaBox.width(), viaBox.length());
+  if (cutClassIdx1 != -1)
+    cutClass1 = cutLayer->getCutClass(cutClassIdx1)->getName();
+  if (cutClassIdx2 != -1)
+    cutClass2 = cutLayer->getCutClass(cutClassIdx2)->getName();
+
   // spacing value needed
   frCoord bloatDist = 0;
   for (auto con : cutLayer->getCutSpacing()) {
@@ -1431,23 +1536,15 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       bloatDist = max(bloatDist, con->getCutWithin());
     }
   }
-  frString cutClass1 = "";
-  frString cutClass2 = "";
-  if (!cutLayer->getLef58CutSpacingTableConstraints().empty()) {
-    int cutClassIdx1, cutClassIdx2;
-    cutClassIdx1 = cutLayer->getCutClassIdx(box.width(), box.length());
-    cutClassIdx2 = cutLayer->getCutClassIdx(viaBox.width(), viaBox.length());
-    if (cutClassIdx1 != -1)
-      cutClass1 = cutLayer->getCutClass(cutClassIdx1)->getName();
-    if (cutClassIdx2 != -1)
-      cutClass2 = cutLayer->getCutClass(cutClassIdx2)->getName();
-    for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
+  auto lef58cons = cutLayer->hasLef58CutSpacingTableConstraints(false)
+                       ? cutLayer->getLef58CutSpacingTableConstraints(false)
+                       : cutLayer->getLef58CutSpacingTableConstraints(true);
+  for (auto con : lef58cons) {
+    bloatDist = max(bloatDist,
+                    con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+    if (cutClass1 == cutClass2)
       bloatDist = max(bloatDist,
-                      con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
-      if (cutClass1 == cutClass2)
-        bloatDist = max(bloatDist,
-                        con->getODBRule()->getExactAlignedSpacing(cutClass1));
-    }
+                      con->getODBRule()->getExactAlignedSpacing(cutClass1));
   }
 
   FlexMazeIdx mIdx1;
@@ -1522,82 +1619,35 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             break;
         }
         if (!hasViol) {
-          for (auto con : cutLayer->getLef58CutSpacingTableConstraints()) {
+          for (auto con : lef58cons) {
             auto dbRule = con->getODBRule();
-            if (dbRule->isLayerValid())
-              continue;
-            auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
-            if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                && dbRule->isNoPrl()) {
-              reqDistSquare = dbRule->getSpacing(
-                  cutClass1,
-                  false,
-                  cutClass2,
-                  false,
-                  odb::dbTechLayerCutSpacingTableDefRule::MAX);
-              reqDistSquare *= reqDistSquare;
-              if (c2cSquare < reqDistSquare) {
-                reqDistSquare = dbRule->getSpacing(
-                    cutClass1,
-                    false,
-                    cutClass2,
-                    false,
-                    odb::dbTechLayerCutSpacingTableDefRule::MIN);
-                reqDistSquare *= reqDistSquare;
-                if (distSquare < reqDistSquare)
-                  hasViol = true;
-              }
-            } else {
-              if (cutClass1 == cutClass2 && box.width() == box.length()) {
-                bool exactlyAligned = false;
-                if (tmpBx.left() == box.left() && tmpBx.right() == box.right()
-                    && !dbRule->isHorizontal())
-                  exactlyAligned = true;
-                else if (tmpBx.bottom() == box.bottom()
-                         && tmpBx.top() == box.top() && !dbRule->isVertical())
-                  exactlyAligned = true;
-
-                auto exAlSpc = dbRule->getExactAlignedSpacing(cutClass1);
-                if (exactlyAligned && exAlSpc != -1) {
-                  reqDistSquare = (frSquaredDistance) exAlSpc * exAlSpc;
-                  if (distSquare < reqDistSquare) {
-                    hasViol = true;
-                    break;
-                  }
-                }
-              }
-              if (prl > reqPrl)
-                reqDistSquare = dbRule->getSpacing(
-                    cutClass1,
-                    false,
-                    cutClass2,
-                    false,
-                    odb::dbTechLayerCutSpacingTableDefRule::SECOND);
-              else
-                reqDistSquare = dbRule->getSpacing(
-                    cutClass1,
-                    false,
-                    cutClass2,
-                    false,
-                    odb::dbTechLayerCutSpacingTableDefRule::FIRST);
-
-              if (dbRule->isCenterToCenter(cutClass1, cutClass2))
-                currDistSquare = c2cSquare;
-              else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                       && (frCoord) reqDistSquare
-                              == dbRule->getSpacing(
-                                  cutClass1,
-                                  false,
-                                  cutClass2,
-                                  false,
-                                  odb::dbTechLayerCutSpacingTableDefRule::MAX))
-                currDistSquare = c2cSquare;
-              else
-                currDistSquare = distSquare;
-
-              reqDistSquare *= reqDistSquare;
-              if (currDistSquare < reqDistSquare)
-                hasViol = true;
+            bool checkVertical
+                = (tmpBx.bottom() > box.top()) || (tmpBx.top() < box.bottom());
+            bool checkHorizontal
+                = (tmpBx.left() > box.right()) || (tmpBx.right() < box.left());
+            if (!checkHorizontal && !checkVertical)
+              hasViol = true;
+            else {
+              if (checkVertical)
+                hasViol = checkLef58CutSpacingViol(box,
+                                                   tmpBx,
+                                                   cutClass1,
+                                                   cutClass2,
+                                                   prl,
+                                                   distSquare,
+                                                   c2cSquare,
+                                                   true,
+                                                   dbRule);
+              if (!hasViol && checkHorizontal)
+                hasViol = checkLef58CutSpacingViol(box,
+                                                   tmpBx,
+                                                   cutClass1,
+                                                   cutClass2,
+                                                   prl,
+                                                   distSquare,
+                                                   c2cSquare,
+                                                   false,
+                                                   dbRule);
             }
             if (hasViol)
               break;
@@ -1766,7 +1816,18 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
     lowerLayer = getTech()->getLayer(cutLayerNum2);
     higherLayer = getTech()->getLayer(cutLayerNum1);
   }
-  if (higherLayer->getLef58CutSpacingTableConstraints().empty())
+  frLef58CutSpacingTableConstraint* con;
+  if (higherLayer->hasLef58DefaultInterCutSpcTblConstraint())
+    con = higherLayer->getLef58DefaultInterCutSpcTblConstraint();
+  else if (higherLayer->hasLef58SameNetInterCutSpcTblConstraint())
+    con = higherLayer->getLef58SameNetInterCutSpcTblConstraint();
+  else if (higherLayer->hasLef58SameMetalInterCutSpcTblConstraint())
+    con = higherLayer->getLef58SameMetalInterCutSpcTblConstraint();
+  else
+    return;
+
+  auto dbRule = con->getODBRule();
+  if (dbRule->getSecondLayer()->getName() != lowerLayer->getName())
     return;
   // obj1 = curr obj
   // obj2 = other obj
@@ -1794,13 +1855,8 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
     cutClass1 = higherLayer->getCutClass(cutClassIdx1)->getName();
   if (cutClassIdx2 != -1)
     cutClass2 = lowerLayer->getCutClass(cutClassIdx2)->getName();
-  for (auto con : higherLayer->getLef58CutSpacingTableConstraints()) {
-    if (con->getODBRule()->isLayerValid())
-      if (con->getODBRule()->getSecondLayer()->getName()
-          == lowerLayer->getName())
-        bloatDist = std::max(
-            bloatDist, con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
-  }
+
+  bloatDist = dbRule->getMaxSpacing(cutClass1, cutClass2);
   if (bloatDist == 0)
     return;
   // assumes width always > 2
@@ -1816,10 +1872,8 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   frSquaredDistance c2cSquare = 0;
   frCoord dx, dy, prl;
   frTransform xform;
-  frSquaredDistance reqDistSquare = 0;
   frPoint boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
-  frSquaredDistance currDistSquare = 0;
   bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
@@ -1835,71 +1889,31 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
         hasViol = false;
-        for (auto con : higherLayer->getLef58CutSpacingTableConstraints()) {
-          auto dbRule = con->getODBRule();
-          if (!dbRule->isLayerValid())
-            continue;
-          if (dbRule->getSecondLayer()->getName() != lowerLayer->getName())
-            continue;
-          auto reqPrl = dbRule->getPrlEntry(cutClass1, cutClass2);
-          if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-              && dbRule->isNoPrl()) {
-            reqDistSquare = dbRule->getSpacing(
-                cutClass1,
-                false,
-                cutClass2,
-                false,
-                odb::dbTechLayerCutSpacingTableDefRule::MAX);
-            reqDistSquare *= reqDistSquare;
-            if (c2cSquare < reqDistSquare) {
-              reqDistSquare = dbRule->getSpacing(
-                  cutClass1,
-                  false,
-                  cutClass2,
-                  false,
-                  odb::dbTechLayerCutSpacingTableDefRule::MIN);
-              reqDistSquare *= reqDistSquare;
-              if (distSquare < reqDistSquare)
-                hasViol = true;
-            }
-          } else {
-            frCoord reqDist;
-            if (prl > reqPrl)
-              reqDist = dbRule->getSpacing(
-                  cutClass1,
-                  false,
-                  cutClass2,
-                  false,
-                  odb::dbTechLayerCutSpacingTableDefRule::SECOND);
-            else
-              reqDist = dbRule->getSpacing(
-                  cutClass1,
-                  false,
-                  cutClass2,
-                  false,
-                  odb::dbTechLayerCutSpacingTableDefRule::FIRST);
 
-            if (dbRule->isCenterToCenter(cutClass1, cutClass2))
-              currDistSquare = c2cSquare;
-            else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)
-                     && reqDist
-                            == dbRule->getSpacing(
-                                cutClass1,
-                                false,
-                                cutClass2,
-                                false,
-                                odb::dbTechLayerCutSpacingTableDefRule::MAX))
-              currDistSquare = c2cSquare;
-            else
-              currDistSquare = distSquare;
-
-            reqDistSquare = (frSquaredDistance) reqDist * reqDist;
-            if (currDistSquare < reqDistSquare)
-              hasViol = true;
-          }
-          if (hasViol)
-            break;
-        }
+        bool checkVertical
+            = (tmpBx.bottom() > box.top()) || (tmpBx.top() < box.bottom());
+        bool checkHorizontal
+            = (tmpBx.left() > box.right()) || (tmpBx.right() < box.left());
+        if (checkVertical)
+          hasViol = checkLef58CutSpacingViol(box,
+                                             tmpBx,
+                                             cutClass1,
+                                             cutClass2,
+                                             prl,
+                                             distSquare,
+                                             c2cSquare,
+                                             true,
+                                             dbRule);
+        if (!hasViol && checkHorizontal)
+          hasViol = checkLef58CutSpacingViol(box,
+                                             tmpBx,
+                                             cutClass1,
+                                             cutClass2,
+                                             prl,
+                                             distSquare,
+                                             c2cSquare,
+                                             false,
+                                             dbRule);
         if (hasViol) {
           switch (type) {
             case 0:

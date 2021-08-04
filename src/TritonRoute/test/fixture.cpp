@@ -499,7 +499,18 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
 {
   auto con = make_shared<frLef58CutSpacingTableConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
-  layer->addLef58CutSpacingTableConstraint(con);
+  if (dbRule->isLayerValid()) {
+    if (dbRule->isSameMetal()) {
+      layer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
+    } else if (dbRule->isSameNet()) {
+      layer->setLef58SameNetInterCutSpcTblConstraint(con.get());
+    } else {
+      layer->setLef58DefaultInterCutSpcTblConstraint(con.get());
+    }
+  } else if (dbRule->isSameNet() || dbRule->isSameMetal())
+    layer->addLef58CutSpacingTableConstraint(con, true);
+  else
+    layer->addLef58CutSpacingTableConstraint(con, false);
   design->getTech()->addConstraint(con);
 }
 

@@ -389,6 +389,8 @@ class FlexGCWorker::Impl
       std::string cutClass2,
       frCoord& prl,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  bool checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1, gcRect* viaRect2);
+  bool checkLef58CutSpacingTbl_stacked(gcRect* viaRect1, gcRect* viaRect2);
   void checkLef58CutSpacingTbl_main(gcRect* viaRect1,
                                     gcRect* viaRect2,
                                     frLef58CutSpacingTableConstraint* con);

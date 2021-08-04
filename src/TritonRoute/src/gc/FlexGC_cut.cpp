@@ -182,24 +182,80 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
   }
   return false;
 }
+
+bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1,
+                                                           gcRect* viaRect2)
+{
+  box_t qb(point_t(gtl::xl(*viaRect1), gtl::yl(*viaRect1)),
+           point_t(gtl::xh(*viaRect1), gtl::yh(*viaRect1)));
+  vector<rq_box_value_t<gcRect*>> results;
+  auto& workerRegionQuery = getWorkerRegionQuery();
+  workerRegionQuery.queryMaxRectangle(qb, viaRect1->getLayerNum() - 1, results);
+  for (auto res : results) {
+    auto metalRect = res.second;
+    if (gtl::intersects(*metalRect, *viaRect1, false))
+      if (gtl::intersects(*metalRect, *viaRect2, false))
+        return true;
+  }
+  return false;
+}
+
+bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_stacked(gcRect* viaRect1,
+                                                         gcRect* viaRect2)
+{
+  if (*viaRect1 == *viaRect2)
+    return true;
+  return gtl::contains(*viaRect1, *viaRect2)
+         || gtl::contains(*viaRect2, *viaRect1);
+}
+
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     gcRect* viaRect1,
     gcRect* viaRect2,
     frLef58CutSpacingTableConstraint* con)
 {
-  gtl::rectangle_data<frCoord> markerRect(*viaRect1);
-  gtl::generalized_intersect(markerRect, *viaRect2);
-  frSquaredDistance distSquare
-      = gtl::square_euclidean_distance(*viaRect1, *viaRect2);
-  if (distSquare == 0)
-    checkCutSpacing_short(viaRect1, viaRect2, markerRect);
-
-  frSquaredDistance c2cSquare = getC2CDistSquare(*viaRect1, *viaRect2);
-
+  auto dbRule = con->getODBRule();
   auto layerNum1 = viaRect1->getLayerNum();
   auto layer1 = getTech()->getLayer(layerNum1);
   auto layerNum2 = viaRect2->getLayerNum();
   auto layer2 = getTech()->getLayer(layerNum2);
+  bool viol = false;
+
+  if (dbRule->isSameNet()) {
+    if (viaRect1->getNet() != viaRect2->getNet())
+      return;
+    if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()
+        && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+      return;
+  } else if (dbRule->isSameMetal()) {
+    if (viaRect1->getNet() != viaRect2->getNet())
+      return;
+    if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+      return;
+  } else {
+    if (viaRect1->getNet() == viaRect2->getNet()) {
+      if (dbRule->isLayerValid())
+        return;
+      else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
+        return;
+      else if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()
+               && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+        return;
+    }
+  }
+  gtl::rectangle_data<frCoord> markerRect(*viaRect1);
+  gtl::generalized_intersect(markerRect, *viaRect2);
+  frSquaredDistance distSquare
+      = gtl::square_euclidean_distance(*viaRect1, *viaRect2);
+  if (distSquare == 0) {
+    if (!dbRule->isLayerValid())
+      checkCutSpacing_short(viaRect1, viaRect2, markerRect);
+    else if (dbRule->isNoStack())
+      viol = true;
+    else
+      viol = !checkLef58CutSpacingTbl_stacked(viaRect1, viaRect2);
+  }
+  frSquaredDistance c2cSquare = getC2CDistSquare(*viaRect1, *viaRect2);
 
   auto cutClassIdx1
       = layer1->getCutClassIdx(viaRect1->width(), viaRect1->length());
@@ -217,13 +273,11 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   bool isUp = gtl::yl(*viaRect2) > gtl::yh(*viaRect1);
   bool isDown = gtl::yh(*viaRect2) < gtl::yl(*viaRect1);
 
-  auto dbRule = con->getODBRule();
-  bool viol = false;
   frCoord prl = -1;
   auto prlValid = checkLef58CutSpacingTbl_prlValid(
       *viaRect1, *viaRect2, markerRect, class1, class2, prl, dbRule);
 
-  if (isUp || isDown) {
+  if (!viol && (isUp || isDown)) {
     frDirEnum secondToFirstDir = isUp ? frDirEnum::N : frDirEnum::S;
     viol = checkLef58CutSpacingTbl_helper(viaRect1,
                                           viaRect2,
@@ -321,12 +375,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     if (ptr->isFixed() && viaRect->isFixed())
       continue;
     if (ptr->getPin() == viaRect->getPin())
-      continue;
-    if (dbRule->isLayerValid() && ptr->getNet() == viaRect->getNet()
-        && !dbRule->isSameNet())
-      continue;
-    if (dbRule->isLayerValid() && ptr->getNet() != viaRect->getNet()
-        && dbRule->isSameNet())
       continue;
     checkLef58CutSpacingTbl_main(viaRect, ptr, con);
   }
