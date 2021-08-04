@@ -37,22 +37,16 @@ void frLayer::printAllConstraints(utl::Logger* logger)
       c->report(logger);
     }
   }
-  for (auto& constraint : lef58CutSpacingTableSameNetConstraints) {
-    if (auto c = constraint.lock()) {
-      c->report(logger);
-    }
-  }
-  for (auto& constraint : lef58CutSpacingTableDiffNetConstraints) {
-    if (auto c = constraint.lock()) {
-      c->report(logger);
-    }
-  }
-  if (lef58SameNetCutSpacingTableConstraint)
-    lef58SameNetCutSpacingTableConstraint->report(logger);
-  if (lef58SameMetalCutSpacingTableConstraint)
-    lef58SameMetalCutSpacingTableConstraint->report(logger);
-  if (lef58DefaultCutSpacingTableConstraint)
-    lef58DefaultCutSpacingTableConstraint->report(logger);
+  if (lef58CutSpacingTableSameNetMetalConstraint)
+    lef58CutSpacingTableSameNetMetalConstraint->report(logger);
+  if (lef58CutSpacingTableDiffNetConstraint)
+    lef58CutSpacingTableDiffNetConstraint->report(logger);
+  if (lef58SameNetInterCutSpacingTableConstraint)
+    lef58SameNetInterCutSpacingTableConstraint->report(logger);
+  if (lef58SameMetalInterCutSpacingTableConstraint)
+    lef58SameMetalInterCutSpacingTableConstraint->report(logger);
+  if (lef58DefaultInterCutSpacingTableConstraint)
+    lef58DefaultInterCutSpacingTableConstraint->report(logger);
   for (auto& constraint : lef58SpacingEndOfLineConstraints) {
     if (auto c = constraint.lock()) {
       c->report(logger);

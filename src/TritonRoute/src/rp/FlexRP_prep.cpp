@@ -661,11 +661,16 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
               < (cutBox2.top() - cutBox2.bottom());
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
-    auto cons = layer1->hasLef58CutSpacingTableConstraints(true)
-                    ? layer1->getLef58CutSpacingTableConstraints(true)
-                    : layer1->getLef58CutSpacingTableConstraints(false);
-    for (auto con : cons) {
-      auto dbRule = con->getODBRule();
+    frLef58CutSpacingTableConstraint* lef58con = nullptr;
+    if (layer1->hasLef58SameMetalCutSpcTblConstraint())
+      lef58con = layer1->getLef58SameMetalCutSpcTblConstraint();
+    else if (layer1->hasLef58SameNetCutSpcTblConstraint())
+      lef58con = layer1->getLef58SameNetCutSpcTblConstraint();
+    else if (layer1->hasLef58DiffNetCutSpcTblConstraint())
+      lef58con = layer1->getLef58DiffNetCutSpcTblConstraint();
+
+    if (lef58con != nullptr) {
+      auto dbRule = lef58con->getODBRule();
       reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
       if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
         if (!swapped)

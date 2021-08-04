@@ -220,8 +220,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   auto layerNum2 = viaRect2->getLayerNum();
   auto layer2 = getTech()->getLayer(layerNum2);
   bool viol = false;
-  if(dbRule->isLayerValid())
-  {
+  if (dbRule->isLayerValid()) {
     if (dbRule->isSameNet()) {
       if (viaRect1->getNet() != viaRect2->getNet())
         return;
@@ -248,8 +247,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
       if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
         return;
     } else {
-      if (viaRect1->getNet() == viaRect2->getNet() && layer1->hasLef58CutSpacingTableConstraints(true))
-        return;
+      if (viaRect1->getNet() == viaRect2->getNet()) {
+        if (layer1->hasLef58SameNetCutSpcTblConstraint())
+          return;
+        else if (checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2)
+                 && layer1->hasLef58SameMetalCutSpcTblConstraint())
+          return;
+      }
     }
   }
   auto cutClassIdx1
@@ -268,7 +272,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   frSquaredDistance distSquare
       = gtl::square_euclidean_distance(*viaRect1, *viaRect2);
   if (distSquare == 0) {
-    if(dbRule->getMaxSpacing(class1, class2) == 0)
+    if (dbRule->getMaxSpacing(class1, class2) == 0)
       return;
     if (!dbRule->isLayerValid())
       checkCutSpacing_short(viaRect1, viaRect2, markerRect);
@@ -278,8 +282,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
       viol = !checkLef58CutSpacingTbl_stacked(viaRect1, viaRect2);
   }
   frSquaredDistance c2cSquare = getC2CDistSquare(*viaRect1, *viaRect2);
-
-  
 
   bool isRight = gtl::xl(*viaRect2) > gtl::xh(*viaRect1);
   bool isLeft = gtl::xh(*viaRect2) < gtl::xl(*viaRect1);

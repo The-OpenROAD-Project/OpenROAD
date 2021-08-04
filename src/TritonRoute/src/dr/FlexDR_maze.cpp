@@ -1506,8 +1506,9 @@ bool checkLef58CutSpacingViol(const frBox& box1,
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
   if (!cutLayer->hasCutSpacing()
-      && !cutLayer->hasLef58CutSpacingTableConstraints(true)
-      && !cutLayer->hasLef58CutSpacingTableConstraints(false)) {
+      && !cutLayer->hasLef58SameMetalCutSpcTblConstraint()
+      && !cutLayer->hasLef58SameNetCutSpcTblConstraint()
+      && !cutLayer->hasLef58DiffNetCutSpcTblConstraint()) {
     return;
   }
   // obj1 = curr obj
@@ -1536,15 +1537,20 @@ bool checkLef58CutSpacingViol(const frBox& box1,
       bloatDist = max(bloatDist, con->getCutWithin());
     }
   }
-  auto lef58cons = cutLayer->hasLef58CutSpacingTableConstraints(false)
-                       ? cutLayer->getLef58CutSpacingTableConstraints(false)
-                       : cutLayer->getLef58CutSpacingTableConstraints(true);
-  for (auto con : lef58cons) {
-    bloatDist = max(bloatDist,
-                    con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+  frLef58CutSpacingTableConstraint* lef58con = nullptr;
+  if (cutLayer->hasLef58SameMetalCutSpcTblConstraint())
+    lef58con = cutLayer->getLef58SameMetalCutSpcTblConstraint();
+  else if (cutLayer->hasLef58SameNetCutSpcTblConstraint())
+    lef58con = cutLayer->getLef58SameNetCutSpcTblConstraint();
+  else if (cutLayer->hasLef58DiffNetCutSpcTblConstraint())
+    lef58con = cutLayer->getLef58DiffNetCutSpcTblConstraint();
+
+  if (lef58con != nullptr) {
+    bloatDist = max(
+        bloatDist, lef58con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
     if (cutClass1 == cutClass2)
-      bloatDist = max(bloatDist,
-                      con->getODBRule()->getExactAlignedSpacing(cutClass1));
+      bloatDist = max(
+          bloatDist, lef58con->getODBRule()->getExactAlignedSpacing(cutClass1));
   }
 
   FlexMazeIdx mIdx1;
@@ -1618,39 +1624,35 @@ bool checkLef58CutSpacingViol(const frBox& box1,
           if (hasViol)
             break;
         }
-        if (!hasViol) {
-          for (auto con : lef58cons) {
-            auto dbRule = con->getODBRule();
-            bool checkVertical
-                = (tmpBx.bottom() > box.top()) || (tmpBx.top() < box.bottom());
-            bool checkHorizontal
-                = (tmpBx.left() > box.right()) || (tmpBx.right() < box.left());
-            if (!checkHorizontal && !checkVertical)
-              hasViol = true;
-            else {
-              if (checkVertical)
-                hasViol = checkLef58CutSpacingViol(box,
-                                                   tmpBx,
-                                                   cutClass1,
-                                                   cutClass2,
-                                                   prl,
-                                                   distSquare,
-                                                   c2cSquare,
-                                                   true,
-                                                   dbRule);
-              if (!hasViol && checkHorizontal)
-                hasViol = checkLef58CutSpacingViol(box,
-                                                   tmpBx,
-                                                   cutClass1,
-                                                   cutClass2,
-                                                   prl,
-                                                   distSquare,
-                                                   c2cSquare,
-                                                   false,
-                                                   dbRule);
-            }
-            if (hasViol)
-              break;
+        if (!hasViol && lef58con != nullptr) {
+          auto dbRule = lef58con->getODBRule();
+          bool checkVertical
+              = (tmpBx.bottom() > box.top()) || (tmpBx.top() < box.bottom());
+          bool checkHorizontal
+              = (tmpBx.left() > box.right()) || (tmpBx.right() < box.left());
+          if (!checkHorizontal && !checkVertical)
+            hasViol = true;
+          else {
+            if (checkVertical)
+              hasViol = checkLef58CutSpacingViol(box,
+                                                 tmpBx,
+                                                 cutClass1,
+                                                 cutClass2,
+                                                 prl,
+                                                 distSquare,
+                                                 c2cSquare,
+                                                 true,
+                                                 dbRule);
+            if (!hasViol && checkHorizontal)
+              hasViol = checkLef58CutSpacingViol(box,
+                                                 tmpBx,
+                                                 cutClass1,
+                                                 cutClass2,
+                                                 prl,
+                                                 distSquare,
+                                                 c2cSquare,
+                                                 false,
+                                                 dbRule);
           }
         }
 

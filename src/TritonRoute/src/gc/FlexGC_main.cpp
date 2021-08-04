@@ -2940,10 +2940,13 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   }
 
   // LEF58_SPACINGTABLE
-  for (auto con : layer->getLef58CutSpacingTableConstraints(true))
-    checkLef58CutSpacingTbl(rect, con.get());
-  for (auto con : layer->getLef58CutSpacingTableConstraints(false))
-    checkLef58CutSpacingTbl(rect, con.get());
+  if (layer->hasLef58SameMetalCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect,
+                            layer->getLef58SameMetalCutSpcTblConstraint());
+  if (layer->hasLef58SameNetCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect, layer->getLef58SameNetCutSpcTblConstraint());
+  if (layer->hasLef58DiffNetCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect, layer->getLef58DiffNetCutSpcTblConstraint());
   if (layer->hasLef58SameNetInterCutSpcTblConstraint())
     checkLef58CutSpacingTbl(rect,
                             layer->getLef58SameNetInterCutSpcTblConstraint());

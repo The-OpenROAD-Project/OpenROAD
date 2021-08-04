@@ -1312,6 +1312,12 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
     if (rule->isLayerValid() && tmpLayer->getLayerNum() == 1)
       continue;
+    if (rule->isSameMask()) {
+      logger->warn(utl::DRT,
+                   279,
+                   "SAMEMASK unsupported for cut LEF58_SPACINGTABLE rule");
+      continue;
+    }
     auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
@@ -1321,10 +1327,15 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       } else {
         tmpLayer->setLef58DefaultInterCutSpcTblConstraint(con.get());
       }
-    } else if (rule->isSameNet() || rule->isSameMetal())
-      tmpLayer->addLef58CutSpacingTableConstraint(con, true);
-    else
-      tmpLayer->addLef58CutSpacingTableConstraint(con, false);
+    } else {
+      if (rule->isSameMetal()) {
+        tmpLayer->setLef58SameMetalCutSpcTblConstraint(con.get());
+      } else if (rule->isSameNet()) {
+        tmpLayer->setLef58SameNetCutSpcTblConstraint(con.get());
+      } else {
+        tmpLayer->setLef58DiffNetCutSpcTblConstraint(con.get());
+      }
+    }
     tech->addConstraint(con);
   }
 }

@@ -507,10 +507,15 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
     } else {
       layer->setLef58DefaultInterCutSpcTblConstraint(con.get());
     }
-  } else if (dbRule->isSameNet() || dbRule->isSameMetal())
-    layer->addLef58CutSpacingTableConstraint(con, true);
-  else
-    layer->addLef58CutSpacingTableConstraint(con, false);
+  } else {
+    if (dbRule->isSameMetal()) {
+      layer->setLef58SameMetalCutSpcTblConstraint(con.get());
+    } else if (dbRule->isSameNet()) {
+      layer->setLef58SameNetCutSpcTblConstraint(con.get());
+    } else {
+      layer->setLef58DiffNetCutSpcTblConstraint(con.get());
+    }
+  }
   design->getTech()->addConstraint(con);
 }
 
