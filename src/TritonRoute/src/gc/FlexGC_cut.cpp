@@ -220,23 +220,35 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   auto layerNum2 = viaRect2->getLayerNum();
   auto layer2 = getTech()->getLayer(layerNum2);
   bool viol = false;
-
-  if (dbRule->isSameNet()) {
-    if (viaRect1->getNet() != viaRect2->getNet())
-      return;
-    if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()
-        && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
-      return;
-  } else if (dbRule->isSameMetal()) {
-    if (viaRect1->getNet() != viaRect2->getNet())
-      return;
-    if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
-      return;
-  } else {
-    if (viaRect1->getNet() == viaRect2->getNet()) {
-      if (dbRule->isLayerValid())
+  if(dbRule->isLayerValid())
+  {
+    if (dbRule->isSameNet()) {
+      if (viaRect1->getNet() != viaRect2->getNet())
         return;
-      else if (layer1->hasLef58CutSpacingTableConstraints(true))
+      if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()
+          && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+        return;
+    } else if (dbRule->isSameMetal()) {
+      if (viaRect1->getNet() != viaRect2->getNet())
+        return;
+      if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+        return;
+    } else {
+      if (viaRect1->getNet() == viaRect2->getNet()) {
+        return;
+      }
+    }
+  } else {
+    if (dbRule->isSameNet()) {
+      if (viaRect1->getNet() != viaRect2->getNet())
+        return;
+    } else if (dbRule->isSameMetal()) {
+      if (viaRect1->getNet() != viaRect2->getNet())
+        return;
+      if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+        return;
+    } else {
+      if (viaRect1->getNet() == viaRect2->getNet() && layer1->hasLef58CutSpacingTableConstraints(true))
         return;
     }
   }
