@@ -173,7 +173,7 @@ void setNonOppositeEnclosureSpacing(
   for (auto item : params) {
     auto cls = at_c<0>(item).c_str();
     auto ext = lefin->dbdist(at_c<1>(item));
-    parser->curRule->addExactElignedEntry(cls, ext);
+    parser->curRule->addNonOppEncSpacingEntry(cls, ext);
   }
 }
 

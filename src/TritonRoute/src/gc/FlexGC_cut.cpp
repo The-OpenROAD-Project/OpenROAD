@@ -236,10 +236,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     if (viaRect1->getNet() == viaRect2->getNet()) {
       if (dbRule->isLayerValid())
         return;
-      else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
-        return;
-      else if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()
-               && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+      else if (layer1->hasLef58CutSpacingTableConstraints(true))
         return;
     }
   }
