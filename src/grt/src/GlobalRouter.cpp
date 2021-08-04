@@ -153,9 +153,9 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
   fastroute_->setAllowOverflow(allow_congestion_);
 
   block_ = db_->getChip()->getBlock();
-  reportLayerSettings(min_routing_layer, max_routing_layer);
 
   initRoutingLayers();
+  reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
@@ -179,10 +179,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
-  odb::dbTech* tech = db_->getTech();
   for (RegionAdjustment region_adjustment : region_adjustments_) {
-    odb::dbTechLayer* layer
-        = tech->findRoutingLayer(region_adjustment.getLayer());
+    odb::dbTechLayer* layer = routing_layers_[region_adjustment.getLayer()];
     logger_->report("Adjusting region on layer {}", layer->getName());
     computeRegionAdjustments(region_adjustment.getRegion(),
                              region_adjustment.getLayer(),
@@ -430,7 +428,7 @@ Capacities GlobalRouter::saveCapacities(int previous_min_layer,
   }
 
   for (int layer = previous_min_layer; layer <= previous_max_layer; layer++) {
-    auto tech_layer = db_->getTech()->findRoutingLayer(layer);
+    auto tech_layer = routing_layers_[layer];
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
         old_cap
@@ -1215,7 +1213,6 @@ void GlobalRouter::computeObstructionsAdjustments()
   std::map<int, std::vector<odb::Rect>> obstructions
       = grid_->getAllObstructions();
 
-  odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* tech_layer;
   for (int layer = 1; layer <= grid_->getNumLayers(); layer++) {
     std::vector<odb::Rect> layer_obstructions = obstructions[layer];
@@ -1226,7 +1223,7 @@ void GlobalRouter::computeObstructionsAdjustments()
 
       bool vertical = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;;
 
-      tech_layer = tech->findRoutingLayer(layer);
+      tech_layer = routing_layers_[layer];
       logger_->info(GRT,
                     17,
                     "Processing {} blockages on layer {}.",
@@ -1788,7 +1785,6 @@ void GlobalRouter::checkPinPlacement()
   bool invalid = false;
   std::map<int, std::vector<odb::Point>> layer_positions_map;
 
-  odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* tech_layer;
   for (Pin* port : getAllPorts()) {
     if (port->getNumLayers() == 0) {
@@ -1799,7 +1795,7 @@ void GlobalRouter::checkPinPlacement()
     }
     int layer = port->getLayers()[0];  // port have only one layer
 
-    tech_layer = tech->findRoutingLayer(layer + 1);
+    tech_layer = routing_layers_[layer + 1];
     if (layer_positions_map[layer].empty()) {
       layer_positions_map[layer].push_back(port->getPosition());
     } else {
@@ -2179,10 +2175,7 @@ odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect)
 
 void GlobalRouter::initGrid(int max_layer)
 {
-  odb::dbTech* tech = db_->getTech();
-
-  odb::dbTechLayer* tech_layer
-      = tech->findRoutingLayer(layer_for_guide_dimension_);
+  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
 
   if (tech_layer == nullptr) {
     logger_->error(GRT, 81, "Layer {} not found.", layer_for_guide_dimension_);
@@ -2234,7 +2227,7 @@ void GlobalRouter::initGrid(int max_layer)
   bool perfect_regular_x = false;
   bool perfect_regular_y = false;
 
-  int num_layers = tech->getRoutingLayerCount();
+  int num_layers = routing_layers_.size();
   if (max_layer > -1) {
     num_layers = max_layer;
   }
@@ -2425,7 +2418,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
       break;
     }
 
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+    odb::dbTechLayer* tech_layer = routing_layers_[layer];
 
     if (tech_layer == nullptr) {
       logger_->error(GRT, 85, "Routing layer {} not found.", layer);
@@ -2500,7 +2493,7 @@ void GlobalRouter::computeCapacities(int max_layer)
       break;
     }
 
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    odb::dbTechLayer* tech_layer = routing_layers_[l];
 
     RoutingTracks routing_tracks = getRoutingTracksByIndex(l);
     int track_spacing = routing_tracks.getUsePitch();
@@ -2555,7 +2548,7 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
       break;
     }
 
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    odb::dbTechLayer* tech_layer = routing_layers_[l];
 
     odb::dbTrackGrid* track = block_->findTrackGrid(tech_layer);
 
@@ -2687,7 +2680,6 @@ void GlobalRouter::makeItermPins(Net* net,
                                  odb::dbNet* db_net,
                                  const odb::Rect& die_area)
 {
-  odb::dbTech* tech = db_->getTech();
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     int pX, pY;
     std::vector<int> pin_layers;
@@ -2764,7 +2756,7 @@ void GlobalRouter::makeItermPins(Net* net,
 
     if (connected_to_pad || connected_to_macro) {
       odb::Point pin_position = pin.getPosition();
-      odb::dbTechLayer* tech_layer = tech->findRoutingLayer(pin.getTopLayer());
+      odb::dbTechLayer* tech_layer = routing_layers_[pin.getTopLayer()];
 
       if (tech_layer->getDirection().getValue()
           == odb::dbTechLayerDir::HORIZONTAL) {
@@ -2793,7 +2785,6 @@ void GlobalRouter::makeBtermPins(Net* net,
                                  odb::dbNet* db_net,
                                  const odb::Rect& die_area)
 {
-  odb::dbTech* tech = db_->getTech();
   for (odb::dbBTerm* bterm : db_net->getBTerms()) {
     int posX, posY;
     std::string pin_name;
@@ -2871,7 +2862,7 @@ void GlobalRouter::makeBtermPins(Net* net,
 
     if (connected_to_pad) {
       odb::Point pin_position = pin.getPosition();
-      odb::dbTechLayer* tech_layer = tech->findRoutingLayer(pin.getTopLayer());
+      odb::dbTechLayer* tech_layer = routing_layers_[pin.getTopLayer()];
 
       if (tech_layer->getDirection().getValue()
           == odb::dbTechLayerDir::HORIZONTAL) {
@@ -2892,7 +2883,7 @@ void GlobalRouter::makeBtermPins(Net* net,
       }
     } else {
       odb::Point pin_position = pin.getPosition();
-      odb::dbTechLayer* tech_layer = tech->findRoutingLayer(pin.getTopLayer());
+      odb::dbTechLayer* tech_layer = routing_layers_[pin.getTopLayer()];
 
       if (tech_layer->getDirection().getValue()
           == odb::dbTechLayerDir::HORIZONTAL) {
@@ -3296,9 +3287,8 @@ void GlobalRouter::print(GRoute& route)
 void GlobalRouter::reportLayerSettings(int min_routing_layer,
                                        int max_routing_layer)
 {
-  odb::dbTech* tech = db_->getTech();
-  odb::dbTechLayer* min_layer = tech->findRoutingLayer(min_routing_layer);
-  odb::dbTechLayer* max_layer = tech->findRoutingLayer(max_routing_layer);
+  odb::dbTechLayer* min_layer = routing_layers_[min_routing_layer];
+  odb::dbTechLayer* max_layer = routing_layers_[max_routing_layer];
   logger_->info(GRT, 20, "Min routing layer: {}", min_layer->getName());
   logger_->info(GRT, 21, "Max routing layer: {}", max_layer->getName());
   logger_->info(GRT, 22, "Global adjustment: {}%", int(adjustment_ * 100));
@@ -3309,7 +3299,6 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer,
 void GlobalRouter::reportResources()
 {
   fastroute_->computeCongestionInformation();
-  odb::dbTech* tech = db_->getTech();
   std::vector<int> original_resources = fastroute_->getOriginalResources();
   std::vector<int> derated_resources = fastroute_->getTotalCapacityPerLayer();
 
@@ -3322,7 +3311,7 @@ void GlobalRouter::reportResources()
       "---------------------------------------------------------------");
 
   for (int l = 0; l < original_resources.size(); l++) {
-    odb::dbTechLayer* layer = tech->findRoutingLayer(l + 1);
+    odb::dbTechLayer* layer = routing_layers_[l + 1];
     std::string routing_direction
         = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
               ? "Horizontal"
@@ -3351,7 +3340,6 @@ void GlobalRouter::reportResources()
 void GlobalRouter::reportCongestion()
 {
   fastroute_->computeCongestionInformation();
-  odb::dbTech* tech = db_->getTech();
   const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
   const std::vector<int>& demands = fastroute_->getTotalUsagePerLayer();
   const std::vector<int>& overflows = fastroute_->getTotalOverflowPerLayer();
@@ -3390,7 +3378,7 @@ void GlobalRouter::reportCongestion()
     total_h_overflow += max_h_overflows[l];
     total_v_overflow += max_v_overflows[l];
 
-    odb::dbTechLayer* layer = tech->findRoutingLayer(l + 1);
+    odb::dbTechLayer* layer = routing_layers_[l + 1];
     logger_->report(
         "{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
         "{:2}",
@@ -3439,11 +3427,10 @@ void GlobalRouter::reportLayerWireLengths()
     }
   }
   if (total_length > 0) {
-    odb::dbTech* tech = db_->getTech();
     for (int i = 0; i < lengths.size(); i++) {
       int64_t length = lengths[i];
       if (length > 0) {
-        odb::dbTechLayer* layer = tech->findRoutingLayer(i);
+        odb::dbTechLayer* layer = routing_layers_[i];
         logger_->report("{:5s} {:8d}um {:3d}%",
                         layer->getName(),
                         static_cast<int64_t>(dbuToMicrons(length)),
