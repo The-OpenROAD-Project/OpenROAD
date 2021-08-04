@@ -65,7 +65,7 @@ void PatternButton::paintEvent(QPaintEvent* event)
   qp.setBrush(brush);
   auto button_rect = rect();
   // adjust by height of radio button + 4 pixels
-  button_rect.adjust(button_rect.height()+4, 2, -1, -2);
+  button_rect.adjust(button_rect.height() + 4, 2, -1, -2);
   qp.drawRect(button_rect);
   qp.end();
 }
