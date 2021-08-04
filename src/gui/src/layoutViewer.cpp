@@ -908,6 +908,10 @@ void LayoutViewer::drawRulers(Painter& painter)
 
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
+  if (!options_->isCongestionVisible()) {
+    return;
+  }
+
   auto block = getBlock();
   if (block == nullptr)
     return;
@@ -922,8 +926,9 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   y_grid_sz = y_grid.size();
   auto gcell_congestion_data = grid->getCongestionMap();
 
-  if (!options_->isCongestionVisible() || gcell_congestion_data.empty())
+  if (gcell_congestion_data.empty()) {
     return;
+  }
 
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
