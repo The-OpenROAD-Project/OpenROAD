@@ -45,8 +45,8 @@ namespace stt{
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
-  min_fanout_alpha_({std::numeric_limits<int>::max(), -1}),
-  min_hpwl_alpha_({std::numeric_limits<int>::max(), -1}),
+  min_fanout_alpha_({-1, -1}),
+  min_hpwl_alpha_({-1, -1}),
   logger_(nullptr),
   db_(nullptr)
 {
@@ -76,20 +76,17 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
   int min_fanout = min_fanout_alpha_.first;
   int min_hpwl = min_hpwl_alpha_.first;
 
-  if (min_fanout > 0) {
+  if (net_alpha_map_.find(net) != net_alpha_map_.end()) {
+    net_alpha = net_alpha_map_[net];
+  } else if (min_hpwl > 0) {
+    if (computeHPWL(net) >= min_hpwl) {
+      net_alpha = min_hpwl_alpha_.second;
+    }
+  } else if (min_fanout > 0) {
     if (net->getTermCount()-1 >= min_fanout) {
       net_alpha = min_fanout_alpha_.second;
     }
   }
-
-  if (min_hpwl > 0) {
-    if (computeHPWL(net) >= min_hpwl) {
-      net_alpha = min_hpwl_alpha_.second;
-    }
-  }
-
-  net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
-              net_alpha_map_[net] : net_alpha;
 
   Tree tree = makeTree(x, y, drvr_index, net_alpha);
 
