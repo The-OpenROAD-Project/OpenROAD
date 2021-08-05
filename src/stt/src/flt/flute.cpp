@@ -961,26 +961,14 @@ DTYPE flutes_wl_MD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>
   return return_val;
 }
 
-static int orderx(const void *a, const void *b) {
-  struct point *pa, *pb;
-
-  pa = *(struct point **)a;
-  pb = *(struct point **)b;
-
-  if (pa->x < pb->x) return -1;
-  if (pa->x > pb->x) return 1;
-  return 0;
+static int orderx(const point* a, const point* b)
+{
+  return a->x < b->x;
 }
 
-static int ordery(const void *a, const void *b) {
-  struct point *pa, *pb;
-
-  pa = *(struct point **)a;
-  pb = *(struct point **)b;
-
-  if (pa->y < pb->y) return -1;
-  if (pa->y > pb->y) return 1;
-  return 0;
+static int ordery(const point* a, const point* b)
+{
+  return a->y < b->y;
 }
 
 Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
