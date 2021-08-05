@@ -996,8 +996,8 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
     xs.resize(d);
     ys.resize(d);
     s.resize(d);
-    pt = (struct point *)malloc(sizeof(struct point) * (d + 1));
-    std::vector<point*> ptp(d+1);
+    pt = (struct point *)malloc(sizeof(struct point) * (d));
+    std::vector<point*> ptp(d);
 
     for (i = 0; i < d; i++) {
       pt[i].x = x[i];
