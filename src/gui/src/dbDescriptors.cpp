@@ -402,4 +402,149 @@ bool DbBTermDescriptor::lessThan(std::any l, std::any r) const
   return l_bterm->getId() < r_bterm->getId();
 }
 
+//////////////////////////////////////////////////
+
+std::string DbBlockageDescriptor::getName(std::any object) const
+{
+  return "";
+}
+
+std::string DbBlockageDescriptor::getTypeName(std::any object) const
+{
+  return "Blockage";
+}
+
+bool DbBlockageDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* blockage = std::any_cast<odb::dbBlockage*>(object);
+  odb::dbBox* box = blockage->getBBox();
+  box->getBox(bbox);
+  return true;
+}
+
+void DbBlockageDescriptor::highlight(std::any object,
+                                     Painter& painter,
+                                     void* additional_data) const
+{
+  odb::Rect rect;
+  getBBox(object, rect);
+  painter.drawRect(rect);
+}
+
+Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) const
+{
+  auto gui = Gui::get();
+  auto blockage = std::any_cast<odb::dbBlockage*>(object);
+  odb::dbInst* inst = blockage->getInstance();
+  std::any inst_value;
+  if (inst != nullptr) {
+    inst_value = gui->makeSelected(inst);
+  } else {
+    inst_value = "<none>";
+  }
+  odb::Rect rect;
+  blockage->getBBox()->getBox(rect);
+  double dbuPerUU = blockage->getBlock()->getDbUnitsPerMicron();
+  return Properties({{"Instance", inst_value},
+                     {"X", rect.xMin() / dbuPerUU},
+                     {"Y", rect.yMin() / dbuPerUU},
+                     {"Width", rect.dx() / dbuPerUU},
+                     {"Height", rect.dy() / dbuPerUU},
+                     {"Soft", blockage->isSoft()},
+                     {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}});
+}
+
+Selected DbBlockageDescriptor::makeSelected(std::any object,
+                                            void* additional_data) const
+{
+  if (auto blockage = std::any_cast<odb::dbBlockage*>(&object)) {
+    return Selected(*blockage, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbBlockageDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_blockage = std::any_cast<odb::dbBlockage*>(l);
+  auto r_blockage = std::any_cast<odb::dbBlockage*>(r);
+  return l_blockage->getId() < r_blockage->getId();
+}
+
+//////////////////////////////////////////////////
+
+std::string DbObstructionDescriptor::getName(std::any object) const
+{
+  return "";
+}
+
+std::string DbObstructionDescriptor::getTypeName(std::any object) const
+{
+  return "Obstruction";
+}
+
+bool DbObstructionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* blockage = std::any_cast<odb::dbObstruction*>(object);
+  odb::dbBox* box = blockage->getBBox();
+  box->getBox(bbox);
+  return true;
+}
+
+void DbObstructionDescriptor::highlight(std::any object,
+                                        Painter& painter,
+                                        void* additional_data) const
+{
+  odb::Rect rect;
+  getBBox(object, rect);
+  painter.drawRect(rect);
+}
+
+Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) const
+{
+  auto gui = Gui::get();
+  auto obs = std::any_cast<odb::dbObstruction*>(object);
+  odb::dbInst* inst = obs->getInstance();
+  std::any inst_value;
+  if (inst != nullptr) {
+    inst_value = gui->makeSelected(inst);
+  } else {
+    inst_value = "<none>";
+  }
+  odb::Rect rect;
+  obs->getBBox()->getBox(rect);
+  double dbuPerUU = obs->getBlock()->getDbUnitsPerMicron();
+  Properties props({{"Instance", inst_value},
+                    {"Layer", obs->getBBox()->getTechLayer()->getName()},
+                    {"X", rect.xMin() / dbuPerUU},
+                    {"Y", rect.yMin() / dbuPerUU},
+                    {"Width", rect.dx() / dbuPerUU},
+                    {"Height", rect.dy() / dbuPerUU},
+                    {"Slot", obs->isSlotObstruction()},
+                    {"Fill", obs->isFillObstruction()}});
+  if (obs->hasEffectiveWidth()) {
+    props.push_back({"Effective width", obs->getEffectiveWidth() / dbuPerUU});
+  }
+
+  if (obs->hasMinSpacing()) {
+    props.push_back({"Min spacing", obs->getMinSpacing() / dbuPerUU});
+  }
+return props;
+}
+
+Selected DbObstructionDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (auto obs = std::any_cast<odb::dbObstruction*>(&object)) {
+    return Selected(*obs, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbObstructionDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_obs = std::any_cast<odb::dbObstruction*>(l);
+  auto r_obs = std::any_cast<odb::dbObstruction*>(r);
+  return l_obs->getId() < r_obs->getId();
+}
+
 }  // namespace gui
