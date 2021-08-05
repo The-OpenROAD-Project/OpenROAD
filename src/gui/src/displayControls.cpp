@@ -64,7 +64,8 @@ void PatternButton::paintEvent(QPaintEvent* event)
   auto brush = QBrush(QColor("black"), pattern_);
   qp.setBrush(brush);
   auto button_rect = rect();
-  button_rect.adjust(18, 2, -1, -1);
+  // adjust by height of radio button + 4 pixels
+  button_rect.adjust(button_rect.height() + 4, 2, -1, -2);
   qp.drawRect(button_rect);
   qp.end();
 }
@@ -72,7 +73,14 @@ void PatternButton::paintEvent(QPaintEvent* event)
 DisplayColorDialog::DisplayColorDialog(QColor color,
                                        Qt::BrushStyle pattern,
                                        QWidget* parent)
-    : QDialog(parent), color_(color), pattern_(pattern)
+    : QDialog(parent), color_(color), pattern_(pattern), show_brush_(true)
+{
+  buildUI();
+}
+
+DisplayColorDialog::DisplayColorDialog(QColor color,
+                                       QWidget* parent)
+    : QDialog(parent), color_(color), pattern_(Qt::SolidPattern), show_brush_(false)
 {
   buildUI();
 }
@@ -84,37 +92,41 @@ void DisplayColorDialog::buildUI()
   color_dialog_->setOption(QColorDialog::ShowAlphaChannel);
   color_dialog_->setWindowFlags(Qt::Widget);
   color_dialog_->setCurrentColor(color_);
-  pattern_group_box_ = new QGroupBox("Layer Pattern");
-  grid_layout_ = new QGridLayout();
 
-  grid_layout_->setColumnStretch(2, 4);
+  main_layout_ = new QVBoxLayout();
 
-  int row_index = 0;
-  for (auto& pattern_group : DisplayColorDialog::brush_patterns_) {
-    int col_index = 0;
-    for (auto pattern : pattern_group) {
-      PatternButton* pattern_button = new PatternButton(pattern);
-      pattern_buttons_.push_back(pattern_button);
-      if (pattern == pattern_)
-        pattern_button->setChecked(true);
-      else
-        pattern_button->setChecked(false);
-      grid_layout_->addWidget(pattern_button, row_index, col_index);
-      ++col_index;
+  if (show_brush_) {
+    pattern_group_box_ = new QGroupBox("Layer Pattern");
+    grid_layout_ = new QGridLayout();
+
+    grid_layout_->setColumnStretch(2, 4);
+
+    int row_index = 0;
+    for (auto& pattern_group : DisplayColorDialog::brush_patterns_) {
+      int col_index = 0;
+      for (auto pattern : pattern_group) {
+        PatternButton* pattern_button = new PatternButton(pattern);
+        pattern_buttons_.push_back(pattern_button);
+        if (pattern == pattern_)
+          pattern_button->setChecked(true);
+        else
+          pattern_button->setChecked(false);
+        grid_layout_->addWidget(pattern_button, row_index, col_index);
+        ++col_index;
+      }
+      ++row_index;
     }
-    ++row_index;
+    pattern_group_box_->setLayout(grid_layout_);
+    main_layout_->addWidget(pattern_group_box_);
   }
-  pattern_group_box_->setLayout(grid_layout_);
+
+  main_layout_->addWidget(color_dialog_);
+
   connect(color_dialog_, SIGNAL(accepted()), this, SLOT(acceptDialog()));
   connect(color_dialog_, SIGNAL(rejected()), this, SLOT(rejectDialog()));
 
-  main_layout_ = new QVBoxLayout();
-  main_layout_->addWidget(pattern_group_box_);
-  main_layout_->addWidget(color_dialog_);
-
   setLayout(main_layout_);
   setWindowTitle("Layer Config");
-  setFixedSize(600, width() - 20);
 }
 
 DisplayColorDialog::~DisplayColorDialog()
@@ -183,6 +195,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(nets_.power, "Power", nets_parent, Qt::Checked, true);
   makeLeafItem(nets_.ground, "Ground", nets_parent, Qt::Checked, true);
   makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
+  toggleParent(nets_group_);
 
   // Instance group
   auto instances_parent = makeParentItem(
@@ -199,6 +212,17 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
+  toggleParent(instance_group_);
+
+  // Blockages group
+  auto blockages = makeParentItem(
+      blockage_group_, "Blockages", model_, Qt::Checked, true);
+  placement_blockage_color_ = Qt::darkGray;
+  placement_blockage_pattern_ = Qt::BDiagPattern;
+
+  makeLeafItem(blockages_.blockages, "Placement", blockages, Qt::Checked, true, placement_blockage_color_);
+  makeLeafItem(blockages_.obstructions, "Routing", blockages, Qt::Checked, true);
+  toggleParent(blockage_group_);
 
   // Rows
   makeParentItem(rows_, "Rows", model_, Qt::Unchecked);
@@ -213,12 +237,17 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
   makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
+  toggleParent(tracks_group_);
 
   // Misc group
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
+  instance_name_color_ = Qt::yellow;
+
+  makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  toggleParent(misc_group_);
 
   setWidget(view_);
   connect(model_,
@@ -243,104 +272,140 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(changed()));
 }
 
-void DisplayControls::readSettings(QSettings* settings)
+void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto getChecked = [](QSettings* settings, const char* name) {
-    return settings->value(name).toBool() ? Qt::Checked : Qt::Unchecked;
+  auto asBool
+      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
+
+  settings->beginGroup(row.name->text());
+  settings->setValue("visible", asBool(row.visible));
+  if (row.selectable != nullptr) {
+    settings->setValue("selectable", asBool(row.selectable));
+  }
+  settings->endGroup();
+}
+
+void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& row)
+{
+  auto getChecked = [](QSettings* settings, QString name, bool default_value) {
+    return settings->value(name, default_value).toBool() ? Qt::Checked : Qt::Unchecked;
   };
 
+  settings->beginGroup(row.name->text());
+  row.visible->setCheckState(getChecked(settings, "visible", row.visible->checkState() == Qt::Checked));
+  if (row.selectable != nullptr) {
+    row.selectable->setCheckState(getChecked(settings, "selectable", row.selectable->checkState() == Qt::Checked));
+  }
+  settings->endGroup();
+}
+
+void DisplayControls::readSettings(QSettings* settings)
+{
   settings->beginGroup("display_controls");
 
   settings->beginGroup("nets");
-  nets_.signal.visible->setCheckState(getChecked(settings, "signal_visible"));
-  nets_.signal.selectable->setCheckState(getChecked(settings, "signal_selectable"));
-  nets_.power.visible->setCheckState(getChecked(settings, "power_visible"));
-  nets_.power.selectable->setCheckState(getChecked(settings, "power_selectable"));
-  nets_.ground.visible->setCheckState(getChecked(settings, "ground_visible"));
-  nets_.ground.selectable->setCheckState(getChecked(settings, "ground_selectable"));
-  nets_.clock.visible->setCheckState(getChecked(settings, "clock_visible"));
-  nets_.clock.selectable->setCheckState(getChecked(settings, "clock_selectable"));
-  settings->endGroup();  // nets
+  readSettingsForRow(settings, nets_.signal);
+  readSettingsForRow(settings, nets_.power);
+  readSettingsForRow(settings, nets_.ground);
+  readSettingsForRow(settings, nets_.clock);
+  settings->endGroup();
 
+  // instances
   settings->beginGroup("instances");
-  instances_.core.visible->setCheckState(getChecked(settings, "stdcell_visible"));
-  instances_.core.selectable->setCheckState(getChecked(settings, "stdcell_selectable"));
-  instances_.blocks.visible->setCheckState(getChecked(settings, "blocks_visible"));
-  instances_.blocks.selectable->setCheckState(getChecked(settings, "blocks_selectable"));
-  instances_.fill.visible->setCheckState(getChecked(settings, "fill_visible"));
-  instances_.fill.selectable->setCheckState(getChecked(settings, "fill_selectable"));
-  instances_.endcap.visible->setCheckState(getChecked(settings, "endcap_visible"));
-  instances_.endcap.selectable->setCheckState(getChecked(settings, "endcap_selectable"));
-  instances_.pads.visible->setCheckState(getChecked(settings, "pads_visible"));
-  instances_.pads.selectable->setCheckState(getChecked(settings, "pads_selectable"));
-  instances_.cover.visible->setCheckState(getChecked(settings, "cover_visible"));
-  instances_.cover.selectable->setCheckState(getChecked(settings, "cover_selectable"));
-  settings->endGroup();  // nets
+  readSettingsForRow(settings, instances_.core);
+  readSettingsForRow(settings, instances_.blocks);
+  readSettingsForRow(settings, instances_.fill);
+  readSettingsForRow(settings, instances_.endcap);
+  readSettingsForRow(settings, instances_.pads);
+  readSettingsForRow(settings, instances_.cover);
+  settings->endGroup();
 
-  rows_.visible->setCheckState(getChecked(settings, "rows_visible"));
-  congestion_map_.visible->setCheckState(
-      getChecked(settings, "congestion_map_visible"));
-  pin_markers_.visible->setCheckState(
-      getChecked(settings, "pin_markers_visible"));
+  // blockages
+  settings->beginGroup("blockages");
+  readSettingsForRow(settings, blockages_.blockages);
+  readSettingsForRow(settings, blockages_.obstructions);
+  placement_blockage_color_ = settings->value("placement_color", placement_blockage_color_).value<QColor>();
+  // pattern saved as int
+  placement_blockage_pattern_ =
+      static_cast<Qt::BrushStyle>(settings->value("placement_pattern",
+                                  static_cast<int>(placement_blockage_pattern_)).toInt());
+  blockages_.blockages.swatch->setIcon(makeSwatchIcon(placement_blockage_color_));
+  settings->endGroup();
 
+  // rows
+  readSettingsForRow(settings, rows_);
+  // congestion map
+  readSettingsForRow(settings, congestion_map_);
+  // pin markers
+  readSettingsForRow(settings, pin_markers_);
+
+  // tracks
   settings->beginGroup("tracks");
-  tracks_.pref.visible->setCheckState(getChecked(settings, "pref_visible"));
-  tracks_.non_pref.visible->setCheckState(
-      getChecked(settings, "non_pref_visible"));
-  settings->endGroup();  // tracks
+  readSettingsForRow(settings, tracks_.pref);
+  readSettingsForRow(settings, tracks_.non_pref);
+  settings->endGroup();
 
+  // misc
   settings->beginGroup("misc");
-  misc_.fills.visible->setCheckState(getChecked(settings, "fills_visible"));
-  settings->endGroup();  // misc
+  readSettingsForRow(settings, misc_.instance_names);
+  readSettingsForRow(settings, misc_.fills);
+  instance_name_color_ = settings->value("instance_name_color", instance_name_color_).value<QColor>();
+  misc_.instance_names.swatch->setIcon(makeSwatchIcon(instance_name_color_));
+  settings->endGroup();
 
   settings->endGroup();
 }
 
 void DisplayControls::writeSettings(QSettings* settings)
 {
-  auto asBool
-      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
-
   settings->beginGroup("display_controls");
 
+  // nets
   settings->beginGroup("nets");
-  settings->setValue("signal_visible", asBool(nets_.signal.visible));
-  settings->setValue("signal_selectable", asBool(nets_.signal.selectable));
-  settings->setValue("power_visible", asBool(nets_.power.visible));
-  settings->setValue("power_selectable", asBool(nets_.power.selectable));
-  settings->setValue("ground_visible", asBool(nets_.ground.visible));
-  settings->setValue("ground_selectable", asBool(nets_.ground.selectable));
-  settings->setValue("clock_visible", asBool(nets_.clock.visible));
-  settings->setValue("clock_selectable", asBool(nets_.clock.selectable));
-  settings->endGroup();  // nets
+  writeSettingsForRow(settings, nets_.signal);
+  writeSettingsForRow(settings, nets_.power);
+  writeSettingsForRow(settings, nets_.ground);
+  writeSettingsForRow(settings, nets_.clock);
+  settings->endGroup();
 
+  // instances
   settings->beginGroup("instances");
-  settings->setValue("stdcell_visible", asBool(instances_.core.visible));
-  settings->setValue("stdcell_selectable", asBool(instances_.core.selectable));
-  settings->setValue("blocks_visible", asBool(instances_.blocks.visible));
-  settings->setValue("blocks_selectable", asBool(instances_.blocks.selectable));
-  settings->setValue("fill_visible", asBool(instances_.fill.visible));
-  settings->setValue("fill_selectable", asBool(instances_.fill.selectable));
-  settings->setValue("endcap_visible", asBool(instances_.endcap.visible));
-  settings->setValue("endcap_selectable", asBool(instances_.endcap.selectable));
-  settings->setValue("pads_visible", asBool(instances_.pads.visible));
-  settings->setValue("pads_selectable", asBool(instances_.pads.selectable));
-  settings->setValue("cover_visible", asBool(instances_.cover.visible));
-  settings->setValue("cover_selectable", asBool(instances_.cover.selectable));
-  settings->endGroup();  // instances
+  writeSettingsForRow(settings, instances_.core);
+  writeSettingsForRow(settings, instances_.blocks);
+  writeSettingsForRow(settings, instances_.fill);
+  writeSettingsForRow(settings, instances_.endcap);
+  writeSettingsForRow(settings, instances_.pads);
+  writeSettingsForRow(settings, instances_.cover);
+  settings->endGroup();
 
-  settings->setValue("rows_visible", asBool(rows_.visible));
-  settings->setValue("congestion_map_visible", asBool(congestion_map_.visible));
-  settings->setValue("pin_markers_visible", asBool(pin_markers_.visible));
+  // blockages
+  settings->beginGroup("blockages");
+  writeSettingsForRow(settings, blockages_.blockages);
+  writeSettingsForRow(settings, blockages_.obstructions);
+  settings->setValue("placement_color", placement_blockage_color_);
+  // save pattern as int
+  settings->setValue("placement_pattern", static_cast<int>(placement_blockage_pattern_));
+  settings->endGroup();
 
+  // rows
+  writeSettingsForRow(settings, rows_);
+  // congestion map
+  writeSettingsForRow(settings, congestion_map_);
+  // pin markers
+  writeSettingsForRow(settings, pin_markers_);
+
+  // tracks
   settings->beginGroup("tracks");
-  settings->setValue("pref_visible", asBool(tracks_.pref.visible));
-  settings->setValue("non_pref_visible", asBool(tracks_.non_pref.visible));
-  settings->endGroup();  // tracks
+  writeSettingsForRow(settings, tracks_.pref);
+  writeSettingsForRow(settings, tracks_.non_pref);
+  settings->endGroup();
 
+  // misc
   settings->beginGroup("misc");
-  settings->setValue("fills_visible", asBool(misc_.fills.visible));
-  settings->endGroup();  // misc
+  writeSettingsForRow(settings, misc_.instance_names);
+  writeSettingsForRow(settings, misc_.fills);
+  settings->setValue("instance_name_color", instance_name_color_);
+  settings->endGroup();
 
   settings->endGroup();
 }
@@ -389,6 +454,14 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
   ignore_callback_ = false;
 }
 
+void DisplayControls::toggleParent(ModelRow& row)
+{
+  toggleParent(row.name, row.visible, Visible);
+  if (row.selectable != nullptr) {
+    toggleParent(row.name, row.selectable, Selectable);
+  }
+}
+
 void DisplayControls::itemChanged(QStandardItem* item)
 {
   if (item->isCheckable() == false) {
@@ -429,36 +502,62 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
   if (index.column() == 1) {
     auto color_item = model_->itemFromIndex(index);
-    QVariant tech_layer_data = color_item->data(Qt::UserRole);
-    if (!tech_layer_data.isValid())
+
+    QColor* item_color = nullptr;
+    Qt::BrushStyle* item_pattern = nullptr;
+    bool has_sibling = false;
+
+    // check if placement
+    if (color_item == blockages_.blockages.swatch) {
+      item_color = &placement_blockage_color_;
+      item_pattern = &placement_blockage_pattern_;
+    } else if (color_item == misc_.instance_names.swatch) {
+      item_color = &instance_name_color_;
+    } else {
+      QVariant tech_layer_data = color_item->data(Qt::UserRole);
+      if (!tech_layer_data.isValid()) {
+        return;
+      }
+      auto tech_layer
+          = static_cast<odb::dbTechLayer*>(tech_layer_data.value<void*>());
+      if (tech_layer == nullptr) {
+        return;
+      }
+      item_color = &layer_color_[tech_layer];
+      item_pattern = &layer_pattern_[tech_layer];
+      has_sibling = true;
+    }
+
+    if (item_color == nullptr) {
       return;
-    auto tech_layer
-        = static_cast<odb::dbTechLayer*>(tech_layer_data.value<void*>());
-    if (tech_layer == nullptr)
-      return;
-    QColor color_val = color(tech_layer);
-    Qt::BrushStyle pattern_val = pattern(tech_layer);
-    DisplayColorDialog display_dialog(color_val, pattern_val);
-    display_dialog.exec();
-    QColor chosen_color = display_dialog.getSelectedColor();
+    }
+
+
+    std::unique_ptr<DisplayColorDialog> display_dialog;
+    if (item_pattern != nullptr) {
+      display_dialog = std::make_unique<DisplayColorDialog>(*item_color, *item_pattern);
+    } else {
+      display_dialog = std::make_unique<DisplayColorDialog>(*item_color);
+    }
+    display_dialog->exec();
+    QColor chosen_color = display_dialog->getSelectedColor();
     if (chosen_color.isValid()) {
-      QPixmap swatch(20, 20);
-      swatch.fill(chosen_color);
-      color_item->setIcon(QIcon(swatch));
-      auto cut_layer_index
-          = model_->sibling(index.row() + 1, index.column(), index);
-      if (cut_layer_index.isValid()) {
-        auto cut_color_item = model_->itemFromIndex(cut_layer_index);
-        cut_color_item->setIcon(QIcon(swatch));
+      color_item->setIcon(makeSwatchIcon(chosen_color));
+
+      if (has_sibling) {
+        auto cut_layer_index
+            = model_->sibling(index.row() + 1, index.column(), index);
+        if (cut_layer_index.isValid()) {
+          auto cut_color_item = model_->itemFromIndex(cut_layer_index);
+          cut_color_item->setIcon(makeSwatchIcon(chosen_color));
+        }
       }
-      if (chosen_color != color_val
-          || layer_pattern_[tech_layer]
-                 != display_dialog.getSelectedPattern()) {
-        layer_color_[tech_layer] = chosen_color;
-        layer_pattern_[tech_layer] = display_dialog.getSelectedPattern();
-        view_->repaint();
-        emit changed();
+      *item_color = chosen_color;
+      if (item_pattern != nullptr) {
+        *item_pattern = display_dialog->getSelectedPattern();
       }
+      view_->repaint();
+      emit changed();
     }
   }
 }
@@ -527,9 +626,11 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           Qt::Checked,
           true,
           color(layer),
-          type == dbTechLayerType::CUT ? NULL : layer);
+          type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(static_cast<void*>(layer)));
     }
   }
+
+  toggleParent(layers_group_);
 
   for (int i = 0; i < 4; i++)
     view_->resizeColumnToContents(i);
@@ -573,20 +674,16 @@ void DisplayControls::makeLeafItem(
     Qt::CheckState checked,
     bool add_selectable,
     const QColor& color,
-    odb::dbTechLayer* tech_layer)
+    const QVariant& user_data)
 {
   row.name = new QStandardItem(text);
   row.name->setEditable(false);
 
-  QPixmap swatch(20, 20);
-  swatch.fill(color);
-  row.swatch = new QStandardItem(QIcon(swatch), "");
+  row.swatch = new QStandardItem(makeSwatchIcon(color), "");
   row.swatch->setEditable(false);
   row.swatch->setCheckable(false);
-  if (tech_layer != nullptr) {
-    QVariant tech_layer_data(
-        QVariant::fromValue(static_cast<void*>(tech_layer)));
-    row.swatch->setData(tech_layer_data, Qt::UserRole);
+  if (user_data.isValid()) {
+    row.swatch->setData(user_data, Qt::UserRole);
   }
 
   row.visible = new QStandardItem("");
@@ -604,6 +701,14 @@ void DisplayControls::makeLeafItem(
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
 }
 
+const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
+{
+  QPixmap swatch(20, 20);
+  swatch.fill(color);
+
+  return QIcon(swatch);
+}
+
 QColor DisplayControls::color(const odb::dbTechLayer* layer)
 {
   return layer_color_.at(layer);
@@ -612,6 +717,21 @@ QColor DisplayControls::color(const odb::dbTechLayer* layer)
 Qt::BrushStyle DisplayControls::pattern(const odb::dbTechLayer* layer)
 {
   return layer_pattern_.at(layer);
+}
+
+QColor DisplayControls::placementBlockageColor()
+{
+  return placement_blockage_color_;
+}
+
+Qt::BrushStyle DisplayControls::placementBlockagePattern()
+{
+  return placement_blockage_pattern_;
+}
+
+QColor DisplayControls::instanceNameColor()
+{
+  return instance_name_color_;
 }
 
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
@@ -704,9 +824,34 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
   return false;
 }
 
+bool DisplayControls::areInstanceNamesVisible()
+{
+  return misc_.instance_names.visible->checkState() == Qt::Checked;
+}
+
 bool DisplayControls::areFillsVisible()
 {
   return misc_.fills.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areBlockagesVisible()
+{
+  return blockages_.blockages.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areBlockagesSelectable()
+{
+  return blockages_.blockages.selectable->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areObstructionsVisible()
+{
+  return blockages_.obstructions.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areObstructionsSelectable()
+{
+  return blockages_.obstructions.selectable->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::areRowsVisible()
