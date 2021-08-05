@@ -1059,6 +1059,11 @@ void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.lef58_type_ = (uint) type;
+  if (layer->flags_.lef58_type_ == odb::dbTechLayer::MIMCAP) {
+    _dbTech* tech = (_dbTech*) layer->getOwner();
+    layer->_rlevel = 0;
+    --tech->_rlayer_cnt;
+  }
 }
 
 dbTechLayer::LEF58_TYPE dbTechLayer::getLef58Type() const
