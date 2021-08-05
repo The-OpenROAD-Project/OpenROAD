@@ -45,8 +45,8 @@ namespace stt{
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
-  min_fanout_alpha_({-1, -1}),
-  min_hpwl_alpha_({-1, -1}),
+  min_fanout_alpha_({0, -1}),
+  min_hpwl_alpha_({0, -1}),
   logger_(nullptr),
   db_(nullptr)
 {
