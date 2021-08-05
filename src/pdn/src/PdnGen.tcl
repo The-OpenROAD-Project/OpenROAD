@@ -399,12 +399,19 @@ proc check_design_state {} {
 
 proc check_orientations {orientations} {
   set valid_orientations {R0 R90 R180 R270 MX MY MXR90 MYR90}
+  set lef_orientations {N R0 FN MX S R180 FS MY E R90 FE MYR90 W R270 FW MXR90}
+
+  set checked_orientations {}
   foreach orient $orientations {
-    if {[lsearch -exact $valid_orientations $orient] == -1} {
-      utl::error PDN 74 "Invalid orientation $orient specified, must be one of [join $valid_orientation {, }]."
+    if {[lsearch -exact $valid_orientations $orient] > -1} {
+      lappend checked_orientations $orient
+    } elseif {[dict exists $lef_orientations $orient]} {
+      lappend checked_orientations [dict get $lef_orientations $orient]
+    } else {
+      utl::error PDN 74 "Invalid orientation $orient specified, must be one of [join $valid_orientations {, }]."
     }
   }
-  return $orientations
+  return $checked_orientations
 }
 
 proc check_layer_names {layer_names} {
@@ -1110,31 +1117,33 @@ proc get_priority_value {priority} {
   if {$priority == "none"} {return 1}
 }
 
-proc set_instance_grid {insts grid priority} {
+proc set_instance_grid {inst_name grid priority} {
   variable instances
 
+  # debug "start- inst_name $inst_name, grid: [dict get $grid name], priority: $priority"
   set grid_name [dict get $grid name]
   set priority_value [get_priority_value $priority]
-  dict for {inst_name instance} $insts {
-    if {[dict exists $instance grid]} {
-      if {[dict get $instance grid] != $grid_name} {
-        set current_priority_value [get_priority_value [dict get $instance selected_by]]
-        if {$priority_value < $current_priority_value} {
-          break
-        } elseif {$priority_value == $current_priority_value} {
-          utl::error PDN 165 "Conflict found, instance $inst_name is part of two grid definitions ($grid_name, [dict get $insts $inst_name grid])."
-        }
+  set instance [dict get $instances $inst_name]
+  if {[dict exists $instance grid]} {
+    if {[dict get $instance grid] != $grid_name} {
+      set current_priority_value [get_priority_value [dict get $instance selected_by]]
+      if {$priority_value < $current_priority_value} {
+        return
+      } elseif {$priority_value == $current_priority_value} {
+        utl::error PDN 165 "Conflict found, instance $inst_name is part of two grid definitions ($grid_name, [dict get $instances $inst_name grid])."
       }
     }
-    if {[dict exists $grid halo]} {
-      set_instance_halo $inst_name [dict get $grid halo]
-    }
-    dict set instances $inst_name selected_by $priority
+  } else {
     dict set instances $inst_name grid $grid_name
-    dict set insts $inst_name selected_by $priority
-    dict set insts $inst_name grid $grid_name
   }
-  return $insts
+
+  if {[dict exists $grid halo]} {
+    set_instance_halo $inst_name [dict get $grid halo]
+  }
+  dict set instances $inst_name selected_by $priority
+  dict set instances $inst_name grid $grid_name
+  dict set insts $inst_name selected_by $priority
+  dict set insts $inst_name grid $grid_name
 }
 
 proc verify_grid {grid} {
@@ -1221,6 +1230,7 @@ proc verify_grid {grid} {
     if {$type == "stdcell"} {
       utl::error PDN 90 "The orient attribute cannot be used with stdcell grids."
     }
+    dict set grid orient [check_orientations [dict get $grid orient]]
   }
 
   if {[dict exists $grid connect]} {
@@ -1271,35 +1281,33 @@ proc complete_macro_grid_specifications {} {
     set boundary [odb::newSetFromRect {*}[get_core_area]]
     set insts [filtered_insts_within $insts $boundary]
     if {[dict exists $grid instances]} {
+      # debug "Check macro name for [dict get $grid name]"
       dict for {inst_name instance} $insts {
-        if {[lsearch [dict get $grid instances] $inst_name] == -1} {
-          set insts [dict remove $insts $inst_name]
-        }
+        if {[lsearch [dict get $grid instances] $inst_name] > -1} {
+          set_instance_grid $inst_name $grid inst_name
+	}
       }
-      set insts [set_instance_grid $insts $grid inst_name]
+      set insts [set_instance_grid $selected_insts $grid inst_name]
     } elseif {[dict exists $grid macro]} {
-      set insts [filter_out_selected_by $insts inst_name]
+      # set insts [filter_out_selected_by $insts inst_name]
+      # debug "Check instance name for [dict get $grid name]"
       dict for {inst_name instance} $insts {
         set cell_name [dict get $instance macro]
-        if {[lsearch [dict get $grid macro] $cell_name] == -1} {
-          set insts [dict remove $insts $inst_name]
+        if {[lsearch [dict get $grid macro] $cell_name] > -1} {
+          set_instance_grid $inst_name $grid cell_name
         }
       }
-      set insts [set_instance_grid $insts $grid cell_name]
     } elseif {[dict exists $grid orient]} {
-      set insts [filter_out_selected_by $insts inst_name]
-      set insts [filter_out_selected_by $insts cell_name]
+      # set insts [filter_out_selected_by $insts inst_name]
+      # set insts [filter_out_selected_by $insts cell_name]
+      # debug "Check orientation for [dict get $grid name]"
       dict for {inst_name instance} $insts {
         set orient [dict get $instance orient]
-        if {[lsearch [dict get $grid orient] $orient] == -1} {
-          set insts [dict remove $insts $inst_name]
+	# debug "Inst: $inst_name, orient: $orient, compare to: [dict get $grid orient]"
+        if {[lsearch [dict get $grid orient] $orient] > -1} {
+          set_instance_grid $inst_name $grid orient
         }
       }
-      set insts [set_instance_grid $insts $grid orient]
-    } else {
-      set insts [filter_out_selected_by $insts inst_name]
-      set insts [filter_out_selected_by $insts cell_name]
-      set insts [filter_out_selected_by $insts orient]
     }
   }
   dict for {grid_name grid} [dict get $design_data grid macro] {
@@ -5255,8 +5263,10 @@ proc add_grid {} {
 proc select_instance_specification {instance} {
   variable design_data
   variable instances
-  # debug "start $instance"
-  # debug [dict get $instances $instance grid]
+
+  if {![dict exists $instances $instance grid]} {
+    utl::error PAD 248 "Instance $instance is not associated with any grid"
+  }
   return [dict get $design_data grid macro [dict get $instances $instance grid]]
 }
 
