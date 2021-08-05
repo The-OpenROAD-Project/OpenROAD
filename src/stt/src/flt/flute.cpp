@@ -961,12 +961,12 @@ DTYPE flutes_wl_MD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>
   return return_val;
 }
 
-static int orderx(const point* a, const point* b)
+static bool orderx(const point* a, const point* b)
 {
   return a->x < b->x;
 }
 
-static int ordery(const point* a, const point* b)
+static bool ordery(const point* a, const point* b)
 {
   return a->y < b->y;
 }
