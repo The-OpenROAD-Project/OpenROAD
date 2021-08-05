@@ -303,5 +303,34 @@ void set_display_controls(const char* name, const char* display_type, bool value
   }
 }
 
+const char* create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
+{
+  if (!check_gui("create_toolbar_button")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  auto button_name = gui->addToolbarButton(name, text, script, echo);
+  return button_name.c_str();
+}
+
+void remove_toolbar_button(const char* name)
+{
+  if (!check_gui("remove_toolbar_button")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->removeToolbarButton(name);
+}
+
+const char* input_dialog(const char* title, const char* question)
+{
+  if (!check_gui("input_dialog")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  auto value = gui->requestUserInput(title, question);
+  return value.c_str();
+}
+
 %} // inline
 

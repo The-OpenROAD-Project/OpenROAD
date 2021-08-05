@@ -74,7 +74,7 @@ class TclCmdInputWidget: public QPlainTextEdit {
 
   signals:
     // complete TCL command available
-    void completeCommand();
+    void completeCommand(const QString& command);
 
     // back in history
     void historyGoBack();
