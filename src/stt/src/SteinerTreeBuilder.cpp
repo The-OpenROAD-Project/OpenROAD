@@ -73,13 +73,19 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
                                          int drvr_index)
 {
   float net_alpha = alpha_;
+  int min_fanout = min_fanout_alpha_.first;
+  int min_hpwl = min_hpwl_alpha_.first;
 
-  if (net->getTermCount()-1 >= min_fanout_alpha_.first) {
-    net_alpha = min_fanout_alpha_.second;
+  if (min_fanout > 0) {
+    if (net->getTermCount()-1 >= min_fanout) {
+      net_alpha = min_fanout_alpha_.second;
+    }
   }
 
-  if (computeHPWL(net) >= min_hpwl_alpha_.first) {
-    net_alpha = min_hpwl_alpha_.second;
+  if (min_hpwl > 0) {
+    if (computeHPWL(net) >= min_hpwl) {
+      net_alpha = min_hpwl_alpha_.second;
+    }
   }
 
   net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
