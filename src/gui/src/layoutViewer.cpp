@@ -34,9 +34,11 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QImageWriter>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPaintEvent>
@@ -419,6 +421,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = getBlock()->getDataBase()->getTech();
   std::vector<Selected> selections;
+
+  if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
+    auto blockages = search_.searchBlockages(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+    for (auto iter : blockages) {
+      selections.push_back(makeSelected_(std::get<2>(iter)));
+    }
+  }
+
   // dbSet doesn't provide a reverse iterator so we have to copy it.
   std::deque<dbTechLayer*> rev_layers;
   for (auto layer : tech->getLayers()) {
@@ -434,6 +444,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       Selected selected = renderer->select(layer, pt_dbu);
       if (selected) {
         selections.push_back(selected);
+      }
+    }
+
+    if (options_->areObstructionsVisible() && options_->areObstructionsSelectable()) {
+      auto obs = search_.searchObstructions(
+          layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+      for (auto iter : obs) {
+        selections.push_back(makeSelected_(std::get<2>(iter)));
       }
     }
 
@@ -651,15 +669,15 @@ void LayoutViewer::addInstTransform(QTransform& xfm,
       xfm.scale(-1, 1);
       break;
     case dbOrientType::MYR90:
-      xfm.scale(-1, 1);
       xfm.rotate(90);
+      xfm.scale(-1, 1);
       break;
     case dbOrientType::MX:
       xfm.scale(1, -1);
       break;
     case dbOrientType::MXR90:
-      xfm.scale(1, -1);
       xfm.rotate(90);
+      xfm.scale(1, -1);
       break;
     default:
       break;  // error
@@ -890,27 +908,32 @@ void LayoutViewer::drawRulers(Painter& painter)
 
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
+  if (!options_->isCongestionVisible()) {
+    return;
+  }
+
   auto block = getBlock();
   if (block == nullptr)
     return;
   auto grid = block->getGCellGrid();
   if (grid == nullptr)
     return;
+
+  auto gcell_congestion_data = grid->getCongestionMap();
+  if (gcell_congestion_data.empty()) {
+    return;
+  }
+
   std::vector<int> x_grid, y_grid;
   uint x_grid_sz, y_grid_sz;
   grid->getGridX(x_grid);
   x_grid_sz = x_grid.size();
   grid->getGridY(y_grid);
   y_grid_sz = y_grid.size();
-  auto gcell_congestion_data = grid->getCongestionMap();
-
-  if (!options_->isCongestionVisible() || gcell_congestion_data.empty())
-    return;
 
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
-
   auto max_congestion_to_show = options_->getMaxCongestionToShow();
 
   for (auto& [key, cong_data] : gcell_congestion_data) {
@@ -961,6 +984,217 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   }
 }
 
+// Draw the instances bounds
+void LayoutViewer::drawInstanceOutlines(QPainter* painter,
+                                        const std::vector<odb::dbInst*>& insts)
+{
+  int minimum_height_for_tag = 5 * minimumViewableResolution();
+  const QTransform initial_xfm = painter->transform();
+
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // setup the instance's transform
+    QTransform xfm = initial_xfm;
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // draw bbox
+    Rect master_box;
+    master->getPlacementBoundary(master_box);
+    painter->drawRect(
+        master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
+
+    // Draw an orientation tag in corner if useful in size
+    int master_h = master->getHeight();
+    if (master_h >= minimum_height_for_tag) {
+      qreal master_w = master->getWidth();
+      qreal tag_size = 0.1 * master_h;
+      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
+      qreal tag_y = master_box.yMin() + tag_size;
+      painter->drawLine(QPointF(tag_x, master_box.yMin()),
+                        QPointF(master_box.xMin(), tag_y));
+    }
+  }
+  painter->setTransform(initial_xfm);
+}
+
+// Draw the instances' shapes
+void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
+                                      QPainter* painter,
+                                      const std::vector<odb::dbInst*>& insts)
+{
+  int minimum_height = 5 * minimumViewableResolution();
+  const QTransform initial_xfm = painter->transform();
+  // Draw the instances' shapes
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    if (master->getHeight() < minimum_height) {
+      continue;
+    }
+
+    const Boxes* boxes = boxesByLayer(master, layer);
+
+    if (boxes == nullptr) {
+      continue;  // no shapes on this layer
+    }
+
+    // setup the instance's transform
+    QTransform xfm = initial_xfm;
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // Only draw the pins/obs if they are big enough to be useful
+    painter->setPen(Qt::NoPen);
+    QColor color = getColor(layer);
+    Qt::BrushStyle brush_pattern = getPattern(layer);
+    painter->setBrush(QBrush(color, brush_pattern));
+
+    painter->setBrush(color.lighter());
+    for (auto& box : boxes->obs) {
+      painter->drawRect(box);
+    }
+
+    painter->setBrush(QBrush(color, brush_pattern));
+    for (auto& box : boxes->mterms) {
+      painter->drawRect(box);
+    }
+  }
+
+  painter->setTransform(initial_xfm);
+}
+
+// Draw the instances' names
+void LayoutViewer::drawInstanceNames(QPainter* painter,
+                                     int font_size,
+                                     const std::vector<odb::dbInst*>& insts)
+{
+  if (!options_->areInstanceNamesVisible()) {
+    return;
+  }
+  int minimum_height = 5 * minimumViewableResolution();
+  const QTransform initial_xfm = painter->transform();
+
+  const QColor text_color = options_->instanceNameColor();
+  painter->setPen(QPen(text_color, 0));
+  painter->setBrush(QBrush(text_color));
+
+  const QFont initial_font = painter->font();
+
+  // aim for 1/4 the width of master, 1/20 the height of master,
+  // but no more than 50x bigger than all other text
+  static const int width_scalar = 4;
+  static const int height_scalar = 20;
+  static const int max_scalar = 50;
+  // text should not fill more than 90% of the instance width
+  static const double width_limit = 0.9;
+
+  painter->setTransform(QTransform());
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    if (master->getHeight() < minimum_height) {
+      continue;
+    }
+
+    // setup the instance's transform
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+
+    // get bbox
+    Rect master_box;
+    master->getPlacementBoundary(master_box);
+    inst_xfm.apply(master_box);
+
+    // draw text
+    QString name = inst->getName().c_str();
+
+    QFont inst_font = initial_font;
+    inst_font.setPixelSize(font_size);
+    QRect text_bbox = QFontMetrics(inst_font).boundingRect(name);
+    int inst_width = master_box.dx();
+    int inst_height = master_box.dy();
+    int text_bbox_width = width_scalar*text_bbox.width();
+    int text_bbox_height = height_scalar*text_bbox.height();
+    if (text_bbox_width < inst_width || text_bbox_height < inst_height) {
+      // text will be tiny, so update pixel size
+      int scale_font_width = std::floor(static_cast<double>(inst_width) / text_bbox_width);
+      int scale_font_height = std::floor(static_cast<double>(inst_height) / text_bbox_height);
+      int scale_font = std::min(max_scalar, std::max(scale_font_width, scale_font_height));
+
+      inst_font.setPixelSize(scale_font * font_size);
+      text_bbox = QFontMetrics(inst_font).boundingRect(name);
+    }
+    double inst_width_limit = width_limit * inst_width;
+    if (text_bbox.width() > inst_width_limit) {
+      // make 10% smaller than width of instance
+      double scale_font = inst_width_limit / text_bbox.width();
+      inst_font.setPixelSize(inst_font.pixelSize() * scale_font);
+    }
+    int final_size = inst_font.pixelSize() * pixels_per_dbu_;
+    if (final_size == 0) {
+      continue;
+    }
+    inst_font.setPixelSize(final_size);
+    painter->setFont(inst_font);
+
+    QRectF text_draw_box = dbuToScreen(master_box);
+    QPointF text_draw_box_center = text_draw_box.center();
+    text_draw_box.setLeft(text_draw_box_center.x() - text_bbox.width() * pixels_per_dbu_/2);
+    text_draw_box.setWidth(text_bbox.width() * pixels_per_dbu_);
+    painter->drawText(text_draw_box, Qt::AlignCenter, name);
+  }
+
+  painter->setTransform(initial_xfm);
+  painter->setFont(initial_font);
+}
+
+void LayoutViewer::drawBlockages(QPainter* painter,
+                                 const Rect& bounds)
+{
+  if (!options_->areBlockagesVisible()) {
+    return;
+  }
+  painter->setPen(Qt::NoPen);
+  painter->setBrush(QBrush(options_->placementBlockageColor(), options_->placementBlockagePattern()));
+
+  auto blockage_range = search_.searchBlockages(
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+
+  for (auto& [box, poly, blockage] : blockage_range) {
+    Rect bbox;
+    blockage->getBBox()->getBox(bbox);
+    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+}
+
+void LayoutViewer::drawObstructions(dbTechLayer* layer,
+                                    QPainter* painter,
+                                    const Rect& bounds)
+{
+  if (!options_->areObstructionsVisible() || !options_->isVisible(layer)) {
+    return;
+  }
+
+  painter->setPen(Qt::NoPen);
+  QColor color = getColor(layer).darker();
+  Qt::BrushStyle brush_pattern = getPattern(layer);
+  painter->setBrush(QBrush(color, brush_pattern));
+
+  auto obstructions_range = search_.searchObstructions(
+      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+
+  for (auto& [box, poly, obs] : obstructions_range) {
+    Rect bbox;
+    obs->getBBox()->getBox(bbox);
+    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -1003,36 +1237,10 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
   }
 
-  // Draw the instances bounds
-  for (auto inst : insts) {
-    dbMaster* master = inst->getMaster();
-    // setup the instance's transform
-    QTransform xfm = painter->transform();
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-    addInstTransform(xfm, inst_xfm);
-    painter->setTransform(xfm);
+  drawInstanceOutlines(painter, insts);
 
-    // draw bbox
-    painter->setPen(QPen(Qt::gray, 0));
-    painter->setBrush(QBrush());
-    Rect master_box;
-    master->getPlacementBoundary(master_box);
-    painter->drawRect(
-        master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
-
-    // Draw an orientation tag in corner if useful in size
-    int master_h = master->getHeight();
-    if (master_h >= 5 * pixel) {
-      qreal master_w = master->getWidth();
-      qreal tag_size = 0.1 * master_h;
-      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-      qreal tag_y = master_box.yMin() + tag_size;
-      painter->drawLine(QPointF(tag_x, master_box.yMin()),
-                        QPointF(master_box.xMin(), tag_y));
-    }
-    painter->setTransform(initial_xfm);
-  }
+  // draw blockages
+  drawBlockages(painter, bounds);
 
   dbTech* tech = block->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
@@ -1046,63 +1254,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
       continue;
     }
 
-    // Draw the instances' shapes
-    for (auto inst : insts) {
-      dbMaster* master = inst->getMaster();
-      if (master->getHeight() < 5 * pixel) {
-        continue;
-      }
+    drawInstanceShapes(layer, painter, insts);
 
-      const Boxes* boxes = boxesByLayer(master, layer);
-
-      if (boxes == nullptr) {
-        continue;  // no shapes on this layer
-      }
-
-      // setup the instance's transform
-      QTransform xfm = painter->transform();
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
-      addInstTransform(xfm, inst_xfm);
-      painter->setTransform(xfm);
-
-      // Only draw the pins/obs if they are big enough to be useful
-      painter->setPen(Qt::NoPen);
-      QColor color = getColor(layer);
-      Qt::BrushStyle brush_pattern = getPattern(layer);
-      painter->setBrush(QBrush(color, brush_pattern));
-
-      painter->setBrush(color.lighter());
-      for (auto& box : boxes->obs) {
-        painter->drawRect(box);
-      }
-
-      painter->setBrush(QBrush(color, brush_pattern));
-      for (auto& box : boxes->mterms) {
-        painter->drawRect(box);
-      }
-
-#if 0
-        // TODO
-        // draw text
-        painter->setPen(QPen(Qt::yellow, 0));
-        painter->setBrush(QBrush(Qt::yellow));
-        auto name = master->getName();
-        qreal font_scale = master_w
-            / painter->fontMetrics().horizontalAdvance(name.c_str());
-
-        font_scale = std::min(font_scale, 5000.0);
-        QFont f = painter->font();
-        f.setPointSizeF(f.pointSize() * pixels_per_dbu_);
-        painter->setFont(f);
-
-        painter->scale(1, -1);
-        painter->drawText(0, -master_h, master_w, master_h,
-                          Qt::AlignCenter, name.c_str());
-#endif
-
-      painter->setTransform(initial_xfm);
-    }
+    drawObstructions(layer, painter, bounds);
 
     // Now draw the shapes
     QColor color = getColor(layer);
@@ -1162,6 +1316,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
       renderer->drawLayer(layer, gui_painter);
     }
   }
+
+  // draw instance names ~ 200nm tall
+  drawInstanceNames(painter, 0.2*block->getDbUnitsPerMicron(), insts);
 
   drawRows(block, painter, bounds);
   for (auto* renderer : renderers) {
@@ -1306,8 +1463,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.setRenderHints(QPainter::Antialiasing);
 
   // Fill draw region with black
-  painter.setPen(QPen(Qt::black, 0));
-  painter.setBrush(Qt::black);
+  painter.setPen(QPen(background_, 0));
+  painter.setBrush(background_);
   painter.drawRect(event->rect());
 
   if (!design_loaded_) {
@@ -1463,12 +1620,78 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
   scroller_ = scroller;
 }
 
+void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
+{
+  dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  QList<QByteArray> valid_extensions = QImageWriter::supportedImageFormats();
+
+  QString save_filepath;
+  if (filepath.isEmpty()) {
+    QString images_filter = "Images (";
+    for (const QString& ext : valid_extensions) {
+      images_filter += "*." + ext + " ";
+    }
+    images_filter += ")";
+
+    save_filepath = QFileDialog::getSaveFileName(
+        this,
+        tr("Save Layout"),
+        "",
+        images_filter);
+  } else {
+    save_filepath = filepath;
+  }
+
+  if (save_filepath.isEmpty()) {
+    return;
+  }
+
+  // check for a valid extension, if not found add .png
+  if (!std::any_of(
+      valid_extensions.begin(),
+      valid_extensions.end(),
+      [save_filepath](const QString& ext) {
+        return save_filepath.endsWith("."+ext);
+      })) {
+    save_filepath += ".png";
+    logger_->warn(utl::GUI, 10, "File path does not end with a valid extension, new path is: {}", save_filepath.toStdString());
+  }
+
+  QRegion save_region;
+  if (region.dx() == 0 || region.dy() == 0) {
+    // default to just that is currently visible
+    save_region = visibleRegion();
+  } else {
+    const QRectF screen_region = dbuToScreen(region);
+    save_region = QRegion(
+        screen_region.left(),  screen_region.top(),
+        screen_region.width(), screen_region.height());
+  }
+
+  const QRect bounding_rect = save_region.boundingRect();
+  QImage img(bounding_rect.width(), bounding_rect.height(), QImage::Format_ARGB32_Premultiplied);
+  if (!img.isNull()) {
+    img.fill(background_);
+    render(&img, {0, 0}, save_region);
+    if (!img.save(save_filepath)) {
+      logger_->warn(utl::GUI, 11, "Failed to write image: {}", save_filepath.toStdString());
+    }
+  } else {
+    logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
+  }
+}
+
 void LayoutViewer::addMenuAndActions()
 {
   // Create Top Level Menu for the context Menu
   auto select_menu = layout_context_menu_->addMenu(tr("Select"));
   auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
   auto view_menu = layout_context_menu_->addMenu(tr("View"));
+  auto save_menu = layout_context_menu_->addMenu(tr("Save"));
   auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
   // Create Actions
 
@@ -1495,6 +1718,10 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
   menu_actions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
   menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
+
+  // Save actions
+  menu_actions_[SAVE_VISIBLE_IMAGE_ACT] = save_menu->addAction(tr("Visible layout"));
+  menu_actions_[SAVE_WHOLE_IMAGE_ACT] = save_menu->addAction(tr("Entire layout"));
 
   // Clear Actions
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
@@ -1545,6 +1772,14 @@ void LayoutViewer::addMenuAndActions()
   });
   connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
     this->fit();
+  });
+
+  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
+    saveImage("");
+  });
+  connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
+    const QSize whole_size = size();
+    saveImage("", screenToDBU({0, 0, whole_size.width(), whole_size.height()}));
   });
 
   connect(
@@ -1654,6 +1889,21 @@ void LayoutViewer::inDbSWireCreate(dbSWire* wire)
 }
 
 void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbBlockageCreate(odb::dbBlockage* blockage)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbObstructionCreate(odb::dbObstruction* obs)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbObstructionDestroy(odb::dbObstruction* obs)
 {
   updateShapes();
 }

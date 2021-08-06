@@ -73,15 +73,24 @@ class Capacities
   Capacities() = default;
   CapacitiesVec& getHorCapacities() { return hor_capacities_; }
   CapacitiesVec& getVerCapacities() { return ver_capacities_; }
-  void setHorCapacities(CapacitiesVec capacities) { hor_capacities_ = capacities; }
-  void setVerCapacities(CapacitiesVec capacities) { ver_capacities_ = capacities; }
+  void setHorCapacities(CapacitiesVec capacities)
+  {
+    hor_capacities_ = capacities;
+  }
+  void setVerCapacities(CapacitiesVec capacities)
+  {
+    ver_capacities_ = capacities;
+  }
+
  private:
   CapacitiesVec hor_capacities_;
   CapacitiesVec ver_capacities_;
 };
 
-struct cmpById {
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const {
+struct cmpById
+{
+  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const
+  {
     return net1->getId() < net2->getId();
   }
 };

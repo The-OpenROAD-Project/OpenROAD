@@ -414,8 +414,8 @@ repair_clk_inverters_cmd()
 void
 repair_net_cmd(Net *net,
                double max_length,
-                  double max_slew_margin,
-                  double max_cap_margin)
+               double max_slew_margin,
+               double max_cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();

@@ -48,6 +48,7 @@
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
 
 namespace gui {
 
@@ -302,6 +303,27 @@ void Gui::clearRulers()
   main_window->clearRulers();
 }
 
+const std::string Gui::addToolbarButton(const std::string& name,
+                                        const std::string& text,
+                                        const std::string& script,
+                                        bool echo)
+{
+  return main_window->addToolbarButton(name,
+                                       QString::fromStdString(text),
+                                       QString::fromStdString(script),
+                                       echo);
+}
+
+void Gui::removeToolbarButton(const std::string& name)
+{
+  main_window->removeToolbarButton(name);
+}
+
+const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
+{
+  return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
+}
+
 void Gui::addCustomVisibilityControl(const std::string& name,
                                      bool initially_visible)
 {
@@ -312,6 +334,16 @@ void Gui::addCustomVisibilityControl(const std::string& name,
 bool Gui::checkCustomVisibilityControl(const std::string& name)
 {
   return main_window->getControls()->checkCustomVisibilityControl(name);
+}
+
+void Gui::setDisplayControlsVisible(const std::string& name, bool value)
+{
+  main_window->getControls()->setControlByPath(name, true, value ? Qt::Checked : Qt::Unchecked);
+}
+
+void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
+{
+  main_window->getControls()->setControlByPath(name, false, value ? Qt::Checked : Qt::Unchecked);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -337,6 +369,11 @@ void Gui::zoomOut()
 void Gui::zoomOut(const odb::Point& focus_dbu)
 {
   main_window->getLayoutViewer()->zoomOut(focus_dbu);
+}
+
+void Gui::saveImage(const std::string& filename, const odb::Rect& region)
+{
+  main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
 }
 
 Renderer::~Renderer()
@@ -411,6 +448,11 @@ void Selected::highlight(Painter& painter,
 
 }  // namespace gui
 
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* gui_tcl_inits[];
+}  // namespace sta
+
 extern "C" {
 struct Tcl_Interp;
 }
@@ -425,6 +467,7 @@ void initGui(OpenRoad* openroad)
 {
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
+  sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
   if (gui::main_window) {
     using namespace gui;
     main_window->setLogger(openroad->getLogger());
@@ -432,6 +475,8 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
     Gui::get()->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+    Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+    Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
   }
 }
 

@@ -31,7 +31,7 @@ The -num_pads_per_tile options specifies the number of padcells that can be plac
 
 Details about the redistribution layer, name, width and spacing are specified with the -rdl_layer, -rdl_width and -rdl_spacing commands (units: micrometres)
 
-The -rdl_cover_file_name is used to specify the name of the file to contain the RDL routing.
+The -rdl_cover_file_name is used to specify the name of the file to contain the RDL routing. The use of this option is deprecated, as the RDL routes are written to the database
 
 ### Options
 
@@ -47,7 +47,7 @@ The -rdl_cover_file_name is used to specify the name of the file to contain the 
 | -rdl_layer | Name of the redistribution layer |
 | -rdl_width | The width of the RDL layer to use when connecting bumps to padcells |
 | -rdl_spacing | The required spacing between RDL wires |
-| -rdl_cover_file_name | Specify the name of the file to which the routing of the redistribution layer is to be written. If not specified, the default value is cover.def.  In the previous release, the openroad database did not support 45 degree lines used by RDL routing, and this cover.def allowed for the RDL to be added at the end of the flow, without being added to the database. Now that the database will allow 45 degree lines, and this command will be deprecated once ICeWall has been modified to write RDL into the database directly. |
+| -rdl_cover_file_name | Specify the name of the file to which the routing of the redistribution layer is to be written. If not specified, no cover def file will be written. In the previous release, the openroad database did not support 45 degree lines used by RDL routing, and this cover.def allowed for the RDL to be added at the end of the flow, without being added to the database. Now that the database allows 45 degree lines, this option is deprecated, and may be removed in a later version of openroad. |
 
 ### Examples
 ```

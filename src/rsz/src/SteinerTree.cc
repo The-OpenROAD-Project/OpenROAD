@@ -320,10 +320,12 @@ SteinerTree::findLeftRights(const Network *network,
       printf("\n");
     }
   }
-  SteinerPt root = drvrPt(network);
-  SteinerPt root_adj = adj1[root];
-  left_[root] = root_adj;
-  findLeftRights(root, root_adj, adj1, adj2, adj3, logger);
+  if (drvr_steiner_pt_ != null_pt) {
+    SteinerPt root = drvrPt(network);
+    SteinerPt root_adj = adj1[root];
+    left_[root] = root_adj;
+    findLeftRights(root, root_adj, adj1, adj2, adj3, logger);
+  }
 }
 
 void

@@ -104,7 +104,7 @@ bool Pin::isDriver()
   } else {
     odb::dbNet* db_net = iterm_->getNet();
     odb::dbITerm* driver = db_net->getFirstOutput();
-    
+
     return (driver == iterm_);
   }
 }

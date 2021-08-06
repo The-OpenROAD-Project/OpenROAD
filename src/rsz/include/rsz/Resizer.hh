@@ -300,7 +300,7 @@ protected:
   void ensureBlock();
   void ensureDesignArea();
   void ensureLevelDrvrVertices();
-  Instance *bufferInput(Pin *top_pin,
+  Instance *bufferInput(const Pin *top_pin,
                         LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
@@ -342,6 +342,7 @@ protected:
                     int &fanout_violations,
                     int &length_violations);
   void repairNet(Net *net,
+                 const Pin *drvr_pin,
                  Vertex *drvr,
                  double max_slew_margin,
                  double max_cap_margin,
@@ -385,7 +386,6 @@ protected:
   void makeRepeater(const char *where,
                     SteinerTree *tree,
                     SteinerPt pt,
-                    Net *net,
                     LibertyCell *buffer_cell,
                     int level,
                     int &wire_length,
@@ -395,7 +395,6 @@ protected:
   void makeRepeater(const char *where,
                     int x,
                     int y,
-                    Net *net,
                     LibertyCell *buffer_cell,
                     int level,
                     int &wire_length,

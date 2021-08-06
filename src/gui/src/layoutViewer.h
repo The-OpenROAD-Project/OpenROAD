@@ -94,6 +94,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     VIEW_ZOOMOUT_ACT,
     VIEW_ZOOMFIT_ACT,
 
+    SAVE_WHOLE_IMAGE_ACT,
+    SAVE_VISIBLE_IMAGE_ACT,
+
     CLEAR_SELECTIONS_ACT,
     CLEAR_HIGHLIGHTS_ACT,
     CLEAR_RULERS_ACT,
@@ -120,6 +123,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
+  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect());
+
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;
   virtual void resizeEvent(QResizeEvent* event) override;
@@ -142,6 +147,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void inDbSWireCreate(odb::dbSWire* wire) override;
   virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
   virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
+  virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
+  virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
+  virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
 
  signals:
   void location(qreal x, qreal y);
@@ -207,6 +215,19 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                   QPainter* painter,
                   const odb::Rect& bounds);
 
+  void drawInstanceOutlines(QPainter* painter,
+                            const std::vector<odb::dbInst*>& insts);
+  void drawInstanceShapes(odb::dbTechLayer* layer,
+                          QPainter* painter,
+                          const std::vector<odb::dbInst*>& insts);
+  void drawInstanceNames(QPainter* painter,
+                         int font_size,
+                         const std::vector<odb::dbInst*>& insts);
+  void drawBlockages(QPainter* painter,
+                     const odb::Rect& bounds);
+  void drawObstructions(odb::dbTechLayer* layer,
+                        QPainter* painter,
+                        const odb::Rect& bounds);
   void drawRows(odb::dbBlock* block,
                 QPainter* painter,
                 const odb::Rect& bounds);
@@ -261,6 +282,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPoint centering_shift_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
+
+  const QColor background_ = Qt::black;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

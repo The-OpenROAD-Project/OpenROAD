@@ -343,6 +343,23 @@ class Gui
   void zoomOut();
   void zoomOut(const odb::Point& focus_dbu);
 
+  // Save layout to an image file
+  void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
+
+  // modify display controls
+  void setDisplayControlsVisible(const std::string& name, bool value);
+  void setDisplayControlsSelectable(const std::string& name, bool value);
+
+  // adding custom buttons to toolbar
+  const std::string addToolbarButton(const std::string& name,
+                                     const std::string& text,
+                                     const std::string& script,
+                                     bool echo);
+  void removeToolbarButton(const std::string& name);
+
+  // request for user input
+  const std::string requestUserInput(const std::string& title, const std::string& question);
+
   // Force an immediate redraw.
   void redraw();
 

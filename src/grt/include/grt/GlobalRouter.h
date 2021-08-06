@@ -88,14 +88,18 @@ class SteinerTree;
 class RoutePt;
 class GrouteRenderer;
 
-
 struct RegionAdjustment
 {
   odb::Rect region;
   int layer;
   float adjustment;
 
-  RegionAdjustment(int min_x, int min_y, int max_x, int max_y, int l, float adjst);
+  RegionAdjustment(int min_x,
+                   int min_y,
+                   int max_x,
+                   int max_y,
+                   int l,
+                   float adjst);
   odb::Rect getRegion() { return region; }
   int getLayer() { return layer; }
   float getAdjustment() { return adjustment; }
@@ -158,7 +162,9 @@ class GlobalRouter
 
   // flow functions
   void writeGuides(const char* file_name);
-  std::vector<Net*> startFastRoute(int min_routing_layer, int max_routing_layer, NetType type);
+  std::vector<Net*> startFastRoute(int min_routing_layer,
+                                   int max_routing_layer,
+                                   NetType type);
   void estimateRC();
   void run();
   void globalRouteClocksSeparately();
@@ -178,11 +184,14 @@ class GlobalRouter
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
   void setCapacitiesPerturbationPercentage(float percentage);
-  void setPerturbationAmount(int perturbation) { perturbation_amount_ = perturbation; };
+  void setPerturbationAmount(int perturbation)
+  {
+    perturbation_amount_ = perturbation;
+  };
   void perturbCapacities();
 
   // Highlight route in the gui.
-  void highlightRoute(const odb::dbNet *net);
+  void highlightRoute(const odb::dbNet* net);
   // Report the wire length on each layer.
   void reportLayerWireLengths();
 
@@ -206,7 +215,8 @@ class GlobalRouter
   void initializeNets(std::vector<Net*>& nets);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
-  void computeUserGlobalAdjustments(int min_routing_layer, int max_routing_layer);
+  void computeUserGlobalAdjustments(int min_routing_layer,
+                                    int max_routing_layer);
   void computeUserLayerAdjustments(int max_routing_layer);
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
@@ -214,18 +224,23 @@ class GlobalRouter
   void computeObstructionsAdjustments();
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
-  int computeTrackConsumption(const Net* net, std::vector<int>& edge_costs_per_layer);
+  int computeTrackConsumption(const Net* net,
+                              std::vector<int>& edge_costs_per_layer);
 
   // aux functions
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
-                             int min_routing_layer, int max_routing_layer);
+  void addGuidesForLocalNets(odb::dbNet* db_net,
+                             GRoute& route,
+                             int min_routing_layer,
+                             int max_routing_layer);
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
-  void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets,
-                          int min_routing_layer, int max_routing_layer);
+  void addRemainingGuides(NetRouteMap& routes,
+                          std::vector<Net*>& nets,
+                          int min_routing_layer,
+                          int max_routing_layer);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guide_box);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -239,7 +254,9 @@ class GlobalRouter
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
-  NetRouteMap findRouting(std::vector<Net*>& nets, int min_routing_layer, int max_routing_layer);
+  NetRouteMap findRouting(std::vector<Net*>& nets,
+                          int min_routing_layer,
+                          int max_routing_layer);
   void print(GRoute& route);
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
@@ -252,9 +269,15 @@ class GlobalRouter
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
   Capacities saveCapacities(int previous_min_layer, int previous_max_layer);
-  void restoreCapacities(Capacities capacities, int previous_min_layer, int previous_max_layer);
-  int getEdgeResource(int x1, int y1, int x2, int y2,
-                      odb::dbTechLayer* tech_layer, odb::dbGCellGrid* gcell_grid);
+  void restoreCapacities(Capacities capacities,
+                         int previous_min_layer,
+                         int previous_max_layer);
+  int getEdgeResource(int x1,
+                      int y1,
+                      int x2,
+                      int y2,
+                      odb::dbTechLayer* tech_layer,
+                      odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
 
@@ -273,7 +296,7 @@ class GlobalRouter
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
   int findInstancesObstructions(odb::Rect& die_area,
-                              const std::vector<int>& layer_extensions);
+                                const std::vector<int>& layer_extensions);
   void findNetsObstructions(odb::Rect& die_area);
   int computeMaxRoutingLayer();
   std::map<int, odb::dbTechVia*> getDefaultVias(int max_routing_layer);
@@ -284,13 +307,13 @@ class GlobalRouter
   bool clockHasLeafITerm(odb::dbNet* db_net);
 
   ord::OpenRoad* openroad_;
-  utl::Logger *logger_;
-  gui::Gui *gui_;
-  stt::SteinerTreeBuilder *stt_builder_;
+  utl::Logger* logger_;
+  gui::Gui* gui_;
+  stt::SteinerTreeBuilder* stt_builder_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
-  GrouteRenderer *groute_renderer_;
+  GrouteRenderer* groute_renderer_;
   NetRouteMap routes_;
 
   std::vector<Net>* nets_;
