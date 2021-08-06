@@ -399,7 +399,7 @@ proc check_design_state {} {
 
 proc check_orientations {orientations} {
   set valid_orientations {R0 R90 R180 R270 MX MY MXR90 MYR90}
-  set lef_orientations {N R0 FN MX S R180 FS MY E R90 FE MYR90 W R270 FW MXR90}
+  set lef_orientations {N R0 FN MY S R180 FS MX E R270 FE MYR90 W R90 FW MXR90}
 
   set checked_orientations {}
   foreach orient $orientations {
