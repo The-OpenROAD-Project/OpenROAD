@@ -980,6 +980,13 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
   Tree t;
   int d = x.size();
 
+  if (d < 2) {
+    t.deg = 1;
+    t.branch.resize(0);
+    t.length = 0;
+    return t;
+  }
+
   if (d == 2) {
     t.deg = 2;
     t.length = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
