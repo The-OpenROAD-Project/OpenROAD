@@ -196,9 +196,12 @@ void  Tapcell::cutRow(odb::dbBlock* block, odb::dbRow* row, std::map<std::string
 
   std::vector<odb::dbBox*> row_blockage_bboxs = row_blockages[row_name];
   std::vector<std::pair<int,int>> row_blockage_xs;
-  for(odb::dbBox* row_blockage_bbox : row_blockage_bboxs) {
+  for(odb::dbBox* row_blockage_bbox : row_blockages[row_name]) {
     row_blockage_xs.push_back(std::make_pair(row_blockage_bbox->xMin(), row_blockage_bbox->xMax()));
   }
+
+  std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
+
   std::vector<int> Data;
   int row_sub_idx = 1;
   for( std::pair<int,int> blockage : row_blockage_xs) {
@@ -412,6 +415,7 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>>& rows, std::string 
     y = iter->first;
     std::vector<int> prev_x;
     std::vector<vector<int>> merged_placements;
+    std::sort(row_fills[y].begin(), row_fills[y].end());
     for(std::vector<int> xs : row_fills[y]) {
       std::sort(xs.begin(), xs.end());
       if (prev_x.size() == 0) {
@@ -450,6 +454,7 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>>& rows, std::string 
       }
     }
   }
+    logger_->info(utl::TAP, 75, "Rows with macros: {}", rows_with_macros[1]);
   
   for(int row_idx = 0; row_idx < rows.size(); row_idx++) {
     subrows = rows[row_idx];
