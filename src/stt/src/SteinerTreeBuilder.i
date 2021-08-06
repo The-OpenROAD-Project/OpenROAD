@@ -87,6 +87,14 @@ set_min_hpwl_alpha(int hpwl, float alpha)
   getSteinerTreeBuilder()->setMinHPWLAlpha(hpwl, alpha);
 }
 
+void report_flute_tree(std::vector<int> x,
+                       std::vector<int> y)
+{
+  const int flute_accuracy = 3;
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = flt::flute(x, y, flute_accuracy);
+  pdr::reportSteinerTree(tree, logger);
+}
 
 void
 report_pd_tree(std::vector<int> x,
