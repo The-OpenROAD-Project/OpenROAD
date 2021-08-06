@@ -133,8 +133,9 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
   int max_y = std::numeric_limits<int>::min();
 
   for (odb::dbITerm* iterm : net->getITerms()) {
-    if (iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::NONE ||
-        iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::UNPLACED) {
+    odb::dbPlacementStatus status = iterm->getInst()->getPlacementStatus();
+    if (status != odb::dbPlacementStatus::NONE &&
+        status != odb::dbPlacementStatus::UNPLACED) {
       int x, y;
       iterm->getAvgXY(&x, &y);
       min_x = std::min(min_x, x);
