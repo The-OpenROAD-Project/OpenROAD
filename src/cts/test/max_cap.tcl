@@ -24,6 +24,6 @@ set_wire_rc -clock  -layer met3
 clock_tree_synthesis -root_buf sky130_fd_sc_hs__clkbuf_1 \
                      -buf_list sky130_fd_sc_hs__clkbuf_1
 
-estimate_parasitics -placement
 set_propagated_clock clk1
+estimate_parasitics -placement
 report_check_types -max_cap -max_slew -net [get_net -of_object [get_pin r1/CLK]]
