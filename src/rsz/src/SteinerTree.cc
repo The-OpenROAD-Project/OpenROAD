@@ -95,7 +95,7 @@ makeSteinerTree(const Pin *drvr_pin,
   int pin_count = pins.size();
   bool is_placed = true;
   if (pin_count > max_pin_count)
-    logger->warn(RSZ, 69, "skipping net {} with pin count {}",
+    logger->warn(RSZ, 69, "skipping net {} with {} pins.",
                  sdc_network->pathName(net),
                  pin_count);
   else if (pin_count >= 2) {
