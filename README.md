@@ -656,6 +656,7 @@ change units. They should represent "average" routing layer resistance
 and capacitance. If the set_wire_rc command is not called before
 resizing, the default_wireload model specified in the first liberty
 file or with the SDC set_wire_load command is used to make parasitics.  
+Ideal clock nets are not estimated.
 
 After the `global_route` command has been called the global routing topology
 and layers can be used to estimate parasitics  with the `-global_routing` flag.

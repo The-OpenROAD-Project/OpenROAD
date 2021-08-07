@@ -22,21 +22,21 @@ Path Type: max
 
     Cap    Slew   Delay    Time   Description
 -----------------------------------------------------------------------
-   1.01    0.00    0.00    0.00 ^ in1 (in)
+   1.28    0.00    0.00    0.00 ^ in1 (in)
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
-   1.00    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
+   1.28    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
-  18.58    0.04    0.06    0.07 ^ u2/Z (BUF_X1)
-           0.04    0.01    0.08 ^ repeater3/A (BUF_X4)
-  33.15    0.02    0.04    0.12 ^ repeater3/Z (BUF_X4)
-           0.04    0.03    0.15 ^ repeater2/A (BUF_X4)
-  33.15    0.02    0.04    0.19 ^ repeater2/Z (BUF_X4)
-           0.04    0.03    0.22 ^ repeater1/A (BUF_X4)
-  30.75    0.02    0.04    0.25 ^ repeater1/Z (BUF_X4)
-           0.03    0.03    0.28 ^ u3/A (BUF_X1)
-   0.06    0.00    0.02    0.30 ^ u3/Z (BUF_X1)
-           0.00    0.00    0.30 ^ out1 (out)
-                           0.30   data arrival time
+   3.71    0.01    0.03    0.04 ^ u2/Z (BUF_X1)
+           0.01    0.00    0.04 ^ repeater3/A (BUF_X4)
+  33.15    0.02    0.03    0.07 ^ repeater3/Z (BUF_X4)
+           0.04    0.03    0.10 ^ repeater2/A (BUF_X4)
+  33.15    0.02    0.04    0.14 ^ repeater2/Z (BUF_X4)
+           0.04    0.03    0.17 ^ repeater1/A (BUF_X4)
+  30.75    0.02    0.04    0.20 ^ repeater1/Z (BUF_X4)
+           0.03    0.03    0.23 ^ u3/A (BUF_X1)
+   0.31    0.01    0.02    0.26 ^ u3/Z (BUF_X1)
+           0.01    0.00    0.26 ^ out1 (out)
+                           0.26   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 

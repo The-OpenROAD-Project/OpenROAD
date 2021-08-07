@@ -74,9 +74,10 @@ SteinerPt SteinerTree::null_pt = -1;
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
                 bool find_left_rights,
+                int max_pin_count,
+                SteinerTreeBuilder *stt_builder,
                 dbNetwork *network,
-                Logger *logger,
-                SteinerTreeBuilder *stt_builder)
+                Logger *logger)
 {
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
@@ -93,7 +94,11 @@ makeSteinerTree(const Pin *drvr_pin,
   sort(pins, PinPathNameLess(network));
   int pin_count = pins.size();
   bool is_placed = true;
-  if (pin_count >= 2) {
+  if (pin_count > max_pin_count)
+    logger->warn(RSZ, 69, "skipping net {} with pin count {}",
+                 sdc_network->pathName(net),
+                 pin_count);
+  else if (pin_count >= 2) {
     int x[pin_count];
     int y[pin_count];
     int drvr_idx = 0;
@@ -151,7 +156,7 @@ void
 SteinerTree::setTree(stt::Tree tree,
                      const dbNetwork *network)
 {
-  tree_ = tree;
+  tree_ = std::move(tree);
 
   // Find driver steiner point.
   drvr_steiner_pt_ = null_pt;
