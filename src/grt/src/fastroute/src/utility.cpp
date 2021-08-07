@@ -129,12 +129,12 @@ void FastRouteCore::ConvertToFull3DType2()
   }
 }
 
-static int comparePVMINX(const OrderNetPin& a, const OrderNetPin& b)
+static bool comparePVMINX(const OrderNetPin& a, const OrderNetPin& b)
 {
   return a.minX < b.minX;
 }
 
-static int comparePVPV(const OrderNetPin& a, const OrderNetPin& b)
+static bool comparePVPV(const OrderNetPin& a, const OrderNetPin& b)
 {
   return a.npv < b.npv;
 }
@@ -975,7 +975,7 @@ void FastRouteCore::checkRoute3D()
   }
 }
 
-static int compareTEL(const OrderTree a, const OrderTree b)
+static bool compareTEL(const OrderTree a, const OrderTree b)
 {
   return a.xmin > b.xmin;
 }
@@ -1194,7 +1194,7 @@ void FastRouteCore::check2DEdgesUsage()
   }
 }
 
-static int compareEdgeLen(const OrderNetEdge a, const OrderNetEdge b)
+static bool compareEdgeLen(const OrderNetEdge a, const OrderNetEdge b)
 {
   return a.length > b.length;
 }
