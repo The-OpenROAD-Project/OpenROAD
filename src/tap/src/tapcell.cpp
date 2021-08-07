@@ -446,15 +446,14 @@ int Tapcell::insertTapcells(std::vector<vector<odb::dbRow*>>& rows, std::string 
       bot_top_row[i]--;
       bot_top_row[i+1]++;
 
-      if (bot_top_row[0] >= 0) {
-        rows_with_macros.insert(std::pair<int, int>(bot_top_row[0],0));
+      if (bot_top_row[i] >= 0) {
+        rows_with_macros.insert(std::pair<int, int>(bot_top_row[i],0));
       }
-      if (bot_top_row.back() <= rows.size()) {
-        rows_with_macros.insert(std::pair<int, int>(bot_top_row.back(),0));
+      if (bot_top_row[i+1] <= rows.size()) {
+        rows_with_macros.insert(std::pair<int, int>(bot_top_row[i+1],0));
       }
     }
   }
-    logger_->info(utl::TAP, 75, "Rows with macros: {}", rows_with_macros[1]);
   
   for(int row_idx = 0; row_idx < rows.size(); row_idx++) {
     subrows = rows[row_idx];
