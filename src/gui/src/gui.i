@@ -94,6 +94,7 @@ odb::Point make_point(double x, double y)
 %}
 
 %include "../../Exception.i"
+%include "std_string.i"
 
 %inline %{
 
@@ -303,14 +304,13 @@ void set_display_controls(const char* name, const char* display_type, bool value
   }
 }
 
-const char* create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
+const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
 {
   if (!check_gui("create_toolbar_button")) {
     return "";
   }
   auto gui = gui::Gui::get();
-  auto button_name = gui->addToolbarButton(name, text, script, echo);
-  return button_name.c_str();
+  return gui->addToolbarButton(name, text, script, echo);
 }
 
 void remove_toolbar_button(const char* name)
@@ -322,14 +322,13 @@ void remove_toolbar_button(const char* name)
   gui->removeToolbarButton(name);
 }
 
-const char* input_dialog(const char* title, const char* question)
+const std::string input_dialog(const char* title, const char* question)
 {
   if (!check_gui("input_dialog")) {
     return "";
   }
   auto gui = gui::Gui::get();
-  auto value = gui->requestUserInput(title, question);
-  return value.c_str();
+  return gui->requestUserInput(title, question);
 }
 
 %} // inline
