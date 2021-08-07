@@ -45,8 +45,8 @@ namespace stt{
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
-  min_fanout_alpha_({std::numeric_limits<int>::max(), -1}),
-  min_hpwl_alpha_({std::numeric_limits<int>::max(), -1}),
+  min_fanout_alpha_({0, -1}),
+  min_hpwl_alpha_({0, -1}),
   logger_(nullptr),
   db_(nullptr)
 {
@@ -73,17 +73,20 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
                                          int drvr_index)
 {
   float net_alpha = alpha_;
+  int min_fanout = min_fanout_alpha_.first;
+  int min_hpwl = min_hpwl_alpha_.first;
 
-  if (net->getTermCount()-1 >= min_fanout_alpha_.first) {
-    net_alpha = min_fanout_alpha_.second;
+  if (net_alpha_map_.find(net) != net_alpha_map_.end()) {
+    net_alpha = net_alpha_map_[net];
+  } else if (min_hpwl > 0) {
+    if (computeHPWL(net) >= min_hpwl) {
+      net_alpha = min_hpwl_alpha_.second;
+    }
+  } else if (min_fanout > 0) {
+    if (net->getTermCount()-1 >= min_fanout) {
+      net_alpha = min_fanout_alpha_.second;
+    }
   }
-
-  if (computeHPWL(net) >= min_hpwl_alpha_.first) {
-    net_alpha = min_hpwl_alpha_.second;
-  }
-
-  net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
-              net_alpha_map_[net] : net_alpha;
 
   Tree tree = makeTree(x, y, drvr_index, net_alpha);
 
@@ -130,8 +133,9 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
   int max_y = std::numeric_limits<int>::min();
 
   for (odb::dbITerm* iterm : net->getITerms()) {
-    if (iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::NONE ||
-        iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::UNPLACED) {
+    odb::dbPlacementStatus status = iterm->getInst()->getPlacementStatus();
+    if (status != odb::dbPlacementStatus::NONE &&
+        status != odb::dbPlacementStatus::UNPLACED) {
       int x, y;
       iterm->getAvgXY(&x, &y);
       min_x = std::min(min_x, x);
