@@ -53,7 +53,9 @@ class MacroPlacer2
             utl::Logger* logger);
   bool place(const char* config_file,
              const char* report_directory,
-             const char* report_file);
+             const char* report_file,
+             const char* macro_blockage_file,
+             const char* prefer_location_file);
 
  private:
   odb::dbDatabase* db_ = nullptr;

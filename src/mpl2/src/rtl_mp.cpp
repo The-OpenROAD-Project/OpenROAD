@@ -85,7 +85,9 @@ bool rtl_macro_placer(const char* config_file,
                       Logger* logger,
                       dbDatabase* db,
                       const char* report_directory,
-                      const char* report_file)
+                      const char* report_file,
+                      const char* macro_blockage_file, 
+                      const char* prefer_location_file)
 {
   logger->report("Start RTL-MP");
 
@@ -98,8 +100,10 @@ bool rtl_macro_placer(const char* config_file,
   float dead_space = 0.1;
   float halo_width = 2.0;
 
-  string region_file = string("macro_blockage.txt");
-  string location_file = string("location.txt");
+  string region_file = string(macro_blockage_file);
+  string location_file = string(prefer_location_file);
+  //string region_file = string("macro_blockage.txt");
+  //string location_file = string("location.txt");
 
   // These parameters are related to multi-start in shape engine
   int num_thread = 5;
@@ -404,9 +408,11 @@ void MacroPlacer2::init(dbDatabase* db, Logger* logger)
 
 bool MacroPlacer2::place(const char* config_file,
                          const char* report_directory,
-                         const char* report_file)
+                         const char* report_file,
+                         const char* macro_blockage_file,
+                         const char* prefer_location_file)
 {
-  return rtl_macro_placer(config_file, logger_, db_,  report_directory, report_file);
+  return rtl_macro_placer(config_file, logger_, db_,  report_directory, report_file, macro_blockage_file, prefer_location_file);
 }
 
 }  // namespace mpl

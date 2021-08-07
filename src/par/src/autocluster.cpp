@@ -1225,7 +1225,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
           output_file << "source: " << cluster->getName() << "   ";
           flag = false;
         }
-        output_file << cluster->getName() << "   " << iter->second << "   ";
+        output_file << cluster_map_[iter->first]->getName() << "   " << iter->second << "   ";
       }
       iter++;
     }

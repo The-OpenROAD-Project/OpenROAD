@@ -396,6 +396,7 @@ void SimulatedAnnealingCore::CalculateWirelength()
   for (Net* net : nets_) {
     vector<string> blocks = net->blocks_;
     vector<string> terminals = net->terminals_;
+    
 
     if (blocks.size() == 0)
       continue;
@@ -428,6 +429,7 @@ void SimulatedAnnealingCore::CalculateWirelength()
 
     wirelength_ += (abs(ux - lx) + abs(uy - ly)) * weight;
   }
+
 }
 
 float SimulatedAnnealingCore::NormCost(float area,
@@ -504,7 +506,8 @@ void SimulatedAnnealingCore::FastSA()
   float T = init_T_;
   float rej_threshold = rej_ratio_ * perturb_per_step_;
 
-  while (step <= max_num_step_ && rej_num <= rej_threshold) {
+  //while (step <= max_num_step_ && rej_num <= rej_threshold) {
+  while (step <= max_num_step_) {  
     rej_num = 0.0;
     for (int i = 0; i < perturb_per_step_; i++) {
       Perturb();
@@ -531,6 +534,11 @@ void SimulatedAnnealingCore::FastSA()
     }
 
     step++;
+
+    if(step == max_num_step_) {
+        flip_prob_ = 1.0; // force the agent to focus on flipping only
+        perturb_per_step_ = perturb_per_step_ * 10;
+    }
 
     // T = T * 0.99;
     T = T * cooling_rate_;
@@ -590,7 +598,7 @@ bool PinAlignmentSingleCluster(
   // parameterse related to fastSA
   float init_prob = 0.95;
   float rej_ratio = 0.99;
-  int max_num_step = 5000;
+  int max_num_step = 3000;
   int k = 5;
   float c = 100.0;
   float alpha = 0.3;
@@ -758,6 +766,7 @@ bool PinAlignment(const vector<Cluster*>& clusters,
       //string net_file = string("./rtl_mp/") + name + string(".txt.net");
       string net_file = string(report_directory) + string("/") + name + string(".txt.net");
       block_placement::ParseNetFile(nets, terminal_position, net_file.c_str());
+        
 
       bool flag = PinAlignmentSingleCluster(report_directory,
                                             clusters[i],

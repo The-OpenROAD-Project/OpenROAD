@@ -34,10 +34,12 @@
 sta::define_cmd_args "rtl_macro_placer" { -config_file config_file \
                                          [-report_directory report_file] \
                                          -report_file report_file \
+                                         [-macro_blockage_file macro_blockage_file] \
+                                         [-prefer_location_file prefer_location_file] \
                               }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { -config_file
-       -report_directory -report_file } flag {  }
+       -report_directory -report_file -macro_blockage_file -prefer_location_file } flag {  }
 
     if { ![info exists keys(-config_file)] } {
         utl::error MPL 2 "Missing mandatory -config_file file"
@@ -50,12 +52,22 @@ proc rtl_macro_placer { args } {
     set config_file $keys(-config_file)
     set report_file $keys(-report_file)
     set report_directory "rtl_mp"
+    set macro_blockage_file "macro_blockage.txt"
+    set prefer_location_file "location.txt"
 
     if { [info exists keys(-report_directory)] } {
         set report_directory $keys(-report_directory)
     }
 
-    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file]} {
+    if { [info exists keys(-macro_blockage_file)] } {
+        set macro_blockage_file $keys(-macro_blockage_file)
+    }
+
+    if { [info exists keys(-prefer_location_file)] } {
+        set prefer_location_file $keys(-prefer_location_file)
+    }
+
+    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file $macro_blockage_file $prefer_location_file]} {
         return false
     }
 
