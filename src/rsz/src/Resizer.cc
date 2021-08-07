@@ -803,8 +803,8 @@ Resizer::repairNet(Net *net,
 {
   // Hands off special nets.
   if (!db_network_->isSpecial(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, true,
-                                        db_network_, logger_, stt_builder_);
+    SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
+                                        stt_builder_, db_network_, logger_);
     if (tree) {
       debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                  sdc_network_->pathName(drvr_pin));
@@ -2936,8 +2936,8 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true,
-                                      db_network_, logger_, stt_builder_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
+                                      stt_builder_, db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
     delete tree;
@@ -3693,7 +3693,8 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, false, db_network_, logger_, stt_builder_);
+      tree = makeSteinerTree(drvr, false, max_steiner_pin_count_,
+                             stt_builder_, db_network_, logger_);
     steiner_renderer_->highlight(tree);
   }
 }
