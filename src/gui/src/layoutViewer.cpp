@@ -1071,14 +1071,13 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
 
 // Draw the instances' names
 void LayoutViewer::drawInstanceNames(QPainter* painter,
-                                     int font_size,
                                      const std::vector<odb::dbInst*>& insts)
 {
   if (!options_->areInstanceNamesVisible()) {
     return;
   }
 
-  int minimum_height = 10 * minimumViewableResolution();
+  const int minimum_size = 10 * minimumViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   const QColor text_color = options_->instanceNameColor();
@@ -1086,104 +1085,90 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   painter->setBrush(QBrush(text_color));
 
   const QFont initial_font = painter->font();
+  const QFontMetricsF font_metrics(initial_font);
 
+  // core cell text should be 10% of cell height
+  static const float size_target = 0.1;
   // text should not fill more than 90% of the instance height or width
   static const float size_limit = 0.9;
-  // snap scaling to 5x increments if new scale is less than this, but more than 1x
-  const float font_size_1x = font_size*pixels_per_dbu_;
-  const float font_size_0p5x = 0.5*font_size_1x;
-  const float font_size_snap = 5*font_size_1x;
+  static const float rotation_limit = 0.85; // slightly lower to prevent oscillating rotations when zooming
+
+  // limit non-core text to 1/2.0 (50%) of cell height or width
+  static const float non_core_scale_limit = 2.0;
+
+  // minimum pixel height for text
+  static const int minimum_text_height = 10;
+
+  const float font_core_scale_height = size_target*pixels_per_dbu_;
+  const float font_core_scale_width = size_limit*pixels_per_dbu_;
 
   painter->setTransform(QTransform());
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
-    if (master->getHeight() < minimum_height) {
+    int master_height = master->getHeight();
+    int master_width = master->getHeight();
+
+    if (inst->getMaster()->isCore() && master_height < minimum_size) {
+      // if core cell, just check master height
+      continue;
+    } else if (master_width < minimum_size || master_height < minimum_size) {
       continue;
     }
 
-    // setup the instance's transform
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-
-    // get bbox
     Rect instance_box;
-    master->getPlacementBoundary(instance_box);
-    inst_xfm.apply(instance_box);
+    inst->getBBox()->getBox(instance_box);
 
-    // draw text
     QString name = inst->getName().c_str();
-
-    QFont inst_font = initial_font;
-    inst_font.setPixelSize(font_size);
-
-    QRect name_bbox = QFontMetrics(inst_font).boundingRect(name);
-    Rect name_bbox_in_dbu = screenToDBU(name_bbox);
-
-    int inst_width_limited = size_limit*instance_box.dx();
-    int inst_height_limited = size_limit*instance_box.dy();
-
-    bool do_rotate = inst_height_limited > inst_width_limited;
-
-    float text_bbox_width = name_bbox_in_dbu.dx();
-    float text_bbox_height = name_bbox_in_dbu.dy();
-
-    // determine scaling factor that will keep text inside instance
-    float scale = 0.0;
-    if (do_rotate) {
-      // draw text rotated
-      float width_scale = inst_width_limited / text_bbox_height;
-      float height_scale = inst_height_limited / text_bbox_width;
-      scale = std::min(width_scale, height_scale);
-    } else {
-      // draw text normally
-      float width_scale = inst_width_limited / text_bbox_width;
-      float height_scale = inst_height_limited / text_bbox_height;
-      scale = std::min(width_scale, height_scale);
-    }
-
     QRectF instance_bbox_in_px = dbuToScreen(instance_box);
 
-    float new_font_size = scale * font_size;
-    if (new_font_size > font_size_1x) {
-      // limit upscaling to discrete steps
-      int snap_steps = std::floor(new_font_size / font_size_snap);
-      if (snap_steps == 0) {
-        new_font_size = font_size_1x;
-      } else {
-        new_font_size = snap_steps * font_size_snap;
-      }
-    } else if (new_font_size < font_size_0p5x && font_size_0p5x >= 1) {
-      // check downscale and adjust back to 0.5x with ellipses.
-      new_font_size = font_size_0p5x;
-      int max_width = do_rotate ? instance_bbox_in_px.height() : instance_bbox_in_px.width();
+    QRectF text_bounding_box = font_metrics.boundingRect(name);
 
-      inst_font.setPixelSize(font_size_0p5x);
-      name = QFontMetrics(inst_font).elidedText(name, Qt::ElideLeft, size_limit*max_width);
-    } else {
-      new_font_size = scale * font_size;
-    }
-
-    int int_font_size = new_font_size;
-    if (int_font_size == 0) {
-      // text is too small
+    if (text_bounding_box.height() < minimum_text_height) {
       continue;
     }
-    inst_font.setPixelSize(int_font_size);
-    painter->setFont(inst_font);
+
+    bool do_rotate = false;
+    if (text_bounding_box.width() > rotation_limit*instance_bbox_in_px.width()) {
+      // non-rotated text will not fit without elide
+      if (instance_bbox_in_px.height() > instance_bbox_in_px.width()) {
+        // check if more text will fit if rotated
+        do_rotate = true;
+      }
+    }
+
+    qreal text_height_check = non_core_scale_limit*text_bounding_box.height();
+    // don't show text if it's more than "non_core_scale_limit" of cell height/width
+    // this keeps text from dominating the cell size
+    if (!do_rotate && text_height_check > instance_bbox_in_px.height()) {
+      continue;
+    }
+    if (do_rotate && text_height_check > instance_bbox_in_px.width()) {
+      continue;
+    }
 
     QTransform text_transform;
+    auto text_alignment = Qt::AlignLeft | Qt::AlignBottom;
     if (do_rotate) {
-      QPointF instance_center = instance_bbox_in_px.center();
-
-      text_transform.translate(instance_center.x(), instance_center.y()); // move to center of inst
+      const QPointF inst_center = instance_bbox_in_px.center();
+      text_transform.translate(inst_center.x(), inst_center.y()); // move to center of inst
       text_transform.rotate(90);
-      text_transform.translate(-instance_center.x(), -instance_center.y()); // back to 0, 0
-      // remap instance_bbox to ensure bounding box is handled correctly
-      instance_bbox_in_px = text_transform.mapRect(instance_bbox_in_px);
-    }
-    painter->setTransform(text_transform);
+      text_transform.translate(-inst_center.x(), -inst_center.y()); // move to center of 0, 0
+      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit*instance_bbox_in_px.height());
 
-    painter->drawText(instance_bbox_in_px, Qt::AlignCenter, name);
+      instance_bbox_in_px = text_transform.mapRect(instance_bbox_in_px);
+      text_alignment = Qt::AlignRight | Qt::AlignBottom;
+
+      // account for descent of font
+      text_transform.translate(-font_metrics.descent(), 0);
+    } else {
+      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit*instance_bbox_in_px.width());
+
+      // account for descent of font
+      text_transform.translate(font_metrics.descent(), 0);
+    }
+
+    painter->setTransform(text_transform);
+    painter->drawText(instance_bbox_in_px, text_alignment, name);
   }
 
   painter->setTransform(initial_xfm);
@@ -1354,8 +1339,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
   }
 
-  // draw instance names ~ 200nm tall
-  drawInstanceNames(painter, 0.2*block->getDbUnitsPerMicron(), insts);
+  // draw instance names
+  drawInstanceNames(painter, insts);
 
   drawRows(block, painter, bounds);
   for (auto* renderer : renderers) {
