@@ -1132,7 +1132,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 
   odb::dbTechLayer* routing_layer = routing_layers_[layer];
-  bool vertical = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;;
+  bool vertical = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
   tiles_to_adjust
       = grid_->getBlockedTiles(region, first_tile_box, last_tile_box);
@@ -1143,10 +1143,10 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   int track_space = routing_tracks.getUsePitch();
 
   int first_tile_reduce = grid_->computeTileReduce(
-      region, first_tile_box, track_space, true, vertical);
+      region, first_tile_box, track_space, true, routing_layer->getDirection());
 
   int last_tile_reduce = grid_->computeTileReduce(
-      region, last_tile_box, track_space, false, vertical);
+      region, last_tile_box, track_space, false, routing_layer->getDirection());
 
   // If preferred direction is horizontal, only first and the last line will
   // have specific adjustments
@@ -1217,7 +1217,7 @@ void GlobalRouter::computeObstructionsAdjustments()
     if (!layer_obstructions.empty()) {
       std::pair<Grid::TILE, Grid::TILE> blocked_tiles;
 
-      bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;;
+      bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
       logger_->info(GRT,
                     17,
@@ -1250,10 +1250,10 @@ void GlobalRouter::computeObstructionsAdjustments()
         Grid::TILE& last_tile = blocked_tiles.second;
 
         int first_tile_reduce = grid_->computeTileReduce(
-            obs, first_tile_box, track_space, true, vertical);
+            obs, first_tile_box, track_space, true, tech_layer->getDirection());
 
         int last_tile_reduce = grid_->computeTileReduce(
-            obs, last_tile_box, track_space, false, vertical);
+            obs, last_tile_box, track_space, false, tech_layer->getDirection());
 
         if (!vertical) {
           for (int x = first_tile._x; x < last_tile._x; x++) {
@@ -2433,6 +2433,8 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
     int track_pitch, line_2__via_pitch_down, line_2__via_pitch_up, location,
         num_tracks;
     bool orientation;
+    const bool horizontal = false;
+    const bool vertical = true;
 
     track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
     track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
@@ -2444,7 +2446,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
       line_2__via_pitch_down = l2vPitches[level].second;
       location = init_track_y;
       num_tracks = num_tracks_y;
-      orientation = RoutingTracks::HORIZONTAL;
+      orientation = horizontal;
     } else if (tech_layer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
       track_pitch = track_step_x;
@@ -2452,7 +2454,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
       line_2__via_pitch_down = l2vPitches[level].second;
       location = init_track_x;
       num_tracks = num_tracks_x;
-      orientation = RoutingTracks::VERTICAL;
+      orientation = vertical;
     } else {
       logger_->error(GRT,
                      87,
