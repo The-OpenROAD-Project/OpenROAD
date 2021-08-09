@@ -1026,9 +1026,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             if (Horizontal) {
               // left
               if (curX > regionX1 && directions_3D_[curL][curY][curX] != Direction::East) {
-                grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX - 1;
                 tmp = d1_3D_[curL][curY][curX] + 1;
-                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap) {
+                if (h_edges_3D_[curL][curY][curX - 1].usage < h_edges_3D_[curL][curY][curX - 1].cap) {
                   tmpX = curX - 1;  // the left neighbor
 
                   if (d1_3D_[curL][curY][tmpX]
@@ -1062,12 +1061,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               // right
               if (Horizontal && curX < regionX2
                   && directions_3D_[curL][curY][curX] != Direction::West) {
-                grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX;
 
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpX = curX + 1;  // the right neighbor
 
-                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap) {
+                if (h_edges_3D_[curL][curY][curX].usage < h_edges_3D_[curL][curY][curX].cap) {
                   if (d1_3D_[curL][curY][tmpX]
                       >= BIG_INT)  // right neighbor not been put into heap1_3D_
                   {
@@ -1100,10 +1098,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               // bottom
               if (!Horizontal && curY > regionY1
                   && directions_3D_[curL][curY][curX] != Direction::South) {
-                grid = grid_vs_[curL] + (curY - 1) * x_grid_ + curX;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY - 1;  // the bottom neighbor
-                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap) {
+                if (v_edges_3D_[curL][(curY - 1)][curX].usage < v_edges_3D_[curL][(curY - 1)][curX].cap) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // bottom neighbor not been put into
                                    // heap1_3D_
@@ -1136,10 +1133,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               // top
               if (!Horizontal && curY < regionY2
                   && directions_3D_[curL][curY][curX] != Direction::North) {
-                grid = grid_vs_[curL] + curY * x_grid_ + curX;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY + 1;  // the top neighbor
-                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap) {
+                if (v_edges_3D_[curL][curY][curX].usage < v_edges_3D_[curL][curY][curX].cap) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // top neighbor not been put into heap1_3D_
                   {
@@ -1642,14 +1638,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               if (gridsX[i] == gridsX[i + 1])  // a vertical edge
               {
                 min_y = std::min(gridsY[i], gridsY[i + 1]);
-                v_edges_3D_[gridsL[i] * grid_v_ + min_y * x_grid_ + gridsX[i]]
+                v_edges_3D_[gridsL[i]][min_y][gridsX[i]]
                     .usage
                     += edge_cost_per_layer[gridsL[i]];
               } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
               {
                 min_x = std::min(gridsX[i], gridsX[i + 1]);
-                h_edges_3D_[gridsL[i] * grid_h_ + gridsY[i] * (x_grid_ - 1)
-                            + min_x]
+                h_edges_3D_[gridsL[i]][gridsY[i]][min_x]
                     .usage
                     += edge_cost_per_layer[gridsL[i]];
               }

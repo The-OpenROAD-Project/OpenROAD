@@ -394,8 +394,6 @@ class FastRouteCore
   int num_layers_;
   int total_overflow_;  // total # overflow
   int grid_hv_;
-  int grid_h_;
-  int grid_v_;
   int verbose_;
   int via_cost_;
   int mazeedge_threshold_;
@@ -420,13 +418,9 @@ class FastRouteCore
   std::vector<int> dcor_;
   std::vector<int> seglist_index_;  // the index for the segments for each net
   std::vector<int> seglist_cnt_;    // the number of segements for each net
-  std::vector<int> grid_hs_;
-  std::vector<int> grid_vs_;
   std::vector<bool> pop_heap2_;
 
   std::vector<FrNet*> nets_;
-  std::vector<Edge> h_edges_;
-  std::vector<Edge> v_edges_;
   std::vector<OrderNetEdge> net_eo_;
   std::vector<std::vector<int>>
       gxs_;  // the copy of xs for nets, used for second FLUTE
@@ -434,12 +428,15 @@ class FastRouteCore
       gys_;  // the copy of xs for nets, used for second FLUTE
   std::vector<std::vector<int>>
       gs_;  // the copy of vertical sequence for nets, used for second FLUTE
-  std::vector<Edge3D> h_edges_3D_;
-  std::vector<Edge3D> v_edges_3D_;
   std::vector<Segment> seglist_;
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
+
+  multi_array<Edge, 2> v_edges_;
+  multi_array<Edge, 2> h_edges_;
+  multi_array<Edge3D, 3> h_edges_3D_;
+  multi_array<Edge3D, 3> v_edges_3D_;
   multi_array<Direction, 3> directions_3D_;
   multi_array<parent3D, 3> pr_3D_;
   multi_array<int, 3> corr_edge_3D_;
