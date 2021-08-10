@@ -134,6 +134,14 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(setSelected(const Selected&, bool)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
+  connect(inspector_,
+          SIGNAL(selectedItemChanged()),
+          selection_browser_,
+          SLOT(updateModels()));
+  connect(inspector_,
+          SIGNAL(selectedItemChanged()),
+          viewer_,
+          SLOT(update()));
 
   connect(this,
           SIGNAL(selectionChanged()),

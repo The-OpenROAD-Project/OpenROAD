@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QDockWidget>
+#include <QItemDelegate>
 #include <QStandardItemModel>
 #include <QTreeView>
 #include <QVBoxLayout>
@@ -43,6 +44,43 @@
 #include "gui/gui.h"
 
 namespace gui {
+
+class SelectedItemModel : public QStandardItemModel
+{
+  Q_OBJECT
+
+public:
+  SelectedItemModel(QObject* parent = nullptr) : QStandardItemModel(0, 2, parent) {}
+
+  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+};
+
+class EditorItemDelegate : public QItemDelegate
+{
+  Q_OBJECT
+
+public:
+  enum EditType {
+    NUMBER,
+    STRING,
+    LIST
+  };
+
+  EditorItemDelegate(const QColor& foreground, QObject* parent = nullptr);
+
+  QWidget* createEditor(QWidget* parent,
+                        const QStyleOptionViewItem& option,
+                        const QModelIndex& index) const override;
+
+  void setEditorData(QWidget* editor,
+                     const QModelIndex& index) const override;
+  void setModelData(QWidget* editor,
+                    QAbstractItemModel* model,
+                    const QModelIndex& index) const override;
+
+private:
+  QColor foreground_;
+};
 
 // The inspector is to allow a single object to have it properties displayed.
 // It is generic and builds on the Selected and Descriptor classes.
@@ -58,6 +96,7 @@ class Inspector : public QDockWidget
 
  signals:
   void selected(const Selected& selected, bool showConnectivity = false);
+  void selectedItemChanged();
 
  public slots:
   void inspect(const Selected& object);
@@ -66,6 +105,11 @@ class Inspector : public QDockWidget
 
  private:
   void handleAction(QWidget* action);
+  QStandardItem* makeItem(const Selected& selected);
+  QStandardItem* makeItem(const QString& name);
+  void makeItemEditor(QStandardItem* item,
+                      const EditorItemDelegate::EditType type,
+                      const Descriptor::Editor& editor);
 
   // The columns in the tree view
   enum Column
@@ -75,11 +119,14 @@ class Inspector : public QDockWidget
   };
 
   QTreeView* view_;
-  QStandardItemModel* model_;
+  SelectedItemModel* model_;
   QVBoxLayout* layout_;
   const SelectionSet& selected_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
+
+  const QColor selectable_item_ = Qt::blue;
+  const QColor editable_item_ = Qt::darkGreen;
 };
 
 }  // namespace gui

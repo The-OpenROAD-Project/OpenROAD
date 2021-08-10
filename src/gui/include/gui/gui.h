@@ -38,6 +38,7 @@
 #include <array>
 #include <functional>
 #include <initializer_list>
+#include <map>
 #include <set>
 #include <string>
 #include <tuple>
@@ -74,13 +75,28 @@ class Descriptor
   using Action = std::pair<std::string, ActionCallback>;
   using Actions = std::vector<Action>;
 
+  // An editor is a callback function and a list of possible values (this can be empty),
+  // the name of the editor should match the property it modifies
+  // the callback should return true if the edit was successful, otherwise false
+  using EditorOption = std::pair<std::string, std::any>;
+  using EditorCallback = std::function<bool(std::any)>;
+  using Editor = std::pair<EditorCallback, const std::vector<EditorOption>>;
+  using Editors = std::map<std::string, Editor>;
+
   virtual Properties getProperties(std::any object) const = 0;
   virtual Actions getActions(std::any /* object */) const { return Actions(); }
+  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
 
   virtual Selected makeSelected(std::any object,
                                 void* additional_data) const = 0;
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
+
+  static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
+  {
+    return {func, options};
+  }
+  static const Editor makeEditor(const EditorCallback& func) { return makeEditor(func, {}); }
 
 protected:
   // The caller (Selected) will pre-configure the Painter's pen
@@ -137,6 +153,11 @@ class Selected
   Descriptor::Actions getActions() const
   {
     return descriptor_->getActions(object_);
+  }
+
+  Descriptor::Editors getEditors() const
+  {
+    return descriptor_->getEditors(object_);
   }
 
   operator bool() const { return object_.has_value(); }

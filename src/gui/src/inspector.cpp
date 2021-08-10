@@ -32,53 +32,121 @@
 
 #include "inspector.h"
 
+#include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QLineEdit>
 
 #include "gui/gui.h"
 
 Q_DECLARE_METATYPE(gui::Selected);
+Q_DECLARE_METATYPE(gui::Descriptor::Editor);
+Q_DECLARE_METATYPE(gui::EditorItemDelegate::EditType);
+Q_DECLARE_METATYPE(std::any);
 
 namespace gui {
 
 using namespace odb;
 
-static QStandardItem* makeItem(const QString& name,
-                               const Selected& selected = Selected())
+QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
-  auto item = new QStandardItem(name);
-  item->setEditable(false);
-  item->setSelectable(false);
-  if (selected) {
-    item->setData(QVariant::fromValue(selected));
-    item->setForeground(Qt::blue);
+  if (role == Qt::DisplayRole && index.column() == 1) {
+    auto selected_data = itemFromIndex(index)->data().value<Selected>();
+    if (selected_data) {
+      // use selected name when available
+      return QString::fromStdString(selected_data.getName());
+    }
   }
-  return item;
+  return QStandardItemModel::data(index, role);
 }
 
-static QStandardItem* makeItem(const std::string& name,
-                               const Selected& selected = Selected())
+EditorItemDelegate::EditorItemDelegate(const QColor& foreground,
+                                       QObject* parent) : QItemDelegate(parent),
+                                       foreground_(foreground)
 {
-  return makeItem(QString::fromStdString(name), selected);
 }
 
-static QStandardItem* makeItem(const char* name,
-                               const Selected& selected = Selected())
+QWidget* EditorItemDelegate::createEditor(QWidget* parent,
+                                          const QStyleOptionViewItem& /* option */,
+                                          const QModelIndex& index) const
 {
-  return makeItem(QString(name), selected);
+  auto type = index.model()->data(index, Qt::UserRole+1).value<EditorItemDelegate::EditType>();
+  if (type == LIST) {
+    auto combo_box = new QComboBox(parent);
+    combo_box->setStyleSheet("color: " + foreground_.name());
+    return combo_box;
+  } else {
+    auto line_edit = new QLineEdit(parent);
+    line_edit->setStyleSheet("color: " + foreground_.name());
+    return line_edit;
+  }
 }
+
+void EditorItemDelegate::setEditorData(QWidget* editor,
+                                       const QModelIndex &index) const
+{
+  auto type = index.model()->data(index, Qt::UserRole+1).value<EditorItemDelegate::EditType>();
+  auto [callback, values] = index.model()->data(index, Qt::UserRole).value<Descriptor::Editor>();
+  QString value = index.model()->data(index, Qt::EditRole).toString();
+
+  if (type != LIST) {
+    QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
+    line_edit->setText(value);
+  } else {
+    QComboBox* combo_box = static_cast<QComboBox*>(editor);
+    for (const auto& [name, option_value] : values) {
+      combo_box->addItem(QString::fromStdString(name), QVariant::fromValue(option_value));
+    }
+    combo_box->setCurrentText(value);
+  }
+}
+
+void EditorItemDelegate::setModelData(QWidget* editor,
+                                      QAbstractItemModel* model,
+                                      const QModelIndex& index) const
+{
+  auto type = model->data(index, Qt::UserRole+1).value<EditorItemDelegate::EditType>();
+  auto [callback, values] = model->data(index, Qt::UserRole).value<Descriptor::Editor>();
+
+  QString value;
+
+  bool accepted = false;
+  if (type != LIST) {
+    QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
+    value = line_edit->text();
+    if (type == NUMBER) {
+      accepted = callback(value.toDouble());
+    } else if (type == STRING) {
+      accepted = callback(value.toStdString());
+    }
+  } else {
+    QComboBox* combo_box = static_cast<QComboBox*>(editor);
+    value = combo_box->currentText();
+    accepted = callback(combo_box->currentData().value<std::any>());
+  }
+
+  if (accepted) {
+    model->setData(index, value, Qt::EditRole);
+  } else {
+    // reset to original data
+    model->setData(index, index.model()->data(index, Qt::EditRole), Qt::EditRole);
+  }
+}
+
+////////
 
 Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new QTreeView()),
-      model_(new QStandardItemModel(0, 2)),
+      model_(new SelectedItemModel),
       layout_(new QVBoxLayout),
       selected_(selected)
 {
   setObjectName("inspector");  // for settings
   model_->setHorizontalHeaderLabels({"Name", "Value"});
   view_->setModel(model_);
+  view_->setItemDelegate(new EditorItemDelegate(editable_item_, this));
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -101,6 +169,13 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 
 void Inspector::inspect(const Selected& object)
 {
+  // disconnect so announcements can be will not be made about changes
+  // changes right now are based on adding item to model
+  disconnect(model_,
+             SIGNAL(itemChanged(QStandardItem*)),
+             this,
+             SIGNAL(selectedItemChanged()));
+
   model_->removeRows(0, model_->rowCount());
   // remove action buttons and ensure delete
   for (auto& [button, action] : actions_) {
@@ -113,47 +188,76 @@ void Inspector::inspect(const Selected& object)
     return;
   }
 
-  model_->appendRow({makeItem("Type"), makeItem(object.getTypeName())});
-  model_->appendRow({makeItem("Name"), makeItem(object.getName())});
+  auto editors = object.getEditors();
 
-  for (auto& [name, value] : object.getProperties()) {
-    auto name_item = makeItem(name);
+  Descriptor::Properties all_properties;
+  all_properties.push_back({"Type", object.getTypeName()});
+  all_properties.push_back({"Name", object.getName()});
+
+  Descriptor::Properties properties = object.getProperties();
+  std::copy(properties.begin(), properties.end(), std::back_inserter(all_properties));
+
+  for (auto& [name, value] : all_properties) {
+    auto name_item = makeItem(QString::fromStdString(name));
+    auto editor_found = editors.find(name);
+    EditorItemDelegate::EditType editor_type = EditorItemDelegate::STRING; // default to string
+    std::vector<Descriptor::EditorOption> editor_options;
+
+    QStandardItem* value_item = nullptr;
 
     // For a SelectionSet a row is created with the set items
     // as children rows
     if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
-      auto value_item = makeItem(QString::number(sel_set->size()) + " items");
-      model_->appendRow({name_item, value_item});
+      value_item = makeItem(QString::number(sel_set->size()) + " items");
       int index = 1;
       for (const auto& selected : *sel_set) {
         auto index_item = makeItem(QString::number(index++));
-        auto selected_item = makeItem(selected.getName(), selected);
+        auto selected_item = makeItem(selected);
         name_item->appendRow({index_item, selected_item});
       }
-      // Auto open small lists
-      if (sel_set->size() < 10) {
-        view_->expand(name_item->index());
-      }
     } else if (auto selected = std::any_cast<Selected>(&value)) {
-      auto value_item = makeItem(selected->getName(), *selected);
-      model_->appendRow({name_item, value_item});
+      value_item = makeItem(*selected);
     } else if (auto v = std::any_cast<const char*>(&value)) {
-      model_->appendRow({name_item, makeItem(QString(*v))});
+      value_item = makeItem(QString(*v));
     } else if (auto v = std::any_cast<const std::string>(&value)) {
-      model_->appendRow({name_item, makeItem(*v)});
+      value_item = makeItem(QString::fromStdString(*v));
     } else if (auto v = std::any_cast<int>(&value)) {
-      model_->appendRow({name_item, makeItem(QString::number(*v))});
+      value_item = makeItem(QString::number(*v));
+      editor_type = EditorItemDelegate::NUMBER;
     } else if (auto v = std::any_cast<unsigned int>(&value)) {
-      model_->appendRow({name_item, makeItem(QString::number(*v))});
+      value_item = makeItem(QString::number(*v));
+      editor_type = EditorItemDelegate::NUMBER;
     } else if (auto v = std::any_cast<double>(&value)) {
-      model_->appendRow({name_item, makeItem(QString::number(*v))});
+      value_item = makeItem(QString::number(*v));
+      editor_type = EditorItemDelegate::NUMBER;
     } else if (auto v = std::any_cast<float>(&value)) {
-      model_->appendRow({name_item, makeItem(QString::number(*v))});
+      value_item = makeItem(QString::number(*v));
+      editor_type = EditorItemDelegate::NUMBER;
     } else if (auto v = std::any_cast<bool>(&value)) {
-      model_->appendRow({name_item, makeItem(*v ? "True" : "False")});
+      value_item = makeItem(*v ? "True" : "False");
+      editor_options.push_back({"True", true});
+      editor_options.push_back({"False", false});
     } else {
-      auto value_item = makeItem(QString("<unknown>"));
-      model_->appendRow({name_item, value_item});
+      value_item = makeItem("<unknown>");
+    }
+
+    model_->appendRow({name_item, value_item});
+
+    // Auto open small lists
+    if (model_->hasChildren(name_item->index()) && name_item->rowCount() < 10) {
+      view_->expand(name_item->index());
+    }
+
+    // make editor if found
+    if (editor_found != editors.end()) {
+      auto editor = (*editor_found).second;
+
+      // replace editor options
+      if (!editor_options.empty()) {
+        makeItemEditor(value_item, editor_type, Descriptor::makeEditor(editor.first, editor_options));
+      } else {
+        makeItemEditor(value_item, editor_type, editor);
+      }
     }
   }
 
@@ -166,6 +270,12 @@ void Inspector::inspect(const Selected& object)
     layout_->addWidget(button);
     actions_[button] = action;
   }
+
+  // connect so announcements can be made about changes
+  connect(model_,
+          SIGNAL(itemChanged(QStandardItem*)),
+          this,
+          SIGNAL(selectedItemChanged()));
 }
 
 void Inspector::clicked(const QModelIndex& index)
@@ -191,6 +301,38 @@ void Inspector::handleAction(QWidget* action)
   auto callback = actions_[action];
   auto new_selection = callback();
   emit selected(new_selection);
+}
+
+QStandardItem* Inspector::makeItem(const QString& name)
+{
+  auto item = new QStandardItem(name);
+  item->setEditable(false);
+  item->setSelectable(false);
+  return item;
+}
+
+QStandardItem* Inspector::makeItem(const Selected& selected)
+{
+  auto item = makeItem("");
+  item->setData(QVariant::fromValue(selected));
+  item->setForeground(selectable_item_);
+  return item;
+}
+
+void Inspector::makeItemEditor(QStandardItem* item,
+                               const EditorItemDelegate::EditType type,
+                               const Descriptor::Editor& editor)
+{
+  item->setEditable(true);
+  item->setForeground(editable_item_);
+  item->setData(QVariant::fromValue(editor), Qt::UserRole);
+  if (editor.second.empty()) {
+    // options are empty so use selected type
+    item->setData(QVariant::fromValue(type), Qt::UserRole+1);
+  } else {
+    // options are not empty so use list type
+    item->setData(QVariant::fromValue(EditorItemDelegate::LIST), Qt::UserRole+1);
+  }
 }
 
 }  // namespace gui
