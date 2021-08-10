@@ -35,7 +35,61 @@
 #include "db.h"
 #include "dbShape.h"
 
+#include "ord/OpenRoad.hh"
+#include "db_sta/dbSta.hh"
+#include "db_sta/dbNetwork.hh"
+#include "sta/Liberty.hh"
+
+#include <QInputDialog>
+#include <QStringList>
+
+#include <regex>
+
 namespace gui {
+
+// renames an object
+template<typename T>
+static void renameObjectEditor(T obj, Descriptor::Editors& editor)
+{
+  editor.insert({"Name", Descriptor::makeEditor([obj](std::any value) {
+    obj->rename(std::any_cast<std::string>(value).c_str());
+    return true;
+  })});
+}
+
+// get list of tech layers as EditorOption list
+static void layerOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
+{
+  for (auto layer : tech->getLayers()) {
+    options.push_back({layer->getName(), layer});
+  }
+}
+
+// request user input to select tech layer, returns nullptr or current if none was selected
+static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* current = nullptr)
+{
+  std::vector<Descriptor::EditorOption> options;
+  layerOptions(tech, options);
+  QStringList layers;
+  for (auto& [name, layer] : options) {
+    layers.append(QString::fromStdString(name));
+  }
+  bool okay;
+  int default_selection = current == nullptr ? 0 : layers.indexOf(QString::fromStdString(current->getName()));
+  QString selection = QInputDialog::getItem(
+      nullptr,
+      "Select technology layer",
+      "Layer",
+      layers,
+      default_selection, // current layer
+      false,
+      &okay);
+  if (okay) {
+    return std::any_cast<odb::dbTechLayer*>(options[layers.indexOf(selection)].second);
+  } else {
+    return current;
+  }
+}
 
 std::string DbInstDescriptor::getName(std::any object) const
 {
@@ -97,6 +151,136 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   }
   props.push_back({"ITerms", iterms});
   return props;
+}
+
+Descriptor::Actions DbInstDescriptor::getActions(std::any object) const
+{
+  auto inst = std::any_cast<odb::dbInst*>(object);
+  return Actions({{"Delete", [inst]() {
+    odb::dbInst::destroy(inst);
+    return Selected(); // unselect since this object is now gone
+  }}});
+}
+
+Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
+{
+  auto inst = std::any_cast<odb::dbInst*>(object);
+
+  std::vector<Descriptor::EditorOption> master_options;
+  makeMasterOptions(inst->getMaster(), master_options);
+
+  std::vector<Descriptor::EditorOption> orient_options;
+  makeOrientationOptions(orient_options);
+
+  std::vector<Descriptor::EditorOption> placement_options;
+  makePlacementStatusOptions(placement_options);
+
+  Editors edits;
+  renameObjectEditor(inst, edits);
+  if (!master_options.empty()) {
+    edits.insert({"Master", makeEditor([inst](std::any value) {
+      inst->swapMaster(std::any_cast<odb::dbMaster*>(value));
+      return true;
+    }, master_options)});
+  }
+  edits.insert({"Orientation", makeEditor([inst](std::any value) {
+      inst->setOrient(std::any_cast<odb::dbOrientType>(value));
+      return true;
+    }, orient_options)});
+  edits.insert({"Placement status", makeEditor([inst](std::any value) {
+      inst->setPlacementStatus(std::any_cast<odb::dbPlacementStatus>(value));
+      return true;
+    }, placement_options)});
+
+  edits.insert({"X", makeEditor([this, inst](std::any value) {
+    return setNewLocation(inst, value, true);
+    })});
+  edits.insert({"Y", makeEditor([this, inst](std::any value) {
+    return setNewLocation(inst, value, false);
+    })});
+  return edits;
+}
+
+// get list of equivalent masters as EditorOptions
+void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const
+{
+  // mirrors method used in Resizer.cpp
+  auto sta = ord::OpenRoad::openRoad()->getSta();
+  auto network = sta->getDbNetwork();
+
+  sta::LibertyLibrarySeq libs;
+  sta::LibertyLibraryIterator *lib_iter = network->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary *lib = lib_iter->next();
+    libs.push_back(lib);
+  }
+  delete lib_iter;
+  sta->makeEquivCells(&libs, nullptr);
+
+  std::set<odb::dbMaster*> masters;
+  sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
+  auto equiv_cells = sta->equivCells(cell);
+  if (equiv_cells != nullptr) {
+    for (auto equiv : *equiv_cells) {
+      masters.insert(network->staToDb(equiv));
+    }
+  }
+
+  for (auto master : masters) {
+    options.push_back({master->getConstName(), master});
+  }
+}
+
+// get list if instance orientations for the editor
+void DbInstDescriptor::makeOrientationOptions(std::vector<EditorOption>& options) const
+{
+  std::vector<odb::dbOrientType> types = {
+      odb::dbOrientType::R0,
+      odb::dbOrientType::R90,
+      odb::dbOrientType::R180,
+      odb::dbOrientType::R270,
+      odb::dbOrientType::MY,
+      odb::dbOrientType::MYR90,
+      odb::dbOrientType::MX,
+      odb::dbOrientType::MXR90
+  };
+
+  for (auto type : types) {
+    options.push_back({type.getString(), type});
+  }
+}
+
+// get list of placement statuses for the editor
+void DbInstDescriptor::makePlacementStatusOptions(std::vector<EditorOption>& options) const
+{
+  std::vector<odb::dbPlacementStatus> types = {
+      odb::dbPlacementStatus::NONE,
+      odb::dbPlacementStatus::UNPLACED,
+      odb::dbPlacementStatus::SUGGESTED,
+      odb::dbPlacementStatus::PLACED,
+      odb::dbPlacementStatus::LOCKED,
+      odb::dbPlacementStatus::FIRM,
+      odb::dbPlacementStatus::COVER
+  };
+
+  for (auto type : types) {
+    options.push_back({type.getString(), type});
+  }
+}
+
+// change location of instance
+bool DbInstDescriptor::setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const
+{
+  int new_value = std::any_cast<double>(value) * inst->getBlock()->getDbUnitsPerMicron();
+  int x_dbu, y_dbu;
+  inst->getLocation(x_dbu, y_dbu);
+  if (is_x) {
+    x_dbu = new_value;
+  } else {
+    y_dbu = new_value;
+  }
+  inst->setLocation(x_dbu, y_dbu);
+  return true;
 }
 
 Selected DbInstDescriptor::makeSelected(std::any object,
@@ -255,6 +439,14 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   return props;
 }
 
+Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
+{
+  auto net = std::any_cast<odb::dbNet*>(object);
+  Editors edits;
+  renameObjectEditor(net, edits);
+  return edits;
+}
+
 Selected DbNetDescriptor::makeSelected(std::any object,
                                        void* additional_data) const
 {
@@ -388,6 +580,14 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
                      {"IO type", bterm->getIoType().getString()}});
 }
 
+Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
+{
+  auto bterm = std::any_cast<odb::dbBTerm*>(object);
+  Editors edits;
+  renameObjectEditor(bterm, edits);
+  return edits;
+}
+
 Selected DbBTermDescriptor::makeSelected(std::any object,
                                          void* additional_data) const
 {
@@ -454,6 +654,31 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) cons
                      {"Height", rect.dy() / dbuPerUU},
                      {"Soft", blockage->isSoft()},
                      {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}});
+}
+
+Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
+{
+  auto blockage = std::any_cast<odb::dbBlockage*>(object);
+  Editors edits;
+  edits.insert({"Max density", makeEditor([blockage](std::any any_value) {
+    std::string value = std::any_cast<std::string>(any_value);
+    std::regex density_regex("(1?[0-9]?[0-9]?(\\.[0-9]*)?)\\s*%?");
+    std::smatch base_match;
+    if (std::regex_match(value, base_match, density_regex)) {
+      try {
+        // try to convert to float
+        float density = std::stof(base_match[0]);
+        if (0 <= density && density <= 100) {
+          blockage->setMaxDensity(density);
+          return true;
+        }
+      } catch (std::invalid_argument&) {
+        // catch poorly formatted string
+      }
+    }
+    return false;
+  })});
+  return edits;
 }
 
 Selected DbBlockageDescriptor::makeSelected(std::any object,
@@ -530,7 +755,36 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
   if (obs->hasMinSpacing()) {
     props.push_back({"Min spacing", obs->getMinSpacing() / dbuPerUU});
   }
-return props;
+  return props;
+}
+
+Descriptor::Actions DbObstructionDescriptor::getActions(std::any object) const
+{
+  auto obs = std::any_cast<odb::dbObstruction*>(object);
+  return Actions({{"Copy to layer", [obs, object]() {
+    odb::dbBox* box = obs->getBBox();
+    odb::dbTechLayer* layer = getLayerSelection(obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
+    auto gui = gui::Gui::get();
+    if (layer == nullptr) {
+      // select old layer again
+      return gui->makeSelected(obs);
+    }
+    else {
+      auto new_obs = odb::dbObstruction::create(
+          obs->getBlock(),
+          layer,
+          box->xMin(),
+          box->yMin(),
+          box->xMax(),
+          box->yMax());
+      // does not copy other parameters
+      return gui->makeSelected(new_obs);
+    }
+  }},
+  {"Delete", [obs]() {
+    odb::dbObstruction::destroy(obs);
+    return Selected(); // unselect since this object is now gone
+  }}});
 }
 
 Selected DbObstructionDescriptor::makeSelected(std::any object,

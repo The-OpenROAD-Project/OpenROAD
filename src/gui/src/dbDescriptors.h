@@ -34,6 +34,10 @@
 
 #include "gui/gui.h"
 
+namespace odb {
+class dbMaster;
+}
+
 namespace gui {
 
 // Descriptor classes for OpenDB objects.  Eventually these should
@@ -53,8 +57,16 @@ class DbInstDescriptor : public Descriptor
   bool isInst(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
+  Actions getActions(std::any object) const override;
+  Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+ private:
+  void makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const;
+  void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
+  void makeOrientationOptions(std::vector<EditorOption>& options) const;
+  bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
 };
 
 class DbNetDescriptor : public Descriptor
@@ -71,6 +83,7 @@ class DbNetDescriptor : public Descriptor
   bool isNet(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -106,6 +119,7 @@ class DbBTermDescriptor : public Descriptor
                  void* additional_data) const override;
 
   Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
@@ -122,6 +136,7 @@ class DbBlockageDescriptor : public Descriptor
                  void* additional_data) const override;
 
   Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
@@ -138,6 +153,7 @@ class DbObstructionDescriptor : public Descriptor
                  void* additional_data) const override;
 
   Properties getProperties(std::any object) const override;
+  Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 };
