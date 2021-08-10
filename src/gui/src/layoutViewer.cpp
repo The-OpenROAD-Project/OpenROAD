@@ -1088,6 +1088,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   const QFont text_font = options_->instanceNameFont();
   const QFontMetricsF font_metrics(text_font);
 
+  // minimum pixel height for text (10px)
+  if (font_metrics.ascent() < 10) {
+    // text is too small
+    return;
+  }
+
   // core cell text should be 10% of cell height
   static const float size_target = 0.1;
   // text should not fill more than 90% of the instance height or width
@@ -1096,9 +1102,6 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
 
   // limit non-core text to 1/2.0 (50%) of cell height or width
   static const float non_core_scale_limit = 2.0;
-
-  // minimum pixel height for text
-  static const int minimum_text_height = 10;
 
   const float font_core_scale_height = size_target * pixels_per_dbu_;
   const float font_core_scale_width = size_limit * pixels_per_dbu_;
@@ -1110,10 +1113,10 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     int master_height = master->getHeight();
     int master_width = master->getHeight();
 
-    if (inst->getMaster()->isCore() && master_height < minimum_size) {
-      // if core cell, just check master height
+    if (master_height < minimum_size) {
       continue;
-    } else if (master_width < minimum_size || master_height < minimum_size) {
+    } else if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+      // if core cell, just check master height
       continue;
     }
 
@@ -1124,10 +1127,6 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     QRectF instance_bbox_in_px = dbuToScreen(instance_box);
 
     QRectF text_bounding_box = font_metrics.boundingRect(name);
-
-    if (text_bounding_box.height() < minimum_text_height) {
-      continue;
-    }
 
     bool do_rotate = false;
     if (text_bounding_box.width() > rotation_limit * instance_bbox_in_px.width()) {
