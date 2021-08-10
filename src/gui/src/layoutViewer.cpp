@@ -1100,8 +1100,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   // minimum pixel height for text
   static const int minimum_text_height = 10;
 
-  const float font_core_scale_height = size_target*pixels_per_dbu_;
-  const float font_core_scale_width = size_limit*pixels_per_dbu_;
+  const float font_core_scale_height = size_target * pixels_per_dbu_;
+  const float font_core_scale_width = size_limit * pixels_per_dbu_;
 
   painter->setTransform(QTransform());
   painter->setFont(text_font);
@@ -1130,7 +1130,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     }
 
     bool do_rotate = false;
-    if (text_bounding_box.width() > rotation_limit*instance_bbox_in_px.width()) {
+    if (text_bounding_box.width() > rotation_limit * instance_bbox_in_px.width()) {
       // non-rotated text will not fit without elide
       if (instance_bbox_in_px.height() > instance_bbox_in_px.width()) {
         // check if more text will fit if rotated
@@ -1138,7 +1138,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       }
     }
 
-    qreal text_height_check = non_core_scale_limit*text_bounding_box.height();
+    qreal text_height_check = non_core_scale_limit * text_bounding_box.height();
     // don't show text if it's more than "non_core_scale_limit" of cell height/width
     // this keeps text from dominating the cell size
     if (!do_rotate && text_height_check > instance_bbox_in_px.height()) {
@@ -1155,7 +1155,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       text_transform.translate(inst_center.x(), inst_center.y()); // move to center of inst
       text_transform.rotate(90);
       text_transform.translate(-inst_center.x(), -inst_center.y()); // move to center of 0, 0
-      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit*instance_bbox_in_px.height());
+      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.height());
 
       instance_bbox_in_px = text_transform.mapRect(instance_bbox_in_px);
       text_alignment = Qt::AlignRight | Qt::AlignBottom;
@@ -1163,7 +1163,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       // account for descent of font
       text_transform.translate(-font_metrics.descent(), 0);
     } else {
-      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit*instance_bbox_in_px.width());
+      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.width());
 
       // account for descent of font
       text_transform.translate(font_metrics.descent(), 0);
