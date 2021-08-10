@@ -35,6 +35,10 @@
 #include <QDockWidget>
 #include <QStandardItemModel>
 #include <QTreeView>
+#include <QVBoxLayout>
+
+#include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 
@@ -61,6 +65,8 @@ class Inspector : public QDockWidget
   void update();
 
  private:
+  void handleAction(QWidget* action);
+
   // The columns in the tree view
   enum Column
   {
@@ -70,7 +76,10 @@ class Inspector : public QDockWidget
 
   QTreeView* view_;
   QStandardItemModel* model_;
+  QVBoxLayout* layout_;
   const SelectionSet& selected_;
+
+  std::map<QWidget*, Descriptor::ActionCallback> actions_;
 };
 
 }  // namespace gui

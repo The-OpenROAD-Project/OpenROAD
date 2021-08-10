@@ -34,12 +34,7 @@
 
 #include <QDebug>
 #include <QHeaderView>
-#include <QKeyEvent>
-#include <QLineEdit>
-#include <QPainter>
-#include <QSettings>
-#include <QVBoxLayout>
-#include <vector>
+#include <QPushButton>
 
 #include "gui/gui.h"
 
@@ -78,6 +73,7 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new QTreeView()),
       model_(new QStandardItemModel(0, 2)),
+      layout_(new QVBoxLayout),
       selected_(selected)
 {
   setObjectName("inspector");  // for settings
@@ -90,7 +86,13 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
   header->setStretchLastSection(false);
 
-  setWidget(view_);
+  QWidget* container = new QWidget;
+  layout_->addWidget(view_, /* stretch */ 1);
+
+  container->setLayout(layout_);
+
+  setWidget(container);
+
   connect(view_,
           SIGNAL(clicked(const QModelIndex&)),
           this,
@@ -100,6 +102,12 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 void Inspector::inspect(const Selected& object)
 {
   model_->removeRows(0, model_->rowCount());
+  // remove action buttons and ensure delete
+  for (auto& [button, action] : actions_) {
+    layout_->removeWidget(button);
+    delete button;
+  }
+  actions_.clear();
 
   if (!object) {
     return;
@@ -148,6 +156,16 @@ void Inspector::inspect(const Selected& object)
       model_->appendRow({name_item, value_item});
     }
   }
+
+  // add action buttons
+  for (const auto [name, action] : object.getActions()) {
+    QPushButton* button = new QPushButton(name.c_str(), this);
+    connect(button, &QPushButton::released, [this, button]() {
+      handleAction(button);
+    });
+    layout_->addWidget(button);
+    actions_[button] = action;
+  }
 }
 
 void Inspector::clicked(const QModelIndex& index)
@@ -166,6 +184,13 @@ void Inspector::update()
   } else {
     inspect(*selected_.begin());
   }
+}
+
+void Inspector::handleAction(QWidget* action)
+{
+  auto callback = actions_[action];
+  auto new_selection = callback();
+  emit selected(new_selection);
 }
 
 }  // namespace gui

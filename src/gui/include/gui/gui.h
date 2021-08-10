@@ -36,6 +36,7 @@
 
 #include <any>
 #include <array>
+#include <functional>
 #include <initializer_list>
 #include <set>
 #include <string>
@@ -67,7 +68,14 @@ class Descriptor
   using Property = std::pair<std::string, std::any>;
   using Properties = std::vector<Property>;
 
+  // An action is a name and a callback function, the function should return
+  // the next object to select (when deleting the object just return Selected())
+  using ActionCallback = std::function<Selected(void)>;
+  using Action = std::pair<std::string, ActionCallback>;
+  using Actions = std::vector<Action>;
+
   virtual Properties getProperties(std::any object) const = 0;
+  virtual Actions getActions(std::any /* object */) const { return Actions(); }
 
   virtual Selected makeSelected(std::any object,
                                 void* additional_data) const = 0;
@@ -124,6 +132,11 @@ class Selected
   Descriptor::Properties getProperties() const
   {
     return descriptor_->getProperties(object_);
+  }
+
+  Descriptor::Actions getActions() const
+  {
+    return descriptor_->getActions(object_);
   }
 
   operator bool() const { return object_.has_value(); }
