@@ -153,6 +153,7 @@ class DisplayControls : public QDockWidget, public Options
   QColor placementBlockageColor() override;
   Qt::BrushStyle placementBlockagePattern() override;
   QColor instanceNameColor() override;
+  QFont instanceNameFont() override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
@@ -323,6 +324,7 @@ class DisplayControls : public QDockWidget, public Options
   Qt::BrushStyle placement_blockage_pattern_;
 
   QColor instance_name_color_;
+  QFont instance_name_font_;
 
   CongestionSetupDialog* congestion_dialog_;
 };
