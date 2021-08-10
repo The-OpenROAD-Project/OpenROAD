@@ -37,6 +37,7 @@
 
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/pdrev.h"
+#include "stt/flute.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "opendb/db.h"

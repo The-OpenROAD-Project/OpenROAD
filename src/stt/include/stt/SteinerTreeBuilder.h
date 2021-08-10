@@ -39,9 +39,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "flute.h"
-#include "pdrev.h"
+#include "utl/Logger.h"
 
 namespace ord {
 class OpenRoad;
@@ -55,6 +53,22 @@ class dbNet;
 namespace stt {
 
 using utl::Logger;
+
+typedef int DTYPE;
+
+struct Branch {
+  DTYPE x, y;  // starting point of the branch
+  int n;       // index of neighbor
+};
+
+struct Tree {
+  int deg;         // degree
+  DTYPE length;    // total wirelength
+  std::vector<Branch> branch;  // array of tree branches
+
+  void printTree(utl::Logger* logger);
+  int branchCount() const { return deg * 2 - 2; }
+};
 
 class SteinerTreeBuilder
 {
