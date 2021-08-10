@@ -115,6 +115,12 @@ float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
 // overlap between them.
 bool SteinerTreeBuilder::checkTree(const Tree& tree) const
 {
+  // Such high fanout nets are going to get buffered so
+  // we don't need to worry about them.
+  if (tree.deg > 100) {
+    return true;
+  }
+
   std::vector<odb::Rect> rects;
   for (int i = 0; i < tree.branchCount(); ++i) {
     const Branch& branch = tree.branch[i];
