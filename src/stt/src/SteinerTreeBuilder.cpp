@@ -102,11 +102,29 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
   return tree;
 }
 
+void SteinerTreeBuilder::setAlpha(float alpha)
+{
+  alpha_ = alpha;
+}
+
 float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_.at(net) : alpha_;
   return net_alpha;
+}
+
+void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
+{
+  net_alpha_map_[net] = alpha;
+}
+void SteinerTreeBuilder::setMinFanoutAlpha(int min_fanout, float alpha)
+{
+  min_fanout_alpha_ = {min_fanout, alpha};
+}
+void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
+{
+  min_hpwl_alpha_ = {min_hpwl, alpha};
 }
 
 Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,

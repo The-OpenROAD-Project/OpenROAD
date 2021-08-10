@@ -78,11 +78,11 @@ class SteinerTreeBuilder
                        const std::vector<int>& s,
                        int acc);
   float getAlpha() const { return alpha_; }
-  void setAlpha(float alpha) { alpha_ = alpha; }
+  void setAlpha(float alpha);
   float getAlpha(const odb::dbNet* net) const;
-  void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
-  void setMinFanoutAlpha(int min_fanout, float alpha) { min_fanout_alpha_ = {min_fanout, alpha}; }
-  void setMinHPWLAlpha(int min_hpwl, float alpha) { min_hpwl_alpha_ = {min_hpwl, alpha}; }
+  void setNetAlpha(const odb::dbNet* net, float alpha);
+  void setMinFanoutAlpha(int min_fanout, float alpha);
+  void setMinHPWLAlpha(int min_hpwl, float alpha);
 
  private:
   Tree makeTree(std::vector<int>& x,
