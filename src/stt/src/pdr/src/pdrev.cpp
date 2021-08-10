@@ -204,13 +204,15 @@ Tree PdRev::translateTree()
 {
   if (graph_->num_terminals > 2) {
     for (int i = 0; i < graph_->num_terminals; ++i) {
-      Node& child = graph_->nodes[i];
-      if (child.children.size() == 0
-          || (child.parent == i && child.children.size() == 1
-              && child.children[0] >= graph_->num_terminals))
-        continue;
-      replaceNode(graph_, i);
+      Node& node = graph_->nodes[i];
+      if (!(node.children.empty()
+            || (node.parent == i // is root node
+                && node.children.size() == 1
+                && node.children[0] >= graph_->num_terminals))) {
+        replaceNode(graph_, i);
+      }
     }
+
     int nNodes = graph_->nodes.size();
     for (int i = graph_->num_terminals; i < nNodes; ++i) {
       while (graph_->nodes[i].children.size() > 3

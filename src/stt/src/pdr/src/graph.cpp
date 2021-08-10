@@ -652,19 +652,11 @@ void Graph::UpdateSteinerNodes()
   UpdateEdges(fSTNodes);
 }
 
-void Graph::addChild(Node& pNode, int idx)
+void Graph::addChild(Node& node, int idx)
 {
-  // rewrite with find and no copy -cherry
-  vector<int> newC = pNode.children;
-  bool flag = true;
-  for (int i = 0; i < newC.size(); ++i) {
-    if (newC[i] == idx) {
-      flag = false;
-      break;
-    }
-  }
-  if (flag)
-    pNode.children.push_back(idx);
+  auto &children = node.children;
+  if (std::find(children.begin(), children.end(), idx) == children.end())
+    children.push_back(idx);
 }
 
 void Graph::removeN(Node& pN, int idx)
@@ -2163,14 +2155,17 @@ void Graph::get_children_of_node()
 
 void Graph::print_tree()
 {
-  /* For each terminal */
   for (size_t j = 0; j < nodes.size(); ++j) {
-    logger_->report("Node {} ({} , {}) parent= {} Level= {}",
+    Node &node = nodes[j];
+    std::string children;
+    for (int child : node.children)
+      children += std::to_string(child) + " ";
+    logger_->report("Node {} ({} {}) parent={} children={}",
                     j,
-                    nodes[j].x,
-                    nodes[j].y,
-                    nodes[j].parent,
-                    nodes[j].level);
+                    node.x,
+                    node.y,
+                    node.parent,
+                    children);
   }
 }
 
@@ -2264,7 +2259,7 @@ void Graph::run_PD_brute_force(float alpha)
                    i,
                    nodes[i].min_dist);
         int edge_len = dist(nodes[i], nodes[nn1]);
-        float d = alpha * (float) nodes[i].path_length;
+        float d = alpha * nodes[i].path_length;
         debugPrint(logger_, PDR, "pdrev", 3,
                    "intermediate d = alpha * nodes[i].path_length = "
                    "{}*{} = {}",
