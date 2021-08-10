@@ -51,6 +51,7 @@ namespace utl {
 #define FOREACH_TOOL(X) \
     X(ANT) \
     X(CTS) \
+    X(CDL) \
     X(DPL) \
     X(DRT) \
     X(FIN) \

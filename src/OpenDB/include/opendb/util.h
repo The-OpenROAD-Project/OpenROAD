@@ -39,12 +39,13 @@
 
 #include "array1.h"
 #include "atypes.h"
+#include "utl/Logger.h"
 
 unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
 int Ath__double2int(double v);
 
 namespace odb {
-int AthResourceLog(const char* title, int smallScale = 0);
+int AthResourceLog(utl::Logger* logger, const char* title, int smallScale = 0);
 }  // namespace odb
 
 // Simple list

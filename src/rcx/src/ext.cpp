@@ -394,7 +394,7 @@ bool Ext::extract(ExtractOptions opts) {
                 block->getConstName());
 
   odb::orderWires(block, nullptr /* net_name_or_id*/, false /* force */,
-                  false /* verbose */, true /* quiet */);
+                  logger_ ,false /* verbose */, true /* quiet */);
   if (opts.lef_rc) {
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
@@ -461,12 +461,12 @@ bool Ext::extract(ExtractOptions opts) {
     if (dbNetSdb == NULL) {
       extSdb = true;
       if (rlog)
-        AthResourceLog("before get sdb", 0);
+        AthResourceLog(logger_, "before get sdb", 0);
 
       dbNetSdb = _ext->getBlock()->getNetSdb(_context, _ext->getTech());
 
       if (rlog)
-        AthResourceLog("after get sdb", 0);
+        AthResourceLog(logger_, "after get sdb", 0);
     }
 #endif
   }
@@ -571,12 +571,12 @@ bool Ext::extract(ExtractOptions opts) {
   if (!ccBandTracks) {
     if (extSdb && extdbg != 99) {
       if (opts.rlog)
-        odb::AthResourceLog("before remove sdb", 0);
+        odb::AthResourceLog(logger_, "before remove sdb", 0);
       dbNetSdb->cleanSdb();
 #ifdef ZUI
       _ext->getBlock()->resetNetSdb();
       if (rlog)
-        AthResourceLog("after remove sdb", 0);
+        AthResourceLog(logger_, "after remove sdb", 0);
 #endif
     }
   }

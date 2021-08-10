@@ -40,8 +40,6 @@
 #include <string>
 #include <vector>
 
-#include "dbLogger.h"
-
 namespace odb {
 
 void writeLine(FILE* f, const std::string& s)
@@ -95,13 +93,13 @@ std::string getNetName(dbBlock* block,
   return net->getName();
 }
 
-bool cdl::writeCdl(dbBlock* block, const char* fileName, bool includeFillers)
+bool cdl::writeCdl(dbBlock* block, const char* fileName, utl::Logger* logger, bool includeFillers)
 {
   int unconnectedNets = 0;
   FILE* f = fopen(fileName, "w");
 
   if (f == NULL) {
-    error(1, "cannot open file %s", fileName);
+    logger->error(utl::CDL, 1, "Cannot open file {}", fileName);
     return false;
   }
 

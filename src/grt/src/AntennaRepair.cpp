@@ -112,7 +112,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
       }
       wire_encoder.end();
 
-      odb::orderWires(db_net, false, false);
+      odb::orderWires(db_net, false, logger_ ,false);
 
       std::vector<ant::VINFO> netViol = arc_->get_net_antenna_violations(
           db_net,

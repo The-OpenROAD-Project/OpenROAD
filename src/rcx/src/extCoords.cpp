@@ -67,7 +67,7 @@ void extSpef::initSearchForNets() {
     S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
     if (P[n] <= 0)
-      error(0, "Layer %s, routing level %d, has pitch %d !!\n",
+      logger_->error(utl::RCX, 101, "Layer {}, routing level {}, has pitch {} !!\n",
             layer->getConstName(), n, P[n]);
     tg = _block->findTrackGrid(layer);
     if (tg) {
@@ -84,6 +84,7 @@ void extSpef::initSearchForNets() {
 
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, P, S, X1, Y1);
   _search->setBlock(_block);
+  _search->setLogger(logger_);
 }
 uint extSpef::addNetShapesOnSearch(uint netId) {
   dbNet* net = dbNet::getNet(_block, netId);

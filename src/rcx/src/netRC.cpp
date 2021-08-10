@@ -2519,21 +2519,21 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
         //#ifndef NEW_GS_FLOW
         if (_usingMetalPlanes && (_geoThickTable == NULL)) {
           if (rlog)
-            AthResourceLog("before initPlanes", detailRlog);
+            AthResourceLog(logger_, "before initPlanes", detailRlog);
           initPlanes(_currentModel->getLayerCnt() + 1);
           if (rlog)
-            AthResourceLog("after initPlanes", detailRlog);
+            AthResourceLog(logger_, "after initPlanes", detailRlog);
           addPowerGs();
           if (rlog)
-            AthResourceLog("after addPowerGs", detailRlog);
+            AthResourceLog(logger_, "after addPowerGs", detailRlog);
           if (_alwaysNewGs)
             addSignalGs();
           if (rlog)
-            AthResourceLog("after addSignalGs", detailRlog);
+            AthResourceLog(logger_, "after addSignalGs", detailRlog);
           if (_overCell)
             addInstShapesOnPlanes();
           if (rlog)
-            AthResourceLog("after addInstShapesOnPlanes", detailRlog);
+            AthResourceLog(logger_, "after addInstShapesOnPlanes", detailRlog);
         }
       }
       //#endif
@@ -2544,7 +2544,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
   }
   _extRun++;
   if (rlog)
-    AthResourceLog("start extract", detailRlog);
+    AthResourceLog(logger_, "start extract", detailRlog);
 
 #ifdef ZDEBUG
   Interface->event("CC", "_couplingFlag", Z_INT, _couplingFlag, NULL);
@@ -2642,7 +2642,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     _debug = 0;
 
   if (rlog)
-    AthResourceLog("after makeNetRCsegs", detailRlog);
+    AthResourceLog(logger_, "after makeNetRCsegs", detailRlog);
   int ttttPrintDgContext = 0;
   if (!skipExtractionAfterRcGen && (_couplingFlag > 1)) {
     logger_->info(RCX, 439, "Coupling Cap extraction {} ...",
@@ -2668,7 +2668,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     if (_usingMetalPlanes && (_geoThickTable == NULL)) {
       makeIntersectPlanes(0);
       if (rlog)
-        AthResourceLog("after makeIntersectPlanes", detailRlog);
+        AthResourceLog(logger_, "after makeIntersectPlanes", detailRlog);
     }
 
     if (_debug) {
@@ -2796,7 +2796,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     // _totSmallCCcnt, _totBigCCcnt, _coupleThreshold);
 
     if (rlog)
-      AthResourceLog("after couplingCaps", detailRlog);
+      AthResourceLog(logger_, "after couplingCaps", detailRlog);
 
     if (_debug)
       computeXcaps(0);
@@ -2812,7 +2812,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       if (ccCapSdb != NULL && (preserve_geom == 2 || preserve_geom == 0))
         ccCapSdb->cleanSdb();
       if (rlog)
-        AthResourceLog("FreeCCgeom", detailRlog);
+        AthResourceLog(logger_, "FreeCCgeom", detailRlog);
     }
   }
 
@@ -2820,11 +2820,11 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     _extNetSDB = NULL;
   if (ttttRemoveGs) {
     if (rlog)
-      AthResourceLog("before removeSeq", detailRlog);
+      AthResourceLog(logger_, "before removeSeq", detailRlog);
     if (_geomSeq)
       delete _geomSeq;
     if (rlog)
-      AthResourceLog("after removeSeq", detailRlog);
+      AthResourceLog(logger_, "after removeSeq", detailRlog);
     _geomSeq = NULL;
   }
   _extracted = true;
@@ -2854,13 +2854,13 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     }
   }
   if (rlog)
-    AthResourceLog("before remove Model", detailRlog);
+    AthResourceLog(logger_, "before remove Model", detailRlog);
 
   if (!windowFlow) {
     // delete _currentModel;
     _modelTable->resetCnt(0);
     if (rlog)
-      AthResourceLog("After remove Model", detailRlog);
+      AthResourceLog(logger_, "After remove Model", detailRlog);
   }
   if (_batchScaleExt)
     genScaledExt();
@@ -3152,7 +3152,7 @@ uint extMain::readSPEF(char* filename, char* netNames, bool force, bool useIds,
                     capNodeMapFile);
   }
   if (log)
-    AthResourceLog("start readSpef", 0);
+    AthResourceLog(logger_, "start readSpef", 0);
   std::vector<dbNet*> inets;
 
   if (_block != NULL)
@@ -3170,7 +3170,7 @@ uint extMain::readSPEF(char* filename, char* netNames, bool force, bool useIds,
     fclose(_spef->_capNodeFile);
 
   if (log)
-    AthResourceLog("finish readSpef", 0);
+    AthResourceLog(logger_, "finish readSpef", 0);
 
   if (diff || cnt == 0) {
     delete _spef;

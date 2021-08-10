@@ -36,13 +36,12 @@
 #include <stdlib.h>
 
 #include "db.h"
-#include "dbLogger.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
 
 namespace odb {
 
-void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
+void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm, utl::Logger* logger)
 {
   *iterm = NULL;
   *bterm = NULL;
@@ -88,11 +87,11 @@ void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
     *iterm = *iterms.begin();
     return;
   }
-  notice(0, "no terminals for net %d %s\n", net->getId(), net->getConstName());
+  logger->warn(utl::ODB, 230, "no terminals for net {} {}", net->getId(), net->getConstName());
   return;
 }
 
-tmg_conn::tmg_conn()
+tmg_conn::tmg_conn(utl::Logger* logger)
 {
   _rcV.reserve(1024);
   _ptNmax = 1024;
@@ -117,6 +116,7 @@ tmg_conn::tmg_conn()
   _preserveSWire = false;
   _swireNetCnt = 0;
   _gVerbose = false;
+  logger_ = logger;
 }
 
 int tmg_conn::ptDist(int fr, int to)
@@ -154,11 +154,11 @@ void tmg_conn::addRc(dbShape& s, int ifr, int ito)
     x._vert = 1;
     x._width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
-    // notice(0, "an isolated square patch of metal\n");
+    // notice(0, "an isolated square patch of metal");
     x._vert = 0;
     x._width = s.xMax() - s.xMin();
   } else {
-    notice(0, "warning, nonsquare shape with same points\n");
+    logger_->warn(utl::ODB, 240, "warning, nonsquare shape with same points");
     x._vert = 0;
     x._width = 0;
   }
@@ -194,7 +194,7 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
   dbTechLayer* layer = _ptV[ifr]._layer;
   if (!layer || layer != _ptV[ito]._layer
       || (_ptV[ifr]._x != _ptV[ito]._x && _ptV[ifr]._y != _ptV[ito]._y)) {
-    notice(0, "bad patch, net %d\n", _net->getId());
+    logger_->warn(utl::ODB, 241, "bad patch, net {}", _net->getId());
     return NULL;
   }
   tmg_rc x;
@@ -295,22 +295,22 @@ void tmg_conn::addShort(int i0, int i1)
     _ptV[i1]._jct = 1;
 }
 
-static void print_shape(tmg_rc_sh& s)
+static void print_shape(tmg_rc_sh& s, utl::Logger* logger)
 {
   if (s.getTechLayer())
-    notice(0, "%s", s.getTechLayer()->getName().c_str());
+    logger->warn(utl::ODB, 242, "{}", s.getTechLayer()->getName().c_str());
   else if (s.getTechVia())
-    notice(0, "%s", s.getTechVia()->getName().c_str());
+    logger->warn(utl::ODB, 243, "{}", s.getTechVia()->getName().c_str());
   else if (s.getVia())
-    notice(0, "%s", s.getVia()->getName().c_str());
+    logger->warn(utl::ODB, 244, "{}", s.getVia()->getName().c_str());
   else
-    notice(0, " ");
-  notice(0, " (%d %d) (%d %d)", s.xMin(), s.yMin(), s.xMax(), s.yMax());
+    logger->warn(utl::ODB, 245, " ");
+  logger->warn(utl::ODB, 246, " ({} {}) ({} {})", s.xMin(), s.yMin(), s.xMax(), s.yMax());
 }
 
 void tmg_conn::loadNet(dbNet* net)
 {
-  // notice(0, "tmg_conn::loadNet(%s)\n",net->getName().c_str());
+  // logger_->warn(utl::ODB, 240, "tmg_conn::loadNet({})",net->getName().c_str());
   _net = net;
   _rcV.clear();
   _ptN = 0;
@@ -479,17 +479,17 @@ void tmg_conn::loadWire(dbWire* wire)
   int j,k=0;
   for (j=0;j<_ptN;j++) {
     if (_rcV[k]._ifr == j-1 && _rcV[k]._ito == j) {
-      notice(0, "rcV[%d] ",k); print_shape(_rcV[k]._shape);
+      logger_->warn(utl::ODB, 240, "rcV[{}] ",k); print_shape(_rcV[k]._shape);
       if (!_rcV[k]._shape.isVia()) {
         int dx = _rcV[k]._shape.getDX();
         int dy = _rcV[k]._shape.getDY();
-        notice(0, "  w %d",(dx<dy?dx:dy));
+        logger_->warn(utl::ODB, 240, "  w {}",(dx<dy?dx:dy));
       }
-      if (_rcV[k]._shape._rule) notice(0, " %s",_rcV[k]._shape._rule->getName().c_str());
-      notice(0, "\n");
+      if (_rcV[k]._shape._rule) logger_->warn(utl::ODB, 240, " {}",_rcV[k]._shape._rule->getName().c_str());
+      logger_->warn(utl::ODB, 240, "");
       k++;
-    } else notice(0, "\n");
-    notice(0, "ptV[%d] %s (%d %d)\n",j,_ptV[j]._layer->getName().c_str(), _ptV[j]._x,_ptV[j]._y);
+    } else logger_->warn(utl::ODB, 240, "");
+    logger_->warn(utl::ODB, 240, "ptV[{}] {} ({} {})",j,_ptV[j]._layer->getName().c_str(), _ptV[j]._x,_ptV[j]._y);
   }
 #endif
 }
@@ -532,8 +532,8 @@ void tmg_conn::splitBySj(bool verbose,
           continue;
         _vertSplitCnt++;
         if (verbose || _gVerbose)
-          notice(0,
-                 "split ( %d %d %d %d %s %d )\n",
+          logger_->warn(utl::ODB, 248,
+                 "split ( {} {} {} {} {} {} )",
                  nxmin,
                  nymin,
                  nxmax,
@@ -543,14 +543,12 @@ void tmg_conn::splitBySj(bool verbose,
         if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
           _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
           if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", nxmin, sk->yMin(), nxmax, nymax);
+            logger_->warn(utl::ODB, 249, "      ( {} {} {} {} )", nxmin, sk->yMin(), nxmax, nymax);
           nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
         } else {
           _rcV[k]._shape.setYmax(_ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2);
           if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, sk->yMax());
+            logger_->warn(utl::ODB, 250, "      ( {} {} {} {} )", nxmin, nymin, nxmax, sk->yMax());
           nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
         }
         pt->_x = _ptV[_rcV[k]._ifr]._x;
@@ -562,8 +560,8 @@ void tmg_conn::splitBySj(bool verbose,
           continue;
         _horzSplitCnt++;
         if (verbose || _gVerbose)
-          notice(0,
-                 "split ( %d %d %d %d %s %d )\n",
+          logger_->warn(utl::ODB, 251,
+                 "split ( {} {} {} {} {} {} )",
                  nxmin,
                  nymin,
                  nxmax,
@@ -575,14 +573,12 @@ void tmg_conn::splitBySj(bool verbose,
           // removing, dec12,06 wfs
           // _search->setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width/2);
           if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", sk->xMin(), nymin, nxmax, nymax);
+            logger_->warn(utl::ODB, 252, "      ( {} {} {} {} )", sk->xMin(), nymin, nxmax, nymax);
           nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
         } else {
           _rcV[k]._shape.setXmax(_ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2);
           if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", nxmin, nymin, sk->xMax(), nymax);
+            logger_->warn(utl::ODB, 253, "      ( {} {} {} {} )", nxmin, nymin, sk->xMax(), nymax);
           nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
         }
         pt->_x = _ptV[_rcV[j]._ifr]._x;
@@ -604,7 +600,7 @@ void tmg_conn::splitBySj(bool verbose,
       _ptN++;
       _search->addShape(rt, nxmin, nymin, nxmax, nymax, 0, _rcV.size() - 1);
       if (verbose || _gVerbose)
-        notice(0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, nymax);
+        logger_->warn(utl::ODB, 254, "      ( {} {} {} {} )", nxmin, nymin, nxmax, nymax);
       //_search->resetSorted();
     }
 }
@@ -675,8 +671,8 @@ void tmg_conn::splitTtop(bool verbose)
   }
   int sCnt = _vertSplitCnt + _horzSplitCnt - beginSplitCnt;
   if (verbose || (_gVerbose && sCnt != 0))
-    notice(0,
-           "Split %d T shapes of net %d %s\n\n",
+    logger_->warn(utl::ODB, 255,
+           "Split {} T shapes of net {} {}",
            sCnt,
            _net->getId(),
            _net->getConstName());
@@ -691,7 +687,7 @@ void tmg_conn::setSring()
       tmg_rcpt* pto = _ptV + _shortV[ii]._i1;
       tmg_rcpt* x;
       if (pfr == pto) {
-        notice(0, "WHAT?\n");
+        logger_->warn(utl::ODB, 256, "WHAT?");
         continue;
       }
       if (pfr->_sring && !pto->_sring) {
@@ -777,9 +773,9 @@ void tmg_conn::detachTilePins()
               continue;
           }
           if (recti.contains(rectb))
-            error(0,
+            logger_->error(utl::ODB, 280,
                   "Internal Error: tmg_conn::detachTilePins: tilepin inside "
-                  "iterm. should not happen.\n");
+                  "iterm. should not happen.");
 
           if (!recti.overlaps(rectb))
             continue;
@@ -984,7 +980,7 @@ void tmg_conn::findConnections(bool verbose)
   int wloop;
   removeWireLoops(&wloop);
   if (wloop) {
-    notice(0, "wire loop in net %d\n", _net->getId());
+    logger_->warn(utl::ODB, 257, "wire loop in net {}", _net->getId());
     // printConnections();
   }
 
@@ -1021,8 +1017,8 @@ void tmg_conn::findConnections(bool verbose)
                 continue;  // skipping V01
               box->getBox(rect);
               transform.apply(rect);
-              // notice(0, "iterm %s (%d %d) (%d
-              // %d)\n",box->getTechVia()->getName().c_str(),
+              // logger_->warn(utl::ODB, 240, "iterm {} ({} {}) ({}
+              // {})",box->getTechVia()->getName().c_str(),
               //  rect.xMin(),rect.yMin(),rect.xMax(),rect.yMax());
               _search->searchStart(
                   rt_t, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
@@ -1069,8 +1065,8 @@ void tmg_conn::findConnections(bool verbose)
               rt = box->getTechLayer()->getRoutingLevel();
               box->getBox(rect);
               transform.apply(rect);
-              // notice(0, "iterm %s (%d %d) (%d
-              // %d)\n",box->getTechLayer()->getName().c_str(),
+              // logger_->warn(utl::ODB, 240, "iterm {} ({} {}) ({}
+              // {})",box->getTechLayer()->getName().c_str(),
               //  rect.xMin(),rect.yMin(),rect.xMax(),rect.yMax());
               _search->searchStart(
                   rt, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
@@ -1096,10 +1092,10 @@ void tmg_conn::findConnections(bool verbose)
 #if 0
         // this identifies some terminal loops 
         if (_csN > 3) {
-          notice(0, "more than 3 wire shapes connecting to term %s/%s\n",
+          logger_->warn(utl::ODB, 240, "more than 3 wire shapes connecting to term {}/{}",
               x->_iterm->getInst()->getName().c_str(),
               x->_iterm->getMTerm()->getName().c_str());
-          notice(0, " in net %d %s\n",_net->getId(),_net->getName().c_str());
+          logger_->warn(utl::ODB, 240, " in net {} {}",_net->getId(),_net->getName().c_str());
         }
 #endif
       }  // mpins
@@ -1109,7 +1105,7 @@ void tmg_conn::findConnections(bool verbose)
       dbShape pin;
       if (x->_bterm->getFirstPin(pin)) {  // TWG: added bpins
         if (pin.isVia()) {
-          notice(0, "bterm via shape\n");
+          logger_->warn(utl::ODB, 258, "bterm via shape");
           // TODO
         } else {
           rt = pin.getTechLayer()->getRoutingLevel();
@@ -1353,7 +1349,7 @@ void tmg_conn::connectTerm(int j, bool soft)
         if (c2pinpt) {
           for (x = pc->_sring; x != pc; x = x->_sring) {
             if (!(x->_pinpt || x->_c2pinpt)) {
-              // notice(0,"add x %d\n",x-_ptV);
+              // logger_->warn(utl::ODB, 240,"add x {}",x-_ptV);
               x->_next_for_clear = _first_for_clear;
               _first_for_clear = x;
             }
@@ -1369,7 +1365,7 @@ void tmg_conn::connectTerm(int j, bool soft)
       tmg_rcpt* pto = _ptV + _shortV[ii]._i1;
       if (pfr->_c2pinpt) {
         if (!(pto->_pinpt || pto->_c2pinpt)) {
-          // notice(0,"add pto %d\n",pto-_ptV);
+          // logger_->warn(utl::ODB, 240,"add pto {}",pto-_ptV);
           pto->_next_for_clear = _first_for_clear;
           _first_for_clear = pto;
         }
@@ -1377,7 +1373,7 @@ void tmg_conn::connectTerm(int j, bool soft)
       }
       if (pto->_c2pinpt) {
         if (!(pfr->_pinpt || pfr->_c2pinpt)) {
-          // notice(0,"add pfr %d\n",pfr-_ptV);
+          // logger_->warn(utl::ODB, 240,"add pfr {}",pfr-_ptV);
           pfr->_next_for_clear = _first_for_clear;
           _first_for_clear = pfr;
         }
@@ -1406,9 +1402,9 @@ void tmg_conn::connectTerm(int j, bool soft)
     }
   }
 #if 0
-  notice(0,"xterm %d",j);
-  if (x->_iterm) notice(0," I%d",x->_iterm->getInst()->getId());
-  notice(0,"\n");
+  logger_->warn(utl::ODB, 240,"xterm {}",j);
+  if (x->_iterm) logger_->warn(utl::ODB, 240," I{}",x->_iterm->getInst()->getId());
+  logger_->warn(utl::ODB, 240,"");
   int p[64], pN=0, m;
   for (ii=0;ii<_csN;ii++) {
     int k = _csV[ii].k;
@@ -1420,10 +1416,10 @@ void tmg_conn::connectTerm(int j, bool soft)
     if (m==pN) p[pN++]= bto;
   }
   for (m=0;m<pN;m++) {
-    notice(0,"ptV[%d]",p[m]);
-    if (_ptV[p[m]]._pinpt) notice(0," pinpt");
-    if (_ptV[p[m]]._c2pinpt) notice(0," c2pinpt");
-    notice(0,"\n");
+    logger_->warn(utl::ODB, 240,"ptV[{}]",p[m]);
+    if (_ptV[p[m]]._pinpt) logger_->warn(utl::ODB, 240," pinpt");
+    if (_ptV[p[m]]._c2pinpt) logger_->warn(utl::ODB, 240," c2pinpt");
+    logger_->warn(utl::ODB, 240,"");
   }
 #endif
 
@@ -1457,10 +1453,10 @@ void tmg_conn::connectTerm(int j, bool soft)
         pt->_tindex = -1;
       }
       if (pt->_tindex >= 0) {
-        notice(0, "error, net %d, shorts to another term\n", _net->getId());
-        notice(0, "wire point (%d %d)\n", pt->_x, pt->_y);
-        notice(0, " %s\n\n", _net->getName().c_str());
-        error(0, "order_wires failed\n");
+        logger_->warn(utl::ODB, 259, "error, net {}, shorts to another term", _net->getId());
+        logger_->warn(utl::ODB, 260, "wire point ({} {})", pt->_x, pt->_y);
+        logger_->warn(utl::ODB, 261, " {}", _net->getName().c_str());
+        logger_->error(utl::ODB, 295, "order_wires failed");
       }
       pt->_tindex = j;
       addPointToTerm(pt, x);
@@ -1483,10 +1479,10 @@ void tmg_conn::connectTerm(int j, bool soft)
         pt->_tindex = -1;
       }
       if (pt->_tindex >= 0) {
-        notice(0, "error, net %d, shorts to another term\n", _net->getId());
-        notice(0, "wire point (%d %d)\n", pt->_x, pt->_y);
-        notice(0, " %s\n\n", _net->getName().c_str());
-        error(0, "order_wires failed\n");
+        logger_->warn(utl::ODB, 262, "error, net {}, shorts to another term", _net->getId());
+        logger_->warn(utl::ODB, 263, "wire point ({} {})", pt->_x, pt->_y);
+        logger_->warn(utl::ODB, 264, " {}", _net->getName().c_str());
+        logger_->error(utl::ODB, 292, "order_wires failed");
       }
       pt->_tindex = j;
       addPointToTerm(pt, x);
@@ -1515,10 +1511,10 @@ void tmg_conn::connectTerm(int j, bool soft)
         pt->_tindex = -1;
       }
       if (pt->_tindex >= 0) {
-        notice(0, "error, net %d, shorts to another term\n", _net->getId());
-        notice(0, "wire point (%d %d)\n", pt->_x, pt->_y);
-        notice(0, " %s\n\n", _net->getName().c_str());
-        error(0, "order_wires failed\n");
+        logger_->warn(utl::ODB, 265, "error, net {}, shorts to another term", _net->getId());
+        logger_->warn(utl::ODB, 266, "wire point ({} {})", pt->_x, pt->_y);
+        logger_->warn(utl::ODB, 267, " {}", _net->getName().c_str());
+        logger_->error(utl::ODB, 293, "order_wires failed");
       }
       pt->_tindex = j;
       addPointToTerm(pt, x);
@@ -1572,7 +1568,7 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   tmg_rcpt* pt = _ptV + (choose_bfr ? bfr : bto);
   tmg_rcpt* pother = _ptV + (choose_bfr ? bto : bfr);
   if (pt->_tindex == j) {
-    // notice(0, "already connected\n");
+    // logger_->warn(utl::ODB, 240, "already connected");
     return;
   }
 
@@ -1609,18 +1605,18 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   }
 
   if (pt->_tindex >= 0) {
-    // notice(0, "warning, net %d, shorts to another term\n",_net->getId());
-    // notice(0, "intersection region (%d %d) (%d %d)\n",xlo,ylo,xhi,yhi);
-    // notice(0, "wire point (%d %d)\n",pt->_x,pt->_y);
-    // notice(0, " %s\n\n",_net->getName().c_str());
+    // logger_->warn(utl::ODB, 240, "warning, net {}, shorts to another term",_net->getId());
+    // logger_->warn(utl::ODB, 240, "intersection region ({} {}) ({} {})",xlo,ylo,xhi,yhi);
+    // logger_->warn(utl::ODB, 240, "wire point ({} {})",pt->_x,pt->_y);
+    // logger_->warn(utl::ODB, 240, " {}",_net->getName().c_str());
     return;  // skip soft if conflicts with hard
   }
-  // notice(0, "net %d %s, term %s/%s\n",_net->getId(),_net->getName().c_str(),
+  // logger_->warn(utl::ODB, 240, "net {} {}, term {}/{}",_net->getId(),_net->getName().c_str(),
   //  x->_iterm->getInst()->getName().c_str(),
   //  x->_iterm->getMTerm()->getName().c_str());
-  // notice(0, "intersection region (%d %d) (%d %d)\n",xlo,ylo,xhi,yhi);
-  // notice(0, "wire point (%d %d)\n",pt->_x,pt->_y);
-  // notice(0, "adding point %d to term %d\n",pt-_ptV,j);
+  // logger_->warn(utl::ODB, 240, "intersection region ({} {}) ({} {})",xlo,ylo,xhi,yhi);
+  // logger_->warn(utl::ODB, 240, "wire point ({} {})",pt->_x,pt->_y);
+  // logger_->warn(utl::ODB, 240, "adding point {} to term {}",pt-_ptV,j);
   pt->_tindex = j;
   addPointToTerm(pt, x);
   pt->_fre = 0;
@@ -1632,62 +1628,62 @@ void tmg_conn::printConnections()
 {
   // called after findConnections
   int j;
-  notice(0,
-         "\nprintConnections net %d  %s\n",
+  logger_->warn(utl::ODB, 269,
+         "printConnections net {}  {}",
          _net->getId(),
          _net->getName().c_str());
 
   int k = 0;
   for (j = 0; j < _ptN; j++) {
     if (_rcV[k]._ifr == j - 1 && _rcV[k]._ito == j) {
-      notice(0, "  ");
-      print_shape(_rcV[k]._shape);
-      notice(0, "\n");
+      logger_->warn(utl::ODB, 270, "  ");
+      print_shape(_rcV[k]._shape, logger_);
+      logger_->warn(utl::ODB, 271, "");
       k++;
     } else
-      notice(0, "\n");
-    notice(0,
-           "ptV[%d] %s (%d %d)\n",
+      logger_->warn(utl::ODB, 272, "");
+    logger_->warn(utl::ODB, 273,
+           "ptV[{}] {} ({} {})",
            j,
            _ptV[j]._layer->getName().c_str(),
            _ptV[j]._x,
            _ptV[j]._y);
   }
-  notice(0, "\n");
+  logger_->warn(utl::ODB, 274, "");
 
   int start = 1;
   for (unsigned long j = 0; j < _rcV.size(); j++) {
     if (start) {
       start = 0;
-      notice(0, "path %d", _rcV[j]._ifr);
+      logger_->warn(utl::ODB, 275, "path {}", _rcV[j]._ifr);
     } else if (_ptV[_rcV[j]._ifr]._jct)
-      notice(0, " %d", _rcV[j]._ifr);
+      logger_->warn(utl::ODB, 276, " {}", _rcV[j]._ifr);
     if (j == _rcV.size() - 1 || _rcV[j]._ito != _rcV[j + 1]._ifr) {
-      notice(0, " %d\n", _rcV[j]._ito);
+      logger_->warn(utl::ODB, 277, " {}", _rcV[j]._ito);
       start = 1;
     }
   }
   for (j = 0; j < _shortN; j++) {
     if (_shortV[j]._skip)
-      notice(0, "skip ");
+      logger_->warn(utl::ODB, 278, "skip ");
     // if (_shortV[j]._skip) continue;
-    notice(0, "short %d %d\n", _shortV[j]._i0, _shortV[j]._i1);
+    logger_->warn(utl::ODB, 279, "short {} {}", _shortV[j]._i0, _shortV[j]._i1);
   }
 }
 
-static void print_rcterm(tmg_rcterm* x)
+static void print_rcterm(tmg_rcterm* x, utl::Logger* logger)
 {
   dbITerm* iterm = x->_iterm;
-  // if (iterm) notice(0, " iterm %s/%s",iterm->getInst()->getName().c_str(),
+  // if (iterm) logger_->warn(utl::ODB, 240, " iterm {}/{}",iterm->getInst()->getName().c_str(),
   //     iterm->getMTerm()->getName().c_str());
   if (iterm)
-    notice(0,
-           " iterm I%d/%s",
+    logger->warn(utl::ODB, 601,
+           " iterm I{}/{}",
            iterm->getInst()->getId(),
            iterm->getMTerm()->getName().c_str());
   dbBTerm* bterm = x->_bterm;
   if (bterm)
-    notice(0, " bterm %s", x->_bterm->getName().c_str());
+    logger->warn(utl::ODB, 602, " bterm {}", x->_bterm->getName().c_str());
 }
 
 int tmg_conn::getStartNode()
@@ -1698,7 +1694,7 @@ int tmg_conn::getStartNode()
   // or default to the first point
   dbITerm* it_drv;
   dbBTerm* bt_drv;
-  tmg_getDriveTerm(_net, &it_drv, &bt_drv);
+  tmg_getDriveTerm(_net, &it_drv, &bt_drv, logger_);
   tmg_rcterm* x;
   int j;
   for (j = 0; j < _termN; j++) {
@@ -1755,8 +1751,8 @@ void tmg_conn::analyzeNet(dbNet* net,
   net->setWireOrdered(true);  // 090606
   if (!_connected) {
     if (!quiet)
-      notice(0,
-             "\ndisconnected net %d  %s\n",
+      logger_->warn(utl::ODB, 603,
+             "disconnected net {}  {}",
              _net->getId(),
              _net->getName().c_str());
     if (verbose)
@@ -1781,8 +1777,8 @@ void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
       _connected);  // this will change,
                     // we should wire-order the disconnected nets
   if (!_connected) {
-    notice(0,
-           "\ndisconnected net %d  %s\n",
+    logger_->warn(utl::ODB, 604,
+           "disconnected net {}  {}",
            _net->getId(),
            _net->getName().c_str());
     if (verbose)
@@ -1901,24 +1897,24 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     x = _termV + j;
     x->_first_pt = NULL;
     if (verbose) {
-      notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - _ptV) : 0);
-      print_rcterm(x);
-      notice(0, "\n");
+      logger_->warn(utl::ODB, 605, "j={} pt={} ", j, x->_pt ? (x->_pt - _ptV) : 0);
+      print_rcterm(x, logger_);
+      logger_->warn(utl::ODB, 607, "");
     }
     if (x->_pt == NULL) {
       _connected = false;
       if (x->_iterm) {
         if (!quiet)
-          notice(0,
-                 "unconnected iterm I%d(%s)/%s in net %d\n",
+          logger_->warn(utl::ODB, 608,
+                 "unconnected iterm I{}({})/{} in net {}",
                  x->_iterm->getInst()->getId(),
                  x->_iterm->getInst()->getMaster()->getConstName(),
                  x->_iterm->getMTerm()->getConstName(),
                  _net->getId());
       } else {
         if (!quiet)
-          notice(0,
-                 "unconnected bterm %s in net %d\n",
+          logger_->warn(utl::ODB, 609,
+                 "unconnected bterm {} in net {}",
                  x->_bterm->getConstName(),
                  _net->getId());
       }
@@ -1947,14 +1943,14 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     tstackV[tstackN++] = x;
   dfsClear();
   if (!dfsStart(jstart)) {
-    warning(0, "cannot order %s\n", _net->getConstName());
+    logger_->warn(utl::ODB, 291, "cannot order {}", _net->getConstName());
     return;
   }
   if (verbose) {
-    notice(0, "starting at %d ", jstart);
+    logger_->warn(utl::ODB, 610, "starting at {} ", jstart);
     if (x)
-      print_rcterm(x);
-    notice(0, "\n");
+      print_rcterm(x, logger_);
+    logger_->warn(utl::ODB, 611, "");
   }
   int last_term_index = 0;
   while (1) {
@@ -1974,16 +1970,16 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
         }
       }
       if (verbose) {
-        notice(0, "%d-%d", jfr, jto);
+        logger_->warn(utl::ODB, 612, "{}-{}", jfr, jto);
         if (is_short)
-          notice(0, " short");
+          logger_->warn(utl::ODB, 613, " short");
         if (is_loop)
-          notice(0, " loop");
+          logger_->warn(utl::ODB, 614, " loop");
         if (x && x->_iterm)
-          notice(0, " iterm I%d", x->_iterm->getInst()->getId());
+          logger_->warn(utl::ODB, 615, " iterm I{}", x->_iterm->getInst()->getId());
         if (x && x->_bterm)
-          notice(0, " bterm");
-        notice(0, "\n");
+          logger_->warn(utl::ODB, 616, " bterm");
+        logger_->warn(utl::ODB, 617, "");
       }
       if (!no_convert) {
         addToWire(jfr, jto, k, is_short, is_loop);
@@ -2014,10 +2010,10 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
       tstack0--;
       _last_id = x->_first_pt->_dbwire_id;
       if (verbose) {
-        notice(0, "net %d feedthru at ", _net->getId());
-        print_rcterm(x);
-        notice(0, "\n");
-        notice(0, "last_id = %d\n", _last_id);
+        logger_->warn(utl::ODB, 618, "net {} feedthru at ", _net->getId());
+        print_rcterm(x, logger_);
+        logger_->warn(utl::ODB, 619, "");
+        logger_->warn(utl::ODB, 620, "last_id = {}", _last_id);
       }
     }
     if (!pt) {
@@ -2043,7 +2039,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     }
     jstart = pt - _ptV;
     if (!dfsStart(jstart)) {
-      warning(0, "cannot order %s\n", _net->getConstName());
+      logger_->warn(utl::ODB, 296, "cannot order {}", _net->getConstName());
       return;
     }
   }
@@ -2066,7 +2062,7 @@ int tmg_conn::getExtension(int ipt, tmg_rc* rc)
   else if (ipt == rc->_ito)
     pto = _ptV + rc->_ifr;
   else {
-    notice(0, "error, addPoint(int,rc)\n");
+    logger_->warn(utl::ODB, 621, "error, addPoint(int,rc)");
     exit(0);
   }
   if (p->_x < pto->_x) {
@@ -2087,10 +2083,10 @@ int tmg_conn::addPoint(int ipt, tmg_rc* rc)
   tmg_rcpt* p = _ptV + ipt;
   ext = getExtension(ipt, rc);
   if (ext == rc->_default_ext) {
-    // notice(0, "addPoint(%d, %d)\n",p->_x,p->_y);
+    // logger_->warn(utl::ODB, 240, "addPoint({}, {})",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
-    // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
+    // logger_->warn(utl::ODB, 240, "addPoint({}, {}, {})",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2176,10 +2172,10 @@ int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
     }
   }
   if (ext == rc->_default_ext) {
-    // notice(0, "addPoint(%d, %d)\n",p->_x,p->_y);
+    // logger_->warn(utl::ODB, 240, "addPoint({}, {})",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
-    // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
+    // logger_->warn(utl::ODB, 240, "addPoint({}, {}, {})",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2193,7 +2189,7 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
   tmg_rcpt* p = _ptV + ipt;
   ext = getExtension(ipt, rc);
   if (ext != rc->_default_ext) {
-    // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
+    // logger_->warn(utl::ODB, 240, "addPoint({}, {}, {})",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2210,31 +2206,31 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   xto = _ptV[to]._x;
   yto = _ptV[to]._y;
   if (xfr != xto && yfr != yto && !is_short)
-    notice(0, "net %d: addToWire, trouble xy\n", _net->getId());
+    logger_->warn(utl::ODB, 622, "net {}: addToWire, trouble xy", _net->getId());
   if (is_short && _last_id < 0)
-    notice(0, "net %d: addToWire, trouble, first is short\n", _net->getId());
+    logger_->warn(utl::ODB, 623, "net {}: addToWire, trouble, first is short", _net->getId());
   if (verbose && is_short && (xfr != xto || yfr != yto)) {
-    notice(0, "net %d: trouble, short to off point\n", _net->getId());
-    notice(0, "  fr (%d %d)\n", xfr, yfr);
-    notice(0, "  to (%d %d)\n", xto, yto);
+    logger_->warn(utl::ODB, 624, "net {}: trouble, short to off point", _net->getId());
+    logger_->warn(utl::ODB, 625, "  fr ({} {})", xfr, yfr);
+    logger_->warn(utl::ODB, 626, "  to ({} {})", xto, yto);
   }
 
   if (verbose) {
     if (_ptV[fr]._dbwire_id != _last_id)
-      notice(0, "new path\n");
-    notice(0, " fr= %d   to= %d   k= %d", fr, to, k);
+      logger_->warn(utl::ODB, 627, "new path");
+    logger_->warn(utl::ODB, 628, " fr= {}   to= {}   k= {}", fr, to, k);
     if (is_short)
-      notice(0, " short");
+      logger_->warn(utl::ODB, 629, " short");
     if (is_loop)
-      notice(0, " loop");
+      logger_->warn(utl::ODB, 630, " loop");
     if (k >= 0)
-      notice(0,
-             " (%d %d) (%d %d)",
+      logger_->warn(utl::ODB, 631,
+             " ({} {}) ({} {})",
              rc->_shape.xMin(),
              rc->_shape.yMin(),
              rc->_shape.xMax(),
              rc->_shape.yMax());
-    notice(0, "\n");
+    logger_->warn(utl::ODB, 632, "");
   }
 
   if (!_newWire)
@@ -2243,7 +2239,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   if (is_short) {
     // wfs 4-19-05
     if (xfr != xto || yfr != yto) {
-      // notice(0, "changing bad short to disconnect\n");
+      // logger_->warn(utl::ODB, 240, "changing bad short to disconnect");
       _ptV[to]._dbwire_id = -1;
       _last_id = _ptV[fr]._dbwire_id;
       return;
@@ -2253,13 +2249,13 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
       return;
     }
     if (verbose)
-      notice(0, "shorting to dbwire_id %d\n", _ptV[fr]._dbwire_id);
+      logger_->warn(utl::ODB, 633, "shorting to dbwire_id {}", _ptV[fr]._dbwire_id);
     _ptV[to]._dbwire_id = _ptV[fr]._dbwire_id;
     return;
   }
   if (k < 0)
-    error(0,
-          "Internal Error: tmg_conn::addToWire: value of k is negative: %d\n",
+    logger_->error(utl::ODB, 297, 
+          "Internal Error: tmg_conn::addToWire: value of k is negative: {}",
           k);
 
   int ext;
@@ -2278,7 +2274,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
       else
         _encoder.newPathShort(_last_id, _ptV[fr]._layer, dbWireType::ROUTED);
     } else {
-      //   notice(0, "disconnected wire forest, net %d\n",_net->getId());
+      //   logger_->warn(utl::ODB, 240, "disconnected wire forest, net {}",_net->getId());
       if (_path_rule)
         _encoder.newPath(_ptV[fr]._layer, dbWireType::ROUTED, lyr_rule);
       else
@@ -2300,11 +2296,11 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
         _encoder.addBTerm(x->_bterm);
     }
     if (verbose)
-      notice(0, "new tree, starting at id=%d\n", fr_id);
+      logger_->warn(utl::ODB, 634, "new tree, starting at id={}", fr_id);
   } else if (fr_id != _last_id) {
     _path_rule = rc->_shape._rule;
     if (verbose)
-      notice(0, "branch from id=%d\n", fr_id);
+      logger_->warn(utl::ODB, 635, "branch from id={}", fr_id);
     if (rc->_shape.isVia()) {
       if (_path_rule)
         _encoder.newPath(fr_id, lyr_rule);
@@ -2339,7 +2335,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 
     _path_rule = rc->_shape._rule;
     if (verbose)
-      notice(0, "branch from id=%d\n", fr_id);
+      logger_->warn(utl::ODB, 636, "branch from id={}", fr_id);
     if (rc->_shape.isVia()) {
       if (_path_rule)
         _encoder.newPath(fr_id, lyr_rule);
@@ -2390,7 +2386,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   else if (rc->_shape.getVia())
     to_id = _encoder.addVia(rc->_shape.getVia());
   else
-    notice(0, "error in addToWire\n");
+    logger_->warn(utl::ODB, 637, "error in addToWire");
 
   if (_ptV[to]._tindex >= 0 && _ptV[to]._tindex != _ptV[fr]._tindex
       && _ptV[to]._t_alt && _ptV[to]._t_alt->_tindex < 0
@@ -2407,7 +2403,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     if (x->_first_pt == NULL)
       x->_first_pt = _ptV + to;
     if (verbose)
-      notice(0, "term at id=%d\n", to_id);
+      logger_->warn(utl::ODB, 638, "term at id={}", to_id);
     if (x->_iterm)
       _encoder.addITerm(x->_iterm);
     else
@@ -2417,7 +2413,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   _ptV[to]._dbwire_id = to_id;
   _last_id = to_id;
   if (verbose)
-    notice(0, "to   id=%d\n", to_id);
+    logger_->warn(utl::ODB, 639, "to   id={}", to_id);
 
   _firstSegmentAfterVia = rc->_shape.isVia();
 }

@@ -44,6 +44,7 @@
 #include "geom.h"
 #include "gseq.h"
 #include "rcx.h"
+#include "utl/Logger.h"
 
 using namespace odb;
 
@@ -629,6 +630,8 @@ class Ath__gridTable
 
   Ath__array1D<Ath__wire*>* _bandWire;
 
+  utl::Logger* logger_;
+
  public:
   Ath__gridTable(Ath__box* bb,
                  uint rowSize,
@@ -711,6 +714,7 @@ class Ath__gridTable
   void resetMaxArea();
 
   void removeMarkedNetWires();
+  void setLogger(utl::Logger* logger);
 
   // EXTRACTION
 

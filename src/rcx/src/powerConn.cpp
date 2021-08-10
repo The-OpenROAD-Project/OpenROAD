@@ -4404,7 +4404,7 @@ uint extMain::powerRCGen() {
   // odb::dbBox *bb = _block->getBBox();
   char msg1[1024];
   sprintf(msg1, "\nExtracting %d nets ", pNetCnt);
-  AthResourceLog(msg1, 0);
+  AthResourceLog(logger_, msg1, 0);
 
   // for (int ii= pNetCnt-1; ii>=0; ii--)
   for (uint ii = 0; ii < pNetCnt; ii++) {
@@ -4437,14 +4437,14 @@ uint extMain::powerRCGen() {
       writeViaResistors(_globCirGND, 0, _viaStackGlobGND, !_wireInfra);
     }
     sprintf(msg1, "\nFinished %s ", net->getConstName());
-    AthResourceLog(msg1, 0);
+    AthResourceLog(logger_, msg1, 0);
 
     for (uint jj = 0; jj < _powerMacroTable.size(); jj++) {
       odb::dbInst* inst = _powerMacroTable[jj];
       logger_->info(RCX, 347, "--- Connectivity of macro {} with net {} ... ",
                     inst->getConstName(), net->getConstName());
       iterm2Vias(inst, net);
-      AthResourceLog("-- Finished Macro", 0);
+      AthResourceLog(logger_, "-- Finished Macro", 0);
     }
 
     bool m1Vias = true;

@@ -43,6 +43,7 @@
 
 #include "db.h"
 #include "odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -51,6 +52,7 @@ class cdl
  public:
   static bool writeCdl(dbBlock* block,
                        const char* fileName,
+                       utl::Logger* logger,
                        bool includeFillers = 0);
 };
 

@@ -35,6 +35,7 @@
 #include "db.h"
 #include "dbWireCodec.h"
 #include "geom.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -169,6 +170,7 @@ class tmg_conn
   int* _csNV;
   int _csN;
   tmg_rcpt* _first_for_clear;
+  utl::Logger* logger_;
 
  private:
   int _ptNmax;
@@ -180,7 +182,7 @@ class tmg_conn
   int _horzSplitCnt;
 
  public:
-  tmg_conn();
+  tmg_conn(utl::Logger* logger);
   void analyzeNet(dbNet* net,
                   bool force,
                   bool verbose,

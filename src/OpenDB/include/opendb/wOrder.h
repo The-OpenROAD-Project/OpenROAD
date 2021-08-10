@@ -33,6 +33,7 @@
 #pragma once
 
 #include "odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -41,16 +42,18 @@ class dbNet;
 
 void orderWires(dbBlock* b,
                 bool force,
+                utl::Logger* logger,
                 int cutLength = 0,
                 int maxLength = 0,
                 bool quiet = false);
 void orderWires(dbBlock* b,
                 const char* net_name_or_id,
                 bool force,
+                utl::Logger* logger,
                 bool verbose = false,
                 bool quiet = false,
                 int cutLength = 0,
                 int maxLength = 0);
-void orderWires(dbNet* net, bool force, bool verbose = false);
+void orderWires(dbNet* net, bool force, utl::Logger* logger, bool verbose = false);
 
 }  // namespace odb

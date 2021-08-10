@@ -365,7 +365,7 @@ OpenRoad::writeCdl(const char* filename, bool includeFillers)
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
-      odb::cdl::writeCdl(block, filename, includeFillers);
+      odb::cdl::writeCdl(block, filename, logger_, includeFillers);
     }
   }
 

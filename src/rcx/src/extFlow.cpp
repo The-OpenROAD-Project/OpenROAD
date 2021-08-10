@@ -685,6 +685,7 @@ uint extMain::initSearchForNets(int* X1, int* Y1, uint* pitchTable,
 
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
+  _search->setLogger(logger_);
   return layerCnt;
 }
 
@@ -2065,7 +2066,7 @@ uint extMain::couplingFlow(bool rlog, Rect& extRect, uint trackStep,
     addPowerGs();
     addSignalGs();
     if (rlog)
-      AthResourceLog("NewFlow single GS ", 0);
+      AthResourceLog(logger_, "NewFlow single GS ", 0);
   }
   uint minRes[2];
   minRes[1] = pitchTable[1];
@@ -2111,7 +2112,7 @@ uint extMain::couplingFlow(bool rlog, Rect& extRect, uint trackStep,
 #endif
 
     if (rlog)
-      AthResourceLog("Making net tables ", 0);
+      AthResourceLog(logger_, "Making net tables ", 0);
   }
   uint totalWiresExtracted = 0;
 
@@ -2143,7 +2144,7 @@ uint extMain::couplingFlow(bool rlog, Rect& extRect, uint trackStep,
 
     _search->initCouplingCapLoops(dir, ccFlag, coupleAndCompute, m);
     if (rlog)
-      AthResourceLog("initCouplingCapLoops", 0);
+      AthResourceLog(logger_, "initCouplingCapLoops", 0);
 
     lo_sdb[dir] = ll[dir] - step_nm[dir];
     int hiXY = ll[dir] + step_nm[dir];
@@ -2171,7 +2172,7 @@ uint extMain::couplingFlow(bool rlog, Rect& extRect, uint trackStep,
         m->_rotatedGs = getRotatedFlag();
         m->_pixelTable = _geomSeq;
         if (rlog)
-          AthResourceLog("Fill GS", 0);
+          AthResourceLog(logger_, "Fill GS", 0);
       }
       // add wires onto search such that    loX<=loX<=hiX
       hi_sdb[dir] = hiXY;
@@ -2190,7 +2191,7 @@ uint extMain::couplingFlow(bool rlog, Rect& extRect, uint trackStep,
       }
 
       if (rlog)
-        AthResourceLog("Fill Sdb", 0);
+        AthResourceLog(logger_, "Fill Sdb", 0);
 
       uint extractedWireCnt = 0;
       int extractLimit = hiXY - ccDist * maxPitch;
@@ -2203,7 +2204,7 @@ uint extMain::couplingFlow(bool rlog, Rect& extRect, uint trackStep,
         sprintf(buff, "CCext %d wires xy[%d]= %d ", processWireCnt, dir,
                 minExtracted);
 
-        AthResourceLog(buff, 0);
+        AthResourceLog(logger_, buff, 0);
       }
 
       int deallocLimit = minExtracted - (ccDist + 1) * maxPitch;
@@ -2709,7 +2710,7 @@ void extWindow::reportProcessedWires(bool rlog) {
 #ifdef _WIN32
     logger_->info(RCX, 214, "{}", buff);
 #endif
-    AthResourceLog(buff, 0);
+    AthResourceLog(logger_, buff, 0);
   }
 }
 int extWindow::getDeallocLimit() {
@@ -2979,7 +2980,7 @@ uint extMain::couplingWindowFlow(bool rlog, Rect& extRect, uint trackStep,
 #endif
 
     if (rlog)
-      AthResourceLog("Making net tables ", 0);
+      AthResourceLog(logger_, "Making net tables ", 0);
   }
 
   FILE* boundFP = fopen("window.bounds", "w");
@@ -3002,7 +3003,7 @@ uint extMain::couplingWindowFlow(bool rlog, Rect& extRect, uint trackStep,
 
     _search->initCouplingCapLoops(dir, ccFlag, coupleAndCompute, m);
     if (rlog)
-      AthResourceLog("initCouplingCapLoops", 0);
+      AthResourceLog(logger_, "initCouplingCapLoops", 0);
 
     uint stepNum = 0;
     int hiXY = W->setExtBoundaries(dir);
@@ -3185,7 +3186,7 @@ uint extMain::extractWindow(bool rlog, extWindow* W, Rect& extRect,
   }
 
   if (rlog)
-    AthResourceLog("initCouplingCapLoops", 0);
+    AthResourceLog(logger_, "initCouplingCapLoops", 0);
 
   fillWindowGs(W, sdbTable_ll, sdbTable_ur, sdbBucketSize, sdbPowerTable,
                tmpNetIdTable, sdbSignalTable, gsInstTable);
@@ -3195,13 +3196,13 @@ uint extMain::extractWindow(bool rlog, extWindow* W, Rect& extRect,
       sdbPowerTable, tmpNetIdTable, sdbSignalTable);
 
   if (rlog)
-    AthResourceLog("Fill GS", 0);
+    AthResourceLog(logger_, "Fill GS", 0);
 
   m->_rotatedGs = getRotatedFlag();
   m->_pixelTable = _geomSeq;
 
   if (rlog)
-    AthResourceLog("Fill Sdb", 0);
+    AthResourceLog(logger_, "Fill Sdb", 0);
 
   // W->printExtLimits(limFP);
   // W->printBoundaries(bndFP, true);
@@ -3871,7 +3872,7 @@ uint extMain::createWindowsDB(bool rlog, Rect& extRect, uint trackStep,
         mkInstBins(W->_maxPitch * W->_ccDist, W->_ll, W->_ur, binCnt);
 
     if (rlog)
-      AthResourceLog("Making net tables ", 0);
+      AthResourceLog(logger_, "Making net tables ", 0);
   } else if (use_bin_tables == 3) {  // signal_table based tiling
     _tiles = new extTileSystem(extRect, W->_step_nm);
     bool skipPower = false;

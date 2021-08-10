@@ -1660,6 +1660,7 @@ int AntennaChecker::check_antennas(std::string path, bool report_violating_nets)
   odb::orderWires(block,
                   nullptr /* net_name_or_id*/,
                   false /* force */,
+                  logger_,
                   false /* verbose */,
                   true /* quiet */);
 

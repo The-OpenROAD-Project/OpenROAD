@@ -49,7 +49,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "dbLogger.h"
+#include "utl/Logger.h"
 
 using namespace std;
 
@@ -184,7 +184,7 @@ void AthMemCounterp(int /* unused: signo */)
   }
 }
 
-int AthResourceLog(const char* title, int ss)
+int AthResourceLog(utl::Logger* logger, const char* title, int ss)
 {
   static struct tms ctp;
   static time_t wtp = 0;
@@ -228,28 +228,27 @@ int AthResourceLog(const char* title, int ss)
   int ticks = sysconf(_SC_CLK_TCK);
   if (wtp) {
     if (title && title[0])
-      notice(0, "%s:  ", title);
+      logger->warn(utl::ODB, 700, "%s:  ", title);
 
     wtd = wtn - wtp;
-    notice(0, "ELAPSE %.8s  ", asctime(gmtime(&wtd)) + 11);
+    logger->warn(utl::ODB, 701, "ELAPSE %.8s  ", asctime(gmtime(&wtd)) + 11);
 
     if (ss) {
-      notice(0,
+      logger->warn(utl::ODB, 702,
              "CPU %ld cs  ",
              (ctn.tms_utime + ctn.tms_stime) - (ctp.tms_utime + ctp.tms_stime));
-      notice(0, "MEM %d B (%d B)", (int) (mmn), (int) (mmn - mmp));
-      notice(0, " MAX %d M", (int) max_size);
-      notice(0, "  %s\n", ctime(&wtn));
+      logger->warn(utl::ODB, 703, "MEM %d B (%d B)", (int) (mmn), (int) (mmn - mmp));
+      logger->warn(utl::ODB, 704, " MAX %d M", (int) max_size);
+      logger->warn(utl::ODB, 705, "  %s\n", ctime(&wtn));
     } else {
       int imeg = 1024 * 1024;
-      notice(0,
+      logger->warn(utl::ODB, 706,
              "CPU %ld sec  ",
              ((ctn.tms_utime + ctn.tms_stime) - (ctp.tms_utime + ctp.tms_stime))
                  / ticks);
-      notice(
-          0, "MEM %d M (%d M)", (int) (mmn / imeg), (int) ((mmn - mmp) / imeg));
-      notice(0, " MAX %d M", (int) ((double) max_size / imeg));
-      notice(0, "  %s\n", ctime(&wtn));
+      logger->warn(utl::ODB, 707, "MEM %d M (%d M)", (int) (mmn / imeg), (int) ((mmn - mmp) / imeg));
+      logger->warn(utl::ODB, 708, " MAX %d M", (int) ((double) max_size / imeg));
+      logger->warn(utl::ODB, 709, "  %s\n", ctime(&wtn));
     }
   }
   wtp = wtn;

@@ -34,7 +34,6 @@
 #include <stdlib.h>
 
 #include "db.h"
-#include "dbLogger.h"
 #include "dbMap.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
@@ -45,7 +44,7 @@ namespace odb {
 void tmg_conn::checkConnOrdered(bool verbose)
 {
   if (verbose)
-    notice(0, "net %d %s\n", _net->getId(), _net->getName().c_str());
+    logger_->warn(utl::ODB, 900, "net %d %s\n", _net->getId(), _net->getName().c_str());
   dbITerm* drv_iterm = NULL;
   dbBTerm* drv_bterm = NULL;
   dbITerm* itermV[1024];
@@ -63,19 +62,19 @@ void tmg_conn::checkConnOrdered(bool verbose)
   while (pitr.getNextPath(path)) {
     if (!path.is_branch) {
       if (verbose) {
-        notice(0, "path %d", path.junction_id);
+        logger_->warn(utl::ODB, 901, "path %d", path.junction_id);
         if (path.iterm) {
-          notice(0,
+          logger_->warn(utl::ODB, 902,
                  " iterm I%d/%s",
                  path.iterm->getInst()->getId(),
                  path.iterm->getMTerm()->getName().c_str());
         } else if (path.bterm) {
-          notice(0, " bterm %d", path.bterm->getId());
+          logger_->warn(utl::ODB, 903, " bterm %d", path.bterm->getId());
         }
-        notice(0, "\n");
+        logger_->warn(utl::ODB, 904, "\n");
       }
       if (!path.iterm && !path.bterm) {
-        notice(0, "NO TERM\n");
+        logger_->warn(utl::ODB, 905, "NO TERM\n");
         _connected = false;
       }
       if (first) {
@@ -91,15 +90,15 @@ void tmg_conn::checkConnOrdered(bool verbose)
       } else {
         if (verbose && !(drv_iterm && path.iterm == drv_iterm)
             && !(drv_bterm && path.bterm == drv_bterm)) {
-          notice(0, "PATH NOT FROM DRIVER\n");
-          notice(0, "path.short_junction = %d\n", path.short_junction);
+          logger_->warn(utl::ODB, 906, "PATH NOT FROM DRIVER\n");
+          logger_->warn(utl::ODB, 907, "path.short_junction = %d\n", path.short_junction);
         }
         if (path.iterm) {
           for (j = 0; j < itermN; j++)
             if (itermV[j] == path.iterm)
               break;
           if (j == itermN) {
-            notice(0, "DISC\n");
+            logger_->warn(utl::ODB, 908, "DISC\n");
             _connected = false;
             itermV[itermN++] = path.iterm;
           }
@@ -109,7 +108,7 @@ void tmg_conn::checkConnOrdered(bool verbose)
             if (btermV[j] == path.bterm)
               break;
           if (j == btermN) {
-            notice(0, "DISC\n");
+            logger_->warn(utl::ODB, 909, "DISC\n");
             _connected = false;
             btermV[btermN++] = path.bterm;
           }
@@ -117,14 +116,14 @@ void tmg_conn::checkConnOrdered(bool verbose)
       }
     } else {
       if (verbose)
-        notice(0, "branch %d\n", path.junction_id);
+        logger_->warn(utl::ODB, 910, "branch %d\n", path.junction_id);
     }
     while (pitr.getNextShape(pathShape)) {
       if (0 && verbose)
-        notice(0, "shape %d", pathShape.junction_id);
+        logger_->warn(utl::ODB, 911, "shape %d", pathShape.junction_id);
       if (pathShape.iterm) {
         if (0 && verbose)
-          notice(0,
+          logger_->warn(utl::ODB, 912,
                  " iterm I%d/%s",
                  pathShape.iterm->getInst()->getId(),
                  pathShape.iterm->getMTerm()->getName().c_str());
@@ -136,7 +135,7 @@ void tmg_conn::checkConnOrdered(bool verbose)
         }
       } else if (pathShape.bterm) {
         if (0 && verbose)
-          notice(0, " bterm %d", pathShape.bterm->getId());
+          logger_->warn(utl::ODB, 913, " bterm %d", pathShape.bterm->getId());
         for (j = 0; j < btermN; j++)
           if (btermV[j] == pathShape.bterm)
             break;
@@ -146,19 +145,18 @@ void tmg_conn::checkConnOrdered(bool verbose)
       if (0 && verbose) {
         dbShape s = pathShape.shape;
         if (s.getTechVia())
-          notice(0, " %s", s.getTechVia()->getName().c_str());
+          logger_->warn(utl::ODB, 914, " %s", s.getTechVia()->getName().c_str());
         else if (s.getVia())
-          notice(0, " %s", s.getVia()->getName().c_str());
+          logger_->warn(utl::ODB, 915, " %s", s.getVia()->getName().c_str());
         else if (s.getTechLayer())
-          notice(0, " %s", s.getTechLayer()->getName().c_str());
-        notice(0, "\n");
+          logger_->warn(utl::ODB, 916, " %s", s.getTechLayer()->getName().c_str());
+        logger_->warn(utl::ODB, 917, "\n");
       }
     }
   }
   if (!_connected) {
     _net->setDisconnected(true);
-    notice(
-        0, "disconnected net %d %s\n", _net->getId(), _net->getName().c_str());
+    logger_->warn(utl::ODB, 918, "disconnected net %d %s\n", _net->getId(), _net->getName().c_str());
   }
 }
 
@@ -364,7 +362,7 @@ void tmg_conn::checkConnected(bool verbose)
   if (disc) {
     _net->setDisconnected(true);
     if (verbose) {
-      notice(0,
+      logger_->warn(utl::ODB, 919,
              "disconnected net %d %s\n",
              _net->getId(),
              _net->getName().c_str());
