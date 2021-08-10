@@ -39,9 +39,6 @@ Node::Node(int _idx, int _x, int _y) :
   idx(_idx),
   x(_x),
   y(_y),
-  // magic number alert -cherry
-  nn_edge_detcost(8, 10000),
-  nn_sw_cost(8, 10000),
   maxPLToChild(0)
 {
   parent = 0;

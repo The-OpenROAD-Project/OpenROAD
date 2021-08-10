@@ -136,8 +136,8 @@ write_def $cts_def
 ################################################################
 # Setup/hold timing repair
 
-estimate_parasitics -placement
 set_propagated_clock [all_clocks]
+estimate_parasitics -placement
 repair_timing
 
 # Post timing repair using placement based parasitics.

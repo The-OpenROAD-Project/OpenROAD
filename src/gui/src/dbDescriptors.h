@@ -73,6 +73,9 @@ class DbNetDescriptor : public Descriptor
   Properties getProperties(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+ private:
+  static const int max_iterms_ = 10000;
 };
 
 class DbITermDescriptor : public Descriptor
@@ -92,6 +95,38 @@ class DbITermDescriptor : public Descriptor
 };
 
 class DbBTermDescriptor : public Descriptor
+{
+ public:
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+};
+
+class DbBlockageDescriptor : public Descriptor
+{
+ public:
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+};
+
+class DbObstructionDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;

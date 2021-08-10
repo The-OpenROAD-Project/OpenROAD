@@ -102,7 +102,12 @@ proc detailed_route { args } {
     }
     if { [info exists keys(-droute_end_iter)] } {
       sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-      set droute_end_iter $keys(-droute_end_iter)
+      if {$keys(-droute_end_iter) > 64} {
+        utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
+        set droute_end_iter 64
+      } else {
+        set droute_end_iter $keys(-droute_end_iter)
+      }
     } else {
       set droute_end_iter -1
     }

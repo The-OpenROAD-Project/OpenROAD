@@ -742,11 +742,7 @@ class FlexDRWorker
   void subPathCost(drConnFig* connFig);
   void modPathCost(drConnFig* connFig, int type);
   // minSpc
-  void modMinSpacingCost(drNet* net,
-                         const frBox& box,
-                         frMIdx z,
-                         int type,
-                         bool isCurrPs);
+
   void modMinSpacingCostPlanar(const frBox& box,
                                frMIdx z,
                                int type,

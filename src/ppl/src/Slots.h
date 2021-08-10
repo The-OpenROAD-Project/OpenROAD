@@ -63,7 +63,8 @@ struct Slot
 struct Section
 {
   odb::Point pos;
-  Netlist net;
+  std::vector<int> pin_indices;
+  std::vector<std::vector<int>> pin_groups;
   int cost;
   int begin_slot;
   int end_slot;

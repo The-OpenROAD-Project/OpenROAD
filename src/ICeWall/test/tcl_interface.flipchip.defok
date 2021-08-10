@@ -4280,9 +4280,121 @@ SPECIALNETS 185 ;
       ( u_vzz_3 DVDD ) ( u_ddr_addr_8_o DVDD ) ( u_ddr_addr_9_o DVDD ) ( u_pwrdet1 DVDD ) ( u_vss_1 DVDD ) ( u_vdd_1 DVDD ) ( u_ddr_addr_10_o DVDD ) ( u_ddr_addr_11_o DVDD )
       ( u_v18_2 DVDD ) ( u_vzz_2 DVDD ) ( u_ddr_addr_12_o DVDD ) ( u_ddr_addr_13_o DVDD ) ( u_ddr_addr_14_o DVDD ) ( u_ddr_addr_15_o DVDD ) ( u_v18_1 DVDD ) ( u_vzz_1 DVDD )
       ( u_ddr_ba_0_o DVDD ) ( u_ddr_ba_1_o DVDD ) ( u_pwrdet0 DVDD ) ( u_ddr_ba_2_o DVDD ) ( u_vss_0 DVDD ) ( u_vdd_0 DVDD ) ( u_ddr_dqs_p_1_io DVDD ) ( u_v18_0 DVDD )
-      ( u_vzz_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_ddr_dm_1_o DVDD ) + USE POWER ;
+      ( u_vzz_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_ddr_dm_1_o DVDD ) + USE POWER
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5240000 175000 ) ( 5240000 430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2040000 175000 ) ( 2040000 430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 650000 ) ( 4260000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 355000 ) ( 4160000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4220000 295000 ) ( 4160000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4220000 175000 ) ( 4220000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 650000 ) ( 2980000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 355000 ) ( 2880000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2940000 295000 ) ( 2880000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2940000 175000 ) ( 2940000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1600000 650000 ) ( 1700000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1600000 355000 ) ( 1600000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1660000 295000 ) ( 1600000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1660000 175000 ) ( 1660000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 960000 650000 ) ( 1060000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 960000 355000 ) ( 960000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1020000 295000 ) ( 960000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1020000 175000 ) ( 1020000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 1290000 ) ( 5250000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 1290000 ) ( 5645000 1290000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 1290000 ) ( 5695000 1340000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 1340000 ) ( 5825000 1340000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3800000 1250000 ) ( 3940000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3800000 315000 ) ( 3800000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3840000 275000 ) ( 3800000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3840000 175000 ) ( 3840000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2520000 1250000 ) ( 2660000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2520000 315000 ) ( 2520000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2560000 275000 ) ( 2520000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2560000 175000 ) ( 2560000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 970000 1290000 ) ( 1070000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1290000 ) ( 970000 1290000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1290000 ) ( 305000 1340000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1340000 ) ( 305000 1340000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4930000 1710000 ) ( 5030000 1810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 1810000 ) ( 5645000 1810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 1780000 ) ( 5645000 1810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 1780000 ) ( 5825000 1780000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3440000 1570000 ) ( 3300000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3440000 315000 ) ( 3440000 1570000 )
+      NEW metal10 0 + SHAPE STRIPE ( 3430000 315000 ) ( 3450000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3440000 175000 ) ( 3440000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4290000 2030000 ) ( 4430000 2170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 2170000 ) ( 5685000 2170000 )
+      NEW metal10 0 + SHAPE STRIPE ( 5675000 2170000 ) ( 5695000 2170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 2170000 ) ( 5825000 2170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2040000 ) ( 430000 2040000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 2350000 ) ( 650000 2450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2450000 ) ( 650000 2450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 335000 2430000 ) ( 355000 2450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2430000 ) ( 335000 2430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 2680000 ) ( 5825000 2680000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4930000 2990000 ) ( 5030000 3090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 3090000 ) ( 5645000 3090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 3060000 ) ( 5645000 3090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 3060000 ) ( 5825000 3060000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 970000 2890000 ) ( 1070000 2990000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2890000 ) ( 970000 2890000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2890000 ) ( 305000 2940000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2940000 ) ( 305000 2940000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3320000 ) ( 430000 3320000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 3530000 ) ( 5250000 3630000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 3530000 ) ( 5645000 3530000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 3530000 ) ( 5695000 3580000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 3580000 ) ( 5825000 3580000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 3960000 ) ( 5825000 3960000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1570000 3810000 ) ( 1710000 3950000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3810000 ) ( 1570000 3810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3810000 ) ( 285000 3840000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3840000 ) ( 285000 3840000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4930000 4270000 ) ( 5030000 4370000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 4370000 ) ( 5645000 4370000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 4340000 ) ( 5645000 4370000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 4340000 ) ( 5825000 4340000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2660000 4290000 ) ( 2520000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2520000 4430000 ) ( 2520000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2520000 5685000 ) ( 2560000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2560000 5725000 ) ( 2560000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 970000 4170000 ) ( 1070000 4270000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4170000 ) ( 970000 4170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4170000 ) ( 305000 4220000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4220000 ) ( 305000 4220000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3940000 4610000 ) ( 4080000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4080000 4750000 ) ( 4080000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4080000 5685000 ) ( 4090000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4090000 5695000 ) ( 4090000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2020000 4610000 ) ( 2160000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2160000 4750000 ) ( 2160000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2160000 5685000 ) ( 2170000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2170000 5695000 ) ( 2170000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 4590000 ) ( 650000 4690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4690000 ) ( 650000 4690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 345000 4680000 ) ( 355000 4690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4680000 ) ( 345000 4680000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4580000 4930000 ) ( 4480000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4480000 5030000 ) ( 4480000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4480000 5645000 ) ( 4540000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4540000 5705000 ) ( 4540000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5220000 5250000 ) ( 5320000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5320000 5350000 ) ( 5320000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5320000 5645000 ) ( 5300000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5300000 5665000 ) ( 5300000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1700000 5250000 ) ( 1800000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1800000 5350000 ) ( 1800000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1800000 5645000 ) ( 1780000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1780000 5665000 ) ( 1780000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3640000 5570000 ) ( 3640000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 760000 5570000 ) ( 760000 5825000 ) ;
     - DVDD_1 ( PIN DVDD_1 ) ( u_v18_21 DVDD ) ( u_clk_C_i DVDD ) ( u_vzz_21 DVDD ) ( u_clk_o DVDD ) ( u_vdd_pll DVDD ) ( u_clk_async_reset_i DVDD )
-      ( u_vss_pll DVDD ) ( u_pwrdet11 DVDD ) ( u_misc_o DVDD ) + USE POWER ;
+      ( u_vss_pll DVDD ) ( u_pwrdet11 DVDD ) ( u_misc_o DVDD ) + USE POWER
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2980000 4930000 ) ( 2880000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 5030000 ) ( 2880000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 5645000 ) ( 2950000 5715000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2950000 5715000 ) ( 2950000 5825000 ) ;
     - DVSS_0 ( PIN DVSS_0 ) ( u_UNASSIGNED_2 DVSS ) ( u_UNASSIGNED_1 DVSS ) ( u_UNASSIGNED_0 DVSS ) ( u_v18_33 DVSS ) ( u_vzz_33 DVSS ) ( u_vss_15 DVSS )
       ( u_vdd_15 DVSS ) ( u_ddr_dq_8_io DVSS ) ( u_ddr_dq_9_io DVSS ) ( u_ddr_dq_10_io DVSS ) ( u_pwrdet17 DVSS ) ( u_ddr_dq_11_io DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_v18_32 DVSS )
       ( u_vzz_32 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_ddr_dq_14_io DVSS ) ( u_ddr_dq_15_io DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_v18_31 DVSS ) ( u_vzz_31 DVSS ) ( u_ddr_dqs_n_0_io DVSS )
@@ -4314,9 +4426,112 @@ SPECIALNETS 185 ;
       ( u_vzz_3 DVSS ) ( u_ddr_addr_8_o DVSS ) ( u_ddr_addr_9_o DVSS ) ( u_pwrdet1 DVSS ) ( u_vss_1 DVSS ) ( u_vdd_1 DVSS ) ( u_ddr_addr_10_o DVSS ) ( u_ddr_addr_11_o DVSS )
       ( u_v18_2 DVSS ) ( u_vzz_2 DVSS ) ( u_ddr_addr_12_o DVSS ) ( u_ddr_addr_13_o DVSS ) ( u_ddr_addr_14_o DVSS ) ( u_ddr_addr_15_o DVSS ) ( u_v18_1 DVSS ) ( u_vzz_1 DVSS )
       ( u_ddr_ba_0_o DVSS ) ( u_ddr_ba_1_o DVSS ) ( u_pwrdet0 DVSS ) ( u_ddr_ba_2_o DVSS ) ( u_vss_0 DVSS ) ( u_vdd_0 DVSS ) ( u_ddr_dqs_p_1_io DVSS ) ( u_v18_0 DVSS )
-      ( u_vzz_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_ddr_dm_1_o DVSS ) + USE GROUND ;
+      ( u_vzz_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_ddr_dm_1_o DVSS ) + USE GROUND
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4920000 175000 ) ( 4920000 430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 760000 175000 ) ( 760000 430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 650000 ) ( 2020000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 355000 ) ( 1920000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1980000 295000 ) ( 1920000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1980000 175000 ) ( 1980000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3400000 970000 ) ( 3300000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3400000 355000 ) ( 3400000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3380000 335000 ) ( 3400000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3380000 175000 ) ( 3380000 335000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 1250000 ) ( 4610000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 1250000 ) ( 5685000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 1250000 ) ( 5715000 1280000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 1280000 ) ( 5825000 1280000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4120000 1250000 ) ( 4260000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4120000 315000 ) ( 4120000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 275000 ) ( 4120000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 175000 ) ( 4160000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2840000 1250000 ) ( 2980000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2840000 315000 ) ( 2840000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 275000 ) ( 2840000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 175000 ) ( 2880000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1560000 1250000 ) ( 1700000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1560000 315000 ) ( 1560000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1600000 275000 ) ( 1560000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1600000 175000 ) ( 1600000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1400000 ) ( 430000 1400000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 1720000 ) ( 5825000 1720000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3760000 1570000 ) ( 3620000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3760000 315000 ) ( 3760000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3770000 305000 ) ( 3760000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3770000 175000 ) ( 3770000 305000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2480000 1570000 ) ( 2340000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2480000 315000 ) ( 2480000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2490000 305000 ) ( 2480000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2490000 175000 ) ( 2490000 305000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4930000 2030000 ) ( 5030000 2130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 2130000 ) ( 5645000 2130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5665000 2110000 ) ( 5645000 2130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5665000 2110000 ) ( 5825000 2110000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 2030000 ) ( 650000 2130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2130000 ) ( 650000 2130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 2100000 ) ( 355000 2130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2100000 ) ( 325000 2100000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1390000 2350000 ) ( 1250000 2490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2490000 ) ( 1250000 2490000 )
+      NEW metal10 0 + SHAPE STRIPE ( 305000 2490000 ) ( 325000 2490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2490000 ) ( 315000 2490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 2570000 ) ( 5250000 2670000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 2570000 ) ( 5645000 2570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 2570000 ) ( 5695000 2620000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 2620000 ) ( 5825000 2620000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 3000000 ) ( 5825000 3000000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3000000 ) ( 430000 3000000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 3310000 ) ( 650000 3410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3410000 ) ( 650000 3410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 3380000 ) ( 355000 3410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3380000 ) ( 325000 3380000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 3490000 ) ( 4610000 3630000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 3490000 ) ( 5685000 3490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 3490000 ) ( 5715000 3520000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 3520000 ) ( 5825000 3520000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 3850000 ) ( 5250000 3950000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 3850000 ) ( 5645000 3850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 3850000 ) ( 5695000 3900000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 3900000 ) ( 5825000 3900000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 970000 3850000 ) ( 1070000 3950000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3850000 ) ( 970000 3850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3850000 ) ( 305000 3900000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3900000 ) ( 305000 3900000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 4280000 ) ( 5825000 4280000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4260000 4290000 ) ( 4120000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4120000 4430000 ) ( 4120000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4120000 5685000 ) ( 4160000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 5725000 ) ( 4160000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2340000 4290000 ) ( 2200000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2200000 4430000 ) ( 2200000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2200000 5685000 ) ( 2240000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 5725000 ) ( 2240000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4280000 ) ( 430000 4280000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1700000 4610000 ) ( 1840000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1840000 4750000 ) ( 1840000 5685000 )
+      NEW metal10 0 + SHAPE STRIPE ( 1830000 5685000 ) ( 1850000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1840000 5685000 ) ( 1840000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1390000 4590000 ) ( 1250000 4730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 4730000 ) ( 1250000 4730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 4730000 ) ( 305000 4740000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4740000 ) ( 305000 4740000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3620000 4930000 ) ( 3520000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3520000 5030000 ) ( 3520000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3520000 5645000 ) ( 3580000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3580000 5705000 ) ( 3580000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2660000 4930000 ) ( 2560000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2560000 5030000 ) ( 2560000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2560000 5645000 ) ( 2620000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2620000 5705000 ) ( 2620000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5560000 5570000 ) ( 5560000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4600000 5570000 ) ( 4600000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1080000 5570000 ) ( 1080000 5825000 ) ;
     - DVSS_1 ( PIN DVSS_1 ) ( u_v18_21 DVSS ) ( u_clk_C_i DVSS ) ( u_vzz_21 DVSS ) ( u_clk_o DVSS ) ( u_vdd_pll DVSS ) ( u_clk_async_reset_i DVSS )
-      ( u_vss_pll DVSS ) ( u_pwrdet11 DVSS ) ( u_misc_o DVSS ) + USE GROUND ;
+      ( u_vss_pll DVSS ) ( u_pwrdet11 DVSS ) ( u_misc_o DVSS ) + USE GROUND
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2980000 5250000 ) ( 3080000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3080000 5350000 ) ( 3080000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3080000 5645000 ) ( 3070000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3070000 5655000 ) ( 3070000 5825000 ) ;
     - RETN_0 ( u_UNASSIGNED_2 RETN ) ( u_UNASSIGNED_1 RETN ) ( u_UNASSIGNED_0 RETN ) ( u_v18_33 RETN ) ( u_vzz_33 RETN ) ( u_vss_15 RETN ) ( u_vdd_15 RETN )
       ( u_ddr_dq_8_io RETN ) ( u_ddr_dq_9_io RETN ) ( u_ddr_dq_10_io RETN ) ( u_pwrdet17 RETN ) ( u_ddr_dq_11_io RETN ) ( u_ddr_dq_12_io RETN ) ( u_v18_32 RETN ) ( u_vzz_32 RETN )
       ( u_ddr_dq_13_io RETN ) ( u_ddr_dq_14_io RETN ) + USE SIGNAL ;
@@ -4543,7 +4758,60 @@ SPECIALNETS 185 ;
       ( u_ci_v_i VDD ) ( u_ci_tkn_o VDD ) ( u_ci_clk_i VDD ) ( u_ci_8_i VDD ) ( u_ci_7_i VDD ) ( u_ci_6_i VDD ) ( u_ci_5_i VDD ) ( u_ci_4_i VDD )
       ( u_ci_3_i VDD ) ( u_ci_2_i VDD ) ( u_ci_1_i VDD ) ( u_ci_0_i VDD ) ( u_ci2_v_o VDD ) ( u_ci2_tkn_i VDD ) ( u_ci2_clk_o VDD ) ( u_ci2_8_o VDD )
       ( u_ci2_7_o VDD ) ( u_ci2_6_o VDD ) ( u_ci2_5_o VDD ) ( u_ci2_4_o VDD ) ( u_ci2_3_o VDD ) ( u_ci2_2_o VDD ) ( u_ci2_1_o VDD ) ( u_ci2_0_o VDD )
-      ( u_bsg_tag_en_i VDD ) ( u_bsg_tag_data_o VDD ) ( u_bsg_tag_data_i VDD ) ( u_bsg_tag_clk_o VDD ) ( u_bsg_tag_clk_i VDD ) ( u_UNASSIGNED_2 VDD ) ( u_UNASSIGNED_1 VDD ) ( u_UNASSIGNED_0 VDD ) + USE POWER ;
+      ( u_bsg_tag_en_i VDD ) ( u_bsg_tag_data_o VDD ) ( u_bsg_tag_data_i VDD ) ( u_bsg_tag_clk_o VDD ) ( u_bsg_tag_clk_i VDD ) ( u_UNASSIGNED_2 VDD ) ( u_UNASSIGNED_1 VDD ) ( u_UNASSIGNED_0 VDD ) + USE POWER
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4280000 175000 ) ( 4280000 430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 970000 ) ( 5250000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 970000 ) ( 5645000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 970000 ) ( 5695000 1020000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 1020000 ) ( 5825000 1020000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1160000 970000 ) ( 1060000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1160000 355000 ) ( 1160000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1140000 335000 ) ( 1160000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1140000 175000 ) ( 1140000 335000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3160000 1250000 ) ( 3300000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3160000 315000 ) ( 3160000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3200000 275000 ) ( 3160000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3200000 175000 ) ( 3200000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2200000 1250000 ) ( 2340000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2200000 315000 ) ( 2200000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 275000 ) ( 2200000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 175000 ) ( 2240000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 970000 1610000 ) ( 1070000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1610000 ) ( 970000 1610000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1610000 ) ( 305000 1660000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1660000 ) ( 305000 1660000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 2250000 ) ( 5250000 2350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 2250000 ) ( 5645000 2250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 2250000 ) ( 5695000 2300000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 2300000 ) ( 5825000 2300000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 2670000 ) ( 650000 2770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2770000 ) ( 650000 2770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 335000 2750000 ) ( 355000 2770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2750000 ) ( 335000 2750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 3330000 ) ( 5825000 3330000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 3630000 ) ( 650000 3730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3730000 ) ( 650000 3730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 335000 3710000 ) ( 355000 3730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3710000 ) ( 335000 3710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3940000 4290000 ) ( 3800000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3800000 4430000 ) ( 3800000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3800000 5685000 ) ( 3840000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3840000 5725000 ) ( 3840000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3300000 4290000 ) ( 3160000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3160000 4430000 ) ( 3160000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3160000 5685000 ) ( 3200000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3200000 5725000 ) ( 3200000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 4600000 ) ( 5825000 4600000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1700000 4930000 ) ( 1600000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1600000 5030000 ) ( 1600000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1600000 5645000 ) ( 1660000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1660000 5705000 ) ( 1660000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4920000 ) ( 430000 4920000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2660000 5250000 ) ( 2760000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2760000 5350000 ) ( 2760000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2760000 5645000 ) ( 2740000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2740000 5665000 ) ( 2740000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4920000 5570000 ) ( 4920000 5825000 ) ;
     - VDD1 + USE POWER
       + ROUTED metal10 20000 + SHAPE STRIPE ( 2160000 3320000 ) ( 2160000 3469200 )
       NEW metal10 20000 + SHAPE STRIPE ( 1880000 3320000 ) ( 1880000 3469200 )
@@ -4788,7 +5056,57 @@ SPECIALNETS 185 ;
       ( u_ci_v_i VSS ) ( u_ci_tkn_o VSS ) ( u_ci_clk_i VSS ) ( u_ci_8_i VSS ) ( u_ci_7_i VSS ) ( u_ci_6_i VSS ) ( u_ci_5_i VSS ) ( u_ci_4_i VSS )
       ( u_ci_3_i VSS ) ( u_ci_2_i VSS ) ( u_ci_1_i VSS ) ( u_ci_0_i VSS ) ( u_ci2_v_o VSS ) ( u_ci2_tkn_i VSS ) ( u_ci2_clk_o VSS ) ( u_ci2_8_o VSS )
       ( u_ci2_7_o VSS ) ( u_ci2_6_o VSS ) ( u_ci2_5_o VSS ) ( u_ci2_4_o VSS ) ( u_ci2_3_o VSS ) ( u_ci2_2_o VSS ) ( u_ci2_1_o VSS ) ( u_ci2_0_o VSS )
-      ( u_bsg_tag_en_i VSS ) ( u_bsg_tag_data_o VSS ) ( u_bsg_tag_data_i VSS ) ( u_bsg_tag_clk_o VSS ) ( u_bsg_tag_clk_i VSS ) ( u_UNASSIGNED_2 VSS ) ( u_UNASSIGNED_1 VSS ) ( u_UNASSIGNED_0 VSS ) + USE GROUND ;
+      ( u_bsg_tag_en_i VSS ) ( u_bsg_tag_data_o VSS ) ( u_bsg_tag_data_i VSS ) ( u_bsg_tag_clk_o VSS ) ( u_bsg_tag_clk_i VSS ) ( u_UNASSIGNED_2 VSS ) ( u_UNASSIGNED_1 VSS ) ( u_UNASSIGNED_0 VSS ) + USE GROUND
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3200000 650000 ) ( 3300000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3200000 355000 ) ( 3200000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3260000 295000 ) ( 3200000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3260000 175000 ) ( 3260000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 650000 ) ( 2340000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 355000 ) ( 2240000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2300000 295000 ) ( 2240000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2300000 175000 ) ( 2300000 295000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 1080000 ) ( 5825000 1080000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4360000 970000 ) ( 4260000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4360000 355000 ) ( 4360000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4340000 335000 ) ( 4360000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4340000 175000 ) ( 4340000 335000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1240000 1250000 ) ( 1380000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1240000 315000 ) ( 1240000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1280000 275000 ) ( 1240000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1280000 175000 ) ( 1280000 275000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 750000 1390000 ) ( 650000 1490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1490000 ) ( 650000 1490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 1460000 ) ( 355000 1490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1460000 ) ( 325000 1460000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5570000 2360000 ) ( 5825000 2360000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2690000 ) ( 430000 2690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4930000 3310000 ) ( 5030000 3410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 3410000 ) ( 5645000 3410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5665000 3390000 ) ( 5645000 3410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5665000 3390000 ) ( 5825000 3390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3650000 ) ( 430000 3650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4930000 4590000 ) ( 5030000 4690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 4690000 ) ( 5645000 4690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 4660000 ) ( 5645000 4690000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 4660000 ) ( 5825000 4660000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3620000 4610000 ) ( 3760000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3760000 4750000 ) ( 3760000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3760000 5685000 ) ( 3770000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3770000 5695000 ) ( 3770000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4900000 4930000 ) ( 4800000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4800000 5030000 ) ( 4800000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4800000 5645000 ) ( 4860000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4860000 5705000 ) ( 4860000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 970000 4810000 ) ( 1070000 4910000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4810000 ) ( 970000 4810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4810000 ) ( 305000 4860000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4860000 ) ( 305000 4860000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1380000 5250000 ) ( 1480000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1480000 5350000 ) ( 1480000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1480000 5645000 ) ( 1470000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1470000 5655000 ) ( 1470000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3320000 5570000 ) ( 3320000 5825000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2680000 5570000 ) ( 2680000 5825000 ) ;
     - VSS1 + USE GROUND
       + ROUTED metal10 20000 + SHAPE STRIPE ( 2480000 3320000 ) ( 2480000 3469200 )
       NEW metal10 20000 + SHAPE STRIPE ( 2200000 3320000 ) ( 2200000 3469200 )
@@ -4839,677 +5157,585 @@ SPECIALNETS 185 ;
       NEW metal10 20000 + SHAPE STRIPE ( 3470000 2030000 ) ( 3770000 2030000 )
       NEW metal10 20000 + SHAPE STRIPE ( 3760000 1870000 ) ( 3760000 2020000 )
       NEW metal10 20000 + SHAPE STRIPE ( 3480000 1870000 ) ( 3480000 2020000 ) ;
-    - p_bsg_tag_clk_i ( PIN p_bsg_tag_clk_i ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL ;
-    - p_bsg_tag_clk_o ( PIN p_bsg_tag_clk_o ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL ;
-    - p_bsg_tag_data_i ( PIN p_bsg_tag_data_i ) ( u_bsg_tag_data_i PAD ) + USE SIGNAL ;
-    - p_bsg_tag_data_o ( PIN p_bsg_tag_data_o ) ( u_bsg_tag_data_o PAD ) + USE SIGNAL ;
-    - p_bsg_tag_en_i ( PIN p_bsg_tag_en_i ) ( u_bsg_tag_en_i PAD ) + USE SIGNAL ;
-    - p_ci2_0_o ( PIN p_ci2_0_o ) ( u_ci2_0_o PAD ) + USE SIGNAL ;
-    - p_ci2_1_o ( PIN p_ci2_1_o ) ( u_ci2_1_o PAD ) + USE SIGNAL ;
-    - p_ci2_2_o ( PIN p_ci2_2_o ) ( u_ci2_2_o PAD ) + USE SIGNAL ;
-    - p_ci2_3_o ( PIN p_ci2_3_o ) ( u_ci2_3_o PAD ) + USE SIGNAL ;
-    - p_ci2_4_o ( PIN p_ci2_4_o ) ( u_ci2_4_o PAD ) + USE SIGNAL ;
-    - p_ci2_5_o ( PIN p_ci2_5_o ) ( u_ci2_5_o PAD ) + USE SIGNAL ;
-    - p_ci2_6_o ( PIN p_ci2_6_o ) ( u_ci2_6_o PAD ) + USE SIGNAL ;
-    - p_ci2_7_o ( PIN p_ci2_7_o ) ( u_ci2_7_o PAD ) + USE SIGNAL ;
-    - p_ci2_8_o ( PIN p_ci2_8_o ) ( u_ci2_8_o PAD ) + USE SIGNAL ;
-    - p_ci2_clk_o ( PIN p_ci2_clk_o ) ( u_ci2_clk_o PAD ) + USE SIGNAL ;
-    - p_ci2_tkn_i ( PIN p_ci2_tkn_i ) ( u_ci2_tkn_i PAD ) + USE SIGNAL ;
-    - p_ci2_v_o ( PIN p_ci2_v_o ) ( u_ci2_v_o PAD ) + USE SIGNAL ;
-    - p_ci_0_i ( PIN p_ci_0_i ) ( u_ci_0_i PAD ) + USE SIGNAL ;
-    - p_ci_1_i ( PIN p_ci_1_i ) ( u_ci_1_i PAD ) + USE SIGNAL ;
-    - p_ci_2_i ( PIN p_ci_2_i ) ( u_ci_2_i PAD ) + USE SIGNAL ;
-    - p_ci_3_i ( PIN p_ci_3_i ) ( u_ci_3_i PAD ) + USE SIGNAL ;
-    - p_ci_4_i ( PIN p_ci_4_i ) ( u_ci_4_i PAD ) + USE SIGNAL ;
-    - p_ci_5_i ( PIN p_ci_5_i ) ( u_ci_5_i PAD ) + USE SIGNAL ;
-    - p_ci_6_i ( PIN p_ci_6_i ) ( u_ci_6_i PAD ) + USE SIGNAL ;
-    - p_ci_7_i ( PIN p_ci_7_i ) ( u_ci_7_i PAD ) + USE SIGNAL ;
-    - p_ci_8_i ( PIN p_ci_8_i ) ( u_ci_8_i PAD ) + USE SIGNAL ;
-    - p_ci_clk_i ( PIN p_ci_clk_i ) ( u_ci_clk_i PAD ) + USE SIGNAL ;
-    - p_ci_tkn_o ( PIN p_ci_tkn_o ) ( u_ci_tkn_o PAD ) + USE SIGNAL ;
-    - p_ci_v_i ( PIN p_ci_v_i ) ( u_ci_v_i PAD ) + USE SIGNAL ;
-    - p_clk_A_i ( PIN p_clk_A_i ) ( u_clk_A_i PAD ) + USE SIGNAL ;
-    - p_clk_B_i ( PIN p_clk_B_i ) ( u_clk_B_i PAD ) + USE SIGNAL ;
-    - p_clk_C_i ( PIN p_clk_C_i ) ( u_clk_C_i PAD ) + USE SIGNAL ;
-    - p_clk_async_reset_i ( PIN p_clk_async_reset_i ) ( u_clk_async_reset_i PAD ) + USE SIGNAL ;
-    - p_clk_o ( PIN p_clk_o ) ( u_clk_o PAD ) + USE SIGNAL ;
-    - p_co2_0_o ( PIN p_co2_0_o ) ( u_co2_0_o PAD ) + USE SIGNAL ;
-    - p_co2_1_o ( PIN p_co2_1_o ) ( u_co2_1_o PAD ) + USE SIGNAL ;
-    - p_co2_2_o ( PIN p_co2_2_o ) ( u_co2_2_o PAD ) + USE SIGNAL ;
-    - p_co2_3_o ( PIN p_co2_3_o ) ( u_co2_3_o PAD ) + USE SIGNAL ;
-    - p_co2_4_o ( PIN p_co2_4_o ) ( u_co2_4_o PAD ) + USE SIGNAL ;
-    - p_co2_5_o ( PIN p_co2_5_o ) ( u_co2_5_o PAD ) + USE SIGNAL ;
-    - p_co2_6_o ( PIN p_co2_6_o ) ( u_co2_6_o PAD ) + USE SIGNAL ;
-    - p_co2_7_o ( PIN p_co2_7_o ) ( u_co2_7_o PAD ) + USE SIGNAL ;
-    - p_co2_8_o ( PIN p_co2_8_o ) ( u_co2_8_o PAD ) + USE SIGNAL ;
-    - p_co2_clk_o ( PIN p_co2_clk_o ) ( u_co2_clk_o PAD ) + USE SIGNAL ;
-    - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( u_co2_tkn_i PAD ) + USE SIGNAL ;
-    - p_co2_v_o ( PIN p_co2_v_o ) ( u_co2_v_o PAD ) + USE SIGNAL ;
-    - p_co_0_i ( PIN p_co_0_i ) ( u_co_0_i PAD ) + USE SIGNAL ;
-    - p_co_1_i ( PIN p_co_1_i ) ( u_co_1_i PAD ) + USE SIGNAL ;
-    - p_co_2_i ( PIN p_co_2_i ) ( u_co_2_i PAD ) + USE SIGNAL ;
-    - p_co_3_i ( PIN p_co_3_i ) ( u_co_3_i PAD ) + USE SIGNAL ;
-    - p_co_4_i ( PIN p_co_4_i ) ( u_co_4_i PAD ) + USE SIGNAL ;
-    - p_co_5_i ( PIN p_co_5_i ) ( u_co_5_i PAD ) + USE SIGNAL ;
-    - p_co_6_i ( PIN p_co_6_i ) ( u_co_6_i PAD ) + USE SIGNAL ;
-    - p_co_7_i ( PIN p_co_7_i ) ( u_co_7_i PAD ) + USE SIGNAL ;
-    - p_co_8_i ( PIN p_co_8_i ) ( u_co_8_i PAD ) + USE SIGNAL ;
-    - p_co_clk_i ( PIN p_co_clk_i ) ( u_co_clk_i PAD ) + USE SIGNAL ;
-    - p_co_tkn_o ( PIN p_co_tkn_o ) ( u_co_tkn_o PAD ) + USE SIGNAL ;
-    - p_co_v_i ( PIN p_co_v_i ) ( u_co_v_i PAD ) + USE SIGNAL ;
-    - p_core_async_reset_i ( PIN p_core_async_reset_i ) ( u_core_async_reset_i PAD ) + USE SIGNAL ;
-    - p_ddr_addr_0_o ( PIN p_ddr_addr_0_o ) ( u_ddr_addr_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_10_o ( PIN p_ddr_addr_10_o ) ( u_ddr_addr_10_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_11_o ( PIN p_ddr_addr_11_o ) ( u_ddr_addr_11_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_12_o ( PIN p_ddr_addr_12_o ) ( u_ddr_addr_12_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_13_o ( PIN p_ddr_addr_13_o ) ( u_ddr_addr_13_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_14_o ( PIN p_ddr_addr_14_o ) ( u_ddr_addr_14_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_15_o ( PIN p_ddr_addr_15_o ) ( u_ddr_addr_15_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_1_o ( PIN p_ddr_addr_1_o ) ( u_ddr_addr_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_2_o ( PIN p_ddr_addr_2_o ) ( u_ddr_addr_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_3_o ( PIN p_ddr_addr_3_o ) ( u_ddr_addr_3_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_4_o ( PIN p_ddr_addr_4_o ) ( u_ddr_addr_4_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_5_o ( PIN p_ddr_addr_5_o ) ( u_ddr_addr_5_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_6_o ( PIN p_ddr_addr_6_o ) ( u_ddr_addr_6_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_7_o ( PIN p_ddr_addr_7_o ) ( u_ddr_addr_7_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_8_o ( PIN p_ddr_addr_8_o ) ( u_ddr_addr_8_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_9_o ( PIN p_ddr_addr_9_o ) ( u_ddr_addr_9_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_0_o ( PIN p_ddr_ba_0_o ) ( u_ddr_ba_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_1_o ( PIN p_ddr_ba_1_o ) ( u_ddr_ba_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_2_o ( PIN p_ddr_ba_2_o ) ( u_ddr_ba_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_cas_n_o ( PIN p_ddr_cas_n_o ) ( u_ddr_cas_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_ck_n_o ( PIN p_ddr_ck_n_o ) ( u_ddr_ck_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_ck_p_o ( PIN p_ddr_ck_p_o ) ( u_ddr_ck_p_o PAD ) + USE SIGNAL ;
-    - p_ddr_cke_o ( PIN p_ddr_cke_o ) ( u_ddr_cke_o PAD ) + USE SIGNAL ;
-    - p_ddr_cs_n_o ( PIN p_ddr_cs_n_o ) ( u_ddr_cs_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_0_o ( PIN p_ddr_dm_0_o ) ( u_ddr_dm_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_1_o ( PIN p_ddr_dm_1_o ) ( u_ddr_dm_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_2_o ( PIN p_ddr_dm_2_o ) ( u_ddr_dm_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_3_o ( PIN p_ddr_dm_3_o ) ( u_ddr_dm_3_o PAD ) + USE SIGNAL ;
-    - p_ddr_dq_0_io ( PIN p_ddr_dq_0_io ) ( u_ddr_dq_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_10_io ( PIN p_ddr_dq_10_io ) ( u_ddr_dq_10_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_11_io ( PIN p_ddr_dq_11_io ) ( u_ddr_dq_11_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_12_io ( PIN p_ddr_dq_12_io ) ( u_ddr_dq_12_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_13_io ( PIN p_ddr_dq_13_io ) ( u_ddr_dq_13_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_14_io ( PIN p_ddr_dq_14_io ) ( u_ddr_dq_14_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_15_io ( PIN p_ddr_dq_15_io ) ( u_ddr_dq_15_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_16_io ( PIN p_ddr_dq_16_io ) ( u_ddr_dq_16_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_17_io ( PIN p_ddr_dq_17_io ) ( u_ddr_dq_17_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_18_io ( PIN p_ddr_dq_18_io ) ( u_ddr_dq_18_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_19_io ( PIN p_ddr_dq_19_io ) ( u_ddr_dq_19_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_1_io ( PIN p_ddr_dq_1_io ) ( u_ddr_dq_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_20_io ( PIN p_ddr_dq_20_io ) ( u_ddr_dq_20_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_21_io ( PIN p_ddr_dq_21_io ) ( u_ddr_dq_21_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_22_io ( PIN p_ddr_dq_22_io ) ( u_ddr_dq_22_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_23_io ( PIN p_ddr_dq_23_io ) ( u_ddr_dq_23_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_24_io ( PIN p_ddr_dq_24_io ) ( u_ddr_dq_24_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_25_io ( PIN p_ddr_dq_25_io ) ( u_ddr_dq_25_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_26_io ( PIN p_ddr_dq_26_io ) ( u_ddr_dq_26_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_27_io ( PIN p_ddr_dq_27_io ) ( u_ddr_dq_27_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_28_io ( PIN p_ddr_dq_28_io ) ( u_ddr_dq_28_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_29_io ( PIN p_ddr_dq_29_io ) ( u_ddr_dq_29_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_2_io ( PIN p_ddr_dq_2_io ) ( u_ddr_dq_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_30_io ( PIN p_ddr_dq_30_io ) ( u_ddr_dq_30_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_31_io ( PIN p_ddr_dq_31_io ) ( u_ddr_dq_31_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_3_io ( PIN p_ddr_dq_3_io ) ( u_ddr_dq_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_4_io ( PIN p_ddr_dq_4_io ) ( u_ddr_dq_4_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_5_io ( PIN p_ddr_dq_5_io ) ( u_ddr_dq_5_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_6_io ( PIN p_ddr_dq_6_io ) ( u_ddr_dq_6_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_7_io ( PIN p_ddr_dq_7_io ) ( u_ddr_dq_7_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_8_io ( PIN p_ddr_dq_8_io ) ( u_ddr_dq_8_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_9_io ( PIN p_ddr_dq_9_io ) ( u_ddr_dq_9_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_0_io ( PIN p_ddr_dqs_n_0_io ) ( u_ddr_dqs_n_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_1_io ( PIN p_ddr_dqs_n_1_io ) ( u_ddr_dqs_n_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_2_io ( PIN p_ddr_dqs_n_2_io ) ( u_ddr_dqs_n_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_3_io ( PIN p_ddr_dqs_n_3_io ) ( u_ddr_dqs_n_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_0_io ( PIN p_ddr_dqs_p_0_io ) ( u_ddr_dqs_p_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_1_io ( PIN p_ddr_dqs_p_1_io ) ( u_ddr_dqs_p_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_2_io ( PIN p_ddr_dqs_p_2_io ) ( u_ddr_dqs_p_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_3_io ( PIN p_ddr_dqs_p_3_io ) ( u_ddr_dqs_p_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_odt_o ( PIN p_ddr_odt_o ) ( u_ddr_odt_o PAD ) + USE SIGNAL ;
-    - p_ddr_ras_n_o ( PIN p_ddr_ras_n_o ) ( u_ddr_ras_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_reset_n_o ( PIN p_ddr_reset_n_o ) ( u_ddr_reset_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_we_n_o ( PIN p_ddr_we_n_o ) ( u_ddr_we_n_o PAD ) + USE SIGNAL ;
-    - p_misc_o ( PIN p_misc_o ) ( u_misc_o PAD ) + USE SIGNAL ;
-    - p_sel_0_i ( PIN p_sel_0_i ) ( u_sel_0_i PAD ) + USE SIGNAL ;
-    - p_sel_1_i ( PIN p_sel_1_i ) ( u_sel_1_i PAD ) + USE SIGNAL ;
-    - p_sel_2_i ( PIN p_sel_2_i ) ( u_sel_2_i PAD ) + USE SIGNAL ;
-END SPECIALNETS
-SPECIALNETS 144 ;
-    - p_co2_8_o 
-      + ROUTED metal10 20000  ( 175000 5560000 ) ( 430000 5560000 )
-      ;
-    - DVDD_0 
-      + USE POWER
-      + ROUTED metal10 20000  ( 760000 5825000 ) ( 760000 5570000 )
-      NEW metal10 20000  ( 3640000 5825000 ) ( 3640000 5570000 )
-      NEW metal10 20000  ( 1780000 5825000 ) ( 1780000 5665000 ) ( 1800000 5645000 ) ( 1800000 5350000 ) ( 1700000 5250000 )
-      NEW metal10 20000  ( 5300000 5825000 ) ( 5300000 5665000 ) ( 5320000 5645000 ) ( 5320000 5350000 ) ( 5220000 5250000 )
-      NEW metal10 20000  ( 4540000 5825000 ) ( 4540000 5705000 ) ( 4480000 5645000 ) ( 4480000 5030000 ) ( 4580000 4930000 )
-      NEW metal10 20000  ( 175000 4680000 ) ( 345000 4680000 ) ( 355000 4690000 ) ( 650000 4690000 ) ( 750000 4590000 )
-      NEW metal10 20000  ( 2170000 5825000 ) ( 2170000 5695000 ) ( 2160000 5685000 ) ( 2160000 4750000 ) ( 2020000 4610000 )
-      NEW metal10 20000  ( 4090000 5825000 ) ( 4090000 5695000 ) ( 4080000 5685000 ) ( 4080000 4750000 ) ( 3940000 4610000 )
-      NEW metal10 20000  ( 175000 4220000 ) ( 305000 4220000 ) ( 355000 4170000 ) ( 970000 4170000 ) ( 1070000 4270000 )
-      NEW metal10 20000  ( 2560000 5825000 ) ( 2560000 5725000 ) ( 2520000 5685000 ) ( 2520000 4430000 ) ( 2660000 4290000 )
-      NEW metal10 20000  ( 5825000 4340000 ) ( 5675000 4340000 ) ( 5645000 4370000 ) ( 5030000 4370000 ) ( 4930000 4270000 )
-      NEW metal10 20000  ( 175000 3840000 ) ( 285000 3840000 ) ( 315000 3810000 ) ( 1570000 3810000 ) ( 1710000 3950000 )
-      NEW metal10 20000  ( 5825000 3960000 ) ( 5570000 3960000 )
-      NEW metal10 20000  ( 5825000 3580000 ) ( 5695000 3580000 ) ( 5645000 3530000 ) ( 5350000 3530000 ) ( 5250000 3630000 )
-      NEW metal10 20000  ( 175000 3320000 ) ( 430000 3320000 )
-      NEW metal10 20000  ( 175000 2940000 ) ( 305000 2940000 ) ( 355000 2890000 ) ( 970000 2890000 ) ( 1070000 2990000 )
-      NEW metal10 20000  ( 5825000 3060000 ) ( 5675000 3060000 ) ( 5645000 3090000 ) ( 5030000 3090000 ) ( 4930000 2990000 )
-      NEW metal10 20000  ( 5825000 2680000 ) ( 5570000 2680000 )
-      NEW metal10 20000  ( 175000 2430000 ) ( 335000 2430000 ) ( 355000 2450000 ) ( 650000 2450000 ) ( 750000 2350000 )
-      NEW metal10 20000  ( 175000 2040000 ) ( 430000 2040000 )
-      NEW metal10 20000  ( 5825000 2170000 ) ( 5685000 2170000 ) ( 5685000 2170000 ) ( 4430000 2170000 ) ( 4290000 2030000 )
-      NEW metal10 20000  ( 3440000 175000 ) ( 3440000 315000 ) ( 3440000 315000 ) ( 3440000 1570000 ) ( 3300000 1710000 )
-      NEW metal10 20000  ( 5825000 1780000 ) ( 5675000 1780000 ) ( 5645000 1810000 ) ( 5030000 1810000 ) ( 4930000 1710000 )
-      NEW metal10 20000  ( 175000 1340000 ) ( 305000 1340000 ) ( 355000 1290000 ) ( 970000 1290000 ) ( 1070000 1390000 )
-      NEW metal10 20000  ( 2560000 175000 ) ( 2560000 275000 ) ( 2520000 315000 ) ( 2520000 1250000 ) ( 2660000 1390000 )
-      NEW metal10 20000  ( 3840000 175000 ) ( 3840000 275000 ) ( 3800000 315000 ) ( 3800000 1250000 ) ( 3940000 1390000 )
-      NEW metal10 20000  ( 5825000 1340000 ) ( 5695000 1340000 ) ( 5645000 1290000 ) ( 5350000 1290000 ) ( 5250000 1390000 )
-      NEW metal10 20000  ( 1020000 175000 ) ( 1020000 295000 ) ( 960000 355000 ) ( 960000 650000 ) ( 1060000 750000 )
-      NEW metal10 20000  ( 1660000 175000 ) ( 1660000 295000 ) ( 1600000 355000 ) ( 1600000 650000 ) ( 1700000 750000 )
-      NEW metal10 20000  ( 2940000 175000 ) ( 2940000 295000 ) ( 2880000 355000 ) ( 2880000 650000 ) ( 2980000 750000 )
-      NEW metal10 20000  ( 4220000 175000 ) ( 4220000 295000 ) ( 4160000 355000 ) ( 4160000 650000 ) ( 4260000 750000 )
-      NEW metal10 20000  ( 2040000 175000 ) ( 2040000 430000 )
-      NEW metal10 20000  ( 5240000 175000 ) ( 5240000 430000 )
-      ;
-    - DVSS_0 
-      + USE GROUND
-      + ROUTED metal10 20000  ( 1080000 5825000 ) ( 1080000 5570000 )
-      NEW metal10 20000  ( 4600000 5825000 ) ( 4600000 5570000 )
-      NEW metal10 20000  ( 5560000 5825000 ) ( 5560000 5570000 )
-      NEW metal10 20000  ( 2620000 5825000 ) ( 2620000 5705000 ) ( 2560000 5645000 ) ( 2560000 5030000 ) ( 2660000 4930000 )
-      NEW metal10 20000  ( 3580000 5825000 ) ( 3580000 5705000 ) ( 3520000 5645000 ) ( 3520000 5030000 ) ( 3620000 4930000 )
-      NEW metal10 20000  ( 175000 4740000 ) ( 305000 4740000 ) ( 315000 4730000 ) ( 1250000 4730000 ) ( 1390000 4590000 )
-      NEW metal10 20000  ( 1840000 5825000 ) ( 1840000 5685000 ) ( 1840000 5685000 ) ( 1840000 4750000 ) ( 1700000 4610000 )
-      NEW metal10 20000  ( 175000 4280000 ) ( 430000 4280000 )
-      NEW metal10 20000  ( 2240000 5825000 ) ( 2240000 5725000 ) ( 2200000 5685000 ) ( 2200000 4430000 ) ( 2340000 4290000 )
-      NEW metal10 20000  ( 4160000 5825000 ) ( 4160000 5725000 ) ( 4120000 5685000 ) ( 4120000 4430000 ) ( 4260000 4290000 )
-      NEW metal10 20000  ( 5825000 4280000 ) ( 5570000 4280000 )
-      NEW metal10 20000  ( 175000 3900000 ) ( 305000 3900000 ) ( 355000 3850000 ) ( 970000 3850000 ) ( 1070000 3950000 )
-      NEW metal10 20000  ( 5825000 3900000 ) ( 5695000 3900000 ) ( 5645000 3850000 ) ( 5350000 3850000 ) ( 5250000 3950000 )
-      NEW metal10 20000  ( 5825000 3520000 ) ( 5715000 3520000 ) ( 5685000 3490000 ) ( 4750000 3490000 ) ( 4610000 3630000 )
-      NEW metal10 20000  ( 175000 3380000 ) ( 325000 3380000 ) ( 355000 3410000 ) ( 650000 3410000 ) ( 750000 3310000 )
-      NEW metal10 20000  ( 175000 3000000 ) ( 430000 3000000 )
-      NEW metal10 20000  ( 5825000 3000000 ) ( 5570000 3000000 )
-      NEW metal10 20000  ( 5825000 2620000 ) ( 5695000 2620000 ) ( 5645000 2570000 ) ( 5350000 2570000 ) ( 5250000 2670000 )
-      NEW metal10 20000  ( 175000 2490000 ) ( 315000 2490000 ) ( 315000 2490000 ) ( 1250000 2490000 ) ( 1390000 2350000 )
-      NEW metal10 20000  ( 175000 2100000 ) ( 325000 2100000 ) ( 355000 2130000 ) ( 650000 2130000 ) ( 750000 2030000 )
-      NEW metal10 20000  ( 5825000 2110000 ) ( 5665000 2110000 ) ( 5645000 2130000 ) ( 5030000 2130000 ) ( 4930000 2030000 )
-      NEW metal10 20000  ( 2490000 175000 ) ( 2490000 305000 ) ( 2480000 315000 ) ( 2480000 1570000 ) ( 2340000 1710000 )
-      NEW metal10 20000  ( 3770000 175000 ) ( 3770000 305000 ) ( 3760000 315000 ) ( 3760000 1570000 ) ( 3620000 1710000 )
-      NEW metal10 20000  ( 5825000 1720000 ) ( 5570000 1720000 )
-      NEW metal10 20000  ( 175000 1400000 ) ( 430000 1400000 )
-      NEW metal10 20000  ( 1600000 175000 ) ( 1600000 275000 ) ( 1560000 315000 ) ( 1560000 1250000 ) ( 1700000 1390000 )
-      NEW metal10 20000  ( 2880000 175000 ) ( 2880000 275000 ) ( 2840000 315000 ) ( 2840000 1250000 ) ( 2980000 1390000 )
-      NEW metal10 20000  ( 4160000 175000 ) ( 4160000 275000 ) ( 4120000 315000 ) ( 4120000 1250000 ) ( 4260000 1390000 )
-      NEW metal10 20000  ( 5825000 1280000 ) ( 5715000 1280000 ) ( 5685000 1250000 ) ( 4750000 1250000 ) ( 4610000 1390000 )
-      NEW metal10 20000  ( 3380000 175000 ) ( 3380000 335000 ) ( 3400000 355000 ) ( 3400000 970000 ) ( 3300000 1070000 )
-      NEW metal10 20000  ( 1980000 175000 ) ( 1980000 295000 ) ( 1920000 355000 ) ( 1920000 650000 ) ( 2020000 750000 )
-      NEW metal10 20000  ( 760000 175000 ) ( 760000 430000 )
-      NEW metal10 20000  ( 4920000 175000 ) ( 4920000 430000 )
-      ;
-    - p_co_2_i 
-      + ROUTED metal10 20000  ( 1410000 5825000 ) ( 1410000 5570000 )
-      ;
-    - p_co_3_i 
-      + ROUTED metal10 20000  ( 1720000 5825000 ) ( 1720000 5570000 )
-      ;
-    - p_co_tkn_o 
-      + ROUTED metal10 20000  ( 2050000 5825000 ) ( 2050000 5570000 )
-      ;
-    - p_co_6_i 
-      + ROUTED metal10 20000  ( 2360000 5825000 ) ( 2360000 5570000 )
-      ;
-    - VSS 
-      + USE GROUND
-      + ROUTED metal10 20000  ( 2680000 5825000 ) ( 2680000 5570000 )
-      NEW metal10 20000  ( 3320000 5825000 ) ( 3320000 5570000 )
-      NEW metal10 20000  ( 1470000 5825000 ) ( 1470000 5655000 ) ( 1480000 5645000 ) ( 1480000 5350000 ) ( 1380000 5250000 )
-      NEW metal10 20000  ( 175000 4860000 ) ( 305000 4860000 ) ( 355000 4810000 ) ( 970000 4810000 ) ( 1070000 4910000 )
-      NEW metal10 20000  ( 4860000 5825000 ) ( 4860000 5705000 ) ( 4800000 5645000 ) ( 4800000 5030000 ) ( 4900000 4930000 )
-      NEW metal10 20000  ( 3770000 5825000 ) ( 3770000 5695000 ) ( 3760000 5685000 ) ( 3760000 4750000 ) ( 3620000 4610000 )
-      NEW metal10 20000  ( 5825000 4660000 ) ( 5675000 4660000 ) ( 5645000 4690000 ) ( 5030000 4690000 ) ( 4930000 4590000 )
-      NEW metal10 20000  ( 175000 3650000 ) ( 430000 3650000 )
-      NEW metal10 20000  ( 5825000 3390000 ) ( 5665000 3390000 ) ( 5645000 3410000 ) ( 5030000 3410000 ) ( 4930000 3310000 )
-      NEW metal10 20000  ( 175000 2690000 ) ( 430000 2690000 )
-      NEW metal10 20000  ( 5825000 2360000 ) ( 5570000 2360000 )
-      NEW metal10 20000  ( 175000 1460000 ) ( 325000 1460000 ) ( 355000 1490000 ) ( 650000 1490000 ) ( 750000 1390000 )
-      NEW metal10 20000  ( 1280000 175000 ) ( 1280000 275000 ) ( 1240000 315000 ) ( 1240000 1250000 ) ( 1380000 1390000 )
-      NEW metal10 20000  ( 4340000 175000 ) ( 4340000 335000 ) ( 4360000 355000 ) ( 4360000 970000 ) ( 4260000 1070000 )
-      NEW metal10 20000  ( 5825000 1080000 ) ( 5570000 1080000 )
-      NEW metal10 20000  ( 2300000 175000 ) ( 2300000 295000 ) ( 2240000 355000 ) ( 2240000 650000 ) ( 2340000 750000 )
-      NEW metal10 20000  ( 3260000 175000 ) ( 3260000 295000 ) ( 3200000 355000 ) ( 3200000 650000 ) ( 3300000 750000 )
-      ;
-    - p_clk_C_i 
-      + ROUTED metal10 20000  ( 3010000 5825000 ) ( 3010000 5570000 )
-      ;
-    - p_ci2_0_o 
-      + ROUTED metal10 20000  ( 3970000 5825000 ) ( 3970000 5570000 )
-      ;
-    - p_ci2_3_o 
-      + ROUTED metal10 20000  ( 4280000 5825000 ) ( 4280000 5570000 )
-      ;
-    - VDD 
-      + USE POWER
-      + ROUTED metal10 20000  ( 4920000 5825000 ) ( 4920000 5570000 )
-      NEW metal10 20000  ( 2740000 5825000 ) ( 2740000 5665000 ) ( 2760000 5645000 ) ( 2760000 5350000 ) ( 2660000 5250000 )
-      NEW metal10 20000  ( 175000 4920000 ) ( 430000 4920000 )
-      NEW metal10 20000  ( 1660000 5825000 ) ( 1660000 5705000 ) ( 1600000 5645000 ) ( 1600000 5030000 ) ( 1700000 4930000 )
-      NEW metal10 20000  ( 5825000 4600000 ) ( 5570000 4600000 )
-      NEW metal10 20000  ( 3200000 5825000 ) ( 3200000 5725000 ) ( 3160000 5685000 ) ( 3160000 4430000 ) ( 3300000 4290000 )
-      NEW metal10 20000  ( 3840000 5825000 ) ( 3840000 5725000 ) ( 3800000 5685000 ) ( 3800000 4430000 ) ( 3940000 4290000 )
-      NEW metal10 20000  ( 175000 3710000 ) ( 335000 3710000 ) ( 355000 3730000 ) ( 650000 3730000 ) ( 750000 3630000 )
-      NEW metal10 20000  ( 5825000 3330000 ) ( 5570000 3330000 )
-      NEW metal10 20000  ( 175000 2750000 ) ( 335000 2750000 ) ( 355000 2770000 ) ( 650000 2770000 ) ( 750000 2670000 )
-      NEW metal10 20000  ( 5825000 2300000 ) ( 5695000 2300000 ) ( 5645000 2250000 ) ( 5350000 2250000 ) ( 5250000 2350000 )
-      NEW metal10 20000  ( 175000 1660000 ) ( 305000 1660000 ) ( 355000 1610000 ) ( 970000 1610000 ) ( 1070000 1710000 )
-      NEW metal10 20000  ( 2240000 175000 ) ( 2240000 275000 ) ( 2200000 315000 ) ( 2200000 1250000 ) ( 2340000 1390000 )
-      NEW metal10 20000  ( 3200000 175000 ) ( 3200000 275000 ) ( 3160000 315000 ) ( 3160000 1250000 ) ( 3300000 1390000 )
-      NEW metal10 20000  ( 1140000 175000 ) ( 1140000 335000 ) ( 1160000 355000 ) ( 1160000 970000 ) ( 1060000 1070000 )
-      NEW metal10 20000  ( 5825000 1020000 ) ( 5695000 1020000 ) ( 5645000 970000 ) ( 5350000 970000 ) ( 5250000 1070000 )
-      NEW metal10 20000  ( 4280000 175000 ) ( 4280000 430000 )
-      ;
-    - p_ci2_6_o 
-      + ROUTED metal10 20000  ( 5240000 5825000 ) ( 5240000 5570000 )
-      ;
-    - p_co2_6_o 
-      + ROUTED metal10 20000  ( 175000 5240000 ) ( 430000 5240000 )
-      ;
-    - p_co2_7_o 
-      + ROUTED metal10 20000  ( 175000 5310000 ) ( 335000 5310000 ) ( 355000 5330000 ) ( 650000 5330000 ) ( 750000 5230000 )
-      ;
-    - p_co_0_i 
-      + ROUTED metal10 20000  ( 1140000 5825000 ) ( 1140000 5665000 ) ( 1160000 5645000 ) ( 1160000 5350000 ) ( 1060000 5250000 )
-      ;
-    - p_co_v_i 
-      + ROUTED metal10 20000  ( 2110000 5825000 ) ( 2110000 5655000 ) ( 2120000 5645000 ) ( 2120000 5350000 ) ( 2020000 5250000 )
-      ;
-    - p_co_7_i 
-      + ROUTED metal10 20000  ( 2430000 5825000 ) ( 2430000 5655000 ) ( 2440000 5645000 ) ( 2440000 5350000 ) ( 2340000 5250000 )
-      ;
-    - DVSS_1 
-      + USE GROUND
-      + ROUTED metal10 20000  ( 3070000 5825000 ) ( 3070000 5655000 ) ( 3080000 5645000 ) ( 3080000 5350000 ) ( 2980000 5250000 )
-      ;
-    - p_misc_o 
-      + ROUTED metal10 20000  ( 3380000 5825000 ) ( 3380000 5665000 ) ( 3400000 5645000 ) ( 3400000 5350000 ) ( 3300000 5250000 )
-      ;
-    - p_sel_2_i 
-      + ROUTED metal10 20000  ( 3710000 5825000 ) ( 3710000 5655000 ) ( 3720000 5645000 ) ( 3720000 5350000 ) ( 3620000 5250000 )
-      ;
-    - p_ci2_1_o 
-      + ROUTED metal10 20000  ( 4030000 5825000 ) ( 4030000 5655000 ) ( 4040000 5645000 ) ( 4040000 5350000 ) ( 3940000 5250000 )
-      ;
-    - p_ci2_4_o 
-      + ROUTED metal10 20000  ( 4350000 5825000 ) ( 4350000 5655000 ) ( 4360000 5645000 ) ( 4360000 5350000 ) ( 4260000 5250000 )
-      ;
-    - p_ci2_tkn_i 
-      + ROUTED metal10 20000  ( 4660000 5825000 ) ( 4660000 5665000 ) ( 4680000 5645000 ) ( 4680000 5350000 ) ( 4580000 5250000 )
-      ;
-    - p_ci2_5_o 
-      + ROUTED metal10 20000  ( 4980000 5825000 ) ( 4980000 5665000 ) ( 5000000 5645000 ) ( 5000000 5350000 ) ( 4900000 5250000 )
-      ;
-    - p_ci2_7_o 
-      + ROUTED metal10 20000  ( 5825000 5240000 ) ( 5570000 5240000 )
-      ;
-    - p_co2_5_o 
-      + ROUTED metal10 20000  ( 175000 4980000 ) ( 325000 4980000 ) ( 355000 5010000 ) ( 650000 5010000 ) ( 750000 4910000 )
-      ;
-    - p_co_1_i 
-      + ROUTED metal10 20000  ( 1340000 5825000 ) ( 1340000 5705000 ) ( 1280000 5645000 ) ( 1280000 5030000 ) ( 1380000 4930000 )
-      ;
-    - p_co_clk_i 
-      + ROUTED metal10 20000  ( 1980000 5825000 ) ( 1980000 5705000 ) ( 1920000 5645000 ) ( 1920000 5030000 ) ( 2020000 4930000 )
-      ;
-    - p_co_5_i 
-      + ROUTED metal10 20000  ( 2300000 5825000 ) ( 2300000 5705000 ) ( 2240000 5645000 ) ( 2240000 5030000 ) ( 2340000 4930000 )
-      ;
-    - DVDD_1 
-      + USE POWER
-      + ROUTED metal10 20000  ( 2950000 5825000 ) ( 2950000 5715000 ) ( 2880000 5645000 ) ( 2880000 5030000 ) ( 2980000 4930000 )
-      ;
-    - p_clk_async_reset_i 
-      + ROUTED metal10 20000  ( 3260000 5825000 ) ( 3260000 5705000 ) ( 3200000 5645000 ) ( 3200000 5030000 ) ( 3300000 4930000 )
-      ;
-    - p_core_async_reset_i 
-      + ROUTED metal10 20000  ( 3900000 5825000 ) ( 3900000 5705000 ) ( 3840000 5645000 ) ( 3840000 5030000 ) ( 3940000 4930000 )
-      ;
-    - p_ci2_2_o 
-      + ROUTED metal10 20000  ( 4220000 5825000 ) ( 4220000 5705000 ) ( 4160000 5645000 ) ( 4160000 5030000 ) ( 4260000 4930000 )
-      ;
-    - p_ci_0_i 
-      + ROUTED metal10 20000  ( 5825000 4860000 ) ( 5695000 4860000 ) ( 5645000 4810000 ) ( 5350000 4810000 ) ( 5250000 4910000 )
-      ;
-    - p_ci2_8_o 
-      + ROUTED metal10 20000  ( 5825000 4930000 ) ( 5570000 4930000 )
-      ;
-    - p_co2_v_o 
-      + ROUTED metal10 20000  ( 175000 4620000 ) ( 430000 4620000 )
-      ;
-    - p_co2_tkn_i 
-      + ROUTED metal10 20000  ( 175000 4560000 ) ( 285000 4560000 ) ( 355000 4490000 ) ( 970000 4490000 ) ( 1070000 4590000 )
-      ;
-    - p_co_8_i 
-      + ROUTED metal10 20000  ( 2490000 5825000 ) ( 2490000 5695000 ) ( 2480000 5685000 ) ( 2480000 4750000 ) ( 2340000 4610000 )
-      ;
-    - p_clk_A_i 
-      + ROUTED metal10 20000  ( 2800000 5825000 ) ( 2800000 5685000 ) ( 2800000 5685000 ) ( 2800000 4750000 ) ( 2660000 4610000 )
-      ;
-    - p_clk_o 
-      + ROUTED metal10 20000  ( 3130000 5825000 ) ( 3130000 5695000 ) ( 3120000 5685000 ) ( 3120000 4750000 ) ( 2980000 4610000 )
-      ;
-    - p_sel_0_i 
-      + ROUTED metal10 20000  ( 3450000 5825000 ) ( 3450000 5695000 ) ( 3440000 5685000 ) ( 3440000 4750000 ) ( 3300000 4610000 )
-      ;
-    - p_ci2_clk_o 
-      + ROUTED metal10 20000  ( 4410000 5825000 ) ( 4410000 5695000 ) ( 4400000 5685000 ) ( 4400000 4750000 ) ( 4260000 4610000 )
-      ;
-    - p_ci2_v_o 
-      + ROUTED metal10 20000  ( 4720000 5825000 ) ( 4720000 5685000 ) ( 4720000 5685000 ) ( 4720000 4750000 ) ( 4580000 4610000 )
-      ;
-    - p_ci_1_i 
-      + ROUTED metal10 20000  ( 5825000 4540000 ) ( 5695000 4540000 ) ( 5645000 4490000 ) ( 5350000 4490000 ) ( 5250000 4590000 )
-      ;
-    - p_co2_4_o 
-      + ROUTED metal10 20000  ( 175000 4340000 ) ( 325000 4340000 ) ( 355000 4370000 ) ( 650000 4370000 ) ( 750000 4270000 )
-      ;
-    - p_co2_clk_o 
-      + ROUTED metal10 20000  ( 175000 4400000 ) ( 305000 4400000 ) ( 315000 4410000 ) ( 1250000 4410000 ) ( 1390000 4270000 )
-      ;
-    - p_co2_3_o 
-      + ROUTED metal10 20000  ( 175000 4160000 ) ( 285000 4160000 ) ( 315000 4130000 ) ( 1570000 4130000 ) ( 1710000 4270000 )
-      ;
-    - p_co_4_i 
-      + ROUTED metal10 20000  ( 1920000 5825000 ) ( 1920000 5725000 ) ( 1880000 5685000 ) ( 1880000 4430000 ) ( 2020000 4290000 )
-      ;
-    - p_clk_B_i 
-      + ROUTED metal10 20000  ( 2880000 5825000 ) ( 2880000 5725000 ) ( 2840000 5685000 ) ( 2840000 4430000 ) ( 2980000 4290000 )
-      ;
-    - p_sel_1_i 
-      + ROUTED metal10 20000  ( 3520000 5825000 ) ( 3520000 5725000 ) ( 3480000 5685000 ) ( 3480000 4430000 ) ( 3620000 4290000 )
-      ;
-    - p_ci_3_i 
-      + ROUTED metal10 20000  ( 5825000 4160000 ) ( 5715000 4160000 ) ( 5685000 4130000 ) ( 4750000 4130000 ) ( 4610000 4270000 )
-      ;
-    - p_ci_2_i 
-      + ROUTED metal10 20000  ( 5825000 4220000 ) ( 5695000 4220000 ) ( 5645000 4170000 ) ( 5350000 4170000 ) ( 5250000 4270000 )
-      ;
-    - p_co2_0_o 
-      + ROUTED metal10 20000  ( 175000 3960000 ) ( 430000 3960000 )
-      ;
-    - p_co2_1_o 
-      + ROUTED metal10 20000  ( 175000 4020000 ) ( 325000 4020000 ) ( 355000 4050000 ) ( 650000 4050000 ) ( 750000 3950000 )
-      ;
-    - p_co2_2_o 
-      + ROUTED metal10 20000  ( 175000 4090000 ) ( 315000 4090000 ) ( 315000 4090000 ) ( 1250000 4090000 ) ( 1390000 3950000 )
-      ;
-    - p_ci_4_i 
-      + ROUTED metal10 20000  ( 5825000 4080000 ) ( 5695000 4080000 ) ( 5685000 4090000 ) ( 4430000 4090000 ) ( 4290000 3950000 )
-      ;
-    - p_ci_tkn_o 
-      + ROUTED metal10 20000  ( 5825000 3840000 ) ( 5715000 3840000 ) ( 5685000 3810000 ) ( 4750000 3810000 ) ( 4610000 3950000 )
-      ;
-    - p_ci_clk_i 
-      + ROUTED metal10 20000  ( 5825000 4020000 ) ( 5675000 4020000 ) ( 5645000 4050000 ) ( 5030000 4050000 ) ( 4930000 3950000 )
-      ;
-    - p_bsg_tag_data_o 
-      + ROUTED metal10 20000  ( 175000 3590000 ) ( 295000 3590000 ) ( 355000 3530000 ) ( 970000 3530000 ) ( 1070000 3630000 )
-      ;
-    - p_bsg_tag_clk_o 
-      + ROUTED metal10 20000  ( 175000 3770000 ) ( 315000 3770000 ) ( 315000 3770000 ) ( 1250000 3770000 ) ( 1390000 3630000 )
-      ;
-    - p_ddr_dq_7_io 
-      + ROUTED metal10 20000  ( 175000 3520000 ) ( 285000 3520000 ) ( 315000 3490000 ) ( 1570000 3490000 ) ( 1710000 3630000 )
-      ;
-    - p_ci_v_i 
-      + ROUTED metal10 20000  ( 5825000 3770000 ) ( 5685000 3770000 ) ( 5685000 3770000 ) ( 4430000 3770000 ) ( 4290000 3630000 )
-      ;
-    - p_ci_5_i 
-      + ROUTED metal10 20000  ( 5825000 3700000 ) ( 5675000 3700000 ) ( 5645000 3730000 ) ( 5030000 3730000 ) ( 4930000 3630000 )
-      ;
-    - p_ci_6_i 
-      + ROUTED metal10 20000  ( 5825000 3640000 ) ( 5570000 3640000 )
-      ;
-    - p_ddr_dq_5_io 
-      + ROUTED metal10 20000  ( 175000 3260000 ) ( 305000 3260000 ) ( 355000 3210000 ) ( 970000 3210000 ) ( 1070000 3310000 )
-      ;
-    - p_ddr_dq_6_io 
-      + ROUTED metal10 20000  ( 175000 3440000 ) ( 305000 3440000 ) ( 315000 3450000 ) ( 1250000 3450000 ) ( 1390000 3310000 )
-      ;
-    - p_ddr_dq_4_io 
-      + ROUTED metal10 20000  ( 175000 3200000 ) ( 285000 3200000 ) ( 315000 3170000 ) ( 1570000 3170000 ) ( 1710000 3310000 )
-      ;
-    - p_ci_7_i 
-      + ROUTED metal10 20000  ( 5825000 3450000 ) ( 5685000 3450000 ) ( 5685000 3450000 ) ( 4430000 3450000 ) ( 4290000 3310000 )
-      ;
-    - p_bsg_tag_en_i 
-      + ROUTED metal10 20000  ( 5825000 3200000 ) ( 5715000 3200000 ) ( 5685000 3170000 ) ( 4750000 3170000 ) ( 4610000 3310000 )
-      ;
-    - p_ci_8_i 
-      + ROUTED metal10 20000  ( 5825000 3270000 ) ( 5705000 3270000 ) ( 5645000 3210000 ) ( 5350000 3210000 ) ( 5250000 3310000 )
-      ;
-    - p_ddr_dq_2_io 
-      + ROUTED metal10 20000  ( 175000 3060000 ) ( 325000 3060000 ) ( 355000 3090000 ) ( 650000 3090000 ) ( 750000 2990000 )
-      ;
-    - p_ddr_dq_3_io 
-      + ROUTED metal10 20000  ( 175000 3120000 ) ( 305000 3120000 ) ( 315000 3130000 ) ( 1250000 3130000 ) ( 1390000 2990000 )
-      ;
-    - p_ddr_dq_1_io 
-      + ROUTED metal10 20000  ( 175000 2880000 ) ( 285000 2880000 ) ( 315000 2850000 ) ( 1570000 2850000 ) ( 1710000 2990000 )
-      ;
-    - p_bsg_tag_data_i 
-      + ROUTED metal10 20000  ( 5825000 3120000 ) ( 5695000 3120000 ) ( 5685000 3130000 ) ( 4430000 3130000 ) ( 4290000 2990000 )
-      ;
-    - p_ddr_dm_3_o 
-      + ROUTED metal10 20000  ( 5825000 2880000 ) ( 5715000 2880000 ) ( 5685000 2850000 ) ( 4750000 2850000 ) ( 4610000 2990000 )
-      ;
-    - p_bsg_tag_clk_i 
-      + ROUTED metal10 20000  ( 5825000 2940000 ) ( 5695000 2940000 ) ( 5645000 2890000 ) ( 5350000 2890000 ) ( 5250000 2990000 )
-      ;
-    - p_ddr_dm_0_o 
-      + ROUTED metal10 20000  ( 175000 2620000 ) ( 305000 2620000 ) ( 355000 2570000 ) ( 970000 2570000 ) ( 1070000 2670000 )
-      ;
-    - p_ddr_dq_0_io 
-      + ROUTED metal10 20000  ( 175000 2810000 ) ( 315000 2810000 ) ( 315000 2810000 ) ( 1250000 2810000 ) ( 1390000 2670000 )
-      ;
-    - p_ddr_dqs_n_0_io 
-      + ROUTED metal10 20000  ( 175000 2560000 ) ( 285000 2560000 ) ( 315000 2530000 ) ( 1570000 2530000 ) ( 1710000 2670000 )
-      ;
-    - p_ddr_dqs_p_3_io 
-      + ROUTED metal10 20000  ( 5825000 2800000 ) ( 5695000 2800000 ) ( 5685000 2810000 ) ( 4430000 2810000 ) ( 4290000 2670000 )
-      ;
-    - p_ddr_dq_24_io 
-      + ROUTED metal10 20000  ( 5825000 2560000 ) ( 5715000 2560000 ) ( 5685000 2530000 ) ( 4750000 2530000 ) ( 4610000 2670000 )
-      ;
-    - p_ddr_dqs_n_3_io 
-      + ROUTED metal10 20000  ( 5825000 2740000 ) ( 5675000 2740000 ) ( 5645000 2770000 ) ( 5030000 2770000 ) ( 4930000 2670000 )
-      ;
-    - p_ddr_dqs_p_0_io 
-      + ROUTED metal10 20000  ( 175000 2370000 ) ( 430000 2370000 )
-      ;
-    - p_ddr_dq_15_io 
-      + ROUTED metal10 20000  ( 175000 2310000 ) ( 295000 2310000 ) ( 355000 2250000 ) ( 970000 2250000 ) ( 1070000 2350000 )
-      ;
-    - p_ddr_dq_14_io 
-      + ROUTED metal10 20000  ( 175000 2240000 ) ( 285000 2240000 ) ( 315000 2210000 ) ( 1570000 2210000 ) ( 1710000 2350000 )
-      ;
-    - p_ddr_dq_25_io 
-      + ROUTED metal10 20000  ( 5825000 2490000 ) ( 5685000 2490000 ) ( 5685000 2490000 ) ( 4430000 2490000 ) ( 4290000 2350000 )
-      ;
-    - p_ddr_dq_27_io 
-      + ROUTED metal10 20000  ( 5825000 2240000 ) ( 5715000 2240000 ) ( 5685000 2210000 ) ( 4750000 2210000 ) ( 4610000 2350000 )
-      ;
-    - p_ddr_dq_26_io 
-      + ROUTED metal10 20000  ( 5825000 2420000 ) ( 5675000 2420000 ) ( 5645000 2450000 ) ( 5030000 2450000 ) ( 4930000 2350000 )
-      ;
-    - p_ddr_dq_12_io 
-      + ROUTED metal10 20000  ( 175000 1980000 ) ( 305000 1980000 ) ( 355000 1930000 ) ( 970000 1930000 ) ( 1070000 2030000 )
-      ;
-    - p_ddr_dq_13_io 
-      + ROUTED metal10 20000  ( 175000 2160000 ) ( 305000 2160000 ) ( 315000 2170000 ) ( 1250000 2170000 ) ( 1390000 2030000 )
-      ;
-    - p_ddr_dq_11_io 
-      + ROUTED metal10 20000  ( 175000 1920000 ) ( 285000 1920000 ) ( 315000 1890000 ) ( 1570000 1890000 ) ( 1710000 2030000 )
-      ;
-    - p_ddr_dq_30_io 
-      + ROUTED metal10 20000  ( 5825000 1920000 ) ( 5715000 1920000 ) ( 5685000 1890000 ) ( 4750000 1890000 ) ( 4610000 2030000 )
-      ;
-    - p_ddr_dq_29_io 
-      + ROUTED metal10 20000  ( 5825000 1990000 ) ( 5705000 1990000 ) ( 5645000 1930000 ) ( 5350000 1930000 ) ( 5250000 2030000 )
-      ;
-    - p_ddr_dq_28_io 
-      + ROUTED metal10 20000  ( 5825000 2050000 ) ( 5570000 2050000 )
-      ;
-    - p_ddr_dq_8_io 
-      + ROUTED metal10 20000  ( 175000 1720000 ) ( 430000 1720000 )
-      ;
-    - p_ddr_dq_9_io 
-      + ROUTED metal10 20000  ( 175000 1780000 ) ( 325000 1780000 ) ( 355000 1810000 ) ( 650000 1810000 ) ( 750000 1710000 )
-      ;
-    - p_ddr_dq_10_io 
-      + ROUTED metal10 20000  ( 175000 1840000 ) ( 305000 1840000 ) ( 315000 1850000 ) ( 1250000 1850000 ) ( 1390000 1710000 )
-      ;
-    - p_ddr_addr_13_o 
-      + ROUTED metal10 20000  ( 1850000 175000 ) ( 1850000 305000 ) ( 1840000 315000 ) ( 1840000 1570000 ) ( 1700000 1710000 )
-      ;
-    - p_ddr_addr_10_o 
-      + ROUTED metal10 20000  ( 2160000 175000 ) ( 2160000 315000 ) ( 2160000 315000 ) ( 2160000 1570000 ) ( 2020000 1710000 )
-      ;
-    - p_ddr_addr_4_o 
-      + ROUTED metal10 20000  ( 2810000 175000 ) ( 2810000 305000 ) ( 2800000 315000 ) ( 2800000 1570000 ) ( 2660000 1710000 )
-      ;
-    - p_ddr_addr_1_o 
-      + ROUTED metal10 20000  ( 3130000 175000 ) ( 3130000 305000 ) ( 3120000 315000 ) ( 3120000 1570000 ) ( 2980000 1710000 )
-      ;
-    - p_ddr_ck_n_o 
-      + ROUTED metal10 20000  ( 4090000 175000 ) ( 4090000 305000 ) ( 4080000 315000 ) ( 4080000 1570000 ) ( 3940000 1710000 )
-      ;
-    - p_ddr_dq_31_io 
-      + ROUTED metal10 20000  ( 5825000 1840000 ) ( 5695000 1840000 ) ( 5685000 1850000 ) ( 4430000 1850000 ) ( 4290000 1710000 )
-      ;
-    - p_ddr_dq_17_io 
-      + ROUTED metal10 20000  ( 5825000 1600000 ) ( 5715000 1600000 ) ( 5685000 1570000 ) ( 4750000 1570000 ) ( 4610000 1710000 )
-      ;
-    - p_ddr_dq_16_io 
-      + ROUTED metal10 20000  ( 5825000 1660000 ) ( 5695000 1660000 ) ( 5645000 1610000 ) ( 5350000 1610000 ) ( 5250000 1710000 )
-      ;
-    - p_ddr_addr_12_o 
-      + ROUTED metal10 20000  ( 1920000 175000 ) ( 1920000 275000 ) ( 1880000 315000 ) ( 1880000 1250000 ) ( 2020000 1390000 )
-      ;
-    - p_ddr_odt_o 
-      + ROUTED metal10 20000  ( 3520000 175000 ) ( 3520000 275000 ) ( 3480000 315000 ) ( 3480000 1250000 ) ( 3620000 1390000 )
-      ;
-    - p_ddr_dq_18_io 
-      + ROUTED metal10 20000  ( 5825000 1460000 ) ( 5675000 1460000 ) ( 5645000 1490000 ) ( 5030000 1490000 ) ( 4930000 1390000 )
-      ;
-    - p_ddr_dq_19_io 
-      + ROUTED metal10 20000  ( 5825000 1400000 ) ( 5570000 1400000 )
-      ;
-    - UNASSIGNED_1 
-      + ROUTED metal10 20000  ( 175000 1020000 ) ( 430000 1020000 )
-      ;
-    - UNASSIGNED_0 
-      + ROUTED metal10 20000  ( 175000 1080000 ) ( 265000 1080000 ) ( 355000 1170000 ) ( 650000 1170000 ) ( 750000 1070000 )
-      ;
-    - p_ddr_ba_0_o 
-      + ROUTED metal10 20000  ( 1470000 175000 ) ( 1470000 345000 ) ( 1480000 355000 ) ( 1480000 970000 ) ( 1380000 1070000 )
-      ;
-    - p_ddr_addr_14_o 
-      + ROUTED metal10 20000  ( 1780000 175000 ) ( 1780000 335000 ) ( 1800000 355000 ) ( 1800000 970000 ) ( 1700000 1070000 )
-      ;
-    - p_ddr_addr_11_o 
-      + ROUTED metal10 20000  ( 2100000 175000 ) ( 2100000 335000 ) ( 2120000 355000 ) ( 2120000 970000 ) ( 2020000 1070000 )
-      ;
-    - p_ddr_addr_8_o 
-      + ROUTED metal10 20000  ( 2430000 175000 ) ( 2430000 345000 ) ( 2440000 355000 ) ( 2440000 970000 ) ( 2340000 1070000 )
-      ;
-    - p_ddr_addr_5_o 
-      + ROUTED metal10 20000  ( 2750000 175000 ) ( 2750000 345000 ) ( 2760000 355000 ) ( 2760000 970000 ) ( 2660000 1070000 )
-      ;
-    - p_ddr_addr_2_o 
-      + ROUTED metal10 20000  ( 3060000 175000 ) ( 3060000 335000 ) ( 3080000 355000 ) ( 3080000 970000 ) ( 2980000 1070000 )
-      ;
-    - p_ddr_cas_n_o 
-      + ROUTED metal10 20000  ( 3710000 175000 ) ( 3710000 345000 ) ( 3720000 355000 ) ( 3720000 970000 ) ( 3620000 1070000 )
-      ;
-    - p_ddr_cke_o 
-      + ROUTED metal10 20000  ( 4030000 175000 ) ( 4030000 345000 ) ( 4040000 355000 ) ( 4040000 970000 ) ( 3940000 1070000 )
-      ;
-    - p_ddr_dqs_p_2_io 
-      + ROUTED metal10 20000  ( 4670000 175000 ) ( 4670000 345000 ) ( 4680000 355000 ) ( 4680000 970000 ) ( 4580000 1070000 )
-      ;
-    - p_ddr_dq_20_io 
-      + ROUTED metal10 20000  ( 5825000 1140000 ) ( 5675000 1140000 ) ( 5645000 1170000 ) ( 5030000 1170000 ) ( 4930000 1070000 )
-      ;
-    - UNASSIGNED_2 
-      + ROUTED metal10 20000  ( 175000 760000 ) ( 430000 760000 )
-      ;
-    - p_ddr_dqs_n_1_io 
-      + ROUTED metal10 20000  ( 700000 175000 ) ( 700000 295000 ) ( 640000 355000 ) ( 640000 650000 ) ( 740000 750000 )
-      ;
-    - p_ddr_ba_2_o 
-      + ROUTED metal10 20000  ( 1340000 175000 ) ( 1340000 295000 ) ( 1280000 355000 ) ( 1280000 650000 ) ( 1380000 750000 )
-      ;
-    - p_ddr_addr_7_o 
-      + ROUTED metal10 20000  ( 2620000 175000 ) ( 2620000 295000 ) ( 2560000 355000 ) ( 2560000 650000 ) ( 2660000 750000 )
-      ;
-    - p_ddr_reset_n_o 
-      + ROUTED metal10 20000  ( 3580000 175000 ) ( 3580000 295000 ) ( 3520000 355000 ) ( 3520000 650000 ) ( 3620000 750000 )
-      ;
-    - p_ddr_ras_n_o 
-      + ROUTED metal10 20000  ( 3900000 175000 ) ( 3900000 295000 ) ( 3840000 355000 ) ( 3840000 650000 ) ( 3940000 750000 )
-      ;
-    - p_ddr_ck_p_o 
-      + ROUTED metal10 20000  ( 4540000 175000 ) ( 4540000 295000 ) ( 4480000 355000 ) ( 4480000 650000 ) ( 4580000 750000 )
-      ;
-    - p_ddr_dm_2_o 
-      + ROUTED metal10 20000  ( 4860000 175000 ) ( 4860000 295000 ) ( 4800000 355000 ) ( 4800000 650000 ) ( 4900000 750000 )
-      ;
-    - p_ddr_dq_22_io 
-      + ROUTED metal10 20000  ( 5825000 700000 ) ( 5695000 700000 ) ( 5645000 650000 ) ( 5350000 650000 ) ( 5250000 750000 )
-      ;
-    - p_ddr_dq_21_io 
-      + ROUTED metal10 20000  ( 5825000 770000 ) ( 5570000 770000 )
-      ;
-    - p_ddr_dm_1_o 
-      + ROUTED metal10 20000  ( 440000 175000 ) ( 440000 430000 )
-      ;
-    - p_ddr_dqs_p_1_io 
-      + ROUTED metal10 20000  ( 1080000 175000 ) ( 1080000 430000 )
-      ;
-    - p_ddr_ba_1_o 
-      + ROUTED metal10 20000  ( 1410000 175000 ) ( 1410000 430000 )
-      ;
-    - p_ddr_addr_15_o 
-      + ROUTED metal10 20000  ( 1720000 175000 ) ( 1720000 430000 )
-      ;
-    - p_ddr_addr_9_o 
-      + ROUTED metal10 20000  ( 2370000 175000 ) ( 2370000 430000 )
-      ;
-    - p_ddr_addr_6_o 
-      + ROUTED metal10 20000  ( 2680000 175000 ) ( 2680000 430000 )
-      ;
-    - p_ddr_addr_3_o 
-      + ROUTED metal10 20000  ( 3000000 175000 ) ( 3000000 430000 )
-      ;
-    - p_ddr_addr_0_o 
-      + ROUTED metal10 20000  ( 3320000 175000 ) ( 3320000 430000 )
-      ;
-    - p_ddr_we_n_o 
-      + ROUTED metal10 20000  ( 3650000 175000 ) ( 3650000 430000 )
-      ;
-    - p_ddr_cs_n_o 
-      + ROUTED metal10 20000  ( 3960000 175000 ) ( 3960000 430000 )
-      ;
-    - p_ddr_dqs_n_2_io 
-      + ROUTED metal10 20000  ( 4600000 175000 ) ( 4600000 430000 )
-      ;
-    - p_ddr_dq_23_io 
-      + ROUTED metal10 20000  ( 5825000 440000 ) ( 5570000 440000 )
-      ;
+    - p_bsg_tag_clk_i ( PIN p_bsg_tag_clk_i ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 2890000 ) ( 5250000 2990000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 2890000 ) ( 5645000 2890000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 2890000 ) ( 5695000 2940000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 2940000 ) ( 5825000 2940000 ) ;
+    - p_bsg_tag_clk_o ( PIN p_bsg_tag_clk_o ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 3630000 ) ( 1250000 3770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3770000 ) ( 1250000 3770000 )
+      NEW metal10 0 + SHAPE STRIPE ( 305000 3770000 ) ( 325000 3770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3770000 ) ( 315000 3770000 ) ;
+    - p_bsg_tag_data_i ( PIN p_bsg_tag_data_i ) ( u_bsg_tag_data_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 2990000 ) ( 4430000 3130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 3130000 ) ( 5685000 3130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 3120000 ) ( 5685000 3130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 3120000 ) ( 5825000 3120000 ) ;
+    - p_bsg_tag_data_o ( PIN p_bsg_tag_data_o ) ( u_bsg_tag_data_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 970000 3530000 ) ( 1070000 3630000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3530000 ) ( 970000 3530000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3530000 ) ( 295000 3590000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3590000 ) ( 295000 3590000 ) ;
+    - p_bsg_tag_en_i ( PIN p_bsg_tag_en_i ) ( u_bsg_tag_en_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 3170000 ) ( 4610000 3310000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 3170000 ) ( 5685000 3170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 3170000 ) ( 5715000 3200000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 3200000 ) ( 5825000 3200000 ) ;
+    - p_ci2_0_o ( PIN p_ci2_0_o ) ( u_ci2_0_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3970000 5570000 ) ( 3970000 5825000 ) ;
+    - p_ci2_1_o ( PIN p_ci2_1_o ) ( u_ci2_1_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3940000 5250000 ) ( 4040000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4040000 5350000 ) ( 4040000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4040000 5645000 ) ( 4030000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4030000 5655000 ) ( 4030000 5825000 ) ;
+    - p_ci2_2_o ( PIN p_ci2_2_o ) ( u_ci2_2_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4260000 4930000 ) ( 4160000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 5030000 ) ( 4160000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4160000 5645000 ) ( 4220000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4220000 5705000 ) ( 4220000 5825000 ) ;
+    - p_ci2_3_o ( PIN p_ci2_3_o ) ( u_ci2_3_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4280000 5570000 ) ( 4280000 5825000 ) ;
+    - p_ci2_4_o ( PIN p_ci2_4_o ) ( u_ci2_4_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4260000 5250000 ) ( 4360000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4360000 5350000 ) ( 4360000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4360000 5645000 ) ( 4350000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4350000 5655000 ) ( 4350000 5825000 ) ;
+    - p_ci2_5_o ( PIN p_ci2_5_o ) ( u_ci2_5_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4900000 5250000 ) ( 5000000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5000000 5350000 ) ( 5000000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5000000 5645000 ) ( 4980000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4980000 5665000 ) ( 4980000 5825000 ) ;
+    - p_ci2_6_o ( PIN p_ci2_6_o ) ( u_ci2_6_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5240000 5570000 ) ( 5240000 5825000 ) ;
+    - p_ci2_7_o ( PIN p_ci2_7_o ) ( u_ci2_7_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 5240000 ) ( 5825000 5240000 ) ;
+    - p_ci2_8_o ( PIN p_ci2_8_o ) ( u_ci2_8_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 4930000 ) ( 5825000 4930000 ) ;
+    - p_ci2_clk_o ( PIN p_ci2_clk_o ) ( u_ci2_clk_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4260000 4610000 ) ( 4400000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4400000 4750000 ) ( 4400000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4400000 5685000 ) ( 4410000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4410000 5695000 ) ( 4410000 5825000 ) ;
+    - p_ci2_tkn_i ( PIN p_ci2_tkn_i ) ( u_ci2_tkn_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4580000 5250000 ) ( 4680000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4680000 5350000 ) ( 4680000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4680000 5645000 ) ( 4660000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4660000 5665000 ) ( 4660000 5825000 ) ;
+    - p_ci2_v_o ( PIN p_ci2_v_o ) ( u_ci2_v_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4580000 4610000 ) ( 4720000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4720000 4750000 ) ( 4720000 5685000 )
+      NEW metal10 0 + SHAPE STRIPE ( 4710000 5685000 ) ( 4730000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4720000 5685000 ) ( 4720000 5825000 ) ;
+    - p_ci_0_i ( PIN p_ci_0_i ) ( u_ci_0_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 4810000 ) ( 5250000 4910000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 4810000 ) ( 5645000 4810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 4810000 ) ( 5695000 4860000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 4860000 ) ( 5825000 4860000 ) ;
+    - p_ci_1_i ( PIN p_ci_1_i ) ( u_ci_1_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 4490000 ) ( 5250000 4590000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 4490000 ) ( 5645000 4490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 4490000 ) ( 5695000 4540000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 4540000 ) ( 5825000 4540000 ) ;
+    - p_ci_2_i ( PIN p_ci_2_i ) ( u_ci_2_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 4170000 ) ( 5250000 4270000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 4170000 ) ( 5645000 4170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 4170000 ) ( 5695000 4220000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 4220000 ) ( 5825000 4220000 ) ;
+    - p_ci_3_i ( PIN p_ci_3_i ) ( u_ci_3_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 4130000 ) ( 4610000 4270000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 4130000 ) ( 5685000 4130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 4130000 ) ( 5715000 4160000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 4160000 ) ( 5825000 4160000 ) ;
+    - p_ci_4_i ( PIN p_ci_4_i ) ( u_ci_4_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 3950000 ) ( 4430000 4090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 4090000 ) ( 5685000 4090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 4080000 ) ( 5685000 4090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 4080000 ) ( 5825000 4080000 ) ;
+    - p_ci_5_i ( PIN p_ci_5_i ) ( u_ci_5_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4930000 3630000 ) ( 5030000 3730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 3730000 ) ( 5645000 3730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 3700000 ) ( 5645000 3730000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 3700000 ) ( 5825000 3700000 ) ;
+    - p_ci_6_i ( PIN p_ci_6_i ) ( u_ci_6_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 3640000 ) ( 5825000 3640000 ) ;
+    - p_ci_7_i ( PIN p_ci_7_i ) ( u_ci_7_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 3310000 ) ( 4430000 3450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 3450000 ) ( 5685000 3450000 )
+      NEW metal10 0 + SHAPE STRIPE ( 5675000 3450000 ) ( 5695000 3450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 3450000 ) ( 5825000 3450000 ) ;
+    - p_ci_8_i ( PIN p_ci_8_i ) ( u_ci_8_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 3210000 ) ( 5250000 3310000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 3210000 ) ( 5645000 3210000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 3210000 ) ( 5705000 3270000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5705000 3270000 ) ( 5825000 3270000 ) ;
+    - p_ci_clk_i ( PIN p_ci_clk_i ) ( u_ci_clk_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4930000 3950000 ) ( 5030000 4050000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 4050000 ) ( 5645000 4050000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 4020000 ) ( 5645000 4050000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 4020000 ) ( 5825000 4020000 ) ;
+    - p_ci_tkn_o ( PIN p_ci_tkn_o ) ( u_ci_tkn_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 3810000 ) ( 4610000 3950000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 3810000 ) ( 5685000 3810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 3810000 ) ( 5715000 3840000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 3840000 ) ( 5825000 3840000 ) ;
+    - p_ci_v_i ( PIN p_ci_v_i ) ( u_ci_v_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 3630000 ) ( 4430000 3770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 3770000 ) ( 5685000 3770000 )
+      NEW metal10 0 + SHAPE STRIPE ( 5675000 3770000 ) ( 5695000 3770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 3770000 ) ( 5825000 3770000 ) ;
+    - p_clk_A_i ( PIN p_clk_A_i ) ( u_clk_A_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2660000 4610000 ) ( 2800000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2800000 4750000 ) ( 2800000 5685000 )
+      NEW metal10 0 + SHAPE STRIPE ( 2790000 5685000 ) ( 2810000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2800000 5685000 ) ( 2800000 5825000 ) ;
+    - p_clk_B_i ( PIN p_clk_B_i ) ( u_clk_B_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2980000 4290000 ) ( 2840000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2840000 4430000 ) ( 2840000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2840000 5685000 ) ( 2880000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2880000 5725000 ) ( 2880000 5825000 ) ;
+    - p_clk_C_i ( PIN p_clk_C_i ) ( u_clk_C_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3010000 5570000 ) ( 3010000 5825000 ) ;
+    - p_clk_async_reset_i ( PIN p_clk_async_reset_i ) ( u_clk_async_reset_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3300000 4930000 ) ( 3200000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3200000 5030000 ) ( 3200000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3200000 5645000 ) ( 3260000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3260000 5705000 ) ( 3260000 5825000 ) ;
+    - p_clk_o ( PIN p_clk_o ) ( u_clk_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2980000 4610000 ) ( 3120000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3120000 4750000 ) ( 3120000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3120000 5685000 ) ( 3130000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3130000 5695000 ) ( 3130000 5825000 ) ;
+    - p_co2_0_o ( PIN p_co2_0_o ) ( u_co2_0_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 175000 3960000 ) ( 430000 3960000 ) ;
+    - p_co2_1_o ( PIN p_co2_1_o ) ( u_co2_1_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 750000 3950000 ) ( 650000 4050000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4050000 ) ( 650000 4050000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 4020000 ) ( 355000 4050000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4020000 ) ( 325000 4020000 ) ;
+    - p_co2_2_o ( PIN p_co2_2_o ) ( u_co2_2_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 3950000 ) ( 1250000 4090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 4090000 ) ( 1250000 4090000 )
+      NEW metal10 0 + SHAPE STRIPE ( 305000 4090000 ) ( 325000 4090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4090000 ) ( 315000 4090000 ) ;
+    - p_co2_3_o ( PIN p_co2_3_o ) ( u_co2_3_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 4130000 ) ( 1710000 4270000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 4130000 ) ( 1570000 4130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 4130000 ) ( 285000 4160000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4160000 ) ( 285000 4160000 ) ;
+    - p_co2_4_o ( PIN p_co2_4_o ) ( u_co2_4_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 750000 4270000 ) ( 650000 4370000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4370000 ) ( 650000 4370000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 4340000 ) ( 355000 4370000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4340000 ) ( 325000 4340000 ) ;
+    - p_co2_5_o ( PIN p_co2_5_o ) ( u_co2_5_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 750000 4910000 ) ( 650000 5010000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 5010000 ) ( 650000 5010000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 4980000 ) ( 355000 5010000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4980000 ) ( 325000 4980000 ) ;
+    - p_co2_6_o ( PIN p_co2_6_o ) ( u_co2_6_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 175000 5240000 ) ( 430000 5240000 ) ;
+    - p_co2_7_o ( PIN p_co2_7_o ) ( u_co2_7_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 750000 5230000 ) ( 650000 5330000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 5330000 ) ( 650000 5330000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 335000 5310000 ) ( 355000 5330000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 5310000 ) ( 335000 5310000 ) ;
+    - p_co2_8_o ( PIN p_co2_8_o ) ( u_co2_8_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 175000 5560000 ) ( 430000 5560000 ) ;
+    - p_co2_clk_o ( PIN p_co2_clk_o ) ( u_co2_clk_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 4270000 ) ( 1250000 4410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 4410000 ) ( 1250000 4410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 305000 4400000 ) ( 315000 4410000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4400000 ) ( 305000 4400000 ) ;
+    - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( u_co2_tkn_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 970000 4490000 ) ( 1070000 4590000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4490000 ) ( 970000 4490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 4490000 ) ( 285000 4560000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 4560000 ) ( 285000 4560000 ) ;
+    - p_co2_v_o ( PIN p_co2_v_o ) ( u_co2_v_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 175000 4620000 ) ( 430000 4620000 ) ;
+    - p_co_0_i ( PIN p_co_0_i ) ( u_co_0_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1060000 5250000 ) ( 1160000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1160000 5350000 ) ( 1160000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1160000 5645000 ) ( 1140000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1140000 5665000 ) ( 1140000 5825000 ) ;
+    - p_co_1_i ( PIN p_co_1_i ) ( u_co_1_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1380000 4930000 ) ( 1280000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1280000 5030000 ) ( 1280000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1280000 5645000 ) ( 1340000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1340000 5705000 ) ( 1340000 5825000 ) ;
+    - p_co_2_i ( PIN p_co_2_i ) ( u_co_2_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1410000 5570000 ) ( 1410000 5825000 ) ;
+    - p_co_3_i ( PIN p_co_3_i ) ( u_co_3_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1720000 5570000 ) ( 1720000 5825000 ) ;
+    - p_co_4_i ( PIN p_co_4_i ) ( u_co_4_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2020000 4290000 ) ( 1880000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1880000 4430000 ) ( 1880000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1880000 5685000 ) ( 1920000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 5725000 ) ( 1920000 5825000 ) ;
+    - p_co_5_i ( PIN p_co_5_i ) ( u_co_5_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2340000 4930000 ) ( 2240000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 5030000 ) ( 2240000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2240000 5645000 ) ( 2300000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2300000 5705000 ) ( 2300000 5825000 ) ;
+    - p_co_6_i ( PIN p_co_6_i ) ( u_co_6_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2360000 5570000 ) ( 2360000 5825000 ) ;
+    - p_co_7_i ( PIN p_co_7_i ) ( u_co_7_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2340000 5250000 ) ( 2440000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2440000 5350000 ) ( 2440000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2440000 5645000 ) ( 2430000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2430000 5655000 ) ( 2430000 5825000 ) ;
+    - p_co_8_i ( PIN p_co_8_i ) ( u_co_8_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2340000 4610000 ) ( 2480000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2480000 4750000 ) ( 2480000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2480000 5685000 ) ( 2490000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2490000 5695000 ) ( 2490000 5825000 ) ;
+    - p_co_clk_i ( PIN p_co_clk_i ) ( u_co_clk_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2020000 4930000 ) ( 1920000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 5030000 ) ( 1920000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 5645000 ) ( 1980000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1980000 5705000 ) ( 1980000 5825000 ) ;
+    - p_co_tkn_o ( PIN p_co_tkn_o ) ( u_co_tkn_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2050000 5570000 ) ( 2050000 5825000 ) ;
+    - p_co_v_i ( PIN p_co_v_i ) ( u_co_v_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2020000 5250000 ) ( 2120000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2120000 5350000 ) ( 2120000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2120000 5645000 ) ( 2110000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2110000 5655000 ) ( 2110000 5825000 ) ;
+    - p_core_async_reset_i ( PIN p_core_async_reset_i ) ( u_core_async_reset_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3940000 4930000 ) ( 3840000 5030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3840000 5030000 ) ( 3840000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3840000 5645000 ) ( 3900000 5705000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3900000 5705000 ) ( 3900000 5825000 ) ;
+    - p_ddr_addr_0_o ( PIN p_ddr_addr_0_o ) ( u_ddr_addr_0_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3320000 175000 ) ( 3320000 430000 ) ;
+    - p_ddr_addr_10_o ( PIN p_ddr_addr_10_o ) ( u_ddr_addr_10_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2160000 1570000 ) ( 2020000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2160000 315000 ) ( 2160000 1570000 )
+      NEW metal10 0 + SHAPE STRIPE ( 2150000 315000 ) ( 2170000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2160000 175000 ) ( 2160000 315000 ) ;
+    - p_ddr_addr_11_o ( PIN p_ddr_addr_11_o ) ( u_ddr_addr_11_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2120000 970000 ) ( 2020000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2120000 355000 ) ( 2120000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2100000 335000 ) ( 2120000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2100000 175000 ) ( 2100000 335000 ) ;
+    - p_ddr_addr_12_o ( PIN p_ddr_addr_12_o ) ( u_ddr_addr_12_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1880000 1250000 ) ( 2020000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1880000 315000 ) ( 1880000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 275000 ) ( 1880000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1920000 175000 ) ( 1920000 275000 ) ;
+    - p_ddr_addr_13_o ( PIN p_ddr_addr_13_o ) ( u_ddr_addr_13_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1840000 1570000 ) ( 1700000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1840000 315000 ) ( 1840000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1850000 305000 ) ( 1840000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1850000 175000 ) ( 1850000 305000 ) ;
+    - p_ddr_addr_14_o ( PIN p_ddr_addr_14_o ) ( u_ddr_addr_14_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1800000 970000 ) ( 1700000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1800000 355000 ) ( 1800000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1780000 335000 ) ( 1800000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1780000 175000 ) ( 1780000 335000 ) ;
+    - p_ddr_addr_15_o ( PIN p_ddr_addr_15_o ) ( u_ddr_addr_15_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1720000 175000 ) ( 1720000 430000 ) ;
+    - p_ddr_addr_1_o ( PIN p_ddr_addr_1_o ) ( u_ddr_addr_1_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3120000 1570000 ) ( 2980000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3120000 315000 ) ( 3120000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3130000 305000 ) ( 3120000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3130000 175000 ) ( 3130000 305000 ) ;
+    - p_ddr_addr_2_o ( PIN p_ddr_addr_2_o ) ( u_ddr_addr_2_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3080000 970000 ) ( 2980000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3080000 355000 ) ( 3080000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3060000 335000 ) ( 3080000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3060000 175000 ) ( 3060000 335000 ) ;
+    - p_ddr_addr_3_o ( PIN p_ddr_addr_3_o ) ( u_ddr_addr_3_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3000000 175000 ) ( 3000000 430000 ) ;
+    - p_ddr_addr_4_o ( PIN p_ddr_addr_4_o ) ( u_ddr_addr_4_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2800000 1570000 ) ( 2660000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2800000 315000 ) ( 2800000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2810000 305000 ) ( 2800000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2810000 175000 ) ( 2810000 305000 ) ;
+    - p_ddr_addr_5_o ( PIN p_ddr_addr_5_o ) ( u_ddr_addr_5_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2760000 970000 ) ( 2660000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2760000 355000 ) ( 2760000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2750000 345000 ) ( 2760000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2750000 175000 ) ( 2750000 345000 ) ;
+    - p_ddr_addr_6_o ( PIN p_ddr_addr_6_o ) ( u_ddr_addr_6_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2680000 175000 ) ( 2680000 430000 ) ;
+    - p_ddr_addr_7_o ( PIN p_ddr_addr_7_o ) ( u_ddr_addr_7_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2560000 650000 ) ( 2660000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2560000 355000 ) ( 2560000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2620000 295000 ) ( 2560000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2620000 175000 ) ( 2620000 295000 ) ;
+    - p_ddr_addr_8_o ( PIN p_ddr_addr_8_o ) ( u_ddr_addr_8_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2440000 970000 ) ( 2340000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2440000 355000 ) ( 2440000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2430000 345000 ) ( 2440000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 2430000 175000 ) ( 2430000 345000 ) ;
+    - p_ddr_addr_9_o ( PIN p_ddr_addr_9_o ) ( u_ddr_addr_9_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 2370000 175000 ) ( 2370000 430000 ) ;
+    - p_ddr_ba_0_o ( PIN p_ddr_ba_0_o ) ( u_ddr_ba_0_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1480000 970000 ) ( 1380000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1480000 355000 ) ( 1480000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1470000 345000 ) ( 1480000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1470000 175000 ) ( 1470000 345000 ) ;
+    - p_ddr_ba_1_o ( PIN p_ddr_ba_1_o ) ( u_ddr_ba_1_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1410000 175000 ) ( 1410000 430000 ) ;
+    - p_ddr_ba_2_o ( PIN p_ddr_ba_2_o ) ( u_ddr_ba_2_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1280000 650000 ) ( 1380000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1280000 355000 ) ( 1280000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1340000 295000 ) ( 1280000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 1340000 175000 ) ( 1340000 295000 ) ;
+    - p_ddr_cas_n_o ( PIN p_ddr_cas_n_o ) ( u_ddr_cas_n_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3720000 970000 ) ( 3620000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3720000 355000 ) ( 3720000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3710000 345000 ) ( 3720000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3710000 175000 ) ( 3710000 345000 ) ;
+    - p_ddr_ck_n_o ( PIN p_ddr_ck_n_o ) ( u_ddr_ck_n_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4080000 1570000 ) ( 3940000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4080000 315000 ) ( 4080000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4090000 305000 ) ( 4080000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4090000 175000 ) ( 4090000 305000 ) ;
+    - p_ddr_ck_p_o ( PIN p_ddr_ck_p_o ) ( u_ddr_ck_p_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4480000 650000 ) ( 4580000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4480000 355000 ) ( 4480000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4540000 295000 ) ( 4480000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4540000 175000 ) ( 4540000 295000 ) ;
+    - p_ddr_cke_o ( PIN p_ddr_cke_o ) ( u_ddr_cke_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4040000 970000 ) ( 3940000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4040000 355000 ) ( 4040000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4030000 345000 ) ( 4040000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4030000 175000 ) ( 4030000 345000 ) ;
+    - p_ddr_cs_n_o ( PIN p_ddr_cs_n_o ) ( u_ddr_cs_n_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3960000 175000 ) ( 3960000 430000 ) ;
+    - p_ddr_dm_0_o ( PIN p_ddr_dm_0_o ) ( u_ddr_dm_0_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 970000 2570000 ) ( 1070000 2670000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2570000 ) ( 970000 2570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2570000 ) ( 305000 2620000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2620000 ) ( 305000 2620000 ) ;
+    - p_ddr_dm_1_o ( PIN p_ddr_dm_1_o ) ( u_ddr_dm_1_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 440000 175000 ) ( 440000 430000 ) ;
+    - p_ddr_dm_2_o ( PIN p_ddr_dm_2_o ) ( u_ddr_dm_2_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4800000 650000 ) ( 4900000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4800000 355000 ) ( 4800000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4860000 295000 ) ( 4800000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4860000 175000 ) ( 4860000 295000 ) ;
+    - p_ddr_dm_3_o ( PIN p_ddr_dm_3_o ) ( u_ddr_dm_3_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 2850000 ) ( 4610000 2990000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 2850000 ) ( 5685000 2850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 2850000 ) ( 5715000 2880000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 2880000 ) ( 5825000 2880000 ) ;
+    - p_ddr_dq_0_io ( PIN p_ddr_dq_0_io ) ( u_ddr_dq_0_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 2670000 ) ( 1250000 2810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2810000 ) ( 1250000 2810000 )
+      NEW metal10 0 + SHAPE STRIPE ( 305000 2810000 ) ( 325000 2810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2810000 ) ( 315000 2810000 ) ;
+    - p_ddr_dq_10_io ( PIN p_ddr_dq_10_io ) ( u_ddr_dq_10_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 1710000 ) ( 1250000 1850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 1850000 ) ( 1250000 1850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 305000 1840000 ) ( 315000 1850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1840000 ) ( 305000 1840000 ) ;
+    - p_ddr_dq_11_io ( PIN p_ddr_dq_11_io ) ( u_ddr_dq_11_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 1890000 ) ( 1710000 2030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 1890000 ) ( 1570000 1890000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 1890000 ) ( 285000 1920000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1920000 ) ( 285000 1920000 ) ;
+    - p_ddr_dq_12_io ( PIN p_ddr_dq_12_io ) ( u_ddr_dq_12_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 970000 1930000 ) ( 1070000 2030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1930000 ) ( 970000 1930000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1930000 ) ( 305000 1980000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1980000 ) ( 305000 1980000 ) ;
+    - p_ddr_dq_13_io ( PIN p_ddr_dq_13_io ) ( u_ddr_dq_13_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 2030000 ) ( 1250000 2170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2170000 ) ( 1250000 2170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 305000 2160000 ) ( 315000 2170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2160000 ) ( 305000 2160000 ) ;
+    - p_ddr_dq_14_io ( PIN p_ddr_dq_14_io ) ( u_ddr_dq_14_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 2210000 ) ( 1710000 2350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2210000 ) ( 1570000 2210000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2210000 ) ( 285000 2240000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2240000 ) ( 285000 2240000 ) ;
+    - p_ddr_dq_15_io ( PIN p_ddr_dq_15_io ) ( u_ddr_dq_15_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 970000 2250000 ) ( 1070000 2350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2250000 ) ( 970000 2250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 2250000 ) ( 295000 2310000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2310000 ) ( 295000 2310000 ) ;
+    - p_ddr_dq_16_io ( PIN p_ddr_dq_16_io ) ( u_ddr_dq_16_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 1610000 ) ( 5250000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 1610000 ) ( 5645000 1610000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 1610000 ) ( 5695000 1660000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 1660000 ) ( 5825000 1660000 ) ;
+    - p_ddr_dq_17_io ( PIN p_ddr_dq_17_io ) ( u_ddr_dq_17_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 1570000 ) ( 4610000 1710000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 1570000 ) ( 5685000 1570000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 1570000 ) ( 5715000 1600000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 1600000 ) ( 5825000 1600000 ) ;
+    - p_ddr_dq_18_io ( PIN p_ddr_dq_18_io ) ( u_ddr_dq_18_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4930000 1390000 ) ( 5030000 1490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 1490000 ) ( 5645000 1490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 1460000 ) ( 5645000 1490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 1460000 ) ( 5825000 1460000 ) ;
+    - p_ddr_dq_19_io ( PIN p_ddr_dq_19_io ) ( u_ddr_dq_19_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 1400000 ) ( 5825000 1400000 ) ;
+    - p_ddr_dq_1_io ( PIN p_ddr_dq_1_io ) ( u_ddr_dq_1_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 2850000 ) ( 1710000 2990000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2850000 ) ( 1570000 2850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2850000 ) ( 285000 2880000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2880000 ) ( 285000 2880000 ) ;
+    - p_ddr_dq_20_io ( PIN p_ddr_dq_20_io ) ( u_ddr_dq_20_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4930000 1070000 ) ( 5030000 1170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 1170000 ) ( 5645000 1170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 1140000 ) ( 5645000 1170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 1140000 ) ( 5825000 1140000 ) ;
+    - p_ddr_dq_21_io ( PIN p_ddr_dq_21_io ) ( u_ddr_dq_21_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 770000 ) ( 5825000 770000 ) ;
+    - p_ddr_dq_22_io ( PIN p_ddr_dq_22_io ) ( u_ddr_dq_22_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 650000 ) ( 5250000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 650000 ) ( 5645000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 650000 ) ( 5695000 700000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 700000 ) ( 5825000 700000 ) ;
+    - p_ddr_dq_23_io ( PIN p_ddr_dq_23_io ) ( u_ddr_dq_23_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 440000 ) ( 5825000 440000 ) ;
+    - p_ddr_dq_24_io ( PIN p_ddr_dq_24_io ) ( u_ddr_dq_24_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 2530000 ) ( 4610000 2670000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 2530000 ) ( 5685000 2530000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 2530000 ) ( 5715000 2560000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 2560000 ) ( 5825000 2560000 ) ;
+    - p_ddr_dq_25_io ( PIN p_ddr_dq_25_io ) ( u_ddr_dq_25_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 2350000 ) ( 4430000 2490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 2490000 ) ( 5685000 2490000 )
+      NEW metal10 0 + SHAPE STRIPE ( 5675000 2490000 ) ( 5695000 2490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 2490000 ) ( 5825000 2490000 ) ;
+    - p_ddr_dq_26_io ( PIN p_ddr_dq_26_io ) ( u_ddr_dq_26_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4930000 2350000 ) ( 5030000 2450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 2450000 ) ( 5645000 2450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 2420000 ) ( 5645000 2450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 2420000 ) ( 5825000 2420000 ) ;
+    - p_ddr_dq_27_io ( PIN p_ddr_dq_27_io ) ( u_ddr_dq_27_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 2210000 ) ( 4610000 2350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 2210000 ) ( 5685000 2210000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 2210000 ) ( 5715000 2240000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 2240000 ) ( 5825000 2240000 ) ;
+    - p_ddr_dq_28_io ( PIN p_ddr_dq_28_io ) ( u_ddr_dq_28_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5570000 2050000 ) ( 5825000 2050000 ) ;
+    - p_ddr_dq_29_io ( PIN p_ddr_dq_29_io ) ( u_ddr_dq_29_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 5350000 1930000 ) ( 5250000 2030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5350000 1930000 ) ( 5645000 1930000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5645000 1930000 ) ( 5705000 1990000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5705000 1990000 ) ( 5825000 1990000 ) ;
+    - p_ddr_dq_2_io ( PIN p_ddr_dq_2_io ) ( u_ddr_dq_2_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 750000 2990000 ) ( 650000 3090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3090000 ) ( 650000 3090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 3060000 ) ( 355000 3090000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3060000 ) ( 325000 3060000 ) ;
+    - p_ddr_dq_30_io ( PIN p_ddr_dq_30_io ) ( u_ddr_dq_30_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4750000 1890000 ) ( 4610000 2030000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4750000 1890000 ) ( 5685000 1890000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5685000 1890000 ) ( 5715000 1920000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5715000 1920000 ) ( 5825000 1920000 ) ;
+    - p_ddr_dq_31_io ( PIN p_ddr_dq_31_io ) ( u_ddr_dq_31_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 1710000 ) ( 4430000 1850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 1850000 ) ( 5685000 1850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 1840000 ) ( 5685000 1850000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 1840000 ) ( 5825000 1840000 ) ;
+    - p_ddr_dq_3_io ( PIN p_ddr_dq_3_io ) ( u_ddr_dq_3_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 2990000 ) ( 1250000 3130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3130000 ) ( 1250000 3130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 305000 3120000 ) ( 315000 3130000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3120000 ) ( 305000 3120000 ) ;
+    - p_ddr_dq_4_io ( PIN p_ddr_dq_4_io ) ( u_ddr_dq_4_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 3170000 ) ( 1710000 3310000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3170000 ) ( 1570000 3170000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3170000 ) ( 285000 3200000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3200000 ) ( 285000 3200000 ) ;
+    - p_ddr_dq_5_io ( PIN p_ddr_dq_5_io ) ( u_ddr_dq_5_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 970000 3210000 ) ( 1070000 3310000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3210000 ) ( 970000 3210000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 3210000 ) ( 305000 3260000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3260000 ) ( 305000 3260000 ) ;
+    - p_ddr_dq_6_io ( PIN p_ddr_dq_6_io ) ( u_ddr_dq_6_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1390000 3310000 ) ( 1250000 3450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3450000 ) ( 1250000 3450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 305000 3440000 ) ( 315000 3450000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3440000 ) ( 305000 3440000 ) ;
+    - p_ddr_dq_7_io ( PIN p_ddr_dq_7_io ) ( u_ddr_dq_7_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 3490000 ) ( 1710000 3630000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3490000 ) ( 1570000 3490000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 3490000 ) ( 285000 3520000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 3520000 ) ( 285000 3520000 ) ;
+    - p_ddr_dq_8_io ( PIN p_ddr_dq_8_io ) ( u_ddr_dq_8_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 175000 1720000 ) ( 430000 1720000 ) ;
+    - p_ddr_dq_9_io ( PIN p_ddr_dq_9_io ) ( u_ddr_dq_9_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 750000 1710000 ) ( 650000 1810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 355000 1810000 ) ( 650000 1810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 325000 1780000 ) ( 355000 1810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 1780000 ) ( 325000 1780000 ) ;
+    - p_ddr_dqs_n_0_io ( PIN p_ddr_dqs_n_0_io ) ( u_ddr_dqs_n_0_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1570000 2530000 ) ( 1710000 2670000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2530000 ) ( 1570000 2530000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 315000 2530000 ) ( 285000 2560000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 175000 2560000 ) ( 285000 2560000 ) ;
+    - p_ddr_dqs_n_1_io ( PIN p_ddr_dqs_n_1_io ) ( u_ddr_dqs_n_1_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 640000 650000 ) ( 740000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 640000 355000 ) ( 640000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 700000 295000 ) ( 640000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 700000 175000 ) ( 700000 295000 ) ;
+    - p_ddr_dqs_n_2_io ( PIN p_ddr_dqs_n_2_io ) ( u_ddr_dqs_n_2_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4600000 175000 ) ( 4600000 430000 ) ;
+    - p_ddr_dqs_n_3_io ( PIN p_ddr_dqs_n_3_io ) ( u_ddr_dqs_n_3_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4930000 2670000 ) ( 5030000 2770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5030000 2770000 ) ( 5645000 2770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 2740000 ) ( 5645000 2770000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5675000 2740000 ) ( 5825000 2740000 ) ;
+    - p_ddr_dqs_p_0_io ( PIN p_ddr_dqs_p_0_io ) ( u_ddr_dqs_p_0_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 175000 2370000 ) ( 430000 2370000 ) ;
+    - p_ddr_dqs_p_1_io ( PIN p_ddr_dqs_p_1_io ) ( u_ddr_dqs_p_1_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 1080000 175000 ) ( 1080000 430000 ) ;
+    - p_ddr_dqs_p_2_io ( PIN p_ddr_dqs_p_2_io ) ( u_ddr_dqs_p_2_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4680000 970000 ) ( 4580000 1070000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4680000 355000 ) ( 4680000 970000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4670000 345000 ) ( 4680000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4670000 175000 ) ( 4670000 345000 ) ;
+    - p_ddr_dqs_p_3_io ( PIN p_ddr_dqs_p_3_io ) ( u_ddr_dqs_p_3_io PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 4290000 2670000 ) ( 4430000 2810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 4430000 2810000 ) ( 5685000 2810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 2800000 ) ( 5685000 2810000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 5695000 2800000 ) ( 5825000 2800000 ) ;
+    - p_ddr_odt_o ( PIN p_ddr_odt_o ) ( u_ddr_odt_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3480000 1250000 ) ( 3620000 1390000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3480000 315000 ) ( 3480000 1250000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3520000 275000 ) ( 3480000 315000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3520000 175000 ) ( 3520000 275000 ) ;
+    - p_ddr_ras_n_o ( PIN p_ddr_ras_n_o ) ( u_ddr_ras_n_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3840000 650000 ) ( 3940000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3840000 355000 ) ( 3840000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3900000 295000 ) ( 3840000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3900000 175000 ) ( 3900000 295000 ) ;
+    - p_ddr_reset_n_o ( PIN p_ddr_reset_n_o ) ( u_ddr_reset_n_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3520000 650000 ) ( 3620000 750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3520000 355000 ) ( 3520000 650000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3580000 295000 ) ( 3520000 355000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3580000 175000 ) ( 3580000 295000 ) ;
+    - p_ddr_we_n_o ( PIN p_ddr_we_n_o ) ( u_ddr_we_n_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3650000 175000 ) ( 3650000 430000 ) ;
+    - p_misc_o ( PIN p_misc_o ) ( u_misc_o PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3300000 5250000 ) ( 3400000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3400000 5350000 ) ( 3400000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3400000 5645000 ) ( 3380000 5665000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3380000 5665000 ) ( 3380000 5825000 ) ;
+    - p_sel_0_i ( PIN p_sel_0_i ) ( u_sel_0_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3300000 4610000 ) ( 3440000 4750000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3440000 4750000 ) ( 3440000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3440000 5685000 ) ( 3450000 5695000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3450000 5695000 ) ( 3450000 5825000 ) ;
+    - p_sel_1_i ( PIN p_sel_1_i ) ( u_sel_1_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3620000 4290000 ) ( 3480000 4430000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3480000 4430000 ) ( 3480000 5685000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3480000 5685000 ) ( 3520000 5725000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3520000 5725000 ) ( 3520000 5825000 ) ;
+    - p_sel_2_i ( PIN p_sel_2_i ) ( u_sel_2_i PAD ) + USE SIGNAL
+      + ROUTED metal10 20000 + SHAPE STRIPE ( 3620000 5250000 ) ( 3720000 5350000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3720000 5350000 ) ( 3720000 5645000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3720000 5645000 ) ( 3710000 5655000 )
+      NEW metal10 20000 + SHAPE STRIPE ( 3710000 5655000 ) ( 3710000 5825000 ) ;
 END SPECIALNETS
 NETS 219 ;
     - UNASSIGNED_0 ( u_UNASSIGNED_0 PAD ) + USE SIGNAL ;

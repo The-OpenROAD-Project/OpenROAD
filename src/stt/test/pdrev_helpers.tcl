@@ -109,6 +109,26 @@ proc report_pdrev_nets { nets alpha use_pd } {
   }
 }
 
+proc report_flute_net { net } {
+  set pins [lassign $net net_name drvr_index]
+  puts "Net $net_name"
+  set xs {}
+  set ys {}
+  foreach pin $pins {
+    lassign $pin pin_name x y
+    lappend xs $x
+    lappend ys $y
+  }
+  
+  stt::report_flute_tree $xs $ys
+}
+
+proc report_flute_nets { nets } {
+  foreach net $nets {
+    report_flute_net $net
+  }
+}
+
 proc find_pdrev_net { nets net_name } {
   foreach net $nets {
   set pins [lassign $net name drvr_index]

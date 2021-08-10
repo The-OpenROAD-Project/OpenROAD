@@ -859,13 +859,13 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   for (int i = 0; i < num_col_idx; i++)
     colIdx[i] = col_idx[i];
 
+#ifdef PARTITIONERS
   // MLPart only support 2-way partition
   const int npart = 2;
   double balanceArray[2] = {0.5, 0.5};
   double tolerance = 0.05;
   unsigned int seed = 0;
 
-#ifdef PARTITIONERS
   UMpack_mlpart(num_vertice,
                 num_edge,
                 vertexWeight,
@@ -1574,7 +1574,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   map_iter = cluster_map_.begin();
   float dbu = db_->getTech()->getDbUnitsPerMicron();
   while (map_iter != cluster_map_.end()) {
-    int id = map_iter->first;
     float area = map_iter->second->calculateArea(network_);
     if (area != 0.0) {
       output_file << "cluster: " << map_iter->second->getName() << endl;

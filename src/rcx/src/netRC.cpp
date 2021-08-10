@@ -220,11 +220,6 @@ double extMain::getViaResistance_b(dbVia* tvia, dbNet* net) {
 void extMain::getViaCapacitance(dbShape svia, dbNet* net) {
   bool USE_DB_UNITS = false;
 
-  uint cnt = 0;
-
-  const char* tcut = "tcut";
-  const char* bcut = "bcut";
-
   std::vector<dbShape> shapes;
   dbShape::getViaBoxes(svia, shapes);
 
@@ -236,14 +231,6 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net) {
     Width[jj] = 0;
     Len[jj] = 0;
   }
-
-  int maxLenBot = 0;
-  int maxWidthBot = 0;
-  int maxLenTop = 0;
-  int maxWidthTop = 0;
-
-  int bot = 0;
-  int top = 1000;
 
   std::vector<dbShape>::iterator shape_itr;
   for (shape_itr = shapes.begin(); shape_itr != shapes.end(); ++shape_itr) {
@@ -319,7 +306,6 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
     uint width = 0;
     dbTechVia* tvia = s.getTechVia();
     if (tvia != NULL) {
-      int i = 0;
       level = tvia->getBottomLayer()->getRoutingLevel();
       width = tvia->getBottomLayer()->getWidth();
       res = tvia->getResistance();
@@ -372,7 +358,6 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
       double res = getResistance(level, width, len, 0);
       ;
       double unitCap = getFringe(level, width, 0, areaCap);
-      double tot = len * width * unitCap;
       double frTot = len * 2 * unitCap;
 
       _tmpCapTable[0] = frTot;
@@ -1634,29 +1619,27 @@ int extMain::setMinTypMax(bool min, bool typ, bool max, const char* cmp_file,
     _extDbCnt = extDbCnt;
     //		uint cnt= 0;
 
-    int dbIndex = -1;
-    dbIndex = _modelMap.add(_minModelIndex);
+    _modelMap.add(_minModelIndex);
     //_block->setExtMinCorner(dbIndex);
 
-    dbIndex = _modelMap.add(_typModelIndex);
+    _modelMap.add(_typModelIndex);
     //_block->setExtTypCorner(dbIndex);
 
     if (extDbCnt > 2) {
-      dbIndex = _modelMap.add(_maxModelIndex);
+      _modelMap.add(_maxModelIndex);
       //_block->setExtMaxCorner(dbIndex);
     }
   } else if (min || max || typ) {
-    int dbIndex = -1;
     if (min) {
-      dbIndex = _modelMap.add(_minModelIndex);
+      _modelMap.add(_minModelIndex);
       //_block->setExtMinCorner(dbIndex);
     }
     if (typ) {
-      dbIndex = _modelMap.add(_typModelIndex);
+      _modelMap.add(_typModelIndex);
       //_block->setExtTypCorner(dbIndex);
     }
     if (max) {
-      dbIndex = _modelMap.add(_maxModelIndex);
+      _modelMap.add(_maxModelIndex);
       //_block->setExtMaxCorner(dbIndex);
     }
     _extDbCnt = _modelMap.getCnt();
@@ -1664,17 +1647,16 @@ int extMain::setMinTypMax(bool min, bool typ, bool max, const char* cmp_file,
     if (!_eco)
       _block->setCornerCount(_extDbCnt);
   } else if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
-    int dbIndex = -1;
     if (setMin >= 0) {
-      dbIndex = _modelMap.add(setMin);
+      _modelMap.add(setMin);
       //_block->setExtMinCorner(dbIndex);
     }
     if (setTyp >= 0) {
-      dbIndex = _modelMap.add(setTyp);
+      _modelMap.add(setTyp);
       //_block->setExtMinCorner(dbIndex);
     }
     if (setMax >= 0) {
-      dbIndex = _modelMap.add(setMax);
+      _modelMap.add(setMax);
       //_block->setExtMinCorner(dbIndex);
     }
     _extDbCnt = _modelMap.getCnt();
@@ -2063,14 +2045,11 @@ void extMain::makeCornerNameMap() {
   strcpy(cornerList, "");
 
   if (_scaledCornerTable != NULL) {
-    char extList[128];
-    char resList[128];
-    char ccList[128];
-    char gndcList[128];
-    strcpy(extList, "");
-    strcpy(ccList, "");
-    strcpy(resList, "");
-    strcpy(gndcList, "");
+    char buf[128];
+    std::string extList;
+    std::string resList;
+    std::string ccList;
+    std::string gndcList;
     for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
@@ -2085,10 +2064,14 @@ void extMain::makeCornerNameMap() {
       map[s->_dbIndex] = s;
       A[s->_dbIndex] = -(ii + 1);
 
-      sprintf(extList, "%s %d", extList, s->_model);
-      sprintf(resList, "%s %g", resList, s->_resFactor);
-      sprintf(ccList, "%s %g", ccList, s->_ccFactor);
-      sprintf(gndcList, "%s %g", gndcList, s->_gndFactor);
+      sprintf(buf, " %d", s->_model);
+      extList += buf;
+      sprintf(buf, " %g", s->_resFactor);
+      resList += buf;
+      sprintf(buf, " %g", s->_ccFactor);
+      ccList += buf;
+      sprintf(buf, " %g", s->_gndFactor);
+      gndcList += buf;
     }
     _prevControl->_derivedCornerList = extList;
     _prevControl->_resFactorList = resList;
@@ -2096,8 +2079,8 @@ void extMain::makeCornerNameMap() {
     _prevControl->_gndcFactorList = gndcList;
   }
   if (_processCornerTable != NULL) {
-    char extList[128];
-    strcpy(extList, "");
+    std::string extList;
+    char buf[128];
 
     for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
@@ -2113,7 +2096,8 @@ void extMain::makeCornerNameMap() {
       A[s->_dbIndex] = ii + 1;
       map[s->_dbIndex] = s;
 
-      sprintf(extList, "%s %d", extList, s->_model);
+      sprintf(buf, " %d", s->_model);
+      extList += buf;
     }
     _prevControl->_extractedCornerList = extList;
   }
@@ -2121,30 +2105,29 @@ void extMain::makeCornerNameMap() {
   // 	delete [] map;
   // 	return;
   // }
-  char aList[128];
-  strcpy(aList, "");
+  std::string aList;
 
   for (uint k = 0; k < _cornerCnt; k++) {
-    sprintf(aList, "%s %d", aList, A[k]);
+    aList += " " + std::to_string(A[k]);
   }
   _prevControl->_cornerIndexList = aList;
 
-  char buff[1024];
+  std::string buff;
   if (map[0] == NULL)
-    sprintf(buff, "%s %d", buff, 0);
+    buff += " 0";
   else
-    sprintf(buff, "%s", map[0]->_name);
+    buff += map[0]->_name;
 
   for (uint ii = 1; ii < _cornerCnt; ii++) {
     extCorner* s = map[ii];
     if (s == NULL)
-      sprintf(buff, "%s %d", buff, ii);
+      buff += " " + std::to_string(ii);
     else
-      sprintf(buff, "%s %s", buff, s->_name);
+      buff += std::string(" ") + s->_name;
   }
   if (!_remote) {
     _block->setCornerCount(_cornerCnt);
-    _block->setCornerNameList(buff);
+    _block->setCornerNameList(buff.c_str());
   }
 
   delete[] map;
@@ -2241,11 +2224,12 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file) {
   }
   _extDbCnt = _processCornerTable->getCnt();
 
+#ifndef NDEBUG
   uint scaleCornerCnt = 0;
   if (_scaledCornerTable != NULL)
     scaleCornerCnt = _scaledCornerTable->getCnt();
-
   assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
+#endif
 
   // char cornerNameList[1024];
   // makeCornerNameMap(cornerNameList, _cornerCnt, false);
@@ -2681,18 +2665,15 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     _totSegCnt = 0;
     _totSignalSegCnt = 0;
 
-    uint intersectCnt;
     if (_usingMetalPlanes && (_geoThickTable == NULL)) {
-      intersectCnt = makeIntersectPlanes(0);
+      makeIntersectPlanes(0);
       if (rlog)
         AthResourceLog("after makeIntersectPlanes", detailRlog);
     }
 
-    uint ccCnt;
     if (_debug) {
       if (_debug != 102)
-        ccCnt =
-            _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
+        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
     } else {
       logger_->info(RCX, 440,
                     "Coupling threshhold is {:.4f} fF, coupling capacitance "
@@ -2766,8 +2747,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
 
         //#ifndef NEW_GS_FLOW
         if (_cc_band_tracks == 0) {
-          ccCnt = _extNetSDB->couplingCaps(ccCapSdb, _couplingFlag, Interface,
-                                           extCompute1, &m);
+          _extNetSDB->couplingCaps(ccCapSdb, _couplingFlag, Interface,
+                                   extCompute1, &m);
         } else {
           //#else
           Rect maxRect;
@@ -2793,8 +2774,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
         }
         //#endif
       } else {
-        ccCnt = _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface,
-                                         extCompute, this);
+        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface,
+                                 extCompute, this);
       }
       if (m._dgContextFile) {
         fclose(m._dgContextFile);

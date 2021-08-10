@@ -1277,6 +1277,9 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   new_inst_hdr->_inst_cnt++;
   inst->_inst_hdr = new_inst_hdr->getOID();
 
+  // set new bbox based on new master
+  _dbInst::setInstBBox(inst);
+
   // The next two steps invalidates any dbSet<dbITerm> iterators.
 
   // 1) update the iterm-mterm-idx

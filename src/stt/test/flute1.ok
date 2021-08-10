@@ -1,0 +1,34 @@
+Net dup1
+WL = 30
+0 (0 0) neighbor 4 length 20
+1 (10 10) neighbor 4 length 0
+2 (10 10) neighbor 5 length 0
+3 (10 20) neighbor 5 length 10
+4 (10 10) neighbor 5 length 0
+5 (10 10) neighbor 5 length 0
+Net dup1
+WL = 30
+0 (0 0) neighbor 4 length 20
+1 (10 10) neighbor 4 length 0
+2 (10 10) neighbor 5 length 0
+3 (10 20) neighbor 5 length 10
+4 (10 10) neighbor 5 length 0
+5 (10 10) neighbor 5 length 0
+Net dup2
+WL = 3
+0 (29 43) neighbor 3 length 2
+1 (28 44) neighbor 3 length 0
+2 (28 45) neighbor 3 length 1
+3 (28 44) neighbor 3 length 0
+Net dup3
+WL = 54
+0 (65 37) neighbor 3 length 1
+1 (65 38) neighbor 3 length 0
+2 (100 56) neighbor 3 length 53
+3 (65 38) neighbor 3 length 0
+Net dup4
+WL = 0
+0 (10 10) neighbor 1 length 0
+1 (10 10) neighbor 1 length 0
+Net one
+WL = 0

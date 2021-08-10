@@ -32,7 +32,7 @@ BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
   auto i2 = odb::dbInst::create(block, lib->findMaster("and2"), "i2");
   auto n1 = odb::dbNet::create(block, "n1");
   auto n2 = odb::dbNet::create(block, "n2");
-  auto b1 = odb::dbBTerm::create(n1, "b1");
+  odb::dbBTerm::create(n1, "b1");
   auto b2 = odb::dbBTerm::create(n1, "b2");
   auto b3 = odb::dbBTerm::create(n1, "b3");
   odb::dbITerm::connect(i1->findITerm("a"), n1);

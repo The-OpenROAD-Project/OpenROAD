@@ -34,6 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stt/SteinerTreeBuilder.h"
+#include "stt/flute.h"
+#include "stt/pdrev.h"
 
 #include <map>
 #include <vector>
@@ -45,8 +47,8 @@ namespace stt{
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
-  min_fanout_alpha_({std::numeric_limits<int>::max(), -1}),
-  min_hpwl_alpha_({std::numeric_limits<int>::max(), -1}),
+  min_fanout_alpha_({0, -1}),
+  min_hpwl_alpha_({0, -1}),
   logger_(nullptr),
   db_(nullptr)
 {
@@ -73,31 +75,38 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
                                          int drvr_index)
 {
   float net_alpha = alpha_;
+  int min_fanout = min_fanout_alpha_.first;
+  int min_hpwl = min_hpwl_alpha_.first;
 
-  if (net->getTermCount() >= min_fanout_alpha_.first) {
-    net_alpha = min_fanout_alpha_.second;
+  if (net_alpha_map_.find(net) != net_alpha_map_.end()) {
+    net_alpha = net_alpha_map_[net];
+  } else if (min_hpwl > 0) {
+    if (computeHPWL(net) >= min_hpwl) {
+      net_alpha = min_hpwl_alpha_.second;
+    }
+  } else if (min_fanout > 0) {
+    if (net->getTermCount()-1 >= min_fanout) {
+      net_alpha = min_fanout_alpha_.second;
+    }
   }
-
-  if (computeHPWL(net) >= min_hpwl_alpha_.first) {
-    net_alpha = min_hpwl_alpha_.second;
-  }
-
-  net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
-              net_alpha_map_[net] : net_alpha;
 
   Tree tree = makeTree(x, y, drvr_index, net_alpha);
 
   return tree;
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(int num_pins,
-                                         int x[],
-                                         int y[],
-                                         int s[],
+Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
+                                         const std::vector<int>& y,
+                                         const std::vector<int>& s,
                                          int accuracy)
 {
-  Tree tree = flt::flutes(num_pins, x, y, s, accuracy);
+  Tree tree = flt::flutes(x, y, s, accuracy);
   return tree;
+}
+
+void SteinerTreeBuilder::setAlpha(float alpha)
+{
+  alpha_ = alpha;
 }
 
 float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
@@ -105,6 +114,19 @@ float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_.at(net) : alpha_;
   return net_alpha;
+}
+
+void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
+{
+  net_alpha_map_[net] = alpha;
+}
+void SteinerTreeBuilder::setMinFanoutAlpha(int min_fanout, float alpha)
+{
+  min_fanout_alpha_ = {min_fanout, alpha};
+}
+void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
+{
+  min_hpwl_alpha_ = {min_hpwl, alpha};
 }
 
 Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
@@ -117,14 +139,7 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
   if (alpha > 0.0) {
     tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
   } else {
-    int pin_count = x.size();
-    int x_arr[pin_count];
-    int y_arr[pin_count];
-
-    std::copy(x.begin(), x.end(), x_arr);
-    std::copy(y.begin(), y.end(), y_arr);
-
-    tree = flt::flute(pin_count, x_arr, y_arr, flute_accuracy);
+    tree = flt::flute(x, y, flute_accuracy);
   }
 
   return tree;
@@ -138,8 +153,9 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
   int max_y = std::numeric_limits<int>::min();
 
   for (odb::dbITerm* iterm : net->getITerms()) {
-    if (iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::NONE ||
-        iterm->getInst()->getPlacementStatus() != odb::dbPlacementStatus::UNPLACED) {
+    odb::dbPlacementStatus status = iterm->getInst()->getPlacementStatus();
+    if (status != odb::dbPlacementStatus::NONE &&
+        status != odb::dbPlacementStatus::UNPLACED) {
       int x, y;
       iterm->getAvgXY(&x, &y);
       min_x = std::min(min_x, x);
@@ -172,6 +188,19 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
   int hpwl = (max_x - min_x) + (max_y - min_y);
 
   return hpwl;
+}
+
+void Tree::printTree(utl::Logger* logger)
+{
+  if (deg > 1) {
+    for (int i = 0; i < deg; i++)
+      logger->report(" {:2d}:  x={:4g}  y={:4g}  e={}",
+                     i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+    for (int i = deg; i < 2 * deg - 2; i++)
+      logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
+                     i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+    logger->report("");
+  }
 }
 
 }

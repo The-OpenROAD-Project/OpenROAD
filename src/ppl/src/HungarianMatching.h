@@ -60,18 +60,23 @@ using utl::Logger;
 class HungarianMatching
 {
  public:
-  HungarianMatching(Section&, std::vector<Slot>&, Logger* logger);
+  HungarianMatching(Section& section,
+                    Netlist& netlist,
+                    std::vector<Slot>& slots,
+                    Logger* logger);
   virtual ~HungarianMatching() = default;
   void findAssignment();
   void findAssignmentForGroups();
-  void getFinalAssignment(std::vector<IOPin>&) const;
-  void getAssignmentForGroups(std::vector<IOPin>&);
+  void getFinalAssignment(std::vector<IOPin>& assigment) const;
+  void getAssignmentForGroups(std::vector<IOPin>& assigment);
 
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
   std::vector<int> assignment_;
   HungarianAlgorithm hungarian_solver_;
   Netlist& netlist_;
+  const std::vector<int>& pin_indices_;
+  const std::vector<std::vector<int>>& pin_groups_;
   std::vector<Slot>& slots_;
   int begin_slot_;
   int end_slot_;

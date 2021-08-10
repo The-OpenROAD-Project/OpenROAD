@@ -821,8 +821,6 @@ void extMasterConductor::writeRaphaelConformalGround(FILE* fp, double X,
                                                      extProcess* p) {
   double height[3];
   double thickness[3];
-  double bottom_ext[3];
-  double slope[3];
   double e[3];
   bool trench = false;
   uint cnt = 0;
@@ -840,8 +838,6 @@ void extMasterConductor::writeRaphaelConformalGround(FILE* fp, double X,
     trench = d->_trench;
     height[i] = d->_height;
     thickness[i] = d->_thickness;
-    bottom_ext[i] = d->_bottom_ext;
-    slope[i] = d->_slope;
     e[i] = d->_epsilon;
     h += d->_thickness;
     cnt++;

@@ -7610,1016 +7610,990 @@ SPECIALNETS 258 ;
       NEW metal10 15000 + SHAPE STRIPE ( 2157500 1210000 ) ( 2157500 1357500 )
       NEW metal10 15000 + SHAPE STRIPE ( 1812500 1210000 ) ( 1812500 1357500 )
       NEW metal10 15000 + SHAPE STRIPE ( 1537500 1210000 ) ( 1537500 1357500 ) ;
-    - sig1 ( PIN sig1 ) ( u_sig1 PAD ) + USE SIGNAL ;
-    - sig10 ( PIN sig10 ) ( u_sig10 PAD ) + USE SIGNAL ;
-    - sig100 ( PIN sig100 ) ( u_sig100 PAD ) + USE SIGNAL ;
-    - sig101 ( PIN sig101 ) ( u_sig101 PAD ) + USE SIGNAL ;
-    - sig102 ( PIN sig102 ) ( u_sig102 PAD ) + USE SIGNAL ;
-    - sig103 ( PIN sig103 ) ( u_sig103 PAD ) + USE SIGNAL ;
-    - sig104 ( PIN sig104 ) ( u_sig104 PAD ) + USE SIGNAL ;
-    - sig105 ( PIN sig105 ) ( u_sig105 PAD ) + USE SIGNAL ;
-    - sig106 ( PIN sig106 ) ( u_sig106 PAD ) + USE SIGNAL ;
-    - sig107 ( PIN sig107 ) ( u_sig107 PAD ) + USE SIGNAL ;
-    - sig108 ( PIN sig108 ) ( u_sig108 PAD ) + USE SIGNAL ;
-    - sig109 ( PIN sig109 ) ( u_sig109 PAD ) + USE SIGNAL ;
-    - sig11 ( PIN sig11 ) ( u_sig11 PAD ) + USE SIGNAL ;
-    - sig110 ( PIN sig110 ) ( u_sig110 PAD ) + USE SIGNAL ;
-    - sig111 ( PIN sig111 ) ( u_sig111 PAD ) + USE SIGNAL ;
-    - sig112 ( PIN sig112 ) ( u_sig112 PAD ) + USE SIGNAL ;
-    - sig113 ( PIN sig113 ) ( u_sig113 PAD ) + USE SIGNAL ;
-    - sig114 ( PIN sig114 ) ( u_sig114 PAD ) + USE SIGNAL ;
-    - sig115 ( PIN sig115 ) ( u_sig115 PAD ) + USE SIGNAL ;
-    - sig116 ( PIN sig116 ) ( u_sig116 PAD ) + USE SIGNAL ;
-    - sig117 ( PIN sig117 ) ( u_sig117 PAD ) + USE SIGNAL ;
-    - sig118 ( PIN sig118 ) ( u_sig118 PAD ) + USE SIGNAL ;
-    - sig119 ( PIN sig119 ) ( u_sig119 PAD ) + USE SIGNAL ;
-    - sig12 ( PIN sig12 ) ( u_sig12 PAD ) + USE SIGNAL ;
-    - sig120 ( PIN sig120 ) ( u_sig120 PAD ) + USE SIGNAL ;
-    - sig121 ( PIN sig121 ) ( u_sig121 PAD ) + USE SIGNAL ;
-    - sig122 ( PIN sig122 ) ( u_sig122 PAD ) + USE SIGNAL ;
-    - sig123 ( PIN sig123 ) ( u_sig123 PAD ) + USE SIGNAL ;
-    - sig124 ( PIN sig124 ) ( u_sig124 PAD ) + USE SIGNAL ;
-    - sig125 ( PIN sig125 ) ( u_sig125 PAD ) + USE SIGNAL ;
-    - sig126 ( PIN sig126 ) ( u_sig126 PAD ) + USE SIGNAL ;
-    - sig127 ( PIN sig127 ) ( u_sig127 PAD ) + USE SIGNAL ;
-    - sig128 ( PIN sig128 ) ( u_sig128 PAD ) + USE SIGNAL ;
-    - sig129 ( PIN sig129 ) ( u_sig129 PAD ) + USE SIGNAL ;
-    - sig13 ( PIN sig13 ) ( u_sig13 PAD ) + USE SIGNAL ;
-    - sig130 ( PIN sig130 ) ( u_sig130 PAD ) + USE SIGNAL ;
-    - sig131 ( PIN sig131 ) ( u_sig131 PAD ) + USE SIGNAL ;
-    - sig132 ( PIN sig132 ) ( u_sig132 PAD ) + USE SIGNAL ;
-    - sig133 ( PIN sig133 ) ( u_sig133 PAD ) + USE SIGNAL ;
-    - sig134 ( PIN sig134 ) ( u_sig134 PAD ) + USE SIGNAL ;
-    - sig135 ( PIN sig135 ) ( u_sig135 PAD ) + USE SIGNAL ;
-    - sig136 ( PIN sig136 ) ( u_sig136 PAD ) + USE SIGNAL ;
-    - sig137 ( PIN sig137 ) ( u_sig137 PAD ) + USE SIGNAL ;
-    - sig138 ( PIN sig138 ) ( u_sig138 PAD ) + USE SIGNAL ;
-    - sig139 ( PIN sig139 ) ( u_sig139 PAD ) + USE SIGNAL ;
-    - sig14 ( PIN sig14 ) ( u_sig14 PAD ) + USE SIGNAL ;
-    - sig140 ( PIN sig140 ) ( u_sig140 PAD ) + USE SIGNAL ;
-    - sig141 ( PIN sig141 ) ( u_sig141 PAD ) + USE SIGNAL ;
-    - sig142 ( PIN sig142 ) ( u_sig142 PAD ) + USE SIGNAL ;
-    - sig143 ( PIN sig143 ) ( u_sig143 PAD ) + USE SIGNAL ;
-    - sig144 ( PIN sig144 ) ( u_sig144 PAD ) + USE SIGNAL ;
-    - sig145 ( PIN sig145 ) ( u_sig145 PAD ) + USE SIGNAL ;
-    - sig146 ( PIN sig146 ) ( u_sig146 PAD ) + USE SIGNAL ;
-    - sig147 ( PIN sig147 ) ( u_sig147 PAD ) + USE SIGNAL ;
-    - sig148 ( PIN sig148 ) ( u_sig148 PAD ) + USE SIGNAL ;
-    - sig149 ( PIN sig149 ) ( u_sig149 PAD ) + USE SIGNAL ;
-    - sig15 ( PIN sig15 ) ( u_sig15 PAD ) + USE SIGNAL ;
-    - sig150 ( PIN sig150 ) ( u_sig150 PAD ) + USE SIGNAL ;
-    - sig151 ( PIN sig151 ) ( u_sig151 PAD ) + USE SIGNAL ;
-    - sig152 ( PIN sig152 ) ( u_sig152 PAD ) + USE SIGNAL ;
-    - sig153 ( PIN sig153 ) ( u_sig153 PAD ) + USE SIGNAL ;
-    - sig154 ( PIN sig154 ) ( u_sig154 PAD ) + USE SIGNAL ;
-    - sig155 ( PIN sig155 ) ( u_sig155 PAD ) + USE SIGNAL ;
-    - sig156 ( PIN sig156 ) ( u_sig156 PAD ) + USE SIGNAL ;
-    - sig157 ( PIN sig157 ) ( u_sig157 PAD ) + USE SIGNAL ;
-    - sig158 ( PIN sig158 ) ( u_sig158 PAD ) + USE SIGNAL ;
-    - sig159 ( PIN sig159 ) ( u_sig159 PAD ) + USE SIGNAL ;
-    - sig16 ( PIN sig16 ) ( u_sig16 PAD ) + USE SIGNAL ;
-    - sig160 ( PIN sig160 ) ( u_sig160 PAD ) + USE SIGNAL ;
-    - sig161 ( PIN sig161 ) ( u_sig161 PAD ) + USE SIGNAL ;
-    - sig162 ( PIN sig162 ) ( u_sig162 PAD ) + USE SIGNAL ;
-    - sig163 ( PIN sig163 ) ( u_sig163 PAD ) + USE SIGNAL ;
-    - sig164 ( PIN sig164 ) ( u_sig164 PAD ) + USE SIGNAL ;
-    - sig165 ( PIN sig165 ) ( u_sig165 PAD ) + USE SIGNAL ;
-    - sig166 ( PIN sig166 ) ( u_sig166 PAD ) + USE SIGNAL ;
-    - sig167 ( PIN sig167 ) ( u_sig167 PAD ) + USE SIGNAL ;
-    - sig168 ( PIN sig168 ) ( u_sig168 PAD ) + USE SIGNAL ;
-    - sig169 ( PIN sig169 ) ( u_sig169 PAD ) + USE SIGNAL ;
-    - sig17 ( PIN sig17 ) ( u_sig17 PAD ) + USE SIGNAL ;
-    - sig170 ( PIN sig170 ) ( u_sig170 PAD ) + USE SIGNAL ;
-    - sig171 ( PIN sig171 ) ( u_sig171 PAD ) + USE SIGNAL ;
-    - sig172 ( PIN sig172 ) ( u_sig172 PAD ) + USE SIGNAL ;
-    - sig173 ( PIN sig173 ) ( u_sig173 PAD ) + USE SIGNAL ;
-    - sig174 ( PIN sig174 ) ( u_sig174 PAD ) + USE SIGNAL ;
-    - sig175 ( PIN sig175 ) ( u_sig175 PAD ) + USE SIGNAL ;
-    - sig176 ( PIN sig176 ) ( u_sig176 PAD ) + USE SIGNAL ;
-    - sig177 ( PIN sig177 ) ( u_sig177 PAD ) + USE SIGNAL ;
-    - sig178 ( PIN sig178 ) ( u_sig178 PAD ) + USE SIGNAL ;
-    - sig179 ( PIN sig179 ) ( u_sig179 PAD ) + USE SIGNAL ;
-    - sig18 ( PIN sig18 ) ( u_sig18 PAD ) + USE SIGNAL ;
-    - sig180 ( PIN sig180 ) ( u_sig180 PAD ) + USE SIGNAL ;
-    - sig181 ( PIN sig181 ) ( u_sig181 PAD ) + USE SIGNAL ;
-    - sig182 ( PIN sig182 ) ( u_sig182 PAD ) + USE SIGNAL ;
-    - sig183 ( PIN sig183 ) ( u_sig183 PAD ) + USE SIGNAL ;
-    - sig184 ( PIN sig184 ) ( u_sig184 PAD ) + USE SIGNAL ;
-    - sig185 ( PIN sig185 ) ( u_sig185 PAD ) + USE SIGNAL ;
-    - sig186 ( PIN sig186 ) ( u_sig186 PAD ) + USE SIGNAL ;
-    - sig187 ( PIN sig187 ) ( u_sig187 PAD ) + USE SIGNAL ;
-    - sig188 ( PIN sig188 ) ( u_sig188 PAD ) + USE SIGNAL ;
-    - sig189 ( PIN sig189 ) ( u_sig189 PAD ) + USE SIGNAL ;
-    - sig19 ( PIN sig19 ) ( u_sig19 PAD ) + USE SIGNAL ;
-    - sig190 ( PIN sig190 ) ( u_sig190 PAD ) + USE SIGNAL ;
-    - sig191 ( PIN sig191 ) ( u_sig191 PAD ) + USE SIGNAL ;
-    - sig192 ( PIN sig192 ) ( u_sig192 PAD ) + USE SIGNAL ;
-    - sig193 ( PIN sig193 ) ( u_sig193 PAD ) + USE SIGNAL ;
-    - sig194 ( PIN sig194 ) ( u_sig194 PAD ) + USE SIGNAL ;
-    - sig195 ( PIN sig195 ) ( u_sig195 PAD ) + USE SIGNAL ;
-    - sig196 ( PIN sig196 ) ( u_sig196 PAD ) + USE SIGNAL ;
-    - sig197 ( PIN sig197 ) ( u_sig197 PAD ) + USE SIGNAL ;
-    - sig198 ( PIN sig198 ) ( u_sig198 PAD ) + USE SIGNAL ;
-    - sig199 ( PIN sig199 ) ( u_sig199 PAD ) + USE SIGNAL ;
-    - sig2 ( PIN sig2 ) ( u_sig2 PAD ) + USE SIGNAL ;
-    - sig20 ( PIN sig20 ) ( u_sig20 PAD ) + USE SIGNAL ;
-    - sig200 ( PIN sig200 ) ( u_sig200 PAD ) + USE SIGNAL ;
-    - sig201 ( PIN sig201 ) ( u_sig201 PAD ) + USE SIGNAL ;
-    - sig202 ( PIN sig202 ) ( u_sig202 PAD ) + USE SIGNAL ;
-    - sig203 ( PIN sig203 ) ( u_sig203 PAD ) + USE SIGNAL ;
-    - sig204 ( PIN sig204 ) ( u_sig204 PAD ) + USE SIGNAL ;
-    - sig205 ( PIN sig205 ) ( u_sig205 PAD ) + USE SIGNAL ;
-    - sig206 ( PIN sig206 ) ( u_sig206 PAD ) + USE SIGNAL ;
-    - sig207 ( PIN sig207 ) ( u_sig207 PAD ) + USE SIGNAL ;
-    - sig208 ( PIN sig208 ) ( u_sig208 PAD ) + USE SIGNAL ;
-    - sig209 ( PIN sig209 ) ( u_sig209 PAD ) + USE SIGNAL ;
-    - sig21 ( PIN sig21 ) ( u_sig21 PAD ) + USE SIGNAL ;
-    - sig210 ( PIN sig210 ) ( u_sig210 PAD ) + USE SIGNAL ;
-    - sig211 ( PIN sig211 ) ( u_sig211 PAD ) + USE SIGNAL ;
-    - sig212 ( PIN sig212 ) ( u_sig212 PAD ) + USE SIGNAL ;
-    - sig213 ( PIN sig213 ) ( u_sig213 PAD ) + USE SIGNAL ;
-    - sig214 ( PIN sig214 ) ( u_sig214 PAD ) + USE SIGNAL ;
-    - sig215 ( PIN sig215 ) ( u_sig215 PAD ) + USE SIGNAL ;
-    - sig216 ( PIN sig216 ) ( u_sig216 PAD ) + USE SIGNAL ;
-    - sig217 ( PIN sig217 ) ( u_sig217 PAD ) + USE SIGNAL ;
-    - sig218 ( PIN sig218 ) ( u_sig218 PAD ) + USE SIGNAL ;
-    - sig219 ( PIN sig219 ) ( u_sig219 PAD ) + USE SIGNAL ;
-    - sig22 ( PIN sig22 ) ( u_sig22 PAD ) + USE SIGNAL ;
-    - sig220 ( PIN sig220 ) ( u_sig220 PAD ) + USE SIGNAL ;
-    - sig221 ( PIN sig221 ) ( u_sig221 PAD ) + USE SIGNAL ;
-    - sig222 ( PIN sig222 ) ( u_sig222 PAD ) + USE SIGNAL ;
-    - sig223 ( PIN sig223 ) ( u_sig223 PAD ) + USE SIGNAL ;
-    - sig224 ( PIN sig224 ) ( u_sig224 PAD ) + USE SIGNAL ;
-    - sig225 ( PIN sig225 ) ( u_sig225 PAD ) + USE SIGNAL ;
-    - sig226 ( PIN sig226 ) ( u_sig226 PAD ) + USE SIGNAL ;
-    - sig227 ( PIN sig227 ) ( u_sig227 PAD ) + USE SIGNAL ;
-    - sig228 ( PIN sig228 ) ( u_sig228 PAD ) + USE SIGNAL ;
-    - sig229 ( PIN sig229 ) ( u_sig229 PAD ) + USE SIGNAL ;
-    - sig23 ( PIN sig23 ) ( u_sig23 PAD ) + USE SIGNAL ;
-    - sig230 ( PIN sig230 ) ( u_sig230 PAD ) + USE SIGNAL ;
-    - sig231 ( PIN sig231 ) ( u_sig231 PAD ) + USE SIGNAL ;
-    - sig232 ( PIN sig232 ) ( u_sig232 PAD ) + USE SIGNAL ;
-    - sig233 ( PIN sig233 ) ( u_sig233 PAD ) + USE SIGNAL ;
-    - sig234 ( PIN sig234 ) ( u_sig234 PAD ) + USE SIGNAL ;
-    - sig235 ( PIN sig235 ) ( u_sig235 PAD ) + USE SIGNAL ;
-    - sig236 ( PIN sig236 ) ( u_sig236 PAD ) + USE SIGNAL ;
-    - sig237 ( PIN sig237 ) ( u_sig237 PAD ) + USE SIGNAL ;
-    - sig238 ( PIN sig238 ) ( u_sig238 PAD ) + USE SIGNAL ;
-    - sig239 ( PIN sig239 ) ( u_sig239 PAD ) + USE SIGNAL ;
-    - sig24 ( PIN sig24 ) ( u_sig24 PAD ) + USE SIGNAL ;
-    - sig240 ( PIN sig240 ) ( u_sig240 PAD ) + USE SIGNAL ;
-    - sig241 ( PIN sig241 ) ( u_sig241 PAD ) + USE SIGNAL ;
-    - sig242 ( PIN sig242 ) ( u_sig242 PAD ) + USE SIGNAL ;
-    - sig243 ( PIN sig243 ) ( u_sig243 PAD ) + USE SIGNAL ;
-    - sig244 ( PIN sig244 ) ( u_sig244 PAD ) + USE SIGNAL ;
-    - sig245 ( PIN sig245 ) ( u_sig245 PAD ) + USE SIGNAL ;
-    - sig246 ( PIN sig246 ) ( u_sig246 PAD ) + USE SIGNAL ;
-    - sig247 ( PIN sig247 ) ( u_sig247 PAD ) + USE SIGNAL ;
-    - sig248 ( PIN sig248 ) ( u_sig248 PAD ) + USE SIGNAL ;
-    - sig249 ( PIN sig249 ) ( u_sig249 PAD ) + USE SIGNAL ;
-    - sig25 ( PIN sig25 ) ( u_sig25 PAD ) + USE SIGNAL ;
-    - sig250 ( PIN sig250 ) ( u_sig250 PAD ) + USE SIGNAL ;
-    - sig251 ( PIN sig251 ) ( u_sig251 PAD ) + USE SIGNAL ;
-    - sig252 ( PIN sig252 ) ( u_sig252 PAD ) + USE SIGNAL ;
-    - sig26 ( PIN sig26 ) ( u_sig26 PAD ) + USE SIGNAL ;
-    - sig27 ( PIN sig27 ) ( u_sig27 PAD ) + USE SIGNAL ;
-    - sig28 ( PIN sig28 ) ( u_sig28 PAD ) + USE SIGNAL ;
-    - sig29 ( PIN sig29 ) ( u_sig29 PAD ) + USE SIGNAL ;
-    - sig3 ( PIN sig3 ) ( u_sig3 PAD ) + USE SIGNAL ;
-    - sig30 ( PIN sig30 ) ( u_sig30 PAD ) + USE SIGNAL ;
-    - sig31 ( PIN sig31 ) ( u_sig31 PAD ) + USE SIGNAL ;
-    - sig32 ( PIN sig32 ) ( u_sig32 PAD ) + USE SIGNAL ;
-    - sig33 ( PIN sig33 ) ( u_sig33 PAD ) + USE SIGNAL ;
-    - sig34 ( PIN sig34 ) ( u_sig34 PAD ) + USE SIGNAL ;
-    - sig35 ( PIN sig35 ) ( u_sig35 PAD ) + USE SIGNAL ;
-    - sig36 ( PIN sig36 ) ( u_sig36 PAD ) + USE SIGNAL ;
-    - sig37 ( PIN sig37 ) ( u_sig37 PAD ) + USE SIGNAL ;
-    - sig38 ( PIN sig38 ) ( u_sig38 PAD ) + USE SIGNAL ;
-    - sig39 ( PIN sig39 ) ( u_sig39 PAD ) + USE SIGNAL ;
-    - sig4 ( PIN sig4 ) ( u_sig4 PAD ) + USE SIGNAL ;
-    - sig40 ( PIN sig40 ) ( u_sig40 PAD ) + USE SIGNAL ;
-    - sig41 ( PIN sig41 ) ( u_sig41 PAD ) + USE SIGNAL ;
-    - sig42 ( PIN sig42 ) ( u_sig42 PAD ) + USE SIGNAL ;
-    - sig43 ( PIN sig43 ) ( u_sig43 PAD ) + USE SIGNAL ;
-    - sig44 ( PIN sig44 ) ( u_sig44 PAD ) + USE SIGNAL ;
-    - sig45 ( PIN sig45 ) ( u_sig45 PAD ) + USE SIGNAL ;
-    - sig46 ( PIN sig46 ) ( u_sig46 PAD ) + USE SIGNAL ;
-    - sig47 ( PIN sig47 ) ( u_sig47 PAD ) + USE SIGNAL ;
-    - sig48 ( PIN sig48 ) ( u_sig48 PAD ) + USE SIGNAL ;
-    - sig49 ( PIN sig49 ) ( u_sig49 PAD ) + USE SIGNAL ;
-    - sig5 ( PIN sig5 ) ( u_sig5 PAD ) + USE SIGNAL ;
-    - sig50 ( PIN sig50 ) ( u_sig50 PAD ) + USE SIGNAL ;
-    - sig51 ( PIN sig51 ) ( u_sig51 PAD ) + USE SIGNAL ;
-    - sig52 ( PIN sig52 ) ( u_sig52 PAD ) + USE SIGNAL ;
-    - sig53 ( PIN sig53 ) ( u_sig53 PAD ) + USE SIGNAL ;
-    - sig54 ( PIN sig54 ) ( u_sig54 PAD ) + USE SIGNAL ;
-    - sig55 ( PIN sig55 ) ( u_sig55 PAD ) + USE SIGNAL ;
-    - sig56 ( PIN sig56 ) ( u_sig56 PAD ) + USE SIGNAL ;
-    - sig57 ( PIN sig57 ) ( u_sig57 PAD ) + USE SIGNAL ;
-    - sig58 ( PIN sig58 ) ( u_sig58 PAD ) + USE SIGNAL ;
-    - sig59 ( PIN sig59 ) ( u_sig59 PAD ) + USE SIGNAL ;
-    - sig6 ( PIN sig6 ) ( u_sig6 PAD ) + USE SIGNAL ;
-    - sig60 ( PIN sig60 ) ( u_sig60 PAD ) + USE SIGNAL ;
-    - sig61 ( PIN sig61 ) ( u_sig61 PAD ) + USE SIGNAL ;
-    - sig62 ( PIN sig62 ) ( u_sig62 PAD ) + USE SIGNAL ;
-    - sig63 ( PIN sig63 ) ( u_sig63 PAD ) + USE SIGNAL ;
-    - sig64 ( PIN sig64 ) ( u_sig64 PAD ) + USE SIGNAL ;
-    - sig65 ( PIN sig65 ) ( u_sig65 PAD ) + USE SIGNAL ;
-    - sig66 ( PIN sig66 ) ( u_sig66 PAD ) + USE SIGNAL ;
-    - sig67 ( PIN sig67 ) ( u_sig67 PAD ) + USE SIGNAL ;
-    - sig68 ( PIN sig68 ) ( u_sig68 PAD ) + USE SIGNAL ;
-    - sig69 ( PIN sig69 ) ( u_sig69 PAD ) + USE SIGNAL ;
-    - sig7 ( PIN sig7 ) ( u_sig7 PAD ) + USE SIGNAL ;
-    - sig70 ( PIN sig70 ) ( u_sig70 PAD ) + USE SIGNAL ;
-    - sig71 ( PIN sig71 ) ( u_sig71 PAD ) + USE SIGNAL ;
-    - sig72 ( PIN sig72 ) ( u_sig72 PAD ) + USE SIGNAL ;
-    - sig73 ( PIN sig73 ) ( u_sig73 PAD ) + USE SIGNAL ;
-    - sig74 ( PIN sig74 ) ( u_sig74 PAD ) + USE SIGNAL ;
-    - sig75 ( PIN sig75 ) ( u_sig75 PAD ) + USE SIGNAL ;
-    - sig76 ( PIN sig76 ) ( u_sig76 PAD ) + USE SIGNAL ;
-    - sig77 ( PIN sig77 ) ( u_sig77 PAD ) + USE SIGNAL ;
-    - sig78 ( PIN sig78 ) ( u_sig78 PAD ) + USE SIGNAL ;
-    - sig79 ( PIN sig79 ) ( u_sig79 PAD ) + USE SIGNAL ;
-    - sig8 ( PIN sig8 ) ( u_sig8 PAD ) + USE SIGNAL ;
-    - sig80 ( PIN sig80 ) ( u_sig80 PAD ) + USE SIGNAL ;
-    - sig81 ( PIN sig81 ) ( u_sig81 PAD ) + USE SIGNAL ;
-    - sig82 ( PIN sig82 ) ( u_sig82 PAD ) + USE SIGNAL ;
-    - sig83 ( PIN sig83 ) ( u_sig83 PAD ) + USE SIGNAL ;
-    - sig84 ( PIN sig84 ) ( u_sig84 PAD ) + USE SIGNAL ;
-    - sig85 ( PIN sig85 ) ( u_sig85 PAD ) + USE SIGNAL ;
-    - sig86 ( PIN sig86 ) ( u_sig86 PAD ) + USE SIGNAL ;
-    - sig87 ( PIN sig87 ) ( u_sig87 PAD ) + USE SIGNAL ;
-    - sig88 ( PIN sig88 ) ( u_sig88 PAD ) + USE SIGNAL ;
-    - sig89 ( PIN sig89 ) ( u_sig89 PAD ) + USE SIGNAL ;
-    - sig9 ( PIN sig9 ) ( u_sig9 PAD ) + USE SIGNAL ;
-    - sig90 ( PIN sig90 ) ( u_sig90 PAD ) + USE SIGNAL ;
-    - sig91 ( PIN sig91 ) ( u_sig91 PAD ) + USE SIGNAL ;
-    - sig92 ( PIN sig92 ) ( u_sig92 PAD ) + USE SIGNAL ;
-    - sig93 ( PIN sig93 ) ( u_sig93 PAD ) + USE SIGNAL ;
-    - sig94 ( PIN sig94 ) ( u_sig94 PAD ) + USE SIGNAL ;
-    - sig95 ( PIN sig95 ) ( u_sig95 PAD ) + USE SIGNAL ;
-    - sig96 ( PIN sig96 ) ( u_sig96 PAD ) + USE SIGNAL ;
-    - sig97 ( PIN sig97 ) ( u_sig97 PAD ) + USE SIGNAL ;
-    - sig98 ( PIN sig98 ) ( u_sig98 PAD ) + USE SIGNAL ;
-    - sig99 ( PIN sig99 ) ( u_sig99 PAD ) + USE SIGNAL ;
-END SPECIALNETS
-SPECIALNETS 252 ;
-    - sig190 
-      + ROUTED metal10 15000  ( 215000 7573000 ) ( 435000 7573000 )
-      ;
-    - sig189 
-      + ROUTED metal10 15000  ( 753000 7785000 ) ( 753000 7565000 )
-      ;
-    - sig188 
-      + ROUTED metal10 15000  ( 1063000 7785000 ) ( 1063000 7565000 )
-      ;
-    - sig185 
-      + ROUTED metal10 15000  ( 1373000 7785000 ) ( 1373000 7565000 )
-      ;
-    - sig182 
-      + ROUTED metal10 15000  ( 1683000 7785000 ) ( 1683000 7565000 )
-      ;
-    - sig179 
-      + ROUTED metal10 15000  ( 1993000 7785000 ) ( 1993000 7565000 )
-      ;
-    - sig176 
-      + ROUTED metal10 15000  ( 2303000 7785000 ) ( 2303000 7565000 )
-      ;
-    - sig173 
-      + ROUTED metal10 15000  ( 2613000 7785000 ) ( 2613000 7565000 )
-      ;
-    - sig170 
-      + ROUTED metal10 15000  ( 2923000 7785000 ) ( 2923000 7565000 )
-      ;
-    - sig167 
-      + ROUTED metal10 15000  ( 3233000 7785000 ) ( 3233000 7565000 )
-      ;
-    - sig164 
-      + ROUTED metal10 15000  ( 3543000 7785000 ) ( 3543000 7565000 )
-      ;
-    - sig161 
-      + ROUTED metal10 15000  ( 3853000 7785000 ) ( 3853000 7565000 )
-      ;
-    - sig158 
-      + ROUTED metal10 15000  ( 4163000 7785000 ) ( 4163000 7565000 )
-      ;
-    - sig155 
-      + ROUTED metal10 15000  ( 4473000 7785000 ) ( 4473000 7565000 )
-      ;
-    - sig152 
-      + ROUTED metal10 15000  ( 4783000 7785000 ) ( 4783000 7565000 )
-      ;
-    - sig149 
-      + ROUTED metal10 15000  ( 5093000 7785000 ) ( 5093000 7565000 )
-      ;
-    - sig146 
-      + ROUTED metal10 15000  ( 5403000 7785000 ) ( 5403000 7565000 )
-      ;
-    - sig143 
-      + ROUTED metal10 15000  ( 5713000 7785000 ) ( 5713000 7565000 )
-      ;
-    - sig140 
-      + ROUTED metal10 15000  ( 6023000 7785000 ) ( 6023000 7565000 )
-      ;
-    - sig137 
-      + ROUTED metal10 15000  ( 6333000 7785000 ) ( 6333000 7565000 )
-      ;
-    - sig134 
-      + ROUTED metal10 15000  ( 6643000 7785000 ) ( 6643000 7565000 )
-      ;
-    - sig131 
-      + ROUTED metal10 15000  ( 6953000 7785000 ) ( 6953000 7565000 )
-      ;
-    - sig129 
-      + ROUTED metal10 15000  ( 7263000 7785000 ) ( 7263000 7565000 )
-      ;
-    - sig127 
-      + ROUTED metal10 15000  ( 7573000 7785000 ) ( 7573000 7565000 )
-      ;
-    - sig192 
-      + ROUTED metal10 15000  ( 215000 7263000 ) ( 435000 7263000 )
-      ;
-    - sig191 
-      + ROUTED metal10 15000  ( 215000 7367000 ) ( 327000 7367000 ) ( 336500 7357500 ) ( 642500 7357500 ) ( 745000 7255000 )
-      ;
-    - sig187 
-      + ROUTED metal10 15000  ( 1167000 7785000 ) ( 1167000 7673000 ) ( 1157500 7663500 ) ( 1157500 7357500 ) ( 1055000 7255000 )
-      ;
-    - sig184 
-      + ROUTED metal10 15000  ( 1477000 7785000 ) ( 1477000 7673000 ) ( 1467500 7663500 ) ( 1467500 7357500 ) ( 1365000 7255000 )
-      ;
-    - sig181 
-      + ROUTED metal10 15000  ( 1787000 7785000 ) ( 1787000 7673000 ) ( 1777500 7663500 ) ( 1777500 7357500 ) ( 1675000 7255000 )
-      ;
-    - sig178 
-      + ROUTED metal10 15000  ( 2097000 7785000 ) ( 2097000 7673000 ) ( 2087500 7663500 ) ( 2087500 7357500 ) ( 1985000 7255000 )
-      ;
-    - sig175 
-      + ROUTED metal10 15000  ( 2407000 7785000 ) ( 2407000 7673000 ) ( 2397500 7663500 ) ( 2397500 7357500 ) ( 2295000 7255000 )
-      ;
-    - sig172 
-      + ROUTED metal10 15000  ( 2717000 7785000 ) ( 2717000 7673000 ) ( 2707500 7663500 ) ( 2707500 7357500 ) ( 2605000 7255000 )
-      ;
-    - sig169 
-      + ROUTED metal10 15000  ( 3027000 7785000 ) ( 3027000 7673000 ) ( 3017500 7663500 ) ( 3017500 7357500 ) ( 2915000 7255000 )
-      ;
-    - sig166 
-      + ROUTED metal10 15000  ( 3337000 7785000 ) ( 3337000 7673000 ) ( 3327500 7663500 ) ( 3327500 7357500 ) ( 3225000 7255000 )
-      ;
-    - sig163 
-      + ROUTED metal10 15000  ( 3647000 7785000 ) ( 3647000 7673000 ) ( 3637500 7663500 ) ( 3637500 7357500 ) ( 3535000 7255000 )
-      ;
-    - sig160 
-      + ROUTED metal10 15000  ( 3957000 7785000 ) ( 3957000 7673000 ) ( 3947500 7663500 ) ( 3947500 7357500 ) ( 3845000 7255000 )
-      ;
-    - sig157 
-      + ROUTED metal10 15000  ( 4267000 7785000 ) ( 4267000 7673000 ) ( 4257500 7663500 ) ( 4257500 7357500 ) ( 4155000 7255000 )
-      ;
-    - sig154 
-      + ROUTED metal10 15000  ( 4577000 7785000 ) ( 4577000 7673000 ) ( 4567500 7663500 ) ( 4567500 7357500 ) ( 4465000 7255000 )
-      ;
-    - sig151 
-      + ROUTED metal10 15000  ( 4887000 7785000 ) ( 4887000 7673000 ) ( 4877500 7663500 ) ( 4877500 7357500 ) ( 4775000 7255000 )
-      ;
-    - sig148 
-      + ROUTED metal10 15000  ( 5197000 7785000 ) ( 5197000 7673000 ) ( 5187500 7663500 ) ( 5187500 7357500 ) ( 5085000 7255000 )
-      ;
-    - sig145 
-      + ROUTED metal10 15000  ( 5507000 7785000 ) ( 5507000 7673000 ) ( 5497500 7663500 ) ( 5497500 7357500 ) ( 5395000 7255000 )
-      ;
-    - sig142 
-      + ROUTED metal10 15000  ( 5817000 7785000 ) ( 5817000 7673000 ) ( 5807500 7663500 ) ( 5807500 7357500 ) ( 5705000 7255000 )
-      ;
-    - sig139 
-      + ROUTED metal10 15000  ( 6127000 7785000 ) ( 6127000 7673000 ) ( 6117500 7663500 ) ( 6117500 7357500 ) ( 6015000 7255000 )
-      ;
-    - sig136 
-      + ROUTED metal10 15000  ( 6437000 7785000 ) ( 6437000 7673000 ) ( 6427500 7663500 ) ( 6427500 7357500 ) ( 6325000 7255000 )
-      ;
-    - sig133 
-      + ROUTED metal10 15000  ( 6747000 7785000 ) ( 6747000 7673000 ) ( 6737500 7663500 ) ( 6737500 7357500 ) ( 6635000 7255000 )
-      ;
-    - sig130 
-      + ROUTED metal10 15000  ( 7057000 7785000 ) ( 7057000 7673000 ) ( 7047500 7663500 ) ( 7047500 7357500 ) ( 6945000 7255000 )
-      ;
-    - sig128 
-      + ROUTED metal10 15000  ( 7367000 7785000 ) ( 7367000 7673000 ) ( 7357500 7663500 ) ( 7357500 7357500 ) ( 7255000 7255000 )
-      ;
-    - sig126 
-      + ROUTED metal10 15000  ( 7785000 7247000 ) ( 7565000 7247000 )
-      ;
-    - sig194 
-      + ROUTED metal10 15000  ( 215000 6953000 ) ( 435000 6953000 )
-      ;
-    - sig193 
-      + ROUTED metal10 15000  ( 215000 7057000 ) ( 327000 7057000 ) ( 336500 7047500 ) ( 642500 7047500 ) ( 745000 6945000 )
-      ;
-    - sig195 
-      + ROUTED metal10 15000  ( 215000 6849000 ) ( 330000 6849000 ) ( 336500 6842500 ) ( 952500 6842500 ) ( 1055000 6945000 )
-      ;
-    - sig186 
-      + ROUTED metal10 15000  ( 1269000 7785000 ) ( 1269000 7670000 ) ( 1262500 7663500 ) ( 1262500 7047500 ) ( 1365000 6945000 )
-      ;
-    - sig183 
-      + ROUTED metal10 15000  ( 1579000 7785000 ) ( 1579000 7670000 ) ( 1572500 7663500 ) ( 1572500 7047500 ) ( 1675000 6945000 )
-      ;
-    - sig180 
-      + ROUTED metal10 15000  ( 1889000 7785000 ) ( 1889000 7670000 ) ( 1882500 7663500 ) ( 1882500 7047500 ) ( 1985000 6945000 )
-      ;
-    - sig177 
-      + ROUTED metal10 15000  ( 2199000 7785000 ) ( 2199000 7670000 ) ( 2192500 7663500 ) ( 2192500 7047500 ) ( 2295000 6945000 )
-      ;
-    - sig174 
-      + ROUTED metal10 15000  ( 2509000 7785000 ) ( 2509000 7670000 ) ( 2502500 7663500 ) ( 2502500 7047500 ) ( 2605000 6945000 )
-      ;
-    - sig171 
-      + ROUTED metal10 15000  ( 2819000 7785000 ) ( 2819000 7670000 ) ( 2812500 7663500 ) ( 2812500 7047500 ) ( 2915000 6945000 )
-      ;
-    - sig168 
-      + ROUTED metal10 15000  ( 3129000 7785000 ) ( 3129000 7670000 ) ( 3122500 7663500 ) ( 3122500 7047500 ) ( 3225000 6945000 )
-      ;
-    - sig165 
-      + ROUTED metal10 15000  ( 3439000 7785000 ) ( 3439000 7670000 ) ( 3432500 7663500 ) ( 3432500 7047500 ) ( 3535000 6945000 )
-      ;
-    - sig162 
-      + ROUTED metal10 15000  ( 3749000 7785000 ) ( 3749000 7670000 ) ( 3742500 7663500 ) ( 3742500 7047500 ) ( 3845000 6945000 )
-      ;
-    - sig159 
-      + ROUTED metal10 15000  ( 4059000 7785000 ) ( 4059000 7670000 ) ( 4052500 7663500 ) ( 4052500 7047500 ) ( 4155000 6945000 )
-      ;
-    - sig156 
-      + ROUTED metal10 15000  ( 4369000 7785000 ) ( 4369000 7670000 ) ( 4362500 7663500 ) ( 4362500 7047500 ) ( 4465000 6945000 )
-      ;
-    - sig153 
-      + ROUTED metal10 15000  ( 4679000 7785000 ) ( 4679000 7670000 ) ( 4672500 7663500 ) ( 4672500 7047500 ) ( 4775000 6945000 )
-      ;
-    - sig150 
-      + ROUTED metal10 15000  ( 4989000 7785000 ) ( 4989000 7670000 ) ( 4982500 7663500 ) ( 4982500 7047500 ) ( 5085000 6945000 )
-      ;
-    - sig147 
-      + ROUTED metal10 15000  ( 5299000 7785000 ) ( 5299000 7670000 ) ( 5292500 7663500 ) ( 5292500 7047500 ) ( 5395000 6945000 )
-      ;
-    - sig144 
-      + ROUTED metal10 15000  ( 5609000 7785000 ) ( 5609000 7670000 ) ( 5602500 7663500 ) ( 5602500 7047500 ) ( 5705000 6945000 )
-      ;
-    - sig141 
-      + ROUTED metal10 15000  ( 5919000 7785000 ) ( 5919000 7670000 ) ( 5912500 7663500 ) ( 5912500 7047500 ) ( 6015000 6945000 )
-      ;
-    - sig138 
-      + ROUTED metal10 15000  ( 6229000 7785000 ) ( 6229000 7670000 ) ( 6222500 7663500 ) ( 6222500 7047500 ) ( 6325000 6945000 )
-      ;
-    - sig135 
-      + ROUTED metal10 15000  ( 6539000 7785000 ) ( 6539000 7670000 ) ( 6532500 7663500 ) ( 6532500 7047500 ) ( 6635000 6945000 )
-      ;
-    - sig132 
-      + ROUTED metal10 15000  ( 6849000 7785000 ) ( 6849000 7670000 ) ( 6842500 7663500 ) ( 6842500 7047500 ) ( 6945000 6945000 )
-      ;
-    - sig125 
-      + ROUTED metal10 15000  ( 7785000 6833000 ) ( 7673000 6833000 ) ( 7663500 6842500 ) ( 7357500 6842500 ) ( 7255000 6945000 )
-      ;
-    - sig124 
-      + ROUTED metal10 15000  ( 7785000 6937000 ) ( 7565000 6937000 )
-      ;
-    - sig197 
-      + ROUTED metal10 15000  ( 215000 6643000 ) ( 435000 6643000 )
-      ;
-    - sig196 
-      + ROUTED metal10 15000  ( 215000 6747000 ) ( 327000 6747000 ) ( 336500 6737500 ) ( 642500 6737500 ) ( 745000 6635000 )
-      ;
-    - sig198 
-      + ROUTED metal10 15000  ( 215000 6539000 ) ( 330000 6539000 ) ( 336500 6532500 ) ( 952500 6532500 ) ( 1055000 6635000 )
-      ;
-    - sig123 
-      + ROUTED metal10 15000  ( 7785000 6731000 ) ( 7670000 6731000 ) ( 7663500 6737500 ) ( 7047500 6737500 ) ( 6945000 6635000 )
-      ;
-    - sig122 
-      + ROUTED metal10 15000  ( 7785000 6523000 ) ( 7673000 6523000 ) ( 7663500 6532500 ) ( 7357500 6532500 ) ( 7255000 6635000 )
-      ;
-    - sig121 
-      + ROUTED metal10 15000  ( 7785000 6627000 ) ( 7565000 6627000 )
-      ;
-    - sig200 
-      + ROUTED metal10 15000  ( 215000 6333000 ) ( 435000 6333000 )
-      ;
-    - sig199 
-      + ROUTED metal10 15000  ( 215000 6437000 ) ( 327000 6437000 ) ( 336500 6427500 ) ( 642500 6427500 ) ( 745000 6325000 )
-      ;
-    - sig201 
-      + ROUTED metal10 15000  ( 215000 6229000 ) ( 330000 6229000 ) ( 336500 6222500 ) ( 952500 6222500 ) ( 1055000 6325000 )
-      ;
-    - sig120 
-      + ROUTED metal10 15000  ( 7785000 6421000 ) ( 7670000 6421000 ) ( 7663500 6427500 ) ( 7047500 6427500 ) ( 6945000 6325000 )
-      ;
-    - sig119 
-      + ROUTED metal10 15000  ( 7785000 6213000 ) ( 7673000 6213000 ) ( 7663500 6222500 ) ( 7357500 6222500 ) ( 7255000 6325000 )
-      ;
-    - sig118 
-      + ROUTED metal10 15000  ( 7785000 6317000 ) ( 7565000 6317000 )
-      ;
-    - sig203 
-      + ROUTED metal10 15000  ( 215000 6023000 ) ( 435000 6023000 )
-      ;
-    - sig202 
-      + ROUTED metal10 15000  ( 215000 6127000 ) ( 327000 6127000 ) ( 336500 6117500 ) ( 642500 6117500 ) ( 745000 6015000 )
-      ;
-    - sig204 
-      + ROUTED metal10 15000  ( 215000 5919000 ) ( 330000 5919000 ) ( 336500 5912500 ) ( 952500 5912500 ) ( 1055000 6015000 )
-      ;
-    - sig117 
-      + ROUTED metal10 15000  ( 7785000 6111000 ) ( 7670000 6111000 ) ( 7663500 6117500 ) ( 7047500 6117500 ) ( 6945000 6015000 )
-      ;
-    - sig116 
-      + ROUTED metal10 15000  ( 7785000 5903000 ) ( 7673000 5903000 ) ( 7663500 5912500 ) ( 7357500 5912500 ) ( 7255000 6015000 )
-      ;
-    - sig115 
-      + ROUTED metal10 15000  ( 7785000 6007000 ) ( 7565000 6007000 )
-      ;
-    - sig206 
-      + ROUTED metal10 15000  ( 215000 5713000 ) ( 435000 5713000 )
-      ;
-    - sig205 
-      + ROUTED metal10 15000  ( 215000 5817000 ) ( 327000 5817000 ) ( 336500 5807500 ) ( 642500 5807500 ) ( 745000 5705000 )
-      ;
-    - sig207 
-      + ROUTED metal10 15000  ( 215000 5609000 ) ( 330000 5609000 ) ( 336500 5602500 ) ( 952500 5602500 ) ( 1055000 5705000 )
-      ;
-    - sig114 
-      + ROUTED metal10 15000  ( 7785000 5801000 ) ( 7670000 5801000 ) ( 7663500 5807500 ) ( 7047500 5807500 ) ( 6945000 5705000 )
-      ;
-    - sig113 
-      + ROUTED metal10 15000  ( 7785000 5593000 ) ( 7673000 5593000 ) ( 7663500 5602500 ) ( 7357500 5602500 ) ( 7255000 5705000 )
-      ;
-    - sig112 
-      + ROUTED metal10 15000  ( 7785000 5697000 ) ( 7565000 5697000 )
-      ;
-    - sig209 
-      + ROUTED metal10 15000  ( 215000 5403000 ) ( 435000 5403000 )
-      ;
-    - sig208 
-      + ROUTED metal10 15000  ( 215000 5507000 ) ( 327000 5507000 ) ( 336500 5497500 ) ( 642500 5497500 ) ( 745000 5395000 )
-      ;
-    - sig210 
-      + ROUTED metal10 15000  ( 215000 5299000 ) ( 330000 5299000 ) ( 336500 5292500 ) ( 952500 5292500 ) ( 1055000 5395000 )
-      ;
-    - sig111 
-      + ROUTED metal10 15000  ( 7785000 5491000 ) ( 7670000 5491000 ) ( 7663500 5497500 ) ( 7047500 5497500 ) ( 6945000 5395000 )
-      ;
-    - sig110 
-      + ROUTED metal10 15000  ( 7785000 5283000 ) ( 7673000 5283000 ) ( 7663500 5292500 ) ( 7357500 5292500 ) ( 7255000 5395000 )
-      ;
-    - sig109 
-      + ROUTED metal10 15000  ( 7785000 5387000 ) ( 7565000 5387000 )
-      ;
-    - sig212 
-      + ROUTED metal10 15000  ( 215000 5093000 ) ( 435000 5093000 )
-      ;
-    - sig211 
-      + ROUTED metal10 15000  ( 215000 5197000 ) ( 327000 5197000 ) ( 336500 5187500 ) ( 642500 5187500 ) ( 745000 5085000 )
-      ;
-    - sig213 
-      + ROUTED metal10 15000  ( 215000 4989000 ) ( 330000 4989000 ) ( 336500 4982500 ) ( 952500 4982500 ) ( 1055000 5085000 )
-      ;
-    - sig108 
-      + ROUTED metal10 15000  ( 7785000 5181000 ) ( 7670000 5181000 ) ( 7663500 5187500 ) ( 7047500 5187500 ) ( 6945000 5085000 )
-      ;
-    - sig107 
-      + ROUTED metal10 15000  ( 7785000 4973000 ) ( 7673000 4973000 ) ( 7663500 4982500 ) ( 7357500 4982500 ) ( 7255000 5085000 )
-      ;
-    - sig106 
-      + ROUTED metal10 15000  ( 7785000 5077000 ) ( 7565000 5077000 )
-      ;
-    - sig215 
-      + ROUTED metal10 15000  ( 215000 4783000 ) ( 435000 4783000 )
-      ;
-    - sig214 
-      + ROUTED metal10 15000  ( 215000 4887000 ) ( 327000 4887000 ) ( 336500 4877500 ) ( 642500 4877500 ) ( 745000 4775000 )
-      ;
-    - sig216 
-      + ROUTED metal10 15000  ( 215000 4679000 ) ( 330000 4679000 ) ( 336500 4672500 ) ( 952500 4672500 ) ( 1055000 4775000 )
-      ;
-    - sig105 
-      + ROUTED metal10 15000  ( 7785000 4871000 ) ( 7670000 4871000 ) ( 7663500 4877500 ) ( 7047500 4877500 ) ( 6945000 4775000 )
-      ;
-    - sig104 
-      + ROUTED metal10 15000  ( 7785000 4663000 ) ( 7673000 4663000 ) ( 7663500 4672500 ) ( 7357500 4672500 ) ( 7255000 4775000 )
-      ;
-    - sig103 
-      + ROUTED metal10 15000  ( 7785000 4767000 ) ( 7565000 4767000 )
-      ;
-    - sig218 
-      + ROUTED metal10 15000  ( 215000 4473000 ) ( 435000 4473000 )
-      ;
-    - sig217 
-      + ROUTED metal10 15000  ( 215000 4577000 ) ( 327000 4577000 ) ( 336500 4567500 ) ( 642500 4567500 ) ( 745000 4465000 )
-      ;
-    - sig219 
-      + ROUTED metal10 15000  ( 215000 4369000 ) ( 330000 4369000 ) ( 336500 4362500 ) ( 952500 4362500 ) ( 1055000 4465000 )
-      ;
-    - sig102 
-      + ROUTED metal10 15000  ( 7785000 4561000 ) ( 7670000 4561000 ) ( 7663500 4567500 ) ( 7047500 4567500 ) ( 6945000 4465000 )
-      ;
-    - sig101 
-      + ROUTED metal10 15000  ( 7785000 4353000 ) ( 7673000 4353000 ) ( 7663500 4362500 ) ( 7357500 4362500 ) ( 7255000 4465000 )
-      ;
-    - sig100 
-      + ROUTED metal10 15000  ( 7785000 4457000 ) ( 7565000 4457000 )
-      ;
-    - sig221 
-      + ROUTED metal10 15000  ( 215000 4163000 ) ( 435000 4163000 )
-      ;
-    - sig220 
-      + ROUTED metal10 15000  ( 215000 4267000 ) ( 327000 4267000 ) ( 336500 4257500 ) ( 642500 4257500 ) ( 745000 4155000 )
-      ;
-    - sig222 
-      + ROUTED metal10 15000  ( 215000 4059000 ) ( 330000 4059000 ) ( 336500 4052500 ) ( 952500 4052500 ) ( 1055000 4155000 )
-      ;
-    - sig99 
-      + ROUTED metal10 15000  ( 7785000 4251000 ) ( 7670000 4251000 ) ( 7663500 4257500 ) ( 7047500 4257500 ) ( 6945000 4155000 )
-      ;
-    - sig98 
-      + ROUTED metal10 15000  ( 7785000 4043000 ) ( 7673000 4043000 ) ( 7663500 4052500 ) ( 7357500 4052500 ) ( 7255000 4155000 )
-      ;
-    - sig97 
-      + ROUTED metal10 15000  ( 7785000 4147000 ) ( 7565000 4147000 )
-      ;
-    - sig224 
-      + ROUTED metal10 15000  ( 215000 3853000 ) ( 435000 3853000 )
-      ;
-    - sig223 
-      + ROUTED metal10 15000  ( 215000 3957000 ) ( 327000 3957000 ) ( 336500 3947500 ) ( 642500 3947500 ) ( 745000 3845000 )
-      ;
-    - sig225 
-      + ROUTED metal10 15000  ( 215000 3749000 ) ( 330000 3749000 ) ( 336500 3742500 ) ( 952500 3742500 ) ( 1055000 3845000 )
-      ;
-    - sig96 
-      + ROUTED metal10 15000  ( 7785000 3941000 ) ( 7670000 3941000 ) ( 7663500 3947500 ) ( 7047500 3947500 ) ( 6945000 3845000 )
-      ;
-    - sig95 
-      + ROUTED metal10 15000  ( 7785000 3733000 ) ( 7673000 3733000 ) ( 7663500 3742500 ) ( 7357500 3742500 ) ( 7255000 3845000 )
-      ;
-    - sig94 
-      + ROUTED metal10 15000  ( 7785000 3837000 ) ( 7565000 3837000 )
-      ;
-    - sig227 
-      + ROUTED metal10 15000  ( 215000 3543000 ) ( 435000 3543000 )
-      ;
-    - sig226 
-      + ROUTED metal10 15000  ( 215000 3647000 ) ( 327000 3647000 ) ( 336500 3637500 ) ( 642500 3637500 ) ( 745000 3535000 )
-      ;
-    - sig228 
-      + ROUTED metal10 15000  ( 215000 3439000 ) ( 330000 3439000 ) ( 336500 3432500 ) ( 952500 3432500 ) ( 1055000 3535000 )
-      ;
-    - sig93 
-      + ROUTED metal10 15000  ( 7785000 3631000 ) ( 7670000 3631000 ) ( 7663500 3637500 ) ( 7047500 3637500 ) ( 6945000 3535000 )
-      ;
-    - sig92 
-      + ROUTED metal10 15000  ( 7785000 3423000 ) ( 7673000 3423000 ) ( 7663500 3432500 ) ( 7357500 3432500 ) ( 7255000 3535000 )
-      ;
-    - sig91 
-      + ROUTED metal10 15000  ( 7785000 3527000 ) ( 7565000 3527000 )
-      ;
-    - sig230 
-      + ROUTED metal10 15000  ( 215000 3233000 ) ( 435000 3233000 )
-      ;
-    - sig229 
-      + ROUTED metal10 15000  ( 215000 3337000 ) ( 327000 3337000 ) ( 336500 3327500 ) ( 642500 3327500 ) ( 745000 3225000 )
-      ;
-    - sig231 
-      + ROUTED metal10 15000  ( 215000 3129000 ) ( 330000 3129000 ) ( 336500 3122500 ) ( 952500 3122500 ) ( 1055000 3225000 )
-      ;
-    - sig90 
-      + ROUTED metal10 15000  ( 7785000 3321000 ) ( 7670000 3321000 ) ( 7663500 3327500 ) ( 7047500 3327500 ) ( 6945000 3225000 )
-      ;
-    - sig89 
-      + ROUTED metal10 15000  ( 7785000 3113000 ) ( 7673000 3113000 ) ( 7663500 3122500 ) ( 7357500 3122500 ) ( 7255000 3225000 )
-      ;
-    - sig88 
-      + ROUTED metal10 15000  ( 7785000 3217000 ) ( 7565000 3217000 )
-      ;
-    - sig233 
-      + ROUTED metal10 15000  ( 215000 2923000 ) ( 435000 2923000 )
-      ;
-    - sig232 
-      + ROUTED metal10 15000  ( 215000 3027000 ) ( 327000 3027000 ) ( 336500 3017500 ) ( 642500 3017500 ) ( 745000 2915000 )
-      ;
-    - sig234 
-      + ROUTED metal10 15000  ( 215000 2819000 ) ( 330000 2819000 ) ( 336500 2812500 ) ( 952500 2812500 ) ( 1055000 2915000 )
-      ;
-    - sig87 
-      + ROUTED metal10 15000  ( 7785000 3011000 ) ( 7670000 3011000 ) ( 7663500 3017500 ) ( 7047500 3017500 ) ( 6945000 2915000 )
-      ;
-    - sig86 
-      + ROUTED metal10 15000  ( 7785000 2803000 ) ( 7673000 2803000 ) ( 7663500 2812500 ) ( 7357500 2812500 ) ( 7255000 2915000 )
-      ;
-    - sig85 
-      + ROUTED metal10 15000  ( 7785000 2907000 ) ( 7565000 2907000 )
-      ;
-    - sig236 
-      + ROUTED metal10 15000  ( 215000 2613000 ) ( 435000 2613000 )
-      ;
-    - sig235 
-      + ROUTED metal10 15000  ( 215000 2717000 ) ( 327000 2717000 ) ( 336500 2707500 ) ( 642500 2707500 ) ( 745000 2605000 )
-      ;
-    - sig237 
-      + ROUTED metal10 15000  ( 215000 2509000 ) ( 330000 2509000 ) ( 336500 2502500 ) ( 952500 2502500 ) ( 1055000 2605000 )
-      ;
-    - sig84 
-      + ROUTED metal10 15000  ( 7785000 2701000 ) ( 7670000 2701000 ) ( 7663500 2707500 ) ( 7047500 2707500 ) ( 6945000 2605000 )
-      ;
-    - sig83 
-      + ROUTED metal10 15000  ( 7785000 2493000 ) ( 7673000 2493000 ) ( 7663500 2502500 ) ( 7357500 2502500 ) ( 7255000 2605000 )
-      ;
-    - sig82 
-      + ROUTED metal10 15000  ( 7785000 2597000 ) ( 7565000 2597000 )
-      ;
-    - sig239 
-      + ROUTED metal10 15000  ( 215000 2303000 ) ( 435000 2303000 )
-      ;
-    - sig238 
-      + ROUTED metal10 15000  ( 215000 2407000 ) ( 327000 2407000 ) ( 336500 2397500 ) ( 642500 2397500 ) ( 745000 2295000 )
-      ;
-    - sig240 
-      + ROUTED metal10 15000  ( 215000 2199000 ) ( 330000 2199000 ) ( 336500 2192500 ) ( 952500 2192500 ) ( 1055000 2295000 )
-      ;
-    - sig81 
-      + ROUTED metal10 15000  ( 7785000 2391000 ) ( 7670000 2391000 ) ( 7663500 2397500 ) ( 7047500 2397500 ) ( 6945000 2295000 )
-      ;
-    - sig80 
-      + ROUTED metal10 15000  ( 7785000 2183000 ) ( 7673000 2183000 ) ( 7663500 2192500 ) ( 7357500 2192500 ) ( 7255000 2295000 )
-      ;
-    - sig79 
-      + ROUTED metal10 15000  ( 7785000 2287000 ) ( 7565000 2287000 )
-      ;
-    - sig242 
-      + ROUTED metal10 15000  ( 215000 1993000 ) ( 435000 1993000 )
-      ;
-    - sig241 
-      + ROUTED metal10 15000  ( 215000 2097000 ) ( 327000 2097000 ) ( 336500 2087500 ) ( 642500 2087500 ) ( 745000 1985000 )
-      ;
-    - sig243 
-      + ROUTED metal10 15000  ( 215000 1889000 ) ( 330000 1889000 ) ( 336500 1882500 ) ( 952500 1882500 ) ( 1055000 1985000 )
-      ;
-    - sig78 
-      + ROUTED metal10 15000  ( 7785000 2081000 ) ( 7670000 2081000 ) ( 7663500 2087500 ) ( 7047500 2087500 ) ( 6945000 1985000 )
-      ;
-    - sig77 
-      + ROUTED metal10 15000  ( 7785000 1873000 ) ( 7673000 1873000 ) ( 7663500 1882500 ) ( 7357500 1882500 ) ( 7255000 1985000 )
-      ;
-    - sig76 
-      + ROUTED metal10 15000  ( 7785000 1977000 ) ( 7565000 1977000 )
-      ;
-    - sig245 
-      + ROUTED metal10 15000  ( 215000 1683000 ) ( 435000 1683000 )
-      ;
-    - sig244 
-      + ROUTED metal10 15000  ( 215000 1787000 ) ( 327000 1787000 ) ( 336500 1777500 ) ( 642500 1777500 ) ( 745000 1675000 )
-      ;
-    - sig246 
-      + ROUTED metal10 15000  ( 215000 1579000 ) ( 330000 1579000 ) ( 336500 1572500 ) ( 952500 1572500 ) ( 1055000 1675000 )
-      ;
-    - sig75 
-      + ROUTED metal10 15000  ( 7785000 1771000 ) ( 7670000 1771000 ) ( 7663500 1777500 ) ( 7047500 1777500 ) ( 6945000 1675000 )
-      ;
-    - sig74 
-      + ROUTED metal10 15000  ( 7785000 1563000 ) ( 7673000 1563000 ) ( 7663500 1572500 ) ( 7357500 1572500 ) ( 7255000 1675000 )
-      ;
-    - sig73 
-      + ROUTED metal10 15000  ( 7785000 1667000 ) ( 7565000 1667000 )
-      ;
-    - sig248 
-      + ROUTED metal10 15000  ( 215000 1373000 ) ( 435000 1373000 )
-      ;
-    - sig247 
-      + ROUTED metal10 15000  ( 215000 1477000 ) ( 327000 1477000 ) ( 336500 1467500 ) ( 642500 1467500 ) ( 745000 1365000 )
-      ;
-    - sig249 
-      + ROUTED metal10 15000  ( 215000 1269000 ) ( 330000 1269000 ) ( 336500 1262500 ) ( 952500 1262500 ) ( 1055000 1365000 )
-      ;
-    - sig72 
-      + ROUTED metal10 15000  ( 7785000 1461000 ) ( 7670000 1461000 ) ( 7663500 1467500 ) ( 7047500 1467500 ) ( 6945000 1365000 )
-      ;
-    - sig71 
-      + ROUTED metal10 15000  ( 7785000 1253000 ) ( 7673000 1253000 ) ( 7663500 1262500 ) ( 7357500 1262500 ) ( 7255000 1365000 )
-      ;
-    - sig70 
-      + ROUTED metal10 15000  ( 7785000 1357000 ) ( 7565000 1357000 )
-      ;
-    - sig251 
-      + ROUTED metal10 15000  ( 215000 1063000 ) ( 435000 1063000 )
-      ;
-    - sig250 
-      + ROUTED metal10 15000  ( 813000 215000 ) ( 813000 302000 ) ( 847500 336500 ) ( 847500 952500 ) ( 745000 1055000 )
-      ;
-    - sig6 
-      + ROUTED metal10 15000  ( 1151000 215000 ) ( 1151000 330000 ) ( 1157500 336500 ) ( 1157500 952500 ) ( 1055000 1055000 )
-      ;
-    - sig9 
-      + ROUTED metal10 15000  ( 1461000 215000 ) ( 1461000 330000 ) ( 1467500 336500 ) ( 1467500 952500 ) ( 1365000 1055000 )
-      ;
-    - sig12 
-      + ROUTED metal10 15000  ( 1771000 215000 ) ( 1771000 330000 ) ( 1777500 336500 ) ( 1777500 952500 ) ( 1675000 1055000 )
-      ;
-    - sig15 
-      + ROUTED metal10 15000  ( 2081000 215000 ) ( 2081000 330000 ) ( 2087500 336500 ) ( 2087500 952500 ) ( 1985000 1055000 )
-      ;
-    - sig18 
-      + ROUTED metal10 15000  ( 2391000 215000 ) ( 2391000 330000 ) ( 2397500 336500 ) ( 2397500 952500 ) ( 2295000 1055000 )
-      ;
-    - sig21 
-      + ROUTED metal10 15000  ( 2701000 215000 ) ( 2701000 330000 ) ( 2707500 336500 ) ( 2707500 952500 ) ( 2605000 1055000 )
-      ;
-    - sig24 
-      + ROUTED metal10 15000  ( 3011000 215000 ) ( 3011000 330000 ) ( 3017500 336500 ) ( 3017500 952500 ) ( 2915000 1055000 )
-      ;
-    - sig27 
-      + ROUTED metal10 15000  ( 3321000 215000 ) ( 3321000 330000 ) ( 3327500 336500 ) ( 3327500 952500 ) ( 3225000 1055000 )
-      ;
-    - sig30 
-      + ROUTED metal10 15000  ( 3631000 215000 ) ( 3631000 330000 ) ( 3637500 336500 ) ( 3637500 952500 ) ( 3535000 1055000 )
-      ;
-    - sig33 
-      + ROUTED metal10 15000  ( 3941000 215000 ) ( 3941000 330000 ) ( 3947500 336500 ) ( 3947500 952500 ) ( 3845000 1055000 )
-      ;
-    - sig36 
-      + ROUTED metal10 15000  ( 4251000 215000 ) ( 4251000 330000 ) ( 4257500 336500 ) ( 4257500 952500 ) ( 4155000 1055000 )
-      ;
-    - sig39 
-      + ROUTED metal10 15000  ( 4561000 215000 ) ( 4561000 330000 ) ( 4567500 336500 ) ( 4567500 952500 ) ( 4465000 1055000 )
-      ;
-    - sig42 
-      + ROUTED metal10 15000  ( 4871000 215000 ) ( 4871000 330000 ) ( 4877500 336500 ) ( 4877500 952500 ) ( 4775000 1055000 )
-      ;
-    - sig45 
-      + ROUTED metal10 15000  ( 5181000 215000 ) ( 5181000 330000 ) ( 5187500 336500 ) ( 5187500 952500 ) ( 5085000 1055000 )
-      ;
-    - sig48 
-      + ROUTED metal10 15000  ( 5491000 215000 ) ( 5491000 330000 ) ( 5497500 336500 ) ( 5497500 952500 ) ( 5395000 1055000 )
-      ;
-    - sig51 
-      + ROUTED metal10 15000  ( 5801000 215000 ) ( 5801000 330000 ) ( 5807500 336500 ) ( 5807500 952500 ) ( 5705000 1055000 )
-      ;
-    - sig54 
-      + ROUTED metal10 15000  ( 6111000 215000 ) ( 6111000 330000 ) ( 6117500 336500 ) ( 6117500 952500 ) ( 6015000 1055000 )
-      ;
-    - sig57 
-      + ROUTED metal10 15000  ( 6421000 215000 ) ( 6421000 330000 ) ( 6427500 336500 ) ( 6427500 952500 ) ( 6325000 1055000 )
-      ;
-    - sig60 
-      + ROUTED metal10 15000  ( 6731000 215000 ) ( 6731000 330000 ) ( 6737500 336500 ) ( 6737500 952500 ) ( 6635000 1055000 )
-      ;
-    - sig69 
-      + ROUTED metal10 15000  ( 7785000 1151000 ) ( 7670000 1151000 ) ( 7663500 1157500 ) ( 7047500 1157500 ) ( 6945000 1055000 )
-      ;
-    - sig68 
-      + ROUTED metal10 15000  ( 7785000 943000 ) ( 7673000 943000 ) ( 7663500 952500 ) ( 7357500 952500 ) ( 7255000 1055000 )
-      ;
-    - sig67 
-      + ROUTED metal10 15000  ( 7785000 1047000 ) ( 7565000 1047000 )
-      ;
-    - sig252 
-      + ROUTED metal10 15000  ( 215000 753000 ) ( 435000 753000 )
-      ;
-    - sig3 
-      + ROUTED metal10 15000  ( 633000 215000 ) ( 633000 327000 ) ( 642500 336500 ) ( 642500 642500 ) ( 745000 745000 )
-      ;
-    - sig5 
-      + ROUTED metal10 15000  ( 943000 215000 ) ( 943000 327000 ) ( 952500 336500 ) ( 952500 642500 ) ( 1055000 745000 )
-      ;
-    - sig8 
-      + ROUTED metal10 15000  ( 1253000 215000 ) ( 1253000 327000 ) ( 1262500 336500 ) ( 1262500 642500 ) ( 1365000 745000 )
-      ;
-    - sig11 
-      + ROUTED metal10 15000  ( 1563000 215000 ) ( 1563000 327000 ) ( 1572500 336500 ) ( 1572500 642500 ) ( 1675000 745000 )
-      ;
-    - sig14 
-      + ROUTED metal10 15000  ( 1873000 215000 ) ( 1873000 327000 ) ( 1882500 336500 ) ( 1882500 642500 ) ( 1985000 745000 )
-      ;
-    - sig17 
-      + ROUTED metal10 15000  ( 2183000 215000 ) ( 2183000 327000 ) ( 2192500 336500 ) ( 2192500 642500 ) ( 2295000 745000 )
-      ;
-    - sig20 
-      + ROUTED metal10 15000  ( 2493000 215000 ) ( 2493000 327000 ) ( 2502500 336500 ) ( 2502500 642500 ) ( 2605000 745000 )
-      ;
-    - sig23 
-      + ROUTED metal10 15000  ( 2803000 215000 ) ( 2803000 327000 ) ( 2812500 336500 ) ( 2812500 642500 ) ( 2915000 745000 )
-      ;
-    - sig26 
-      + ROUTED metal10 15000  ( 3113000 215000 ) ( 3113000 327000 ) ( 3122500 336500 ) ( 3122500 642500 ) ( 3225000 745000 )
-      ;
-    - sig29 
-      + ROUTED metal10 15000  ( 3423000 215000 ) ( 3423000 327000 ) ( 3432500 336500 ) ( 3432500 642500 ) ( 3535000 745000 )
-      ;
-    - sig32 
-      + ROUTED metal10 15000  ( 3733000 215000 ) ( 3733000 327000 ) ( 3742500 336500 ) ( 3742500 642500 ) ( 3845000 745000 )
-      ;
-    - sig35 
-      + ROUTED metal10 15000  ( 4043000 215000 ) ( 4043000 327000 ) ( 4052500 336500 ) ( 4052500 642500 ) ( 4155000 745000 )
-      ;
-    - sig38 
-      + ROUTED metal10 15000  ( 4353000 215000 ) ( 4353000 327000 ) ( 4362500 336500 ) ( 4362500 642500 ) ( 4465000 745000 )
-      ;
-    - sig41 
-      + ROUTED metal10 15000  ( 4663000 215000 ) ( 4663000 327000 ) ( 4672500 336500 ) ( 4672500 642500 ) ( 4775000 745000 )
-      ;
-    - sig44 
-      + ROUTED metal10 15000  ( 4973000 215000 ) ( 4973000 327000 ) ( 4982500 336500 ) ( 4982500 642500 ) ( 5085000 745000 )
-      ;
-    - sig47 
-      + ROUTED metal10 15000  ( 5283000 215000 ) ( 5283000 327000 ) ( 5292500 336500 ) ( 5292500 642500 ) ( 5395000 745000 )
-      ;
-    - sig50 
-      + ROUTED metal10 15000  ( 5593000 215000 ) ( 5593000 327000 ) ( 5602500 336500 ) ( 5602500 642500 ) ( 5705000 745000 )
-      ;
-    - sig53 
-      + ROUTED metal10 15000  ( 5903000 215000 ) ( 5903000 327000 ) ( 5912500 336500 ) ( 5912500 642500 ) ( 6015000 745000 )
-      ;
-    - sig56 
-      + ROUTED metal10 15000  ( 6213000 215000 ) ( 6213000 327000 ) ( 6222500 336500 ) ( 6222500 642500 ) ( 6325000 745000 )
-      ;
-    - sig59 
-      + ROUTED metal10 15000  ( 6523000 215000 ) ( 6523000 327000 ) ( 6532500 336500 ) ( 6532500 642500 ) ( 6635000 745000 )
-      ;
-    - sig62 
-      + ROUTED metal10 15000  ( 6833000 215000 ) ( 6833000 327000 ) ( 6842500 336500 ) ( 6842500 642500 ) ( 6945000 745000 )
-      ;
-    - sig66 
-      + ROUTED metal10 15000  ( 7785000 633000 ) ( 7673000 633000 ) ( 7663500 642500 ) ( 7357500 642500 ) ( 7255000 745000 )
-      ;
-    - sig65 
-      + ROUTED metal10 15000  ( 7785000 737000 ) ( 7565000 737000 )
-      ;
-    - sig1 
-      + ROUTED metal10 15000  ( 427000 215000 ) ( 427000 435000 )
-      ;
-    - sig2 
-      + ROUTED metal10 15000  ( 737000 215000 ) ( 737000 435000 )
-      ;
-    - sig4 
-      + ROUTED metal10 15000  ( 1047000 215000 ) ( 1047000 435000 )
-      ;
-    - sig7 
-      + ROUTED metal10 15000  ( 1357000 215000 ) ( 1357000 435000 )
-      ;
-    - sig10 
-      + ROUTED metal10 15000  ( 1667000 215000 ) ( 1667000 435000 )
-      ;
-    - sig13 
-      + ROUTED metal10 15000  ( 1977000 215000 ) ( 1977000 435000 )
-      ;
-    - sig16 
-      + ROUTED metal10 15000  ( 2287000 215000 ) ( 2287000 435000 )
-      ;
-    - sig19 
-      + ROUTED metal10 15000  ( 2597000 215000 ) ( 2597000 435000 )
-      ;
-    - sig22 
-      + ROUTED metal10 15000  ( 2907000 215000 ) ( 2907000 435000 )
-      ;
-    - sig25 
-      + ROUTED metal10 15000  ( 3217000 215000 ) ( 3217000 435000 )
-      ;
-    - sig28 
-      + ROUTED metal10 15000  ( 3527000 215000 ) ( 3527000 435000 )
-      ;
-    - sig31 
-      + ROUTED metal10 15000  ( 3837000 215000 ) ( 3837000 435000 )
-      ;
-    - sig34 
-      + ROUTED metal10 15000  ( 4147000 215000 ) ( 4147000 435000 )
-      ;
-    - sig37 
-      + ROUTED metal10 15000  ( 4457000 215000 ) ( 4457000 435000 )
-      ;
-    - sig40 
-      + ROUTED metal10 15000  ( 4767000 215000 ) ( 4767000 435000 )
-      ;
-    - sig43 
-      + ROUTED metal10 15000  ( 5077000 215000 ) ( 5077000 435000 )
-      ;
-    - sig46 
-      + ROUTED metal10 15000  ( 5387000 215000 ) ( 5387000 435000 )
-      ;
-    - sig49 
-      + ROUTED metal10 15000  ( 5697000 215000 ) ( 5697000 435000 )
-      ;
-    - sig52 
-      + ROUTED metal10 15000  ( 6007000 215000 ) ( 6007000 435000 )
-      ;
-    - sig55 
-      + ROUTED metal10 15000  ( 6317000 215000 ) ( 6317000 435000 )
-      ;
-    - sig58 
-      + ROUTED metal10 15000  ( 6627000 215000 ) ( 6627000 435000 )
-      ;
-    - sig61 
-      + ROUTED metal10 15000  ( 6937000 215000 ) ( 6937000 435000 )
-      ;
-    - sig63 
-      + ROUTED metal10 15000  ( 7247000 215000 ) ( 7247000 435000 )
-      ;
-    - sig64 
-      + ROUTED metal10 15000  ( 7785000 427000 ) ( 7565000 427000 )
-      ;
+    - sig1 ( PIN sig1 ) ( u_sig1 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 427000 215000 ) ( 427000 435000 ) ;
+    - sig10 ( PIN sig10 ) ( u_sig10 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1667000 215000 ) ( 1667000 435000 ) ;
+    - sig100 ( PIN sig100 ) ( u_sig100 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 4457000 ) ( 7785000 4457000 ) ;
+    - sig101 ( PIN sig101 ) ( u_sig101 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 4362500 ) ( 7255000 4465000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 4362500 ) ( 7663500 4362500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4353000 ) ( 7663500 4362500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4353000 ) ( 7785000 4353000 ) ;
+    - sig102 ( PIN sig102 ) ( u_sig102 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 4465000 ) ( 7047500 4567500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 4567500 ) ( 7663500 4567500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 4561000 ) ( 7663500 4567500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 4561000 ) ( 7785000 4561000 ) ;
+    - sig103 ( PIN sig103 ) ( u_sig103 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 4767000 ) ( 7785000 4767000 ) ;
+    - sig104 ( PIN sig104 ) ( u_sig104 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 4672500 ) ( 7255000 4775000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 4672500 ) ( 7663500 4672500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4663000 ) ( 7663500 4672500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4663000 ) ( 7785000 4663000 ) ;
+    - sig105 ( PIN sig105 ) ( u_sig105 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 4775000 ) ( 7047500 4877500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 4877500 ) ( 7663500 4877500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 4871000 ) ( 7663500 4877500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 4871000 ) ( 7785000 4871000 ) ;
+    - sig106 ( PIN sig106 ) ( u_sig106 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 5077000 ) ( 7785000 5077000 ) ;
+    - sig107 ( PIN sig107 ) ( u_sig107 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 4982500 ) ( 7255000 5085000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 4982500 ) ( 7663500 4982500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4973000 ) ( 7663500 4982500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4973000 ) ( 7785000 4973000 ) ;
+    - sig108 ( PIN sig108 ) ( u_sig108 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 5085000 ) ( 7047500 5187500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 5187500 ) ( 7663500 5187500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 5181000 ) ( 7663500 5187500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 5181000 ) ( 7785000 5181000 ) ;
+    - sig109 ( PIN sig109 ) ( u_sig109 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 5387000 ) ( 7785000 5387000 ) ;
+    - sig11 ( PIN sig11 ) ( u_sig11 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1572500 642500 ) ( 1675000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1572500 336500 ) ( 1572500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1563000 327000 ) ( 1572500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1563000 215000 ) ( 1563000 327000 ) ;
+    - sig110 ( PIN sig110 ) ( u_sig110 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 5292500 ) ( 7255000 5395000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 5292500 ) ( 7663500 5292500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 5283000 ) ( 7663500 5292500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 5283000 ) ( 7785000 5283000 ) ;
+    - sig111 ( PIN sig111 ) ( u_sig111 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 5395000 ) ( 7047500 5497500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 5497500 ) ( 7663500 5497500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 5491000 ) ( 7663500 5497500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 5491000 ) ( 7785000 5491000 ) ;
+    - sig112 ( PIN sig112 ) ( u_sig112 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 5697000 ) ( 7785000 5697000 ) ;
+    - sig113 ( PIN sig113 ) ( u_sig113 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 5602500 ) ( 7255000 5705000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 5602500 ) ( 7663500 5602500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 5593000 ) ( 7663500 5602500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 5593000 ) ( 7785000 5593000 ) ;
+    - sig114 ( PIN sig114 ) ( u_sig114 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 5705000 ) ( 7047500 5807500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 5807500 ) ( 7663500 5807500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 5801000 ) ( 7663500 5807500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 5801000 ) ( 7785000 5801000 ) ;
+    - sig115 ( PIN sig115 ) ( u_sig115 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 6007000 ) ( 7785000 6007000 ) ;
+    - sig116 ( PIN sig116 ) ( u_sig116 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 5912500 ) ( 7255000 6015000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 5912500 ) ( 7663500 5912500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 5903000 ) ( 7663500 5912500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 5903000 ) ( 7785000 5903000 ) ;
+    - sig117 ( PIN sig117 ) ( u_sig117 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 6015000 ) ( 7047500 6117500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 6117500 ) ( 7663500 6117500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 6111000 ) ( 7663500 6117500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 6111000 ) ( 7785000 6111000 ) ;
+    - sig118 ( PIN sig118 ) ( u_sig118 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 6317000 ) ( 7785000 6317000 ) ;
+    - sig119 ( PIN sig119 ) ( u_sig119 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 6222500 ) ( 7255000 6325000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 6222500 ) ( 7663500 6222500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 6213000 ) ( 7663500 6222500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 6213000 ) ( 7785000 6213000 ) ;
+    - sig12 ( PIN sig12 ) ( u_sig12 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1777500 952500 ) ( 1675000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1777500 336500 ) ( 1777500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1771000 330000 ) ( 1777500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1771000 215000 ) ( 1771000 330000 ) ;
+    - sig120 ( PIN sig120 ) ( u_sig120 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 6325000 ) ( 7047500 6427500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 6427500 ) ( 7663500 6427500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 6421000 ) ( 7663500 6427500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 6421000 ) ( 7785000 6421000 ) ;
+    - sig121 ( PIN sig121 ) ( u_sig121 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 6627000 ) ( 7785000 6627000 ) ;
+    - sig122 ( PIN sig122 ) ( u_sig122 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 6532500 ) ( 7255000 6635000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 6532500 ) ( 7663500 6532500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 6523000 ) ( 7663500 6532500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 6523000 ) ( 7785000 6523000 ) ;
+    - sig123 ( PIN sig123 ) ( u_sig123 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 6635000 ) ( 7047500 6737500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 6737500 ) ( 7663500 6737500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 6731000 ) ( 7663500 6737500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 6731000 ) ( 7785000 6731000 ) ;
+    - sig124 ( PIN sig124 ) ( u_sig124 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 6937000 ) ( 7785000 6937000 ) ;
+    - sig125 ( PIN sig125 ) ( u_sig125 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 6842500 ) ( 7255000 6945000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 6842500 ) ( 7663500 6842500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 6833000 ) ( 7663500 6842500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 6833000 ) ( 7785000 6833000 ) ;
+    - sig126 ( PIN sig126 ) ( u_sig126 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 7247000 ) ( 7785000 7247000 ) ;
+    - sig127 ( PIN sig127 ) ( u_sig127 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7573000 7565000 ) ( 7573000 7785000 ) ;
+    - sig128 ( PIN sig128 ) ( u_sig128 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7255000 7255000 ) ( 7357500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 7357500 ) ( 7357500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 7663500 ) ( 7367000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7367000 7673000 ) ( 7367000 7785000 ) ;
+    - sig129 ( PIN sig129 ) ( u_sig129 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7263000 7565000 ) ( 7263000 7785000 ) ;
+    - sig13 ( PIN sig13 ) ( u_sig13 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1977000 215000 ) ( 1977000 435000 ) ;
+    - sig130 ( PIN sig130 ) ( u_sig130 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 7255000 ) ( 7047500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 7357500 ) ( 7047500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 7663500 ) ( 7057000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7057000 7673000 ) ( 7057000 7785000 ) ;
+    - sig131 ( PIN sig131 ) ( u_sig131 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6953000 7565000 ) ( 6953000 7785000 ) ;
+    - sig132 ( PIN sig132 ) ( u_sig132 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 6945000 ) ( 6842500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6842500 7047500 ) ( 6842500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6842500 7663500 ) ( 6849000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6849000 7670000 ) ( 6849000 7785000 ) ;
+    - sig133 ( PIN sig133 ) ( u_sig133 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6635000 7255000 ) ( 6737500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6737500 7357500 ) ( 6737500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6737500 7663500 ) ( 6747000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6747000 7673000 ) ( 6747000 7785000 ) ;
+    - sig134 ( PIN sig134 ) ( u_sig134 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6643000 7565000 ) ( 6643000 7785000 ) ;
+    - sig135 ( PIN sig135 ) ( u_sig135 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6635000 6945000 ) ( 6532500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6532500 7047500 ) ( 6532500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6532500 7663500 ) ( 6539000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6539000 7670000 ) ( 6539000 7785000 ) ;
+    - sig136 ( PIN sig136 ) ( u_sig136 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6325000 7255000 ) ( 6427500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6427500 7357500 ) ( 6427500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6427500 7663500 ) ( 6437000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6437000 7673000 ) ( 6437000 7785000 ) ;
+    - sig137 ( PIN sig137 ) ( u_sig137 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6333000 7565000 ) ( 6333000 7785000 ) ;
+    - sig138 ( PIN sig138 ) ( u_sig138 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6325000 6945000 ) ( 6222500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6222500 7047500 ) ( 6222500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6222500 7663500 ) ( 6229000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6229000 7670000 ) ( 6229000 7785000 ) ;
+    - sig139 ( PIN sig139 ) ( u_sig139 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6015000 7255000 ) ( 6117500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6117500 7357500 ) ( 6117500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6117500 7663500 ) ( 6127000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6127000 7673000 ) ( 6127000 7785000 ) ;
+    - sig14 ( PIN sig14 ) ( u_sig14 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1882500 642500 ) ( 1985000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1882500 336500 ) ( 1882500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1873000 327000 ) ( 1882500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1873000 215000 ) ( 1873000 327000 ) ;
+    - sig140 ( PIN sig140 ) ( u_sig140 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6023000 7565000 ) ( 6023000 7785000 ) ;
+    - sig141 ( PIN sig141 ) ( u_sig141 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6015000 6945000 ) ( 5912500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5912500 7047500 ) ( 5912500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5912500 7663500 ) ( 5919000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5919000 7670000 ) ( 5919000 7785000 ) ;
+    - sig142 ( PIN sig142 ) ( u_sig142 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5705000 7255000 ) ( 5807500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5807500 7357500 ) ( 5807500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5807500 7663500 ) ( 5817000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5817000 7673000 ) ( 5817000 7785000 ) ;
+    - sig143 ( PIN sig143 ) ( u_sig143 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5713000 7565000 ) ( 5713000 7785000 ) ;
+    - sig144 ( PIN sig144 ) ( u_sig144 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5705000 6945000 ) ( 5602500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5602500 7047500 ) ( 5602500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5602500 7663500 ) ( 5609000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5609000 7670000 ) ( 5609000 7785000 ) ;
+    - sig145 ( PIN sig145 ) ( u_sig145 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5395000 7255000 ) ( 5497500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5497500 7357500 ) ( 5497500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5497500 7663500 ) ( 5507000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5507000 7673000 ) ( 5507000 7785000 ) ;
+    - sig146 ( PIN sig146 ) ( u_sig146 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5403000 7565000 ) ( 5403000 7785000 ) ;
+    - sig147 ( PIN sig147 ) ( u_sig147 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5395000 6945000 ) ( 5292500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5292500 7047500 ) ( 5292500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5292500 7663500 ) ( 5299000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5299000 7670000 ) ( 5299000 7785000 ) ;
+    - sig148 ( PIN sig148 ) ( u_sig148 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5085000 7255000 ) ( 5187500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5187500 7357500 ) ( 5187500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5187500 7663500 ) ( 5197000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5197000 7673000 ) ( 5197000 7785000 ) ;
+    - sig149 ( PIN sig149 ) ( u_sig149 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5093000 7565000 ) ( 5093000 7785000 ) ;
+    - sig15 ( PIN sig15 ) ( u_sig15 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2087500 952500 ) ( 1985000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2087500 336500 ) ( 2087500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2081000 330000 ) ( 2087500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2081000 215000 ) ( 2081000 330000 ) ;
+    - sig150 ( PIN sig150 ) ( u_sig150 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5085000 6945000 ) ( 4982500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4982500 7047500 ) ( 4982500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4982500 7663500 ) ( 4989000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4989000 7670000 ) ( 4989000 7785000 ) ;
+    - sig151 ( PIN sig151 ) ( u_sig151 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4775000 7255000 ) ( 4877500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4877500 7357500 ) ( 4877500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4877500 7663500 ) ( 4887000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4887000 7673000 ) ( 4887000 7785000 ) ;
+    - sig152 ( PIN sig152 ) ( u_sig152 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4783000 7565000 ) ( 4783000 7785000 ) ;
+    - sig153 ( PIN sig153 ) ( u_sig153 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4775000 6945000 ) ( 4672500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4672500 7047500 ) ( 4672500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4672500 7663500 ) ( 4679000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4679000 7670000 ) ( 4679000 7785000 ) ;
+    - sig154 ( PIN sig154 ) ( u_sig154 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4465000 7255000 ) ( 4567500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4567500 7357500 ) ( 4567500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4567500 7663500 ) ( 4577000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4577000 7673000 ) ( 4577000 7785000 ) ;
+    - sig155 ( PIN sig155 ) ( u_sig155 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4473000 7565000 ) ( 4473000 7785000 ) ;
+    - sig156 ( PIN sig156 ) ( u_sig156 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4465000 6945000 ) ( 4362500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4362500 7047500 ) ( 4362500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4362500 7663500 ) ( 4369000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4369000 7670000 ) ( 4369000 7785000 ) ;
+    - sig157 ( PIN sig157 ) ( u_sig157 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4155000 7255000 ) ( 4257500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4257500 7357500 ) ( 4257500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4257500 7663500 ) ( 4267000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4267000 7673000 ) ( 4267000 7785000 ) ;
+    - sig158 ( PIN sig158 ) ( u_sig158 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4163000 7565000 ) ( 4163000 7785000 ) ;
+    - sig159 ( PIN sig159 ) ( u_sig159 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4155000 6945000 ) ( 4052500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4052500 7047500 ) ( 4052500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4052500 7663500 ) ( 4059000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4059000 7670000 ) ( 4059000 7785000 ) ;
+    - sig16 ( PIN sig16 ) ( u_sig16 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2287000 215000 ) ( 2287000 435000 ) ;
+    - sig160 ( PIN sig160 ) ( u_sig160 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3845000 7255000 ) ( 3947500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3947500 7357500 ) ( 3947500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3947500 7663500 ) ( 3957000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3957000 7673000 ) ( 3957000 7785000 ) ;
+    - sig161 ( PIN sig161 ) ( u_sig161 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3853000 7565000 ) ( 3853000 7785000 ) ;
+    - sig162 ( PIN sig162 ) ( u_sig162 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3845000 6945000 ) ( 3742500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3742500 7047500 ) ( 3742500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3742500 7663500 ) ( 3749000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3749000 7670000 ) ( 3749000 7785000 ) ;
+    - sig163 ( PIN sig163 ) ( u_sig163 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3535000 7255000 ) ( 3637500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3637500 7357500 ) ( 3637500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3637500 7663500 ) ( 3647000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3647000 7673000 ) ( 3647000 7785000 ) ;
+    - sig164 ( PIN sig164 ) ( u_sig164 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3543000 7565000 ) ( 3543000 7785000 ) ;
+    - sig165 ( PIN sig165 ) ( u_sig165 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3535000 6945000 ) ( 3432500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3432500 7047500 ) ( 3432500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3432500 7663500 ) ( 3439000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3439000 7670000 ) ( 3439000 7785000 ) ;
+    - sig166 ( PIN sig166 ) ( u_sig166 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3225000 7255000 ) ( 3327500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3327500 7357500 ) ( 3327500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3327500 7663500 ) ( 3337000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3337000 7673000 ) ( 3337000 7785000 ) ;
+    - sig167 ( PIN sig167 ) ( u_sig167 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3233000 7565000 ) ( 3233000 7785000 ) ;
+    - sig168 ( PIN sig168 ) ( u_sig168 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3225000 6945000 ) ( 3122500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3122500 7047500 ) ( 3122500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3122500 7663500 ) ( 3129000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3129000 7670000 ) ( 3129000 7785000 ) ;
+    - sig169 ( PIN sig169 ) ( u_sig169 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2915000 7255000 ) ( 3017500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3017500 7357500 ) ( 3017500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3017500 7663500 ) ( 3027000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3027000 7673000 ) ( 3027000 7785000 ) ;
+    - sig17 ( PIN sig17 ) ( u_sig17 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2192500 642500 ) ( 2295000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2192500 336500 ) ( 2192500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2183000 327000 ) ( 2192500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2183000 215000 ) ( 2183000 327000 ) ;
+    - sig170 ( PIN sig170 ) ( u_sig170 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2923000 7565000 ) ( 2923000 7785000 ) ;
+    - sig171 ( PIN sig171 ) ( u_sig171 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2915000 6945000 ) ( 2812500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2812500 7047500 ) ( 2812500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2812500 7663500 ) ( 2819000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2819000 7670000 ) ( 2819000 7785000 ) ;
+    - sig172 ( PIN sig172 ) ( u_sig172 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2605000 7255000 ) ( 2707500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2707500 7357500 ) ( 2707500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2707500 7663500 ) ( 2717000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2717000 7673000 ) ( 2717000 7785000 ) ;
+    - sig173 ( PIN sig173 ) ( u_sig173 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2613000 7565000 ) ( 2613000 7785000 ) ;
+    - sig174 ( PIN sig174 ) ( u_sig174 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2605000 6945000 ) ( 2502500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2502500 7047500 ) ( 2502500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2502500 7663500 ) ( 2509000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2509000 7670000 ) ( 2509000 7785000 ) ;
+    - sig175 ( PIN sig175 ) ( u_sig175 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2295000 7255000 ) ( 2397500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2397500 7357500 ) ( 2397500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2397500 7663500 ) ( 2407000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2407000 7673000 ) ( 2407000 7785000 ) ;
+    - sig176 ( PIN sig176 ) ( u_sig176 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2303000 7565000 ) ( 2303000 7785000 ) ;
+    - sig177 ( PIN sig177 ) ( u_sig177 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2295000 6945000 ) ( 2192500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2192500 7047500 ) ( 2192500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2192500 7663500 ) ( 2199000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2199000 7670000 ) ( 2199000 7785000 ) ;
+    - sig178 ( PIN sig178 ) ( u_sig178 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1985000 7255000 ) ( 2087500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2087500 7357500 ) ( 2087500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2087500 7663500 ) ( 2097000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2097000 7673000 ) ( 2097000 7785000 ) ;
+    - sig179 ( PIN sig179 ) ( u_sig179 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1993000 7565000 ) ( 1993000 7785000 ) ;
+    - sig18 ( PIN sig18 ) ( u_sig18 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2397500 952500 ) ( 2295000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2397500 336500 ) ( 2397500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2391000 330000 ) ( 2397500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2391000 215000 ) ( 2391000 330000 ) ;
+    - sig180 ( PIN sig180 ) ( u_sig180 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1985000 6945000 ) ( 1882500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1882500 7047500 ) ( 1882500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1882500 7663500 ) ( 1889000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1889000 7670000 ) ( 1889000 7785000 ) ;
+    - sig181 ( PIN sig181 ) ( u_sig181 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1675000 7255000 ) ( 1777500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1777500 7357500 ) ( 1777500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1777500 7663500 ) ( 1787000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1787000 7673000 ) ( 1787000 7785000 ) ;
+    - sig182 ( PIN sig182 ) ( u_sig182 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1683000 7565000 ) ( 1683000 7785000 ) ;
+    - sig183 ( PIN sig183 ) ( u_sig183 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1675000 6945000 ) ( 1572500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1572500 7047500 ) ( 1572500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1572500 7663500 ) ( 1579000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1579000 7670000 ) ( 1579000 7785000 ) ;
+    - sig184 ( PIN sig184 ) ( u_sig184 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1365000 7255000 ) ( 1467500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1467500 7357500 ) ( 1467500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1467500 7663500 ) ( 1477000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1477000 7673000 ) ( 1477000 7785000 ) ;
+    - sig185 ( PIN sig185 ) ( u_sig185 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1373000 7565000 ) ( 1373000 7785000 ) ;
+    - sig186 ( PIN sig186 ) ( u_sig186 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1365000 6945000 ) ( 1262500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1262500 7047500 ) ( 1262500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1262500 7663500 ) ( 1269000 7670000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1269000 7670000 ) ( 1269000 7785000 ) ;
+    - sig187 ( PIN sig187 ) ( u_sig187 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1055000 7255000 ) ( 1157500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1157500 7357500 ) ( 1157500 7663500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1157500 7663500 ) ( 1167000 7673000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1167000 7673000 ) ( 1167000 7785000 ) ;
+    - sig188 ( PIN sig188 ) ( u_sig188 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1063000 7565000 ) ( 1063000 7785000 ) ;
+    - sig189 ( PIN sig189 ) ( u_sig189 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 753000 7565000 ) ( 753000 7785000 ) ;
+    - sig19 ( PIN sig19 ) ( u_sig19 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2597000 215000 ) ( 2597000 435000 ) ;
+    - sig190 ( PIN sig190 ) ( u_sig190 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 7573000 ) ( 435000 7573000 ) ;
+    - sig191 ( PIN sig191 ) ( u_sig191 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 7255000 ) ( 642500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 7357500 ) ( 642500 7357500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 7357500 ) ( 327000 7367000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 7367000 ) ( 327000 7367000 ) ;
+    - sig192 ( PIN sig192 ) ( u_sig192 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 7263000 ) ( 435000 7263000 ) ;
+    - sig193 ( PIN sig193 ) ( u_sig193 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 6945000 ) ( 642500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 7047500 ) ( 642500 7047500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 7047500 ) ( 327000 7057000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 7057000 ) ( 327000 7057000 ) ;
+    - sig194 ( PIN sig194 ) ( u_sig194 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 6953000 ) ( 435000 6953000 ) ;
+    - sig195 ( PIN sig195 ) ( u_sig195 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 6842500 ) ( 1055000 6945000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6842500 ) ( 952500 6842500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6842500 ) ( 330000 6849000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 6849000 ) ( 330000 6849000 ) ;
+    - sig196 ( PIN sig196 ) ( u_sig196 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 6635000 ) ( 642500 6737500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6737500 ) ( 642500 6737500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6737500 ) ( 327000 6747000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 6747000 ) ( 327000 6747000 ) ;
+    - sig197 ( PIN sig197 ) ( u_sig197 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 6643000 ) ( 435000 6643000 ) ;
+    - sig198 ( PIN sig198 ) ( u_sig198 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 6532500 ) ( 1055000 6635000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6532500 ) ( 952500 6532500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6532500 ) ( 330000 6539000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 6539000 ) ( 330000 6539000 ) ;
+    - sig199 ( PIN sig199 ) ( u_sig199 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 6325000 ) ( 642500 6427500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6427500 ) ( 642500 6427500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6427500 ) ( 327000 6437000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 6437000 ) ( 327000 6437000 ) ;
+    - sig2 ( PIN sig2 ) ( u_sig2 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 737000 215000 ) ( 737000 435000 ) ;
+    - sig20 ( PIN sig20 ) ( u_sig20 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2502500 642500 ) ( 2605000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2502500 336500 ) ( 2502500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2493000 327000 ) ( 2502500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2493000 215000 ) ( 2493000 327000 ) ;
+    - sig200 ( PIN sig200 ) ( u_sig200 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 6333000 ) ( 435000 6333000 ) ;
+    - sig201 ( PIN sig201 ) ( u_sig201 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 6222500 ) ( 1055000 6325000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6222500 ) ( 952500 6222500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6222500 ) ( 330000 6229000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 6229000 ) ( 330000 6229000 ) ;
+    - sig202 ( PIN sig202 ) ( u_sig202 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 6015000 ) ( 642500 6117500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6117500 ) ( 642500 6117500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 6117500 ) ( 327000 6127000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 6127000 ) ( 327000 6127000 ) ;
+    - sig203 ( PIN sig203 ) ( u_sig203 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 6023000 ) ( 435000 6023000 ) ;
+    - sig204 ( PIN sig204 ) ( u_sig204 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 5912500 ) ( 1055000 6015000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5912500 ) ( 952500 5912500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5912500 ) ( 330000 5919000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 5919000 ) ( 330000 5919000 ) ;
+    - sig205 ( PIN sig205 ) ( u_sig205 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 5705000 ) ( 642500 5807500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5807500 ) ( 642500 5807500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5807500 ) ( 327000 5817000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 5817000 ) ( 327000 5817000 ) ;
+    - sig206 ( PIN sig206 ) ( u_sig206 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 5713000 ) ( 435000 5713000 ) ;
+    - sig207 ( PIN sig207 ) ( u_sig207 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 5602500 ) ( 1055000 5705000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5602500 ) ( 952500 5602500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5602500 ) ( 330000 5609000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 5609000 ) ( 330000 5609000 ) ;
+    - sig208 ( PIN sig208 ) ( u_sig208 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 5395000 ) ( 642500 5497500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5497500 ) ( 642500 5497500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5497500 ) ( 327000 5507000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 5507000 ) ( 327000 5507000 ) ;
+    - sig209 ( PIN sig209 ) ( u_sig209 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 5403000 ) ( 435000 5403000 ) ;
+    - sig21 ( PIN sig21 ) ( u_sig21 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2707500 952500 ) ( 2605000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2707500 336500 ) ( 2707500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2701000 330000 ) ( 2707500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2701000 215000 ) ( 2701000 330000 ) ;
+    - sig210 ( PIN sig210 ) ( u_sig210 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 5292500 ) ( 1055000 5395000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5292500 ) ( 952500 5292500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5292500 ) ( 330000 5299000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 5299000 ) ( 330000 5299000 ) ;
+    - sig211 ( PIN sig211 ) ( u_sig211 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 5085000 ) ( 642500 5187500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5187500 ) ( 642500 5187500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 5187500 ) ( 327000 5197000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 5197000 ) ( 327000 5197000 ) ;
+    - sig212 ( PIN sig212 ) ( u_sig212 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 5093000 ) ( 435000 5093000 ) ;
+    - sig213 ( PIN sig213 ) ( u_sig213 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 4982500 ) ( 1055000 5085000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4982500 ) ( 952500 4982500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4982500 ) ( 330000 4989000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4989000 ) ( 330000 4989000 ) ;
+    - sig214 ( PIN sig214 ) ( u_sig214 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 4775000 ) ( 642500 4877500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4877500 ) ( 642500 4877500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4877500 ) ( 327000 4887000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4887000 ) ( 327000 4887000 ) ;
+    - sig215 ( PIN sig215 ) ( u_sig215 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 4783000 ) ( 435000 4783000 ) ;
+    - sig216 ( PIN sig216 ) ( u_sig216 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 4672500 ) ( 1055000 4775000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4672500 ) ( 952500 4672500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4672500 ) ( 330000 4679000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4679000 ) ( 330000 4679000 ) ;
+    - sig217 ( PIN sig217 ) ( u_sig217 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 4465000 ) ( 642500 4567500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4567500 ) ( 642500 4567500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4567500 ) ( 327000 4577000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4577000 ) ( 327000 4577000 ) ;
+    - sig218 ( PIN sig218 ) ( u_sig218 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 4473000 ) ( 435000 4473000 ) ;
+    - sig219 ( PIN sig219 ) ( u_sig219 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 4362500 ) ( 1055000 4465000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4362500 ) ( 952500 4362500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4362500 ) ( 330000 4369000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4369000 ) ( 330000 4369000 ) ;
+    - sig22 ( PIN sig22 ) ( u_sig22 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2907000 215000 ) ( 2907000 435000 ) ;
+    - sig220 ( PIN sig220 ) ( u_sig220 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 4155000 ) ( 642500 4257500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4257500 ) ( 642500 4257500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4257500 ) ( 327000 4267000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4267000 ) ( 327000 4267000 ) ;
+    - sig221 ( PIN sig221 ) ( u_sig221 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 4163000 ) ( 435000 4163000 ) ;
+    - sig222 ( PIN sig222 ) ( u_sig222 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 4052500 ) ( 1055000 4155000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4052500 ) ( 952500 4052500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 4052500 ) ( 330000 4059000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 4059000 ) ( 330000 4059000 ) ;
+    - sig223 ( PIN sig223 ) ( u_sig223 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 3845000 ) ( 642500 3947500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3947500 ) ( 642500 3947500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3947500 ) ( 327000 3957000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3957000 ) ( 327000 3957000 ) ;
+    - sig224 ( PIN sig224 ) ( u_sig224 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 3853000 ) ( 435000 3853000 ) ;
+    - sig225 ( PIN sig225 ) ( u_sig225 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 3742500 ) ( 1055000 3845000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3742500 ) ( 952500 3742500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3742500 ) ( 330000 3749000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3749000 ) ( 330000 3749000 ) ;
+    - sig226 ( PIN sig226 ) ( u_sig226 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 3535000 ) ( 642500 3637500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3637500 ) ( 642500 3637500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3637500 ) ( 327000 3647000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3647000 ) ( 327000 3647000 ) ;
+    - sig227 ( PIN sig227 ) ( u_sig227 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 3543000 ) ( 435000 3543000 ) ;
+    - sig228 ( PIN sig228 ) ( u_sig228 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 3432500 ) ( 1055000 3535000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3432500 ) ( 952500 3432500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3432500 ) ( 330000 3439000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3439000 ) ( 330000 3439000 ) ;
+    - sig229 ( PIN sig229 ) ( u_sig229 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 3225000 ) ( 642500 3327500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3327500 ) ( 642500 3327500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3327500 ) ( 327000 3337000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3337000 ) ( 327000 3337000 ) ;
+    - sig23 ( PIN sig23 ) ( u_sig23 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 2812500 642500 ) ( 2915000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2812500 336500 ) ( 2812500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2803000 327000 ) ( 2812500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 2803000 215000 ) ( 2803000 327000 ) ;
+    - sig230 ( PIN sig230 ) ( u_sig230 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 3233000 ) ( 435000 3233000 ) ;
+    - sig231 ( PIN sig231 ) ( u_sig231 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 3122500 ) ( 1055000 3225000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3122500 ) ( 952500 3122500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3122500 ) ( 330000 3129000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3129000 ) ( 330000 3129000 ) ;
+    - sig232 ( PIN sig232 ) ( u_sig232 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 2915000 ) ( 642500 3017500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3017500 ) ( 642500 3017500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 3017500 ) ( 327000 3027000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 3027000 ) ( 327000 3027000 ) ;
+    - sig233 ( PIN sig233 ) ( u_sig233 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 2923000 ) ( 435000 2923000 ) ;
+    - sig234 ( PIN sig234 ) ( u_sig234 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 2812500 ) ( 1055000 2915000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2812500 ) ( 952500 2812500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2812500 ) ( 330000 2819000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 2819000 ) ( 330000 2819000 ) ;
+    - sig235 ( PIN sig235 ) ( u_sig235 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 2605000 ) ( 642500 2707500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2707500 ) ( 642500 2707500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2707500 ) ( 327000 2717000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 2717000 ) ( 327000 2717000 ) ;
+    - sig236 ( PIN sig236 ) ( u_sig236 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 2613000 ) ( 435000 2613000 ) ;
+    - sig237 ( PIN sig237 ) ( u_sig237 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 2502500 ) ( 1055000 2605000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2502500 ) ( 952500 2502500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2502500 ) ( 330000 2509000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 2509000 ) ( 330000 2509000 ) ;
+    - sig238 ( PIN sig238 ) ( u_sig238 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 2295000 ) ( 642500 2397500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2397500 ) ( 642500 2397500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2397500 ) ( 327000 2407000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 2407000 ) ( 327000 2407000 ) ;
+    - sig239 ( PIN sig239 ) ( u_sig239 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 2303000 ) ( 435000 2303000 ) ;
+    - sig24 ( PIN sig24 ) ( u_sig24 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3017500 952500 ) ( 2915000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3017500 336500 ) ( 3017500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3011000 330000 ) ( 3017500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3011000 215000 ) ( 3011000 330000 ) ;
+    - sig240 ( PIN sig240 ) ( u_sig240 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 2192500 ) ( 1055000 2295000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2192500 ) ( 952500 2192500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2192500 ) ( 330000 2199000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 2199000 ) ( 330000 2199000 ) ;
+    - sig241 ( PIN sig241 ) ( u_sig241 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 1985000 ) ( 642500 2087500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2087500 ) ( 642500 2087500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 2087500 ) ( 327000 2097000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 2097000 ) ( 327000 2097000 ) ;
+    - sig242 ( PIN sig242 ) ( u_sig242 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 1993000 ) ( 435000 1993000 ) ;
+    - sig243 ( PIN sig243 ) ( u_sig243 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 1882500 ) ( 1055000 1985000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1882500 ) ( 952500 1882500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1882500 ) ( 330000 1889000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 1889000 ) ( 330000 1889000 ) ;
+    - sig244 ( PIN sig244 ) ( u_sig244 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 1675000 ) ( 642500 1777500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1777500 ) ( 642500 1777500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1777500 ) ( 327000 1787000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 1787000 ) ( 327000 1787000 ) ;
+    - sig245 ( PIN sig245 ) ( u_sig245 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 1683000 ) ( 435000 1683000 ) ;
+    - sig246 ( PIN sig246 ) ( u_sig246 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 1572500 ) ( 1055000 1675000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1572500 ) ( 952500 1572500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1572500 ) ( 330000 1579000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 1579000 ) ( 330000 1579000 ) ;
+    - sig247 ( PIN sig247 ) ( u_sig247 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 745000 1365000 ) ( 642500 1467500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1467500 ) ( 642500 1467500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1467500 ) ( 327000 1477000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 1477000 ) ( 327000 1477000 ) ;
+    - sig248 ( PIN sig248 ) ( u_sig248 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 1373000 ) ( 435000 1373000 ) ;
+    - sig249 ( PIN sig249 ) ( u_sig249 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 1262500 ) ( 1055000 1365000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1262500 ) ( 952500 1262500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 336500 1262500 ) ( 330000 1269000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 215000 1269000 ) ( 330000 1269000 ) ;
+    - sig25 ( PIN sig25 ) ( u_sig25 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3217000 215000 ) ( 3217000 435000 ) ;
+    - sig250 ( PIN sig250 ) ( u_sig250 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 847500 952500 ) ( 745000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 847500 336500 ) ( 847500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 813000 302000 ) ( 847500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 813000 215000 ) ( 813000 302000 ) ;
+    - sig251 ( PIN sig251 ) ( u_sig251 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 1063000 ) ( 435000 1063000 ) ;
+    - sig252 ( PIN sig252 ) ( u_sig252 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 215000 753000 ) ( 435000 753000 ) ;
+    - sig26 ( PIN sig26 ) ( u_sig26 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3122500 642500 ) ( 3225000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3122500 336500 ) ( 3122500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3113000 327000 ) ( 3122500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3113000 215000 ) ( 3113000 327000 ) ;
+    - sig27 ( PIN sig27 ) ( u_sig27 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3327500 952500 ) ( 3225000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3327500 336500 ) ( 3327500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3321000 330000 ) ( 3327500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3321000 215000 ) ( 3321000 330000 ) ;
+    - sig28 ( PIN sig28 ) ( u_sig28 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3527000 215000 ) ( 3527000 435000 ) ;
+    - sig29 ( PIN sig29 ) ( u_sig29 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3432500 642500 ) ( 3535000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3432500 336500 ) ( 3432500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3423000 327000 ) ( 3432500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3423000 215000 ) ( 3423000 327000 ) ;
+    - sig3 ( PIN sig3 ) ( u_sig3 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 642500 642500 ) ( 745000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 642500 336500 ) ( 642500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 633000 327000 ) ( 642500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 633000 215000 ) ( 633000 327000 ) ;
+    - sig30 ( PIN sig30 ) ( u_sig30 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3637500 952500 ) ( 3535000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3637500 336500 ) ( 3637500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3631000 330000 ) ( 3637500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3631000 215000 ) ( 3631000 330000 ) ;
+    - sig31 ( PIN sig31 ) ( u_sig31 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3837000 215000 ) ( 3837000 435000 ) ;
+    - sig32 ( PIN sig32 ) ( u_sig32 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3742500 642500 ) ( 3845000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3742500 336500 ) ( 3742500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3733000 327000 ) ( 3742500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3733000 215000 ) ( 3733000 327000 ) ;
+    - sig33 ( PIN sig33 ) ( u_sig33 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 3947500 952500 ) ( 3845000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3947500 336500 ) ( 3947500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3941000 330000 ) ( 3947500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 3941000 215000 ) ( 3941000 330000 ) ;
+    - sig34 ( PIN sig34 ) ( u_sig34 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4147000 215000 ) ( 4147000 435000 ) ;
+    - sig35 ( PIN sig35 ) ( u_sig35 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4052500 642500 ) ( 4155000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4052500 336500 ) ( 4052500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4043000 327000 ) ( 4052500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4043000 215000 ) ( 4043000 327000 ) ;
+    - sig36 ( PIN sig36 ) ( u_sig36 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4257500 952500 ) ( 4155000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4257500 336500 ) ( 4257500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4251000 330000 ) ( 4257500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4251000 215000 ) ( 4251000 330000 ) ;
+    - sig37 ( PIN sig37 ) ( u_sig37 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4457000 215000 ) ( 4457000 435000 ) ;
+    - sig38 ( PIN sig38 ) ( u_sig38 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4362500 642500 ) ( 4465000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4362500 336500 ) ( 4362500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4353000 327000 ) ( 4362500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4353000 215000 ) ( 4353000 327000 ) ;
+    - sig39 ( PIN sig39 ) ( u_sig39 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4567500 952500 ) ( 4465000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4567500 336500 ) ( 4567500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4561000 330000 ) ( 4567500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4561000 215000 ) ( 4561000 330000 ) ;
+    - sig4 ( PIN sig4 ) ( u_sig4 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1047000 215000 ) ( 1047000 435000 ) ;
+    - sig40 ( PIN sig40 ) ( u_sig40 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4767000 215000 ) ( 4767000 435000 ) ;
+    - sig41 ( PIN sig41 ) ( u_sig41 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4672500 642500 ) ( 4775000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4672500 336500 ) ( 4672500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4663000 327000 ) ( 4672500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4663000 215000 ) ( 4663000 327000 ) ;
+    - sig42 ( PIN sig42 ) ( u_sig42 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4877500 952500 ) ( 4775000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4877500 336500 ) ( 4877500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4871000 330000 ) ( 4877500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4871000 215000 ) ( 4871000 330000 ) ;
+    - sig43 ( PIN sig43 ) ( u_sig43 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5077000 215000 ) ( 5077000 435000 ) ;
+    - sig44 ( PIN sig44 ) ( u_sig44 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 4982500 642500 ) ( 5085000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4982500 336500 ) ( 4982500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4973000 327000 ) ( 4982500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 4973000 215000 ) ( 4973000 327000 ) ;
+    - sig45 ( PIN sig45 ) ( u_sig45 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5187500 952500 ) ( 5085000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5187500 336500 ) ( 5187500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5181000 330000 ) ( 5187500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5181000 215000 ) ( 5181000 330000 ) ;
+    - sig46 ( PIN sig46 ) ( u_sig46 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5387000 215000 ) ( 5387000 435000 ) ;
+    - sig47 ( PIN sig47 ) ( u_sig47 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5292500 642500 ) ( 5395000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5292500 336500 ) ( 5292500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5283000 327000 ) ( 5292500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5283000 215000 ) ( 5283000 327000 ) ;
+    - sig48 ( PIN sig48 ) ( u_sig48 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5497500 952500 ) ( 5395000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5497500 336500 ) ( 5497500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5491000 330000 ) ( 5497500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5491000 215000 ) ( 5491000 330000 ) ;
+    - sig49 ( PIN sig49 ) ( u_sig49 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5697000 215000 ) ( 5697000 435000 ) ;
+    - sig5 ( PIN sig5 ) ( u_sig5 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 952500 642500 ) ( 1055000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 952500 336500 ) ( 952500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 943000 327000 ) ( 952500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 943000 215000 ) ( 943000 327000 ) ;
+    - sig50 ( PIN sig50 ) ( u_sig50 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5602500 642500 ) ( 5705000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5602500 336500 ) ( 5602500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5593000 327000 ) ( 5602500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5593000 215000 ) ( 5593000 327000 ) ;
+    - sig51 ( PIN sig51 ) ( u_sig51 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5807500 952500 ) ( 5705000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5807500 336500 ) ( 5807500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5801000 330000 ) ( 5807500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5801000 215000 ) ( 5801000 330000 ) ;
+    - sig52 ( PIN sig52 ) ( u_sig52 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6007000 215000 ) ( 6007000 435000 ) ;
+    - sig53 ( PIN sig53 ) ( u_sig53 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 5912500 642500 ) ( 6015000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5912500 336500 ) ( 5912500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5903000 327000 ) ( 5912500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 5903000 215000 ) ( 5903000 327000 ) ;
+    - sig54 ( PIN sig54 ) ( u_sig54 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6117500 952500 ) ( 6015000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6117500 336500 ) ( 6117500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6111000 330000 ) ( 6117500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6111000 215000 ) ( 6111000 330000 ) ;
+    - sig55 ( PIN sig55 ) ( u_sig55 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6317000 215000 ) ( 6317000 435000 ) ;
+    - sig56 ( PIN sig56 ) ( u_sig56 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6222500 642500 ) ( 6325000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6222500 336500 ) ( 6222500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6213000 327000 ) ( 6222500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6213000 215000 ) ( 6213000 327000 ) ;
+    - sig57 ( PIN sig57 ) ( u_sig57 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6427500 952500 ) ( 6325000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6427500 336500 ) ( 6427500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6421000 330000 ) ( 6427500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6421000 215000 ) ( 6421000 330000 ) ;
+    - sig58 ( PIN sig58 ) ( u_sig58 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6627000 215000 ) ( 6627000 435000 ) ;
+    - sig59 ( PIN sig59 ) ( u_sig59 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6532500 642500 ) ( 6635000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6532500 336500 ) ( 6532500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6523000 327000 ) ( 6532500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6523000 215000 ) ( 6523000 327000 ) ;
+    - sig6 ( PIN sig6 ) ( u_sig6 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1157500 952500 ) ( 1055000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1157500 336500 ) ( 1157500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1151000 330000 ) ( 1157500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1151000 215000 ) ( 1151000 330000 ) ;
+    - sig60 ( PIN sig60 ) ( u_sig60 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6737500 952500 ) ( 6635000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6737500 336500 ) ( 6737500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6731000 330000 ) ( 6737500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6731000 215000 ) ( 6731000 330000 ) ;
+    - sig61 ( PIN sig61 ) ( u_sig61 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6937000 215000 ) ( 6937000 435000 ) ;
+    - sig62 ( PIN sig62 ) ( u_sig62 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6842500 642500 ) ( 6945000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6842500 336500 ) ( 6842500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6833000 327000 ) ( 6842500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 6833000 215000 ) ( 6833000 327000 ) ;
+    - sig63 ( PIN sig63 ) ( u_sig63 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7247000 215000 ) ( 7247000 435000 ) ;
+    - sig64 ( PIN sig64 ) ( u_sig64 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 427000 ) ( 7785000 427000 ) ;
+    - sig65 ( PIN sig65 ) ( u_sig65 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 737000 ) ( 7785000 737000 ) ;
+    - sig66 ( PIN sig66 ) ( u_sig66 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 642500 ) ( 7255000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 642500 ) ( 7663500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 633000 ) ( 7663500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 633000 ) ( 7785000 633000 ) ;
+    - sig67 ( PIN sig67 ) ( u_sig67 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 1047000 ) ( 7785000 1047000 ) ;
+    - sig68 ( PIN sig68 ) ( u_sig68 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 952500 ) ( 7255000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 952500 ) ( 7663500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 943000 ) ( 7663500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 943000 ) ( 7785000 943000 ) ;
+    - sig69 ( PIN sig69 ) ( u_sig69 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 1055000 ) ( 7047500 1157500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 1157500 ) ( 7663500 1157500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 1151000 ) ( 7663500 1157500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 1151000 ) ( 7785000 1151000 ) ;
+    - sig7 ( PIN sig7 ) ( u_sig7 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1357000 215000 ) ( 1357000 435000 ) ;
+    - sig70 ( PIN sig70 ) ( u_sig70 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 1357000 ) ( 7785000 1357000 ) ;
+    - sig71 ( PIN sig71 ) ( u_sig71 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 1262500 ) ( 7255000 1365000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 1262500 ) ( 7663500 1262500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 1253000 ) ( 7663500 1262500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 1253000 ) ( 7785000 1253000 ) ;
+    - sig72 ( PIN sig72 ) ( u_sig72 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 1365000 ) ( 7047500 1467500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 1467500 ) ( 7663500 1467500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 1461000 ) ( 7663500 1467500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 1461000 ) ( 7785000 1461000 ) ;
+    - sig73 ( PIN sig73 ) ( u_sig73 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 1667000 ) ( 7785000 1667000 ) ;
+    - sig74 ( PIN sig74 ) ( u_sig74 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 1572500 ) ( 7255000 1675000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 1572500 ) ( 7663500 1572500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 1563000 ) ( 7663500 1572500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 1563000 ) ( 7785000 1563000 ) ;
+    - sig75 ( PIN sig75 ) ( u_sig75 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 1675000 ) ( 7047500 1777500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 1777500 ) ( 7663500 1777500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 1771000 ) ( 7663500 1777500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 1771000 ) ( 7785000 1771000 ) ;
+    - sig76 ( PIN sig76 ) ( u_sig76 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 1977000 ) ( 7785000 1977000 ) ;
+    - sig77 ( PIN sig77 ) ( u_sig77 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 1882500 ) ( 7255000 1985000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 1882500 ) ( 7663500 1882500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 1873000 ) ( 7663500 1882500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 1873000 ) ( 7785000 1873000 ) ;
+    - sig78 ( PIN sig78 ) ( u_sig78 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 1985000 ) ( 7047500 2087500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 2087500 ) ( 7663500 2087500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 2081000 ) ( 7663500 2087500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 2081000 ) ( 7785000 2081000 ) ;
+    - sig79 ( PIN sig79 ) ( u_sig79 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 2287000 ) ( 7785000 2287000 ) ;
+    - sig8 ( PIN sig8 ) ( u_sig8 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1262500 642500 ) ( 1365000 745000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1262500 336500 ) ( 1262500 642500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1253000 327000 ) ( 1262500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1253000 215000 ) ( 1253000 327000 ) ;
+    - sig80 ( PIN sig80 ) ( u_sig80 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 2192500 ) ( 7255000 2295000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 2192500 ) ( 7663500 2192500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 2183000 ) ( 7663500 2192500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 2183000 ) ( 7785000 2183000 ) ;
+    - sig81 ( PIN sig81 ) ( u_sig81 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 2295000 ) ( 7047500 2397500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 2397500 ) ( 7663500 2397500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 2391000 ) ( 7663500 2397500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 2391000 ) ( 7785000 2391000 ) ;
+    - sig82 ( PIN sig82 ) ( u_sig82 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 2597000 ) ( 7785000 2597000 ) ;
+    - sig83 ( PIN sig83 ) ( u_sig83 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 2502500 ) ( 7255000 2605000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 2502500 ) ( 7663500 2502500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 2493000 ) ( 7663500 2502500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 2493000 ) ( 7785000 2493000 ) ;
+    - sig84 ( PIN sig84 ) ( u_sig84 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 2605000 ) ( 7047500 2707500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 2707500 ) ( 7663500 2707500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 2701000 ) ( 7663500 2707500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 2701000 ) ( 7785000 2701000 ) ;
+    - sig85 ( PIN sig85 ) ( u_sig85 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 2907000 ) ( 7785000 2907000 ) ;
+    - sig86 ( PIN sig86 ) ( u_sig86 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 2812500 ) ( 7255000 2915000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 2812500 ) ( 7663500 2812500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 2803000 ) ( 7663500 2812500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 2803000 ) ( 7785000 2803000 ) ;
+    - sig87 ( PIN sig87 ) ( u_sig87 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 2915000 ) ( 7047500 3017500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 3017500 ) ( 7663500 3017500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3011000 ) ( 7663500 3017500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3011000 ) ( 7785000 3011000 ) ;
+    - sig88 ( PIN sig88 ) ( u_sig88 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 3217000 ) ( 7785000 3217000 ) ;
+    - sig89 ( PIN sig89 ) ( u_sig89 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 3122500 ) ( 7255000 3225000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 3122500 ) ( 7663500 3122500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 3113000 ) ( 7663500 3122500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 3113000 ) ( 7785000 3113000 ) ;
+    - sig9 ( PIN sig9 ) ( u_sig9 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 1467500 952500 ) ( 1365000 1055000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1467500 336500 ) ( 1467500 952500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1461000 330000 ) ( 1467500 336500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 1461000 215000 ) ( 1461000 330000 ) ;
+    - sig90 ( PIN sig90 ) ( u_sig90 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 3225000 ) ( 7047500 3327500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 3327500 ) ( 7663500 3327500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3321000 ) ( 7663500 3327500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3321000 ) ( 7785000 3321000 ) ;
+    - sig91 ( PIN sig91 ) ( u_sig91 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 3527000 ) ( 7785000 3527000 ) ;
+    - sig92 ( PIN sig92 ) ( u_sig92 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 3432500 ) ( 7255000 3535000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 3432500 ) ( 7663500 3432500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 3423000 ) ( 7663500 3432500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 3423000 ) ( 7785000 3423000 ) ;
+    - sig93 ( PIN sig93 ) ( u_sig93 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 3535000 ) ( 7047500 3637500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 3637500 ) ( 7663500 3637500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3631000 ) ( 7663500 3637500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3631000 ) ( 7785000 3631000 ) ;
+    - sig94 ( PIN sig94 ) ( u_sig94 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 3837000 ) ( 7785000 3837000 ) ;
+    - sig95 ( PIN sig95 ) ( u_sig95 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 3742500 ) ( 7255000 3845000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 3742500 ) ( 7663500 3742500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 3733000 ) ( 7663500 3742500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 3733000 ) ( 7785000 3733000 ) ;
+    - sig96 ( PIN sig96 ) ( u_sig96 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 3845000 ) ( 7047500 3947500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 3947500 ) ( 7663500 3947500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3941000 ) ( 7663500 3947500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 3941000 ) ( 7785000 3941000 ) ;
+    - sig97 ( PIN sig97 ) ( u_sig97 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7565000 4147000 ) ( 7785000 4147000 ) ;
+    - sig98 ( PIN sig98 ) ( u_sig98 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 7357500 4052500 ) ( 7255000 4155000 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7357500 4052500 ) ( 7663500 4052500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4043000 ) ( 7663500 4052500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7673000 4043000 ) ( 7785000 4043000 ) ;
+    - sig99 ( PIN sig99 ) ( u_sig99 PAD ) + USE SIGNAL
+      + ROUTED metal10 15000 + SHAPE STRIPE ( 6945000 4155000 ) ( 7047500 4257500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7047500 4257500 ) ( 7663500 4257500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 4251000 ) ( 7663500 4257500 )
+      NEW metal10 15000 + SHAPE STRIPE ( 7670000 4251000 ) ( 7785000 4251000 ) ;
 END SPECIALNETS
 NETS 252 ;
     - core_sig1 ( u_sig1 A ) + USE SIGNAL ;
