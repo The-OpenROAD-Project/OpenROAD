@@ -173,31 +173,33 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 
 ////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////
-
 typedef std::pair<int, int> PDedge;
-typedef std::vector<std::vector<PDedge>> PDedges;
+typedef std::vector<std::set<PDedge>> PDedges;
 
 static int findPathDepth(int node,
                          int from,
                          PDedges &edges,
-                         int level);
+                         int length);
 
-int findPathDepth(Tree &tree,
-                  int drvr_idx)
+int findPathDepth(Tree &tree)
 {
   int node_count = tree.branchCount();
   PDedges edges(node_count);
   int branch_count = tree.branchCount();
   if (branch_count > 2) {
+    int drvr_idx = 0;
     for (int i = 0; i < branch_count; i++) {
       stt::Branch &branch = tree.branch[i];
       int neighbor = branch.n;
-      Branch &neighbor_branch = tree.branch[neighbor];
-      int length = std::abs(branch.x - neighbor_branch.x)
-        + std::abs(branch.y - neighbor_branch.y);
-      edges[neighbor].push_back(PDedge(i, length));
-      edges[i].push_back(PDedge(neighbor, length));
+      if (neighbor == i)
+        drvr_idx = i;
+      else {
+        Branch &neighbor_branch = tree.branch[neighbor];
+        int length = std::abs(branch.x - neighbor_branch.x)
+          + std::abs(branch.y - neighbor_branch.y);
+        edges[neighbor].insert(PDedge(i, length));
+        edges[i].insert(PDedge(neighbor, length));
+      }
     }
     return findPathDepth(drvr_idx, drvr_idx, edges, 0);
   }
@@ -208,29 +210,27 @@ int findPathDepth(Tree &tree,
 static int findPathDepth(int node,
                          int from,
                          PDedges &edges,
-                         int level)
+                         int length)
 {
-  int max_level = level;
-  for (PDedge &edge : edges[node]) {
+  int max_length = length;
+  for (const PDedge &edge : edges[node]) {
     int neighbor = edge.first;
-    int length = edge.second;
+    int edge_length = edge.second;
     if (neighbor != from)
-      max_level = std::max(max_level, findPathDepth(neighbor, node, edges,
-                                                    // zero length edges do not add depth
-                                                    length == 0 ? level : level + 1));
+      max_length = std::max(max_length,
+                            findPathDepth(neighbor, node, edges, length + edge_length));
   }
-  return max_level;
+  return max_length;
 }
 
 // Used by regressions.
 void
 reportSteinerTree(stt::Tree &tree,
-                  int drvr_idx,
                   Logger *logger)
 {
   logger->report("Wire length = {} Path depth = {}",
                  tree.length,
-                 findPathDepth(tree, drvr_idx));
+                 findPathDepth(tree));
   for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
