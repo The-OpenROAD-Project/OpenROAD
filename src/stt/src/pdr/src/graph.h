@@ -79,7 +79,7 @@ public:
                             int i_node);
   float calc_tree_cost();
 
-  void heap_insert(int p, int key);
+  void heap_insert(int p, float key);
   int heap_delete_min();
   void heap_decrease_key(int p, float new_key);
 
@@ -184,7 +184,7 @@ private:
   vector<vector<int>> tree_struct_;
   vector<int> tree_struct_1darr_;
 
-  vector<int> heap_key_;
+  vector<float> heap_key_;
   //   0 empty
   //  -1 visited (removed)
   vector<int> heap_idx_;

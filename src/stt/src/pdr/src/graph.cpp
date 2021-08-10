@@ -2009,7 +2009,7 @@ void Graph::NESW_NearestNeighbors(int left, int right, int oct)
   }
 }
 
-void Graph::heap_insert(int p, int key)
+void Graph::heap_insert(int p, float key)
 {
   int k; /* hole in the heap     */
   int j; /* parent of the hole   */
@@ -2057,12 +2057,13 @@ void Graph::heap_insert(int p, int key)
   }
 }
 
+// Returns element index min key.
 int Graph::heap_delete_min()
 {
   int min, last;
   int k;     /* hole in the heap     */
   int j;     /* child of the hole    */
-  int l_key; /* key of last point    */
+  float l_key; /* key of last point    */
 
   if (heap_size_ == 0) /* heap is empty */
     return (-1);
