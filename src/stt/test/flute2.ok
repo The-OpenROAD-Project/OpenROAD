@@ -1,5 +1,5 @@
 Net lalaland1
-Wire length = 919025 Path depth = 16
+Wire length = 919025 Path depth = 710987
 0 (1730950 624475) neighbor 11 length 138540
 1 (1742950 751015) neighbor 11 length 0
 2 (1919867 767465) neighbor 12 length 39960
@@ -21,7 +21,7 @@ Wire length = 919025 Path depth = 16
 18 (1965947 1100465) neighbor 18 length 0
 19 (2005787 1127105) neighbor 18 length 66480
 Net lalaland2
-Wire length = 1237161 Path depth = 32
+Wire length = 1237161 Path depth = 773830
 0 (1694747 597835) neighbor 30 length 27550
 1 (1712507 607625) neighbor 30 length 0
 2 (1730950 624475) neighbor 31 length 12623
