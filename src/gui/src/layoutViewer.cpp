@@ -1085,7 +1085,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   painter->setBrush(QBrush(text_color));
 
   const QFont initial_font = painter->font();
-  const QFontMetricsF font_metrics(initial_font);
+  const QFont text_font = options_->instanceNameFont();
+  const QFontMetricsF font_metrics(text_font);
 
   // core cell text should be 10% of cell height
   static const float size_target = 0.1;
@@ -1103,6 +1104,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   const float font_core_scale_width = size_limit*pixels_per_dbu_;
 
   painter->setTransform(QTransform());
+  painter->setFont(text_font);
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     int master_height = master->getHeight();
