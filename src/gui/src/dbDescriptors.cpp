@@ -116,6 +116,7 @@ bool DbInstDescriptor::lessThan(std::any l, std::any r) const
 }
 
 //////////////////////////////////////////////////
+
 std::string DbNetDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbNet*>(object)->getName();
@@ -324,6 +325,7 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
     net_value = "<none>";
   }
   return Properties({{"Instance", gui->makeSelected(iterm->getInst())},
+                     {"IO type", iterm->getIoType().getString()},
                      {"Net", net_value},
                      {"MTerm", iterm->getMTerm()->getConstName()}});
 }
