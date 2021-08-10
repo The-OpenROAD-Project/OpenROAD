@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -72,32 +72,5 @@ void initTapcell(OpenRoad* openroad)
   sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
   openroad->getTapcell()->init(openroad->getDb(), openroad->getLogger());
 }
-
-// using std::max;
-// using std::min;
-// using std::vector;
-
-// extern "C" {
-// extern int Tap_Init(Tcl_Interp *interp);
-// }
-
-// Tapcell::Tapcell()
-//   : db_(nullptr)
-// {
-// }
-
-// Tapcell::~Tapcell()
-// {
-// }
-
-// void init(Tcl_Interp *tcl_interp, odb::dbDatabase *db)
-// {
-//   //db_ = db;
-//   // Define swig TCL commands.
-//   Tap_Init(tcl_interp);
-//   // Eval encoded sta TCL sources.
-//   sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
-//   //openroad->getIOPlacer()->init(openroad->getDb(), openroad->getLogger());
-// }
 
 }

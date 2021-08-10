@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,9 +42,6 @@
 namespace ord {
 
 tap::Tapcell* getTapcell();
-// {
-//   return ord::OpenRoad::openRoad()->getTapcell();
-// }
 
 }
 

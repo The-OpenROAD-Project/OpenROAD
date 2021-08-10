@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -76,8 +76,8 @@ public:
 private:
   odb::dbDatabase *db_;
   utl::Logger* logger_;
-  int phy_idx;
-  std::vector<std::vector<int>> filled_sites;
+  int phy_idx_;
+  std::vector<std::vector<int>> filled_sites_;
 
   void  cutRow(odb::dbBlock* block, odb::dbRow* row, std::map<std::string, std::vector<odb::dbBox*>>& row_blockages, int& min_row_width, int& halo_x, int& halo_y);
   int makeSiteLoc( int x, double site_x, int dirc, int& offset);
