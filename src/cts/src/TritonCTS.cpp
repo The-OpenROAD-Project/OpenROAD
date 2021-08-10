@@ -68,7 +68,7 @@ void TritonCTS::init(ord::OpenRoad* openroad)
   _network = _openroad->getDbNetwork();
   _openSta = _openroad->getSta();
 
-  _options = new CtsOptions(_logger);
+  _options = new CtsOptions(_logger, openroad->getSteinerTreeBuilder());
   _techChar = new TechChar(_options,
                            _openroad,
                            _db,

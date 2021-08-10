@@ -221,7 +221,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                           QPainter* painter,
                           const std::vector<odb::dbInst*>& insts);
   void drawInstanceNames(QPainter* painter,
-                         int font_size,
                          const std::vector<odb::dbInst*>& insts);
   void drawBlockages(QPainter* painter,
                      const odb::Rect& bounds);

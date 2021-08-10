@@ -35,6 +35,8 @@
 
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/LinesRenderer.h"
+#include "stt/flute.h"
+#include "stt/pdrev.h"
 
 #include <map>
 #include <vector>
@@ -103,11 +105,29 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
   return tree;
 }
 
+void SteinerTreeBuilder::setAlpha(float alpha)
+{
+  alpha_ = alpha;
+}
+
 float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
 {
   float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
                     net_alpha_map_.at(net) : alpha_;
   return net_alpha;
+}
+
+void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
+{
+  net_alpha_map_[net] = alpha;
+}
+void SteinerTreeBuilder::setMinFanoutAlpha(int min_fanout, float alpha)
+{
+  min_fanout_alpha_ = {min_fanout, alpha};
+}
+void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
+{
+  min_hpwl_alpha_ = {min_hpwl, alpha};
 }
 
 Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
@@ -287,6 +307,19 @@ highlightSteinerTree(Tree &tree,
                                 odb::Point(x2, y2)));
     }
     LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);
+  }
+}
+
+void Tree::printTree(utl::Logger* logger)
+{
+  if (deg > 1) {
+    for (int i = 0; i < deg; i++)
+      logger->report(" {:2d}:  x={:4g}  y={:4g}  e={}",
+                     i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+    for (int i = deg; i < 2 * deg - 2; i++)
+      logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
+                     i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
+    logger->report("");
   }
 }
 

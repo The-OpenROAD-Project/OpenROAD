@@ -32,7 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "flute.h"
+#include "SteinerTreeBuilder.h"
 
 namespace utl {
 class Logger;
