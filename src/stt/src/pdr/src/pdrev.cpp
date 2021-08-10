@@ -32,10 +32,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stt/pdrev.h"
+#include "stt/LinesRenderer.h"
 
 #include "graph.h"
 #include "utl/Logger.h"
-#include "gui/gui.h"
 
 namespace pdr {
 
@@ -274,66 +274,14 @@ reportXY(std::vector<int> x,
     logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
 }
 
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger)
-{
-  printf("WL = %d\n", tree.length);
-  for (int i = 0; i < tree.branchCount(); i++) {
-    int x1 = tree.branch[i].x;
-    int y1 = tree.branch[i].y;
-    int parent = tree.branch[i].n;
-    int x2 = tree.branch[parent].x;
-    int y2 = tree.branch[parent].y;
-    int length = abs(x1-x2)+abs(y1-y2);
-    printf("%d (%d %d) neighbor %d length %d\n",
-           i, x1, y1, parent, length);
-  }
-}
-
-// Simple general purpose render for a group of lines.
-class LinesRenderer : public gui::Renderer
-{
-public:
-  void highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
-                 gui::Painter::Color color);
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-
-private:
-  std::vector<std::pair<odb::Point, odb::Point>> lines_;
-  gui::Painter::Color color_;
-};
-
-static LinesRenderer *lines_renderer = nullptr;
-
-void
-LinesRenderer::highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
-                         gui::Painter::Color color)
-{
-  lines_ = lines;
-  color_ = color;
-}
-
-void
-LinesRenderer::drawObjects(gui::Painter &painter)
-{
-  if (!lines_.empty()) {
-    painter.setPen(color_, true);
-    for (int i = 0 ; i < lines_.size(); ++i) {
-      painter.drawLine(lines_[i].first, lines_[i].second);
-    }
-  }
-}
-
 void
 PdRev::highlightGraph()
 {
   gui::Gui *gui = gui::Gui::get();
   if (gui) {
-    if (lines_renderer == nullptr) {
-      lines_renderer = new LinesRenderer();
-      gui->registerRenderer(lines_renderer);
+    if (stt::LinesRenderer::lines_renderer == nullptr) {
+      stt::LinesRenderer::lines_renderer = new stt::LinesRenderer();
+      gui->registerRenderer(stt::LinesRenderer::lines_renderer);
     }
     std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> xy_lines;
     graphLines(xy_lines);
@@ -344,31 +292,7 @@ PdRev::highlightGraph()
       lines.push_back(std::pair(odb::Point(xy1.first, xy1.second),
                                 odb::Point(xy2.first, xy2.second)));
     }
-    lines_renderer->highlight(lines, gui::Painter::red);
-  }
-}
-
-void
-highlightSteinerTree(Tree &tree,
-                     gui::Gui *gui)
-{
-  if (gui) {
-    if (lines_renderer == nullptr) {
-      lines_renderer = new LinesRenderer();
-      gui->registerRenderer(lines_renderer);
-    }
-    std::vector<std::pair<odb::Point, odb::Point>> lines;
-    for (int i = 0; i < tree.branchCount(); i++) {
-      stt::Branch branch = tree.branch[i];
-      int x1 = branch.x;
-      int y1 = branch.y;
-      stt::Branch &neighbor = tree.branch[branch.n];
-      int x2 = neighbor.x;
-      int y2 = neighbor.y;
-      lines.push_back(std::pair(odb::Point(x1, y1),
-                                odb::Point(x2, y2)));
-    }
-    lines_renderer->highlight(lines, gui::Painter::red);
+    stt::LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);
   }
 }
 

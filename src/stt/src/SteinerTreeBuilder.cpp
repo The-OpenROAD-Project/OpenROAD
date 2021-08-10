@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stt/SteinerTreeBuilder.h"
+#include "stt/LinesRenderer.h"
 
 #include <map>
 #include <vector>
@@ -41,7 +42,7 @@
 #include "ord/OpenRoad.hh"
 #include "opendb/db.h"
 
-namespace stt{
+namespace stt {
 
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
@@ -168,6 +169,125 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
   int hpwl = (max_x - min_x) + (max_y - min_y);
 
   return hpwl;
+}
+
+////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////
+
+typedef std::pair<int, int> PDedge;
+typedef std::vector<std::vector<PDedge>> PDedges;
+
+static int findPathDepth(int node,
+                         int from,
+                         PDedges &edges,
+                         int level);
+
+int findPathDepth(Tree &tree,
+                  int drvr_idx)
+{
+  int node_count = tree.branchCount();
+  PDedges edges(node_count);
+  int branch_count = tree.branchCount();
+  if (branch_count > 2) {
+    for (int i = 0; i < branch_count; i++) {
+      stt::Branch &branch = tree.branch[i];
+      int neighbor = branch.n;
+      Branch &neighbor_branch = tree.branch[neighbor];
+      int length = std::abs(branch.x - neighbor_branch.x)
+        + std::abs(branch.y - neighbor_branch.y);
+      edges[neighbor].push_back(PDedge(i, length));
+      edges[i].push_back(PDedge(neighbor, length));
+    }
+    return findPathDepth(drvr_idx, drvr_idx, edges, 0);
+  }
+  else
+    return 0;
+}
+
+static int findPathDepth(int node,
+                         int from,
+                         PDedges &edges,
+                         int level)
+{
+  int max_level = level;
+  for (PDedge &edge : edges[node]) {
+    int neighbor = edge.first;
+    int length = edge.second;
+    if (neighbor != from)
+      max_level = std::max(max_level, findPathDepth(neighbor, node, edges,
+                                                    // zero length edges do not add depth
+                                                    length == 0 ? level : level + 1));
+  }
+  return max_level;
+}
+
+// Used by regressions.
+void
+reportSteinerTree(stt::Tree &tree,
+                  int drvr_idx,
+                  Logger *logger)
+{
+  logger->report("Wire length = {} Path depth = {}",
+                 tree.length,
+                 findPathDepth(tree, drvr_idx));
+  for (int i = 0; i < tree.branchCount(); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    int parent = tree.branch[i].n;
+    int x2 = tree.branch[parent].x;
+    int y2 = tree.branch[parent].y;
+    int length = abs(x1-x2)+abs(y1-y2);
+    logger->report("{} ({} {}) neighbor {} length {}",
+                   i, x1, y1, parent, length);
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
+LinesRenderer *LinesRenderer::lines_renderer = nullptr;
+
+void
+LinesRenderer::highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
+                         gui::Painter::Color color)
+{
+  lines_ = lines;
+  color_ = color;
+}
+
+void
+LinesRenderer::drawObjects(gui::Painter &painter)
+{
+  if (!lines_.empty()) {
+    painter.setPen(color_, true);
+    for (int i = 0 ; i < lines_.size(); ++i) {
+      painter.drawLine(lines_[i].first, lines_[i].second);
+    }
+  }
+}
+
+void
+highlightSteinerTree(Tree &tree,
+                     gui::Gui *gui)
+{
+  if (gui) {
+    if (LinesRenderer::lines_renderer == nullptr) {
+      LinesRenderer::lines_renderer = new LinesRenderer();
+      gui->registerRenderer(LinesRenderer::lines_renderer);
+    }
+    std::vector<std::pair<odb::Point, odb::Point>> lines;
+    for (int i = 0; i < tree.branchCount(); i++) {
+      stt::Branch branch = tree.branch[i];
+      int x1 = branch.x;
+      int y1 = branch.y;
+      stt::Branch &neighbor = tree.branch[branch.n];
+      int x2 = neighbor.x;
+      int y2 = neighbor.y;
+      lines.push_back(std::pair(odb::Point(x1, y1),
+                                odb::Point(x2, y2)));
+    }
+    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);
+  }
 }
 
 }

@@ -101,4 +101,13 @@ class SteinerTreeBuilder
   odb::dbDatabase* db_;
 };
 
+// Used by regressions.
+void
+reportSteinerTree(Tree &tree,
+                  int drvr_index,
+                  Logger *logger);
+void
+highlightSteinerTree(Tree &tree,
+                     gui::Gui *gui);
+
 }  // namespace stt

@@ -1,5 +1,5 @@
 Net clk
-WL = 316
+Wire length = 316 Path depth = 17
 0 (91 101) neighbor 0 length 0
 1 (27 58) neighbor 47 length 2
 2 (20 62) neighbor 58 length 5
@@ -71,19 +71,19 @@ WL = 316
 68 (58 68) neighbor 50 length 0
 69 (29 54) neighbor 51 length 0
 Net req_rdy
-WL = 54
+Wire length = 54 Path depth = 4
 0 (65 37) neighbor 0 length 0
 1 (100 56) neighbor 3 length 53
 2 (65 38) neighbor 3 length 0
 3 (65 38) neighbor 0 length 1
 Net _057_
-WL = 4
+Wire length = 4 Path depth = 2
 0 (54 30) neighbor 0 length 0
 1 (55 33) neighbor 3 length 1
 2 (54 33) neighbor 3 length 0
 3 (54 33) neighbor 0 length 3
 Net _059_
-WL = 67
+Wire length = 67 Path depth = 9
 0 (63 37) neighbor 0 length 0
 1 (45 57) neighbor 14 length 1
 2 (39 58) neighbor 16 length 3
@@ -103,13 +103,13 @@ WL = 67
 16 (40 56) neighbor 14 length 5
 17 (52 53) neighbor 12 length 16
 Net _073_
-WL = 9
+Wire length = 9 Path depth = 2
 0 (38 70) neighbor 0 length 0
 1 (38 66) neighbor 3 length 0
 2 (43 66) neighbor 3 length 5
 3 (38 66) neighbor 0 length 4
 Net _109_
-WL = 7
+Wire length = 7 Path depth = 2
 0 (47 52) neighbor 0 length 0
 1 (46 52) neighbor 5 length 1
 2 (45 56) neighbor 5 length 4
@@ -117,7 +117,7 @@ WL = 7
 4 (46 53) neighbor 0 length 2
 5 (46 53) neighbor 4 length 0
 Net _110_
-WL = 16
+Wire length = 16 Path depth = 3
 0 (20 48) neighbor 5 length 0
 1 (19 44) neighbor 5 length 5
 2 (22 48) neighbor 6 length 0
@@ -127,7 +127,7 @@ WL = 16
 6 (22 48) neighbor 5 length 2
 7 (26 45) neighbor 6 length 7
 Net _111_
-WL = 21
+Wire length = 21 Path depth = 4
 0 (54 68) neighbor 0 length 0
 1 (51 54) neighbor 7 length 5
 2 (52 66) neighbor 5 length 2
@@ -137,7 +137,7 @@ WL = 21
 6 (55 58) neighbor 5 length 9
 7 (55 55) neighbor 6 length 3
 Net _112_
-WL = 10
+Wire length = 10 Path depth = 2
 0 (58 66) neighbor 5 length 0
 1 (56 69) neighbor 5 length 5
 2 (57 63) neighbor 4 length 1
@@ -145,7 +145,7 @@ WL = 10
 4 (58 63) neighbor 5 length 3
 5 (58 66) neighbor 5 length 0
 Net _113_
-WL = 24
+Wire length = 24 Path depth = 3
 0 (48 70) neighbor 0 length 0
 1 (49 62) neighbor 6 length 1
 2 (46 68) neighbor 7 length 0
@@ -155,7 +155,7 @@ WL = 24
 6 (48 62) neighbor 5 length 6
 7 (46 68) neighbor 5 length 2
 Net _114_
-WL = 24
+Wire length = 24 Path depth = 5
 0 (43 71) neighbor 0 length 0
 1 (32 70) neighbor 6 length 10
 2 (38 66) neighbor 8 length 0
@@ -167,7 +167,7 @@ WL = 24
 8 (38 66) neighbor 7 length 1
 9 (42 68) neighbor 6 length 2
 Net _115_
-WL = 23
+Wire length = 23 Path depth = 3
 0 (20 66) neighbor 7 length 0
 1 (20 59) neighbor 6 length 2
 2 (23 66) neighbor 7 length 3
@@ -177,13 +177,13 @@ WL = 23
 6 (20 61) neighbor 7 length 5
 7 (20 66) neighbor 7 length 0
 Net _116_
-WL = 11
+Wire length = 11 Path depth = 2
 0 (29 68) neighbor 0 length 0
 1 (24 68) neighbor 3 length 4
 2 (28 62) neighbor 3 length 6
 3 (28 68) neighbor 0 length 1
 Net _117_
-WL = 24
+Wire length = 24 Path depth = 5
 0 (30 29) neighbor 0 length 0
 1 (21 30) neighbor 7 length 8
 2 (28 32) neighbor 6 length 1
@@ -195,7 +195,7 @@ WL = 24
 8 (29 41) neighbor 6 length 9
 9 (28 41) neighbor 8 length 1
 Net _118_
-WL = 27
+Wire length = 27 Path depth = 4
 0 (20 40) neighbor 7 length 0
 1 (18 35) neighbor 7 length 7
 2 (33 40) neighbor 6 length 4
@@ -207,7 +207,7 @@ WL = 27
 8 (22 40) neighbor 7 length 2
 9 (29 36) neighbor 6 length 4
 Net _119_
-WL = 17
+Wire length = 17 Path depth = 4
 0 (39 28) neighbor 0 length 0
 1 (34 28) neighbor 5 length 4
 2 (38 32) neighbor 6 length 0
@@ -217,7 +217,7 @@ WL = 17
 6 (38 32) neighbor 5 length 4
 7 (36 36) neighbor 6 length 6
 Net _120_
-WL = 27
+Wire length = 27 Path depth = 3
 0 (19 53) neighbor 5 length 0
 1 (19 57) neighbor 5 length 4
 2 (22 52) neighbor 6 length 0
@@ -227,7 +227,7 @@ WL = 27
 6 (22 52) neighbor 5 length 4
 7 (36 52) neighbor 6 length 14
 Net _121_
-WL = 16
+Wire length = 16 Path depth = 2
 0 (34 50) neighbor 7 length 0
 1 (32 55) neighbor 5 length 4
 2 (29 49) neighbor 6 length 5
@@ -237,7 +237,7 @@ WL = 16
 6 (34 49) neighbor 7 length 1
 7 (34 50) neighbor 7 length 0
 Net _122_
-WL = 18
+Wire length = 18 Path depth = 4
 0 (47 29) neighbor 0 length 0
 1 (42 29) neighbor 5 length 3
 2 (45 32) neighbor 6 length 0
@@ -247,7 +247,7 @@ WL = 18
 6 (45 32) neighbor 5 length 3
 7 (44 39) neighbor 6 length 8
 Net _123_
-WL = 19
+Wire length = 19 Path depth = 4
 0 (54 45) neighbor 6 length 0
 1 (54 48) neighbor 6 length 3
 2 (43 47) neighbor 7 length 0
@@ -259,7 +259,7 @@ WL = 19
 8 (50 45) neighbor 6 length 4
 9 (47 47) neighbor 8 length 5
 Net _124_
-WL = 17
+Wire length = 17 Path depth = 4
 0 (68 47) neighbor 0 length 0
 1 (66 55) neighbor 6 length 3
 2 (63 47) neighbor 5 length 3
@@ -269,7 +269,7 @@ WL = 17
 6 (66 52) neighbor 5 length 5
 7 (63 52) neighbor 6 length 3
 Net _125_
-WL = 13
+Wire length = 13 Path depth = 3
 0 (64 43) neighbor 6 length 0
 1 (65 42) neighbor 6 length 2
 2 (59 42) neighbor 5 length 1
@@ -279,7 +279,7 @@ WL = 13
 6 (64 43) neighbor 6 length 0
 7 (58 46) neighbor 5 length 4
 Net _126_
-WL = 15
+Wire length = 15 Path depth = 4
 0 (24 44) neighbor 7 length 0
 1 (20 44) neighbor 7 length 4
 2 (28 44) neighbor 8 length 0
@@ -291,7 +291,7 @@ WL = 15
 8 (28 44) neighbor 6 length 1
 9 (29 44) neighbor 8 length 1
 Net _127_
-WL = 11
+Wire length = 11 Path depth = 4
 0 (53 59) neighbor 0 length 0
 1 (51 56) neighbor 5 length 4
 2 (56 58) neighbor 6 length 0
@@ -301,7 +301,7 @@ WL = 11
 6 (56 58) neighbor 5 length 3
 7 (56 56) neighbor 6 length 2
 Net _128_
-WL = 21
+Wire length = 21 Path depth = 5
 0 (61 69) neighbor 0 length 0
 1 (57 69) neighbor 6 length 2
 2 (58 60) neighbor 7 length 0
@@ -313,7 +313,7 @@ WL = 21
 8 (57 58) neighbor 7 length 3
 9 (59 63) neighbor 6 length 6
 Net _129_
-WL = 21
+Wire length = 21 Path depth = 5
 0 (48 65) neighbor 0 length 0
 1 (48 63) neighbor 6 length 1
 2 (38 64) neighbor 8 length 0
@@ -325,7 +325,7 @@ WL = 21
 8 (38 64) neighbor 7 length 5
 9 (36 63) neighbor 8 length 3
 Net _130_
-WL = 16
+Wire length = 16 Path depth = 4
 0 (37 70) neighbor 6 length 0
 1 (33 70) neighbor 6 length 4
 2 (37 63) neighbor 7 length 0
@@ -337,7 +337,7 @@ WL = 16
 8 (36 63) neighbor 7 length 1
 9 (37 67) neighbor 6 length 3
 Net _131_
-WL = 16
+Wire length = 16 Path depth = 4
 0 (21 62) neighbor 0 length 0
 1 (21 60) neighbor 6 length 1
 2 (31 61) neighbor 7 length 0
@@ -349,7 +349,7 @@ WL = 16
 8 (32 61) neighbor 7 length 1
 9 (32 61) neighbor 8 length 0
 Net _132_
-WL = 16
+Wire length = 16 Path depth = 2
 0 (28 59) neighbor 5 length 0
 1 (24 59) neighbor 7 length 4
 2 (31 59) neighbor 6 length 0
@@ -359,7 +359,7 @@ WL = 16
 6 (31 59) neighbor 7 length 3
 7 (28 59) neighbor 5 length 0
 Net _133_
-WL = 16
+Wire length = 16 Path depth = 2
 0 (26 31) neighbor 4 length 0
 1 (22 30) neighbor 4 length 5
 2 (27 41) neighbor 5 length 1
@@ -367,7 +367,7 @@ WL = 16
 4 (26 31) neighbor 4 length 0
 5 (27 40) neighbor 4 length 10
 Net _134_
-WL = 13
+Wire length = 13 Path depth = 2
 0 (24 35) neighbor 4 length 0
 1 (19 35) neighbor 4 length 5
 2 (29 36) neighbor 5 length 0
@@ -375,7 +375,7 @@ WL = 13
 4 (24 35) neighbor 4 length 0
 5 (29 36) neighbor 4 length 6
 Net _135_
-WL = 18
+Wire length = 18 Path depth = 5
 0 (35 32) neighbor 9 length 0
 1 (33 30) neighbor 9 length 4
 2 (34 40) neighbor 10 length 0
@@ -389,7 +389,7 @@ WL = 18
 10 (34 40) neighbor 8 length 1
 11 (33 40) neighbor 10 length 1
 Net _136_
-WL = 29
+Wire length = 29 Path depth = 4
 0 (24 54) neighbor 7 length 0
 1 (20 56) neighbor 7 length 6
 2 (36 52) neighbor 8 length 0
@@ -401,7 +401,7 @@ WL = 29
 8 (36 52) neighbor 6 length 2
 9 (37 51) neighbor 8 length 2
 Net _137_
-WL = 14
+Wire length = 14 Path depth = 5
 0 (31 54) neighbor 0 length 0
 1 (32 55) neighbor 6 length 1
 2 (37 49) neighbor 7 length 0
@@ -413,7 +413,7 @@ WL = 14
 8 (37 48) neighbor 7 length 1
 9 (36 53) neighbor 6 length 5
 Net _138_
-WL = 26
+Wire length = 26 Path depth = 5
 0 (44 34) neighbor 7 length 0
 1 (42 30) neighbor 7 length 6
 2 (43 42) neighbor 8 length 0
@@ -427,7 +427,7 @@ WL = 26
 10 (42 44) neighbor 9 length 2
 11 (44 39) neighbor 7 length 5
 Net _139_
-WL = 18
+Wire length = 18 Path depth = 3
 0 (51 49) neighbor 5 length 0
 1 (53 49) neighbor 5 length 2
 2 (42 47) neighbor 6 length 0
@@ -437,7 +437,7 @@ WL = 18
 6 (42 47) neighbor 7 length 5
 7 (47 47) neighbor 5 length 6
 Net _140_
-WL = 17
+Wire length = 17 Path depth = 4
 0 (67 52) neighbor 0 length 0
 1 (65 55) neighbor 5 length 3
 2 (59 52) neighbor 6 length 0
@@ -447,7 +447,7 @@ WL = 17
 6 (59 52) neighbor 7 length 4
 7 (63 52) neighbor 5 length 2
 Net _141_
-WL = 17
+Wire length = 17 Path depth = 3
 0 (58 42) neighbor 5 length 0
 1 (56 42) neighbor 5 length 2
 2 (57 52) neighbor 6 length 0
@@ -457,7 +457,7 @@ WL = 17
 6 (57 52) neighbor 7 length 7
 7 (58 46) neighbor 5 length 4
 Net _142_
-WL = 96
+Wire length = 96 Path depth = 9
 0 (46 53) neighbor 14 length 0
 1 (43 63) neighbor 15 length 0
 2 (52 64) neighbor 13 length 7
@@ -477,13 +477,13 @@ WL = 96
 16 (50 35) neighbor 17 length 2
 17 (48 35) neighbor 11 length 17
 Net _145_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (28 40) neighbor 0 length 0
 1 (29 41) neighbor 3 length 0
 2 (32 41) neighbor 3 length 3
 3 (29 41) neighbor 0 length 2
 Net _146_
-WL = 11
+Wire length = 11 Path depth = 5
 0 (30 37) neighbor 0 length 0
 1 (32 36) neighbor 7 length 1
 2 (32 40) neighbor 6 length 0
@@ -493,19 +493,19 @@ WL = 11
 6 (32 40) neighbor 7 length 3
 7 (32 37) neighbor 5 length 0
 Net _147_
-WL = 23
+Wire length = 23 Path depth = 3
 0 (32 41) neighbor 0 length 0
 1 (53 39) neighbor 3 length 1
 2 (53 40) neighbor 3 length 0
 3 (53 40) neighbor 0 length 22
 Net _150_
-WL = 16
+Wire length = 16 Path depth = 4
 0 (52 54) neighbor 0 length 0
 1 (52 39) neighbor 3 length 1
 2 (53 40) neighbor 3 length 1
 3 (52 40) neighbor 0 length 14
 Net _152_
-WL = 9
+Wire length = 9 Path depth = 5
 0 (54 34) neighbor 0 length 0
 1 (54 38) neighbor 5 length 0
 2 (52 40) neighbor 4 length 1
@@ -513,13 +513,13 @@ WL = 9
 4 (52 39) neighbor 5 length 3
 5 (54 38) neighbor 0 length 4
 Net _153_
-WL = 3
+Wire length = 3 Path depth = 4
 0 (51 38) neighbor 0 length 0
 1 (51 39) neighbor 3 length 0
 2 (52 40) neighbor 3 length 2
 3 (51 39) neighbor 0 length 1
 Net _158_
-WL = 108
+Wire length = 108 Path depth = 8
 0 (52 53) neighbor 15 length 0
 1 (43 63) neighbor 13 length 8
 2 (51 64) neighbor 13 length 1
@@ -539,7 +539,7 @@ WL = 108
 16 (50 35) neighbor 11 length 3
 17 (23 50) neighbor 14 length 2
 Net _159_
-WL = 55
+Wire length = 55 Path depth = 9
 0 (49 35) neighbor 15 length 0
 1 (48 33) neighbor 16 length 0
 2 (60 32) neighbor 12 length 10
@@ -561,7 +561,7 @@ WL = 55
 18 (24 35) neighbor 14 length 6
 19 (30 34) neighbor 13 length 11
 Net _160_
-WL = 140
+Wire length = 140 Path depth = 10
 0 (50 30) neighbor 14 length 0
 1 (20 59) neighbor 17 length 3
 2 (32 70) neighbor 15 length 0
@@ -583,7 +583,7 @@ WL = 140
 18 (21 30) neighbor 14 length 29
 19 (19 44) neighbor 13 length 9
 Net _165_
-WL = 15
+Wire length = 15 Path depth = 5
 0 (59 63) neighbor 0 length 0
 1 (60 56) neighbor 6 length 4
 2 (61 60) neighbor 7 length 2
@@ -593,7 +593,7 @@ WL = 15
 6 (59 59) neighbor 5 length 1
 7 (59 60) neighbor 5 length 0
 Net _166_
-WL = 7
+Wire length = 7 Path depth = 5
 0 (56 55) neighbor 0 length 0
 1 (62 56) neighbor 4 length 1
 2 (61 56) neighbor 4 length 0
@@ -601,13 +601,13 @@ WL = 7
 4 (61 56) neighbor 5 length 3
 5 (59 55) neighbor 0 length 3
 Net _167_
-WL = 6
+Wire length = 6 Path depth = 3
 0 (59 56) neighbor 0 length 0
 1 (58 51) neighbor 3 length 2
 2 (58 53) neighbor 3 length 0
 3 (58 53) neighbor 0 length 4
 Net _168_
-WL = 10
+Wire length = 10 Path depth = 6
 0 (58 46) neighbor 7 length 0
 1 (59 47) neighbor 7 length 2
 2 (58 47) neighbor 8 length 0
@@ -619,7 +619,7 @@ WL = 10
 8 (58 47) neighbor 7 length 1
 9 (58 51) neighbor 6 length 2
 Net _169_
-WL = 10
+Wire length = 10 Path depth = 8
 0 (63 52) neighbor 0 length 0
 1 (59 49) neighbor 6 length 0
 2 (62 50) neighbor 7 length 0
@@ -629,7 +629,7 @@ WL = 10
 6 (59 49) neighbor 5 length 1
 7 (62 50) neighbor 0 length 3
 Net _170_
-WL = 30
+Wire length = 30 Path depth = 4
 0 (59 51) neighbor 0 length 0
 1 (35 46) neighbor 4 length 1
 2 (36 45) neighbor 4 length 1
@@ -637,7 +637,7 @@ WL = 30
 4 (36 46) neighbor 5 length 24
 5 (55 51) neighbor 0 length 4
 Net _171_
-WL = 8
+Wire length = 8 Path depth = 3
 0 (38 56) neighbor 4 length 0
 1 (40 56) neighbor 4 length 2
 2 (40 52) neighbor 5 length 1
@@ -645,7 +645,7 @@ WL = 8
 4 (38 56) neighbor 4 length 0
 5 (40 53) neighbor 4 length 5
 Net _172_
-WL = 11
+Wire length = 11 Path depth = 4
 0 (36 53) neighbor 6 length 0
 1 (42 52) neighbor 9 length 2
 2 (40 52) neighbor 7 length 0
@@ -657,7 +657,7 @@ WL = 11
 8 (36 51) neighbor 6 length 2
 9 (40 52) neighbor 7 length 0
 Net _173_
-WL = 16
+Wire length = 16 Path depth = 4
 0 (41 53) neighbor 5 length 0
 1 (41 52) neighbor 5 length 1
 2 (37 44) neighbor 6 length 2
@@ -667,13 +667,13 @@ WL = 16
 6 (38 43) neighbor 7 length 2
 7 (40 43) neighbor 5 length 11
 Net _174_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (44 39) neighbor 0 length 0
 1 (43 43) neighbor 3 length 4
 2 (44 40) neighbor 3 length 0
 3 (44 40) neighbor 0 length 1
 Net _175_
-WL = 14
+Wire length = 14 Path depth = 7
 0 (47 47) neighbor 0 length 0
 1 (46 45) neighbor 5 length 2
 2 (42 44) neighbor 7 length 3
@@ -683,7 +683,7 @@ WL = 14
 6 (43 47) neighbor 5 length 3
 7 (43 46) neighbor 6 length 1
 Net _176_
-WL = 17
+Wire length = 17 Path depth = 4
 0 (44 43) neighbor 6 length 0
 1 (38 48) neighbor 5 length 4
 2 (37 44) neighbor 5 length 1
@@ -693,7 +693,7 @@ WL = 17
 6 (44 43) neighbor 6 length 0
 7 (38 43) neighbor 6 length 6
 Net _177_
-WL = 11
+Wire length = 11 Path depth = 5
 0 (39 43) neighbor 0 length 0
 1 (34 41) neighbor 5 length 4
 2 (36 45) neighbor 4 length 4
@@ -701,13 +701,13 @@ WL = 11
 4 (38 43) neighbor 0 length 1
 5 (38 41) neighbor 4 length 2
 Net _178_
-WL = 4
+Wire length = 4 Path depth = 4
 0 (32 61) neighbor 0 length 0
 1 (33 62) neighbor 3 length 1
 2 (32 64) neighbor 3 length 2
 3 (32 62) neighbor 0 length 1
 Net _179_
-WL = 8
+Wire length = 8 Path depth = 3
 0 (28 62) neighbor 4 length 0
 1 (33 60) neighbor 5 length 2
 2 (33 62) neighbor 5 length 0
@@ -715,13 +715,13 @@ WL = 8
 4 (28 62) neighbor 4 length 0
 5 (33 62) neighbor 4 length 5
 Net _180_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (33 62) neighbor 0 length 0
 1 (37 61) neighbor 3 length 2
 2 (36 62) neighbor 3 length 0
 3 (36 62) neighbor 0 length 3
 Net _181_
-WL = 4
+Wire length = 4 Path depth = 3
 0 (38 67) neighbor 4 length 0
 1 (40 67) neighbor 4 length 2
 2 (38 65) neighbor 5 length 1
@@ -729,17 +729,17 @@ WL = 4
 4 (38 67) neighbor 4 length 0
 5 (38 66) neighbor 4 length 1
 Net _182_
-WL = 6
+Wire length = 6 Path depth = 4
 0 (38 65) neighbor 0 length 0
 1 (37 61) neighbor 3 length 2
 2 (39 62) neighbor 3 length 1
 3 (38 62) neighbor 0 length 3
 Net _183_
-WL = 2
+Wire length = 2 Path depth = 0
 0 (44 62) neighbor 0 length 0
 1 (42 62) neighbor 0 length 2
 Net _184_
-WL = 6
+Wire length = 6 Path depth = 5
 0 (42 62) neighbor 0 length 0
 1 (40 62) neighbor 4 length 0
 2 (37 61) neighbor 5 length 3
@@ -747,7 +747,7 @@ WL = 6
 4 (40 62) neighbor 0 length 2
 5 (39 62) neighbor 4 length 1
 Net _185_
-WL = 18
+Wire length = 18 Path depth = 4
 0 (37 61) neighbor 0 length 0
 1 (35 46) neighbor 4 length 1
 2 (36 45) neighbor 4 length 1
@@ -755,31 +755,31 @@ WL = 18
 4 (36 46) neighbor 5 length 12
 5 (36 58) neighbor 0 length 4
 Net _186_
-WL = 3
+Wire length = 3 Path depth = 4
 0 (30 36) neighbor 0 length 0
 1 (30 37) neighbor 3 length 0
 2 (29 38) neighbor 3 length 2
 3 (30 37) neighbor 0 length 1
 Net _187_
-WL = 8
+Wire length = 8 Path depth = 3
 0 (30 38) neighbor 0 length 0
 1 (32 37) neighbor 3 length 1
 2 (37 38) neighbor 3 length 5
 3 (32 38) neighbor 0 length 2
 Net _188_
-WL = 4
+Wire length = 4 Path depth = 3
 0 (36 36) neighbor 0 length 0
 1 (38 37) neighbor 3 length 1
 2 (37 38) neighbor 3 length 1
 3 (37 37) neighbor 0 length 2
 Net _189_
-WL = 8
+Wire length = 8 Path depth = 3
 0 (37 38) neighbor 0 length 0
 1 (36 45) neighbor 3 length 2
 2 (37 44) neighbor 3 length 0
 3 (37 44) neighbor 0 length 6
 Net _191_
-WL = 8
+Wire length = 8 Path depth = 5
 0 (28 41) neighbor 0 length 0
 1 (28 45) neighbor 5 length 0
 2 (31 45) neighbor 5 length 3
@@ -787,31 +787,31 @@ WL = 8
 4 (28 43) neighbor 0 length 2
 5 (28 45) neighbor 4 length 2
 Net _196_
-WL = 2
+Wire length = 2 Path depth = 3
 0 (27 44) neighbor 0 length 0
 1 (29 44) neighbor 3 length 1
 2 (28 44) neighbor 3 length 0
 3 (28 44) neighbor 0 length 1
 Net _198_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (29 41) neighbor 0 length 0
 1 (31 44) neighbor 3 length 3
 2 (29 43) neighbor 3 length 0
 3 (29 43) neighbor 0 length 2
 Net _200_
-WL = 2
+Wire length = 2 Path depth = 3
 0 (36 52) neighbor 0 length 0
 1 (37 51) neighbor 3 length 1
 2 (37 52) neighbor 3 length 0
 3 (37 52) neighbor 0 length 1
 Net _202_
-WL = 2
+Wire length = 2 Path depth = 3
 0 (36 49) neighbor 0 length 0
 1 (37 48) neighbor 3 length 1
 2 (37 49) neighbor 3 length 0
 3 (37 49) neighbor 0 length 1
 Net _205_
-WL = 6
+Wire length = 6 Path depth = 4
 0 (43 40) neighbor 0 length 0
 1 (43 43) neighbor 4 length 0
 2 (42 44) neighbor 5 length 2
@@ -819,37 +819,37 @@ WL = 6
 4 (43 43) neighbor 0 length 3
 5 (43 43) neighbor 4 length 0
 Net _207_
-WL = 2
+Wire length = 2 Path depth = 0
 0 (42 48) neighbor 0 length 0
 1 (43 47) neighbor 0 length 2
 Net _211_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (34 37) neighbor 0 length 0
 1 (35 41) neighbor 3 length 2
 2 (34 40) neighbor 3 length 0
 3 (34 40) neighbor 0 length 3
 Net _212_
-WL = 1
+Wire length = 1 Path depth = 0
 0 (33 39) neighbor 0 length 0
 1 (33 40) neighbor 0 length 1
 Net _218_
-WL = 8
+Wire length = 8 Path depth = 4
 0 (28 62) neighbor 0 length 0
 1 (32 59) neighbor 3 length 6
 2 (29 63) neighbor 3 length 1
 3 (29 62) neighbor 0 length 1
 Net _220_
-WL = 4
+Wire length = 4 Path depth = 0
 0 (62 53) neighbor 0 length 0
 1 (59 52) neighbor 0 length 4
 Net _222_
-WL = 6
+Wire length = 6 Path depth = 4
 0 (57 47) neighbor 0 length 0
 1 (57 52) neighbor 3 length 0
 2 (58 52) neighbor 3 length 1
 3 (57 52) neighbor 0 length 5
 Net _225_
-WL = 7
+Wire length = 7 Path depth = 3
 0 (57 63) neighbor 5 length 0
 1 (58 63) neighbor 5 length 1
 2 (57 58) neighbor 4 length 2
@@ -857,37 +857,37 @@ WL = 7
 4 (57 60) neighbor 5 length 3
 5 (57 63) neighbor 5 length 0
 Net _227_
-WL = 2
+Wire length = 2 Path depth = 4
 0 (55 58) neighbor 0 length 0
 1 (56 58) neighbor 3 length 0
 2 (57 58) neighbor 3 length 1
 3 (56 58) neighbor 0 length 1
 Net _231_
-WL = 2
+Wire length = 2 Path depth = 2
 0 (31 60) neighbor 3 length 0
 1 (32 60) neighbor 3 length 1
 2 (31 61) neighbor 3 length 1
 3 (31 60) neighbor 3 length 0
 Net _234_
-WL = 3
+Wire length = 3 Path depth = 4
 0 (36 65) neighbor 0 length 0
 1 (36 63) neighbor 3 length 0
 2 (37 63) neighbor 3 length 1
 3 (36 63) neighbor 0 length 2
 Net _236_
-WL = 7
+Wire length = 7 Path depth = 3
 0 (42 64) neighbor 0 length 0
 1 (36 63) neighbor 3 length 4
 2 (39 64) neighbor 3 length 0
 3 (39 64) neighbor 0 length 3
 Net _239_
-WL = 11
+Wire length = 11 Path depth = 4
 0 (36 58) neighbor 0 length 0
 1 (43 57) neighbor 3 length 0
 2 (45 56) neighbor 3 length 3
 3 (43 57) neighbor 0 length 8
 Net _240_
-WL = 42
+Wire length = 42 Path depth = 6
 0 (43 57) neighbor 9 length 0
 1 (46 60) neighbor 6 length 5
 2 (48 45) neighbor 7 length 5
@@ -899,7 +899,7 @@ WL = 42
 8 (41 58) neighbor 6 length 2
 9 (43 57) neighbor 9 length 0
 Net _241_
-WL = 106
+Wire length = 106 Path depth = 6
 0 (42 59) neighbor 13 length 0
 1 (62 60) neighbor 10 length 1
 2 (58 37) neighbor 14 length 14
@@ -919,7 +919,7 @@ WL = 106
 16 (40 56) neighbor 11 length 2
 17 (27 49) neighbor 15 length 3
 Net _242_
-WL = 94
+Wire length = 94 Path depth = 7
 0 (62 39) neighbor 15 length 0
 1 (62 60) neighbor 10 length 11
 2 (63 49) neighbor 10 length 1
@@ -939,11 +939,11 @@ WL = 94
 16 (47 45) neighbor 11 length 6
 17 (29 45) neighbor 13 length 6
 Net _245_
-WL = 1
+Wire length = 1 Path depth = 0
 0 (45 56) neighbor 0 length 0
 1 (46 56) neighbor 0 length 1
 Net _247_
-WL = 86
+Wire length = 86 Path depth = 6
 0 (49 56) neighbor 12 length 0
 1 (59 37) neighbor 13 length 0
 2 (64 48) neighbor 8 length 15
@@ -959,7 +959,7 @@ WL = 86
 12 (49 56) neighbor 12 length 0
 13 (59 37) neighbor 9 length 10
 Net _248_
-WL = 147
+Wire length = 147 Path depth = 14
 0 (66 32) neighbor 0 length 0
 1 (43 66) neighbor 14 length 11
 2 (48 60) neighbor 14 length 0
@@ -981,7 +981,7 @@ WL = 147
 18 (30 32) neighbor 16 length 10
 19 (25 49) neighbor 17 length 10
 Net _251_
-WL = 104
+Wire length = 104 Path depth = 6
 0 (48 52) neighbor 11 length 0
 1 (42 68) neighbor 12 length 4
 2 (46 68) neighbor 12 length 0
@@ -1001,7 +1001,7 @@ WL = 104
 16 (22 48) neighbor 14 length 4
 17 (48 52) neighbor 11 length 0
 Net _252_
-WL = 50
+Wire length = 50 Path depth = 10
 0 (49 35) neighbor 14 length 0
 1 (48 33) neighbor 15 length 0
 2 (60 32) neighbor 18 length 12
@@ -1023,13 +1023,13 @@ WL = 50
 18 (48 32) neighbor 15 length 1
 19 (31 34) neighbor 13 length 1
 Net _254_
-WL = 3
+Wire length = 3 Path depth = 2
 0 (28 44) neighbor 3 length 0
 1 (28 45) neighbor 3 length 1
 2 (29 43) neighbor 3 length 2
 3 (28 44) neighbor 3 length 0
 Net _257_
-WL = 111
+Wire length = 111 Path depth = 9
 0 (53 52) neighbor 15 length 0
 1 (28 62) neighbor 14 length 1
 2 (57 63) neighbor 16 length 0
@@ -1051,7 +1051,7 @@ WL = 111
 18 (45 32) neighbor 17 length 18
 19 (38 32) neighbor 18 length 7
 Net _259_
-WL = 16
+Wire length = 16 Path depth = 6
 0 (29 43) neighbor 0 length 0
 1 (32 37) neighbor 5 length 1
 2 (28 37) neighbor 4 length 2
@@ -1059,19 +1059,19 @@ WL = 16
 4 (29 38) neighbor 0 length 5
 5 (32 38) neighbor 4 length 3
 Net _269_
-WL = 5
+Wire length = 5 Path depth = 4
 0 (37 38) neighbor 0 length 0
 1 (38 41) neighbor 3 length 0
 2 (39 41) neighbor 3 length 1
 3 (38 41) neighbor 0 length 4
 Net _271_
-WL = 6
+Wire length = 6 Path depth = 4
 0 (34 40) neighbor 0 length 0
 1 (38 41) neighbor 3 length 0
 2 (39 41) neighbor 3 length 1
 3 (38 41) neighbor 0 length 5
 Net _272_
-WL = 18
+Wire length = 18 Path depth = 6
 0 (39 41) neighbor 0 length 0
 1 (41 52) neighbor 5 length 1
 2 (40 53) neighbor 7 length 0
@@ -1081,7 +1081,7 @@ WL = 18
 6 (40 43) neighbor 0 length 3
 7 (40 53) neighbor 5 length 1
 Net _277_
-WL = 6
+Wire length = 6 Path depth = 3
 0 (37 52) neighbor 4 length 0
 1 (42 52) neighbor 5 length 2
 2 (40 52) neighbor 5 length 0
@@ -1089,19 +1089,19 @@ WL = 6
 4 (37 52) neighbor 4 length 0
 5 (40 52) neighbor 4 length 3
 Net _283_
-WL = 13
+Wire length = 13 Path depth = 4
 0 (37 49) neighbor 0 length 0
 1 (41 43) neighbor 3 length 4
 2 (44 47) neighbor 3 length 3
 3 (41 47) neighbor 0 length 6
 Net _284_
-WL = 7
+Wire length = 7 Path depth = 3
 0 (41 43) neighbor 0 length 0
 1 (44 39) neighbor 3 length 4
 2 (44 43) neighbor 3 length 0
 3 (44 43) neighbor 0 length 3
 Net _288_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (43 43) neighbor 4 length 0
 1 (44 44) neighbor 5 length 1
 2 (44 43) neighbor 5 length 0
@@ -1109,7 +1109,7 @@ WL = 5
 4 (43 43) neighbor 4 length 0
 5 (44 43) neighbor 4 length 1
 Net _298_
-WL = 24
+Wire length = 24 Path depth = 6
 0 (43 48) neighbor 0 length 0
 1 (59 48) neighbor 6 length 0
 2 (59 49) neighbor 7 length 0
@@ -1119,35 +1119,35 @@ WL = 24
 6 (59 48) neighbor 5 length 5
 7 (59 49) neighbor 6 length 1
 Net _301_
-WL = 10
+Wire length = 10 Path depth = 1
 0 (60 49) neighbor 3 length 0
 1 (61 56) neighbor 3 length 8
 2 (60 47) neighbor 3 length 2
 3 (60 49) neighbor 3 length 0
 Net _303_
-WL = 5
+Wire length = 5 Path depth = 0
 0 (59 52) neighbor 0 length 0
 1 (59 47) neighbor 0 length 5
 Net _310_
-WL = 3
+Wire length = 3 Path depth = 3
 0 (60 54) neighbor 0 length 0
 1 (61 56) neighbor 3 length 1
 2 (60 56) neighbor 3 length 0
 3 (60 56) neighbor 0 length 2
 Net _312_
-WL = 4
+Wire length = 4 Path depth = 2
 0 (61 56) neighbor 3 length 0
 1 (63 56) neighbor 3 length 2
 2 (61 58) neighbor 3 length 2
 3 (61 56) neighbor 3 length 0
 Net _318_
-WL = 5
+Wire length = 5 Path depth = 3
 0 (57 58) neighbor 0 length 0
 1 (60 60) neighbor 3 length 3
 2 (58 59) neighbor 3 length 0
 3 (58 59) neighbor 0 length 2
 Net _329_
-WL = 20
+Wire length = 20 Path depth = 6
 0 (57 60) neighbor 0 length 0
 1 (40 62) neighbor 4 length 0
 2 (44 61) neighbor 5 length 0
@@ -1155,13 +1155,13 @@ WL = 20
 4 (40 62) neighbor 5 length 5
 5 (44 61) neighbor 0 length 14
 Net _333_
-WL = 2
+Wire length = 2 Path depth = 4
 0 (39 65) neighbor 0 length 0
 1 (38 65) neighbor 3 length 0
 2 (38 66) neighbor 3 length 1
 3 (38 65) neighbor 0 length 1
 Net _335_
-WL = 25
+Wire length = 25 Path depth = 5
 0 (40 59) neighbor 0 length 0
 1 (24 64) neighbor 5 length 4
 2 (41 66) neighbor 4 length 4
@@ -1169,31 +1169,31 @@ WL = 25
 4 (40 63) neighbor 0 length 4
 5 (27 63) neighbor 4 length 13
 Net _339_
-WL = 11
+Wire length = 11 Path depth = 4
 0 (40 62) neighbor 0 length 0
 1 (33 65) neighbor 3 length 1
 2 (34 66) neighbor 3 length 1
 3 (34 65) neighbor 0 length 9
 Net _340_
-WL = 3
+Wire length = 3 Path depth = 4
 0 (32 64) neighbor 0 length 0
 1 (33 65) neighbor 3 length 0
 2 (33 66) neighbor 3 length 1
 3 (33 65) neighbor 0 length 2
 Net _341_
-WL = 6
+Wire length = 6 Path depth = 3
 0 (38 66) neighbor 0 length 0
 1 (33 65) neighbor 3 length 2
 2 (34 66) neighbor 3 length 0
 3 (34 66) neighbor 0 length 4
 Net _343_
-WL = 5
+Wire length = 5 Path depth = 4
 0 (33 66) neighbor 0 length 0
 1 (31 65) neighbor 3 length 0
 2 (31 63) neighbor 3 length 2
 3 (31 65) neighbor 0 length 3
 Net _354_
-WL = 78
+Wire length = 78 Path depth = 7
 0 (44 57) neighbor 11 length 0
 1 (33 70) neighbor 10 length 9
 2 (48 63) neighbor 8 length 6
@@ -1209,7 +1209,7 @@ WL = 78
 12 (51 56) neighbor 8 length 4
 13 (41 58) neighbor 11 length 4
 Net _355_
-WL = 119
+Wire length = 119 Path depth = 8
 0 (42 58) neighbor 14 length 0
 1 (56 42) neighbor 15 length 10
 2 (53 49) neighbor 15 length 0
@@ -1231,7 +1231,7 @@ WL = 119
 18 (33 30) neighbor 16 length 10
 19 (20 44) neighbor 17 length 12
 Net _403_
-WL = 104
+Wire length = 104 Path depth = 5
 0 (65 38) neighbor 13 length 0
 1 (51 54) neighbor 12 length 2
 2 (65 42) neighbor 14 length 0
@@ -1253,13 +1253,13 @@ WL = 104
 18 (58 34) neighbor 11 length 4
 19 (49 30) neighbor 18 length 13
 Net _404_
-WL = 52
+Wire length = 52 Path depth = 2
 0 (73 66) neighbor 0 length 0
 1 (59 34) neighbor 3 length 4
 2 (53 38) neighbor 3 length 6
 3 (59 38) neighbor 0 length 42
 Net _405_
-WL = 10
+Wire length = 10 Path depth = 3
 0 (60 31) neighbor 0 length 0
 1 (59 34) neighbor 4 length 1
 2 (54 33) neighbor 5 length 0
@@ -1267,7 +1267,7 @@ WL = 10
 4 (59 33) neighbor 0 length 3
 5 (54 33) neighbor 4 length 5
 Net _406_
-WL = 26
+Wire length = 26 Path depth = 6
 0 (27 45) neighbor 0 length 0
 1 (27 49) neighbor 4 length 3
 2 (34 46) neighbor 5 length 0
@@ -1275,101 +1275,101 @@ WL = 26
 4 (27 46) neighbor 0 length 1
 5 (34 46) neighbor 4 length 7
 Net _407_
-WL = 28
+Wire length = 28 Path depth = 2
 0 (63 56) neighbor 3 length 0
 1 (62 60) neighbor 3 length 5
 2 (67 37) neighbor 3 length 23
 3 (63 56) neighbor 3 length 0
 Net _408_
-WL = 14
+Wire length = 14 Path depth = 2
 0 (63 60) neighbor 3 length 0
 1 (62 60) neighbor 3 length 1
 2 (64 72) neighbor 3 length 13
 3 (63 60) neighbor 3 length 0
 Net _409_
-WL = 19
+Wire length = 19 Path depth = 4
 0 (44 62) neighbor 0 length 0
 1 (46 60) neighbor 3 length 3
 2 (45 77) neighbor 3 length 15
 3 (45 62) neighbor 0 length 1
 Net _410_
-WL = 16
+Wire length = 16 Path depth = 4
 0 (40 67) neighbor 0 length 0
 1 (41 66) neighbor 3 length 1
 2 (42 80) neighbor 3 length 14
 3 (41 67) neighbor 0 length 1
 Net _411_
-WL = 24
+Wire length = 24 Path depth = 4
 0 (32 65) neighbor 0 length 0
 1 (24 64) neighbor 3 length 0
 2 (10 63) neighbor 3 length 15
 3 (24 64) neighbor 0 length 9
 Net _412_
-WL = 5
+Wire length = 5 Path depth = 4
 0 (29 63) neighbor 0 length 0
 1 (27 63) neighbor 3 length 0
 2 (24 63) neighbor 3 length 3
 3 (27 63) neighbor 0 length 2
 Net _413_
-WL = 3
+Wire length = 3 Path depth = 0
 0 (28 45) neighbor 0 length 0
 1 (26 46) neighbor 0 length 3
 Net _414_
-WL = 5
+Wire length = 5 Path depth = 4
 0 (29 38) neighbor 0 length 0
 1 (26 39) neighbor 3 length 1
 2 (25 38) neighbor 3 length 1
 3 (26 38) neighbor 0 length 3
 Net _415_
-WL = 3
+Wire length = 3 Path depth = 4
 0 (38 37) neighbor 0 length 0
 1 (39 37) neighbor 3 length 0
 2 (40 38) neighbor 3 length 2
 3 (39 37) neighbor 0 length 1
 Net _416_
-WL = 4
+Wire length = 4 Path depth = 2
 0 (40 56) neighbor 3 length 0
 1 (39 56) neighbor 3 length 1
 2 (41 58) neighbor 3 length 3
 3 (40 56) neighbor 3 length 0
 Net _417_
-WL = 18
+Wire length = 18 Path depth = 2
 0 (43 52) neighbor 3 length 0
 1 (28 51) neighbor 3 length 16
 2 (44 53) neighbor 3 length 2
 3 (43 52) neighbor 3 length 0
 Net _418_
-WL = 23
+Wire length = 23 Path depth = 4
 0 (44 39) neighbor 0 length 0
 1 (44 38) neighbor 3 length 0
 2 (45 17) neighbor 3 length 22
 3 (44 38) neighbor 0 length 1
 Net _419_
-WL = 36
+Wire length = 36 Path depth = 4
 0 (47 44) neighbor 0 length 0
 1 (47 45) neighbor 3 length 0
 2 (48 79) neighbor 3 length 35
 3 (47 45) neighbor 0 length 1
 Net _420_
-WL = 11
+Wire length = 11 Path depth = 2
 0 (63 50) neighbor 3 length 0
 1 (62 49) neighbor 3 length 2
 2 (71 51) neighbor 3 length 9
 3 (63 50) neighbor 3 length 0
 Net _421_
-WL = 39
+Wire length = 39 Path depth = 4
 0 (61 47) neighbor 0 length 0
 1 (58 37) neighbor 3 length 0
 2 (57 12) neighbor 3 length 26
 3 (58 37) neighbor 0 length 13
 Net _422_
-WL = 13
+Wire length = 13 Path depth = 2
 0 (52 23) neighbor 0 length 0
 1 (54 34) neighbor 3 length 1
 2 (54 33) neighbor 3 length 0
 3 (54 33) neighbor 0 length 12
 Net _423_
-WL = 4
+Wire length = 4 Path depth = 5
 0 (55 35) neighbor 0 length 0
 1 (54 34) neighbor 5 length 0
 2 (54 33) neighbor 5 length 1
