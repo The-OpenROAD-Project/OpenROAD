@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <QDebug>
+#include <QFontDialog>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -246,6 +247,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   instance_name_color_ = Qt::yellow;
 
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
+  instance_name_font_ = QFont(); // use default font
+  instance_name_font_.setPointSize(12);
+
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
@@ -350,6 +354,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.fills);
   instance_name_color_ = settings->value("instance_name_color", instance_name_color_).value<QColor>();
+  instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   misc_.instance_names.swatch->setIcon(makeSwatchIcon(instance_name_color_));
   settings->endGroup();
 
@@ -405,6 +410,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, misc_.instance_names);
   writeSettingsForRow(settings, misc_.fills);
   settings->setValue("instance_name_color", instance_name_color_);
+  settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
 
   settings->endGroup();
@@ -500,7 +506,15 @@ void DisplayControls::itemChanged(QStandardItem* item)
 
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
-  if (index.column() == 1) {
+  if (index.column() == 0) {
+    auto name_item = model_->itemFromIndex(index);
+
+    if (name_item == misc_.instance_names.name) {
+      // handle font change
+      instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+    }
+  }
+  else if (index.column() == 1) { // handle color changes
     auto color_item = model_->itemFromIndex(index);
 
     QColor* item_color = nullptr;
@@ -732,6 +746,11 @@ Qt::BrushStyle DisplayControls::placementBlockagePattern()
 QColor DisplayControls::instanceNameColor()
 {
   return instance_name_color_;
+}
+
+QFont DisplayControls::instanceNameFont()
+{
+  return instance_name_font_;
 }
 
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)

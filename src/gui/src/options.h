@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QColor>
+#include <QFont>
 
 namespace odb {
 class dbTechLayer;
@@ -53,6 +54,7 @@ class Options
   virtual QColor placementBlockageColor() = 0;
   virtual Qt::BrushStyle placementBlockagePattern() = 0;
   virtual QColor instanceNameColor() = 0;
+  virtual QFont instanceNameFont() = 0;
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
   virtual bool isNetVisible(odb::dbNet* net) = 0;
