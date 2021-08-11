@@ -38,7 +38,7 @@
 #include <QString>
 #include <vector>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "staGui.h"
 #include "timingReportDialog.h"
 #include "ui_timingDebug.h"

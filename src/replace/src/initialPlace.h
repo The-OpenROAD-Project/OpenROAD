@@ -35,7 +35,7 @@
 #define __REPLACE_INIT_PLACE__
 
 #include <Eigen/SparseCore>
-#include "opendb/db.h"
+#include "odb/db.h"
 #include <memory>
 
 namespace utl {

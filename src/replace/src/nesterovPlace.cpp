@@ -34,7 +34,7 @@
 #include "placerBase.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"

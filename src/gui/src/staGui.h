@@ -38,8 +38,8 @@
 #include <QAbstractTableModel>
 
 #include "gui/gui.h"
-#include "opendb/db.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/Sta.hh"

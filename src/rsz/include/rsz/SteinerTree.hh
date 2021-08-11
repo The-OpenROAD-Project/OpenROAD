@@ -42,7 +42,7 @@
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
 
-#include "opendb/geom.h"
+#include "odb/geom.h"
 
 #include "db_sta/dbNetwork.hh"
 

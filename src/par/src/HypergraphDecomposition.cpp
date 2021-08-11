@@ -37,7 +37,7 @@
 
 #include <fstream>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace par {
 

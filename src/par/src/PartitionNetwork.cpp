@@ -35,7 +35,7 @@
 
 #include "par/PartitionMgr.h"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
 #include "db_sta/dbNetwork.hh"
