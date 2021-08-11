@@ -66,21 +66,33 @@ class Descriptor
   virtual bool isNet(std::any /* object */) const { return false; }
 
   // A property is a name and a value.
-  using Property = std::pair<std::string, std::any>;
+  struct Property {
+    std::string name;
+    std::any value;
+  };
   using Properties = std::vector<Property>;
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
   using ActionCallback = std::function<Selected(void)>;
-  using Action = std::pair<std::string, ActionCallback>;
+  struct Action {
+    std::string name;
+    ActionCallback callback;
+  };
   using Actions = std::vector<Action>;
 
   // An editor is a callback function and a list of possible values (this can be empty),
   // the name of the editor should match the property it modifies
   // the callback should return true if the edit was successful, otherwise false
-  using EditorOption = std::pair<std::string, std::any>;
+  struct EditorOption {
+    std::string name;
+    std::any value;
+  };
   using EditorCallback = std::function<bool(std::any)>;
-  using Editor = std::pair<EditorCallback, const std::vector<EditorOption>>;
+  struct Editor {
+    EditorCallback callback;
+    const std::vector<EditorOption> options;
+  };
   using Editors = std::map<std::string, Editor>;
 
   virtual Properties getProperties(std::any object) const = 0;

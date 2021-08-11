@@ -419,12 +419,12 @@ void Inspector::makeItemEditor(const std::string& name,
   const Descriptor::Editor* used_editor = &editor;
   if (type == EditorItemDelegate::BOOL) {
     // for BOOL we can build a new editor with options
-    const Descriptor::Editor bool_editor = Descriptor::makeEditor(editor.first, {{"True", true}, {"False", false}});
+    const Descriptor::Editor bool_editor = Descriptor::makeEditor(editor.callback, {{"True", true}, {"False", false}});
     used_editor = &bool_editor;
   }
 
   item->setData(QVariant::fromValue(*used_editor), EditorItemDelegate::editor_);
-  if (used_editor->second.empty()) {
+  if (used_editor->options.empty()) {
     // options are empty so use selected type
     item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
   } else {

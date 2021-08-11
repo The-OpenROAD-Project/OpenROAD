@@ -96,7 +96,7 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
       false,
       &okay);
   if (okay) {
-    return std::any_cast<odb::dbTechLayer*>(options[layers.indexOf(selection)].second);
+    return std::any_cast<odb::dbTechLayer*>(options[layers.indexOf(selection)].value);
   } else {
     return current;
   }
