@@ -120,7 +120,7 @@ report_stt_tree(std::vector<int> x,
 
   builder->setAlpha(alpha);
   auto tree = builder->makeSteinerTree(x, y, drvr_index);
-  pdr::reportSteinerTree(tree, logger);
+  stt::reportSteinerTree(tree, logger);
 
   builder->setAlpha(old_alpha);
 }
