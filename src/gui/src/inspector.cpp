@@ -297,6 +297,14 @@ void Inspector::inspect(const Selected& object)
       }
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       value_item = makeItem(*selected);
+    } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
+      value_item = makeItem(QString::number(v_list->size()) + " items");
+      int index = 1;
+      for (const auto val : *v_list) {
+        auto index_item = makeItem(QString::number(index++));
+        auto selected_item = makeItem(convertAnyToQString(val));
+        name_item->appendRow({index_item, selected_item});
+      }
     } else {
       value_item = makeItem(convertAnyToQString(value, &editor_type));
     }

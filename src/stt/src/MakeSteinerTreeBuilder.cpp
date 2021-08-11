@@ -36,6 +36,7 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 
 #include "stt/SteinerTreeBuilder.h"
+#include "stt/flute.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 

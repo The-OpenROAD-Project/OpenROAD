@@ -34,7 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
-#include "stt/SteinerTreeBuilder.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -467,8 +466,8 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     vecX.emplace_back(point.getX() * _options->getDbUnits());
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
-  float alpha = 0.8;
-  stt::Tree pdTree = pdr::primDijkstraRevII(vecX, vecY, 0, alpha, _logger);
+  stt::SteinerTreeBuilder* sttBuilder = _options->getSttBuilder();
+  stt::Tree pdTree = sttBuilder->makeSteinerTree(vecX, vecY, 0);
   int wl = pdTree.length;
   return wl/double(_options->getDbUnits());
 }

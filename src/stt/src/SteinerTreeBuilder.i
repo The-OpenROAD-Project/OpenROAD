@@ -37,6 +37,7 @@
 
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/pdrev.h"
+#include "stt/flute.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "opendb/db.h"
@@ -105,6 +106,23 @@ report_pd_tree(std::vector<int> x,
   utl::Logger *logger = ord::getLogger();
   stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
   pdr::reportSteinerTree(tree, logger);
+}
+
+void
+report_stt_tree(std::vector<int> x,
+                std::vector<int> y,
+                int drvr_index,
+                float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  auto builder = getSteinerTreeBuilder();
+  float old_alpha = builder->getAlpha();
+
+  builder->setAlpha(alpha);
+  auto tree = builder->makeSteinerTree(x, y, drvr_index);
+  pdr::reportSteinerTree(tree, logger);
+
+  builder->setAlpha(old_alpha);
 }
 
 void
