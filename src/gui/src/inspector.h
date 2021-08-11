@@ -104,7 +104,7 @@ class Inspector : public QDockWidget
 
  signals:
   void selected(const Selected& selected, bool showConnectivity = false);
-  void selectedItemChanged();
+  void selectedItemChanged(const Selected& selected);
 
  public slots:
   void inspect(const Selected& object);

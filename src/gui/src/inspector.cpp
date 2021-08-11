@@ -230,10 +230,7 @@ void Inspector::inspect(const Selected& object)
 {
   // disconnect so announcements can be will not be made about changes
   // changes right now are based on adding item to model
-  disconnect(model_,
-             SIGNAL(itemChanged(QStandardItem*)),
-             this,
-             SIGNAL(selectedItemChanged()));
+  disconnect(model_, SIGNAL(itemChanged(QStandardItem*)));
 
   model_->removeRows(0, model_->rowCount());
   // remove action buttons and ensure delete
@@ -305,9 +302,9 @@ void Inspector::inspect(const Selected& object)
 
   // connect so announcements can be made about changes
   connect(model_,
-          SIGNAL(itemChanged(QStandardItem*)),
+          &SelectedItemModel::itemChanged,
           this,
-          SIGNAL(selectedItemChanged()));
+          [this, object]() { emit selectedItemChanged(object); });
 }
 
 void Inspector::clicked(const QModelIndex& index)
