@@ -33,11 +33,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "tap/MakeTapcell.h"
 
 #include "ord/OpenRoad.hh"
-#include "tap/tapcell.h"
-#include "tap/MakeTapcell.h"
 #include "sta/StaMain.hh"
+#include "tap/tapcell.h"
 
 using std::max;
 using std::min;
@@ -45,11 +45,11 @@ using std::vector;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *tap_tcl_inits[];
-}
+extern const char* tap_tcl_inits[];
+}  // namespace sta
 
 extern "C" {
-extern int Tap_Init(Tcl_Interp *interp);
+extern int Tap_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -73,4 +73,4 @@ void initTapcell(OpenRoad* openroad)
   openroad->getTapcell()->init(openroad->getDb(), openroad->getLogger());
 }
 
-}
+}  // namespace ord
