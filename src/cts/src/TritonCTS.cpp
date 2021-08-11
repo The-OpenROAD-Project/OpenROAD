@@ -42,8 +42,8 @@
 #include "TreeBuilder.h"
 #include "LevelBalancer.h"
 
-#include "opendb/db.h"
-#include "opendb/dbShape.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 #include "sta/Sdc.hh"
 #include "sta/Liberty.hh"

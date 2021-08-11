@@ -45,11 +45,11 @@
 #include "utl/MakeLogger.h"
 #include "utl/Logger.h"
 
-#include "opendb/db.h"
-#include "opendb/lefin.h"
-#include "opendb/defin.h"
-#include "opendb/defout.h"
-#include "opendb/cdl.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
+#include "odb/defin.h"
+#include "odb/defout.h"
+#include "odb/cdl.h"
 
 #include "sta/VerilogWriter.hh"
 #include "sta/StaMain.hh"
@@ -90,7 +90,7 @@ extern const char *openroad_swig_tcl_inits[];
 // Swig uses C linkage for init functions.
 extern "C" {
 extern int Openroad_swig_Init(Tcl_Interp *interp);
-extern int Opendbtcl_Init(Tcl_Interp *interp);
+extern int Odbtcl_Init(Tcl_Interp *interp);
 }
 
 // Main.cc set by main()
@@ -236,7 +236,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   initLogger(logger_, tcl_interp);
   initGui(this); // first so we can register our sink with the logger
-  Opendbtcl_Init(tcl_interp);
+  Odbtcl_Init(tcl_interp);
   initInitFloorplan(this);
   initDbSta(this);
   initResizer(this);

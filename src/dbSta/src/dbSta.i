@@ -1,6 +1,6 @@
 %{
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
@@ -14,7 +14,7 @@ using sta::Instance;
 
 %}
 
-%import "opendb.i"
+%import "odb.i"
 %include "../../src/Exception.i"
 // OpenSTA swig files
 %include "tcl/StaTcl.i"

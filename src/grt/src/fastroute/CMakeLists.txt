@@ -57,6 +57,6 @@ target_link_libraries(FastRoute4.1
   PRIVATE
     utl
     stt
-    opendb
+    odb
     Boost::boost
 )

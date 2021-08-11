@@ -48,7 +48,7 @@ if (Qt5_FOUND AND BUILD_GUI)
 
   target_link_libraries(gui
     PUBLIC
-      opendb
+      odb
     PRIVATE
       Qt5::Core
       Qt5::Widgets
@@ -65,7 +65,7 @@ else()
   add_library(gui src/stub.cpp)
   target_link_libraries(gui
     PUBLIC
-      opendb
+      odb
   )
 endif()
 

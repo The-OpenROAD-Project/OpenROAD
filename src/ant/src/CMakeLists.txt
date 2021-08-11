@@ -50,7 +50,7 @@ target_include_directories(ant
 
 target_link_libraries(ant
   PUBLIC
-    opendb
+    odb
     OpenSTA
     utl
 )

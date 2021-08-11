@@ -46,7 +46,7 @@
 #include <utility> // pair
 #include <tuple> // pair
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;

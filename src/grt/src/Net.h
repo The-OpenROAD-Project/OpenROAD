@@ -39,7 +39,7 @@
 #include <vector>
 
 #include "Pin.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace grt {
 
