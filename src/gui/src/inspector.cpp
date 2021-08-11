@@ -96,16 +96,17 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
         // use selected name when available
         return QString::fromStdString(selected_data.getName());
       }
+    } else if (role == Qt::BackgroundRole) {
+      bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+
+      if (has_editor) {
+        return QBrush(editable_item_);
+      }
     } else if (role == Qt::ForegroundRole) {
       bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
-      bool has_editor   = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
 
-      if (has_selected && has_editor) {
-        return QBrush(selectable_editable_item_);
-      } else if (has_selected){
+      if (has_selected){
         return QBrush(selectable_item_);
-      } else if (has_editor) {
-        return QBrush(editable_item_);
       }
     }
   }
@@ -115,7 +116,7 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
                                        QObject* parent) : QItemDelegate(parent),
                                        model_(model),
-                                       foreground_(model->getEditableColor())
+                                       background_(model->getEditableColor())
 {
 }
 
@@ -124,15 +125,14 @@ QWidget* EditorItemDelegate::createEditor(QWidget* parent,
                                           const QModelIndex& index) const
 {
   auto type = index.model()->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+  QWidget* editor;
   if (type == LIST) {
-    auto combo_box = new QComboBox(parent);
-    combo_box->setStyleSheet("color: " + foreground_.name());
-    return combo_box;
+    editor = new QComboBox(parent);
   } else {
-    auto line_edit = new QLineEdit(parent);
-    line_edit->setStyleSheet("color: " + foreground_.name());
-    return line_edit;
+    editor = new QLineEdit(parent);
   }
+  editor->setStyleSheet("background: " + background_.name());
+  return editor;
 }
 
 void EditorItemDelegate::setEditorData(QWidget* editor,
@@ -214,7 +214,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
 Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new QTreeView()),
-      model_(new SelectedItemModel(Qt::blue, Qt::darkGreen, Qt::darkCyan)),
+      model_(new SelectedItemModel(Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */)),
       layout_(new QVBoxLayout),
       selected_(selected),
       selection_(Selected()),

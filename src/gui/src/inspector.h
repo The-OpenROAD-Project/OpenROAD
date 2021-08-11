@@ -54,23 +54,19 @@ public:
   SelectedItemModel(
       const QColor& selectable,
       const QColor& editable,
-      const QColor& selectable_editable,
       QObject* parent = nullptr)
   : QStandardItemModel(0, 2, parent),
     selectable_item_(selectable),
-    editable_item_(editable),
-    selectable_editable_item_(selectable_editable) {}
+    editable_item_(editable) {}
 
   QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
 
   const QColor& getSelectableColor() { return selectable_item_; }
   const QColor& getEditableColor() { return editable_item_; }
-  const QColor& getSelectableEditableColor() { return selectable_editable_item_; }
 
 private:
   const QColor selectable_item_;
   const QColor editable_item_;
-  const QColor selectable_editable_item_;
 };
 
 class EditorItemDelegate : public QItemDelegate
@@ -106,7 +102,7 @@ public:
 
 private:
   SelectedItemModel* model_;
-  const QColor foreground_;
+  const QColor background_;
 };
 
 // The inspector is to allow a single object to have it properties displayed.
