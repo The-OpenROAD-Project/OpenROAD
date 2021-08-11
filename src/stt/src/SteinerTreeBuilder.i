@@ -109,6 +109,23 @@ report_pd_tree(std::vector<int> x,
 }
 
 void
+report_stt_tree(std::vector<int> x,
+                std::vector<int> y,
+                int drvr_index,
+                float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  auto builder = getSteinerTreeBuilder();
+  float old_alpha = builder->getAlpha();
+
+  builder->setAlpha(alpha);
+  auto tree = builder->makeSteinerTree(x, y, drvr_index);
+  pdr::reportSteinerTree(tree, logger);
+
+  builder->setAlpha(old_alpha);
+}
+
+void
 highlight_pd_tree(std::vector<int> x,
                   std::vector<int> y,
                   int drvr_index,

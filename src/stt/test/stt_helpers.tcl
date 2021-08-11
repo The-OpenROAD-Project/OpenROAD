@@ -86,6 +86,19 @@ proc write_gcd_nets {} {
   write_nets "gcd.nets"
 }
 
+proc report_stt_net { net alpha } {
+  set pins [lassign $net net_name drvr_index]
+  puts "Net $net_name"
+  set xs {}
+  set ys {}
+  foreach pin $pins {
+    lassign $pin pin_name x y
+    lappend xs $x
+    lappend ys $y
+  }
+  stt::report_stt_tree $xs $ys $drvr_index $alpha
+}
+
 proc report_pd_net { net alpha } {
   set pins [lassign $net net_name drvr_index]
   puts "Net $net_name"
