@@ -162,14 +162,23 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
   if (alpha > 0.0) {
     tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
 
-    if (!checkTree(tree)) { // fallback
-      tree = flt::flute(x, y, flute_accuracy);
+    if (checkTree(tree)) {
+      return tree;
     }
-  } else {
-    tree = flt::flute(x, y, flute_accuracy);
-  }
 
-  return tree;
+    // Try a smaller alpha if possible
+    if (alpha > 0.1) {
+      tree = pdr::primDijkstra(x, y, drvr_index, alpha - 0.1, logger_);
+      if (checkTree(tree)) {
+        return tree;
+      }
+    }
+
+    // Give up and use flute
+    return tree = flt::flute(x, y, flute_accuracy);
+  } else {
+    return flt::flute(x, y, flute_accuracy);
+  }
 }
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
