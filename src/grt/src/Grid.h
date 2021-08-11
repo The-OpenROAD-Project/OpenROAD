@@ -158,10 +158,11 @@ class Grid
   {
     return obstructions_;
   }
-  void addObstruction(int layer, const odb::Rect& obstruction)
-  {
-    obstructions_[layer].push_back(obstruction);
-  }
+
+  void addObstruction(int layer,
+                      const odb::Rect& obstruction,
+                      int min_layer,
+                      int max_layer);
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 

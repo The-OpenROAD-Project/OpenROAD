@@ -197,4 +197,12 @@ odb::Rect Grid::getGridArea() const
       lower_left_x_, lower_left_y_, upper_right_x_, upper_right_y_);
 }
 
+void Grid::addObstruction(int layer,
+                          const odb::Rect& obstruction,
+                          int min_layer,
+                          int max_layer)
+{
+  obstructions_[layer].push_back(obstruction);
+}
+
 }  // namespace grt

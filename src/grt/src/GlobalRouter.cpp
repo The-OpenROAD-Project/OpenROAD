@@ -2991,7 +2991,7 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
     if (!die_area.contains(obstruction_rect)) {
       logger_->warn(GRT, 37, "Found blockage outside die area.");
     }
-    grid_->addObstruction(layer, obstruction_rect);
+    grid_->addObstruction(layer, obstruction_rect, min_routing_layer_, max_routing_layer_);
     obstructions_cnt++;
   }
 
@@ -3047,7 +3047,7 @@ int GlobalRouter::findInstancesObstructions(
                       "Found blockage outside die area in instance {}.",
                       inst->getConstName());
       }
-      grid_->addObstruction(layer, obstruction_rect);
+      grid_->addObstruction(layer, obstruction_rect, min_routing_layer_, max_routing_layer_);
       obstructions_cnt++;
     }
 
@@ -3080,7 +3080,7 @@ int GlobalRouter::findInstancesObstructions(
                           inst->getConstName());
             pin_out_of_die_count++;
           }
-          grid_->addObstruction(pin_layer, pin_box);
+          grid_->addObstruction(pin_layer, pin_box, min_routing_layer_, max_routing_layer_);
         }
       }
     }
@@ -3131,7 +3131,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                             "Net {} has wires outside die area.",
                             db_net->getConstName());
             }
-            grid_->addObstruction(l, obstruction_rect);
+            grid_->addObstruction(l, obstruction_rect, min_routing_layer_, max_routing_layer_);
           }
         }
       }
@@ -3161,7 +3161,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                             "Net {} has wires outside die area.",
                             db_net->getConstName());
             }
-            grid_->addObstruction(l, obstruction_rect);
+            grid_->addObstruction(l, obstruction_rect, min_routing_layer_, max_routing_layer_);
           }
         }
       }
