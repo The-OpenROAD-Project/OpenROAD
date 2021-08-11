@@ -75,15 +75,7 @@ primDijkstra(std::vector<int>& x,
              float alpha,
              Logger* logger)
 {
-  // pdrev fails with non-zero root index despite showing signs of supporting it.
-  std::vector<int> x1(x);
-  std::vector<int> y1(y);
-  // Move driver to pole position until drvr_index arg works.
-  std::swap(x1[0], x1[drvr_index]);
-  std::swap(y1[0], y1[drvr_index]);
-  drvr_index = 0;
-
-  pdr::PdRev pd(x1, y1, drvr_index, logger);
+  pdr::PdRev pd(x, y, drvr_index, logger);
   pd.runPD(alpha);
   Tree tree = pd.translateTree();
   //pd.highlightSteinerTree(tree);

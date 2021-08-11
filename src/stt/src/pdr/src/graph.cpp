@@ -736,7 +736,13 @@ void Graph::RemoveSTNodes()
     Node& cN = nodes[toBeRemoved[i]];
     removeChild(nodes[cN.parent], cN.idx);
     for (int j = 0; j < cN.children.size(); ++j) {
-      replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
+      replaceParent(nodes[cN.children[j]], cN.idx,
+                    // Note that the root node's parent is itself,
+                    // so the removed node's parent cannot be used
+                    // for the children. This fact seems to have escaped
+                    // the original author. Use the original root node
+                    // as the parent -cherry 08/09/2021
+                    cN.parent == cN.idx ? root_idx_ : cN.parent);
       addChild(nodes[cN.parent], cN.children[j]);
     }
   }
