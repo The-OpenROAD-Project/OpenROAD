@@ -44,10 +44,47 @@ Q_DECLARE_METATYPE(gui::Selected);
 Q_DECLARE_METATYPE(gui::Descriptor::Editor);
 Q_DECLARE_METATYPE(gui::EditorItemDelegate::EditType);
 Q_DECLARE_METATYPE(std::any);
+Q_DECLARE_METATYPE(std::string);
 
 namespace gui {
 
 using namespace odb;
+
+static QString convertAnyToQString(const std::any& item, EditorItemDelegate::EditType* type = nullptr)
+{
+  QString value;
+  EditorItemDelegate::EditType value_type = EditorItemDelegate::STRING; // default to string
+
+  if (auto selected = std::any_cast<Selected>(&item)) {
+    value = QString::fromStdString(selected->getName());
+  } else if (auto v = std::any_cast<const char*>(&item)) {
+    value = QString(*v);
+  } else if (auto v = std::any_cast<const std::string>(&item)) {
+    value = QString::fromStdString(*v);
+  } else if (auto v = std::any_cast<int>(&item)) {
+    value_type = EditorItemDelegate::NUMBER;
+    value = QString::number(*v);
+  } else if (auto v = std::any_cast<unsigned int>(&item)) {
+    value_type = EditorItemDelegate::NUMBER;
+    value = QString::number(*v);
+  } else if (auto v = std::any_cast<double>(&item)) {
+    value_type = EditorItemDelegate::NUMBER;
+    value = QString::number(*v);
+  } else if (auto v = std::any_cast<float>(&item)) {
+    value_type = EditorItemDelegate::NUMBER;
+    value = QString::number(*v);
+  } else if (auto v = std::any_cast<bool>(&item)) {
+    value_type = EditorItemDelegate::BOOL;
+    value = *v ? "True" : "False";
+  } else {
+    value = "<unknown>";
+  }
+
+  if (type != nullptr) {
+    *type = value_type;
+  }
+  return value;
+}
 
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
@@ -71,7 +108,7 @@ QWidget* EditorItemDelegate::createEditor(QWidget* parent,
                                           const QStyleOptionViewItem& /* option */,
                                           const QModelIndex& index) const
 {
-  auto type = index.model()->data(index, Qt::UserRole+1).value<EditorItemDelegate::EditType>();
+  auto type = index.model()->data(index, editor_type_).value<EditorItemDelegate::EditType>();
   if (type == LIST) {
     auto combo_box = new QComboBox(parent);
     combo_box->setStyleSheet("color: " + foreground_.name());
@@ -86,8 +123,8 @@ QWidget* EditorItemDelegate::createEditor(QWidget* parent,
 void EditorItemDelegate::setEditorData(QWidget* editor,
                                        const QModelIndex &index) const
 {
-  auto type = index.model()->data(index, Qt::UserRole+1).value<EditorItemDelegate::EditType>();
-  auto [callback, values] = index.model()->data(index, Qt::UserRole).value<Descriptor::Editor>();
+  auto type = index.model()->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+  auto [callback, values] = index.model()->data(index, editor_).value<Descriptor::Editor>();
   QString value = index.model()->data(index, Qt::EditRole).toString();
 
   if (type != LIST) {
@@ -106,8 +143,8 @@ void EditorItemDelegate::setModelData(QWidget* editor,
                                       QAbstractItemModel* model,
                                       const QModelIndex& index) const
 {
-  auto type = model->data(index, Qt::UserRole+1).value<EditorItemDelegate::EditType>();
-  auto [callback, values] = model->data(index, Qt::UserRole).value<Descriptor::Editor>();
+  auto type = model->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+  auto [callback, values] = model->data(index, editor_).value<Descriptor::Editor>();
 
   QString value;
 
@@ -127,7 +164,18 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   }
 
   if (accepted) {
-    model->setData(index, value, Qt::EditRole);
+    // retrieve property again
+    auto selected = model->data(index, selected_).value<Selected>();
+    auto item_name = model->data(index, editor_name_).value<std::string>();
+    QString formatted_value;
+    if (item_name == "Name") { // name and type are inserted in inspector, so handle differently
+      formatted_value = QString::fromStdString(selected.getName());
+    } else if (item_name == "Type") {
+      formatted_value = QString::fromStdString(selected.getTypeName());
+    } else {
+      formatted_value = convertAnyToQString(selected.getProperty(item_name));
+    }
+    model->setData(index, formatted_value, Qt::EditRole);
   } else {
     // reset to original data
     model->setData(index, index.model()->data(index, Qt::EditRole), Qt::EditRole);
@@ -201,7 +249,6 @@ void Inspector::inspect(const Selected& object)
     auto name_item = makeItem(QString::fromStdString(name));
     auto editor_found = editors.find(name);
     EditorItemDelegate::EditType editor_type = EditorItemDelegate::STRING; // default to string
-    std::vector<Descriptor::EditorOption> editor_options;
 
     QStandardItem* value_item = nullptr;
 
@@ -217,28 +264,8 @@ void Inspector::inspect(const Selected& object)
       }
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       value_item = makeItem(*selected);
-    } else if (auto v = std::any_cast<const char*>(&value)) {
-      value_item = makeItem(QString(*v));
-    } else if (auto v = std::any_cast<const std::string>(&value)) {
-      value_item = makeItem(QString::fromStdString(*v));
-    } else if (auto v = std::any_cast<int>(&value)) {
-      value_item = makeItem(QString::number(*v));
-      editor_type = EditorItemDelegate::NUMBER;
-    } else if (auto v = std::any_cast<unsigned int>(&value)) {
-      value_item = makeItem(QString::number(*v));
-      editor_type = EditorItemDelegate::NUMBER;
-    } else if (auto v = std::any_cast<double>(&value)) {
-      value_item = makeItem(QString::number(*v));
-      editor_type = EditorItemDelegate::NUMBER;
-    } else if (auto v = std::any_cast<float>(&value)) {
-      value_item = makeItem(QString::number(*v));
-      editor_type = EditorItemDelegate::NUMBER;
-    } else if (auto v = std::any_cast<bool>(&value)) {
-      value_item = makeItem(*v ? "True" : "False");
-      editor_options.push_back({"True", true});
-      editor_options.push_back({"False", false});
     } else {
-      value_item = makeItem("<unknown>");
+      value_item = makeItem(convertAnyToQString(value, &editor_type));
     }
 
     model_->appendRow({name_item, value_item});
@@ -251,13 +278,7 @@ void Inspector::inspect(const Selected& object)
     // make editor if found
     if (editor_found != editors.end()) {
       auto editor = (*editor_found).second;
-
-      // replace editor options
-      if (!editor_options.empty()) {
-        makeItemEditor(value_item, editor_type, Descriptor::makeEditor(editor.first, editor_options));
-      } else {
-        makeItemEditor(value_item, editor_type, editor);
-      }
+      makeItemEditor(name, value_item, object, editor_type, editor);
     }
   }
 
@@ -319,19 +340,31 @@ QStandardItem* Inspector::makeItem(const Selected& selected)
   return item;
 }
 
-void Inspector::makeItemEditor(QStandardItem* item,
+void Inspector::makeItemEditor(const std::string& name,
+                               QStandardItem* item,
+                               const Selected& selected,
                                const EditorItemDelegate::EditType type,
                                const Descriptor::Editor& editor)
 {
   item->setEditable(true);
   item->setForeground(editable_item_);
-  item->setData(QVariant::fromValue(editor), Qt::UserRole);
-  if (editor.second.empty()) {
+  item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
+  item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
+
+  const Descriptor::Editor* used_editor = &editor;
+  if (type == EditorItemDelegate::BOOL) {
+    // for BOOL we can build a new editor with options
+    const Descriptor::Editor bool_editor = Descriptor::makeEditor(editor.first, {{"True", true}, {"False", false}});
+    used_editor = &bool_editor;
+  }
+
+  item->setData(QVariant::fromValue(*used_editor), EditorItemDelegate::editor_);
+  if (used_editor->second.empty()) {
     // options are empty so use selected type
-    item->setData(QVariant::fromValue(type), Qt::UserRole+1);
+    item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
   } else {
     // options are not empty so use list type
-    item->setData(QVariant::fromValue(EditorItemDelegate::LIST), Qt::UserRole+1);
+    item->setData(QVariant::fromValue(EditorItemDelegate::LIST), EditorItemDelegate::editor_type_);
   }
 }
 

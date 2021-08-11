@@ -60,9 +60,16 @@ class EditorItemDelegate : public QItemDelegate
   Q_OBJECT
 
 public:
+  // positions in ->data() where data is located
+  static const int editor_      = Qt::UserRole;
+  static const int editor_name_ = Qt::UserRole+1;
+  static const int editor_type_ = Qt::UserRole+2;
+  static const int selected_    = Qt::UserRole+3;
+
   enum EditType {
     NUMBER,
     STRING,
+    BOOL,
     LIST
   };
 
@@ -107,7 +114,9 @@ class Inspector : public QDockWidget
   void handleAction(QWidget* action);
   QStandardItem* makeItem(const Selected& selected);
   QStandardItem* makeItem(const QString& name);
-  void makeItemEditor(QStandardItem* item,
+  void makeItemEditor(const std::string& name,
+                      QStandardItem* item,
+                      const Selected& selected,
                       const EditorItemDelegate::EditType type,
                       const Descriptor::Editor& editor);
 
