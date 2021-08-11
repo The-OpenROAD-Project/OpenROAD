@@ -215,28 +215,8 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
 // get list of equivalent masters as EditorOptions
 void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const
 {
-  // mirrors method used in Resizer.cpp
-  auto sta = ord::OpenRoad::openRoad()->getSta();
-  auto network = sta->getDbNetwork();
-
-  sta::LibertyLibrarySeq libs;
-  sta::LibertyLibraryIterator *lib_iter = network->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary *lib = lib_iter->next();
-    libs.push_back(lib);
-  }
-  delete lib_iter;
-  sta->makeEquivCells(&libs, nullptr);
-
   std::set<odb::dbMaster*> masters;
-  sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
-  auto equiv_cells = sta->equivCells(cell);
-  if (equiv_cells != nullptr) {
-    for (auto equiv : *equiv_cells) {
-      masters.insert(network->staToDb(equiv));
-    }
-  }
-
+  DbMasterDescriptor::getMasterEquivalent(master, masters);
   for (auto master : masters) {
     options.push_back({master->getConstName(), master});
   }
