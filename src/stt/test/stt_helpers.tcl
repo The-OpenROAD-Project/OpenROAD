@@ -86,7 +86,7 @@ proc write_gcd_nets {} {
   write_nets "gcd.nets"
 }
 
-proc report_pdrev_net { net alpha use_pd } {
+proc report_pd_net { net alpha } {
   set pins [lassign $net net_name drvr_index]
   puts "Net $net_name"
   set xs {}
@@ -96,17 +96,20 @@ proc report_pdrev_net { net alpha use_pd } {
     lappend xs $x
     lappend ys $y
   }
-  if { $use_pd } {
-    stt::report_pd_tree $xs $ys $drvr_index $alpha
-  } else {
-    stt::report_pdII_tree $xs $ys $drvr_index $alpha
-  }
+  stt::report_pd_tree $xs $ys $drvr_index $alpha
 }
 
-proc report_pdrev_nets { nets alpha use_pd } {
-  foreach net $nets {
-    report_pdrev_net $net $alpha $use_pd
+proc report_pdrev_net { net alpha } {
+  set pins [lassign $net net_name drvr_index]
+  puts "Net $net_name"
+  set xs {}
+  set ys {}
+  foreach pin $pins {
+    lassign $pin pin_name x y
+    lappend xs $x
+    lappend ys $y
   }
+  stt::report_pdrev_tree $xs $ys $drvr_index $alpha
 }
 
 proc report_flute_net { net } {
@@ -123,13 +126,7 @@ proc report_flute_net { net } {
   stt::report_flute_tree $xs $ys
 }
 
-proc report_flute_nets { nets } {
-  foreach net $nets {
-    report_flute_net $net
-  }
-}
-
-proc find_pdrev_net { nets net_name } {
+proc find_net { nets net_name } {
   foreach net $nets {
   set pins [lassign $net name drvr_index]
     if { $name == $net_name } {

@@ -121,10 +121,10 @@ highlight_pd_tree(std::vector<int> x,
 }
 
 void
-report_pdII_tree(std::vector<int> x,
-                 std::vector<int> y,
-                 int drvr_index,
-                 float alpha)
+report_pdrev_tree(std::vector<int> x,
+                  std::vector<int> y,
+                  int drvr_index,
+                  float alpha)
 {
   utl::Logger *logger = ord::getLogger();
   stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
