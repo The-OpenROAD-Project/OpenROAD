@@ -874,13 +874,13 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
-  static const int max_overflow_increases_ = 25;
+  const int max_overflow_increases = 25;
 
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
   while (total_overflow_ > 0 && i <= overflow_iterations_
-         && overflow_increases <= max_overflow_increases_) {
+         && overflow_increases <= max_overflow_increases) {
     if (verbose_ > 1) {
       logger_->info(GRT, 102, "Iteration {}", i);
     }
@@ -1110,7 +1110,7 @@ NetRouteMap FastRouteCore::run()
     copyBR();
   }
 
-  if (overflow_increases > max_overflow_increases_) {
+  if (overflow_increases > max_overflow_increases) {
     logger_->warn(
         GRT,
         230,
