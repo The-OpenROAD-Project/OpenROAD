@@ -129,6 +129,15 @@ void Inspector::inspect(const Selected& object)
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       auto value_item = makeItem(selected->getName(), *selected);
       model_->appendRow({name_item, value_item});
+    } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
+      auto value_item = makeItem(QString::number(v_list->size()) + " items");
+      model_->appendRow({name_item, value_item});
+      int index = 1;
+      for (const auto& val : *v_list) {
+        auto index_item = makeItem(QString::number(index++));
+        auto selected_item = makeItem(QString(std::any_cast<const char*>(val)));
+        name_item->appendRow({index_item, selected_item});
+      }
     } else if (auto v = std::any_cast<const char*>(&value)) {
       model_->appendRow({name_item, makeItem(QString(*v))});
     } else if (auto v = std::any_cast<const std::string>(&value)) {

@@ -35,6 +35,11 @@
 #include "db.h"
 #include "dbShape.h"
 
+#include "ord/OpenRoad.hh"
+#include "db_sta/dbSta.hh"
+#include "db_sta/dbNetwork.hh"
+#include "sta/Liberty.hh"
+
 namespace gui {
 
 std::string DbInstDescriptor::getName(std::any object) const
@@ -76,9 +81,10 @@ bool DbInstDescriptor::isInst(std::any object) const
 
 Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
 {
+  auto gui = Gui::get();
   auto inst = std::any_cast<odb::dbInst*>(object);
   auto placed = inst->getPlacementStatus();
-  Properties props({{"Master", inst->getMaster()->getConstName()},
+  Properties props({{"Master", gui->makeSelected(inst->getMaster())},
                     {"Placement status", placed.getString()},
                     {"Source type", inst->getSourceType().getString()}});
   if (placed.isPlaced()) {
@@ -91,7 +97,6 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
                   {"Y", y / dbuPerUU}});
   }
   SelectionSet iterms;
-  auto gui = Gui::get();
   for (auto iterm : inst->getITerms()) {
     iterms.insert(gui->makeSelected(iterm));
   }
@@ -116,6 +121,130 @@ bool DbInstDescriptor::lessThan(std::any l, std::any r) const
 }
 
 //////////////////////////////////////////////////
+
+std::string DbMasterDescriptor::getName(std::any object) const
+{
+  return std::any_cast<odb::dbMaster*>(object)->getName();
+}
+
+std::string DbMasterDescriptor::getTypeName(std::any object) const
+{
+  return "Master";
+}
+
+bool DbMasterDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto master = std::any_cast<odb::dbMaster*>(object);
+  master->getPlacementBoundary(bbox);
+  return true;
+}
+
+void DbMasterDescriptor::highlight(std::any object,
+                                   Painter& painter,
+                                   void* additional_data) const
+{
+  auto master = std::any_cast<odb::dbMaster*>(object);
+  std::set<odb::dbInst*> insts;
+  getInstances(master, insts);
+  for (auto inst : insts) {
+    if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+
+    odb::dbBox* bbox = inst->getBBox();
+    odb::Rect rect;
+    bbox->getBox(rect);
+    painter.drawRect(rect);
+  }
+}
+
+Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
+{
+  auto master = std::any_cast<odb::dbMaster*>(object);
+  Properties props({{"Master type", master->getType().getString()}});
+  auto site = master->getSite();
+  if (site != nullptr) {
+    props.push_back({"Site", site->getConstName()});
+  }
+  auto gui = Gui::get();
+  std::vector<std::any> mterms;
+  for (auto mterm : master->getMTerms()) {
+    mterms.push_back(mterm->getConstName());
+  }
+  props.push_back({"MTerms", mterms});
+  SelectionSet equivalent;
+  std::set<odb::dbMaster*> equivalent_masters;
+  getMasterEquivalent(master, equivalent_masters);
+  for (auto other_master : equivalent_masters) {
+    if (other_master != master) {
+      equivalent.insert(gui->makeSelected(other_master));
+    }
+  }
+  props.push_back({"Equivalent", equivalent});
+  SelectionSet instances;
+  std::set<odb::dbInst*> insts;
+  getInstances(master, insts);
+  for (auto inst : insts) {
+    instances.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", instances});
+
+  return props;
+}
+
+Selected DbMasterDescriptor::makeSelected(std::any object,
+                                          void* additional_data) const
+{
+  if (auto master = std::any_cast<odb::dbMaster*>(&object)) {
+    return Selected(*master, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbMasterDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_master = std::any_cast<odb::dbMaster*>(l);
+  auto r_master = std::any_cast<odb::dbMaster*>(r);
+  return l_master->getId() < r_master->getId();
+}
+
+// get list of equivalent masters as EditorOptions
+void DbMasterDescriptor::getMasterEquivalent(odb::dbMaster* master, std::set<odb::dbMaster*>& masters)
+{
+  // mirrors method used in Resizer.cpp
+  auto sta = ord::OpenRoad::openRoad()->getSta();
+  auto network = sta->getDbNetwork();
+
+  sta::LibertyLibrarySeq libs;
+  sta::LibertyLibraryIterator *lib_iter = network->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary *lib = lib_iter->next();
+    libs.push_back(lib);
+  }
+  delete lib_iter;
+  sta->makeEquivCells(&libs, nullptr);
+
+  sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
+  auto equiv_cells = sta->equivCells(cell);
+  if (equiv_cells != nullptr) {
+    for (auto equiv : *equiv_cells) {
+      masters.insert(network->staToDb(equiv));
+    }
+  }
+}
+
+// get list of instances of that type
+void DbMasterDescriptor::getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const
+{
+  for (auto inst : ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getInsts()) {
+    if (inst->getMaster() == master) {
+      insts.insert(inst);
+    }
+  }
+}
+
+//////////////////////////////////////////////////
+
 std::string DbNetDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbNet*>(object)->getName();
