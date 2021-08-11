@@ -195,10 +195,9 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
     }
 
     // Give up and use flute
-    return tree = flt::flute(x, y, flute_accuracy);
-  } else {
-    return flt::flute(x, y, flute_accuracy);
-  }
+  } 
+
+  return flt::flute(x, y, flute_accuracy);
 }
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
