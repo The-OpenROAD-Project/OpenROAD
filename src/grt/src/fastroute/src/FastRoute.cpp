@@ -881,6 +881,9 @@ NetRouteMap FastRouteCore::run()
   int last_total_overflow = 0;
   while (total_overflow_ > 0 && i <= overflow_iterations_
          && overflow_increases <= max_overflow_increases_) {
+    if (verbose_ > 1) {
+      logger_->info(GRT, 102, "Iteration {}", i);
+    }
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
     } else if (THRESH_M >= 2) {
