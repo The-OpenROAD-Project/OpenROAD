@@ -3603,42 +3603,29 @@ void Graph::update_node_detcost_Kt(int j)
 
 void Graph::get_level_in_tree()
 {
-  // This needlessly copies vectors in many places -cherry 06/20/2021
   tree_struct_.clear();
-  int iter = 0;
-  vector<int> tmp1;
-  tree_struct_.push_back(tmp1);
-  tree_struct_[iter].push_back(0);
-  iter++;
-  int j = 0, level_count = 0;
-  vector<int> set_of_chi = nodes[j].children, tmp;
-  vector<int> tmp2;
-  tree_struct_.push_back(tmp2);
-  tree_struct_[iter].insert(
-      tree_struct_[iter].end(), set_of_chi.begin(), set_of_chi.end());
-  int size_of_chi = set_of_chi.size();
-  nodes[j].level = level_count;
-  while (size_of_chi != 0) {
-    level_count++;
-    iter++;
-    tmp = set_of_chi;
-    set_of_chi.clear();
+  int level = 0;
+  int j = root_idx_;
+  tree_struct_.push_back({j});
+
+  vector<int> children = nodes[j].children;
+  tree_struct_.push_back(children);
+  nodes[j].level = level;
+  level++;
+
+  while (!children.empty()) {
+    vector<int> tmp = children;
+    children.clear();
     for (int l = 0; l < tmp.size(); l++) {
-      nodes[tmp[l]].level = level_count;
-      set_of_chi.insert(set_of_chi.end(),
-                        nodes[tmp[l]].children.begin(),
-                        nodes[tmp[l]].children.end());
+      nodes[tmp[l]].level = level;
+      children.insert(children.end(),
+                      nodes[tmp[l]].children.begin(),
+                      nodes[tmp[l]].children.end());
     }
 
-    vector<int> tmp3;
-    tree_struct_.push_back(tmp3);
-    tmp3.clear();
-    tree_struct_[iter].insert(
-        tree_struct_[iter].end(), set_of_chi.begin(), set_of_chi.end());
-    size_of_chi = set_of_chi.size();
+    tree_struct_.push_back(children);
+    level++;
   }
-  tmp.clear();
-  set_of_chi.clear();
 }
 
 void Graph::update_detourcosts_to_NNs(int j)
