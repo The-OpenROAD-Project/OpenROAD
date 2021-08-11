@@ -49,16 +49,27 @@ namespace gui {
 
 // renames an object
 template<typename T>
-static void renameObjectEditor(T obj, Descriptor::Editors& editor)
+static void addRenameEditor(T obj, Descriptor::Editors& editor)
 {
   editor.insert({"Name", Descriptor::makeEditor([obj](std::any value) {
-    obj->rename(std::any_cast<std::string>(value).c_str());
+    const std::string new_name = std::any_cast<std::string>(value);
+    // check if empty
+    if (new_name.empty()) {
+      return false;
+    }
+    // check for illegal characters
+    for (const char ch : {obj->getBlock()->getHierarchyDelimeter()}) {
+      if (new_name.find(ch) != std::string::npos) {
+        return false;
+      }
+    }
+    obj->rename(new_name.c_str());
     return true;
   })});
 }
 
 // get list of tech layers as EditorOption list
-static void layerOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
+static void addLayersToOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
 {
   for (auto layer : tech->getLayers()) {
     options.push_back({layer->getName(), layer});
@@ -69,7 +80,7 @@ static void layerOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption
 static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* current = nullptr)
 {
   std::vector<Descriptor::EditorOption> options;
-  layerOptions(tech, options);
+  addLayersToOptions(tech, options);
   QStringList layers;
   for (auto& [name, layer] : options) {
     layers.append(QString::fromStdString(name));
@@ -175,30 +186,30 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
   std::vector<Descriptor::EditorOption> placement_options;
   makePlacementStatusOptions(placement_options);
 
-  Editors edits;
-  renameObjectEditor(inst, edits);
+  Editors editors;
+  addRenameEditor(inst, editors);
   if (!master_options.empty()) {
-    edits.insert({"Master", makeEditor([inst](std::any value) {
+    editors.insert({"Master", makeEditor([inst](std::any value) {
       inst->swapMaster(std::any_cast<odb::dbMaster*>(value));
       return true;
     }, master_options)});
   }
-  edits.insert({"Orientation", makeEditor([inst](std::any value) {
+  editors.insert({"Orientation", makeEditor([inst](std::any value) {
       inst->setOrient(std::any_cast<odb::dbOrientType>(value));
       return true;
     }, orient_options)});
-  edits.insert({"Placement status", makeEditor([inst](std::any value) {
+  editors.insert({"Placement status", makeEditor([inst](std::any value) {
       inst->setPlacementStatus(std::any_cast<odb::dbPlacementStatus>(value));
       return true;
     }, placement_options)});
 
-  edits.insert({"X", makeEditor([this, inst](std::any value) {
+  editors.insert({"X", makeEditor([this, inst](std::any value) {
     return setNewLocation(inst, value, true);
     })});
-  edits.insert({"Y", makeEditor([this, inst](std::any value) {
+  editors.insert({"Y", makeEditor([this, inst](std::any value) {
     return setNewLocation(inst, value, false);
     })});
-  return edits;
+  return editors;
 }
 
 // get list of equivalent masters as EditorOptions
@@ -234,18 +245,15 @@ void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<Edit
 // get list if instance orientations for the editor
 void DbInstDescriptor::makeOrientationOptions(std::vector<EditorOption>& options) const
 {
-  std::vector<odb::dbOrientType> types = {
-      odb::dbOrientType::R0,
-      odb::dbOrientType::R90,
-      odb::dbOrientType::R180,
-      odb::dbOrientType::R270,
-      odb::dbOrientType::MY,
-      odb::dbOrientType::MYR90,
-      odb::dbOrientType::MX,
-      odb::dbOrientType::MXR90
-  };
-
-  for (auto type : types) {
+  for (odb::dbOrientType type :
+      {odb::dbOrientType::R0,
+       odb::dbOrientType::R90,
+       odb::dbOrientType::R180,
+       odb::dbOrientType::R270,
+       odb::dbOrientType::MY,
+       odb::dbOrientType::MYR90,
+       odb::dbOrientType::MX,
+       odb::dbOrientType::MXR90}) {
     options.push_back({type.getString(), type});
   }
 }
@@ -253,17 +261,14 @@ void DbInstDescriptor::makeOrientationOptions(std::vector<EditorOption>& options
 // get list of placement statuses for the editor
 void DbInstDescriptor::makePlacementStatusOptions(std::vector<EditorOption>& options) const
 {
-  std::vector<odb::dbPlacementStatus> types = {
-      odb::dbPlacementStatus::NONE,
-      odb::dbPlacementStatus::UNPLACED,
-      odb::dbPlacementStatus::SUGGESTED,
-      odb::dbPlacementStatus::PLACED,
-      odb::dbPlacementStatus::LOCKED,
-      odb::dbPlacementStatus::FIRM,
-      odb::dbPlacementStatus::COVER
-  };
-
-  for (auto type : types) {
+  for (odb::dbPlacementStatus type :
+      {odb::dbPlacementStatus::NONE,
+       odb::dbPlacementStatus::UNPLACED,
+       odb::dbPlacementStatus::SUGGESTED,
+       odb::dbPlacementStatus::PLACED,
+       odb::dbPlacementStatus::LOCKED,
+       odb::dbPlacementStatus::FIRM,
+       odb::dbPlacementStatus::COVER}) {
     options.push_back({type.getString(), type});
   }
 }
@@ -442,9 +447,9 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
 Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
-  Editors edits;
-  renameObjectEditor(net, edits);
-  return edits;
+  Editors editors;
+  addRenameEditor(net, editors);
+  return editors;
 }
 
 Selected DbNetDescriptor::makeSelected(std::any object,
@@ -583,9 +588,9 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
 Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
 {
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
-  Editors edits;
-  renameObjectEditor(bterm, edits);
-  return edits;
+  Editors editors;
+  addRenameEditor(bterm, editors);
+  return editors;
 }
 
 Selected DbBTermDescriptor::makeSelected(std::any object,
@@ -659,8 +664,8 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) cons
 Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
 {
   auto blockage = std::any_cast<odb::dbBlockage*>(object);
-  Editors edits;
-  edits.insert({"Max density", makeEditor([blockage](std::any any_value) {
+  Editors editors;
+  editors.insert({"Max density", makeEditor([blockage](std::any any_value) {
     std::string value = std::any_cast<std::string>(any_value);
     std::regex density_regex("(1?[0-9]?[0-9]?(\\.[0-9]*)?)\\s*%?");
     std::smatch base_match;
@@ -672,13 +677,15 @@ Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
           blockage->setMaxDensity(density);
           return true;
         }
-      } catch (std::invalid_argument&) {
+      } catch (std::out_of_range&) {
+        // catch poorly formatted string
+      } catch (std::logic_error&) {
         // catch poorly formatted string
       }
     }
     return false;
   })});
-  return edits;
+  return editors;
 }
 
 Selected DbBlockageDescriptor::makeSelected(std::any object,
