@@ -135,13 +135,17 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(setSelected(const Selected&, bool)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
   connect(inspector_,
-          SIGNAL(selectedItemChanged()),
+          SIGNAL(selectedItemChanged(const Selected&)),
           selection_browser_,
           SLOT(updateModels()));
   connect(inspector_,
-          SIGNAL(selectedItemChanged()),
+          SIGNAL(selectedItemChanged(const Selected&)),
           viewer_,
           SLOT(update()));
+  connect(inspector_,
+          SIGNAL(selectedItemChanged(const Selected&)),
+          this,
+          SLOT(updateSelectedStatus(const Selected&)));
 
   connect(this,
           SIGNAL(selectionChanged()),
@@ -359,12 +363,17 @@ void MainWindow::setLocation(qreal x, qreal y)
   location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
 }
 
+void MainWindow::updateSelectedStatus(const Selected& selection)
+{
+  status(selection ? selection.getName() : "");
+}
+
 void MainWindow::addSelected(const Selected& selection)
 {
   if (selection) {
     selected_.emplace(selection);
   }
-  status(selection ? selection.getName() : "");
+  emit updateSelectedStatus(selection);
   emit selectionChanged();
 }
 
