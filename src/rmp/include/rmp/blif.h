@@ -75,12 +75,13 @@ class Blif
        const std::string& const1_cell_port_);
   void setReplaceableInstances(std::set<odb::dbInst*>& insts);
   void addReplaceableInstance(odb::dbInst* inst);
-  bool writeBlif(const char* file_name, bool write_requireds = false);
+  bool writeBlif(const char* file_name, bool write_arrival_requireds = false);
   bool readBlif(const char* file_name, odb::dbBlock* block);
   bool inspectBlif(const char* file_name, int& num_instances);
-  float getRequiredTime(sta::dbSta* staRoot,
-                      sta::Pin* term, bool is_rise);
-
+  float getRequiredTime(sta::Pin* term, bool is_rise);
+  float getArrivalTime(sta::Pin* term, bool is_rise);
+  void addArrival(sta::Pin* pin, std::string netName);
+  void addRequired(sta::Pin* pin, std::string netName);
 
  private:
   std::set<odb::dbInst*> instances_to_optimize;
@@ -91,6 +92,7 @@ class Blif
   std::string const1_cell_;
   std::string const1_cell_port_;
   std::map<std::string, std::pair<float,float>> requireds_;
+  std::map<std::string, std::pair<float,float>> arrivals_;
 };
 
 }  // namespace rmp

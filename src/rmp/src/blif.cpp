@@ -54,6 +54,8 @@
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/PortDirection.hh"
+#include "sta/PathRef.hh"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 using utl::RMP;
@@ -85,7 +87,7 @@ void Blif::addReplaceableInstance(odb::dbInst* inst)
   instances_to_optimize.insert(inst);
 }
 
-bool Blif::writeBlif(const char* file_name, bool write_requireds)
+bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 {
   int dummy_nets = 0;
 
@@ -159,10 +161,13 @@ bool Blif::writeBlif(const char* file_name, bool write_requireds)
       auto connectedIterms = net->getITerms();
 
       if (connectedIterms.size() == 1) {
-        if (iterm->getIoType() == odb::dbIoType::INPUT)
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
           inputs.insert(netName);
-        else if (iterm->getIoType() == odb::dbIoType::OUTPUT)
+          addArrival(pin_, netName);
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
           outputs.insert(netName);
+          addRequired(pin_, netName);
+        }
 
       } else {
         bool addAsInput = false;
@@ -210,15 +215,15 @@ bool Blif::writeBlif(const char* file_name, bool write_requireds)
 
             } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
               outputs.insert(netName);
-              if (requireds_.find(netName) == requireds_.end())
-                requireds_[netName] = std::pair<float, float>(getRequiredTime(open_sta_, pin_, true)*1e12,
-                                                              getRequiredTime(open_sta_, pin_, false)*1e12);
+              addRequired(pin_, netName);
             }
           }
         }
         if (addAsInput && const0.find(netName) == const0.end()
-            && const1.find(netName) == const1.end())
+            && const1.find(netName) == const1.end()) {
           inputs.insert(netName);
+          addArrival(pin_, netName);
+        }
       }
 
       // connect to original ports if not inferred already
@@ -247,16 +252,16 @@ bool Blif::writeBlif(const char* file_name, bool write_requireds)
 
               } else {
                 inputs.insert(netName);
+                addArrival(pin_, netName);
               }
             } else {
               inputs.insert(netName);
+              addArrival(pin_, netName);
             }
           } else if (connectedPort->getIoType() == odb::dbIoType::OUTPUT) {
             outputs.insert(netName);
-            if (requireds_.find(netName) == requireds_.end())
-              requireds_[netName] = std::pair<float, float>(getRequiredTime(open_sta_, pin_, true)*1e12,
-                                                            getRequiredTime(open_sta_, pin_, false)*1e12);
-         }
+            addRequired(pin_, netName);
+          }
         }
       }
     }
@@ -309,7 +314,12 @@ bool Blif::writeBlif(const char* file_name, bool write_requireds)
     }
   }
 
-  if (write_requireds) {
+  if (write_arrival_requireds) {
+        for (auto& arrival : arrivals_) {
+      f << ".input_arrival " << arrival.first << " "
+        << arrival.second.first << " " << arrival.second.second << std::endl;
+    }
+
     for (auto& required : requireds_) {
       f << ".output_required " << required.first << " "
         << required.second.first << " " << required.second.second << std::endl;
@@ -566,17 +576,48 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   return true;
 }
 
-float Blif::getRequiredTime(sta::dbSta* staRoot,
-                      sta::Pin* term,
-                      bool is_rise)
+float Blif::getRequiredTime(sta::Pin* term, bool is_rise)
 {
-  auto vert = staRoot->getDbNetwork()->graph()->pinLoadVertex(term);
-  auto req = staRoot->vertexRequired(
-      vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
-      sta::MinMax::max());
+  auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
+  // auto pathRef = open_sta_->vertexWorstRequiredPath(vert, sta::MinMax::max());
+  // if (pathRef.isNull())
+  //   return 0;
+  // auto ap = pathRef.pathAnalysisPt(open_sta_);
+
+  auto req = open_sta_->vertexRequired(vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), sta::MinMax::max());
   if (sta::delayInf(req)) {
     return 0;
   }
   return req;
 }
+
+float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
+{
+  auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
+  auto pathRef = open_sta_->vertexWorstArrivalPath(vert, sta::MinMax::max());
+  if (pathRef.isNull())
+    return 0;
+
+  auto ap = pathRef.pathAnalysisPt(open_sta_);
+  auto arr = open_sta_->vertexArrival(vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), ap);
+  if (sta::delayInf(arr)) {
+    return 0;
+  }
+  return arr;
+}
+
+void Blif::addArrival(sta::Pin* pin, std::string netName)
+{
+  if (arrivals_.find(netName) == arrivals_.end())
+    arrivals_[netName] = std::pair<float, float>(getArrivalTime(pin, true)*1e12,
+                                                getArrivalTime(pin, false)*1e12);
+}
+
+void Blif::addRequired(sta::Pin* pin, std::string netName)
+{
+  if (requireds_.find(netName) == requireds_.end())
+    requireds_[netName] = std::pair<float, float>(getRequiredTime(pin, true)*1e12,
+                                                  getRequiredTime(pin, false)*1e12);
+}
+
 }  // namespace rmp
