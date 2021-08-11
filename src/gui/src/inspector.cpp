@@ -32,6 +32,7 @@
 
 #include "inspector.h"
 
+#include <QApplication>
 #include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
@@ -176,7 +177,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
 
   if (accepted) {
     // retrieve property again
-    auto selected = model->data(index, selected_).value<Selected>();
+    auto selected = model->data(index, editor_select_).value<Selected>();
     auto item_name = model->data(index, editor_name_).value<std::string>();
     QString formatted_value;
     if (item_name == "Name") { // name and type are inserted in inspector, so handle differently
@@ -191,6 +192,9 @@ void EditorItemDelegate::setModelData(QWidget* editor,
     // reset to original data
     model->setData(index, index.model()->data(index, Qt::EditRole), Qt::EditRole);
   }
+
+  // disable editing as we are done editing
+  model_->itemFromIndex(index)->setEditable(false);
 }
 
 ////////
@@ -200,7 +204,9 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       view_(new QTreeView()),
       model_(new SelectedItemModel),
       layout_(new QVBoxLayout),
-      selected_(selected)
+      selected_(selected),
+      selection_(Selected()),
+      mouse_timer_(nullptr)
 {
   setObjectName("inspector");  // for settings
   model_->setHorizontalHeaderLabels({"Name", "Value"});
@@ -312,10 +318,49 @@ void Inspector::inspect(const Selected& object)
 
 void Inspector::clicked(const QModelIndex& index)
 {
+  // QT sends both single and double clicks, so they need to be handled with a timer to
+  // be able to tell the difference
+  if (mouse_timer_ == nullptr) {
+    mouse_timer_ = std::make_unique<QTimer>(this);
+    mouse_timer_->setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
+    mouse_timer_->setSingleShot(true);
+
+    connect(mouse_timer_.get(), &QTimer::timeout, [this, index]() { emit indexClicked(index); });
+
+    mouse_timer_->start();
+  } else {
+    mouse_timer_->stop();
+
+    emit indexDoubleClicked(index);
+  }
+
+}
+
+void Inspector::indexClicked(const QModelIndex& index)
+{
+  mouse_timer_ = nullptr;
+
+  // handle single click event
   QStandardItem* item = model_->itemFromIndex(index);
-  auto new_selected = item->data().value<Selected>();
+  auto new_selected = item->data(EditorItemDelegate::selected_).value<Selected>();
   if (new_selected) {
     emit selected(new_selected, false);
+  }
+}
+
+void Inspector::indexDoubleClicked(const QModelIndex& index)
+{
+  mouse_timer_ = nullptr;
+
+  // handle single click event
+  QStandardItem* item = model_->itemFromIndex(index);
+  QVariant item_data = item->data(EditorItemDelegate::editor_);
+
+  if (item_data.isValid()) {
+    // set editable
+    item->setEditable(true);
+    // start editing
+    view_->edit(index);
   }
 }
 
@@ -345,8 +390,8 @@ QStandardItem* Inspector::makeItem(const QString& name)
 
 QStandardItem* Inspector::makeItem(const Selected& selected)
 {
-  auto item = makeItem("");
-  item->setData(QVariant::fromValue(selected));
+  auto item = makeItem(QString::fromStdString(selected.getName()));
+  item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
   item->setForeground(selectable_item_);
   return item;
 }
@@ -357,9 +402,9 @@ void Inspector::makeItemEditor(const std::string& name,
                                const EditorItemDelegate::EditType type,
                                const Descriptor::Editor& editor)
 {
-  item->setEditable(true);
+  item->setEditable(false);
   item->setForeground(editable_item_);
-  item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
+  item->setData(QVariant::fromValue(selected), EditorItemDelegate::editor_select_);
   item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
 
   const Descriptor::Editor* used_editor = &editor;

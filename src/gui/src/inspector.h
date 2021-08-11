@@ -35,6 +35,7 @@
 #include <QDockWidget>
 #include <QItemDelegate>
 #include <QStandardItemModel>
+#include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
 
@@ -61,10 +62,11 @@ class EditorItemDelegate : public QItemDelegate
 
 public:
   // positions in ->data() where data is located
-  static const int editor_      = Qt::UserRole;
-  static const int editor_name_ = Qt::UserRole+1;
-  static const int editor_type_ = Qt::UserRole+2;
-  static const int selected_    = Qt::UserRole+3;
+  static const int editor_        = Qt::UserRole;
+  static const int editor_name_   = Qt::UserRole+1;
+  static const int editor_type_   = Qt::UserRole+2;
+  static const int editor_select_ = Qt::UserRole+3;
+  static const int selected_      = Qt::UserRole+4;
 
   enum EditType {
     NUMBER,
@@ -111,6 +113,9 @@ class Inspector : public QDockWidget
   void clicked(const QModelIndex& index);
   void update();
 
+  void indexClicked(const QModelIndex& index);
+  void indexDoubleClicked(const QModelIndex& index);
+
  private:
   void handleAction(QWidget* action);
   QStandardItem* makeItem(const Selected& selected);
@@ -133,11 +138,15 @@ class Inspector : public QDockWidget
   QVBoxLayout* layout_;
   const SelectionSet& selected_;
   Selected selection_;
+  std::unique_ptr<QTimer> mouse_timer_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 
   const QColor selectable_item_ = Qt::blue;
   const QColor editable_item_ = Qt::darkGreen;
+
+  // used to finetune the double click interval
+  static constexpr double mouse_double_click_scale_ = 0.75;
 };
 
 }  // namespace gui
