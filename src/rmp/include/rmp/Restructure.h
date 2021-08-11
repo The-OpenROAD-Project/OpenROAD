@@ -106,6 +106,7 @@ class Restructure
   int countConsts(odb::dbBlock* top_block);
   void removeConstCells();
   void removeConstCell(odb::dbInst* inst);
+  bool readAbcLog(std::string abc_file_name, int& level_gain, float& delay_val);
 
   Logger* logger_;
   std::string logfile_;

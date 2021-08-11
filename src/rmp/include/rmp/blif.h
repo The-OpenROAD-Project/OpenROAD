@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include <set>
+#include <map>
 #include <string>
 
 namespace ord {
@@ -56,6 +57,7 @@ class Logger;
 
 namespace sta {
 class dbSta;
+class Pin;
 }  // namespace sta
 
 using utl::Logger;
@@ -73,9 +75,12 @@ class Blif
        const std::string& const1_cell_port_);
   void setReplaceableInstances(std::set<odb::dbInst*>& insts);
   void addReplaceableInstance(odb::dbInst* inst);
-  bool writeBlif(const char* file_name);
+  bool writeBlif(const char* file_name, bool write_requireds = false);
   bool readBlif(const char* file_name, odb::dbBlock* block);
   bool inspectBlif(const char* file_name, int& num_instances);
+  float getRequiredTime(sta::dbSta* staRoot,
+                      sta::Pin* term, bool is_rise);
+
 
  private:
   std::set<odb::dbInst*> instances_to_optimize;
@@ -85,6 +90,7 @@ class Blif
   std::string const0_cell_port_;
   std::string const1_cell_;
   std::string const1_cell_port_;
+  std::map<std::string, std::pair<float,float>> requireds_;
 };
 
 }  // namespace rmp

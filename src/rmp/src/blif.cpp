@@ -85,7 +85,7 @@ void Blif::addReplaceableInstance(odb::dbInst* inst)
   instances_to_optimize.insert(inst);
 }
 
-bool Blif::writeBlif(const char* file_name)
+bool Blif::writeBlif(const char* file_name, bool write_requireds)
 {
   int dummy_nets = 0;
 
@@ -118,6 +118,7 @@ bool Blif::writeBlif(const char* file_name)
         = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
     std::string currentConnections = "", currentClock = "";
     std::set<std::string> currentClocks;
+    int totalOutPins = 0, totalOutConstPins = 0;
 
     auto iterms = inst->getITerms();
 
@@ -207,8 +208,12 @@ bool Blif::writeBlif(const char* file_name)
                 addAsInput = true;
               }
 
-            } else if (iterm->getIoType() == odb::dbIoType::OUTPUT)
+            } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
               outputs.insert(netName);
+              if (requireds_.find(netName) == requireds_.end())
+                requireds_[netName] = std::pair<float, float>(getRequiredTime(open_sta_, pin_, true)*1e12,
+                                                              getRequiredTime(open_sta_, pin_, false)*1e12);
+            }
           }
         }
         if (addAsInput && const0.find(netName) == const0.end()
@@ -248,7 +253,10 @@ bool Blif::writeBlif(const char* file_name)
             }
           } else if (connectedPort->getIoType() == odb::dbIoType::OUTPUT) {
             outputs.insert(netName);
-          }
+            if (requireds_.find(netName) == requireds_.end())
+              requireds_[netName] = std::pair<float, float>(getRequiredTime(open_sta_, pin_, true)*1e12,
+                                                            getRequiredTime(open_sta_, pin_, false)*1e12);
+         }
         }
       }
     }
@@ -298,6 +306,13 @@ bool Blif::writeBlif(const char* file_name)
     f << ".clock";
     for (auto& clock : clocks) {
       f << " " << clock;
+    }
+  }
+
+  if (write_requireds) {
+    for (auto& required : requireds_) {
+      f << ".output_required " << required.first << " "
+        << required.second.first << " " << required.second.second << std::endl;
     }
   }
 
@@ -551,4 +566,17 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   return true;
 }
 
+float Blif::getRequiredTime(sta::dbSta* staRoot,
+                      sta::Pin* term,
+                      bool is_rise)
+{
+  auto vert = staRoot->getDbNetwork()->graph()->pinLoadVertex(term);
+  auto req = staRoot->vertexRequired(
+      vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+      sta::MinMax::max());
+  if (sta::delayInf(req)) {
+    return 0;
+  }
+  return req;
+}
 }  // namespace rmp
