@@ -1,4 +1,5 @@
 record_tests {
+  check
   flute1
   flute2
   flute3

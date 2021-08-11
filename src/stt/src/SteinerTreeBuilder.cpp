@@ -116,6 +116,49 @@ float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
   return net_alpha;
 }
 
+// This checks whether the tree has the property that no two
+// non-adjacent edges have intersecting bounding boxes.  If
+// they do it is a failure as embedding those egdes may cause
+// overlap between them.
+bool SteinerTreeBuilder::checkTree(const Tree& tree) const
+{
+  // Such high fanout nets are going to get buffered so
+  // we don't need to worry about them.
+  if (tree.deg > 100) {
+    return true;
+  }
+
+  std::vector<odb::Rect> rects;
+  for (int i = 0; i < tree.branchCount(); ++i) {
+    const Branch& branch = tree.branch[i];
+    const int x1 = branch.x;
+    const int y1 = branch.y;
+    const Branch& neighbor = tree.branch[branch.n];
+    const int x2 = neighbor.x;
+    const int y2 = neighbor.y;
+    rects.emplace_back(x1, y1, x2, y2);
+  }
+  for (auto i = 0; i < rects.size(); ++i) {
+    for (auto j = i + 1; j < rects.size(); ++j) {
+      const Branch& b1 = tree.branch[i];
+      const Branch& b2 = tree.branch[j];
+      const odb::Rect& r1 = rects[i];
+      const odb::Rect& r2 = rects[j];
+      if (r1.intersects(r2) && b1.n != j && b2.n != i && b1.n != b2.n) {
+        debugPrint(logger_, utl::STT, "check", 1,
+                   "check failed ({}, {}) ({}, {}) [{}, {}] vs ({}, {}) ({}, {}) [{}, {}] degree={}",
+                      r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
+                      i, b1.n,
+                      r2.xMin(), r2.yMin(), r2.xMax(), r2.yMax(),
+                      j, b2.n, tree.deg);
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
 {
   net_alpha_map_[net] = alpha;
@@ -138,11 +181,23 @@ Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
 
   if (alpha > 0.0) {
     tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-  } else {
-    tree = flt::flute(x, y, flute_accuracy);
-  }
 
-  return tree;
+    if (checkTree(tree)) {
+      return tree;
+    }
+
+    // Try a smaller alpha if possible
+    if (alpha > 0.1) {
+      tree = pdr::primDijkstra(x, y, drvr_index, alpha - 0.1, logger_);
+      if (checkTree(tree)) {
+        return tree;
+      }
+    }
+
+    // Give up and use flute
+  } 
+
+  return flt::flute(x, y, flute_accuracy);
 }
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)

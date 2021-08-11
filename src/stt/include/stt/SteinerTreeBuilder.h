@@ -104,6 +104,7 @@ class SteinerTreeBuilder
                 int drvr_index,
                 float alpha);
   int computeHPWL(odb::dbNet* net);
+  bool checkTree(const Tree& tree) const;
 
   const int flute_accuracy = 3;
   float alpha_;
