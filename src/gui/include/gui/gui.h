@@ -91,7 +91,7 @@ class Descriptor
   using EditorCallback = std::function<bool(std::any)>;
   struct Editor {
     EditorCallback callback;
-    const std::vector<EditorOption> options;
+    std::vector<EditorOption> options;
   };
   using Editors = std::map<std::string, Editor>;
 
