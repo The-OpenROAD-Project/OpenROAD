@@ -98,8 +98,10 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
   return QStandardItemModel::data(index, role);
 }
 
-EditorItemDelegate::EditorItemDelegate(const QColor& foreground,
+EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
+                                       const QColor& foreground,
                                        QObject* parent) : QItemDelegate(parent),
+                                       model_(model),
                                        foreground_(foreground)
 {
 }
@@ -121,7 +123,7 @@ QWidget* EditorItemDelegate::createEditor(QWidget* parent,
 }
 
 void EditorItemDelegate::setEditorData(QWidget* editor,
-                                       const QModelIndex &index) const
+                                       const QModelIndex& index) const
 {
   auto type = index.model()->data(index, editor_type_).value<EditorItemDelegate::EditType>();
   auto [callback, values] = index.model()->data(index, editor_).value<Descriptor::Editor>();
@@ -132,10 +134,19 @@ void EditorItemDelegate::setEditorData(QWidget* editor,
     line_edit->setText(value);
   } else {
     QComboBox* combo_box = static_cast<QComboBox*>(editor);
+    // disconnect to stop callback to setModelData
+    combo_box->disconnect();
+    combo_box->clear();
     for (const auto& [name, option_value] : values) {
       combo_box->addItem(QString::fromStdString(name), QVariant::fromValue(option_value));
     }
     combo_box->setCurrentText(value);
+    // listen for changes and update immediately
+    connect(combo_box,
+            &QComboBox::currentTextChanged,
+            [this, editor, index](const QString& text) {
+              setModelData(editor, model_, index);
+            });
   }
 }
 
@@ -194,7 +205,7 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   setObjectName("inspector");  // for settings
   model_->setHorizontalHeaderLabels({"Name", "Value"});
   view_->setModel(model_);
-  view_->setItemDelegate(new EditorItemDelegate(editable_item_, this));
+  view_->setItemDelegate(new EditorItemDelegate(model_, editable_item_, this));
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);

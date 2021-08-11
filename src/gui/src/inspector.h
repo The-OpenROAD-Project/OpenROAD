@@ -73,7 +73,7 @@ public:
     LIST
   };
 
-  EditorItemDelegate(const QColor& foreground, QObject* parent = nullptr);
+  EditorItemDelegate(SelectedItemModel* model, const QColor& foreground, QObject* parent = nullptr);
 
   QWidget* createEditor(QWidget* parent,
                         const QStyleOptionViewItem& option,
@@ -86,6 +86,7 @@ public:
                     const QModelIndex& index) const override;
 
 private:
+  SelectedItemModel* model_;
   QColor foreground_;
 };
 
