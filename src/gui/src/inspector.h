@@ -132,6 +132,7 @@ class Inspector : public QDockWidget
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
   const SelectionSet& selected_;
+  Selected selection_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 

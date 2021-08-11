@@ -220,6 +220,11 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 
   setWidget(container);
 
+  // connect so announcements can be made about changes
+  connect(model_,
+          &SelectedItemModel::itemChanged,
+          [this]() { emit selectedItemChanged(selection_); });
+
   connect(view_,
           SIGNAL(clicked(const QModelIndex&)),
           this,
@@ -230,7 +235,7 @@ void Inspector::inspect(const Selected& object)
 {
   // disconnect so announcements can be will not be made about changes
   // changes right now are based on adding item to model
-  disconnect(model_, SIGNAL(itemChanged(QStandardItem*)));
+  blockSignals(true);
 
   model_->removeRows(0, model_->rowCount());
   // remove action buttons and ensure delete
@@ -239,6 +244,8 @@ void Inspector::inspect(const Selected& object)
     delete button;
   }
   actions_.clear();
+
+  selection_ = object;
 
   if (!object) {
     return;
@@ -300,11 +307,7 @@ void Inspector::inspect(const Selected& object)
     actions_[button] = action;
   }
 
-  // connect so announcements can be made about changes
-  connect(model_,
-          &SelectedItemModel::itemChanged,
-          this,
-          [this, object]() { emit selectedItemChanged(object); });
+  blockSignals(false);
 }
 
 void Inspector::clicked(const QModelIndex& index)
