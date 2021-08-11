@@ -194,6 +194,7 @@ class GlobalRouter
   void highlightRoute(const odb::dbNet* net);
   // Report the wire length on each layer.
   void reportLayerWireLengths();
+  odb::Rect globalRoutingToBox(const GSegment& route);
 
  protected:
   // Net functions
@@ -243,7 +244,6 @@ class GlobalRouter
                           int max_routing_layer);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guide_box);
-  odb::Rect globalRoutingToBox(const GSegment& route);
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
                        GSegment& new_seg,

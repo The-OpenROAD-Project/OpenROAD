@@ -3543,18 +3543,7 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
         odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
         // Draw rect because drawLine does not have a way to set the pen
         // thickness.
-        odb::Rect rect;
-        // gui clips visiblity of rect when zoomed out so layer width doesn't
-        // work very well.
-        int thickness = layer->getWidth() * 20;
-        if (seg.init_x == seg.final_x)
-          // vertical
-          rect = odb::Rect(
-              seg.init_x, seg.init_y, seg.init_x + thickness, seg.final_y);
-        else
-          // horizontal
-          rect = odb::Rect(
-              seg.init_x, seg.init_y, seg.final_x, seg.init_y + thickness);
+        odb::Rect rect = groute_->globalRoutingToBox(seg);
         painter.setPen(layer);
         painter.setBrush(layer);
         painter.drawRect(rect);

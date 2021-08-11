@@ -53,18 +53,6 @@
 #define LUT_SOURCE LUT_VAR
 
 namespace stt {
-void Tree::printTree(utl::Logger* logger)
-{
-  if (deg > 1) {
-    for (int i = 0; i < deg; i++)
-      logger->report(" {:2d}:  x={:4g}  y={:4g}  e={}",
-                     i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-    for (int i = deg; i < 2 * deg - 2; i++)
-      logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
-                     i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-    logger->report("");
-  }
-}
 
 namespace flt {
 

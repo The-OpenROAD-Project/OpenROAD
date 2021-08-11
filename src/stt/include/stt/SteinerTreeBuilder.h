@@ -39,9 +39,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "flute.h"
-#include "pdrev.h"
+#include "utl/Logger.h"
 
 namespace ord {
 class OpenRoad;
@@ -55,6 +53,22 @@ class dbNet;
 namespace stt {
 
 using utl::Logger;
+
+typedef int DTYPE;
+
+struct Branch {
+  DTYPE x, y;  // starting point of the branch
+  int n;       // index of neighbor
+};
+
+struct Tree {
+  int deg;         // degree
+  DTYPE length;    // total wirelength
+  std::vector<Branch> branch;  // array of tree branches
+
+  void printTree(utl::Logger* logger);
+  int branchCount() const { return deg * 2 - 2; }
+};
 
 class SteinerTreeBuilder
 {
@@ -78,11 +92,11 @@ class SteinerTreeBuilder
                        const std::vector<int>& s,
                        int acc);
   float getAlpha() const { return alpha_; }
-  void setAlpha(float alpha) { alpha_ = alpha; }
+  void setAlpha(float alpha);
   float getAlpha(const odb::dbNet* net) const;
-  void setNetAlpha(const odb::dbNet* net, float alpha) { net_alpha_map_[net] = alpha; }
-  void setMinFanoutAlpha(int min_fanout, float alpha) { min_fanout_alpha_ = {min_fanout, alpha}; }
-  void setMinHPWLAlpha(int min_hpwl, float alpha) { min_hpwl_alpha_ = {min_hpwl, alpha}; }
+  void setNetAlpha(const odb::dbNet* net, float alpha);
+  void setMinFanoutAlpha(int min_fanout, float alpha);
+  void setMinHPWLAlpha(int min_hpwl, float alpha);
 
  private:
   Tree makeTree(std::vector<int>& x,
