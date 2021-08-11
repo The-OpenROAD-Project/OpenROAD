@@ -51,9 +51,26 @@ class SelectedItemModel : public QStandardItemModel
   Q_OBJECT
 
 public:
-  SelectedItemModel(QObject* parent = nullptr) : QStandardItemModel(0, 2, parent) {}
+  SelectedItemModel(
+      const QColor& selectable,
+      const QColor& editable,
+      const QColor& selectable_editable,
+      QObject* parent = nullptr)
+  : QStandardItemModel(0, 2, parent),
+    selectable_item_(selectable),
+    editable_item_(editable),
+    selectable_editable_item_(selectable_editable) {}
 
   QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+  const QColor& getSelectableColor() { return selectable_item_; }
+  const QColor& getEditableColor() { return editable_item_; }
+  const QColor& getSelectableEditableColor() { return selectable_editable_item_; }
+
+private:
+  const QColor selectable_item_;
+  const QColor editable_item_;
+  const QColor selectable_editable_item_;
 };
 
 class EditorItemDelegate : public QItemDelegate
@@ -75,7 +92,7 @@ public:
     LIST
   };
 
-  EditorItemDelegate(SelectedItemModel* model, const QColor& foreground, QObject* parent = nullptr);
+  EditorItemDelegate(SelectedItemModel* model, QObject* parent = nullptr);
 
   QWidget* createEditor(QWidget* parent,
                         const QStyleOptionViewItem& option,
@@ -89,7 +106,7 @@ public:
 
 private:
   SelectedItemModel* model_;
-  QColor foreground_;
+  const QColor foreground_;
 };
 
 // The inspector is to allow a single object to have it properties displayed.
@@ -141,9 +158,6 @@ class Inspector : public QDockWidget
   std::unique_ptr<QTimer> mouse_timer_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
-
-  const QColor selectable_item_ = Qt::blue;
-  const QColor editable_item_ = Qt::darkGreen;
 
   // used to finetune the double click interval
   static constexpr double mouse_double_click_scale_ = 0.75;

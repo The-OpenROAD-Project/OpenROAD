@@ -89,21 +89,33 @@ static QString convertAnyToQString(const std::any& item, EditorItemDelegate::Edi
 
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
-  if (role == Qt::DisplayRole && index.column() == 1) {
-    auto selected_data = itemFromIndex(index)->data().value<Selected>();
-    if (selected_data) {
-      // use selected name when available
-      return QString::fromStdString(selected_data.getName());
+  if (index.column() == 1) {
+    if (role == Qt::DisplayRole) {
+      auto selected_data = itemFromIndex(index)->data(EditorItemDelegate::selected_).value<Selected>();
+      if (selected_data) {
+        // use selected name when available
+        return QString::fromStdString(selected_data.getName());
+      }
+    } else if (role == Qt::ForegroundRole) {
+      bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+      bool has_editor   = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+
+      if (has_selected && has_editor) {
+        return QBrush(selectable_editable_item_);
+      } else if (has_selected){
+        return QBrush(selectable_item_);
+      } else if (has_editor) {
+        return QBrush(editable_item_);
+      }
     }
   }
   return QStandardItemModel::data(index, role);
 }
 
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
-                                       const QColor& foreground,
                                        QObject* parent) : QItemDelegate(parent),
                                        model_(model),
-                                       foreground_(foreground)
+                                       foreground_(model->getEditableColor())
 {
 }
 
@@ -202,7 +214,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
 Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new QTreeView()),
-      model_(new SelectedItemModel),
+      model_(new SelectedItemModel(Qt::blue, Qt::darkGreen, Qt::darkCyan)),
       layout_(new QVBoxLayout),
       selected_(selected),
       selection_(Selected()),
@@ -211,7 +223,7 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   setObjectName("inspector");  // for settings
   model_->setHorizontalHeaderLabels({"Name", "Value"});
   view_->setModel(model_);
-  view_->setItemDelegate(new EditorItemDelegate(model_, editable_item_, this));
+  view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -392,7 +404,6 @@ QStandardItem* Inspector::makeItem(const Selected& selected)
 {
   auto item = makeItem(QString::fromStdString(selected.getName()));
   item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
-  item->setForeground(selectable_item_);
   return item;
 }
 
@@ -402,8 +413,6 @@ void Inspector::makeItemEditor(const std::string& name,
                                const EditorItemDelegate::EditType type,
                                const Descriptor::Editor& editor)
 {
-  item->setEditable(false);
-  item->setForeground(editable_item_);
   item->setData(QVariant::fromValue(selected), EditorItemDelegate::editor_select_);
   item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
 
