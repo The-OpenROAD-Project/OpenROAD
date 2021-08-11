@@ -34,89 +34,137 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-
-#include "tap/tapcell.h"
-#include "ord/OpenRoad.hh"
 #include "opendb/db.h"
+#include "ord/OpenRoad.hh"
+#include "tap/tapcell.h"
 
-namespace ord {
+  namespace ord {
 
-tap::Tapcell* getTapcell();
+  tap::Tapcell* getTapcell();
 
-}
+  }
 
-using ord::getTapcell;
-using std::vector;
-using std::set;
-using std::string;
+  using ord::getTapcell;
+  using std::set;
+  using std::string;
+  using std::vector;
 
 %}
-
 
 %include "../../Exception.i"
 
 %inline %{
+  namespace tap {
 
-namespace tap {
+  void run(odb::dbMaster* endcap_master,
+           int halo_x,
+           int halo_y,
+           const char* cnrcap_nwin_master,
+           const char* cnrcap_nwout_master,
+           const char* endcap_prefix,
+           int add_boundary_cell,
+           const char* tap_nwintie_master,
+           const char* tap_nwin2_master,
+           const char* tap_nwin3_master,
+           const char* tap_nwouttie_master,
+           const char* tap_nwout2_master,
+           const char* tap_nwout3_master,
+           const char* incnrcap_nwin_master,
+           const char* incnrcap_nwout_master,
+           const char* tapcell_master,
+           int dist,
+           const char* tap_prefix)
+  {
+    getTapcell()->run(endcap_master,
+                      halo_x,
+                      halo_y,
+                      cnrcap_nwin_master,
+                      cnrcap_nwout_master,
+                      endcap_prefix,
+                      add_boundary_cell,
+                      tap_nwintie_master,
+                      tap_nwin2_master,
+                      tap_nwin3_master,
+                      tap_nwouttie_master,
+                      tap_nwout2_master,
+                      tap_nwout3_master,
+                      incnrcap_nwin_master,
+                      incnrcap_nwout_master,
+                      tapcell_master,
+                      dist,
+                      tap_prefix);
+  }
 
-void run(odb::dbMaster* endcap_master, int halo_x, int halo_y, const char* cnrcap_nwin_master, const char* cnrcap_nwout_master, const char* endcap_prefix, int add_boundary_cell, const char* tap_nwintie_master, const char* tap_nwin2_master, const char* tap_nwin3_master, const char* tap_nwouttie_master, const char* tap_nwout2_master, const char* tap_nwout3_master, const char* incnrcap_nwin_master, const char* incnrcap_nwout_master, const char* tapcell_master, int dist, const char* tap_prefix)
-{
-  getTapcell()->run(endcap_master, halo_x, halo_y, cnrcap_nwin_master, cnrcap_nwout_master, endcap_prefix, add_boundary_cell, tap_nwintie_master, tap_nwin2_master, tap_nwin3_master, tap_nwouttie_master, tap_nwout2_master, tap_nwout3_master, incnrcap_nwin_master, incnrcap_nwout_master, tapcell_master, dist, tap_prefix);
-}
+  void clear(const char* tap_prefix, const char* endcap_prefix)
+  {
+    getTapcell()->clear(tap_prefix, endcap_prefix);
+  }
 
-void clear (const char* tap_prefix, const char* endcap_prefix ) {
-  getTapcell()->clear(tap_prefix, endcap_prefix);
-}
+  void reset() { getTapcell()->reset(); }
 
-void reset()
-{
-  getTapcell()->reset();
-}
+  void cut_rows(odb::dbMaster* endcap_master,
+                std::vector<odb::dbBox*> blockages,
+                int halo_x,
+                int halo_y)
+  {
+    getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
+  }
 
-void cut_rows(odb::dbMaster* endcap_master, std::vector<odb::dbBox*> blockages,int halo_x, int halo_y)
-{
-  getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
-}
+  std::vector<std::vector<odb::dbRow*>> organize_rows()
+  {
+    return getTapcell()->organizeRows();
+  }
 
-std::vector<std::vector<odb::dbRow*>> organize_rows()
-{
-  return getTapcell()->organizeRows();
-}
+  int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows,
+                     odb::dbMaster* endcap_master,
+                     std::vector<std::string> cnrcap_masters,
+                     const char* prefix)
+  {
+    return getTapcell()->insertEndcaps(
+        rows, endcap_master, cnrcap_masters, prefix);
+  }
 
-int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows, odb::dbMaster* endcap_master, std::vector<std::string> cnrcap_masters, const char* prefix)
-{
-  return getTapcell()->insertEndcaps(rows, endcap_master, cnrcap_masters, prefix);
-}
+  int insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows,
+                           std::vector<std::string> masters,
+                           odb::dbMaster* endcap_master,
+                           std::string prefix)
+  {
+    return getTapcell()->insertAtTopBottom(
+        rows, masters, endcap_master, prefix);
+  }
 
-int insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* endcap_master, std::string prefix)
-{
-  return getTapcell()->insertAtTopBottom(rows, masters, endcap_master, prefix);
-}
+  int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows,
+                           std::vector<std::string> masters,
+                           odb::dbMaster* corner_master,
+                           std::string prefix)
+  {
+    return getTapcell()->insertAroundMacros(
+        rows, masters, corner_master, prefix);
+  }
 
-int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows, std::vector<std::string> masters, odb::dbMaster* corner_master, std::string prefix)
-{
-  return getTapcell()->insertAroundMacros(rows, masters, corner_master, prefix);
-}
+  int remove_cells(const char* prefix)
+  {
+    return getTapcell()->removeCells(prefix);
+  }
 
-int remove_cells(const char* prefix)
-{
-  return getTapcell()->removeCells(prefix);
-}
+  std::vector<odb::dbBox*> find_blockages()
+  {
+    return getTapcell()->findBlockages();
+  }
 
-std::vector<odb::dbBox*> find_blockages()
-{
-  return getTapcell()->findBlockages();
-}
+  int insert_tapcells(std::vector<vector<odb::dbRow*>> rows,
+                      std::string tapcell_master,
+                      int dist,
+                      std::string prefix)
+  {
+    return getTapcell()->insertTapcells(rows, tapcell_master, dist, prefix);
+  }
 
-int insert_tapcells(std::vector<vector<odb::dbRow*>> rows, std::string tapcell_master, int dist, std::string prefix)
-{
-  return getTapcell()->insertTapcells(rows, tapcell_master, dist, prefix);
-}
+  bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int halo_x, int halo_y)
+  {
+    return getTapcell()->overlaps(blockage, row, halo_x, halo_y);
+  }
 
-bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int halo_x, int halo_y) {
-  return getTapcell()->overlaps(blockage, row, halo_x, halo_y);
-}
+  }  // namespace tap
 
-} // namespace
-
-%}
+  %}

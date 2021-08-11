@@ -154,12 +154,12 @@ proc tapcell { args } {
     utl::warn TAP 17 "add_boundary_cell option is deprecated."
   }
 
-  set tap_prefix $tap::default_tapcell_prefix
+  set tap_prefix "TAP_"
   if { [info exists keys(-tap_prefix)] } {
       set tap_prefix $keys(-tap_prefix)
   }
 
-  set endcap_prefix $tap::default_endcap_prefix
+  set endcap_prefix "PHY_"
   if { [info exists keys(-endcap_prefix)] } {
       set endcap_prefix $keys(-endcap_prefix)
   }
@@ -207,30 +207,22 @@ proc tapcell_ripup { args } {
     keys {-tap_prefix -endcap_prefix} \
     flags {}
 
-  set tap_prefix $tap::default_tapcell_prefix
+  set tap_prefix "TAP_"
   if { [info exists keys(-tap_prefix)] } {
     set tap_prefix $keys(-tap_prefix)
   }
 
-  set endcap_prefix $tap::default_endcap_prefix
+  set endcap_prefix "PHY_"
   if { [info exists keys(-endcap_prefix)] } {
     set endcap_prefix $keys(-endcap_prefix)
   }
 
   set taps_removed [tap::remove_cells $tap_prefix]
-  utl::info TAP 100 "Tapcells removed: $taps_removed"
+  utl::info TAP 100 "Removed $taps_removed tapcells."
   set endcaps_removed [tap::remove_cells $endcap_prefix]
-  utl::info TAP 101 "Endcaps removed: $endcaps_removed"
+  utl::info TAP 101 "Removed $endcaps_removed endcaps."
 
   # Reset global parameters 
   tap::reset
 }
 
-namespace eval tap {
-variable default_tapcell_prefix "TAP_"
-variable default_endcap_prefix "PHY_"
-
-
-
-# namespace end
-}
