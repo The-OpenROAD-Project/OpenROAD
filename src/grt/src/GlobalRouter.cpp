@@ -2982,17 +2982,18 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
     odb::dbBox* obstruction_box = obstruction->getBBox();
 
     int layer = obstruction_box->getTechLayer()->getRoutingLevel();
-
-    odb::Point lower_bound
-        = odb::Point(obstruction_box->xMin(), obstruction_box->yMin());
-    odb::Point upper_bound
-        = odb::Point(obstruction_box->xMax(), obstruction_box->yMax());
-    odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-    if (!die_area.contains(obstruction_rect)) {
-      logger_->warn(GRT, 37, "Found blockage outside die area.");
+    if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
+      odb::Point lower_bound
+          = odb::Point(obstruction_box->xMin(), obstruction_box->yMin());
+      odb::Point upper_bound
+          = odb::Point(obstruction_box->xMax(), obstruction_box->yMax());
+      odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+      if (!die_area.contains(obstruction_rect)) {
+        logger_->warn(GRT, 37, "Found blockage outside die area.");
+      }
+      grid_->addObstruction(layer, obstruction_rect);
+      obstructions_cnt++;
     }
-    grid_->addObstruction(layer, obstruction_rect);
-    obstructions_cnt++;
   }
 
   return obstructions_cnt;
@@ -3024,31 +3025,33 @@ int GlobalRouter::findInstancesObstructions(
     for (odb::dbBox* box : master->getObstructions()) {
       int layer = box->getTechLayer()->getRoutingLevel();
 
-      odb::Rect rect;
-      box->getBox(rect);
-      transform.apply(rect);
+      if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
+        odb::Rect rect;
+        box->getBox(rect);
+        transform.apply(rect);
 
-      int layer_extension = 0;
+        int layer_extension = 0;
 
-      if (isMacro) {
-        layer_extension
-            = layer_extensions[box->getTechLayer()->getRoutingLevel()];
-        layer_extension += macro_extension_ * grid_->getTileWidth();
+        if (isMacro) {
+          layer_extension
+              = layer_extensions[box->getTechLayer()->getRoutingLevel()];
+          layer_extension += macro_extension_ * grid_->getTileWidth();
+        }
+
+        odb::Point lower_bound = odb::Point(rect.xMin() - layer_extension,
+                                            rect.yMin() - layer_extension);
+        odb::Point upper_bound = odb::Point(rect.xMax() + layer_extension,
+                                            rect.yMax() + layer_extension);
+        odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+        if (!die_area.contains(obstruction_rect)) {
+          logger_->warn(GRT,
+                        38,
+                        "Found blockage outside die area in instance {}.",
+                        inst->getConstName());
+        }
+        grid_->addObstruction(layer, obstruction_rect);
+        obstructions_cnt++;
       }
-
-      odb::Point lower_bound = odb::Point(rect.xMin() - layer_extension,
-                                          rect.yMin() - layer_extension);
-      odb::Point upper_bound = odb::Point(rect.xMax() + layer_extension,
-                                          rect.yMax() + layer_extension);
-      odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-      if (!die_area.contains(obstruction_rect)) {
-        logger_->warn(GRT,
-                      38,
-                      "Found blockage outside die area in instance {}.",
-                      inst->getConstName());
-      }
-      grid_->addObstruction(layer, obstruction_rect);
-      obstructions_cnt++;
     }
 
     for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -3070,17 +3073,19 @@ int GlobalRouter::findInstancesObstructions(
           }
 
           pin_layer = tech_layer->getRoutingLevel();
-          lower_bound = odb::Point(rect.xMin(), rect.yMin());
-          upper_bound = odb::Point(rect.xMax(), rect.yMax());
-          pin_box = odb::Rect(lower_bound, upper_bound);
-          if (!die_area.contains(pin_box)) {
-            logger_->warn(GRT,
-                          39,
-                          "Found pin outside die area in instance {}.",
-                          inst->getConstName());
-            pin_out_of_die_count++;
+          if (min_routing_layer_ <= pin_layer && pin_layer <= max_routing_layer_) {
+            lower_bound = odb::Point(rect.xMin(), rect.yMin());
+            upper_bound = odb::Point(rect.xMax(), rect.yMax());
+            pin_box = odb::Rect(lower_bound, upper_bound);
+            if (!die_area.contains(pin_box)) {
+              logger_->warn(GRT,
+                            39,
+                            "Found pin outside die area in instance {}.",
+                            inst->getConstName());
+              pin_out_of_die_count++;
+            }
+            grid_->addObstruction(pin_layer, pin_box);
           }
-          grid_->addObstruction(pin_layer, pin_box);
         }
       }
     }
@@ -3120,18 +3125,20 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
             s->getBox(wire_rect);
             int l = s->getTechLayer()->getRoutingLevel();
 
-            odb::Point lower_bound
-                = odb::Point(wire_rect.xMin(), wire_rect.yMin());
-            odb::Point upper_bound
-                = odb::Point(wire_rect.xMax(), wire_rect.yMax());
-            odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-            if (!die_area.contains(obstruction_rect)) {
-              logger_->warn(GRT,
-                            40,
-                            "Net {} has wires outside die area.",
-                            db_net->getConstName());
+            if (min_routing_layer_ <= l && l <= max_routing_layer_) {
+              odb::Point lower_bound
+                  = odb::Point(wire_rect.xMin(), wire_rect.yMin());
+              odb::Point upper_bound
+                  = odb::Point(wire_rect.xMax(), wire_rect.yMax());
+              odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+              if (!die_area.contains(obstruction_rect)) {
+                logger_->warn(GRT,
+                              40,
+                              "Net {} has wires outside die area.",
+                              db_net->getConstName());
+              }
+              grid_->addObstruction(l, obstruction_rect);
             }
-            grid_->addObstruction(l, obstruction_rect);
           }
         }
       }
@@ -3150,18 +3157,20 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
             pshape.shape.getBox(wire_rect);
             int l = pshape.shape.getTechLayer()->getRoutingLevel();
 
-            odb::Point lower_bound
-                = odb::Point(wire_rect.xMin(), wire_rect.yMin());
-            odb::Point upper_bound
-                = odb::Point(wire_rect.xMax(), wire_rect.yMax());
-            odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-            if (!die_area.contains(obstruction_rect)) {
-              logger_->warn(GRT,
-                            41,
-                            "Net {} has wires outside die area.",
-                            db_net->getConstName());
+            if (min_routing_layer_ <= l && l <= max_routing_layer_) {
+              odb::Point lower_bound
+                  = odb::Point(wire_rect.xMin(), wire_rect.yMin());
+              odb::Point upper_bound
+                  = odb::Point(wire_rect.xMax(), wire_rect.yMax());
+              odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+              if (!die_area.contains(obstruction_rect)) {
+                logger_->warn(GRT,
+                              41,
+                              "Net {} has wires outside die area.",
+                              db_net->getConstName());
+              }
+              grid_->addObstruction(l, obstruction_rect);
             }
-            grid_->addObstruction(l, obstruction_rect);
           }
         }
       }
