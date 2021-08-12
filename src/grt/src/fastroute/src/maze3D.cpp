@@ -50,7 +50,7 @@ using utl::GRT;
 #define RIGHT(i) 2 * i + 2
 
 // non recursive version of heapify-
-static void heapify3D(int** array, const int heapSize, int i)
+static void heapify3D(std::vector<int*> &array, const int heapSize, int i)
 {
   bool STOP = false;
 
@@ -79,7 +79,7 @@ static void heapify3D(int** array, const int heapSize, int i)
   } while (!STOP);
 }
 
-static void updateHeap3D(int** array, const int arrayLen, int i)
+static void updateHeap3D(std::vector<int*> &array, const int arrayLen, int i)
 {
   int* tmpi = array[i];
   while (i > 0 && *(array[PARENT(i)]) > *tmpi) {
@@ -91,13 +91,15 @@ static void updateHeap3D(int** array, const int arrayLen, int i)
 }
 
 // extract the entry with minimum distance from Priority queue
-static void extractMin3D(int** array, int const arrayLen)
+static void extractMin3D(std::vector<int*> &array, int const arrayLen)
 {
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);
 }
 
-void FastRouteCore::setupHeap3D(int netID,
+void FastRouteCore::setupHeap3D(std::vector<int*> &heap1_3D,
+                                std::vector<short*> &heap2_3D,
+                                int netID,
                                 int edgeID,
                                 int* heapLen1,
                                 int* heapLen2,
@@ -132,11 +134,11 @@ void FastRouteCore::setupHeap3D(int netID,
   {
     d1_3D_[0][y1][x1] = 0;
     directions_3D_[0][y1][x1] = Direction::Origin;
-    heap1_3D_[0] = &d1_3D_[0][y1][x1];
+    heap1_3D[0] = &d1_3D_[0][y1][x1];
     *heapLen1 = 1;
     d2_3D_[0][y2][x2] = 0;
     directions_3D_[0][y2][x2] = Direction::Origin;
-    heap2_3D_[0] = &d2_3D_[0][y2][x2];
+    heap2_3D[0] = &d2_3D_[0][y2][x2];
     *heapLen2 = 1;
   } else  // net with more than 2 pins
   {
@@ -150,17 +152,17 @@ void FastRouteCore::setupHeap3D(int netID,
       heapVisited[i] = false;
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
-    // them into heap1_3D_
+    // them into heap1_3D
     if (n1 < d)  // n1 is a Pin node
     {
-      // just need to put n1 itself into heap1_3D_
+      // just need to put n1 itself into heap1_3D
       heapcnt = 0;
 
       nt = treenodes[n1].stackAlias;
 
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
         d1_3D_[l][y1][x1] = 0;
-        heap1_3D_[heapcnt] = &d1_3D_[l][y1][x1];
+        heap1_3D[heapcnt] = &d1_3D_[l][y1][x1];
         directions_3D_[l][y1][x1] = Direction::Origin;
         heapVisited[n1] = true;
         heapcnt++;
@@ -174,11 +176,11 @@ void FastRouteCore::setupHeap3D(int netID,
 
       nt = treenodes[n1].stackAlias;
 
-      // add n1 into heap1_3D_
+      // add n1 into heap1_3D
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
         d1_3D_[l][y1][x1] = 0;
         directions_3D_[l][y1][x1] = Direction::Origin;
-        heap1_3D_[heapcnt] = &d1_3D_[l][y1][x1];
+        heap1_3D[heapcnt] = &d1_3D_[l][y1][x1];
         heapVisited[n1] = true;
         heapcnt++;
       }
@@ -202,10 +204,10 @@ void FastRouteCore::setupHeap3D(int netID,
             {
               if (heapVisited[nbr] == false) {
                 // put all the grids on the two adjacent tree edges into
-                // heap1_3D_
+                // heap1_3D
                 if (treeedges[edge].route.routelen > 0)  // not a degraded edge
                 {
-                  // put nbr into heap1_3D_ if in enlarged region
+                  // put nbr into heap1_3D if in enlarged region
                   if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
                     nbrX = treenodes[nbr].x;
                     nbrY = treenodes[nbr].y;
@@ -214,7 +216,7 @@ void FastRouteCore::setupHeap3D(int netID,
                          l++) {
                       d1_3D_[l][nbrY][nbrX] = 0;
                       directions_3D_[l][nbrY][nbrX] = Direction::Origin;
-                      heap1_3D_[heapcnt] = &d1_3D_[l][nbrY][nbrX];
+                      heap1_3D[heapcnt] = &d1_3D_[l][nbrY][nbrX];
                       heapcnt++;
                       corr_edge_3D_[l][nbrY][nbrX] = edge;
                     }
@@ -225,7 +227,7 @@ void FastRouteCore::setupHeap3D(int netID,
                   route = &(treeedges[edge].route);
                   if (route->type == RouteType::MazeRoute) {
                     for (int j = 1; j < route->routelen;
-                         j++)  // don't put edge_n1 and edge_n2 into heap1_3D_
+                         j++)  // don't put edge_n1 and edge_n2 into heap1_3D
                     {
                       x_grid = route->gridsX[j];
                       y_grid = route->gridsY[j];
@@ -233,7 +235,7 @@ void FastRouteCore::setupHeap3D(int netID,
 
                       if (in_region_[y_grid][x_grid]) {
                         d1_3D_[l_grid][y_grid][x_grid] = 0;
-                        heap1_3D_[heapcnt] = &d1_3D_[l_grid][y_grid][x_grid];
+                        heap1_3D[heapcnt] = &d1_3D_[l_grid][y_grid][x_grid];
                         directions_3D_[l_grid][y_grid][x_grid] = Direction::Origin;
                         heapcnt++;
                         corr_edge_3D_[l_grid][y_grid][x_grid] = edge;
@@ -251,12 +253,12 @@ void FastRouteCore::setupHeap3D(int netID,
           }                 // loop i (3 neigbors for cur node)
         }                   // if cur node is a Steiner nodes
       }                     // while heapQueue is not empty
-      *heapLen1 = heapcnt;  // record the length of heap1_3D_
+      *heapLen1 = heapcnt;  // record the length of heap1_3D
     }                       // else n1 is not a Pin node
 
     // find all the grids on subtree t2 (connect to n2) and put them into
-    // heap2_3D_ find all the grids on tree edges in subtree t2 (connecting to
-    // n2) and put them into heap2_3D_
+    // heap2_3D find all the grids on tree edges in subtree t2 (connecting to
+    // n2) and put them into heap2_3D
     if (n2 < d)  // n2 is a Pin node
     {
       nt = treenodes[n2].stackAlias;
@@ -264,10 +266,10 @@ void FastRouteCore::setupHeap3D(int netID,
       heapcnt = 0;
 
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        // just need to put n1 itself into heap1_3D_
+        // just need to put n1 itself into heap1_3D
         d2_3D_[l][y2][x2] = 0;
         directions_3D_[l][y2][x2] = Direction::Origin;
-        heap2_3D_[heapcnt] = &d2_3D_[l][y2][x2];
+        heap2_3D[heapcnt] = &d2_3D_[l][y2][x2];
         heapVisited[n2] = true;
         //*heapLen2 += 1;
         heapcnt++;
@@ -279,11 +281,11 @@ void FastRouteCore::setupHeap3D(int netID,
       queuehead = queuetail = 0;
 
       nt = treenodes[n2].stackAlias;
-      // add n2 into heap2_3D_
+      // add n2 into heap2_3D
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
         d2_3D_[l][y2][x2] = 0;
         directions_3D_[l][y2][x2] = Direction::Origin;
-        heap2_3D_[heapcnt] = &d2_3D_[l][y2][x2];
+        heap2_3D[heapcnt] = &d2_3D_[l][y2][x2];
         heapcnt++;
       }
       heapVisited[n2] = true;
@@ -308,10 +310,10 @@ void FastRouteCore::setupHeap3D(int netID,
             {
               if (heapVisited[nbr] == false) {
                 // put all the grids on the two adjacent tree edges into
-                // heap2_3D_
+                // heap2_3D
                 if (treeedges[edge].route.routelen > 0)  // not a degraded edge
                 {
-                  // put nbr into heap2_3D_
+                  // put nbr into heap2_3D
                   if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
                     nbrX = treenodes[nbr].x;
                     nbrY = treenodes[nbr].y;
@@ -322,7 +324,7 @@ void FastRouteCore::setupHeap3D(int netID,
 
                       d2_3D_[l][nbrY][nbrX] = 0;
                       directions_3D_[l][nbrY][nbrX] = Direction::Origin;
-                      heap2_3D_[heapcnt] = &d2_3D_[l][nbrY][nbrX];
+                      heap2_3D[heapcnt] = &d2_3D_[l][nbrY][nbrX];
                       heapcnt++;
                       corr_edge_3D_[l][nbrY][nbrX] = edge;
                     }
@@ -333,7 +335,7 @@ void FastRouteCore::setupHeap3D(int netID,
                   route = &(treeedges[edge].route);
                   if (route->type == RouteType::MazeRoute) {
                     for (int j = 1; j < route->routelen;
-                         j++)  // don't put edge_n1 and edge_n2 into heap2_3D_
+                         j++)  // don't put edge_n1 and edge_n2 into heap2_3D
                     {
                       x_grid = route->gridsX[j];
                       y_grid = route->gridsY[j];
@@ -341,7 +343,7 @@ void FastRouteCore::setupHeap3D(int netID,
                       if (in_region_[y_grid][x_grid]) {
                         d2_3D_[l_grid][y_grid][x_grid] = 0;
                         directions_3D_[l_grid][y_grid][x_grid] = Direction::Origin;
-                        heap2_3D_[heapcnt] = &d2_3D_[l_grid][y_grid][x_grid];
+                        heap2_3D[heapcnt] = &d2_3D_[l_grid][y_grid][x_grid];
                         heapcnt++;
 
                         corr_edge_3D_[l_grid][y_grid][x_grid] = edge;
@@ -359,7 +361,7 @@ void FastRouteCore::setupHeap3D(int netID,
           }                 // loop i (3 neigbors for cur node)
         }                   // if cur node is a Steiner nodes
       }                     // while heapQueue is not empty
-      *heapLen2 = heapcnt;  // record the length of heap2_3D_
+      *heapLen2 = heapcnt;  // record the length of heap2_3D
     }                       // else n2 is not a Pin node
 
     for (int i = regionY1; i <= regionY2; i++) {
@@ -866,8 +868,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHub,
                                          int layerOrientation)
 {
+  std::vector<int*> heap1_3D;
+  std::vector<short*> heap2_3D;
+
   int netID, enlarge, endIND;
-  std::vector<bool> pop_heap2_3D_;
+  std::vector<bool> pop_heap2_3D;
 
   int i, j, k, deg, n1, n2, n1x, n1y, n2x, n2y, ymin, ymax, xmin, xmax, curX,
       curY, curL, crossX, crossY, crossL, tmpX, tmpY, tmpL, tmpi, min_x, min_y,
@@ -893,12 +898,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  pop_heap2_3D_.resize(num_layers_ * y_range_ * x_range_);
+  pop_heap2_3D.resize(num_layers_ * y_range_ * x_range_);
 
   // allocate memory for priority queue
-  heap1_3D_ = new int*[y_grid_ * x_grid_ * num_layers_];
-  heap2_3D_ = new short*[y_grid_ * x_grid_ * num_layers_];
-
+  heap1_3D.resize(y_grid_ * x_grid_ * num_layers_);
+  heap2_3D.resize(y_grid_ * x_grid_ * num_layers_);
+  
   for (i = 0; i < y_grid_; i++) {
     for (j = 0; j < x_grid_; j++) {
       in_region_[i][j] = false;
@@ -907,7 +912,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   range = y_range_ * x_range_ * num_layers_;
   for (i = 0; i < range; i++) {
-    pop_heap2_3D_[i] = false;
+    pop_heap2_3D[i] = false;
   }
 
   endIND = num_valid_nets_ * 0.9;
@@ -970,7 +975,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           n1a = treeedge->n1a;
           n2a = treeedge->n2a;
 
-          // initialize pop_heap1_3D_[] and pop_heap2_3D_[] as false (for
+          // initialize pop_heap1_3D_[] and pop_heap2_3D[] as false (for
           // detecting the shortest path is found or not)
 
           for (k = 0; k < num_layers_; k++) {
@@ -982,9 +987,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             }
           }
 
-          // setup heap1_3D_, heap2_3D_ and initialize d1_3D_[][] and d2_3D_[][]
+          // setup heap1_3D, heap2_3D and initialize d1_3D_[][] and d2_3D_[][]
           // for all the grids on the two subtrees
-          setupHeap3D(netID,
+          setupHeap3D(heap1_3D,
+                      heap2_3D,
+                      netID,
                       edgeID,
                       &heapLen1,
                       &heapLen2,
@@ -994,14 +1001,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                       regionY2);
 
           // while loop to find shortest path
-          ind1 = (heap1_3D_[0] - &d1_3D_[0][0][0]);
+          ind1 = (heap1_3D[0] - &d1_3D_[0][0][0]);
 
           for (i = 0; i < heapLen2; i++)
-            pop_heap2_3D_[heap2_3D_[i] - &d2_3D_[0][0][0]] = true;
+            pop_heap2_3D[heap2_3D[i] - &d2_3D_[0][0][0]] = true;
 
-          while (pop_heap2_3D_[ind1]
+          while (pop_heap2_3D[ind1]
                  == false)  // stop until the grid position been popped out from
-                            // both heap1_3D_ and heap2_3D_
+                            // both heap1_3D and heap2_3D
           {
             // relax all the adjacent grids within the enlarged region for
             // source subtree
@@ -1013,7 +1020,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             if (heapLen1 < 1) {
               logger_->error(GRT, 183, "Heap underflow.");
             }
-            extractMin3D(heap1_3D_, heapLen1);
+            extractMin3D(heap1_3D, heapLen1);
             // pop_heap1_3D_[ind1] = true;
             heapLen1--;
 
@@ -1026,24 +1033,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             if (Horizontal) {
               // left
               if (curX > regionX1 && directions_3D_[curL][curY][curX] != Direction::East) {
-                grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX - 1;
                 tmp = d1_3D_[curL][curY][curX] + 1;
-                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap) {
+                if (h_edges_3D_[curL][curY][curX - 1].usage < h_edges_3D_[curL][curY][curX - 1].cap) {
                   tmpX = curX - 1;  // the left neighbor
 
                   if (d1_3D_[curL][curY][tmpX]
-                      >= BIG_INT)  // left neighbor not been put into heap1_3D_
+                      >= BIG_INT)  // left neighbor not been put into heap1_3D
                   {
                     d1_3D_[curL][curY][tmpX] = tmp;
                     pr_3D_[curL][curY][tmpX].l = curL;
                     pr_3D_[curL][curY][tmpX].x = curX;
                     pr_3D_[curL][curY][tmpX].y = curY;
                     directions_3D_[curL][curY][tmpX] = Direction::West;
-                    heap1_3D_[heapLen1] = &d1_3D_[curL][curY][tmpX];
+                    heap1_3D[heapLen1] = &d1_3D_[curL][curY][tmpX];
                     heapLen1++;
-                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                    updateHeap3D(heap1_3D, heapLen1, heapLen1 - 1);
                   } else if (d1_3D_[curL][curY][tmpX]
-                             > tmp)  // left neighbor been put into heap1_3D_
+                             > tmp)  // left neighbor been put into heap1_3D
                                      // but needs update
                   {
                     d1_3D_[curL][curY][tmpX] = tmp;
@@ -1053,34 +1059,33 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     directions_3D_[curL][curY][tmpX] = Direction::West;
                     dtmp = &d1_3D_[curL][curY][tmpX];
                     ind = 0;
-                    while (heap1_3D_[ind] != dtmp)
+                    while (heap1_3D[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap1_3D_, heapLen1, ind);
+                    updateHeap3D(heap1_3D, heapLen1, ind);
                   }
                 }
               }
               // right
               if (Horizontal && curX < regionX2
                   && directions_3D_[curL][curY][curX] != Direction::West) {
-                grid = grid_hs_[curL] + curY * (x_grid_ - 1) + curX;
 
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpX = curX + 1;  // the right neighbor
 
-                if (h_edges_3D_[grid].usage < h_edges_3D_[grid].cap) {
+                if (h_edges_3D_[curL][curY][curX].usage < h_edges_3D_[curL][curY][curX].cap) {
                   if (d1_3D_[curL][curY][tmpX]
-                      >= BIG_INT)  // right neighbor not been put into heap1_3D_
+                      >= BIG_INT)  // right neighbor not been put into heap1_3D
                   {
                     d1_3D_[curL][curY][tmpX] = tmp;
                     pr_3D_[curL][curY][tmpX].l = curL;
                     pr_3D_[curL][curY][tmpX].x = curX;
                     pr_3D_[curL][curY][tmpX].y = curY;
                     directions_3D_[curL][curY][tmpX] = Direction::East;
-                    heap1_3D_[heapLen1] = &d1_3D_[curL][curY][tmpX];
+                    heap1_3D[heapLen1] = &d1_3D_[curL][curY][tmpX];
                     heapLen1++;
-                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                    updateHeap3D(heap1_3D, heapLen1, heapLen1 - 1);
                   } else if (d1_3D_[curL][curY][tmpX]
-                             > tmp)  // right neighbor been put into heap1_3D_
+                             > tmp)  // right neighbor been put into heap1_3D
                                      // but needs update
                   {
                     d1_3D_[curL][curY][tmpX] = tmp;
@@ -1090,9 +1095,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     directions_3D_[curL][curY][tmpX] = Direction::East;
                     dtmp = &d1_3D_[curL][curY][tmpX];
                     ind = 0;
-                    while (heap1_3D_[ind] != dtmp)
+                    while (heap1_3D[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap1_3D_, heapLen1, ind);
+                    updateHeap3D(heap1_3D, heapLen1, ind);
                   }
                 }
               }
@@ -1100,24 +1105,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               // bottom
               if (!Horizontal && curY > regionY1
                   && directions_3D_[curL][curY][curX] != Direction::South) {
-                grid = grid_vs_[curL] + (curY - 1) * x_grid_ + curX;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY - 1;  // the bottom neighbor
-                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap) {
+                if (v_edges_3D_[curL][curY - 1][curX].usage < v_edges_3D_[curL][curY - 1][curX].cap) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // bottom neighbor not been put into
-                                   // heap1_3D_
+                                   // heap1_3D
                   {
                     d1_3D_[curL][tmpY][curX] = tmp;
                     pr_3D_[curL][tmpY][curX].l = curL;
                     pr_3D_[curL][tmpY][curX].x = curX;
                     pr_3D_[curL][tmpY][curX].y = curY;
                     directions_3D_[curL][tmpY][curX] = Direction::North;
-                    heap1_3D_[heapLen1] = &d1_3D_[curL][tmpY][curX];
+                    heap1_3D[heapLen1] = &d1_3D_[curL][tmpY][curX];
                     heapLen1++;
-                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                    updateHeap3D(heap1_3D, heapLen1, heapLen1 - 1);
                   } else if (d1_3D_[curL][tmpY][curX]
-                             > tmp)  // bottom neighbor been put into heap1_3D_
+                             > tmp)  // bottom neighbor been put into heap1_3D
                                      // but needs update
                   {
                     d1_3D_[curL][tmpY][curX] = tmp;
@@ -1127,32 +1131,31 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     directions_3D_[curL][tmpY][curX] = Direction::North;
                     dtmp = &d1_3D_[curL][tmpY][curX];
                     ind = 0;
-                    while (heap1_3D_[ind] != dtmp)
+                    while (heap1_3D[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap1_3D_, heapLen1, ind);
+                    updateHeap3D(heap1_3D, heapLen1, ind);
                   }
                 }
               }
               // top
               if (!Horizontal && curY < regionY2
                   && directions_3D_[curL][curY][curX] != Direction::North) {
-                grid = grid_vs_[curL] + curY * x_grid_ + curX;
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY + 1;  // the top neighbor
-                if (v_edges_3D_[grid].usage < v_edges_3D_[grid].cap) {
+                if (v_edges_3D_[curL][curY][curX].usage < v_edges_3D_[curL][curY][curX].cap) {
                   if (d1_3D_[curL][tmpY][curX]
-                      >= BIG_INT)  // top neighbor not been put into heap1_3D_
+                      >= BIG_INT)  // top neighbor not been put into heap1_3D
                   {
                     d1_3D_[curL][tmpY][curX] = tmp;
                     pr_3D_[curL][tmpY][curX].l = curL;
                     pr_3D_[curL][tmpY][curX].x = curX;
                     pr_3D_[curL][tmpY][curX].y = curY;
                     directions_3D_[curL][tmpY][curX] = Direction::South;
-                    heap1_3D_[heapLen1] = &d1_3D_[curL][tmpY][curX];
+                    heap1_3D[heapLen1] = &d1_3D_[curL][tmpY][curX];
                     heapLen1++;
-                    updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                    updateHeap3D(heap1_3D, heapLen1, heapLen1 - 1);
                   } else if (d1_3D_[curL][tmpY][curX]
-                             > tmp)  // top neighbor been put into heap1_3D_ but
+                             > tmp)  // top neighbor been put into heap1_3D but
                                      // needs update
                   {
                     d1_3D_[curL][tmpY][curX] = tmp;
@@ -1162,9 +1165,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     directions_3D_[curL][tmpY][curX] = Direction::South;
                     dtmp = &d1_3D_[curL][tmpY][curX];
                     ind = 0;
-                    while (heap1_3D_[ind] != dtmp)
+                    while (heap1_3D[ind] != dtmp)
                       ind++;
-                    updateHeap3D(heap1_3D_, heapLen1, ind);
+                    updateHeap3D(heap1_3D, heapLen1, ind);
                   }
                 }
               }
@@ -1176,18 +1179,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               tmpL = curL - 1;  // the bottom neighbor
 
               if (d1_3D_[tmpL][curY][curX]
-                  >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
+                  >= BIG_INT)  // bottom neighbor not been put into heap1_3D
               {
                 d1_3D_[tmpL][curY][curX] = tmp;
                 pr_3D_[tmpL][curY][curX].l = curL;
                 pr_3D_[tmpL][curY][curX].x = curX;
                 pr_3D_[tmpL][curY][curX].y = curY;
                 directions_3D_[tmpL][curY][curX] = Direction::Down;
-                heap1_3D_[heapLen1] = &d1_3D_[tmpL][curY][curX];
+                heap1_3D[heapLen1] = &d1_3D_[tmpL][curY][curX];
                 heapLen1++;
-                updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                updateHeap3D(heap1_3D, heapLen1, heapLen1 - 1);
               } else if (d1_3D_[tmpL][curY][curX]
-                         > tmp)  // bottom neighbor been put into heap1_3D_ but
+                         > tmp)  // bottom neighbor been put into heap1_3D but
                                  // needs update
               {
                 d1_3D_[tmpL][curY][curX] = tmp;
@@ -1197,9 +1200,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 directions_3D_[tmpL][curY][curX] = Direction::Down;
                 dtmp = &d1_3D_[tmpL][curY][curX];
                 ind = 0;
-                while (heap1_3D_[ind] != dtmp)
+                while (heap1_3D[ind] != dtmp)
                   ind++;
-                updateHeap3D(heap1_3D_, heapLen1, ind);
+                updateHeap3D(heap1_3D, heapLen1, ind);
               }
             }
 
@@ -1209,18 +1212,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               tmp = d1_3D_[curL][curY][curX] + via_cost_;
               tmpL = curL + 1;  // the bottom neighbor
               if (d1_3D_[tmpL][curY][curX]
-                  >= BIG_INT)  // bottom neighbor not been put into heap1_3D_
+                  >= BIG_INT)  // bottom neighbor not been put into heap1_3D
               {
                 d1_3D_[tmpL][curY][curX] = tmp;
                 pr_3D_[tmpL][curY][curX].l = curL;
                 pr_3D_[tmpL][curY][curX].x = curX;
                 pr_3D_[tmpL][curY][curX].y = curY;
                 directions_3D_[tmpL][curY][curX] = Direction::Up;
-                heap1_3D_[heapLen1] = &d1_3D_[tmpL][curY][curX];
+                heap1_3D[heapLen1] = &d1_3D_[tmpL][curY][curX];
                 heapLen1++;
-                updateHeap3D(heap1_3D_, heapLen1, heapLen1 - 1);
+                updateHeap3D(heap1_3D, heapLen1, heapLen1 - 1);
               } else if (d1_3D_[tmpL][curY][curX]
-                         > tmp)  // bottom neighbor been put into heap1_3D_ but
+                         > tmp)  // bottom neighbor been put into heap1_3D but
                                  // needs update
               {
                 d1_3D_[tmpL][curY][curX] = tmp;
@@ -1230,18 +1233,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 directions_3D_[tmpL][curY][curX] = Direction::Up;
                 dtmp = &d1_3D_[tmpL][curY][curX];
                 ind = 0;
-                while (heap1_3D_[ind] != dtmp)
+                while (heap1_3D[ind] != dtmp)
                   ind++;
-                updateHeap3D(heap1_3D_, heapLen1, ind);
+                updateHeap3D(heap1_3D, heapLen1, ind);
               }
             }
 
             // update ind1 for next loop
-            ind1 = (heap1_3D_[0] - &d1_3D_[0][0][0]);
+            ind1 = (heap1_3D[0] - &d1_3D_[0][0][0]);
           }  // while loop
 
           for (i = 0; i < heapLen2; i++)
-            pop_heap2_3D_[heap2_3D_[i] - &d2_3D_[0][0][0]] = false;
+            pop_heap2_3D[heap2_3D[i] - &d2_3D_[0][0][0]] = false;
 
           // get the new route for the edge and store it in gridsX[] and
           // gridsY[] temporarily
@@ -1642,14 +1645,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               if (gridsX[i] == gridsX[i + 1])  // a vertical edge
               {
                 min_y = std::min(gridsY[i], gridsY[i + 1]);
-                v_edges_3D_[gridsL[i] * grid_v_ + min_y * x_grid_ + gridsX[i]]
+                v_edges_3D_[gridsL[i]][min_y][gridsX[i]]
                     .usage
                     += edge_cost_per_layer[gridsL[i]];
               } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
               {
                 min_x = std::min(gridsX[i], gridsX[i + 1]);
-                h_edges_3D_[gridsL[i] * grid_h_ + gridsY[i] * (x_grid_ - 1)
-                            + min_x]
+                h_edges_3D_[gridsL[i]][gridsY[i]][min_x]
                     .usage
                     += edge_cost_per_layer[gridsL[i]];
               }
@@ -1760,8 +1762,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   corr_edge_3D_.resize(boost::extents[0][0][0]);
   pr_3D_.resize(boost::extents[0][0][0]);
 
-  delete[] heap1_3D_;
-  delete[] heap2_3D_;
+  heap1_3D.clear();
+  heap2_3D.clear();
 }
 
 }  // namespace grt
