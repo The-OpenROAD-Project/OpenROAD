@@ -119,7 +119,7 @@ add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
 add_subdirectory(stt)
-add_subdirectory(replace)
+add_subdirectory(gpl)
 add_subdirectory(dpl)
 add_subdirectory(fin)
 add_subdirectory(ppl)
@@ -163,7 +163,7 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   openroad_swig
-  replace
+  gpl
   dpl
   fin
   rsz

@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "replace/Replace.h"
+#include "gpl/Replace.h"
 #include "initialPlace.h"
 #include "nesterovPlace.h"
 #include "placerBase.h"

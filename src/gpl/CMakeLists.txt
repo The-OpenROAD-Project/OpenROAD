@@ -44,13 +44,13 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Eigen3 REQUIRED)
 
-swig_lib(NAME      replace
+swig_lib(NAME      gpl
          NAMESPACE gpl
          I_FILE    src/replace.i
          SCRIPTS   src/replace.tcl
 )
 
-target_sources(replace
+target_sources(gpl
   PRIVATE
     src/MakeReplace.cpp
     src/replace.cpp
@@ -68,14 +68,14 @@ target_sources(replace
     src/graphics.cpp
 )
 
-messages(TARGET replace)
+messages(TARGET gpl)
 
-target_include_directories(replace
+target_include_directories(gpl
   PUBLIC
     include
 )
 
-target_link_libraries(replace
+target_link_libraries(gpl
   PRIVATE
     utl
     Eigen3::Eigen
@@ -92,17 +92,17 @@ if( USE_CIMG_LIB )
   find_package(X11 REQUIRED)
   find_package(JPEG REQUIRED)
   if ( X11_FOUND AND JPEG_FOUND )
-    target_link_libraries( replace
+    target_link_libraries( gpl
       PRIVATE
         ${X11_LIBRARIES}
         ${JPEG_LIBRARIES}
     )
-    target_include_directories( replace
+    target_include_directories( gpl
       PUBLIC
         ${X11_INCLUDE_DIR}
         ${JPEG_INCLUDE_DIR}
     )
-    target_compile_definitions( replace
+    target_compile_definitions( gpl
       PRIVATE
         ENABLE_CIMG_LIB
         cimg_use_jpeg=1

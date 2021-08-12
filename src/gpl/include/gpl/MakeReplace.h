@@ -31,41 +31,23 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
-#include "sta/StaMain.hh"
-#include "ord/OpenRoad.hh"
-#include "replace/MakeReplace.h"
-#include "replace/Replace.h"
+#pragma once
 
-namespace sta {
-extern const char *replace_tcl_inits[];
-}
-
-extern "C" {
-extern int Replace_Init(Tcl_Interp* interp);
+namespace gpl {
+class Replace;
 }
 
 namespace ord {
 
-gpl::Replace* 
-makeReplace() {
-  return new gpl::Replace();
-}
+class OpenRoad;
+
+gpl::Replace*
+makeReplace();
 
 void
-initReplace(OpenRoad* openroad) {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Replace_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::replace_tcl_inits);
-  openroad->getReplace()->setDb(openroad->getDb());
-  openroad->getReplace()->setLogger(openroad->getLogger());
-  openroad->getReplace()->setGlobalRouter(openroad->getGlobalRouter());
-  openroad->getReplace()->setResizer(openroad->getResizer());
-}
+initReplace(OpenRoad* openroad);
 
 void
-deleteReplace(gpl::Replace *replace) {
-  delete replace;
-}
+deleteReplace(gpl::Replace *replace);
 
 }
