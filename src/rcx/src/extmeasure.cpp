@@ -183,7 +183,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
       dbTechLayerType type = techLayer->getType();
 
       if (type.getValue() != dbTechLayerType::ROUTING ||
-          layer->getRoutingLevel() == 0)
+          techLayer->getRoutingLevel() == 0)
         continue;
 
       _idTable[layerNum] = techLayer->getRoutingLevel();
@@ -483,7 +483,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
         dbTechLayerType type = techLayer->getType();
 
         if (type.getValue() != dbTechLayerType::ROUTING ||
-            layer->getRoutingLevel() == 0)
+            techLayer->getRoutingLevel() == 0)
           continue;
 
         _idTable[layerNum] = techLayer->getRoutingLevel();
@@ -731,7 +731,7 @@ int extMeasure::readAB(extMain* extMain, const char* filename,
     }
     dbTechLayerType type = techLayer->getType();
     if (type.getValue() != dbTechLayerType::ROUTING ||
-        layer->getRoutingLevel() == 0)
+        techLayer->getRoutingLevel() == 0)
       continue;
 
     char netName[256];
