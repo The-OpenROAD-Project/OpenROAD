@@ -392,7 +392,10 @@ void DbMasterDescriptor::getMasterEquivalent(odb::dbMaster* master, std::set<odb
   auto equiv_cells = sta->equivCells(cell);
   if (equiv_cells != nullptr) {
     for (auto equiv : *equiv_cells) {
-      masters.insert(network->staToDb(equiv));
+      auto eq_master = network->staToDb(equiv);
+      if (eq_master != nullptr) {
+        masters.insert(eq_master);
+      }
     }
   }
 }
