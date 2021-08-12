@@ -171,20 +171,25 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   auto [callback, values] = model->data(index, editor_).value<Descriptor::Editor>();
 
   QString value;
+  QString old_value = index.model()->data(index, Qt::EditRole).toString();
 
   bool accepted = false;
+  std::any callback_value;
   if (type != LIST) {
     QLineEdit* line_edit = static_cast<QLineEdit*>(editor);
     value = line_edit->text();
     if (type == NUMBER) {
-      accepted = callback(value.toDouble());
+      callback_value = value.toDouble();
     } else if (type == STRING) {
-      accepted = callback(value.toStdString());
+      callback_value = value.toStdString();
     }
   } else {
     QComboBox* combo_box = static_cast<QComboBox*>(editor);
     value = combo_box->currentText();
-    accepted = callback(combo_box->currentData().value<std::any>());
+    callback_value = combo_box->currentData().value<std::any>();
+  }
+  if (value != old_value) {
+    accepted = callback(callback_value);
   }
 
   if (accepted) {
@@ -197,7 +202,12 @@ void EditorItemDelegate::setModelData(QWidget* editor,
     } else if (item_name == "Type") {
       formatted_value = QString::fromStdString(selected.getTypeName());
     } else {
-      formatted_value = convertAnyToQString(selected.getProperty(item_name));
+      auto new_property = selected.getProperty(item_name);
+      if (model->data(index, selected_).isValid()) {
+        auto new_selected = std::any_cast<Selected>(new_property);
+        model->setData(index, QVariant::fromValue(new_selected), selected_);
+      }
+      formatted_value = convertAnyToQString(new_property);
     }
     model->setData(index, formatted_value, Qt::EditRole);
   } else {
