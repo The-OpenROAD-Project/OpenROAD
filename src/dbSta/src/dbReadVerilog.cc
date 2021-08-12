@@ -80,12 +80,16 @@ using sta::Cell;
 using sta::deleteVerilogReader;
 using sta::LeafInstanceIterator;
 using sta::InstanceChildIterator;
+using sta::InstancePinIterator;
 using sta::NetIterator;
 using sta::NetTermIterator;
 using sta::ConnectedPinIterator;
 using sta::NetConnectedPinIterator;
 using sta::PinPathNameLess;
 using sta::LibertyCell;
+using sta::CellPortBitIterator;
+using sta::CellPortIterator;
+using sta::Port;
 
 using utl::Logger;
 using utl::STA;
@@ -156,6 +160,7 @@ public:
 protected:
   void makeDbInsts();
   dbIoType staToDb(PortDirection *dir);
+  void makeDbPins();
   void makeDbNets(const Instance *inst);
   bool hasTerminals(Net *net) const;
   dbMaster *getMaster(Cell *cell);
@@ -224,8 +229,41 @@ Verilog2db::makeBlock()
 void
 Verilog2db::makeDbNetlist()
 {
+  makeDbPins();
   makeDbInsts();
   makeDbNets(network_->topInstance());
+}
+
+void
+Verilog2db::makeDbPins()
+{
+  Cell *top_cell = network_->cell(network_->topInstance());
+  CellPortBitIterator *port_iter = network_->portBitIterator(top_cell);
+  while (port_iter->hasNext()) {
+    Port *port = port_iter->next();
+    const char *port_name = network_->name(port);
+    dbNet *db_net = dbNet::create(block_, port_name);
+    dbBTerm *bterm = dbBTerm::create(db_net, port_name);
+    dbIoType io_type = staToDb(network_->direction(port));
+    bterm->setIoType(io_type);
+  }
+  delete port_iter;
+
+  // OpenDB does not have any concept of bus ports.
+  // Use a property to annotate the bus names endian-ness for writing verilog.
+  CellPortIterator *bus_iter = network_->portIterator(top_cell);
+  while (bus_iter->hasNext()) {
+    Port *port = port_iter->next();
+    if (network_->isBus(port)) {
+      const char *port_name = network_->name(port);
+      int from = network_->fromIndex(port);
+      int to = network_->toIndex(port);
+      string key = "bus_big_endian ";
+      key += port_name;
+      odb::dbBoolProperty::create(block_, key.c_str(), from > to);
+    }
+  }
+  delete bus_iter;
 }
 
 void
@@ -271,8 +309,10 @@ Verilog2db::makeDbNets(const Instance *inst)
     Net *net = net_iter->next();
     const char *net_name = network_->pathName(net);
     if (is_top || !hasTerminals(net)) {
-      dbNet *db_net = dbNet::create(block_, net_name);
-      
+      dbNet *db_net = block_->findNet(net_name);
+      if (db_net == nullptr)
+        db_net = dbNet::create(block_, net_name);
+
       if (network_->isPower(net))
         db_net->setSigType(odb::dbSigType::POWER);
       if (network_->isGround(net))
@@ -289,6 +329,7 @@ Verilog2db::makeDbNets(const Instance *inst)
       sort(net_pins, PinPathNameLess(network_));
 
       for (Pin *pin : net_pins) {
+#if 0
 	if (network_->isTopLevelPort(pin)) {
 	  const char *port_name = network_->portName(pin);
 	  if (block_->findBTerm(port_name) == nullptr) {
@@ -297,7 +338,9 @@ Verilog2db::makeDbNets(const Instance *inst)
 	    bterm->setIoType(io_type);
 	  }
 	}
-	else if (network_->isLeaf(pin)) {
+	else 
+#endif
+if (network_->isLeaf(pin)) {
 	  const char *port_name = network_->portName(pin);
 	  Instance *inst = network_->instance(pin);
 	  const char *inst_name = network_->pathName(inst);

@@ -68,6 +68,7 @@ using odb::dbITermObj;
 using odb::dbBTermObj;
 using odb::dbIntProperty;
 using odb::dbPlacementStatus;
+using odb::dbBoolProperty;
 
 // TODO: move to StringUtil
 char *
@@ -910,7 +911,8 @@ dbNetwork::makeCell(Library *library,
 		      port_name);
     }
   }
-  groupBusPorts(cell);
+  // Assume big endian busses because LEF has no clue about busses.
+  groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
   // for corners that are not used for "linking".
@@ -952,9 +954,25 @@ dbNetwork::makeTopCell()
     setDirection(port, dir);
     
   }
-  groupBusPorts(top_cell_);
+  groupBusPorts(top_cell_,
+                [=](const char *port_name) { return portIsBigEndian(port_name); } );
 }
 
+// read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
+// is big endian.
+bool
+dbNetwork::portIsBigEndian(const char *port_name)
+{
+  string key = "bus_big_endian ";
+  key += port_name;
+  dbBoolProperty *property = odb::dbBoolProperty::find(block_, key.c_str());
+  if (property)
+    return property->getValue();
+  else
+    // Default when DEF did not come from read_verilog.
+    return true;
+}
+  
 void
 dbNetwork::findConstantNets()
 {
