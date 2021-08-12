@@ -70,7 +70,7 @@
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "mpl2/MakeMacroPlacer.h"
-#include "replace/MakeReplace.h"
+#include "gpl/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
 #include "cts/MakeTritoncts.h"
 #include "rmp/MakeRestructure.h"

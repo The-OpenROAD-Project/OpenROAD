@@ -29,7 +29,7 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 16951
+[INFO GRT-0004] Blockages: 9129
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22

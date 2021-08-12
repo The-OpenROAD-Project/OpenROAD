@@ -29,11 +29,10 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 6714
+[INFO GRT-0004] Blockages: 13
 [INFO GRT-0019] Found 6 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 5
-[INFO GRT-0017] Processing 5262 blockages on layer li1.
 [INFO GRT-0017] Processing 706 blockages on layer met1.
 
 [INFO GRT-0053] Routing resources analysis:
@@ -69,10 +68,9 @@ Routing clock nets...
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 6714
+[INFO GRT-0004] Blockages: 13
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 12
-[INFO GRT-0017] Processing 5262 blockages on layer li1.
 [INFO GRT-0017] Processing 706 blockages on layer met1.
 
 [INFO GRT-0053] Routing resources analysis:
