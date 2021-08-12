@@ -31,14 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef MAKE_REPLACE
-#define MAKE_REPLACE
+#pragma once
 
 namespace gpl {
 class Replace;
 }
 
 namespace ord {
+
 class OpenRoad;
 
 gpl::Replace*
@@ -51,5 +51,3 @@ void
 deleteReplace(gpl::Replace *replace);
 
 }
-
-#endif

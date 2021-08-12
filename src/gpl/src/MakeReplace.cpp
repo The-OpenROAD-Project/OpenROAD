@@ -34,15 +34,15 @@
 #include <tcl.h>
 #include "sta/StaMain.hh"
 #include "ord/OpenRoad.hh"
-#include "replace/MakeReplace.h"
-#include "replace/Replace.h"
+#include "gpl/MakeReplace.h"
+#include "gpl/Replace.h"
 
 namespace sta {
-extern const char *replace_tcl_inits[];
+extern const char *gpl_tcl_inits[];
 }
 
 extern "C" {
-extern int Replace_Init(Tcl_Interp* interp);
+extern int Gpl_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -55,8 +55,10 @@ makeReplace() {
 void
 initReplace(OpenRoad* openroad) {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Replace_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::replace_tcl_inits);
+  Gpl_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::gpl_tcl_inits);
+  // Replace should define an init function that takes these args.
+  // There is no reason for all these set functions to exist. -cherry
   openroad->getReplace()->setDb(openroad->getDb());
   openroad->getReplace()->setLogger(openroad->getLogger());
   openroad->getReplace()->setGlobalRouter(openroad->getGlobalRouter());
