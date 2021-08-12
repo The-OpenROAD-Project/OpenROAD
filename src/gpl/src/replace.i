@@ -1,6 +1,6 @@
 %{
 #include "ord/OpenRoad.hh"
-#include "replace/Replace.h"
+#include "gpl/Replace.h"
 
 namespace ord {
 OpenRoad*

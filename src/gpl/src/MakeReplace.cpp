@@ -31,25 +31,43 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef MAKE_REPLACE
-#define MAKE_REPLACE
+#include <tcl.h>
+#include "sta/StaMain.hh"
+#include "ord/OpenRoad.hh"
+#include "gpl/MakeReplace.h"
+#include "gpl/Replace.h"
 
-namespace gpl {
-class Replace;
+namespace sta {
+extern const char *gpl_tcl_inits[];
+}
+
+extern "C" {
+extern int Gpl_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
-class OpenRoad;
 
-gpl::Replace*
-makeReplace();
-
-void
-initReplace(OpenRoad* openroad);
-
-void
-deleteReplace(gpl::Replace *replace);
-
+gpl::Replace* 
+makeReplace() {
+  return new gpl::Replace();
 }
 
-#endif
+void
+initReplace(OpenRoad* openroad) {
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  Gpl_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::gpl_tcl_inits);
+  // Replace should define an init function that takes these args.
+  // There is no reason for all these set functions to exist. -cherry
+  openroad->getReplace()->setDb(openroad->getDb());
+  openroad->getReplace()->setLogger(openroad->getLogger());
+  openroad->getReplace()->setGlobalRouter(openroad->getGlobalRouter());
+  openroad->getReplace()->setResizer(openroad->getResizer());
+}
+
+void
+deleteReplace(gpl::Replace *replace) {
+  delete replace;
+}
+
+}
