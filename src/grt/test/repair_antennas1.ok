@@ -29,11 +29,10 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 16951
+[INFO GRT-0004] Blockages: 35
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22
-[INFO GRT-0017] Processing 13509 blockages on layer li1.
 [INFO GRT-0017] Processing 3926 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
 
@@ -116,10 +115,9 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 16957
+[INFO GRT-0004] Blockages: 35
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 17
-[INFO GRT-0017] Processing 13512 blockages on layer li1.
 [INFO GRT-0017] Processing 3930 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
 [INFO GRT-0009] Nets to reroute: 6.
