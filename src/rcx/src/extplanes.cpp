@@ -91,7 +91,8 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb) {
   odb::dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
-    if (layer->getType() != odb::dbTechLayerType::ROUTING)
+    if (layer->getType() != odb::dbTechLayerType::ROUTING ||
+        layer->getRoutingLevel() == 0)
       continue;
 
     uint level = layer->getRoutingLevel();

@@ -127,7 +127,8 @@ uint extMain::calcMinMaxRC() {
     odb::dbTechLayer* layer = *itr;
     odb::dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != odb::dbTechLayerType::ROUTING)
+    if (type.getValue() != odb::dbTechLayerType::ROUTING ||
+        layer->getRoutingLevel() == 0)
       continue;
 
     int met = layer->getRoutingLevel();

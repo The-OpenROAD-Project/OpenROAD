@@ -58,7 +58,8 @@ void extSpef::initSearchForNets() {
     dbTechLayer* layer = *itr;
     dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING)
+    if (type.getValue() != dbTechLayerType::ROUTING ||
+        layer->getRoutingLevel() == 0)
       continue;
 
     n = layer->getRoutingLevel();
