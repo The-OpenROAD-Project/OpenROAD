@@ -213,9 +213,8 @@ class FastRouteCore
                             int ripupTHlb,
                             int ripupTHub,
                             int layerOrientation);
-  void setupHeap3D(
-                   std::vector<int*> &heap1_3D_,
-                   std::vector<short*> &heap2_3D_,
+  void setupHeap3D(std::vector<int*> &heap1_3D,
+                   std::vector<short*> &heap2_3D,
                    int netID,
                    int edgeID,
                    int* heapLen1,
