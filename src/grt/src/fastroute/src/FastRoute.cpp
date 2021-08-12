@@ -90,10 +90,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
       h_capacity_lb_(0),
-      heap1_3D_(nullptr),
-      heap2_3D_(nullptr),
-      heap2_(nullptr),
-      heap1_(nullptr),
       logger_(log),
       stt_builder_(stt_builder)
 {
@@ -166,12 +162,13 @@ void FastRouteCore::deleteComponents()
   parent_x3_.resize(boost::extents[0][0]);
   parent_y3_.resize(boost::extents[0][0]);
 
-  if (heap1_ != nullptr)
-    delete[] heap1_;
-  if (heap2_ != nullptr)
-    delete[] heap2_;
-  heap1_ = nullptr;
-  heap2_ = nullptr;
+  if (!heap1_.empty()) {
+    heap1_.clear();
+  }
+
+  if (!heap2_.empty()) {
+    heap2_.clear();
+  }
 
   pop_heap2_.clear();
 
@@ -635,8 +632,8 @@ void FastRouteCore::initAuxVar()
   pop_heap2_.resize(y_grid_ * x_range_);
 
   // allocate memory for priority queue
-  heap1_ = new float*[y_grid_ * x_grid_];
-  heap2_ = new float*[y_grid_ * x_grid_];
+  heap1_.resize(y_grid_ * x_grid_);
+  heap2_.resize(y_grid_ * x_grid_);
 }
 
 NetRouteMap FastRouteCore::getRoutes()

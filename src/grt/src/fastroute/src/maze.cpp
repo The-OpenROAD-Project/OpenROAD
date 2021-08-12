@@ -209,7 +209,7 @@ void FastRouteCore::convertToMazeroute()
 }
 
 // non recursive version of heapify
-static void heapify(float** array, const int heapSize, int i)
+static void heapify(std::vector<float*> &array, const int heapSize, int i)
 {
   bool stop = false;
 
@@ -239,13 +239,13 @@ static void heapify(float** array, const int heapSize, int i)
 }
 
 // build heap for an list of grid
-static void buildHeap(float** array, int arrayLen)
+static void buildHeap(std::vector<float*> &array, int arrayLen)
 {
   for (int i = arrayLen / 2 - 1; i >= 0; i--)
     heapify(array, arrayLen, i);
 }
 
-static void updateHeap(float** array, int arrayLen, int i)
+static void updateHeap(std::vector<float*> &array, int arrayLen, int i)
 {
   float* tmpi = array[i];
   while (i > 0 && *(array[PARENT(i)]) > *tmpi) {
@@ -257,7 +257,7 @@ static void updateHeap(float** array, int arrayLen, int i)
 }
 
 // extract the entry with minimum distance from Priority queue
-static void extractMin(float** array, int arrayLen)
+static void extractMin(std::vector<float*> &array, int arrayLen)
 {
   array[0] = array[arrayLen - 1];
   heapify(array, arrayLen - 1, 0);

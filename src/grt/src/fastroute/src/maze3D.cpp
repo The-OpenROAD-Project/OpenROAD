@@ -50,7 +50,7 @@ using utl::GRT;
 #define RIGHT(i) 2 * i + 2
 
 // non recursive version of heapify-
-static void heapify3D(int** array, const int heapSize, int i)
+static void heapify3D(std::vector<int*> &array, const int heapSize, int i)
 {
   bool STOP = false;
 
@@ -79,7 +79,7 @@ static void heapify3D(int** array, const int heapSize, int i)
   } while (!STOP);
 }
 
-static void updateHeap3D(int** array, const int arrayLen, int i)
+static void updateHeap3D(std::vector<int*> &array, const int arrayLen, int i)
 {
   int* tmpi = array[i];
   while (i > 0 && *(array[PARENT(i)]) > *tmpi) {
@@ -91,7 +91,7 @@ static void updateHeap3D(int** array, const int arrayLen, int i)
 }
 
 // extract the entry with minimum distance from Priority queue
-static void extractMin3D(int** array, int const arrayLen)
+static void extractMin3D(std::vector<int*> &array, int const arrayLen)
 {
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);
@@ -896,9 +896,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   pop_heap2_3D_.resize(num_layers_ * y_range_ * x_range_);
 
   // allocate memory for priority queue
-  heap1_3D_ = new int*[y_grid_ * x_grid_ * num_layers_];
-  heap2_3D_ = new short*[y_grid_ * x_grid_ * num_layers_];
-
+  heap1_3D_.resize(y_grid_ * x_grid_ * num_layers_);
+  heap2_3D_.resize(y_grid_ * x_grid_ * num_layers_);
+  
   for (i = 0; i < y_grid_; i++) {
     for (j = 0; j < x_grid_; j++) {
       in_region_[i][j] = false;
@@ -1755,8 +1755,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   corr_edge_3D_.resize(boost::extents[0][0][0]);
   pr_3D_.resize(boost::extents[0][0][0]);
 
-  delete[] heap1_3D_;
-  delete[] heap2_3D_;
+  heap1_3D_.clear();
+  heap2_3D_.clear();
 }
 
 }  // namespace grt

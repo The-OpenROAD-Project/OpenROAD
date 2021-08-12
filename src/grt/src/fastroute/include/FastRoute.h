@@ -459,11 +459,11 @@ class FastRouteCore
   std::vector<StTree> sttrees_;  // the Steiner trees
   std::vector<StTree> sttrees_bk_;
 
-  int** heap1_3D_;
-  short** heap2_3D_;
+  std::vector<int*> heap1_3D_;
+  std::vector<short*> heap2_3D_;
 
-  float** heap2_;
-  float** heap1_;
+  std::vector<float*> heap2_;
+  std::vector<float*> heap1_;
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
