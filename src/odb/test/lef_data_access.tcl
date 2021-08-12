@@ -10,7 +10,7 @@ check "lef version string" {$tech getLefVersionStr} "5.5"
 
 check "manufacturing grid size" {$tech getManufacturingGrid} 5
 check "case sensitive" {$tech getNamesCaseSensitive} ON
-check "num routing layers" {$tech getRoutingLayerCount} 9
+check "num routing layers" {$tech getRoutingLayerCount} 10 
 check "num vias" {$tech getViaCount} 14
 check "num layers" {$tech getLayerCount} 22
 check "units" {set units [$tech getLefUnits]} 2000
