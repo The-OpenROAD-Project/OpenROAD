@@ -711,12 +711,12 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
             }
             for (i = 1; i < segHeight; i++) {
               cost_lr_[i] = cost_lr_[i - 1];
-              tmp = v_edges_[(y1 + i - 1)][x1].est_usage - v_capacity_lb_
-                    + v_edges_[(y1 + i - 1)][x1].red;
+              tmp = v_edges_[y1 + i - 1][x1].est_usage - v_capacity_lb_
+                    + v_edges_[y1 + i - 1][x1].red;
               if (tmp > 0)
                 cost_lr_[i] += tmp;
-              tmp = v_edges_[(y1 + i - 1)][x2].est_usage - v_capacity_lb_
-                    + v_edges_[(y1 + i - 1)][x2].red;
+              tmp = v_edges_[y1 + i - 1][x2].est_usage - v_capacity_lb_
+                    + v_edges_[y1 + i - 1][x2].red;
               if (tmp > 0)
                 cost_lr_[i] -= tmp;
             }
@@ -728,12 +728,12 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
             }
             for (i = 1; i < segHeight; i++) {
               cost_lr_[i] = cost_lr_[i - 1];
-              tmp = v_edges_[(y2 + i - 1)][x2].est_usage - v_capacity_lb_
-                    + v_edges_[(y2 + i - 1)][x2].red;
+              tmp = v_edges_[y2 + i - 1][x2].est_usage - v_capacity_lb_
+                    + v_edges_[y2 + i - 1][x2].red;
               if (tmp > 0)
                 cost_lr_[i] += tmp;
-              tmp = v_edges_[(y2 + i - 1)][x1].est_usage - v_capacity_lb_
-                    + v_edges_[(y2 + i - 1)][x1].red;
+              tmp = v_edges_[y2 + i - 1][x1].est_usage - v_capacity_lb_
+                    + v_edges_[y2 + i - 1][x1].red;
               if (tmp > 0)
                 cost_lr_[i] -= tmp;
             }

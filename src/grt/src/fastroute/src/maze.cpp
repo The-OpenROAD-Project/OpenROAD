@@ -1157,7 +1157,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           float tmp;
           if ((preY == curY) || (d1_[curY][curX] == 0)) {
             tmp = d1_[curY][curX]
-                  + h_cost_table_[h_edges_[curY][(curX - 1)].usage + h_edges_[curY][(curX - 1)].red
+                  + h_cost_table_[h_edges_[curY][curX - 1].usage + h_edges_[curY][curX - 1].red
                                   + L * h_edges_[curY][(curX - 1)].last_usage];
           } else {
             if (curX < regionX2 - 1) {
@@ -1172,8 +1172,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               }
             }
             tmp = d1_[curY][curX] + via
-                  + h_cost_table_[h_edges_[curY][(curX - 1)].usage + h_edges_[curY][(curX - 1)].red
-                                  + L * h_edges_[curY][(curX - 1)].last_usage];
+                  + h_cost_table_[h_edges_[curY][curX - 1].usage + h_edges_[curY][curX - 1].red
+                                  + L * h_edges_[curY][curX - 1].last_usage];
           }
           tmpX = curX - 1;  // the left neighbor
 
@@ -1212,9 +1212,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             if (curX > regionX1 + 1) {
               const int tmp_cost
                   = d1_[curY][curX - 1]
-                    + h_cost_table_[h_edges_[curY][(curX - 1)].usage
-                                    + h_edges_[curY][(curX - 1)].red
-                                    + L * h_edges_[curY][(curX - 1)].last_usage];
+                    + h_cost_table_[h_edges_[curY][curX - 1].usage
+                                    + h_edges_[curY][curX - 1].red
+                                    + L * h_edges_[curY][curX - 1].last_usage];
 
               if (tmp_cost < d1_[curY][curX] + via) {
                 hyper_h_[curY][curX] = true;
@@ -1256,8 +1256,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           if ((preX == curX) || (d1_[curY][curX] == 0)) {
             tmp = d1_[curY][curX]
-                  + v_cost_table_[v_edges_[(curY - 1)][curX].usage + v_edges_[(curY - 1)][curX].red
-                                  + L * v_edges_[(curY - 1)][curX].last_usage];
+                  + v_cost_table_[v_edges_[curY - 1][curX].usage + v_edges_[curY - 1][curX].red
+                                  + L * v_edges_[curY - 1][curX].last_usage];
           } else {
             if (curY < regionY2 - 1) {
               const int tmp_cost
@@ -1271,8 +1271,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               }
             }
             tmp = d1_[curY][curX] + via
-                  + v_cost_table_[v_edges_[(curY - 1)][curX].usage + v_edges_[(curY - 1)][curX].red
-                                  + L * v_edges_[(curY - 1)][curX].last_usage];
+                  + v_cost_table_[v_edges_[curY - 1][curX].usage + v_edges_[curY - 1][curX].red
+                                  + L * v_edges_[curY - 1][curX].last_usage];
           }
           tmpY = curY - 1;  // the bottom neighbor
           if (d1_[tmpY][curX]
@@ -1311,9 +1311,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             if (curY > regionY1 + 1) {
               const int tmp_cost
                   = d1_[curY - 1][curX]
-                    + v_cost_table_[v_edges_[(curY - 1)][curX].usage
-                                    + v_edges_[(curY - 1)][curX].red
-                                    + L * v_edges_[(curY - 1)][curX].last_usage];
+                    + v_cost_table_[v_edges_[curY - 1][curX].usage
+                                    + v_edges_[curY - 1][curX].red
+                                    + L * v_edges_[curY - 1][curX].last_usage];
 
               if (tmp_cost < d1_[curY][curX] + via) {
                 hyper_v_[curY][curX] = true;

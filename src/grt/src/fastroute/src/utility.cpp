@@ -1674,9 +1674,9 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost1 += h_edges_[smallY][m].est_usage;
                   cost2 += h_edges_[bigY][m].est_usage;
                 }
-                for (m = 0; m < (bigY - smallY); m++) {
-                  cost1 += v_edges_[smallY + m][bigX].est_usage;
-                  cost2 += v_edges_[smallY + m][smallX].est_usage;
+                for (m = smallY; m < bigY; m++) {
+                  cost1 += v_edges_[m][bigX].est_usage;
+                  cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costH[j] += std::min(cost1, cost2);
               }  // if(n3!=n2)
@@ -1704,9 +1704,9 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost1 += h_edges_[smallY][m].est_usage;
                   cost2 += h_edges_[bigY][m].est_usage;
                 }
-                for (m = 0; m < (bigY-smallY); m++) {
-                  cost1 += v_edges_[smallY + m][bigX].est_usage;
-                  cost2 += v_edges_[smallY + m][smallX].est_usage;
+                for (m = smallY; m < bigY; m++) {
+                  cost1 += v_edges_[m][bigX].est_usage;
+                  cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costH[j] += std::min(cost1, cost2);
               }  // if(n3!=n1)
@@ -1785,9 +1785,9 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost1 += h_edges_[smallY][m].est_usage;
                   cost2 += h_edges_[bigY][m].est_usage;
                 }
-                for (m = 0; m < (bigY - smallY); m++) {
-                  cost1 += v_edges_[smallY + m][bigX].est_usage;
-                  cost2 += v_edges_[smallY + m][smallX].est_usage;
+                for (m = smallY; m < bigY; m++) {
+                  cost1 += v_edges_[m][bigX].est_usage;
+                  cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costV[j] += std::min(cost1, cost2);
               }  // if(n3!=n2)
@@ -1815,9 +1815,9 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost1 += h_edges_[smallY][m].est_usage;
                   cost2 += h_edges_[bigY][m].est_usage;
                 }
-                for (m = 0; m < (bigY - smallY); m++) {
-                  cost1 += v_edges_[smallY + m][bigX].est_usage;
-                  cost2 += v_edges_[smallY + m][smallX].est_usage;
+                for (m = smallY; m < bigY; m++) {
+                  cost1 += v_edges_[m][bigX].est_usage;
+                  cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costV[j] += std::min(cost1, cost2);
               }  // if(n3!=n1)

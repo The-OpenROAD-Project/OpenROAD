@@ -162,13 +162,8 @@ void FastRouteCore::deleteComponents()
   parent_x3_.resize(boost::extents[0][0]);
   parent_y3_.resize(boost::extents[0][0]);
 
-  if (!heap1_.empty()) {
-    heap1_.clear();
-  }
-
-  if (!heap2_.empty()) {
-    heap2_.clear();
-  }
+  heap1_.clear();
+  heap2_.clear();
 
   pop_heap2_.clear();
 
@@ -364,8 +359,8 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  h_edges_.resize(boost::extents[y_grid_][(x_grid_ - 1)]);
-  v_edges_.resize(boost::extents[(y_grid_ - 1)][x_grid_]);
+  h_edges_.resize(boost::extents[y_grid_][x_grid_ - 1]);
+  v_edges_.resize(boost::extents[y_grid_ - 1][x_grid_]);
 
   init_usage();
 

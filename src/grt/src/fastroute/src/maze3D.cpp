@@ -97,7 +97,9 @@ static void extractMin3D(std::vector<int*> &array, int const arrayLen)
   heapify3D(array, arrayLen - 1, 0);
 }
 
-void FastRouteCore::setupHeap3D(int netID,
+void FastRouteCore::setupHeap3D(std::vector<int*> &heap1_3D_,
+                                std::vector<short*> &heap2_3D_,
+                                int netID,
                                 int edgeID,
                                 int* heapLen1,
                                 int* heapLen2,
@@ -866,6 +868,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHub,
                                          int layerOrientation)
 {
+  std::vector<int*> heap1_3D_;
+  std::vector<short*> heap2_3D_;
+
   int netID, enlarge, endIND;
   std::vector<bool> pop_heap2_3D_;
 
@@ -984,7 +989,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
           // setup heap1_3D_, heap2_3D_ and initialize d1_3D_[][] and d2_3D_[][]
           // for all the grids on the two subtrees
-          setupHeap3D(netID,
+          setupHeap3D(heap1_3D_,
+                      heap2_3D_,
+                      netID,
                       edgeID,
                       &heapLen1,
                       &heapLen2,
@@ -1100,7 +1107,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                   && directions_3D_[curL][curY][curX] != Direction::South) {
                 tmp = d1_3D_[curL][curY][curX] + 1;
                 tmpY = curY - 1;  // the bottom neighbor
-                if (v_edges_3D_[curL][(curY - 1)][curX].usage < v_edges_3D_[curL][(curY - 1)][curX].cap) {
+                if (v_edges_3D_[curL][curY - 1][curX].usage < v_edges_3D_[curL][curY - 1][curX].cap) {
                   if (d1_3D_[curL][tmpY][curX]
                       >= BIG_INT)  // bottom neighbor not been put into
                                    // heap1_3D_

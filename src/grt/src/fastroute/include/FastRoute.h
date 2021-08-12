@@ -213,7 +213,10 @@ class FastRouteCore
                             int ripupTHlb,
                             int ripupTHub,
                             int layerOrientation);
-  void setupHeap3D(int netID,
+  void setupHeap3D(
+                   std::vector<int*> &heap1_3D_,
+                   std::vector<short*> &heap2_3D_,
+                   int netID,
                    int edgeID,
                    int* heapLen1,
                    int* heapLen2,
@@ -433,10 +436,10 @@ class FastRouteCore
   std::vector<OrderTree> tree_order_cong_;
 
 
-  multi_array<Edge, 2> v_edges_;
-  multi_array<Edge, 2> h_edges_;
-  multi_array<Edge3D, 3> h_edges_3D_;
-  multi_array<Edge3D, 3> v_edges_3D_;
+  multi_array<Edge, 2> v_edges_;       // The way it is indexed is (Y, X)
+  multi_array<Edge, 2> h_edges_;       // The way it is indexed is (Y, X)
+  multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
+  multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Direction, 3> directions_3D_;
   multi_array<parent3D, 3> pr_3D_;
   multi_array<int, 3> corr_edge_3D_;
@@ -458,9 +461,6 @@ class FastRouteCore
 
   std::vector<StTree> sttrees_;  // the Steiner trees
   std::vector<StTree> sttrees_bk_;
-
-  std::vector<int*> heap1_3D_;
-  std::vector<short*> heap2_3D_;
 
   std::vector<float*> heap2_;
   std::vector<float*> heap1_;
