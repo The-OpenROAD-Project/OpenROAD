@@ -40,7 +40,7 @@
 #include <map>
 #include <vector>
 
-#include "RoutingTracks.h"
+#include "RoutingLayer.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -173,7 +173,7 @@ class Grid
                         const odb::Rect& tile,
                         int track_space,
                         bool first,
-                        odb::dbTechLayerDir direction);
+                        bool direction);
 
   odb::Point getMiddle();
   odb::Rect getGridArea() const;

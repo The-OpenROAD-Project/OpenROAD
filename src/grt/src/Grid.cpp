@@ -161,10 +161,10 @@ int Grid::computeTileReduce(const odb::Rect& obs,
                             const odb::Rect& tile,
                             int track_space,
                             bool first,
-                            odb::dbTechLayerDir direction)
+                            bool direction)
 {
   int reduce = -1;
-  if (direction == odb::dbTechLayerDir::VERTICAL) {
+  if (direction == RoutingLayer::VERTICAL) {
     if (obs.xMin() >= tile.xMin() && obs.xMax() <= tile.xMax()) {
       reduce = ceil(std::abs(obs.xMax() - obs.xMin()) / track_space);
     } else if (first) {
