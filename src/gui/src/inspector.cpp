@@ -288,23 +288,13 @@ void Inspector::inspect(const Selected& object)
     // For a SelectionSet a row is created with the set items
     // as children rows
     if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
-      value_item = makeItem(QString::number(sel_set->size()) + " items");
-      int index = 1;
-      for (const auto& selected : *sel_set) {
-        auto index_item = makeItem(QString::number(index++));
-        auto selected_item = makeItem(selected);
-        name_item->appendRow({index_item, selected_item});
-      }
+      value_item = value_item = makeItem(name_item, sel_set->begin(), sel_set->end());
+    } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
+      value_item = makeItem(name_item, v_list->begin(), v_list->end());
+    } else if (auto v_set = std::any_cast<std::set<std::any>>(&value)) {
+      value_item = makeItem(name_item, v_set->begin(), v_set->end());
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       value_item = makeItem(*selected);
-    } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
-      value_item = makeItem(QString::number(v_list->size()) + " items");
-      int index = 1;
-      for (const auto val : *v_list) {
-        auto index_item = makeItem(QString::number(index++));
-        auto selected_item = makeItem(convertAnyToQString(val));
-        name_item->appendRow({index_item, selected_item});
-      }
     } else {
       value_item = makeItem(convertAnyToQString(value, &editor_type));
     }
@@ -408,11 +398,29 @@ QStandardItem* Inspector::makeItem(const QString& name)
   return item;
 }
 
+QStandardItem* Inspector::makeItem(const std::any& item)
+{
+  return makeItem(convertAnyToQString(item));
+}
+
 QStandardItem* Inspector::makeItem(const Selected& selected)
 {
   auto item = makeItem(QString::fromStdString(selected.getName()));
   item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
   return item;
+}
+
+template<typename Iterator>
+QStandardItem* Inspector::makeItem(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+{
+  int index = 0;
+  for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
+    auto index_item = makeItem(QString::number(++index));
+    auto selected_item = makeItem(*use_itr);
+    name_item->appendRow({index_item, selected_item});
+  }
+
+  return makeItem(QString::number(index) + " items");
 }
 
 void Inspector::makeItemEditor(const std::string& name,

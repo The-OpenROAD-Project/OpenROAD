@@ -133,6 +133,11 @@ class Inspector : public QDockWidget
   void handleAction(QWidget* action);
   QStandardItem* makeItem(const Selected& selected);
   QStandardItem* makeItem(const QString& name);
+  QStandardItem* makeItem(const std::any& item);
+
+  template<typename Iterator>
+  QStandardItem* makeItem(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
+
   void makeItemEditor(const std::string& name,
                       QStandardItem* item,
                       const Selected& selected,
