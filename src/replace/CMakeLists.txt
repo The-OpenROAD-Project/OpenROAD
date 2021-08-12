@@ -80,7 +80,7 @@ target_link_libraries(replace
     utl
     Eigen3::Eigen
     gui
-    opendb
+    odb
     OpenSTA
     stt
     rsz

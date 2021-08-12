@@ -35,7 +35,7 @@
 #include "nesterovBase.h"
 #include "utl/Logger.h"
 
-#include <opendb/db.h>
+#include <odb/db.h>
 #include <iostream>
 
 namespace gpl {

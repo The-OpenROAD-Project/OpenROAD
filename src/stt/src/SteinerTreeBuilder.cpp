@@ -42,7 +42,7 @@
 #include <vector>
 
 #include "ord/OpenRoad.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace stt {
 

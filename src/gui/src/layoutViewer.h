@@ -44,7 +44,7 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "options.h"
 #include "search.h"
 

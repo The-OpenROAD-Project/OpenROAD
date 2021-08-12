@@ -40,7 +40,7 @@
 #include "stt/flute.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include <vector>
 
 namespace ord {

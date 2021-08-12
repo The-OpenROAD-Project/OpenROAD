@@ -48,7 +48,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace grt {

@@ -41,7 +41,7 @@
 #include <vector>
 
 #include "RoutingTracks.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace grt {
 
