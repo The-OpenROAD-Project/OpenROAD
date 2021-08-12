@@ -40,7 +40,7 @@
 
 #include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 using grt::GlobalRouter;

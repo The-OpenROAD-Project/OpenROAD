@@ -62,6 +62,6 @@ target_link_libraries(mpl2
     utl
     dbSta
     OpenSTA
-    opendb
+    odb
     gui
 )

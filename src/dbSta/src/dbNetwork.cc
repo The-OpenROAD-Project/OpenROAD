@@ -43,7 +43,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Liberty.hh"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace sta {
 

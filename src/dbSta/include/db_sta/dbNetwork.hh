@@ -37,7 +37,7 @@
 
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;

@@ -42,7 +42,7 @@
 #include <vector>
 
 #include "GRoute.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 
 namespace ord {

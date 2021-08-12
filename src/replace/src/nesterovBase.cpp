@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 #include "nesterovBase.h"
 #include "placerBase.h"

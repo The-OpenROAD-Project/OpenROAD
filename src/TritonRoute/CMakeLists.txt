@@ -133,7 +133,7 @@ target_include_directories(TritonRoute
 target_link_libraries(TritonRoute
   PUBLIC
     gui
-    opendb
+    odb
     stt
     OpenSTA
     utl

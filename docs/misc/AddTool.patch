@@ -194,7 +194,7 @@ index 00000000..3aa04be5
 +// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 +
 +#include <tcl.h>
-+#include "opendb/db.h"
++#include "odb/db.h"
 +
 +namespace tool {
 +
@@ -265,7 +265,7 @@ index 00000000..dccb8cf4
 +  PUBLIC ${TOOL_HOME}/include
 +  PRIVATE
 +  ${OPENROAD_HOME}/include
-+  ${OPENDB_HOME}/include
++  ${ODB_HOME}/include
 +  ${OPENSTA_HOME}/include
 +  )
 diff --git a/src/tool/src/MakeTool.cc b/src/tool/src/MakeTool.cc

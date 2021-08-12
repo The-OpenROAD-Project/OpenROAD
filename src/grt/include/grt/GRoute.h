@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include "opendb/db.h"
-#include "opendb/geom.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbNet;

@@ -349,14 +349,13 @@ These are all wrong:
 
 .. code-block:: cpp
 
-  #include <opendb/db.h>
-  #include <ABKCommon/uofm_alloc.h>
-  #include <OpenSTA/liberty/Liberty.hh>
-  #include <opendb/db.h>
-  #include <opendb/dbTypes.h>
-  #include <opendb/defin.h>
-  #include <opendb/defout.h>
-  #include <opendb/lefin.h>
+  #include <odb/db.h>
+  #include <sta/liberty/Liberty.hh>
+  #include <odb/db.h>
+  #include <odb/dbTypes.h>
+  #include <odb/defin.h>
+  #include <odb/defout.h>
+  #include <odb/lefin.h>
 
 
 
@@ -372,13 +371,13 @@ needs.
 
   // Types.hpp
   #include <OpenSTA/liberty/Liberty.hh>
-  #include <opendb/db.h>
-  #include <opendb/dbTypes.h>
+  #include <odb/db.h>
+  #include <odb/dbTypes.h>
   // It should be obvious that every source file is not reading def.
-  #include <opendb/defin.h>
+  #include <odb/defin.h>
   // or writing it.
-  #include <opendb/defout.h>
-  #include <opendb/lefin.h>
+  #include <odb/defout.h>
+  #include <odb/lefin.h>
   #include "db_sta/dbNetwork.hh"
   #include "db_sta/dbSta.hh"
 

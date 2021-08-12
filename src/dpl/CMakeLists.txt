@@ -63,7 +63,7 @@ target_include_directories(dpl
 
 target_link_libraries(dpl
   PRIVATE
-    opendb
+    odb
     OpenSTA
     utl
 )
@@ -76,6 +76,6 @@ messages(
 
 add_custom_target(opendp_tags etags -o TAGS
   ${OPENDP_SRC}
-  ${OPENDB_HOME}/include/dpl/*.h
+  ${OPENDP_HOME}/include/dpl/*.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
