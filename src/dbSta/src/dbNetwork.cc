@@ -952,7 +952,6 @@ dbNetwork::makeTopCell()
     Port *port = makePort(top_cell_, port_name);
     PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     setDirection(port, dir);
-    
   }
   groupBusPorts(top_cell_,
                 [=](const char *port_name) { return portMsbFirst(port_name); } );

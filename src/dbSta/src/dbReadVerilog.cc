@@ -310,6 +310,7 @@ Verilog2db::makeDbNets(const Instance *inst)
     const char *net_name = network_->pathName(net);
     if (is_top || !hasTerminals(net)) {
       dbNet *db_net = block_->findNet(net_name);
+      // Net may already exist from makeDbPins().
       if (db_net == nullptr)
         db_net = dbNet::create(block_, net_name);
 
@@ -329,18 +330,8 @@ Verilog2db::makeDbNets(const Instance *inst)
       sort(net_pins, PinPathNameLess(network_));
 
       for (Pin *pin : net_pins) {
-#if 0
-	if (network_->isTopLevelPort(pin)) {
-	  const char *port_name = network_->portName(pin);
-	  if (block_->findBTerm(port_name) == nullptr) {
-	    dbBTerm *bterm = dbBTerm::create(db_net, port_name);
-	    dbIoType io_type = staToDb(network_->direction(pin));
-	    bterm->setIoType(io_type);
-	  }
-	}
-	else 
-#endif
-if (network_->isLeaf(pin)) {
+        // Note bterms are made in makeDbPins().
+        if (network_->isLeaf(pin)) {
 	  const char *port_name = network_->portName(pin);
 	  Instance *inst = network_->instance(pin);
 	  const char *inst_name = network_->pathName(inst);
