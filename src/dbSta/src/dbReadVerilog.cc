@@ -253,7 +253,7 @@ Verilog2db::makeDbPins()
   // Use a property to annotate the bus names as msb or lsb first for writing verilog.
   CellPortIterator *bus_iter = network_->portIterator(top_cell);
   while (bus_iter->hasNext()) {
-    Port *port = port_iter->next();
+    Port *port = bus_iter->next();
     if (network_->isBus(port)) {
       const char *port_name = network_->name(port);
       int from = network_->fromIndex(port);
