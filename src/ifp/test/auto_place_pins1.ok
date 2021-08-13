@@ -4,6 +4,4 @@
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO IFP-0001] Added 570 rows of 4209 sites.
-Differences found at line 588.
-        + FIXED ( 200260 201600 ) N ;
-        + FIXED ( 1799680 732460 ) N ;
+No differences found.

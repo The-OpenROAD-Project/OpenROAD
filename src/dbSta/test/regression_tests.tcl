@@ -22,6 +22,7 @@ record_tests {
   read_verilog5
   read_verilog6
   read_verilog7
+  read_verilog8
 
   write_verilog1
   write_verilog2

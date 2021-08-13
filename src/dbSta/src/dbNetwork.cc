@@ -944,6 +944,11 @@ dbNetwork::readDbNetlistAfter()
 void
 dbNetwork::makeTopCell()
 {
+  if (top_cell_) {
+    // Reading DEF or linking when a network already exists; remove previous top cell.
+    Library *top_lib = library(top_cell_);
+    deleteLibrary(top_lib);
+  }
   const char *design_name = block_->getConstName();
   Library *top_lib = makeLibrary(design_name, nullptr);
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
@@ -975,6 +980,7 @@ dbNetwork::portMsbFirst(const char *port_name)
 void
 dbNetwork::findConstantNets()
 {
+  clearConstantNets();
   for (dbNet *dnet : block_->getNets()) {
     if (dnet->getSigType() == dbSigType::GROUND)
       addConstantNet(dbToSta(dnet), LogicValue::zero);

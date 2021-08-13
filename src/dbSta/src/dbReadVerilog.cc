@@ -160,7 +160,7 @@ public:
 protected:
   void makeDbInsts();
   dbIoType staToDb(PortDirection *dir);
-  void makeDbPins();
+  void recordBusPortsOrder();
   void makeDbNets(const Instance *inst);
   bool hasTerminals(Net *net) const;
   dbMaster *getMaster(Cell *cell);
@@ -208,6 +208,7 @@ Verilog2db::makeBlock()
     chip = dbChip::create(db_);
   block_ = chip->getBlock();
   if (block_) {
+    // Delete existing db network objects.
     auto insts = block_->getInsts();
     for (auto iter = insts.begin(); iter != insts.end(); ) {
       iter = dbInst::destroy(iter);
@@ -215,6 +216,10 @@ Verilog2db::makeBlock()
     auto nets = block_->getNets();
     for (auto iter = nets.begin(); iter != nets.end(); ) {
       iter = dbNet::destroy(iter);
+    }
+    auto bterms = block_->getBTerms();
+    for (auto iter = bterms.begin(); iter != bterms.end(); ) {
+      iter = dbBTerm::destroy(iter);
     }
   }
   else {
@@ -229,28 +234,17 @@ Verilog2db::makeBlock()
 void
 Verilog2db::makeDbNetlist()
 {
-  makeDbPins();
+  recordBusPortsOrder();
   makeDbInsts();
   makeDbNets(network_->topInstance());
 }
 
 void
-Verilog2db::makeDbPins()
+Verilog2db::recordBusPortsOrder()
 {
-  Cell *top_cell = network_->cell(network_->topInstance());
-  CellPortBitIterator *port_iter = network_->portBitIterator(top_cell);
-  while (port_iter->hasNext()) {
-    Port *port = port_iter->next();
-    const char *port_name = network_->name(port);
-    dbNet *db_net = dbNet::create(block_, port_name);
-    dbBTerm *bterm = dbBTerm::create(db_net, port_name);
-    dbIoType io_type = staToDb(network_->direction(port));
-    bterm->setIoType(io_type);
-  }
-  delete port_iter;
-
   // OpenDB does not have any concept of bus ports.
   // Use a property to annotate the bus names as msb or lsb first for writing verilog.
+  Cell *top_cell = network_->cell(network_->topInstance());
   CellPortIterator *bus_iter = network_->portIterator(top_cell);
   while (bus_iter->hasNext()) {
     Port *port = bus_iter->next();
@@ -309,10 +303,7 @@ Verilog2db::makeDbNets(const Instance *inst)
     Net *net = net_iter->next();
     const char *net_name = network_->pathName(net);
     if (is_top || !hasTerminals(net)) {
-      dbNet *db_net = block_->findNet(net_name);
-      // Net may already exist from makeDbPins().
-      if (db_net == nullptr)
-        db_net = dbNet::create(block_, net_name);
+      dbNet *db_net = dbNet::create(block_, net_name);
 
       if (network_->isPower(net))
         db_net->setSigType(odb::dbSigType::POWER);
@@ -330,8 +321,15 @@ Verilog2db::makeDbNets(const Instance *inst)
       sort(net_pins, PinPathNameLess(network_));
 
       for (Pin *pin : net_pins) {
-        // Note bterms are made in makeDbPins().
-        if (network_->isLeaf(pin)) {
+	if (network_->isTopLevelPort(pin)) {
+	  const char *port_name = network_->portName(pin);
+	  if (block_->findBTerm(port_name) == nullptr) {
+	    dbBTerm *bterm = dbBTerm::create(db_net, port_name);
+	    dbIoType io_type = staToDb(network_->direction(pin));
+	    bterm->setIoType(io_type);
+	  }
+	}
+	else if (network_->isLeaf(pin)) {
 	  const char *port_name = network_->portName(pin);
 	  Instance *inst = network_->instance(pin);
 	  const char *inst_name = network_->pathName(inst);
