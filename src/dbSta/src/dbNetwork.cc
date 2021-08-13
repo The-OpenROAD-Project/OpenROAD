@@ -911,7 +911,7 @@ dbNetwork::makeCell(Library *library,
 		      port_name);
     }
   }
-  // Assume big endian busses because LEF has no clue about busses.
+  // Assume msb first busses because LEF has no clue about busses.
   groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
@@ -955,15 +955,15 @@ dbNetwork::makeTopCell()
     
   }
   groupBusPorts(top_cell_,
-                [=](const char *port_name) { return portIsBigEndian(port_name); } );
+                [=](const char *port_name) { return portMsbFirst(port_name); } );
 }
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
-// is big endian.
+// is msb first or lsb first.
 bool
-dbNetwork::portIsBigEndian(const char *port_name)
+dbNetwork::portMsbFirst(const char *port_name)
 {
-  string key = "bus_big_endian ";
+  string key = "bus_msb_first ";
   key += port_name;
   dbBoolProperty *property = odb::dbBoolProperty::find(block_, key.c_str());
   if (property)

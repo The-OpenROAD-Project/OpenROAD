@@ -250,7 +250,7 @@ Verilog2db::makeDbPins()
   delete port_iter;
 
   // OpenDB does not have any concept of bus ports.
-  // Use a property to annotate the bus names endian-ness for writing verilog.
+  // Use a property to annotate the bus names as msb or lsb first for writing verilog.
   CellPortIterator *bus_iter = network_->portIterator(top_cell);
   while (bus_iter->hasNext()) {
     Port *port = port_iter->next();
@@ -258,7 +258,7 @@ Verilog2db::makeDbPins()
       const char *port_name = network_->name(port);
       int from = network_->fromIndex(port);
       int to = network_->toIndex(port);
-      string key = "bus_big_endian ";
+      string key = "bus_msb_first ";
       key += port_name;
       odb::dbBoolProperty::create(block_, key.c_str(), from > to);
     }
