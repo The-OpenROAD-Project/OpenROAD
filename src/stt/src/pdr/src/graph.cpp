@@ -2223,8 +2223,6 @@ void Graph::run_PD_brute_force(float alpha)
   heap_insert(root_idx_, 0);
   nodes[root_idx_].parent = root_idx_;
 
-  // update shortest path
-  updateMinDist();
   /* n points to be extracted from heap */
   for (int k = 0; k < num_terminals; k++) {
     int i = heap_delete_min();
@@ -2707,13 +2705,13 @@ void Graph::constructSteiner()
   BuildDAG();
 }
 
-// Despite the name this does not actually "Do" much of anything, and
-// certainly nothing in the referenced "HoVW" paper. It is just setup
-// for similarly poorly named "fix_max_dc" function. -cherry 08/13/2021
+// Despite the name this does not appear to have much of anything in
+// common with the referenced "HoVW" paper:
+// "New Algorithms for the Rectilinear Steiner Tree Problem", 
+// JAN-MING HO, GOPALAKRISHNAN VIJAYAN, AND C. K. WONG
 void Graph::doSteiner_HoVW()
 {
   // Tree preparation
-  updateMinDist();
   for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
     int child = j;
     int par = nodes[j].parent;
