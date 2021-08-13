@@ -182,8 +182,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
 
       dbTechLayerType type = techLayer->getType();
 
-      if (type.getValue() != dbTechLayerType::ROUTING ||
-          techLayer->getRoutingLevel() == 0)
+      if (techLayer->getRoutingLevel() == 0)
         continue;
 
       _idTable[layerNum] = techLayer->getRoutingLevel();
@@ -482,8 +481,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
 
         dbTechLayerType type = techLayer->getType();
 
-        if (type.getValue() != dbTechLayerType::ROUTING ||
-            techLayer->getRoutingLevel() == 0)
+        if (techLayer->getRoutingLevel() == 0)
           continue;
 
         _idTable[layerNum] = techLayer->getRoutingLevel();
@@ -730,8 +728,7 @@ int extMeasure::readAB(extMain* extMain, const char* filename,
       continue;
     }
     dbTechLayerType type = techLayer->getType();
-    if (type.getValue() != dbTechLayerType::ROUTING ||
-        techLayer->getRoutingLevel() == 0)
+    if (techLayer->getRoutingLevel() == 0)
       continue;
 
     char netName[256];
@@ -899,8 +896,7 @@ void extMeasure::getMinWidth(dbTech* tech) {
   dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
-    if (layer->getType() != dbTechLayerType::ROUTING ||
-        layer->getRoutingLevel() == 0)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     uint level = layer->getRoutingLevel();

@@ -567,8 +567,7 @@ uint extMain::getExtLayerCnt(dbTech* tech) {
     dbTechLayer* layer = *itr;
     dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING ||
-        layer->getRoutingLevel() == 0)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     n++;
@@ -608,8 +607,7 @@ uint extMain::addExtModel(dbTech* tech) {
     dbTechLayer* layer = *itr;
     dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING ||
-        layer->getRoutingLevel() == 0)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     n = layer->getRoutingLevel();
@@ -662,8 +660,7 @@ uint extMain::getResCapTable(bool lefRC) {
     dbTechLayer* layer = *itr;
     dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING ||
-        layer->getRoutingLevel() == 0)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     n = layer->getRoutingLevel();
@@ -744,8 +741,7 @@ bool extMain::checkLayerResistance() {
     dbTechLayer* layer = *itr;
     dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING ||
-        layer->getRoutingLevel() == 0)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     double res = layer->getResistance();  // OHMS per square
