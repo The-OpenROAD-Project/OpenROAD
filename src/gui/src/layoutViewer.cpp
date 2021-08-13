@@ -1272,9 +1272,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    const bool is_cut = layer->getType() == dbTechLayerType::CUT;
-    if (is_cut && layer->getWidth() < 1 * pixel) {
-      continue;
+    if (layer->getType() == dbTechLayerType::CUT) {
+      const int cut_width = layer->getWidth();
+      // Don't skip if width is not set, otherwise this layer cannot be drawn
+      if (cut_width != 0 && cut_width < 1 * pixel) {
+        continue;
+      }
     }
 
     drawInstanceShapes(layer, painter, insts);
