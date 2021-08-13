@@ -1272,12 +1272,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    if (layer->getType() == dbTechLayerType::CUT) {
-      const int cut_width = layer->getWidth();
-      // Don't skip if width is not set, otherwise this layer cannot be drawn
-      if (cut_width != 0 && cut_width < 1 * pixel) {
-        continue;
-      }
+    if (layer->getType() == dbTechLayerType::CUT && cut_maximum_size_[layer] < 1 * pixel) {
+      continue;
     }
 
     drawInstanceShapes(layer, painter, insts);
@@ -1500,6 +1496,10 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   if (!search_init_) {
     search_.init(block);
     search_init_ = true;
+  }
+
+  if (cut_maximum_size_.empty()) {
+    generateCutLayerMaximumSizes();
   }
 
   // Coordinate system setup (see file level comments)
@@ -1852,6 +1852,35 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   // ensure changes are processed before the next wheel event to prevent zoomIn and Out
   // from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+void LayoutViewer::generateCutLayerMaximumSizes()
+{
+  if (db_ == nullptr) {
+    return;
+  }
+
+  dbTech* tech = db_->getTech();
+  if (tech == nullptr) {
+    return;
+  }
+
+  for (auto layer : tech->getLayers()) {
+    if (layer->getType() == dbTechLayerType::CUT) {
+      int width = layer->getWidth();
+      if (width == 0) {
+        // width is not set, so looking through all vias to find max size
+        for (auto via : tech->getVias()) {
+          for (auto box : via->getBoxes()) {
+            if (box->getTechLayer() == layer) {
+              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
+            }
+          }
+        }
+      }
+      cut_maximum_size_[layer] = width;
+    }
+  }
 }
 
 void LayoutViewer::inDbNetDestroy(dbNet* net)

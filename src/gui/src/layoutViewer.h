@@ -250,6 +250,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   int minimumViewableResolution();
 
+  void generateCutLayerMaximumSizes();
+
   void addMenuAndActions();
   void updateShapes();
 
@@ -279,6 +281,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 
   QPoint centering_shift_;
+
+  std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 
