@@ -310,7 +310,7 @@ PartitionMgr::buildPartitionedInstance(
       }
     }
   }
-  network->groupBusPorts(cell);
+  network->groupBusPorts(cell, [](const char*) { return true; });
 
   // build instance
   std::string instname = name;
