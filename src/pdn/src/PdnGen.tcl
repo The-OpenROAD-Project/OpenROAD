@@ -357,8 +357,6 @@ variable pitches
 variable loffset
 variable boffset
 variable site
-variable site_width
-variable site_name
 variable row_height
 variable metal_layers {}
 variable blockages {}
@@ -470,6 +468,9 @@ proc check_rails {rails_spec} {
     }
     if {[dict exists $rails_spec $layer_name spacing]} {
       check_layer_spacing $layer_name [dict get $rails_spec $layer_name spacing]
+    }
+    if {![dict exists $rails_spec $layer_name pitch]} {
+      dict set rails_spec $layer_name pitch [ord::dbu_to_microns [expr [get_row_height] * 2]]
     }
   }
   return $rails_spec
@@ -1215,7 +1216,7 @@ proc verify_grid {grid} {
   }
  
   if {[dict exists $grid rails]} {
-    check_rails [dict get $grid rails]
+    dict set grid rails [check_rails [dict get $grid rails]]
   }
 
   if {[dict exists $grid straps]} {
@@ -1414,6 +1415,10 @@ proc get_dir {layer_name} {
 
   if {[regexp {.*_PIN_(hor|ver)} $layer_name - dir]} {
     return $dir
+  }
+
+  if {[is_rails_layer $layer_name]} {
+    return "hor"
   }
 
   if {![dict exists $layers $layer_name direction]} {
@@ -2967,21 +2972,17 @@ proc get_grid_channel_layers {} {
   variable grid_data
 
   set channel_layers {}
+  if {[dict exists $grid_data rails]} {
+    lappend channel_layers [lindex [dict keys [dict get $grid_data rails]] end]
+  }
   foreach layer_name [dict keys [dict get $grid_data straps]] {
-    if {[dict exists $grid_data straps $layer_name channel_spacing]} {
-      lappend channel_layers $layer_name
-    } elseif {[dict exists $grid_data straps $layer_name] && [dict exists $grid_data template names]} {
-      set template_name [lindex [dict get $grid_data template names] 0]
-      if {[dict exists $grid_data straps $layer_name $template_name channel_spacing]} {
-        lappend channel_layers $layer_name
-      }
-    }
+    lappend channel_layers $layer_name
   }
 
   return $channel_layers
 }
 
-proc get_grid_channel_spacing {layer_name} {
+proc get_grid_channel_spacing {layer_name channel_height} {
   variable grid_data
   variable def_units
 
@@ -2992,6 +2993,51 @@ proc get_grid_channel_spacing {layer_name} {
     if {[dict exists $grid_data straps $layer_name $template_name channel_spacing]} {
       return [expr round([dict get $grid_data straps $layer_name $template_name channel_spacing]]
     }
+  } else {
+    set layer [[ord::get_db_tech] findLayer $layer_name]
+    if {$layer == "NULL"}  {
+      utl::error PDN 168 "Layer $layer_name does not exist"
+    }
+    set layer_width [get_grid_wire_width $layer_name]
+    if {[$layer hasTwoWidthsSpacingRules]} {
+      set num_widths [$layer getTwoWidthsSpacingTableNumWidths]
+      set current_width 0
+      set prl_rule -1
+      for {set rule 0} {$rule < $num_widths} {incr rule} {
+        set width [$layer getTwoWidthsSpacingTableWidth $rule]
+        if {$width == $current_width && $prl_rule != -1} {
+          continue
+        } else {
+          set current_width $width
+          if {[$layer getTwoWidthsSpacingTableHasPRL $rule] == 0} {
+            set non_prl_rule $rule
+            set prl_rule -1
+          } else {
+            if {$channel_height > [$layer getTwoWidthsSpacingTablePRL $rule]} {
+              set prl_rule $rule
+            }
+          }
+        }
+        if {$layer_width < [$layer getTwoWidthsSpacingTableWidth $rule]} {
+          if {$prl_rule == 0} {
+            set use_rule $non_prl_rule
+          } else {
+            set use_rule $prl_rule
+          }
+          break
+        }
+      }
+
+      set spacing [$layer getTwoWidthsSpacingTableEntry $use_rule $use_rule]
+      # debug "Two widths spacing: layer: $layer_name, rule: $use_rule, spacing: $spacing"
+    } elseif {[$layer hasV55SpacingRules]} {
+      utl::warn PDN 173 "V55 spacing rule for layer $layer_name detected, using normal spacing rule instead"
+      set spacing [$layer getSpacing]
+    } else {
+      set spacing [$layer getSpacing]
+    }
+    # Can't store value, since it depends on channel height
+    return $spacing
   }
 
   utl::error "PDN" 52 "Unable to get channel_spacing setting for layer $layer_name."
@@ -4491,6 +4537,13 @@ proc get_default_halo {} {
   return [lmap x $default_halo {ord::microns_to_dbu $x}]
 }
 
+proc get_row_height {} {
+  set first_row [lindex [[ord::get_db_block] getRows] 0]
+  set row_site [$first_row getSite]
+
+  return [$row_site getHeight]
+}
+
 proc init {args} {
   variable db
   variable block
@@ -4503,8 +4556,6 @@ proc init {args} {
   variable stripe_locs
   variable site
   variable row_height
-  variable site_width
-  variable site_name
   variable metal_layers
   variable def_units
   variable stripes_start_with
@@ -4569,16 +4620,7 @@ proc init {args} {
 
   # Sourcing user inputs file
   #
-  set sites {}
-  foreach lib $libs {
-    set sites [concat $sites [$lib getSites]]
-  }
-  set site [lindex $sites 0]
-
-  set site_name [$site getName]
-  set site_width [$site getWidth]
-
-  set row_height [$site getHeight]
+  set row_height [get_row_height]
 
   ##### Get information from BEOL LEF
   utl::info "PDN" 9 "Reading technology data."
@@ -5321,6 +5363,7 @@ proc init_metal_layers {} {
       set layer_name [$layer getName]
       lappend metal_layers $layer_name
 
+      # debug "Direction ($layer_name): [$layer getDirection]"
       if {[$layer getDirection] == "HORIZONTAL"} {
         dict set layers $layer_name direction "hor"
       } else {
@@ -5580,101 +5623,155 @@ proc round_to_routing_grid {layer_name location} {
   return [lindex $grid_points $pos]
 }
 
-proc identify_channels {layer_name} {
+proc identify_channels {lower_layer_name upper_layer_name tag} {
   variable block
-  set pitch_check [expr 1.1 * [get_grid_wire_pitch $layer_name]]
+  variable stripe_locs
 
-  foreach row [$block getRows] {
-    set box [$row getBBox]
-    set xMin [$box xMin]
-    set xMax [$box xMax]
-    set yMin [$box yMin]
-    set yMax [$box yMax]
-
-    if {[expr ($xMax - $xMin) < $pitch_check]} {
-      lappend channel_rows [odb::newSetFromRect $xMin $yMin $xMax $yMax]
-    }
+  set upper_pitch_check [expr round(1.1 * [get_grid_wire_pitch $upper_layer_name])]
+  set lower_pitch_check [expr round(1.1 * [get_grid_wire_pitch $lower_layer_name])]
+  # debug "stripes $lower_layer_name, tag: $tag, $stripe_locs($lower_layer_name,$tag)"
+  # debug "Direction (lower-$lower_layer_name): [get_dir $lower_layer_name] (upper-$upper_layer_name): [get_dir $upper_layer_name]"
+  # debug "Pitch check (lower): [ord::dbu_to_microns $lower_pitch_check], (upper): [ord::dbu_to_microns $upper_pitch_check]"
+  if {[get_dir $lower_layer_name] ==  "hor"} {
+    set channel_wires [odb::subtractSet $stripe_locs($lower_layer_name,$tag) [odb::bloatSet [odb::shrinkSet $stripe_locs($lower_layer_name,$tag) $upper_pitch_check 0] $upper_pitch_check 0]]
+    set channels [odb::shrinkSet [odb::bloatSet $channel_wires 0 $lower_pitch_check] 0 $lower_pitch_check]
+    # debug "Channel wires: [llength [odb::getRectangles $channel_wires]]"
+    # debug "Channels: [llength [odb::getRectangles $channels]]"
+  } else {
+    set channel_wires [odb::subtractSet $stripe_locs($lower_layer_name,$tag) [odb::bloatSet [odb::shrinkSet $stripe_locs($lower_layer_name,$tag) 0 $upper_pitch_check] 0 $upper_pitch_check]]
+    set channels [odb::shrinkSet [odb::bloatSet $channel_wires $lower_pitch_check 0] $lower_pitch_check 0]
   }
-  set channels [odb::orSets $channel_rows]
-  # debug "Number of rows in channels found : [llength $channel_rows]"
+
+  foreach rect [odb::getRectangles $channels] {
+    # debug "([ord::dbu_to_microns [$rect xMin]] [ord::dbu_to_microns [$rect yMin]]) - ([ord::dbu_to_microns [$rect xMax]] [ord::dbu_to_microns [$rect yMax]])"
+  }
   # debug "Number of channels [llength [::odb::getPolygons $channels]]"
 
   return $channels
 }
 
-proc repair_channel {channel layer_name} {
-  set points [::odb::getPoints $channel]
-  set channel_spacing [get_grid_channel_spacing $layer_name]
+
+proc repair_channel {channel layer_name tag min_size} {
+  variable stripe_locs
+
+  if {[get_dir $layer_name] == "hor"} {
+    set channel_height [$channel dx]
+  } else {
+    set channel_height [$channel dy]
+  }
+  set channel_spacing [get_grid_channel_spacing $layer_name $channel_height]
   set width [get_grid_wire_width $layer_name]
 
-  set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
-  set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
-  set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
-  set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+  set xMin [$channel xMin]
+  set xMax [$channel xMax]
+  set yMin [$channel yMin]
+  set yMax [$channel yMax]
 
-  set vdd_routing_grid [round_to_routing_grid $layer_name [expr ($xMax + $xMin - $channel_spacing) / 2]]
-  set vss_routing_grid [expr $vdd_routing_grid + $width + $channel_spacing]
-
-  if {([expr $vdd_routing_grid - $width / 2] < $xMin) || ([expr $vss_routing_grid + $width / 2] > $xMax)} {
-    variable def_units
-
-    utl::warn "PDN" 47 "Channel ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) too narrow. Channel on layer $layer_name must be at least [expr (2.0 * $width + $channel_spacing) / $def_units] wide."
+  if {$tag == "POWER"} {
+    set other_tag "GROUND"
+  } else {
+    set other_tag "POWER"
   }
 
-  set vdd_stripe [odb::newSetFromRect [expr $vdd_routing_grid - $width / 2] $yMin [expr $vdd_routing_grid + $width / 2] $yMax]
-  set vdd_name [get_voltage_domain_power [get_voltage_domain [expr $vdd_routing_grid - $width / 2] $yMin [expr $vdd_routing_grid + $width / 2] $yMax]]
-  set vss_stripe [odb::newSetFromRect [expr $vss_routing_grid - $width / 2] $yMin [expr $vss_routing_grid + $width / 2] $yMax]
-  set vss_name [get_voltage_domain_ground [get_voltage_domain [expr $vss_routing_grid - $width / 2] $yMin [expr $vss_routing_grid + $width / 2] $yMax]]
+  if {[channel_has_pg_strap $channel $layer_name $other_tag]} {
+    set other_strap [lindex [odb::getRectangles [odb::andSet [odb::newSetFromRect $xMin $yMin $xMax $yMax] $stripe_locs($layer_name,$other_tag)]] 0]
 
-  add_stripe $layer_name "POWER_$vdd_name"  $vdd_stripe
-  add_stripe $layer_name "GROUND_$vss_name" $vss_stripe
+    if {[get_dir $layer_name] == "hor"} {
+      if {$xMax - $xMin < $min_size} {
+        set center [expr ($xMax + $xMin) / 2]
+        set xMin [expr $center - $min_size / 2]
+        set xMax [expr $center + $min_size / 2]
+      }
+      if {[$other_strap yMin] - $channel_spacing - $width > $yMin} {
+        # debug "Stripe below $other_strap"
+        set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMin] - $channel_spacing - $width] $xMax [expr [$other_strap yMin] - $channel_spacing]]
+      } elseif {[$other_strap yMax] + $channel_spacing + $width < $yMax} {
+        # debug "Stripe above $other_strap"
+        set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMax] + $channel_spacing] $xMax [expr [$other_strap yMax] + $channel_spacing + $width]]
+      } else {
+        utl::error PDN 169 "Cannot fit additional $tag horizontal strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
+      }
+    } else {
+      if {$yMax - $yMin < $min_size} {
+        set center [expr ($yMax + $yMin) / 2]
+        set yMin [expr $center - $min_size / 2]
+        set yMax [expr $center + $min_size / 2]
+      }
+      if {[$other_strap xMin] - $channel_spacing - $width > $xMin} {
+        # debug "Stripe left of $other_strap on layer $layer_name, spacing: $channel_spacing, width $width, strap_edge: [$other_strap xMin]"
+        set stripe [odb::newSetFromRect [expr [$other_strap xMin] - $channel_spacing - $width] $yMin [expr [$other_strap xMin] - $channel_spacing] $yMax]
+      } elseif {[$other_strap xMax] + $channel_spacing + $width < $xMax} {
+        # debug "Stripe right of $other_strap"
+        set stripe [odb::newSetFromRect [expr [$other_strap xMax] + $channel_spacing] $yMin [expr [$other_strap xMax] + $channel_spacing + $width] $yMax]
+      } else {
+        utl::error PDN 170 "Cannot fit additional $tag vertical strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
+      }
+    }
+  } else {
+    if {[get_dir $layer_name] == "hor"} {
+      set routing_grid [round_to_routing_grid $layer_name [expr ($yMax + $yMin - $channel_spacing) / 2]]
+      if {([expr $routing_grid - $width / 2] < $yMin) || ([expr $routing_grid + $width / 2] > $yMax)} {
+        utl::warn "PDN" 171 "Channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin] [ord::dbu_to_microns $xMax] [ord::dbu_to_microns $yMax]) too narrow. Channel on layer $layer_name must be at least [ord::dbu_to_microns [expr round(2.0 * $width + $channel_spacing)]] wide."
+      }
+
+      set stripe [odb::newSetFromRect $xMin [expr $routing_grid - $width / 2] $xMax [expr $routing_grid + $width / 2]]
+    } else {
+      set routing_grid [round_to_routing_grid $layer_name [expr ($xMax + $xMin - $channel_spacing) / 2]]
+
+      if {([expr $routing_grid - $width / 2] < $xMin) || ([expr $routing_grid + $width / 2] > $xMax)} {
+        utl::warn "PDN" 172 "Channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin] [ord::dbu_to_microns $xMax] [ord::dbu_to_microns $yMax]) too narrow. Channel on layer $layer_name must be at least [ord::dbu_to_microns [expr round(2.0 * $width + $channel_spacing)]] wide."
+      }
+
+      set stripe [odb::newSetFromRect [expr $routing_grid - $width / 2] $yMin [expr $routing_grid + $width / 2] $yMax]
+    }
+  }
+
+  add_stripe $layer_name $tag $stripe
 }
 
-proc channel_has_pg_straps {channel layer_name}  {
+proc channel_has_pg_strap {channel layer_name tag}  {
   variable stripe_locs
+  # debug "start, channel: $channel, layer: $layer_name"
+  # debug "       ([ord::dbu_to_microns [$channel xMin]] [ord::dbu_to_microns [$channel yMin]]) - ([ord::dbu_to_microns [$channel xMax]] [ord::dbu_to_microns [$channel yMax]])"
 
   set power_strap 0
   set ground_strap 0
-  set check_set [odb::andSet $stripe_locs($layer_name,"POWER") $channel]
+
+  set channel_set [odb::newSetFromRect [$channel xMin] [$channel yMin] [$channel xMax] [$channel yMax]]
+  set check_set [odb::andSet $stripe_locs($layer_name,$tag) $channel_set]
+
   if {[llength [odb::getPolygons $check_set]] > 0} {
-    set power_strap 1
-  }
-  set check_set [odb::andSet $stripe_locs($layer_name,"GROUND") $channel]
-  if {[llength [odb::getPolygons $check_set]] > 0} {
-    set ground_strap 1
-  }
-  if {$power_strap && $ground_strap} {
+    # debug "end: channel does not need repair"
     return 1
   }
 
-  # If there is a single strap in the channel, then remove it - the repair will add power and ground
-  if {$power_strap && !$ground_strap} {
-    set $stripe_locs($layer_name,"POWER") [odb::subtractSet $stripe_locs($layer_name,"POWER") $channel]
-  }
-
-  if {!$power_strap && $ground_strap} {
-    set $stripe_locs($layer_name,"GROUND") [odb::subtractSet $stripe_locs($layer_name,"GROUND") $channel]
-  }
-
+  # debug "end: channel needs repair"
   return 0
 }
 
 proc process_channels {} {
-  foreach layer_name [get_grid_channel_layers] {
-    set channels [identify_channels $layer_name]
-    foreach channel [::odb::getPolygons $channels] {
-      set points [::odb::getPoints $channel]
-      if {[llength $points] != 4} {
-        utl::warn "PDN" 46 "Non-rectangular channel area."
-        continue
+  set layers [get_grid_channel_layers]
+  set lower_layers [lrange $layers 0 end-1]
+  set upper_layers [lrange $layers 1 end]
+  foreach lower_layer_name $lower_layers upper_layer_name $upper_layers {
+    foreach tag {POWER GROUND} {
+      set channels [identify_channels $lower_layer_name $upper_layer_name $tag]
+      # debug "Tag: $tag, Channels found: [llength [odb::getPolygons $channels]]"
+      foreach channel [::odb::getRectangles $channels] {
+        if {![channel_has_pg_strap $channel $upper_layer_name $tag]} {
+          set next_upper_layer_idx [expr [lsearch -exact $layers $upper_layer_name] + 1]
+          if {$next_upper_layer_idx < [llength $layers]} {
+            set next_upper_layer [lindex $layers $next_upper_layer_idx]
+            set min_size [expr [get_grid_wire_pitch $next_upper_layer] + [get_grid_wire_width $next_upper_layer]]
+          } else {
+            set min_size 0
+          }
+          repair_channel $channel $upper_layer_name $tag $min_size
+        }
       }
-
-      if {![channel_has_pg_straps $channel $layer_name]} {
-        repair_channel $channel $layer_name
-      }
+      merge_stripes
     }
   }
-  merge_stripes
 }
 
 proc get_stdcell_plus_area {} {
@@ -6308,7 +6405,7 @@ proc plan_grid {} {
   }
 
   add_grid
-  # process_channels
+  process_channels
 
   foreach pwr_net [dict get $design_data power_nets] {
     generate_grid_vias "POWER" $pwr_net
