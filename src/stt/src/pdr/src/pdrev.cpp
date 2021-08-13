@@ -121,7 +121,10 @@ void PdRev::runPD(float alpha)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
-  graph_->doSteiner_HoVW();
+  // The following slightly improve wire length but the cost is the use
+  // of absolutely horrid unreliable code.
+  //graph_->doSteiner_HoVW();
+  //graph_->fix_max_dc();
 }
 
 void PdRev::runPDII(float alpha)

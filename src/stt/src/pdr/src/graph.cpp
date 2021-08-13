@@ -2707,6 +2707,9 @@ void Graph::constructSteiner()
   BuildDAG();
 }
 
+// Despite the name this does not actually "Do" much of anything, and
+// certainly nothing in the referenced "HoVW" paper. It is just setup
+// for similarly poorly named "fix_max_dc" function. -cherry 08/13/2021
 void Graph::doSteiner_HoVW()
 {
   // Tree preparation
