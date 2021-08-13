@@ -164,6 +164,9 @@ proc tapcell { args } {
       set endcap_prefix $keys(-endcap_prefix)
   }
 
+  tap::set_tap_prefix $tap_prefix
+  tap::set_endcap_prefix $endcap_prefix
+  
   set add_boundary_cell 0
   if {$tap_nwintie_master != "INVALID" &&
       $tap_nwin2_master != "INVALID" &&
@@ -191,9 +194,9 @@ proc tapcell { args } {
     }
   }
 
-  tap::clear $tap_prefix $endcap_prefix
+  tap::clear
 
-  tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $endcap_prefix $add_boundary_cell $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist $tap_prefix
+  tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $add_boundary_cell $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist
 
 }
 
@@ -216,6 +219,9 @@ proc tapcell_ripup { args } {
   if { [info exists keys(-endcap_prefix)] } {
     set endcap_prefix $keys(-endcap_prefix)
   }
+
+  tap::set_tap_prefix $tap_prefix
+  tap::set_endcap_prefix $endcap_prefix
 
   set taps_removed [tap::remove_cells $tap_prefix]
   utl::info TAP 100 "Removed $taps_removed tapcells."

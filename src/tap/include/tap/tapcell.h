@@ -57,14 +57,14 @@ class Tapcell
   Tapcell();
   ~Tapcell();
   void init(odb::dbDatabase* db, utl::Logger* logger);
-  // void run();
-  void clear(const char* tap_prefix, const char* endcap_prefix);
+  void setTapPrefix(const char* tap_prefix);
+  void setEndcapPrefix(const char* endcap_prefix);
+  void clear();
   void run(odb::dbMaster* endcap_master,
            int& halo_x,
            int& halo_y,
            const char* cnrcap_nwin_master,
            const char* cnrcap_nwout_master,
-           const char* endcap_prefix,
            int& add_boundary_cell,
            const char* tap_nwintie_master,
            const char* tap_nwin2_master,
@@ -75,8 +75,7 @@ class Tapcell
            const char* incnrcap_nwin_master,
            const char* incnrcap_nwout_master,
            const char* tapcell_master,
-           int& dist,
-           const char* tap_prefix);
+           int& dist);
   void reset();
   void cutRows(odb::dbMaster* endcap_master,
                std::vector<odb::dbBox*> blockages,
@@ -85,13 +84,11 @@ class Tapcell
   int removeCells(const char* prefix);
   int insertEndcaps(std::vector<std::vector<odb::dbRow*>>& rows,
                     odb::dbMaster* endcap_master,
-                    std::vector<std::string>& cnrcap_masters,
-                    const char* prefix);
+                    std::vector<std::string>& cnrcap_masters);
   std::vector<std::vector<odb::dbRow*>> organizeRows();
   int insertTapcells(std::vector<std::vector<odb::dbRow*>>& rows,
                      std::string tapcell_master,
-                     int& dist,
-                     std::string prefix);
+                     int& dist);
   int insertAtTopBottom(std::vector<std::vector<odb::dbRow*>>& rows,
                         std::vector<std::string> masters,
                         odb::dbMaster* endcap_master,
@@ -111,7 +108,8 @@ class Tapcell
   utl::Logger* logger_;
   int phy_idx_;
   std::vector<std::vector<int>> filled_sites_;
-
+  const char* tap_prefix_;
+  const char* endcap_prefix_;
   void cutRow(odb::dbBlock* block,
               odb::dbRow* row,
               std::map<std::string, std::vector<odb::dbBox*>>& row_blockages,
@@ -145,7 +143,7 @@ class Tapcell
                  int y,
                  std::string prefix);
   bool isXInRow(const int x, std::vector<odb::dbRow*>& subrow);
-  bool checkIfFilled(int& x,
+  int checkIfFilled(int& x,
                      int& width,
                      odb::dbOrientType& orient,
                      std::vector<std::vector<int>>& row_insts);

@@ -74,10 +74,18 @@ void Tapcell::reset()
 
 //---------------------------------------------------------------
 
-void Tapcell::clear(const char* tap_prefix, const char* endcap_prefix)
+void Tapcell::setTapPrefix(const char* tap_prefix) {
+  tap_prefix_ = tap_prefix;
+}
+
+void Tapcell::setEndcapPrefix(const char* endcap_prefix) {
+  endcap_prefix_ = endcap_prefix;
+}
+
+void Tapcell::clear()
 {
-  int taps_removed = removeCells(tap_prefix);
-  int endcaps_removed = removeCells(endcap_prefix);
+  int taps_removed = removeCells(tap_prefix_);
+  int endcaps_removed = removeCells(endcap_prefix_);
 
   // Reset global parameters
   phy_idx_ = 0;
@@ -89,7 +97,6 @@ void Tapcell::run(odb::dbMaster* endcap_master,
                   int& halo_y,
                   const char* cnrcap_nwin_master,
                   const char* cnrcap_nwout_master,
-                  const char* endcap_prefix,
                   int& add_boundary_cell,
                   const char* tap_nwintie_master,
                   const char* tap_nwin2_master,
@@ -100,8 +107,7 @@ void Tapcell::run(odb::dbMaster* endcap_master,
                   const char* incnrcap_nwin_master,
                   const char* incnrcap_nwout_master,
                   const char* tapcell_master,
-                  int& dist,
-                  const char* tap_prefix)
+                  int& dist)
 {
   cutRows(endcap_master, findBlockages(), halo_x, halo_y);
   vector<vector<odb::dbRow*>> rows = organizeRows();
@@ -114,7 +120,7 @@ void Tapcell::run(odb::dbMaster* endcap_master,
   phy_idx_ = 0;
   filled_sites_.clear();
   if (endcap_master != nullptr) {
-    insertEndcaps(rows, endcap_master, cnrcap_masters, endcap_prefix);
+    insertEndcaps(rows, endcap_master, cnrcap_masters);
   }
   if (add_boundary_cell) {
     vector<string> tap_nw_masters;
@@ -138,13 +144,13 @@ void Tapcell::run(odb::dbMaster* endcap_master,
     insertAtTopBottom(rows,
                       tap_nw_masters,
                       db_->findMaster(cnrcap_nwin_master),
-                      endcap_prefix);
+                      endcap_prefix_);
     insertAroundMacros(rows,
                        tap_macro_masters,
                        db_->findMaster(cnrcap_nwin_master),
-                       endcap_prefix);
+                       endcap_prefix_);
   }
-  insertTapcells(rows, tapcell_master, dist, tap_prefix);
+  insertTapcells(rows, tapcell_master, dist);
   filled_sites_.clear();
 }
 
@@ -262,8 +268,7 @@ void Tapcell::cutRow(odb::dbBlock* block,
 
 int Tapcell::insertEndcaps(vector<vector<odb::dbRow*>>& rows,
                            odb::dbMaster* endcap_master,
-                           vector<string>& cnrcap_masters,
-                           const char* prefix)
+                           vector<string>& cnrcap_masters)
 {
   int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -358,7 +363,7 @@ int Tapcell::insertEndcaps(vector<vector<odb::dbRow*>>& rows,
         continue;
       }
 
-      buildCell(block, masterl, row_ori, llx, lly, prefix);
+      buildCell(block, masterl, row_ori, llx, lly, endcap_prefix_);
 
       int master_x = masterr->getWidth();
       int master_y = masterr->getHeight();
@@ -379,7 +384,7 @@ int Tapcell::insertEndcaps(vector<vector<odb::dbRow*>>& rows,
       } else if (row_ori == odb::dbOrientType::R0) {
         right_ori = odb::dbOrientType::MY;
       }
-      buildCell(block, masterr, right_ori, loc_2_x, loc_2_y, prefix);
+      buildCell(block, masterr, right_ori, loc_2_x, loc_2_y, endcap_prefix_);
     }
   }
 
@@ -441,8 +446,7 @@ odb::dbMaster* Tapcell::pickCornerMaster(int top_bottom,
 
 int Tapcell::insertTapcells(vector<vector<odb::dbRow*>>& rows,
                             string tapcell_master,
-                            int& dist,
-                            string prefix)
+                            int& dist)
 {
   int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -573,9 +577,9 @@ int Tapcell::insertTapcells(vector<vector<odb::dbRow*>>& rows,
       for (x = llx + offset; x < urx; x = x + pitch) {
         x = makeSiteLoc(x, site_x, -1, llx);
         // check if site is filled
-        bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
+        int overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
         if (overlap == 0) {
-          buildCell(block, master, ori, x, lly, prefix);
+          buildCell(block, master, ori, x, lly, tap_prefix_);
         }
       }
     }
@@ -585,7 +589,7 @@ int Tapcell::insertTapcells(vector<vector<odb::dbRow*>>& rows,
   return tapcell_count;
 }
 
-bool Tapcell::checkIfFilled(int& x,
+int Tapcell::checkIfFilled(int& x,
                             int& width,
                             odb::dbOrientType& orient,
                             vector<vector<int>>& row_insts)
@@ -1144,7 +1148,7 @@ bool Tapcell::overlaps(odb::dbBox* blockage,
   int row_ury = rowBB.yMax();
 
   if (blockage_lly >= row_ury || row_lly >= blockage_ury) {
-    return 0;
+    return false;
   }
 
   int blockage_llx = blockage->xMin() - halo_x;
@@ -1153,10 +1157,10 @@ bool Tapcell::overlaps(odb::dbBox* blockage,
   int row_urx = rowBB.xMax();
 
   if (blockage_llx >= row_urx || row_llx >= blockage_urx) {
-    return 0;
+    return false;
   }
 
-  return 1;
+  return true;
 }
 
 vector<odb::dbBox*> Tapcell::findBlockages()
@@ -1297,7 +1301,7 @@ int Tapcell::removeCells(const char* prefix)
   int removed = 0;
 
   if (prefix_string.length() == 0) {
-    // no prefix is given, this will result in all cells being removed
+    // if no prefix is given, return 0 instead of having all cells removed
     return 0;
   }
 
@@ -1318,7 +1322,7 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, odb::dbOrientType ori)
 
   switch (ori) {
     case odb::dbOrientType::R0:
-      return 1;
+      return true;
     case odb::dbOrientType::MX:
       return symmetry_x;
     case odb::dbOrientType::MY:
@@ -1326,7 +1330,7 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, odb::dbOrientType ori)
     case odb::dbOrientType::R180:
       return (symmetry_x && symmetry_y);
     default:
-      return 0;
+      return false;
   }
 }
 
