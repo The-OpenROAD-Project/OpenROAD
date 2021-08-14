@@ -123,6 +123,7 @@ proc add_global_connection {args} {
 
 sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-macro] \
+                                        [-grid_over_pins] \
                                         [-voltage_domains <list_of_voltage_domains>] \
                                         [-orient <list_of_valid_orientations>] \
                                         [-instances <list_of_instances>] \
@@ -137,7 +138,7 @@ proc define_pdn_grid {args} {
 
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -pins -starts_with} \
-    flags {-macro}
+    flags {-macro -grid_over_pins}
 
   if {[llength $args] > 0} {
     utl::error PDN 132 "Unexpected argument [lindex $args 0] for define_pdn_grid command."
@@ -145,6 +146,10 @@ proc define_pdn_grid {args} {
 
   if {[info exists flags(-macro)]} {
     set keys(-macro) 1
+  }
+
+  if {[info exists flags(-grid_over_pins)]} {
+    set keys(-grid_over_pins) 1
   }
 
   if {[llength $args] > 0} {
@@ -371,6 +376,7 @@ variable stdcell_area ""
 variable power_nets {}
 variable ground_nets {}
 variable macros {}
+variable verbose 0
 variable global_connections {}
 variable default_global_connections {
   VDD {
@@ -719,6 +725,7 @@ proc define_pdn_grid {args} {
       -name            {dict set grid name $value}
       -voltage_domains {dict set grid voltage_domains [check_voltage_domains $value]}
       -macro           {dict set grid type macro}
+      -grid_over_pins  {dict set grid grid_over_pins 1}
       -orient          {dict set grid orient [check_orientations $value]}
       -instances       {dict set grid instances [check_instances $value]}
       -cells           {dict set grid macro [check_cells $value]}
@@ -3922,16 +3929,21 @@ proc get_macro_blocks {} {
   foreach lib [[ord::get_db] getLibs] {
     foreach cell [$lib getMasters] {
       if {![$cell isBlock] && ![$cell isPad]} {continue}
+      set macro_name [$cell getName]
+      dict set macros $macro_name width  [$cell getWidth]
+      dict set macros $macro_name height [$cell getHeight]
 
       set blockage_layers {}
       foreach obs [$cell getObstructions] {
         set layer_name [[$obs getTechLayer] getName]
         dict set blockage_layers $layer_name 1
       }
+      dict set macros $macro_name blockage_layers [dict keys $blockage_layers]
 
       set pin_layers {}
       set power_pins {}
       set ground_pins {}
+      set first_shape 1
 
       foreach term [$cell getMTerms] {
         set sig_type [$term getSigType]
@@ -3946,17 +3958,30 @@ proc get_macro_blocks {} {
         foreach pin [$term getMPins] {
           foreach shape [$pin getGeometry] {
             lappend pin_layers [[$shape getTechLayer] getName]
+            if {$first_shape == 1} {
+              set xMin [$shape xMin]
+              set xMax [$shape xMax]
+              set yMin [$shape yMin]
+              set yMax [$shape yMax]
+              set first_shape 0
+            } else {
+              set xMin [expr min($xMin,[$shape xMin])]
+              set xMax [expr max($xMax,[$shape xMax])]
+              set yMin [expr min($yMin,[$shape yMin])]
+              set yMax [expr max($yMax,[$shape yMax])]
+            }
           }
         }
       }
-      dict set macros [$cell getName] [list \
-        width  [$cell getWidth] \
-        height [$cell getHeight] \
-        blockage_layers [dict keys $blockage_layers] \
-        pin_layers [lsort -unique $pin_layers] \
-        power_pins [lsort -unique $power_pins] \
-        ground_pins [lsort -unique $ground_pins] \
-      ]
+
+      dict set macros $macro_name pin_layers [lsort -unique $pin_layers]
+      dict set macros $macro_name power_pins [lsort -unique $power_pins]
+      dict set macros $macro_name ground_pins [lsort -unique $ground_pins]
+      if {$first_shape == 0}  {
+        dict set macros $macro_name pins_area [list $xMin $yMin $xMax $yMax]
+      } else {
+        dict set macros $macro_name pins_area [list 0 0 0 0]
+      }
     }
   }
 
@@ -4023,6 +4048,21 @@ proc get_instances {} {
   }
 
   return $instances
+}
+
+proc get_master_pg_pins_area {macro_name} {
+  variable macros
+
+  return [dict get $macros $macro_name pins_area]
+}
+
+proc get_instance_pg_pins_area {inst_name} {
+  variable instances
+
+  set instance [dict get $instances $inst_name]
+  set inst [dict get $instance inst]
+
+  set master_area [transform_box {*}[get_master_pg_pins_area [[$inst getMaster] getName]] [$inst getOrigin] [$inst getOrient]]
 }
 
 proc set_instance_halo {inst_name halo} {
@@ -6342,7 +6382,14 @@ proc add_macro_based_grids {} {
         if {$verbose == 1} {
           utl::info "PDN" 34 "  - grid [dict get $grid_data name] for instance $instance"
         }
-        dict set grid_data area [dict get $instances $instance macro_boundary]
+
+        if {[dict exists $grid_data grid_over_pins]} {
+          # debug "Grid over pins: [get_instance_pg_pins_area $instance]"
+          dict set grid_data area [get_instance_pg_pins_area $instance]
+        } else {
+          # debug "Grid boundary: [get_instance_pg_pins_area $instance]"
+          dict set grid_data area [dict get $instances $instance macro_boundary]
+        }
         add_grid
 
         # debug "Generate vias for [dict get $design_data power_nets] [dict get $design_data ground_nets]"
