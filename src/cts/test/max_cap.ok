@@ -59,7 +59,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r3/CLK                                  1.00    1.93   -0.93 (VIOLATED)
+r2/CLK                                  1.00    1.93   -0.93 (VIOLATED)
 r11/CLK                                 1.00    1.93   -0.93 (VIOLATED)
 r8/CLK                                  1.00    1.93   -0.93 (VIOLATED)
 
