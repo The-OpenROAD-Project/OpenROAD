@@ -16,7 +16,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r239/RESET_B                            1.50    4.97   -3.47 (VIOLATED)
+r239/RESET_B                            1.50    5.96   -4.46 (VIOLATED)
 
 max capacitance
 
@@ -27,13 +27,12 @@ r0/Q                                    0.17    0.00    0.17 (MET)
 [INFO RSZ-0058] Using max wire length 2006um.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 14 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 15 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r238/RESET_B                            1.50    0.61    0.89 (MET)
+r209/RESET_B                            1.50    0.57    0.93 (MET)
 
 max capacitance
 

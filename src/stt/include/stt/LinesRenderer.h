@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,35 +30,28 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
-#include "SteinerTreeBuilder.h"
+#pragma once
 
-namespace utl {
-class Logger;
+#include "gui/gui.h"
+
+namespace stt {
+
+// Simple general purpose render for a group of lines.
+class LinesRenderer : public gui::Renderer
+{
+public:
+  void highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
+                 gui::Painter::Color color);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+  // singleton for debug functions
+  static LinesRenderer *lines_renderer;
+
+private:
+  std::vector<std::pair<odb::Point, odb::Point>> lines_;
+  gui::Painter::Color color_;
+};
+
 }
-namespace gui {
-class Gui;
-}
-
-namespace pdr {
-
-using utl::Logger;
-using stt::Tree;
-
-Tree
-primDijkstra(std::vector<int>& x,
-             std::vector<int>& y,
-             int drvr_index,
-             float alpha,
-             Logger* logger);
-
-Tree
-primDijkstraRevII(std::vector<int>& x,
-                  std::vector<int>& y,
-                  int drvr_index,
-                  float alpha,
-                  Logger* logger);
-
-}  // namespace PD

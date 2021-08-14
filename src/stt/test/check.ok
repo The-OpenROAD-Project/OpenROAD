@@ -1,7 +1,7 @@
 Net clk
 [DEBUG STT-0001] check failed (48100, 35300) (48100, 35300) [2, 23] vs (48100, 35000) (48500, 35300) [14, 39] degree=21
-[DEBUG STT-0001] check failed (50700, 34500) (50700, 34500) [1, 21] vs (49900, 34500) (50700, 34500) [15, 37] degree=21
-WL = 12800
+[DEBUG STT-0001] check failed (50700, 34500) (50700, 34500) [1, 22] vs (49900, 34500) (50700, 34500) [15, 37] degree=21
+Wire length = 12800 Path depth = 6400
 0 (48300 34000) neighbor 21 length 100
 1 (48000 34100) neighbor 21 length 300
 2 (51200 34100) neighbor 31 length 500
