@@ -181,6 +181,7 @@ private:
   vector<int> sorted_hanan_;
   vector<int> aux_;
 
+  // Children of each level in the greph [level][child]
   vector<vector<int>> tree_struct_;
   vector<int> tree_struct_1darr_;
 
