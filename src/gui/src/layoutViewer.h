@@ -247,8 +247,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // Compute and store the offset necessary to center the block in the viewport.
   void computeCenteringOffset();
 
-
-  int minimumViewableResolution();
+  int fineViewableResolution();
+  int nominalViewableResolution();
+  int coarseViewableResolution();
 
   void generateCutLayerMaximumSizes();
 
