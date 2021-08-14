@@ -217,7 +217,9 @@ class GuiPainter : public Painter
     const int x_len = std::abs(x0 - x1);
     const int y_len = std::abs(y0 - y1);
 
-    ss << std::fixed << std::setprecision(2)
+    const int precision = std::ceil(std::log10(dbu_per_micron_));
+
+    ss << std::fixed << std::setprecision(precision)
        << std::max(x_len, y_len) / (qreal) dbu_per_micron_;
 
     drawLine(x0, y0, x1, y1);
