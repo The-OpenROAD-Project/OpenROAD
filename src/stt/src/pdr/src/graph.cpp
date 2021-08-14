@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <set>
 #include <unordered_set>
 #include <queue>
 #include <string>
@@ -2737,13 +2738,13 @@ void Graph::doSteiner_HoVW()
   if (logger_->debugCheck(PDR, "pdrev", 3))
     print_tree();
 
-  vector<Node> set_of_nodes;
   // Starting from the nodes in the second level from bottom
   for (int k = tree_struct_.size() - 3; k >= 0; k--) {
     for (int l = 0; l < tree_struct_[k].size(); l++) {
       int child = tree_struct_[k][l], par = nodes[child].parent;
       Node tmp_node = nodes[child];
 
+      vector<Node> set_of_nodes;
       set_of_nodes.push_back(tmp_node);
       set_of_nodes.push_back(nodes[par]);
       for (int m = 0; m < tmp_node.children.size(); m++)
@@ -2752,7 +2753,6 @@ void Graph::doSteiner_HoVW()
       if (set_of_nodes.size() > 2) {
         get_overlap_lshape(set_of_nodes, nodes[child].idx);
       }
-      set_of_nodes.clear();
     }
   }
 
@@ -3216,31 +3216,14 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
 
   // Only if dont_care_flag = number of repeating rows - 1, then make the child
   // edge dont_care
-  if ((dont_care_flag != 0) && (dont_care_flag == max_ap_cnt - 1)) {
-    vector<int> List1;
+  if ((dont_care_flag != 0) && (dont_care_flag == max_ap_cnt - 1)
+      && !best_config.empty()) {
+    std::set<int> dont_care_children;
     for (int mm = 0; mm < result[0].size() - 1; mm++)
-      List1.push_back(mm);
-    vector<int> dont_care_child;
-    // Get dont care child index by removing the rest of the children indices
-    copy_if(
-        List1.begin(),
-        List1.end(),
-        back_inserter(dont_care_child),
-        [&not_dont_care_child](const int& arg) {
-          return (
-              find(not_dont_care_child.begin(), not_dont_care_child.end(), arg)
-              == not_dont_care_child.end());
-        });
-    if (best_config.size() != 0) {
-      for (int mm = 0; mm < dont_care_child.size(); mm++) {
-        best_config[dont_care_child[mm] * 2 + 1] = 5;
-      }
-    }
-    dont_care_child.clear();
-    List1.clear();
+      dont_care_children.insert(mm);
+    for (int dont_care_child : dont_care_children)
+      best_config[dont_care_child * 2 + 1] = 5;
   }
-  tmp_res.clear();
-  not_dont_care_child.clear();
   // New part added till here
   edges_[index].upper_ov = max_ov;
   edges_[index].upper_best_config = best_config;
@@ -3248,9 +3231,6 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   edges_[index].upper_sps_to_be_added_y = best_sps_y;
   edges_[index].upper_idx_of_cn_x = best_sps_curr_node_idx_x;
   edges_[index].upper_idx_of_cn_y = best_sps_curr_node_idx_y;
-  best_config.clear();
-  best_sps_x.clear();
-  best_sps_y.clear();
 
   // Choosing the best
   if (edges_[index].lower_ov > edges_[index].upper_ov) {
@@ -3263,16 +3243,6 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     edges_[index].best_ov = edges_[index].lower_ov;
     edges_[index].best_shape = 5;
   }
-
-  for (int i = 0; i < lists.size(); i++)
-    lists[i].clear();
-  for (int i = 0; i < result.size(); i++)
-    result[i].clear();
-  lists.clear();
-  result.clear();
-  tmp1.clear();
-  tmp2.clear();
-  set_of_nodes.clear();
 }
 
 bool Graph::segmentIntersection(std::pair<double, double> A,
