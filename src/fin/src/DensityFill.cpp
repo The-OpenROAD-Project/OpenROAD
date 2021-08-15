@@ -37,7 +37,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "graphics.h"
-#include "opendb/dbShape.h"
+#include "odb/dbShape.h"
 
 namespace fin {
 

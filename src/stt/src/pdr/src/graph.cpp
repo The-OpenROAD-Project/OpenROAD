@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <set>
 #include <unordered_set>
 #include <queue>
 #include <string>
@@ -652,19 +653,11 @@ void Graph::UpdateSteinerNodes()
   UpdateEdges(fSTNodes);
 }
 
-void Graph::addChild(Node& pNode, int idx)
+void Graph::addChild(Node& node, int idx)
 {
-  // rewrite with find and no copy -cherry
-  vector<int> newC = pNode.children;
-  bool flag = true;
-  for (int i = 0; i < newC.size(); ++i) {
-    if (newC[i] == idx) {
-      flag = false;
-      break;
-    }
-  }
-  if (flag)
-    pNode.children.push_back(idx);
+  auto &children = node.children;
+  if (std::find(children.begin(), children.end(), idx) == children.end())
+    children.push_back(idx);
 }
 
 void Graph::removeN(Node& pN, int idx)
@@ -744,7 +737,13 @@ void Graph::RemoveSTNodes()
     Node& cN = nodes[toBeRemoved[i]];
     removeChild(nodes[cN.parent], cN.idx);
     for (int j = 0; j < cN.children.size(); ++j) {
-      replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
+      replaceParent(nodes[cN.children[j]], cN.idx,
+                    // Note that the root node's parent is itself,
+                    // so the removed node's parent cannot be used
+                    // for the children. This fact seems to have escaped
+                    // the original author. Use the original root node
+                    // as the parent -cherry 08/09/2021
+                    cN.parent == cN.idx ? root_idx_ : cN.parent);
       addChild(nodes[cN.parent], cN.children[j]);
     }
   }
@@ -2017,7 +2016,7 @@ void Graph::NESW_NearestNeighbors(int left, int right, int oct)
   }
 }
 
-void Graph::heap_insert(int p, int key)
+void Graph::heap_insert(int p, float key)
 {
   int k; /* hole in the heap     */
   int j; /* parent of the hole   */
@@ -2065,12 +2064,13 @@ void Graph::heap_insert(int p, int key)
   }
 }
 
+// Returns element index min key.
 int Graph::heap_delete_min()
 {
   int min, last;
   int k;     /* hole in the heap     */
   int j;     /* child of the hole    */
-  int l_key; /* key of last point    */
+  float l_key; /* key of last point    */
 
   if (heap_size_ == 0) /* heap is empty */
     return (-1);
@@ -2163,14 +2163,17 @@ void Graph::get_children_of_node()
 
 void Graph::print_tree()
 {
-  /* For each terminal */
   for (size_t j = 0; j < nodes.size(); ++j) {
-    logger_->report("Node {} ({} , {}) parent= {} Level= {}",
+    Node &node = nodes[j];
+    std::string children;
+    for (int child : node.children)
+      children += std::to_string(child) + " ";
+    logger_->report("Node {} ({} {}) parent={} children={}",
                     j,
-                    nodes[j].x,
-                    nodes[j].y,
-                    nodes[j].parent,
-                    nodes[j].level);
+                    node.x,
+                    node.y,
+                    node.parent,
+                    children);
   }
 }
 
@@ -2221,8 +2224,6 @@ void Graph::run_PD_brute_force(float alpha)
   heap_insert(root_idx_, 0);
   nodes[root_idx_].parent = root_idx_;
 
-  // update shortest path
-  updateMinDist();
   /* n points to be extracted from heap */
   for (int k = 0; k < num_terminals; k++) {
     int i = heap_delete_min();
@@ -2264,7 +2265,7 @@ void Graph::run_PD_brute_force(float alpha)
                    i,
                    nodes[i].min_dist);
         int edge_len = dist(nodes[i], nodes[nn1]);
-        float d = alpha * (float) nodes[i].path_length;
+        float d = alpha * nodes[i].path_length;
         debugPrint(logger_, PDR, "pdrev", 3,
                    "intermediate d = alpha * nodes[i].path_length = "
                    "{}*{} = {}",
@@ -2705,10 +2706,13 @@ void Graph::constructSteiner()
   BuildDAG();
 }
 
+// Despite the name this does not appear to have much of anything in
+// common with the referenced "HoVW" paper:
+// "New Algorithms for the Rectilinear Steiner Tree Problem", 
+// JAN-MING HO, GOPALAKRISHNAN VIJAYAN, AND C. K. WONG
 void Graph::doSteiner_HoVW()
 {
   // Tree preparation
-  updateMinDist();
   for (int j = 0; j < num_terminals; ++j) /* For each terminal */ {
     int child = j;
     int par = nodes[j].parent;
@@ -2734,13 +2738,13 @@ void Graph::doSteiner_HoVW()
   if (logger_->debugCheck(PDR, "pdrev", 3))
     print_tree();
 
-  vector<Node> set_of_nodes;
   // Starting from the nodes in the second level from bottom
   for (int k = tree_struct_.size() - 3; k >= 0; k--) {
     for (int l = 0; l < tree_struct_[k].size(); l++) {
       int child = tree_struct_[k][l], par = nodes[child].parent;
       Node tmp_node = nodes[child];
 
+      vector<Node> set_of_nodes;
       set_of_nodes.push_back(tmp_node);
       set_of_nodes.push_back(nodes[par]);
       for (int m = 0; m < tmp_node.children.size(); m++)
@@ -2749,7 +2753,6 @@ void Graph::doSteiner_HoVW()
       if (set_of_nodes.size() > 2) {
         get_overlap_lshape(set_of_nodes, nodes[child].idx);
       }
-      set_of_nodes.clear();
     }
   }
 
@@ -3213,31 +3216,14 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
 
   // Only if dont_care_flag = number of repeating rows - 1, then make the child
   // edge dont_care
-  if ((dont_care_flag != 0) && (dont_care_flag == max_ap_cnt - 1)) {
-    vector<int> List1;
+  if ((dont_care_flag != 0) && (dont_care_flag == max_ap_cnt - 1)
+      && !best_config.empty()) {
+    std::set<int> dont_care_children;
     for (int mm = 0; mm < result[0].size() - 1; mm++)
-      List1.push_back(mm);
-    vector<int> dont_care_child;
-    // Get dont care child index by removing the rest of the children indices
-    copy_if(
-        List1.begin(),
-        List1.end(),
-        back_inserter(dont_care_child),
-        [&not_dont_care_child](const int& arg) {
-          return (
-              find(not_dont_care_child.begin(), not_dont_care_child.end(), arg)
-              == not_dont_care_child.end());
-        });
-    if (best_config.size() != 0) {
-      for (int mm = 0; mm < dont_care_child.size(); mm++) {
-        best_config[dont_care_child[mm] * 2 + 1] = 5;
-      }
-    }
-    dont_care_child.clear();
-    List1.clear();
+      dont_care_children.insert(mm);
+    for (int dont_care_child : dont_care_children)
+      best_config[dont_care_child * 2 + 1] = 5;
   }
-  tmp_res.clear();
-  not_dont_care_child.clear();
   // New part added till here
   edges_[index].upper_ov = max_ov;
   edges_[index].upper_best_config = best_config;
@@ -3245,9 +3231,6 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   edges_[index].upper_sps_to_be_added_y = best_sps_y;
   edges_[index].upper_idx_of_cn_x = best_sps_curr_node_idx_x;
   edges_[index].upper_idx_of_cn_y = best_sps_curr_node_idx_y;
-  best_config.clear();
-  best_sps_x.clear();
-  best_sps_y.clear();
 
   // Choosing the best
   if (edges_[index].lower_ov > edges_[index].upper_ov) {
@@ -3260,16 +3243,6 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     edges_[index].best_ov = edges_[index].lower_ov;
     edges_[index].best_shape = 5;
   }
-
-  for (int i = 0; i < lists.size(); i++)
-    lists[i].clear();
-  for (int i = 0; i < result.size(); i++)
-    result[i].clear();
-  lists.clear();
-  result.clear();
-  tmp1.clear();
-  tmp2.clear();
-  set_of_nodes.clear();
 }
 
 bool Graph::segmentIntersection(std::pair<double, double> A,
@@ -3601,42 +3574,29 @@ void Graph::update_node_detcost_Kt(int j)
 
 void Graph::get_level_in_tree()
 {
-  // This needlessly copies vectors in many places -cherry 06/20/2021
   tree_struct_.clear();
-  int iter = 0;
-  vector<int> tmp1;
-  tree_struct_.push_back(tmp1);
-  tree_struct_[iter].push_back(0);
-  iter++;
-  int j = 0, level_count = 0;
-  vector<int> set_of_chi = nodes[j].children, tmp;
-  vector<int> tmp2;
-  tree_struct_.push_back(tmp2);
-  tree_struct_[iter].insert(
-      tree_struct_[iter].end(), set_of_chi.begin(), set_of_chi.end());
-  int size_of_chi = set_of_chi.size();
-  nodes[j].level = level_count;
-  while (size_of_chi != 0) {
-    level_count++;
-    iter++;
-    tmp = set_of_chi;
-    set_of_chi.clear();
+  int level = 0;
+  int j = root_idx_;
+  tree_struct_.push_back({j});
+
+  vector<int> children = nodes[j].children;
+  tree_struct_.push_back(children);
+  nodes[j].level = level;
+  level++;
+
+  while (!children.empty()) {
+    vector<int> tmp = children;
+    children.clear();
     for (int l = 0; l < tmp.size(); l++) {
-      nodes[tmp[l]].level = level_count;
-      set_of_chi.insert(set_of_chi.end(),
-                        nodes[tmp[l]].children.begin(),
-                        nodes[tmp[l]].children.end());
+      nodes[tmp[l]].level = level;
+      children.insert(children.end(),
+                      nodes[tmp[l]].children.begin(),
+                      nodes[tmp[l]].children.end());
     }
 
-    vector<int> tmp3;
-    tree_struct_.push_back(tmp3);
-    tmp3.clear();
-    tree_struct_[iter].insert(
-        tree_struct_[iter].end(), set_of_chi.begin(), set_of_chi.end());
-    size_of_chi = set_of_chi.size();
+    tree_struct_.push_back(children);
+    level++;
   }
-  tmp.clear();
-  set_of_chi.clear();
 }
 
 void Graph::update_detourcosts_to_NNs(int j)

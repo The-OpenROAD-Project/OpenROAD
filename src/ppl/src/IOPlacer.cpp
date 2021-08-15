@@ -39,7 +39,7 @@
 #include <random>
 #include <sstream>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"

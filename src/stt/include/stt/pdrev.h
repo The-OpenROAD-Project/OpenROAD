@@ -32,7 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "flute.h"
+#include "SteinerTreeBuilder.h"
 
 namespace utl {
 class Logger;
@@ -59,13 +59,5 @@ primDijkstraRevII(std::vector<int>& x,
                   int drvr_index,
                   float alpha,
                   Logger* logger);
-
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger);
-void
-highlightSteinerTree(stt::Tree &tree,
-                     gui::Gui *gui);
 
 }  // namespace PD

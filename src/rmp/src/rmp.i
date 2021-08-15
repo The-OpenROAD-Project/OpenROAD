@@ -37,7 +37,7 @@
 #include "rmp/Restructure.h"
 #include "rmp/blif.h"
 #include "ord/OpenRoad.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 
 namespace ord {

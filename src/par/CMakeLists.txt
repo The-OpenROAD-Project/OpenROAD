@@ -118,7 +118,7 @@ target_include_directories(par
 
 target_link_libraries(par
   PUBLIC
-    opendb
+    odb
     OpenSTA
     utl
     dbSta

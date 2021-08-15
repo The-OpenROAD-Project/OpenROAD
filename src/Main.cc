@@ -79,7 +79,7 @@ using sta::is_regular_file;
 extern "C"
 {
     extern PyObject* PyInit__openroad_swig_py();
-    extern PyObject* PyInit__opendbpy();
+    extern PyObject* PyInit__odbpy();
 }
 #endif
 
@@ -99,15 +99,15 @@ showSplash();
 
 #ifdef ENABLE_PYTHON3
 namespace sta {
-extern const char *opendbpy_python_inits[];
+extern const char *odbpy_python_inits[];
 extern const char *openroad_swig_py_python_inits[];
 }
 
 static void
 initPython()
 {
-  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
-    fprintf(stderr, "Error: could not add module opendbpy\n");
+  if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
+    fprintf(stderr, "Error: could not add module odbpy\n");
     exit(1);
   }
 
@@ -118,18 +118,18 @@ initPython()
 
   Py_Initialize();
 
-  char *unencoded = sta::unencode(sta::opendbpy_python_inits);
+  char *unencoded = sta::unencode(sta::odbpy_python_inits);
 
-  PyObject* odb_code = Py_CompileString(unencoded, "opendbpy.py", Py_file_input);
+  PyObject* odb_code = Py_CompileString(unencoded, "odbpy.py", Py_file_input);
   if (odb_code == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not compile opendbpy\n");
+    fprintf(stderr, "Error: could not compile odbpy\n");
     exit(1);
   }
 
-  if (PyImport_ExecCodeModule("opendb", odb_code) == nullptr) {
+  if (PyImport_ExecCodeModule("odb", odb_code) == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not add module opendb.py\n");
+    fprintf(stderr, "Error: could not add module odb\n");
     exit(1);
   }
 

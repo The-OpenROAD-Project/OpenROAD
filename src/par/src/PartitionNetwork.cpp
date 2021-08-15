@@ -35,7 +35,7 @@
 
 #include "par/PartitionMgr.h"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
 #include "db_sta/dbNetwork.hh"
@@ -310,7 +310,7 @@ PartitionMgr::buildPartitionedInstance(
       }
     }
   }
-  network->groupBusPorts(cell);
+  network->groupBusPorts(cell, [](const char*) { return true; });
 
   // build instance
   std::string instname = name;

@@ -12,8 +12,8 @@
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
-#include "opendb/db.h"
 #include "sta/Bfs.hh"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/Graph.hh"
 #include "utl/Logger.h"

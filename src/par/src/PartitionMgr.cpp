@@ -51,7 +51,7 @@ extern "C" {
 
 #include "HypergraphDecomposition.h"
 #include "autocluster.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
 

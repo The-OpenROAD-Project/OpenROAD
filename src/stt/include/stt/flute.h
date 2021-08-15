@@ -30,26 +30,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "utl/Logger.h"
+#include "SteinerTreeBuilder.h"
 
 #pragma once
 
 namespace stt {
-typedef int DTYPE;
-
-struct Branch {
-  DTYPE x, y;  // starting point of the branch
-  int n;       // index of neighbor
-};
-
-struct Tree {
-  int deg;         // degree
-  DTYPE length;    // total wirelength
-  std::vector<Branch> branch;  // array of tree branches
-
-  void printTree(utl::Logger* logger);
-  int branchCount() const { return deg * 2 - 2; }
-};
 
 namespace flt {
 

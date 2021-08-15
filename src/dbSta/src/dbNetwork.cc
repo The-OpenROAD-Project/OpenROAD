@@ -43,7 +43,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Liberty.hh"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace sta {
 
@@ -68,6 +68,7 @@ using odb::dbITermObj;
 using odb::dbBTermObj;
 using odb::dbIntProperty;
 using odb::dbPlacementStatus;
+using odb::dbBoolProperty;
 
 // TODO: move to StringUtil
 char *
@@ -910,7 +911,8 @@ dbNetwork::makeCell(Library *library,
 		      port_name);
     }
   }
-  groupBusPorts(cell);
+  // Assume msb first busses because LEF has no clue about busses.
+  groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
   // for corners that are not used for "linking".
@@ -942,6 +944,11 @@ dbNetwork::readDbNetlistAfter()
 void
 dbNetwork::makeTopCell()
 {
+  if (top_cell_) {
+    // Reading DEF or linking when a network already exists; remove previous top cell.
+    Library *top_lib = library(top_cell_);
+    deleteLibrary(top_lib);
+  }
   const char *design_name = block_->getConstName();
   Library *top_lib = makeLibrary(design_name, nullptr);
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
@@ -950,14 +957,30 @@ dbNetwork::makeTopCell()
     Port *port = makePort(top_cell_, port_name);
     PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     setDirection(port, dir);
-    
   }
-  groupBusPorts(top_cell_);
+  groupBusPorts(top_cell_,
+                [=](const char *port_name) { return portMsbFirst(port_name); } );
 }
 
+// read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
+// is msb first or lsb first.
+bool
+dbNetwork::portMsbFirst(const char *port_name)
+{
+  string key = "bus_msb_first ";
+  key += port_name;
+  dbBoolProperty *property = odb::dbBoolProperty::find(block_, key.c_str());
+  if (property)
+    return property->getValue();
+  else
+    // Default when DEF did not come from read_verilog.
+    return true;
+}
+  
 void
 dbNetwork::findConstantNets()
 {
+  clearConstantNets();
   for (dbNet *dnet : block_->getNets()) {
     if (dnet->getSigType() == dbSigType::GROUND)
       addConstantNet(dbToSta(dnet), LogicValue::zero);
