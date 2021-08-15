@@ -50,6 +50,7 @@ namespace rsz {
 
 using std::abs;
 using std::string;
+using std::vector;
 
 using utl::RSZ;
 
@@ -89,9 +90,6 @@ makeSteinerTree(const Pin *drvr_pin,
   SteinerTree *tree = new SteinerTree(drvr_pin);
   PinSeq &pins = tree->pins();
   connectedPins(net, network, pins);
-  // Steiner tree is apparently sensitive to pin order.
-  // Pay the price to stabilize the results.
-  sort(pins, PinPathNameLess(network));
   int pin_count = pins.size();
   bool is_placed = true;
   if (pin_count > max_pin_count)
@@ -99,16 +97,15 @@ makeSteinerTree(const Pin *drvr_pin,
                  sdc_network->pathName(net),
                  pin_count);
   else if (pin_count >= 2) {
-    int x[pin_count];
-    int y[pin_count];
+    vector<int> x, y;
     int drvr_idx = 0;
     for (int i = 0; i < pin_count; i++) {
       Pin *pin = pins[i];
       if (pin == drvr_pin)
         drvr_idx = i;
       Point loc = network->location(pin);
-      x[i] = loc.x();
-      y[i] = loc.y();
+      x.push_back(loc.x());
+      y.push_back(loc.y());
       debugPrint(debug, "steiner", 3, " %s (%d %d)",
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
@@ -120,9 +117,8 @@ makeSteinerTree(const Pin *drvr_pin,
       tree->locAddPin(loc, pin);
     }
     if (is_placed) {
-      std::vector<int> x1(x, x + pin_count);
-      std::vector<int> y1(y, y + pin_count);
-      stt::Tree ftree = stt_builder->makeSteinerTree(network->staToDb(net), x1, y1, drvr_idx);
+      stt::Tree ftree = stt_builder->makeSteinerTree(network->staToDb(net),
+                                                     x, y, drvr_idx);
       
       if (debug->check("steiner", 3))
         ftree.printTree(logger);

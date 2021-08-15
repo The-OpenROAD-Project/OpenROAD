@@ -36,8 +36,8 @@
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
 #include "global.h"
-#include "opendb/db.h"
-#include "opendb/dbWireCodec.h"
+#include "odb/db.h"
+#include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
 
 using namespace std;

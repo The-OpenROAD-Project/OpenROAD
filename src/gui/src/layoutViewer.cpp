@@ -751,7 +751,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  int min_resolution = 5*minimumViewableResolution();
+  int min_resolution = nominalViewableResolution();
   Rect block_bounds;
   block->getBBox()->getBox(block_bounds);
   const Rect draw_bounds = block_bounds.intersect(bounds);
@@ -812,7 +812,7 @@ void LayoutViewer::drawRows(dbBlock* block,
   if (!options_->areRowsVisible()) {
     return;
   }
-  int min_resolution = 5*minimumViewableResolution();
+  int min_resolution = nominalViewableResolution();
   // three possible draw cases:
   // 1) resolution allows for individual sites -> draw all
   // 2) individual sites too small -> just draw row outlines
@@ -988,7 +988,7 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
-  int minimum_height_for_tag = 5 * minimumViewableResolution();
+  int minimum_height_for_tag = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   painter->setPen(QPen(Qt::gray, 0));
@@ -1027,7 +1027,7 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
-  int minimum_height = 5 * minimumViewableResolution();
+  int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
   for (auto inst : insts) {
@@ -1077,7 +1077,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  const int minimum_size = 10 * minimumViewableResolution();
+  const int minimum_size = coarseViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   const QColor text_color = options_->instanceNameColor();
@@ -1186,7 +1186,7 @@ void LayoutViewer::drawBlockages(QPainter* painter,
   painter->setBrush(QBrush(options_->placementBlockageColor(), options_->placementBlockagePattern()));
 
   auto blockage_range = search_.searchBlockages(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), fineViewableResolution());
 
   for (auto& [box, poly, blockage] : blockage_range) {
     Rect bbox;
@@ -1209,7 +1209,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   painter->setBrush(QBrush(color, brush_pattern));
 
   auto obstructions_range = search_.searchObstructions(
-      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), fineViewableResolution());
 
   for (auto& [box, poly, obs] : obstructions_range) {
     Rect bbox;
@@ -1226,7 +1226,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              int depth,
                              const QTransform& base_tx)
 {
-  int pixel = minimumViewableResolution();  // 1 pixel in DBU
+  int min_resolution = fineViewableResolution();  // 1 pixel in DBU
+  int nominal_resolution = nominalViewableResolution();
   LayerBoxes boxes;
   QTransform initial_xfm = painter->transform();
 
@@ -1248,7 +1249,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   auto inst_range = search_.searchInsts(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), min_resolution);
 
   // Cache the search results as we will iterate over the instances
   // for each layer.
@@ -1272,8 +1273,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    const bool is_cut = layer->getType() == dbTechLayerType::CUT;
-    if (is_cut && layer->getWidth() < 1 * pixel) {
+    if (layer->getType() == dbTechLayerType::CUT && cut_maximum_size_[layer] < nominal_resolution) {
       continue;
     }
 
@@ -1291,7 +1291,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      bounds.yMin(),
                                      bounds.xMax(),
                                      bounds.yMax(),
-                                     5 * pixel);
+                                     nominal_resolution);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -1324,7 +1324,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       bounds.yMin(),
                                       bounds.xMax(),
                                       bounds.yMax(),
-                                      5 * pixel);
+                                      nominal_resolution);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -1497,6 +1497,10 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   if (!search_init_) {
     search_.init(block);
     search_init_ = true;
+  }
+
+  if (cut_maximum_size_.empty()) {
+    generateCutLayerMaximumSizes();
   }
 
   // Coordinate system setup (see file level comments)
@@ -1851,6 +1855,35 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void LayoutViewer::generateCutLayerMaximumSizes()
+{
+  if (db_ == nullptr) {
+    return;
+  }
+
+  dbTech* tech = db_->getTech();
+  if (tech == nullptr) {
+    return;
+  }
+
+  for (auto layer : tech->getLayers()) {
+    if (layer->getType() == dbTechLayerType::CUT) {
+      int width = layer->getWidth();
+      if (width == 0) {
+        // width is not set, so looking through all vias to find max size
+        for (auto via : tech->getVias()) {
+          for (auto box : via->getBoxes()) {
+            if (box->getTechLayer() == layer) {
+              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
+            }
+          }
+        }
+      }
+      cut_maximum_size_[layer] = width;
+    }
+  }
+}
+
 void LayoutViewer::inDbNetDestroy(dbNet* net)
 {
   updateShapes();
@@ -1938,9 +1971,19 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
   fit();
 }
 
-int LayoutViewer::minimumViewableResolution()
+inline int LayoutViewer::fineViewableResolution()
 {
-  return 1 / pixels_per_dbu_;
+  return 1.0 / pixels_per_dbu_;
+}
+
+inline int LayoutViewer::nominalViewableResolution()
+{
+  return 5.0 / pixels_per_dbu_;
+}
+
+inline int LayoutViewer::coarseViewableResolution()
+{
+  return 10.0 / pixels_per_dbu_;
 }
 
 }  // namespace gui

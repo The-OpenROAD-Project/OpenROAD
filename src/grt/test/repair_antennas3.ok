@@ -29,11 +29,10 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 105790
+[INFO GRT-0004] Blockages: 72
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 25
-[INFO GRT-0017] Processing 25185 blockages on layer li1.
 [INFO GRT-0017] Processing 27401 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
 
@@ -49,22 +48,22 @@ met4       Vertical         8664          8444          2.54%
 met5       Horizontal       2888          2812          2.63%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 1825
-[INFO GRT-0112] Final usage 3D: 7536
+[INFO GRT-0111] Final number of vias: 1831
+[INFO GRT-0112] Final usage 3D: 7537
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             19170          1211            6.32%             0 /  0 /  0
-met2             21497           850            3.95%             0 /  0 /  0
+met1             19170          1188            6.20%             0 /  0 /  0
+met2             21497           856            3.98%             0 /  0 /  0
 met3             12987             0            0.00%             0 /  0 /  0
 met4              8444             0            0.00%             0 /  0 /  0
 met5              2812             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            64910          2061            3.18%             0 /  0 /  0
+Total            64910          2044            3.15%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 22521 um
+[INFO GRT-0018] Total wirelength: 22456 um
 [INFO GRT-0006] Repairing antennas, iteration 1.
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0224] Chose via L1M1_PR as default.
@@ -132,10 +131,9 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 17100
+[INFO GRT-0004] Blockages: 72
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0017] Processing 13408 blockages on layer li1.
 [INFO GRT-0017] Processing 3845 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
 [INFO GRT-0009] Nets to reroute: 1.

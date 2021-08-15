@@ -48,7 +48,11 @@ class OpenRoad;
 namespace odb {
 class dbDatabase;
 class dbNet;
-}  // namespace odb
+}
+
+namespace gui {
+class Gui;
+}
 
 namespace stt {
 
@@ -104,6 +108,7 @@ class SteinerTreeBuilder
                 int drvr_index,
                 float alpha);
   int computeHPWL(odb::dbNet* net);
+  bool checkTree(const Tree& tree) const;
 
   const int flute_accuracy = 3;
   float alpha_;
@@ -114,5 +119,13 @@ class SteinerTreeBuilder
   Logger* logger_;
   odb::dbDatabase* db_;
 };
+
+// Used by regressions.
+void
+reportSteinerTree(Tree &tree,
+                  Logger *logger);
+void
+highlightSteinerTree(Tree &tree,
+                     gui::Gui *gui);
 
 }  // namespace stt

@@ -29,7 +29,7 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 16951
+[INFO GRT-0004] Blockages: 9129
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22
@@ -50,21 +50,21 @@ met5       Horizontal       3362          3280          2.44%
 ---------------------------------------------------------------
 
 [INFO GRT-0111] Final number of vias: 933
-[INFO GRT-0112] Final usage 3D: 5776
+[INFO GRT-0112] Final usage 3D: 5749
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-li1              24714          1547            6.26%             0 /  0 /  0
-met1             28047          1430            5.10%             0 /  0 /  0
+li1              24714          1487            6.02%             0 /  0 /  0
+met1             28047          1463            5.22%             0 /  0 /  0
 met2             24920             0            0.00%             0 /  0 /  0
 met3             15040             0            0.00%             0 /  0 /  0
 met4              9768             0            0.00%             0 /  0 /  0
 met5              3280             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           105769          2977            2.81%             0 /  0 /  0
+Total           105769          2950            2.79%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30506 um
+[INFO GRT-0018] Total wirelength: 30312 um
 [WARNING STA-0328] port 'DIOD' not found.
 [ERROR GRT-0069] Diode not found.
 GRT-0069

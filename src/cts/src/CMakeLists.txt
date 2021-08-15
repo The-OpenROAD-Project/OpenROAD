@@ -66,7 +66,7 @@ target_include_directories(cts
 
 target_link_libraries(cts
   PRIVATE
-    opendb
+    odb
     dbSta
     OpenSTA
     rsz

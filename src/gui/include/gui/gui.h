@@ -43,7 +43,7 @@
 #include <typeinfo>
 #include <variant>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace gui {
 class Painter;
