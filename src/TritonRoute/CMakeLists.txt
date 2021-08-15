@@ -90,6 +90,7 @@ target_sources(TritonRoute
     src/gc/FlexGC_main.cpp
     src/gc/FlexGC_eol.cpp
     src/gc/FlexGC_inf.cpp
+    src/gc/FlexGC_cut.cpp
     src/db/drObj/drShape.cpp
     src/db/drObj/drVia.cpp
     src/db/infra/frBox.cpp
@@ -176,6 +177,7 @@ target_include_directories(trTest
 
 target_link_libraries(trTest
   TritonRoute
+  opendb
 )
 
 # Use the shared library if found.  We need to pass this info to

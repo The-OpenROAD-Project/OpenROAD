@@ -36,6 +36,10 @@
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 
+namespace odb {
+class dbTechLayerCutSpacingTableDefRule;
+}
+
 namespace fr {
 class FlexGCWorkerRegionQuery
 {
@@ -375,6 +379,32 @@ class FlexGCWorker::Impl
 
   void checkCutSpacing();
   void checkCutSpacing_main(gcRect* rect);
+  void checkLef58CutSpacingTbl(gcRect* viaRect,
+                               frLef58CutSpacingTableConstraint* con);
+  bool checkLef58CutSpacingTbl_prlValid(
+      const gtl::rectangle_data<frCoord>& viaRect1,
+      const gtl::rectangle_data<frCoord>& viaRect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
+      std::string cutClass1,
+      std::string cutClass2,
+      frCoord& prl,
+      odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  bool checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1, gcRect* viaRect2);
+  bool checkLef58CutSpacingTbl_stacked(gcRect* viaRect1, gcRect* viaRect2);
+  void checkLef58CutSpacingTbl_main(gcRect* viaRect1,
+                                    gcRect* viaRect2,
+                                    frLef58CutSpacingTableConstraint* con);
+  bool checkLef58CutSpacingTbl_helper(
+      gcRect* viaRect1,
+      gcRect* viaRect2,
+      frString cutClass1,
+      frString cutClass2,
+      const frDirEnum dir,
+      frSquaredDistance distSquare,
+      frSquaredDistance c2cSquare,
+      bool prlValid,
+      frCoord prl,
+      odb::dbTechLayerCutSpacingTableDefRule* dbRule);
   void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
   bool checkCutSpacing_main_hasAdjCuts(gcRect* rect,
                                        frCutSpacingConstraint* con);
