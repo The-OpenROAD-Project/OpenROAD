@@ -40,7 +40,7 @@
 #include "frViaDef.h"
 #include "frViaRuleGenerate.h"
 #include "utl/Logger.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace fr {
 namespace io {

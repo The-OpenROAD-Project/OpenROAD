@@ -30,7 +30,7 @@
 
 #include <stdexcept>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 using namespace fr;
 

@@ -28,7 +28,7 @@
 
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 using namespace fr;
 typedef odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY LOOKUP_STRATEGY;

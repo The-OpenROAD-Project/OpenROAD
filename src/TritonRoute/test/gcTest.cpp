@@ -43,7 +43,7 @@
 #include "fixture.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 using namespace fr;
 namespace bdata = boost::unit_test::data;
