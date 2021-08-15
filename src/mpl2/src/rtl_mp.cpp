@@ -47,7 +47,7 @@
 #include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 using utl::PAR;
 
