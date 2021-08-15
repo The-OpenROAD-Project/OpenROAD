@@ -162,11 +162,6 @@ void FastRouteCore::deleteComponents()
   parent_x3_.resize(boost::extents[0][0]);
   parent_y3_.resize(boost::extents[0][0]);
 
-  heap1_.clear();
-  heap2_.clear();
-
-  pop_heap2_.clear();
-
   net_eo_.clear();
 
   xcor_.clear();
@@ -179,11 +174,6 @@ void FastRouteCore::deleteComponents()
   corr_edge_.resize(boost::extents[0][0]);
 
   in_region_.resize(boost::extents[0][0]);
-
-  d1_3D_.resize(boost::extents[0][0][0]);
-  d2_3D_.resize(boost::extents[0][0][0]);
-  d1_.resize(boost::extents[0][0]);
-  d2_.resize(boost::extents[0][0]);
 
   v_capacity_3D_.clear();
   h_capacity_3D_.clear();
@@ -233,12 +223,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   layer_grid_.resize(boost::extents[num_layers_][MAXLEN]);
   via_link_.resize(boost::extents[num_layers_][MAXLEN]);
-
-  d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
-  d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
-
-  d1_.resize(boost::extents[y_range_][x_range_]);
-  d2_.resize(boost::extents[y_range_][x_range_]);
 
   hv_.resize(boost::extents[y_range_][x_range_]);
   hyper_v_.resize(boost::extents[y_range_][x_range_]);
@@ -623,12 +607,6 @@ void FastRouteCore::initAuxVar()
   parent_y1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_x3_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
-
-  pop_heap2_.resize(y_grid_ * x_range_);
-
-  // allocate memory for priority queue
-  heap1_.resize(y_grid_ * x_grid_);
-  heap2_.resize(y_grid_ * x_grid_);
 }
 
 NetRouteMap FastRouteCore::getRoutes()
