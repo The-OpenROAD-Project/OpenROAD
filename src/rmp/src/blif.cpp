@@ -590,12 +590,8 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 float Blif::getRequiredTime(sta::Pin* term, bool is_rise)
 {
   auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
-  // auto pathRef = open_sta_->vertexWorstRequiredPath(vert, sta::MinMax::max());
-  // if (pathRef.isNull())
-  //   return 0;
-  // auto ap = pathRef.pathAnalysisPt(open_sta_);
-
-  auto req = open_sta_->vertexRequired(vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), sta::MinMax::max());
+  auto req = open_sta_->vertexRequired(vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+                                             sta::MinMax::max());
   if (sta::delayInf(req)) {
     return 0;
   }
