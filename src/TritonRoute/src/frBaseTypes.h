@@ -348,7 +348,8 @@ struct frDebugSettings
         gcellX(-1),
         gcellY(-1),
         iter(0),
-        paMarkers(false)
+        paMarkers(false),
+        paCombining(false)
   {
   }
 
@@ -365,6 +366,7 @@ struct frDebugSettings
   int gcellY;
   int iter;
   bool paMarkers;
+  bool paCombining;
 };
 }  // namespace fr
 
