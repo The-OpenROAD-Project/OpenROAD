@@ -1022,16 +1022,16 @@ void FastRouteCore::StNetOrder()
       const std::vector<short>& gridsX = treeedge->route.gridsX;
       const std::vector<short>& gridsY = treeedge->route.gridsY;
       for (i = 0; i < treeedge->route.routelen; i++) {
-        if (gridsX[i] == gridsX[i + 1])  // a vertical edge
-        {
+        if (gridsX[i] == gridsX[i + 1]) { // a vertical edge
           min_y = std::min(gridsY[i], gridsY[i + 1]);
+          const int cap = getEdgeCapacity(nets_[j], gridsX[i], min_y, gridsX[i], min_y+1);
           tree_order_cong_[j].xmin
-              += std::max(0, v_edges_[min_y][gridsX[i]].usage - v_edges_[min_y][gridsX[i]].cap);
-        } else  // a horizontal edge
-        {
+              += std::max(0, v_edges_[min_y][gridsX[i]].usage - cap);
+        } else { // a horizontal edge
           min_x = std::min(gridsX[i], gridsX[i + 1]);
+          const int cap = getEdgeCapacity(nets_[j], min_x, gridsY[i], min_x+1, gridsY[i]);
           tree_order_cong_[j].xmin
-              += std::max(0, h_edges_[gridsY[i]][min_x].usage - h_edges_[gridsY[i]][min_x].cap);
+              += std::max(0, h_edges_[gridsY[i]][min_x].usage - cap);
         }
       }
     }
