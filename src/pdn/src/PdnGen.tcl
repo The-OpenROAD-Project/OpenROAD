@@ -6205,6 +6205,10 @@ proc get_valid_mterms {net_name} {
   }
 
   set mterms_list {}
+  if {![dict exists $global_connections $net_name]} {
+    utl::error PDN  174 "Net $net_name has no global connections defined."
+  }
+
   foreach pattern [dict get $global_connections $net_name] {
     lappend mterms_list [dict get $pattern pin_name]
   }
