@@ -1850,12 +1850,6 @@ void Graph::buildNearestNeighborsForSPT()
       }
     }
   }
-
-  int totNN = 0;
-  for (int j = 0; j < nodes.size(); ++j) /* For each terminal */ {
-    totNN += nn_[j].size();
-  }
-  avg_nn_ = (float) totNN * 1.0 / nodes.size();
 }
 
 void Graph::NESW_Combine(int left, int mid, int right, int oct)
@@ -3694,20 +3688,6 @@ void Graph::BuildDAG()
     }
     UpdateMaxPLToChild(dag_[i]);
   }
-}
-
-// unused
-void Graph::find_max_dc_node(vector<float>& node_and_dc)
-{
-  int max_node = 0, max_node_dc = 0;
-  for (int j = 1; j < num_terminals; ++j) /* For each terminal */ {
-    if (nodes[j].det_cost_node > max_node_dc) {
-      max_node_dc = nodes[j].det_cost_node;
-      max_node = j;
-    }
-  }
-  node_and_dc[0] = max_node;
-  node_and_dc[1] = max_node_dc;
 }
 
 }  // namespace

@@ -60,7 +60,6 @@ public:
   void run_PD_brute_force(float alpha);
   void doSteiner_HoVW();
   void fix_max_dc();
-  void find_max_dc_node(vector<float>& node_and_dc);
   int calc_overlap(vector<vector<Node>>& set_of_nodes);
   int calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
   void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
@@ -175,7 +174,6 @@ private:
   vector<Node> hanan_;
   // nearest neighbor in some undocumented sense -cherry 06/14/2021
   vector<vector<int>> nn_;
-  float avg_nn_;
   vector<vector<int>> nn_hanan_;
   vector<int> sorted_;
   vector<int> sorted_hanan_;

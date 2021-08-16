@@ -251,6 +251,7 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 typedef std::pair<int, int> PDedge;
 typedef std::vector<std::set<PDedge>> PDedges;
 
+static int findPathDepth(Tree &tree);
 static int findPathDepth(int node,
                          int from,
                          PDedges &edges,
@@ -276,7 +277,7 @@ reportSteinerTree(stt::Tree &tree,
   }
 }
 
-int findPathDepth(Tree &tree)
+static int findPathDepth(Tree &tree)
 {
   int node_count = tree.branchCount();
   PDedges edges(node_count);
