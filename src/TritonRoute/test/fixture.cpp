@@ -30,6 +30,8 @@
 
 #include <stdexcept>
 
+#include "odb/db.h"
+
 using namespace fr;
 
 Fixture::Fixture()
@@ -478,6 +480,43 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
   cutEnc->setBelow(below);
   cutEnc->setAllCuts(allCuts);
   return cutEnc;
+}
+
+void Fixture::makeCutClass(frLayerNum layer_num,
+                           std::string name,
+                           frCoord width,
+                           frCoord height)
+{
+  auto cutClass = make_unique<frLef58CutClass>();
+  cutClass->setName(name);
+  cutClass->setViaWidth(width);
+  cutClass->setViaLength(height);
+  design->getTech()->addCutClass(layer_num, std::move(cutClass));
+}
+
+void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
+                                 odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+{
+  auto con = make_shared<frLef58CutSpacingTableConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  if (dbRule->isLayerValid()) {
+    if (dbRule->isSameMetal()) {
+      layer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
+    } else if (dbRule->isSameNet()) {
+      layer->setLef58SameNetInterCutSpcTblConstraint(con.get());
+    } else {
+      layer->setLef58DefaultInterCutSpcTblConstraint(con.get());
+    }
+  } else {
+    if (dbRule->isSameMetal()) {
+      layer->setLef58SameMetalCutSpcTblConstraint(con.get());
+    } else if (dbRule->isSameNet()) {
+      layer->setLef58SameNetCutSpcTblConstraint(con.get());
+    } else {
+      layer->setLef58DiffNetCutSpcTblConstraint(con.get());
+    }
+  }
+  design->getTech()->addConstraint(con);
 }
 
 frNet* Fixture::makeNet(const char* name)

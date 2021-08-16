@@ -40,6 +40,7 @@
 #include "frViaDef.h"
 #include "frViaRuleGenerate.h"
 #include "utl/Logger.h"
+#include "odb/db.h"
 
 namespace fr {
 namespace io {
@@ -1261,76 +1262,14 @@ class frLef58CutSpacingTableConstraint : public frConstraint
 {
  public:
   // constructor
-  frLef58CutSpacingTableConstraint()
-      : cutClassHasAll(false), defaultCutSpacing(0)
+  frLef58CutSpacingTableConstraint(odb::dbTechLayerCutSpacingTableDefRule* dbRule) : db_rule_(dbRule)
   {
   }
   // getter
-  std::shared_ptr<
-      fr2DLookupTbl<frString, frString, std::pair<frCoord, frCoord>>>
-  getCutClassTbl() const
-  {
-    return cutClassTbl;
-  }
-  bool hasPrlConstraint() const { return (prlConstraint) ? true : false; }
-  std::shared_ptr<frLef58CutSpacingTablePrlConstraint> getPrlConstraint() const
-  {
-    return prlConstraint;
-  }
-  bool hasLayerConstraint() const { return (layerConstraint) ? true : false; }
-  std::shared_ptr<frLef58CutSpacingTableLayerConstraint> getLayerConstraint()
-      const
-  {
-    return layerConstraint;
-  }
-  bool hasAll() const { return cutClassHasAll; }
-  frCoord getDefaultCutSpacing() const { return defaultCutSpacing; }
-  // setter
-  void setCutClassTbl(
-      std::shared_ptr<
-          fr2DLookupTbl<frString, frString, std::pair<frCoord, frCoord>>>& in)
-  {
-    cutClassTbl = in;
-  }
-  void setPrlConstraint(
-      const std::shared_ptr<frLef58CutSpacingTablePrlConstraint>& in)
-  {
-    prlConstraint = in;
-  }
-  void setLayerConstraint(
-      const std::shared_ptr<frLef58CutSpacingTableLayerConstraint>& in)
-  {
-    layerConstraint = in;
-  }
-  void setAll(bool in) { cutClassHasAll = in; }
-  void setDefaultCutSpacing(frCoord in) { defaultCutSpacing = in; }
+  odb::dbTechLayerCutSpacingTableDefRule* getODBRule() const { return db_rule_; }
   void report(utl::Logger* logger) const override
   {
-    logger->report("CUTSPACINGTABLE defaultCutSpacing {} cutClassHasAll {}");
-    if (prlConstraint != nullptr)
-      prlConstraint->report(logger);
-    if (layerConstraint != nullptr)
-      layerConstraint->report(logger);
-    if (cutClassTbl != nullptr) {
-      std::string cols = "";
-      std::string rows = "";
-      for (auto row : cutClassTbl->getRows())
-        rows = rows + row + " ";
-      for (auto col : cutClassTbl->getCols())
-        cols = cols + col + " ";
-      logger->report("\trowName: {}", cutClassTbl->getRowName());
-      logger->report("\trows: {}", rows);
-      logger->report("\trcolName: {}", cutClassTbl->getColName());
-      logger->report("\tcols: {}", cols);
-      auto tbl = cutClassTbl->getValues();
-      for (auto row : tbl) {
-        std::string vals = "";
-        for (auto col : row)
-          vals = vals + "(" + std::to_string(col.first) + ","
-                 + std::to_string(col.second) + ") ";
-        logger->report("\t{}", vals);
-      }
-    }
+    logger->report("CUTSPACINGTABLE");
   }
   // others
   frConstraintTypeEnum typeId() const override
@@ -1338,14 +1277,9 @@ class frLef58CutSpacingTableConstraint : public frConstraint
     return frConstraintTypeEnum::frcLef58CutSpacingTableConstraint;
   }
 
- protected:
-  std::shared_ptr<
-      fr2DLookupTbl<frString, frString, std::pair<frCoord, frCoord>>>
-      cutClassTbl;
-  std::shared_ptr<frLef58CutSpacingTablePrlConstraint> prlConstraint;
-  std::shared_ptr<frLef58CutSpacingTableLayerConstraint> layerConstraint;
-  bool cutClassHasAll;
-  frCoord defaultCutSpacing;
+ private:
+  odb::dbTechLayerCutSpacingTableDefRule* db_rule_;
+  
 };
 
 // new SPACINGTABLE Constraints
