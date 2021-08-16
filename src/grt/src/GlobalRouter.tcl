@@ -282,6 +282,19 @@ proc write_guides { args } {
   grt::write_guides $file_name
 }
 
+sta::define_cmd_args "highlight_route" { net_name }
+
+proc highlight_route { net_name } {
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 223 "Missing dbBlock."
+  }
+  set net [$block findNet $net_name]
+  if { $net != "NULL" } {
+    grt::highlight_net_route $net
+  }
+}
+
 namespace eval grt {
 
 proc estimate_rc_cmd {} {
@@ -361,17 +374,6 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 
   if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
     utl::error GRT 67 "Upper right y is outside die area."
-  }
-}
-
-proc highlight_route { net_name } {
-  set block [ord::get_db_block]
-  if { $block == "NULL" } {
-    utl::error GRT 223 "Missing dbBlock."
-  }
-  set net [$block findNet $net_name]
-  if { $net != "NULL" } {
-    highlight_net_route $net
   }
 }
 
