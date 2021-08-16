@@ -8145,7 +8145,21 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerCutSpacingTableDefRule : public dbObject
 {
  public:
+  enum LOOKUP_STRATEGY
+  {
+    FIRST,
+    SECOND,
+    MAX,
+    MIN
+  };
   // User Code Begin dbTechLayerCutSpacingTableDefRuleEnums
+  /*
+  LOOKUP_STRATEGY:
+  * FIRST     : first spacing value
+  * SECOND    : second spacing value
+  * MAX       : max spacing value
+  * MIN       : min spacing value
+  */
   // User Code End dbTechLayerCutSpacingTableDefRuleEnums
 
   void setDefault(int spacing);
@@ -8257,61 +8271,33 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   bool isOppositeEnclosureResizeSpacingValid() const;
 
   // User Code Begin dbTechLayerCutSpacingTableDefRule
-  void addPrlForAlignedCutEntry(dbTechLayerCutClassRule* from,
-                                dbTechLayerCutClassRule* to);
+  void addPrlForAlignedCutEntry(std::string from, std::string to);
 
-  std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
-  getPrlForAlignedCutTable() const;
+  void addCenterToCenterEntry(std::string from, std::string to);
 
-  void addCenterToCenterEntry(dbTechLayerCutClassRule* from,
-                              dbTechLayerCutClassRule* to);
+  void addCenterAndEdgeEntry(std::string from, std::string to);
 
-  std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
-  getCenterToCenterTable() const;
+  void addPrlEntry(std::string from, std::string to, int ccPrl);
 
-  void addCenterAndEdgeEntry(dbTechLayerCutClassRule* from,
-                             dbTechLayerCutClassRule* to);
+  void addEndExtensionEntry(std::string cls, int ext);
 
-  std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
-  getCenterAndEdgeTable() const;
+  void addSideExtensionEntry(std::string cls, int ext);
 
-  void addPrlEntry(dbTechLayerCutClassRule* from,
-                   dbTechLayerCutClassRule* to,
-                   int ccPrl);
+  void addExactElignedEntry(std::string cls, int spacing);
 
-  std::vector<
-      std::tuple<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*, int>>
-  getPrlTable() const;
+  void addNonOppEncSpacingEntry(std::string cls, int spacing);
 
-  void addEndExtensionEntry(dbTechLayerCutClassRule* cls, int ext);
-
-  std::vector<std::pair<dbTechLayerCutClassRule*, int>> getEndExtensionTable()
-      const;
-
-  void addSideExtensionEntry(dbTechLayerCutClassRule* cls, int ext);
-
-  std::vector<std::pair<dbTechLayerCutClassRule*, int>> getSideExtensionTable()
-      const;
-
-  void addExactElignedEntry(dbTechLayerCutClassRule* cls, int spacing);
-
-  std::vector<std::pair<dbTechLayerCutClassRule*, int>> getExactAlignedTable()
-      const;
-
-  void addNonOppEncSpacingEntry(dbTechLayerCutClassRule* cls, int spacing);
-
-  std::vector<std::pair<dbTechLayerCutClassRule*, int>>
-  getNonOppEncSpacingTable() const;
-
-  void addOppEncSpacingEntry(dbTechLayerCutClassRule* cls,
-                             int rsz1,
-                             int rsz2,
-                             int spacing);
-
-  std::vector<std::tuple<dbTechLayerCutClassRule*, int, int, int>>
-  getOppEncSpacingTable() const;
+  void addOppEncSpacingEntry(std::string cls, int rsz1, int rsz2, int spacing);
 
   dbTechLayer* getSecondLayer() const;
+
+  bool isCenterToCenter(std::string cutClass1, std::string cutClass2);
+
+  bool isCenterAndEdge(std::string cutClass1, std::string cutClass2);
+
+  bool isPrlForAlignedCutClasses(std::string cutClass1, std::string cutClass2);
+
+  int getPrlEntry(std::string cutClass1, std::string cutClass2);
 
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
                        std::map<std::string, uint> row_map,
@@ -8321,10 +8307,19 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
                        std::map<std::string, uint>& row_map,
                        std::map<std::string, uint>& col_map);
 
-  std::pair<int, int> getSpacing(const char* class1,
-                                 bool SIDE1,
-                                 const char* class2,
-                                 bool SIDE2);
+  int getMaxSpacing(std::string cutClass, bool SIDE) const;
+
+  int getExactAlignedSpacing(std::string cutClass) const;
+
+  int getMaxSpacing(std::string cutClass1,
+                    std::string cutClass2,
+                    LOOKUP_STRATEGY strategy = MAX) const;
+
+  int getSpacing(std::string class1,
+                 bool SIDE1,
+                 std::string class2,
+                 bool SIDE2,
+                 LOOKUP_STRATEGY strategy = MAX) const;
 
   dbTechLayer* getTechLayer() const;
 

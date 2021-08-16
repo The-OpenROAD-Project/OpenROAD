@@ -1,6 +1,6 @@
 # Challenging net from nangate45/swerv with segment overlaps.
 # We have to fallback to Flute on this net.
-source "pdrev_helpers.tcl"
+source "stt_helpers.tcl"
 
 set_debug_level STT check 1
 

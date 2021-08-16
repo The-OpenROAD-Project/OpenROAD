@@ -217,7 +217,9 @@ class GuiPainter : public Painter
     const int x_len = std::abs(x0 - x1);
     const int y_len = std::abs(y0 - y1);
 
-    ss << std::fixed << std::setprecision(2)
+    const int precision = std::ceil(std::log10(dbu_per_micron_));
+
+    ss << std::fixed << std::setprecision(precision)
        << std::max(x_len, y_len) / (qreal) dbu_per_micron_;
 
     drawLine(x0, y0, x1, y1);
@@ -350,9 +352,32 @@ void LayoutViewer::computeCenteringOffset()
   }
 }
 
+odb::Point LayoutViewer::getVisibleCenter()
+{
+  return screenToDBU(visibleRegion().boundingRect().center());
+}
+
+void LayoutViewer::setResolution(qreal pixels_per_dbu)
+{
+  odb::Point center = getVisibleCenter();
+  setPixelsPerDBU(pixels_per_dbu);
+  centerAt(center);
+}
+
+void LayoutViewer::centerAt(const QPointF& focus)
+{
+  scroller_->horizontalScrollBar()->setValue(focus.x() - scroller_->width() / 2);
+  scroller_->verticalScrollBar()->setValue(focus.y() - scroller_->height() / 2);
+}
+
+void LayoutViewer::centerAt(const odb::Point& focus)
+{
+  centerAt(dbuToScreen(focus));
+}
+
 void LayoutViewer::zoomIn()
 {
-  zoomIn(screenToDBU(visibleRegion().boundingRect().center()), false);
+  zoomIn(getVisibleCenter(), false);
 }
 
 void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
@@ -362,7 +387,7 @@ void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
 
 void LayoutViewer::zoomOut()
 {
-  zoomOut(screenToDBU(visibleRegion().boundingRect().center()), false);
+  zoomOut(getVisibleCenter(), false);
 }
 
 void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
@@ -373,21 +398,17 @@ void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
 void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_focus)
 {
   qreal old_pixels_per_dbu = getPixelsPerDBU();
-  int scrollbar_x = scroller_->horizontalScrollBar()->value();
-  int scrollbar_y = scroller_->verticalScrollBar()->value();
-  QPointF old_pos_in_widget = dbuToScreen(focus);
+  QPointF pos_in_widget = dbuToScreen(focus);
 
   setPixelsPerDBU(pixels_per_dbu_ * factor);
 
+  factor = getPixelsPerDBU() / old_pixels_per_dbu;
   if (do_delta_focus) {
-    qreal new_pixels_per_dbu = getPixelsPerDBU();
-    QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * old_pos_in_widget;
-    scroller_->horizontalScrollBar()->setValue(scrollbar_x + delta.x());
-    scroller_->verticalScrollBar()->setValue(scrollbar_y + delta.y());
+    QPointF delta = (factor - 1) * pos_in_widget;
+    scroller_->horizontalScrollBar()->setValue(scroller_->horizontalScrollBar()->value() + delta.x());
+    scroller_->verticalScrollBar()->setValue(scroller_->verticalScrollBar()->value() + delta.y());
   } else {
-    QPointF new_pos_in_widget = dbuToScreen(focus);
-    scroller_->horizontalScrollBar()->setValue(new_pos_in_widget.x() - scroller_->horizontalScrollBar()->pageStep()/2);
-    scroller_->verticalScrollBar()->setValue(new_pos_in_widget.y() - scroller_->verticalScrollBar()->pageStep()/2);
+    centerAt(factor * pos_in_widget);
   }
 }
 
@@ -401,8 +422,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
   int w = (scroller_->width() - screen_rect.width()) / 2;
   int h = (scroller_->height() - screen_rect.height()) / 2;
 
-  scroller_->horizontalScrollBar()->setValue(screen_rect.left() - w);
-  scroller_->verticalScrollBar()->setValue(screen_rect.top() - h);
+  centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
 }
 
 void LayoutViewer::updateRubberBandRegion()
@@ -751,7 +771,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  int min_resolution = 5*minimumViewableResolution();
+  int min_resolution = nominalViewableResolution();
   Rect block_bounds;
   block->getBBox()->getBox(block_bounds);
   const Rect draw_bounds = block_bounds.intersect(bounds);
@@ -812,7 +832,7 @@ void LayoutViewer::drawRows(dbBlock* block,
   if (!options_->areRowsVisible()) {
     return;
   }
-  int min_resolution = 5*minimumViewableResolution();
+  int min_resolution = nominalViewableResolution();
   // three possible draw cases:
   // 1) resolution allows for individual sites -> draw all
   // 2) individual sites too small -> just draw row outlines
@@ -988,7 +1008,7 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
-  int minimum_height_for_tag = 5 * minimumViewableResolution();
+  int minimum_height_for_tag = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   painter->setPen(QPen(Qt::gray, 0));
@@ -1027,7 +1047,7 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
-  int minimum_height = 5 * minimumViewableResolution();
+  int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
   for (auto inst : insts) {
@@ -1077,7 +1097,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  const int minimum_size = 10 * minimumViewableResolution();
+  const int minimum_size = coarseViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   const QColor text_color = options_->instanceNameColor();
@@ -1186,7 +1206,7 @@ void LayoutViewer::drawBlockages(QPainter* painter,
   painter->setBrush(QBrush(options_->placementBlockageColor(), options_->placementBlockagePattern()));
 
   auto blockage_range = search_.searchBlockages(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), fineViewableResolution());
 
   for (auto& [box, poly, blockage] : blockage_range) {
     Rect bbox;
@@ -1209,7 +1229,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   painter->setBrush(QBrush(color, brush_pattern));
 
   auto obstructions_range = search_.searchObstructions(
-      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), minimumViewableResolution());
+      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), fineViewableResolution());
 
   for (auto& [box, poly, obs] : obstructions_range) {
     Rect bbox;
@@ -1226,7 +1246,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              int depth,
                              const QTransform& base_tx)
 {
-  int pixel = minimumViewableResolution();  // 1 pixel in DBU
+  int min_resolution = fineViewableResolution();  // 1 pixel in DBU
+  int nominal_resolution = nominalViewableResolution();
   LayerBoxes boxes;
   QTransform initial_xfm = painter->transform();
 
@@ -1248,7 +1269,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   auto inst_range = search_.searchInsts(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), min_resolution);
 
   // Cache the search results as we will iterate over the instances
   // for each layer.
@@ -1272,8 +1293,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    const bool is_cut = layer->getType() == dbTechLayerType::CUT;
-    if (is_cut && layer->getWidth() < 1 * pixel) {
+    if (layer->getType() == dbTechLayerType::CUT && cut_maximum_size_[layer] < nominal_resolution) {
       continue;
     }
 
@@ -1291,7 +1311,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      bounds.yMin(),
                                      bounds.xMax(),
                                      bounds.yMax(),
-                                     5 * pixel);
+                                     nominal_resolution);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -1324,7 +1344,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       bounds.yMin(),
                                       bounds.xMax(),
                                       bounds.yMax(),
-                                      5 * pixel);
+                                      nominal_resolution);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -1497,6 +1517,10 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   if (!search_init_) {
     search_.init(block);
     search_init_ = true;
+  }
+
+  if (cut_maximum_size_.empty()) {
+    generateCutLayerMaximumSizes();
   }
 
   // Coordinate system setup (see file level comments)
@@ -1851,6 +1875,35 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void LayoutViewer::generateCutLayerMaximumSizes()
+{
+  if (db_ == nullptr) {
+    return;
+  }
+
+  dbTech* tech = db_->getTech();
+  if (tech == nullptr) {
+    return;
+  }
+
+  for (auto layer : tech->getLayers()) {
+    if (layer->getType() == dbTechLayerType::CUT) {
+      int width = layer->getWidth();
+      if (width == 0) {
+        // width is not set, so looking through all vias to find max size
+        for (auto via : tech->getVias()) {
+          for (auto box : via->getBoxes()) {
+            if (box->getTechLayer() == layer) {
+              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
+            }
+          }
+        }
+      }
+      cut_maximum_size_[layer] = width;
+    }
+  }
+}
+
 void LayoutViewer::inDbNetDestroy(dbNet* net)
 {
   updateShapes();
@@ -1938,9 +1991,19 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
   fit();
 }
 
-int LayoutViewer::minimumViewableResolution()
+inline int LayoutViewer::fineViewableResolution()
 {
-  return 1 / pixels_per_dbu_;
+  return 1.0 / pixels_per_dbu_;
+}
+
+inline int LayoutViewer::nominalViewableResolution()
+{
+  return 5.0 / pixels_per_dbu_;
+}
+
+inline int LayoutViewer::coarseViewableResolution()
+{
+  return 10.0 / pixels_per_dbu_;
 }
 
 }  // namespace gui
