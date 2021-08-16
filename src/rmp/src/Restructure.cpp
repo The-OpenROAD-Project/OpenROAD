@@ -105,7 +105,8 @@ void Restructure::run(char* liberty_file_name,
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
 
-  removeConstCells();
+  if (opt_mode_ <= Mode::AREA_3) // Only in area mode
+    removeConstCells();
 
   getBlob(max_depth);
 
@@ -307,7 +308,8 @@ void Restructure::runABC()
           best_level_gain = level_gain;
           best_blif = output_blif_file_name_;
         }
-        if (!level_based && delay < best_delay_gain) {
+        // Using only DELAY_4 for delay based gain
+        if ((curr_mode_idx == modes.size()-1) || (!level_based && delay < best_delay_gain)) {
           best_delay_gain = delay;
           best_blif = output_blif_file_name_;
         }
@@ -552,7 +554,7 @@ bool Restructure::writeAbcScript(std::string file_name)
     script << read_lib_str;
   }
 
-  script << "read_blif " << input_blif_file_name_ << std::endl;
+  script << "read_blif -n " << input_blif_file_name_ << std::endl;
 
   if (logger_->debugCheck(RMP, "remap", 1))
     script << "write_verilog " << input_blif_file_name_ + std::string(".v")
@@ -595,31 +597,31 @@ void Restructure::writeOptCommands(std::ofstream& script)
 
   switch (opt_mode_) {
     case Mode::DELAY_1: {
-      script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
       script << "buffer -p -c" << std::endl;
       break;
     }
     case Mode::DELAY_2: {
       script << "choice" << std::endl;
-      script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
       script << "choice" << std::endl;
-      script << "map" << std::endl;
+      script << "map -D 0.01" << std::endl;
       script << "buffer -p -c" << std::endl << "topo" << std::endl;
       break;
     }
     case Mode::DELAY_3: {
       script << "choice2" << std::endl;
-      script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
       script << "choice2" << std::endl;
-      script << "map" << std::endl;
+      script << "map -D 0.01" << std::endl;
       script << "buffer -p -c" << std::endl << "topo" << std::endl;
       break;
     }
     case Mode::DELAY_4: {
       script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
+      script << "amap -F 20 -A 20 -C 5000 -Q 0.1 -m" << std::endl;
       script << "choice2" << std::endl;
-      script << "map -p -B 0.2 -A 0.9 -M 0" << std::endl;
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
       script << "buffer -p -c" << std::endl;
       break;
     }
