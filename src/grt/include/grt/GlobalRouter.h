@@ -165,8 +165,6 @@ class GlobalRouter
                                    int max_routing_layer,
                                    NetType type);
   void estimateRC();
-  void run();
-  void globalRouteClocksSeparately();
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }

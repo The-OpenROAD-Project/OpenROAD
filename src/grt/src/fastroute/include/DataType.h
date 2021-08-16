@@ -84,6 +84,8 @@ struct FrNet    // A Net is a set of connected MazePoints
   bool is_clock;             // flag that indicates if net is a clock net
   int driver_idx;
   int edgeCost;
+  int minLayer;
+  int maxLayer;
   std::vector<int> edge_cost_per_layer;
 };
 

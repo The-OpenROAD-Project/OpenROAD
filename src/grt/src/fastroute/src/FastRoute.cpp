@@ -294,6 +294,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           bool is_clock,
                           int driver_idx,
                           int cost,
+                          int min_layer,
+                          int max_layer,
                           std::vector<int> edge_cost_per_layer)
 {
   const int netID = new_net_id_;
@@ -305,6 +307,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
   net->edgeCost = cost;
+  net->minLayer = min_layer;
+  net->maxLayer = max_layer;
   net->edge_cost_per_layer = edge_cost_per_layer;
 
   seglist_index_[new_net_id_] = seg_count_;
