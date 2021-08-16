@@ -107,6 +107,11 @@ class FastRouteCore
   void updateDbCongestion();
 
   int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
+  int getEdgeCapacity(FrNet* net,
+                      int x1,
+                      int y1,
+                      int x2,
+                      int y2);
   int getEdgeCurrentResource(long x1,
                              long y1,
                              int l1,

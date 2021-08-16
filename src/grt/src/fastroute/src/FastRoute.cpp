@@ -548,6 +548,30 @@ int FastRouteCore::getEdgeCapacity(long x1,
   return cap;
 }
 
+int FastRouteCore::getEdgeCapacity(FrNet* net,
+                                   int x1,
+                                   int y1,
+                                   int x2,
+                                   int y2)
+{
+  int cap = 0;
+
+  // get 2D edge capacity respecting layer restrictions
+  for (int l = net->minLayer; l <= net->maxLayer; l++) {
+    if (y1 == y2) { // horizontal edge
+      cap += h_edges_3D_[l][y1][x1].cap;
+    } else if (x1 == x2) { // vertical edge
+      cap += v_edges_3D_[l][y1][x1].cap;
+    } else {
+      logger_->error(GRT,
+          180,
+          "Cannot get edge capacity 3D: edge is not vertical or horizontal.");
+    }
+  }
+
+  return cap;
+}
+
 void FastRouteCore::setEdgeCapacity(long x1,
                                     long y1,
                                     int l1,
