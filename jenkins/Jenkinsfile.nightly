@@ -44,7 +44,7 @@ pipeline {
             stage("Test Replace Large") {
               steps {
                 unstash "build";
-                sh "./src/replace/test/regression-large";
+                sh "./src/gpl/test/regression-large";
               }
             }
           }
