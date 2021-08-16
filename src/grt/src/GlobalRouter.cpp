@@ -197,11 +197,18 @@ void GlobalRouter::globalRoute()
     max_routing_layer_ = computeMaxRoutingLayer();
   }
 
+  int min_layer = min_layer_for_clock_ > 0 ? 
+                  std::min(min_routing_layer_, min_layer_for_clock_) :
+                  min_routing_layer_;
+  int max_layer = max_layer_for_clock_ > 0 ?
+                  std::max(max_routing_layer_, max_layer_for_clock_) :
+                  max_routing_layer_;
+
   std::vector<Net*> nets
-      = startFastRoute(min_routing_layer_, max_routing_layer_, NetType::All);
+      = startFastRoute(min_layer, max_layer, NetType::All);
   reportResources();
 
-  routes_ = findRouting(nets, min_routing_layer_, max_routing_layer_);
+  routes_ = findRouting(nets, min_layer, max_layer);
 
   reportCongestion();
   computeWirelength();
