@@ -251,7 +251,7 @@ void FlexPAGraphics::setObjsAndMakers(
     frBox bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
-                  279,
+                  281,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
                   bbox.left(),
