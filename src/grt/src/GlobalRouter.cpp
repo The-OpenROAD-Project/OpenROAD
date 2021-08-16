@@ -3459,17 +3459,17 @@ class GrouteRenderer : public gui::Renderer
 {
  public:
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
-  void highlight(const odb::dbNet* net);
+  void highlight( odb::dbNet* net);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
  private:
   GlobalRouter* groute_;
   odb::dbTech* tech_;
-  const odb::dbNet* net_;
+  std::vector<odb::dbNet*> nets_;
 };
 
 // Highlight guide in the gui.
-void GlobalRouter::highlightRoute(const odb::dbNet* net)
+void GlobalRouter::highlightRoute(odb::dbNet* net)
 {
   if (gui_) {
     if (groute_renderer_ == nullptr) {
@@ -3481,20 +3481,20 @@ void GlobalRouter::highlightRoute(const odb::dbNet* net)
 }
 
 GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
-    : groute_(groute), tech_(tech), net_(nullptr)
+    : groute_(groute), tech_(tech)
 {
 }
 
-void GrouteRenderer::highlight(const odb::dbNet* net)
+void GrouteRenderer::highlight(odb::dbNet* net)
 {
-  net_ = net;
+  nets_.push_back(net);
 }
 
 void GrouteRenderer::drawObjects(gui::Painter& painter)
 {
-  if (net_) {
+  for (const odb::dbNet* net : nets_) {
     NetRouteMap& routes = groute_->getRoutes();
-    GRoute& groute = routes[const_cast<odb::dbNet*>(net_)];
+    GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
     for (GSegment& seg : groute) {
       int layer1 = seg.init_layer;
       int layer2 = seg.final_layer;

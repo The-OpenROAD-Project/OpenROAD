@@ -289,9 +289,11 @@ proc highlight_route { net_name } {
   if { $block == "NULL" } {
     utl::error GRT 223 "Missing dbBlock."
   }
-  set net [$block findNet $net_name]
-  if { $net != "NULL" } {
-    grt::highlight_net_route $net
+
+  foreach net [get_nets $net_name] {
+    if { $net != "NULL" } {
+      grt::highlight_net_route [sta::sta_to_db_net $net]
+    }
   }
 }
 
