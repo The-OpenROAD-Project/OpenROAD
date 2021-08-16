@@ -218,6 +218,24 @@ void zoom_out(double x, double y)
   gui->zoomIn(make_point(x, y));
 }
 
+void center_at(double x, double y)
+{
+  if (!check_gui("center_at")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->centerAt(make_point(x, y));
+}
+
+void set_resolution(double dbu_per_pixel)
+{
+  if (!check_gui("set_resolution")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->setResolution(1 / dbu_per_pixel);
+}
+
 void design_created()
 {
   if (!check_gui("design_created")) {
