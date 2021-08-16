@@ -191,6 +191,8 @@ class GlobalRouter
 
   // Highlight route in the gui.
   void highlightRoute(odb::dbNet* net);
+  // Clear routes in the gui
+  void clearRouteGui();
   // Report the wire length on each layer.
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);

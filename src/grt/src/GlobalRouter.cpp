@@ -3459,7 +3459,8 @@ class GrouteRenderer : public gui::Renderer
 {
  public:
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
-  void highlight( odb::dbNet* net);
+  void highlight(odb::dbNet* net);
+  void clear();
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
  private:
@@ -3478,6 +3479,16 @@ void GlobalRouter::highlightRoute(odb::dbNet* net)
     }
     groute_renderer_->highlight(net);
   }
+}
+
+void GlobalRouter::clearRouteGui()
+{
+  groute_renderer_->clear();
+}
+
+void GrouteRenderer::clear()
+{
+  nets_.clear();
 }
 
 GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)

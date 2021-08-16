@@ -297,6 +297,12 @@ proc highlight_route { net_name } {
   }
 }
 
+sta::define_cmd_args "clear_route" {}
+
+proc clear_route {} {
+  grt::clear_routes
+}
+
 namespace eval grt {
 
 proc estimate_rc_cmd {} {

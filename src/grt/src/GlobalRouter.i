@@ -200,6 +200,12 @@ highlight_net_route(odb::dbNet *net)
 }
 
 void
+clear_routes()
+{
+  getGlobalRouter()->clearRouteGui();
+}
+
+void
 report_layer_wire_lengths()
 {
   getGlobalRouter()->reportLayerWireLengths();
