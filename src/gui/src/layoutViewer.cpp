@@ -217,7 +217,9 @@ class GuiPainter : public Painter
     const int x_len = std::abs(x0 - x1);
     const int y_len = std::abs(y0 - y1);
 
-    ss << std::fixed << std::setprecision(2)
+    const int precision = std::ceil(std::log10(dbu_per_micron_));
+
+    ss << std::fixed << std::setprecision(precision)
        << std::max(x_len, y_len) / (qreal) dbu_per_micron_;
 
     drawLine(x0, y0, x1, y1);
@@ -350,9 +352,32 @@ void LayoutViewer::computeCenteringOffset()
   }
 }
 
+odb::Point LayoutViewer::getVisibleCenter()
+{
+  return screenToDBU(visibleRegion().boundingRect().center());
+}
+
+void LayoutViewer::setResolution(qreal pixels_per_dbu)
+{
+  odb::Point center = getVisibleCenter();
+  setPixelsPerDBU(pixels_per_dbu);
+  centerAt(center);
+}
+
+void LayoutViewer::centerAt(const QPointF& focus)
+{
+  scroller_->horizontalScrollBar()->setValue(focus.x() - scroller_->width() / 2);
+  scroller_->verticalScrollBar()->setValue(focus.y() - scroller_->height() / 2);
+}
+
+void LayoutViewer::centerAt(const odb::Point& focus)
+{
+  centerAt(dbuToScreen(focus));
+}
+
 void LayoutViewer::zoomIn()
 {
-  zoomIn(screenToDBU(visibleRegion().boundingRect().center()), false);
+  zoomIn(getVisibleCenter(), false);
 }
 
 void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
@@ -362,7 +387,7 @@ void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
 
 void LayoutViewer::zoomOut()
 {
-  zoomOut(screenToDBU(visibleRegion().boundingRect().center()), false);
+  zoomOut(getVisibleCenter(), false);
 }
 
 void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
@@ -373,21 +398,17 @@ void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
 void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_focus)
 {
   qreal old_pixels_per_dbu = getPixelsPerDBU();
-  int scrollbar_x = scroller_->horizontalScrollBar()->value();
-  int scrollbar_y = scroller_->verticalScrollBar()->value();
-  QPointF old_pos_in_widget = dbuToScreen(focus);
+  QPointF pos_in_widget = dbuToScreen(focus);
 
   setPixelsPerDBU(pixels_per_dbu_ * factor);
 
+  factor = getPixelsPerDBU() / old_pixels_per_dbu;
   if (do_delta_focus) {
-    qreal new_pixels_per_dbu = getPixelsPerDBU();
-    QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * old_pos_in_widget;
-    scroller_->horizontalScrollBar()->setValue(scrollbar_x + delta.x());
-    scroller_->verticalScrollBar()->setValue(scrollbar_y + delta.y());
+    QPointF delta = (factor - 1) * pos_in_widget;
+    scroller_->horizontalScrollBar()->setValue(scroller_->horizontalScrollBar()->value() + delta.x());
+    scroller_->verticalScrollBar()->setValue(scroller_->verticalScrollBar()->value() + delta.y());
   } else {
-    QPointF new_pos_in_widget = dbuToScreen(focus);
-    scroller_->horizontalScrollBar()->setValue(new_pos_in_widget.x() - scroller_->horizontalScrollBar()->pageStep()/2);
-    scroller_->verticalScrollBar()->setValue(new_pos_in_widget.y() - scroller_->verticalScrollBar()->pageStep()/2);
+    centerAt(factor * pos_in_widget);
   }
 }
 
@@ -401,8 +422,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
   int w = (scroller_->width() - screen_rect.width()) / 2;
   int h = (scroller_->height() - screen_rect.height()) / 2;
 
-  scroller_->horizontalScrollBar()->setValue(screen_rect.left() - w);
-  scroller_->verticalScrollBar()->setValue(screen_rect.top() - h);
+  centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
 }
 
 void LayoutViewer::updateRubberBandRegion()

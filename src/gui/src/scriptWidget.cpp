@@ -332,6 +332,8 @@ void ScriptWidget::pause()
   pauser_->setEnabled(true);
   paused_ = true;
 
+  input_->setReadOnly(true);
+
   // Keep processing events until the user continues
   while (paused_) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
@@ -340,6 +342,8 @@ void ScriptWidget::pause()
   pauser_->setText(prior_text);
   pauser_->setStyleSheet(prior_style);
   pauser_->setEnabled(prior_enable);
+
+  input_->setReadOnly(false);
 
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);

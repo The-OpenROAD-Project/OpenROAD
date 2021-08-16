@@ -342,6 +342,8 @@ class Gui
   void zoomIn(const odb::Point& focus_dbu);
   void zoomOut();
   void zoomOut(const odb::Point& focus_dbu);
+  void centerAt(const odb::Point& focus_dbu);
+  void setResolution(double pixels_per_dbu);
 
   // Save layout to an image file
   void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
