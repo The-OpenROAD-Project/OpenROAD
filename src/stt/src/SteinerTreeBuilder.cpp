@@ -65,7 +65,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
                                          std::vector<int>& y,
                                          int drvr_index)
 {
-  Tree tree = makeTree(x, y, drvr_index, alpha_);
+  Tree tree = makeSteinerTree(x, y, drvr_index, alpha_);
 
   return tree;
 }
@@ -91,7 +91,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
     }
   }
 
-  Tree tree = makeTree(x, y, drvr_index, net_alpha);
+  Tree tree = makeSteinerTree(x, y, drvr_index, net_alpha);
 
   return tree;
 }
@@ -173,10 +173,10 @@ void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
   min_hpwl_alpha_ = {min_hpwl, alpha};
 }
 
-Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
-                                  std::vector<int>& y,
-                                  int drvr_index,
-                                  float alpha)
+Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
+                                         std::vector<int>& y,
+                                         int drvr_index,
+                                         float alpha)
 {
   Tree tree;
 
@@ -256,6 +256,26 @@ static int findPathDepth(int node,
                          PDedges &edges,
                          int length);
 
+// Used by regressions.
+void
+reportSteinerTree(stt::Tree &tree,
+                  Logger *logger)
+{
+  logger->report("Wire length = {} Path depth = {}",
+                 tree.length,
+                 findPathDepth(tree));
+  for (int i = 0; i < tree.branchCount(); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    int parent = tree.branch[i].n;
+    int x2 = tree.branch[parent].x;
+    int y2 = tree.branch[parent].y;
+    int length = abs(x1-x2)+abs(y1-y2);
+    logger->report("{} ({} {}) neighbor {} length {}",
+                   i, x1, y1, parent, length);
+  }
+}
+
 int findPathDepth(Tree &tree)
 {
   int node_count = tree.branchCount();
@@ -296,26 +316,6 @@ static int findPathDepth(int node,
                             findPathDepth(neighbor, node, edges, length + edge_length));
   }
   return max_length;
-}
-
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger)
-{
-  logger->report("Wire length = {} Path depth = {}",
-                 tree.length,
-                 findPathDepth(tree));
-  for (int i = 0; i < tree.branchCount(); i++) {
-    int x1 = tree.branch[i].x;
-    int y1 = tree.branch[i].y;
-    int parent = tree.branch[i].n;
-    int x2 = tree.branch[parent].x;
-    int y2 = tree.branch[parent].y;
-    int length = abs(x1-x2)+abs(y1-y2);
-    logger->report("{} ({} {}) neighbor {} length {}",
-                   i, x1, y1, parent, length);
-  }
 }
 
 ////////////////////////////////////////////////////////////////
