@@ -3459,18 +3459,18 @@ class GrouteRenderer : public gui::Renderer
 {
  public:
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
-  void highlight(odb::dbNet* net);
+  void highlight(const odb::dbNet* net);
   void clear();
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
  private:
   GlobalRouter* groute_;
   odb::dbTech* tech_;
-  std::vector<odb::dbNet*> nets_;
+  std::vector<const odb::dbNet*> nets_;
 };
 
 // Highlight guide in the gui.
-void GlobalRouter::highlightRoute(odb::dbNet* net)
+void GlobalRouter::highlightRoute(const odb::dbNet* net)
 {
   if (gui_) {
     if (groute_renderer_ == nullptr) {
@@ -3496,7 +3496,7 @@ GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
 {
 }
 
-void GrouteRenderer::highlight(odb::dbNet* net)
+void GrouteRenderer::highlight(const odb::dbNet* net)
 {
   nets_.push_back(net);
 }

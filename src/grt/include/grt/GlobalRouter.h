@@ -190,7 +190,7 @@ class GlobalRouter
   void perturbCapacities();
 
   // Highlight route in the gui.
-  void highlightRoute(odb::dbNet* net);
+  void highlightRoute(const odb::dbNet* net);
   // Clear routes in the gui
   void clearRouteGui();
   // Report the wire length on each layer.

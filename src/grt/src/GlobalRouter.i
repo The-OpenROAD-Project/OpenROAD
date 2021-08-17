@@ -194,7 +194,7 @@ write_guides(char* fileName)
 }
 
 void
-highlight_net_route(odb::dbNet *net)
+highlight_net_route(const odb::dbNet *net)
 {
   getGlobalRouter()->highlightRoute(net);
 }
