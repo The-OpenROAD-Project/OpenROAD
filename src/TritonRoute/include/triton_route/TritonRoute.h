@@ -94,6 +94,7 @@ class TritonRoute
   void setDebugGCell(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
+  void setDebugPaCombining(bool on = true);
   void reportConstraints();
 
   void readParams(const std::string& fileName);
