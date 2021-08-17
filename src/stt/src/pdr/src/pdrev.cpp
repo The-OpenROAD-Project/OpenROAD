@@ -128,10 +128,12 @@ void PdRev::runPD(float alpha)
 
 void PdRev::runPDII(float alpha)
 {
+#ifdef PDREVII
   graph_->buildNearestNeighborsForSPT();
   graph_->PDBU_new_NN(alpha);
   graph_->doSteiner_HoVW();
   graph_->fix_max_dc();
+#endif
 }
 
 ////////////////////////////////////////////////////////////////
