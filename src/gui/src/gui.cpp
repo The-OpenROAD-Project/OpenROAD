@@ -482,6 +482,7 @@ void initGui(OpenRoad* openroad)
     using namespace gui;
     main_window->setLogger(openroad->getLogger());
     Gui::get()->registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
+    Gui::get()->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
     Gui::get()->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
     Gui::get()->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
