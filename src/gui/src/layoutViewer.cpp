@@ -838,7 +838,7 @@ void LayoutViewer::drawRows(dbBlock* block,
   // 2) individual sites too small -> just draw row outlines
   // 3) row is too small -> dont draw anything
 
-  QPen pen(QColor(0, 0xff, 0, 0x70));
+  QPen pen(options_->rowColor());
   pen.setCosmetic(true);
   painter->setPen(pen);
   painter->setBrush(Qt::NoBrush);
@@ -1073,11 +1073,12 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
     painter->setPen(Qt::NoPen);
     QColor color = getColor(layer);
     Qt::BrushStyle brush_pattern = getPattern(layer);
-    painter->setBrush(QBrush(color, brush_pattern));
 
-    painter->setBrush(color.lighter());
-    for (auto& box : boxes->obs) {
-      painter->drawRect(box);
+    if (options_->areObstructionsVisible()) {
+      painter->setBrush(color.lighter());
+      for (auto& box : boxes->obs) {
+        painter->drawRect(box);
+      }
     }
 
     painter->setBrush(QBrush(color, brush_pattern));
