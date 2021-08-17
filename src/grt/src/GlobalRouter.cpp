@@ -3466,7 +3466,7 @@ class GrouteRenderer : public gui::Renderer
  private:
   GlobalRouter* groute_;
   odb::dbTech* tech_;
-  std::vector<const odb::dbNet*> nets_;
+  std::set<const odb::dbNet*> nets_;
 };
 
 // Highlight guide in the gui.
@@ -3498,7 +3498,7 @@ GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
 
 void GrouteRenderer::highlight(const odb::dbNet* net)
 {
-  nets_.push_back(net);
+  nets_.insert(net);
 }
 
 void GrouteRenderer::drawObjects(gui::Painter& painter)
