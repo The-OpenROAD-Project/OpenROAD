@@ -50,8 +50,7 @@ FlexPA::FlexPA(frDesign* in, Logger* logger)
       macroCellPinGenApCnt_(0),
       macroCellPinValidPlanarApCnt_(0),
       macroCellPinValidViaApCnt_(0),
-      macroCellPinNoApCnt_(0),
-      maxAccessPatternSize_(0)
+      macroCellPinNoApCnt_(0)
 {
 }
 

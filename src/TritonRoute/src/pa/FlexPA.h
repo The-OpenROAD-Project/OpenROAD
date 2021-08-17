@@ -84,8 +84,6 @@ class FlexPA
   std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       uniqueInstPatterns_;
 
-  int maxAccessPatternSize_;
-
   // helper strutures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
   std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
