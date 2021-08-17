@@ -838,7 +838,7 @@ void LayoutViewer::drawRows(dbBlock* block,
   // 2) individual sites too small -> just draw row outlines
   // 3) row is too small -> dont draw anything
 
-  QPen pen(QColor(0, 0xff, 0, 0x70));
+  QPen pen(options_->rowColor());
   pen.setCosmetic(true);
   painter->setPen(pen);
   painter->setBrush(Qt::NoBrush);
