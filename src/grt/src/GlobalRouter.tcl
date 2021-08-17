@@ -282,25 +282,23 @@ proc write_guides { args } {
   grt::write_guides $file_name
 }
 
-sta::define_cmd_args "draw_route_guides" { nets }
+sta::define_cmd_args "draw_route_guides" { net_names }
 
-proc draw_route_guides { nets } {
+proc draw_route_guides { net_names } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
     utl::error GRT 223 "Missing dbBlock."
   }
 
-  foreach net [get_nets $nets] {
-    if { $net != "NULL" } {
-      grt::highlight_net_route [sta::sta_to_db_net $net]
+  if {[llength $net_names] > 0} {
+    foreach net [get_nets $net_names] {
+      if { $net != "NULL" } {
+        grt::highlight_net_route [sta::sta_to_db_net $net]
+      }
     }
+  } else {
+    grt::erase_routes
   }
-}
-
-sta::define_cmd_args "erase_route_guides" {}
-
-proc erase_route_guides {} {
-  grt::erase_routes
 }
 
 namespace eval grt {

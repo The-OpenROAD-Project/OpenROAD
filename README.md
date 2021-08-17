@@ -987,10 +987,10 @@ estimate_parasitics -global_routing
 ```
 
 ```
-draw_route_guides nets
+draw_route_guides net_names
 ```
 The `draw_route_guides` command plots the route guides for a set of nets.
-To erase the route guides from the GUI, use the command `erase_route_guides`.
+To erase the route guides from the GUI, pass an empty list to this command: `draw_route_guides {}`.
 
 
 #### PDN analysis
