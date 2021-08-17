@@ -200,7 +200,7 @@ highlight_net_route(const odb::dbNet *net)
 }
 
 void
-clear_routes()
+erase_routes()
 {
   getGlobalRouter()->clearRouteGui();
 }
