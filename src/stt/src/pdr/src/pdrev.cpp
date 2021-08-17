@@ -55,7 +55,7 @@ public:
   ~PdRev();
   void runPD(float alpha);
   void runPDII(float alpha);
-  Tree translateTree();
+  Tree translateTree(int root_idx);
   void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
   void highlightGraph();
 
@@ -63,6 +63,7 @@ private:
   void replaceNode(Graph* graph, int originalNode);
   void transferChildren(int originalNode);
   void printTree(Tree fluteTree);
+  void RemoveSTNodes(int root_idx);
 
   Graph* graph_;
   Logger* logger_;
@@ -77,7 +78,7 @@ primDijkstra(std::vector<int>& x,
 {
   pdr::PdRev pd(x, y, drvr_index, logger);
   pd.runPD(alpha);
-  Tree tree = pd.translateTree();
+  Tree tree = pd.translateTree(drvr_index);
   return tree;
 }
 
@@ -98,7 +99,7 @@ primDijkstraRevII(std::vector<int>& x,
 
   pdr::PdRev pd(x1, y1, drvr_index, logger);
   pd.runPDII(alpha);
-  Tree tree = pd.translateTree();
+  Tree tree = pd.translateTree(drvr_index);
   return tree;
 }
 
@@ -138,7 +139,8 @@ void PdRev::runPDII(float alpha)
 
 ////////////////////////////////////////////////////////////////
 
-Tree PdRev::translateTree()
+// Translate pdrev graph to flute steiner tree representation.
+Tree PdRev::translateTree(int root_idx)
 {
   if (graph_->num_terminals > 2) {
     for (int i = 0; i < graph_->num_terminals; ++i) {
@@ -159,14 +161,14 @@ Tree PdRev::translateTree()
         transferChildren(i);
       }
     }
-    graph_->RemoveSTNodes();
+    RemoveSTNodes(root_idx);
   }
 
   Tree tree;
   int num_terminals = graph_->num_terminals;
   tree.deg = num_terminals;
   if (num_terminals < 2) {
-    tree.branch.resize(0);
+    // No branches.
     tree.length = 0;
   }
   else {
@@ -176,13 +178,13 @@ Tree PdRev::translateTree()
     if (graph_->nodes.size() != branch_count)
       logger_->error(PDR, 666, "steiner branch count inconsistent");
     for (int i = 0; i < graph_->nodes.size(); ++i) {
-      Node& child = graph_->nodes[i];
-      int parent = child.parent;
+      Node& node = graph_->nodes[i];
+      int parent = node.parent;
       if (parent >= graph_->nodes.size())
         logger_->error(PDR, 667, "steiner branch node out of bounds");
       Branch& newBranch = tree.branch[i];
-      newBranch.x = child.x;
-      newBranch.y = child.y;
+      newBranch.x = node.x;
+      newBranch.y = node.y;
       newBranch.n = parent;
     }
   }
@@ -247,6 +249,58 @@ void PdRev::transferChildren(int originalNode)
 
   graph_->addChild(node, newNode);
   nodes.push_back(newSP);
+}
+
+// Remove spanning tree nodes?
+// Remove steiner tree nodes?
+// Who knows -cherry 08/16/2021
+void PdRev::RemoveSTNodes(int root_idx)
+{
+  vector<int> toBeRemoved;
+  vector<Node> &nodes = graph_->nodes;
+
+  for (int i = graph_->num_terminals; i < nodes.size(); ++i) {
+    if (nodes[i].children.size() < 2
+        || (nodes[i].parent == i && nodes[i].children.size() == 2)) {
+      toBeRemoved.push_back(i);
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    Node& cN = nodes[toBeRemoved[i]];
+    graph_->removeChild(nodes[cN.parent], cN.idx);
+    for (int j = 0; j < cN.children.size(); ++j) {
+      graph_->replaceParent(nodes[cN.children[j]], cN.idx,
+                            // Note that the root node's parent is itself,
+                            // so the removed node's parent cannot be used
+                            // for the children. This fact seems to have escaped
+                            // the original author. Use the original root node
+                            // as the parent -cherry 08/09/2021
+                            cN.parent == cN.idx ? root_idx : cN.parent);
+      graph_->addChild(nodes[cN.parent], cN.children[j]);
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    nodes.erase(nodes.begin() + toBeRemoved[i]);
+  }
+
+  std::map<int, int> idxMap;
+  for (int i = 0; i < nodes.size(); ++i) {
+    idxMap[nodes[i].idx] = i;
+  }
+  for (int i = 0; i < nodes.size(); ++i) {
+    Node& cN = nodes[i];
+    for (int j = 0; j < toBeRemoved.size(); ++j) {
+      graph_->removeChild(nodes[i], toBeRemoved[j]);
+    }
+
+    sort(cN.children.begin(), cN.children.end());
+    for (int j = 0; j < cN.children.size(); ++j) {
+      if (cN.children[j] != idxMap[cN.children[j]])
+        graph_->replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
+    }
+    cN.idx = i;
+    cN.parent = idxMap[cN.parent];
+  }
 }
 
 ////////////////////////////////////////////////////////////////

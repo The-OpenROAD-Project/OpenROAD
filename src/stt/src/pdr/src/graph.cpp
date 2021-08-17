@@ -175,53 +175,6 @@ void Graph::addChild(Node& node, int idx)
     children.push_back(idx);
 }
 
-void Graph::RemoveSTNodes()
-{
-  vector<int> toBeRemoved;
-  for (int i = num_terminals; i < nodes.size(); ++i) {
-    if (nodes[i].children.size() < 2
-        || (nodes[i].parent == i && nodes[i].children.size() == 2)) {
-      toBeRemoved.push_back(i);
-    }
-  }
-  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
-    Node& cN = nodes[toBeRemoved[i]];
-    removeChild(nodes[cN.parent], cN.idx);
-    for (int j = 0; j < cN.children.size(); ++j) {
-      replaceParent(nodes[cN.children[j]], cN.idx,
-                    // Note that the root node's parent is itself,
-                    // so the removed node's parent cannot be used
-                    // for the children. This fact seems to have escaped
-                    // the original author. Use the original root node
-                    // as the parent -cherry 08/09/2021
-                    cN.parent == cN.idx ? root_idx_ : cN.parent);
-      addChild(nodes[cN.parent], cN.children[j]);
-    }
-  }
-  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
-    nodes.erase(nodes.begin() + toBeRemoved[i]);
-  }
-
-  map<int, int> idxMap;
-  for (int i = 0; i < nodes.size(); ++i) {
-    idxMap[nodes[i].idx] = i;
-  }
-  for (int i = 0; i < nodes.size(); ++i) {
-    Node& cN = nodes[i];
-    for (int j = 0; j < toBeRemoved.size(); ++j) {
-      removeChild(nodes[i], toBeRemoved[j]);
-    }
-
-    sort(cN.children.begin(), cN.children.end());
-    for (int j = 0; j < cN.children.size(); ++j) {
-      if (cN.children[j] != idxMap[cN.children[j]])
-        replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
-    }
-    cN.idx = i;
-    cN.parent = idxMap[cN.parent];
-  }
-}
-
 void Graph::RemoveUnneceSTNodes()
 {
   vector<int> toBeRemoved;

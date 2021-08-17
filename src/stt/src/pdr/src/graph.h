@@ -62,9 +62,9 @@ public:
 
   // used by PdRev::translateTree
   void replaceParent(Node& pNode, int idx, int tIdx);
-  void RemoveSTNodes();
   void addChild(Node& pNode, int idx);
   void replaceChild(Node& pNode, int idx, int tIdx);
+  void removeChild(Node& pNode, int idx);
   int calc_tree_wl_pd();
 
   vector<Node> nodes;
@@ -95,7 +95,6 @@ private:
 
   void UpdateManhDist();
   void UpdateMaxPLToChild(int cIdx);
-  void removeChild(Node& pNode, int idx);
   int IdentLoc(int cIdx, int tIdx);
   int IsAdded(Node& cN);
   void FreeManhDist();
