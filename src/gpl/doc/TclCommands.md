@@ -32,4 +32,7 @@ global_placement
 ## Other Options
 * __verbose_level__ [0-10, int] : Set verbose level for RePlAce. Default: 1
 
-Note that all of the TCL commands are defined in the [../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/replace/src/replace.tcl) and [../src/replace.i](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/replace/src/replace.i).
+Note that all of the TCL commands are defined in the
+[../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.tcl)
+and
+[../src/replace.i](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.i).

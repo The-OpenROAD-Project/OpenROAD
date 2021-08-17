@@ -122,6 +122,13 @@ To estimate RC parasitics based on global route results, use the `-global_routin
 option of the `estimate_parasitics` command.
 
 ```
+draw_route_guides net_names
+```
+The `draw_route_guides` command plots the route guides for a set of nets.
+To erase the route guides from the GUI, pass an empty list to this command:
+`draw_route_guides {}`.
+
+```
 estimate_parasitics -global_routing
 ```
 
