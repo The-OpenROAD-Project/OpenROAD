@@ -551,13 +551,13 @@ int FastRouteCore::getEdgeCapacity(long x1,
 int FastRouteCore::getEdgeCapacity(FrNet* net,
                                    int x1,
                                    int y1,
-                                   bool horizontal_edge)
+                                   EdgeDirection direction)
 {
   int cap = 0;
 
   // get 2D edge capacity respecting layer restrictions
   for (int l = net->minLayer; l <= net->maxLayer; l++) {
-    if (horizontal_edge) {
+    if (direction == EdgeDirection::Horizontal) {
       cap += h_edges_3D_[l][y1][x1].cap;
     } else {
       cap += v_edges_3D_[l][y1][x1].cap;

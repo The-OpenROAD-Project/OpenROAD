@@ -110,7 +110,7 @@ class FastRouteCore
   int getEdgeCapacity(FrNet* net,
                       int x1,
                       int y1,
-                      bool horizontal_edge);
+                      EdgeDirection direction);
   int getEdgeCurrentResource(long x1,
                              long y1,
                              int l1,
@@ -379,8 +379,6 @@ class FastRouteCore
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;  // big integer used as infinity
   static const int HCOST = 5000;
-  static const bool horizontal_edge = true;
-  static const bool vertical_edge = false;
 
   int max_degree_;
   std::vector<int> cap_per_layer_;

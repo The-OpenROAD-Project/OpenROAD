@@ -478,26 +478,26 @@ bool FastRouteCore::netCongestion(const int netID)
     // remove L routing
     if (seg->xFirst) {
       for (int i = seg->x1; i < seg->x2; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], i, seg->y1, horizontal_edge);
+        const int cap = getEdgeCapacity(nets_[netID], i, seg->y1, EdgeDirection::Horizontal);
         if (h_edges_[seg->y1][i].est_usage >= cap) {
           return true;
         }
       }
       for (int i = ymin; i < ymax; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], seg->x2, i, vertical_edge);
+        const int cap = getEdgeCapacity(nets_[netID], seg->x2, i, EdgeDirection::Vertical);
         if (v_edges_[i][seg->x2].est_usage >= cap) {
           return true;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], seg->x1, i, vertical_edge);
+        const int cap = getEdgeCapacity(nets_[netID], seg->x1, i, EdgeDirection::Vertical);
         if (v_edges_[i][seg->x1].est_usage >= cap) {
           return true;
         }
       }
       for (int i = seg->x1; i < seg->x2; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], i, seg->y2, horizontal_edge);
+        const int cap = getEdgeCapacity(nets_[netID], i, seg->y2, EdgeDirection::Horizontal);
         if (h_edges_[seg->y2][i].est_usage >= cap) {
           return true;
         }
@@ -597,26 +597,26 @@ float FastRouteCore::coeffADJ(const int netID)
   float coef;
   if (xmin == xmax) {
     for (int j = ymin; j < ymax; j++) {
-      Vcap += getEdgeCapacity(nets_[netID], xmin, j, vertical_edge);
+      Vcap += getEdgeCapacity(nets_[netID], xmin, j, EdgeDirection::Vertical);
       Vusage += v_edges_[j][xmin].est_usage;
     }
     coef = 1;
   } else if (ymin == ymax) {
     for (int i = xmin; i < xmax; i++) {
-      Hcap += getEdgeCapacity(nets_[netID], i, ymin, horizontal_edge);
+      Hcap += getEdgeCapacity(nets_[netID], i, ymin, EdgeDirection::Horizontal);
       Husage += h_edges_[ymin][i].est_usage;
     }
     coef = 1;
   } else {
     for (int j = ymin; j <= ymax; j++) {
       for (int i = xmin; i < xmax; i++) {
-        Hcap += getEdgeCapacity(nets_[netID], i, j, horizontal_edge);
+        Hcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Horizontal);
         Husage += h_edges_[j][i].est_usage;
       }
     }
     for (int j = ymin; j < ymax; j++) {
       for (int i = xmin; i <= xmax; i++) {
-        Vcap += getEdgeCapacity(nets_[netID], i, j, vertical_edge);
+        Vcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Vertical);
         Vusage += v_edges_[j][i].est_usage;
       }
     }

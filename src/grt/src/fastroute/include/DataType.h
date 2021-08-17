@@ -60,6 +60,12 @@ enum class Direction
   Down
 };
 
+enum class EdgeDirection
+{
+  Horizontal,
+  Vertical
+};
+
 struct Segment  // A Segment is a 2-pin connection
 {
   bool xFirst;  // route x-direction first (only for L route)
