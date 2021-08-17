@@ -715,11 +715,11 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
         // set layer restriction only to clock nets that are not connected to
         // leaf iterms
-        bool has_leaf = clockHasLeafITerm(net->getDbNet());
-        int min_layer = (is_clock && min_layer_for_clock_ > 0 && !has_leaf)
+        bool is_non_leaf_clock = isNonLeafClock(net->getDbNet()) && is_clock;
+        int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                             ? min_layer_for_clock_
                             : min_routing_layer_;
-        int max_layer = (is_clock && max_layer_for_clock_ > 0 && !has_leaf)
+        int max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
                             ? max_layer_for_clock_
                             : max_routing_layer_;
 
@@ -2572,15 +2572,17 @@ void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
   } else {
     // add clock nets not connected to a leaf first
     for (Net net : *nets_) {
-      bool has_leaf = clockHasLeafITerm(net.getDbNet());
-      if ((net.getSignalType() == odb::dbSigType::CLOCK && !has_leaf)) {
+      bool is_non_leaf_clock = isNonLeafClock(net.getDbNet())
+                               && net.getSignalType() == odb::dbSigType::CLOCK;
+      if (is_non_leaf_clock) {
         nets.push_back(db_net_map_[net.getDbNet()]);
       }
     }
 
     for (Net net : *nets_) {
-      bool has_leaf = clockHasLeafITerm(net.getDbNet());
-      if ((net.getSignalType() != odb::dbSigType::CLOCK || has_leaf)) {
+      bool is_non_leaf_clock = isNonLeafClock(net.getDbNet())
+                               && net.getSignalType() == odb::dbSigType::CLOCK;
+      if (!is_non_leaf_clock) {
         nets.push_back(db_net_map_[net.getDbNet()]);
       }
     }
@@ -2607,18 +2609,18 @@ bool GlobalRouter::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
   return lib_port->isRegClk();
 }
 
-bool GlobalRouter::clockHasLeafITerm(odb::dbNet* db_net)
+bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   if (db_net->getSigType() == odb::dbSigType::CLOCK) {
     for (odb::dbITerm* iterm : db_net->getITerms()) {
       if (isClkTerm(iterm, network)) {
-        return true;
+        return false;
       }
     }
   }
 
-  return false;
+  return true;
 }
 
 void GlobalRouter::makeItermPins(Net* net,

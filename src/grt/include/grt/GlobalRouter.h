@@ -301,7 +301,7 @@ class GlobalRouter
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  bool clockHasLeafITerm(odb::dbNet* db_net);
+  bool isNonLeafClock(odb::dbNet* db_net);
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;
