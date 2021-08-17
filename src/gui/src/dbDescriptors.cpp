@@ -149,7 +149,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
                     {"Source type", inst->getSourceType().getString()}});
   if (placed.isPlaced()) {
     int x, y;
-    inst->getOrigin(x, y);
+    inst->getLocation(x, y);
     double dbuPerUU = inst->getBlock()->getDbUnitsPerMicron();
     props.insert(props.end(),
                  {{"Orientation", inst->getOrient().getString()},
@@ -195,7 +195,7 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
     }, master_options)});
   }
   editors.insert({"Orientation", makeEditor([inst](std::any value) {
-      inst->setOrient(std::any_cast<odb::dbOrientType>(value));
+      inst->setLocationOrient(std::any_cast<odb::dbOrientType>(value));
       return true;
     }, orient_options)});
   editors.insert({"Placement status", makeEditor([inst](std::any value) {
