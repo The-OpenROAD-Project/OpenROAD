@@ -2085,6 +2085,9 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
       }
     }
   }
+  if (graphics_) {
+    graphics_->setObjsAndMakers(objs, gcWorker.getMarkers());
+  }
   return sol;
 }
 

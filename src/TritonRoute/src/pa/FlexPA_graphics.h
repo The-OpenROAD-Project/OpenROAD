@@ -67,8 +67,9 @@ class FlexPAGraphics : public gui::Renderer
   void setViaAP(const frAccessPoint* ap,
                 const frVia* via,
                 const std::vector<std::unique_ptr<frMarker>>& markers);
-  void setMarkersAndShapes(
-      const std::vector<std::unique_ptr<frMarker>>& markers);
+
+  void setObjsAndMakers(const vector<pair<frConnFig*, frBlockObject*>>& objs,
+                        const std::vector<std::unique_ptr<frMarker>>& markers);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -91,7 +92,7 @@ class FlexPAGraphics : public gui::Renderer
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   const frAccessPoint* pa_ap_;
-  const frVia* pa_via_;
+  std::vector<const frVia*> pa_vias_;
   const std::vector<std::unique_ptr<frMarker>>* pa_markers_;
   std::vector<std::pair<frBox, frLayerNum>> shapes_;
 };
