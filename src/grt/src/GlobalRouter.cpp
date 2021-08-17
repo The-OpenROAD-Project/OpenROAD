@@ -2610,17 +2610,16 @@ bool GlobalRouter::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
 bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
-  if (db_net->getSigType() == odb::dbSigType::CLOCK) {
-    for (odb::dbITerm* iterm : db_net->getITerms()) {
-      if (isClkTerm(iterm, network)) {
-        return false;
-      }
-    }
-
-    return true;
+  if (db_net->getSigType() != odb::dbSigType::CLOCK) {
+    return false;
   }
 
-  return false;
+  for (odb::dbITerm* iterm : db_net->getITerms()) {
+    if (isClkTerm(iterm, network)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void GlobalRouter::makeItermPins(Net* net,
