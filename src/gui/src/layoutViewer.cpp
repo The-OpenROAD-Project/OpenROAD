@@ -1073,11 +1073,12 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
     painter->setPen(Qt::NoPen);
     QColor color = getColor(layer);
     Qt::BrushStyle brush_pattern = getPattern(layer);
-    painter->setBrush(QBrush(color, brush_pattern));
 
-    painter->setBrush(color.lighter());
-    for (auto& box : boxes->obs) {
-      painter->drawRect(box);
+    if (options_->areObstructionsVisible()) {
+      painter->setBrush(color.lighter());
+      for (auto& box : boxes->obs) {
+        painter->drawRect(box);
+      }
     }
 
     painter->setBrush(QBrush(color, brush_pattern));
