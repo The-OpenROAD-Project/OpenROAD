@@ -715,7 +715,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
         // set layer restriction only to clock nets that are not connected to
         // leaf iterms
-        bool is_non_leaf_clock = isNonLeafClock(net->getDbNet()) && is_clock;
+        bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
         int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                             ? min_layer_for_clock_
                             : min_routing_layer_;
@@ -2572,16 +2572,14 @@ void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
   } else {
     // add clock nets not connected to a leaf first
     for (Net net : *nets_) {
-      bool is_non_leaf_clock = isNonLeafClock(net.getDbNet())
-                               && net.getSignalType() == odb::dbSigType::CLOCK;
+      bool is_non_leaf_clock = isNonLeafClock(net.getDbNet());
       if (is_non_leaf_clock) {
         nets.push_back(db_net_map_[net.getDbNet()]);
       }
     }
 
     for (Net net : *nets_) {
-      bool is_non_leaf_clock = isNonLeafClock(net.getDbNet())
-                               && net.getSignalType() == odb::dbSigType::CLOCK;
+      bool is_non_leaf_clock = isNonLeafClock(net.getDbNet());
       if (!is_non_leaf_clock) {
         nets.push_back(db_net_map_[net.getDbNet()]);
       }
@@ -2618,9 +2616,11 @@ bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)
         return false;
       }
     }
+
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 void GlobalRouter::makeItermPins(Net* net,
