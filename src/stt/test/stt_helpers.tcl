@@ -135,8 +135,7 @@ proc report_flute_net { net } {
     lappend xs $x
     lappend ys $y
   }
-  
-  stt::report_flute_tree $xs $ys
+  stt::report_flute_tree $xs $ys $drvr_index
 }
 
 proc find_net { nets net_name } {
@@ -171,4 +170,16 @@ proc highlight_stt_net { net alpha } {
     lappend ys $y
   }
   stt::highlight_stt_tree $xs $ys $drvr_index $alpha
+}
+
+proc highlight_flute_net { net } {
+  set pins [lassign $net net_name drvr_index]
+  set xs {}
+  set ys {}
+  foreach pin $pins {
+    lassign $pin pin_name x y
+    lappend xs $x
+    lappend ys $y
+  }
+  stt::highlight_flute_tree $xs $ys
 }

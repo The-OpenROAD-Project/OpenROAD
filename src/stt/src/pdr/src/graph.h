@@ -116,7 +116,6 @@ private:
   vector<vector<int>> manh_dist_;
   int root_idx_;
 
-  vector<Node> sheared_;
   // nearest neighbor in some undocumented sense -cherry 06/14/2021
   vector<vector<int>> nn_;
   vector<int> sorted_;
@@ -163,8 +162,6 @@ private:
   int DeltaE(int idx, int rIdx, bool isRemove);
   int DeltaW(int idx, int rIdx, bool isRemove);
   void AddNode(int cIdx, int pIdx, int eShape);
-  void NESW_NearestNeighbors(int left, int right, int oct);
-  void NESW_Combine(int left, int mid, int right, int oct);
   void SortCNodes(vector<Node>& cNodes, int cIdx, int pIdx, int eShape);
   void UpdateEdges(vector<Node>& STNodes);
   void constructSteiner();
@@ -197,6 +194,14 @@ private:
   vector<int> aux_;
   vector<int> tree_struct_1darr_;
 #endif
+
+#ifdef Guibas_Stolfi
+  void NESW_NearestNeighbors(int left, int right, int oct);
+  void NESW_Combine(int left, int mid, int right, int oct);
+
+  vector<Node> sheared_;
+#endif
+
 };
 
 }  // namespace PD

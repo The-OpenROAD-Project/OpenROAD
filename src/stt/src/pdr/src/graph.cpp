@@ -105,8 +105,10 @@ Graph::Graph(vector<int>& x,
       pts[pt] = idx;
       nodes.push_back(Node(idx, x[i], y[i]));
       edges_.push_back(Edge(idx, 0, 0));
-      sheared_.push_back(Node(idx, 0, 0));
       sorted_.push_back(idx);
+#ifdef Guibas_Stolfi
+      sheared_.push_back(Node(idx, 0, 0));
+#endif
     } 
     else if (root_idx_ == idx)
       // Root is a duplicate location.
@@ -2920,163 +2922,6 @@ void Graph::removeW(Node& pN, int idx)
     nList.erase(nList.begin() + cIdx);
 }
 
-void Graph::NESW_NearestNeighbors(int left, int right, int oct)
-{
-  if (right == left + 1) {
-    nn_[sorted_[left]][oct] = nn_[sorted_[left]][(oct + 4) % 8] = -1;
-  } else {
-    int mid = (left + right) / 2;
-
-    NESW_NearestNeighbors(left, mid, oct);
-    NESW_NearestNeighbors(mid, right, oct);
-    NESW_Combine(left, mid, right, oct);
-
-    if (logger_->debugCheck(PDR, "pdrev", 3)) {
-      debugPrint(logger_, PDR, "pdrev", 3, "{} {} {} {}", oct, left, mid, right);
-      std::string numTermRpt;
-      for (int i = 0; i < num_terminals; ++i) {
-        numTermRpt = numTermRpt + "  " + std::to_string(nn_[i][oct]);
-      }
-      debugPrint(logger_, PDR, "pdrev", 3, "{}", numTermRpt);
-    }
-  }
-}
-
-void Graph::NESW_Combine(int left, int mid, int right, int oct)
-{
-  int i, j, k, y2;
-  int i1;
-  int i2;
-  int best_i2;   /* index of current best nearest-neighbor */
-  int best_dist; /* distance to best nearest-neighbor      */
-  int d;
-
-  /*
-     update north-east nearest neighbors accross the mid-line
-   */
-  i1 = left;
-  i2 = mid;
-  y2 = sheared_[sorted_[i2]].y;
-
-  while ((i1 < mid) && (sheared_[sorted_[i1]].y >= y2)) {
-    i1++;
-  }
-
-  if (i1 < mid) {
-    best_i2 = i2;
-    best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
-    i2++;
-
-    while ((i1 < mid) && (i2 < right)) {
-      if (sheared_[sorted_[i1]].y < sheared_[sorted_[i2]].y) {
-        d = dist(sheared_[sorted_[i1]], sheared_[sorted_[i2]]);
-        if (d < best_dist) {
-          best_i2 = i2;
-          best_dist = d;
-        }
-        i2++;
-      } else {
-        if ((nn_[sorted_[i1]][oct] == -1)
-            || (best_dist
-                < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
-          nn_[sorted_[i1]][oct] = sorted_[best_i2];
-        }
-        i1++;
-        if (i1 < mid) {
-          best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
-        }
-      }
-    }
-
-    while (i1 < mid) {
-      if ((nn_[sorted_[i1]][oct] == -1)
-          || (dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]])
-              < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
-        nn_[sorted_[i1]][oct] = sorted_[best_i2];
-      }
-      i1++;
-    }
-  }
-
-  /*
-     repeat for south-west nearest neighbors
-   */
-  oct = (oct + 4) % 8;
-
-  i1 = right - 1;
-  i2 = mid - 1;
-  y2 = sheared_[sorted_[i2]].y;
-
-  while ((i1 >= mid) && (sheared_[sorted_[i1]].y <= y2)) {
-    i1--;
-  }
-
-  if (i1 >= mid) {
-    best_i2 = i2;
-    best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
-    i2--;
-
-    while ((i1 >= mid) && (i2 >= left)) {
-      if (sheared_[sorted_[i1]].y > sheared_[sorted_[i2]].y) {
-        d = dist(sheared_[sorted_[i1]], sheared_[sorted_[i2]]);
-        if (d < best_dist) {
-          best_i2 = i2;
-          best_dist = d;
-        }
-        i2--;
-      } else {
-        if ((nn_[sorted_[i1]][oct] == -1)
-            || (best_dist
-                < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
-          nn_[sorted_[i1]][oct] = sorted_[best_i2];
-        }
-        i1--;
-        if (i1 >= mid) {
-          best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
-        }
-      }
-    }
-
-    while (i1 >= mid) {
-      if ((nn_[sorted_[i1]][oct] == -1)
-          || (dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]])
-              < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
-        nn_[sorted_[i1]][oct] = sorted_[best_i2];
-      }
-      i1--;
-    }
-  }
-
-  /*
-     merge sorted[left..mid-1] with sorted[mid..right-1] by y-coordinate
-   */
-
-  i = left; /* first unprocessed element in left  list  */
-  j = mid;  /* first unprocessed element in right list  */
-  k = left; /* first free available slot in output list */
-
-  while ((i < mid) && (j < right)) {
-    if (sheared_[sorted_[i]].y >= sheared_[sorted_[j]].y) {
-      aux_[k++] = sorted_[i++];
-    } else {
-      aux_[k++] = sorted_[j++];
-    }
-  }
-
-  /*
-     copy leftovers
-   */
-  while (i < mid) {
-    aux_[k++] = sorted_[i++];
-  }
-  while (j < right) {
-    aux_[k++] = sorted_[j++];
-  }
-
-  for (i = left; i < right; i++) {
-    sorted_[i] = aux_[i];
-  }
-}
 
 void Graph::SortCNodes(vector<Node>& cNodes, int cIdx, int pIdx, int eShape)
 {
@@ -3646,6 +3491,173 @@ bool Graph::IsSameDir(int cIdx, int nIdx)
     return true;
   else
     return false;
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////
+
+// Unused remnants of Guibas-Stolfi algorithm for computing nearest NE neighbors
+// plagiarized from RMST-Pack
+
+#ifdef Guibas_Stolfi
+
+void Graph::NESW_NearestNeighbors(int left, int right, int oct)
+{
+  if (right == left + 1) {
+    nn_[sorted_[left]][oct] = nn_[sorted_[left]][(oct + 4) % 8] = -1;
+  } else {
+    int mid = (left + right) / 2;
+
+    NESW_NearestNeighbors(left, mid, oct);
+    NESW_NearestNeighbors(mid, right, oct);
+    NESW_Combine(left, mid, right, oct);
+
+    if (logger_->debugCheck(PDR, "pdrev", 3)) {
+      debugPrint(logger_, PDR, "pdrev", 3, "{} {} {} {}", oct, left, mid, right);
+      std::string numTermRpt;
+      for (int i = 0; i < num_terminals; ++i) {
+        numTermRpt = numTermRpt + "  " + std::to_string(nn_[i][oct]);
+      }
+      debugPrint(logger_, PDR, "pdrev", 3, "{}", numTermRpt);
+    }
+  }
+}
+
+void Graph::NESW_Combine(int left, int mid, int right, int oct)
+{
+  int i, j, k, y2;
+  int i1;
+  int i2;
+  int best_i2;   /* index of current best nearest-neighbor */
+  int best_dist; /* distance to best nearest-neighbor      */
+  int d;
+
+  /*
+     update north-east nearest neighbors accross the mid-line
+   */
+  i1 = left;
+  i2 = mid;
+  y2 = sheared_[sorted_[i2]].y;
+
+  while ((i1 < mid) && (sheared_[sorted_[i1]].y >= y2)) {
+    i1++;
+  }
+
+  if (i1 < mid) {
+    best_i2 = i2;
+    best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
+    i2++;
+
+    while ((i1 < mid) && (i2 < right)) {
+      if (sheared_[sorted_[i1]].y < sheared_[sorted_[i2]].y) {
+        d = dist(sheared_[sorted_[i1]], sheared_[sorted_[i2]]);
+        if (d < best_dist) {
+          best_i2 = i2;
+          best_dist = d;
+        }
+        i2++;
+      } else {
+        if ((nn_[sorted_[i1]][oct] == -1)
+            || (best_dist
+                < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
+          nn_[sorted_[i1]][oct] = sorted_[best_i2];
+        }
+        i1++;
+        if (i1 < mid) {
+          best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
+        }
+      }
+    }
+
+    while (i1 < mid) {
+      if ((nn_[sorted_[i1]][oct] == -1)
+          || (dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]])
+              < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
+        nn_[sorted_[i1]][oct] = sorted_[best_i2];
+      }
+      i1++;
+    }
+  }
+
+  /*
+     repeat for south-west nearest neighbors
+   */
+  oct = (oct + 4) % 8;
+
+  i1 = right - 1;
+  i2 = mid - 1;
+  y2 = sheared_[sorted_[i2]].y;
+
+  while ((i1 >= mid) && (sheared_[sorted_[i1]].y <= y2)) {
+    i1--;
+  }
+
+  if (i1 >= mid) {
+    best_i2 = i2;
+    best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
+    i2--;
+
+    while ((i1 >= mid) && (i2 >= left)) {
+      if (sheared_[sorted_[i1]].y > sheared_[sorted_[i2]].y) {
+        d = dist(sheared_[sorted_[i1]], sheared_[sorted_[i2]]);
+        if (d < best_dist) {
+          best_i2 = i2;
+          best_dist = d;
+        }
+        i2--;
+      } else {
+        if ((nn_[sorted_[i1]][oct] == -1)
+            || (best_dist
+                < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
+          nn_[sorted_[i1]][oct] = sorted_[best_i2];
+        }
+        i1--;
+        if (i1 >= mid) {
+          best_dist = dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]]);
+        }
+      }
+    }
+
+    while (i1 >= mid) {
+      if ((nn_[sorted_[i1]][oct] == -1)
+          || (dist(sheared_[sorted_[i1]], sheared_[sorted_[best_i2]])
+              < dist(sheared_[sorted_[i1]], sheared_[nn_[sorted_[i1]][oct]]))) {
+        nn_[sorted_[i1]][oct] = sorted_[best_i2];
+      }
+      i1--;
+    }
+  }
+
+  /*
+     merge sorted[left..mid-1] with sorted[mid..right-1] by y-coordinate
+   */
+
+  i = left; /* first unprocessed element in left  list  */
+  j = mid;  /* first unprocessed element in right list  */
+  k = left; /* first free available slot in output list */
+
+  while ((i < mid) && (j < right)) {
+    if (sheared_[sorted_[i]].y >= sheared_[sorted_[j]].y) {
+      aux_[k++] = sorted_[i++];
+    } else {
+      aux_[k++] = sorted_[j++];
+    }
+  }
+
+  /*
+     copy leftovers
+   */
+  while (i < mid) {
+    aux_[k++] = sorted_[i++];
+  }
+  while (j < right) {
+    aux_[k++] = sorted_[j++];
+  }
+
+  for (i = left; i < right; i++) {
+    sorted_[i] = aux_[i];
+  }
 }
 
 #endif

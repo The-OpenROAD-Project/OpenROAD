@@ -123,7 +123,10 @@ class SteinerTreeBuilder
 // Used by regressions.
 void
 reportSteinerTree(Tree &tree,
+                  int drvr_x,
+                  int drvr_y,
                   Logger *logger);
+
 void
 highlightSteinerTree(Tree &tree,
                      gui::Gui *gui);

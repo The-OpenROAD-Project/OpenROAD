@@ -164,10 +164,12 @@ void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
 {
   net_alpha_map_[net] = alpha;
 }
+
 void SteinerTreeBuilder::setMinFanoutAlpha(int min_fanout, float alpha)
 {
   min_fanout_alpha_ = {min_fanout, alpha};
 }
+
 void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
 {
   min_hpwl_alpha_ = {min_hpwl, alpha};
@@ -251,20 +253,27 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 typedef std::pair<int, int> PDedge;
 typedef std::vector<std::set<PDedge>> PDedges;
 
-static int findPathDepth(Tree &tree);
+static int findPathDepth(Tree &tree,
+                         int drvr_index);
 static int findPathDepth(int node,
                          int from,
                          PDedges &edges,
                          int length);
+static int findLocationIndex(Tree &tree, int x, int y);
 
 // Used by regressions.
 void
 reportSteinerTree(stt::Tree &tree,
+                  int drvr_x,
+                  int drvr_y,
                   Logger *logger)
 {
+  // flute mangles the x/y locations and pdrev moves the driver to 0
+  // so we have to find the driver location index.
+  int drvr_index = findLocationIndex(tree, drvr_x, drvr_y);
   logger->report("Wire length = {} Path depth = {}",
                  tree.length,
-                 findPathDepth(tree));
+                 findPathDepth(tree, drvr_index));
   for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
@@ -277,19 +286,30 @@ reportSteinerTree(stt::Tree &tree,
   }
 }
 
-static int findPathDepth(Tree &tree)
+int
+findLocationIndex(Tree &tree,
+                  int x,
+                  int y)
 {
-  int node_count = tree.branchCount();
-  PDedges edges(node_count);
+  for (int i = 0; i < tree.branchCount(); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    if (x1 == x && y1 == y)
+      return i;
+  }
+  return -1;
+}
+
+static int findPathDepth(Tree &tree,
+                         int drvr_index)
+{
   int branch_count = tree.branchCount();
+  PDedges edges(branch_count);
   if (branch_count > 2) {
-    int drvr_idx = 0;
     for (int i = 0; i < branch_count; i++) {
       stt::Branch &branch = tree.branch[i];
       int neighbor = branch.n;
-      if (neighbor == i)
-        drvr_idx = i;
-      else {
+      if (neighbor != i) {
         Branch &neighbor_branch = tree.branch[neighbor];
         int length = std::abs(branch.x - neighbor_branch.x)
           + std::abs(branch.y - neighbor_branch.y);
@@ -297,7 +317,7 @@ static int findPathDepth(Tree &tree)
         edges[i].insert(PDedge(neighbor, length));
       }
     }
-    return findPathDepth(drvr_idx, drvr_idx, edges, 0);
+    return findPathDepth(drvr_index, drvr_index, edges, 0);
   }
   else
     return 0;
