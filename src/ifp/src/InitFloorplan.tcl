@@ -269,6 +269,43 @@ proc microns_to_mfg_grid { microns } {
   }  
 }
 
+proc cut_row {block row row_blockages min_row_width halo_x halo_y} {
+  set row_name [$row getName]
+  set row_bb [$row getBBox]
+
+  set row_site [$row getSite]
+  set site_width [$row_site getWidth]
+
+  set start_origin_x [$row_bb xMin]
+  set start_origin_y [$row_bb yMin]
+
+  set curr_min_row_width [expr $min_row_width + 2*$site_width]
+
+  set row_blockage_bboxs [dict get $row_blockages $row_name]
+  set row_blockage_xs []
+  foreach row_blockage_bbox [dict get $row_blockages $row_name] {
+    lappend row_blockage_xs "[$row_blockage_bbox xMin] [$row_blockage_bbox xMax]"
+  }
+  set row_blockage_xs [lsort -integer -index 0 $row_blockage_xs]
+
+  set row_sub_idx 1
+  foreach blockage $row_blockage_xs {
+    lassign $blockage blockage_x0 blockage_x1
+    # ensure rows are an integer length of sitewidth
+    set new_row_end_x [tap::make_site_loc [expr $blockage_x0 - $halo_x] $site_width -1 $start_origin_x]
+    tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x $new_row_end_x $start_origin_y $row $curr_min_row_width
+    incr row_sub_idx
+
+    set start_origin_x [tap::make_site_loc [expr $blockage_x1 + $halo_x] $site_width 1 $start_origin_x]
+  }
+
+  # Make last row
+  tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x [$row_bb xMax] $start_origin_y $row $curr_min_row_width
+
+  # Remove current row
+  odb::dbRow_destroy $row
+}
+
 proc cut_rows {block placement_blockages} {
   utl::info "IFP" 6 "Placement blockages found: [llength $placement_blockages]"
 
@@ -280,7 +317,7 @@ proc cut_rows {block placement_blockages} {
       foreach row [$block getRows] {
         set row_name [$row getName]
         if {![dict exists $row_placement_blockages $row_name]} {
-          if {[tap::overlaps $blockage $row 0 0]} {
+          if {[tap::overlaps [$blockage getBBox] $row 0 0]} {
             lappend rows_to_cut $row
           }
           dict lappend row_placement_blockages $row_name [$blockage getBBox]
@@ -291,7 +328,7 @@ proc cut_rows {block placement_blockages} {
 
   # cut rows around placement blockages
   foreach row $rows_to_cut {
-    tap::cut_row $block $row $row_placement_blockages 0 0 0
+    ifp::cut_row $block $row $row_placement_blockages 0 0 0
   }
 
   utl::info "IFP" 23 "Cut rows: [llength $rows_to_cut]"
