@@ -118,6 +118,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Set the location to display in the status bar
   void setLocation(qreal x, qreal y);
 
+  // Update selected name in status bar
+  void updateSelectedStatus(const Selected& selection);
+
   // Add to the selection
   void addSelected(const Selected& selection);
 

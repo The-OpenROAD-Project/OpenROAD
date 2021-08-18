@@ -402,6 +402,12 @@ void SelectHighlightWindow::updateHighlightModel()
   ui->tabWidget->setCurrentWidget(ui->hltTab);
 }
 
+void SelectHighlightWindow::updateModels()
+{
+  selection_model_.populateModel();
+  highlight_model_.populateModel();
+}
+
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
 {
   select_context_menu_->popup(ui->selTableView->viewport()->mapToGlobal(pos));
