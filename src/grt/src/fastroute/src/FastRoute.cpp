@@ -294,6 +294,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           bool is_clock,
                           int driver_idx,
                           int cost,
+                          int min_layer,
+                          int max_layer,
                           std::vector<int> edge_cost_per_layer)
 {
   const int netID = new_net_id_;
@@ -305,6 +307,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
   net->edgeCost = cost;
+  net->minLayer = min_layer;
+  net->maxLayer = max_layer;
   net->edge_cost_per_layer = edge_cost_per_layer;
 
   seglist_index_[new_net_id_] = seg_count_;
@@ -539,6 +543,25 @@ int FastRouteCore::getEdgeCapacity(long x1,
         GRT,
         214,
         "Cannot get edge capacity: edge is not vertical or horizontal.");
+  }
+
+  return cap;
+}
+
+int FastRouteCore::getEdgeCapacity(FrNet* net,
+                                   int x1,
+                                   int y1,
+                                   EdgeDirection direction)
+{
+  int cap = 0;
+
+  // get 2D edge capacity respecting layer restrictions
+  for (int l = net->minLayer; l <= net->maxLayer; l++) {
+    if (direction == EdgeDirection::Horizontal) {
+      cap += h_edges_3D_[l][y1][x1].cap;
+    } else {
+      cap += v_edges_3D_[l][y1][x1].cap;
+    }
   }
 
   return cap;
