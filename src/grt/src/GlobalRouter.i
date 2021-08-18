@@ -188,6 +188,12 @@ highlight_net_route(const odb::dbNet *net)
 }
 
 void
+erase_routes()
+{
+  getGlobalRouter()->clearRouteGui();
+}
+
+void
 report_layer_wire_lengths()
 {
   getGlobalRouter()->reportLayerWireLengths();

@@ -986,6 +986,13 @@ option of the `estimate_parasitics` command.
 estimate_parasitics -global_routing
 ```
 
+```
+draw_route_guides net_names
+```
+The `draw_route_guides` command plots the route guides for a set of nets.
+To erase the route guides from the GUI, pass an empty list to this command: `draw_route_guides {}`.
+
+
 #### PDN analysis
 
 PDNSim PDN checker searches for floating PDN stripes on the power and ground nets. 
