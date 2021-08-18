@@ -121,7 +121,6 @@ float getRequiredTime(sta::dbSta* staRoot,
 TimingPathsModel::TimingPathsModel(bool get_max, int path_count)
     : openroad_(ord::OpenRoad::openRoad())
 {
-  populateModel(get_max, path_count);
 }
 
 TimingPathsModel::~TimingPathsModel()
@@ -471,6 +470,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
 TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
   TimingPathRenderer::path_inst_color_.a = 100;
+  TimingPathRenderer::inst_highlight_color_.a = 100;
 }
 
 TimingPathRenderer::~TimingPathRenderer()
