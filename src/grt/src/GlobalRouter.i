@@ -159,6 +159,30 @@ set_perturbation_amount(int perturbation)
 }
 
 void
+set_critical_nets_percentage(float percent)
+{
+  getGlobalRouter()->setCriticalNetsPercentage(percent);
+}
+
+void
+set_max_negative_slack(float max_slack)
+{
+  getGlobalRouter()->setMaxNegativeSlack(max_slack);
+}
+
+void
+set_timing_critical_min_area(int min_area)
+{
+  getGlobalRouter()->setTimingCriticalMinArea(min_area);
+}
+
+void
+set_timing_critical_min_fanout(int fanout)
+{
+  getGlobalRouter()->setTimingCriticalMinFanout(fanout);
+}
+
+void
 run()
 {
   getGlobalRouter()->globalRoute();

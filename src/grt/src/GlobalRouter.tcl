@@ -120,7 +120,7 @@ sta::define_cmd_args "set_routing_layers" { [-signal layers] \
 
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock}
+    keys {-signal -clock -timing_critical}
 
   if { [info exists keys(-signal)] } {
     grt::define_layer_range $keys(-signal)
