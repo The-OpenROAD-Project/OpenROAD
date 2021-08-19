@@ -823,12 +823,16 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         // set layer restriction only to clock nets that are not connected to
         // leaf iterms
         bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-        int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
+
+        int min_layer = net->isTimingCritical() ? min_layer_for_timing_critical_ : min_routing_layer_;
+        int max_layer = net->isTimingCritical() ? max_layer_for_timing_critical_ : max_routing_layer_;
+
+        min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                             ? min_layer_for_clock_
-                            : min_routing_layer_;
-        int max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
+                            : min_layer;
+        max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
                             ? max_layer_for_clock_
-                            : max_routing_layer_;
+                            : max_layer;
 
         int netID = fastroute_->addNet(net->getDbNet(),
                                        pins_on_grid.size(),
@@ -2677,6 +2681,9 @@ void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
       nets.push_back(db_net_map_[db_net]);
     }
   } else {
+    if (critical_nets_percent_ > 0) {
+      findWorstSlackNets(critical_nets_percent_);
+    }
     // add clock nets not connected to a leaf first
     for (Net net : *nets_) {
       bool is_non_leaf_clock = isNonLeafClock(net.getDbNet());
