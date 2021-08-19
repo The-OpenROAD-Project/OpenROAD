@@ -313,6 +313,7 @@ class Painter
   }
 
   virtual void setTransparentBrush() = 0;
+  virtual void setHashedBrush(const Color& color) = 0;
 
   inline double getPixelsPerDBU() { return pixels_per_dbu_; }
   inline Options* getOptions() { return options_; }

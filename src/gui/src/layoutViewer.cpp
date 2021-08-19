@@ -186,6 +186,11 @@ class GuiPainter : public Painter
   using Painter::drawLine;
 
   void setTransparentBrush() override { painter_->setBrush(Qt::transparent); }
+  void setHashedBrush(const Color& color) override
+  {
+    painter_->setBrush(QBrush(QColor(color.r, color.g, color.b, color.a), Qt::DiagCrossPattern));
+  }
+
   void drawCircle(int x, int y, int r) override
   {
     painter_->drawEllipse(QPoint(x, y), r, r);
