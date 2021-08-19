@@ -1,6 +1,6 @@
-## add_global_connection
+# add_global_connection
 
-### Synopsis
+## Synopsis
 ```
   % add_global_connection \
     -net net_name \
@@ -9,10 +9,10 @@
     (-power|-ground)
 ```
 
-### Description
+## Description
 The `add_global_connection` command is used to connect power and ground pins on design instances to the appropriate supplies.
 
-### Options
+## Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -23,7 +23,7 @@ The `add_global_connection` command is used to connect power and ground pins on 
 | `-ground` | Specifies that the net is a ground net |
 
 
-### Examples
+## Examples
 ```
 # Stdcell power/ground pins
 add_global_connection -net VDD -pin_pattern {^VDD$} -power
@@ -35,4 +35,3 @@ add_global_connection -net VDD -pin_pattern {^VDDCE$}
 add_global_connection -net VSS -pin_pattern {^VSSE$}
 
 ```
-
