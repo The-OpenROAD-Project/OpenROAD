@@ -433,6 +433,10 @@ class Gui
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
+  // open DRC
+  void loadDRC(const std::string& filename);
+  void setDRCVisible(bool visible);
+
   // Force an immediate redraw.
   void redraw();
 

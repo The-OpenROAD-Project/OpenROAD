@@ -358,5 +358,23 @@ void pause()
   return gui->pause();
 }
 
+void load_drc(const char* filename)
+{
+  if (!check_gui("load_drc")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->loadDRC(filename);
+}
+
+void set_drc_visible(bool visible)
+{
+  if (!check_gui("set_drc_visible")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->setDRCVisible(visible);
+}
+
 %} // inline
 

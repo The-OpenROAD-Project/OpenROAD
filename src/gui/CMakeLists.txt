@@ -44,6 +44,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/staGui.cpp
     src/timingDebugDialog.cpp
     src/timingReportDialog.cpp
+    src/drcWidget.cpp
   )
 
   target_link_libraries(gui

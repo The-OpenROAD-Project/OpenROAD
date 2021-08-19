@@ -60,6 +60,7 @@ class LayoutScroll;
 class ScriptWidget;
 class DisplayControls;
 class Inspector;
+class DRCWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -173,6 +174,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // show Timing Dialog Box
   void showTimingDialog();
 
+  // load drc file
+  void loadDRC(const QString& filename);
+
   // add/remove toolbar button
   const std::string addToolbarButton(const std::string& name,
                                      const QString& text,
@@ -185,6 +189,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
+  DRCWidget* getDRCViewer() const { return drc_viewer_; }
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -215,6 +220,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
+  DRCWidget* drc_viewer_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;

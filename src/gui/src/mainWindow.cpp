@@ -50,6 +50,7 @@
 #include "selectHighlightWindow.h"
 #include "staGui.h"
 #include "utl/Logger.h"
+#include "drcWidget.h"
 
 namespace gui {
 
@@ -69,7 +70,8 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this))
+      script_(new ScriptWidget(this)),
+      drc_viewer_(new DRCWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -85,12 +87,16 @@ MainWindow::MainWindow(QWidget* parent)
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
+  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
-  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
+  addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
+
+  tabifyDockWidget(inspector_, drc_viewer_);
+  drc_viewer_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
@@ -189,6 +195,19 @@ MainWindow::MainWindow(QWidget* parent)
           viewer_,
           SLOT(update()));
 
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          drc_viewer_,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(drc_viewer_,
+          &DRCWidget::selectDRC,
+          [this](const Selected& selected) {
+            setSelected(selected, false);
+            odb::Rect bbox;
+            selected.getBBox(bbox);
+            zoomTo(bbox);
+          });
+
   createActions();
   createToolbars();
   createMenus();
@@ -201,6 +220,7 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
+  drc_viewer_->readSettings(&settings);
   settings.endGroup();
 }
 
@@ -285,6 +305,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
+  windows_menu_->addAction(drc_viewer_->toggleViewAction());
   selection_browser_->setVisible(false);
 }
 
@@ -518,6 +539,13 @@ void MainWindow::showTimingDialog()
   }
 }
 
+void MainWindow::loadDRC(const QString& filename)
+{
+  drc_viewer_->loadReport(filename);
+  drc_viewer_->show();
+  drc_viewer_->raise();
+}
+
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set) {
@@ -602,6 +630,7 @@ void MainWindow::saveSettings()
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
+  drc_viewer_->writeSettings(&settings);
   settings.endGroup();
 }
 
@@ -637,6 +666,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewer_->setLogger(logger);
+  drc_viewer_->setLogger(logger);
 }
 
 void MainWindow::fit()
