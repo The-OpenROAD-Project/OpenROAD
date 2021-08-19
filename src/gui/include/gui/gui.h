@@ -344,10 +344,10 @@ class Renderer
   // Handle user clicks.  Layer is a nullptr for the
   // object not associated with a layer.
   // Return true if an object was found; false otherwise.
-  virtual Selected select(odb::dbTechLayer* /* layer */,
-                          const odb::Point& /* point */)
+  virtual SelectionSet select(odb::dbTechLayer* /* layer */,
+                              const odb::Point& /* point */)
   {
-    return Selected();
+    return SelectionSet();
   }
 };
 

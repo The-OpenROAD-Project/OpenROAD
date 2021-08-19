@@ -214,12 +214,12 @@ void Graphics::cellPlot(bool pause)
   }
 }
 
-gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
+gui::SelectionSet Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
 {
   selected_ = nullptr;
 
   if (layer || !nb_) {
-    return gui::Selected();
+    return gui::SelectionSet();
   }
 
   for (GCell* cell : nb_->gCells()) {
@@ -238,10 +238,10 @@ gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
     selected_ = cell;
     if (cell->isInstance()) {
       reportSelected();
-      return gui::Gui::get()->makeSelected(cell->instance()->dbInst());
+      return {gui::Gui::get()->makeSelected(cell->instance()->dbInst())};
     }
   }
-  return gui::Selected();
+  return gui::SelectionSet();
 }
 
 void Graphics::status(const std::string& message)

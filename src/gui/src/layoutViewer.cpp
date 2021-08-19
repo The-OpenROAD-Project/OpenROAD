@@ -463,8 +463,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     }
 
     for (auto* renderer : renderers) {
-      Selected selected = renderer->select(layer, pt_dbu);
-      if (selected) {
+      for (auto selected : renderer->select(layer, pt_dbu)) {
         selections.push_back(selected);
       }
     }
@@ -491,8 +490,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
   // Check for objects not in a layer
   for (auto* renderer : renderers) {
-    Selected selected = renderer->select(nullptr, pt_dbu);
-    if (selected) {
+    for (auto selected : renderer->select(nullptr, pt_dbu)) {
       selections.push_back(selected);
     }
   }
