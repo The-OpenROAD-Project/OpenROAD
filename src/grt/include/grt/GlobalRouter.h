@@ -74,6 +74,10 @@ class dbSta;
 class dbNetwork;
 }  // namespace sta
 
+namespace rsz {
+class Resizer;
+} // namespace rsz
+
 namespace grt {
 
 class FastRouteCore;
@@ -177,6 +181,14 @@ class GlobalRouter
 
   // route clock nets public functions
   void routeClockNets();
+
+  // timing driven public functions
+  void setCriticalNetsPercentage(float percent);
+  void setMaxNegativeSlack(float max_slack);
+  void setTimingCriticalMinArea(int min_area);
+  void setTimingCriticalMinFanout(int fanout);
+  void setMinLayerForTimingCritical(int min_layer);
+  void setMaxLayerForTimingCritical(int max_layer);
 
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
@@ -304,9 +316,12 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
+  bool findWorstSlackNets(float worst_nets_percentage);
+  odb::Rect computeNetBBox(Net& net);
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;
+  rsz::Resizer* rsz_;
   gui::Gui* gui_;
   stt::SteinerTreeBuilder* stt_builder_;
   // Objects variables
@@ -342,6 +357,14 @@ class GlobalRouter
   int verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
+
+  // timing driven variables
+  float critical_nets_percent_;
+  float max_negative_slack_;
+  int timing_critical_min_area_;
+  int timing_critical_min_fanout_;
+  int min_layer_for_timing_critical_;
+  int max_layer_for_timing_critical_;
 
   // variables for random grt
   int seed_;

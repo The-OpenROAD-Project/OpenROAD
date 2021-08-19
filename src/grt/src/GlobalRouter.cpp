@@ -60,6 +60,7 @@
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
 #include "ord/OpenRoad.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -92,6 +93,12 @@ GlobalRouter::GlobalRouter()
       verbose_(0),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
+      critical_nets_percent_(0),
+      max_negative_slack_(0),
+      timing_critical_min_area_(-1),
+      timing_critical_min_fanout_(-1),
+      min_layer_for_timing_critical_(-1),
+      max_layer_for_timing_critical_(-2),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -110,6 +117,7 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
+  rsz_ = openroad_->getResizer();
   sta_ = openroad_->getSta();
 }
 
@@ -302,6 +310,105 @@ void GlobalRouter::estimateRC()
       builder.estimateParasitcs(db_net, net->getPins(), route);
     }
   }
+}
+
+bool GlobalRouter::findWorstSlackNets(float worst_nets_percentage)
+{
+  std::vector<float> slack_values;
+  std::map<odb::dbNet*, float> slack_per_net;
+
+  rsz_->resizeSlackPreamble();
+  rsz_->findResizeSlacks();
+
+  std::vector<odb::dbNet*> worst_slack_nets = rsz_->resizeWorstSlackDbNets();
+
+  if( worst_slack_nets.empty()) {
+    logger_->warn(GRT, 227, "No net slacks found. Timing-driven mode disabled.");
+    return false;
+  }
+
+  sta::Slack slack_min = rsz_->resizeNetSlack(worst_slack_nets[0]);
+  logger_->info(GRT, 231, "Worst slack {:.3g}", slack_min);
+
+  if (slack_min >= 0) {
+    logger_->warn(GRT, 232, "Positive WNS. Timing-driven mode disabled.");
+    return false;
+  }
+
+  for (Net& net : *nets_) {
+    float net_slack = rsz_->resizeNetSlack(net.getDbNet());
+    slack_values.push_back(net_slack);
+    slack_per_net[net.getDbNet()] = net_slack;
+  }
+
+  if (!slack_values.empty()) {
+    std::sort(slack_values.begin(), slack_values.end());
+
+    int slack_idx = (slack_values.size() * worst_nets_percentage) - 1;
+    float max_slack = (max_negative_slack_ != 0) ? 
+                      max_negative_slack_ : slack_values[slack_idx];
+
+    int critical_nets_count = 0;
+    for (Net& net : *nets_) {
+      odb::Rect bbox = computeNetBBox(net);
+      if (slack_per_net[net.getDbNet()] < 0 &&
+          slack_per_net[net.getDbNet()] <= max_slack &&
+          net.getNumPins() >= timing_critical_min_fanout_ &&
+          bbox.area() > timing_critical_min_area_) {
+        net.setTimingCritical();
+        critical_nets_count++;
+      }
+    }
+    logger_->info(GRT, 233, "Worst slack nets: {}", critical_nets_count);
+  }
+
+  return true;
+}
+
+odb::Rect GlobalRouter::computeNetBBox(Net& net)
+{
+  const std::vector<Pin>& pins = net.getPins();
+  odb::Point min(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+  odb::Point max(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
+
+  for (const Pin& pin : pins) {
+    const odb::Point& pin_pos = pin.getPosition();
+    min.setX(std::min(pin_pos.getX(), min.getX()));
+    min.setY(std::min(pin_pos.getY(), min.getY()));
+    max.setX(std::max(pin_pos.getX(), max.getX()));
+    max.setY(std::max(pin_pos.getY(), max.getY()));
+  }
+
+  return odb::Rect(min, max);
+}
+
+void GlobalRouter::setCriticalNetsPercentage(float percent)
+{
+  critical_nets_percent_ = percent;
+}
+
+void GlobalRouter::setMaxNegativeSlack(float max_slack)
+{
+  max_negative_slack_ = max_slack;
+}
+
+void GlobalRouter::setTimingCriticalMinArea(int min_area)
+{
+  timing_critical_min_area_ = min_area;
+}
+
+void GlobalRouter::setTimingCriticalMinFanout(int fanout)
+{
+  timing_critical_min_fanout_ = fanout;
+}
+
+void GlobalRouter::setMinLayerForTimingCritical(int min_layer)
+{
+  min_layer_for_timing_critical_ = min_layer;
+}
+void GlobalRouter::setMaxLayerForTimingCritical(int max_layer)
+{
+  max_layer_for_timing_critical_ = max_layer;
 }
 
 void GlobalRouter::initCoreGrid(int max_routing_layer)
