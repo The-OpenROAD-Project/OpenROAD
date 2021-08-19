@@ -29,11 +29,14 @@ Options description:
 ```
 set_routing_layers [-signal min-max]
                    [-clock min-max]
+                   [-timing_critical]
 ```
 
 The `set_routing_layers` command sets the minimum and maximum routing
-layers for signal nets, with the `-signal` option, and the minimum and
-maximum routing layers for clock nets, with the `-clock` option.
+layers for signal nets, with the `-signal` option, the minimum and
+maximum routing layers for clock nets, with the `-clock` option, and
+the minimum and maximum layers for timing critical nets, with the
+`-timing_critical` option.
 
 Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
 
@@ -71,7 +74,7 @@ set_routing_alpha [-net net_name] alpha
 By default the global router uses heuristic rectilinear Steiner minimum
 trees (RSMTs) as an initial basis to construct route guides. An RSMT
 tries to minimize the total wirelength needed to connect a given set
-of pins.  The Prim-Dijkstra heuristic is an alternative net topology
+of pins.  The Prim-Dijkstra (PD) heuristic is an alternative net topology
 algorithm that supports a trade-off between total wirelength and maximum
 path depth from the net driver to its loads. The `set_routing_alpha`
 command enables the Prim/Dijkstra algorithm and sets the alpha parameter
@@ -79,7 +82,7 @@ used to trade-off wirelength and path depth.  Alpha is between 0.0
 and 1.0. When alpha is 0.0 the net topology minimizes total wirelength
 (i.e. capacitance).  When alpha is 1.0 it minimizes longest path between
 the driver and loads (i.e., maximum resistance).  Typical values are
-0.4-0.8. For more information about PDRev, check the paper
+0.4-0.8. For more information about PD, check the paper
 [here](in https://vlsicad.ucsd.edu/Publications/Journals/j18.pdf).
 You can call it multiple times for different nets.
 
@@ -114,6 +117,22 @@ will only have meaning and effect when `-capacities_perturbation_percentage` is 
 The random seed must be different from 0 to enable randomization of the global routing.
 
 Example: `set_global_routing_random -seed 42 -capacities_perturbation_percentage 50 -perturbation_amount 2`
+
+```
+set_global_routing_timing_driven [-critical_nets_percentage percent]
+                                 [-max_negative_slack slack]
+                                 [-min_area min_area]
+                                 [-min_fanout fanout]
+```
+
+The `set_global_routing_timing_driven` command sets the configuration to detect timing critical
+nets. The `-critical_nets_percentage` option sets the percentage amount of nets to be considered
+as timing critical. The `-max_negative_slack` option sets the maximum negative slack allowed.
+Nets with negative slack smaller than this value are considered timing critical.
+The `-min_area` option sets the minimum area (in microns) necessary to consider a net as timing critical.
+The `-min_fanout` option sets the minimum fanout necessary to consider a net as timing critical.
+
+Example: `set_global_routing_timing_driven -critical_nets_percentage 0.1 -max_negative_slack -10 -min_area 10 -min_fanout 4`
 
 ```
 repair_antennas diodeCellName/diodePinName [-iterations iterations]
