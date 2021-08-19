@@ -53,13 +53,15 @@ public:
         int root_index,
         Logger* logger);
   ~PdRev();
-  void runPD(float alpha);
-  void runPDII(float alpha);
-  Tree translateTree(int root_idx);
+  Tree primDijkstra(float alpha,
+                    int root_idx);
+  Tree primDijkstraRevII(float alpha,
+                         int root_idx);
   void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
   void highlightGraph();
 
 private:
+  Tree translateTree(int root_idx);
   void replaceNode(Graph* graph, int originalNode);
   void transferChildren(int originalNode);
   void printTree(Tree fluteTree);
@@ -77,9 +79,7 @@ primDijkstra(std::vector<int>& x,
              Logger* logger)
 {
   pdr::PdRev pd(x, y, drvr_index, logger);
-  pd.runPD(alpha);
-  Tree tree = pd.translateTree(drvr_index);
-  return tree;
+  return pd.primDijkstra(alpha, drvr_index);
 }
 
 Tree
@@ -98,9 +98,7 @@ primDijkstraRevII(std::vector<int>& x,
   drvr_index = 0;
 
   pdr::PdRev pd(x1, y1, drvr_index, logger);
-  pd.runPDII(alpha);
-  Tree tree = pd.translateTree(drvr_index);
-  return tree;
+  return pd.primDijkstraRevII(alpha, drvr_index);
 }
 
 PdRev::PdRev(std::vector<int>& x,
@@ -117,7 +115,8 @@ PdRev::~PdRev()
   delete graph_;
 }
 
-void PdRev::runPD(float alpha)
+Tree PdRev::primDijkstra(float alpha,
+                         int root_idx)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
@@ -125,9 +124,11 @@ void PdRev::runPD(float alpha)
   // The following slightly improves wire length but the cost is the use
   // of absolutely horrid unreliable code.
   //graph_->fix_max_dc();
+  return translateTree(root_idx);
 }
 
-void PdRev::runPDII(float alpha)
+Tree PdRev::primDijkstraRevII(float alpha,
+                              int root_idx)
 {
 #ifdef PDREVII
   graph_->buildNearestNeighborsForSPT();
@@ -135,11 +136,14 @@ void PdRev::runPDII(float alpha)
   graph_->doSteiner_HoVW();
   graph_->fix_max_dc();
 #endif
+  return translateTree(root_idx);
 }
 
 ////////////////////////////////////////////////////////////////
 
 // Translate pdrev graph to flute steiner tree representation.
+// Apparently this simple mindedly clones non-terminal nodes along with their
+// location so the number of branches are num_terminals * 2 - 2 like flute.
 Tree PdRev::translateTree(int root_idx)
 {
   if (graph_->num_terminals > 2) {
