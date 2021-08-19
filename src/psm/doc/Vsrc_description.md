@@ -3,7 +3,7 @@
 This file specifies the description of the C4 bump configurations file.
 The file is a csv as described below:
 
-``` csv
+```
 <x_coordinate>, <y_coordinate>, <octagonal_c4_bump_edge_length>, <voltage_value>
 ```
 
@@ -17,7 +17,10 @@ Voltage_value specifies the value of voltage source at the C4 bump. In case
 there is a need to specify voltage drop in micron
 
 ## Example file
+
+```
 250,250,20,1.1
 130,170,20,1.1
 370,410,10,1.1
 410,450,10,1.1
+```

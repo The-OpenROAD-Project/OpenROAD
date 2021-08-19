@@ -43,7 +43,7 @@ Options description:
 
 ## Example scripts
 
-See the file [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example
+See the file `test/Vsrc_aes_vdd.loc` for an example
 with a description specified [here](doc/Vsrc_description.md).
 
 ## Regression tests

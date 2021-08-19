@@ -134,7 +134,7 @@ Below is a list of the available tools/modules included in the OpenROAD app.
 
 ### Database
 
-- [OpenDB](./src/OpenDB/README.md)
+- [OpenDB](./src/odb/README.md)
 
 ### Parasitics Extraction
 
@@ -171,7 +171,7 @@ Below is a list of the available tools/modules included in the OpenROAD app.
 
 ### Global Placement
 
-- [RePlAce](./src/replace/README.md)
+- [RePlAce](./src/gpl/README.md)
 
 ### Timing Analysis
 

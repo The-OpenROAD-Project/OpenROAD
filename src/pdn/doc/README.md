@@ -32,8 +32,8 @@ For further information on the configuration file, and to review an example
 configuration see the following:
 
 * [PDN configuration help](PDN.md)
-* [Sample configuration - PDN.cfg](example_PDN.cfg)
-* [Sample grid configuration - grid_strategy-M1-M4-M7.cfg](grid_strategy-M1-M4-M7.cfg)
+* [Sample configuration - PDN.cfg](doc/example_PDN.cfg)
+* [Sample grid configuration - grid_strategy-M1-M4-M7.cfg](doc/grid_strategy-M1-M4-M7.cfg)
 
 ## Assumptions and Limitations
 

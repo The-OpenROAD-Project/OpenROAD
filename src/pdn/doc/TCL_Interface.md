@@ -12,6 +12,4 @@ Once the power grid has been fully inserted, the power grid can be inserted with
  - [pdngen](pdngen.md)
 
 Examples of how to use these commands together.
- - [Nangate45 example](../test/test_gcd_M7_pin.api.example.tcl)
-
-
+ - [Nangate45 example](test/test_gcd_M7_pin.api.example.tcl)

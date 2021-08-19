@@ -22,13 +22,15 @@ entries:
   entries:
   - file: main/src/README
     title: OpenROAD TCL
-  - file: main/src/OpenDB/README
+  - file: main/src/odb/README
     title: OpenDB
     entries:
-      - file: main/src/OpenDB/src/codeGenerator/README
+      - file: main/src/odb/src/codeGenerator/README
         title: Code Generator
-      - file: main/src/OpenDB/test/unitTestsPython/README
+      - file: main/src/odb/test/unitTestsPython/README
         title: Unit Tests (Python)
+      - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
+        title: Add Fields in DB Objects
   - file: main/src/rcx/README
     title: OpenRCX
     entries:
@@ -74,15 +76,30 @@ entries:
       entries:
       - file: main/src/pdn/doc/PDN
         title: PDN
+    - file: main/src/pdn/doc/TCL_Interface.md
+      title: Tcl Interface
+      entries:
+      - file: main/src/pdn/doc/add_global_connection.md
+        title: add_global_connection
+      - file: main/src/pdn/doc/add_pdn_connect.md
+        title: add_pdn_connect
+      - file: main/src/pdn/doc/add_pdn_ring.md
+        title: add_pdn_ring
+      - file: main/src/pdn/doc/add_pdn_stripe.md
+        title: add_pdn_stripe
+      - file: main/src/pdn/doc/define_pdn_grid.md
+        title: add_pdn_stripe
+      - file: main/src/pdn/doc/set_voltage_domain.md
+        title: add_pdn_stripe
   - file: main/src/psm/README
     title: PDNSim
     entries:
     - file: main/src/psm/doc/Vsrc_description
       title: VSRC description
-  - file: main/src/replace/README
+  - file: main/src/gpl/README
     title: RePlAce
     entries:
-    - file: main/src/replace/doc/TclCommands
+    - file: main/src/gpl/doc/TclCommands
       title: Tclcommands
   - file: main/src/sta/README
     title: OpenSTA (external)
