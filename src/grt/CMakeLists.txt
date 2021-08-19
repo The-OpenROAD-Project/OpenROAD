@@ -70,6 +70,7 @@ target_link_libraries(grt
     gui
     stt
     OpenSTA
+    rsz
     Boost::boost
 )
 
