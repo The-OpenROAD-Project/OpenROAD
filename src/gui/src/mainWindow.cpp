@@ -205,6 +205,16 @@ MainWindow::MainWindow(QWidget* parent)
             setSelected(selected, false);
             odb::Rect bbox;
             selected.getBBox(bbox);
+            // 10 microns
+            const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+            // twice the largest dimension of bounding box
+            const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
+            // pick smallest
+            const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
+            bbox.set_xlo(bbox.xMin() - zoomout_margin);
+            bbox.set_ylo(bbox.yMin() - zoomout_margin);
+            bbox.set_xhi(bbox.xMax() + zoomout_margin);
+            bbox.set_yhi(bbox.yMax() + zoomout_margin);
             zoomTo(bbox);
           });
 
