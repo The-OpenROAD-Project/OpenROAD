@@ -104,11 +104,10 @@ class GuiPainter : public Painter
              const QPoint& centering_shift,
              qreal pixels_per_dbu,
              int dbu_per_micron)
-      : painter_(painter),
-        options_(options),
+      : Painter(options, pixels_per_dbu),
+        painter_(painter),
         base_transform_(base_transform),
         centering_shift_(centering_shift),
-        pixels_per_dbu_(pixels_per_dbu),
         dbu_per_micron_(dbu_per_micron)
   {
   }
@@ -121,7 +120,7 @@ class GuiPainter : public Painter
 
   void setPen(odb::dbTechLayer* layer, bool cosmetic = false) override
   {
-    QPen pen(options_->color(layer));
+    QPen pen(getOptions()->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
@@ -143,8 +142,8 @@ class GuiPainter : public Painter
   }
   void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
   {
-    QColor color = options_->color(layer);
-    Qt::BrushStyle brush_pattern = options_->pattern(layer);
+    QColor color = getOptions()->color(layer);
+    Qt::BrushStyle brush_pattern = getOptions()->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
@@ -200,8 +199,8 @@ class GuiPainter : public Painter
   {
     painter_->save();
     painter_->setTransform(base_transform_);
-    int sx = centering_shift_.x() + x * pixels_per_dbu_;
-    int sy = centering_shift_.y() - y * pixels_per_dbu_;
+    int sx = centering_shift_.x() + x * getPixelsPerDBU();
+    int sy = centering_shift_.y() - y * getPixelsPerDBU();
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
     painter_->drawText(sx, sy, QString::fromStdString(s));
@@ -233,10 +232,8 @@ class GuiPainter : public Painter
 
  private:
   QPainter* painter_;
-  Options* options_;
   const QTransform base_transform_;
   const QPoint centering_shift_;
-  qreal pixels_per_dbu_;
   int dbu_per_micron_;
 };
 

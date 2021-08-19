@@ -50,6 +50,7 @@
 namespace gui {
 class Painter;
 class Selected;
+class Options;
 
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
@@ -266,6 +267,7 @@ class Painter
   static inline const Color persistHighlight = yellow;
   static inline const Color ruler_color = cyan;
 
+  Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -311,6 +313,13 @@ class Painter
   }
 
   virtual void setTransparentBrush() = 0;
+
+  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
+  inline Options* getOptions() { return options_; }
+
+ private:
+  Options* options_;
+  double pixels_per_dbu_;
 };
 
 // This is an interface for classes that wish to be called to render
