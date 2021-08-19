@@ -113,7 +113,11 @@ void DRCViolation::paint(Painter& painter)
       const QRect rect = *s;
       painter.drawRect({rect.left(), rect.bottom(), rect.right(), rect.top()});
     } else if (auto s = std::get_if<QPolygon>(&shape)) {
-      // TODO: add polygon
+      std::vector<odb::Point> points;
+      for (const auto& pt : *s) {
+        points.push_back({pt.x(), pt.y()});
+      }
+      painter.drawPolygon(points);
     }
   }
 }
