@@ -170,12 +170,13 @@ sta::define_cmd_args "detailed_route_debug" {
     [-gcell x y]
     [-iter iter]
     [-pa_markers]
+    [-pa_combining]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -gcell -iter -pin} \
-      flags {-dr -maze -pa -pa_markers}
+      flags {-dr -maze -pa -pa_markers -pa_combining}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
@@ -183,6 +184,7 @@ proc detailed_route_debug { args } {
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
   set pa_markers [info exists flags(-pa_markers)]
+  set pa_combining [info exists flags(-pa_combining)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -215,5 +217,5 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
-      $gcell_x $gcell_y $iter $pa_markers
+      $gcell_x $gcell_y $iter $pa_markers $pa_combining
 }

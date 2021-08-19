@@ -1,35 +1,35 @@
-# Python Unit Tests
+ # Python Unit Tests
 
-### Running tests
+## Running tests
 
 For running the python unit tests you will need to install first *testtools* and *unittest-parallel* which enables concurrent unit testing
 
-```shell
+``` shell
 pip3 install testtools
 pip3 install unittest-parallel
 ```
 
 Then, you can run the unit tests  in sequence by running
 
-```shell
-./../unitTests.sh
+``` shell
+../unitTests.sh
 ```
 
 or in parallel by running
 
-```shell
-./../unitTests.sh parallel
+``` shell
+../unitTests.sh parallel
 ```
 
 **Note**: The test cases within each Unit Test run in parallel in both situations
 
 --------------------------------------------------------------------------
 
-### <u>Tests Structure</u>
+## <u>Tests Structure</u>
 
 The directory unitTestsPython includes unit tests for OpenDB Python APIs. Any test file starts with 'Test' followed by the test target.
 
-#### odbUnitTest.py:
+### odbUnitTest.py:
 
 This includes `TestCase` class which inherits from `unittest.TestCase` with additional functionalities:
 
@@ -43,13 +43,12 @@ This includes `TestCase` class which inherits from `unittest.TestCase` with addi
 
   So, in the end, the expected behavior is:
 
-  ```python
-  obj.SetterName(*args)
-  
-  assert(obj.GetterName()==expectedVal)`
-  ```
+``` python
+obj.SetterName(*args)
 
-  
+assert(obj.GetterName()==expectedVal)
+```
+
 
 * `check(self,obj,GetterName,expectedVal,*args)` which tests against expected value
 
@@ -59,19 +58,19 @@ This includes `TestCase` class which inherits from `unittest.TestCase` with addi
 
 * `mainParallel(Test)` runs the passed `Test` class in parallel
 
-#### helper.py:
+### helper.py:
 
 A set of functions for creating simple db instances to be used for testing.  You can find the description of each function in the comments
 
-#### TestNet.py:
+### TestNet.py:
 
 Unit test class for testing dbNet. It inherits from `odbUnitTest.TestCase` . it consists of
 
 * `setUp(self)` function to be called before each test case. Here, we create the database with the desired chip, block, masters, instances and nets.
 * `tearDown(self)` function to be called after each test case. Here, we destroy our db.
-* `test_*(self)` the test cases functions. Their names should start with `test` for the unittest suite to recognize. 
+* `test_*(self)` the test cases functions. Their names should start with `test` for the unittest suite to recognize.
 
-#### TestDestroy.py:
+### TestDestroy.py:
 
 Integration test class for testing the `destroy(*args)` function on OpenDB.
 
@@ -92,7 +91,7 @@ Integration test class for testing the `destroy(*args)` function on OpenDB.
 
 * `test_destroy_region_parent` destroying _ and test for the effect on *block*
 
-#### TestBlock.py:
+### TestBlock.py:
 
 Unit Test for dbBlock
 
@@ -105,7 +104,7 @@ Unit Test for dbBlock
   * `test_bbox3` testing block box with Inst, BPin and Obstruction placed
   * `test_bbox3` testing block box with Inst, BPin, Obstruction and SWire placed
 
-#### TestBTerm.py:
+### TestBTerm.py:
 
 Unit Test for dbBTerm
 
@@ -113,13 +112,13 @@ Unit Test for dbBTerm
 * `test_connect` testing connect function of `BTerm` on `BTerm` and `Net`
 * `test_disconnect` testing disconnect function of `BTerm` on `BTerm` and `Net`
 
-#### TestInst.py:
+### TestInst.py:
 
 Unit Test for dbInst
 
 * `test_swap_master` testing swap master function
 
-#### TestITerm.py:
+### TestITerm.py:
 
 Unit Test for dbITerm
 
@@ -132,10 +131,9 @@ Unit Test for dbITerm
 
 --------------------------
 
-##### Problems Found In Testing
+#### Problems Found In Testing
 
 * multiple core dumps that leads to aborting the process:
   * dbNet.get1st*()			(when nothing on top of the list)
   * childRegion.getParent()       (after destroying the parent region)
 * Implementation of ComputeBBox() is flawed and needs to be reconsidered
-

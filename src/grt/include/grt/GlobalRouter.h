@@ -83,7 +83,6 @@ class Pin;
 class Net;
 class Netlist;
 class RoutingTracks;
-class RoutingLayer;
 class SteinerTree;
 class RoutePt;
 class GrouteRenderer;
@@ -166,8 +165,6 @@ class GlobalRouter
                                    int max_routing_layer,
                                    NetType type);
   void estimateRC();
-  void run();
-  void globalRouteClocksSeparately();
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
@@ -192,6 +189,8 @@ class GlobalRouter
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet* net);
+  // Clear routes in the gui
+  void clearRouteGui();
   // Report the wire length on each layer.
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -231,7 +230,7 @@ class GlobalRouter
   // aux functions
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
-  RoutingLayer getRoutingLayerByIndex(int index);
+  odb::dbTechLayer* getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net,
                              GRoute& route,
@@ -250,7 +249,7 @@ class GlobalRouter
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  GSegment createFakePin(Pin pin, odb::Point& pin_position, RoutingLayer layer);
+  GSegment createFakePin(Pin pin, odb::Point& pin_position, odb::dbTechLayer* layer);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
@@ -283,7 +282,7 @@ class GlobalRouter
 
   // db functions
   void initGrid(int max_layer);
-  void initRoutingLayers(std::vector<RoutingLayer>& routing_layers);
+  void initRoutingLayers(std::map<int, odb::dbTechLayer*>& routing_layers);
   void initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
                          int max_layer);
   void computeCapacities(int max_layer);
@@ -304,7 +303,7 @@ class GlobalRouter
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  bool clockHasLeafITerm(odb::dbNet* db_net);
+  bool isNonLeafClock(odb::dbNet* db_net);
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;
@@ -319,7 +318,7 @@ class GlobalRouter
   std::vector<Net>* nets_;
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
-  std::vector<RoutingLayer>* routing_layers_;
+  std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks>* routing_tracks_;
 
   // Flow variables

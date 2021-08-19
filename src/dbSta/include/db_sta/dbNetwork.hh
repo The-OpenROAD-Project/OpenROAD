@@ -242,6 +242,7 @@ protected:
   virtual void visitConnectedPins(const Net *net,
                                   PinVisitor &visitor,
                                   ConstNetSet &visited_nets) const;
+  bool portMsbFirst(const char *port_name);
 
   dbDatabase *db_;
   Logger *logger_;

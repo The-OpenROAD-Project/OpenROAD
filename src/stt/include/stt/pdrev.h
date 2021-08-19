@@ -60,12 +60,4 @@ primDijkstraRevII(std::vector<int>& x,
                   float alpha,
                   Logger* logger);
 
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger);
-void
-highlightSteinerTree(stt::Tree &tree,
-                     gui::Gui *gui);
-
 }  // namespace PD

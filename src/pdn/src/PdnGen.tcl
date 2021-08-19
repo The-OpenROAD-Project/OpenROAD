@@ -6375,7 +6375,7 @@ proc add_macro_based_grids {} {
 
   if {![dict exists $design_data grid macro]} {return}
 
-  foreach grid_data [dict get $design_data grid macro] {
+  foreach {key grid_data} [dict get $design_data grid macro] {
     if {![dict exists $grid_data _related_instances]} {continue}
     set instances [dict get $grid_data _related_instances]
 

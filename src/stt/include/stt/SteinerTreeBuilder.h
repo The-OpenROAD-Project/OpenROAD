@@ -48,7 +48,11 @@ class OpenRoad;
 namespace odb {
 class dbDatabase;
 class dbNet;
-}  // namespace odb
+}
+
+namespace gui {
+class Gui;
+}
 
 namespace stt {
 
@@ -115,5 +119,13 @@ class SteinerTreeBuilder
   Logger* logger_;
   odb::dbDatabase* db_;
 };
+
+// Used by regressions.
+void
+reportSteinerTree(Tree &tree,
+                  Logger *logger);
+void
+highlightSteinerTree(Tree &tree,
+                     gui::Gui *gui);
 
 }  // namespace stt

@@ -204,29 +204,31 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
   if (ripuptype == RouteType::LRoute) {  // remove L routing
     if (treeedge->route.xFirst) {
       for (int i = x1; i < x2; i++) {
-        if (h_edges_[y1][i].est_usage > h_edges_[y1][i].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], i, y1, EdgeDirection::Horizontal);
+        if (h_edges_[y1][i].est_usage > cap) {
           needRipup = true;
           break;
         }
       }
 
       for (int i = ymin; i < ymax; i++) {
-        if (v_edges_[i][x2].est_usage
-            > v_edges_[i][x2].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], x2, i, EdgeDirection::Vertical);
+        if (v_edges_[i][x2].est_usage > cap) {
           needRipup = true;
           break;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
-        if (v_edges_[i][x1].est_usage
-            > v_edges_[i][x1].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], x1, i, EdgeDirection::Vertical);
+        if (v_edges_[i][x1].est_usage > cap) {
           needRipup = true;
           break;
         }
       }
       for (int i = x1; i < x2; i++) {
-        if (h_edges_[y2][i].est_usage > h_edges_[y2][i].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], i, y2, EdgeDirection::Horizontal);
+        if (h_edges_[y2][i].est_usage > cap) {
           needRipup = true;
           break;
         }

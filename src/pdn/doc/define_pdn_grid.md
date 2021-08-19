@@ -1,6 +1,6 @@
-## define_pdn_grid
+# define_pdn_grid
 
-### Synopsis
+## Synopsis
 For specifying a power grid over the stdcell area:
 ```
   % define_pdn_grid
@@ -25,7 +25,7 @@ For specifying a power grid over macros in the design:
     [-starts_with (POWER|GROUND)]    
 ```
 
-### Description
+## Description
 
 Defines the rules to describe a power grid pattern to be placed in the design.
 
@@ -60,7 +60,7 @@ A halo value is used to specify the minimum distance between this macro and any 
 Each of the `-instances`, `-cells` and `-orient` acts as an independent filter applied in succession to the list of macros.
 
 
-### Options
+## Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -77,7 +77,7 @@ Each of the `-instances`, `-cells` and `-orient` acts as an independent filter a
 | `-pin_direction` | Specifies the direction of power/ground pins on the selected macro instances as eiher horizontal or vertical |
 
 
-### Examples
+## Examples
 ```
 define_pdn_grid -name main_grid -pins {metal7} -voltage_domain {CORE TEMP_ANALOG}
 
@@ -85,4 +85,3 @@ define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pin
 define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -starts_with POWER -pin_direction horizontal
 
 ```
-

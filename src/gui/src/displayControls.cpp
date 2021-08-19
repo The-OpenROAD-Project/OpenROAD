@@ -226,7 +226,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(blockage_group_);
 
   // Rows
-  makeParentItem(rows_, "Rows", model_, Qt::Unchecked);
+  row_color_ = QColor(0, 0xff, 0, 0x70);
+  makeParentItem(rows_, "Rows", model_, Qt::Unchecked, false, row_color_);
 
   // Rows
   makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
@@ -305,6 +306,10 @@ void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& ro
 
 void DisplayControls::readSettings(QSettings* settings)
 {
+  auto getColor = [this, settings](QStandardItem* item, QColor& color, const char* key) {
+    color = settings->value(key, color).value<QColor>();
+    item->setIcon(makeSwatchIcon(color));
+  };
   settings->beginGroup("display_controls");
 
   settings->beginGroup("nets");
@@ -328,16 +333,16 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("blockages");
   readSettingsForRow(settings, blockages_.blockages);
   readSettingsForRow(settings, blockages_.obstructions);
-  placement_blockage_color_ = settings->value("placement_color", placement_blockage_color_).value<QColor>();
+  getColor(blockages_.blockages.swatch, placement_blockage_color_, "placement_color");
   // pattern saved as int
   placement_blockage_pattern_ =
       static_cast<Qt::BrushStyle>(settings->value("placement_pattern",
                                   static_cast<int>(placement_blockage_pattern_)).toInt());
-  blockages_.blockages.swatch->setIcon(makeSwatchIcon(placement_blockage_color_));
   settings->endGroup();
 
   // rows
   readSettingsForRow(settings, rows_);
+  getColor(rows_.swatch, row_color_, "row_color");
   // congestion map
   readSettingsForRow(settings, congestion_map_);
   // pin markers
@@ -353,9 +358,8 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("misc");
   readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.fills);
-  instance_name_color_ = settings->value("instance_name_color", instance_name_color_).value<QColor>();
+  getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
-  misc_.instance_names.swatch->setIcon(makeSwatchIcon(instance_name_color_));
   settings->endGroup();
 
   settings->endGroup();
@@ -394,6 +398,7 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   // rows
   writeSettingsForRow(settings, rows_);
+  settings->setValue("row_color", row_color_);
   // congestion map
   writeSettingsForRow(settings, congestion_map_);
   // pin markers
@@ -527,6 +532,8 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       item_pattern = &placement_blockage_pattern_;
     } else if (color_item == misc_.instance_names.swatch) {
       item_color = &instance_name_color_;
+    } else if (color_item == rows_.swatch) {
+      item_color = &row_color_;
     } else {
       QVariant tech_layer_data = color_item->data(Qt::UserRole);
       if (!tech_layer_data.isValid()) {
@@ -661,9 +668,10 @@ QStandardItem* DisplayControls::makeParentItem(
     const QString& text,
     QStandardItemModel* parent,
     Qt::CheckState checked,
-    bool add_selectable)
+    bool add_selectable,
+    const QColor& color)
 {
-  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable);
+  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable, color);
 
   row.visible->setData(QVariant::fromValue(Callback({
     [this, row](bool visible) {
@@ -876,6 +884,11 @@ bool DisplayControls::areObstructionsSelectable()
 bool DisplayControls::areRowsVisible()
 {
   return rows_.visible->checkState() == Qt::Checked;
+}
+
+QColor DisplayControls::rowColor()
+{
+  return row_color_;
 }
 
 bool DisplayControls::arePrefTracksVisible()

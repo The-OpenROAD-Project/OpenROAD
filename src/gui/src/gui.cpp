@@ -371,6 +371,16 @@ void Gui::zoomOut(const odb::Point& focus_dbu)
   main_window->getLayoutViewer()->zoomOut(focus_dbu);
 }
 
+void Gui::centerAt(const odb::Point& focus_dbu)
+{
+  main_window->getLayoutViewer()->centerAt(focus_dbu);
+}
+
+void Gui::setResolution(double pixels_per_dbu)
+{
+  main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
+}
+
 void Gui::saveImage(const std::string& filename, const odb::Rect& region)
 {
   main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
@@ -472,6 +482,7 @@ void initGui(OpenRoad* openroad)
     using namespace gui;
     main_window->setLogger(openroad->getLogger());
     Gui::get()->registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
+    Gui::get()->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
     Gui::get()->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
     Gui::get()->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);

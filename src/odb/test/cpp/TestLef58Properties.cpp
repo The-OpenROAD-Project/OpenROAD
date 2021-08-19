@@ -208,18 +208,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(std::string(def->getSecondLayer()->getName()) == "metal1");
   BOOST_TEST(!def->isSameMetal());
   BOOST_TEST(def->isPrlForAlignedCut());
-  auto prlFACtbl = def->getPrlForAlignedCutTable();
-  BOOST_TEST(prlFACtbl.size() == 2);
-  BOOST_TEST(std::string(prlFACtbl[0].first->getName()) == "cls1");
-  BOOST_TEST(std::string(prlFACtbl[0].second->getName()) == "cls2");
-  BOOST_TEST(std::string(prlFACtbl[1].first->getName()) == "cls3");
-  BOOST_TEST(std::string(prlFACtbl[1].second->getName()) == "cls4");
   auto spacing1 = def->getSpacing("cls1", true, "cls3", false);
   auto spacing2 = def->getSpacing("cls1", false, "cls4", false);
-  BOOST_TEST(spacing1.first == 0.1 * distFactor);
-  BOOST_TEST(spacing1.second == 0.2 * distFactor);
-  BOOST_TEST(spacing2.first == 0.7 * distFactor);
-  BOOST_TEST(spacing2.second == def->getDefault());
+  BOOST_TEST(spacing1 == 0.2 * distFactor);
+  BOOST_TEST(spacing2 == 0.7 * distFactor);
 
   auto poly = dbTech->findLayer("poly");
   BOOST_TEST(poly->getLef58Type() == odb::dbTechLayer::NWELL);

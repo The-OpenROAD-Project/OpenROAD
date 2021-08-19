@@ -1,6 +1,6 @@
-## add_pdn_stripe
+# add_pdn_stripe
 
-### Synopsis
+## Synopsis
 ```
   % add_pdn_stripe
     [-grid grid_name] \
@@ -13,7 +13,7 @@
     [-followpins]
 ```
 
-### Description
+## Description
 
 Defines a pattern of power and ground stripes in a single layer to be added to a power grid.
 
@@ -28,7 +28,7 @@ The `-starts_with` argument is used to specifiy whether the first stripe is POWE
 The `-followpins` flag defines the stripes to be stdcell rails. When `-followpins` is used the values for pitch and spacing are determined from the pattern of stdcell rows.
 
 
-### Options
+## Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -41,10 +41,9 @@ The `-followpins` flag defines the stripes to be stdcell rails. When `-followpin
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
 | `-followpins` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows |
 
-### Examples
+## Examples
 ```
 add_pdn_stripe -grid main_grid -layer metal1 -width 0.17 -followpins
 add_pdn_stripe -grid main_grid -layer metal2 -width 0.17 -followpins
 add pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with POWER
 ```
-

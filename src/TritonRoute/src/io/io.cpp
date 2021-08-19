@@ -873,8 +873,10 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       for (auto box : pin->getBoxes()) {
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end())
-          logger->error(
-              DRT, 112, "Unsupported layer {}.", box->getTechLayer()->getName());
+          logger->error(DRT,
+                        112,
+                        "Unsupported layer {}.",
+                        box->getTechLayer()->getName());
         frLayerNum layerNum
             = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
         frCoord xl = defdist(block, box->xMin());
@@ -1258,10 +1260,11 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         break;
       }
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
-        logger->warn(utl::DRT,
-                     258,
-                     "Unsupported LEF58_SPACING rule for layer {} of type AREA.",
-                     layer->getName());
+        logger->warn(
+            utl::DRT,
+            258,
+            "Unsupported LEF58_SPACING rule for layer {} of type AREA.",
+            layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY:
         logger->warn(
@@ -1309,78 +1312,30 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
     if (rule->isLayerValid() && tmpLayer->getLayerNum() == 1)
       continue;
-    auto con = make_shared<frLef58CutSpacingTableConstraint>();
-    if (rule->isDefaultValid())
-      con->setDefaultCutSpacing(rule->getDefault());
-    if (rule->isPrlValid()) {
-      auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>();
-      ptr->setPrl(rule->getPrl());
-      ptr->setHorizontal(rule->isPrlHorizontal());
-      ptr->setVertical(rule->isPrlVertical());
-      ptr->setMaxXY(rule->isMaxXY());
-      con->setPrlConstraint(ptr);
+    if (rule->isSameMask()) {
+      logger->warn(utl::DRT,
+                   279,
+                   "SAMEMASK unsupported for cut LEF58_SPACINGTABLE rule");
+      continue;
     }
+    auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
     if (rule->isLayerValid()) {
-      auto secondLayerName = rule->getSecondLayer()->getName();
-      auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
-      if (tech->name2layer.find(secondLayerName) == tech->name2layer.end()) {
-        logger->warn(utl::DRT,
-                     264,
-                     "Layer {} is not found to layer {} LEF58_SPACINGTABLE.",
-                     secondLayerName,
-                     layer->getName());
-        continue;
+      if (rule->isSameMetal()) {
+        tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
+      } else if (rule->isSameNet()) {
+        tmpLayer->setLef58SameNetInterCutSpcTblConstraint(con.get());
+      } else {
+        tmpLayer->setLef58DefaultInterCutSpcTblConstraint(con.get());
       }
-      auto secondLayerNum = tech->name2layer.at(secondLayerName)->getLayerNum();
-      ptr->setSecondLayerNum(secondLayerNum);
-      ptr->setNonZeroEnc(rule->isNonZeroEnclosure());
-      con->setLayerConstraint(ptr);
+    } else {
+      if (rule->isSameMetal()) {
+        tmpLayer->setLef58SameMetalCutSpcTblConstraint(con.get());
+      } else if (rule->isSameNet()) {
+        tmpLayer->setLef58SameNetCutSpcTblConstraint(con.get());
+      } else {
+        tmpLayer->setLef58DiffNetCutSpcTblConstraint(con.get());
+      }
     }
-    frCollection<frCollection<std::pair<frCoord, frCoord>>> table;
-    map<std::string, frUInt4> rowMap, tmpRowMap;
-    map<std::string, frUInt4> colMap, tmpColMap;
-    rule->getSpacingTable(table, tmpRowMap, tmpColMap);
-
-    for (auto& [key, val] : tmpRowMap) {
-      std::string newKey = key;
-      size_t idx = newKey.find("/");
-      if (idx != string::npos)
-        newKey.replace(idx, 1, "");
-      rowMap[newKey] = val;
-    }
-    for (auto& [key, val] : tmpColMap) {
-      std::string newKey = key;
-      size_t idx = newKey.find("/");
-      if (idx != string::npos)
-        newKey.replace(idx, 1, "");
-      colMap[newKey] = val;
-    }
-
-    vector<frString> expColNames;
-    for (auto& [col, idx] : colMap)
-      expColNames.push_back(col);
-    sort(expColNames.begin(), expColNames.end());
-
-    vector<frString> expRowNames;
-    for (auto& [row, idx] : rowMap)
-      expRowNames.push_back(row);
-    sort(expRowNames.begin(), expRowNames.end());
-
-    auto tblVals = table;
-    uint i = 0;
-    for (auto& [row, orig_i] : rowMap) {
-      uint j = 0;
-      for (auto& [col, orig_j] : colMap)
-        tblVals.at(i).at(j++) = table.at(orig_i).at(orig_j);
-      ++i;
-    }
-    string rowName("CUTCLASS");
-    string colName("CUTCLASS");
-    auto ptr = make_shared<
-        fr2DLookupTbl<frString, frString, pair<frCoord, frCoord>>>(
-        rowName, expRowNames, colName, expColNames, tblVals);
-    con->setCutClassTbl(ptr);
-    tmpLayer->lef58CutSpacingTableConstraints.push_back(con);
     tech->addConstraint(con);
   }
 }
@@ -1957,10 +1912,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         } else if (str == "FEEDTHRU") {
           termDirection = frTermDirectionEnum::FEEDTHRU;
         } else {
-          logger->error(DRT,
-                        121,
-                        "Unsupported terminal direction {} in lef.",
-                        str);
+          logger->error(
+              DRT, 121, "Unsupported terminal direction {} in lef.", str);
         }
         term->setDirection(termDirection);
 
