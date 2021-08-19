@@ -55,7 +55,6 @@ class TimingWidget : public QDockWidget
   Q_OBJECT
  public:
   TimingWidget(QWidget* parent = nullptr);
-  ~TimingWidget() {};
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
 

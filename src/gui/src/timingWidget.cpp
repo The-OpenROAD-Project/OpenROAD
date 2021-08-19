@@ -72,7 +72,6 @@ TimingWidget::TimingWidget(QWidget* parent)
     view->setContextMenuPolicy(Qt::CustomContextMenu);
     view->setSelectionMode(QAbstractItemView::SingleSelection);
     view->setSelectionBehavior(QAbstractItemView::SelectRows);
-    view->setSortingEnabled(true);
     view->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
   };
 
@@ -81,7 +80,9 @@ TimingWidget::TimingWidget(QWidget* parent)
   setupTableView(path_details_table_view_, path_details_model_);
 
   // default to sorting by slack
+  setup_timing_table_view_->setSortingEnabled(true);
   setup_timing_table_view_->horizontalHeader()->setSortIndicator(3, Qt::AscendingOrder);
+  hold_timing_table_view_->setSortingEnabled(true);
   hold_timing_table_view_->horizontalHeader()->setSortIndicator(3, Qt::AscendingOrder);
 
   path_count_spin_box_->setRange(0, 10000);
