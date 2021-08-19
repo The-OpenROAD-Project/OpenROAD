@@ -115,6 +115,7 @@ proc set_global_routing_region_adjustment { args } {
 
 sta::define_cmd_args "set_routing_layers" { [-signal layers] \
                                             [-clock layers] \
+                                            [-timing_critical layers]
 }
 
 proc set_routing_layers { args } {
@@ -128,6 +129,10 @@ proc set_routing_layers { args } {
   if { [info exists keys(-clock)] } {
     grt::define_clock_layer_range $keys(-clock)
   }
+
+  if { [info exists keys(-timing_critical)] } {
+    grt::define_timing_critical_layer_range $keys(-timing_critical)
+  }
 }
 
 sta::define_cmd_args "set_macro_extension" { extension }
@@ -139,6 +144,51 @@ proc set_macro_extension { args } {
     grt::set_macro_extension $extension
   } else {
     utl::error GRT 219 "Command set_macro_extension needs one argument: extension."
+  }
+}
+
+sta::define_cmd_args "set_global_routing_timing_driven" { [-critical_nets_percentage percent] \
+                                                          [-max_negative_slack slack] \
+                                                          [-min_area min_area] \
+                                                          [-min_fanout fanout]
+                                                        }
+
+proc set_global_routing_timing_driven { args } {
+  sta::parse_key_args "set_global_routing_timing_driven" args \
+    keys { -critical_nets_percentage \
+           -max_negative_slack -min_area \
+           -min_fanout
+         }
+
+  if { [info exists keys(-critical_nets_percentage) ] } {
+    set percent $keys(-critical_nets_percentage)
+    sta::check_float "-critical_nets_percentage" $percent
+    grt::set_critical_nets_percentage $percent
+  } else {
+    grt::set_critical_nets_percentage 0
+  }
+
+  if { [info exists keys(-max_negative_slack)] } {
+    set max_slack $keys(-max_negative_slack)
+    grt::set_max_negative_slack $max_slack
+  } else {
+    grt::set_max_negative_slack 0
+  }
+
+  if { [info exists keys(-min_area)] } {
+    set min_area $keys(-min_area)
+    sta::check_positive_float "-min_area" $min_area
+    grt::set_timing_critical_min_area [expr { int($min_area * $lef_units * $lef_units) }]
+  } else {
+    grt::set_timing_critical_min_area 0
+  }
+
+  if { [info exists keys(-min_fanout)] } {
+    set fanout $keys(-min_fanout)
+    sta::check_positive_integer "-min_fanout" $fanout
+    grt::set_timing_critical_min_fanout $fanout
+  } else {
+    grt::set_timing_critical_min_fanout 1
   }
 }
 
@@ -412,6 +462,19 @@ proc define_clock_layer_range { layers } {
     grt::set_clock_layer_range $min_clock_layer $max_clock_layer
   } else {
     utl::error GRT 56 "In argument -clock_layers, min routing layer is greater than max routing layer."
+  }
+}
+
+proc define_timing_critical_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-timing_critical_layers" $layers]
+  lassign $layer_range min_timing_critical_layer max_timing_critical_layer
+  grt::check_routing_layer $min_timing_critical_layer
+  grt::check_routing_layer $max_timing_critical_layer
+
+  if { $min_timing_critical_layer < $max_timing_critical_layer } {
+    grt::set_timing_critical_layer_range $min_timing_critical_layer $max_timing_critical_layer
+  } else {
+    utl::error GRT 147 "-timing_critical_layers: Min routing layer is greater than max routing layer."
   }
 }
 

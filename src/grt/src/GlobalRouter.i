@@ -128,6 +128,13 @@ set_clock_layer_range(int minLayer, int maxLayer)
 }
 
 void
+set_timing_critical_layer_range(int minLayer, int maxLayer)
+{
+  getGlobalRouter()->setMinLayerForTimingCritical(minLayer);
+  getGlobalRouter()->setMaxLayerForTimingCritical(maxLayer);
+}
+
+void
 set_macro_extension(int macroExtension)
 {
   getGlobalRouter()->setMacroExtension(macroExtension);
