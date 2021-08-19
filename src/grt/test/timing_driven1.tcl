@@ -18,23 +18,17 @@ set guide_file [make_result_file timing_driven1.guide]
 
 set_global_routing_layer_adjustment metal2 0.8
 set_global_routing_layer_adjustment metal3 0.7
-set_global_routing_layer_adjustment metal4-metal10 0.4
+set_global_routing_layer_adjustment metal4-metal8 0.4
 
-set_routing_layers -signal metal2-metal10 -timing_critical metal2-metal5
+set_routing_layers -signal metal2-metal10 -timing_critical metal7-metal10
+set_global_routing_timing_driven -critical_nets_percentage 0.1 -min_fanout 4
 set_macro_extension 2
 
 global_route
 
-set_routing_alpha 0.7
-repair_timing_critical_nets -critical_nets_percentage 0.1 -min_fanout 4
-
 write_guides $guide_file
 
-set_propagated_clock [all_clocks]
-estimate_parasitics -global_routing
-
-report_wns -digits 3
-report_worst_slack -digits 3
+diff_file timing_driven1.guideok $guide_file
 
 # set_thread_count 8
 # detailed_route -guide $guide_file \
