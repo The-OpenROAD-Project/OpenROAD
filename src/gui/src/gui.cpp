@@ -395,6 +395,21 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region)
   main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
 }
 
+void Gui::showWidget(const std::string& name, bool show)
+{
+  const QString find_name = QString::fromStdString(name);
+  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
+    if (widget->objectName() == find_name || widget->windowTitle() == find_name) {
+      if (show) {
+        widget->show();
+        widget->raise();
+      } else {
+        widget->hide();
+      }
+    }
+  }
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);

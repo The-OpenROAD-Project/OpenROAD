@@ -50,6 +50,7 @@
 #include "selectHighlightWindow.h"
 #include "staGui.h"
 #include "utl/Logger.h"
+#include "timingWidget.h"
 #include "drcWidget.h"
 
 namespace gui {
@@ -71,6 +72,7 @@ MainWindow::MainWindow(QWidget* parent)
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this)),
+      timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this))
 {
   // Size and position the window
@@ -79,7 +81,6 @@ MainWindow::MainWindow(QWidget* parent)
   move(size.width() * 0.1, size.height() * 0.1);
 
   find_dialog_ = new FindObjectDialog(this);
-  timing_dialog_ = new TimingDebugDialog(this);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
@@ -90,11 +91,13 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
+  addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
 
+  tabifyDockWidget(inspector_, timing_widget_);
   tabifyDockWidget(inspector_, drc_viewer_);
   drc_viewer_->hide();
 
@@ -190,7 +193,7 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
-  connect(timing_dialog_,
+  connect(timing_widget_,
           SIGNAL(highlightTimingPath(TimingPath*)),
           viewer_,
           SLOT(update()));
@@ -230,6 +233,7 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
+  timing_widget_->readSettings(&settings);
   settings.endGroup();
 }
 
@@ -287,8 +291,8 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
-  connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
+  connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
 }
 
 void MainWindow::createMenus()
@@ -301,12 +305,9 @@ void MainWindow::createMenus()
   view_menu_->addAction(find_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
-  view_menu_->addAction(inspect_);
-  view_menu_->addAction(timing_debug_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(congestion_setup_);
-  tools_menu_->addAction(timing_debug_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -314,8 +315,8 @@ void MainWindow::createMenus()
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
+  windows_menu_->addAction(timing_widget_->toggleViewAction());
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
-  selection_browser_->setVisible(false);
 }
 
 void MainWindow::createToolbars()
@@ -540,14 +541,6 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
-void MainWindow::showTimingDialog()
-{
-  if (timing_dialog_->populateTimingPaths(nullptr)) {
-    timing_dialog_->show();
-    Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
-  }
-}
-
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set) {
@@ -632,6 +625,7 @@ void MainWindow::saveSettings()
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
+  timing_widget_->writeSettings(&settings);
   settings.endGroup();
 }
 

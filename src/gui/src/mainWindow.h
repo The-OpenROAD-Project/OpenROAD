@@ -42,7 +42,6 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-#include "timingDebugDialog.h"
 
 namespace odb {
 class dbDatabase;
@@ -60,6 +59,7 @@ class LayoutScroll;
 class ScriptWidget;
 class DisplayControls;
 class Inspector;
+class TimingWidget;
 class DRCWidget;
 
 // This is the main window for the GUI.  Currently we use a single
@@ -171,9 +171,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
-  // show Timing Dialog Box
-  void showTimingDialog();
-
   // add/remove toolbar button
   const std::string addToolbarButton(const std::string& name,
                                      const QString& text,
@@ -217,6 +214,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
+  TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
 
   QMenu* file_menu_;
@@ -239,7 +237,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QLabel* location_;
 
   FindObjectDialog* find_dialog_;
-  TimingDebugDialog* timing_dialog_;
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, const Descriptor*> descriptors_;
