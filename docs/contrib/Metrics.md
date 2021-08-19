@@ -1,9 +1,9 @@
 # Metrics
 
 The [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
-repository contains source files (e.g., LEF/DEF, verilog, SDC, Liberty,
-RC) and configuration files (e.g. `config.mk`) that enable the user to run
-a small set of designs through our complete RTL-GDS flow.
+repository contains source files (e.g., LEF/DEF, Verilog, SDC, Liberty,
+RC extraction) and configuration files (e.g. `config.mk`) that enable the user to run
+a small set of example designs through our complete RTL-to-GDS flow.
 
 To keep track of the quality of the results, we maintain inside each
 design folder two files:
@@ -18,11 +18,11 @@ evaluate new executions when a change is made.
 ## Checking against golden
 
 The evaluation checks for key metrics (e.g., worst slack, number of
-DRCs) to ensure that changes do not degrade too much w.r.t. the
+DRCs) to ensure that changes do not degrade too much with respect to the
 "golden" values.
 
-After you make a significant change, e.g., fixed a bug in a piece of
-code, or changed some configuration variable
+After you make a significant change, e.g., fixing a bug in a piece of
+code, or changing some configuration variable
 (`PLACE_DENSITY`), you should review the results and compare
 them with the "golden". To perform the check, you will need to run the
 following command:
@@ -33,16 +33,16 @@ cd OpenROAD-flow-scripts/flow
 make [clean_metadata] metadata
 ```
 
-If the command above yields any error message, please review them to
+If the command above yields any error message, please review to
 make sure the change in metrics is expected and justifiable. If so,
 proceed to the next section to update the "golden" reference.
 
 ## Update process
 
-The update of the reference files is mandatory if the metrics got worse
+Update of the reference files is mandatory if any metrics became worse
 than the values limited by the `rules.json` (see previous
-section on how to perform the check). Also it is a good idea to update
-the "golden" files if your changed improved a metric to ensure that
+section on how to perform the check). Also, it is a good idea to update
+the "golden" files if your changes have improved a metric, to ensure that
 the improvement will not be lost in the future.
 
 To update all the reference files:

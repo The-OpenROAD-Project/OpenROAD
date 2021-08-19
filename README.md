@@ -112,7 +112,7 @@ gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004 
 openroad
   -help              show help and exit
   -version           show version and exit
-  -no_init           do not read .openroad init file
+  -no_init           do not read ~/.openroad init file
   -no_splash         do not show the license splash at startup
   -threads count     max number of threads to use
   -exit              exit after reading cmd_file

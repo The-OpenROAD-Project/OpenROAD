@@ -48,16 +48,15 @@ Net FE_OFN298734_n20421 10 (Net NetName NumOfTerminals)
 ./pd_rev -f ./test.in -a1 0.3 -bu 1 -a2 0.45 -hv 1
 ```
 
-## Prerequisites:
-- Boost library
-- OpenMP
-- gcc-6.2 or later version
+## External references
 
-## Paper reference:
-- C. J. Alpert, W.-K. Chow, K. Han, A. B. Kahng, Z. Li, D. Liu and S. Venkatesh, "Prim-Dijkstra Revisited: Achieving Superior Timing-driven Routing Trees", Proc. ACM/IEEE Intl. Symp. on Physical Design, 2018, pp. 10-17.
+-   C. J. Alpert, W.-K. Chow, K. Han, A. B. Kahng, Z. Li, D. Liu and
+    S. Venkatesh, "Prim-Dijkstra Revisited: Achieving Superior Timing-driven
+    Routing Trees", Proc. ACM/IEEE Intl. Symp. on Physical Design, 2018,
+    pp. 10-17.
 
 
-# Authors
+## Authors
 
 - Kwangsoo Han
 - Andrew B. Kahng
@@ -68,6 +67,6 @@ Contact: kwhan@ucsd.edu, abk@ucsd.edu, srvenkat@ucsd.edu
 Affiliation: Computer Science and Engineering Department, UC San Diego,
              La Jolla, CA 92093-0404, USA
 
-# License
+## License
 
-Copyright(c) 2018 Regents of the University of California
+BSD 3-Clause License. See [LICENSE](LICENSE) file.

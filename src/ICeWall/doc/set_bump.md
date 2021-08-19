@@ -16,7 +16,7 @@ The -row and -col options are required and identify the row and column of a spec
 
 The -net, -power and -ground options are mutually exclusive and are used to specify the name of the net connected to a bump and whether it is of type signal, power or ground.
 
-The -remove option is used to specify that no bump should be placed at the specified position in the bump array
+The -remove option is used to specify that no bump should be placed at the specified position in the bump array.
 
 ## Options
 
@@ -32,7 +32,9 @@ The -remove option is used to specify that no bump should be placed at the speci
 ## Examples
 ```
 set_bump -row  8 -col  8 -power VDD1
+
 set_bump -row  9 -col  8 -remove
+
 set_bump -row 10 -col  8 -power VDD2
 ```
 

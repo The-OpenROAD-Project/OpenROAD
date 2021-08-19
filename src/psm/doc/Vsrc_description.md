@@ -1,17 +1,20 @@
 # Voltage source location file description
+
 This file specifies the description of the C4 bump configurations file.
 The file is a csv as described below:
 
+``` csv
 <x_coordinate>, <y_coordinate>, <octagonal_c4_bump_edge_length>, <voltage_value>
+```
 
 The x and y coordinate specify the center location of the voltage C4 bumps in
 micro meter.
 
 The octagonal c4_edge_length specifies the edge length of the C4 to determine
-the pitch of the RDL layer in micrometer
+the pitch of the RDL layer in micron
 
 Voltage_value specifies the value of voltage source at the C4 bump. In case
-there is a need to specify voltage drop in micrometer
+there is a need to specify voltage drop in micron
 
 ## Example file
 250,250,20,1.1

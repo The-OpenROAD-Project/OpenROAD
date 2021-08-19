@@ -5,7 +5,7 @@ List of coding practices.
 ---
 **NOTE**
 
-This is a compilation of many idioms in openroad code that I consider
+This is a compilation of many idioms in OpenROAD code that I consider
 undesirable. Obviously other programmers have different opinions or they
 would not be so pervasive. James Cherry 04/2020
 
@@ -16,11 +16,11 @@ would not be so pervasive. James Cherry 04/2020
 ### Practice #1
 
 Don't comment out code. Remove it. `git` provides a complete history of
-the code if you want to look backwards. Huge chunks of commented out
-code that are stunningly common in student code makes it nearly
+the code if you want to look backwards. Huge chunks of commented-out
+code that are stunningly common in student code make it nearly
 impossible to read.
 
-`FlexTa.cpp` has 220 lines of code and 600 lines of commented out code.
+`FlexTa.cpp` has 220 lines of code and 600 lines of commented-out code.
 
 ### Practice #2
 
@@ -79,7 +79,7 @@ frDRC.h frDRC_init.cpp frDRC_main.cpp frDRC_setup.cpp frDRC_util.cpp
 ### Practice #6
 
 Don't name variables theThingy, curThingy or myThingy. It is just
-distracting extraneous verbage. Just use thingy.
+distracting extraneous verbiage. Just use thingy.
 
 ``` cpp
 float currXSize;
@@ -92,10 +92,10 @@ float currWLnoWts;
 
 ### Practice #7
 
-Do not use global varaibles. All state should be inside of classes.
+Do not use global variables. All state should be inside of classes.
 Global variables make multi-threading next to impossible and preclude
 having multiple copies of a tool running in the same process. The only
-global variable in `openroad` should be the singleton that tcl commands
+global variable in `openroad` should be the singleton that Tcl commands
 reference.
 
 ``` cpp
@@ -121,8 +121,8 @@ extern bool ENABLE_BOUNDARY_MAR_FIX;
 ### Practice #8
 
 Do not use strings (names) to refer to database or sta objects except in
-user interface code. DEF, SDC, and verilog all use different names for
-netlist instances and nets so the names will not always match.
+user interface code. DEF, SDC, and Verilog all use different names for
+netlist instances and nets, so the names will not always match.
 
 ### Practice #9
 
@@ -149,7 +149,7 @@ for(dbInst* inst : block->getInsts() ){
 Don't put magic numbers in the code. Use a variable with a name that
 captures the intent. Document the units if they exist.
 
-examples of unnamed magic numbers:
+Examples of unnamed magic numbers:
 
 ``` cpp
 referenceHpwl_= 446000000;
@@ -222,7 +222,7 @@ Don't use malloc. Use new. We are writting C++, not C.
 ### Practice #14
 
 Don't use C style arrays. There is no bounds checks for them so they
-invite subtle memory errors to unwitting programmers that fail to use
+invite subtle memory errors to unwitting programmers who fail to use
 valgrind. Use std::vector or std::array.
 
 ### Practice #15
@@ -357,7 +357,7 @@ needs.
 #include "db_sta/dbSta.hh"
 ```
 
-Note this example also incorrectly uses <>'s around openroad headers.
+Note this example also incorrectly uses `<>'s` around OpenROAD headers.
 
 Header files should only include files to support the header. Include
 files necessary for code in the code file, not the header.
@@ -389,7 +389,7 @@ unsigned net_num = 0;
 
 ### Practice #24
 
-Use class declarations if you are only refering to object by pointer
+Use class declarations if you are only referring to objects by pointer
 instead of including their complete class definition. This can vastly
 reduce the code the compiler has to process.
 
@@ -416,8 +416,8 @@ to guarantee.
 
 ### Practice #26
 
-Don't put "using namespace" inside a function. It makes no sense what
-so ever but I have seen some very confused programmers do this far too
+Don't put "using namespace" inside a function. It makes no sense whatsoever
+but I have seen some very confused programmers do this far too
 many times.
 
 ### Practice #27
@@ -433,7 +433,7 @@ and doesn't explicity declare what in the namespace is being used. Use
 EVER EVER `using namespace std`. It is HUGE.
 
 The following is especially confused because it is trying to "use" the
-symbols in code that is already in the MacroPlace namespace.
+symbols in code that are already in the MacroPlace namespace.
 
 ``` cpp
 using namespace MacroPlace;
@@ -504,11 +504,11 @@ Don't put file names in `.gitignore` ignored directories.
 
 ### Practice #33
 
-Don't list compile artifacts in `.gitignore` They all end
+Don't list compile artifacts in `.gitignore`. They all end
 up in the build directory so each file type does not have to appear in
 `.gitignore`.
 
-All of the following is nonsense that has propagated faster than covid
+All of the following is nonsense that has propagated faster than COVID
 in student code:
 
 #### Compiled Object files
@@ -536,7 +536,7 @@ in student code:
 ### Practice #35
 
 Don't change compile flags in `cmake` files. These are set at the top
-level and should not be overriden.
+level and should not be overridden.
 
 ``` cmake
 set(CMAKE_CXX_FLAGS "-O3")

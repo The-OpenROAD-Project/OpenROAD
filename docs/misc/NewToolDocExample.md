@@ -16,35 +16,24 @@ Description.
     command_1 [-argA] [-argB] <file>
 ```
 
-| Parameter | Description | Default      | Allowed values |
-|-----------|-------------|--------------|----------------|
-| `-argA`   | Argument A. | 0            | `int`          |
-| `-argB`   | Argument B. | 42           | [25-50]        |
-| `<file>`  | Input file. | **Required** | `string`       |
+-   `<file>`: Input file. This is a *Required* parameter. The parameter
+    expects a `string`.
+-   `-argA`: Argument A. Default value is 0. The parameter expects a `int`.
+-   `-argB`: Argument B. Default value is 42. The parameter expects a `int`
+    in the range [25-50].
 
 
 ## Example scripts
 
 ## Regression tests
 
-| Test    | Description             |
-|---------|-------------------------|
-| Test 1. | Description for test 1. |
-| Test 2. | Description for test 2. |
-| Test 3. | Description for test 3. |
-
 ## Limitations
-
-Things the tool cannot do.
 
 ## FAQs
 
-Frequent questions about this tool in particular.
-
-Replace NEW_TOOL with the name of your tool in the link below.
-Use `%20` instead of spaces.
-
-Checkout [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+NEW TOOL+in%3Atitle) about this tool.
+Check out
+[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+fastroute+in%3Atitle)
+about this tool.
 
 ## External references (Optional)
 
@@ -56,4 +45,4 @@ Checkout [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/di
 
 ## License
 
-BSD 3-Clause License
+BSD 3-Clause License. See [LICENSE](LICENSE) file.

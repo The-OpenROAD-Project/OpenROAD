@@ -17,14 +17,14 @@ To build the binaries and run `gcd` through the flow:
 
 **NOTE**
 
-`gcd` is a small design, thus requires less computational power.
+`gcd` is a small design, and thus requires less computational power.
 Larger designs may require better hardware.
 
 ---
 
 ### Building and Installing the Software
 
-There are currently two options to get OpenROAD Flow setup:
+There are currently two options to set up the OpenROAD Flow:
 
 - Build from sources using Docker, [instructions here](./BuildWithDocker.md).
 - Build from sources locally, [instructions here](./BuildLocally.md).
@@ -37,7 +37,7 @@ You can select a design using either of the following methods:
 1.  The flow
     [Makefile](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/Makefile)
     contains a list of sample design configurations at the top of the
-    file. Uncomment the respective line to select the design
+    file. Uncomment the respective line to select the design.
 2.  Specify the design using the shell environment. For example:
 
 ``` shell
@@ -80,7 +80,7 @@ due to NDA restrictions. However, if you are able to access these
 platforms, you can create the necessary platform-specific files
 yourself.
 
-Once the platform is setup. Create a new design configuration with
+Once the platform is set up, you can create a new design configuration with
 information about the design. See sample configurations in the `design`
 directory.
 
@@ -97,7 +97,7 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 
 ## Miscellaneous
 
-### nangate45 smoke-test harness for top level Verilog designs
+### nangate45 smoke-test harness for top-level Verilog designs
 
 1.  Drop your Verilog files into designs/src/harness
 2.  Start the workflow:
@@ -105,7 +105,7 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 ---
 **TIP!**
 
-Start with a small tiny submodule in your design with few pins.
+Start with a very small submodule in your design that has only a few pins.
 
 ---
 

@@ -2,6 +2,8 @@
 
 Tapcell and endcap insertion.
 
+## Commands
+
 ```
 tapcell [-tapcell_master tapcell_master]
         [-endcap_master endcap_master]
@@ -21,4 +23,20 @@ tapcell [-tapcell_master tapcell_master]
         [-tap_prefix tap_prefix]
         [-endcap_prefix endcap_prefix]
 ```
-You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
+
+## Example scripts
+
+You can find script examples for both 45nm and 14nm in
+`tap/etc/scripts`
+
+
+## Limitations
+
+## FAQs
+
+Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+tap+in%3Atitle)
+about this tool.
+
+## License
+
+BSD 3-Clause License. See [LICENSE](LICENSE) file.

@@ -1,6 +1,6 @@
 # User Guide
 
-The OpenROAD Project uses three tools to achieve RTL-to-GDS:
+The OpenROAD Project uses three tools to perform automated RTL-to-GDS layout generation:
 
 1.  [yosys](https://github.com/The-OpenROAD-Project/yosys): Logic
     Synthesis
