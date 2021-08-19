@@ -156,8 +156,10 @@ _installCentosRuntime() {
 
 _help() {
     cat <<EOF
-usage: $0 -run[time]
+
+Usage: $0 -run[time]
        $0 -dev[elopment]
+
 EOF
     exit "${1:-1}"
 }
