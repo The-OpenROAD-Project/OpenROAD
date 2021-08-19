@@ -112,6 +112,11 @@ void TritonRoute::setDebugPaMarkers(bool on)
   debug_->paMarkers = on;
 }
 
+void TritonRoute::setDebugPaCombining(bool on)
+{
+  debug_->paCombining = on;
+}
+
 int TritonRoute::getNumDRVs() const
 {
   if (num_drvs_ < 0) {

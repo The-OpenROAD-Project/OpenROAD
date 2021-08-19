@@ -2909,20 +2909,18 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect,
 void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
 {
   auto layerNum = rect->getLayerNum();
-
+  auto layer = getTech()->getLayer(layerNum);
   // CShort
   // diff net same layer
-  for (auto con : getTech()->getLayer(layerNum)->getCutSpacing(false)) {
+  for (auto con : layer->getCutSpacing(false)) {
     checkCutSpacing_main(rect, con);
   }
   // same net same layer
-  for (auto con : getTech()->getLayer(layerNum)->getCutSpacing(true)) {
+  for (auto con : layer->getCutSpacing(true)) {
     checkCutSpacing_main(rect, con);
   }
   // diff net diff layer
-  for (auto con :
-       getTech()->getLayer(layerNum)->getInterLayerCutSpacingConstraint(
-           false)) {
+  for (auto con : layer->getInterLayerCutSpacingConstraint(false)) {
     if (con) {
       checkCutSpacing_main(rect, con);
     }
@@ -2931,17 +2929,33 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   // LEF58_SPACING for cut layer
   bool skipDiffNet = false;
   // samenet rule
-  for (auto con :
-       getTech()->getLayer(layerNum)->getLef58CutSpacingConstraints(true)) {
+  for (auto con : layer->getLef58CutSpacingConstraints(true)) {
     // skipSameNet if same-net rule exists
     skipDiffNet = true;
     checkLef58CutSpacing_main(rect, con, false);
   }
   // diffnet rule
-  for (auto con :
-       getTech()->getLayer(layerNum)->getLef58CutSpacingConstraints(false)) {
+  for (auto con : layer->getLef58CutSpacingConstraints(false)) {
     checkLef58CutSpacing_main(rect, con, skipDiffNet);
   }
+
+  // LEF58_SPACINGTABLE
+  if (layer->hasLef58SameMetalCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect,
+                            layer->getLef58SameMetalCutSpcTblConstraint());
+  if (layer->hasLef58SameNetCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect, layer->getLef58SameNetCutSpcTblConstraint());
+  if (layer->hasLef58DiffNetCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect, layer->getLef58DiffNetCutSpcTblConstraint());
+  if (layer->hasLef58SameNetInterCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect,
+                            layer->getLef58SameNetInterCutSpcTblConstraint());
+  if (layer->hasLef58SameMetalInterCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect,
+                            layer->getLef58SameMetalInterCutSpcTblConstraint());
+  if (layer->hasLef58DefaultInterCutSpcTblConstraint())
+    checkLef58CutSpacingTbl(rect,
+                            layer->getLef58DefaultInterCutSpcTblConstraint());
 }
 
 void FlexGCWorker::Impl::checkCutSpacing()
@@ -2975,7 +2989,6 @@ void FlexGCWorker::Impl::checkCutSpacing()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
-            // cout <<"from " <<maxrect.get() <<endl;
             checkCutSpacing_main(maxrect.get());
           }
         }

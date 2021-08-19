@@ -26,16 +26,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
 #include <chrono>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 #include "db/infra/frTime.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -874,13 +875,13 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
     via2.getLayer2BBox(viaBox2);
   }
   via2.getCutBBox(cutBox2);
-
+  auto boxLength = isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
+                              : (cutBox1.right() - cutBox1.left());
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
-    auto samenetCons
-        = getTech()->getLayer(viaDef1->getCutLayerNum())->getCutSpacing(true);
-    auto diffnetCons
-        = getTech()->getLayer(viaDef1->getCutLayerNum())->getCutSpacing(false);
+    auto layer = getTech()->getLayer(viaDef1->getCutLayerNum());
+    auto samenetCons = layer->getCutSpacing(true);
+    auto diffnetCons = layer->getCutSpacing(false);
     if (!samenetCons.empty()) {
       // check samenet spacing rule if exists
       for (auto con : samenetCons) {
@@ -895,8 +896,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         }
         auto reqSpcVal = con->getCutSpacing();
         if (!con->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                                  : (cutBox1.right() - cutBox1.left());
+          reqSpcVal += boxLength;
         }
         sol = max(sol, reqSpcVal);
       }
@@ -913,8 +913,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         }
         auto reqSpcVal = con->getCutSpacing();
         if (!con->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                                  : (cutBox1.right() - cutBox1.left());
+          reqSpcVal += boxLength;
         }
         sol = max(sol, reqSpcVal);
       }
@@ -965,14 +964,80 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
         ;
       } else {
         if (!samenetCon->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                                  : (cutBox1.right() - cutBox1.left());
+          reqSpcVal += boxLength;
         }
       }
       sol = max(sol, reqSpcVal);
     }
   }
-
+  // LEF58_SPACINGTABLE
+  if (viaDef2->getCutLayerNum() > viaDef1->getCutLayerNum()) {
+    // swap via defs
+    frViaDef* tempViaDef = viaDef2;
+    viaDef2 = viaDef1;
+    viaDef1 = tempViaDef;
+    // swap boxes
+    frBox tempCutBox(cutBox2);
+    cutBox2.set(cutBox1);
+    cutBox1.set(tempCutBox);
+  }
+  auto layer1 = getTech()->getLayer(viaDef1->getCutLayerNum());
+  auto layer2 = getTech()->getLayer(viaDef2->getCutLayerNum());
+  auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.width(), cutBox1.length());
+  auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.width(), cutBox2.length());
+  frString cutClass1, cutClass2;
+  if (cutClassIdx1 != -1)
+    cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
+  if (cutClassIdx2 != -1)
+    cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
+  bool isSide1;
+  bool isSide2;
+  if (isCurrDirY) {
+    isSide1 = (cutBox1.right() - cutBox1.left())
+              > (cutBox1.top() - cutBox1.bottom());
+    isSide2 = (cutBox2.right() - cutBox2.left())
+              > (cutBox2.top() - cutBox2.bottom());
+  } else {
+    isSide1 = (cutBox1.right() - cutBox1.left())
+              < (cutBox1.top() - cutBox1.bottom());
+    isSide2 = (cutBox2.right() - cutBox2.left())
+              < (cutBox2.top() - cutBox2.bottom());
+  }
+  if (layer1->getLayerNum() == layer2->getLayerNum()) {
+    frLef58CutSpacingTableConstraint* lef58con = nullptr;
+    if (layer1->hasLef58SameMetalCutSpcTblConstraint())
+      lef58con = layer1->getLef58SameMetalCutSpcTblConstraint();
+    else if (layer1->hasLef58SameNetCutSpcTblConstraint())
+      lef58con = layer1->getLef58SameNetCutSpcTblConstraint();
+    else if (layer1->hasLef58DiffNetCutSpcTblConstraint())
+      lef58con = layer1->getLef58DiffNetCutSpcTblConstraint();
+    if (lef58con != nullptr) {
+      auto dbRule = lef58con->getODBRule();
+      auto reqSpcVal
+          = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
+      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+        reqSpcVal += boxLength;
+      }
+      sol = max(sol, reqSpcVal);
+    }
+  } else {
+    frLef58CutSpacingTableConstraint* con = nullptr;
+    if (layer1->hasLef58SameMetalInterCutSpcTblConstraint())
+      con = layer1->getLef58SameMetalInterCutSpcTblConstraint();
+    else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
+      con = layer1->getLef58SameNetInterCutSpcTblConstraint();
+    else if (layer1->hasLef58DefaultInterCutSpcTblConstraint())
+      con = layer1->getLef58DefaultInterCutSpcTblConstraint();
+    if (con != nullptr) {
+      auto dbRule = con->getODBRule();
+      auto reqSpcVal
+          = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
+      if (reqSpcVal != 0 && !dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+        reqSpcVal += boxLength;
+      }
+      sol = max(sol, reqSpcVal);
+    }
+  }
   return sol;
 }
 
@@ -1410,8 +1475,7 @@ void FlexDR::searchRepair(int iter,
     } else {
       suffix = "th";
     }
-    logger_->info(
-        DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
+    logger_->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
   }
   if (graphics_) {
     graphics_->startIter(iter);

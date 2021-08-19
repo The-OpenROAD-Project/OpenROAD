@@ -1784,6 +1784,9 @@ bool definReader::createBlock(const char* file)
     defrSetRowCbk(rowCallback);
     defrSetNetCbk(netCallback);
     defrSetSNetCbk(specialNetCallback);
+    defrSetViaCbk(viaCallback);
+
+    defrSetAddPathToNet();
   }
 
   if (_mode == defin::DEFAULT) {
@@ -1810,10 +1813,6 @@ bool definReader::createBlock(const char* file)
     defrSetStartPinsCbk(pinsStartCallback);
     defrSetStylesStartCbk(stylesCallback);
     defrSetTechnologyCbk(technologyCallback);
-
-    defrSetViaCbk(viaCallback);
-
-    defrSetAddPathToNet();
   }
 
   bool isZipped = hasSuffix(file, ".gz");
