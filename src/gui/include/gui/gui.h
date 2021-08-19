@@ -302,6 +302,8 @@ class Painter
 
   virtual void drawCircle(int x, int y, int r) = 0;
 
+  virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
+
   virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
 
   virtual void drawRuler(int x0, int y0, int x1, int y1) = 0;

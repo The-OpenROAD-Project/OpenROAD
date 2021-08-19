@@ -162,10 +162,7 @@ class GuiPainter : public Painter
       painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()),
                                QPoint(shape->xMax(), shape->yMax())));
     } else {
-      QPolygon qpoly(size);
-      for (int i = 0; i < size; i++)
-        qpoly.setPoint(i, points[i].getX(), points[i].getY());
-      painter_->drawPolygon(qpoly);
+      drawPolygon(points);
     }
   }
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
@@ -178,6 +175,14 @@ class GuiPainter : public Painter
     else
       painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
                                QPoint(rect.xMax(), rect.yMax())));
+  }
+  void drawPolygon(const std::vector<odb::Point>& points) override
+  {
+    QPolygon poly;
+    for (const auto& pt : points) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    painter_->drawPolygon(poly);
   }
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
