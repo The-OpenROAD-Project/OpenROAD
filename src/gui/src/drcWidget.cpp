@@ -52,25 +52,15 @@ Q_DECLARE_METATYPE(gui::DRCViolation*);
 
 namespace gui {
 
-static QString getBBoxString(const odb::Rect& bbox, odb::dbBlock* block)
-{
-  double to_microns = block->getDbUnitsPerMicron();
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(5) << "(";
-  ss << bbox.xMin() / to_microns << ",";
-  ss << bbox.yMin() / to_microns << "), (";
-  ss << bbox.xMax() / to_microns << ",";
-  ss << bbox.yMax() / to_microns << ")";
-  return QString::fromStdString(ss.str());
-}
-
 ///////
 
-DRCViolation::DRCViolation(const std::string& type,
+DRCViolation::DRCViolation(const std::string& name,
+                           const std::string& type,
                            const std::vector<std::any>& srcs,
                            const std::vector<DRCShape>& shapes,
                            odb::dbTechLayer* layer,
                            const std::string& comment) :
+                               name_(name),
                                type_(type),
                                srcs_(srcs),
                                shapes_(shapes),
@@ -80,14 +70,16 @@ DRCViolation::DRCViolation(const std::string& type,
   computeBBox();
 }
 
-DRCViolation::DRCViolation(const std::string& type,
+DRCViolation::DRCViolation(const std::string& name,
+                           const std::string& type,
                            const std::vector<DRCShape>& shapes,
                            const std::string& comment) :
-                                DRCViolation(type,
-                                             {},
-                                             shapes,
-                                             nullptr,
-                                             comment) {}
+                                DRCViolation(name,
+                                    type,
+                                    {},
+                                    shapes,
+                                    nullptr,
+                                    comment) {}
 
 void DRCViolation::computeBBox()
 {
@@ -292,6 +284,13 @@ void DRCWidget::toggleRenderer(bool visible)
 
 void DRCWidget::updateModel()
 {
+  auto makeItem = [](const QString& text) {
+    QStandardItem* item = new  QStandardItem(text);
+    item->setEditable(false);
+    item->setSelectable(false);
+    return item;
+  };
+
   model_->removeRows(0, model_->rowCount());
 
   std::map<std::string, std::vector<DRCViolation*>> violation_by_type;
@@ -300,31 +299,21 @@ void DRCWidget::updateModel()
   }
 
   for (const auto& [type, violation_list] : violation_by_type) {
-    QStandardItem* type_group = new QStandardItem(QString::fromStdString(type));
-    type_group->setEditable(false);
-    type_group->setSelectable(false);
+    QStandardItem* type_group = makeItem(QString::fromStdString(type));
 
     int violation_idx = 1;
     for (const auto& violation : violation_list) {
-      QStandardItem* violation_item = new QStandardItem(getBBoxString(violation->getBBox(), block_));
-      violation_item->setEditable(false);
+      QStandardItem* violation_item = makeItem(QString::fromStdString(violation->getName()));
       violation_item->setSelectable(true);
       violation_item->setData(QVariant::fromValue(violation));
 
-      QStandardItem* idx_item = new QStandardItem(QString::number(violation_idx++));
-      idx_item->setEditable(false);
-      idx_item->setSelectable(false);
-
       type_group->appendRow({
-        idx_item,
+        makeItem(QString::number(violation_idx++)),
         violation_item
       });
     }
 
-    QStandardItem* count_item = new QStandardItem(QString::number(violation_list.size()));
-    count_item->setEditable(false);
-    count_item->setSelectable(false);
-    model_->appendRow({type_group, count_item});
+    model_->appendRow({type_group, makeItem(QString::number(violation_list.size()) + " violations")});
   }
 
   toggleRenderer(!this->isHidden());
@@ -494,9 +483,18 @@ void DRCWidget::loadTRReport(const QString& filename)
         }
       }
 
+      std::string name = "Layer: ";
+      if (layer != nullptr) {
+        name += layer->getName();
+      } else {
+        name += "<unknown>";
+      }
+      name += ", Sources: " + sources;
+
       std::vector<DRCViolation::DRCShape> shapes({
         QRect{rect.xMin(), rect.yMin(), static_cast<int>(rect.dx()), static_cast<int>(rect.dy())}});
       violations_.push_back(std::make_unique<DRCViolation>(
+        name,
         type,
         srcs_list,
         shapes,

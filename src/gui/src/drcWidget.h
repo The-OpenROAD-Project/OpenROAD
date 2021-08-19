@@ -59,16 +59,19 @@ class DRCViolation {
   public:
     using DRCShape = std::variant<QLine, QRect, QPolygon>;
 
-    DRCViolation(const std::string& type,
+    DRCViolation(const std::string& name,
+                 const std::string& type,
                  const std::vector<std::any>& srcs,
                  const std::vector<DRCShape>& shapes,
                  odb::dbTechLayer* layer,
                  const std::string& comment);
-    DRCViolation(const std::string& type,
+    DRCViolation(const std::string& name,
+                 const std::string& type,
                  const std::vector<DRCShape>& shapes,
                  const std::string& comment);
     ~DRCViolation() {}
 
+    const std::string& getName() { return name_; }
     const std::string& getType() { return type_; }
     const std::vector<std::any>& getSources() { return srcs_; }
     const std::vector<DRCShape>& getShapes() { return shapes_; }
@@ -81,6 +84,7 @@ class DRCViolation {
   private:
     void computeBBox();
 
+    std::string name_;
     std::string type_;
     std::vector<std::any> srcs_;
     std::vector<DRCShape> shapes_;
