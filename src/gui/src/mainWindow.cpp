@@ -71,7 +71,7 @@ MainWindow::MainWindow(QWidget* parent)
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this)),
-      timing_dialog_(new TimingWidget(this))
+      timing_widget_(new TimingWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -89,12 +89,12 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
-  addDockWidget(Qt::RightDockWidgetArea, timing_dialog_);
+  addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
 
-  tabifyDockWidget(inspector_, timing_dialog_);
+  tabifyDockWidget(inspector_, timing_widget_);
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
@@ -188,7 +188,7 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
-  connect(timing_dialog_,
+  connect(timing_widget_,
           SIGNAL(highlightTimingPath(TimingPath*)),
           viewer_,
           SLOT(update()));
@@ -205,7 +205,7 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
-  timing_dialog_->readSettings(&settings);
+  timing_widget_->readSettings(&settings);
   settings.endGroup();
 }
 
@@ -264,6 +264,7 @@ void MainWindow::createActions()
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
+  connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
 }
 
 void MainWindow::createMenus()
@@ -286,8 +287,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
-  windows_menu_->addAction(timing_dialog_->toggleViewAction());
-  selection_browser_->setVisible(false);
+  windows_menu_->addAction(timing_widget_->toggleViewAction());
 }
 
 void MainWindow::createToolbars()
@@ -596,7 +596,7 @@ void MainWindow::saveSettings()
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
-  timing_dialog_->writeSettings(&settings);
+  timing_widget_->writeSettings(&settings);
   settings.endGroup();
 }
 

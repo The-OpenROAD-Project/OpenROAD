@@ -212,7 +212,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
-  TimingWidget* timing_dialog_;
+  TimingWidget* timing_widget_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
