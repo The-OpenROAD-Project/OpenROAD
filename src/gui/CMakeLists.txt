@@ -42,8 +42,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
     src/staGui.cpp
-    src/timingDebugDialog.cpp
-    src/timingReportDialog.cpp
+    src/timingWidget.cpp
   )
 
   target_link_libraries(gui
