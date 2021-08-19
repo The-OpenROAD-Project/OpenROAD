@@ -105,7 +105,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
 
   if (alpha > 0.0) {
     tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-
+      return tree;
     if (checkTree(tree)) {
       return tree;
     }
@@ -119,7 +119,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
     }
 
     // Give up and use flute
-  } 
+  }
 
   return flt::flute(x, y, flute_accuracy);
 }
@@ -133,18 +133,9 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
   return tree;
 }
 
-////////////////////////////////////////////////////////////////
-
-void SteinerTreeBuilder::setAlpha(float alpha)
+static bool rectAreaZero(const odb::Rect &rect)
 {
-  alpha_ = alpha;
-}
-
-float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
-{
-  float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
-                    net_alpha_map_.at(net) : alpha_;
-  return net_alpha;
+  return rect.xMin() == rect.xMax() && rect.yMin() == rect.yMax();
 }
 
 // This checks whether the tree has the property that no two
@@ -175,7 +166,12 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
       const Branch& b2 = tree.branch[j];
       const odb::Rect& r1 = rects[i];
       const odb::Rect& r2 = rects[j];
-      if (r1.intersects(r2) && b1.n != j && b2.n != i && b1.n != b2.n) {
+      if (!rectAreaZero(r1)
+          && !rectAreaZero(r2)
+          && r1.intersects(r2)
+          && b1.n != j
+          && b2.n != i
+          && b1.n != b2.n) {
         debugPrint(logger_, utl::STT, "check", 1,
                    "check failed ({}, {}) ({}, {}) [{}, {}] vs ({}, {}) ({}, {}) [{}, {}] degree={}",
                       r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
@@ -188,6 +184,20 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
   }
 
   return true;
+}
+
+////////////////////////////////////////////////////////////////
+
+void SteinerTreeBuilder::setAlpha(float alpha)
+{
+  alpha_ = alpha;
+}
+
+float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
+{
+  float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
+                    net_alpha_map_.at(net) : alpha_;
+  return net_alpha;
 }
 
 void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
