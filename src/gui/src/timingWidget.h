@@ -55,7 +55,7 @@ class TimingWidget : public QDockWidget
   Q_OBJECT
  public:
   TimingWidget(QWidget* parent = nullptr);
-  ~TimingWidget();
+  ~TimingWidget() {};
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
 
@@ -70,10 +70,9 @@ class TimingWidget : public QDockWidget
 
   void showPathDetails(const QModelIndex& index);
   void highlightPathStage(const QModelIndex& index);
-  void timingPathsViewCustomSort(int col_index);
   void findNodeInPathDetails();
 
-  void toggleRenderer();
+  void toggleRenderer(bool enable);
 
   void populatePaths();
   void modelWasReset();
@@ -86,6 +85,10 @@ class TimingWidget : public QDockWidget
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 
+ protected:
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
+
  private:
   void copy();
 
@@ -97,7 +100,6 @@ class TimingWidget : public QDockWidget
   QSpinBox* path_index_spin_box_;
   QSpinBox* path_count_spin_box_;
   QPushButton* update_button_;
-  QPushButton* render_enable_button_;
 
   TimingPathsModel* setup_timing_paths_model_;
   TimingPathsModel* hold_timing_paths_model_;

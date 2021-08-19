@@ -57,7 +57,6 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_index_spin_box_(new QSpinBox),
       path_count_spin_box_(new QSpinBox),
       update_button_(new QPushButton("Update")),
-      render_enable_button_(new QPushButton("Draw path")),
       setup_timing_paths_model_(new TimingPathsModel),
       hold_timing_paths_model_(new TimingPathsModel),
       path_details_model_(new TimingPathDetailModel),
@@ -81,10 +80,12 @@ TimingWidget::TimingWidget(QWidget* parent)
   setupTableView(hold_timing_table_view_, hold_timing_paths_model_);
   setupTableView(path_details_table_view_, path_details_model_);
 
+  // default to sorting by slack
+  setup_timing_table_view_->horizontalHeader()->setSortIndicator(3, Qt::AscendingOrder);
+  hold_timing_table_view_->horizontalHeader()->setSortIndicator(3, Qt::AscendingOrder);
+
   path_count_spin_box_->setRange(0, 10000);
   path_count_spin_box_->setValue(100);
-
-  render_enable_button_->setCheckable(true);
 
   QWidget* container = new QWidget;
   QGridLayout* layout = new QGridLayout;
@@ -94,11 +95,10 @@ TimingWidget::TimingWidget(QWidget* parent)
   control_frame->setFrameShadow(QFrame::Raised);
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(render_enable_button_);
   controls_layout->addWidget(new QLabel("Paths:"));
   controls_layout->addWidget(path_count_spin_box_);
   controls_layout->addWidget(update_button_);
-  controls_layout->insertStretch(1);
+  controls_layout->insertStretch(0);
   control_frame->setLayout(controls_layout);
   layout->addWidget(control_frame, 0, 0);
 
@@ -136,13 +136,14 @@ TimingWidget::TimingWidget(QWidget* parent)
   setWidget(container);
 
   connect(setup_timing_table_view_->horizontalHeader(),
-          SIGNAL(sectionClicked(int)),
-          this,
-          SLOT(timingPathsViewCustomSort(int)));
+          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          setup_timing_table_view_->model(),
+          SLOT(sort(int, Qt::SortOrder)));
   connect(hold_timing_table_view_->horizontalHeader(),
-          SIGNAL(sectionClicked(int)),
-          this,
-          SLOT(timingPathsViewCustomSort(int)));
+          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          hold_timing_table_view_->model(),
+          SLOT(sort(int, Qt::SortOrder)));
+
   connect(path_details_table_view_,
           SIGNAL(clicked(const QModelIndex&)),
           this,
@@ -182,23 +183,16 @@ TimingWidget::TimingWidget(QWidget* parent)
       SLOT(selectedDetailRowChanged(const QItemSelection&,
                                     const QItemSelection&)));
 
-  connect(render_enable_button_, SIGNAL(toggled(bool)), this, SLOT(toggleRenderer()));
-
   connect(setup_timing_paths_model_, SIGNAL(modelReset()), this, SLOT(modelWasReset()));
   connect(hold_timing_paths_model_, SIGNAL(modelReset()), this, SLOT(modelWasReset()));
 
   path_index_spin_box_->setRange(0, 0);
 }
 
-TimingWidget::~TimingWidget()
-{
-}
-
 void TimingWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  render_enable_button_->setChecked(settings->value("draw_enabled", render_enable_button_->isChecked()).toBool());
   path_count_spin_box_->setValue(settings->value("path_count", path_count_spin_box_->value()).toInt());
 
   settings->endGroup();
@@ -208,7 +202,6 @@ void TimingWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  settings->setValue("draw_enabled", render_enable_button_->isChecked());
   settings->setValue("path_count", path_count_spin_box_->value());
 
   settings->endGroup();
@@ -259,21 +252,6 @@ void TimingWidget::highlightPathStage(const QModelIndex& index)
   emit highlightTimingPath(path_renderer_->getPathToRender());
 }
 
-void TimingWidget::timingPathsViewCustomSort(int col_index)
-{
-  if (col_index != 1)
-    return;
-
-  QTableView* focus_view = static_cast<QTableView*>(delay_widget_->currentWidget());
-
-  auto sort_order
-      = focus_view->horizontalHeader()->sortIndicatorOrder()
-                == Qt::AscendingOrder
-            ? Qt::DescendingOrder
-            : Qt::AscendingOrder;
-  focus_view->model()->sort(col_index, sort_order);
-}
-
 void TimingWidget::findNodeInPathDetails()
 {
   auto search_node = find_object_edit_->text();
@@ -309,6 +287,12 @@ void TimingWidget::populatePaths()
 
   setup_timing_paths_model_->populateModel(true, count);
   hold_timing_paths_model_->populateModel(false, count);
+
+  // honor selected sort
+  auto setup_header = setup_timing_table_view_->horizontalHeader();
+  setup_timing_paths_model_->sort(setup_header->sortIndicatorSection(), setup_header->sortIndicatorOrder());
+  auto hold_header = hold_timing_table_view_->horizontalHeader();
+  hold_timing_paths_model_->sort(hold_header->sortIndicatorSection(), hold_header->sortIndicatorOrder());
 }
 
 void TimingWidget::selectedRowChanged(const QItemSelection& selected_row,
@@ -369,22 +353,32 @@ void TimingWidget::handleDbChange(QString change_type,
   hold_timing_paths_model_->resetModel();
 }
 
+void TimingWidget::showEvent(QShowEvent* event)
+{
+  toggleRenderer(true);
+}
+
+void TimingWidget::hideEvent(QHideEvent* event)
+{
+  toggleRenderer(false);
+}
+
 void TimingWidget::modelWasReset()
 {
   setup_timing_table_view_->resizeColumnsToContents();
   hold_timing_table_view_->resizeColumnsToContents();
 
-  toggleRenderer();
+  toggleRenderer(!this->isHidden());
 }
 
-void TimingWidget::toggleRenderer()
+void TimingWidget::toggleRenderer(bool visible)
 {
   auto gui = Gui::get();
   if (gui == nullptr) {
     return;
   }
 
-  if (render_enable_button_->isChecked()) {
+  if (visible) {
     gui->registerRenderer(path_renderer_);
   } else {
     gui->unregisterRenderer(path_renderer_);
