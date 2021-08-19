@@ -220,7 +220,6 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
-  drc_viewer_->readSettings(&settings);
   settings.endGroup();
 }
 
@@ -539,13 +538,6 @@ void MainWindow::showTimingDialog()
   }
 }
 
-void MainWindow::loadDRC(const QString& filename)
-{
-  drc_viewer_->loadReport(filename);
-  drc_viewer_->show();
-  drc_viewer_->raise();
-}
-
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set) {
@@ -630,7 +622,6 @@ void MainWindow::saveSettings()
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
-  drc_viewer_->writeSettings(&settings);
   settings.endGroup();
 }
 

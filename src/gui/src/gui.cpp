@@ -329,13 +329,8 @@ const std::string Gui::requestUserInput(const std::string& title, const std::str
 void Gui::loadDRC(const std::string& filename)
 {
   if (!filename.empty()) {
-    main_window->loadDRC(QString::fromStdString(filename));
+    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
   }
-}
-
-void Gui::setDRCVisible(bool visible)
-{
-  main_window->getDRCViewer()->setDRCVisible(visible);
 }
 
 void Gui::addCustomVisibilityControl(const std::string& name,

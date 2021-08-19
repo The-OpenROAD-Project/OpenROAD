@@ -435,7 +435,6 @@ class Gui
 
   // open DRC
   void loadDRC(const std::string& filename);
-  void setDRCVisible(bool visible);
 
   // Force an immediate redraw.
   void redraw();

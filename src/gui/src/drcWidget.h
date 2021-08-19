@@ -113,9 +113,6 @@ class DRCWidget : public QDockWidget, public Renderer
     DRCWidget(QWidget* parent = nullptr);
     ~DRCWidget() {}
 
-    void readSettings(QSettings* settings);
-    void writeSettings(QSettings* settings);
-
     void setLogger(utl::Logger* logger);
 
     // Renderer
@@ -130,8 +127,11 @@ class DRCWidget : public QDockWidget, public Renderer
     void setBlock(odb::dbBlock* block);
     void clicked(const QModelIndex& index);
     void selectReport();
-    void toggleRenderer();
-    void setDRCVisible(bool visible);
+    void toggleRenderer(bool visible);
+
+  protected:
+    void showEvent(QShowEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
 
   private:
     void loadTRReport(const QString& filename);
@@ -146,7 +146,6 @@ class DRCWidget : public QDockWidget, public Renderer
     odb::dbBlock* block_;
 
     QPushButton* load_;
-    QPushButton* enable_paint_;
 
     std::vector<std::unique_ptr<DRCViolation>> violations_;
 };

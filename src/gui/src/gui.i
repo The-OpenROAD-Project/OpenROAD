@@ -367,14 +367,5 @@ void load_drc(const char* filename)
   gui->loadDRC(filename);
 }
 
-void set_drc_visible(bool visible)
-{
-  if (!check_gui("set_drc_visible")) {
-    return;
-  }
-  auto gui = gui::Gui::get();
-  gui->setDRCVisible(visible);
-}
-
 %} // inline
 

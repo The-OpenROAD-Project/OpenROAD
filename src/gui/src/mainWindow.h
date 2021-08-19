@@ -174,9 +174,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // show Timing Dialog Box
   void showTimingDialog();
 
-  // load drc file
-  void loadDRC(const QString& filename);
-
   // add/remove toolbar button
   const std::string addToolbarButton(const std::string& name,
                                      const QString& text,

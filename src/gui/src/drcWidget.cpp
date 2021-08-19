@@ -206,8 +206,7 @@ DRCWidget::DRCWidget(QWidget* parent)
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
       block_(nullptr),
-      load_(new QPushButton("Load...")),
-      enable_paint_(new QPushButton("Show..."))
+      load_(new QPushButton("Load..."))
 {
   setObjectName("drc_viewer"); // for settings
 
@@ -220,18 +219,10 @@ DRCWidget::DRCWidget(QWidget* parent)
   // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
   header->setStretchLastSection(false);
 
-  enable_paint_->setCheckable(true);
-  enable_paint_->setChecked(false);
-
   QWidget* container = new QWidget;
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(view_);
-
-  QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(enable_paint_);
-  controls_layout->addWidget(load_);
-  controls_layout->insertStretch(1);
-  layout->addLayout(controls_layout);
+  layout->addWidget(load_);
 
   container->setLayout(layout);
   setWidget(container);
@@ -241,23 +232,6 @@ DRCWidget::DRCWidget(QWidget* parent)
           this,
           SLOT(clicked(const QModelIndex&)));
   connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
-
-  // enable render button action
-  connect(enable_paint_, SIGNAL(toggled(bool)), this, SLOT(toggleRenderer()));
-}
-
-void DRCWidget::readSettings(QSettings* settings)
-{
-  settings->beginGroup(objectName());
-  enable_paint_->setChecked(settings->value("draw_enable", enable_paint_->isChecked()).toBool());
-  settings->endGroup();
-}
-
-void DRCWidget::writeSettings(QSettings* settings)
-{
-  settings->beginGroup(objectName());
-  settings->setValue("draw_enable", enable_paint_->isChecked());
-  settings->endGroup();
 }
 
 void DRCWidget::setLogger(utl::Logger* logger)
@@ -292,23 +266,28 @@ void DRCWidget::setBlock(odb::dbBlock* block)
   block_ = block;
 }
 
-void DRCWidget::toggleRenderer()
+void DRCWidget::showEvent(QShowEvent* event)
+{
+  toggleRenderer(true);
+}
+
+void DRCWidget::hideEvent(QHideEvent* event)
+{
+  toggleRenderer(false);
+}
+
+void DRCWidget::toggleRenderer(bool visible)
 {
   auto gui = Gui::get();
   if (gui == nullptr) {
     return;
   }
 
-  if (enable_paint_->isChecked()) {
+  if (visible) {
     gui->registerRenderer(this);
   } else {
     gui->unregisterRenderer(this);
   }
-}
-
-void DRCWidget::setDRCVisible(bool visible)
-{
-  enable_paint_->setChecked(visible);
 }
 
 void DRCWidget::updateModel()
@@ -348,7 +327,7 @@ void DRCWidget::updateModel()
     model_->appendRow({type_group, count_item});
   }
 
-  toggleRenderer();
+  toggleRenderer(!this->isHidden());
 }
 
 void DRCWidget::drawObjects(Painter& painter)
