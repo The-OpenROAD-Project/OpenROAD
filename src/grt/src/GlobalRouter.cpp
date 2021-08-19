@@ -353,7 +353,7 @@ bool GlobalRouter::findWorstSlackNets(float worst_nets_percentage)
       odb::Rect bbox = computeNetBBox(net);
       if (slack_per_net[net.getDbNet()] < 0 &&
           slack_per_net[net.getDbNet()] <= max_slack &&
-          net.getNumPins() >= timing_critical_min_fanout_ &&
+          net.getNumPins()-1 >= timing_critical_min_fanout_ &&
           bbox.area() > timing_critical_min_area_) {
         net.setTimingCritical();
         critical_nets_count++;

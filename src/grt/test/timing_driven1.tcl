@@ -21,7 +21,7 @@ set_global_routing_layer_adjustment metal3 0.7
 set_global_routing_layer_adjustment metal4-metal8 0.4
 
 set_routing_layers -signal metal2-metal10 -timing_critical metal7-metal10
-set_global_routing_timing_driven -critical_nets_percentage 0.1 -min_fanout 4
+set_global_routing_timing_driven -critical_nets_percentage 0.1 -min_fanout 3
 set_macro_extension 2
 
 global_route
@@ -29,10 +29,3 @@ global_route
 write_guides $guide_file
 
 diff_file timing_driven1.guideok $guide_file
-
-# set_thread_count 8
-# detailed_route -guide $guide_file \
-#                -output_guide [make_result_file "timing_driven1_output_guide.mod"] \
-#                -output_drc [make_result_file "timing_driven1_route_drc.rpt"] \
-#                -output_maze [make_result_file "timing_driven1_maze.log"] \
-#                -verbose 1
