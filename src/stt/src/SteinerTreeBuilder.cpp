@@ -96,6 +96,34 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
   return tree;
 }
 
+Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
+                                         std::vector<int>& y,
+                                         int drvr_index,
+                                         float alpha)
+{
+  Tree tree;
+
+  if (alpha > 0.0) {
+    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
+
+    if (checkTree(tree)) {
+      return tree;
+    }
+
+    // Try a smaller alpha if possible
+    if (alpha > 0.1) {
+      tree = pdr::primDijkstra(x, y, drvr_index, alpha - 0.1, logger_);
+      if (checkTree(tree)) {
+        return tree;
+      }
+    }
+
+    // Give up and use flute
+  } 
+
+  return flt::flute(x, y, flute_accuracy);
+}
+
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& y,
                                          const std::vector<int>& s,
@@ -104,6 +132,8 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
   Tree tree = flt::flutes(x, y, s, accuracy);
   return tree;
 }
+
+////////////////////////////////////////////////////////////////
 
 void SteinerTreeBuilder::setAlpha(float alpha)
 {
@@ -173,34 +203,6 @@ void SteinerTreeBuilder::setMinFanoutAlpha(int min_fanout, float alpha)
 void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
 {
   min_hpwl_alpha_ = {min_hpwl, alpha};
-}
-
-Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
-                                         std::vector<int>& y,
-                                         int drvr_index,
-                                         float alpha)
-{
-  Tree tree;
-
-  if (alpha > 0.0) {
-    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-
-    if (checkTree(tree)) {
-      return tree;
-    }
-
-    // Try a smaller alpha if possible
-    if (alpha > 0.1) {
-      tree = pdr::primDijkstra(x, y, drvr_index, alpha - 0.1, logger_);
-      if (checkTree(tree)) {
-        return tree;
-      }
-    }
-
-    // Give up and use flute
-  } 
-
-  return flt::flute(x, y, flute_accuracy);
 }
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
