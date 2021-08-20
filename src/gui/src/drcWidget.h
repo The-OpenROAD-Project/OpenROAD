@@ -56,7 +56,10 @@ namespace gui {
 
 class DRCViolation {
   public:
-    using DRCShape = std::variant<QLine, QRect, QPolygon>;
+    using DRCLine = std::pair<odb::Point, odb::Point>;
+    using DRCRect = odb::Rect;
+    using DRCPoly = std::vector<odb::Point>;
+    using DRCShape = std::variant<DRCLine, DRCRect, DRCPoly>;
 
     DRCViolation(const std::string& name,
                  const std::string& type,

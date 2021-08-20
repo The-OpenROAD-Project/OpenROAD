@@ -87,12 +87,15 @@ void DRCViolation::computeBBox()
 {
   QPolygon outline;
   for (const auto& shape : shapes_) {
-    if(auto s = std::get_if<QLine>(&shape)) {
-      outline << (*s).p1() << (*s).p2();
-    } else if (auto s = std::get_if<QRect>(&shape)) {
-      outline = outline.united(*s);
-    } else if (auto s = std::get_if<QPolygon>(&shape)) {
-      outline = outline.united(*s);
+    if(auto s = std::get_if<DRCLine>(&shape)) {
+      outline << QPoint((*s).first.x(), (*s).first.y());
+      outline << QPoint((*s).second.x(), (*s).second.y());
+    } else if (auto s = std::get_if<DRCRect>(&shape)) {
+      outline = outline.united(QRect((*s).xMin(), (*s).yMin(), (*s).dx(), (*s).dy()));
+    } else if (auto s = std::get_if<DRCPoly>(&shape)) {
+      for (const auto& pt : *s) {
+        outline << QPoint(pt.x(), pt.y());
+      }
     }
   }
 
@@ -107,19 +110,14 @@ void DRCViolation::computeBBox()
 void DRCViolation::paint(Painter& painter)
 {
   for (const auto& shape : shapes_) {
-    if(auto s = std::get_if<QLine>(&shape)) {
-      const QPoint& p1 = (*s).p1();
-      const QPoint& p2 = (*s).p2();
+    if(auto s = std::get_if<DRCLine>(&shape)) {
+      const odb::Point& p1 = (*s).first;
+      const odb::Point& p2 = (*s).second;
       painter.drawLine(p1.x(), p1.y(), p2.x(), p2.y());
-    } else if (auto s = std::get_if<QRect>(&shape)) {
-      const QRect rect = *s;
-      painter.drawRect({rect.left(), rect.bottom(), rect.right(), rect.top()});
-    } else if (auto s = std::get_if<QPolygon>(&shape)) {
-      std::vector<odb::Point> points;
-      for (const auto& pt : *s) {
-        points.push_back({pt.x(), pt.y()});
-      }
-      painter.drawPolygon(points);
+    } else if (auto s = std::get_if<DRCRect>(&shape)) {
+      painter.drawRect(*s);
+    } else if (auto s = std::get_if<DRCPoly>(&shape)) {
+      painter.drawPolygon(*s);
     }
   }
 }
@@ -568,8 +566,7 @@ void DRCWidget::loadTRReport(const QString& filename)
     }
     name += ", Sources: " + sources;
 
-    std::vector<DRCViolation::DRCShape> shapes({
-      QRect{rect.xMin(), rect.yMin(), static_cast<int>(rect.dx()), static_cast<int>(rect.dy())}});
+    std::vector<DRCViolation::DRCShape> shapes({rect});
     violations_.push_back(std::make_unique<DRCViolation>(
         name,
         type,
