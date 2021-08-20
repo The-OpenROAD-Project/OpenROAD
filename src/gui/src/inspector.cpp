@@ -390,6 +390,7 @@ void Inspector::update()
     inspect(Selected());
   } else {
     inspect(*selected_.begin());
+    raise();
   }
 }
 
