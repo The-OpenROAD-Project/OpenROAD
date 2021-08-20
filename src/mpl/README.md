@@ -3,7 +3,7 @@
 ParquetFP-based macro cell placer, "TritonMacroPlacer".
 The macro placer places macros/blocks honoring halos, channels
 and cell row "snapping".
-Run `global_placement` before macro placement.
+Run `global_placement` before macro placement because TritonMacroPlacer requires placed macro locations. 
 
 Approximately ceil((#macros/3)^(3/2)) sets corresponding to quadrisections
 of the initial placed mixed-size layout are explored and packed using
@@ -17,12 +17,14 @@ macro_placement [-halo {halo_x halo_y}]
                 [-channel {channel_x channel_y}]
                 [-fence_region {lx ly ux uy}]
                 [-snap_layer snap_layer_number]
+                [-style corner_max_wl|corner_min_wl]
 ```
 
 -   `-halo` horizontal/vertical halo around macros (microns)
 -   `-channel` horizontal/vertical channel width between macros (microns)
 -   `-fence_region` - restrict macro placements to a region (microns). Defaults to the core area.
 -   `-snap_layer_number` - snap macro origins to this routing layer track
+-   `-style` - choose the style from multiple macro placement solutions. Defaults to the corner_max_wl. 
 
 Macros will be placed with `max(halo * 2, channel)` spacing between macros, and between
 macros and the fence/die boundary. If no solutions are found, try reducing the
