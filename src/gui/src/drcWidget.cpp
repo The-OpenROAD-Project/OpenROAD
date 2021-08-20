@@ -408,13 +408,15 @@ void DRCWidget::loadReport(const QString& filename)
 {
   violations_.clear();
 
-  if (filename.endsWith(".rpt")) {
-    loadTRReport(filename);
-  } else if (filename.endsWith(".ascii")) {
-    loadASCIIReport(filename);
-  } else {
-    logger_->error(utl::GUI, 32, "Unable to determine type of {}", filename.toStdString());
-  }
+  try {
+    if (filename.endsWith(".rpt")) {
+      loadTRReport(filename);
+    } else if (filename.endsWith(".ascii")) {
+      loadASCIIReport(filename);
+    } else {
+      logger_->error(utl::GUI, 32, "Unable to determine type of {}", filename.toStdString());
+    }
+  } catch (std::runtime_error&) {} // catch errors
 
   updateModel();
 }
@@ -438,11 +440,15 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     // type of violation
     std::getline(report, line);
+    if (line.empty()) {
+      continue;
+    }
+
     std::string type;
     if (std::regex_match(line, base_match, violation_type)) {
       type = base_match[1].str();
     } else {
-      continue;
+      logger_->error(utl::GUI, 45, "Unable to parse line as violation type: {}", line);
     }
 
     // sources of violation
@@ -451,107 +457,126 @@ void DRCWidget::loadTRReport(const QString& filename)
     if (std::regex_match(line, base_match, srcs)) {
       sources = base_match[1].str();
     } else {
-      continue;
+      logger_->error(utl::GUI, 46, "Unable to parse line as violation source: {}", line);
     }
 
     std::getline(report, line);
     // bounding box and layer
-    if (std::regex_match(line, base_match, bbox_layer)) {
-      std::string bbox = base_match[1].str();
-      odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
+    if (!std::regex_match(line, base_match, bbox_layer)) {
+      logger_->error(utl::GUI, 47, "Unable to parse line as violation location: {}", line);
+    }
 
-      odb::Rect rect;
-      if (std::regex_match(bbox, base_match, bbox_corners)) {
+    std::string bbox = base_match[1].str();
+    odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
+    if (layer == nullptr) {
+      logger_->warn(utl::GUI, 40, "Unable to find tech layer: {}", base_match[2].str());
+    }
+
+    odb::Rect rect;
+    if (std::regex_match(bbox, base_match, bbox_corners)) {
+      try {
         rect.set_xlo(std::stod(base_match[1].str()) * block_->getDbUnitsPerMicron());
         rect.set_ylo(std::stod(base_match[2].str()) * block_->getDbUnitsPerMicron());
         rect.set_xhi(std::stod(base_match[3].str()) * block_->getDbUnitsPerMicron());
         rect.set_yhi(std::stod(base_match[4].str()) * block_->getDbUnitsPerMicron());
+      } catch (std::invalid_argument&) {
+        logger_->error(utl::GUI, 48, "Unable to parse bounding box: {}", bbox);
+      } catch (std::out_of_range&) {
+        logger_->error(utl::GUI, 49, "Unable to parse bounding box: {}", bbox);
+      }
+    } else {
+      logger_->error(utl::GUI, 50, "Unable to parse bounding box: {}", bbox);
+    }
+
+    std::vector<std::any> srcs_list;
+    std::stringstream srcs_stream(sources);
+    std::string single_source;
+    std::string comment = "";
+
+    // split sources list
+    while(getline(srcs_stream, single_source, ' ')) {
+      if (single_source.empty()) {
+        continue;
       }
 
-      std::vector<std::any> srcs_list;
-      std::stringstream srcs_stream(sources);
-      std::string single_source;
-      std::string comment = "";
+      std::any item;
 
-      // split sources list
-      while(getline(srcs_stream, single_source, ' ')) {
-        if (single_source.empty()) {
-          continue;
-        }
-
-        std::any item;
-
-        auto pin_loc = single_source.find("PIN/");
-        if (pin_loc != std::string::npos) {
-          std::string pin_name = single_source.substr(pin_loc + 1);
-          if (pin_name != "OBS") {
-            // bterm
-            odb::dbBTerm* bterm = block_->findBTerm(pin_name.c_str());
-            if (bterm != nullptr) {
-              item = bterm;
-            }
+      if (single_source.substr(0, 4) == "PIN/") {
+        std::string pin_name = single_source.substr(4);
+        if (pin_name != "OBS") {
+          // bterm
+          odb::dbBTerm* bterm = block_->findBTerm(pin_name.c_str());
+          if (bterm != nullptr) {
+            item = bterm;
+          } else {
+            logger_->warn(utl::GUI, 41, "Unable to find bterm: {}", pin_name);
           }
-        } else {
-          auto inst_loc = single_source.find("/");
-          if (inst_loc != std::string::npos) {
-            std::string inst_name = single_source.substr(0, inst_loc);
-            std::string pin_name = single_source.substr(inst_loc + 1);
-            // instance
-            odb::dbInst* inst = block_->findInst(inst_name.c_str());
-            if (inst != nullptr) {
-              if (pin_name == "OBS") {
-                // just add instance
-                item = inst;
+        }
+      } else {
+        auto inst_loc = single_source.find("/");
+        if (inst_loc != std::string::npos) {
+          std::string inst_name = single_source.substr(0, inst_loc);
+          std::string pin_name = single_source.substr(inst_loc + 1);
+          // instance
+          odb::dbInst* inst = block_->findInst(inst_name.c_str());
+          if (inst != nullptr) {
+            if (pin_name == "OBS") {
+              // just add instance
+              item = inst;
+            } else {
+              odb::dbITerm* iterm = nullptr;
+              for (auto itrm : inst->getITerms()) {
+                if (itrm->getMTerm()->getName() == pin_name) {
+                  iterm = itrm;
+                }
+              }
+              if (iterm != nullptr) {
+                // add iterm
+                item = iterm;
               } else {
-                odb::dbITerm* iterm = nullptr;
-                for (auto itrm : inst->getITerms()) {
-                  if (itrm->getMTerm()->getName() == pin_name) {
-                    iterm = itrm;
-                  }
-                }
-                if (iterm != nullptr) {
-                  // add iterm
-                  item = iterm;
-                } else {
-                  // add inst
-                  item = inst;
-                }
+                // add inst
+                logger_->warn(utl::GUI, 42, "Unable to find iterm: {}", single_source);
+                item = inst;
               }
             }
           } else {
-            // net
-            odb::dbNet* net = block_->findNet(single_source.c_str());
-            if (net != nullptr) {
-              item = net;
-            }
+            logger_->warn(utl::GUI, 43, "Unable to find instance: {}", inst_name);
+          }
+        } else {
+          // net
+          odb::dbNet* net = block_->findNet(single_source.c_str());
+          if (net != nullptr) {
+            item = net;
+          } else {
+            logger_->warn(utl::GUI, 44, "Unable to find net: {}", single_source);
           }
         }
-
-        if (item.has_value()) {
-          srcs_list.push_back(item);
-        } else {
-          comment += single_source + " ";
-        }
       }
 
-      std::string name = "Layer: ";
-      if (layer != nullptr) {
-        name += layer->getName();
+      if (item.has_value()) {
+        srcs_list.push_back(item);
       } else {
-        name += "<unknown>";
+        comment += single_source + " ";
       }
-      name += ", Sources: " + sources;
+    }
 
-      std::vector<DRCViolation::DRCShape> shapes({
-        QRect{rect.xMin(), rect.yMin(), static_cast<int>(rect.dx()), static_cast<int>(rect.dy())}});
-      violations_.push_back(std::make_unique<DRCViolation>(
+    std::string name = "Layer: ";
+    if (layer != nullptr) {
+      name += layer->getName();
+    } else {
+      name += "<unknown>";
+    }
+    name += ", Sources: " + sources;
+
+    std::vector<DRCViolation::DRCShape> shapes({
+      QRect{rect.xMin(), rect.yMin(), static_cast<int>(rect.dx()), static_cast<int>(rect.dy())}});
+    violations_.push_back(std::make_unique<DRCViolation>(
         name,
         type,
         srcs_list,
         shapes,
         layer,
         sources));
-    }
   }
 
   report.close();
