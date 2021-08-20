@@ -225,7 +225,7 @@ DRCWidget::DRCWidget(QWidget* parent)
 {
   setObjectName("drc_viewer"); // for settings
 
-  model_->setHorizontalHeaderLabels({"Violation", "Bounds"});
+  model_->setHorizontalHeaderLabels({"Type", "Violation"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
