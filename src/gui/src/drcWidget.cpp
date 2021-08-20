@@ -33,20 +33,19 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <QDebug>
+#include "drcWidget.h"
 
 #include <QApplication>
+#include <QDebug>
+#include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
-#include <QFileDialog>
-
-#include <map>
 #include <fstream>
+#include <iomanip>
+#include <map>
 #include <regex>
 #include <sstream>
-#include <iomanip>
 
-#include "drcWidget.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(gui::DRCViolation*);
@@ -61,13 +60,13 @@ DRCViolation::DRCViolation(const std::string& name,
                            const std::vector<DRCShape>& shapes,
                            odb::dbTechLayer* layer,
                            const std::string& comment)
-                           : name_(name),
-                             type_(type),
-                             srcs_(srcs),
-                             shapes_(shapes),
-                             layer_(layer),
-                             comment_(comment),
-                             viewed_(false)
+    : name_(name),
+      type_(type),
+      srcs_(srcs),
+      shapes_(shapes),
+      layer_(layer),
+      comment_(comment),
+      viewed_(false)
 {
   computeBBox();
 }
@@ -76,22 +75,20 @@ DRCViolation::DRCViolation(const std::string& name,
                            const std::string& type,
                            const std::vector<DRCShape>& shapes,
                            const std::string& comment)
-                           : DRCViolation(name,
-                               type,
-                               {},
-                               shapes,
-                               nullptr,
-                               comment) {}
+    : DRCViolation(name, type, {}, shapes, nullptr, comment)
+{
+}
 
 void DRCViolation::computeBBox()
 {
   QPolygon outline;
   for (const auto& shape : shapes_) {
-    if(auto s = std::get_if<DRCLine>(&shape)) {
+    if (auto s = std::get_if<DRCLine>(&shape)) {
       outline << QPoint((*s).first.x(), (*s).first.y());
       outline << QPoint((*s).second.x(), (*s).second.y());
     } else if (auto s = std::get_if<DRCRect>(&shape)) {
-      outline = outline.united(QRect((*s).xMin(), (*s).yMin(), (*s).dx(), (*s).dy()));
+      outline = outline.united(
+          QRect((*s).xMin(), (*s).yMin(), (*s).dx(), (*s).dy()));
     } else if (auto s = std::get_if<DRCPoly>(&shape)) {
       for (const auto& pt : *s) {
         outline << QPoint(pt.x(), pt.y());
@@ -100,17 +97,14 @@ void DRCViolation::computeBBox()
   }
 
   QRect bounds = outline.boundingRect();
-  bbox_ = odb::Rect(
-      bounds.left(),
-      bounds.bottom(),
-      bounds.right(),
-      bounds.top());
+  bbox_
+      = odb::Rect(bounds.left(), bounds.bottom(), bounds.right(), bounds.top());
 }
 
 void DRCViolation::paint(Painter& painter)
 {
   for (const auto& shape : shapes_) {
-    if(auto s = std::get_if<DRCLine>(&shape)) {
+    if (auto s = std::get_if<DRCLine>(&shape)) {
       const odb::Point& p1 = (*s).first;
       const odb::Point& p2 = (*s).second;
       painter.drawLine(p1.x(), p1.y(), p2.x(), p2.y());
@@ -224,7 +218,7 @@ DRCWidget::DRCWidget(QWidget* parent)
       block_(nullptr),
       load_(new QPushButton("Load..."))
 {
-  setObjectName("drc_viewer"); // for settings
+  setObjectName("drc_viewer");  // for settings
 
   model_->setHorizontalHeaderLabels({"Type", "Violation"});
   view_->setModel(model_);
@@ -312,7 +306,7 @@ void DRCWidget::toggleRenderer(bool visible)
 void DRCWidget::updateModel()
 {
   auto makeItem = [](const QString& text) {
-    QStandardItem* item = new  QStandardItem(text);
+    QStandardItem* item = new QStandardItem(text);
     item->setEditable(false);
     item->setSelectable(false);
     return item;
@@ -330,19 +324,20 @@ void DRCWidget::updateModel()
 
     int violation_idx = 1;
     for (const auto& violation : violation_list) {
-      QStandardItem* violation_item = makeItem(QString::fromStdString(violation->getName()));
+      QStandardItem* violation_item
+          = makeItem(QString::fromStdString(violation->getName()));
       violation_item->setSelectable(true);
       violation_item->setData(QVariant::fromValue(violation));
-      QStandardItem* violation_index = makeItem(QString::number(violation_idx++));
+      QStandardItem* violation_index
+          = makeItem(QString::number(violation_idx++));
       violation_index->setData(QVariant::fromValue(violation));
 
-      type_group->appendRow({
-        violation_index,
-        violation_item
-      });
+      type_group->appendRow({violation_index, violation_item});
     }
 
-    model_->appendRow({type_group, makeItem(QString::number(violation_list.size()) + " violations")});
+    model_->appendRow(
+        {type_group,
+         makeItem(QString::number(violation_list.size()) + " violations")});
   }
 
   toggleRenderer(!this->isHidden());
@@ -362,12 +357,10 @@ void DRCWidget::drawObjects(Painter& painter)
     if (std::max(box.dx(), box.dy()) < min_box) {
       // box is too small to be useful, so draw X instead
       odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
-      painter.drawLine(
-          {center.x() - min_box / 2, center.y() - min_box / 2},
-          {center.x() + min_box / 2, center.y() + min_box / 2});
-      painter.drawLine(
-          {center.x() - min_box / 2, center.y() + min_box / 2},
-          {center.x() + min_box / 2, center.y() - min_box / 2});
+      painter.drawLine({center.x() - min_box / 2, center.y() - min_box / 2},
+                       {center.x() + min_box / 2, center.y() + min_box / 2});
+      painter.drawLine({center.x() - min_box / 2, center.y() + min_box / 2},
+                       {center.x() + min_box / 2, center.y() - min_box / 2});
     } else {
       violation->paint(painter);
     }
@@ -410,9 +403,13 @@ void DRCWidget::loadReport(const QString& filename)
     } else if (filename.endsWith(".ascii")) {
       loadASCIIReport(filename);
     } else {
-      logger_->error(utl::GUI, 32, "Unable to determine type of {}", filename.toStdString());
+      logger_->error(utl::GUI,
+                     32,
+                     "Unable to determine type of {}",
+                     filename.toStdString());
     }
-  } catch (std::runtime_error&) {} // catch errors
+  } catch (std::runtime_error&) {
+  }  // catch errors
 
   updateModel();
 }
@@ -421,13 +418,17 @@ void DRCWidget::loadTRReport(const QString& filename)
 {
   std::ifstream report(filename.toStdString());
   if (!report.is_open()) {
-    logger_->error(utl::GUI, 30, "Unable to open TritonRoute DRC report: {}", filename.toStdString());
+    logger_->error(utl::GUI,
+                   30,
+                   "Unable to open TritonRoute DRC report: {}",
+                   filename.toStdString());
   }
 
   std::regex violation_type("\\s*violation type: (.*)");
   std::regex srcs("\\s*srcs: (.*)");
   std::regex bbox_layer("\\s*bbox = (.*) on Layer (.*)");
-  std::regex bbox_corners("\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
+  std::regex bbox_corners(
+      "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
 
   auto tech = block_->getDataBase()->getTech();
   while (!report.eof()) {
@@ -444,7 +445,8 @@ void DRCWidget::loadTRReport(const QString& filename)
     if (std::regex_match(line, base_match, violation_type)) {
       type = base_match[1].str();
     } else {
-      logger_->error(utl::GUI, 45, "Unable to parse line as violation type: {}", line);
+      logger_->error(
+          utl::GUI, 45, "Unable to parse line as violation type: {}", line);
     }
 
     // sources of violation
@@ -453,28 +455,35 @@ void DRCWidget::loadTRReport(const QString& filename)
     if (std::regex_match(line, base_match, srcs)) {
       sources = base_match[1].str();
     } else {
-      logger_->error(utl::GUI, 46, "Unable to parse line as violation source: {}", line);
+      logger_->error(
+          utl::GUI, 46, "Unable to parse line as violation source: {}", line);
     }
 
     std::getline(report, line);
     // bounding box and layer
     if (!std::regex_match(line, base_match, bbox_layer)) {
-      logger_->error(utl::GUI, 47, "Unable to parse line as violation location: {}", line);
+      logger_->error(
+          utl::GUI, 47, "Unable to parse line as violation location: {}", line);
     }
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
     if (layer == nullptr) {
-      logger_->warn(utl::GUI, 40, "Unable to find tech layer: {}", base_match[2].str());
+      logger_->warn(
+          utl::GUI, 40, "Unable to find tech layer: {}", base_match[2].str());
     }
 
     odb::Rect rect;
     if (std::regex_match(bbox, base_match, bbox_corners)) {
       try {
-        rect.set_xlo(std::stod(base_match[1].str()) * block_->getDbUnitsPerMicron());
-        rect.set_ylo(std::stod(base_match[2].str()) * block_->getDbUnitsPerMicron());
-        rect.set_xhi(std::stod(base_match[3].str()) * block_->getDbUnitsPerMicron());
-        rect.set_yhi(std::stod(base_match[4].str()) * block_->getDbUnitsPerMicron());
+        rect.set_xlo(std::stod(base_match[1].str())
+                     * block_->getDbUnitsPerMicron());
+        rect.set_ylo(std::stod(base_match[2].str())
+                     * block_->getDbUnitsPerMicron());
+        rect.set_xhi(std::stod(base_match[3].str())
+                     * block_->getDbUnitsPerMicron());
+        rect.set_yhi(std::stod(base_match[4].str())
+                     * block_->getDbUnitsPerMicron());
       } catch (std::invalid_argument&) {
         logger_->error(utl::GUI, 48, "Unable to parse bounding box: {}", bbox);
       } catch (std::out_of_range&) {
@@ -490,7 +499,7 @@ void DRCWidget::loadTRReport(const QString& filename)
     std::string comment = "";
 
     // split sources list
-    while(getline(srcs_stream, single_source, ' ')) {
+    while (getline(srcs_stream, single_source, ' ')) {
       if (single_source.empty()) {
         continue;
       }
@@ -565,12 +574,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     std::vector<DRCViolation::DRCShape> shapes({rect});
     violations_.push_back(std::make_unique<DRCViolation>(
-        name,
-        type,
-        srcs_list,
-        shapes,
-        layer,
-        comment));
+        name, type, srcs_list, shapes, layer, comment));
   }
 
   report.close();
@@ -582,4 +586,3 @@ void DRCWidget::loadASCIIReport(const QString& filename)
 }
 
 }  // namespace gui
-
