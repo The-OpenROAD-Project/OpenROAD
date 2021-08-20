@@ -1767,8 +1767,7 @@ void FlexDR::reportDRC()
 
   if (DRC_RPT_FILE == string("")) {
     if (VERBOSE > 0) {
-      cout << "Waring: no DRC report specified, skipped writing DRC report"
-           << endl;
+      logger_->warn(DRT, 290, "Waring: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
@@ -1931,38 +1930,40 @@ void FlexDR::reportDRC()
       }
       drcRpt << endl;
       // get source(s) of violation
+      // format: type:name/identifier
       drcRpt << "    srcs: ";
       for (auto src : marker->getSrcs()) {
         if (src) {
           switch (src->typeId()) {
             case frcNet:
-              drcRpt << (static_cast<frNet*>(src))->getName() << " ";
+              drcRpt << "net:" << (static_cast<frNet*>(src))->getName() << " ";
               break;
             case frcInstTerm: {
               frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-              drcRpt << instTerm->getInst()->getName() << "/"
+              drcRpt << "iterm:"
+                     << instTerm->getInst()->getName() << "/"
                      << instTerm->getTerm()->getName() << " ";
               break;
             }
             case frcTerm: {
               frTerm* term = (static_cast<frTerm*>(src));
-              drcRpt << "PIN/" << term->getName() << " ";
+              drcRpt << "bterm:" << term->getName() << " ";
               break;
             }
             case frcInstBlockage: {
               frInstBlockage* instBlockage
                   = (static_cast<frInstBlockage*>(src));
-              drcRpt << instBlockage->getInst()->getName() << "/OBS"
+              drcRpt << "inst:"
+                     << instBlockage->getInst()->getName()
                      << " ";
               break;
             }
             case frcBlockage: {
-              drcRpt << "PIN/OBS"
-                     << " ";
+              drcRpt << "obstruction: ";
               break;
             }
             default:
-              std::cout << "Error: unexpected src type in marker\n";
+              logger_->error(DRT, 291, "Unexpected source type in marker: {}", src->typeId());
           }
         }
       }
