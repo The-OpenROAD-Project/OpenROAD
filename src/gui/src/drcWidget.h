@@ -54,7 +54,6 @@ class Logger;
 
 namespace gui {
 
-
 class DRCViolation {
   public:
     using DRCShape = std::variant<QLine, QRect, QPolygon>;
@@ -79,6 +78,10 @@ class DRCViolation {
     const std::string getComment() { return comment_; }
     odb::dbTechLayer* getLayer() { return layer_; }
 
+    bool isViewed() { return viewed_; }
+    void setViewed() { viewed_ = true; }
+    void clearViewed() { viewed_ = false; }
+
     void paint(Painter& painter);
 
   private:
@@ -91,6 +94,8 @@ class DRCViolation {
     odb::dbTechLayer* layer_;
     std::string comment_;
     odb::Rect bbox_;
+
+    bool viewed_;
 };
 
 class DRCDescriptor : public Descriptor
@@ -107,6 +112,13 @@ class DRCDescriptor : public Descriptor
     Properties getProperties(std::any object) const override;
     Selected makeSelected(std::any object, void* additional_data) const override;
     bool lessThan(std::any l, std::any r) const override;
+};
+
+class DRCItemModel : public QStandardItemModel
+{
+  public:
+    DRCItemModel(QWidget* parent = nullptr) : QStandardItemModel(parent) {}
+    QVariant data(const QModelIndex& index, int role) const override;
 };
 
 class DRCWidget : public QDockWidget, public Renderer
@@ -132,6 +144,7 @@ class DRCWidget : public QDockWidget, public Renderer
     void clicked(const QModelIndex& index);
     void selectReport();
     void toggleRenderer(bool visible);
+    void updateSelection(const Selected& selection);
 
   protected:
     void showEvent(QShowEvent* event) override;
@@ -145,7 +158,7 @@ class DRCWidget : public QDockWidget, public Renderer
     utl::Logger* logger_;
 
     QTreeView* view_;
-    QStandardItemModel* model_;
+    DRCItemModel* model_;
 
     odb::dbBlock* block_;
 

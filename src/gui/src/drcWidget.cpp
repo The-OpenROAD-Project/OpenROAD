@@ -35,6 +35,7 @@
 
 #include <QDebug>
 
+#include <QApplication>
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QFileDialog>
@@ -65,7 +66,8 @@ DRCViolation::DRCViolation(const std::string& name,
                                srcs_(srcs),
                                shapes_(shapes),
                                layer_(layer),
-                               comment_(comment)
+                               comment_(comment),
+                               viewed_(false)
 {
   computeBBox();
 }
@@ -196,11 +198,28 @@ bool DRCDescriptor::lessThan(std::any l, std::any r) const
 
 ///////
 
+QVariant DRCItemModel::data(const QModelIndex& index, int role) const
+{
+  if (role == Qt::FontRole) {
+    auto item_data = itemFromIndex(index)->data();
+    if (item_data.isValid()) {
+      DRCViolation* item = item_data.value<DRCViolation*>();
+      QFont font = QApplication::font();
+      font.setBold(!item->isViewed());
+      return font;
+    }
+  }
+
+  return QStandardItemModel::data(index, role);
+}
+
+///////
+
 DRCWidget::DRCWidget(QWidget* parent)
     : QDockWidget("DRC Viewer", parent),
       logger_(nullptr),
       view_(new QTreeView(this)),
-      model_(new QStandardItemModel(this)),
+      model_(new DRCItemModel(this)),
       block_(nullptr),
       load_(new QPushButton("Load..."))
 {
@@ -252,8 +271,13 @@ void DRCWidget::clicked(const QModelIndex& index)
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
   if (data.isValid()) {
-    Selected t = Gui::get()->makeSelected(data.value<DRCViolation*>());
-    emit selectDRC(t);
+    auto violation = data.value<DRCViolation*>();
+    if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
+      violation->clearViewed();
+    } else {
+      Selected t = Gui::get()->makeSelected(violation);
+      emit selectDRC(t);
+    }
   }
 }
 
@@ -310,9 +334,11 @@ void DRCWidget::updateModel()
       QStandardItem* violation_item = makeItem(QString::fromStdString(violation->getName()));
       violation_item->setSelectable(true);
       violation_item->setData(QVariant::fromValue(violation));
+      QStandardItem* violation_index = makeItem(QString::number(violation_idx++));
+      violation_index->setData(QVariant::fromValue(violation));
 
       type_group->appendRow({
-        makeItem(QString::number(violation_idx++)),
+        violation_index,
         violation_item
       });
     }
@@ -364,6 +390,15 @@ SelectionSet DRCWidget::select(odb::dbTechLayer* layer, const odb::Point& point)
     }
   }
   return selections;
+}
+
+void DRCWidget::updateSelection(const Selected& selection)
+{
+  const std::any& object = selection.getObject();
+  if (auto s = std::any_cast<DRCViolation*>(&object)) {
+    (*s)->setViewed();
+    emit update();
+  }
 }
 
 void DRCWidget::loadReport(const QString& filename)

@@ -220,6 +220,13 @@ MainWindow::MainWindow(QWidget* parent)
             bbox.set_yhi(bbox.yMax() + zoomout_margin);
             zoomTo(bbox);
           });
+  connect(this,
+          &MainWindow::selectionChanged,
+          [this]() {
+            if (!selected_.empty()) {
+              drc_viewer_->updateSelection(*selected_.begin());
+            }
+          });
 
   createActions();
   createToolbars();
