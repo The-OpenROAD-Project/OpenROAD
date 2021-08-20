@@ -495,64 +495,63 @@ void DRCWidget::loadTRReport(const QString& filename)
         continue;
       }
 
+      auto ident = single_source.find(":");
+      std::string item_type = single_source.substr(0, ident);
+      std::string item_name = single_source.substr(ident + 1);
+
       std::any item;
 
-      if (single_source.substr(0, 4) == "PIN/") {
-        std::string pin_name = single_source.substr(4);
-        if (pin_name != "OBS") {
-          // bterm
-          odb::dbBTerm* bterm = block_->findBTerm(pin_name.c_str());
-          if (bterm != nullptr) {
-            item = bterm;
-          } else {
-            logger_->warn(utl::GUI, 41, "Unable to find bterm: {}", pin_name);
+      if (item_type == "net") {
+        odb::dbNet* net = block_->findNet(item_name.c_str());
+        if (net != nullptr) {
+          item = net;
+        } else {
+          logger_->warn(utl::GUI, 44, "Unable to find net: {}", item_name);
+        }
+      } else if (item_type == "inst") {
+        odb::dbInst* inst = block_->findInst(item_name.c_str());
+        if (inst != nullptr) {
+          item = inst;
+        } else {
+          logger_->warn(utl::GUI, 43, "Unable to find instance: {}", item_name);
+        }
+      } else if (item_type == "iterm") {
+        odb::dbITerm* iterm = block_->findITerm(item_name.c_str());
+        if (iterm != nullptr) {
+          item = iterm;
+        } else {
+          logger_->warn(utl::GUI, 42, "Unable to find iterm: {}", item_name);
+        }
+      } else if (item_type == "bterm") {
+        odb::dbBTerm* bterm = block_->findBTerm(item_name.c_str());
+        if (bterm != nullptr) {
+          item = bterm;
+        } else {
+          logger_->warn(utl::GUI, 41, "Unable to find bterm: {}", item_name);
+        }
+      } else if (item_type == "obstruction") {
+        if (layer != nullptr) {
+          for (const auto& obs : block_->getObstructions()) {
+            auto obs_bbox = obs->getBBox();
+            if (obs_bbox->getTechLayer() == layer) {
+              odb::Rect obs_rect;
+              obs_bbox->getBox(obs_rect);
+              if (obs_rect.intersects(rect)) {
+                srcs_list.push_back(obs);
+              }
+            }
           }
         }
       } else {
-        auto inst_loc = single_source.find("/");
-        if (inst_loc != std::string::npos) {
-          std::string inst_name = single_source.substr(0, inst_loc);
-          std::string pin_name = single_source.substr(inst_loc + 1);
-          // instance
-          odb::dbInst* inst = block_->findInst(inst_name.c_str());
-          if (inst != nullptr) {
-            if (pin_name == "OBS") {
-              // just add instance
-              item = inst;
-            } else {
-              odb::dbITerm* iterm = nullptr;
-              for (auto itrm : inst->getITerms()) {
-                if (itrm->getMTerm()->getName() == pin_name) {
-                  iterm = itrm;
-                }
-              }
-              if (iterm != nullptr) {
-                // add iterm
-                item = iterm;
-              } else {
-                // add inst
-                logger_->warn(utl::GUI, 42, "Unable to find iterm: {}", single_source);
-                item = inst;
-              }
-            }
-          } else {
-            logger_->warn(utl::GUI, 43, "Unable to find instance: {}", inst_name);
-          }
-        } else {
-          // net
-          odb::dbNet* net = block_->findNet(single_source.c_str());
-          if (net != nullptr) {
-            item = net;
-          } else {
-            logger_->warn(utl::GUI, 44, "Unable to find net: {}", single_source);
-          }
-        }
+        logger_->warn(utl::GUI, 51, "Unknown source type: {}", item_type);
       }
 
       if (item.has_value()) {
         srcs_list.push_back(item);
       } else {
-        comment += single_source + " ";
+        if (!item_name.empty()) {
+          comment += single_source + " ";
+        }
       }
     }
 
@@ -571,7 +570,7 @@ void DRCWidget::loadTRReport(const QString& filename)
         srcs_list,
         shapes,
         layer,
-        sources));
+        comment));
   }
 
   report.close();
