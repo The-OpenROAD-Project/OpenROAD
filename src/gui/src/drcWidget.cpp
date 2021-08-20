@@ -175,7 +175,10 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
     props.push_back({"Sources", sources});
   }
 
-  props.push_back({"Comment", vio->getComment()});
+  auto& comment = vio->getComment();
+  if (!comment.empty()) {
+    props.push_back({"Comment", vio->getComment()});
+  }
 
   return props;
 }
@@ -468,12 +471,15 @@ void DRCWidget::loadTRReport(const QString& filename)
       std::vector<std::any> srcs_list;
       std::stringstream srcs_stream(sources);
       std::string single_source;
+      std::string comment = "";
 
       // split sources list
       while(getline(srcs_stream, single_source, ' ')) {
         if (single_source.empty()) {
           continue;
         }
+
+        std::any item;
 
         auto pin_loc = single_source.find("PIN/");
         if (pin_loc != std::string::npos) {
@@ -482,7 +488,7 @@ void DRCWidget::loadTRReport(const QString& filename)
             // bterm
             odb::dbBTerm* bterm = block_->findBTerm(pin_name.c_str());
             if (bterm != nullptr) {
-              srcs_list.push_back(bterm);
+              item = bterm;
             }
           }
         } else {
@@ -495,7 +501,7 @@ void DRCWidget::loadTRReport(const QString& filename)
             if (inst != nullptr) {
               if (pin_name == "OBS") {
                 // just add instance
-                srcs_list.push_back(inst);
+                item = inst;
               } else {
                 odb::dbITerm* iterm = nullptr;
                 for (auto itrm : inst->getITerms()) {
@@ -505,10 +511,10 @@ void DRCWidget::loadTRReport(const QString& filename)
                 }
                 if (iterm != nullptr) {
                   // add iterm
-                  srcs_list.push_back(iterm);
+                  item = iterm;
                 } else {
                   // add inst
-                  srcs_list.push_back(inst);
+                  item = inst;
                 }
               }
             }
@@ -516,9 +522,15 @@ void DRCWidget::loadTRReport(const QString& filename)
             // net
             odb::dbNet* net = block_->findNet(single_source.c_str());
             if (net != nullptr) {
-              srcs_list.push_back(net);
+              item = net;
             }
           }
+        }
+
+        if (item.has_value()) {
+          srcs_list.push_back(item);
+        } else {
+          comment += single_source + " ";
         }
       }
 
