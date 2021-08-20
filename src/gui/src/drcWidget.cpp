@@ -60,14 +60,14 @@ DRCViolation::DRCViolation(const std::string& name,
                            const std::vector<std::any>& srcs,
                            const std::vector<DRCShape>& shapes,
                            odb::dbTechLayer* layer,
-                           const std::string& comment) :
-                               name_(name),
-                               type_(type),
-                               srcs_(srcs),
-                               shapes_(shapes),
-                               layer_(layer),
-                               comment_(comment),
-                               viewed_(false)
+                           const std::string& comment)
+                           : name_(name),
+                             type_(type),
+                             srcs_(srcs),
+                             shapes_(shapes),
+                             layer_(layer),
+                             comment_(comment),
+                             viewed_(false)
 {
   computeBBox();
 }
@@ -75,13 +75,13 @@ DRCViolation::DRCViolation(const std::string& name,
 DRCViolation::DRCViolation(const std::string& name,
                            const std::string& type,
                            const std::vector<DRCShape>& shapes,
-                           const std::string& comment) :
-                                DRCViolation(name,
-                                    type,
-                                    {},
-                                    shapes,
-                                    nullptr,
-                                    comment) {}
+                           const std::string& comment)
+                           : DRCViolation(name,
+                               type,
+                               {},
+                               shapes,
+                               nullptr,
+                               comment) {}
 
 void DRCViolation::computeBBox()
 {
