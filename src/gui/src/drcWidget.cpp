@@ -230,10 +230,8 @@ DRCWidget::DRCWidget(QWidget* parent)
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
-  header->setSectionResizeMode(0, QHeaderView::Stretch);
-  header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-  // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
-  header->setStretchLastSection(false);
+  header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(1, QHeaderView::Stretch);
 
   QWidget* container = new QWidget;
   QVBoxLayout* layout = new QVBoxLayout;
