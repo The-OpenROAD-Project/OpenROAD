@@ -29,6 +29,10 @@
 #include "frDesign.h"
 
 using namespace fr;
+
+namespace odb {
+class dbTechLayerCutSpacingTableDefRule;
+}
 // General Fixture for tests using db objects.
 class Fixture
 {
@@ -126,6 +130,14 @@ class Fixture
       bool above = false,
       bool below = false,
       bool allCuts = false);
+
+  void makeCutClass(frLayerNum layer_num,
+                    std::string name,
+                    frCoord width,
+                    frCoord height);
+
+  void makeLef58CutSpcTbl(frLayerNum layer_num,
+                          odb::dbTechLayerCutSpacingTableDefRule* dbRule);
 
   frNet* makeNet(const char* name);
 

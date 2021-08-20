@@ -89,29 +89,17 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   dbTechLayerCutSpacingTableDefRuleFlags flags_;
   int default_;
   dbId<_dbTechLayer> second_layer_;
-  dbVector<
-      std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
-      prl_for_aligned_cut_tbl_;
-  dbVector<
-      std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
-      center_to_center_tbl_;
-  dbVector<
-      std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
-      center_and_edge_tbl_;
+  dbVector<std::pair<std::string, std::string>> prl_for_aligned_cut_tbl_;
+  dbVector<std::pair<std::string, std::string>> center_to_center_tbl_;
+  dbVector<std::pair<std::string, std::string>> center_and_edge_tbl_;
   int prl_;
-  dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,
-                      dbId<_dbTechLayerCutClassRule>,
-                      int>>
-      prl_tbl_;
+  dbVector<std::tuple<std::string, std::string, int>> prl_tbl_;
   int extension_;
-  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> end_extension_tbl_;
-  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> side_extension_tbl_;
-  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>>
-      exact_aligned_spacing_tbl_;
-  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>>
-      non_opp_enc_spacing_tbl_;
-  dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>, int, int, int>>
-      opp_enc_spacing_tbl_;
+  dbVector<std::pair<std::string, int>> end_extension_tbl_;
+  dbVector<std::pair<std::string, int>> side_extension_tbl_;
+  dbVector<std::pair<std::string, int>> exact_aligned_spacing_tbl_;
+  dbVector<std::pair<std::string, int>> non_opp_enc_spacing_tbl_;
+  dbVector<std::tuple<std::string, int, int, int>> opp_enc_spacing_tbl_;
   dbVector<dbVector<std::pair<int, int>>> spacing_tbl_;
   std::map<std::string, uint> row_map_;
   std::map<std::string, uint> col_map_;

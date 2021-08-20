@@ -29,6 +29,7 @@
 #ifndef _FR_FLEXDR_H_
 #define _FR_FLEXDR_H_
 
+#include <boost/polygon/polygon.hpp>
 #include <deque>
 #include <memory>
 
@@ -38,7 +39,6 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
-#include <boost/polygon/polygon.hpp>
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 
@@ -343,9 +343,7 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(const FlexDRViaData* via_data,
-               frDesign* design,
-               Logger* logger)
+  FlexDRWorker(const FlexDRViaData* via_data, frDesign* design, Logger* logger)
       : design_(design),
         logger_(logger),
         graphics_(nullptr),
@@ -666,9 +664,9 @@ class FlexDRWorker
                     frCoord high,
                     std::set<frCoord>& trackLocs);
   void getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
-                                Rectangle& pinRect,
-                                std::set<frCoord>& xLocs,
-                                std::set<frCoord>& yLocs);
+                                     Rectangle& pinRect,
+                                     std::set<frCoord>& xLocs,
+                                     std::set<frCoord>& yLocs);
   void initNet_boundary(drNet* net,
                         std::vector<std::unique_ptr<drConnFig>>& extObjs);
   void initNets_regionQuery();
@@ -799,6 +797,11 @@ class FlexDRWorker
                                    int type,
                                    bool isUpperVia,
                                    bool isBlockage = false);
+  void modLef58InterLayerCutSpacingCost(const frBox& box,
+                                        frMIdx z,
+                                        int type,
+                                        bool isUpperVia,
+                                        bool isBlockage = false);
   // adjCut
   void modAdjCutSpacingCost_fixedObj(const frDesign* design,
                                      const frBox& box,

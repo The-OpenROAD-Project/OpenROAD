@@ -14,12 +14,12 @@ global_placement
     [-initial_place_max_iter max_iter]
     [-initial_place_max_fanout max_fanout]
     [-verbose_level verbose_level]
-  
+
 ```
 
 ## Flow Control
 * __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
-* __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions. 
+* __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
 
 ## Tuning Parameters
 * __bin_grid_count__ : Set bin grid's count manually. Default: Defined by internal algorithm. [64,128,256,512,..., int]
@@ -32,4 +32,7 @@ global_placement
 ## Other Options
 * __verbose_level__ [0-10, int] : Set verbose level for RePlAce. Default: 1
 
-Note that all of the TCL commands are defined in the [replace.tcl](../src/replace.tcl) and [replace.i](../src/replace.i).
+Note that all of the TCL commands are defined in the
+[../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.tcl)
+and
+[../src/replace.i](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.i).

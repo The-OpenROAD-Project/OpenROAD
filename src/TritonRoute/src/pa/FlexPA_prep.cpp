@@ -1471,10 +1471,7 @@ void FlexPA::genInstPattern(std::vector<frInst*>& insts)
     return;
   }
 
-  // TODO: change to a global constant
-  maxAccessPatternSize_ = 5;
-
-  int numNode = (insts.size() + 2) * maxAccessPatternSize_;
+  int numNode = (insts.size() + 2) * ACCESS_PATTERN_END_ITERATION_NUM;
 
   std::vector<FlexDPNode> nodes(numNode);
 
@@ -1488,8 +1485,8 @@ void FlexPA::genInstPattern_init(std::vector<FlexDPNode>& nodes,
                                  const std::vector<frInst*>& insts)
 {
   // init virutal nodes
-  int startNodeIdx = getFlatIdx(-1, 0, maxAccessPatternSize_);
-  int endNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
+  int startNodeIdx = getFlatIdx(-1, 0, ACCESS_PATTERN_END_ITERATION_NUM);
+  int endNodeIdx = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   nodes[startNodeIdx].setNodeCost(0);
   nodes[startNodeIdx].setPathCost(0);
   nodes[endNodeIdx].setNodeCost(0);
@@ -1501,7 +1498,7 @@ void FlexPA::genInstPattern_init(std::vector<FlexDPNode>& nodes,
     auto uniqueInstIdx = unique2Idx_[uniqueInst];
     auto& instPatterns = uniqueInstPatterns_[uniqueInstIdx];
     for (int idx2 = 0; idx2 < (int) instPatterns.size(); idx2++) {
-      int nodeIdx = getFlatIdx(idx1, idx2, maxAccessPatternSize_);
+      int nodeIdx = getFlatIdx(idx1, idx2, ACCESS_PATTERN_END_ITERATION_NUM);
       auto accessPattern = instPatterns[idx2].get();
       nodes[nodeIdx].setNodeCost(accessPattern->getCost());
     }
@@ -1513,15 +1510,15 @@ void FlexPA::genInstPattern_perform(std::vector<FlexDPNode>& nodes,
 {
   for (int currIdx1 = 0; currIdx1 <= (int) insts.size(); currIdx1++) {
     bool isSet = false;
-    for (int currIdx2 = 0; currIdx2 < maxAccessPatternSize_; currIdx2++) {
-      auto currNodeIdx = getFlatIdx(currIdx1, currIdx2, maxAccessPatternSize_);
+    for (int currIdx2 = 0; currIdx2 < ACCESS_PATTERN_END_ITERATION_NUM; currIdx2++) {
+      auto currNodeIdx = getFlatIdx(currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
       auto& currNode = nodes[currNodeIdx];
       if (currNode.getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
       }
       int prevIdx1 = currIdx1 - 1;
-      for (int prevIdx2 = 0; prevIdx2 < maxAccessPatternSize_; prevIdx2++) {
-        int prevNodeIdx = getFlatIdx(prevIdx1, prevIdx2, maxAccessPatternSize_);
+      for (int prevIdx2 = 0; prevIdx2 < ACCESS_PATTERN_END_ITERATION_NUM; prevIdx2++) {
+        int prevNodeIdx = getFlatIdx(prevIdx1, prevIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
         auto& prevNode = nodes[prevNodeIdx];
         if (prevNode.getPathCost() == std::numeric_limits<int>::max()) {
           continue;
@@ -1547,7 +1544,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
 {
   // bool isDebugMode = true;
   bool isDebugMode = false;
-  int currNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
+  int currNodeIdx = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   auto currNode = &(nodes[currNodeIdx]);
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
@@ -1555,7 +1552,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
     // non-virtual node
     if (instCnt != (int) insts.size()) {
       int currIdx1, currIdx2;
-      getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize_);
+      getNestedIdx(currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
       instAccessPatternIdx[currIdx1] = currIdx2;
 
       auto& inst = insts[currIdx1];
@@ -1604,7 +1601,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
 void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
                                   const std::vector<frInst*>& insts)
 {
-  int currNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
+  int currNodeIdx = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   auto currNode = &(nodes[currNodeIdx]);
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
@@ -1622,7 +1619,7 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
     // non-virtual node
     if (instCnt != (int) insts.size()) {
       int currIdx1, currIdx2;
-      getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize_);
+      getNestedIdx(currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
       instAccessPatternIdx[currIdx1] = currIdx2;
 
       // print debug information
@@ -1677,8 +1674,8 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
 {
   int edgeCost = 0;
   int prevIdx1, prevIdx2, currIdx1, currIdx2;
-  getNestedIdx(prevNodeIdx, prevIdx1, prevIdx2, maxAccessPatternSize_);
-  getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize_);
+  getNestedIdx(prevNodeIdx, prevIdx1, prevIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+  getNestedIdx(currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
   if (prevIdx1 == -1 || currIdx1 == (int) insts.size()) {
     return edgeCost;
   }
@@ -2084,6 +2081,9 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
         owners->insert(src);
       }
     }
+  }
+  if (graphics_) {
+    graphics_->setObjsAndMakers(objs, gcWorker.getMarkers());
   }
   return sol;
 }

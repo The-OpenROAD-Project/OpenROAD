@@ -165,6 +165,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
+  void centerAt(const QPointF& focus);
+  void centerAt(const odb::Point& focus);
+  void setResolution(qreal dbu_per_pixel);
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
@@ -243,6 +246,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+
+  odb::Point getVisibleCenter();
 
   // Compute and store the offset necessary to center the block in the viewport.
   void computeCenteringOffset();

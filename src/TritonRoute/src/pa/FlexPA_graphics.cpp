@@ -26,13 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexPA_graphics.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "FlexPA.h"
+#include "FlexPA_graphics.h"
 
 namespace fr {
 
@@ -47,7 +46,6 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
       inst_term_(nullptr),
       top_block_(design->getTopBlock()),
       pa_ap_(nullptr),
-      pa_via_(nullptr),
       pa_markers_(nullptr)
 {
   // Build the layer map between opendb & tr
@@ -93,14 +91,14 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  if (pa_via_) {
-    auto* via_def = pa_via_->getViaDef();
+  for (auto via : pa_vias_) {
+    auto* via_def = via->getViaDef();
     frBox bbox;
     bool skip = false;
     if (via_def->getLayer1Num() == layerNum) {
-      pa_via_->getLayer1BBox(bbox);
+      via->getLayer1BBox(bbox);
     } else if (via_def->getLayer2Num() == layerNum) {
-      pa_via_->getLayer2BBox(bbox);
+      via->getLayer2BBox(bbox);
     } else {
       skip = true;
     }
@@ -208,7 +206,7 @@ void FlexPAGraphics::setViaAP(
   }
 
   pa_ap_ = ap;
-  pa_via_ = via;
+  pa_vias_ = {via};
   pa_markers_ = &markers;
   for (auto& marker : markers) {
     frBox bbox;
@@ -228,54 +226,46 @@ void FlexPAGraphics::setViaAP(
 
   // These are going away once we return
   pa_ap_ = nullptr;
-  pa_via_ = nullptr;
+  pa_vias_.clear();
   pa_markers_ = nullptr;
 }
 
-void FlexPAGraphics::setMarkersAndShapes(
+void FlexPAGraphics::setObjsAndMakers(
+    const vector<pair<frConnFig*, frBlockObject*>>& objs,
     const std::vector<std::unique_ptr<frMarker>>& markers)
 {
-  if (markers.empty())
+  if (!settings_->paCombining) {
     return;
-  pa_markers_ = &markers;
-  frBox box;
-  if (inst_term_) {
-    inst_term_->getInst()->getBBox(box);
-  } else {
-    markers[0]->getBBox(box);
   }
-  shapes_.clear();
+
+  for (auto [obj, parent] : objs) {
+    if (obj->typeId() == frcVia) {
+      auto via = static_cast<frVia*>(obj);
+      pa_vias_.push_back(via);
+    } else {
+      logger_->warn(DRT, 280, "Unknown type {} in setObjAP", obj->typeId());
+    }
+  }
+  pa_markers_ = &markers;
   for (auto& marker : markers) {
     frBox bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
-                  257,
+                  281,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
                   bbox.left(),
                   bbox.bottom(),
                   bbox.right(),
                   bbox.top());
-    for (auto& a : marker->getAggressors()) {
-      shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
-    }
-    for (auto& a : marker->getVictims()) {
-      shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
-    }
   }
 
-  gui_->zoomTo({box.left() - 200,
-                box.bottom() - 200,
-                box.right() + 200,
-                box.top() + 200});
   gui_->redraw();
   gui_->pause();
 
   // These are going away once we return
-  pa_ap_ = nullptr;
-  pa_via_ = nullptr;
   pa_markers_ = nullptr;
-  shapes_.clear();
+  pa_vias_.clear();
 }
 
 void FlexPAGraphics::status(const std::string& message)

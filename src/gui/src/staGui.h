@@ -76,6 +76,8 @@ class GuiDBChangeListener;
 
 class TimingPathsModel : public QAbstractTableModel
 {
+ Q_OBJECT
+
  public:
   TimingPathsModel(bool get_max = true, int path_count = 100);
   ~TimingPathsModel();
@@ -93,8 +95,10 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
 
   void resetModel();
-  void sort(int col_index, Qt::SortOrder sort_order) override;
   void populateModel(bool get_max = true, int path_count = 100);
+
+ public slots:
+  void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
   bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
