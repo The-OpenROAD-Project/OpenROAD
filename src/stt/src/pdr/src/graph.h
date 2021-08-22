@@ -69,6 +69,7 @@ public:
 
   vector<Node> nodes;
   int num_terminals;
+  int root_idx_;
 
 private:
   int calc_overlap(vector<vector<Node>>& set_of_nodes);
@@ -114,7 +115,6 @@ private:
 
   vector<Edge> edges_;
   vector<vector<int>> manh_dist_;
-  int root_idx_;
 
   // nearest neighbor in some undocumented sense -cherry 06/14/2021
   vector<vector<int>> nn_;

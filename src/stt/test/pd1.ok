@@ -26,3 +26,9 @@ Net dup4
 Wire length = 0 Path depth = 0
 Net one
 Wire length = 0 Path depth = 0
+Net dup5
+Wire length = 8 Path depth = 8
+0 (123 209) neighbor 3 length 3
+1 (123 215) neighbor 1 length 0
+2 (122 211) neighbor 3 length 0
+3 (122 211) neighbor 1 length 5

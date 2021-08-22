@@ -61,11 +61,11 @@ public:
   void highlightGraph();
 
 private:
-  Tree translateTree(int root_idx);
+  Tree translateTree();
   void replaceNode(Graph* graph, int originalNode);
   void transferChildren(int originalNode);
   void printTree(Tree fluteTree);
-  void RemoveSTNodes(int root_idx);
+  void RemoveSTNodes();
 
   Graph* graph_;
   Logger* logger_;
@@ -124,7 +124,7 @@ Tree PdRev::primDijkstra(float alpha,
   // The following slightly improves wire length but the cost is the use
   // of absolutely horrid unreliable code.
   //graph_->fix_max_dc();
-  return translateTree(root_idx);
+  return translateTree();
 }
 
 Tree PdRev::primDijkstraRevII(float alpha,
@@ -136,7 +136,7 @@ Tree PdRev::primDijkstraRevII(float alpha,
   graph_->doSteiner_HoVW();
   graph_->fix_max_dc();
 #endif
-  return translateTree(root_idx);
+  return translateTree();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -144,7 +144,7 @@ Tree PdRev::primDijkstraRevII(float alpha,
 // Translate pdrev graph to flute steiner tree representation.
 // Apparently this simple mindedly clones non-terminal nodes along with their
 // location so the number of branches are num_terminals * 2 - 2 like flute.
-Tree PdRev::translateTree(int root_idx)
+Tree PdRev::translateTree()
 {
   if (graph_->num_terminals > 2) {
     for (int i = 0; i < graph_->num_terminals; ++i) {
@@ -165,7 +165,7 @@ Tree PdRev::translateTree(int root_idx)
         transferChildren(i);
       }
     }
-    RemoveSTNodes(root_idx);
+    RemoveSTNodes();
   }
 
   Tree tree;
@@ -258,7 +258,7 @@ void PdRev::transferChildren(int originalNode)
 // Remove spanning tree nodes?
 // Remove steiner tree nodes?
 // Who knows -cherry 08/16/2021
-void PdRev::RemoveSTNodes(int root_idx)
+void PdRev::RemoveSTNodes()
 {
   vector<int> toBeRemoved;
   vector<Node> &nodes = graph_->nodes;
@@ -278,8 +278,12 @@ void PdRev::RemoveSTNodes(int root_idx)
                             // so the removed node's parent cannot be used
                             // for the children. This fact seems to have escaped
                             // the original author. Use the original root node
-                            // as the parent -cherry 08/09/2021
-                            cN.parent == cN.idx ? root_idx : cN.parent);
+                            // as the parent.
+                            // Note well that the root_idx passed to the top level
+                            // function cannot be used here because it may have
+                            // been if duplicate x/y locations were removed.
+                            // -cherry 08/09/2021
+                            cN.parent == cN.idx ? graph_->root_idx_ : cN.parent);
       graph_->addChild(nodes[cN.parent], cN.children[j]);
     }
   }
