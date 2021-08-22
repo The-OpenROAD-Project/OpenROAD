@@ -11,6 +11,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
+  set(CMAKE_AUTORCC ON)
   set(CMAKE_AUTOUIC ON)
   set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
 
@@ -43,6 +44,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/selectHighlightWindow.cpp
     src/staGui.cpp
     src/timingWidget.cpp
+    resources/resource.qrc
   )
 
   target_link_libraries(gui

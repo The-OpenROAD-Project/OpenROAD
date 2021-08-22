@@ -52,6 +52,12 @@
 #include "utl/Logger.h"
 #include "timingWidget.h"
 
+// must be loaded in global namespace
+static void loadQTResources()
+{
+  Q_INIT_RESOURCE(resource);
+}
+
 namespace gui {
 
 MainWindow::MainWindow(QWidget* parent)
@@ -207,6 +213,11 @@ MainWindow::MainWindow(QWidget* parent)
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
   settings.endGroup();
+
+  // load resources and set window icon and title
+  loadQTResources();
+  setWindowIcon(QIcon(":/icon.png"));
+  setWindowTitle("OpenROAD");
 }
 
 void MainWindow::createStatusBar()
