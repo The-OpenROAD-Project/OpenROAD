@@ -265,17 +265,17 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 typedef std::pair<int, int> PDedge;
 typedef std::vector<std::set<PDedge>> PDedges;
 
-static int findPathDepth(Tree &tree,
+static int findPathDepth(const Tree &tree,
                          int drvr_index);
 static int findPathDepth(int node,
                          int from,
                          PDedges &edges,
                          int length);
-static int findLocationIndex(Tree &tree, int x, int y);
+static int findLocationIndex(const Tree &tree, int x, int y);
 
 // Used by regressions.
 void
-reportSteinerTree(stt::Tree &tree,
+reportSteinerTree(const stt::Tree &tree,
                   int drvr_x,
                   int drvr_y,
                   Logger *logger)
@@ -299,7 +299,7 @@ reportSteinerTree(stt::Tree &tree,
 }
 
 int
-findLocationIndex(Tree &tree,
+findLocationIndex(const Tree &tree,
                   int x,
                   int y)
 {
@@ -312,17 +312,17 @@ findLocationIndex(Tree &tree,
   return -1;
 }
 
-static int findPathDepth(Tree &tree,
+static int findPathDepth(const Tree &tree,
                          int drvr_index)
 {
   int branch_count = tree.branchCount();
   PDedges edges(branch_count);
   if (branch_count > 2) {
     for (int i = 0; i < branch_count; i++) {
-      stt::Branch &branch = tree.branch[i];
+      const stt::Branch &branch = tree.branch[i];
       int neighbor = branch.n;
       if (neighbor != i) {
-        Branch &neighbor_branch = tree.branch[neighbor];
+        const Branch &neighbor_branch = tree.branch[neighbor];
         int length = std::abs(branch.x - neighbor_branch.x)
           + std::abs(branch.y - neighbor_branch.y);
         edges[neighbor].insert(PDedge(i, length));
@@ -375,7 +375,7 @@ LinesRenderer::drawObjects(gui::Painter &painter)
 }
 
 void
-highlightSteinerTree(Tree &tree,
+highlightSteinerTree(const Tree &tree,
                      gui::Gui *gui)
 {
   if (gui) {
@@ -385,10 +385,10 @@ highlightSteinerTree(Tree &tree,
     }
     std::vector<std::pair<odb::Point, odb::Point>> lines;
     for (int i = 0; i < tree.branchCount(); i++) {
-      stt::Branch branch = tree.branch[i];
+      const stt::Branch &branch = tree.branch[i];
       int x1 = branch.x;
       int y1 = branch.y;
-      stt::Branch &neighbor = tree.branch[branch.n];
+      const stt::Branch &neighbor = tree.branch[branch.n];
       int x2 = neighbor.x;
       int y2 = neighbor.y;
       lines.push_back(std::pair(odb::Point(x1, y1),

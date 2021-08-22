@@ -122,13 +122,13 @@ class SteinerTreeBuilder
 
 // Used by regressions.
 void
-reportSteinerTree(Tree &tree,
+reportSteinerTree(const Tree &tree,
                   int drvr_x,
                   int drvr_y,
                   Logger *logger);
 
 void
-highlightSteinerTree(Tree &tree,
+highlightSteinerTree(const Tree &tree,
                      gui::Gui *gui);
 
 }  // namespace stt
