@@ -35,7 +35,7 @@
 
 include("openroad")
 
-project(TritonRoute
+project(drt
   LANGUAGES CXX
 )
 
@@ -48,7 +48,7 @@ find_package(Boost 1.68.0)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
 
-swig_lib(NAME      TritonRoute
+swig_lib(NAME      drt
          NAMESPACE drt
          I_FILE    src/TritonRoute.i
          SCRIPTS   src/TritonRoute.tcl
@@ -56,7 +56,7 @@ swig_lib(NAME      TritonRoute
 
 set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
 
-target_sources(TritonRoute
+target_sources(drt
   PRIVATE
     src/gr/FlexGRCMap.cpp
     src/gr/FlexGR.cpp
@@ -123,7 +123,7 @@ target_sources(TritonRoute
     src/MakeTritonRoute.cpp
 )
 
-target_include_directories(TritonRoute
+target_include_directories(drt
   PUBLIC
     include
 
@@ -131,7 +131,7 @@ target_include_directories(TritonRoute
     src
 )
 
-target_link_libraries(TritonRoute
+target_link_libraries(drt
   PUBLIC
     gui
     odb
@@ -145,14 +145,14 @@ target_link_libraries(TritonRoute
 )
 
 messages(
-  TARGET TritonRoute
+  TARGET drt
 )
 
 ############################################################
 # Compiler flags
 ############################################################
 # Todo: add -Wextra and cleanup warnings
-target_compile_options(TritonRoute
+target_compile_options(drt
   PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security -Wno-gnu-zero-variadic-macro-arguments>
@@ -176,7 +176,7 @@ target_include_directories(trTest
 )
 
 target_link_libraries(trTest
-  TritonRoute
+  drt
   odb
 )
 
@@ -201,12 +201,12 @@ add_test(NAME trTest COMMAND trTest)
 ############################################################
 
 if (VTune_FOUND)
-  target_compile_definitions(TritonRoute
+  target_compile_definitions(drt
     PUBLIC
     HAS_VTUNE=1
   )
 
-  target_link_libraries(TritonRoute
+  target_link_libraries(drt
     PUBLIC
     VTune::VTune
   )
