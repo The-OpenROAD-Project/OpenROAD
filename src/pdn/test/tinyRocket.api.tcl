@@ -19,7 +19,7 @@ add_pdn_stripe -layer metal7 -width 1.40 -pitch 40.0 -offset 2.0
 add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal4 metal7}
 
-define_pdn_grid -macro -starts_with POWER -orient {N S FS FN} -pin_direction vertical -halo 4.0 -grid_over_pins
+define_pdn_grid -macro -starts_with POWER -orient {N S FS FN} -pin_direction vertical -halo 4.0 -grid_over_pg_pins
 add_pdn_stripe -layer metal5 -width 0.93 -pitch 10.0 -offset 2.0
 add_pdn_stripe -layer metal6 -width 0.93 -pitch 10.0 -offset 2.0
 add_pdn_connect -layers {metal4 metal5}

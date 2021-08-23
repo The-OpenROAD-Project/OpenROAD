@@ -123,7 +123,7 @@ proc add_global_connection {args} {
 
 sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-macro] \
-                                        [-grid_over_pins] \
+                                        [-grid_over_pg_pins|-grid_over_boundary] \
                                         [-voltage_domains <list_of_voltage_domains>] \
                                         [-orient <list_of_valid_orientations>] \
                                         [-instances <list_of_instances>] \
@@ -138,7 +138,7 @@ proc define_pdn_grid {args} {
 
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -pins -starts_with} \
-    flags {-macro -grid_over_pins}
+    flags {-macro -grid_over_pg_pins -grid_over_boundary}
 
   if {[llength $args] > 0} {
     utl::error PDN 132 "Unexpected argument [lindex $args 0] for define_pdn_grid command."
@@ -146,10 +146,15 @@ proc define_pdn_grid {args} {
 
   if {[info exists flags(-macro)]} {
     set keys(-macro) 1
-  }
 
-  if {[info exists flags(-grid_over_pins)]} {
-    set keys(-grid_over_pins) 1
+    if {[info exists flags(-grid_over_pg_pins)] && [info exists flags(-grid_over_bounary)]} {
+      utl::error PDN 175 "Options -grid_over_pg_pins and -grid_over_boundary are mutually exclusive."
+    }
+
+    set keys(-grid_over_pg_pins) 1
+    if {[info exists flags(-grid_over_boundary)]} {
+      set keys(-grid_over_pg_pins) 0
+    }
   }
 
   if {[llength $args] > 0} {
@@ -722,18 +727,18 @@ proc define_pdn_grid {args} {
     set value [lindex $process_args 1]
 
     switch $arg {
-      -name            {dict set grid name $value}
-      -voltage_domains {dict set grid voltage_domains [check_voltage_domains $value]}
-      -macro           {dict set grid type macro}
-      -grid_over_pins  {dict set grid grid_over_pins 1}
-      -orient          {dict set grid orient [check_orientations $value]}
-      -instances       {dict set grid instances [check_instances $value]}
-      -cells           {dict set grid macro [check_cells $value]}
-      -halo            {dict set grid halo [check_halo [lmap x $value {ord::microns_to_dbu [check_number $x]}]]}
-      -pins            {dict set grid pins [check_layer_names $value]}
-      -starts_with     {dict set grid starts_with [check_starts_with $value]}
-      -pin_direction   {dict set grid pin_direction [check_direction $value]}
-      default          {utl::error PDN 88 "Unrecognized argument $arg, should be one of -name, -orient, -instances -cells -pins -starts_with."}
+      -name              {dict set grid name $value}
+      -voltage_domains   {dict set grid voltage_domains [check_voltage_domains $value]}
+      -macro             {dict set grid type macro}
+      -grid_over_pg_pins {dict set grid grid_over_pg_pins $value}
+      -orient            {dict set grid orient [check_orientations $value]}
+      -instances         {dict set grid instances [check_instances $value]}
+      -cells             {dict set grid macro [check_cells $value]}
+      -halo              {dict set grid halo [check_halo [lmap x $value {ord::microns_to_dbu [check_number $x]}]]}
+      -pins              {dict set grid pins [check_layer_names $value]}
+      -starts_with       {dict set grid starts_with [check_starts_with $value]}
+      -pin_direction     {dict set grid pin_direction [check_direction $value]}
+      default            {utl::error PDN 88 "Unrecognized argument $arg, should be one of -name, -orient, -instances -cells -pins -starts_with."}
     }
 
     set process_args [lrange $process_args 2 end]
@@ -5467,10 +5472,23 @@ proc report_layer_details {layer} {
 
 proc print_strategy {type specification} {
   if {[dict exists $specification name]} {
-    utl::report "Type: ${type}, [dict get $specification name]"
+    set header "Type: ${type}, [dict get $specification name]"
   } else {
-    utl::report "Type: $type"
+    set header "Type: $type"
   }
+
+  if {$type == "macro"} {
+    if {[dict exists $specification grid_over_pg_pins]} {
+      if {[dict get $specification grid_over_pg_pins] == 1} {
+        set header "$header -grid_over_pg_pins"
+      } else {
+        set header "$header -grid_over_boundary"
+      }
+    }
+  }
+
+  utl::report $header
+
   if {[dict exists $specification core_ring]} {
     utl::report "    Core Rings"
     dict for {layer_name layer} [dict get $specification core_ring] {
@@ -6387,7 +6405,7 @@ proc add_macro_based_grids {} {
           utl::info "PDN" 34 "  - grid [dict get $grid_data name] for instance $instance"
         }
 
-        if {[dict exists $grid_data grid_over_pins]} {
+        if {[dict exists $grid_data grid_over_pg_pins]} {
           # debug "Grid over pins: [get_instance_pg_pins_area $instance]"
           dict set grid_data area [get_instance_pg_pins_area $instance]
         } else {
