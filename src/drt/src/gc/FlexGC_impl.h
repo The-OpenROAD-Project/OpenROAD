@@ -180,6 +180,7 @@ class FlexGCWorker::Impl
   bool initDesign_skipObj(frBlockObject* obj);
   void initDRWorker();
   void initNets();
+  void initCutClasses();
   void initNet(gcNet* net);
   void initNet_pins_polygon(gcNet* net);
   void initNet_pins_polygonEdges(gcNet* net);

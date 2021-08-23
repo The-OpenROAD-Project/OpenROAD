@@ -798,6 +798,9 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
       }
     }
   }
+  auto layer = getTech()->getLayer(i);
+  if(layer->getType() == frLayerTypeEnum::CUT)
+    layer->updateMaxCutClass(rectangle->width(), rectangle->length());
   pin->addMaxRectangle(std::move(rectangle));
 }
 
@@ -817,6 +820,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
       for (auto& rect : rects) {
         initNet_pins_maxRectangles_helper(
             net, pin.get(), rect, i, fixedMaxRectangles);
+        
       }
     }
   }
@@ -838,6 +842,23 @@ void FlexGCWorker::Impl::initNets()
   }
 }
 
+void FlexGCWorker::Impl::initCutClasses()
+{
+  for(auto &layer : getTech()->getLayers())
+  {
+    if(layer->getType() == frLayerTypeEnum::CUT)
+    {
+      auto viaDef = layer->getDefaultViaDef();
+      if(viaDef == nullptr)
+        continue;
+      frVia via(viaDef);
+      frBox tmpBx;
+      via.getCutBBox(tmpBx);
+      layer->updateMaxCutClass(tmpBx.width(), tmpBx.length());
+    }
+  }
+}
+
 void FlexGCWorker::Impl::initRegionQuery()
 {
   getWorkerRegionQuery().init(getTech()->getLayers().size());
@@ -852,6 +873,7 @@ void FlexGCWorker::Impl::init(const frDesign* design)
   initDesign(design);
   initDRWorker();
   initNets();
+  initCutClasses();
   initRegionQuery();
 }
 

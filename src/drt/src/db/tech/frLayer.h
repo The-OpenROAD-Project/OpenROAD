@@ -82,7 +82,8 @@ class frLayer
         lef58CutSpacingTableDiffNetConstraint(nullptr),
         lef58SameNetInterCutSpacingTableConstraint(nullptr),
         lef58SameMetalInterCutSpacingTableConstraint(nullptr),
-        lef58DefaultInterCutSpacingTableConstraint(nullptr)
+        lef58DefaultInterCutSpacingTableConstraint(nullptr),
+        maxCutClassIdx(-1)
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
@@ -658,6 +659,24 @@ class frLayer
 
   void printAllConstraints(utl::Logger* logger);
 
+  void updateMaxCutClass(frCoord width, frCoord length)
+  {
+    int cutClassIdx = getCutClassIdx(width, length);
+    if(maxCutClassIdx == -1)
+    {
+      maxCutClassIdx = cutClassIdx;
+      return;
+    }
+    auto curClass = getCutClass(maxCutClassIdx);
+    auto curWidth = curClass->getViaWidth();
+    auto curLength = curClass->getViaLength();
+    if(width > curWidth || length > curLength)
+      maxCutClassIdx = cutClassIdx;
+  }
+  const int getMaxCutClassIdx()
+  {
+    return maxCutClassIdx;
+  }
  protected:
   frLayerTypeEnum type;
   frLayerNum layerNum;
@@ -719,6 +738,7 @@ class frLayer
 
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
+  int maxCutClassIdx;
 };
 }  // namespace fr
 

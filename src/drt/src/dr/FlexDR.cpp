@@ -1015,7 +1015,8 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       auto dbRule = lef58con->getODBRule();
       auto reqSpcVal
           = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
+          && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         reqSpcVal += boxLength;
       }
       sol = max(sol, reqSpcVal);
@@ -1026,13 +1027,12 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       con = layer1->getLef58SameMetalInterCutSpcTblConstraint();
     else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
       con = layer1->getLef58SameNetInterCutSpcTblConstraint();
-    else if (layer1->hasLef58DefaultInterCutSpcTblConstraint())
-      con = layer1->getLef58DefaultInterCutSpcTblConstraint();
     if (con != nullptr) {
       auto dbRule = con->getODBRule();
       auto reqSpcVal
           = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-      if (reqSpcVal != 0 && !dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+      if (reqSpcVal != 0 && !dbRule->isCenterToCenter(cutClass1, cutClass2)
+          && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         reqSpcVal += boxLength;
       }
       sol = max(sol, reqSpcVal);

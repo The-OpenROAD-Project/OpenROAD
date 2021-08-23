@@ -373,13 +373,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
                         ->getLayerNum();
   else
     queryLayerNum = layerNum1;
-  frCoord maxSpc;
-  if (width == length) {
-    maxSpc = dbRule->getMaxSpacing(cutClass, false);
-  } else {
-    maxSpc = std::max(dbRule->getMaxSpacing(cutClass, true),
-                      dbRule->getMaxSpacing(cutClass, false));
-  }
+  
+  auto layer2 = getTech()->getLayer(queryLayerNum);
+  int cutClassIdx2 = layer2->getMaxCutClassIdx();
+  if(cutClassIdx2 < 0)
+    return;
+  auto cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
+  frCoord maxSpc = dbRule->getMaxSpacing(cutClass, cutClass2);
 
   box_t queryBox;
   myBloat(*viaRect, maxSpc, queryBox);
