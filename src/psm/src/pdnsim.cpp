@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "ir_solver.h"
 #include <string>
 #include <vector>
@@ -49,15 +49,15 @@ namespace psm {
 PDNSim::PDNSim()
     : _db(nullptr),
       _sta(nullptr),
+      _logger(nullptr),
       _vsrc_loc(""),
-      _power_net(""),
       _out_file(""),
       _em_out_file(""),
       _enable_em(0),
-      _spice_out_file(""),
       _bump_pitch_x(0),
-      _bump_pitch_y(0)
-      //_net_voltage_map(nullptr)
+      _bump_pitch_y(0),
+      _spice_out_file(""),
+      _power_net("")
       {};
 
 PDNSim::~PDNSim()
@@ -187,14 +187,12 @@ int PDNSim::analyze_power_grid()
   gmat_obj = irsolve_h->GetGMat();
   irsolve_h->SolveIR();
   std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
-  int                unit_micron = (_db->getTech())->getDbUnitsPerMicron();
   int                vsize;
   vsize = nodes.size();
   for (int n = 0; n < vsize; n++) {
     Node* node = nodes[n];
     if (node->GetLayerNum() != 1)
       continue;
-    NodeLoc loc = node->GetLoc();
   }
   _logger->report("########## IR report #################");
   _logger->report("Worstcase voltage: {:3.2e} V", irsolve_h->wc_voltage);

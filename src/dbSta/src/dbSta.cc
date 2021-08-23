@@ -55,7 +55,7 @@
 #include "sta/EquivCells.hh"
 #include "sta/ReportTcl.hh"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"

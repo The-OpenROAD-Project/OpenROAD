@@ -74,7 +74,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
   QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
-  connect(input_, SIGNAL(completeCommand()), this, SLOT(executeCommand()));
+  connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));
   connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
   connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
   connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
@@ -172,14 +172,15 @@ void ScriptWidget::setupTcl()
   input_->init(interp_);
 }
 
-void ScriptWidget::executeCommand()
+void ScriptWidget::executeCommand(const QString& command, bool echo)
 {
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
-  QString command = input_->text();
 
-  // Show the command that we executed
-  addCommandToOutput(command);
+  if (echo) {
+    // Show the command that we executed
+    addCommandToOutput(command);
+  }
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
@@ -187,8 +188,10 @@ void ScriptWidget::executeCommand()
   addTclResultToOutput(return_code);
 
   if (return_code == TCL_OK) {
-    // record the successful command to tcl history command
-    Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
+    if (echo) {
+      // record the successful command to tcl history command
+      Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
+    }
 
     // Update history; ignore repeated commands and keep last 100
     const int history_limit = 100;
@@ -329,6 +332,8 @@ void ScriptWidget::pause()
   pauser_->setEnabled(true);
   paused_ = true;
 
+  input_->setReadOnly(true);
+
   // Keep processing events until the user continues
   while (paused_) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
@@ -337,6 +342,8 @@ void ScriptWidget::pause()
   pauser_->setText(prior_text);
   pauser_->setStyleSheet(prior_style);
   pauser_->setEnabled(prior_enable);
+
+  input_->setReadOnly(false);
 
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);

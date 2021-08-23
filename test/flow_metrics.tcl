@@ -228,6 +228,61 @@ proc report_test_metrics { test } {
 
 ################################################################
 
+proc report_flow_metric_limits_main {} {
+  global argc argv
+  if { $argv == "help" || $argv == "-help" } {
+    puts {Usage: report_flow_metric_limits test1 [test2]...}
+  } else {
+    if { $argc == 0 } {
+      set tests [expand_tests "flow"]
+    } else {
+      set tests [expand_tests $argv]
+    }
+    report_metrics_header
+    foreach test $tests {
+      report_test_metric_limits $test
+    }
+  }
+}
+
+proc report_test_metric_limits { test } {
+  # Don't require json until it is really needed.
+  package require json
+
+  set metrics_limits_file [test_metrics_limits_file $test]
+  if { ![file exists $metrics_limits_file] } {
+    return "missing metrics limits file"
+  }
+  set stream [open $metrics_limits_file r]
+  set json_string [read $stream]
+  close $stream
+  if { [catch {json::json2dict $json_string} metrics_limits_dict] } {
+    return "error parsing metrics limits json"
+  }
+
+  puts -nonewline [format "%-20s" $test]
+  foreach name [metric_names] {
+    set short_name [metric_short_name $name]
+    if { $short_name != "" } {
+      set key [metric_json_key $name]
+      if { [dict exists $metrics_limits_dict $key] } {
+        set limit [dict get $metrics_limits_dict $key]
+        set format [metric_format $name]
+        if { [string index $format end] == "d" } {
+          set limit [expr round($limit)]
+        }
+        set field [format $format $limit]
+      } else {
+        set field [format "%[string length $short_name]s" "N/A"]
+      }
+      puts -nonewline " $field"
+    }
+  }
+  puts ""
+}
+
+################################################################
+
 proc compare_flow_metrics_main {} {
   global argc argv test_groups
   if { $argv == "help" || $argv == "-help" } {

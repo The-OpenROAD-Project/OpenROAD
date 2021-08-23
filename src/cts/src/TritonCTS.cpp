@@ -42,8 +42,8 @@
 #include "TreeBuilder.h"
 #include "LevelBalancer.h"
 
-#include "opendb/db.h"
-#include "opendb/dbShape.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 #include "sta/Sdc.hh"
 #include "sta/Liberty.hh"
@@ -68,7 +68,7 @@ void TritonCTS::init(ord::OpenRoad* openroad)
   _network = _openroad->getDbNetwork();
   _openSta = _openroad->getSta();
 
-  _options = new CtsOptions(_logger);
+  _options = new CtsOptions(_logger, openroad->getSteinerTreeBuilder());
   _techChar = new TechChar(_options,
                            _openroad,
                            _db,

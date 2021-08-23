@@ -94,6 +94,7 @@ _installUbuntuDev() {
         lcov \
         libpcre3-dev \
         python3-dev \
+        libreadline-dev \
         tcl-dev \
         tcllib \
         wget \
@@ -132,6 +133,7 @@ _installCentosDev() {
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
         pcre-devel \
+        readline-devel \
         tcl \
         tcl-devel \
         tcllib \
@@ -154,8 +156,10 @@ _installCentosRuntime() {
 
 _help() {
     cat <<EOF
-usage: $0 -run[time]
+
+Usage: $0 -run[time]
        $0 -dev[elopment]
+
 EOF
     exit "${1:-1}"
 }

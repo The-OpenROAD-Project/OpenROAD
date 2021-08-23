@@ -282,6 +282,25 @@ proc write_guides { args } {
   grt::write_guides $file_name
 }
 
+sta::define_cmd_args "draw_route_guides" { net_names }
+
+proc draw_route_guides { net_names } {
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 223 "Missing dbBlock."
+  }
+
+  if {[llength $net_names] > 0} {
+    foreach net [get_nets $net_names] {
+      if { $net != "NULL" } {
+        grt::highlight_net_route [sta::sta_to_db_net $net]
+      }
+    }
+  } else {
+    grt::erase_routes
+  }
+}
+
 namespace eval grt {
 
 proc estimate_rc_cmd {} {
@@ -364,17 +383,6 @@ proc check_region { lower_x lower_y upper_x upper_y } {
   }
 }
 
-proc highlight_route { net_name } {
-  set block [ord::get_db_block]
-  if { $block == "NULL" } {
-    utl::error GRT 223 "Missing dbBlock."
-  }
-  set net [$block findNet $net_name]
-  if { $net != "NULL" } {
-    highlight_net_route $net
-  }
-}
-
 proc define_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-layers" $layers]
   lassign $layer_range min_layer max_layer
@@ -387,7 +395,9 @@ proc define_layer_range { layers } {
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 57 "Missing track structure."
+      set tech [ord::get_db_tech]
+      set layer_name [[$tech findRoutingLayer $layer] getName]
+      utl::error GRT 57 "Missing track structure for layer $layer_name."
     }
   }
 }

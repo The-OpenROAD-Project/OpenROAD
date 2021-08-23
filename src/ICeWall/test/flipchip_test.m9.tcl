@@ -30,10 +30,7 @@ if {[catch {ICeWall init_footprint flipchip_test/flipchip_test.sigmap} msg]} {
   exit
 }
 
-set def_file [make_result_file "flipchip.m9.def"]
-set def1_file [make_result_file "flipchip_test.m9.def"]
+set def_file [make_result_file "flipchip_test.m9.def"]
 
 write_def $def_file
-exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" $def_file > $def1_file
-
-diff_files $def1_file "flipchip_test.m9.defok"
+diff_files $def_file "flipchip_test.m9.defok"

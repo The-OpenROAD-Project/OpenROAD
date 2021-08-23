@@ -47,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "get_voltage.h"
 #include "ir_solver.h"
 #include "node.h"
@@ -122,12 +122,8 @@ void IRSolver::SolveIR()
                    "IR Solver may not be accurate. LVS may also fail.");
   }
   int        unit_micron = (m_db->getTech())->getDbUnitsPerMicron();
-  clock_t    t1, t2;
   CscMatrix* Gmat = m_Gmat->GetGMat();
   // fill A
-  int                       nnz     = Gmat->nnz;
-  int                       m       = Gmat->num_rows;
-  int                       n       = Gmat->num_cols;
   double*                   values  = &(Gmat->values[0]);
   int*                      row_idx = &(Gmat->row_idx[0]);
   int*                      col_ptr = &(Gmat->col_ptr[0]);
@@ -279,10 +275,8 @@ bool IRSolver::AddC4Bump()
   for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
     double  voltage_value = m_C4Nodes[it].second;
-    Node*        c4_node = m_Gmat->GetNode(node_loc);
     m_Gmat->AddC4Bump(node_loc, it);  // add the 0th bump
     m_J.push_back(voltage_value);     // push back first vdd
-    NodeLoc c4_node_loc = c4_node->GetLoc();
   }
   return true;
 }
@@ -332,8 +326,6 @@ void IRSolver::ReadC4Data()
     int       coreL = coreRect.yMax() - coreRect.yMin();
     odb::Rect dieRect;
     block->getDieArea(dieRect);
-    int dieW     = dieRect.xMax() - dieRect.xMin();
-    int dieL     = dieRect.xMax() - dieRect.xMin();
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {
@@ -490,7 +482,6 @@ bool IRSolver::CreateGmat(bool connection_only)
   m_Gmat                 = new GMat(num_routing_layers, m_logger);
   dbChip*      chip      = m_db->getChip();
   dbBlock*     block     = chip->getBlock();
-  dbSet<dbNet> nets      = block->getNets();
   dbNet*       power_net = block->findNet(m_power_net.data());
   if (power_net == NULL) {
     m_logger->error(utl::PSM,
@@ -762,9 +753,6 @@ bool IRSolver::CreateGmat(bool connection_only)
             x_top_enclosure    = params.getXTopEnclosure();
             y_top_enclosure    = params.getYTopEnclosure();
           }
-          dbBox* via_bBox = via->getBBox();
-          BBox   bBox
-              = make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
           int x, y;
           curWire->getViaXY(x, y);
           dbTechLayer* via_layer = via->getBottomLayer();
@@ -950,7 +938,6 @@ bool IRSolver::CheckValidR(double R) {
 bool IRSolver::CheckConnectivity()
 {
   vector<pair<NodeIdx, double>>::iterator c4_node_it;
-  int                                     x, y;
   CscMatrix*                              Amat      = m_Gmat->GetAMat();
   int                                     num_nodes = m_Gmat->GetNumNodes();
 
@@ -990,9 +977,7 @@ bool IRSolver::CheckConnectivity()
     }
   }
   int                     uncon_err_cnt   = 0;
-  int                     uncon_err_flag  = 0;
   int                     uncon_inst_cnt  = 0;
-  int                     uncon_inst_flag = 0;
   vector<Node*>           node_list       = m_Gmat->GetAllNodes();
   vector<Node*>::iterator node_list_it;
   bool                    unconnected_node = false;

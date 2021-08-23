@@ -37,7 +37,7 @@
 #include <map>
 #include <vector>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace fin {

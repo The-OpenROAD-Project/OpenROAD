@@ -42,7 +42,7 @@
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
 
-#include "opendb/geom.h"
+#include "odb/geom.h"
 
 #include "db_sta/dbNetwork.hh"
 
@@ -98,9 +98,10 @@ typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
                 bool find_left_rights,
+                int max_pin_count,
+                SteinerTreeBuilder *stt_builder,
                 dbNetwork *network,
-                Logger *logger,
-                SteinerTreeBuilder *stt_builder);
+                Logger *logger);
 
 // Wrapper for stt::Tree
 //
@@ -175,9 +176,10 @@ protected:
 
   friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
                                       bool find_left_rights,
+                                      int max_pin_count,
+                                      SteinerTreeBuilder *stt_builder,
                                       dbNetwork *network,
-                                      Logger *logger,
-                                      SteinerTreeBuilder *stt_builder);
+                                      Logger *logger);
 };
 
 } // namespace

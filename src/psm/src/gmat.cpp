@@ -343,8 +343,6 @@ void GMat::GenerateStripeConductance(int                        t_l,
       } else {
         Node*  node1  = y_itr.second;
         Node*  node2  = y_prev.second;
-        NodeLoc node_loc1      = node1->GetLoc();
-        NodeLoc node_loc2      = node2->GetLoc();
         int    width  = t_x_max - t_x_min;
         int    length = (y_itr.first).first - (y_prev.first).first;
         if(length == 0)

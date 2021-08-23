@@ -152,21 +152,9 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-global_route()
-{
-  getGlobalRouter()->globalRoute();
-}
-
-void
-global_route_clocks_separately()
-{
-  getGlobalRouter()->globalRouteClocksSeparately();
-}
-
-void
 run()
 {
-  getGlobalRouter()->run();
+  getGlobalRouter()->globalRoute();
 }
 
 void
@@ -197,6 +185,12 @@ void
 highlight_net_route(const odb::dbNet *net)
 {
   getGlobalRouter()->highlightRoute(net);
+}
+
+void
+erase_routes()
+{
+  getGlobalRouter()->clearRouteGui();
 }
 
 void

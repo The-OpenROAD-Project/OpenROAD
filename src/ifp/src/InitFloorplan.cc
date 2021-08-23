@@ -39,8 +39,8 @@
 #include <fstream>
 #include <cmath>
 
-#include "opendb/db.h"
-#include "opendb/dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 
 #include "sta/StringUtil.hh"
 #include "sta/Vector.hh"
@@ -568,7 +568,7 @@ InitFloorplan::metersToDbu(double dist) const
 {
   dbTech *tech = db_->getTech();
   int dbu = tech->getDbUnitsPerMicron();
-  return dist * 1e+6 * dbu;
+  return round(dist * 1e+6 * dbu);
 }
 
 } // namespace

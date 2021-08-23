@@ -39,7 +39,7 @@
 #include <vector>
 
 #include "mpl/Partition.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
 

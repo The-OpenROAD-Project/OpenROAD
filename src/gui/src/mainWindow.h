@@ -42,7 +42,6 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-#include "timingDebugDialog.h"
 
 namespace odb {
 class dbDatabase;
@@ -60,6 +59,7 @@ class LayoutScroll;
 class ScriptWidget;
 class DisplayControls;
 class Inspector;
+class TimingWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -118,6 +118,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Set the location to display in the status bar
   void setLocation(qreal x, qreal y);
 
+  // Update selected name in status bar
+  void updateSelectedStatus(const Selected& selection);
+
   // Add to the selection
   void addSelected(const Selected& selection);
 
@@ -167,10 +170,18 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
-  // show Timing Dialog Box
-  void showTimingDialog();
+  // add/remove toolbar button
+  const std::string addToolbarButton(const std::string& name,
+                                     const QString& text,
+                                     const QString& script,
+                                     bool echo);
+  void removeToolbarButton(const std::string& name);
+
+  // request for user input
+  const std::string requestUserInput(const QString& title, const QString& question);
 
   DisplayControls* getControls() const { return controls_; }
+  LayoutViewer* getLayoutViewer() const { return viewer_; }
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -188,6 +199,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   odb::dbBlock* getBlock();
 
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
   std::vector<QLine> rulers_;
@@ -200,6 +212,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
+  TimingWidget* timing_widget_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -221,10 +234,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QLabel* location_;
 
   FindObjectDialog* find_dialog_;
-  TimingDebugDialog* timing_dialog_;
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, const Descriptor*> descriptors_;
+
+  // created button actions
+  std::map<const std::string, std::unique_ptr<QAction>> buttons_;
 };
 
 }  // namespace gui

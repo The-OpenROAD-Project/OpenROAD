@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include "opendb/db.h"
-#include "opendb/geom.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbNet;
@@ -56,15 +56,24 @@ struct GSegment
   int final_layer;
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
-      : init_x(x0),
-        init_y(y0),
-        init_layer(l0),
-        final_x(x1),
-        final_y(y1),
-        final_layer(l1)
   {
+    init_x = std::min(x0, x1);
+    init_y = std::min(y0, y1);
+    init_layer = l0;
+    final_x = std::max(x0, x1);
+    final_y = std::max(y0, y1);
+    final_layer = l1;
   }
   bool isVia() { return (init_x == final_x && init_y == final_y); }
+  bool operator==(const GSegment& segment) const
+  {
+    return (init_layer == segment.init_layer &&
+            final_layer == segment.final_layer &&
+            init_x == segment.init_x &&
+            init_y == segment.init_y &&
+            final_x == segment.final_x &&
+            final_y == segment.final_y);
+  }
 };
 
 class Capacities
@@ -73,15 +82,24 @@ class Capacities
   Capacities() = default;
   CapacitiesVec& getHorCapacities() { return hor_capacities_; }
   CapacitiesVec& getVerCapacities() { return ver_capacities_; }
-  void setHorCapacities(CapacitiesVec capacities) { hor_capacities_ = capacities; }
-  void setVerCapacities(CapacitiesVec capacities) { ver_capacities_ = capacities; }
+  void setHorCapacities(CapacitiesVec capacities)
+  {
+    hor_capacities_ = capacities;
+  }
+  void setVerCapacities(CapacitiesVec capacities)
+  {
+    ver_capacities_ = capacities;
+  }
+
  private:
   CapacitiesVec hor_capacities_;
   CapacitiesVec ver_capacities_;
 };
 
-struct cmpById {
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const {
+struct cmpById
+{
+  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const
+  {
     return net1->getId() < net2->getId();
   }
 };

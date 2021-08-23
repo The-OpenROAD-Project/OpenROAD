@@ -34,11 +34,10 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0017] Processing 8469 blockages on layer metal1.
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource
@@ -56,15 +55,15 @@ metal9     Horizontal       2256          2162          4.17%
 metal10    Vertical         2256          2209          2.08%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 2606
-[INFO GRT-0112] Final usage 3D: 11213
+[INFO GRT-0111] Final number of vias: 2596
+[INFO GRT-0112] Final usage 3D: 11143
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2           24581          1707            6.94%             0 /  0 /  0
-metal3           33028          1688            5.11%             0 /  0 /  0
+metal2           24581          1683            6.85%             0 /  0 /  0
+metal3           33028          1672            5.06%             0 /  0 /  0
 metal4           15698             0            0.00%             0 /  0 /  0
 metal5           15410             0            0.00%             0 /  0 /  0
 metal6           15698             0            0.00%             0 /  0 /  0
@@ -73,13 +72,13 @@ metal8            4512             0            0.00%             0 /  0 /  0
 metal9            2162             0            0.00%             0 /  0 /  0
 metal10           2209             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           117668          3395            2.89%             0 /  0 /  0
+Total           117668          3355            2.85%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10489 um
+[INFO GRT-0018] Total wirelength: 10363 um
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.734-17.734
- Total capacitance: 47.710-50.972
+ Wire capacitance: 18.179-18.179
+ Total capacitance: 48.154-51.417
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

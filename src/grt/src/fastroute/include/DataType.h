@@ -40,7 +40,6 @@ class dbNet;
 }
 
 namespace grt {
-typedef int DTYPE;
 
 enum class RouteType
 {
@@ -50,21 +49,24 @@ enum class RouteType
   MazeRoute
 };
 
-typedef struct
+enum class Direction
 {
-  DTYPE x, y;
-  int n;
-} Branch;
+  North,
+  East,
+  South,
+  West,
+  Origin,
+  Up,
+  Down
+};
 
-typedef struct
+enum class EdgeDirection
 {
-  int deg;
-  int totalDeg;
-  DTYPE length;
-  Branch* branch;
-} Tree;
+  Horizontal,
+  Vertical
+};
 
-typedef struct
+struct Segment  // A Segment is a 2-pin connection
 {
   bool xFirst;  // route x-direction first (only for L route)
   bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
@@ -73,11 +75,10 @@ typedef struct
   short x1, y1, x2, y2;  // coordinates of two endpoints
   int netID;             // the netID of the net this segment belonging to
   short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
-  short* route;          // array of H and V Edges to implement this Segment
   int numEdges;          // number of H and V Edges to implement this Segment
-} Segment;               // A Segment is a 2-pin connection
+};
 
-typedef struct
+struct FrNet    // A Net is a set of connected MazePoints
 {
   odb::dbNet* db_net;
   int numPins;  // number of pins in the net
@@ -89,12 +90,14 @@ typedef struct
   bool is_clock;             // flag that indicates if net is a clock net
   int driver_idx;
   int edgeCost;
+  int minLayer;
+  int maxLayer;
   std::vector<int> edge_cost_per_layer;
-} FrNet;                    // A Net is a set of connected MazePoints
+};
 
 const char* netName(FrNet* net);
 
-typedef struct
+struct Edge // An Edge is the routing track holder between two adjacent MazePoints
 {
   short congCNT;
   unsigned short cap;    // the capacity of the edge
@@ -102,16 +105,16 @@ typedef struct
   unsigned short red;
   short last_usage;
   float est_usage;  // the estimated usage of the edge
-} Edge;  // An Edge is the routing track holder between two adjacent MazePoints
+};
 
-typedef struct
+struct Edge3D
 {
   unsigned short cap;    // the capacity of the edge
   unsigned short usage;  // the usage of the edge
   unsigned short red;
-} Edge3D;
+};
 
-typedef struct TNode
+struct TreeNode
 {
   bool assigned;
 
@@ -130,9 +133,9 @@ typedef struct TNode
   int hID;
   int lID;
   int stackAlias;
-} TreeNode;
+};
 
-typedef struct
+struct Route
 {
   RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
   bool xFirst;   // valid for LRoute, TRUE - the route is horizontal first (x1,
@@ -141,20 +144,20 @@ typedef struct
   bool HVH;      // valid for ZRoute, TRUE - the route is HVH shape, false - VHV
                  // shape
   short Zpoint;  // valid for ZRoute, the position of turn point for Z-shape
-  short*
+  std::vector<short>
       gridsX;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short*
+  std::vector<short>
       gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short* gridsL;  // n
+  std::vector<short> gridsL;  // n
   int routelen;   // valid for MazeRoute, the number of edges in the route
                   // Edge3D *edge;       // list of 3D edges the route go
                   // through;
 
-} Route;
+};
 
-typedef struct
+struct TreeEdge
 {
   bool assigned;
 
@@ -163,57 +166,39 @@ typedef struct
   int n2, n2a;
   Route route;
 
-} TreeEdge;
+};
 
-typedef struct
+struct StTree
 {
   int deg;
   TreeNode* nodes;  // the nodes (pin and Steiner nodes) in the tree
   TreeEdge* edges;  // the tree edges
-} StTree;
+};
 
-typedef struct
+struct OrderNetPin
 {
   int treeIndex;
   int minX;
   float npv;  // net length over pin
-} OrderNetPin;
+};
 
-typedef struct
+struct OrderTree
 {
   int length;
   int treeIndex;
   int xmin;
-} OrderTree;
+};
 
-typedef struct
+struct parent3D
 {
   short l;
   int x, y;
-} parent3D;
+};
 
-typedef struct
+struct OrderNetEdge
 {
   int length;
   int edgeID;
-} OrderNetEdge;
-
-typedef enum
-{
-  NORTH,
-  EAST,
-  SOUTH,
-  WEST,
-  ORIGIN,
-  UP,
-  DOWN
-} dirctionT;
-typedef enum
-{
-  NONE,
-  HORI,
-  VERT,
-  BID
-} viaST;
+};
 
 }  // namespace grt

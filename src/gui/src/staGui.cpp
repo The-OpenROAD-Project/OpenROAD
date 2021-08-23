@@ -121,7 +121,6 @@ float getRequiredTime(sta::dbSta* staRoot,
 TimingPathsModel::TimingPathsModel(bool get_max, int path_count)
     : openroad_(ord::OpenRoad::openRoad())
 {
-  populateModel(get_max, path_count);
 }
 
 TimingPathsModel::~TimingPathsModel()
@@ -203,20 +202,45 @@ void TimingPathsModel::resetModel()
 
 void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 {
+  // columns {"Capture Clock", "Required", "Arrival", "Slack", "Start", "End"};
+
+  std::function<bool(const TimingPath* path1, const TimingPath* path2)> sort_func;
+  if (col_index == 0) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getStartClock() < path2->getStartClock();
+    };
+  } else if (col_index == 1) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getPathRequiredTime() < path2->getPathRequiredTime();
+    };
+  } else if (col_index == 2) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getPathArrivalTime() < path2->getPathArrivalTime();
+    };
+  } else if (col_index == 3) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getSlack() < path2->getSlack();
+    };
+  } else if (col_index == 4) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getStartStageName() < path2->getStartStageName();
+    };
+  } else if (col_index == 5) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getEndStageName() < path2->getEndStageName();
+    };
+  } else {
+    return;
+  }
+
   beginResetModel();
-  (void) col_index;
-  if (sort_order == Qt::AscendingOrder)
-    std::stable_sort(timing_paths_.begin(),
-                     timing_paths_.end(),
-                     [](const TimingPath* path1, TimingPath* path2) {
-                       return path1->getStartClock() < path2->getStartClock();
-                     });
-  else
-    std::stable_sort(timing_paths_.begin(),
-                     timing_paths_.end(),
-                     [](const TimingPath* path1, TimingPath* path2) {
-                       return path1->getStartClock() > path2->getStartClock();
-                     });
+
+  if (sort_order == Qt::AscendingOrder) {
+    std::stable_sort(timing_paths_.begin(), timing_paths_.end(), sort_func);
+  } else {
+    std::stable_sort(timing_paths_.rbegin(), timing_paths_.rend(), sort_func);
+  }
+
   endResetModel();
 }
 
@@ -471,6 +495,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
 TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
   TimingPathRenderer::path_inst_color_.a = 100;
+  TimingPathRenderer::inst_highlight_color_.a = 100;
 }
 
 TimingPathRenderer::~TimingPathRenderer()

@@ -904,7 +904,7 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net, double max_cap, uint test,
     }
 
     cnt++;
-    uint shapeId;
+    uint shapeId = 0;
     if (!_foreign)
       shapeId = rc->getShapeId();
 

@@ -19,6 +19,7 @@ if (Qt5_FOUND AND BUILD_GUI)
   swig_lib(NAME      gui
            NAMESPACE gui
            I_FILE    src/gui.i
+           SCRIPTS   src/gui.tcl
            RUNTIME_HEADER tclSwig.h
   )
 
@@ -41,13 +42,12 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
     src/staGui.cpp
-    src/timingDebugDialog.cpp
-    src/timingReportDialog.cpp
+    src/timingWidget.cpp
   )
 
   target_link_libraries(gui
     PUBLIC
-      opendb
+      odb
     PRIVATE
       Qt5::Core
       Qt5::Widgets
@@ -64,7 +64,7 @@ else()
   add_library(gui src/stub.cpp)
   target_link_libraries(gui
     PUBLIC
-      opendb
+      odb
   )
 endif()
 

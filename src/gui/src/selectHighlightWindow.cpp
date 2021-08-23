@@ -329,10 +329,16 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
           SIGNAL(customContextMenuRequested(QPoint)),
           this,
           SLOT(showHighlightCustomMenu(QPoint)));
-  ui->selTableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
-  ui->hltTableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
+  auto sel_header = ui->selTableView->horizontalHeader();
+  for (int i = 0; i < sel_header->count()-1; i++) {
+    sel_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+  }
+  sel_header->setSectionResizeMode(sel_header->count()-1, QHeaderView::Stretch);
+  auto hlt_header = ui->hltTableView->horizontalHeader();
+  for (int i = 0; i < hlt_header->count()-1; i++) {
+    hlt_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+  }
+  hlt_header->setSectionResizeMode(hlt_header->count()-1, QHeaderView::Stretch);
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
   QAction* remove_all_sel_items = select_context_menu_->addAction("Clear All");
@@ -394,6 +400,12 @@ void SelectHighlightWindow::updateHighlightModel()
 {
   highlight_model_.populateModel();
   ui->tabWidget->setCurrentWidget(ui->hltTab);
+}
+
+void SelectHighlightWindow::updateModels()
+{
+  selection_model_.populateModel();
+  highlight_model_.populateModel();
 }
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
