@@ -327,7 +327,7 @@ void ScriptWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void ScriptWidget::pause()
+void ScriptWidget::pause(int timeout)
 {
   QString prior_text = pauser_->text();
   bool prior_enable = pauser_->isEnabled();
@@ -338,6 +338,10 @@ void ScriptWidget::pause()
   paused_ = true;
 
   input_->setReadOnly(true);
+
+  if (timeout > 0) {
+    QTimer::singleShot(timeout, this, SLOT(unpause()));
+  }
 
   // Keep processing events until the user continues
   while (paused_) {
@@ -352,6 +356,11 @@ void ScriptWidget::pause()
 
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+void ScriptWidget::unpause()
+{
+  paused_ = false;
 }
 
 void ScriptWidget::pauserClicked()

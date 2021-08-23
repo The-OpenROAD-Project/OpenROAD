@@ -88,7 +88,8 @@ class ScriptWidget : public QDockWidget
  private slots:
   void outputChanged();
 
-  void pause();
+  void pause(int timeout);
+  void unpause();
 
   void pauserClicked();
 

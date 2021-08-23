@@ -62,7 +62,7 @@ void gui::Gui::redraw()
 {
 }
 
-void gui::Gui::pause()
+void gui::Gui::pause(int timeout)
 {
 }
 
