@@ -65,7 +65,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
                                          std::vector<int>& y,
                                          int drvr_index)
 {
-  Tree tree = makeTree(x, y, drvr_index, alpha_);
+  Tree tree = makeSteinerTree(x, y, drvr_index, alpha_);
 
   return tree;
 }
@@ -91,9 +91,18 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
     }
   }
 
-  Tree tree = makeTree(x, y, drvr_index, net_alpha);
+  return makeSteinerTree(x, y, drvr_index, net_alpha);
+}
 
-  return tree;
+Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
+                                         std::vector<int>& y,
+                                         int drvr_index,
+                                         float alpha)
+{
+  if (alpha > 0.0)
+    return pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
+  else
+    return flt::flute(x, y, flute_accuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
@@ -101,20 +110,12 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& s,
                                          int accuracy)
 {
-  Tree tree = flt::flutes(x, y, s, accuracy);
-  return tree;
+  return flt::flutes(x, y, s, accuracy);
 }
 
-void SteinerTreeBuilder::setAlpha(float alpha)
+static bool rectAreaZero(const odb::Rect &rect)
 {
-  alpha_ = alpha;
-}
-
-float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
-{
-  float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
-                    net_alpha_map_.at(net) : alpha_;
-  return net_alpha;
+  return rect.xMin() == rect.xMax() && rect.yMin() == rect.yMax();
 }
 
 // This checks whether the tree has the property that no two
@@ -145,7 +146,12 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
       const Branch& b2 = tree.branch[j];
       const odb::Rect& r1 = rects[i];
       const odb::Rect& r2 = rects[j];
-      if (r1.intersects(r2) && b1.n != j && b2.n != i && b1.n != b2.n) {
+      if (!rectAreaZero(r1)
+          && !rectAreaZero(r2)
+          && r1.intersects(r2)
+          && b1.n != j
+          && b2.n != i
+          && b1.n != b2.n) {
         debugPrint(logger_, utl::STT, "check", 1,
                    "check failed ({}, {}) ({}, {}) [{}, {}] vs ({}, {}) ({}, {}) [{}, {}] degree={}",
                       r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
@@ -160,45 +166,33 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
   return true;
 }
 
+////////////////////////////////////////////////////////////////
+
+void SteinerTreeBuilder::setAlpha(float alpha)
+{
+  alpha_ = alpha;
+}
+
+float SteinerTreeBuilder::getAlpha(const odb::dbNet* net) const
+{
+  float net_alpha = net_alpha_map_.find(net) != net_alpha_map_.end() ?
+                    net_alpha_map_.at(net) : alpha_;
+  return net_alpha;
+}
+
 void SteinerTreeBuilder::setNetAlpha(const odb::dbNet* net, float alpha)
 {
   net_alpha_map_[net] = alpha;
 }
+
 void SteinerTreeBuilder::setMinFanoutAlpha(int min_fanout, float alpha)
 {
   min_fanout_alpha_ = {min_fanout, alpha};
 }
+
 void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
 {
   min_hpwl_alpha_ = {min_hpwl, alpha};
-}
-
-Tree SteinerTreeBuilder::makeTree(std::vector<int>& x,
-                                  std::vector<int>& y,
-                                  int drvr_index,
-                                  float alpha)
-{
-  Tree tree;
-
-  if (alpha > 0.0) {
-    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-
-    if (checkTree(tree)) {
-      return tree;
-    }
-
-    // Try a smaller alpha if possible
-    if (alpha > 0.1) {
-      tree = pdr::primDijkstra(x, y, drvr_index, alpha - 0.1, logger_);
-      if (checkTree(tree)) {
-        return tree;
-      }
-    }
-
-    // Give up and use flute
-  } 
-
-  return flt::flute(x, y, flute_accuracy);
 }
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
@@ -251,32 +245,71 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 typedef std::pair<int, int> PDedge;
 typedef std::vector<std::set<PDedge>> PDedges;
 
+static int findPathDepth(const Tree &tree,
+                         int drvr_index);
 static int findPathDepth(int node,
                          int from,
                          PDedges &edges,
                          int length);
+static int findLocationIndex(const Tree &tree, int x, int y);
 
-int findPathDepth(Tree &tree)
+// Used by regressions.
+void
+reportSteinerTree(const stt::Tree &tree,
+                  int drvr_x,
+                  int drvr_y,
+                  Logger *logger)
 {
-  int node_count = tree.branchCount();
-  PDedges edges(node_count);
+  // flute mangles the x/y locations and pdrev moves the driver to 0
+  // so we have to find the driver location index.
+  int drvr_index = findLocationIndex(tree, drvr_x, drvr_y);
+  logger->report("Wire length = {} Path depth = {}",
+                 tree.length,
+                 findPathDepth(tree, drvr_index));
+  for (int i = 0; i < tree.branchCount(); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    int parent = tree.branch[i].n;
+    int x2 = tree.branch[parent].x;
+    int y2 = tree.branch[parent].y;
+    int length = abs(x1-x2)+abs(y1-y2);
+    logger->report("{} ({} {}) neighbor {} length {}",
+                   i, x1, y1, parent, length);
+  }
+}
+
+int
+findLocationIndex(const Tree &tree,
+                  int x,
+                  int y)
+{
+  for (int i = 0; i < tree.branchCount(); i++) {
+    int x1 = tree.branch[i].x;
+    int y1 = tree.branch[i].y;
+    if (x1 == x && y1 == y)
+      return i;
+  }
+  return -1;
+}
+
+static int findPathDepth(const Tree &tree,
+                         int drvr_index)
+{
   int branch_count = tree.branchCount();
+  PDedges edges(branch_count);
   if (branch_count > 2) {
-    int drvr_idx = 0;
     for (int i = 0; i < branch_count; i++) {
-      stt::Branch &branch = tree.branch[i];
+      const stt::Branch &branch = tree.branch[i];
       int neighbor = branch.n;
-      if (neighbor == i)
-        drvr_idx = i;
-      else {
-        Branch &neighbor_branch = tree.branch[neighbor];
+      if (neighbor != i) {
+        const Branch &neighbor_branch = tree.branch[neighbor];
         int length = std::abs(branch.x - neighbor_branch.x)
           + std::abs(branch.y - neighbor_branch.y);
         edges[neighbor].insert(PDedge(i, length));
         edges[i].insert(PDedge(neighbor, length));
       }
     }
-    return findPathDepth(drvr_idx, drvr_idx, edges, 0);
+    return findPathDepth(drvr_index, drvr_index, edges, 0);
   }
   else
     return 0;
@@ -296,26 +329,6 @@ static int findPathDepth(int node,
                             findPathDepth(neighbor, node, edges, length + edge_length));
   }
   return max_length;
-}
-
-// Used by regressions.
-void
-reportSteinerTree(stt::Tree &tree,
-                  Logger *logger)
-{
-  logger->report("Wire length = {} Path depth = {}",
-                 tree.length,
-                 findPathDepth(tree));
-  for (int i = 0; i < tree.branchCount(); i++) {
-    int x1 = tree.branch[i].x;
-    int y1 = tree.branch[i].y;
-    int parent = tree.branch[i].n;
-    int x2 = tree.branch[parent].x;
-    int y2 = tree.branch[parent].y;
-    int length = abs(x1-x2)+abs(y1-y2);
-    logger->report("{} ({} {}) neighbor {} length {}",
-                   i, x1, y1, parent, length);
-  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -342,7 +355,7 @@ LinesRenderer::drawObjects(gui::Painter &painter)
 }
 
 void
-highlightSteinerTree(Tree &tree,
+highlightSteinerTree(const Tree &tree,
                      gui::Gui *gui)
 {
   if (gui) {
@@ -352,10 +365,10 @@ highlightSteinerTree(Tree &tree,
     }
     std::vector<std::pair<odb::Point, odb::Point>> lines;
     for (int i = 0; i < tree.branchCount(); i++) {
-      stt::Branch branch = tree.branch[i];
+      const stt::Branch &branch = tree.branch[i];
       int x1 = branch.x;
       int y1 = branch.y;
-      stt::Branch &neighbor = tree.branch[branch.n];
+      const stt::Branch &neighbor = tree.branch[branch.n];
       int x2 = neighbor.x;
       int y2 = neighbor.y;
       lines.push_back(std::pair(odb::Point(x1, y1),

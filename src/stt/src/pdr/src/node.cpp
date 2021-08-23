@@ -35,6 +35,9 @@
 
 namespace pdr {
 
+using std::ostream;
+using std::vector;
+
 Node::Node(int _idx, int _x, int _y) :
   idx(_idx),
   x(_x),
@@ -66,6 +69,7 @@ void Node::report(ostream& os,
     }
   }
   if (level > 2) {
+#ifdef PDREVII
     os << " N: ";
     for (int i = 0; i < N.size(); ++i) {
       os << N[i] << " ";
@@ -82,6 +86,7 @@ void Node::report(ostream& os,
     for (int i = 0; i < W.size(); ++i) {
       os << W[i] << " ";
     }
+#endif
     os << "PL: " << src_to_sink_dist << " MaxPLToChild: " << maxPLToChild;
   }
 }
@@ -97,7 +102,6 @@ Node1::Node1(int _idx, int _x, int _y)
   idx = _idx;
   x = _x;
   y = _y;
-  parent = 0;
 }
 
 } // namespace
