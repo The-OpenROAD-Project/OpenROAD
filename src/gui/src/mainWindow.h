@@ -38,6 +38,7 @@
 #include <QToolBar>
 #include <memory>
 #include <typeindex>
+#include <unordered_map>
 
 #include "findDialog.h"
 #include "gui/gui.h"
