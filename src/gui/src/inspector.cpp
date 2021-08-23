@@ -267,10 +267,12 @@ void Inspector::inspect(const Selected& object)
 
   model_->removeRows(0, model_->rowCount());
   // remove action buttons and ensure delete
-  for (auto& [button, action] : actions_) {
-    delete button;
+  while (!actions_.empty()) {
+    auto it = actions_.begin();
+    auto widget = it->first;
+    actions_.erase(it);
+    delete widget; // no longer in the map so it's safe to delete
   }
-  actions_.clear();
 
   selection_ = object;
 
