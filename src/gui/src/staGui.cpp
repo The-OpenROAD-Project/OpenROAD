@@ -506,7 +506,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
 
 /////////
 
-TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
+TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_node_(0)
 {
   TimingPathRenderer::path_inst_color_.a = 100;
   TimingPathRenderer::inst_highlight_color_.a = 100;
