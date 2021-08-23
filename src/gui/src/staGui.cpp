@@ -118,6 +118,8 @@ float getRequiredTime(sta::dbSta* staRoot,
   return req;
 }
 
+/////////
+
 TimingPathsModel::TimingPathsModel(bool get_max, int path_count)
     : openroad_(ord::OpenRoad::openRoad())
 {
@@ -377,6 +379,8 @@ bool TimingPathsModel::populatePaths(bool get_max,
   return true;
 }
 
+/////////
+
 std::string TimingPath::getStartStageName() const
 {
   auto node = getNodeAt(1);
@@ -413,9 +417,17 @@ std::string TimingPathNode::getNetName() const
   return db_bterm->getNet()->getName();
 }
 
+/////////
+
+TimingPathDetailModel::TimingPathDetailModel()
+  : QAbstractTableModel(),
+    path_(nullptr)
+{
+}
+
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
-  if (!path_)
+  if (path_ == nullptr)
     return 0;
   return path_->levelsCount();
 }
@@ -442,7 +454,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     }
   }
 
-  if (!index.isValid() || role != Qt::DisplayRole || !path_) {
+  if (!index.isValid() || role != Qt::DisplayRole || path_ == nullptr) {
     return QVariant();
   }
 
@@ -492,6 +504,8 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
   endResetModel();
 }
 
+/////////
+
 TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
   TimingPathRenderer::path_inst_color_.a = 100;
@@ -516,7 +530,7 @@ void TimingPathRenderer::highlightNode(int node_idx)
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbObject* sink_node = nullptr;
   odb::dbNet* net = nullptr;
@@ -561,7 +575,7 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbObject* sink_node = nullptr;
   int src_x, src_y;
@@ -605,7 +619,7 @@ void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
                                        gui::Painter& painter,
                                        const gui::Painter::Color& inst_color)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbBox* bbox = db_inst->getBBox();
   odb::Rect rect;
@@ -617,7 +631,7 @@ void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
 void TimingPathRenderer::highlightTerm(odb::dbBTerm* term,
                                        gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbShape port_shape;
   if (term->getFirstPin(port_shape)) {
@@ -633,7 +647,7 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
                                       odb::dbObject* sink_node,
                                       gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   int src_x, src_y;
   int dst_x, dst_y;
