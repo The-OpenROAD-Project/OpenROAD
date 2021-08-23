@@ -68,6 +68,7 @@ class TimingWidget : public QDockWidget
   void keyPressEvent(QKeyEvent* key_event);
 
   void showPathDetails(const QModelIndex& index);
+  void clearPathDetails();
   void highlightPathStage(const QModelIndex& index);
   void findNodeInPathDetails();
 
