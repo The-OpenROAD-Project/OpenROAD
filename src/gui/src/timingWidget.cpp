@@ -216,6 +216,15 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
   }
 }
 
+void TimingWidget::clearPathDetails()
+{
+  focus_view_ = nullptr;
+
+  path_details_model_->populateModel(nullptr);
+  path_renderer_->highlight(nullptr);
+  emit highlightTimingPath(nullptr);
+}
+
 void TimingWidget::showPathDetails(const QModelIndex& index)
 {
   if (!index.isValid())
@@ -300,8 +309,13 @@ void TimingWidget::selectedRowChanged(const QItemSelection& selected_row,
                                       const QItemSelection& deselected_row)
 {
   auto sel_indices = selected_row.indexes();
-  if (sel_indices.isEmpty())
+  if (sel_indices.isEmpty()) {
+    if (!deselected_row.isEmpty()) {
+      clearPathDetails();
+    }
+
     return;
+  }
   auto top_sel_index = sel_indices.first();
   showPathDetails(top_sel_index);
 }

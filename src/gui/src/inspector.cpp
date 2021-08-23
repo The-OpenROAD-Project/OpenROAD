@@ -268,7 +268,6 @@ void Inspector::inspect(const Selected& object)
   model_->removeRows(0, model_->rowCount());
   // remove action buttons and ensure delete
   for (auto& [button, action] : actions_) {
-    layout_->removeWidget(button);
     delete button;
   }
   actions_.clear();
@@ -298,7 +297,7 @@ void Inspector::inspect(const Selected& object)
     // For a SelectionSet a row is created with the set items
     // as children rows
     if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
-      value_item = value_item = makeItem(name_item, sel_set->begin(), sel_set->end());
+      value_item = makeItem(name_item, sel_set->begin(), sel_set->end());
     } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
       value_item = makeItem(name_item, v_list->begin(), v_list->end());
     } else if (auto v_set = std::any_cast<std::set<std::any>>(&value)) {
@@ -442,15 +441,14 @@ void Inspector::makeItemEditor(const std::string& name,
   item->setData(QVariant::fromValue(selected), EditorItemDelegate::editor_select_);
   item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
 
-  const Descriptor::Editor* used_editor = &editor;
+  Descriptor::Editor used_editor = editor;
   if (type == EditorItemDelegate::BOOL) {
-    // for BOOL we can build a new editor with options
-    const Descriptor::Editor bool_editor = Descriptor::makeEditor(editor.callback, {{"True", true}, {"False", false}});
-    used_editor = &bool_editor;
+    // for BOOL, replace options with true/false options
+    used_editor.options = {{"True", true}, {"False", false}};
   }
 
-  item->setData(QVariant::fromValue(*used_editor), EditorItemDelegate::editor_);
-  if (used_editor->options.empty()) {
+  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::editor_);
+  if (used_editor.options.empty()) {
     // options are empty so use selected type
     item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
   } else {
