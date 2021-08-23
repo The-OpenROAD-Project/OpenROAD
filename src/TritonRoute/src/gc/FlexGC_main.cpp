@@ -3007,7 +3007,7 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       continue;
     }
     auto lNum = marker->getLayerNum();
-    int z = lNum/2 - 1;
+    int z = lNum / 2 - 1;
     if (!tech_->hasVia2ViaMinStepViolAt(z)) {
       continue;
     }
@@ -3022,16 +3022,16 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     marker->getBBox(markerBBox);
     workerRegionQuery.query(markerBBox, lNum, results);
     for (auto& connFig : results) {
-        if (connFig->typeId() != drcVia) {
-          continue;
-        }
-        auto obj = static_cast<drVia*>(connFig);
-        if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
-          continue;
-        }
-        obj->getOrigin(origin);
-        net = obj->getNet();
-        break;
+      if (connFig->typeId() != drcVia) {
+        continue;
+      }
+      auto obj = static_cast<drVia*>(connFig);
+      if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
+        continue;
+      }
+      obj->getOrigin(origin);
+      net = obj->getNet();
+      break;
     }
     if (!net) {
       continue;
@@ -3039,13 +3039,13 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     frBox const* chosenPatch = nullptr;
     markerBBox.shift(-origin.x(), -origin.y());
     for (auto& patch : tech_->getVia2ViaMinStepPatches()[z]) {
-        if (patch.overlaps(markerBBox)) {
-            chosenPatch = &patch;
-            break;
-        }
+      if (patch.overlaps(markerBBox)) {
+        chosenPatch = &patch;
+        break;
+      }
     }
     if (!chosenPatch)
-        continue;
+      continue;
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
@@ -3067,7 +3067,8 @@ int FlexGCWorker::Impl::main()
   // printMarker = true;
   //  minStep patching for GF14
   if (surgicalFixEnabled_ && getDRWorker()
-      && tech_->hasVia2ViaMinStep()) { //DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
+      && tech_->hasVia2ViaMinStep()) {  // DBPROCESSNODE ==
+                                        // "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
     patchMetalShape();
   }
   // incremental updates
