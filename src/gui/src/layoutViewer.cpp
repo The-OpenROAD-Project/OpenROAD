@@ -437,9 +437,13 @@ void LayoutViewer::updateRubberBandRegion()
 
 Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 {
+  if (db_ == nullptr) {
+    return Selected();
+  }
+
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
-  dbTech* tech = getBlock()->getDataBase()->getTech();
+  dbTech* tech = db_->getTech();
   std::vector<Selected> selections;
 
   if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
