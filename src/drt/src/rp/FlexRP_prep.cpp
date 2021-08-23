@@ -144,7 +144,7 @@ void FlexRP::prep_minStepViasCheck()
     else
       cout << "no viols"
            << "\n";
-}
+} 
 
 bool FlexRP::hasMinStepViolation(frMinStepConstraint* minStepCons,
                                  int edge1,
