@@ -333,7 +333,7 @@ static int findPathDepth(int node,
 
 ////////////////////////////////////////////////////////////////
 
-static LinesRenderer *LinesRenderer::lines_renderer = nullptr;
+LinesRenderer *LinesRenderer::lines_renderer = nullptr;
 
 void
 LinesRenderer::highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
