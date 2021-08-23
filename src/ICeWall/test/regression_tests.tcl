@@ -8,6 +8,7 @@ record_tests {
   coyote_tc_sky130.some_pad_locations
   coyote_tc_sky130.no_pad_locations
   coyote_tc_sky130.not_enough_space
+  coyote_tc_sky130.max_pad_spacing_constraint
   caravel_sky130
   tcl_interface
   tcl_interface.flipchip

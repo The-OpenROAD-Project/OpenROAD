@@ -3487,7 +3487,22 @@ namespace eval ICeWall {
     }  
   }
   
-  proc add_locations {side_name  unplaced_pads anchor_cell_a anchor_cell_b } {
+  proc get_padcell_cell_ref {padcell} {
+    variable library
+    return [dict get $library types [get_padcell_type $padcell]] 
+  }
+  
+  proc has_max_spacing {padcellRef} {
+    variable library
+    return [dict exists $library cells $padcellRef max_pad_spacing] 
+  }
+
+  proc get_max_spacing {padcellRef} {
+    variable library
+    return [ord::microns_to_dbu [lindex [dict get $library cells $padcellRef max_pad_spacing] 1]] 
+  }
+    
+  proc add_locations {side_name  unplaced_pads anchor_cell_a anchor_cell_b} {
     variable pad_ring     
     variable chip_width 
     variable chip_height
@@ -3578,24 +3593,31 @@ namespace eval ICeWall {
       utl::error PAD 247 "Cannot fit IO pads between the following anchor cells : $anchor_cell_a, $anchor_cell_b."
     }
     foreach padcell $unplaced_pads {
-      set padOrder [ expr 1 + [lsearch $unplaced_pads $padcell]] 
-
+      set padOrder [ expr 1 + [lsearch $unplaced_pads $padcell]]            
+      set padcellRef [get_padcell_cell_ref $padcell]
+      set maxPadSpacing $PadSpacing
+      if [has_max_spacing $padcellRef] {
+       debug " $padcellRef [has_max_spacing $padcellRef] "
+       set padcell_width [get_padcell_width $padcell]
+       set max_spacing [ expr $padcell_width + [get_max_spacing $padcellRef]]      
+       set maxPadSpacing [expr min($PadSpacing,$max_spacing)]
+      }
       switch $side_name \
     	"bottom" {
-    	  set pad_center_x [expr $sideStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_center_x [expr $sideStart + ($maxPadSpacing * $padOrder) ] 
     	  set pad_center_y [expr $edge_bottom_offset + round (0.5 * [get_padcell_height $padcell]) ]
     	} \
     	"right"  {
     	  set pad_center_x [expr $chip_width - $edge_right_offset - round (0.5 * [get_padcell_height $padcell]) ]
-    	  set pad_center_y [expr $sideStart + ($PadSpacing * $padOrder) ] 
+    	  set pad_center_y [expr $sideStart + ($maxPadSpacing * $padOrder) ] 
     	} \
     	"top" {
-    	  set pad_center_x [expr $sideStart - ($PadSpacing * $padOrder) ] 
+    	  set pad_center_x [expr $sideStart - ($maxPadSpacing * $padOrder) ] 
     	  set pad_center_y [expr $chip_height - $edge_bottom_offset - round (0.5 * [get_padcell_height $padcell])  ]
     	} \
     	"left" {
     	  set pad_center_x [expr $edge_left_offset + round (0.5 * [get_padcell_height $padcell])]
-    	  set pad_center_y [expr $sideStart - ($PadSpacing * $padOrder) ]
+    	  set pad_center_y [expr $sideStart - ($maxPadSpacing * $padOrder) ]
     	}
       #debug "padOrder: $padOrder pad_center_x: $pad_center_x  pad_center_y: $pad_center_y"
 
