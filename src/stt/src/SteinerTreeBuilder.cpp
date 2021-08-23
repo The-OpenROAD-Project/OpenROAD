@@ -91,9 +91,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
     }
   }
 
-  Tree tree = makeSteinerTree(x, y, drvr_index, net_alpha);
-
-  return tree;
+  return makeSteinerTree(x, y, drvr_index, net_alpha);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
@@ -101,27 +99,10 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
                                          int drvr_index,
                                          float alpha)
 {
-  Tree tree;
-
-  if (alpha > 0.0) {
-    tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-      return tree;
-    if (checkTree(tree)) {
-      return tree;
-    }
-
-    // Try a smaller alpha if possible
-    if (alpha > 0.1) {
-      tree = pdr::primDijkstra(x, y, drvr_index, alpha - 0.1, logger_);
-      if (checkTree(tree)) {
-        return tree;
-      }
-    }
-
-    // Give up and use flute
-  }
-
-  return flt::flute(x, y, flute_accuracy);
+  if (alpha > 0.0)
+    return pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
+  else
+    return flt::flute(x, y, flute_accuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
@@ -129,8 +110,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& s,
                                          int accuracy)
 {
-  Tree tree = flt::flutes(x, y, s, accuracy);
-  return tree;
+  return flt::flutes(x, y, s, accuracy);
 }
 
 static bool rectAreaZero(const odb::Rect &rect)
@@ -353,7 +333,7 @@ static int findPathDepth(int node,
 
 ////////////////////////////////////////////////////////////////
 
-LinesRenderer *LinesRenderer::lines_renderer = nullptr;
+static LinesRenderer *LinesRenderer::lines_renderer = nullptr;
 
 void
 LinesRenderer::highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
