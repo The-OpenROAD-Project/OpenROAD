@@ -19,7 +19,7 @@ Type: stdcell, grid
       Layer: metal5  -  width: 5.000  spacing: 3.000  core_offset: 5.000 
       Layer: metal6  -  width: 5.000  spacing: 3.000  core_offset: 5.000 
     Stdcell Rails
-      Layer: metal1  -  width: 0.170 
+      Layer: metal1  -  width: 0.170  pitch: 2.800 
     Straps
       Layer: metal6  -  width: 3.000  pitch: 50.000  offset: 11.500 
     Connect: {metal1 metal6} {metal5 metal6}
