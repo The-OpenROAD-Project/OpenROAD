@@ -999,7 +999,6 @@ void DisplayControls::techInit()
         color = colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        // coverity[DC.WEAK_CRYPTO]
         color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
       }
     } else if (type == dbTechLayerType::CUT) {
@@ -1007,7 +1006,6 @@ void DisplayControls::techInit()
         color = colors[via++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        // coverity[DC.WEAK_CRYPTO]
         color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
       }
     } else {
