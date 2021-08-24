@@ -59,14 +59,16 @@ DRCViolation::DRCViolation(const std::string& name,
                            const std::vector<std::any>& srcs,
                            const std::vector<DRCShape>& shapes,
                            odb::dbTechLayer* layer,
-                           const std::string& comment)
+                           const std::string& comment,
+                           int file_line)
     : name_(name),
       type_(type),
       srcs_(srcs),
       shapes_(shapes),
       layer_(layer),
       comment_(comment),
-      viewed_(false)
+      viewed_(false),
+      file_line_(file_line)
 {
   computeBBox();
 }
@@ -74,8 +76,9 @@ DRCViolation::DRCViolation(const std::string& name,
 DRCViolation::DRCViolation(const std::string& name,
                            const std::string& type,
                            const std::vector<DRCShape>& shapes,
-                           const std::string& comment)
-    : DRCViolation(name, type, {}, shapes, nullptr, comment)
+                           const std::string& comment,
+                           int file_line)
+    : DRCViolation(name, type, {}, shapes, nullptr, comment, file_line)
 {
 }
 
@@ -170,6 +173,11 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   auto& comment = vio->getComment();
   if (!comment.empty()) {
     props.push_back({"Comment", vio->getComment()});
+  }
+
+  int line_number = vio->getFileLine();
+  if (line_number != 0) {
+    props.push_back({"Line number:", line_number});
   }
 
   return props;
@@ -430,47 +438,53 @@ void DRCWidget::loadTRReport(const QString& filename)
   std::regex bbox_corners(
       "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
 
+  int line_number = 0;
   auto tech = block_->getDataBase()->getTech();
   while (!report.eof()) {
     std::string line;
     std::smatch base_match;
 
     // type of violation
+    line_number++;
     std::getline(report, line);
     if (line.empty()) {
       continue;
     }
 
+    int violation_line_number = line_number;
     std::string type;
     if (std::regex_match(line, base_match, violation_type)) {
       type = base_match[1].str();
     } else {
       logger_->error(
-          utl::GUI, 45, "Unable to parse line as violation type: {}", line);
+          utl::GUI, 45, "Unable to parse line as violation type (line: {}): {}", line_number, line);
     }
 
     // sources of violation
+    line_number++;
+    int source_line_number = line_number;
     std::getline(report, line);
     std::string sources;
     if (std::regex_match(line, base_match, srcs)) {
       sources = base_match[1].str();
     } else {
       logger_->error(
-          utl::GUI, 46, "Unable to parse line as violation source: {}", line);
+          utl::GUI, 46, "Unable to parse line as violation source (line: {}): {}", line_number, line);
     }
 
+    line_number++;
     std::getline(report, line);
     // bounding box and layer
     if (!std::regex_match(line, base_match, bbox_layer)) {
       logger_->error(
-          utl::GUI, 47, "Unable to parse line as violation location: {}", line);
+          utl::GUI, 47, "Unable to parse line as violation location (line: {}): {}", line_number, line);
     }
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
     if (layer == nullptr) {
       logger_->warn(
-          utl::GUI, 40, "Unable to find tech layer: {}", base_match[2].str());
+          utl::GUI, 40, "Unable to find tech layer (line: {}): {}", line_number, base_match[2].str());
     }
 
     odb::Rect rect;
@@ -485,12 +499,12 @@ void DRCWidget::loadTRReport(const QString& filename)
         rect.set_yhi(std::stod(base_match[4].str())
                      * block_->getDbUnitsPerMicron());
       } catch (std::invalid_argument&) {
-        logger_->error(utl::GUI, 48, "Unable to parse bounding box: {}", bbox);
+        logger_->error(utl::GUI, 48, "Unable to parse bounding box (line: {}): {}", line_number, bbox);
       } catch (std::out_of_range&) {
-        logger_->error(utl::GUI, 49, "Unable to parse bounding box: {}", bbox);
+        logger_->error(utl::GUI, 49, "Unable to parse bounding box (line: {}): {}", line_number, bbox);
       }
     } else {
-      logger_->error(utl::GUI, 50, "Unable to parse bounding box: {}", bbox);
+      logger_->error(utl::GUI, 50, "Unable to parse bounding box (line: {}): {}", line_number, bbox);
     }
 
     std::vector<std::any> srcs_list;
@@ -515,30 +529,31 @@ void DRCWidget::loadTRReport(const QString& filename)
         if (net != nullptr) {
           item = net;
         } else {
-          logger_->warn(utl::GUI, 44, "Unable to find net: {}", item_name);
+          logger_->warn(utl::GUI, 44, "Unable to find net (line: {}): {}", source_line_number, item_name);
         }
       } else if (item_type == "inst") {
         odb::dbInst* inst = block_->findInst(item_name.c_str());
         if (inst != nullptr) {
           item = inst;
         } else {
-          logger_->warn(utl::GUI, 43, "Unable to find instance: {}", item_name);
+          logger_->warn(utl::GUI, 43, "Unable to find instance (line: {}): {}", source_line_number, item_name);
         }
       } else if (item_type == "iterm") {
         odb::dbITerm* iterm = block_->findITerm(item_name.c_str());
         if (iterm != nullptr) {
           item = iterm;
         } else {
-          logger_->warn(utl::GUI, 42, "Unable to find iterm: {}", item_name);
+          logger_->warn(utl::GUI, 42, "Unable to find iterm (line: {}): {}", source_line_number, item_name);
         }
       } else if (item_type == "bterm") {
         odb::dbBTerm* bterm = block_->findBTerm(item_name.c_str());
         if (bterm != nullptr) {
           item = bterm;
         } else {
-          logger_->warn(utl::GUI, 41, "Unable to find bterm: {}", item_name);
+          logger_->warn(utl::GUI, 41, "Unable to find bterm (line: {}): {}", source_line_number, item_name);
         }
       } else if (item_type == "obstruction") {
+        bool found = false;
         if (layer != nullptr) {
           for (const auto& obs : block_->getObstructions()) {
             auto obs_bbox = obs->getBBox();
@@ -547,12 +562,16 @@ void DRCWidget::loadTRReport(const QString& filename)
               obs_bbox->getBox(obs_rect);
               if (obs_rect.intersects(rect)) {
                 srcs_list.push_back(obs);
+                found = true;
               }
             }
           }
         }
+        if (!found) {
+          logger_->warn(utl::GUI, 52, "Unable to find obstruction (line: {})", source_line_number);
+        }
       } else {
-        logger_->warn(utl::GUI, 51, "Unknown source type: {}", item_type);
+        logger_->warn(utl::GUI, 51, "Unknown source type (line: {}): {}", source_line_number, item_type);
       }
 
       if (item.has_value()) {
@@ -574,7 +593,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     std::vector<DRCViolation::DRCShape> shapes({rect});
     violations_.push_back(std::make_unique<DRCViolation>(
-        name, type, srcs_list, shapes, layer, comment));
+        name, type, srcs_list, shapes, layer, comment, violation_line_number));
   }
 
   report.close();

@@ -66,11 +66,13 @@ class DRCViolation {
                  const std::vector<std::any>& srcs,
                  const std::vector<DRCShape>& shapes,
                  odb::dbTechLayer* layer,
-                 const std::string& comment);
+                 const std::string& comment,
+                 int file_line);
     DRCViolation(const std::string& name,
                  const std::string& type,
                  const std::vector<DRCShape>& shapes,
-                 const std::string& comment);
+                 const std::string& comment,
+                 int file_line);
     ~DRCViolation() {}
 
     const std::string& getName() { return name_; }
@@ -80,6 +82,7 @@ class DRCViolation {
     const odb::Rect& getBBox() { return bbox_; }
     const std::string getComment() { return comment_; }
     odb::dbTechLayer* getLayer() { return layer_; }
+    int getFileLine() { return file_line_; }
 
     bool isViewed() { return viewed_; }
     void setViewed() { viewed_ = true; }
@@ -97,6 +100,7 @@ class DRCViolation {
     odb::dbTechLayer* layer_;
     std::string comment_;
     odb::Rect bbox_;
+    int file_line_;
 
     bool viewed_;
 };
