@@ -608,6 +608,10 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter)
     nxt_stage = highlight_node_ - 1;
   if (nxt_stage != -1)
     getSegmentEnds(nxt_stage, dst_x, dst_y);
+  else {
+    // no dst
+    return;
+  }
   odb::Point pt1(src_x, src_y);
   odb::Point pt2(dst_x, dst_y);
 

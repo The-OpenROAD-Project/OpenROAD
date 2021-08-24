@@ -53,7 +53,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       output_(new QTextEdit),
       input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
-      historyPosition_(0)
+      interp_(nullptr),
+      history_(),
+      history_buffer_last_(),
+      historyPosition_(0),
+      paused_(false),
+      logger_(nullptr)
 {
   setObjectName("scripting");  // for settings
 
