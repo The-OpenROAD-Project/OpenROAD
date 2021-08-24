@@ -333,6 +333,8 @@ void Inspector::inspect(const Selected& object)
   }
 
   blockSignals(false);
+
+  view_->resizeColumnToContents(0);
 }
 
 void Inspector::clicked(const QModelIndex& index)
