@@ -65,8 +65,6 @@ class TimingWidget : public QDockWidget
   void highlightTimingPath(TimingPath* timing_path);
 
  public slots:
-  void keyPressEvent(QKeyEvent* key_event);
-
   void showPathDetails(const QModelIndex& index);
   void clearPathDetails();
   void highlightPathStage(const QModelIndex& index);
@@ -86,6 +84,7 @@ class TimingWidget : public QDockWidget
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 
  protected:
+  void keyPressEvent(QKeyEvent* key_event) override;
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
 

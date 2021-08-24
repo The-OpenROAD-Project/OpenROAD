@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QInputDialog>
 #include <QMenu>
@@ -37,6 +38,7 @@
 #include <QSettings>
 #include <QStatusBar>
 #include <QToolButton>
+#include <QUrl>
 #include <QWidgetAction>
 #include <map>
 #include <vector>
@@ -52,6 +54,12 @@
 #include "utl/Logger.h"
 #include "timingWidget.h"
 #include "drcWidget.h"
+
+// must be loaded in global namespace
+static void loadQTResources()
+{
+  Q_INIT_RESOURCE(resource);
+}
 
 namespace gui {
 
@@ -242,6 +250,11 @@ MainWindow::MainWindow(QWidget* parent)
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
   settings.endGroup();
+
+  // load resources and set window icon and title
+  loadQTResources();
+  setWindowIcon(QIcon(":/icon.png"));
+  setWindowTitle("OpenROAD");
 }
 
 void MainWindow::createStatusBar()
@@ -283,10 +296,13 @@ void MainWindow::createActions()
   inspect_ = new QAction("Inspect", this);
   inspect_->setShortcut(QString("q"));
 
-  timing_debug_ = new QAction("Timing ...", this);
+  timing_debug_ = new QAction("Timing...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
   congestion_setup_ = new QAction("Congestion Setup...", this);
+
+  help_ = new QAction("Help", this);
+  help_->setShortcut(QString("Ctrl+H"));
 
   connect(congestion_setup_,
           SIGNAL(triggered()),
@@ -300,6 +316,7 @@ void MainWindow::createActions()
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
   connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
+  connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
 }
 
 void MainWindow::createMenus()
@@ -324,6 +341,8 @@ void MainWindow::createMenus()
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   windows_menu_->addAction(timing_widget_->toggleViewAction());
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
+
+  menuBar()->addAction(help_);
 }
 
 void MainWindow::createToolbars()
@@ -546,6 +565,18 @@ void MainWindow::showFindDialog()
   if (getBlock() == nullptr)
     return;
   find_dialog_->exec();
+}
+
+void MainWindow::showHelp()
+{
+  const QUrl help_url("https://openroad.readthedocs.io/en/latest/");
+  if (!QDesktopServices::openUrl(help_url)) {
+    // failed to open
+    logger_->warn(utl::GUI,
+                 23,
+                 "Failed to open help automatically, navigate to: {}",
+                 help_url.toString().toStdString());
+  }
 }
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)

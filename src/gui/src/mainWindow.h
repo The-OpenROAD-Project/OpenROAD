@@ -38,6 +38,7 @@
 #include <QToolBar>
 #include <memory>
 #include <typeindex>
+#include <unordered_map>
 
 #include "findDialog.h"
 #include "gui/gui.h"
@@ -171,6 +172,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
+  // Show help in browser
+  void showHelp();
+
   // add/remove toolbar button
   const std::string addToolbarButton(const std::string& name,
                                      const QString& text,
@@ -231,6 +235,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* timing_debug_;
   QAction* zoom_in_;
   QAction* zoom_out_;
+  QAction* help_;
 
   QAction* congestion_setup_;
 

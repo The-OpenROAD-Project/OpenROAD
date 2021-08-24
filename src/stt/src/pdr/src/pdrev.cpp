@@ -53,16 +53,19 @@ public:
         int root_index,
         Logger* logger);
   ~PdRev();
-  void runPD(float alpha);
-  void runPDII(float alpha);
-  Tree translateTree();
+  Tree primDijkstra(float alpha,
+                    int root_idx);
+  Tree primDijkstraRevII(float alpha,
+                         int root_idx);
   void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
   void highlightGraph();
 
 private:
+  Tree translateTree();
   void replaceNode(Graph* graph, int originalNode);
   void transferChildren(int originalNode);
   void printTree(Tree fluteTree);
+  void RemoveSTNodes();
 
   Graph* graph_;
   Logger* logger_;
@@ -76,10 +79,7 @@ primDijkstra(std::vector<int>& x,
              Logger* logger)
 {
   pdr::PdRev pd(x, y, drvr_index, logger);
-  pd.runPD(alpha);
-  Tree tree = pd.translateTree();
-  //pd.highlightSteinerTree(tree);
-  return tree;
+  return pd.primDijkstra(alpha, drvr_index);
 }
 
 Tree
@@ -98,9 +98,7 @@ primDijkstraRevII(std::vector<int>& x,
   drvr_index = 0;
 
   pdr::PdRev pd(x1, y1, drvr_index, logger);
-  pd.runPDII(alpha);
-  Tree tree = pd.translateTree();
-  return tree;
+  return pd.primDijkstraRevII(alpha, drvr_index);
 }
 
 PdRev::PdRev(std::vector<int>& x,
@@ -117,7 +115,8 @@ PdRev::~PdRev()
   delete graph_;
 }
 
-void PdRev::runPD(float alpha)
+Tree PdRev::primDijkstra(float alpha,
+                         int root_idx)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
@@ -125,14 +124,75 @@ void PdRev::runPD(float alpha)
   // The following slightly improves wire length but the cost is the use
   // of absolutely horrid unreliable code.
   //graph_->fix_max_dc();
+  return translateTree();
 }
 
-void PdRev::runPDII(float alpha)
+Tree PdRev::primDijkstraRevII(float alpha,
+                              int root_idx)
 {
+#ifdef PDREVII
   graph_->buildNearestNeighborsForSPT();
   graph_->PDBU_new_NN(alpha);
   graph_->doSteiner_HoVW();
   graph_->fix_max_dc();
+#endif
+  return translateTree();
+}
+
+////////////////////////////////////////////////////////////////
+
+// Translate pdrev graph to flute steiner tree representation.
+// Apparently this simple mindedly clones non-terminal nodes along with their
+// location so the number of branches are num_terminals * 2 - 2 like flute.
+Tree PdRev::translateTree()
+{
+  if (graph_->num_terminals > 2) {
+    for (int i = 0; i < graph_->num_terminals; ++i) {
+      Node& node = graph_->nodes[i];
+      if (!(node.children.empty()
+            || (node.parent == i // is root node
+                && node.children.size() == 1
+                && node.children[0] >= graph_->num_terminals))) {
+        replaceNode(graph_, i);
+      }
+    }
+
+    int nNodes = graph_->nodes.size();
+    for (int i = graph_->num_terminals; i < nNodes; ++i) {
+      while (graph_->nodes[i].children.size() > 3
+             || (graph_->nodes[i].parent != i
+                 && graph_->nodes[i].children.size() == 3)) {
+        transferChildren(i);
+      }
+    }
+    RemoveSTNodes();
+  }
+
+  Tree tree;
+  int num_terminals = graph_->num_terminals;
+  tree.deg = num_terminals;
+  if (num_terminals < 2) {
+    // No branches.
+    tree.length = 0;
+  }
+  else {
+    int branch_count = tree.branchCount();
+    tree.branch.resize(branch_count);
+    tree.length = graph_->calc_tree_wl_pd();
+    if (graph_->nodes.size() != branch_count)
+      logger_->error(PDR, 666, "steiner branch count inconsistent");
+    for (int i = 0; i < graph_->nodes.size(); ++i) {
+      Node& node = graph_->nodes[i];
+      int parent = node.parent;
+      if (parent >= graph_->nodes.size())
+        logger_->error(PDR, 667, "steiner branch node out of bounds");
+      Branch& newBranch = tree.branch[i];
+      newBranch.x = node.x;
+      newBranch.y = node.y;
+      newBranch.n = parent;
+    }
+  }
+  return tree;
 }
 
 void PdRev::replaceNode(Graph* tree, int originalNode)
@@ -195,56 +255,63 @@ void PdRev::transferChildren(int originalNode)
   nodes.push_back(newSP);
 }
 
-Tree PdRev::translateTree()
+// Remove spanning tree nodes?
+// Remove steiner tree nodes?
+// Who knows -cherry 08/16/2021
+void PdRev::RemoveSTNodes()
 {
-  if (graph_->num_terminals > 2) {
-    for (int i = 0; i < graph_->num_terminals; ++i) {
-      Node& node = graph_->nodes[i];
-      if (!(node.children.empty()
-            || (node.parent == i // is root node
-                && node.children.size() == 1
-                && node.children[0] >= graph_->num_terminals))) {
-        replaceNode(graph_, i);
-      }
+  vector<int> toBeRemoved;
+  vector<Node> &nodes = graph_->nodes;
+
+  for (int i = graph_->num_terminals; i < nodes.size(); ++i) {
+    if (nodes[i].children.size() < 2
+        || (nodes[i].parent == i && nodes[i].children.size() == 2)) {
+      toBeRemoved.push_back(i);
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    Node& cN = nodes[toBeRemoved[i]];
+    graph_->removeChild(nodes[cN.parent], cN.idx);
+    for (int j = 0; j < cN.children.size(); ++j) {
+      graph_->replaceParent(nodes[cN.children[j]], cN.idx,
+                            // Note that the root node's parent is itself,
+                            // so the removed node's parent cannot be used
+                            // for the children. This fact seems to have escaped
+                            // the original author. Use the original root node
+                            // as the parent.
+                            // Note well that the root_idx passed to the top level
+                            // function cannot be used here because it may have
+                            // been if duplicate x/y locations were removed.
+                            // -cherry 08/09/2021
+                            cN.parent == cN.idx ? graph_->root_idx_ : cN.parent);
+      graph_->addChild(nodes[cN.parent], cN.children[j]);
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    nodes.erase(nodes.begin() + toBeRemoved[i]);
+  }
+
+  std::map<int, int> idxMap;
+  for (int i = 0; i < nodes.size(); ++i) {
+    idxMap[nodes[i].idx] = i;
+  }
+  for (int i = 0; i < nodes.size(); ++i) {
+    Node& cN = nodes[i];
+    for (int j = 0; j < toBeRemoved.size(); ++j) {
+      graph_->removeChild(nodes[i], toBeRemoved[j]);
     }
 
-    int nNodes = graph_->nodes.size();
-    for (int i = graph_->num_terminals; i < nNodes; ++i) {
-      while (graph_->nodes[i].children.size() > 3
-             || (graph_->nodes[i].parent != i
-                 && graph_->nodes[i].children.size() == 3)) {
-        transferChildren(i);
-      }
+    sort(cN.children.begin(), cN.children.end());
+    for (int j = 0; j < cN.children.size(); ++j) {
+      if (cN.children[j] != idxMap[cN.children[j]])
+        graph_->replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
     }
-    graph_->RemoveSTNodes();
+    cN.idx = i;
+    cN.parent = idxMap[cN.parent];
   }
-
-  Tree tree;
-  int num_terminals = graph_->num_terminals;
-  tree.deg = num_terminals;
-  if (num_terminals < 2) {
-    tree.branch.resize(0);
-    tree.length = 0;
-  }
-  else {
-    int branch_count = tree.branchCount();
-    tree.branch.resize(branch_count);
-    tree.length = graph_->calc_tree_wl_pd();
-    if (graph_->nodes.size() != branch_count)
-      logger_->error(PDR, 666, "steiner branch count inconsistent");
-    for (int i = 0; i < graph_->nodes.size(); ++i) {
-      Node& child = graph_->nodes[i];
-      int parent = child.parent;
-      if (parent >= graph_->nodes.size())
-        logger_->error(PDR, 667, "steiner branch node out of bounds");
-      Branch& newBranch = tree.branch[i];
-      newBranch.x = child.x;
-      newBranch.y = child.y;
-      newBranch.n = parent;
-    }
-  }
-  return tree;
 }
+
+////////////////////////////////////////////////////////////////
 
 void
 PdRev::graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines)

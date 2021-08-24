@@ -18,3 +18,7 @@ report_pd_net $dup4 $alpha
 
 set one {one 0 {p0 10 10}}
 report_pd_net $one $alpha
+
+# driver index changes by duplicate removal
+set dup5 {dup5 2 {p0 123 209} {p1 123 209} {p2 123 215} {p3 122 211}}
+report_pd_net $dup5 .3

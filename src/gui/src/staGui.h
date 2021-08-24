@@ -196,7 +196,7 @@ class TimingPath
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel() {}
+  TimingPathDetailModel();
   ~TimingPathDetailModel() {}
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
