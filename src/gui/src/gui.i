@@ -358,5 +358,23 @@ void pause()
   return gui->pause();
 }
 
+void show_widget(const char* name)
+{
+  if (!check_gui("show_widget")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  return gui->showWidget(name, true);
+}
+
+void hide_widget(const char* name)
+{
+  if (!check_gui("hide_widget")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  return gui->showWidget(name, false);
+}
+
 %} // inline
 

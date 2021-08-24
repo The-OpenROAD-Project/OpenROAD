@@ -1663,10 +1663,11 @@ dbModInst* dbBlock::findModInst(const char* path)
   while (token != NULL) {
     cur_inst = cur_mod->findModInst(token);
     if (cur_inst == nullptr)
-      return nullptr;
+      break;
     cur_mod = cur_inst->getMaster();
     token = strtok(NULL, "/");
   }
+  free((void*) _path);
   return cur_inst;
 }
 

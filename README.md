@@ -196,7 +196,7 @@ Below is a list of the available tools/modules included in the OpenROAD app.
 
 ### Detailed Router
 
-- [TritonRoute](./src/TritonRoute/README.md)
+- [TritonRoute](./src/drt/README.md)
 
 ### Metal Fill
 

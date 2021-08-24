@@ -32,48 +32,50 @@
 
 #pragma once
 
-#include <QDialog>
+#include <QDockWidget>
 #include <QKeyEvent>
 #include <QModelIndex>
-#include <QString>
+#include <QTableView>
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QPushButton>
+#include <QSettings>
 #include <vector>
 
 #include "odb/db.h"
 #include "staGui.h"
-#include "timingReportDialog.h"
-#include "ui_timingDebug.h"
 
 namespace ord {
 class OpenRoad;
 }
 
 namespace gui {
-class TimingDebugDialog : public QDialog, public Ui::TimingDialog
+class TimingWidget : public QDockWidget
 {
   Q_OBJECT
  public:
-  TimingDebugDialog(QWidget* parent = nullptr);
-  ~TimingDebugDialog();
+  TimingWidget(QWidget* parent = nullptr);
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
+
+  void readSettings(QSettings* settings);
+  void writeSettings(QSettings* settings);
 
  signals:
   void highlightTimingPath(TimingPath* timing_path);
 
  public slots:
-  void accept();
-  void reject();
-  bool populateTimingPaths(odb::dbBlock* block);
-
-  void keyPressEvent(QKeyEvent* key_event);
-
   void showPathDetails(const QModelIndex& index);
+  void clearPathDetails();
   void highlightPathStage(const QModelIndex& index);
-  void timingPathsViewCustomSort(int col_index);
   void findNodeInPathDetails();
 
+  void toggleRenderer(bool enable);
+
+  void populatePaths();
+  void modelWasReset();
+
   void showPathIndex(int pathId);
-  void showTimingReportDialog();
   void selectedRowChanged(const QItemSelection& prev_index,
                           const QItemSelection& curr_index);
   void selectedDetailRowChanged(const QItemSelection& prev_index,
@@ -81,14 +83,30 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 
+ protected:
+  void keyPressEvent(QKeyEvent* key_event) override;
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
+
  private:
   void copy();
 
-  TimingPathsModel* timing_paths_model_;
+  QTableView* setup_timing_table_view_;
+  QTableView* hold_timing_table_view_;
+  QTableView* path_details_table_view_;
+
+  QLineEdit* find_object_edit_;
+  QSpinBox* path_index_spin_box_;
+  QSpinBox* path_count_spin_box_;
+  QPushButton* update_button_;
+
+  TimingPathsModel* setup_timing_paths_model_;
+  TimingPathsModel* hold_timing_paths_model_;
   TimingPathDetailModel* path_details_model_;
   TimingPathRenderer* path_renderer_;
   GuiDBChangeListener* dbchange_listener_;
-  TimingReportDialog* timing_report_dlg_;
+  QTabWidget* delay_widget_;
+
   QTableView* focus_view_;
 };
 }  // namespace gui

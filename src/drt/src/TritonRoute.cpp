@@ -53,11 +53,11 @@ using namespace triton_route;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* TritonRoute_tcl_inits[];
+extern const char* drt_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Tritonroute_Init(Tcl_Interp* interp);
+extern int Drt_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
@@ -135,8 +135,8 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
-  Tritonroute_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
+  Drt_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
   FlexDRGraphics::init();
 }
 
