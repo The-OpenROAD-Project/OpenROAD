@@ -253,7 +253,7 @@ void DRCWidget::selectReport()
       this,
       tr("DRC Report"),
       QString(),
-      tr("TritonRoute Report (*.rpt);;RVE (*.ascii);;All (*)"));
+      tr("DRC Report (*.rpt *.ascii);;TritonRoute Report (*.rpt);;RVE (*.ascii);;All (*)"));
   if (!filename.isEmpty()) {
     loadReport(filename);
   }
