@@ -136,14 +136,6 @@ void FlexRP::prep_minStepViasCheck()
       }
     }
   }
-  cout << "tech_->hasVia2viaMinStep_ ? " << tech_->hasVia2viaMinStep_ << "\n";
-  for (auto b : tech_->via2viaMinStepPatches_)
-    if (!b.empty())
-      cout << "min step viols"
-           << "\n";
-    else
-      cout << "no viols"
-           << "\n";
 } 
 
 bool FlexRP::hasMinStepViolation(frMinStepConstraint* minStepCons,
