@@ -96,12 +96,16 @@ class ScriptWidget : public QDockWidget
   void goBackHistory();
   void goForwardHistory();
 
+  void updatePauseTimeout();
+
  protected:
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
 
  private:
   void setupTcl();
+
+  void triggerPauseCountDown(int timeout);
 
   void addToOutput(const QString& text, const QColor& color);
   void addCommandToOutput(const QString& cmd);
@@ -121,6 +125,7 @@ class ScriptWidget : public QDockWidget
   QTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
+  std::unique_ptr<QTimer> pause_timer_;
   Tcl_Interp* interp_;
   QStringList history_;
   QString history_buffer_last_;
