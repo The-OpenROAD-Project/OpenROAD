@@ -64,14 +64,16 @@ void FlexRP::prep_minStepViasCheck()
     }
     if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum)
       continue;
-    auto minStepCons = layer->getMinStepConstraint();
-    if (!minStepCons)
-      continue;
-    vector<frBox>* patches = &tech_->via2viaMinStepPatches_[lNum / 2 - 1];
     frViaDef* downVia
         = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     frViaDef* upVia
         = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    if (!downVia || !upVia)
+        continue;
+    auto minStepCons = layer->getMinStepConstraint();
+    if (!minStepCons)
+      continue;
+    vector<frBox>* patches = &tech_->via2viaMinStepPatches_[lNum / 2 - 1];
     frBox const* inner = nullptr;
     frBox const* outer = nullptr;
     if (downVia->getLayer2ShapeBox().right()
@@ -136,14 +138,6 @@ void FlexRP::prep_minStepViasCheck()
       }
     }
   }
-  cout << "tech_->hasVia2viaMinStep_ ? " << tech_->hasVia2viaMinStep_ << "\n";
-  for (auto b : tech_->via2viaMinStepPatches_)
-    if (!b.empty())
-      cout << "min step viols"
-           << "\n";
-    else
-      cout << "no viols"
-           << "\n";
 } 
 
 bool FlexRP::hasMinStepViolation(frMinStepConstraint* minStepCons,

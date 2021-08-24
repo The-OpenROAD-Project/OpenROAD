@@ -364,10 +364,10 @@ class frTechObject
   std::vector<std::vector<bool>> viaForbiddenThrough;
   /*
    Each position tells whether the corresponding routing layer (layer index,
-   * not layerNum) has up and down default vias that create a min step viol:
-   * if the vector of such layer index is empty, there is no viol; otherwise,
+   not layerNum) has up and down default vias that create a min step viol:
+   if the vector of such layer index is empty, there is no viol; otherwise,
    there are viols,
-   * and each frBox in the sub vector is a patch to correct the viol
+   and each frBox in the sub vector is a patch to correct the viol
    */
   std::vector<std::vector<frBox>> via2viaMinStepPatches_;
   bool hasVia2viaMinStep_ = false;
