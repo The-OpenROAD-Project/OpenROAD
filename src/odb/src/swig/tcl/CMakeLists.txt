@@ -22,23 +22,3 @@ target_link_libraries(odbtcl
         Boost::boost
         ${TCL_LIBRARY}
 )
-
-# Executable
-add_executable(odbtcl-bin
-    main.cpp
-)
-
-target_include_directories(odbtcl-bin
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include/odb
-)
-
-target_link_libraries(odbtcl-bin
-    PUBLIC
-        odbtcl
-)
-
-set_target_properties(odbtcl-bin
-    PROPERTIES 
-        OUTPUT_NAME odbtcl
-)

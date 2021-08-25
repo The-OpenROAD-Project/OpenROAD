@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
 
@@ -32,6 +32,5 @@ class TestInst(odbUnitTest.TestCase):
         self.assertEqual(self.i1.getMaster().getHeight(), 800)
         
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestInst)
-#     odbUnitTest.main()
+    odbUnitTest.main()
     

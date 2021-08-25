@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
 
@@ -106,6 +106,5 @@ class TestBlock(odbUnitTest.TestCase):
         self.block_placement(4,False)
         self.check_box_rect(-1580, -1000, 2550, 4100)
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestBlock)
-#     odbUnitTest.main()
+    odbUnitTest.main()
     

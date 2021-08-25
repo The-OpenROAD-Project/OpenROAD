@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
 
@@ -35,6 +35,5 @@ class TestBTerm(odbUnitTest.TestCase):
         self.assertEqual(self.n_a.getBTerms(), [])
     
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestBTerm)
-#     odbUnitTest.main()
+    odbUnitTest.main()
     

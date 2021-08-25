@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odb
 import os
 
 

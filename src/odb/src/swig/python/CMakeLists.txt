@@ -23,23 +23,3 @@ target_link_libraries(odbpy
         odb_swig_common
         Boost::boost
 )
-
-# Executable
-add_executable(odbpy-bin 
-                main.cpp 
-)
-
-target_include_directories(odbpy-bin
-  PUBLIC
-    ${PROJECT_SOURCE_DIR}/include/odb
-)
-
-target_link_libraries(odbpy-bin
-  PUBLIC
-    odbpy
-)
-
-set_target_properties(odbpy-bin
-    PROPERTIES 
-        OUTPUT_NAME odbpy
-)

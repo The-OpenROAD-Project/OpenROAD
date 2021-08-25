@@ -142,7 +142,6 @@ OpenRoad::OpenRoad()
     stt_builder_(nullptr),
     threads_(1)
 {
-  db_ = dbDatabase::create();
 }
 
 OpenRoad::~OpenRoad()
@@ -207,7 +206,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   // Make components.
   logger_ = makeLogger(log_filename, metrics_filename);
-  db_->setLogger(logger_);
+  db_ = dbDatabase::create(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();

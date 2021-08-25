@@ -719,13 +719,7 @@ void dbDatabase::commitEco(dbBlock* block_)
   }
 }
 
-void dbDatabase::setLogger(utl::Logger* logger)
-{
-  _dbDatabase* _db = (_dbDatabase*) this;
-  _db->_logger = logger;
-}
-
-dbDatabase* dbDatabase::create()
+dbDatabase* dbDatabase::create(utl::Logger* logger)
 {
   if (db_tbl == NULL) {
     db_tbl = new dbTable<_dbDatabase>(
@@ -734,6 +728,10 @@ dbDatabase* dbDatabase::create()
   }
 
   _dbDatabase* db = db_tbl->create();
+  if(logger == nullptr)
+    db->_logger = new utl::Logger();
+  else
+    db->_logger = logger;
   return (dbDatabase*) db;
 }
 

@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
 
@@ -46,4 +46,4 @@ class TestNet(odbUnitTest.TestCase):
         self.check(self.n2, 'groundCC', False, 1)
         self.check(self.n1, 'getCcCount', 1)
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestNet)
+    odbUnitTest.main()
