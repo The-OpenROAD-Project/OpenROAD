@@ -1541,6 +1541,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   painter.restore();
 
+  // use bounding Rect as event might just be the rubber_band
+  drawScaleBar(&painter, block, visibleRegion().boundingRect());
+
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
@@ -1565,6 +1568,65 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
       painter.drawRect(rubber_band_.normalized());
     }
     return;
+  }
+}
+
+void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect)
+{
+  if (!options_->isScaleBarVisible()) {
+    return;
+  }
+
+  const qreal pixels_per_mircon = pixels_per_dbu_ * block->getDbUnitsPerMicron();
+  const qreal window_width = rect.width() / pixels_per_mircon;
+  const qreal target_width = 0.2 * window_width;
+
+  qreal bar_size = std::pow(10.0, std::floor(std::log10(window_width)) - 1); // microns
+  int target_scale = target_width / bar_size;
+  if (target_scale >= 10) {
+    target_scale = 10;
+  } else if (target_scale >= 5) {
+    target_scale = 5;
+  } else if (target_scale >= 2) {
+    target_scale = 2;
+  } else {
+    target_scale = 1;
+  }
+  bar_size *= target_scale;
+
+  const QPoint ll_offset(rect.left() + 10, rect.bottom() - 20); // px (set to ll corner 10 px in from edge
+  const int bar_height = 10; // px
+  const int bar_segments = 5;
+
+  int bar_width = bar_size * pixels_per_mircon;
+
+  QString bar_scale_text;
+  if (bar_size >= 1000) {
+    bar_scale_text = QString::number(static_cast<int>(bar_size / 1000)) + "mm";
+  } else if (bar_size >= 1) {
+    bar_scale_text = QString::number(static_cast<int>(bar_size)) + "\u03bcm"; // mu
+  } else {
+    bar_scale_text = QString::number(static_cast<int>(bar_size * 1000)) + "nm";
+  }
+
+  auto color = Qt::white;
+
+  painter->setPen(color);
+  painter->setBrush(Qt::transparent);
+
+  painter->drawRect(ll_offset.x(), ll_offset.y(), bar_width, bar_height);
+  painter->drawText(ll_offset.x(), ll_offset.y(), bar_scale_text);
+
+  painter->setBrush(QBrush(color, Qt::DiagCrossPattern));
+  const int segment_width = bar_width / bar_segments;
+  for (int i = 0; i < bar_segments; i++) {
+    if (i % 2 == 1) {
+      painter->drawRect(
+          ll_offset.x() + segment_width * i,
+          ll_offset.y(),
+          segment_width,
+          bar_height);
+    }
   }
 }
 

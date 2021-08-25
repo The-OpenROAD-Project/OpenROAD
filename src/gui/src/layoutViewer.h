@@ -240,6 +240,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
+  void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);

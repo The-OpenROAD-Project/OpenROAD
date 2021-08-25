@@ -250,7 +250,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   instance_name_font_ = QFont(); // use default font
   instance_name_font_.setPointSize(12);
-
+  makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
@@ -357,6 +357,7 @@ void DisplayControls::readSettings(QSettings* settings)
   // misc
   settings->beginGroup("misc");
   readSettingsForRow(settings, misc_.instance_names);
+  readSettingsForRow(settings, misc_.scale_bar);
   readSettingsForRow(settings, misc_.fills);
   getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
@@ -413,6 +414,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   // misc
   settings->beginGroup("misc");
   writeSettingsForRow(settings, misc_.instance_names);
+  writeSettingsForRow(settings, misc_.scale_bar);
   writeSettingsForRow(settings, misc_.fills);
   settings->setValue("instance_name_color", instance_name_color_);
   settings->setValue("instance_name_font", instance_name_font_);
@@ -899,6 +901,11 @@ bool DisplayControls::arePrefTracksVisible()
 bool DisplayControls::areNonPrefTracksVisible()
 {
   return tracks_.non_pref.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::isScaleBarVisible() const
+{
+  return misc_.scale_bar.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::isCongestionVisible() const
