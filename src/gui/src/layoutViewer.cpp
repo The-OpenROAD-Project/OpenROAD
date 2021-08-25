@@ -1611,13 +1611,18 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
     bar_scale_text = QString::number(static_cast<int>(bar_size * 1e6)) + "pm";
   }
 
+  const QRect text_bounding = painter->fontMetrics().boundingRect(bar_scale_text);
+
   auto color = Qt::white;
 
   painter->setPen(color);
   painter->setBrush(Qt::transparent);
 
   painter->drawRect(ll_offset.x(), ll_offset.y(), bar_width, bar_height);
-  painter->drawText(ll_offset.x(), ll_offset.y(), bar_scale_text);
+  painter->drawText(
+      ll_offset.x() + (bar_width - text_bounding.width()) / 2, // center text over bar
+      ll_offset.y(),
+      bar_scale_text);
 
   painter->setBrush(QBrush(color, Qt::DiagCrossPattern));
   const int segment_width = bar_width / bar_segments;
