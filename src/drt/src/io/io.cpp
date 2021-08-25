@@ -1109,7 +1109,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
     tech->addUConstraint(std::move(rectOnlyConstraint));
   }
-  if (layer->isRightWayOnGridOnly()) {
+  if (layer->isRightWayOnGridOnly() || layer->getNumMasks() > 1) {
     auto rightWayOnGridOnlyConstraint
         = make_unique<frLef58RightWayOnGridOnlyConstraint>(
             layer->isRightWayOnGridOnlyCheckMask());
