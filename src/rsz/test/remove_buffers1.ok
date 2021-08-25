@@ -29,7 +29,7 @@ Path Type: max
 (Path is unconstrained)
 
 
-[INFO RSZ-0026] Removed 2 buffers.
+[INFO RSZ-0026] Removed 3 buffers.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
@@ -39,10 +39,9 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00 v input external delay
    0.00    0.00 v in1 (in)
-   0.03    0.03 v b1/Z (BUF_X1)
-   0.02    0.05 v b4/Z (BUF_X8)
-   0.00    0.05 v out1 (out)
-           0.05   data arrival time
+   0.02    0.02 v b4/Z (BUF_X8)
+   0.00    0.02 v out1 (out)
+           0.02   data arrival time
 ---------------------------------------------------------
 (Path is unconstrained)
 

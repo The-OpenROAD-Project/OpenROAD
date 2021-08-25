@@ -238,7 +238,7 @@ proc place_pin { args } {
 
   set pin [ppl::parse_pin_names "place_pin" $pin_name]
   if { [llength $pin] > 1 } {
-    utl::error PPL 71 "place_pin command should receive only one pin name."
+    utl::error PPL 71 "Command place_pin should receive only one pin name."
   }
 
   set layer_idx [ppl::parse_layer_name $layer]
@@ -249,9 +249,10 @@ proc place_pin { args } {
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
                                   [-random_seed seed]\
-                       	          [-random]\
+                                  [-random]\
                                   [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
+                                  [-min_distance_in_tracks]\
                                   [-exclude region]\
                                   [-group_pins pin_list]
                                  }
@@ -260,8 +261,9 @@ proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -corner_avoidance -min_distance -exclude -group_pins} \
-  flags {-random}
+  keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
+        -min_distance -exclude -group_pins} \
+  flags {-random -min_distance_in_tracks}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
@@ -274,7 +276,7 @@ proc place_pins { args } {
   }
 
   set db [ord::get_db]
-  
+
   set blockages {}
 
   foreach inst [$dbBlock getInsts] {
@@ -299,8 +301,8 @@ proc place_pins { args } {
     set hor_layers $keys(-hor_layers)
   } else {
     utl::error PPL 17 "-hor_layers is required."
-  }       
-  
+  }
+
   if [info exists keys(-ver_layers)] {
     set ver_layers $keys(-ver_layers)
   } else {
@@ -318,19 +320,25 @@ proc place_pins { args } {
   }
 
   set min_dist 2
+  set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
   if [info exists keys(-min_distance)] {
     set min_dist $keys(-min_distance)
-    ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+    if {$dist_in_tracks} {
+      ppl::set_min_distance $min_dist
+    } else {
+      ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+    }
   } else {
     utl::report "Using $min_dist tracks default min distance between IO pins."
     # setting min distance as 0u leads to the default min distance
     ppl::set_min_distance 0
   }
+  ppl::set_min_distance_in_tracks $dist_in_tracks
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
   if { $bterms_cnt == 0 } {
-    utl::error PPL 19 "Design without pins"
+    utl::error PPL 19 "Design without pins."
   }
 
 
@@ -347,10 +355,10 @@ proc place_pins { args } {
     }
 
     set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
-    
+
     set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
 
-    ppl::add_hor_layer $hor_layer 
+    ppl::add_hor_layer $hor_layer
   }
 
   set num_tracks_x 0
@@ -371,16 +379,16 @@ proc place_pins { args } {
 
     ppl::add_ver_layer $ver_layer
   }
-  
+
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 
   if { ($bterms_cnt > $num_slots) } {
     utl::error PPL 24 "Number of pins $bterms_cnt exceeds max possible $num_slots."
   }
- 
+
   if { $regions != {} } {
     set lef_units [$dbTech getLefUnits]
-    
+
     foreach region $regions {
       if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
         set edge_ [ppl::parse_edge "-exclude" $edge]
@@ -402,7 +410,7 @@ proc place_pins { args } {
 
           ppl::exclude_interval $edge_ $begin $end
         } else {
-          utl::error PPL 25 "-exclude: $interval is an invalid region"
+          utl::error PPL 25 "-exclude: $interval is an invalid region."
         }
       } else {
         utl::error PPL 26 "-exclude: invalid syntax in $region. Use (top|bottom|left|right):interval."
@@ -420,14 +428,14 @@ proc place_pins { args } {
         if { $db_bterm != "NULL" } {
           lappend pin_list $db_bterm
         } else {
-          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
+          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx."
         }
       }
       ppl::add_pin_group $pin_list
       incr group_idx
     }
   }
-  
+
   ppl::run_io_placement [info exists flags(-random)]
 }
 
@@ -447,7 +455,7 @@ proc parse_direction { cmd direction } {
       [regexp -nocase -- {^INOUT$} $direction] || \
       [regexp -nocase -- {^FEEDTHRU$} $direction]} {
     set direction [string tolower $direction]
-    return [ppl::get_direction $direction]      
+    return [ppl::get_direction $direction]
   } else {
     utl::error PPL 28 "$cmd: Invalid pin direction."
   }
@@ -500,7 +508,7 @@ proc get_edge_extreme { cmd begin edge } {
     } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMax]
     } else {
-      utl::error PPL 30 "$cmd: Invalid edge"
+      utl::error PPL 30 "Invalid edge for command $cmd, should be one of top, bottom, left, right."
     }
   }
 }
@@ -550,7 +558,7 @@ proc parse_pin_names {cmd names} {
   }
 
   if {[llength $pin_list] == 0} {
-    utl::error PPL 61 "Pins for $cmd command were not found"
+    utl::error PPL 61 "Pins for $cmd command were not found."
   }
 
   return $pin_list

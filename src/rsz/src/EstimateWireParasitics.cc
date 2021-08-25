@@ -233,7 +233,8 @@ Resizer::estimateWireParasitic(const Pin *drvr_pin,
                                const Net *net)
 {
   if (!network_->isPower(net)
-      && !network_->isGround(net)) {
+      && !network_->isGround(net)
+      && !sta_->isIdealClock(drvr_pin)) {
     if (isPadNet(net))
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
@@ -274,16 +275,16 @@ Resizer::makePadParasitic(const Net *net)
     const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
     parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                           corner, max_, parasitics_ap);
-    parasitics_->deleteParasiticNetwork(net, parasitics_ap);
   }
+  parasitics_->deleteParasiticNetworks(net);
 }
 
 void
 Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                                       const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(drvr_pin, routingAlpha(), false,
-                                      db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, false, max_steiner_pin_count_,
+                                      stt_builder_, db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));
@@ -331,8 +332,8 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
       const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
       parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                             corner, max_, parasitics_ap);
-      parasitics_->deleteParasiticNetwork(net, parasitics_ap);
     }
+    parasitics_->deleteParasiticNetworks(net);
     delete tree;
   }
 }

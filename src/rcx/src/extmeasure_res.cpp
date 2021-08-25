@@ -162,17 +162,9 @@ uint extMeasure::computeRes(SEQ* s, uint targetMet, uint dir, uint planeIndex,
   for (uint jj = 0; jj < overlapSeq.getCnt(); jj++) {
     SEQ* tgt = overlapSeq.get(jj);
     uint diagDist = calcDist(tgt->_ll, tgt->_ur);
-    uint tgWidth = tgt->_ur[_dir] - tgt->_ll[_dir];
     uint len1 = getLength(tgt, !_dir);
 
     DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
-    int d2 = _dist > 0 ? diagDist - _dist - (_ur[_dir] - _ll[_dir]) : diagDist;
-    int w2 = tgt->_ur[_dir] - tgt->_ll[_dir];
-    const char* x = _dir ? "x" : "y";
-    const char* y = _dir ? "y" : "x";
-    // fprintf(stdout, "   %s %7d %7d  %s=%d  W%d  L%d D%d   d2=%d\n",
-    //  x, tgt->_ll[!_dir], tgt->_ur[!_dir], y, tgt->_ll[_dir],  w2,  len1,
-    //  diagDist, d2);
     len += len1;
     calcRes(_rsegSrcId, len1, _dist, diagDist, _met);
   }
@@ -329,7 +321,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2) {
 
   uint index_dist = 0;
   bool found = false;
-  extDistRC* rc2 = rc2 = _measureTableR[1]->geti(0);
+  extDistRC* rc2 = _measureTableR[1]->geti(0);
   if (rc2 == NULL)
     return rc1;  // TO TEST
 
@@ -377,7 +369,6 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2) {
       _measureTable = _measureTableR[index_dist - 1];
       _computeTable = _computeTableR[index_dist - 1];
       extDistRC* res1 = findIndexed_res(dist1, dist2);
-      double R = (res->_res + res1->_res) / 2;
       double R1 = res->interpolate_res(dist1, res1);
       res1->_diag = R1;
       return res1;
@@ -483,6 +474,8 @@ void extMeasure::getDgOverlap_res(SEQ* sseq, uint dir,
       } else
         continue;
     }
+#else
+    (void) srseg; // silence unused warning
 #endif
     wseq = _seqPool->alloc();
     wseq->type = tseq->type;

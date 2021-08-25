@@ -81,10 +81,11 @@ class ScriptWidget : public QDockWidget
   // shutdown
   void tclExiting();
 
- private slots:
+ public slots:
   // Triggered when the user hits return in the line edit
-  void executeCommand();
+  void executeCommand(const QString& command, bool echo = true);
 
+ private slots:
   void outputChanged();
 
   void pause();
@@ -100,10 +101,13 @@ class ScriptWidget : public QDockWidget
 
  private:
   void setupTcl();
+
   void addToOutput(const QString& text, const QColor& color);
   void addCommandToOutput(const QString& cmd);
   void addTclResultToOutput(int return_code);
-  void addBufferToOutput();
+  void addReportToOutput(const QString& text);
+  void addLogToOutput(const QString& text, const QColor& color);
+
   static int channelOutput(ClientData instanceData,
                            const char* buf,
                            int toWrite,
@@ -117,7 +121,6 @@ class ScriptWidget : public QDockWidget
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
   Tcl_Interp* interp_;
-  QStringList outputBuffer_;
   QStringList history_;
   QString history_buffer_last_;
   int historyPosition_;

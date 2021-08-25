@@ -34,6 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include "db_sta/dbNetwork.hh"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/VerilogReader.hh"
 
 namespace utl {
 class Logger;
@@ -54,29 +57,39 @@ class OpenRoad;
 
 using odb::dbDatabase;
 
-using sta::NetworkReader;
+using sta::Cell;
+using sta::ConcreteNetwork;
+using sta::dbNetwork;
 
-dbVerilogNetwork *
-makeDbVerilogNetwork();
+// Hierarchical network for read_verilog.
+// Verilog cells and module networks are built here.
+// It is NOT part of an Sta.
+class dbVerilogNetwork : public ConcreteNetwork
+{
+ public:
+  dbVerilogNetwork();
+  virtual Cell* findAnyCell(const char* name);
+  void init(dbNetwork* db_network);
 
-void
-initDbVerilogNetwork(OpenRoad *openroad);
+ private:
+  NetworkReader* db_network_;
+};
 
-void
-deleteDbVerilogNetwork(dbVerilogNetwork *verilog_network);
+dbVerilogNetwork* makeDbVerilogNetwork();
+
+void initDbVerilogNetwork(OpenRoad* openroad);
+
+void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
 
 // Read a hierarchical Verilog netlist into a OpenSTA concrete network
-// objects. The hierarchical network is elaborated/flattened by the 
+// objects. The hierarchical network is elaborated/flattened by the
 // link_design command and OpenDB objects are created from the flattened
 // network.
-void
-dbReadVerilog(const char *filename,
-	      dbVerilogNetwork *verilog_network);
+void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network);
 
-void
-dbLinkDesign(const char *top_cell_name,
-	     dbVerilogNetwork *verilog_network,
-	     dbDatabase *db,
-             utl::Logger *logger);
+void dbLinkDesign(const char* top_cell_name,
+                  dbVerilogNetwork* verilog_network,
+                  dbDatabase* db,
+                  utl::Logger* logger);
 
-} // namespace
+}  // namespace ord

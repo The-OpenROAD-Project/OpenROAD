@@ -32,32 +32,51 @@
 
 #pragma once
 
-#include <tcl.h>
-
-#include <set>
-#include <vector>
 #include <memory>
+#include <set>
+#include <string>
+#include <tuple>
+#include <vector>
 
-#include <QSyntaxHighlighter>
 #include <QRegularExpression>
+#include <QSyntaxHighlighter>
+#include <QTextBlockUserData>
 #include <QTextCharFormat>
 
 namespace gui {
 
 using QRegularExpressionPtr = std::unique_ptr<QRegularExpression>;
-struct SyntaxRule
+struct CommandRule
 {
   QRegularExpressionPtr pattern;
-  std::unique_ptr<std::vector<QRegularExpressionPtr>> args;
+  int command; // command index from tclCmdInputWidget::commands_
 };
 
-using SyntaxRulePtr = std::unique_ptr<SyntaxRule>;
-
-struct SyntaxRuleGroup
+struct ArgumentRule
 {
-  std::vector<SyntaxRulePtr> rules;
+  std::vector<QRegularExpressionPtr> rules;
   const QTextCharFormat* format;
-  const QTextCharFormat* args_format;
+};
+
+using CommandRulePtr = std::unique_ptr<CommandRule>;
+using ArgumentRulePtr = std::unique_ptr<ArgumentRule>;
+struct CommandRuleGroup
+{
+  std::vector<CommandRulePtr> rules;
+  const QTextCharFormat* format;
+};
+
+struct CommandArguments
+{
+  std::string command; // name of command
+  bool is_toplevel; // command is part of the toplevel namepace
+  std::set<std::string> arguments; // set of command arguments
+};
+
+struct TclCmdUserData : public QTextBlockUserData
+{
+  bool line_continued;
+  std::set<int> commands;
 };
 
 class TclCmdHighlighter : public QSyntaxHighlighter
@@ -65,7 +84,10 @@ class TclCmdHighlighter : public QSyntaxHighlighter
   Q_OBJECT
 
   public:
-    TclCmdHighlighter(QTextDocument* parent, Tcl_Interp* interp);
+    TclCmdHighlighter(QTextDocument* parent,
+                      const std::vector<CommandArguments>& or_cmds,
+                      const std::string& command_start,
+                      const std::string& command_end);
     ~TclCmdHighlighter();
 
   protected:
@@ -74,29 +96,35 @@ class TclCmdHighlighter : public QSyntaxHighlighter
   private:
     void initFormats();
 
-    void init(Tcl_Interp* interp);
-    void initOpenRoad(Tcl_Interp* interp);
-    void initTclKeywords();
+    void init(const std::vector<CommandArguments>& or_cmds,
+              const std::string& start_of_command,
+              const std::string& end_of_command);
+    void initOpenRoad(const std::vector<CommandArguments>& or_cmds,
+                      const std::string& start_of_command,
+                      const std::string& end_of_command);
+    void initTclKeywords(const std::string& start_of_command,
+                         const std::string& end_of_command);
     void initOther();
 
-    void parseOpenRoadArguments(const char* or_args, std::set<std::string>& args);
-
     const std::string escape(const std::string& preregex);
-    SyntaxRulePtr buildKeywordRule(const std::string& pattern);
-    SyntaxRulePtr buildKeywordRule(const std::string& pattern,
-                                   const std::vector<std::string>& args);
-    SyntaxRulePtr buildRule(const std::string& pattern);
-    SyntaxRulePtr buildRule(const std::string& pattern,
-                            const std::vector<std::string>& args);
+    CommandRulePtr buildKeywordRule(const int command_id,
+                                    const std::string& command,
+                                    const std::string& start_of_command,
+                                    const std::string& end_of_command);
+    CommandRulePtr buildRule(const std::string& pattern);
+    CommandRulePtr buildRule(const int command_id,
+                             const std::string& pattern);
+    ArgumentRulePtr buildArgumentRule(const std::vector<std::string>& args,
+                                      const QTextCharFormat* format);
 
-    void addRuleGroup(std::vector<SyntaxRuleGroup>& rule_group,
-                      std::vector<SyntaxRulePtr>& rules,
-                      const QTextCharFormat* format,
-                      const QTextCharFormat* args_format);
+    void addRuleGroup(std::vector<CommandRuleGroup>& rule_group,
+                      std::vector<CommandRulePtr>& rules,
+                      const QTextCharFormat* format);
 
     void highlightBlockWithRules(const QString& text,
                                  int start_idx,
-                                 const std::vector<SyntaxRuleGroup>& rules);
+                                 const std::vector<CommandRuleGroup>& rules,
+                                 std::set<int>& matched_commands);
     int highlightBlockWithRule(const QString& text,
                                int start_idx,
                                const QRegularExpressionPtr& rule,
@@ -104,14 +132,13 @@ class TclCmdHighlighter : public QSyntaxHighlighter
 
     void highlightBlockWithString(const QString& text);
 
-    std::vector<SyntaxRuleGroup> cmd_rules_;
+    std::vector<CommandRuleGroup> cmd_rules_;
     // general syntax rules
-    std::vector<SyntaxRuleGroup> syntax_rules_;
+    std::vector<CommandRuleGroup> syntax_rules_;
     // string formatting, needs to be handled separately since it can span multiple lines
-    SyntaxRuleGroup string_rule;
+    CommandRuleGroup string_rule;
 
-    // holds the rules for commands detected
-    std::vector<std::pair<const std::vector<QRegularExpressionPtr>*, const QTextCharFormat*>> argument_rules_;
+    std::map<int, ArgumentRulePtr> argument_rules_;
 
     // formatting
     QTextCharFormat openroad_cmd_format_;
@@ -121,10 +148,6 @@ class TclCmdHighlighter : public QSyntaxHighlighter
     QTextCharFormat string_format_;
     QTextCharFormat variable_format_;
     QTextCharFormat comment_format_;
-
-    // common regex
-    const std::string start_of_command_ = "(?:^|(?<=\\s)|(?<=\\[))";
-    const std::string end_of_command_   = "(?:$|(?=\\s)|(?=\\]))";
 };
 
 }  // namespace gui

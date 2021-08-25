@@ -220,11 +220,6 @@ double extMain::getViaResistance_b(dbVia* tvia, dbNet* net) {
 void extMain::getViaCapacitance(dbShape svia, dbNet* net) {
   bool USE_DB_UNITS = false;
 
-  uint cnt = 0;
-
-  const char* tcut = "tcut";
-  const char* bcut = "bcut";
-
   std::vector<dbShape> shapes;
   dbShape::getViaBoxes(svia, shapes);
 
@@ -236,14 +231,6 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net) {
     Width[jj] = 0;
     Len[jj] = 0;
   }
-
-  int maxLenBot = 0;
-  int maxWidthBot = 0;
-  int maxLenTop = 0;
-  int maxWidthTop = 0;
-
-  int bot = 0;
-  int top = 1000;
 
   std::vector<dbShape>::iterator shape_itr;
   for (shape_itr = shapes.begin(); shape_itr != shapes.end(); ++shape_itr) {
@@ -319,7 +306,6 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
     uint width = 0;
     dbTechVia* tvia = s.getTechVia();
     if (tvia != NULL) {
-      int i = 0;
       level = tvia->getBottomLayer()->getRoutingLevel();
       width = tvia->getBottomLayer()->getWidth();
       res = tvia->getResistance();
@@ -372,7 +358,6 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
       double res = getResistance(level, width, len, 0);
       ;
       double unitCap = getFringe(level, width, 0, areaCap);
-      double tot = len * width * unitCap;
       double frTot = len * 2 * unitCap;
 
       _tmpCapTable[0] = frTot;
@@ -1634,29 +1619,27 @@ int extMain::setMinTypMax(bool min, bool typ, bool max, const char* cmp_file,
     _extDbCnt = extDbCnt;
     //		uint cnt= 0;
 
-    int dbIndex = -1;
-    dbIndex = _modelMap.add(_minModelIndex);
+    _modelMap.add(_minModelIndex);
     //_block->setExtMinCorner(dbIndex);
 
-    dbIndex = _modelMap.add(_typModelIndex);
+    _modelMap.add(_typModelIndex);
     //_block->setExtTypCorner(dbIndex);
 
     if (extDbCnt > 2) {
-      dbIndex = _modelMap.add(_maxModelIndex);
+      _modelMap.add(_maxModelIndex);
       //_block->setExtMaxCorner(dbIndex);
     }
   } else if (min || max || typ) {
-    int dbIndex = -1;
     if (min) {
-      dbIndex = _modelMap.add(_minModelIndex);
+      _modelMap.add(_minModelIndex);
       //_block->setExtMinCorner(dbIndex);
     }
     if (typ) {
-      dbIndex = _modelMap.add(_typModelIndex);
+      _modelMap.add(_typModelIndex);
       //_block->setExtTypCorner(dbIndex);
     }
     if (max) {
-      dbIndex = _modelMap.add(_maxModelIndex);
+      _modelMap.add(_maxModelIndex);
       //_block->setExtMaxCorner(dbIndex);
     }
     _extDbCnt = _modelMap.getCnt();
@@ -1664,17 +1647,16 @@ int extMain::setMinTypMax(bool min, bool typ, bool max, const char* cmp_file,
     if (!_eco)
       _block->setCornerCount(_extDbCnt);
   } else if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
-    int dbIndex = -1;
     if (setMin >= 0) {
-      dbIndex = _modelMap.add(setMin);
+      _modelMap.add(setMin);
       //_block->setExtMinCorner(dbIndex);
     }
     if (setTyp >= 0) {
-      dbIndex = _modelMap.add(setTyp);
+      _modelMap.add(setTyp);
       //_block->setExtMinCorner(dbIndex);
     }
     if (setMax >= 0) {
-      dbIndex = _modelMap.add(setMax);
+      _modelMap.add(setMax);
       //_block->setExtMinCorner(dbIndex);
     }
     _extDbCnt = _modelMap.getCnt();
@@ -1716,13 +1698,13 @@ extCorner::extCorner() {
 void extMain::getExtractedCorners() {
   if (_prevControl == NULL)
     return;
-  if (_prevControl->_extractedCornerList == NULL)
+  if (_prevControl->_extractedCornerList.empty())
     return;
   if (_processCornerTable != NULL)
     return;
 
   Ath__parser parser;
-  uint pCornerCnt = parser.mkWords(_prevControl->_extractedCornerList, " ");
+  uint pCornerCnt = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
   if (pCornerCnt <= 0)
     return;
 
@@ -1739,12 +1721,12 @@ void extMain::getExtractedCorners() {
     _processCornerTable->add(t);
   }
 
-  if (_prevControl->_derivedCornerList == NULL) {
+  if (_prevControl->_derivedCornerList.empty()) {
     makeCornerMapFromExtControl();
     return;
   }
 
-  uint sCornerCnt = parser.mkWords(_prevControl->_derivedCornerList, " ");
+  uint sCornerCnt = parser.mkWords(_prevControl->_derivedCornerList.c_str(), " ");
   if (sCornerCnt <= 0)
     return;
 
@@ -1770,20 +1752,20 @@ void extMain::getExtractedCorners() {
   }
   Ath__array1D<double> A;
 
-  parser.mkWords(_prevControl->_resFactorList, " ");
+  parser.mkWords(_prevControl->_resFactorList.c_str(), " ");
   parser.getDoubleArray(&A, 0);
   for (ii = 0; ii < sCornerCnt; ii++) {
     extCorner* t = _scaledCornerTable->get(ii);
     t->_resFactor = A.get(ii);
   }
-  parser.mkWords(_prevControl->_ccFactorList, " ");
+  parser.mkWords(_prevControl->_ccFactorList.c_str(), " ");
   A.resetCnt();
   parser.getDoubleArray(&A, 0);
   for (ii = 0; ii < sCornerCnt; ii++) {
     extCorner* t = _scaledCornerTable->get(ii);
     t->_ccFactor = A.get(ii);
   }
-  parser.mkWords(_prevControl->_gndcFactorList, " ");
+  parser.mkWords(_prevControl->_gndcFactorList.c_str(), " ");
   A.resetCnt();
   parser.getDoubleArray(&A, 0);
   for (ii = 0; ii < sCornerCnt; ii++) {
@@ -1793,7 +1775,7 @@ void extMain::getExtractedCorners() {
   makeCornerMapFromExtControl();
 }
 void extMain::makeCornerMapFromExtControl() {
-  if (_prevControl->_cornerIndexList == NULL)
+  if (_prevControl->_cornerIndexList.empty())
     return;
   if (_processCornerTable == NULL)
     return;
@@ -1801,7 +1783,7 @@ void extMain::makeCornerMapFromExtControl() {
   //	return;
 
   Ath__parser parser;
-  uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList, " ");
+  uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
   if (wordCnt <= 0)
     return;
 
@@ -2063,14 +2045,11 @@ void extMain::makeCornerNameMap() {
   strcpy(cornerList, "");
 
   if (_scaledCornerTable != NULL) {
-    char extList[128];
-    char resList[128];
-    char ccList[128];
-    char gndcList[128];
-    strcpy(extList, "");
-    strcpy(ccList, "");
-    strcpy(resList, "");
-    strcpy(gndcList, "");
+    char buf[128];
+    std::string extList;
+    std::string resList;
+    std::string ccList;
+    std::string gndcList;
     for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
@@ -2085,27 +2064,23 @@ void extMain::makeCornerNameMap() {
       map[s->_dbIndex] = s;
       A[s->_dbIndex] = -(ii + 1);
 
-      sprintf(extList, "%s %d", extList, s->_model);
-      sprintf(resList, "%s %g", resList, s->_resFactor);
-      sprintf(ccList, "%s %g", ccList, s->_ccFactor);
-      sprintf(gndcList, "%s %g", gndcList, s->_gndFactor);
+      sprintf(buf, " %d", s->_model);
+      extList += buf;
+      sprintf(buf, " %g", s->_resFactor);
+      resList += buf;
+      sprintf(buf, " %g", s->_ccFactor);
+      ccList += buf;
+      sprintf(buf, " %g", s->_gndFactor);
+      gndcList += buf;
     }
-    if (_prevControl->_derivedCornerList)
-      free(_prevControl->_derivedCornerList);
-    if (_prevControl->_resFactorList)
-      free(_prevControl->_resFactorList);
-    if (_prevControl->_ccFactorList)
-      free(_prevControl->_ccFactorList);
-    if (_prevControl->_gndcFactorList)
-      free(_prevControl->_gndcFactorList);
-    _prevControl->_derivedCornerList = strdup(extList);
-    _prevControl->_resFactorList = strdup(resList);
-    _prevControl->_ccFactorList = strdup(ccList);
-    _prevControl->_gndcFactorList = strdup(gndcList);
+    _prevControl->_derivedCornerList = extList;
+    _prevControl->_resFactorList = resList;
+    _prevControl->_ccFactorList = ccList;
+    _prevControl->_gndcFactorList = gndcList;
   }
   if (_processCornerTable != NULL) {
-    char extList[128];
-    strcpy(extList, "");
+    std::string extList;
+    char buf[128];
 
     for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
@@ -2121,42 +2096,38 @@ void extMain::makeCornerNameMap() {
       A[s->_dbIndex] = ii + 1;
       map[s->_dbIndex] = s;
 
-      sprintf(extList, "%s %d", extList, s->_model);
+      sprintf(buf, " %d", s->_model);
+      extList += buf;
     }
-    if (_prevControl->_extractedCornerList)
-      free(_prevControl->_extractedCornerList);
-    _prevControl->_extractedCornerList = strdup(extList);
+    _prevControl->_extractedCornerList = extList;
   }
   // if (_extDbCnt<=0) {
   // 	delete [] map;
   // 	return;
   // }
-  char aList[128];
-  strcpy(aList, "");
+  std::string aList;
 
   for (uint k = 0; k < _cornerCnt; k++) {
-    sprintf(aList, "%s %d", aList, A[k]);
+    aList += " " + std::to_string(A[k]);
   }
-  if (_prevControl->_cornerIndexList)
-    free(_prevControl->_cornerIndexList);
-  _prevControl->_cornerIndexList = strdup(aList);
+  _prevControl->_cornerIndexList = aList;
 
-  char buff[1024];
+  std::string buff;
   if (map[0] == NULL)
-    sprintf(buff, "%s %d", buff, 0);
+    buff += " 0";
   else
-    sprintf(buff, "%s", map[0]->_name);
+    buff += map[0]->_name;
 
   for (uint ii = 1; ii < _cornerCnt; ii++) {
     extCorner* s = map[ii];
     if (s == NULL)
-      sprintf(buff, "%s %d", buff, ii);
+      buff += " " + std::to_string(ii);
     else
-      sprintf(buff, "%s %s", buff, s->_name);
+      buff += std::string(" ") + s->_name;
   }
   if (!_remote) {
     _block->setCornerCount(_cornerCnt);
-    _block->setCornerNameList(buff);
+    _block->setCornerNameList(buff.c_str());
   }
 
   delete[] map;
@@ -2180,9 +2151,6 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file) {
     double dbFactor = 1;
     if (dbunit > 1000)
       dbFactor = dbunit * 0.001;
-
-    logger_->info(RCX, 432, "Database dbFactor= {}  dbunit= {}", dbFactor,
-                  dbunit);
 
     extRCModel* m = new extRCModel("MINTYPMAX", logger_);
     _modelTable->add(m);
@@ -2256,11 +2224,12 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file) {
   }
   _extDbCnt = _processCornerTable->getCnt();
 
+#ifndef NDEBUG
   uint scaleCornerCnt = 0;
   if (_scaledCornerTable != NULL)
     scaleCornerCnt = _scaledCornerTable->getCnt();
-
   assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
+#endif
 
   // char cornerNameList[1024];
   // makeCornerNameMap(cornerNameList, _cornerCnt, false);
@@ -2294,10 +2263,8 @@ void extMain::updatePrevControl() {
   _prevControl->_CCnoPowerSource = _CCnoPowerSource;
   _prevControl->_CCnoPowerTarget = _CCnoPowerTarget;
   _prevControl->_usingMetalPlanes = _usingMetalPlanes;
-  if (_prevControl->_ruleFileName)
-    free(_prevControl->_ruleFileName);
   if (_currentModel && _currentModel->getRuleFileName())
-    _prevControl->_ruleFileName = strdup(_currentModel->getRuleFileName());
+    _prevControl->_ruleFileName = _currentModel->getRuleFileName();
 }
 
 void extMain::getPrevControl() {
@@ -2432,7 +2399,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
   int ttttRemoveGs = 1;
   int setBlockPtfile = 0;
   std::vector<dbNet*> inets;
-  if ((_prevControl->_ruleFileName == NULL) &&
+  if ((_prevControl->_ruleFileName.empty()) &&
       (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
     logger_->warn(RCX, 127,
                   "No RC model was read with command <load_model>, "
@@ -2474,7 +2441,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
   // if ( _extRun==0 || (!re_extract && !eco )) {
   if ((_processCornerTable != NULL) ||
       ((_processCornerTable == NULL) && (extRules != NULL))) {
-    char* rulesfile = extRules ? (char*)extRules : _prevControl->_ruleFileName;
+    const char* rulesfile = extRules ? extRules : _prevControl->_ruleFileName.c_str();
     if (debug != 777) {
       if (!setCorners(rulesfile,
                       cmp_file)) {  // DKF:12/22 -- cmp_file for testing,
@@ -2629,7 +2596,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     getResCapTable(true);
   }
 
-  logger_->info(RCX, 436, "RC segment generation {} (max_merge_res {}) ...",
+  logger_->info(RCX, 436, "RC segment generation {} (max_merge_res {:.1f}) ...",
                 getBlock()->getName().c_str(), _mergeResBound);
   uint itermCntEst = 3 * bnets.size();
   setupMapping(itermCntEst);
@@ -2698,18 +2665,15 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     _totSegCnt = 0;
     _totSignalSegCnt = 0;
 
-    uint intersectCnt;
     if (_usingMetalPlanes && (_geoThickTable == NULL)) {
-      intersectCnt = makeIntersectPlanes(0);
+      makeIntersectPlanes(0);
       if (rlog)
         AthResourceLog("after makeIntersectPlanes", detailRlog);
     }
 
-    uint ccCnt;
     if (_debug) {
       if (_debug != 102)
-        ccCnt =
-            _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
+        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
     } else {
       logger_->info(RCX, 440,
                     "Coupling threshhold is {:.4f} fF, coupling capacitance "
@@ -2783,8 +2747,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
 
         //#ifndef NEW_GS_FLOW
         if (_cc_band_tracks == 0) {
-          ccCnt = _extNetSDB->couplingCaps(ccCapSdb, _couplingFlag, Interface,
-                                           extCompute1, &m);
+          _extNetSDB->couplingCaps(ccCapSdb, _couplingFlag, Interface,
+                                   extCompute1, &m);
         } else {
           //#else
           Rect maxRect;
@@ -2810,8 +2774,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
         }
         //#endif
       } else {
-        ccCnt = _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface,
-                                         extCompute, this);
+        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface,
+                                 extCompute, this);
       }
       if (m._dgContextFile) {
         fclose(m._dgContextFile);

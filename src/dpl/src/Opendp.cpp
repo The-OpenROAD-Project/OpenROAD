@@ -124,15 +124,13 @@ Group::Group() :
 }
 
 Opendp::Opendp() :
-  pad_right_(0),
   pad_left_(0),
+  pad_right_(0),
+  max_displacement_x_(0),
+  max_displacement_y_(0),
   grid_(nullptr)
 {
   dummy_cell_.is_placed_ = true;
-  // magic number alert
-  diamond_search_height_ = 100;
-  diamond_search_width_ = diamond_search_height_ * 5;
-  max_displacement_constraint_ = 0;
 }
 
 Opendp::~Opendp()
@@ -181,11 +179,23 @@ Opendp::havePadding() const
 }
 
 void
-Opendp::detailedPlacement(int max_displacment)
+Opendp::detailedPlacement(int max_displacement_x,
+                          int max_displacement_y)
 {
   importDb();
+
+  if (max_displacement_x == 0
+      || max_displacement_y == 0) {
+    // defaults
+    max_displacement_x_ = 500;
+    max_displacement_y_ = 100;
+  }
+  else {
+    max_displacement_x_ = max_displacement_x;
+    max_displacement_y_ = max_displacement_y;
+  }
+
   reportImportWarnings();
-  max_displacement_constraint_ = max_displacment;
   hpwl_before_ = hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.

@@ -32,16 +32,18 @@
 
 #include "tclCmdHighlighter.h"
 
-#include <regex>
+#include <QTextDocument>
 
 namespace gui {
 
-TclCmdHighlighter::TclCmdHighlighter(QTextDocument* parent, Tcl_Interp* interp) :
+TclCmdHighlighter::TclCmdHighlighter(QTextDocument* parent,
+                                     const std::vector<CommandArguments>& or_cmds,
+                                     const std::string& command_start,
+                                     const std::string& command_end) :
     QSyntaxHighlighter(parent)
 {
   initFormats();
-
-  init(interp);
+  init(or_cmds, command_start, command_end);
 }
 
 TclCmdHighlighter::~TclCmdHighlighter()
@@ -81,109 +83,65 @@ void TclCmdHighlighter::initFormats()
   comment_format_.setFontWeight(QFont::Normal);
 }
 
-void TclCmdHighlighter::init(Tcl_Interp* interp)
+void TclCmdHighlighter::init(const std::vector<CommandArguments>& or_cmds,
+                             const std::string& start_of_command,
+                             const std::string& end_of_command)
 {
-  initTclKeywords();
-  initOpenRoad(interp);
+  initTclKeywords(start_of_command, end_of_command);
+  initOpenRoad(or_cmds, start_of_command, end_of_command);
   initOther();
 }
 
-void TclCmdHighlighter::initOpenRoad(Tcl_Interp* interp)
+void TclCmdHighlighter::initOpenRoad(const std::vector<CommandArguments>& or_cmds,
+                                     const std::string& start_of_command,
+                                     const std::string& end_of_command)
 {
-  std::set<std::string> cmds;
-
-  std::vector<SyntaxRulePtr> cmd_regexes;
-
-  // get registered commands
-  if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
-    Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
-
-    int cmd_size;
-    Tcl_Obj** cmds_objs;
-    if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs) == TCL_OK) {
-      for (int i = 0; i < cmd_size; i++) {
-        cmds.insert(Tcl_GetString(cmds_objs[i]));
-      }
-    }
-  }
+  std::vector<CommandRulePtr> cmd_regexes;
 
   // create highlighting for commands and associated arguments
-  for (const std::string& cmd : cmds) {
-    std::set<std::string> args;
-    parseOpenRoadArguments(Tcl_GetVar2(interp,
-                                       "sta::cmd_args",
-                                       cmd.c_str(),
-                                       TCL_LEAVE_ERR_MSG), args);
-
+  int idx = 0;
+  for (const auto& [cmd, or_cmd, args] : or_cmds) {
     std::vector<std::string> args_regex;
     for (const std::string& arg : args) {
-      args_regex.push_back(escape(arg) + end_of_command_);
+      args_regex.push_back(escape(arg) + end_of_command);
     }
 
-    cmd_regexes.push_back(buildKeywordRule(cmd, args_regex));
-  }
-
-  // get commands from common OpenRoad namespaces
-  const std::string namespaces[] = {"ord", "sta", "odb", "utl"};
-  for (const std::string& ns : namespaces) {
-    std::string info = "info commands ::" + ns + "::*";
-    if (Tcl_Eval(interp, info.c_str()) == TCL_OK) {
-      Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
-      int cmd_size;
-      Tcl_Obj** cmds_objs;
-      if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs) == TCL_OK) {
-        for (int i = 0; i < cmd_size; i++) {
-          std::string cmd = Tcl_GetString(cmds_objs[i]);
-          cmd_regexes.push_back(buildRule(start_of_command_ + "((::)?" + escape(cmd.substr(2)) + ")" + end_of_command_));
-        }
-      }
+    cmd_regexes.push_back(buildKeywordRule(idx, cmd, start_of_command, end_of_command));
+    if (args_regex.size() > 0) {
+      argument_rules_.emplace(idx, buildArgumentRule(args_regex, &openroad_arg_format_));
     }
+
+    idx++;
   }
 
-  addRuleGroup(cmd_rules_, cmd_regexes, &openroad_cmd_format_, &openroad_arg_format_);
+  addRuleGroup(cmd_rules_, cmd_regexes, &openroad_cmd_format_);
 }
 
-void TclCmdHighlighter::parseOpenRoadArguments(const char* or_args,
-                                               std::set<std::string>& args)
+void TclCmdHighlighter::initTclKeywords(const std::string& start_of_command,
+                                        const std::string& end_of_command)
 {
-  // look for -????
-  std::regex arg_matcher("\\-[a-zA-Z0-9_]+");
-  std::string local_or_args = or_args;
-
-  std::regex_iterator<std::string::iterator> args_it(local_or_args.begin(),
-                                                     local_or_args.end(),
-                                                     arg_matcher);
-  std::regex_iterator<std::string::iterator> args_end;
-  while (args_it != args_end) {
-    args.insert(args_it->str());
-    ++args_it;
-  }
-}
-
-void TclCmdHighlighter::initTclKeywords()
-{
-  std::vector<SyntaxRulePtr> rules;
+  std::vector<CommandRulePtr> rules;
 
   // tcl keywords
   const std::string tcl_keywords[] = {"after", "append", "apply", "array", "auto_execok",
       "auto_import", "auto_load", "auto_load_index", "auto_qualify", "binary", "break",
       "catch", "cd", "chan", "clock", "close", "concat", "continue", "coroutine", "dict",
-      "echo", "encoding", "eof", "error", "eval", "exec", "exit", "expr", "fblocked",
-      "fconfigure", "fcopy", "file", "fileevent", "flush", "for", "foreach", "fork",
-      "format", "gets", "glob", "global", "history", "if", "incr", "info", "interp",
+      "echo", "else", "elseif", "encoding", "eof", "error", "eval", "exec", "exit", "expr",
+      "fblocked", "fconfigure", "fcopy", "file", "fileevent", "flush", "for", "foreach",
+      "fork", "format", "gets", "glob", "global", "history", "if", "incr", "info", "interp",
       "join", "lappend", "lassign", "lindex", "linsert", "list", "llength", "load",
       "lrange", "lrepeat", "lreplace", "lreverse", "lsearch", "lset", "lsort", "namespace",
       "open", "oo::class", "oo::copy", "oo::define", "oo::objdefine", "oo::object",
-      "package", "pid", "proc", "puts", "pwd", "read", "regexp", "regsub", "rename",
+      "package", "parray", "pid", "proc", "puts", "pwd", "read", "regexp", "regsub", "rename",
       "return", "scan", "seek", "set", "sleep", "socket", "source", "split", "string",
       "subst", "switch", "system", "tailcall", "tclLog", "tell", "throw", "time", "trace",
       "try", "unload", "unset", "update", "uplevel", "upvar", "variable", "vwait", "wait",
       "while", "zlib"};
   for (const std::string& word : tcl_keywords) {
-    rules.push_back(buildKeywordRule(word));
+    rules.push_back(buildKeywordRule(-1, word, start_of_command, end_of_command));
   }
 
-  addRuleGroup(cmd_rules_, rules, &tcl_cmd_format_, nullptr);
+  addRuleGroup(cmd_rules_, rules, &tcl_cmd_format_);
 }
 
 void TclCmdHighlighter::initOther()
@@ -196,24 +154,23 @@ void TclCmdHighlighter::initOther()
   string_rule.rules.push_back(buildRule("^.*?"+not_escaped+"\"")); //start of line
   string_rule.rules.push_back(buildRule(".*")); //whole line
   string_rule.format = &string_format_;
-  string_rule.args_format = nullptr;
 
-  std::vector<SyntaxRulePtr> rules;
+  std::vector<CommandRulePtr> rules;
 
   // tcl {} []
   rules.push_back(buildRule(not_escaped+"(\\{|\\})"));
   rules.push_back(buildRule(not_escaped+"(\\[|\\])"));
-  addRuleGroup(syntax_rules_, rules, &brackets_format_, nullptr);
+  addRuleGroup(syntax_rules_, rules, &brackets_format_);
 
   // variable
   std::string variable_form = "(\\w*::)*\\w+(\\(\\w+\\))?";
   rules.push_back(buildRule("(\\$"+variable_form+")"));
   rules.push_back(buildRule("(\\$\\{"+variable_form+"\\})"));
-  addRuleGroup(syntax_rules_, rules, &variable_format_, nullptr);
+  addRuleGroup(syntax_rules_, rules, &variable_format_);
 
   // comment
   rules.push_back(buildRule(not_escaped+"#.*"));
-  addRuleGroup(syntax_rules_, rules, &comment_format_, nullptr);
+  addRuleGroup(syntax_rules_, rules, &comment_format_);
 }
 
 const std::string TclCmdHighlighter::escape(const std::string& preregex)
@@ -223,66 +180,79 @@ const std::string TclCmdHighlighter::escape(const std::string& preregex)
   return escaped.toLatin1().data();
 }
 
-SyntaxRulePtr TclCmdHighlighter::buildKeywordRule(const std::string& pattern)
+CommandRulePtr TclCmdHighlighter::buildKeywordRule(const int command_id,
+                                                   const std::string& command,
+                                                   const std::string& start_of_command,
+                                                   const std::string& end_of_command)
 {
-  return buildKeywordRule(pattern, {});
+  return buildRule(command_id, start_of_command + "((::)?" + escape(command) + ")" + end_of_command);
 }
 
-SyntaxRulePtr TclCmdHighlighter::buildKeywordRule(const std::string& pattern,
-                                                  const std::vector<std::string>& args)
+CommandRulePtr TclCmdHighlighter::buildRule(const std::string& pattern)
 {
-  return buildRule(start_of_command_ + "(" + escape(pattern) + ")" + end_of_command_, args);
+  return buildRule(-1, pattern);
 }
 
-SyntaxRulePtr TclCmdHighlighter::buildRule(const std::string& pattern)
+CommandRulePtr TclCmdHighlighter::buildRule(const int command_id,
+                                            const std::string& pattern)
 {
-  return buildRule(pattern, {});
-}
-
-SyntaxRulePtr TclCmdHighlighter::buildRule(const std::string& pattern,
-                                           const std::vector<std::string>& args)
-{
-  SyntaxRulePtr rule = std::make_unique<SyntaxRule>();
+  CommandRulePtr rule = std::make_unique<CommandRule>();
 
   rule->pattern = std::make_unique<QRegularExpression>(pattern.c_str());
-  if (args.empty()) {
-    rule->args = nullptr;
-  }
-  else {
-    rule->args = std::make_unique<std::vector<QRegularExpressionPtr>>();
-    for (const std::string& arg : args) {
-      rule->args->push_back(std::make_unique<QRegularExpression>(arg.c_str()));
-    }
+  rule->command = command_id;
+
+  return rule;
+}
+
+ArgumentRulePtr TclCmdHighlighter::buildArgumentRule(const std::vector<std::string>& args,
+                                                     const QTextCharFormat* format)
+{
+  ArgumentRulePtr rule = std::make_unique<ArgumentRule>();
+
+  rule->format = format;
+  for (const std::string& arg : args) {
+    rule->rules.push_back(std::make_unique<QRegularExpression>(arg.c_str()));
   }
 
   return rule;
 }
 
-void TclCmdHighlighter::addRuleGroup(std::vector<SyntaxRuleGroup>& rule_group,
-                                     std::vector<SyntaxRulePtr>& rules,
-                                     const QTextCharFormat* format,
-                                     const QTextCharFormat* args_format)
+void TclCmdHighlighter::addRuleGroup(std::vector<CommandRuleGroup>& rule_group,
+                                     std::vector<CommandRulePtr>& rules,
+                                     const QTextCharFormat* format)
 {
-  SyntaxRuleGroup group;
-  for (SyntaxRulePtr& rule : rules) {
+  CommandRuleGroup group;
+  for (CommandRulePtr& rule : rules) {
     group.rules.push_back(std::move(rule));
   }
   rules.clear();
   group.format = format;
-  group.args_format = args_format;
 
   rule_group.push_back(std::move(group));
 }
 
 void TclCmdHighlighter::highlightBlock(const QString& text)
 {
+  std::set<int> matched_commands;
+
+  int current_block_number = currentBlock().blockNumber();
+  if (current_block_number > 0) {
+    TclCmdUserData* previous_block_data = static_cast<TclCmdUserData*>(document()->findBlockByNumber(current_block_number-1).userData());
+    if (previous_block_data != nullptr && previous_block_data->line_continued) {
+      matched_commands = previous_block_data->commands;
+    }
+  }
+
   // highlight commands
-  highlightBlockWithRules(text, 0, cmd_rules_);
+  highlightBlockWithRules(text, 0, cmd_rules_, matched_commands);
 
   // highlight command arguments
-  for (auto& [args_rule, format] : qAsConst(argument_rules_)) {
-    for (const QRegularExpressionPtr& rule : *args_rule) {
-      highlightBlockWithRule(text, 0, rule, format);
+  for (const int cmd : matched_commands) {
+    ArgumentRulePtr& args = argument_rules_[cmd];
+    if (args != nullptr) {
+      for (const QRegularExpressionPtr& rule : args->rules) {
+        highlightBlockWithRule(text, 0, rule, args->format);
+      }
     }
   }
 
@@ -290,12 +260,20 @@ void TclCmdHighlighter::highlightBlock(const QString& text)
   highlightBlockWithString(text);
 
   // highlight remaining syntax
-  highlightBlockWithRules(text, 0, syntax_rules_);
+  highlightBlockWithRules(text, 0, syntax_rules_, matched_commands);
 
   // not a multi line statement, clear cmd_args list
-  if (text.size() > 0 && text.at(text.size() - 1).toLatin1() != '\\') {
-    argument_rules_.clear();
+  TclCmdUserData* command_data = static_cast<TclCmdUserData*>(currentBlockUserData());
+  if (command_data == nullptr) {
+    // QFragmentMap handles free
+    command_data = new TclCmdUserData();
   }
+  command_data->line_continued = true;
+  command_data->commands = matched_commands;
+  if (text.size() > 0 && text.at(text.size() - 1).toLatin1() != '\\') {
+    command_data->line_continued = false;
+  }
+  setCurrentBlockUserData(command_data);
 }
 
 void TclCmdHighlighter::highlightBlockWithString(const QString& text)
@@ -360,13 +338,14 @@ int TclCmdHighlighter::highlightBlockWithRule(const QString& text,
 
 void TclCmdHighlighter::highlightBlockWithRules(const QString& text,
                                                 int start_idx,
-                                                const std::vector<SyntaxRuleGroup>& group)
+                                                const std::vector<CommandRuleGroup>& group,
+                                                std::set<int>& matched_commands)
 {
-  for (const SyntaxRuleGroup& rules : group) {
-    for (const SyntaxRulePtr& rule : rules.rules) {
+  for (const CommandRuleGroup& rules : group) {
+    for (const CommandRulePtr& rule : rules.rules) {
       if (highlightBlockWithRule(text, start_idx, rule->pattern, rules.format) != -1) {
-        if (rule->args != nullptr) {
-          argument_rules_.push_back(std::make_pair(rule->args.get(), rules.args_format));
+        if (rule->command >= 0) {
+          matched_commands.insert(rule->command);
         }
       }
     }

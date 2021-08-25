@@ -182,7 +182,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
 
       dbTechLayerType type = techLayer->getType();
 
-      if (type.getValue() != dbTechLayerType::ROUTING)
+      if (techLayer->getRoutingLevel() == 0)
         continue;
 
       _idTable[layerNum] = techLayer->getRoutingLevel();
@@ -481,7 +481,7 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
 
         dbTechLayerType type = techLayer->getType();
 
-        if (type.getValue() != dbTechLayerType::ROUTING)
+        if (techLayer->getRoutingLevel() == 0)
           continue;
 
         _idTable[layerNum] = techLayer->getRoutingLevel();
@@ -728,7 +728,7 @@ int extMeasure::readAB(extMain* extMain, const char* filename,
       continue;
     }
     dbTechLayerType type = techLayer->getType();
-    if (type.getValue() != dbTechLayerType::ROUTING)
+    if (techLayer->getRoutingLevel() == 0)
       continue;
 
     char netName[256];
@@ -896,7 +896,7 @@ void extMeasure::getMinWidth(dbTech* tech) {
   dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
-    if (layer->getType() != dbTechLayerType::ROUTING)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     uint level = layer->getRoutingLevel();
@@ -1004,7 +1004,7 @@ uint extMeasure::createDiagNetSingleWire(char* dirName, uint idCnt, int begin,
   ur[!_dir] = _ur[!_dir];
   ur[_dir] = begin + w_layout;
 
-  int met;
+  int met = 0;
   if (_overMet > 0)
     met = _overMet;
   else if (_underMet > 0)
@@ -1816,13 +1816,11 @@ uint extMeasure::computeOUwith2planes(int* ll, int* ur,
                                       Ath__array1D<SEQ*>* resTable) {
   Ath__array1D<SEQ*> met1Table(16);
 
-  bool over = true;
   uint met1 = _underMet;
   uint met2 = _overMet;
   if (_met - _underMet > _overMet - _met) {
     met2 = _underMet;
     met1 = _overMet;
-    over = false;
   }
   getOverlapSeq(met1, ll, ur, &met1Table);
 
@@ -2829,9 +2827,7 @@ void extMeasure::printNet(dbRSeg* rseg, uint netId) {
 
   if (netId == net->getId()) {
     _netId = netId;
-    dbCapNode* cap2 = dbCapNode::getCapNode(_block, rseg->getTargetNode());
-    uint node2 = cap2->getNode();
-    uint shapeId2 = cap2->getShapeId();
+    dbCapNode::getCapNode(_block, rseg->getTargetNode());
   }
 }
 bool extMain::updateCoupCap(dbRSeg* rseg1, dbRSeg* rseg2, int jj, double v) {
@@ -3282,8 +3278,6 @@ void extMeasure::OverSubRC(dbRSeg* rseg1, dbRSeg* rseg2, int ouCovered,
   res_lenOverSub = 0;                     // 0315 -- new calc
   bool SCALING_RES = false;
 
-  int DIAG_SUB_DIVIDER = 1;
-
   double SUB_MULT_CAP =
       1.0;  // Open ended resitance should account by 1/4 -- 11/15
 
@@ -3309,10 +3303,9 @@ void extMeasure::OverSubRC(dbRSeg* rseg1, dbRSeg* rseg2, int ouCovered,
     if (rc == NULL)
       continue;
     double cap = 0;
-    double tot = 0;
     if (lenOverSub > 0) {
       cap = SUB_MULT_CAP * rc->getFringe() * lenOverSub;
-      tot = _extMain->updateTotalCap(rseg1, cap, jj);
+      _extMain->updateTotalCap(rseg1, cap, jj);
     }
     double res = 0;
     if (!_extMain->_lef_res && !rvia1) {
@@ -3459,13 +3452,9 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
   }
   // Copy from computeAndStoreRC_720
   bool SUBTRACT_DIAG = false;
-  bool no_ou = true;
   bool USE_DB_UBITS = false;
   if (rseg1 == NULL && rseg2 == NULL)
     return 0;
-
-  bool traceFlag = false;
-  bool watchFlag = IsDebugNet();
 
   rcSegInfo();
   if (IsDebugNet())
@@ -3474,7 +3463,6 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
                "C"
                "\t[BEGIN-OUD] ----- OverUnder/Diagonal RC ----- BEGIN");
 
-  uint modelCnt = _metRCTable.getCnt();
   int totLenCovered = 0;
   _lenOUtable->resetCnt();
   if (_extMain->_usingMetalPlanes && (_extMain->_geoThickTable == NULL)) {
@@ -3502,13 +3490,6 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
   if (lenOverSub < 0)
     lenOverSub = 0;
 
-  double deltaFr[10];
-  double deltaRes[10];
-  for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-    deltaFr[jj] = 0.0;
-    deltaRes[jj] = 0.0;
-  }
-  double SUB_MULT = 1.0;
   bool COMPUTE_OVER_SUB = true;
 
   // Case where the geometric search returns no neighbor found
@@ -3522,14 +3503,13 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
     _no_debug = true;
     _no_debug = false;
 
-    bool rvia1 = isVia(rseg1->getId());
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       bool ou = false;
       _rc[jj]->_res = 0;  // DF 022821 : Res non context based
 
       if (_rc[jj]->_fringe > 0) {
         ou = true;
-        double tot = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
+        _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
       }
       if (ou && IsDebugNet())
         _rc[jj]->printDebugRC_values("OverUnder Total Open");
@@ -3555,13 +3535,8 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
     // _no_debug= false;
     //	_extMain->updateTotalRes(rseg1, rseg2, this, deltaRes, modelCnt);
 
-    bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
-    bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
-
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       bool ou = false;
-      double totR1 = 0;
-      double totR2 = 0;
       /* Res NOT context dependent DF: 022821
       if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
         if (!rvia1) {
@@ -3736,7 +3711,6 @@ void extMeasure::measureRC(CoupleOptions& options) {
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       _rc[jj]->_res = 0;
     }
-    bool DEBUG1 = _netId == 604801;
     if (IsDebugNet()) {
       const char* netName = "";
       if (_netId > 0) {
@@ -3753,7 +3727,6 @@ void extMeasure::measureRC(CoupleOptions& options) {
               " ---------------------------------------------------------------"
               "------------------\n");
     }
-    uint track_num = options[18];
     double deltaRes[10];
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       deltaRes[jj] = 0.0;
@@ -3764,7 +3737,6 @@ void extMeasure::measureRC(CoupleOptions& options) {
     int len_covered = computeResDist(s, 1, 4, _met, NULL);
     int len_down_not_coupled = _len - len_covered;
 
-    int maxDist = getMaxDist(_met, 0);
     if (_dist > 0 && len_down_not_coupled > 0) {
       calcRes(rseg1->getId(), len_down_not_coupled, 0, _dist, _met);
       len_covered += len_down_not_coupled;
@@ -3778,9 +3750,8 @@ void extMeasure::measureRC(CoupleOptions& options) {
       double totR1 = _rc[jj]->_res;
       if (totR1 > 0) {
         totR1 -= deltaRes[jj];
-        double totalSegCap = 0;
         if (totR1 != 0.0)
-          totalSegCap = _extMain->updateRes(rseg1, totR1, jj);
+          _extMain->updateRes(rseg1, totR1, jj);
       }
     }
   }
@@ -3797,13 +3768,11 @@ void extMeasure::measureRC(CoupleOptions& options) {
 int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1, dbRSeg* rseg2,
                                       int srcCovered) {
   bool SUBTRACT_DIAG = false;
-  bool no_ou = true;
   bool USE_DB_UBITS = false;
   if (rseg1 == NULL && rseg2 == NULL)
     return 0;
 
   bool traceFlag = false;
-  bool watchFlag = IsDebugNet();
   _netId = _extMain->_debug_net_id;
   if (_netId > 0)
     traceFlag = printTraceNet("\nBEGIN", true, NULL, 0, 0);
@@ -3860,7 +3829,6 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1, dbRSeg* rseg2,
   //	int mUnder= _underMet; // will be replaced
 
   double SUB_MULT = 1.0;
-  bool COMPUTE_OVER_SUB = true;
   if (_dist < 0) {  // dist is infinit
     if (totLenCovered < 0)
       totLenCovered = 0;
@@ -4067,6 +4035,8 @@ void extMeasure::getDgOverlap(SEQ* sseq, uint dir,
       } else
         continue;
     }
+#else
+    (void) srseg; // silence unused warning
 #endif
     wseq = _seqPool->alloc();
     wseq->type = tseq->type;

@@ -38,8 +38,8 @@
 #include <QAbstractTableModel>
 
 #include "gui/gui.h"
-#include "opendb/db.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/Sta.hh"
@@ -76,6 +76,8 @@ class GuiDBChangeListener;
 
 class TimingPathsModel : public QAbstractTableModel
 {
+ Q_OBJECT
+
  public:
   TimingPathsModel(bool get_max = true, int path_count = 100);
   ~TimingPathsModel();
@@ -93,8 +95,10 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
 
   void resetModel();
-  void sort(int col_index, Qt::SortOrder sort_order) override;
   void populateModel(bool get_max = true, int path_count = 100);
+
+ public slots:
+  void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
   bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
@@ -192,7 +196,7 @@ class TimingPath
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel() {}
+  TimingPathDetailModel();
   ~TimingPathDetailModel() {}
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;

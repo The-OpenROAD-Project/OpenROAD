@@ -13,14 +13,11 @@
 import docutils
 import os
 import re
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
 
 # -- Project information -----------------------------------------------------
 
 project = 'OpenROAD'
-copyright = 'The OpenROAD Project, 2020'
+copyright = 'The Regents of the University of California, 2021'
 author = 'OpenROAD Team'
 
 
@@ -35,7 +32,25 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
+    'sphinx_external_toc',
+    'myst_parser',
 ]
+
+myst_enable_extensions = [
+    'amsmath',
+    'colon_fence',
+    'deflist',
+    'dollarmath',
+    'html_admonition',
+    'html_image',
+    'replacements',
+    'smartquotes',
+    'substitution',
+    'tasklist',
+    'html_image',
+]
+
+external_toc_path = 'toc.yml'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -44,16 +59,28 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.md']
 
 # The master toctree document.
 master_doc = 'index'
 
-
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    '**/LICENSE',
+    '**/LICENSE.md',
+    'README.md',
+    'misc/NewToolDocExample.md',
+    'docs/releases/PostAlpha2.1BranchMethodology.md',
+    'main/src/OpenDB/src/def/README.md',
+    'main/src/OpenDB/src/def/doc/README.md',
+    'main/src/OpenDB/src/lef/README.md',
+    'main/docs',
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -79,10 +106,10 @@ html_theme_options = {
     # Specify the icon name.
     # For details see link.
     # https://material.io/icons/
-    'header_links' : [
-       ('Home', 'index', False, 'home'),
-       ("The OpenROAD Project", "https://theopenroadproject.org", True, 'launch'),
-       ("GitHub", "https://github.com/The-OpenROAD-Project/OpenROAD", True, 'link')
+    'header_links': [
+        ('Home', 'index', False, 'home'),
+        ("The OpenROAD Project", "https://theopenroadproject.org", True, 'launch'),
+        ("GitHub", "https://github.com/The-OpenROAD-Project/OpenROAD", True, 'link')
     ],
 
     # Customize css colors.
@@ -121,3 +148,15 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
+
+def setup(app):
+    import os
+    if not os.path.exists('main'):
+        os.symlink('..', 'main')
+    prefix = '(../'
+    newPath = '(./main/'
+    with open('index.md', 'r') as f:
+        lines = f.read()
+    lines = lines.replace(prefix, newPath)
+    with open('index.md', 'wt') as f:
+        f.write(lines)

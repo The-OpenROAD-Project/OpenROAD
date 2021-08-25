@@ -37,7 +37,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "graphics.h"
-#include "opendb/dbShape.h"
+#include "odb/dbShape.h"
 
 namespace fin {
 
@@ -444,7 +444,7 @@ void DensityFill::fillLayer(dbBlock* block,
                             dbTechLayer* layer,
                             const odb::Rect& fill_bounds_rect)
 {
-  logger_->info(FIN, 3, "Filling layer {}", layer->getConstName());
+  logger_->info(FIN, 3, "Filling layer {}.", layer->getConstName());
 
   Polygon90Set non_fill = orNonFills(block, layer);
 
@@ -482,7 +482,7 @@ void DensityFill::fillLayer(dbBlock* block,
                 graphics_.get(),
                 &non_opc_fill_area);
   }
-  logger_->info(FIN, 4, "Total fills: {}", block->getFills().size());
+  logger_->info(FIN, 4, "Total fills: {}.", block->getFills().size());
 
   if (!cfg.has_opc) {
     return;
@@ -507,7 +507,7 @@ void DensityFill::fillLayer(dbBlock* block,
         polygon, layer, block, cfg.opc, cfg.num_masks, true, graphics_.get());
   }
 
-  logger_->info(FIN, 6, "Total fills = {}", block->getFills().size());
+  logger_->info(FIN, 6, "Total fills: {}.", block->getFills().size());
 
   if (graphics_) {
     graphics_->status("OPC Area");
@@ -527,7 +527,7 @@ void DensityFill::fill(const char* cfg_filename, const odb::Rect& fill_area)
   for (dbTechLayer* layer : tech->getLayers()) {
     auto it = layers_.find(layer);
     if (it == layers_.end()) {
-      logger_->warn(FIN, 10, "skipping layer {}.", layer->getConstName());
+      logger_->warn(FIN, 10, "Skipping layer {}.", layer->getConstName());
       continue;
     }
     fillLayer(block, layer, fill_area);

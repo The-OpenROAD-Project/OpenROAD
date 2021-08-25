@@ -38,14 +38,13 @@
 #include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
-#include <QLineEdit>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
-#include "utl/Logger.h"
 
 namespace gui {
 
@@ -54,7 +53,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       output_(new QTextEdit),
       input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
-      historyPosition_(0)
+      interp_(nullptr),
+      history_(),
+      history_buffer_last_(),
+      historyPosition_(0),
+      paused_(false),
+      logger_(nullptr)
 {
   setObjectName("scripting");  // for settings
 
@@ -75,7 +79,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
   QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
-  connect(input_, SIGNAL(completeCommand()), this, SLOT(executeCommand()));
+  connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));
   connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
   connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
   connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
@@ -173,14 +177,15 @@ void ScriptWidget::setupTcl()
   input_->init(interp_);
 }
 
-void ScriptWidget::executeCommand()
+void ScriptWidget::executeCommand(const QString& command, bool echo)
 {
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
-  QString command = input_->text();
 
-  // Show the command that we executed
-  addCommandToOutput(command);
+  if (echo) {
+    // Show the command that we executed
+    addCommandToOutput(command);
+  }
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
@@ -188,6 +193,11 @@ void ScriptWidget::executeCommand()
   addTclResultToOutput(return_code);
 
   if (return_code == TCL_OK) {
+    if (echo) {
+      // record the successful command to tcl history command
+      Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
+    }
+
     // Update history; ignore repeated commands and keep last 100
     const int history_limit = 100;
     if (history_.empty() || command != history_.last()) {
@@ -226,32 +236,42 @@ void ScriptWidget::addTclResultToOutput(int return_code)
   }
 }
 
-void ScriptWidget::addBufferToOutput()
+void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
 {
-  // Show whatever we captured from the output channel in grey
-  for (auto& out : outputBuffer_) {
-    if (!out.isEmpty()) {
-      addToOutput(out, buffer_msg_);
-    }
-  }
-  outputBuffer_.clear();
+  addToOutput(text, color);
+}
+
+void ScriptWidget::addReportToOutput(const QString& text)
+{
+  addToOutput(text, buffer_msg_);
 }
 
 void ScriptWidget::addToOutput(const QString& text, const QColor& color)
 {
   // make sure cursor is at the end of the document
-  QTextCursor cursor = output_->textCursor();
-  cursor.movePosition(QTextCursor::End);
-  output_->setTextCursor(cursor);
+  output_->moveCursor(QTextCursor::End);
 
+  QString output_text = text;
+  if (text.endsWith('\n')) {
+    // remove last new line
+    output_text.chop(1);
+  }
+
+  // set new text color
   output_->setTextColor(color);
-  for (QString& text_line : text.split('\n')) {
+
+  QStringList output;
+  for (QString& text_line : output_text.split('\n')) {
+    // check for line length limits
     if (text_line.size() > max_output_line_length_) {
       text_line = text_line.left(max_output_line_length_-3);
       text_line += "...";
     }
-    output_->append(text_line);
+
+    output.append(text_line);
   }
+  // output new text
+  output_->append(output.join("\n"));
 
   // ensure changes are updated
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -317,6 +337,8 @@ void ScriptWidget::pause()
   pauser_->setEnabled(true);
   paused_ = true;
 
+  input_->setReadOnly(true);
+
   // Keep processing events until the user continues
   while (paused_) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
@@ -325,6 +347,8 @@ void ScriptWidget::pause()
   pauser_->setText(prior_text);
   pauser_->setStyleSheet(prior_style);
   pauser_->setEnabled(prior_enable);
+
+  input_->setReadOnly(false);
 
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -370,13 +394,18 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
     this->formatter_->format(msg, formatted);
-    // -1 is to drop the final '\n' character
-    auto str
-        = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
-    widget_->outputBuffer_.append(str);
+    std::string formatted_msg = std::string(formatted.data(), formatted.size());
 
-    // Make it appear now
-    widget_->addBufferToOutput();
+    if (msg.level == spdlog::level::level_enum::off) {
+      // this comes from a ->report
+      widget_->addReportToOutput(formatted_msg.c_str());
+    }
+    else {
+      // select error message color if message level is error or above.
+      const QColor& msg_color = msg.level >= spdlog::level::level_enum::err ? widget_->tcl_error_msg_ : widget_->buffer_msg_;
+
+      widget_->addLogToOutput(formatted_msg.c_str(), msg_color);
+    }
   }
 
   void flush_() override {}

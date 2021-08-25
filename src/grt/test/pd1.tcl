@@ -12,7 +12,7 @@ set_propagated_clock [get_clocks {core_clock}]
 
 set guide_file [make_result_file pd1.guide]
 
-set_routing_alpha 0.3
+set_routing_alpha 0.5
 
 set_global_routing_layer_adjustment met1 0.8
 set_global_routing_layer_adjustment met2 0.7

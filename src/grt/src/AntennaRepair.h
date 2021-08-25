@@ -35,18 +35,18 @@
 
 #pragma once
 
-#include <boost/function_output_iterator.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/iterator/function_output_iterator.hpp>
 #include <string>
 
 #include "ant/AntennaChecker.hh"
 #include "dpl/Opendp.h"
 #include "grt/GRoute.h"
-#include "opendb/db.h"
-#include "opendb/dbBlockCallBackObj.h"
-#include "opendb/dbShape.h"
-#include "opendb/wOrder.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbShape.h"
+#include "odb/wOrder.h"
 #include "sta/Liberty.hh"
 
 // Forward declaration protects FastRoute code from any
@@ -77,7 +77,7 @@ class AntennaCbk : public odb::dbBlockCallBackObj
   virtual void inDbPostMoveInst(odb::dbInst*);
 
  private:
-  GlobalRouter* _grouter;
+  GlobalRouter* grouter_;
 };
 
 class AntennaRepair
@@ -90,17 +90,17 @@ class AntennaRepair
                 utl::Logger* logger);
 
   int checkAntennaViolations(NetRouteMap& routing,
-                             int maxRoutingLayer,
-                             odb::dbMTerm* diodeMTerm);
-  void repairAntennas(odb::dbMTerm* diodeMTerm);
+                             int max_routing_layer,
+                             odb::dbMTerm* diode_mterm);
+  void repairAntennas(odb::dbMTerm* diode_mterm);
   void legalizePlacedCells();
-  AntennaViolations getAntennaViolations() { return _antennaViolations; }
-  void setAntennaViolations(AntennaViolations antennaViolations)
+  AntennaViolations getAntennaViolations() { return antenna_violations_; }
+  void setAntennaViolations(AntennaViolations antenna_violations)
   {
-    _antennaViolations = antennaViolations;
+    antenna_violations_ = antenna_violations;
   }
-  int getDiodesCount() { return _diodeInsts.size(); }
-  void clearViolations() { _antennaViolations.clear(); }
+  int getDiodesCount() { return diode_insts_.size(); }
+  void clearViolations() { antenna_violations_.clear(); }
 
  private:
   typedef int coord_type;
@@ -112,24 +112,24 @@ class AntennaRepair
 
   void deleteFillerCells();
   void insertDiode(odb::dbNet* net,
-                   odb::dbMTerm* diodeMTerm,
-                   odb::dbInst* sinkInst,
-                   odb::dbITerm* sinkITerm,
-                   std::string antennaInstName,
-                   int siteWidth,
-                   r_tree& fixedInsts);
-  void getFixedInstances(r_tree& fixedInsts);
-  void setInstsPlacementStatus(odb::dbPlacementStatus placementStatus);
+                   odb::dbMTerm* diode_mterm,
+                   odb::dbInst* sink_inst,
+                   odb::dbITerm* sink_iterm,
+                   std::string antenna_inst_name,
+                   int site_width,
+                   r_tree& fixed_insts);
+  void getFixedInstances(r_tree& fixed_insts);
+  void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
 
-  GlobalRouter* _grouter;
-  ant::AntennaChecker* _arc;
-  dpl::Opendp* _opendp;
-  odb::dbDatabase* _db;
-  utl::Logger* _logger;
-  odb::dbBlock* _block;
-  std::vector<odb::dbInst*> _diodeInsts;
-  AntennaViolations _antennaViolations;
+  GlobalRouter* grouter_;
+  ant::AntennaChecker* arc_;
+  dpl::Opendp* opendp_;
+  odb::dbDatabase* db_;
+  utl::Logger* logger_;
+  odb::dbBlock* block_;
+  std::vector<odb::dbInst*> diode_insts_;
+  AntennaViolations antenna_violations_;
 };
 
 }  // namespace grt

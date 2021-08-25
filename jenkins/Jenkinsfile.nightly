@@ -1,5 +1,11 @@
 pipeline {
   agent any;
+  options {
+    timeout(time: 8, unit: 'HOURS')
+  }
+  environment {
+    COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+  }
   stages {
     stage("Build") {
       steps {
@@ -20,7 +26,7 @@ pipeline {
             stage("Test ISPD") {
               steps {
                 unstash 'build';
-                sh "./src/TritonRoute/test/run-ispd.tcl";
+                sh "./src/drt/test/run-ispd.tcl";
               }
             }
           }
@@ -38,7 +44,7 @@ pipeline {
             stage("Test Replace Large") {
               steps {
                 unstash "build";
-                sh "./src/replace/test/regression-large";
+                sh "./src/gpl/test/regression-large";
               }
             }
           }
@@ -55,9 +61,18 @@ pipeline {
   post {
     failure {
       script {
+        if ( env.BRANCH_NAME == 'master' ) {
+          echo('Main development branch: report to stakeholders and commit author.');
+          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS";
+          REPLY_TO="$EMAIL_TO";
+        } else {
+          echo('Feature development branch: report only to commit author.');
+          EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
+          REPLY_TO='$DEFAULT_REPLYTO';
+        }
         emailext (
-            to:'$DEFAULT_RECIPIENTS',
-            replyTo: '$DEFAULT_REPLYTO',
+            to: "$EMAIL_TO",
+            replyTo: "$REPLY_TO",
             subject: '$DEFAULT_SUBJECT',
             body: '$DEFAULT_CONTENT',
             );

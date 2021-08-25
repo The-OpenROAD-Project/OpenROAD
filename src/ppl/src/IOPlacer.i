@@ -133,18 +133,6 @@ set_slots_factor(float factor)
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
 }
 
-void
-set_force_spread(bool force)
-{
-  getIOPlacer()->getParameters()->setForceSpread(force);
-}
-
-void
-set_usage_factor(float usage)
-{
-  getIOPlacer()->getParameters()->setUsageFactor(usage);
-}
-
 Edge
 get_edge(const char* edge)
 {
@@ -271,6 +259,12 @@ void
 set_min_distance(int minDist)
 {
   getIOPlacer()->getParameters()->setMinDistance(minDist);
+}
+
+void
+set_min_distance_in_tracks(bool in_tracks)
+{
+  getIOPlacer()->getParameters()->setMinDistanceInTracks(in_tracks);
 }
 
 void

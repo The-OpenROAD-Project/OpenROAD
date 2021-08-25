@@ -1,0 +1,44 @@
+Net clk
+[DEBUG STT-0001] check failed (48100, 35300) (48100, 35300) [2, 23] vs (48100, 35000) (48500, 35300) [14, 39] degree=21
+[DEBUG STT-0001] check failed (50700, 34500) (50700, 34500) [1, 22] vs (49900, 34500) (50700, 34500) [15, 37] degree=21
+Wire length = 12800 Path depth = 9200
+0 (48300 34000) neighbor 21 length 100
+1 (48000 34100) neighbor 21 length 300
+2 (51200 34100) neighbor 31 length 500
+3 (51700 34100) neighbor 31 length 0
+4 (52600 34100) neighbor 32 length 100
+5 (52300 34200) neighbor 33 length 0
+6 (49900 34500) neighbor 26 length 700
+7 (50700 34500) neighbor 26 length 100
+8 (52700 34900) neighbor 34 length 100
+9 (48500 35000) neighbor 22 length 200
+10 (50600 35200) neighbor 27 length 0
+11 (51200 35300) neighbor 28 length 0
+12 (48100 35300) neighbor 23 length 200
+13 (52800 35400) neighbor 38 length 100
+14 (50400 35600) neighbor 29 length 0
+15 (51900 35700) neighbor 36 length 400
+16 (48600 35700) neighbor 24 length 0
+17 (48000 35700) neighbor 25 length 300
+18 (50100 35700) neighbor 30 length 0
+19 (52700 35700) neighbor 38 length 300
+20 (49200 35700) neighbor 39 length 0
+21 (48300 34100) neighbor 22 length 900
+22 (48300 35000) neighbor 23 length 300
+23 (48300 35300) neighbor 25 length 400
+24 (48600 35700) neighbor 39 length 600
+25 (48300 35700) neighbor 24 length 300
+26 (50600 34500) neighbor 27 length 700
+27 (50600 35200) neighbor 37 length 100
+28 (51200 35300) neighbor 37 length 600
+29 (50400 35600) neighbor 30 length 400
+30 (50100 35700) neighbor 39 length 900
+31 (51700 34100) neighbor 33 length 700
+32 (52600 34200) neighbor 34 length 700
+33 (52300 34200) neighbor 32 length 300
+34 (52600 34900) neighbor 35 length 400
+35 (52600 35300) neighbor 36 length 700
+36 (51900 35300) neighbor 28 length 700
+37 (50600 35300) neighbor 29 length 500
+38 (52700 35400) neighbor 35 length 200
+39 (49200 35700) neighbor 39 length 0

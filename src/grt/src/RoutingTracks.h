@@ -48,46 +48,47 @@ namespace grt {
 class RoutingTracks
 {
  private:
-  int _layerIndex;
-  int _trackPitch;
-  int _line2ViaPitchUp;
-  int _line2ViaPitchDown;
-  int _location;
-  int _numTracks;
-  bool _orientation;
+  int layer_index_;
+  int track_pitch_;
+  int line_2_via_pitch_up_;
+  int line_2_via_pitch_down_;
+  int location_;
+  int num_tracks_;
+  bool orientation_;
 
  public:
   RoutingTracks() = default;
-  RoutingTracks(const int layerIndex,
-                const int trackPitch,
-                const int line2ViaPitchUp,
-                const int line2ViaPitchDown,
+  RoutingTracks(const int layer_index,
+                const int track_pitch,
+                const int line_2_via_pitch_up,
+                const int line_2_via_pitch_down,
                 const int location,
-                const int numTracks,
+                const int num_tracks,
                 const bool orientation)
-      : _layerIndex(layerIndex),
-        _trackPitch(trackPitch),
-        _line2ViaPitchUp(line2ViaPitchUp),
-        _line2ViaPitchDown(line2ViaPitchDown),
-        _location(location),
-        _numTracks(numTracks),
-        _orientation(orientation)
+      : layer_index_(layer_index),
+        track_pitch_(track_pitch),
+        line_2_via_pitch_up_(line_2_via_pitch_up),
+        line_2_via_pitch_down_(line_2_via_pitch_down),
+        location_(location),
+        num_tracks_(num_tracks),
+        orientation_(orientation)
   {
   }
 
-  int getLayerIndex() const { return _layerIndex; }
-  int getTrackPitch() const { return _trackPitch; }
+  int getLayerIndex() const { return layer_index_; }
+  int getTrackPitch() const { return track_pitch_; }
   int getLineToViaPitch() const
   {
-    return std::max(_line2ViaPitchUp, _line2ViaPitchDown);
+    return std::max(line_2_via_pitch_up_, line_2_via_pitch_down_);
   }
   int getUsePitch() const
   {
-    return std::max({_trackPitch, _line2ViaPitchUp, _line2ViaPitchDown});
+    return std::max(
+        {track_pitch_, line_2_via_pitch_up_, line_2_via_pitch_down_});
   }
-  int getLocation() const { return _location; }
-  int getNumTracks() const { return _numTracks; }
-  bool getOrientation() const { return _orientation; }
+  int getLocation() const { return location_; }
+  int getNumTracks() const { return num_tracks_; }
+  bool getOrientation() const { return orientation_; }
 };
 
 }  // namespace grt

@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace grt {
 
@@ -63,50 +63,53 @@ class Pin
       const odb::Point& position,
       const std::vector<int>& layers,
       const PinOrientation orientation,
-      const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
-      bool connectedToPad);
+      const std::map<int, std::vector<odb::Rect>>& boxes_per_layer,
+      bool connected_to_pad);
   Pin(odb::dbBTerm* bterm,
       const odb::Point& position,
       const std::vector<int>& layers,
       const PinOrientation orientation,
-      const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
-      bool connectedToPad);
+      const std::map<int, std::vector<odb::Rect>>& boxes_per_layer,
+      bool connected_to_pad);
 
   odb::dbITerm* getITerm() const;
   odb::dbBTerm* getBTerm() const;
   std::string getName() const;
-  const odb::Point& getPosition() const { return _position; }
-  const std::vector<int>& getLayers() const { return _layers; }
-  int getNumLayers() const { return _layers.size(); }
-  int getTopLayer() const { return _layers.back(); }
-  PinOrientation getOrientation() const { return _orientation; }
+  const odb::Point& getPosition() const { return position_; }
+  const std::vector<int>& getLayers() const { return layers_; }
+  int getNumLayers() const { return layers_.size(); }
+  int getTopLayer() const { return layers_.back(); }
+  PinOrientation getOrientation() const { return orientation_; }
   void setOrientation(PinOrientation orientation)
   {
-    _orientation = orientation;
+    orientation_ = orientation;
   }
   const std::map<int, std::vector<odb::Rect>>& getBoxes() const
   {
-    return _boxesPerLayer;
+    return boxes_per_layer_;
   }
-  bool isPort() const { return _isPort; }
-  bool isConnectedToPad() const { return _connectedToPad; }
-  const odb::Point& getOnGridPosition() const { return _onGridPosition; }
-  void setOnGridPosition(odb::Point onGridPos) { _onGridPosition = onGridPos; }
+  bool isPort() const { return is_port_; }
+  bool isConnectedToPad() const { return connected_to_pad_; }
+  const odb::Point& getOnGridPosition() const { return on_grid_position_; }
+  void setOnGridPosition(odb::Point on_grid_pos)
+  {
+    on_grid_position_ = on_grid_pos;
+  }
   bool isDriver();
 
  private:
   union
   {
-    odb::dbITerm* _iterm;
-    odb::dbBTerm* _bterm;
+    odb::dbITerm* iterm_;
+    odb::dbBTerm* bterm_;
   };
-  odb::Point _position;
-  odb::Point _onGridPosition;
-  std::vector<int> _layers;
-  PinOrientation _orientation;
-  std::map<int, std::vector<odb::Rect>> _boxesPerLayer;
-  bool _isPort;
-  bool _connectedToPad;
+  odb::Point position_;
+  odb::Point on_grid_position_;
+  std::vector<int> layers_;
+  PinOrientation orientation_;
+  std::map<int, std::vector<odb::Rect>> boxes_per_layer_;
+  bool is_port_;
+  bool connected_to_pad_;
 };
 
 }  // namespace grt

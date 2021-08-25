@@ -1,6 +1,6 @@
 %{
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
@@ -14,7 +14,7 @@ using sta::Instance;
 
 %}
 
-%import "opendb.i"
+%import "odb.i"
 %include "../../src/Exception.i"
 // OpenSTA swig files
 %include "tcl/StaTcl.i"
@@ -107,6 +107,17 @@ sta_to_db_master(LibertyCell *cell)
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   return db_network->staToDb(cell);
+}
+
+void
+db_network_defined()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbDatabase *db = openroad->getDb();
+  odb::dbChip *chip = db->getChip();
+  odb::dbBlock *block = chip->getBlock();
+  db_network->readDefAfter(block);
 }
 
 %} // inline

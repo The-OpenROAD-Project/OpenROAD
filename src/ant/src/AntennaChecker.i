@@ -47,6 +47,8 @@ odb::dbDatabase *getDb();
 
 %}
 
+%include "../../Exception.i"
+
 %inline %{
 
 namespace ant {

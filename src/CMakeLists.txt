@@ -1,15 +1,15 @@
 # Copyright (c) 2019, Parallax Software, Inc.
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -18,7 +18,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 include("openroad")
 
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/sta)
-set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
+set(ODB_HOME ${PROJECT_SOURCE_DIR}/src/odb)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
@@ -79,13 +79,13 @@ swig_lib(NAME      openroad_swig
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    ${ICEWALL_HOME}/src/ICeWall.tcl
-                   ${OPENDB_HOME}/src/db/OpenDB.tcl
+                   ${ODB_HOME}/src/db/odb.tcl
 )
 
 target_link_libraries(openroad_swig
   PRIVATE
     dbSta
-    opendb
+    odb
     OpenSTA
 )
 
@@ -114,28 +114,29 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Build flow tools
 add_subdirectory(ifp)
-add_subdirectory(OpenDB)
+add_subdirectory(odb)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
 add_subdirectory(stt)
-add_subdirectory(replace)
+add_subdirectory(gpl)
 add_subdirectory(dpl)
 add_subdirectory(fin)
 add_subdirectory(ppl)
-add_subdirectory(TritonCTS)
+add_subdirectory(rmp)
+add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
+add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
-add_subdirectory(PartitionMgr)
+add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
-add_subdirectory(TritonRoute)
+add_subdirectory(drt)
 add_subdirectory(utl)
-add_subdirectory(pdr)
-add_subdirectory(pdngen)
+add_subdirectory(pdn)
 
 ################################################################
 
@@ -162,7 +163,7 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   openroad_swig
-  replace
+  gpl
   dpl
   fin
   rsz
@@ -170,21 +171,22 @@ target_link_libraries(openroad
   stt
   dbSta
   OpenSTA
-  opendb
-  opendbtcl
+  odb
+  odbtcl
   rcx
-  TritonCTS
+  rmp
+  cts
   grt
   tap
   gui
-  TritonRoute
+  drt
   mpl
+  mpl2
   psm
   ant
-  PartitionMgr
+  par
   utl
   pdn
-  pdr
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
@@ -231,12 +233,12 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(openroad_swig_py
     PRIVATE
       dbSta
-      opendb
+      odb
       OpenSTA
   )
   target_link_libraries(openroad
     openroad_swig_py
-    opendbpy
+    odbpy
   )
 else()
   message(STATUS "Python3 disabled")

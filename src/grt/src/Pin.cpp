@@ -43,69 +43,69 @@ Pin::Pin(odb::dbITerm* iterm,
          const odb::Point& position,
          const std::vector<int>& layers,
          const PinOrientation orientation,
-         const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
-         bool connectedToPad)
-    : _iterm(iterm),
-      _position(position),
-      _layers(layers),
-      _orientation(orientation),
-      _boxesPerLayer(boxesPerLayer),
-      _isPort(false),
-      _connectedToPad(connectedToPad)
+         const std::map<int, std::vector<odb::Rect>>& boxes_per_layer,
+         bool connected_to_pad)
+    : iterm_(iterm),
+      position_(position),
+      layers_(layers),
+      orientation_(orientation),
+      boxes_per_layer_(boxes_per_layer),
+      is_port_(false),
+      connected_to_pad_(connected_to_pad)
 {
-  std::sort(_layers.begin(), _layers.end());
+  std::sort(layers_.begin(), layers_.end());
 }
 
 Pin::Pin(odb::dbBTerm* bterm,
          const odb::Point& position,
          const std::vector<int>& layers,
          const PinOrientation orientation,
-         const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
-         bool connectedToPad)
-    : _bterm(bterm),
-      _position(position),
-      _layers(layers),
-      _orientation(orientation),
-      _boxesPerLayer(boxesPerLayer),
-      _isPort(true),
-      _connectedToPad(connectedToPad)
+         const std::map<int, std::vector<odb::Rect>>& boxes_per_layer,
+         bool connected_to_pad)
+    : bterm_(bterm),
+      position_(position),
+      layers_(layers),
+      orientation_(orientation),
+      boxes_per_layer_(boxes_per_layer),
+      is_port_(true),
+      connected_to_pad_(connected_to_pad)
 {
-  std::sort(_layers.begin(), _layers.end());
+  std::sort(layers_.begin(), layers_.end());
 }
 
 odb::dbITerm* Pin::getITerm() const
 {
-  if (_isPort)
+  if (is_port_)
     return nullptr;
   else
-    return _iterm;
+    return iterm_;
 }
 
 odb::dbBTerm* Pin::getBTerm() const
 {
-  if (_isPort)
-    return _bterm;
+  if (is_port_)
+    return bterm_;
   else
     return nullptr;
 }
 
 std::string Pin::getName() const
 {
-  if (_isPort)
-    return _bterm->getName();
+  if (is_port_)
+    return bterm_->getName();
   else
-    return getITermName(_iterm);
+    return getITermName(iterm_);
 }
 
 bool Pin::isDriver()
 {
-  if (_isPort) {
-    return (_bterm->getIoType() == odb::dbIoType::INPUT);
+  if (is_port_) {
+    return (bterm_->getIoType() == odb::dbIoType::INPUT);
   } else {
-    odb::dbNet* db_net = _iterm->getNet();
+    odb::dbNet* db_net = iterm_->getNet();
     odb::dbITerm* driver = db_net->getFirstOutput();
-    
-    return (driver == _iterm);
+
+    return (driver == iterm_);
   }
 }
 
