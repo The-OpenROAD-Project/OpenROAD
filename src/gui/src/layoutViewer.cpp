@@ -1605,8 +1605,10 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
     bar_scale_text = QString::number(static_cast<int>(bar_size / 1000)) + "mm";
   } else if (bar_size >= 1) {
     bar_scale_text = QString::number(static_cast<int>(bar_size)) + "\u03bcm"; // mu
-  } else {
+  } else if (bar_size >= 0.001) {
     bar_scale_text = QString::number(static_cast<int>(bar_size * 1000)) + "nm";
+  } else {
+    bar_scale_text = QString::number(static_cast<int>(bar_size * 1e6)) + "pm";
   }
 
   auto color = Qt::white;
