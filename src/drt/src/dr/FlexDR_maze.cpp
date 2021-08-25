@@ -1183,46 +1183,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   }
 }
 
-bool checkLef58CutSpacingViol(const frBox& box1,
-                              const frBox& box2,
-                              frString cutClass1,
-                              frString cutClass2,
-                              frSquaredDistance distSquare,
-                              frSquaredDistance c2cSquare,
-                              bool isCurrDirY,
-                              odb::dbTechLayerCutSpacingTableDefRule* dbRule,
-                              bool isUpperVia = false)
-{
-  frSquaredDistance currDistSquare, reqDistSquare;
-  bool isSide1, isSide2;
-  bool center2center, centerAndEdge;
-  if (isCurrDirY) {
-    isSide1 = (box1.right() - box1.left()) > (box1.top() - box1.bottom());
-    isSide2 = (box2.right() - box2.left()) > (box2.top() - box2.bottom());
-  } else {
-    isSide1 = (box1.right() - box1.left()) < (box1.top() - box1.bottom());
-    isSide2 = (box2.right() - box2.left()) < (box2.top() - box2.bottom());
-  }
-  if (dbRule->isLayerValid() && isUpperVia) {
-    center2center = dbRule->isCenterToCenter(cutClass2, cutClass1);
-    centerAndEdge = dbRule->isCenterAndEdge(cutClass2, cutClass1);
-    reqDistSquare = dbRule->getSpacing(cutClass2, isSide2, cutClass1, isSide1);
-  } else {
-    center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
-    centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
-    reqDistSquare = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-  }
-
-  if (center2center || centerAndEdge)
-    currDistSquare = c2cSquare;
-  else
-    currDistSquare = distSquare;
-  reqDistSquare *= reqDistSquare;
-  if (currDistSquare < reqDistSquare)
-    return true;
-  return false;
-}
-
 /*inline*/ void FlexDRWorker::modCutSpacingCost(const frBox& box,
                                                 frMIdx z,
                                                 int type,
@@ -1342,32 +1302,17 @@ bool checkLef58CutSpacingViol(const frBox& box1,
         }
         if (!hasViol && lef58con != nullptr) {
           auto dbRule = lef58con->getODBRule();
-          bool checkVertical
-              = (tmpBx.bottom() > box.top()) || (tmpBx.top() < box.bottom());
-          bool checkHorizontal
-              = (tmpBx.left() > box.right()) || (tmpBx.right() < box.left());
-          if (!checkHorizontal && !checkVertical) {
+          bool center2center, centerAndEdge;
+          center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
+          centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
+          reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false);
+          reqDistSquare *= reqDistSquare;
+          if (center2center || centerAndEdge)
+            currDistSquare = c2cSquare;
+          else
+            currDistSquare = distSquare;
+          if (currDistSquare < reqDistSquare)
             hasViol = true;
-          } else {
-            if (checkVertical)
-              hasViol = checkLef58CutSpacingViol(box,
-                                                 tmpBx,
-                                                 cutClass1,
-                                                 cutClass2,
-                                                 distSquare,
-                                                 c2cSquare,
-                                                 true,
-                                                 dbRule);
-            if (!hasViol && checkHorizontal)
-              hasViol = checkLef58CutSpacingViol(box,
-                                                 tmpBx,
-                                                 cutClass1,
-                                                 cutClass2,
-                                                 distSquare,
-                                                 c2cSquare,
-                                                 false,
-                                                 dbRule);
-          }
         }
 
         if (hasViol) {
@@ -1577,7 +1522,8 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
   frBox tmpBx;
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
-  frCoord dx, dy, prl;
+  frSquaredDistance reqDistSquare, currDistSquare;
+  frCoord dx, dy;
   frTransform xform;
   frPoint boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
@@ -1594,33 +1540,24 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
                         (tmpBx.bottom() + tmpBx.top()) / 2);
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
-        prl = max(-dx, -dy);
         hasViol = false;
-
-        bool checkVertical
-            = (tmpBx.bottom() > box.top()) || (tmpBx.top() < box.bottom());
-        bool checkHorizontal
-            = (tmpBx.left() > box.right()) || (tmpBx.right() < box.left());
-        if (checkVertical)
-          hasViol = checkLef58CutSpacingViol(box,
-                                             tmpBx,
-                                             cutClass1,
-                                             cutClass2,
-                                             distSquare,
-                                             c2cSquare,
-                                             true,
-                                             dbRule,
-                                             isUpperVia);
-        if (!hasViol && checkHorizontal)
-          hasViol = checkLef58CutSpacingViol(box,
-                                             tmpBx,
-                                             cutClass1,
-                                             cutClass2,
-                                             distSquare,
-                                             c2cSquare,
-                                             false,
-                                             dbRule,
-                                             isUpperVia);
+        bool center2center, centerAndEdge;
+        if (isUpperVia) {
+          center2center = dbRule->isCenterToCenter(cutClass2, cutClass1);
+          centerAndEdge = dbRule->isCenterAndEdge(cutClass2, cutClass1);
+          reqDistSquare = dbRule->getSpacing(cutClass2, false, cutClass1, false);
+        } else {
+          center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
+          centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
+          reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false);
+        }
+        reqDistSquare *= reqDistSquare;
+        if (center2center || centerAndEdge)
+          currDistSquare = c2cSquare;
+        else
+          currDistSquare = distSquare;
+        if (currDistSquare < reqDistSquare)
+          hasViol = true;
         if (hasViol) {
           switch (type) {
             case 0:
