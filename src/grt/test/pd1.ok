@@ -47,21 +47,21 @@ met4       Vertical         8664          4625          46.62%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 149
-[INFO GRT-0112] Final usage 3D: 612
+[INFO GRT-0111] Final number of vias: 145
+[INFO GRT-0112] Final usage 3D: 588
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              5430            66            1.22%             0 /  0 /  0
-met2              6475            62            0.96%             0 /  0 /  0
-met3              6142            25            0.41%             0 /  0 /  0
+met1              5430            62            1.14%             0 /  0 /  0
+met2              6475            58            0.90%             0 /  0 /  0
+met3              6142            21            0.34%             0 /  0 /  0
 met4              4625            12            0.26%             0 /  0 /  0
 met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            24115           165            0.68%             0 /  0 /  0
+Total            24115           153            0.63%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1785 um
+[INFO GRT-0018] Total wirelength: 1684 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

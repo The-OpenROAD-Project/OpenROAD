@@ -46,6 +46,10 @@
 
 namespace stt {
 
+static void
+reportSteinerBranches(const stt::Tree &tree,
+                      Logger *logger);
+
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
   min_fanout_alpha_({0, -1}),
@@ -99,10 +103,13 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
                                          int drvr_index,
                                          float alpha)
 {
-  if (alpha > 0.0)
-    return pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-  else
-    return flt::flute(x, y, flute_accuracy);
+  if (alpha > 0.0) {
+    Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
+    if (checkTree(tree))
+      return tree;
+    // Fall back to flute if PD fails.
+  }
+  return flt::flute(x, y, flute_accuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
@@ -266,6 +273,21 @@ reportSteinerTree(const stt::Tree &tree,
   logger->report("Wire length = {} Path depth = {}",
                  tree.length,
                  findPathDepth(tree, drvr_index));
+  reportSteinerBranches(tree, logger);
+}
+
+void
+reportSteinerTree(const stt::Tree &tree,
+                  Logger *logger)
+{
+  logger->report("Wire length = {}", tree.length);
+  reportSteinerBranches(tree, logger);
+}
+
+static void
+reportSteinerBranches(const stt::Tree &tree,
+                      Logger *logger)
+{
   for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
