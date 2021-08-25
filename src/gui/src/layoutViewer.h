@@ -118,8 +118,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void setScroller(LayoutScroll* scroller);
 
   // conversion functions
-  odb::Rect screenToDBU(const QRect& rect);
-  odb::Point screenToDBU(const QPoint& point);
+  odb::Rect screenToDBU(const QRectF& rect);
+  odb::Point screenToDBU(const QPointF& point);
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
@@ -165,8 +165,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
-  void centerAt(const QPointF& focus);
   void centerAt(const odb::Point& focus);
+  void centerChanged(int dx, int dy);
   void setResolution(qreal dbu_per_pixel);
   void updateFitResolution();
 
@@ -204,7 +204,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   odb::dbBlock* getBlock();
-  void setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize = true);
+  void setPixelsPerDBU(qreal pixels_per_dbu);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
@@ -251,9 +251,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   odb::Point getVisibleCenter();
 
-  // Compute and store the offset necessary to center the block in the viewport.
-  void computeCenteringOffset();
-
   int fineViewableResolution();
   int nominalViewableResolution();
   int coarseViewableResolution();
@@ -289,6 +286,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 
   QPoint centering_shift_;
+  odb::Point center_;
 
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
@@ -307,6 +305,7 @@ class LayoutScroll : public QScrollArea
 
  signals:
   void viewportChanged();
+  void centerChanged(int dx, int dy);
 
  protected:
   void resizeEvent(QResizeEvent* event) override;
