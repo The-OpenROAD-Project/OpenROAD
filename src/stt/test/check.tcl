@@ -1,4 +1,4 @@
-# Challenging nets from gf12/swerv_wrapper with segment overlaps.
+# Challenging nets from gf/swerv_wrapper with segment overlaps.
 source "stt_helpers.tcl"
 
 # squack when segment overlap is detected
