@@ -187,10 +187,26 @@ highlight_net_route(const odb::dbNet *net)
   getGlobalRouter()->highlightRoute(net);
 }
 
+void highlight_steiner_builder_tree(const odb::dbNet *net)
+{
+  getGlobalRouter()->highlightSteinerBuilderTree(net);
+}
+
+void highlight_2D_tree(const odb::dbNet *net)
+{
+  getGlobalRouter()->highlight2DTree(net);
+}
+
 void
 erase_routes()
 {
   getGlobalRouter()->clearRouteGui();
+}
+
+void
+erase_fastroutes()
+{
+  getGlobalRouter()->clearFastRouteGui();
 }
 
 void

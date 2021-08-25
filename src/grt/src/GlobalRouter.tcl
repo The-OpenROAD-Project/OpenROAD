@@ -301,6 +301,36 @@ proc draw_route_guides { net_names } {
   }
 }
 
+sta::define_cmd_args "highlight_steiner_builder_tree" { net_names }
+
+proc highlight_steiner_builder_tree { net_names } {
+
+  if {[llength $net_names] > 0} {
+    foreach net [get_nets $net_names] {
+      if { $net != "NULL" } {
+        grt::highlight_steiner_builder_tree [sta::sta_to_db_net $net]
+      }
+    }
+  } else {
+    grt::erase_fastroutes
+  }
+}
+
+sta::define_cmd_args "highlight_2D_tree" { net_names }
+
+proc highlight_2D_tree { net_names } {
+
+  if {[llength $net_names] > 0} {
+    foreach net [get_nets $net_names] {
+      if { $net != "NULL" } {
+        grt::highlight_2D_tree [sta::sta_to_db_net $net]
+      }
+    }
+  } else {
+    grt::erase_fastroutes
+  }
+}
+
 namespace eval grt {
 
 proc estimate_rc_cmd {} {

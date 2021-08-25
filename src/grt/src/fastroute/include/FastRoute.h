@@ -150,6 +150,9 @@ class FastRouteCore
   }
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
+  NetRouteMap getTreeBySteinerTreeBuilder();
+  NetRouteMap getTree2D();
+
  private:
   NetRouteMap getRoutes();
   void init_usage();
@@ -472,6 +475,9 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+
+  std::map<odb::dbNet*, std::vector<stt::Tree>> treesGeneratedBySteinerTreeBuilder_;
+  std::map<odb::dbNet*, std::vector<StTree>> trees2D_;
 };
 
 }  // namespace grt

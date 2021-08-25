@@ -189,8 +189,13 @@ class GlobalRouter
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet* net);
+
+  void highlightSteinerBuilderTree(const odb::dbNet* net);
+  void highlight2DTree(const odb::dbNet* net);
+  
   // Clear routes in the gui
   void clearRouteGui();
+  void clearFastRouteGui();
   // Report the wire length on each layer.
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -313,6 +318,7 @@ class GlobalRouter
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
   GrouteRenderer* groute_renderer_;
+  GrouteRenderer* fastroute_renderer_;
   NetRouteMap routes_;
 
   std::vector<Net>* nets_;
