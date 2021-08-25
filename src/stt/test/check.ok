@@ -1,44 +1,90 @@
-Net clk
-[DEBUG STT-0001] check failed (48100, 35300) (48100, 35300) [2, 23] vs (48100, 35000) (48500, 35300) [14, 39] degree=21
-[DEBUG STT-0001] check failed (50700, 34500) (50700, 34500) [1, 22] vs (49900, 34500) (50700, 34500) [15, 37] degree=21
-Wire length = 12800 Path depth = 9200
-0 (48300 34000) neighbor 21 length 100
-1 (48000 34100) neighbor 21 length 300
-2 (51200 34100) neighbor 31 length 500
-3 (51700 34100) neighbor 31 length 0
-4 (52600 34100) neighbor 32 length 100
-5 (52300 34200) neighbor 33 length 0
-6 (49900 34500) neighbor 26 length 700
-7 (50700 34500) neighbor 26 length 100
-8 (52700 34900) neighbor 34 length 100
-9 (48500 35000) neighbor 22 length 200
-10 (50600 35200) neighbor 27 length 0
-11 (51200 35300) neighbor 28 length 0
-12 (48100 35300) neighbor 23 length 200
-13 (52800 35400) neighbor 38 length 100
-14 (50400 35600) neighbor 29 length 0
-15 (51900 35700) neighbor 36 length 400
-16 (48600 35700) neighbor 24 length 0
-17 (48000 35700) neighbor 25 length 300
-18 (50100 35700) neighbor 30 length 0
-19 (52700 35700) neighbor 38 length 300
-20 (49200 35700) neighbor 39 length 0
-21 (48300 34100) neighbor 22 length 900
-22 (48300 35000) neighbor 23 length 300
-23 (48300 35300) neighbor 25 length 400
-24 (48600 35700) neighbor 39 length 600
-25 (48300 35700) neighbor 24 length 300
-26 (50600 34500) neighbor 27 length 700
-27 (50600 35200) neighbor 37 length 100
-28 (51200 35300) neighbor 37 length 600
-29 (50400 35600) neighbor 30 length 400
-30 (50100 35700) neighbor 39 length 900
-31 (51700 34100) neighbor 33 length 700
-32 (52600 34200) neighbor 34 length 700
-33 (52300 34200) neighbor 32 length 300
-34 (52600 34900) neighbor 35 length 400
-35 (52600 35300) neighbor 36 length 700
-36 (51900 35300) neighbor 28 length 700
-37 (50600 35300) neighbor 29 length 500
-38 (52700 35400) neighbor 35 length 200
-39 (49200 35700) neighbor 39 length 0
+Net overlap1
+[DEBUG STT-0001] check failed (11700, 2700) (11800, 3000) [2, 14] vs (11700, 1600) (12200, 2700) [9, 8] degree=9
+steiner tree overlap
+Wire length = 10300 Path depth = 9400
+0 (11700 2700) neighbor 9 length 0
+1 (8900 2500) neighbor 10 length 0
+2 (11800 3000) neighbor 14 length 400
+3 (11600 2700) neighbor 11 length 0
+4 (5200 2300) neighbor 12 length 0
+5 (5000 2000) neighbor 13 length 100
+6 (5000 2100) neighbor 13 length 0
+7 (5200 1400) neighbor 15 length 900
+8 (12200 1600) neighbor 8 length 0
+9 (11700 2700) neighbor 8 length 1600
+10 (8900 2500) neighbor 11 length 2900
+11 (11600 2700) neighbor 14 length 100
+12 (5200 2300) neighbor 10 length 3900
+13 (5000 2100) neighbor 15 length 400
+14 (11700 2700) neighbor 9 length 0
+15 (5200 2300) neighbor 12 length 0
+Net overlap2
+[DEBUG STT-0001] check failed (11000, 11900) (11100, 11900) [1, 61] vs (10900, 11900) (11000, 12300) [37, 38] degree=34
+steiner tree overlap
+Wire length = 8700 Path depth = 4900
+0 (10400 13600) neighbor 0 length 0
+1 (11100 11900) neighbor 61 length 100
+2 (10400 11700) neighbor 60 length 100
+3 (10500 11600) neighbor 60 length 100
+4 (10500 11700) neighbor 34 length 0
+5 (10800 11700) neighbor 35 length 0
+6 (10800 11900) neighbor 36 length 0
+7 (11000 11900) neighbor 37 length 0
+8 (10900 12300) neighbor 38 length 0
+9 (11400 11000) neighbor 39 length 100
+10 (11300 11000) neighbor 39 length 0
+11 (11300 11700) neighbor 40 length 0
+12 (11400 11800) neighbor 41 length 0
+13 (11400 11900) neighbor 42 length 0
+14 (12000 10300) neighbor 43 length 900
+15 (12000 11200) neighbor 43 length 0
+16 (12000 11300) neighbor 44 length 0
+17 (11700 11700) neighbor 45 length 0
+18 (11700 11900) neighbor 46 length 0
+19 (11600 11900) neighbor 47 length 0
+20 (11500 11900) neighbor 48 length 0
+21 (11500 12000) neighbor 49 length 0
+22 (11400 12100) neighbor 50 length 0
+23 (11400 12300) neighbor 51 length 0
+24 (11400 12400) neighbor 52 length 0
+25 (11000 12500) neighbor 53 length 0
+26 (10800 12600) neighbor 54 length 0
+27 (10700 12500) neighbor 55 length 0
+28 (10500 12600) neighbor 56 length 0
+29 (10900 12900) neighbor 65 length 500
+30 (10800 12700) neighbor 54 length 100
+31 (10500 12800) neighbor 57 length 0
+32 (10400 12900) neighbor 58 length 0
+33 (10400 13100) neighbor 59 length 0
+34 (10500 11700) neighbor 35 length 300
+35 (10800 11700) neighbor 36 length 200
+36 (10800 11900) neighbor 61 length 200
+37 (11000 11900) neighbor 38 length 500
+38 (10900 12300) neighbor 63 length 300
+39 (11300 11000) neighbor 40 length 700
+40 (11300 11700) neighbor 41 length 200
+41 (11400 11800) neighbor 42 length 100
+42 (11400 11900) neighbor 62 length 100
+43 (12000 11200) neighbor 44 length 100
+44 (12000 11300) neighbor 45 length 700
+45 (11700 11700) neighbor 46 length 200
+46 (11700 11900) neighbor 47 length 100
+47 (11600 11900) neighbor 62 length 100
+48 (11500 11900) neighbor 49 length 100
+49 (11500 12000) neighbor 50 length 200
+50 (11400 12100) neighbor 51 length 200
+51 (11400 12300) neighbor 52 length 100
+52 (11400 12400) neighbor 63 length 500
+53 (11000 12500) neighbor 64 length 300
+54 (10800 12600) neighbor 64 length 200
+55 (10700 12500) neighbor 56 length 300
+56 (10500 12600) neighbor 57 length 200
+57 (10500 12800) neighbor 65 length 200
+58 (10400 12900) neighbor 59 length 200
+59 (10400 13100) neighbor 0 length 500
+60 (10500 11700) neighbor 34 length 0
+61 (11000 11900) neighbor 37 length 0
+62 (11500 11900) neighbor 48 length 0
+63 (11000 12500) neighbor 53 length 0
+64 (10700 12500) neighbor 55 length 0
+65 (10400 12900) neighbor 58 length 0
