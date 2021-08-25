@@ -124,7 +124,17 @@ line option `-no_init` is specified.
 
 OpenROAD then sources the command file cmd_file if it is specified on
 the command line. Unless the `-exit` command line flag is specified it
-enters and interactive Tcl command interpreter.
+enters an interactive Tcl command interpreter.
+
+#### Run in Python
+OpenROAD can be run in a python interpreter as following
+```
+openroad -python [args]
+```
+
+Currently, OpenDB is the only module supported in python. You can see examples of python scripts in  [OpenDB's python unit-tests](src/odb/test/unitTestsPython/)
+
+
 
 Below is a list of the available tools/modules included in the OpenROAD app.
 
