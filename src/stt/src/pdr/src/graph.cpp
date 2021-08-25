@@ -33,8 +33,6 @@
 
 #include "graph.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -175,54 +173,6 @@ void Graph::addChild(Node& node, int idx)
   auto &children = node.children;
   if (std::find(children.begin(), children.end(), idx) == children.end())
     children.push_back(idx);
-}
-
-void Graph::RemoveUnneceSTNodes()
-{
-  vector<int> toBeRemoved;
-  for (int i = num_terminals; i < nodes.size(); ++i) {
-    if (nodes[i].children.size() < 2) {
-      toBeRemoved.push_back(i);
-    }
-  }
-  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
-    Node& cN = nodes[toBeRemoved[i]];
-    removeChild(nodes[cN.parent], cN.idx);
-    for (int j = 0; j < cN.children.size(); ++j) {
-      replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
-      addChild(nodes[cN.parent], cN.children[j]);
-      edges_[cN.children[j]].head = cN.parent;
-    }
-  }
-  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
-    nodes.erase(nodes.begin() + toBeRemoved[i]);
-    edges_.erase(edges_.begin() + toBeRemoved[i]);
-  }
-
-  map<int, int> idxMap;
-  for (int i = 0; i < nodes.size(); ++i) {
-    debugPrint(logger_, PDR, "pdrev", 3, "idxMap {} {}", i, nodes[i].idx);
-    idxMap[nodes[i].idx] = i;
-  }
-  for (int i = 0; i < nodes.size(); ++i) {
-    Node& cN = nodes[i];
-    for (int j = 0; j < toBeRemoved.size(); ++j) {
-      removeChild(nodes[i], toBeRemoved[j]);
-    }
-
-    debugPrint(logger_, PDR, "pdrev", 3, "before cN: {}", cN);
-    sort(cN.children.begin(), cN.children.end());
-    for (int j = 0; j < cN.children.size(); ++j) {
-      if (cN.children[j] != idxMap[cN.children[j]])
-        replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
-    }
-    cN.idx = i;
-    cN.parent = idxMap[cN.parent];
-    edges_[i].tail = i;
-    edges_[i].head = idxMap[edges_[i].head];
-    edges_[i].idx = i;
-    debugPrint(logger_, PDR, "pdrev", 3, "after cN: {}", cN);
-  }
 }
 
 void Graph::replaceParent(Node& pNode, int idx, int tIdx)
@@ -552,17 +502,6 @@ void Graph::heap_decrease_key(int p, float new_key)
     /* store p in the position of the hole */
     heap_elt_[k] = p;
     heap_idx_[p] = k;
-  }
-}
-
-void Graph::updateMinDist()
-{
-  for (int i = 0; i < num_terminals; ++i) {
-    if (i == root_idx_) {
-      nodes[i].min_dist = 0;
-    } else {
-      nodes[i].min_dist = dist(nodes[i], nodes[root_idx_]);
-    }
   }
 }
 
@@ -2046,6 +1985,54 @@ void Graph::swap_and_update_tree(int min_node,
     update_node_detcost_Kt(j);
   }
   get_children_of_node();
+}
+
+void Graph::RemoveUnneceSTNodes()
+{
+  vector<int> toBeRemoved;
+  for (int i = num_terminals; i < nodes.size(); ++i) {
+    if (nodes[i].children.size() < 2) {
+      toBeRemoved.push_back(i);
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    Node& cN = nodes[toBeRemoved[i]];
+    removeChild(nodes[cN.parent], cN.idx);
+    for (int j = 0; j < cN.children.size(); ++j) {
+      replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
+      addChild(nodes[cN.parent], cN.children[j]);
+      edges_[cN.children[j]].head = cN.parent;
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    nodes.erase(nodes.begin() + toBeRemoved[i]);
+    edges_.erase(edges_.begin() + toBeRemoved[i]);
+  }
+
+  map<int, int> idxMap;
+  for (int i = 0; i < nodes.size(); ++i) {
+    debugPrint(logger_, PDR, "pdrev", 3, "idxMap {} {}", i, nodes[i].idx);
+    idxMap[nodes[i].idx] = i;
+  }
+  for (int i = 0; i < nodes.size(); ++i) {
+    Node& cN = nodes[i];
+    for (int j = 0; j < toBeRemoved.size(); ++j) {
+      removeChild(nodes[i], toBeRemoved[j]);
+    }
+
+    debugPrint(logger_, PDR, "pdrev", 3, "before cN: {}", cN);
+    sort(cN.children.begin(), cN.children.end());
+    for (int j = 0; j < cN.children.size(); ++j) {
+      if (cN.children[j] != idxMap[cN.children[j]])
+        replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
+    }
+    cN.idx = i;
+    cN.parent = idxMap[cN.parent];
+    edges_[i].tail = i;
+    edges_[i].head = idxMap[edges_[i].head];
+    edges_[i].idx = i;
+    debugPrint(logger_, PDR, "pdrev", 3, "after cN: {}", cN);
+  }
 }
 
 void Graph::refineSteiner2()

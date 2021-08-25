@@ -49,6 +49,116 @@ void FlexRP::prep()
     prep_via2viaForbiddenLen(ndr.get());
     prep_viaForbiddenTurnLen(ndr.get());
   }
+  prep_minStepViasCheck();
+}
+
+void FlexRP::prep_minStepViasCheck()
+{
+  auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
+  auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+  tech_->via2viaMinStepPatches_.resize((topLayerNum - bottomLayerNum) / 2 + 1);
+  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+    frLayer* layer = tech_->getLayer(lNum);
+    if (layer->getType() != frLayerTypeEnum::ROUTING) {
+      continue;
+    }
+    if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum)
+      continue;
+    frViaDef* downVia
+        = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    frViaDef* upVia
+        = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    if (!downVia || !upVia)
+        continue;
+    auto minStepCons = layer->getMinStepConstraint();
+    if (!minStepCons)
+      continue;
+    vector<frBox>* patches = &tech_->via2viaMinStepPatches_[lNum / 2 - 1];
+    frBox const* inner = nullptr;
+    frBox const* outer = nullptr;
+    if (downVia->getLayer2ShapeBox().right()
+        < upVia->getLayer1ShapeBox().right()) {
+      inner = &downVia->getLayer2ShapeBox();
+      outer = &upVia->getLayer1ShapeBox();
+    } else if (upVia->getLayer1ShapeBox().right()
+               < downVia->getLayer2ShapeBox().right()) {
+      inner = &upVia->getLayer1ShapeBox();
+      outer = &downVia->getLayer2ShapeBox();
+    }
+    if (inner) {
+      if (inner->top() > outer->top()) {  // right upper joint
+        if (hasMinStepViolation(minStepCons,
+                                outer->right() - inner->right(),
+                                inner->top() - outer->top())) {
+          tech_->hasVia2viaMinStep_ = true;
+          patches->push_back(frBox(
+              inner->right(), outer->top(), outer->right(), inner->top()));
+        }
+      }
+      if (inner->bottom() < outer->bottom()) {  // right down joint
+        if (hasMinStepViolation(minStepCons,
+                                outer->right() - inner->right(),
+                                outer->bottom() - inner->bottom())) {
+          tech_->hasVia2viaMinStep_ = true;
+          patches->push_back(frBox(inner->right(),
+                                   inner->bottom(),
+                                   outer->right(),
+                                   outer->bottom()));
+        }
+      }
+    }
+    inner = outer = nullptr;
+    if (downVia->getLayer2ShapeBox().left()
+        > upVia->getLayer1ShapeBox().left()) {
+      inner = &downVia->getLayer2ShapeBox();
+      outer = &upVia->getLayer1ShapeBox();
+    } else if (upVia->getLayer1ShapeBox().left()
+               > downVia->getLayer2ShapeBox().left()) {
+      inner = &upVia->getLayer1ShapeBox();
+      outer = &downVia->getLayer2ShapeBox();
+    }
+    if (inner) {
+      if (inner->top() > outer->top()) {  // left upper joint
+        if (hasMinStepViolation(minStepCons,
+                                inner->left() - outer->left(),
+                                inner->top() - outer->top())) {
+          tech_->hasVia2viaMinStep_ = true;
+          patches->push_back(
+              frBox(outer->left(), outer->top(), inner->left(), inner->top()));
+        }
+      }
+      if (inner->bottom() < outer->bottom()) {  // left down joint
+        if (hasMinStepViolation(minStepCons,
+                                inner->left() - outer->left(),
+                                outer->bottom() - inner->bottom())) {
+          tech_->hasVia2viaMinStep_ = true;
+          patches->push_back(frBox(
+              outer->left(), inner->bottom(), inner->left(), outer->bottom()));
+        }
+      }
+    }
+  }
+} 
+
+bool FlexRP::hasMinStepViolation(frMinStepConstraint* minStepCons,
+                                 int edge1,
+                                 int edge2)
+{
+  int maxEdges = minStepCons->hasMaxEdges() ? minStepCons->getMaxEdges() : 1;
+  if (!minStepCons->hasOutsideCorner() || maxEdges >= 2)
+    return false;
+  int nEdges = (int) (edge1 < minStepCons->getMinStepLength())
+               + (int) (edge2 < minStepCons->getMinStepLength());
+  if (nEdges > maxEdges) {
+    if (minStepCons->hasMaxLength()) {
+      int length = edge1 < minStepCons->getMinStepLength() ? edge1 : 0;
+      length += edge2 < minStepCons->getMinStepLength() ? edge2 : 0;
+      if (minStepCons->getMaxLength() < length)
+        return true;
+    } else
+      return true;
+  }
+  return false;
 }
 
 void FlexRP::prep_viaForbiddenThrough()

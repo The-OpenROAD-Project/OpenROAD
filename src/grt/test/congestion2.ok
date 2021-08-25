@@ -56,27 +56,27 @@ metal10    Vertical         2256            47          97.92%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0104] Minimal overflow 9 occurring at round 48.
-[INFO GRT-0111] Final number of vias: 4832
-[INFO GRT-0112] Final usage 3D: 19619
+[INFO GRT-0104] Minimal overflow 11 occurring at round 36.
+[INFO GRT-0111] Final number of vias: 4813
+[INFO GRT-0112] Final usage 3D: 19838
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            3008          1231           40.92%             0 /  1 /  3
-metal3            2806          1379           49.14%             1 /  0 /  3
-metal4            2726          1028           37.71%             0 /  1 /  1
-metal5            2438           839           34.41%             1 /  0 /  4
-metal6            2726           646           23.70%             0 /  1 /  1
+metal2            3008          1280           42.55%             0 /  1 /  2
+metal3            2806          1465           52.21%             1 /  0 /  4
+metal4            2726          1073           39.36%             0 /  0 /  0
+metal5            2438           885           36.30%             1 /  0 /  4
+metal6            2726           696           25.53%             0 /  1 /  2
 metal7              46             0            0.00%             0 /  0 /  0
 metal8             188             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10             47             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            13985          5123           36.63%             2 /  3 / 12
+Total            13985          5399           38.61%             2 /  2 / 12
 
-[INFO GRT-0018] Total wirelength: 15449 um
+[INFO GRT-0018] Total wirelength: 16086 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

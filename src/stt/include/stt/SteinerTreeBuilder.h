@@ -126,6 +126,9 @@ reportSteinerTree(const Tree &tree,
                   int drvr_x,
                   int drvr_y,
                   Logger *logger);
+void
+reportSteinerTree(const stt::Tree &tree,
+                  Logger *logger);
 
 void
 highlightSteinerTree(const Tree &tree,
