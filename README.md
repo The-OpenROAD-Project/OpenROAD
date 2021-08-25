@@ -127,7 +127,7 @@ the command line. Unless the `-exit` command line flag is specified it
 enters an interactive Tcl command interpreter.
 
 #### Run in Python
-OpenROAD can be run in a python interpreter as following
+OpenROAD can run with a python command interpreter as following
 ```
 openroad -python [args]
 ```
