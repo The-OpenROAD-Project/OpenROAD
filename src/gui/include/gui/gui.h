@@ -431,7 +431,8 @@ class Gui
 
   // Waits for the user to click continue before returning
   // Draw events are processed while paused.
-  void pause();
+  // timeout is in milliseconds (0 is no timeout)
+  void pause(int timeout = 0);
 
   // Show a message in the status bar
   void status(const std::string& message);

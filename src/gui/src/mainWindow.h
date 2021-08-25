@@ -101,7 +101,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Waits for the user to click continue before returning
   // Draw events are processed while paused.
-  void pause();
+  void pause(int timeout);
 
   // The selected set of objects has changed
   void selectionChanged();

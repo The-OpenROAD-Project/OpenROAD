@@ -349,13 +349,13 @@ const std::string input_dialog(const char* title, const char* question)
   return gui->requestUserInput(title, question);
 }
 
-void pause()
+void pause(int timeout = 0)
 {
   if (!check_gui("pause")) {
     return;
   }
   auto gui = gui::Gui::get();
-  return gui->pause();
+  return gui->pause(timeout);
 }
 
 void show_widget(const char* name)

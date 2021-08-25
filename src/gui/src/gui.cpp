@@ -106,9 +106,9 @@ void Gui::status(const std::string& message)
   main_window->status(message);
 }
 
-void Gui::pause()
+void Gui::pause(int timeout)
 {
-  main_window->pause();
+  main_window->pause(timeout);
 }
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
