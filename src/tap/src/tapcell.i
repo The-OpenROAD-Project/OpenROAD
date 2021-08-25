@@ -112,7 +112,7 @@
   }
 
   void build_row(odb::dbBlock* block,
-                 const char* name,
+                 std::string& name,
                  odb::dbSite* site,
                  int start_x,
                  int end_x,
@@ -134,42 +134,11 @@
   }
 
   void cut_rows(odb::dbMaster* endcap_master,
-                std::vector<odb::dbBox*> blockages,
+                std::vector<odb::dbBox*>& blockages,
                 int halo_x,
                 int halo_y)
   {
     getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
-  }
-
-  std::vector<std::vector<odb::dbRow*>> organize_rows()
-  {
-    return getTapcell()->organizeRows();
-  }
-
-  int insert_endcaps(std::vector<std::vector<odb::dbRow*>> rows,
-                     odb::dbMaster* endcap_master,
-                     std::vector<std::string> cnrcap_masters)
-  {
-    return getTapcell()->insertEndcaps(
-        rows, endcap_master, cnrcap_masters);
-  }
-
-  int insert_at_top_bottom(std::vector<std::vector<odb::dbRow*>> rows,
-                           std::vector<std::string> masters,
-                           odb::dbMaster* endcap_master,
-                           std::string prefix)
-  {
-    return getTapcell()->insertAtTopBottom(
-        rows, masters, endcap_master, prefix);
-  }
-
-  int insert_around_macros(std::vector<std::vector<odb::dbRow*>> rows,
-                           std::vector<std::string> masters,
-                           odb::dbMaster* corner_master,
-                           std::string prefix)
-  {
-    return getTapcell()->insertAroundMacros(
-        rows, masters, corner_master, prefix);
   }
 
   int remove_cells(const char* prefix)
@@ -177,21 +146,8 @@
     return getTapcell()->removeCells(prefix);
   }
 
-  std::vector<odb::dbBox*> find_blockages()
-  {
+  std::vector<odb::dbBox*> find_blockages() {
     return getTapcell()->findBlockages();
-  }
-
-  int insert_tapcells(std::vector<vector<odb::dbRow*>> rows,
-                      std::string tapcell_master,
-                      int dist)
-  {
-    return getTapcell()->insertTapcells(rows, tapcell_master, dist);
-  }
-
-  bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int halo_x, int halo_y)
-  {
-    return getTapcell()->overlaps(blockage, row, halo_x, halo_y);
   }
 
   }  // namespace tap
