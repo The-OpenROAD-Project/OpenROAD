@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
 
@@ -182,4 +182,4 @@ class TestWireCodec(odbUnitTest.TestCase):
 
 
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestWireCodec)
+    odbUnitTest.main()

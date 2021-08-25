@@ -1,4 +1,4 @@
-import opendb as odb
+import odb
 import helper
 import odbUnitTest
 #destroying   dbInst,  dbNet,  dbBTerm,  dbBlock,  dbBPin,  dbWire,  dbCapNode,  dbCcSeg,  dbLib,  dbSWire,  dbObstruction,  dbRegion
@@ -171,6 +171,5 @@ class TestDestroy(odbUnitTest.TestCase):
         self.assertIsNotNone(odb.dbTrackGrid_create(self.block,L1))
 
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestDestroy)
-#     odbUnitTest.main()
+    odbUnitTest.main()
     

@@ -1,9 +1,9 @@
-import opendb as odb
+import odb
 import os
 
 
 def createSimpleDB():
-    db = odb.create_db()
+    db = odb.dbDatabase.create()
     tech = odb.dbTech.create(db)
     L1 = odb.dbTechLayer_create(tech, 'L1', 'ROUTING')
     lib = odb.dbLib.create(db, "lib")
@@ -15,7 +15,7 @@ def createSimpleDB():
 
 
 def createMultiLayerDB():
-    db = odb.create_db()
+    db = odb.dbDatabase.create()
     tech = odb.dbTech.create(db)
     
     m1 = odb.dbTechLayer_create(tech, "M1", 'ROUTING')

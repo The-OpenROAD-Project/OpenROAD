@@ -1,4 +1,4 @@
-import opendb as odb
+import odb
 import helper
 import odbUnitTest
 
@@ -78,6 +78,5 @@ class TestITerm(odbUnitTest.TestCase):
     #     self.assertEqual(odb.get_int(x), int( ((0+50)+(0+100))/4 )*-1 )
     #     self.assertEqual(odb.get_int(y), int( ((0+50)+(0+100))/4 ) )
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestITerm)
-#     odbUnitTest.main()
+    odbUnitTest.main()
     

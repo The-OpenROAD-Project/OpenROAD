@@ -1,4 +1,4 @@
-import opendb as odb
+import odb
 import helper
 import odbUnitTest
 ##################
@@ -47,4 +47,4 @@ class TestModule(odbUnitTest.TestCase):
         self.group.setType("VOLTAGE_DOMAIN")
         self.group.destroy(self.group)
 if __name__=='__main__':
-    odbUnitTest.mainParallel(TestModule)     
+    odbUnitTest.main()     

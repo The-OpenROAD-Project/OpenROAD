@@ -18,10 +18,8 @@ BOOST_AUTO_TEST_SUITE(test_suite)
 BOOST_AUTO_TEST_CASE(test_default)
 {
   utl::Logger* logger = new utl::Logger();
-  dbDatabase* db1 = dbDatabase::create();
-  dbDatabase* db2 = dbDatabase::create();
-  db1->setLogger(logger);
-  db2->setLogger(logger);
+  dbDatabase* db1 = dbDatabase::create(logger);
+  dbDatabase* db2 = dbDatabase::create(logger);
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 

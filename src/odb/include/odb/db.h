@@ -413,11 +413,6 @@ class dbDatabase : public dbObject
   static void commitEco(dbBlock* block);
 
   ///
-  /// links to utl::Logger
-  ///
-  void setLogger(utl::Logger* logger);
-
-  ///
   /// Initializes the database to nothing.
   ///
   void clear();
@@ -425,7 +420,7 @@ class dbDatabase : public dbObject
   ///
   /// Create an instance of a database
   ///
-  static dbDatabase* create();
+  static dbDatabase* create(utl::Logger* logger = nullptr);
 
   ///
   /// Detroy an instance of a database

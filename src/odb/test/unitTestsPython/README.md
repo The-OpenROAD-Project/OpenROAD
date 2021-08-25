@@ -2,14 +2,6 @@
 
 ## Running tests
 
-For running the python unit tests you will need to install first *testtools*  which enables unit testing
-
-``` shell
-pip3 install testtools
-```
-
-Then, you can run the unit tests:
-
 ``` shell
 ../unitTests.sh
 ```
@@ -46,8 +38,6 @@ assert(obj.GetterName()==expectedVal)
 * `change(self,obj,SetterName,*args)` which changes a value in the object
 
 * `main()` runs the `TestCase` in sequential order
-
-* `mainParallel(Test)` runs the passed `Test` class in parallel
 
 ### helper.py:
 
