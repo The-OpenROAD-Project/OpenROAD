@@ -302,12 +302,12 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause fobidden via spacing to
   // boundary pin
-  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+  if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
     if (drWorker_ && drWorker_->getDRIter() >= 30
         && drWorker_->getRipupMode() == 0) {
-      if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
-        auto layerNum = (gridZ + 1) * 2;
-        auto layer = getTech()->getLayer(layerNum);
+      auto layerNum = (gridZ + 1) * 2;
+      auto layer = getTech()->getLayer(layerNum);
+      if (layer->isUnidirectional()) {
         bool isH
             = (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
         if (isH) {

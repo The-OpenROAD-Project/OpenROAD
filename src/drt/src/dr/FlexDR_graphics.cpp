@@ -437,7 +437,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
-      cout << "MARKER " << box << "\n";
+      cout << "MARKER " << box << "lNum " << layerNum << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
