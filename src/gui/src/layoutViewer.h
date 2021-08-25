@@ -305,6 +305,7 @@ class LayoutScroll : public QScrollArea
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
  protected:
+  void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
 
  private:

@@ -1930,6 +1930,12 @@ LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
   viewer->setScroller(this);
 }
 
+void LayoutScroll::scrollContentsBy(int dx, int dy)
+{
+  QScrollArea::scrollContentsBy(dx, dy);
+  widget()->update();
+}
+
 // Handles zoom in/out on ctrl-wheel
 void LayoutScroll::wheelEvent(QWheelEvent* event)
 {
