@@ -358,6 +358,15 @@ void pause(int timeout = 0)
   return gui->pause(timeout);
 }
 
+void load_drc(const char* filename)
+{
+  if (!check_gui("load_drc")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->loadDRC(filename);
+}
+
 void show_widget(const char* name)
 {
   if (!check_gui("show_widget")) {

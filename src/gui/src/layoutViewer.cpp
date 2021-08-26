@@ -104,11 +104,10 @@ class GuiPainter : public Painter
              const QPoint& centering_shift,
              qreal pixels_per_dbu,
              int dbu_per_micron)
-      : painter_(painter),
-        options_(options),
+      : Painter(options, pixels_per_dbu),
+        painter_(painter),
         base_transform_(base_transform),
         centering_shift_(centering_shift),
-        pixels_per_dbu_(pixels_per_dbu),
         dbu_per_micron_(dbu_per_micron)
   {
   }
@@ -121,7 +120,7 @@ class GuiPainter : public Painter
 
   void setPen(odb::dbTechLayer* layer, bool cosmetic = false) override
   {
-    QPen pen(options_->color(layer));
+    QPen pen(getOptions()->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
@@ -143,8 +142,8 @@ class GuiPainter : public Painter
   }
   void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
   {
-    QColor color = options_->color(layer);
-    Qt::BrushStyle brush_pattern = options_->pattern(layer);
+    QColor color = getOptions()->color(layer);
+    Qt::BrushStyle brush_pattern = getOptions()->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
@@ -163,10 +162,7 @@ class GuiPainter : public Painter
       painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()),
                                QPoint(shape->xMax(), shape->yMax())));
     } else {
-      QPolygon qpoly(size);
-      for (int i = 0; i < size; i++)
-        qpoly.setPoint(i, points[i].getX(), points[i].getY());
-      painter_->drawPolygon(qpoly);
+      drawPolygon(points);
     }
   }
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
@@ -180,6 +176,14 @@ class GuiPainter : public Painter
       painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
                                QPoint(rect.xMax(), rect.yMax())));
   }
+  void drawPolygon(const std::vector<odb::Point>& points) override
+  {
+    QPolygon poly;
+    for (const auto& pt : points) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    painter_->drawPolygon(poly);
+  }
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
@@ -187,6 +191,11 @@ class GuiPainter : public Painter
   using Painter::drawLine;
 
   void setTransparentBrush() override { painter_->setBrush(Qt::transparent); }
+  void setHashedBrush(const Color& color) override
+  {
+    painter_->setBrush(QBrush(QColor(color.r, color.g, color.b, color.a), Qt::DiagCrossPattern));
+  }
+
   void drawCircle(int x, int y, int r) override
   {
     painter_->drawEllipse(QPoint(x, y), r, r);
@@ -200,8 +209,8 @@ class GuiPainter : public Painter
   {
     painter_->save();
     painter_->setTransform(base_transform_);
-    int sx = centering_shift_.x() + x * pixels_per_dbu_;
-    int sy = centering_shift_.y() - y * pixels_per_dbu_;
+    int sx = centering_shift_.x() + x * getPixelsPerDBU();
+    int sy = centering_shift_.y() - y * getPixelsPerDBU();
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
     painter_->drawText(sx, sy, QString::fromStdString(s));
@@ -233,10 +242,8 @@ class GuiPainter : public Painter
 
  private:
   QPainter* painter_;
-  Options* options_;
   const QTransform base_transform_;
   const QPoint centering_shift_;
-  qreal pixels_per_dbu_;
   int dbu_per_micron_;
 };
 
@@ -465,8 +472,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     }
 
     for (auto* renderer : renderers) {
-      Selected selected = renderer->select(layer, pt_dbu);
-      if (selected) {
+      for (auto selected : renderer->select(layer, pt_dbu)) {
         selections.push_back(selected);
       }
     }
@@ -493,8 +499,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
   // Check for objects not in a layer
   for (auto* renderer : renderers) {
-    Selected selected = renderer->select(nullptr, pt_dbu);
-    if (selected) {
+    for (auto selected : renderer->select(nullptr, pt_dbu)) {
       selections.push_back(selected);
     }
   }

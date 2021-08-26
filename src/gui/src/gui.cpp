@@ -50,6 +50,8 @@
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
+#include "drcWidget.h"
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -324,6 +326,13 @@ const std::string Gui::requestUserInput(const std::string& title, const std::str
   return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
 }
 
+void Gui::loadDRC(const std::string& filename)
+{
+  if (!filename.empty()) {
+    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
+  }
+}
+
 void Gui::addCustomVisibilityControl(const std::string& name,
                                      bool initially_visible)
 {
@@ -503,6 +512,8 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
     Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+
+    Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
   }
 }
 
