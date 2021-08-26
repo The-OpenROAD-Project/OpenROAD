@@ -72,6 +72,7 @@ class Options
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
 
+  virtual bool isScaleBarVisible() const = 0;
   virtual bool isCongestionVisible() const = 0;
   virtual bool arePinMarkersVisible() const = 0;
   virtual bool showHorizontalCongestion() const = 0;

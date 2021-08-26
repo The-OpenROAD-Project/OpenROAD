@@ -168,6 +168,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void centerAt(const QPointF& focus);
   void centerAt(const odb::Point& focus);
   void setResolution(qreal dbu_per_pixel);
+  void updateFitResolution();
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
@@ -240,6 +241,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
+  void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
@@ -303,7 +305,12 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
+ signals:
+  void viewportChanged();
+
  protected:
+  void resizeEvent(QResizeEvent* event) override;
+  void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
 
  private:

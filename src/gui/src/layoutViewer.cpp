@@ -1541,6 +1541,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   painter.restore();
 
+  // use bounding Rect as event might just be the rubber_band
+  drawScaleBar(&painter, block, visibleRegion().boundingRect());
+
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
@@ -1568,6 +1571,112 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   }
 }
 
+void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect)
+{
+  if (!options_->isScaleBarVisible()) {
+    return;
+  }
+
+  const qreal pixels_per_mircon = pixels_per_dbu_ * block->getDbUnitsPerMicron();
+  const qreal window_width = rect.width() / pixels_per_mircon;
+  const qreal target_width = 0.1 * window_width;
+
+  const qreal peg_width = std::pow(10.0, std::floor(std::log10(target_width))); // microns
+  int peg_incr = std::round(target_width / peg_width);
+  const qreal bar_size = peg_incr * peg_width;
+  if (peg_incr == 1) {
+    // make 10 segments if 1
+    peg_incr = 10;
+  }
+
+  const int bar_height = 10; // px
+
+  int bar_width = bar_size * pixels_per_mircon;
+
+  double scale_unit;
+  QString unit_text;
+  if (bar_size > 1000) {
+    scale_unit = 0.001;
+    unit_text = "mm";
+  } else if (bar_size > 1) {
+    scale_unit = 1;
+    unit_text = "\u03bcm"; // um
+  } else if (bar_size > 0.001) {
+    scale_unit = 1000;
+    unit_text = "nm";
+  } else {
+    scale_unit = 1e6;
+    unit_text = "pm";
+  }
+
+  auto color = Qt::white;
+  painter->setPen(QPen(color, 2));
+  painter->setBrush(Qt::transparent);
+
+  const QRectF scale_bar_outline(rect.left() + 10, rect.bottom() - 20, bar_width, bar_height);
+
+  // draw base half bar shape |_|
+  painter->drawLine(scale_bar_outline.topLeft(), scale_bar_outline.bottomLeft());
+  painter->drawLine(scale_bar_outline.bottomLeft(), scale_bar_outline.bottomRight());
+  painter->drawLine(scale_bar_outline.bottomRight(), scale_bar_outline.topRight());
+
+  const QFontMetrics font_metric = painter->fontMetrics();
+
+  const int text_px_offset = 2;
+  const int text_keep_out = font_metric.averageCharWidth();
+
+  // draw total size over right size
+  const QString bar_text_end = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
+  const QRect end_box = font_metric.boundingRect(bar_text_end);
+  painter->drawText(
+      scale_bar_outline.topRight() - QPointF(end_box.center().x(), text_px_offset),
+      bar_text_end);
+  const qreal end_offset  = scale_bar_outline.right() - 0.5 * end_box.width() - text_keep_out;
+
+  // draw "0" over left side
+  const QRect zero_box = font_metric.boundingRect("0");
+  if (scale_bar_outline.left() + zero_box.center().x() < end_offset) {
+    painter->drawText(
+        scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
+        "0");
+  }
+
+  // margin around 0 to avoid drawing first available increment
+  const qreal zero_offset = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
+  const qreal segment_width = static_cast<double>(bar_width) / peg_incr;
+  const double peg_increment = bar_size / peg_incr;
+  bool middle_shown = false;
+
+  if (segment_width > 4) {
+    // draw pegs, don't draw if they are basically overlapping
+    for (int i = 1; i < peg_incr; i++) {
+      QPointF p1(scale_bar_outline.left() + i * segment_width, scale_bar_outline.bottom());
+      QPointF p2 = p1 - QPointF(0, bar_height / 2);
+
+      if (!middle_shown) {
+        // only one peg increment
+        QString peg_text = QString::number(static_cast<int>(i * peg_increment * scale_unit));
+        QRect peg_text_box = font_metric.boundingRect(peg_text);
+
+        // check if text will fit next to "0"
+        if (p1.x() - 0.5 * peg_text_box.width() > zero_offset) {
+          middle_shown = true;
+
+          // check to make sure there is room at the end
+          if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
+            p2 = p1 - QPointF(0, 3 * bar_height / 4.0); // make this peg a little taller
+            painter->drawText(
+                QPointF(p2.x() - peg_text_box.center().x(), scale_bar_outline.top() - text_px_offset),
+                peg_text);
+          }
+        }
+      }
+
+      painter->drawLine(p1, p2);
+    }
+  }
+}
+
 void LayoutViewer::updateShapes()
 {
   // This is not very smart - we just clear all the search structure
@@ -1592,7 +1701,7 @@ void LayoutViewer::fit()
   }
 
   zoomTo(bbox);
-  fit_pixels_per_dbu_ = pixels_per_dbu_;
+  updateFitResolution();
 }
 
 void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
@@ -1670,6 +1779,21 @@ void LayoutViewer::designLoaded(dbBlock* block)
 void LayoutViewer::setScroller(LayoutScroll* scroller)
 {
   scroller_ = scroller;
+
+  connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(updateFitResolution()));
+}
+
+void LayoutViewer::updateFitResolution()
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  // determine new fit_pixels_per_dbu_ based on current viewport size
+  fit_pixels_per_dbu_ = computePixelsPerDBU(
+      scroller_->maximumViewportSize(),
+      getPaddedRect(getBounds(block)));
 }
 
 void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
@@ -1859,6 +1983,18 @@ LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
   setWidgetResizable(true);
   setWidget(viewer);
   viewer->setScroller(this);
+}
+
+void LayoutScroll::resizeEvent(QResizeEvent* event)
+{
+  QScrollArea::resizeEvent(event);
+  emit viewportChanged();
+}
+
+void LayoutScroll::scrollContentsBy(int dx, int dy)
+{
+  QScrollArea::scrollContentsBy(dx, dy);
+  widget()->update();
 }
 
 // Handles zoom in/out on ctrl-wheel
