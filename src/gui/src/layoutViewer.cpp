@@ -1579,61 +1579,95 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
 
   const qreal pixels_per_mircon = pixels_per_dbu_ * block->getDbUnitsPerMicron();
   const qreal window_width = rect.width() / pixels_per_mircon;
-  const qreal target_width = 0.2 * window_width;
+  const qreal target_width = 0.1 * window_width;
 
-  qreal bar_size = std::pow(10.0, std::floor(std::log10(window_width)) - 1); // microns
-  int target_scale = target_width / bar_size;
-  if (target_scale >= 10) {
-    target_scale = 10;
-  } else if (target_scale >= 5) {
-    target_scale = 5;
-  } else if (target_scale >= 2) {
-    target_scale = 2;
-  } else {
-    target_scale = 1;
+  const qreal peg_width = std::pow(10.0, std::floor(std::log10(target_width))); // microns
+  int peg_incr = std::round(target_width / peg_width);
+  const qreal bar_size = peg_incr * peg_width;
+  if (peg_incr == 1) {
+    // make 10 segments if 1
+    peg_incr = 10;
   }
-  bar_size *= target_scale;
 
-  const QPoint ll_offset(rect.left() + 10, rect.bottom() - 20); // px (set to ll corner 10 px in from edge
   const int bar_height = 10; // px
-  const int bar_segments = 5;
 
   int bar_width = bar_size * pixels_per_mircon;
 
-  QString bar_scale_text;
-  if (bar_size >= 1000) {
-    bar_scale_text = QString::number(static_cast<int>(bar_size / 1000)) + "mm";
-  } else if (bar_size >= 1) {
-    bar_scale_text = QString::number(static_cast<int>(bar_size)) + "\u03bcm"; // mu
-  } else if (bar_size >= 0.001) {
-    bar_scale_text = QString::number(static_cast<int>(bar_size * 1000)) + "nm";
+  double scale_unit;
+  QString unit_text;
+  if (bar_size > 1000) {
+    scale_unit = 0.001;
+    unit_text = "mm";
+  } else if (bar_size > 1) {
+    scale_unit = 1;
+    unit_text = "\u03bcm";
+  } else if (bar_size > 0.001) {
+    scale_unit = 1000;
+    unit_text = "nm";
   } else {
-    bar_scale_text = QString::number(static_cast<int>(bar_size * 1e6)) + "pm";
+    scale_unit = 1e6;
+    unit_text = "pm";
   }
 
-  const QRect text_bounding = painter->fontMetrics().boundingRect(bar_scale_text);
-
   auto color = Qt::white;
-
-  painter->setPen(color);
+  painter->setPen(QPen(color, 2));
   painter->setBrush(Qt::transparent);
 
-  painter->drawRect(ll_offset.x(), ll_offset.y(), bar_width, bar_height);
-  painter->drawText(
-      ll_offset.x() + (bar_width - text_bounding.width()) / 2, // center text over bar
-      ll_offset.y(),
-      bar_scale_text);
+  const QRectF scale_bar_outline(rect.left() + 10, rect.bottom() - 20, bar_width, bar_height);
 
-  painter->setBrush(QBrush(color, Qt::DiagCrossPattern));
-  const int segment_width = bar_width / bar_segments;
-  for (int i = 0; i < bar_segments; i++) {
-    if (i % 2 == 1) {
-      painter->drawRect(
-          ll_offset.x() + segment_width * i,
-          ll_offset.y(),
-          segment_width,
-          bar_height);
+  // draw base half bar shape |_|
+  painter->drawLine(scale_bar_outline.topLeft(), scale_bar_outline.bottomLeft());
+  painter->drawLine(scale_bar_outline.bottomLeft(), scale_bar_outline.bottomRight());
+  painter->drawLine(scale_bar_outline.bottomRight(), scale_bar_outline.topRight());
+
+  const int text_px_offset = 2;
+
+  // draw "0" over left side
+  const QRect zero_box = painter->fontMetrics().boundingRect("0");
+  painter->drawText(
+      scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
+      "0");
+
+  // draw total size over right size
+  const QString bar_text_end = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
+  const QRect end_box = painter->fontMetrics().boundingRect(bar_text_end);
+  painter->drawText(
+      scale_bar_outline.topRight() - QPointF(end_box.center().x(), text_px_offset),
+      bar_text_end);
+
+  // margin around 0 to avoid drawing first available increment
+  const int text_keep_out = 5;
+  const qreal zero_offset = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
+  const qreal end_offset  = scale_bar_outline.right() - 0.5 * end_box.width() - text_keep_out;
+  const qreal segment_width = static_cast<double>(bar_width) / peg_incr;
+  const double peg_increment = bar_size / peg_incr;
+  bool middle_shown = false;
+
+  // draw pegs
+  for (int i = 1; i < peg_incr; i++) {
+    QPointF p1(scale_bar_outline.left() + i * segment_width, scale_bar_outline.bottom());
+    QPointF p2 = p1 - QPointF(0, bar_height / 2);
+
+    if (!middle_shown) {
+      // only one peg increment
+      QString peg_text = QString::number(static_cast<int>(i * peg_increment * scale_unit));
+      QRect peg_text_box = painter->fontMetrics().boundingRect(peg_text);
+
+      // check if text will fit next to "0"
+      if (p1.x() - 0.5 * peg_text_box.width() > zero_offset) {
+        middle_shown = true;
+
+        // check to make sure there is room at the end
+        if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
+          p2 = p1 - QPointF(0, 3 * bar_height / 4.0); // make this peg a little taller
+          painter->drawText(
+              QPointF(p2.x() - peg_text_box.center().x(), scale_bar_outline.top() - text_px_offset),
+              peg_text);
+        }
+      }
     }
+
+    painter->drawLine(p1, p2);
   }
 }
 
