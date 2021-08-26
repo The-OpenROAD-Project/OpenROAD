@@ -5685,6 +5685,9 @@ proc identify_channels {lower_layer_name upper_layer_name tag} {
   variable block
   variable stripe_locs
 
+  set channels {}
+  set wire_groups {}
+
   set upper_pitch_check [expr round(1.1 * [get_grid_wire_pitch $upper_layer_name])]
   set lower_pitch_check [expr round(1.1 * [get_grid_wire_pitch $lower_layer_name])]
   # debug "stripes $lower_layer_name, tag: $tag, $stripe_locs($lower_layer_name,$tag)"
@@ -5692,12 +5695,38 @@ proc identify_channels {lower_layer_name upper_layer_name tag} {
   # debug "Pitch check (lower): [ord::dbu_to_microns $lower_pitch_check], (upper): [ord::dbu_to_microns $upper_pitch_check]"
   if {[get_dir $lower_layer_name] ==  "hor"} {
     set channel_wires [odb::subtractSet $stripe_locs($lower_layer_name,$tag) [odb::bloatSet [odb::shrinkSet $stripe_locs($lower_layer_name,$tag) $upper_pitch_check 0] $upper_pitch_check 0]]
-    set channels [odb::shrinkSet [odb::bloatSet $channel_wires 0 $lower_pitch_check] 0 $lower_pitch_check]
+    # Group wires with same xMin and xMax so that the channels form rectangles
+    foreach wire [odb::getRectangles $channel_wires] {
+      set xMin [$wire xMin]
+      set xMax [$wire xMax]
+      dict lappend wire_groups "$xMin,$xMax" [odb::newSetFromRect [$wire xMin] [$wire yMin] [$wire xMax] [$wire yMax]]
+    }
+    if {[dict size $wire_groups] > 1} {
+      dict for {position wires} $wire_groups {
+        lappend channels [odb::shrinkSet [odb::bloatSet [odb::orSets $wires] 0 $lower_pitch_check] 0 $lower_pitch_check]
+      }
+    }
+
+    set channels [odb::orSets $channels]
     # debug "Channel wires: [llength [odb::getRectangles $channel_wires]]"
     # debug "Channels: [llength [odb::getRectangles $channels]]"
   } else {
     set channel_wires [odb::subtractSet $stripe_locs($lower_layer_name,$tag) [odb::bloatSet [odb::shrinkSet $stripe_locs($lower_layer_name,$tag) 0 $upper_pitch_check] 0 $upper_pitch_check]]
-    set channels [odb::shrinkSet [odb::bloatSet $channel_wires $lower_pitch_check 0] $lower_pitch_check 0]
+    # Group wires with same yMin and yMax so that the channels form rectangles
+    foreach wire [odb::getRectangles $channel_wires] {
+      set yMin [$wire yMin]
+      set yMax [$wire yMax]
+      dict lappend wire_groups "$yMin,$yMax" [odb::newSetFromRect [$wire xMin] [$wire yMin] [$wire xMax] [$wire yMax]]
+    }
+    if {[dict size $wire_groups] > 1} {
+      dict for {position wires} $wire_groups {
+        lappend channels [odb::shrinkSet [odb::bloatSet [odb::orSets $wires] $lower_pitch_check 0] $lower_pitch_check 0]
+      }
+    }
+
+    set channels [odb::orSets $channels]
+    # debug "Channel wires: [llength [odb::getRectangles $channel_wires]]"
+    # debug "Channels: [llength [odb::getRectangles $channels]]"
   }
 
   foreach rect [odb::getRectangles $channels] {
@@ -5747,7 +5776,8 @@ proc repair_channel {channel layer_name tag min_size} {
         # debug "Stripe above $other_strap"
         set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMax] + $channel_spacing] $xMax [expr [$other_strap yMax] + $channel_spacing + $width]]
       } else {
-        utl::error PDN 169 "Cannot fit additional $tag horizontal strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
+	set stripe {}
+        utl::warn PDN 169 "Cannot fit additional $tag horizontal strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
       }
     } else {
       if {$yMax - $yMin < $min_size} {
@@ -5762,7 +5792,8 @@ proc repair_channel {channel layer_name tag min_size} {
         # debug "Stripe right of $other_strap"
         set stripe [odb::newSetFromRect [expr [$other_strap xMax] + $channel_spacing] $yMin [expr [$other_strap xMax] + $channel_spacing + $width] $yMax]
       } else {
-        utl::error PDN 170 "Cannot fit additional $tag vertical strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
+	set stripe {}
+        utl::warn PDN 170 "Cannot fit additional $tag vertical strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
       }
     }
   } else {
@@ -5784,7 +5815,9 @@ proc repair_channel {channel layer_name tag min_size} {
     }
   }
 
-  add_stripe $layer_name $tag $stripe
+  if {$stripe != {}} {
+    add_stripe $layer_name $tag $stripe
+  }
 }
 
 proc channel_has_pg_strap {channel layer_name tag}  {
@@ -5798,8 +5831,13 @@ proc channel_has_pg_strap {channel layer_name tag}  {
   set channel_set [odb::newSetFromRect [$channel xMin] [$channel yMin] [$channel xMax] [$channel yMax]]
   set check_set [odb::andSet $stripe_locs($layer_name,$tag) $channel_set]
 
-  if {[llength [odb::getPolygons $check_set]] > 0} {
-    # debug "end: channel does not need repair"
+  foreach rect [odb::getRectangles $check_set] {
+    if {[get_dir $layer_name] == "ver" && [$rect dx] < [get_grid_wire_width $layer_name]} {continue}
+    if {[get_dir $layer_name] == "hor" && [$rect dy] < [get_grid_wire_width $layer_name]} {continue}
+    # debug "Overlap found"
+    # debug "       Direction: [get_dir $layer_name]"
+    # debug "       Layer width: [get_grid_wire_width $layer_name]"
+    # debug "       ([ord::dbu_to_microns [$rect xMin]] [ord::dbu_to_microns [$rect yMin]]) - ([ord::dbu_to_microns [$rect xMax]] [ord::dbu_to_microns [$rect yMax]])"
     return 1
   }
 
@@ -5814,6 +5852,7 @@ proc process_channels {} {
   foreach lower_layer_name $lower_layers upper_layer_name $upper_layers {
     foreach tag {POWER GROUND} {
       set channels [identify_channels $lower_layer_name $upper_layer_name $tag]
+      if {$channels == {}} {continue}
       # debug "Tag: $tag, Channels found: [llength [odb::getPolygons $channels]]"
       foreach channel [::odb::getRectangles $channels] {
         if {![channel_has_pg_strap $channel $upper_layer_name $tag]} {
@@ -5824,6 +5863,7 @@ proc process_channels {} {
           } else {
             set min_size 0
           }
+          # debug "Repair channel: ([ord::dbu_to_microns [$channel xMin]] [ord::dbu_to_microns [$channel yMin]])-([ord::dbu_to_microns [$channel xMax]] [ord::dbu_to_microns [$channel yMax]]]), tag: $tag, layer: $upper_layer_name, min_size: $min_size"
           repair_channel $channel $upper_layer_name $tag $min_size
         }
       }
