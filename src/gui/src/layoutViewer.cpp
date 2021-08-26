@@ -1600,7 +1600,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
     unit_text = "mm";
   } else if (bar_size > 1) {
     scale_unit = 1;
-    unit_text = "\u03bcm";
+    unit_text = "\u03bcm"; // um
   } else if (bar_size > 0.001) {
     scale_unit = 1000;
     unit_text = "nm";
@@ -1620,54 +1620,60 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
   painter->drawLine(scale_bar_outline.bottomLeft(), scale_bar_outline.bottomRight());
   painter->drawLine(scale_bar_outline.bottomRight(), scale_bar_outline.topRight());
 
-  const int text_px_offset = 2;
+  const QFontMetrics font_metric = painter->fontMetrics();
 
-  // draw "0" over left side
-  const QRect zero_box = painter->fontMetrics().boundingRect("0");
-  painter->drawText(
-      scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
-      "0");
+  const int text_px_offset = 2;
+  const int text_keep_out = font_metric.averageCharWidth();
 
   // draw total size over right size
   const QString bar_text_end = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
-  const QRect end_box = painter->fontMetrics().boundingRect(bar_text_end);
+  const QRect end_box = font_metric.boundingRect(bar_text_end);
   painter->drawText(
       scale_bar_outline.topRight() - QPointF(end_box.center().x(), text_px_offset),
       bar_text_end);
+  const qreal end_offset  = scale_bar_outline.right() - 0.5 * end_box.width() - text_keep_out;
+
+  // draw "0" over left side
+  const QRect zero_box = font_metric.boundingRect("0");
+  if (scale_bar_outline.left() + zero_box.center().x() < end_offset) {
+    painter->drawText(
+        scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
+        "0");
+  }
 
   // margin around 0 to avoid drawing first available increment
-  const int text_keep_out = 5;
   const qreal zero_offset = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
-  const qreal end_offset  = scale_bar_outline.right() - 0.5 * end_box.width() - text_keep_out;
   const qreal segment_width = static_cast<double>(bar_width) / peg_incr;
   const double peg_increment = bar_size / peg_incr;
   bool middle_shown = false;
 
-  // draw pegs
-  for (int i = 1; i < peg_incr; i++) {
-    QPointF p1(scale_bar_outline.left() + i * segment_width, scale_bar_outline.bottom());
-    QPointF p2 = p1 - QPointF(0, bar_height / 2);
+  if (segment_width > 4) {
+    // draw pegs, don't draw if they are basically overlapping
+    for (int i = 1; i < peg_incr; i++) {
+      QPointF p1(scale_bar_outline.left() + i * segment_width, scale_bar_outline.bottom());
+      QPointF p2 = p1 - QPointF(0, bar_height / 2);
 
-    if (!middle_shown) {
-      // only one peg increment
-      QString peg_text = QString::number(static_cast<int>(i * peg_increment * scale_unit));
-      QRect peg_text_box = painter->fontMetrics().boundingRect(peg_text);
+      if (!middle_shown) {
+        // only one peg increment
+        QString peg_text = QString::number(static_cast<int>(i * peg_increment * scale_unit));
+        QRect peg_text_box = font_metric.boundingRect(peg_text);
 
-      // check if text will fit next to "0"
-      if (p1.x() - 0.5 * peg_text_box.width() > zero_offset) {
-        middle_shown = true;
+        // check if text will fit next to "0"
+        if (p1.x() - 0.5 * peg_text_box.width() > zero_offset) {
+          middle_shown = true;
 
-        // check to make sure there is room at the end
-        if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
-          p2 = p1 - QPointF(0, 3 * bar_height / 4.0); // make this peg a little taller
-          painter->drawText(
-              QPointF(p2.x() - peg_text_box.center().x(), scale_bar_outline.top() - text_px_offset),
-              peg_text);
+          // check to make sure there is room at the end
+          if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
+            p2 = p1 - QPointF(0, 3 * bar_height / 4.0); // make this peg a little taller
+            painter->drawText(
+                QPointF(p2.x() - peg_text_box.center().x(), scale_bar_outline.top() - text_px_offset),
+                peg_text);
+          }
         }
       }
-    }
 
-    painter->drawLine(p1, p2);
+      painter->drawLine(p1, p2);
+    }
   }
 }
 
