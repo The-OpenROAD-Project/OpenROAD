@@ -25,15 +25,15 @@ Type: stdcell, grid
       Layer: met4  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
       Layer: met5  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
     Stdcell Rails
-      Layer: met1  -  width: 0.480  offset: 0.000 
+      Layer: met1  -  width: 0.480  pitch: 5.440  offset: 0.000 
     Straps
       Layer: met4  -  width: 1.600  pitch: 50.000  offset: 13.570 
       Layer: met5  -  width: 1.600  pitch: 27.200  offset: 13.600 
     Connect: {met1 met4} {met4 met5}
-Type: macro, CORE_macro_grid_1
+Type: macro, CORE_macro_grid_1 -grid_over_pg_pins
     Macro orientation: R0 R180 MX MY
     Connect: {met4 met5}
-Type: macro, CORE_macro_grid_2
+Type: macro, CORE_macro_grid_2 -grid_over_pg_pins
     Macro orientation: R90 R270 MXR90 MYR90
     Connect: {met4 met5}
 [INFO PDN-0012] **** END INFO ****

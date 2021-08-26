@@ -15,6 +15,7 @@ For specifying a power grid over macros in the design:
   % define_pdn_grid
     -macro \
     [-name name] \
+    [-grid_over_pg_pins|-grid_over_boundary] \
     [-orient <list_of_valid_orientations>] \
     [-instances <list_of_instances] \
     [-cells <list_of_cells>] \
@@ -46,6 +47,8 @@ The presence of macros in the design interupts the normal power grid pattern, an
 
 The `-macro` flag is used to declare that this grid definition is for macros in the design. All macro cell instances will have this grid, but this list of instances can be filtered using the `-instances`, `-cells` and/or `-orient` arguments
 
+The `-grid_over_pg_pins` flag applies to macro grids, and specifies that the power grid should be added only over the area where power/ground pins of the macro are located. This is the default behavior. Alternatively, specifying `-grid_over_boundary` will result in the grid being placed over the whole macro.
+
 The `-instances` argument filters the list of instances for which this grid applies, such that only the specified instances are retained.
 The `-cells` argument filters the list of instance for which this grid applies, such that only instances of the specified cells are retained.
 The `-orient` argument filters the list of instances for which this grid applies, such that only instances of the specified orientation are retained.
@@ -61,23 +64,25 @@ Each of the `-instances`, `-cells` and `-orient` acts as an independent filter a
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-name` | Defines a name to use when referring to this grid definition |
+| `-name` | Defines a name to use when referring to this grid definition. |
 | `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: CORE) |
-| `-pins` | Defines a list of layers which where the power straps will be promoted to block pins |
+| `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
-| `-macro` | Defines the type of grid being added, can be either stdcell or macro|
-| `-instances` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification |
-| `-cells` | For a macro, defines a set of valid cells. Macros which are instances of one of these cells will use this grid specification |
-| `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification |
-| `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively.(Default: 0) |
-| `-pin_direction` | Specifies the direction of power/ground pins on the selected macro instances as eiher horizontal or vertical |
+| `-macro` | Defines the type of grid being added, can be either stdcell or macro. |
+| `-grid_over_boundary` | Place the power grid over the entire macro. |
+| `-grid_over_pg_pins` | Place the power grid over the power grond pins of the macro. (Default) |
+| `-instances` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
+| `-cells` | For a macro, defines a set of valid cells. Macros which are instances of one of these cells will use this grid specification. |
+| `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
+| `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
+| `-pin_direction` | Specifies the direction of power/ground pins on the selected macro instances as eiher horizontal or vertical. |
 
 
 ## Examples
 ```
 define_pdn_grid -name main_grid -pins {metal7} -voltage_domain {CORE TEMP_ANALOG}
 
-define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -starts_with POWER -pin_direction vertical
-define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -starts_with POWER -pin_direction horizontal
+define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pg_pins  -starts_with POWER -pin_direction vertical
+define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_boundary -starts_with POWER -pin_direction horizontal
 
 ```

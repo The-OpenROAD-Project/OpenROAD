@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QInputDialog>
 #include <QMenu>
@@ -37,6 +38,7 @@
 #include <QSettings>
 #include <QStatusBar>
 #include <QToolButton>
+#include <QUrl>
 #include <QWidgetAction>
 #include <map>
 #include <vector>
@@ -50,6 +52,13 @@
 #include "selectHighlightWindow.h"
 #include "staGui.h"
 #include "utl/Logger.h"
+#include "timingWidget.h"
+
+// must be loaded in global namespace
+static void loadQTResources()
+{
+  Q_INIT_RESOURCE(resource);
+}
 
 namespace gui {
 
@@ -69,7 +78,8 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this))
+      script_(new ScriptWidget(this)),
+      timing_widget_(new TimingWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -77,7 +87,6 @@ MainWindow::MainWindow(QWidget* parent)
   move(size.width() * 0.1, size.height() * 0.1);
 
   find_dialog_ = new FindObjectDialog(this);
-  timing_dialog_ = new TimingDebugDialog(this);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
@@ -88,9 +97,12 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
+  addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
+
+  tabifyDockWidget(inspector_, timing_widget_);
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
@@ -105,7 +117,7 @@ MainWindow::MainWindow(QWidget* parent)
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
 
-  connect(this, SIGNAL(pause()), script_, SLOT(pause()));
+  connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
   connect(viewer_,
           SIGNAL(location(qreal, qreal)),
@@ -184,7 +196,7 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
-  connect(timing_dialog_,
+  connect(timing_widget_,
           SIGNAL(highlightTimingPath(TimingPath*)),
           viewer_,
           SLOT(update()));
@@ -201,7 +213,13 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
+  timing_widget_->readSettings(&settings);
   settings.endGroup();
+
+  // load resources and set window icon and title
+  loadQTResources();
+  setWindowIcon(QIcon(":/icon.png"));
+  setWindowTitle("OpenROAD");
 }
 
 void MainWindow::createStatusBar()
@@ -243,10 +261,13 @@ void MainWindow::createActions()
   inspect_ = new QAction("Inspect", this);
   inspect_->setShortcut(QString("q"));
 
-  timing_debug_ = new QAction("Timing ...", this);
+  timing_debug_ = new QAction("Timing...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
   congestion_setup_ = new QAction("Congestion Setup...", this);
+
+  help_ = new QAction("Help", this);
+  help_->setShortcut(QString("Ctrl+H"));
 
   connect(congestion_setup_,
           SIGNAL(triggered()),
@@ -258,8 +279,9 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
-  connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
+  connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
+  connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
 }
 
 void MainWindow::createMenus()
@@ -272,12 +294,9 @@ void MainWindow::createMenus()
   view_menu_->addAction(find_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
-  view_menu_->addAction(inspect_);
-  view_menu_->addAction(timing_debug_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(congestion_setup_);
-  tools_menu_->addAction(timing_debug_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -285,7 +304,9 @@ void MainWindow::createMenus()
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
-  selection_browser_->setVisible(false);
+  windows_menu_->addAction(timing_widget_->toggleViewAction());
+
+  menuBar()->addAction(help_);
 }
 
 void MainWindow::createToolbars()
@@ -510,11 +531,15 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
-void MainWindow::showTimingDialog()
+void MainWindow::showHelp()
 {
-  if (timing_dialog_->populateTimingPaths(nullptr)) {
-    timing_dialog_->show();
-    Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
+  const QUrl help_url("https://openroad.readthedocs.io/en/latest/");
+  if (!QDesktopServices::openUrl(help_url)) {
+    // failed to open
+    logger_->warn(utl::GUI,
+                 23,
+                 "Failed to open help automatically, navigate to: {}",
+                 help_url.toString().toStdString());
   }
 }
 
@@ -602,6 +627,7 @@ void MainWindow::saveSettings()
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
+  timing_widget_->writeSettings(&settings);
   settings.endGroup();
 }
 

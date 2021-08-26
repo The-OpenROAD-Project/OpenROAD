@@ -53,7 +53,13 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       output_(new QTextEdit),
       input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
-      historyPosition_(0)
+      pause_timer_(std::make_unique<QTimer>()),
+      interp_(nullptr),
+      history_(),
+      history_buffer_last_(),
+      historyPosition_(0),
+      paused_(false),
+      logger_(nullptr)
 {
   setObjectName("scripting");  // for settings
 
@@ -81,6 +87,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
+  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
 
   setWidget(container);
 }
@@ -322,7 +329,7 @@ void ScriptWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void ScriptWidget::pause()
+void ScriptWidget::pause(int timeout)
 {
   QString prior_text = pauser_->text();
   bool prior_enable = pauser_->isEnabled();
@@ -333,6 +340,8 @@ void ScriptWidget::pause()
   paused_ = true;
 
   input_->setReadOnly(true);
+
+  triggerPauseCountDown(timeout);
 
   // Keep processing events until the user continues
   while (paused_) {
@@ -349,8 +358,41 @@ void ScriptWidget::pause()
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void ScriptWidget::unpause()
+{
+  paused_ = false;
+}
+
+void ScriptWidget::triggerPauseCountDown(int timeout)
+{
+  if (timeout == 0) {
+    return;
+  }
+
+  pause_timer_->setInterval(timeout);
+  pause_timer_->start();
+  QTimer::singleShot(timeout, this, SLOT(updatePauseTimeout()));
+  updatePauseTimeout();
+}
+
+void ScriptWidget::updatePauseTimeout()
+{
+  if (!paused_) {
+    // already unpaused
+    return;
+  }
+
+  const int one_second = 1000;
+
+  int seconds = pause_timer_->remainingTime() / one_second;
+  pauser_->setText("Continue (" + QString::number(seconds) + "s)");
+
+  QTimer::singleShot(one_second, this, SLOT(updatePauseTimeout()));
+}
+
 void ScriptWidget::pauserClicked()
 {
+  pause_timer_->stop();
   paused_ = false;
 }
 

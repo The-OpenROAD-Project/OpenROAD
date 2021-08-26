@@ -106,9 +106,9 @@ void Gui::status(const std::string& message)
   main_window->status(message);
 }
 
-void Gui::pause()
+void Gui::pause(int timeout)
 {
-  main_window->pause();
+  main_window->pause(timeout);
 }
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
@@ -384,6 +384,21 @@ void Gui::setResolution(double pixels_per_dbu)
 void Gui::saveImage(const std::string& filename, const odb::Rect& region)
 {
   main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
+}
+
+void Gui::showWidget(const std::string& name, bool show)
+{
+  const QString find_name = QString::fromStdString(name);
+  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
+    if (widget->objectName() == find_name || widget->windowTitle() == find_name) {
+      if (show) {
+        widget->show();
+        widget->raise();
+      } else {
+        widget->hide();
+      }
+    }
+  }
 }
 
 Renderer::~Renderer()

@@ -84,6 +84,10 @@ class SteinerTreeBuilder
 
   Tree makeSteinerTree(std::vector<int>& x,
                        std::vector<int>& y,
+                       int drvr_index,
+                       float alpha);
+  Tree makeSteinerTree(std::vector<int>& x,
+                       std::vector<int>& y,
                        int drvr_index);
   Tree makeSteinerTree(odb::dbNet* net,
                        std::vector<int>& x,
@@ -103,10 +107,6 @@ class SteinerTreeBuilder
   void setMinHPWLAlpha(int min_hpwl, float alpha);
 
  private:
-  Tree makeTree(std::vector<int>& x,
-                std::vector<int>& y,
-                int drvr_index,
-                float alpha);
   int computeHPWL(odb::dbNet* net);
   bool checkTree(const Tree& tree) const;
 
@@ -122,10 +122,16 @@ class SteinerTreeBuilder
 
 // Used by regressions.
 void
-reportSteinerTree(Tree &tree,
+reportSteinerTree(const Tree &tree,
+                  int drvr_x,
+                  int drvr_y,
                   Logger *logger);
 void
-highlightSteinerTree(Tree &tree,
+reportSteinerTree(const stt::Tree &tree,
+                  Logger *logger);
+
+void
+highlightSteinerTree(const Tree &tree,
                      gui::Gui *gui);
 
 }  // namespace stt
