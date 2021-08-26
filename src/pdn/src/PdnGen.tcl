@@ -1937,7 +1937,7 @@ proc get_via_enclosure {via_info lower_width upper_width} {
     # debug "Initial enclosure_list (size = $size)- $enclosure_list"
     if {$size > 0} {
       foreach enclosure $enclosure_list {
-        if {![dict exists $enclosure above]} {
+        if {![dict exists $enclosure below]} {
           lappend upper_enclosures $enclosure
         }
       }
@@ -2685,7 +2685,12 @@ proc get_via_option {viarule_name via_info lower width height constraints} {
   variable def_units
 
   # debug "{$lower $width $height}"
-  set lower_dir [get_dir $lower]
+  # debug [dict get $via_info lower layer]
+  if {[is_rails_layer [dict get $via_info lower layer]]} {
+    set lower_dir "hor"
+  } else {
+    set lower_dir [get_dir $lower]
+  }
 
   set upper [dict get $via_info upper layer]
 
