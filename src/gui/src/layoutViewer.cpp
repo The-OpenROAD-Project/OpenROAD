@@ -1701,7 +1701,7 @@ void LayoutViewer::fit()
   }
 
   zoomTo(bbox);
-  fit_pixels_per_dbu_ = pixels_per_dbu_;
+  updateFitResolution();
 }
 
 void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
@@ -1779,6 +1779,21 @@ void LayoutViewer::designLoaded(dbBlock* block)
 void LayoutViewer::setScroller(LayoutScroll* scroller)
 {
   scroller_ = scroller;
+
+  connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(updateFitResolution()));
+}
+
+void LayoutViewer::updateFitResolution()
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  // determine new fit_pixels_per_dbu_ based on current viewport size
+  fit_pixels_per_dbu_ = computePixelsPerDBU(
+      scroller_->maximumViewportSize(),
+      getPaddedRect(getBounds(block)));
 }
 
 void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
@@ -1968,6 +1983,12 @@ LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
   setWidgetResizable(true);
   setWidget(viewer);
   viewer->setScroller(this);
+}
+
+void LayoutScroll::resizeEvent(QResizeEvent* event)
+{
+  QScrollArea::resizeEvent(event);
+  emit viewportChanged();
 }
 
 void LayoutScroll::scrollContentsBy(int dx, int dy)
