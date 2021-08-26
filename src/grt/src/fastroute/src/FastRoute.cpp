@@ -200,7 +200,7 @@ void FastRouteCore::deleteComponents()
   num_nets_ = 0;
 
   treesGeneratedBySteinerTreeBuilder_.clear();
-  trees2D_.clear();
+  treesGeneratedByFastRoute_.clear();
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
@@ -633,6 +633,11 @@ void FastRouteCore::initAuxVar()
   parent_y1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_x3_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
+
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    odb::dbNet* db_net = nets_[netID]->db_net;
+    treesGeneratedByFastRoute_[db_net].resize(num_tree_saved_);
+  }
 }
 
 NetRouteMap FastRouteCore::getRoutes()
@@ -673,15 +678,54 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
-NetRouteMap FastRouteCore::getTree2D()
+NetRouteMap FastRouteCore::get3DTree()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < num_valid_nets_; netID++) {
     odb::dbNet* db_net = nets_[netID]->db_net;
     GRoute& route = routes[db_net];
 
-    TreeEdge* treeedges = trees2D_[db_net][0].edges;
-    const int deg = trees2D_[db_net][0].deg;
+    TreeEdge* treeedges = treesGeneratedByFastRoute_[db_net][2].edges;
+    const int deg = treesGeneratedByFastRoute_[db_net][2].deg;
+
+    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+      TreeEdge* treeedge = &(treeedges[edgeID]);
+      if (treeedge->len > 0) {
+        int routeLen = treeedge->route.routelen;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
+        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
+        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
+        int lastL = gridsL[0];
+        for (int i = 1; i <= routeLen; i++) {
+          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
+          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
+
+          GSegment segment
+              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+          lastX = xreal;
+          lastY = yreal;
+          lastL = gridsL[i];
+          route.push_back(segment);
+        }
+      }
+    }
+  }
+
+  return routes;
+}
+
+
+NetRouteMap FastRouteCore::getRectilinearSteinerTree()
+{
+  NetRouteMap routes;
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    odb::dbNet* db_net = nets_[netID]->db_net;
+    GRoute& route = routes[db_net];
+
+    TreeEdge* treeedges = treesGeneratedByFastRoute_[db_net][0].edges;
+    const int deg = treesGeneratedByFastRoute_[db_net][0].deg;
 
     for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -708,30 +752,57 @@ NetRouteMap FastRouteCore::getTree2D()
   return routes;
 }
 
-NetRouteMap FastRouteCore::getTreeBySteinerTreeBuilder()
+NetRouteMap FastRouteCore::get2DTree()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < num_valid_nets_; netID++) {
     odb::dbNet* db_net = nets_[netID]->db_net;
     GRoute& route = routes[db_net];
 
-    Tree rsmt = treesGeneratedBySteinerTreeBuilder_[db_net][1];
-    const int deg = rsmt.deg;
+    TreeEdge* treeedges = treesGeneratedByFastRoute_[db_net][1].edges;
+    const int deg = treesGeneratedByFastRoute_[db_net][1].deg;
 
-    for (int i = 0; i < 2 * deg - 2; i++) {
-      const int x1 = w_tile_ * (rsmt.branch[i].x + 0.5) + x_corner_;
-      const int y1 = h_tile_ * (rsmt.branch[i].y + 0.5) + y_corner_;
-      const int n = rsmt.branch[i].n;
-      const int x2 = w_tile_ * (rsmt.branch[n].x + 0.5) + x_corner_;
-      const int y2 = h_tile_ * (rsmt.branch[n].y + 0.5) + y_corner_;
-      const int len = abs(x1-x2)+abs(y1-y2);
-      if (len > 0) {
+    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+      TreeEdge* treeedge = &(treeedges[edgeID]);
+      if (treeedge->len > 0) {
+        int routeLen = treeedge->route.routelen;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
+        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
+        for (int i = 1; i <= routeLen; i++) {
+          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
+          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
 
           GSegment segment
-              = GSegment(x1,y1, 1, x2, y2, 1);
+              = GSegment(lastX, lastY, 1, xreal, yreal, 1);
+          lastX = xreal;
+          lastY = yreal;
           route.push_back(segment);
+        }
       }
     }
+  }
+
+  return routes;
+}
+
+NetTreeRouteMap FastRouteCore::getSteinerTree()
+{
+  NetTreeRouteMap routes;
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    odb::dbNet* db_net = nets_[netID]->db_net;
+
+    routes[db_net] = treesGeneratedBySteinerTreeBuilder_[db_net];
+    
+    stt::Tree& stree = routes[db_net];
+    
+    const int deg = stree.deg;
+    for (int i = 0; i < 2 * deg - 2; i++) {
+      stree.branch[i].x = w_tile_ * (stree.branch[i].x + 0.5) + x_corner_;
+      stree.branch[i].y = h_tile_ * (stree.branch[i].y + 0.5) + y_corner_;
+    }
+    
   }
 
   return routes;
@@ -838,6 +909,13 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 97, "First L Route.");
   routeLAll(true);
   gen_brk_RSMT(true, true, true, false, noADJ);
+
+  // Save Rectilinear Steiner Tree generated by FastRoute
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    odb::dbNet* db_net = nets_[netID]->db_net;
+    treesGeneratedByFastRoute_[db_net][0] = sttrees_[netID];
+  }
+
   getOverflow2D(&maxOverflow);
   if (verbose_ > 1)
     logger_->info(GRT, 98, "Second L Route.");
@@ -1128,10 +1206,10 @@ NetRouteMap FastRouteCore::run()
     last_total_overflow = total_overflow_;
   }  // end overflow iterations
 
-  // Save tree 2D before assignament layers
+  // Save 2D tree before assignament layers
   for (int netID = 0; netID < num_valid_nets_; netID++) {
     odb::dbNet* db_net = nets_[netID]->db_net;
-    trees2D_[db_net].push_back(sttrees_[netID]);
+    treesGeneratedByFastRoute_[db_net][1] = sttrees_[netID];
   }
 
   bool has_2D_overflow = total_overflow_ > 0;
@@ -1183,6 +1261,12 @@ NetRouteMap FastRouteCore::run()
     ripupTH3D = 18;
   } else {
     ripupTH3D = 20;
+  }
+
+  // Save 3D tree after assignament layers
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    odb::dbNet* db_net = nets_[netID]->db_net;
+    treesGeneratedByFastRoute_[db_net][2] = sttrees_[netID];
   }
 
   if (goingLV && past_cong == 0) {

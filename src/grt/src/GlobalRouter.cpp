@@ -80,6 +80,7 @@ GlobalRouter::GlobalRouter()
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       fastroute_renderer_(nullptr),
+      steinertree_renderer_(nullptr),
       nets_(new std::vector<Net>),
       grid_(new Grid),
       routing_tracks_(new std::vector<RoutingTracks>),
@@ -3440,16 +3441,16 @@ void GlobalRouter::highlightRoute(const odb::dbNet* net)
   }
 }
 
-void GlobalRouter::highlightSteinerBuilderTree(const odb::dbNet* net)
+void GlobalRouter::highlightSteinerTreeBuilder(const odb::dbNet* net)
 {
   if (gui_) {
-    if (fastroute_renderer_ == nullptr) {
-      fastroute_renderer_ = new GrouteRenderer(this, db_->getTech());
-      gui_->registerRenderer(fastroute_renderer_);
+    if (steinertree_renderer_ == nullptr) {
+      steinertree_renderer_ = new GrouteRenderer(this, db_->getTech());
+      gui_->registerRenderer(steinertree_renderer_);
     }
-    fastroute_renderer_->setFastRouter(fastroute_);
-    fastroute_renderer_->setDesign(2);
-    fastroute_renderer_->highlight(net);
+    steinertree_renderer_->setFastRouter(fastroute_);
+    steinertree_renderer_->setDesign(2);
+    steinertree_renderer_->highlight(net);
   }
 }
 
@@ -3466,6 +3467,32 @@ void GlobalRouter::highlight2DTree(const odb::dbNet* net)
   }
 }
 
+void GlobalRouter::highlight3DTree(const odb::dbNet* net)
+{
+  if (gui_) {
+    if (fastroute_renderer_ == nullptr) {
+      fastroute_renderer_ = new GrouteRenderer(this, db_->getTech());
+      gui_->registerRenderer(fastroute_renderer_);
+    }
+    fastroute_renderer_->setFastRouter(fastroute_);
+    fastroute_renderer_->setDesign(4);
+    fastroute_renderer_->highlight(net);
+  }
+}
+
+void GlobalRouter::highlightrectilinearSteinerTree(const odb::dbNet* net)
+{
+  if (gui_) {
+    if (fastroute_renderer_ == nullptr) {
+      fastroute_renderer_ = new GrouteRenderer(this, db_->getTech());
+      gui_->registerRenderer(fastroute_renderer_);
+    }
+    fastroute_renderer_->setFastRouter(fastroute_);
+    fastroute_renderer_->setDesign(5);
+    fastroute_renderer_->highlight(net);
+  }
+}
+
 
 void GlobalRouter::clearRouteGui()
 {
@@ -3475,6 +3502,11 @@ void GlobalRouter::clearRouteGui()
 void GlobalRouter::clearFastRouteGui()
 {
   fastroute_renderer_->clear();
+}
+
+void GlobalRouter::clearSteinerTreeGui()
+{
+  steinertree_renderer_->clear();
 }
 
 void GrouteRenderer::clear()
@@ -3497,6 +3529,62 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
   if (design_ == 1) {
     for (const odb::dbNet* net : nets_) {
       NetRouteMap& routes = groute_->getRoutes();
+      GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
+      for (GSegment& seg : groute) {
+        int layer1 = seg.init_layer;
+        int layer2 = seg.final_layer;
+        if (layer1 == layer2) {
+          odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
+          // Draw rect because drawLine does not have a way to set the pen
+          // thickness.
+          odb::Rect rect = groute_->globalRoutingToBox(seg);
+          painter.setPen(layer);
+          painter.setBrush(layer);
+          painter.drawRect(rect);
+        }
+      }
+    }
+  }
+  else if (design_ == 2) { // highligh_steiner_tree_buildes
+    for (const odb::dbNet* net : nets_) {
+      NetTreeRouteMap routes = fastroute_->getSteinerTree();
+      stt::Tree& stree = routes[const_cast<odb::dbNet*>(net)];
+      const int deg = stree.deg;
+      for (int i = 0; i < 2 * deg - 2; i++) {
+        const int x1 = stree.branch[i].x;
+        const int y1 = stree.branch[i].y;
+        const int n = stree.branch[i].n;
+        const int x2 = stree.branch[n].x;
+        const int y2 = stree.branch[n].y;
+        const int len = abs(x1-x2)+abs(y1-y2);
+        if (len > 0) {
+            painter.setPen(painter.white);
+            painter.setBrush(painter.white);
+            painter.setPenWidth(700);
+            painter.drawLine(x1,y1,x2,y2);
+        }
+      }
+    }
+  }
+  else if (design_ == 3) {
+    for (const odb::dbNet* net : nets_) {
+      NetRouteMap routes = fastroute_->get2DTree();
+      GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
+      for (GSegment& seg : groute) {
+        int layer1 = seg.init_layer;
+        int layer2 = seg.final_layer;
+        if (layer1 == layer2) {
+          painter.setPen(painter.gray);
+          painter.setBrush(painter.gray);
+          painter.setPenWidth(700);
+          painter.drawLine(seg.init_x,seg.init_y,seg.final_x,seg.final_y);
+        }
+      }
+    }
+  }
+  else if (design_ == 4) {
+    for (const odb::dbNet* net : nets_) {
+      NetRouteMap routes = fastroute_->get3DTree();
       //for(auto it:routes){
         //GRoute& groute = it.second;
       GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
@@ -3505,30 +3593,8 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
           int layer2 = seg.final_layer;
           if (layer1 == layer2) {
             odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
-            // Draw rect because drawLine does not have a way to set the pen
-            // thickness.
-            odb::Rect rect = groute_->globalRoutingToBox(seg);
             painter.setPen(layer);
             painter.setBrush(layer);
-            painter.drawRect(rect);
-          }
-        }
-      //}
-    }
-  }
-  else if (design_ == 2) { // highligh_steiner_tree_buildes
-    for (const odb::dbNet* net : nets_) {
-      NetRouteMap routes = fastroute_->getTreeBySteinerTreeBuilder();
-      //for(auto it:routes){
-        //GRoute& groute = it.second;
-      GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
-        for (GSegment& seg : groute) {
-          int layer1 = seg.init_layer;
-          int layer2 = seg.final_layer;
-          if (layer1 == layer2) {
-            //odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
-            painter.setPen(painter.white);
-            painter.setBrush(painter.white);
             painter.setPenWidth(700);
             painter.drawLine(seg.init_x,seg.init_y,seg.final_x,seg.final_y);
           }
@@ -3536,24 +3602,20 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
       //}
     }
   }
-  else if(design_ == 3){
+  else if (design_ == 5) {
     for (const odb::dbNet* net : nets_) {
-      NetRouteMap routes = fastroute_->getTree2D();
-      //for(auto it:routes){
-        //GRoute& groute = it.second;
+      NetRouteMap routes = fastroute_->getRectilinearSteinerTree();
       GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
-        for (GSegment& seg : groute) {
-          int layer1 = seg.init_layer;
-          int layer2 = seg.final_layer;
-          if (layer1 == layer2) {
-            //odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
-            painter.setPen(painter.gray);
-            painter.setBrush(painter.gray);
-            painter.setPenWidth(700);
-            painter.drawLine(seg.init_x,seg.init_y,seg.final_x,seg.final_y);
-          }
+      for (GSegment& seg : groute) {
+        int layer1 = seg.init_layer;
+        int layer2 = seg.final_layer;
+        if (layer1 == layer2) {
+          painter.setPen(painter.cyan);
+          painter.setBrush(painter.cyan);
+          painter.setPenWidth(700);
+          painter.drawLine(seg.init_x,seg.init_y,seg.final_x,seg.final_y);
         }
-      //}
+      }
     }
   }
 }

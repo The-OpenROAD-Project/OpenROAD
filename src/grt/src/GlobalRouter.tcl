@@ -301,18 +301,18 @@ proc draw_route_guides { net_names } {
   }
 }
 
-sta::define_cmd_args "highlight_steiner_builder_tree" { net_names }
+sta::define_cmd_args "highlight_steiner_tree_builder" { net_names }
 
-proc highlight_steiner_builder_tree { net_names } {
+proc highlight_steiner_tree_builder { net_names } {
 
   if {[llength $net_names] > 0} {
     foreach net [get_nets $net_names] {
       if { $net != "NULL" } {
-        grt::highlight_steiner_builder_tree [sta::sta_to_db_net $net]
+        grt::highlight_steiner_tree_builder [sta::sta_to_db_net $net]
       }
     }
   } else {
-    grt::erase_fastroutes
+    grt::erase_steinertrees
   }
 }
 
@@ -324,6 +324,36 @@ proc highlight_2D_tree { net_names } {
     foreach net [get_nets $net_names] {
       if { $net != "NULL" } {
         grt::highlight_2D_tree [sta::sta_to_db_net $net]
+      }
+    }
+  } else {
+    grt::erase_fastroutes
+  }
+}
+
+sta::define_cmd_args "highlight_3D_tree" { net_names }
+
+proc highlight_3D_tree { net_names } {
+
+  if {[llength $net_names] > 0} {
+    foreach net [get_nets $net_names] {
+      if { $net != "NULL" } {
+        grt::highlight_3D_tree [sta::sta_to_db_net $net]
+      }
+    }
+  } else {
+    grt::erase_fastroutes
+  }
+}
+
+sta::define_cmd_args "highlight_rectilinear_steiner_tree" { net_names }
+
+proc highlight_rectilinear_steiner_tree { net_names } {
+
+  if {[llength $net_names] > 0} {
+    foreach net [get_nets $net_names] {
+      if { $net != "NULL" } {
+        grt::highlight_rectilinear_steiner_tree [sta::sta_to_db_net $net]
       }
     }
   } else {

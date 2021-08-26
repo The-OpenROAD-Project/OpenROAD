@@ -36,6 +36,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace odb {
 class dbNet;
@@ -106,6 +107,7 @@ struct cmpById
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
+typedef std::map<odb::dbNet*, stt::Tree> NetTreeRouteMap;
 typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
 
 void print(GRoute& groute);
