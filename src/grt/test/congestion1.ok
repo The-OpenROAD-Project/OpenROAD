@@ -57,17 +57,17 @@ metal10    Vertical         2256            47          97.92%
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [INFO GRT-0103] Extra Run for hard benchmark.
-[INFO GRT-0104] Minimal overflow 1075 occurring at round 14.
-[INFO GRT-0111] Final number of vias: 3389
-[INFO GRT-0112] Final usage 3D: 15545
+[INFO GRT-0104] Minimal overflow 1095 occurring at round 13.
+[INFO GRT-0111] Final number of vias: 3378
+[INFO GRT-0112] Final usage 3D: 15584
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            3008          2671           88.80%             1 /  5 / 677
-metal3            2806          2707           96.47%             4 /  2 / 770
+metal2            3008          2768           92.02%             1 /  5 / 738
+metal3            2806          2682           95.58%             5 /  1 / 727
 metal4             564             0            0.00%             0 /  0 /  0
 metal5             276             0            0.00%             0 /  0 /  0
 metal6             564             0            0.00%             0 /  0 /  0
@@ -76,8 +76,8 @@ metal8             188             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10             47             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total             7499          5378           71.72%             5 /  7 / 1447
+Total             7499          5450           72.68%             6 /  6 / 1465
 
-[INFO GRT-0018] Total wirelength: 16144 um
+[INFO GRT-0018] Total wirelength: 16321 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

@@ -1,5 +1,4 @@
 record_tests {
-  check
   flute1
   flute_gcd
   pd1

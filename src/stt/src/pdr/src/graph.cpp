@@ -531,6 +531,26 @@ void Graph::print_tree()
                     node.parent,
                     children);
   }
+  for (auto i = 0; i < edges_.size(); i++) {
+    Edge &edge = edges_[i];
+    const char *shape = "?";
+    if (edge.best_shape == 0)
+      shape = "lower L";
+    else if (edge.best_shape == 1)
+      shape = "upper L";
+    else if (edge.best_shape == 5)
+      shape = "don't care";
+    int head = edge.head;
+    int tail = edge.tail;
+    logger_->report("Edge ({} {}) {} -> ({} {}) {} shape={}",
+                    nodes[head].x,
+                    nodes[head].y,
+                    head,
+                    nodes[tail].x,
+                    nodes[tail].y,
+                    tail,
+                    shape);
+  }
 }
 
 int Graph::calc_tree_wl_pd()

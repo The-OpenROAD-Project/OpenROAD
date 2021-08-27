@@ -99,6 +99,7 @@ class SteinerTreeBuilder
                        const std::vector<int>& y,
                        const std::vector<int>& s,
                        int acc);
+  bool checkTree(const Tree& tree) const;
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha);
   float getAlpha(const odb::dbNet* net) const;
@@ -108,7 +109,6 @@ class SteinerTreeBuilder
 
  private:
   int computeHPWL(odb::dbNet* net);
-  bool checkTree(const Tree& tree) const;
 
   const int flute_accuracy = 3;
   float alpha_;
