@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "db.h"
+#include "utl/Logger.h"
 using namespace odb;
 
 dbMaster* createMaster2X1(dbLib*      lib,
@@ -23,7 +24,7 @@ dbMaster* createMaster2X1(dbLib*      lib,
 
 dbDatabase* createSimpleDB()
 {
-  dbDatabase*  db   = dbDatabase::create();
+  dbDatabase*  db   = dbDatabase::create(new utl::Logger());
   dbTech*      tech = dbTech::create(db);
   dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   dbLib*    lib   = dbLib::create(db, "lib1", ',');

@@ -53,7 +53,7 @@ struct GCFixture : public Fixture
 {
   GCFixture() : worker(design->getTech(), logger.get())
   {
-    auto db = odb::dbDatabase::create();
+    auto db = odb::dbDatabase::create(logger.get());
     tech = odb::dbTech::create(db);
   }
 
