@@ -144,7 +144,7 @@ int write_macro_lef(odb::dbLib* lib, const char* path)
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
 {
   if (db == NULL) {
-    db = odb::dbDatabase::create();
+    db = odb::dbDatabase::create(new utl::Logger());
   }
   FILE* fp = fopen(db_path, "rb");
   if (!fp) {

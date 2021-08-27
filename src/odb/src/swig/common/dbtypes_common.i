@@ -37,3 +37,9 @@
 
 %apply std::vector<int> &OUTPUT { std::vector<int> & x_grid,
                                   std::vector<int> & y_grid };
+
+%typemap(in, numinputs=0) utl::Logger *INPUT  {
+   $1 = new utl::Logger();
+}
+
+%apply utl::Logger *INPUT { utl::Logger * logger };

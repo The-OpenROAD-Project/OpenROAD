@@ -420,7 +420,7 @@ class dbDatabase : public dbObject
   ///
   /// Create an instance of a database
   ///
-  static dbDatabase* create(utl::Logger* logger = nullptr);
+  static dbDatabase* create(utl::Logger* logger);
 
   ///
   /// Detroy an instance of a database

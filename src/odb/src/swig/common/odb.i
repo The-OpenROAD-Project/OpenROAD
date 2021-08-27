@@ -47,6 +47,7 @@
 #include "dbTypes.h"
 #include "geom.h"
 #include "wOrder.h"
+#include "utl/Logger.h"
 
 using namespace odb;
 %}

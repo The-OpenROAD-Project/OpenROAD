@@ -726,12 +726,8 @@ dbDatabase* dbDatabase::create(utl::Logger* logger)
         NULL, NULL, (GetObjTbl_t) NULL, dbDatabaseObj);
     ZALLOCATED(db_tbl);
   }
-
   _dbDatabase* db = db_tbl->create();
-  if(logger == nullptr)
-    db->_logger = new utl::Logger();
-  else
-    db->_logger = logger;
+  db->_logger = logger;
   return (dbDatabase*) db;
 }
 
