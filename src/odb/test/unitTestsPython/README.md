@@ -6,8 +6,6 @@
 ../unitTests.sh
 ```
 
---------------------------------------------------------------------------
-
 ## <u>Tests Structure</u>
 
 The directory unitTestsPython includes unit tests for OpenDB Python APIs. Any test file starts with 'Test' followed by the test target.
