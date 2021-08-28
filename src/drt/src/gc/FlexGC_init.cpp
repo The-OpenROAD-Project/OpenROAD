@@ -799,7 +799,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
     }
   }
   auto layer = getTech()->getLayer(i);
-  if(layer->getType() == frLayerTypeEnum::CUT)
+  if (layer->getType() == frLayerTypeEnum::CUT)
     layer->updateMaxCutClass(rectangle->width(), rectangle->length());
   pin->addMaxRectangle(std::move(rectangle));
 }
@@ -820,7 +820,6 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
       for (auto& rect : rects) {
         initNet_pins_maxRectangles_helper(
             net, pin.get(), rect, i, fixedMaxRectangles);
-        
       }
     }
   }
@@ -844,12 +843,10 @@ void FlexGCWorker::Impl::initNets()
 
 void FlexGCWorker::Impl::initCutClasses()
 {
-  for(auto &layer : getTech()->getLayers())
-  {
-    if(layer->getType() == frLayerTypeEnum::CUT)
-    {
+  for (auto& layer : getTech()->getLayers()) {
+    if (layer->getType() == frLayerTypeEnum::CUT) {
       auto viaDef = layer->getDefaultViaDef();
-      if(viaDef == nullptr)
+      if (viaDef == nullptr)
         continue;
       frVia via(viaDef);
       frBox tmpBx;

@@ -671,7 +671,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     if (lef58con != nullptr) {
       auto dbRule = lef58con->getODBRule();
       reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-      if (!dbRule->isCenterToCenter(cutClass1, cutClass2) && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
+      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
+          && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         if (!swapped)
           reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
                                   : (cutBox1.right() - cutBox1.left());
@@ -697,7 +698,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
     if (reqSpcVal == 0)
       return;
-    if (!dbRule->isCenterToCenter(cutClass1, cutClass2) && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
+    if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
+        && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
       reqSpcVal += isCurrDirY ? ((cutBox1.top() - cutBox1.bottom()
                                   + cutBox2.top() - cutBox2.bottom())
                                  / 2)

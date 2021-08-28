@@ -373,10 +373,10 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
                         ->getLayerNum();
   else
     queryLayerNum = layerNum1;
-  
+
   auto layer2 = getTech()->getLayer(queryLayerNum);
   int cutClassIdx2 = layer2->getMaxCutClassIdx();
-  if(cutClassIdx2 < 0)
+  if (cutClassIdx2 < 0)
     return;
   auto cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
   frCoord maxSpc = dbRule->getMaxSpacing(cutClass, cutClass2);

@@ -1305,7 +1305,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
           bool center2center, centerAndEdge;
           center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
           centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
-          reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false);
+          reqDistSquare
+              = dbRule->getSpacing(cutClass1, false, cutClass2, false);
           reqDistSquare *= reqDistSquare;
           if (center2center || centerAndEdge)
             currDistSquare = c2cSquare;
@@ -1545,11 +1546,13 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
         if (isUpperVia) {
           center2center = dbRule->isCenterToCenter(cutClass2, cutClass1);
           centerAndEdge = dbRule->isCenterAndEdge(cutClass2, cutClass1);
-          reqDistSquare = dbRule->getSpacing(cutClass2, false, cutClass1, false);
+          reqDistSquare
+              = dbRule->getSpacing(cutClass2, false, cutClass1, false);
         } else {
           center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
           centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
-          reqDistSquare = dbRule->getSpacing(cutClass1, false, cutClass2, false);
+          reqDistSquare
+              = dbRule->getSpacing(cutClass1, false, cutClass2, false);
         }
         reqDistSquare *= reqDistSquare;
         if (center2center || centerAndEdge)

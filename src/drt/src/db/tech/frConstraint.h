@@ -39,8 +39,8 @@
 #include "frBaseTypes.h"
 #include "frViaDef.h"
 #include "frViaRuleGenerate.h"
-#include "utl/Logger.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace fr {
 namespace io {
@@ -1262,11 +1262,16 @@ class frLef58CutSpacingTableConstraint : public frConstraint
 {
  public:
   // constructor
-  frLef58CutSpacingTableConstraint(odb::dbTechLayerCutSpacingTableDefRule* dbRule) : db_rule_(dbRule)
+  frLef58CutSpacingTableConstraint(
+      odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+      : db_rule_(dbRule)
   {
   }
   // getter
-  odb::dbTechLayerCutSpacingTableDefRule* getODBRule() const { return db_rule_; }
+  odb::dbTechLayerCutSpacingTableDefRule* getODBRule() const
+  {
+    return db_rule_;
+  }
   void report(utl::Logger* logger) const override
   {
     logger->report("CUTSPACINGTABLE");
@@ -1279,7 +1284,6 @@ class frLef58CutSpacingTableConstraint : public frConstraint
 
  private:
   odb::dbTechLayerCutSpacingTableDefRule* db_rule_;
-  
 };
 
 // new SPACINGTABLE Constraints

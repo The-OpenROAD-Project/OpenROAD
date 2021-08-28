@@ -662,21 +662,18 @@ class frLayer
   void updateMaxCutClass(frCoord width, frCoord length)
   {
     int cutClassIdx = getCutClassIdx(width, length);
-    if(maxCutClassIdx == -1)
-    {
+    if (maxCutClassIdx == -1) {
       maxCutClassIdx = cutClassIdx;
       return;
     }
     auto curClass = getCutClass(maxCutClassIdx);
     auto curWidth = curClass->getViaWidth();
     auto curLength = curClass->getViaLength();
-    if(width > curWidth || length > curLength)
+    if (width > curWidth || length > curLength)
       maxCutClassIdx = cutClassIdx;
   }
-  const int getMaxCutClassIdx()
-  {
-    return maxCutClassIdx;
-  }
+  const int getMaxCutClassIdx() { return maxCutClassIdx; }
+
  protected:
   frLayerTypeEnum type;
   frLayerNum layerNum;
