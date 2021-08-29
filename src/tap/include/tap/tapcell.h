@@ -51,6 +51,13 @@ class dbBlock;
 
 namespace tap {
 
+enum LocationType 
+{
+  AboveMacro,
+  BelowMacro,
+  None,
+};
+
 class Tapcell
 {
  public:
@@ -77,7 +84,7 @@ class Tapcell
            const std::string& tapcell_master,
            int dist);
   void reset();
-  int makeSiteLoc(int x, double site_x, int dirc, int offset);
+  int makeSiteLoc(int x, double site_x, bool at_left_from_macro, int offset);
   void buildRow(odb::dbBlock* block,
                 const std::string& name,
                 odb::dbSite* site,
@@ -119,13 +126,13 @@ class Tapcell
               int halo_x,
               int halo_y);
   const std::pair<int, int> getMinMaxX(const std::vector<std::vector<odb::dbRow*>>& rows);
-  odb::dbMaster* pickCornerMaster(int top_bottom,
+  odb::dbMaster* pickCornerMaster(LocationType top_bottom,
                                   odb::dbOrientType ori,
                                   odb::dbMaster* cnrcap_nwin_master,
                                   odb::dbMaster* cnrcap_nwout_master,
                                   odb::dbMaster* endcap_master);
   bool checkSymmetry(odb::dbMaster* master, odb::dbOrientType ori);
-  int isXCorner(const int x,
+  LocationType getLocationType(const int x,
                 const std::vector<odb::dbRow*>& rows_above,
                 const std::vector<odb::dbRow*>& rows_below);
   void makeInstance(odb::dbBlock* block,
