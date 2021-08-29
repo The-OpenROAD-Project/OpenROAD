@@ -50,6 +50,8 @@
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
+#include "drcWidget.h"
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -106,9 +108,9 @@ void Gui::status(const std::string& message)
   main_window->status(message);
 }
 
-void Gui::pause()
+void Gui::pause(int timeout)
 {
-  main_window->pause();
+  main_window->pause(timeout);
 }
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
@@ -324,6 +326,13 @@ const std::string Gui::requestUserInput(const std::string& title, const std::str
   return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
 }
 
+void Gui::loadDRC(const std::string& filename)
+{
+  if (!filename.empty()) {
+    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
+  }
+}
+
 void Gui::addCustomVisibilityControl(const std::string& name,
                                      bool initially_visible)
 {
@@ -384,6 +393,21 @@ void Gui::setResolution(double pixels_per_dbu)
 void Gui::saveImage(const std::string& filename, const odb::Rect& region)
 {
   main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
+}
+
+void Gui::showWidget(const std::string& name, bool show)
+{
+  const QString find_name = QString::fromStdString(name);
+  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
+    if (widget->objectName() == find_name || widget->windowTitle() == find_name) {
+      if (show) {
+        widget->show();
+        widget->raise();
+      } else {
+        widget->hide();
+      }
+    }
+  }
 }
 
 Renderer::~Renderer()
@@ -488,6 +512,8 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
     Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+
+    Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
   }
 }
 

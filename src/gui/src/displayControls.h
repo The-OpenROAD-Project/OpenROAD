@@ -179,6 +179,7 @@ class DisplayControls : public QDockWidget, public Options
   bool areRouteGuidesVisible();
   bool areRoutingObjsVisible();
 
+  bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
   bool showHorizontalCongestion() const override;
@@ -255,6 +256,7 @@ class DisplayControls : public QDockWidget, public Options
   struct MiscModels
   {
     ModelRow instance_names;
+    ModelRow scale_bar;
     ModelRow fills;
   };
 

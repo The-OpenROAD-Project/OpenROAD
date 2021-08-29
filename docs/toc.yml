@@ -1,0 +1,144 @@
+root: index
+entries:
+
+- file: main/CODE_OF_CONDUCT
+  title: Code of Conduct
+- file: contrib/GettingInvolved
+  title: Getting Involved
+
+- file: contrib/DeveloperGuide
+  title: Developer Guide
+  entries:
+  - file: contrib/CodingPractices
+    title: Coding Practices
+  - file: contrib/DatabaseMath
+    title: Database Math
+  - file: contrib/Logger
+    title: Logger
+
+
+- file: main/README
+  title: Getting Started with OpenROAD App
+  entries:
+  - file: main/src/README
+    title: OpenROAD TCL
+  - file: main/src/odb/README
+    title: OpenDB
+    entries:
+      - file: main/src/odb/src/codeGenerator/README
+        title: Code Generator
+      - file: main/src/odb/test/unitTestsPython/README
+        title: Unit Tests (Python)
+      - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
+        title: Add Fields in DB Objects
+  - file: main/src/rcx/README
+    title: OpenRCX
+    entries:
+    - file: main/src/rcx/doc/calibration
+      title: Calibration
+  - file: main/src/rmp/README
+    title: Restructure
+  - file: main/src/ifp/README
+    title: Floorplan Initialization
+  - file: main/src/ppl/README
+    title: ioPlacer
+  - file: main/src/ICeWall/README
+    title: ICeWall
+    entries:
+    - file: main/src/ICeWall/doc/README
+      title: ICeWall Documentation
+      entries:
+      - file: main/src/ICeWall/doc/add_pad
+        title: Add Pad
+      - file: main/src/ICeWall/doc/define_pad_cell
+        title: Define Pad Cell
+      - file: main/src/ICeWall/doc/initialize_padring
+        title: Initialize Padring
+      - file: main/src/ICeWall/doc/place_cell
+        title: Place Cell
+      - file: main/src/ICeWall/doc/set_bump
+        title: Set Bump
+      - file: main/src/ICeWall/doc/set_bump_options
+        title: Set Bump Options
+      - file: main/src/ICeWall/doc/set_padring_options
+        title: Set Padring Options
+      - file: main/src/ICeWall/doc/TCL_Interface
+        title: TCL Interface
+  - file: main/src/mpl/README
+    title: TritonMacroPlacer
+  - file: main/src/tap/README
+    title: Tapcell
+  - file: main/src/pdn/README
+    title: OpenROAD-pdn
+    entries:
+    - file: main/src/pdn/doc/README
+      title: OpenROAD-pdn Documentation
+      entries:
+      - file: main/src/pdn/doc/PDN
+        title: PDN
+    - file: main/src/pdn/doc/TCL_Interface.md
+      title: Tcl Interface
+      entries:
+      - file: main/src/pdn/doc/add_global_connection.md
+        title: add_global_connection
+      - file: main/src/pdn/doc/add_pdn_connect.md
+        title: add_pdn_connect
+      - file: main/src/pdn/doc/add_pdn_ring.md
+        title: add_pdn_ring
+      - file: main/src/pdn/doc/add_pdn_stripe.md
+        title: add_pdn_stripe
+      - file: main/src/pdn/doc/define_pdn_grid.md
+        title: add_pdn_stripe
+      - file: main/src/pdn/doc/set_voltage_domain.md
+        title: add_pdn_stripe
+  - file: main/src/psm/README
+    title: PDNSim
+    entries:
+    - file: main/src/psm/doc/Vsrc_description
+      title: VSRC description
+  - file: main/src/gpl/README
+    title: RePlAce
+    entries:
+    - file: main/src/gpl/doc/TclCommands
+      title: Tclcommands
+  - file: main/src/sta/README
+    title: OpenSTA (external)
+  - file: main/src/rsz/README
+    title: Gate Resizer
+  - file: main/src/dpl/README
+    title: OpenDP
+  - file: main/src/cts/README
+    title: Triton CTS 2.0
+    entries:
+    - file: main/src/cts/doc/cts_lut_characterization
+      title: CTS LUT Characterization
+  - file: main/src/grt/README
+    title: FastRoute
+  - file: main/src/ant/README
+    title: Antenna Checker
+  - file: main/src/drt/README
+    title: TritonRoute
+  - file: main/src/fin/README
+    title: Metal Fill
+
+  - file: main/src/stt/src/flt/README
+    title: Flute
+  - file: main/src/stt/src/pdr/README
+    title: PDRev
+  - file: main/src/par/README
+    title: Partition Manager
+
+- file: user/GettingStarted
+  title: Getting Started with OpenROAD Flow
+  entries:
+  - file: user/BuildWithDocker
+    title: Build With Docker
+  - file: user/BuildLocally
+    title: Build Locally
+  - file: user/UserGuide
+    title: User Guide
+  - file: contrib/Metrics
+    title: Metrics
+
+- file: user/FAQS
+  title: FAQs

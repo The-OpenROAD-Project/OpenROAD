@@ -50,6 +50,7 @@
 namespace gui {
 class Painter;
 class Selected;
+class Options;
 
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
@@ -266,6 +267,7 @@ class Painter
   static inline const Color persistHighlight = yellow;
   static inline const Color ruler_color = cyan;
 
+  Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -300,6 +302,8 @@ class Painter
 
   virtual void drawCircle(int x, int y, int r) = 0;
 
+  virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
+
   virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
 
   virtual void drawRuler(int x0, int y0, int x1, int y1) = 0;
@@ -311,6 +315,14 @@ class Painter
   }
 
   virtual void setTransparentBrush() = 0;
+  virtual void setHashedBrush(const Color& color) = 0;
+
+  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
+  inline Options* getOptions() { return options_; }
+
+ private:
+  Options* options_;
+  double pixels_per_dbu_;
 };
 
 // This is an interface for classes that wish to be called to render
@@ -334,10 +346,10 @@ class Renderer
   // Handle user clicks.  Layer is a nullptr for the
   // object not associated with a layer.
   // Return true if an object was found; false otherwise.
-  virtual Selected select(odb::dbTechLayer* /* layer */,
-                          const odb::Point& /* point */)
+  virtual SelectionSet select(odb::dbTechLayer* /* layer */,
+                              const odb::Point& /* point */)
   {
-    return Selected();
+    return SelectionSet();
   }
 };
 
@@ -413,6 +425,9 @@ class Gui
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
 
+  // show/hide widgets
+  void showWidget(const std::string& name, bool show);
+
   // adding custom buttons to toolbar
   const std::string addToolbarButton(const std::string& name,
                                      const std::string& text,
@@ -423,12 +438,16 @@ class Gui
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
+  // open DRC
+  void loadDRC(const std::string& filename);
+
   // Force an immediate redraw.
   void redraw();
 
   // Waits for the user to click continue before returning
   // Draw events are processed while paused.
-  void pause();
+  // timeout is in milliseconds (0 is no timeout)
+  void pause(int timeout = 0);
 
   // Show a message in the status bar
   void status(const std::string& message);
