@@ -828,8 +828,8 @@ void FlexDRWorker::initNets_searchRepair(
 bool FlexDRWorker::findAPTracks(frLayerNum startLayerNum,
                                 frLayerNum endLayerNum,
                                 Rectangle& pinRect,
-                                std::set<frCoord> xLocs,
-                                std::set<frCoord> yLocs)
+                                std::set<frCoord>& xLocs,
+                                std::set<frCoord>& yLocs)
 {
   int inc = (startLayerNum < endLayerNum ? 2 : -2);
 
@@ -1105,7 +1105,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             }
 
             dPin->addAccessPattern(std::move(uap));
-            break;
+            if (!restrictedRouting)
+                break;
         } else {
           cout << "Error: initNet_termGenAp_new unsupported pinFig\n";
         }

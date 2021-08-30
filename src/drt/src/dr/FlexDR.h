@@ -669,8 +669,8 @@ class FlexDRWorker
   bool findAPTracks(frLayerNum startLayerNum,
                     frLayerNum endLayerNum,
                     Rectangle& pinRect,
-                    std::set<frCoord> xLocs,
-                    std::set<frCoord> yLocs);
+                    std::set<frCoord>& xLocs,
+                    std::set<frCoord>& yLocs);
   void initNet_boundary(drNet* net,
                         std::vector<std::unique_ptr<drConnFig>>& extObjs);
   void initNets_regionQuery();
