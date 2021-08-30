@@ -106,9 +106,9 @@
 
   void reset() { getTapcell()->reset(); }
 
-  int make_site_loc(int x, double site_x, int dirc, int offset)
+  int make_site_loc(int x, double site_x, bool at_left_from_macro, int offset)
   {
-    return getTapcell()->makeSiteLoc(x, site_x, dirc, offset);
+    return getTapcell()->makeSiteLoc(x, site_x, at_left_from_macro, offset);
   }
 
   void build_row(odb::dbBlock* block,

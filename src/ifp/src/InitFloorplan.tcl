@@ -292,11 +292,11 @@ proc cut_row {block row row_blockages min_row_width halo_x halo_y} {
   foreach blockage $row_blockage_xs {
     lassign $blockage blockage_x0 blockage_x1
     # ensure rows are an integer length of sitewidth
-    set new_row_end_x [tap::make_site_loc [expr $blockage_x0 - $halo_x] $site_width -1 $start_origin_x]
+    set new_row_end_x [tap::make_site_loc [expr $blockage_x0 - $halo_x] $site_width 1 $start_origin_x]
     tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x $new_row_end_x $start_origin_y $row $curr_min_row_width
     incr row_sub_idx
 
-    set start_origin_x [tap::make_site_loc [expr $blockage_x1 + $halo_x] $site_width 1 $start_origin_x]
+    set start_origin_x [tap::make_site_loc [expr $blockage_x1 + $halo_x] $site_width 0 $start_origin_x]
   }
 
   # Make last row

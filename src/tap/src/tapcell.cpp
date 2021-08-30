@@ -1125,7 +1125,7 @@ vector<odb::dbBox*> Tapcell::findBlockages()
 int Tapcell::makeSiteLoc(int x, double site_x, bool at_left_from_macro, int offset)
 {
   auto site_int = double(x - offset) / site_x;
-  if (at_left_from_macro == 0) {
+  if (!at_left_from_macro) {
     site_int = ceil(site_int);
   } else {
     site_int = floor(site_int);
