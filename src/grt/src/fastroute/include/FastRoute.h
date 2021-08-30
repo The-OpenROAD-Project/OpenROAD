@@ -202,7 +202,8 @@ class FastRouteCore
                         TreeEdge* treeedges,
                         const int edge_n1A1,
                         const int edge_n1A2);
-  void updateRouteType2(const TreeNode* treenodes,
+  void updateRouteType2(const int net_id,
+                        const TreeNode* treenodes,
                         const int n1,
                         const int A1,
                         const int A2,
