@@ -194,17 +194,17 @@ void highlight_steiner_tree_builder(const odb::dbNet *net)
 
 void highlight_2D_tree(const odb::dbNet *net)
 {
-  getGlobalRouter()->highlight2DTree(net);
+  getGlobalRouter()->highlightRectilinearSteinerTree(net, 3);
 }
 
 void highlight_3D_tree(const odb::dbNet *net)
 {
-  getGlobalRouter()->highlight3DTree(net);
+  getGlobalRouter()->highlightRectilinearSteinerTree(net, 4);
 }
 
 void highlight_rectilinear_steiner_tree(const odb::dbNet *net)
 {
-  getGlobalRouter()->highlightrectilinearSteinerTree(net);
+  getGlobalRouter()->highlightRectilinearSteinerTree(net, 5);
 }
 
 void

@@ -191,9 +191,7 @@ class GlobalRouter
   void highlightRoute(const odb::dbNet* net);
 
   void highlightSteinerTreeBuilder(const odb::dbNet* net);
-  void highlight2DTree(const odb::dbNet* net);
-  void highlight3DTree(const odb::dbNet* net);
-  void highlightrectilinearSteinerTree(const odb::dbNet* net);
+  void highlightRectilinearSteinerTree(const odb::dbNet* net, int design);
 
   // Clear routes in the gui
   void clearRouteGui();

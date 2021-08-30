@@ -150,6 +150,8 @@ class FastRouteCore
   }
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
+  PinNetMap getPins();
+  GRoute convertTreeEdgesToGRoute(TreeEdge* treeedges, const int deg, bool is3DTree);
   NetTreeRouteMap getSteinerTree();
   NetRouteMap get2DTree();
   NetRouteMap get3DTree();
@@ -480,7 +482,7 @@ class FastRouteCore
 
   static const int num_tree_saved_ = 3;
   std::map<odb::dbNet*, stt::Tree> treesGeneratedBySteinerTreeBuilder_;
-  std::map<odb::dbNet*, std::vector<StTree>> treesGeneratedByFastRoute_; // { RectilinearSteinerTree, final 2D tree, 3D Tree after layer assigment }
+  std::map<odb::dbNet*, std::vector<StTree>> treesGeneratedByFastRoute_; // { RectilinearSteinerTree, final 2D tree, 3D Tree after layer assigment }, size of vector is num_tree_saved_
 };
 
 }  // namespace grt

@@ -640,6 +640,70 @@ void FastRouteCore::initAuxVar()
   }
 }
 
+PinNetMap FastRouteCore::getPins(){
+  PinNetMap allPins;
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    odb::dbNet* db_net = nets_[netID]->db_net;
+    PointsVector& netPins = allPins[db_net];
+  
+    std::vector<int> xs = nets_[netID]->pinX;
+    std::vector<int> ys = nets_[netID]->pinY;
+    std::vector<int> ls = nets_[netID]->pinL;
+    int n_pins = nets_[netID]->numPins;
+
+    for (int i = 0; i < n_pins; i++) {
+      const int xreal = w_tile_ * (xs[i] + 0.5) + x_corner_;
+      const int yreal = h_tile_ * (ys[i] + 0.5) + y_corner_;
+      
+      Point point = Point(xreal, yreal, ls[i] + 1);
+      
+      netPins.push_back(point);
+    }
+  }
+  return allPins;
+}
+
+GRoute FastRouteCore::convertTreeEdgesToGRoute(TreeEdge* treeedges, const int deg, bool is3DTree){
+
+  GRoute route;
+  int lastL;
+  GSegment segment;
+
+  for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    if (treeedge->len > 0) {
+      int routeLen = treeedge->route.routelen;
+      const std::vector<short>& gridsX = treeedge->route.gridsX;
+      const std::vector<short>& gridsY = treeedge->route.gridsY;
+      const std::vector<short>& gridsL = treeedge->route.gridsL;
+      int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
+      int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
+
+      if (is3DTree) 
+        lastL = gridsL[0];
+      
+
+      for (int i = 1; i <= routeLen; i++) {
+        const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
+        const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
+
+        if (is3DTree) {
+          segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+          lastL = gridsL[i];
+        }
+        else {
+          segment = GSegment(lastX, lastY, -1, xreal, yreal, -1); // -1 layer no defined for 2D Tree
+        }
+        lastX = xreal;
+        lastY = yreal;
+        route.push_back(segment);
+      }
+    }
+  }
+  return route;
+}
+
+
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
@@ -649,30 +713,9 @@ NetRouteMap FastRouteCore::getRoutes()
 
     TreeEdge* treeedges = sttrees_[netID].edges;
     const int deg = sttrees_[netID].deg;
+    
+    route = convertTreeEdgesToGRoute(treeedges, deg, true);
 
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        const std::vector<short>& gridsL = treeedge->route.gridsL;
-        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
-        int lastL = gridsL[0];
-        for (int i = 1; i <= routeLen; i++) {
-          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
-
-          GSegment segment
-              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
-          lastX = xreal;
-          lastY = yreal;
-          lastL = gridsL[i];
-          route.push_back(segment);
-        }
-      }
-    }
   }
 
   return routes;
@@ -688,29 +731,8 @@ NetRouteMap FastRouteCore::get3DTree()
     TreeEdge* treeedges = treesGeneratedByFastRoute_[db_net][2].edges;
     const int deg = treesGeneratedByFastRoute_[db_net][2].deg;
 
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        const std::vector<short>& gridsL = treeedge->route.gridsL;
-        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
-        int lastL = gridsL[0];
-        for (int i = 1; i <= routeLen; i++) {
-          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
+    route = convertTreeEdgesToGRoute(treeedges, deg, true);
 
-          GSegment segment
-              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
-          lastX = xreal;
-          lastY = yreal;
-          lastL = gridsL[i];
-          route.push_back(segment);
-        }
-      }
-    }
   }
 
   return routes;
@@ -727,26 +749,7 @@ NetRouteMap FastRouteCore::getRectilinearSteinerTree()
     TreeEdge* treeedges = treesGeneratedByFastRoute_[db_net][0].edges;
     const int deg = treesGeneratedByFastRoute_[db_net][0].deg;
 
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
-        for (int i = 1; i <= routeLen; i++) {
-          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
-
-          GSegment segment
-              = GSegment(lastX, lastY, 1, xreal, yreal, 1);
-          lastX = xreal;
-          lastY = yreal;
-          route.push_back(segment);
-        }
-      }
-    }
+    route = convertTreeEdgesToGRoute(treeedges, deg, false);
   }
 
   return routes;
@@ -762,26 +765,7 @@ NetRouteMap FastRouteCore::get2DTree()
     TreeEdge* treeedges = treesGeneratedByFastRoute_[db_net][1].edges;
     const int deg = treesGeneratedByFastRoute_[db_net][1].deg;
 
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
-        for (int i = 1; i <= routeLen; i++) {
-          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
-
-          GSegment segment
-              = GSegment(lastX, lastY, 1, xreal, yreal, 1);
-          lastX = xreal;
-          lastY = yreal;
-          route.push_back(segment);
-        }
-      }
-    }
+    route = convertTreeEdgesToGRoute(treeedges, deg, false);
   }
 
   return routes;
