@@ -218,6 +218,24 @@ void zoom_out(double x, double y)
   gui->zoomIn(make_point(x, y));
 }
 
+void center_at(double x, double y)
+{
+  if (!check_gui("center_at")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->centerAt(make_point(x, y));
+}
+
+void set_resolution(double dbu_per_pixel)
+{
+  if (!check_gui("set_resolution")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->setResolution(1 / dbu_per_pixel);
+}
+
 void design_created()
 {
   if (!check_gui("design_created")) {
@@ -329,6 +347,42 @@ const std::string input_dialog(const char* title, const char* question)
   }
   auto gui = gui::Gui::get();
   return gui->requestUserInput(title, question);
+}
+
+void pause(int timeout = 0)
+{
+  if (!check_gui("pause")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  return gui->pause(timeout);
+}
+
+void load_drc(const char* filename)
+{
+  if (!check_gui("load_drc")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->loadDRC(filename);
+}
+
+void show_widget(const char* name)
+{
+  if (!check_gui("show_widget")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  return gui->showWidget(name, true);
+}
+
+void hide_widget(const char* name)
+{
+  if (!check_gui("hide_widget")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  return gui->showWidget(name, false);
 }
 
 %} // inline

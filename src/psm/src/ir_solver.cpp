@@ -47,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "get_voltage.h"
 #include "ir_solver.h"
 #include "node.h"

@@ -59,7 +59,7 @@ target_include_directories(rsz
 target_link_libraries(rsz
   PUBLIC
     stt
-    opendb
+    odb
     OpenSTA
     dbSta
     gui

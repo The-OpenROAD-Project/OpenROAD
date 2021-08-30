@@ -35,6 +35,7 @@
 
 #include "AntennaRepair.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -84,30 +85,36 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
       wire_encoder.begin(wire);
       odb::dbWireType wire_type = odb::dbWireType::ROUTED;
 
+      std::vector<GSegment> segments_to_wires;
       for (GSegment& seg : route) {
         if (std::abs(seg.init_layer - seg.final_layer) > 1) {
           logger_->error(GRT, 68, "Global route segment not valid.");
         }
-        int x1 = seg.init_x;
-        int y1 = seg.init_y;
-        int x2 = seg.final_x;
-        int y2 = seg.final_y;
-        int l1 = seg.init_layer;
-        int l2 = seg.final_layer;
 
-        odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
+        if (std::find(segments_to_wires.begin(), segments_to_wires.end(), seg) == segments_to_wires.end()) {
+          int x1 = seg.init_x;
+          int y1 = seg.init_y;
+          int x2 = seg.final_x;
+          int y2 = seg.final_y;
+          int l1 = seg.init_layer;
+          int l2 = seg.final_layer;
 
-        if (l1 == l2) {  // Add wire
-          if (x1 == x2 && y1 == y2)
-            continue;
-          wire_encoder.newPath(layer, wire_type);
-          wire_encoder.addPoint(x1, y1);
-          wire_encoder.addPoint(x2, y2);
-        } else {  // Add via
-          int bottom_layer = (l1 < l2) ? l1 : l2;
-          wire_encoder.newPath(layer, wire_type);
-          wire_encoder.addPoint(x1, y1);
-          wire_encoder.addTechVia(default_vias[bottom_layer]);
+          odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
+
+          if (l1 == l2) {  // Add wire
+            if (x1 != x2 || y1 != y2) {
+              wire_encoder.newPath(layer, wire_type);
+              wire_encoder.addPoint(x1, y1);
+              wire_encoder.addPoint(x2, y2);
+              segments_to_wires.push_back(seg);
+            }
+          } else {  // Add via
+            int bottom_layer = (l1 < l2) ? l1 : l2;
+            wire_encoder.newPath(layer, wire_type);
+            wire_encoder.addPoint(x1, y1);
+            wire_encoder.addTechVia(default_vias[bottom_layer]);
+            segments_to_wires.push_back(seg);
+          }
         }
       }
       wire_encoder.end();

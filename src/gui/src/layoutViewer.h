@@ -44,7 +44,7 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "options.h"
 #include "search.h"
 
@@ -118,8 +118,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void setScroller(LayoutScroll* scroller);
 
   // conversion functions
-  odb::Rect screenToDBU(const QRect& rect);
-  odb::Point screenToDBU(const QPoint& point);
+  odb::Rect screenToDBU(const QRectF& rect);
+  odb::Point screenToDBU(const QPointF& point);
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
@@ -165,6 +165,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
+  void centerAt(const odb::Point& focus);
+  void centerChanged(int dx, int dy);
+  void setResolution(qreal dbu_per_pixel);
+  void updateFitResolution();
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
@@ -200,7 +204,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   odb::dbBlock* getBlock();
-  void setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize = true);
+  void setPixelsPerDBU(qreal pixels_per_dbu);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
@@ -221,7 +225,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                           QPainter* painter,
                           const std::vector<odb::dbInst*>& insts);
   void drawInstanceNames(QPainter* painter,
-                         int font_size,
                          const std::vector<odb::dbInst*>& insts);
   void drawBlockages(QPainter* painter,
                      const odb::Rect& bounds);
@@ -238,6 +241,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
+  void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
@@ -245,11 +249,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
 
-  // Compute and store the offset necessary to center the block in the viewport.
-  void computeCenteringOffset();
+  odb::Point getVisibleCenter();
 
+  int fineViewableResolution();
+  int nominalViewableResolution();
+  int coarseViewableResolution();
 
-  int minimumViewableResolution();
+  void generateCutLayerMaximumSizes();
 
   void addMenuAndActions();
   void updateShapes();
@@ -280,6 +286,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 
   QPoint centering_shift_;
+  odb::Point center_;
+
+  std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 
@@ -294,7 +303,13 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
+ signals:
+  void viewportChanged();
+  void centerChanged(int dx, int dy);
+
  protected:
+  void resizeEvent(QResizeEvent* event) override;
+  void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
 
  private:

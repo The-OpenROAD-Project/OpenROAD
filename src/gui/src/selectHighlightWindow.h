@@ -162,6 +162,7 @@ class SelectHighlightWindow : public QDockWidget
  public slots:
   void updateSelectionModel();
   void updateHighlightModel();
+  void updateModels();
   void showSelectCustomMenu(QPoint pos);
   void showHighlightCustomMenu(QPoint pos);
 

@@ -46,7 +46,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
 #include "sta/Graph.hh"

@@ -43,7 +43,7 @@ namespace dpl {
 using std::vector;
 
 // Swig vector type in does not seem to work at all.
-// (see OpenDB/src/swig/common/polgon.i)
+// (see odb/src/swig/common/polgon.i)
 // Copied from opensta/tcl/StaTcl.i
 template <class TYPE>
 vector<TYPE> *

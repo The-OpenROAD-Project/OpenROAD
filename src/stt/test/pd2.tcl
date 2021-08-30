@@ -1,5 +1,5 @@
 # prim-dikstra with same x/y values that sent original code into the ozone
-source "pdrev_helpers.tcl"
+source "stt_helpers.tcl"
 
 set alpha .4
 
@@ -18,7 +18,7 @@ set net {lalaland1 0
  {p10 1965947 1100465}
 }
 
-report_pdrev_net $net $alpha 1
+report_pd_net $net $alpha
 
 # p27 p29 same x
 # p9  p17 same y
@@ -56,4 +56,4 @@ set net {lalaland2 0
   {p29 1965947 1100465}
 }
 
-report_pdrev_net $net $alpha 1
+report_pd_net $net $alpha

@@ -11,6 +11,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
+  set(CMAKE_AUTORCC ON)
   set(CMAKE_AUTOUIC ON)
   set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
 
@@ -42,13 +43,14 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
     src/staGui.cpp
-    src/timingDebugDialog.cpp
-    src/timingReportDialog.cpp
+    src/timingWidget.cpp
+    src/drcWidget.cpp
+    resources/resource.qrc
   )
 
   target_link_libraries(gui
     PUBLIC
-      opendb
+      odb
     PRIVATE
       Qt5::Core
       Qt5::Widgets
@@ -65,7 +67,7 @@ else()
   add_library(gui src/stub.cpp)
   target_link_libraries(gui
     PUBLIC
-      opendb
+      odb
   )
 endif()
 

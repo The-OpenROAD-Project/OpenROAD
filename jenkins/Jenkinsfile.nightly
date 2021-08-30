@@ -26,7 +26,7 @@ pipeline {
             stage("Test ISPD") {
               steps {
                 unstash 'build';
-                sh "./src/TritonRoute/test/run-ispd.tcl";
+                sh "./src/drt/test/run-ispd.tcl";
               }
             }
           }
@@ -44,7 +44,7 @@ pipeline {
             stage("Test Replace Large") {
               steps {
                 unstash "build";
-                sh "./src/replace/test/regression-large";
+                sh "./src/gpl/test/regression-large";
               }
             }
           }
