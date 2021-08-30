@@ -825,31 +825,33 @@ void FlexDRWorker::initNets_searchRepair(
   }
 }
 
-bool FlexDRWorker::findAPTracks(frLayerNum startLayerNum, 
-                                    frLayerNum endLayerNum,
-                                    Rectangle& pinRect,
-                                    std::set<frCoord> xLocs,
-                                    std::set<frCoord> yLocs) {
-    int inc = (startLayerNum < endLayerNum ? 2 : -2);
-    
-    for (frLayerNum lNum = startLayerNum; lNum != endLayerNum + inc; lNum += inc) {
-        frPrefRoutingDirEnum currPrefRouteDir
-                                        = getTech()->getLayer(lNum)->getDir();
-        if (currPrefRouteDir == frcHorzPrefRoutingDir) {
-            getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
-        } else {
-            getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
-        }
-        //track found or is normal layer (so can jog)
-        if (!xLocs.empty() || !yLocs.empty() || !isRestrictedRouting(lNum))
-            return true;
+bool FlexDRWorker::findAPTracks(frLayerNum startLayerNum,
+                                frLayerNum endLayerNum,
+                                Rectangle& pinRect,
+                                std::set<frCoord> xLocs,
+                                std::set<frCoord> yLocs)
+{
+  int inc = (startLayerNum < endLayerNum ? 2 : -2);
+
+  for (frLayerNum lNum = startLayerNum; lNum != endLayerNum + inc;
+       lNum += inc) {
+    frPrefRoutingDirEnum currPrefRouteDir = getTech()->getLayer(lNum)->getDir();
+    if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+      getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
+    } else {
+      getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
     }
-    return false;
+    // track found or is normal layer (so can jog)
+    if (!xLocs.empty() || !yLocs.empty() || !isRestrictedRouting(lNum))
+      return true;
+  }
+  return false;
 }
 
-bool FlexDRWorker::isRestrictedRouting(frLayerNum lNum) {
-    return getTech()->getLayer(lNum)->isUnidirectional() || lNum < BOTTOM_ROUTING_LAYER ||
-            lNum > TOP_ROUTING_LAYER;
+bool FlexDRWorker::isRestrictedRouting(frLayerNum lNum)
+{
+  return getTech()->getLayer(lNum)->isUnidirectional()
+         || lNum < BOTTOM_ROUTING_LAYER || lNum > TOP_ROUTING_LAYER;
 }
 
 void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
@@ -1004,20 +1006,26 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             auto currPrefRouteDir = layer->getDir();
             bool restrictedRouting = isRestrictedRouting(currLayerNum);
             if (currLayerNum + 2 <= getTech()->getTopLayerNum())
-                restrictedRouting = restrictedRouting || 
-                                isRestrictedRouting(currLayerNum + 2);
+              restrictedRouting
+                  = restrictedRouting || isRestrictedRouting(currLayerNum + 2);
             if (currLayerNum - 2 >= getTech()->getBottomLayerNum())
-                restrictedRouting = restrictedRouting || 
-                                isRestrictedRouting(currLayerNum - 2);
+              restrictedRouting
+                  = restrictedRouting || isRestrictedRouting(currLayerNum - 2);
             // get intersecting tracks if any
             if (restrictedRouting) {
-                bool found = findAPTracks(currLayerNum + 2, getTech()->getTopLayerNum(),
-                                pinRect, xLocs, yLocs);
-                if (!found)
-                    found = findAPTracks(currLayerNum - 2, getTech()->getBottomLayerNum(),
-                                pinRect, xLocs, yLocs);
-                if (!found)
-                    continue;
+              bool found = findAPTracks(currLayerNum + 2,
+                                        getTech()->getTopLayerNum(),
+                                        pinRect,
+                                        xLocs,
+                                        yLocs);
+              if (!found)
+                found = findAPTracks(currLayerNum - 2,
+                                     getTech()->getBottomLayerNum(),
+                                     pinRect,
+                                     xLocs,
+                                     yLocs);
+              if (!found)
+                continue;
             } else if (currPrefRouteDir == frcHorzPrefRoutingDir) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
@@ -1066,7 +1074,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
               yLoc = (yl(pinRect) + yh(pinRect)) / 2;
             }
             if (restrictedRouting)
-                specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
+              specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
             // TODO: update as drAccessPattern updated
             auto uap = std::make_unique<drAccessPattern>();
             frPoint pt(xLoc, yLoc);
@@ -1564,7 +1572,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
         cout << "\nError: pin " << name << " still does not have temp ap"
              << endl;
         if (graphics_)
-            graphics_->debugWholeDesign();
+          graphics_->debugWholeDesign();
         exit(1);
       }
     }
