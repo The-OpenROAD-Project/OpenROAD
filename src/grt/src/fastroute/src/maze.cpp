@@ -821,7 +821,8 @@ void FastRouteCore::updateRouteType1(const TreeNode* treenodes,
   treeedges[edge_n1A2].len = abs(A2x - E1x) + abs(A2y - E1y);
 }
 
-void FastRouteCore::updateRouteType2(const TreeNode* treenodes,
+void FastRouteCore::updateRouteType2(const int net_id,
+                                     const TreeNode* treenodes,
                                      const int n1,
                                      const int A1,
                                      const int A2,
@@ -903,7 +904,15 @@ void FastRouteCore::updateRouteType2(const TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    logger_->error(GRT, 170, "Invalid index for position ({}, {}).", E1x, E1y);
+    int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
+    int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
+    logger_->error(GRT,
+                   170,
+                   "Net {}: Invalid index for position ({}, {}).",
+                   netName(nets_[net_id]),
+                   net_id,
+                   x_pos,
+                   y_pos);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
@@ -1473,7 +1482,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int edge_C1C2 = corr_edge_[E1y][E1x];
 
           // update route for edge (n1, C1), (n1, C2) and (A1, A2)
-          updateRouteType2(treenodes,
+          updateRouteType2(netID,
+                           treenodes,
                            n1,
                            A1,
                            A2,
@@ -1596,7 +1606,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int edge_D1D2 = corr_edge_[E2y][E2x];
 
           // update route for edge (n2, D1), (n2, D2) and (B1, B2)
-          updateRouteType2(treenodes,
+          updateRouteType2(netID,
+                           treenodes,
                            n2,
                            B1,
                            B2,
