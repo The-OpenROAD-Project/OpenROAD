@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -118,7 +118,7 @@ void Tapcell::run(odb::dbMaster* endcap_master,
   vector<odb::dbBox*> blockages = findBlockages();
   cutRows(endcap_master, blockages, halo_x, halo_y);
   vector<vector<odb::dbRow*>> rows = organizeRows();
-  cnrcap_masters masters;
+  CnrcapMasters masters;
   masters.nwin_master = cnrcap_nwin_master;
   masters.nwout_master=cnrcap_nwout_master;
 
@@ -257,7 +257,7 @@ void Tapcell::cutRow(odb::dbBlock* block,
 
 int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
                            odb::dbMaster* endcap_master,
-                           const cnrcap_masters& masters)
+                           const CnrcapMasters& masters)
 {
   int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -443,7 +443,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
 
   int y;
   std::map<int, vector<vector<int>>> row_fills;
-  for (filled_sites& placement : filled_sites_) {
+  for (FilledSites& placement : filled_sites_) {
     y = placement.yMin;
     int x_start = placement.xMin;
     int x_end = placement.xMax;
@@ -1155,7 +1155,7 @@ void Tapcell::makeInstance(odb::dbBlock* block,
   inst->setSourceType(odb::dbSourceType::DIST);
 
   odb::dbBox* inst_bb = inst->getBBox();
-  filled_sites filled;
+  FilledSites filled;
   filled.yMin = inst_bb->yMin();
   filled.xMin = inst_bb->xMin();
   filled.xMax = inst_bb->xMax();

@@ -102,13 +102,14 @@ class Tapcell
   std::vector<odb::dbBox*> findBlockages();
  
  private:
-  struct filled_sites
+  struct FilledSites
   {
     int yMin;
     int xMin;
     int xMax;
   };
-  struct cnrcap_masters
+  //Cells placed at corners of macros & corners of core area
+  struct CnrcapMasters
   {
     std::string nwin_master;
     std::string nwout_master;
@@ -116,7 +117,7 @@ class Tapcell
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   int phy_idx_;
-  std::vector<filled_sites> filled_sites_;
+  std::vector<FilledSites> filled_sites_;
   std::string tap_prefix_;
   std::string endcap_prefix_;
   void cutRow(odb::dbBlock* block,
@@ -172,7 +173,7 @@ class Tapcell
       const std::vector<std::vector<odb::dbRow*>>& rows);
   int insertEndcaps(const std::vector<std::vector<odb::dbRow*>>& rows,
                     odb::dbMaster* endcap_master,
-                    const cnrcap_masters& masters);
+                    const CnrcapMasters& masters);
   bool overlaps(odb::dbBox* blockage,
                 odb::dbRow* row,
                 int halo_x,
