@@ -112,7 +112,7 @@
   }
 
   void build_row(odb::dbBlock* block,
-                 std::string& name,
+                 const char* name,
                  odb::dbSite* site,
                  int start_x,
                  int end_x,
@@ -149,6 +149,16 @@
   std::vector<odb::dbBox*> find_blockages() {
     return getTapcell()->findBlockages();
   }
+
+  bool overlaps(odb::dbBox* blockage,
+                odb::dbRow* row,
+                int halo_x,
+                int halo_y) {
+    return getTapcell()->overlaps(blockage, row, halo_x, halo_y);
+  }
+
+
+
 
   }  // namespace tap
 

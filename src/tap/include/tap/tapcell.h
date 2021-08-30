@@ -98,6 +98,10 @@ class Tapcell
                const std::vector<odb::dbBox*>& blockages,
                int halo_x,
                int halo_y);
+  bool overlaps(odb::dbBox* blockage,
+              odb::dbRow* row,
+              int halo_x,
+              int halo_y);
   int removeCells(const std::string& prefix);
   std::vector<odb::dbBox*> findBlockages();
  
@@ -109,7 +113,7 @@ class Tapcell
     int xMax;
   };
   //Cells placed at corners of macros & corners of core area
-  struct CnrcapMasters
+  struct CornercapMasters
   {
     std::string nwin_master;
     std::string nwout_master;
@@ -173,11 +177,7 @@ class Tapcell
       const std::vector<std::vector<odb::dbRow*>>& rows);
   int insertEndcaps(const std::vector<std::vector<odb::dbRow*>>& rows,
                     odb::dbMaster* endcap_master,
-                    const CnrcapMasters& masters);
-  bool overlaps(odb::dbBox* blockage,
-                odb::dbRow* row,
-                int halo_x,
-                int halo_y);
+                    const CornercapMasters& masters);
   std::vector<std::vector<odb::dbRow*>> organizeRows();
   int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
                      const std::string& tapcell_master,

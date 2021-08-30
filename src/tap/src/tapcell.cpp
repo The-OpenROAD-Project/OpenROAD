@@ -118,7 +118,7 @@ void Tapcell::run(odb::dbMaster* endcap_master,
   vector<odb::dbBox*> blockages = findBlockages();
   cutRows(endcap_master, blockages, halo_x, halo_y);
   vector<vector<odb::dbRow*>> rows = organizeRows();
-  CnrcapMasters masters;
+  CornercapMasters masters;
   masters.nwin_master = cnrcap_nwin_master;
   masters.nwout_master=cnrcap_nwout_master;
 
@@ -257,7 +257,7 @@ void Tapcell::cutRow(odb::dbBlock* block,
 
 int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
                            odb::dbMaster* endcap_master,
-                           const CnrcapMasters& masters)
+                           const CornercapMasters& masters)
 {
   int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
