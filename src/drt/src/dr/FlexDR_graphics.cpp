@@ -605,7 +605,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
 
-  frBox gcellBox = in->getGCellBox();
+  frBox gcellBox = in->getRouteBox();
   if (settings_->gcellX >= 0
       && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
     return;

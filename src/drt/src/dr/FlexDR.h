@@ -486,6 +486,8 @@ class FlexDRWorker
   int main(frDesign* design);
 
   Logger* getLogger() { return logger_; }
+  
+  const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
 
  protected:
   typedef struct
@@ -657,16 +659,18 @@ class FlexDRWorker
                         drNet* dNet,
                         std::vector<frBlockObject*>& terms);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
+  bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
   void getTrackLocs(bool isHorzTracks,
                     frLayerNum currLayerNum,
                     frCoord low,
                     frCoord high,
                     std::set<frCoord>& trackLocs);
-  void getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
-                                     Rectangle& pinRect,
-                                     std::set<frCoord>& xLocs,
-                                     std::set<frCoord>& yLocs);
+  bool findAPTracks(frLayerNum startLayerNum, 
+                                    frLayerNum endLayerNum,
+                                    Rectangle& pinRect,
+                                    std::set<frCoord> xLocs,
+                                    std::set<frCoord> yLocs);
   void initNet_boundary(drNet* net,
                         std::vector<std::unique_ptr<drConnFig>>& extObjs);
   void initNets_regionQuery();
@@ -956,6 +960,10 @@ class FlexDRWorker
 
   friend class FlexDR;
   friend class FlexGC;
+  
+  private:
+      //on-the-fly access points that require adding access edges in the grid graph
+      vector<Point3D> specialAccessAPs;
 };
 
 }  // namespace fr

@@ -127,8 +127,8 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
 
 void FlexGridGraph::initEdges(
     const frDesign* design,
-    const map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
-    const map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
+    map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
+    map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
     const map<frLayerNum, frPrefRoutingDirEnum>& zMap,
     const frBox& bbox,
     bool initDR)
@@ -149,13 +149,6 @@ void FlexGridGraph::initEdges(
       nonPrefLayerNum = layerNum;
     }
     const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
-    bool restrictedRouting = layerNum < BOTTOM_ROUTING_LAYER
-                             || layerNum > TOP_ROUTING_LAYER
-                             || layer->isUnidirectional()
-                             || nonPrefLayerNum < BOTTOM_ROUTING_LAYER
-                             || nonPrefLayerNum > TOP_ROUTING_LAYER
-                             || nonPrefLayer->isUnidirectional();
-                        
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
       auto yIt = ySubMap.find(layerNum);
@@ -189,9 +182,7 @@ void FlexGridGraph::initEdges(
           }
           // via to upper layer
           if (xFound2) {
-            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)
-                && (!restrictedRouting || (yIt->second && xIt2->second)
-                    || hasAlignedUpDefTrack(layerNum, xSubMap, ySubMap))) {
+            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
@@ -214,9 +205,7 @@ void FlexGridGraph::initEdges(
           }
           // via to upper layer
           if (yFound2) {
-            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)
-                && (!restrictedRouting || (xIt->second && yIt2->second)
-                    || hasAlignedUpDefTrack(layerNum, xSubMap, ySubMap))) {
+            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
@@ -251,6 +240,51 @@ void FlexGridGraph::initEdges(
       ++yIdx;
     }
     ++zIdx;
+  }
+  //this creates via edges over each ap until reaching a default track or a layer with normal routing; in this case it creates jogs connections to the neighboring tracks
+  for (const Point3D& apPt : drWorker_->getSpecialAccessAPs()) {
+      for (int i = 0; i < 2; i++) { //down and up
+            bool up = (bool)i;
+            int inc = up ? 1 : -1;
+            frMIdx startZ = getMazeZIdx(apPt.z());
+            frLayerNum nextLNum = getLayerNum(startZ) + 2*inc;
+            if (!up)
+                startZ--;
+            frMIdx xIdx = getMazeXIdx(apPt.x());
+            frMIdx yIdx = getMazeYIdx(apPt.y());
+            //create the edges
+            for (int zIdx = startZ; zIdx >= 0 && zIdx < (int)zCoords_.size()-1; zIdx += inc, nextLNum += inc*2) {
+                addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+                auto& xSubMap = xMap[apPt.x()];
+                auto xTrack = xSubMap.find(nextLNum);
+                if (xTrack != xSubMap.end() && xTrack->second != nullptr)
+                    break;
+                auto& ySubMap = yMap[apPt.y()];
+                auto yTrack = ySubMap.find(nextLNum);
+                if (yTrack != ySubMap.end() && yTrack->second != nullptr)
+                    break;
+                //didnt find default track, then create tracks if possible
+                bool restrictedRouting = getTech()->getLayer(nextLNum)->isUnidirectional() || nextLNum < BOTTOM_ROUTING_LAYER ||
+                                          nextLNum > TOP_ROUTING_LAYER;
+                if (!restrictedRouting) {
+                    frPrefRoutingDirEnum prefDir
+                                        = design->getTech()->getLayer(nextLNum)->getDir();
+                      xMap[apPt.x()][nextLNum] = nullptr; //to keep coherence
+                      yMap[apPt.y()][nextLNum] = nullptr;
+                      frMIdx nextZ = up ? zIdx + 1 : zIdx;
+                      if (prefDir == frcHorzPrefRoutingDir) {
+                          addEdge(xIdx, yIdx, nextZ, frDirEnum::N, bbox, initDR);
+                          if (yIdx-1 >= 0)
+                              addEdge(xIdx, yIdx-1, nextZ, frDirEnum::N, bbox, initDR);
+                      } else {
+                          addEdge(xIdx, yIdx, nextZ, frDirEnum::E, bbox, initDR);
+                          if (xIdx-1 >= 0)
+                              addEdge(xIdx-1, yIdx, nextZ, frDirEnum::E, bbox, initDR);
+                      }
+                      break;
+                }
+            }
+      }
   }
 }
 

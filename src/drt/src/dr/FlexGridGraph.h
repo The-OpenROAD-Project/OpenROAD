@@ -1143,8 +1143,8 @@ class FlexGridGraph
       bool followGuide);
   void initEdges(
       const frDesign* design,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
+      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
+      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
       const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
       const frBox& bbox,
       bool initDR);
