@@ -247,6 +247,10 @@ DRCWidget::DRCWidget(QWidget* parent)
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(clicked(const QModelIndex&)));
+  connect(view_->selectionModel(),
+          SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+          this,
+          SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
   connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
 }
 
@@ -265,6 +269,16 @@ void DRCWidget::selectReport()
   if (!filename.isEmpty()) {
     loadReport(filename);
   }
+}
+
+void DRCWidget::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+{
+  auto indexes = selected.indexes();
+  if (indexes.isEmpty()) {
+    return;
+  }
+
+  emit clicked(indexes.first());
 }
 
 void DRCWidget::clicked(const QModelIndex& index)
