@@ -1141,13 +1141,12 @@ class FlexGridGraph
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
       const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
       bool followGuide);
-  void initEdges(
-      const frDesign* design,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
-      const frBox& bbox,
-      bool initDR);
+  void initEdges(const frDesign* design,
+                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
+                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
+                 const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+                 const frBox& bbox,
+                 bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
                     const FlexMazeIdx& dstMazeIdx1,
                     const FlexMazeIdx& dstMazeIdx2,
