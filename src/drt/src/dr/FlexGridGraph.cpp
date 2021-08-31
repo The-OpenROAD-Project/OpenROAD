@@ -148,7 +148,6 @@ void FlexGridGraph::initEdges(
     } else {
       nonPrefLayerNum = layerNum;
     }
-    const auto nonPrefLayer = getTech()->getLayer(nonPrefLayerNum);
     yIdx = 0;
     for (auto& [yCoord, ySubMap] : yMap) {
       auto yIt = ySubMap.find(layerNum);
@@ -271,7 +270,7 @@ void FlexGridGraph::initEdges(
             = getTech()->getLayer(nextLNum)->isUnidirectional()
               || nextLNum < BOTTOM_ROUTING_LAYER
               || nextLNum > TOP_ROUTING_LAYER;
-        if (!restrictedRouting) {
+        if (!restrictedRouting && nextLNum >= VIA_ACCESS_LAYERNUM) {
           frPrefRoutingDirEnum prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();
           xMap[apPt.x()][nextLNum] = nullptr;  // to keep coherence

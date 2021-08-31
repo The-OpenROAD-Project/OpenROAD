@@ -1008,7 +1008,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             if (currLayerNum + 2 <= getTech()->getTopLayerNum())
               restrictedRouting
                   = restrictedRouting || isRestrictedRouting(currLayerNum + 2);
-            if (currLayerNum - 2 >= getTech()->getBottomLayerNum())
+            if (currLayerNum - 2 >= getTech()->getBottomLayerNum() && 
+                    currLayerNum - 2 >= VIA_ACCESS_LAYERNUM)
               restrictedRouting
                   = restrictedRouting || isRestrictedRouting(currLayerNum - 2);
             // get intersecting tracks if any
