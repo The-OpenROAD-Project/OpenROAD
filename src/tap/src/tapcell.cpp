@@ -1236,7 +1236,7 @@ int Tapcell::removeCells(const std::string& prefix)
   }
 
   for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getName().find(prefix_string) != string::npos) {
+    if (inst->getName().find(prefix_string) == 0) {
       odb::dbInst::destroy(inst);
       removed++;
     }

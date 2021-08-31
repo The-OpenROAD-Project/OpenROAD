@@ -229,4 +229,3 @@ proc tapcell_ripup { args } {
   # Reset global parameters 
   tap::reset
 }
-
