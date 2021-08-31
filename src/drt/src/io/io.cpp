@@ -181,7 +181,9 @@ void io::Parser::setObstructions(odb::dbBlock* block)
 {
   for (auto blockage : block->getObstructions()) {
     string layerName = blockage->getBBox()->getTechLayer()->getName();
-    if (tech->name2layer.find(layerName) != tech->name2layer.end()) {
+    if (tech->name2layer.find(layerName) == tech->name2layer.end()) {
+      logger->warn(
+          DRT, 282, "Skipping blockage. Cannot find layer {}.", layerName);
       continue;
     }
     frLayerNum layerNum = tech->name2layer[layerName]->getLayerNum();
