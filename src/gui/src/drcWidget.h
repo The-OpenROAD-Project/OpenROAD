@@ -153,6 +153,8 @@ class DRCWidget : public QDockWidget, public Renderer
     void toggleRenderer(bool visible);
     void updateSelection(const Selected& selection);
 
+    void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+
   protected:
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;

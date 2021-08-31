@@ -125,6 +125,25 @@ static bool rectAreaZero(const odb::Rect &rect)
   return rect.xMin() == rect.xMax() && rect.yMin() == rect.yMax();
 }
 
+static bool isCorner(const odb::Rect &rect,
+                     int x,
+                     int y)
+{
+  return (rect.xMin() == x && rect.yMin() == y)
+    || (rect.xMin() == x && rect.yMax() == y)
+    || (rect.xMax() == x && rect.yMin() == y)
+    || (rect.xMax() == x && rect.yMax() == y);
+}
+
+static bool shareCorner(const odb::Rect &rect1,
+                        const odb::Rect &rect2)
+{
+  return isCorner(rect1, rect2.xMin(), rect2.yMin())
+    || isCorner(rect1, rect2.xMin(), rect2.yMax())
+    || isCorner(rect1, rect2.xMax(), rect2.yMin())
+    || isCorner(rect1, rect2.xMax(), rect2.yMax());
+}
+
 // This checks whether the tree has the property that no two
 // non-adjacent edges have intersecting bounding boxes.  If
 // they do it is a failure as embedding those egdes may cause
@@ -138,7 +157,9 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
   }
 
   std::vector<odb::Rect> rects;
-  for (int i = 0; i < tree.branchCount(); ++i) {
+  // Ignore zero length branches by picking one end as the representative.
+  int branch_count = tree.branchCount();
+  for (int i = 0; i < branch_count; ++i) {
     const Branch& branch = tree.branch[i];
     const int x1 = branch.x;
     const int y1 = branch.y;
@@ -156,15 +177,14 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
       if (!rectAreaZero(r1)
           && !rectAreaZero(r2)
           && r1.intersects(r2)
-          && b1.n != j
-          && b2.n != i
-          && b1.n != b2.n) {
+          && !shareCorner(r1, r2)) {
         debugPrint(logger_, utl::STT, "check", 1,
                    "check failed ({}, {}) ({}, {}) [{}, {}] vs ({}, {}) ({}, {}) [{}, {}] degree={}",
-                      r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
-                      i, b1.n,
-                      r2.xMin(), r2.yMin(), r2.xMax(), r2.yMax(),
-                      j, b2.n, tree.deg);
+                   r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
+                   i, b1.n,
+                   r2.xMin(), r2.yMin(), r2.xMax(), r2.yMax(),
+                   j, b2.n,
+                   tree.deg);
         return false;
       }
     }

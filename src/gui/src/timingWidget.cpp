@@ -231,11 +231,11 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
     return;
 
   if (index.model() == setup_timing_paths_model_) {
-    focus_view_ = setup_timing_table_view_;
     hold_timing_table_view_->clearSelection();
+    focus_view_ = setup_timing_table_view_;
   } else {
-    focus_view_ = hold_timing_table_view_;
     setup_timing_table_view_->clearSelection();
+    focus_view_ = hold_timing_table_view_;
   }
 
   TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
