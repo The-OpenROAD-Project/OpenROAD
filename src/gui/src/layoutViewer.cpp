@@ -219,7 +219,7 @@ class GuiPainter : public Painter
     painter_->restore();
   }
 
-  void drawRuler(int x0, int y0, int x1, int y1) override
+  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
   {
     setPen(ruler_color, true);
     setBrush(ruler_color);
@@ -239,6 +239,9 @@ class GuiPainter : public Painter
       drawString(x0, (y0 + y1) / 2, 0, ss.str());
     } else {
       drawString((x0 + x1) / 2, y0, 0, ss.str());
+    }
+    if (!label.empty()) {
+      drawString(x0, y0, 0, label);
     }
   }
 
@@ -971,7 +974,7 @@ void LayoutViewer::drawRulers(Painter& painter)
 {
   for (auto& ruler : rulers_) {
     painter.drawRuler(
-        ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y());
+        ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y(), ruler->getLabel());
   }
 }
 
