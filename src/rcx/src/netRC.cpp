@@ -40,7 +40,6 @@
 #include "utl/Logger.h"
 
 #define MAXINT 0x7FFFFFFF;
-//#define HI_ACC_10312011
 
 namespace rcx {
 
@@ -591,7 +590,6 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
     uint id = bterm->getId();
     uint capId = _btermTable->geti(id);
     if (capId > 0) {
-//(dbCapNode::getCapNode(_block, capId))->incrChildrenCnt();
 #ifdef DEBUG_NET_ID
       if (bterm->getNet()->getId() == DEBUG_NET_ID)
         fprintf(fp, "\tOLD B_TERM %d  capNode %d\n", id, capId);
@@ -627,38 +625,27 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
       }
       if (cap->getNet()->getId() == _debug_net_id) {
         if (branch) {
-          if (cap->getNet()->getId() == DEBUG_NET_ID)
-            debugPrint(logger_, RCX, "rcseg", 1,
-                       "RCSEG:"
-                       "C"
-                       "\tOLD BRANCH {}  capNode {}",
-                       junction, cap->getId());
+          debugPrint(logger_, RCX, "rcseg", 1,
+                     "RCSEG:C\tOLD BRANCH {}  capNode {}",
+                     junction, cap->getId());
         } else {
-          if (cap->getNet()->getId() == DEBUG_NET_ID)
-            debugPrint(logger_, RCX, "rcseg", 1,
-                       "RCSEG"
-                       "C"
-                       "\tOLD INTERNAL {}  capNode {}",
-                       junction, cap->getId());
+          debugPrint(logger_, RCX, "rcseg", 1,
+                     "RCSEG:C\tOLD INTERNAL {}  capNode {}",
+                     junction, cap->getId());
         }
       }
       return capId;
     }
 
     dbCapNode* cap = dbCapNode::create(net, 0, _foreign);
-
     cap->setInternalFlag();
-    //		if (branch)
-    //			cap->setBranchFlag();
-
     cap->setNode(junction);
 
     if (capId == -1) {
-      // cap->incrChildrenCnt();
       if (branch)
         cap->setBranchFlag();
     }
-    if (cap->getNet()->getId() == DEBUG_NET_ID) {
+    if (cap->getNet()->getId() == _debug_net_id) {
       if (branch) {
         debugPrint(logger_, RCX, "rcseg", 1,
                    "RCSEG:"
