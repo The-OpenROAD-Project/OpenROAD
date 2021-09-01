@@ -42,8 +42,6 @@
 #define MAXINT 0x7FFFFFFF;
 //#define HI_ACC_10312011
 
-#define DEBUG_NET_ID 228157
-
 namespace rcx {
 
 #ifdef DEBUG_NET_ID
