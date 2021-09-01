@@ -99,7 +99,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
     gui::Painter::Color color;
     if (gCell->isInstance()) {
-      color = gui::Painter::dark_green;
+      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
+                                            : gui::Painter::dark_green;
     } else if (gCell->isFiller()) {
       color = gui::Painter::dark_magenta;
     }
