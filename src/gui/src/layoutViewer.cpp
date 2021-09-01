@@ -63,6 +63,8 @@
 #include "search.h"
 #include "utl/Logger.h"
 
+#include "ruler.h"
+
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
 // and formats use the origin at the LOWER-left with y increasing
@@ -251,7 +253,7 @@ LayoutViewer::LayoutViewer(
     Options* options,
     const SelectionSet& selected,
     const HighlightSet& highlighted,
-    const std::vector<QLine>& rulers,
+    const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
     QWidget* parent)
     : QWidget(parent),
@@ -529,6 +531,15 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     dbInst* inst_ptr = std::get<2>(inst);
     if (options_->isInstanceVisible(inst_ptr) && options_->isInstanceSelectable(inst_ptr)) {
       selections.push_back(makeSelected_(inst_ptr));
+    }
+  }
+
+  // Look for rulers
+  // because rulers are 1 pixel wide, we'll add another couple of pixels to its width
+  const int ruler_margin = 4 / pixels_per_dbu_; // 4 pixels in each direction
+  for (auto& ruler : rulers_) {
+    if (ruler->fuzzyIntersection(pt_dbu, ruler_margin)) {
+      selections.push_back(makeSelected_(ruler.get()));
     }
   }
 
@@ -960,7 +971,7 @@ void LayoutViewer::drawRulers(Painter& painter)
 {
   for (auto& ruler : rulers_) {
     painter.drawRuler(
-        ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
+        ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y());
   }
 }
 

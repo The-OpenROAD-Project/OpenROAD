@@ -162,15 +162,30 @@ void highlight_net(const char* name, int highlightGroup=0)
   gui->addNetToHighlightSet(name, highlightGroup);
 }
 
-void add_ruler(double x0, double y0, double x1, double y1)
+const std::string add_ruler(
+  double x0, 
+  double y0, 
+  double x1, 
+  double y1, 
+  const std::string& label = "", 
+  const std::string& name = "")
 {
   if (!check_gui("add_ruler")) {
-    return;
+    return "";
   }
   odb::Point ll = make_point(x0, y0);
   odb::Point ur = make_point(x1, y1);
   auto gui = gui::Gui::get();
-  gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y());  
+  return gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y(), label, name);  
+}
+
+void delete_ruler(const std::string& name)
+{
+  if (!check_gui("delete_ruler")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->deleteRuler(name);  
 }
 
 void zoom_to(double xlo, double ylo, double xhi, double yhi)

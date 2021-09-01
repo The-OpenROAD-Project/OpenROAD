@@ -51,6 +51,7 @@
 #include "sta/StaMain.hh"
 
 #include "drcWidget.h"
+#include "ruler.h"
 
 namespace gui {
 
@@ -285,9 +286,14 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
-void Gui::addRuler(int x0, int y0, int x1, int y1)
+std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  main_window->addRuler(x0, y0, x1, y1);
+  return main_window->addRuler(x0, y0, x1, y1, label, name);
+}
+
+void Gui::deleteRuler(const std::string& name)
+{
+  main_window->deleteRuler(name);
 }
 
 void Gui::clearSelections()
@@ -514,6 +520,7 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
 
     Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
+    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor);
   }
 }
 

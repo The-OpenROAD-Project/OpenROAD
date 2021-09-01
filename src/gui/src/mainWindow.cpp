@@ -151,6 +151,7 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(setSelected(const Selected&, bool)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
+  connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           selection_browser_,
@@ -458,11 +459,27 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
-void MainWindow::addRuler(int x0, int y0, int x1, int y1)
+std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  QLine ruler(QPoint(x0, y0), QPoint(x1, y1));
-  rulers_.push_back(ruler);
+  auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  std::string new_name = new_ruler->getName();
+  rulers_.push_back(std::move(new_ruler));
   emit rulersChanged();
+  return new_name;
+}
+
+void MainWindow::deleteRuler(const std::string& name)
+{
+  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+    return l->getName() == name;
+  });
+  if (ruler_find != rulers_.end()) {
+    // remove from selected set
+    auto remove_selected = makeSelected(ruler_find->get());
+    selected_.erase(remove_selected);
+    rulers_.erase(ruler_find);
+    emit rulersChanged();
+  }
 }
 
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
