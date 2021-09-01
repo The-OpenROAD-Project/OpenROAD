@@ -274,9 +274,6 @@ void ScriptWidget::addToOutput(const QString& text, const QColor& color)
   }
   // output new text
   output_->append(output.join("\n"));
-
-  // ensure changes are updated
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 ScriptWidget::~ScriptWidget()
@@ -400,8 +397,8 @@ void ScriptWidget::outputChanged()
 {
   // ensure the new output is visible
   output_->ensureCursorVisible();
-  // Make changes visible
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  // Make changes visible in output log
+  output_->repaint();
 }
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)

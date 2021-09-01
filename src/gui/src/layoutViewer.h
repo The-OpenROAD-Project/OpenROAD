@@ -197,7 +197,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void setResolution(qreal dbu_per_pixel);
 
   // update the fit resolution (the maximum pixels_per_dbu without scroll bars)
-  void updateFitResolution();
+  void viewportUpdated();
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);

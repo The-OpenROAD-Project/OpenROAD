@@ -77,6 +77,27 @@ class frPoint
  protected:
   frCoord xCoord_, yCoord_;
 };
+
+class Point3D : public frPoint
+{
+ public:
+  Point3D() : frPoint(0, 0), z_(0) {}
+  Point3D(int x, int y, int z) : frPoint(x, y), z_(z) {}
+  Point3D(const Point3D& p) : frPoint(p.x(), p.y()), z_(p.z()) {}
+
+  int z() const { return z_; }
+  void setZ(int z) { z_ = z; }
+
+  bool operator==(const Point3D& pIn) const
+  {
+    return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_) && z_ == pIn.z_;
+  }
+
+  bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
+
+ private:
+  int z_;
+};
 }  // namespace fr
 
 #endif
