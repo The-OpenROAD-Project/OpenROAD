@@ -104,12 +104,12 @@ bool FastRouteCore::checkTree(const int net_id)
           int ed_n2 = treeedges[ed].n2;
           int ed_n1a = treeedges[ed].n1a;
           int ed_n2a = treeedges[ed].n2a;
-          if ((ed_n1a == n1a) || ((ed_n1a == n2a)) ||
-              (ed_n1 == n1) || (ed_n1 == n2)) {
+          if ((ed_n1a == n1a) || ((ed_n1a == n2a)) || (ed_n1 == n1)
+              || (ed_n1 == n2)) {
             common_positions++;
           }
-          if ((ed_n2a == n1a) || ((ed_n2a == n2a)) ||
-              (ed_n2 == n1) || ((ed_n2 == n2))) {
+          if ((ed_n2a == n1a) || ((ed_n2a == n2a)) || (ed_n2 == n1)
+              || ((ed_n2 == n2))) {
             common_positions++;
           }
         }
@@ -118,7 +118,14 @@ bool FastRouteCore::checkTree(const int net_id)
       if (common_positions == 0 && edges.size() > 1) {
         int x_pos = w_tile_ * (position.first + 0.5) + x_corner_;
         int y_pos = h_tile_ * (position.second + 0.5) + y_corner_;
-        logger_->warn(GRT, 231, "Net {}: edge {} has no adjacent edges in position ({}, {})", netName(nets_[net_id]), edgeID, x_pos, y_pos);
+        logger_->warn(
+            GRT,
+            231,
+            "Net {}: edge {} has no adjacent edges in position ({}, {})",
+            netName(nets_[net_id]),
+            edgeID,
+            x_pos,
+            y_pos);
       }
     }
   }
