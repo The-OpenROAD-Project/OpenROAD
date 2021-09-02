@@ -1583,7 +1583,7 @@ void AutoClusterMgr::addFanin(sta::Vertex* vertex, int fanin_id, int num_bit)
     if(vertex_fanins_[vertex].find(fanin_id) == vertex_fanins_[vertex].end()) {
       vertex_fanins_[vertex][fanin_id] = 1;
     } else {
-      vertex_fanins_[vertex][fanin_id] = 1;  
+      vertex_fanins_[vertex][fanin_id] += 1;  
     }
   } else {
     vertex_fanins_[vertex][fanin_id] = 1;

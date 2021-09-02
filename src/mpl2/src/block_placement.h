@@ -202,7 +202,9 @@ class SimulatedAnnealingCore
   float boundary_penalty_;
   float macro_blockage_penalty_;
   float location_penalty_;
-   
+  float notch_penalty_;
+
+
   float pre_height_;
   float pre_width_;
   float pre_area_;
@@ -211,6 +213,8 @@ class SimulatedAnnealingCore
   float pre_boundary_penalty_;
   float pre_macro_blockage_penalty_;
   float pre_location_penalty_;
+  float pre_notch_penalty_;
+
 
   float norm_area_;
   float norm_wirelength_;
@@ -218,6 +222,7 @@ class SimulatedAnnealingCore
   float norm_boundary_penalty_;
   float norm_macro_blockage_penalty_;
   float norm_location_penalty_;
+  float norm_notch_penalty_;
 
   // These parameters are related to cost function
   float alpha_;                  // weight for area
@@ -226,7 +231,7 @@ class SimulatedAnnealingCore
   float boundary_weight_;        // weight for boundary penalty
   float macro_blockage_weight_;  // weight for macro blockage penalty
   float location_weight_;        // weight for location penalty
-
+  float notch_weight_;           // weight for notch penalty
 
   float alpha_base_;
   float beta_base_;
@@ -234,6 +239,7 @@ class SimulatedAnnealingCore
   float boundary_weight_base_;
   float macro_blockage_weight_base_;
   float location_weight_base_;
+  float notch_weight_base_;
  
   // These parameters are related to action probabilities
   float resize_prob_ = 0.4;
@@ -268,6 +274,7 @@ class SimulatedAnnealingCore
   void DoubleSwap();
   void Perturb();
   void Restore();
+  void CalculateNotchPenalty();
   void CalculateOutlinePenalty();
   void CalculateBoundaryPenalty();
   void CalculateMacroBlockagePenalty();
@@ -279,7 +286,8 @@ class SimulatedAnnealingCore
                  float outline_penalty,
                  float boundary_penalty,
                  float macro_blockage_penalty,
-                 float location_penalty) const;
+                 float location_penalty,
+                 float notch_penalty) const;
 
   void UpdateWeight(float avg_area,
                     float avg_wirelength,
@@ -306,6 +314,7 @@ class SimulatedAnnealingCore
       float boundary_weight,
       float macro_blockage_weight,
       float location_weight,
+      float notch_weight,
       float resize_prob,
       float pos_swap_prob,
       float neg_swap_prob,
@@ -331,7 +340,8 @@ class SimulatedAnnealingCore
                   float norm_outline_penalty,
                   float norm_boundary_penalty,
                   float norm_macro_blockage_penalty,
-                  float norm_location_penalty);
+                  float norm_location_penalty,
+                  float norm_notch_penalty);
 
   void SetSeq(const std::vector<int>& pos_seq, const std::vector<int>& neg_seq);
   void AlignMacro();
@@ -345,6 +355,8 @@ class SimulatedAnnealingCore
     return norm_macro_blockage_penalty_;
   }
   float GetNormLocationPenalty() const { return norm_location_penalty_; }
+  float GetNormNotchPenalty() const { return norm_notch_penalty_; }
+
 
   float GetCost() const
   {
@@ -353,7 +365,8 @@ class SimulatedAnnealingCore
                     outline_penalty_,
                     boundary_penalty_,
                     macro_blockage_penalty_,
-                    location_penalty_);
+                    location_penalty_,
+                    notch_penalty_);
   }
 
   float GetWidth() const { return width_; }
@@ -364,6 +377,7 @@ class SimulatedAnnealingCore
   float GetBoundaryPenalty() const { return boundary_penalty_; }
   float GetMacroBlockagePenalty() const { return macro_blockage_penalty_; }
   float GetLocationPenalty() const { return location_penalty_; }
+  float GetNotchPenalty() const { return notch_penalty_; }
   std::vector<Block> GetBlocks() const { return blocks_; }
   std::vector<int> GetPosSeq() const { return pos_seq_; }
   std::vector<int> GetNegSeq() const { return neg_seq_; }
@@ -402,6 +416,7 @@ std::vector<Block> Floorplan(
     float boundary_weight,
     float macro_blockage_weight,
     float location_weight,
+    float notch_weight,
     float resize_prob,
     float pos_swap_prob,
     float neg_swap_prob,

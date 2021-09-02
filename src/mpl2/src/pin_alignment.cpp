@@ -623,13 +623,14 @@ bool PinAlignmentSingleCluster(
   float outline_width = ux - lx;
   float outline_height = uy - ly;
 
+  cout << "outline_width:  " << outline_width << "   outline_height:  " << outline_height << endl;
   // deal with macros
   vector<Macro> macros = cluster->GetMacros();
   //string macro_file = string("./rtl_mp/") + name + string(".txt.block");
   string macro_file = string(report_directory) + string("/") + name + string(".txt.block");
   ParseMacroFile(macros, halo_width, macro_file);
 
-  int perturb_per_step = 2 * macros.size();
+  int perturb_per_step = 5 * macros.size();
 
   std::mt19937 rand_generator(seed);
   vector<int> seed_list;
@@ -700,6 +701,10 @@ bool PinAlignmentSingleCluster(
     if (sa_vector[j]->IsFeasible())
       if (wirelength > sa_vector[j]->GetWirelength())
         min_id = j;
+
+  for(int j = 0; j < sa_vector.size(); j++) {
+    cout << "width:  " << sa_vector[j]->GetWidth() << "  height:  " << sa_vector[j]->GetHeight() << endl;  
+  }
 
   if (min_id == -1) {
     // throw std::invalid_argument(std::string("Invalid Floorplan.  Please

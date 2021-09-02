@@ -123,6 +123,9 @@ bool rtl_macro_placer(const char* config_file,
   float boundary_weight = 0.06;        // weight for pushing macros to boundary
   float macro_blockage_weight = 0.08;  // weight for macro blockage
   float location_weight = 0.05;        // weight for preferred location
+  float notch_weight = 0.05;           // weight for notch
+
+
 
   float learning_rate
       = 0.01;  // learning rate for dynamic weight in cost function
@@ -168,6 +171,7 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "boundary_weight", boundary_weight, logger);
   get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
   get_param(params, "location_weight", location_weight, logger);
+  get_param(params, "notch_weight", notch_weight, logger);
   get_param(params, "resize_prob", resize_prob, logger);
   get_param(params, "pos_swap_prob", pos_swap_prob, logger);
   get_param(params, "neg_swap_prob", neg_swap_prob, logger);
@@ -216,6 +220,7 @@ bool rtl_macro_placer(const char* config_file,
                                                     boundary_weight,
                                                     macro_blockage_weight,
                                                     location_weight,
+                                                    notch_weight,
                                                     resize_prob,
                                                     pos_swap_prob,
                                                     neg_swap_prob,
