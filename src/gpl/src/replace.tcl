@@ -105,14 +105,6 @@ proc global_placement { args } {
     utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
   }
   
-  # flow control for incremental GP
-  if { [info exists flags(-incremental)] } {
-    gpl::set_initial_place_max_iter_cmd 0
-    gpl::set_incremental_place_mode_cmd
-    # Disable routability driven
-    gpl::set_routability_driven_mode 0
-  }
-
   if { [info exists keys(-initial_place_max_fanout)] } { 
     set initial_place_max_fanout $keys(-initial_place_max_fanout)
     sta::check_positive_integer "-initial_place_max_fanout" $initial_place_max_fanout
@@ -258,8 +250,12 @@ proc global_placement { args } {
   if { [ord::db_has_rows] } {
     sta::check_argc_eq0 "global_placement" $args
   
-    gpl::replace_initial_place_cmd
-    gpl::replace_nesterov_place_cmd
+    if { [info exists flags(-incremental)] } {
+      gpl::replace_incremental_place_cmd
+    } else {
+      gpl::replace_initial_place_cmd
+      gpl::replace_nesterov_place_cmd
+    }
     gpl::replace_reset_cmd
   } else {
     utl::error GPL 130 "No rows defined in design. Use initialize_floorplan to add rows."

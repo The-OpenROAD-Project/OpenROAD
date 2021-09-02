@@ -131,10 +131,10 @@ set_init_wirelength_coef_cmd(float coef)
 }
 
 void
-set_incremental_place_mode_cmd()
+replace_incremental_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->setIncrementalPlaceMode(true);
+  replace->doIncrementalPlace();
 }
 
 void
