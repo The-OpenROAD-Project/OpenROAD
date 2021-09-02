@@ -200,6 +200,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool input,
                                     int highlight_group = 0);
 
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+
  private:
   void createMenus();
   void createActions();
@@ -240,6 +243,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* zoom_in_;
   QAction* zoom_out_;
   QAction* help_;
+  QAction* build_ruler_;
 
   QAction* congestion_setup_;
 

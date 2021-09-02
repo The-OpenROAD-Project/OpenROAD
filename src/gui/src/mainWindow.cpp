@@ -305,6 +305,9 @@ void MainWindow::createActions()
   help_ = new QAction("Help", this);
   help_->setShortcut(QString("Ctrl+H"));
 
+  build_ruler_ = new QAction("Ruler", this);
+  build_ruler_->setShortcut(QString("k"));
+
   connect(congestion_setup_,
           SIGNAL(triggered()),
           controls_,
@@ -318,6 +321,8 @@ void MainWindow::createActions()
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
   connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
+
+  connect(build_ruler_, SIGNAL(triggered()), viewer_, SLOT(startRulerBuild()));
 }
 
 void MainWindow::createMenus()
@@ -333,6 +338,7 @@ void MainWindow::createMenus()
 
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(congestion_setup_);
+  tools_menu_->addAction(build_ruler_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -742,6 +748,18 @@ void MainWindow::registerDescriptor(const std::type_info& type,
                                     const Descriptor* descriptor)
 {
   descriptors_[type] = descriptor;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    // Esc stop building ruler
+    viewer_->cancelRulerBuild();
+  } else if (event->key() == Qt::Key_K && event->modifiers() & Qt::ShiftModifier) {
+    // Shift + K, remove all rulers
+    clearRulers();
+  }
+  QMainWindow::keyPressEvent(event);
 }
 
 }  // namespace gui

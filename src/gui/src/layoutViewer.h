@@ -178,6 +178,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
 
+  void startRulerBuild();
+  void cancelRulerBuild();
+
  private:
   struct Boxes
   {
@@ -262,6 +265,15 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void addMenuAndActions();
   void updateShapes();
 
+  using Edge = std::pair<odb::Point, odb::Point>;
+  struct Edges {
+    Edge horizontal;
+    Edge vertical;
+  };
+  // search for nearest edge to point
+  Edge findEdge(const odb::Point& pt, bool horizontal, bool& ok);
+  Edges searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt, bool& ok);
+
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
@@ -280,6 +292,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
+
+  bool building_ruler_;
+  std::unique_ptr<odb::Point> ruler_start_;
+
+  bool snap_edge_showing_;
+  Edge snap_edge_;
 
   utl::Logger* logger_;
   bool design_loaded_;

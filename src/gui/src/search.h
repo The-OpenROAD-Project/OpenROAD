@@ -50,6 +50,13 @@ namespace bgi = boost::geometry::index;
 // db changes.  TODO: this should be into an observer of OpenDB.
 class Search
 {
+  template <typename T>
+  class MinSizePredicate;
+
+  template <typename T>
+  class MinHeightPredicate;
+
+ public:
   using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using Box = bg::model::box<Point>;
   using Polygon
@@ -60,13 +67,6 @@ class Search
   template <typename T>
   using Rtree = bgi::rtree<Value<T>, bgi::quadratic<16>>;
 
-  template <typename T>
-  class MinSizePredicate;
-
-  template <typename T>
-  class MinHeightPredicate;
-
- public:
   // This is an iterator range for return values
   template <typename T>
   class Range
@@ -91,6 +91,12 @@ class Search
   using FillRange = Range<odb::dbFill*>;
   using ObstructionRange = Range<odb::dbObstruction*>;
   using BlockageRange = Range<odb::dbBlockage*>;
+
+  using Edge = std::pair<odb::Point, odb::Point>;
+  struct Edges {
+    Edge horizontal;
+    Edge vertical;
+  };
 
   // Build the structure for the given block.
   void init(odb::dbBlock* block);
