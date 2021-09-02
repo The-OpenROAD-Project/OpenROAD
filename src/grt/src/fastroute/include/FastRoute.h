@@ -175,6 +175,7 @@ class FastRouteCore
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
+  bool checkTree(const int net_id);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
