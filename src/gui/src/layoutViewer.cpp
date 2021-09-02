@@ -210,11 +210,16 @@ class GuiPainter : public Painter
   void drawString(int x, int y, ANCHOR anchor, const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
-    const QTransform transform = painter_->transform();
-    painter_->setTransform(base_transform_);
+    const QFont font = painter_->font();
+    QFont use_font = font;
+    if (getPixelsPerDBU() < 1) {
+      // copy font so we can adjust the size to account for the scaling
+      use_font.setPointSize(font.pointSize() / getPixelsPerDBU());
+    }
+    painter_->setFont(use_font);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
-    int sx = centering_shift_.x() + x * getPixelsPerDBU();
-    int sy = centering_shift_.y() - y * getPixelsPerDBU();
+    int sx = x;
+    int sy = y;
     if (anchor == BOTTOM_LEFT) {
       // default for Qt
     } else if (anchor == BOTTOM_RIGHT) {
@@ -239,9 +244,13 @@ class GuiPainter : public Painter
       sx -= text_bbox.right();
       sy += text_bbox.height() / 2;
     }
+    const QTransform transform = painter_->transform();
+    painter_->translate(sx, sy);
+    painter_->scale(1, -1);
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
-    painter_->drawText(sx, sy, text);
+    painter_->drawText(0, 0, text);
+    painter_->setFont(font);
     painter_->setTransform(transform);
   }
 
@@ -252,43 +261,107 @@ class GuiPainter : public Painter
     const QFont ruler_font = getOptions()->rulerFont();
     const QFont restore_font = painter_->font();
 
-    painter_->setFont(ruler_font);
-
     setPen(ruler_color, true);
     setBrush(ruler_color);
 
     std::stringstream ss;
-    const int x_len = std::abs(x0 - x1);
-    const int y_len = std::abs(y0 - y1);
-
-    const int precision = std::ceil(std::log10(dbu_per_micron_));
-
-    ss << std::fixed << std::setprecision(precision)
-       << std::max(x_len, y_len) / (qreal) dbu_per_micron_;
-
-    drawLine(x0, y0, x1, y1);
-
-    if (x_len < y_len) {
-      const int y = (y0 + y1) / 2;
-      if (!label.empty()) {
-        // label on top of length
-        drawString(x0, y, BOTTOM_LEFT, label);
-        drawString(x0, y, TOP_LEFT, ss.str());
-      } else {
-        drawString(x0, y, LEFT_CENTER, ss.str());
-      }
-    } else {
-      const int x = (x0 + x1) / 2;
-      if (!label.empty()) {
-        // label on top of length
-        drawString(x, y0, BOTTOM_CENTER, label);
-        drawString(x, y0, TOP_CENTER, ss.str());
-      } else {
-        drawString(x, y0, BOTTOM_CENTER, ss.str());
-      }
+    const double x_len = x1 - x0;
+    const double y_len = y1 - y0;
+    const double len = std::sqrt(x_len * x_len + y_len * y_len);
+    if (len == 0) {
+      // zero length ruler
+      return;
     }
 
+    const QTransform initial_xfm = painter_->transform();
+
+    painter_->translate(x0, y0);
+    qreal ruler_angle;
+    if (x_len == 0) {
+      if (y1 > y0) {
+        ruler_angle = 90;
+      } else {
+        ruler_angle = -90;
+      }
+    } else if (y_len == 0) {
+      if (x1 > x0) {
+        ruler_angle = 0;
+      } else {
+        ruler_angle = -180;
+      }
+    } else {
+      ruler_angle = 57.295779 * std::atan(std::abs(y_len / x_len)); // 180 / pi
+      if (x_len < 0) { // adjust for negative dx
+        ruler_angle = 180 - ruler_angle;
+      }
+      if (y_len < 0) { // adjust for negative dy
+       ruler_angle = -ruler_angle;
+      }
+    }
+    painter_->rotate(ruler_angle);
+
+    const int precision = std::ceil(std::log10(dbu_per_micron_));
+    const qreal len_microns = len / (qreal) dbu_per_micron_;
+
+    ss << std::fixed << std::setprecision(precision) << len_microns;
+
+    const bool flip_direction = -90 >= ruler_angle || ruler_angle > 90;
+
+    // draw center line
+    drawLine(0, 0, len, 0);
+    // draw endcaps (arrows) (5 px or 2 DBU if very close)
+    int endcap_size = std::max(2.0, 5.0 / getPixelsPerDBU());
+    if (flip_direction) {
+      endcap_size = -endcap_size;
+    }
+    drawLine(0, -endcap_size, 0, 0);
+    drawLine(len, -endcap_size, len, 0);
+
+    // tick mark interval in microns
+    qreal major_tick_mark_interval = std::pow(10.0, std::floor(std::log10(len_microns)));
+    const int major_ticks = std::floor(len_microns / major_tick_mark_interval);
+    qreal minor_tick_mark_interval = major_tick_mark_interval / 10;
+    const int min_minor_tick_spacing = 10; // pixels
+    const bool do_minor_ticks = minor_tick_mark_interval * dbu_per_micron_ * getPixelsPerDBU() > min_minor_tick_spacing;
+
+    // draw tick marks
+    const int minor_tick_size = endcap_size / 2;
+    const int major_tick_interval = major_tick_mark_interval * dbu_per_micron_;
+    const int minor_tick_interval = minor_tick_mark_interval * dbu_per_micron_;
+    //major ticks
+    for (int tick = 0; tick < len; tick += major_tick_interval) {
+      if (do_minor_ticks) {
+        for (int m = 1; m < 10; m++) {
+          const int m_tick = tick + m * minor_tick_interval;
+          if (m_tick >= len) {
+            break;
+          }
+          drawLine(m_tick, -minor_tick_size, m_tick, 0);
+        }
+      }
+      if (tick == 0) {
+        // don't draw tick mark over end cap
+        continue;
+      }
+      drawLine(tick, -endcap_size, tick, 0);
+    }
+
+    painter_->setFont(ruler_font);
+    painter_->translate(len / 2, 0);
+    if (flip_direction) {
+      // flip text to keep it in the right position
+      painter_->scale(-1, -1);
+    }
+    const int x = len / 2;
+    if (!label.empty()) {
+      // label on next to length
+      drawString(0, 0, BOTTOM_CENTER, label + ": " + ss.str());
+    } else {
+      drawString(0, 0, BOTTOM_CENTER, ss.str());
+    }
     painter_->setFont(restore_font);
+
+    painter_->setTransform(initial_xfm);
   }
 
  private:
