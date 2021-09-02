@@ -265,7 +265,6 @@ class Painter
   // The color to highlight in
   static inline const Color highlight = yellow;
   static inline const Color persistHighlight = yellow;
-  static inline const Color ruler_color = cyan;
 
   Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;

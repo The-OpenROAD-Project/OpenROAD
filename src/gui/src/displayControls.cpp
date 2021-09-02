@@ -225,6 +225,12 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(blockages_.obstructions, "Routing", blockages, Qt::Checked, true);
   toggleParent(blockage_group_);
 
+  // Rulers
+  ruler_font_ = QFont(); // use default font
+  ruler_font_.setPointSize(12);
+  ruler_color_ = Qt::cyan;
+  makeParentItem(rulers_, "Rulers", model_, Qt::Checked, true, row_color_);
+
   // Rows
   row_color_ = QColor(0, 0xff, 0, 0x70);
   makeParentItem(rows_, "Rows", model_, Qt::Unchecked, false, row_color_);
@@ -245,11 +251,11 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
+  instance_name_font_ = QFont(); // use default font
+  instance_name_font_.setPointSize(12);
   instance_name_color_ = Qt::yellow;
 
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
-  instance_name_font_ = QFont(); // use default font
-  instance_name_font_.setPointSize(12);
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   toggleParent(misc_group_);
@@ -348,6 +354,11 @@ void DisplayControls::readSettings(QSettings* settings)
   // pin markers
   readSettingsForRow(settings, pin_markers_);
 
+  // rulers
+  readSettingsForRow(settings, rulers_);
+  getColor(rulers_.swatch, ruler_color_, "ruler_color");
+  ruler_font_ = settings->value("ruler_font", ruler_font_).value<QFont>();
+
   // tracks
   settings->beginGroup("tracks");
   readSettingsForRow(settings, tracks_.pref);
@@ -404,6 +415,11 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, congestion_map_);
   // pin markers
   writeSettingsForRow(settings, pin_markers_);
+
+  // rulers
+  writeSettingsForRow(settings, rulers_);
+  settings->setValue("ruler_color", ruler_color_);
+  settings->setValue("ruler_font", ruler_font_);
 
   // tracks
   settings->beginGroup("tracks");
@@ -519,6 +535,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (name_item == misc_.instance_names.name) {
       // handle font change
       instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+    } else if (name_item == rulers_.name) {
+      // handle font change
+      ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
     }
   }
   else if (index.column() == 1) { // handle color changes
@@ -536,6 +555,8 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       item_color = &instance_name_color_;
     } else if (color_item == rows_.swatch) {
       item_color = &row_color_;
+    } else if (color_item == rulers_.swatch) {
+      item_color = &ruler_color_;
     } else {
       QVariant tech_layer_data = color_item->data(Qt::UserRole);
       if (!tech_layer_data.isValid()) {
@@ -861,6 +882,26 @@ bool DisplayControls::areInstanceNamesVisible()
 bool DisplayControls::areFillsVisible()
 {
   return misc_.fills.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areRulersVisible()
+{
+  return rulers_.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areRulersSelectable()
+{
+  return rulers_.selectable->checkState() == Qt::Checked;
+}
+
+QColor DisplayControls::rulerColor()
+{
+  return ruler_color_;
+}
+
+QFont DisplayControls::rulerFont()
+{
+  return ruler_font_;
 }
 
 bool DisplayControls::areBlockagesVisible()

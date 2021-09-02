@@ -210,7 +210,7 @@ class GuiPainter : public Painter
   void drawString(int x, int y, ANCHOR anchor, const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
-    painter_->save();
+    const QTransform transform = painter_->transform();
     painter_->setTransform(base_transform_);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     int sx = centering_shift_.x() + x * getPixelsPerDBU();
@@ -242,11 +242,18 @@ class GuiPainter : public Painter
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
     painter_->drawText(sx, sy, text);
-    painter_->restore();
+    painter_->setTransform(transform);
   }
 
   void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
   {
+    const QColor ruler_color_qt = getOptions()->rulerColor();
+    const Color ruler_color(ruler_color_qt.red(), ruler_color_qt.green(), ruler_color_qt.blue(), ruler_color_qt.alpha());
+    const QFont ruler_font = getOptions()->rulerFont();
+    const QFont restore_font = painter_->font();
+
+    painter_->setFont(ruler_font);
+
     setPen(ruler_color, true);
     setBrush(ruler_color);
 
@@ -280,6 +287,8 @@ class GuiPainter : public Painter
         drawString(x, y0, BOTTOM_CENTER, ss.str());
       }
     }
+
+    painter_->setFont(restore_font);
   }
 
  private:
@@ -757,12 +766,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     }
   }
 
-  // Look for rulers
-  // because rulers are 1 pixel wide, we'll add another couple of pixels to its width
-  const int ruler_margin = 4 / pixels_per_dbu_; // 4 pixels in each direction
-  for (auto& ruler : rulers_) {
-    if (ruler->fuzzyIntersection(pt_dbu, ruler_margin)) {
-      selections.push_back(makeSelected_(ruler.get()));
+  if (options_->areRulersVisible() && options_->areRulersSelectable()) {
+    // Look for rulers
+    // because rulers are 1 pixel wide, we'll add another couple of pixels to its width
+    const int ruler_margin = 4 / pixels_per_dbu_; // 4 pixels in each direction
+    for (auto& ruler : rulers_) {
+      if (ruler->fuzzyIntersection(pt_dbu, ruler_margin)) {
+        selections.push_back(makeSelected_(ruler.get()));
+      }
     }
   }
 
@@ -1240,6 +1251,10 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawRulers(Painter& painter)
 {
+  if (!options_->areRulersVisible()) {
+    return;
+  }
+
   for (auto& ruler : rulers_) {
     painter.drawRuler(
         ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y(), ruler->getLabel());
