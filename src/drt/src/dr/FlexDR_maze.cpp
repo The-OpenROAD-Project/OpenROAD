@@ -1932,7 +1932,7 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
   }
   setBestMarkers();
   if (graphics_) {
-    graphics_->show();
+    graphics_->show(true);
   }
 }
 
@@ -1986,6 +1986,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           }
         } else {
           gridGraph_.print();
+        }
+        if (graphics_) {
+            graphics_->show(false);
         }
         logger_->error(DRT,
                        255,

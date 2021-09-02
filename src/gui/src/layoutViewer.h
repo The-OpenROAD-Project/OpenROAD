@@ -168,7 +168,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void centerAt(const odb::Point& focus);
   void centerChanged(int dx, int dy);
   void setResolution(qreal dbu_per_pixel);
-  void updateFitResolution();
+  void viewportUpdated();
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);

@@ -825,22 +825,33 @@ void FlexDRWorker::initNets_searchRepair(
   }
 }
 
-void FlexDRWorker::getTrackLocsRestrictedRouting(frLayerNum startLayerNum,
-                                            Rectangle& pinRect,
-                                            std::set<frCoord>& xLocs,
-                                            std::set<frCoord>& yLocs) {
-    for (frLayerNum lNum = startLayerNum; lNum < getTech()->getTopLayerNum();
-                                                                    lNum += 2) {
-        frPrefRoutingDirEnum currPrefRouteDir
-                                        = getTech()->getLayer(lNum)->getDir();
-        if (currPrefRouteDir == frcHorzPrefRoutingDir) {
-            getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
-        } else {
-            getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
-        }
-        if (!xLocs.empty() || !yLocs.empty())
-            return;
+bool FlexDRWorker::findAPTracks(frLayerNum startLayerNum,
+                                frLayerNum endLayerNum,
+                                Rectangle& pinRect,
+                                std::set<frCoord>& xLocs,
+                                std::set<frCoord>& yLocs)
+{
+  int inc = (startLayerNum < endLayerNum ? 2 : -2);
+
+  for (frLayerNum lNum = startLayerNum; lNum != endLayerNum + inc;
+       lNum += inc) {
+    frPrefRoutingDirEnum currPrefRouteDir = getTech()->getLayer(lNum)->getDir();
+    if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+      getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
+    } else {
+      getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
     }
+    // track found or is normal layer (so can jog)
+    if (!xLocs.empty() || !yLocs.empty() || !isRestrictedRouting(lNum))
+      return true;
+  }
+  return false;
+}
+
+bool FlexDRWorker::isRestrictedRouting(frLayerNum lNum)
+{
+  return getTech()->getLayer(lNum)->isUnidirectional()
+         || lNum < BOTTOM_ROUTING_LAYER || lNum > TOP_ROUTING_LAYER;
 }
 
 void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
@@ -990,20 +1001,32 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             if (!boost::polygon::intersect(pinRect, routeRect)) {
               continue;
             }
-
+            frCoord xLoc, yLoc;
             // pinRect now equals intersection of pinRect and routeRect
             auto currPrefRouteDir = layer->getDir();
-            bool restrictedRouting = currLayerNum < BOTTOM_ROUTING_LAYER || 
-                      currLayerNum > TOP_ROUTING_LAYER || layer->isUnidirectional();
-            if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              restrictedRouting = restrictedRouting || 
-                                currLayerNum + 2 < BOTTOM_ROUTING_LAYER || 
-                                currLayerNum + 2 > TOP_ROUTING_LAYER || 
-                                getTech()->getLayer(currLayerNum + 2)->isUnidirectional();
-            }
+            bool restrictedRouting = isRestrictedRouting(currLayerNum);
+            if (currLayerNum + 2 <= getTech()->getTopLayerNum())
+              restrictedRouting
+                  = restrictedRouting || isRestrictedRouting(currLayerNum + 2);
+            if (currLayerNum - 2 >= getTech()->getBottomLayerNum() && 
+                    currLayerNum - 2 >= VIA_ACCESS_LAYERNUM)
+              restrictedRouting
+                  = restrictedRouting || isRestrictedRouting(currLayerNum - 2);
             // get intersecting tracks if any
             if (restrictedRouting) {
-                getTrackLocsRestrictedRouting(currLayerNum + 2, pinRect, xLocs, yLocs);
+              bool found = findAPTracks(currLayerNum + 2,
+                                        getTech()->getTopLayerNum(),
+                                        pinRect,
+                                        xLocs,
+                                        yLocs);
+              if (!found)
+                found = findAPTracks(currLayerNum - 2,
+                                     getTech()->getBottomLayerNum(),
+                                     pinRect,
+                                     xLocs,
+                                     yLocs);
+              if (!found)
+                continue;
             } else if (currPrefRouteDir == frcHorzPrefRoutingDir) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
@@ -1039,10 +1062,6 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                 getTrackLocs(false, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               }
             }
-            if (xLocs.empty() && yLocs.empty() && restrictedRouting)
-                continue;
-            // gen new temp on-track access point if any
-            frCoord xLoc, yLoc;
             // xLoc
             if (!xLocs.empty()) {
               xLoc = *(xLocs.begin());
@@ -1055,6 +1074,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             } else {
               yLoc = (yl(pinRect) + yh(pinRect)) / 2;
             }
+            if (restrictedRouting)
+              specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
             // TODO: update as drAccessPattern updated
             auto uap = std::make_unique<drAccessPattern>();
             frPoint pt(xLoc, yLoc);
@@ -1085,7 +1106,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             }
 
             dPin->addAccessPattern(std::move(uap));
-            break;
+            if (!restrictedRouting)
+                break;
         } else {
           cout << "Error: initNet_termGenAp_new unsupported pinFig\n";
         }
@@ -1551,6 +1573,8 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
       if (dPin->getAccessPatterns().empty()) {
         cout << "\nError: pin " << name << " still does not have temp ap"
              << endl;
+        if (graphics_)
+          graphics_->debugWholeDesign();
         exit(1);
       }
     }

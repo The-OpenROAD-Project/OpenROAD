@@ -87,8 +87,6 @@ public:
   void setClusteredInstance(const std::vector<Instance*>& insts);
   void setInstance(Instance* inst);
   void setFiller();
-  void setMacroInstance();
-  void setStdInstance();
 
   // normal coordinates
   int lx() const;
@@ -150,10 +148,6 @@ private:
   float densityScale_;
   float gradientX_;
   float gradientY_;
-
-  // need to be stored for
-  // MS replace
-  bool isMacroInstance_:1;
 };
 
 inline int

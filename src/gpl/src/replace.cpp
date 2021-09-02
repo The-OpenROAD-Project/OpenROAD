@@ -40,6 +40,7 @@
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include "rsz/Resizer.hh"
+#include "odb/db.h"
 #include "plot.h"
 #include <iostream>
 
@@ -81,7 +82,6 @@ Replace::Replace()
   routabilityMaxInflationIter_(4),
   timingDrivenMode_(true),
   routabilityDrivenMode_(true),
-  incrementalPlaceMode_(false),
   uniformTargetDensityMode_(false),
   padLeft_(0), padRight_(0),
   verbose_(0),
@@ -139,7 +139,6 @@ void Replace::reset() {
 
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true; 
-  incrementalPlaceMode_ = false;
   uniformTargetDensityMode_ = false;
   
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
@@ -166,15 +165,67 @@ void Replace::setResizer(rsz::Resizer* rs) {
 void Replace::setLogger(utl::Logger* logger) {
   log_ = logger;
 }
-void Replace::doInitialPlace() {
 
-  log_->setDebugLevel(GPL, "replace", verbose_);
-
+void Replace::doIncrementalPlace()
+{
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
   pbVars.padRight = padRight_;
-
   pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
+
+  // Lock down already placed objects
+  int locked_cnt = 0;
+  int unplaced_cnt = 0;
+  auto block = db_->getChip()->getBlock();
+  for(auto inst : block->getInsts()) {
+    auto status = inst->getPlacementStatus();
+    if (status == odb::dbPlacementStatus::PLACED) {
+      pb_->dbToPb(inst)->lock();
+      ++locked_cnt;
+    } else if (!status.isPlaced()) {
+      ++unplaced_cnt;
+    }
+  }
+
+  if (unplaced_cnt == 0) {
+    // Everything was already placed so we do the old incremental mode
+    // which just skips initial placement and runs nesterov.
+    pb_->unlockAll();
+    doNesterovPlace();
+    return;
+  }
+
+  log_->info(GPL, 132, "Locked {} instances", locked_cnt);
+
+  // Roughly place the unplaced objects (allow more overflow)
+  constexpr float rough_oveflow = 0.2f;
+  float previous_overflow = overflow_;
+  setTargetOverflow(std::max(rough_oveflow, overflow_));
+  doInitialPlace();
+  int iter = doNesterovPlace();
+
+  // Finish the overflow resolution from the rough placement
+  log_->info(GPL, 133, "Unlocked instances");
+  pb_->unlockAll();
+
+  setTargetOverflow(previous_overflow);
+  if (previous_overflow < rough_oveflow) {
+    doNesterovPlace(iter + 1);
+  }
+}
+
+void Replace::doInitialPlace()
+{
+
+  log_->setDebugLevel(GPL, "replace", verbose_);
+
+  if (pb_ == nullptr) {
+    PlacerBaseVars pbVars;
+    pbVars.padLeft = padLeft_;
+    pbVars.padRight = padRight_;
+
+    pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
+  }
 
   InitialPlaceVars ipVars;
   ipVars.maxIter = initialPlaceMaxIter_;
@@ -182,7 +233,6 @@ void Replace::doInitialPlace() {
   ipVars.maxSolverIter = initialPlaceMaxSolverIter_;
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
-  ipVars.incrementalPlaceMode = incrementalPlaceMode_;
   ipVars.debug = gui_debug_initial_;
   
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
@@ -263,11 +313,11 @@ void Replace::initNesterovPlace() {
   }
 }
 
-void Replace::doNesterovPlace() {
+int Replace::doNesterovPlace(int start_iter) {
   initNesterovPlace();
   if (timingDrivenMode_)
     rs_->resizeSlackPreamble();
-  np_->doNesterovPlace();
+  return np_->doNesterovPlace(start_iter);
 }
 
 void
@@ -313,6 +363,9 @@ Replace::setBinGridCntY(int binGridCntY) {
 void 
 Replace::setTargetOverflow(float overflow) {
   overflow_ = overflow;
+  if (np_) {
+    np_->setTargetOverflow(overflow);
+  }
 }
 
 void
@@ -354,11 +407,6 @@ Replace::setMaxPhiCoef(float maxPhiCoef) {
 void
 Replace::setReferenceHpwl(float refHpwl) {
   referenceHpwl_ = refHpwl;
-}
-
-void
-Replace::setIncrementalPlaceMode(bool mode) {
-  incrementalPlaceMode_ = mode;
 }
 
 void
