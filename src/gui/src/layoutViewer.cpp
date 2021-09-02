@@ -356,7 +356,7 @@ void LayoutViewer::setResolution(qreal pixels_per_dbu)
   centerAt(center);
 }
 
-void LayoutViewer::centerChanged(int dx, int dy)
+void LayoutViewer::updateCenter(int dx, int dy)
 {
   // modify the center according to the dx and dy
   center_.setX(center_.x() - dx / pixels_per_dbu_);
@@ -394,7 +394,7 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
   const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
 
-  // set the center now, since center is modified by the centerChanged
+  // set the center now, since center is modified by the updateCenter
   // we only care of the focus point
   center_ = focus;
 
@@ -432,7 +432,9 @@ void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_foc
 {
   qreal old_pixels_per_dbu = pixels_per_dbu_;
 
-  // focus to center vector, this is only used if doing delta_focus
+  // focus to center, this is only used if doing delta_focus
+  // this holds the distance (x and y) from the desired focus point and the current center
+  // so the new center can be computed and ensure that the new center is in line with the old center.
   odb::Point center_delta(focus.x() - center_.x(), focus.y() - center_.y());
 
   // update resolution
@@ -455,7 +457,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
   const Rect padded_rect = getPaddedRect(rect_dbu);
 
-  // set resolution reviewed to view the padded rect
+  // set resolution required to view the whole padded rect
   setPixelsPerDBU(computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
 
   // center the layout at the middle of the rect
@@ -1832,7 +1834,7 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 
   // ensure changes in the scroll area are announced to the layout viewer
   connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(viewportUpdated()));
-  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(centerChanged(int, int)));
+  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(updateCenter(int, int)));
 }
 
 void LayoutViewer::viewportUpdated()

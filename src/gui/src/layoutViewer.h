@@ -170,12 +170,18 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomIn();
 
   // zoom in and change center to the focus point
+  // do_delta_focus indicates (if true) that the center of the layout should zoom in around the focus
+  // instead of making it the new center. This is used when scrolling with the mouse to keep the
+  // mouse point steady in the layout
   void zoomIn(const odb::Point& focus, bool do_delta_focus = false);
 
   // zoom out the layout, keeping the current center_
   void zoomOut();
 
   // zoom out and change center to the focus point
+  // do_delta_focus indicates (if true) that the center of the layout should zoom in around the focus
+  // instead of making it the new center. This is used when scrolling with the mouse to keep the
+  // mouse point steady in the layout
   void zoomOut(const odb::Point& focus, bool do_delta_focus = false);
 
   // zoom to the specified rect
@@ -190,8 +196,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // center layout at the focus point
   void centerAt(const odb::Point& focus);
 
-  // indicate that the center has changes
-  void centerChanged(int dx, int dy);
+  // indicate that the center has changed, due to the scrollarea changing
+  void updateCenter(int dx, int dy);
 
   // set the layout resolution
   void setResolution(qreal dbu_per_pixel);
@@ -295,7 +301,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   const HighlightSet& highlighted_;
   const std::vector<QLine>& rulers_;
   LayoutScroll* scroller_;
+
+  // holds the current resolution for drawing the layout (units are pixels / dbu)
   qreal pixels_per_dbu_;
+
+  // holds the resolution for drawing the layout where the whole layout fits in the window
+  // (units are pixels / dbu)
   qreal fit_pixels_per_dbu_;
   int min_depth_;
   int max_depth_;
@@ -314,15 +325,16 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 
-  // shift required to center the block in the window
+  // shift required when drawing the layout to center the layout in the window (units: pixels)
   QPoint centering_shift_;
 
-  // center of the layout in window in dbu
+  // The center point of the layout visible in the window (in dbu).
   // this is needed to keep track of the center without a
   // dependence on the resolution
   odb::Point center_;
 
-  // cache of the maximum cut size
+  // Cache of the maximum cut size per layer (units: dbu).
+  // Used to determine when cuts are too small to be seen and should not be drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
@@ -342,7 +354,8 @@ class LayoutScroll : public QScrollArea
   // indicates that the viewport (visible area of the layout) has changed
   void viewportChanged();
 
-  // indicates how far the viewport of the layout has shifted
+  // indicates how far the viewport of the layout has shifted due to a resize event
+  // or by the user manipulating the scrollbars
   void centerChanged(int dx, int dy);
 
  protected:
