@@ -207,15 +207,41 @@ class GuiPainter : public Painter
   //       the trasnsformation is mapped to the base transformation and
   //       the world co-ordinates are mapped to the window co-ordinates
   //       before drawing.
-  void drawString(int x, int y, int offset, const std::string& s) override
+  void drawString(int x, int y, ANCHOR anchor, const std::string& s) override
   {
+    const QString text = QString::fromStdString(s);
     painter_->save();
     painter_->setTransform(base_transform_);
+    const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     int sx = centering_shift_.x() + x * getPixelsPerDBU();
     int sy = centering_shift_.y() - y * getPixelsPerDBU();
+    if (anchor == BOTTOM_LEFT) {
+      // default for Qt
+    } else if (anchor == BOTTOM_RIGHT) {
+      sx -= text_bbox.right();
+    } else if (anchor == TOP_LEFT) {
+      sy -= text_bbox.top();
+    } else if (anchor == TOP_RIGHT) {
+      sx -= text_bbox.right();
+      sy -= text_bbox.top();
+    } else if (anchor == CENTER) {
+      sx -= text_bbox.width() / 2;
+      sy += text_bbox.height() / 2;
+    } else if (anchor == BOTTOM_CENTER) {
+      sx -= text_bbox.width() / 2;
+    } else if (anchor == TOP_CENTER) {
+      sx -= text_bbox.width() / 2;
+      sy -= text_bbox.top();
+    } else if (anchor == LEFT_CENTER) {
+      sy += text_bbox.height() / 2;
+    } else {
+      // RIGHT_CENTER
+      sx -= text_bbox.right();
+      sy += text_bbox.height() / 2;
+    }
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
-    painter_->drawText(sx, sy, QString::fromStdString(s));
+    painter_->drawText(sx, sy, text);
     painter_->restore();
   }
 
@@ -236,12 +262,23 @@ class GuiPainter : public Painter
     drawLine(x0, y0, x1, y1);
 
     if (x_len < y_len) {
-      drawString(x0, (y0 + y1) / 2, 0, ss.str());
+      const int y = (y0 + y1) / 2;
+      if (!label.empty()) {
+        // label on top of length
+        drawString(x0, y, BOTTOM_LEFT, label);
+        drawString(x0, y, TOP_LEFT, ss.str());
+      } else {
+        drawString(x0, y, LEFT_CENTER, ss.str());
+      }
     } else {
-      drawString((x0 + x1) / 2, y0, 0, ss.str());
-    }
-    if (!label.empty()) {
-      drawString(x0, y0, 0, label);
+      const int x = (x0 + x1) / 2;
+      if (!label.empty()) {
+        // label on top of length
+        drawString(x, y0, BOTTOM_CENTER, label);
+        drawString(x, y0, TOP_CENTER, ss.str());
+      } else {
+        drawString(x, y0, BOTTOM_CENTER, ss.str());
+      }
     }
   }
 

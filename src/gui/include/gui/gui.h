@@ -304,7 +304,21 @@ class Painter
 
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
-  virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
+  enum ANCHOR {
+    // four corners
+    BOTTOM_LEFT,
+    BOTTOM_RIGHT,
+    TOP_LEFT,
+    TOP_RIGHT,
+
+    // centers
+    CENTER,
+    BOTTOM_CENTER,
+    TOP_CENTER,
+    LEFT_CENTER,
+    RIGHT_CENTER
+  };
+  virtual void drawString(int x, int y, ANCHOR anchor, const std::string& s) = 0;
 
   virtual void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") = 0;
 
