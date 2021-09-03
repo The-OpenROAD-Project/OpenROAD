@@ -54,27 +54,21 @@ bool Ruler::operator ==(const Ruler& other) const
 
 bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin)
 {
-  odb::Rect ruler_area(pt0_, pt1_);
-  if (ruler_area.isInverted()) {
-    if (ruler_area.xMax() < ruler_area.xMin()) {
-      int tmp = ruler_area.xMax();
-      ruler_area.set_xhi(ruler_area.xMin());
-      ruler_area.set_xlo(tmp);
-    }
+  // compute composite line from two end points through the pt
+  // if the resultant line is longer by the margin, no intersection is reported.
 
-    if (ruler_area.yMax() < ruler_area.yMin()) {
-      int tmp = ruler_area.yMax();
-      ruler_area.set_yhi(ruler_area.yMin());
-      ruler_area.set_ylo(tmp);
-    }
-  }
+  auto distance = [](const odb::Point& pt0, const odb::Point& pt1) -> int {
+    const double len_x = pt0.x() - pt1.x();
+    const double len_y = pt0.y() - pt1.y();
 
-  ruler_area.set_xlo(ruler_area.xMin() - margin);
-  ruler_area.set_ylo(ruler_area.yMin() - margin);
-  ruler_area.set_xhi(ruler_area.xMax() + margin);
-  ruler_area.set_yhi(ruler_area.yMax() + margin);
+    return std::sqrt(len_x * len_x + len_y * len_y);
+  };
 
-  return ruler_area.intersects(pt);
+  const int d0 = distance(pt0_, pt);
+  const int d1 = distance(pt1_, pt);
+  const int dl = distance(pt0_, pt1_);
+
+  return std::abs(d0 + d1 - dl) < margin;
 }
 
 ////////////
