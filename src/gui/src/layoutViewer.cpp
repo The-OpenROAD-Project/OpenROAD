@@ -887,6 +887,35 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   return Selected();
 }
 
+odb::Point LayoutViewer::findNextRulerPoint(const odb::Point& mouse, bool snap)
+{
+  if (!snap) {
+    return mouse;
+  } else{
+    odb::Point snapped = mouse;
+    if (snap_edge_showing_) {
+      if (snap_edge_.first.x() == snap_edge_.second.x()) {
+        // vertical
+        snapped.setX(snap_edge_.first.x());
+      } else {
+        snapped.setY(snap_edge_.first.y());
+      }
+    }
+
+    if (ruler_start_ != nullptr) {
+      // snap to horizontal or vertical ruler
+      if (std::abs(ruler_start_->x() - snapped.x()) < std::abs(ruler_start_->y() - snapped.y())) {
+        // vertical
+        snapped.setX(ruler_start_->x());
+      } else {
+        snapped.setY(ruler_start_->y());
+      }
+    }
+
+    return snapped;
+  }
+}
+
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
 {
   odb::dbBlock* block = getBlock();
@@ -899,29 +928,13 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     Point pt_dbu = screenToDBU(event->pos());
     if (building_ruler_) {
       // build ruler...
-      bool is_start_of_ruler = ruler_start_ == nullptr;
-      std::unique_ptr<odb::Point> next_ruler_pt;
-      if (snap_edge_showing_ && !(qGuiApp->keyboardModifiers() & Qt::ControlModifier)) {
-        // if control is held ignore snap and use screen pos
-        if (snap_edge_.first.x() == snap_edge_.second.x()) {
-          // vertical
-          next_ruler_pt = std::make_unique<odb::Point>(snap_edge_.first.x(), pt_dbu.y());
-        } else {
-          next_ruler_pt = std::make_unique<odb::Point>(pt_dbu.x(), snap_edge_.first.y());
-        }
+      odb::Point next_ruler_pt = findNextRulerPoint(
+          pt_dbu,
+          !(qGuiApp->keyboardModifiers() & Qt::ControlModifier));
+      if (ruler_start_ == nullptr) {
+        ruler_start_ = std::make_unique<odb::Point>(next_ruler_pt);
       } else {
-        next_ruler_pt = std::make_unique<odb::Point>(pt_dbu);
-      }
-      if (is_start_of_ruler) {
-        ruler_start_ = std::move(next_ruler_pt);
-      } else {
-        if (std::abs(ruler_start_->x() - next_ruler_pt->x()) < std::abs(ruler_start_->y() - next_ruler_pt->y())) {
-          // mostly vertical
-          emit addRuler(ruler_start_->x(), ruler_start_->y(), ruler_start_->x(), next_ruler_pt->y());
-        } else {
-          // mostly horizontal
-          emit addRuler(ruler_start_->x(), ruler_start_->y(), next_ruler_pt->x(), ruler_start_->y());
-        }
+        emit addRuler(ruler_start_->x(), ruler_start_->y(), next_ruler_pt.x(), next_ruler_pt.y());
         cancelRulerBuild();
       }
     } else if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
@@ -1786,26 +1799,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   // draw partial ruler if present
   if (building_ruler_ && ruler_start_ != nullptr) {
-    odb::Point snapped_mouse_pos = screenToDBU(mouse_move_pos_);
-
-    bool mostly_vertical = std::abs(ruler_start_->x() - snapped_mouse_pos.x()) < std::abs(ruler_start_->y() - snapped_mouse_pos.y());
-    if (mostly_vertical) {
-      // mostly vertical
-      snapped_mouse_pos.setX(ruler_start_->x());
-    } else {
-      // mostly horizontal
-      snapped_mouse_pos.setY(ruler_start_->y());
-    }
-
-    // if snap is showing, snap ruler as well
-    if (snap_edge_showing_) {
-      if (mostly_vertical) {
-        snapped_mouse_pos.setY(snap_edge_.first.y());
-      } else {
-        snapped_mouse_pos.setX(snap_edge_.first.x());
-      }
-    }
-
+    odb::Point snapped_mouse_pos = findNextRulerPoint(
+        screenToDBU(mouse_move_pos_),
+        !(qGuiApp->keyboardModifiers() & Qt::ControlModifier));
     gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
   }
 }

@@ -274,6 +274,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   Edge findEdge(const odb::Point& pt, bool horizontal, bool& ok);
   Edges searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt, bool& ok);
 
+  odb::Point findNextRulerPoint(const odb::Point& mouse, bool snap);
+
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
