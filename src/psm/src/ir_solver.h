@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_IRSOLVER_
 
 #include "gmat.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace psm {

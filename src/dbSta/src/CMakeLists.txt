@@ -19,11 +19,11 @@ swig_lib(NAME          dbSta
          NAMESPACE     sta
          I_FILE        dbSta.i
          SWIG_INCLUDES ${OPENSTA_HOME}
-                       ${OPENDB_HOME}/src/swig/common
-                       ${OPENDB_HOME}/src/swig/tcl
-                       ${OPENDB_HOME}/include/opendb
+                       ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
          SCRIPTS       ${OPENSTA_HOME}/tcl/Graph.tcl
-                        ${OPENSTA_HOME}/tcl/Liberty.tcl
+                       ${OPENSTA_HOME}/tcl/Liberty.tcl
                        ${OPENSTA_HOME}/tcl/Network.tcl
                        ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
                        ${OPENSTA_HOME}/tcl/Sdc.tcl
@@ -61,7 +61,7 @@ target_include_directories(dbSta
 target_link_libraries(dbSta
   PRIVATE
     OpenSTA
-    opendb
+    odb
     gui
     utl
 )

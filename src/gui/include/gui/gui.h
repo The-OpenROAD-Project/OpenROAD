@@ -36,18 +36,21 @@
 
 #include <any>
 #include <array>
+#include <functional>
 #include <initializer_list>
+#include <map>
 #include <set>
 #include <string>
 #include <tuple>
 #include <typeinfo>
 #include <variant>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace gui {
 class Painter;
 class Selected;
+class Options;
 
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
@@ -64,15 +67,59 @@ class Descriptor
   virtual bool isNet(std::any /* object */) const { return false; }
 
   // A property is a name and a value.
-  using Property = std::pair<std::string, std::any>;
+  struct Property {
+    std::string name;
+    std::any value;
+  };
   using Properties = std::vector<Property>;
 
+  // An action is a name and a callback function, the function should return
+  // the next object to select (when deleting the object just return Selected())
+  using ActionCallback = std::function<Selected(void)>;
+  struct Action {
+    std::string name;
+    ActionCallback callback;
+  };
+  using Actions = std::vector<Action>;
+
+  // An editor is a callback function and a list of possible values (this can be empty),
+  // the name of the editor should match the property it modifies
+  // the callback should return true if the edit was successful, otherwise false
+  struct EditorOption {
+    std::string name;
+    std::any value;
+  };
+  using EditorCallback = std::function<bool(std::any)>;
+  struct Editor {
+    EditorCallback callback;
+    std::vector<EditorOption> options;
+  };
+  using Editors = std::map<std::string, Editor>;
+
   virtual Properties getProperties(std::any object) const = 0;
+  virtual Actions getActions(std::any /* object */) const { return Actions(); }
+  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
 
   virtual Selected makeSelected(std::any object,
                                 void* additional_data) const = 0;
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
+
+  std::any getProperty(std::any object, const std::string& name) const
+  {
+    for (auto& [prop, value] : getProperties(object)) {
+      if (prop == name) {
+        return value;
+      }
+    }
+    return std::any();
+  }
+
+  static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
+  {
+    return {func, options};
+  }
+  static const Editor makeEditor(const EditorCallback& func) { return makeEditor(func, {}); }
 
 protected:
   // The caller (Selected) will pre-configure the Painter's pen
@@ -124,6 +171,21 @@ class Selected
   Descriptor::Properties getProperties() const
   {
     return descriptor_->getProperties(object_);
+  }
+
+  std::any getProperty(const std::string& name) const
+  {
+    return descriptor_->getProperty(object_, name);
+  }
+
+  Descriptor::Actions getActions() const
+  {
+    return descriptor_->getActions(object_);
+  }
+
+  Descriptor::Editors getEditors() const
+  {
+    return descriptor_->getEditors(object_);
   }
 
   operator bool() const { return object_.has_value(); }
@@ -205,6 +267,7 @@ class Painter
   static inline const Color persistHighlight = yellow;
   static inline const Color ruler_color = cyan;
 
+  Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -239,6 +302,8 @@ class Painter
 
   virtual void drawCircle(int x, int y, int r) = 0;
 
+  virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
+
   virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
 
   virtual void drawRuler(int x0, int y0, int x1, int y1) = 0;
@@ -250,6 +315,14 @@ class Painter
   }
 
   virtual void setTransparentBrush() = 0;
+  virtual void setHashedBrush(const Color& color) = 0;
+
+  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
+  inline Options* getOptions() { return options_; }
+
+ private:
+  Options* options_;
+  double pixels_per_dbu_;
 };
 
 // This is an interface for classes that wish to be called to render
@@ -273,10 +346,10 @@ class Renderer
   // Handle user clicks.  Layer is a nullptr for the
   // object not associated with a layer.
   // Return true if an object was found; false otherwise.
-  virtual Selected select(odb::dbTechLayer* /* layer */,
-                          const odb::Point& /* point */)
+  virtual SelectionSet select(odb::dbTechLayer* /* layer */,
+                              const odb::Point& /* point */)
   {
-    return Selected();
+    return SelectionSet();
   }
 };
 
@@ -342,6 +415,8 @@ class Gui
   void zoomIn(const odb::Point& focus_dbu);
   void zoomOut();
   void zoomOut(const odb::Point& focus_dbu);
+  void centerAt(const odb::Point& focus_dbu);
+  void setResolution(double pixels_per_dbu);
 
   // Save layout to an image file
   void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
@@ -349,6 +424,9 @@ class Gui
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+
+  // show/hide widgets
+  void showWidget(const std::string& name, bool show);
 
   // adding custom buttons to toolbar
   const std::string addToolbarButton(const std::string& name,
@@ -360,12 +438,16 @@ class Gui
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
+  // open DRC
+  void loadDRC(const std::string& filename);
+
   // Force an immediate redraw.
   void redraw();
 
   // Waits for the user to click continue before returning
   // Draw events are processed while paused.
-  void pause();
+  // timeout is in milliseconds (0 is no timeout)
+  void pause(int timeout = 0);
 
   // Show a message in the status bar
   void status(const std::string& message);

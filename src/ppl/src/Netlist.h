@@ -41,7 +41,7 @@
 #include <string>
 #include <vector>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace ppl {
 

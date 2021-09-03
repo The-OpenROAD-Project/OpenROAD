@@ -37,7 +37,7 @@
 
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -242,6 +242,7 @@ protected:
   virtual void visitConnectedPins(const Net *net,
                                   PinVisitor &visitor,
                                   ConstNetSet &visited_nets) const;
+  bool portMsbFirst(const char *port_name);
 
   dbDatabase *db_;
   Logger *logger_;

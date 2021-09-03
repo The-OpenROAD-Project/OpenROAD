@@ -153,6 +153,8 @@ class DisplayControls : public QDockWidget, public Options
   QColor placementBlockageColor() override;
   Qt::BrushStyle placementBlockagePattern() override;
   QColor instanceNameColor() override;
+  QFont instanceNameFont() override;
+  QColor rowColor() override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
@@ -177,6 +179,7 @@ class DisplayControls : public QDockWidget, public Options
   bool areRouteGuidesVisible();
   bool areRoutingObjsVisible();
 
+  bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
   bool showHorizontalCongestion() const override;
@@ -253,6 +256,7 @@ class DisplayControls : public QDockWidget, public Options
   struct MiscModels
   {
     ModelRow instance_names;
+    ModelRow scale_bar;
     ModelRow fills;
   };
 
@@ -266,7 +270,8 @@ class DisplayControls : public QDockWidget, public Options
                                 const QString& text,
                                 QStandardItemModel* parent,
                                 Qt::CheckState checked,
-                                bool add_selectable = false);
+                                bool add_selectable = false,
+                                const QColor& color = Qt::transparent);
 
   void makeLeafItem(ModelRow& row,
                     const QString& text,
@@ -323,6 +328,9 @@ class DisplayControls : public QDockWidget, public Options
   Qt::BrushStyle placement_blockage_pattern_;
 
   QColor instance_name_color_;
+  QFont instance_name_font_;
+
+  QColor row_color_;
 
   CongestionSetupDialog* congestion_dialog_;
 };

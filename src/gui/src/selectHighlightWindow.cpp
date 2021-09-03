@@ -231,7 +231,9 @@ bool HighlightModel::setData(const QModelIndex& index,
 }
 
 HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
-    : QStyledItemDelegate(parent)
+    : QStyledItemDelegate(parent),
+      items_(),
+      table_model_(nullptr)
 {
   items_.push_back("Group 1");
   items_.push_back("Group 2");
@@ -400,6 +402,12 @@ void SelectHighlightWindow::updateHighlightModel()
 {
   highlight_model_.populateModel();
   ui->tabWidget->setCurrentWidget(ui->hltTab);
+}
+
+void SelectHighlightWindow::updateModels()
+{
+  selection_model_.populateModel();
+  highlight_model_.populateModel();
 }
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)

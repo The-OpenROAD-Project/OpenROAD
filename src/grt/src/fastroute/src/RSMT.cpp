@@ -426,9 +426,8 @@ void FastRouteCore::fluteCongest(const int netID,
       int usageH = 0;
       for (int k = ys[0]; k <= ys[d - 1]; k++)  // all grids in the column
       {
-        const int grid = k * (x_grid_ - 1);
         for (int j = xs[i]; j < xs[i + 1]; j++)
-          usageH += (h_edges_[grid + j].est_usage + h_edges_[grid + j].red);
+          usageH += (h_edges_[k][j].est_usage + h_edges_[k][j].red);
       }
       if (x_seg[i] != 0 && usageH != 0) {
         x_seg[i]
@@ -438,9 +437,8 @@ void FastRouteCore::fluteCongest(const int netID,
       }
       int usageV = 0;
       for (int j = ys[i]; j < ys[i + 1]; j++) {
-        const int grid = j * x_grid_;
         for (int k = xs[0]; k <= xs[d - 1]; k++)  // all grids in the row
-          usageV += (v_edges_[grid + k].est_usage + v_edges_[grid + k].red);
+          usageV += (v_edges_[j][k].est_usage + v_edges_[j][k].red);
       }
       if (y_seg[i] != 0 && usageV != 0) {
         y_seg[i]
@@ -479,28 +477,28 @@ bool FastRouteCore::netCongestion(const int netID)
 
     // remove L routing
     if (seg->xFirst) {
-      const int grid = seg->y1 * (x_grid_ - 1);
       for (int i = seg->x1; i < seg->x2; i++) {
-        if (h_edges_[grid + i].est_usage >= h_edges_[grid + i].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], i, seg->y1, EdgeDirection::Horizontal);
+        if (h_edges_[seg->y1][i].est_usage >= cap) {
           return true;
         }
       }
       for (int i = ymin; i < ymax; i++) {
-        if (v_edges_[i * x_grid_ + seg->x2].est_usage
-            >= v_edges_[i * x_grid_ + seg->x2].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], seg->x2, i, EdgeDirection::Vertical);
+        if (v_edges_[i][seg->x2].est_usage >= cap) {
           return true;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
-        if (v_edges_[i * x_grid_ + seg->x1].est_usage
-            >= v_edges_[i * x_grid_ + seg->x1].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], seg->x1, i, EdgeDirection::Vertical);
+        if (v_edges_[i][seg->x1].est_usage >= cap) {
           return true;
         }
       }
-      const int grid = seg->y2 * (x_grid_ - 1);
       for (int i = seg->x1; i < seg->x2; i++) {
-        if (h_edges_[grid + i].est_usage >= h_edges_[grid + i].cap) {
+        const int cap = getEdgeCapacity(nets_[netID], i, seg->y2, EdgeDirection::Horizontal);
+        if (h_edges_[seg->y2][i].est_usage >= cap) {
           return true;
         }
       }
@@ -599,31 +597,27 @@ float FastRouteCore::coeffADJ(const int netID)
   float coef;
   if (xmin == xmax) {
     for (int j = ymin; j < ymax; j++) {
-      const int grid = j * x_grid_ + xmin;
-      Vcap += v_edges_[grid].cap;
-      Vusage += v_edges_[grid].est_usage;
+      Vcap += getEdgeCapacity(nets_[netID], xmin, j, EdgeDirection::Vertical);
+      Vusage += v_edges_[j][xmin].est_usage;
     }
     coef = 1;
   } else if (ymin == ymax) {
     for (int i = xmin; i < xmax; i++) {
-      const int grid = ymin * (x_grid_ - 1) + i;
-      Hcap += h_edges_[grid].cap;
-      Husage += h_edges_[grid].est_usage;
+      Hcap += getEdgeCapacity(nets_[netID], i, ymin, EdgeDirection::Horizontal);
+      Husage += h_edges_[ymin][i].est_usage;
     }
     coef = 1;
   } else {
     for (int j = ymin; j <= ymax; j++) {
       for (int i = xmin; i < xmax; i++) {
-        const int grid = j * (x_grid_ - 1) + i;
-        Hcap += h_edges_[grid].cap;
-        Husage += h_edges_[grid].est_usage;
+        Hcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Horizontal);
+        Husage += h_edges_[j][i].est_usage;
       }
     }
     for (int j = ymin; j < ymax; j++) {
       for (int i = xmin; i <= xmax; i++) {
-        const int grid = j * x_grid_ + i;
-        Vcap += v_edges_[grid].cap;
-        Vusage += v_edges_[grid].est_usage;
+        Vcap += getEdgeCapacity(nets_[netID], i, j, EdgeDirection::Vertical);
+        Vusage += v_edges_[j][i].est_usage;
       }
     }
     // (Husage * Vcap) resulting in zero is unlikely, but

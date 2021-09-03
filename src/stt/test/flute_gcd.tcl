@@ -1,5 +1,7 @@
 # flute gcd
-source "pdrev_helpers.tcl"
+source "stt_helpers.tcl"
 
 set nets [read_nets "gcd.nets"]
-report_flute_nets $nets
+foreach net $nets {
+  report_flute_net $net
+}

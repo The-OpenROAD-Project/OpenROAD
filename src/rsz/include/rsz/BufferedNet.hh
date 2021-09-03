@@ -38,7 +38,7 @@
 #include <array>
 
 #include "utl/Logger.h"
-#include "opendb/geom.h"
+#include "odb/geom.h"
 
 #include "sta/Transition.hh"
 #include "sta/Network.hh"

@@ -46,7 +46,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
 #include "sta/Graph.hh"
@@ -652,7 +652,7 @@ void Restructure::setMode(const char* mode_name)
   else if (!strcmp(mode_name, "area"))
     opt_mode_ = Mode::AREA_1;
   else {
-    logger_->report("Mode {} note recognized.", mode_name);
+    logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
   }
 }
 

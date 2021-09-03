@@ -23,10 +23,10 @@ build
 test/results
 flow
 
+docs/main
+
 .idea/
 cmake-build-debug/
 
 coverage-output
 messages.txt
-
-_build

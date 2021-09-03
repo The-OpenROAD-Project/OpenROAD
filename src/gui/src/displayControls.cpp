@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <QDebug>
+#include <QFontDialog>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -225,7 +226,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(blockage_group_);
 
   // Rows
-  makeParentItem(rows_, "Rows", model_, Qt::Unchecked);
+  row_color_ = QColor(0, 0xff, 0, 0x70);
+  makeParentItem(rows_, "Rows", model_, Qt::Unchecked, false, row_color_);
 
   // Rows
   makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
@@ -246,6 +248,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   instance_name_color_ = Qt::yellow;
 
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
+  instance_name_font_ = QFont(); // use default font
+  instance_name_font_.setPointSize(12);
+  makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
@@ -301,6 +306,10 @@ void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& ro
 
 void DisplayControls::readSettings(QSettings* settings)
 {
+  auto getColor = [this, settings](QStandardItem* item, QColor& color, const char* key) {
+    color = settings->value(key, color).value<QColor>();
+    item->setIcon(makeSwatchIcon(color));
+  };
   settings->beginGroup("display_controls");
 
   settings->beginGroup("nets");
@@ -324,16 +333,16 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("blockages");
   readSettingsForRow(settings, blockages_.blockages);
   readSettingsForRow(settings, blockages_.obstructions);
-  placement_blockage_color_ = settings->value("placement_color", placement_blockage_color_).value<QColor>();
+  getColor(blockages_.blockages.swatch, placement_blockage_color_, "placement_color");
   // pattern saved as int
   placement_blockage_pattern_ =
       static_cast<Qt::BrushStyle>(settings->value("placement_pattern",
                                   static_cast<int>(placement_blockage_pattern_)).toInt());
-  blockages_.blockages.swatch->setIcon(makeSwatchIcon(placement_blockage_color_));
   settings->endGroup();
 
   // rows
   readSettingsForRow(settings, rows_);
+  getColor(rows_.swatch, row_color_, "row_color");
   // congestion map
   readSettingsForRow(settings, congestion_map_);
   // pin markers
@@ -348,9 +357,10 @@ void DisplayControls::readSettings(QSettings* settings)
   // misc
   settings->beginGroup("misc");
   readSettingsForRow(settings, misc_.instance_names);
+  readSettingsForRow(settings, misc_.scale_bar);
   readSettingsForRow(settings, misc_.fills);
-  instance_name_color_ = settings->value("instance_name_color", instance_name_color_).value<QColor>();
-  misc_.instance_names.swatch->setIcon(makeSwatchIcon(instance_name_color_));
+  getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
+  instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
 
   settings->endGroup();
@@ -389,6 +399,7 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   // rows
   writeSettingsForRow(settings, rows_);
+  settings->setValue("row_color", row_color_);
   // congestion map
   writeSettingsForRow(settings, congestion_map_);
   // pin markers
@@ -403,8 +414,10 @@ void DisplayControls::writeSettings(QSettings* settings)
   // misc
   settings->beginGroup("misc");
   writeSettingsForRow(settings, misc_.instance_names);
+  writeSettingsForRow(settings, misc_.scale_bar);
   writeSettingsForRow(settings, misc_.fills);
   settings->setValue("instance_name_color", instance_name_color_);
+  settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
 
   settings->endGroup();
@@ -500,7 +513,15 @@ void DisplayControls::itemChanged(QStandardItem* item)
 
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
-  if (index.column() == 1) {
+  if (index.column() == 0) {
+    auto name_item = model_->itemFromIndex(index);
+
+    if (name_item == misc_.instance_names.name) {
+      // handle font change
+      instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+    }
+  }
+  else if (index.column() == 1) { // handle color changes
     auto color_item = model_->itemFromIndex(index);
 
     QColor* item_color = nullptr;
@@ -513,6 +534,8 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       item_pattern = &placement_blockage_pattern_;
     } else if (color_item == misc_.instance_names.swatch) {
       item_color = &instance_name_color_;
+    } else if (color_item == rows_.swatch) {
+      item_color = &row_color_;
     } else {
       QVariant tech_layer_data = color_item->data(Qt::UserRole);
       if (!tech_layer_data.isValid()) {
@@ -647,9 +670,10 @@ QStandardItem* DisplayControls::makeParentItem(
     const QString& text,
     QStandardItemModel* parent,
     Qt::CheckState checked,
-    bool add_selectable)
+    bool add_selectable,
+    const QColor& color)
 {
-  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable);
+  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable, color);
 
   row.visible->setData(QVariant::fromValue(Callback({
     [this, row](bool visible) {
@@ -732,6 +756,11 @@ Qt::BrushStyle DisplayControls::placementBlockagePattern()
 QColor DisplayControls::instanceNameColor()
 {
   return instance_name_color_;
+}
+
+QFont DisplayControls::instanceNameFont()
+{
+  return instance_name_font_;
 }
 
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
@@ -859,6 +888,11 @@ bool DisplayControls::areRowsVisible()
   return rows_.visible->checkState() == Qt::Checked;
 }
 
+QColor DisplayControls::rowColor()
+{
+  return row_color_;
+}
+
 bool DisplayControls::arePrefTracksVisible()
 {
   return tracks_.pref.visible->checkState() == Qt::Checked;
@@ -867,6 +901,11 @@ bool DisplayControls::arePrefTracksVisible()
 bool DisplayControls::areNonPrefTracksVisible()
 {
   return tracks_.non_pref.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::isScaleBarVisible() const
+{
+  return misc_.scale_bar.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::isCongestionVisible() const

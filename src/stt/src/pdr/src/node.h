@@ -36,6 +36,8 @@
 #include <ostream>
 #include <vector>
 
+#include "pdrevII.h"
+
 namespace pdr {
 
 using std::ostream;
@@ -51,11 +53,6 @@ public:
   int x;
   int y;
 
-  vector<int> N;
-  vector<int> S;
-  vector<int> E;
-  vector<int> W;
-
   int parent;       // parent's node index
   vector<int> children;  // immediate children's indices
   int size_of_chi;
@@ -68,11 +65,6 @@ public:
                          // the source through the tree
   int K_t;               // No. of downstream sinks
   int level;        // Level in tree
-  vector<int> nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
-  vector<float> nn_sw_cost;
-  float sw_cost_min;
-  int sw_cost_min_nn_idx;
-  vector<vector<int>> swap_space;
 
   bool conn_to_par;
   vector<int> sp_chil;
@@ -82,6 +74,16 @@ public:
   int maxPLToChild;
 
   friend ostream& operator<<(ostream& os, const Node& n);
+
+#ifdef PDREVII
+  // Segregated PDrevII code
+  vector<int> N;
+  vector<int> S;
+  vector<int> E;
+  vector<int> W;
+  vector<int> nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
+  vector<vector<int>> swap_space;
+#endif
 };
 
 class Node1
@@ -92,7 +94,6 @@ public:
   int idx;
   int x;
   int y;
-  int parent;  // parent's node index
 };
 
 }  // namespace

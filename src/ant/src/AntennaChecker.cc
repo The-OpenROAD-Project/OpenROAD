@@ -37,10 +37,10 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "opendb/db.h"
-#include "opendb/dbTypes.h"
-#include "opendb/dbWireGraph.h"
-#include "opendb/wOrder.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireGraph.h"
+#include "odb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 

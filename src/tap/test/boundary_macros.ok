@@ -13,11 +13,11 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 5 components and 160 component-terminals.
 [INFO ODB-0134] Finished DEF file: boundary_macros.def
-[INFO TAP-0001] Macro blocks found: 5
+[INFO TAP-0001] Found 5 macro blocks.
 [INFO TAP-0002] Original rows: 57
-[INFO TAP-0003] Created rows: 29
-[INFO TAP-0004] Endcaps inserted: 172
-[INFO TAP-0006] Top/bottom cells inserted: 531
-[INFO TAP-0007] Cells inserted near blockages: 481
-[INFO TAP-0005] Tapcells inserted: 41
+[INFO TAP-0003] Created 29 rows for a total of 86 rows.
+[INFO TAP-0004] Inserted 172 endcaps.
+[INFO TAP-0006] Inserted 531 top/bottom cells.
+[INFO TAP-0007] Inserted 481 cells near blockages.
+[INFO TAP-0005] Inserted 41 tapcells.
 No differences found.

@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "ir_solver.h"
 #include <string>
 #include <vector>
