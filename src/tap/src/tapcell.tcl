@@ -191,7 +191,6 @@ proc tapcell { args } {
     }
   }
 
-
   if { [info exists keys(-tapcell_master)] } {
   tap::clear
   tap::set_tap_prefix $tap_prefix
