@@ -394,11 +394,8 @@ variable default_global_connections {
     {inst_name .* pin_name ^VSSE$}
   }
 }
-variable voltage_domains {
-  CORE {
-    primary_power VDD primary_ground VSS
-  }
-}
+variable voltage_domains {}
+
 
 proc check_design_state {} {
   if {[ord::get_db_block] == "NULL"} {
@@ -3489,6 +3486,28 @@ proc generate_stripes {tag net_name} {
   # debug "start: grid_name: [dict get $grid_data name]"
   if {![dict exists $grid_data straps]} {return}
   foreach lay [dict keys [dict get $grid_data straps]] {
+    set width [ord::microns_to_dbu [dict get $grid_data straps $lay width]]
+    if {[dict exists $grid_data straps $lay spacing]} {
+      set spacing [ord::microns_to_dbu [dict get $grid_data straps $lay spacing]]
+    } else {
+      set spacing [expr [ord::microns_to_dbu [dict get $grid_data straps $lay pitch]] / 2]
+    }
+    if {[dict exists $grid_data straps $lay offset]} {
+      set offset [ord::microns_to_dbu [dict get $grid_data straps $lay offset]]
+    } else { 
+      set offset 0
+    }
+    if {[get_dir $lay] == "hor"} {
+      set design_height [expr [lindex [dict get $grid_data area] 3] - [lindex [dict get $grid_data area] 1]]
+      if {$spacing + $offset + 2* $width > $design_height} { 
+        utl::error "PDN" 176 "Insufficient height to add power and ground straps on layer $lay."          
+      }
+    } else { 
+      set design_width [expr [lindex [dict get $grid_data area] 2] - [lindex [dict get $grid_data area] 0]]
+      if {$spacing + $offset + 2* $width > $design_width} {
+        utl::error "PDN" 177 "Insufficient width to add power and ground straps on layer $lay."
+      }
+    }
     # debug "    Layer $lay ..."
     #Upper layer stripes
     if {[dict exists $grid_data straps $lay width]} {
@@ -3546,7 +3565,7 @@ proc cut_blocked_areas {tag} {
 
   foreach layer_name [dict keys [dict get $grid_data straps]] {
     set width [get_grid_wire_width $layer_name]
-
+    #debug "[array names stripe_locs ]"
     set blockages [get_blockages]
     if {[dict exists $blockages $layer_name]} {
       set stripe_locs($layer_name,$tag) [::odb::subtractSet $stripe_locs($layer_name,$tag) [dict get $blockages $layer_name]]
@@ -5967,15 +5986,27 @@ proc get_voltage_domain {llx lly urx ury} {
   return $name
 }
 
+proc init_default_voltage_domain {domain} {
+  variable power_nets
+  variable ground_nets
+  variable voltage_domains
+  dict set voltage_domains $domain primary_ground [lindex $ground_nets 0]
+  dict set voltage_domains $domain primary_power [lindex $power_nets 0]
+}
+
 proc get_voltage_domain_power {domain} {
   variable voltage_domains
-
+  if {![dict exist $voltage_domains $domain ]} {
+    init_default_voltage_domain $domain
+  }
   return [dict get $voltage_domains $domain primary_power]
 }
 
 proc get_voltage_domain_ground {domain} {
   variable voltage_domains
-
+  if {![dict exist $voltage_domains $domain ]} {
+    init_default_voltage_domain $domain
+  }
   return [dict get $voltage_domains $domain primary_ground]
 }
 
