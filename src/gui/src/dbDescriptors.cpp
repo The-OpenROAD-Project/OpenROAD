@@ -725,7 +725,7 @@ bool DbBTermDescriptor::lessThan(std::any l, std::any r) const
 
 std::string DbBlockageDescriptor::getName(std::any object) const
 {
-  return "";
+  return "Blockage";
 }
 
 std::string DbBlockageDescriptor::getTypeName(std::any object) const
@@ -820,7 +820,8 @@ bool DbBlockageDescriptor::lessThan(std::any l, std::any r) const
 
 std::string DbObstructionDescriptor::getName(std::any object) const
 {
-  return "";
+  auto obs = std::any_cast<odb::dbObstruction*>(object);
+  return "Obstruction: " + obs->getBBox()->getTechLayer()->getName();
 }
 
 std::string DbObstructionDescriptor::getTypeName(std::any object) const
@@ -830,8 +831,8 @@ std::string DbObstructionDescriptor::getTypeName(std::any object) const
 
 bool DbObstructionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  auto* blockage = std::any_cast<odb::dbObstruction*>(object);
-  odb::dbBox* box = blockage->getBBox();
+  auto obs = std::any_cast<odb::dbObstruction*>(object);
+  odb::dbBox* box = obs->getBBox();
   box->getBox(bbox);
   return true;
 }

@@ -33,9 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
-#ifndef MAKE_TAPCELL_H
-#define MAKE_TAPCELL_H
+#pragma once
 
 namespace tap {
 class Tapcell;
@@ -45,14 +43,10 @@ namespace ord {
 
 class OpenRoad;
 
-tap::Tapcell *
-makeTapcell();
+tap::Tapcell* makeTapcell();
 
-void
-deleteTapcell(tap::Tapcell *tapcell);
+void deleteTapcell(tap::Tapcell* tapcell);
 
-void
-initTapcell(OpenRoad *openroad);
+void initTapcell(OpenRoad* openroad);
 
-} // namespace
-#endif
+}  // namespace ord

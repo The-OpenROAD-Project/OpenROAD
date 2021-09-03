@@ -652,7 +652,7 @@ void Restructure::setMode(const char* mode_name)
   else if (!strcmp(mode_name, "area"))
     opt_mode_ = Mode::AREA_1;
   else {
-    logger_->report("Mode {} note recognized.", mode_name);
+    logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
   }
 }
 

@@ -292,11 +292,11 @@ void io::Parser::genGuides_gCell2TermMap(
         frBox box;
         shape->getBBox(box);
         frPoint idx;
-        frPoint pt(box.left() - 1, box.bottom() - 1);
+        frPoint pt(box.left() + 1, box.bottom() + 1);
         design->getTopBlock()->getGCellIdx(pt, idx);
         frCoord x1 = idx.x();
         frCoord y1 = idx.y();
-        pt.set(box.upperRight());
+        pt.set(box.upperRight().x() - 1, box.upperRight().y() - 1);
         design->getTopBlock()->getGCellIdx(pt, idx);
         frCoord x2 = idx.x();
         frCoord y2 = idx.y();
