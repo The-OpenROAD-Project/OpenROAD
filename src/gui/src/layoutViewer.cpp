@@ -102,14 +102,10 @@ class GuiPainter : public Painter
  public:
   GuiPainter(QPainter* painter,
              Options* options,
-             const QTransform& base_transform,
-             const QPoint& centering_shift,
              qreal pixels_per_dbu,
              int dbu_per_micron)
       : Painter(options, pixels_per_dbu),
         painter_(painter),
-        base_transform_(base_transform),
-        centering_shift_(centering_shift),
         dbu_per_micron_(dbu_per_micron)
   {
   }
@@ -210,16 +206,10 @@ class GuiPainter : public Painter
   void drawString(int x, int y, ANCHOR anchor, const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
-    const QFont font = painter_->font();
-    QFont use_font = font;
-    if (getPixelsPerDBU() < 1) {
-      // copy font so we can adjust the size to account for the scaling
-      use_font.setPointSize(font.pointSize() / getPixelsPerDBU());
-    }
-    painter_->setFont(use_font);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
-    int sx = x;
-    int sy = y;
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
+    int sx = 0;
+    int sy = 0;
     if (anchor == BOTTOM_LEFT) {
       // default for Qt
     } else if (anchor == BOTTOM_RIGHT) {
@@ -244,13 +234,16 @@ class GuiPainter : public Painter
       sx -= text_bbox.right();
       sy += text_bbox.height() / 2;
     }
+    // current units of sx, sy are pixels, so convert to DBU
+    sx *= scale_adjust;
+    sy *= scale_adjust;
+    // add desired text location in DBU
+    sx += x;
+    sy += y;
     const QTransform transform = painter_->transform();
     painter_->translate(sx, sy);
-    painter_->scale(1, -1);
-    painter_->setPen(QPen(Qt::white, 0));
-    painter_->setBrush(QBrush());
-    painter_->drawText(0, 0, text);
-    painter_->setFont(font);
+    painter_->scale(scale_adjust, -scale_adjust); // undo original scaling
+    painter_->drawText(0, 0, text); // origin of painter is desired location, so paint at 0, 0
     painter_->setTransform(transform);
   }
 
@@ -346,6 +339,7 @@ class GuiPainter : public Painter
       drawLine(tick, -endcap_size, tick, 0);
     }
 
+    setPen(white);
     painter_->setFont(ruler_font);
     painter_->translate(len / 2, 0);
     if (flip_direction) {
@@ -366,8 +360,6 @@ class GuiPainter : public Painter
 
  private:
   QPainter* painter_;
-  const QTransform base_transform_;
-  const QPoint centering_shift_;
   int dbu_per_micron_;
 };
 
@@ -1665,8 +1657,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
 void LayoutViewer::drawBlock(QPainter* painter,
                              const Rect& bounds,
                              dbBlock* block,
-                             int depth,
-                             const QTransform& base_tx)
+                             int depth)
 {
   int min_resolution = fineViewableResolution();  // 1 pixel in DBU
   int nominal_resolution = nominalViewableResolution();
@@ -1676,8 +1667,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter,
                          options_,
-                         base_tx,
-                         centering_shift_,
                          pixels_per_dbu_,
                          block->getDbUnitsPerMicron());
 
@@ -1954,13 +1943,12 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   }
 
   // Coordinate system setup (see file level comments)
-  const QTransform base_transform = painter.transform();
   painter.save();
   painter.translate(centering_shift_);
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   Rect dbu_bounds = screenToDBU(event->rect());
-  drawBlock(&painter, dbu_bounds, block, 0, base_transform);
+  drawBlock(&painter, dbu_bounds, block, 0);
   if (options_->arePinMarkersVisible())
     drawPinMarkers(&painter, dbu_bounds, block);
 

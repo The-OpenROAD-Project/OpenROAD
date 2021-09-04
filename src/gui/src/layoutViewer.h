@@ -213,8 +213,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
-                 int depth,
-                 const QTransform& base_tx);
+                 int depth);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
