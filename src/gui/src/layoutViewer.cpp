@@ -314,29 +314,31 @@ class GuiPainter : public Painter
     qreal major_tick_mark_interval = std::pow(10.0, std::floor(std::log10(len_microns)));
     const int major_ticks = std::floor(len_microns / major_tick_mark_interval);
     qreal minor_tick_mark_interval = major_tick_mark_interval / 10;
-    const int min_minor_tick_spacing = 10; // pixels
-    const bool do_minor_ticks = minor_tick_mark_interval * dbu_per_micron_ * getPixelsPerDBU() > min_minor_tick_spacing;
+    const int min_tick_spacing = 10; // pixels
+    const bool do_minor_ticks = minor_tick_mark_interval * dbu_per_micron_ * getPixelsPerDBU() > min_tick_spacing;
 
     // draw tick marks
     const int minor_tick_size = endcap_size / 2;
     const int major_tick_interval = major_tick_mark_interval * dbu_per_micron_;
     const int minor_tick_interval = minor_tick_mark_interval * dbu_per_micron_;
     //major ticks
-    for (int tick = 0; tick < len; tick += major_tick_interval) {
-      if (do_minor_ticks) {
-        for (int m = 1; m < 10; m++) {
-          const int m_tick = tick + m * minor_tick_interval;
-          if (m_tick >= len) {
-            break;
+    if (major_tick_interval * getPixelsPerDBU() >= min_tick_spacing) { // only draw tick marks if they are spaces apart
+      for (int tick = 0; tick < len; tick += major_tick_interval) {
+        if (do_minor_ticks) {
+          for (int m = 1; m < 10; m++) {
+            const int m_tick = tick + m * minor_tick_interval;
+            if (m_tick >= len) {
+              break;
+            }
+            drawLine(m_tick, -minor_tick_size, m_tick, 0);
           }
-          drawLine(m_tick, -minor_tick_size, m_tick, 0);
         }
+        if (tick == 0) {
+          // don't draw tick mark over end cap
+          continue;
+        }
+        drawLine(tick, -endcap_size, tick, 0);
       }
-      if (tick == 0) {
-        // don't draw tick mark over end cap
-        continue;
-      }
-      drawLine(tick, -endcap_size, tick, 0);
     }
 
     setPen(white);
@@ -751,11 +753,33 @@ LayoutViewer::Edge LayoutViewer::findEdge(const odb::Point& pt, bool horizontal,
   }
 
   auto shape_edges = searchNearestEdge(boxes, pt, ok);
+  Edge selected_edge;
   if (horizontal) {
-    return shape_edges.horizontal;
+    selected_edge = shape_edges.horizontal;
   } else {
-    return shape_edges.vertical;
+    selected_edge = shape_edges.vertical;
   }
+
+  // check if edge should point instead
+  const int point_snap_distance = std::max(10.0 / pixels_per_dbu_, // four pixels
+                                           10.0); //DBU
+
+  std::array<odb::Point, 3> snap_points = {
+      snap_edge_.first, // first corner
+      odb::Point(
+          (snap_edge_.first.x() + snap_edge_.second.x()) / 2,
+          (snap_edge_.first.y() + snap_edge_.second.y()) / 2),// midpoint
+      snap_edge_.second // last corner
+  };
+  for (const auto& s_pt : snap_points) {
+    if (std::abs(s_pt.x() - pt.x()) < point_snap_distance && std::abs(s_pt.y() - pt.y()) < point_snap_distance) {
+      // close to point, so snap to that
+      snap_edge_.first = s_pt;
+      snap_edge_.second = s_pt;
+    }
+  }
+
+  return selected_edge;
 }
 
 Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
@@ -879,32 +903,56 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
   return Selected();
 }
 
-odb::Point LayoutViewer::findNextRulerPoint(const odb::Point& mouse, bool snap)
+odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
 {
   if (!snap) {
-    return mouse;
+    return end_pt;
   } else{
-    odb::Point snapped = mouse;
+    odb::Point snapped = end_pt;
     if (snap_edge_showing_) {
-      if (snap_edge_.first.x() == snap_edge_.second.x()) {
-        // vertical
+      if (snap_edge_.first == snap_edge_.second) { // point snap
+        return snap_edge_.first;
+      }
+
+      bool is_vertical_edge = snap_edge_.first.x() == snap_edge_.second.x();
+      if (is_vertical_edge) {
         snapped.setX(snap_edge_.first.x());
       } else {
         snapped.setY(snap_edge_.first.y());
       }
     }
 
-    if (ruler_start_ != nullptr) {
-      // snap to horizontal or vertical ruler
-      if (std::abs(ruler_start_->x() - snapped.x()) < std::abs(ruler_start_->y() - snapped.y())) {
-        // vertical
-        snapped.setX(ruler_start_->x());
-      } else {
-        snapped.setY(ruler_start_->y());
-      }
-    }
-
     return snapped;
+  }
+}
+
+odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, const odb::Point& start_pt, bool snap)
+{
+  odb::Point snapped = findNextSnapPoint(end_pt, snap);
+  if (snap) {
+    // snap to horizontal or vertical ruler
+    if (std::abs(start_pt.x() - snapped.x()) < std::abs(start_pt.y() - snapped.y())) {
+      // vertical
+      snapped.setX(start_pt.x());
+    } else {
+      snapped.setY(start_pt.y());
+    }
+  }
+  return snapped;
+}
+
+odb::Point LayoutViewer::findNextRulerPoint(const odb::Point& mouse)
+{
+  const bool do_snap = !(qGuiApp->keyboardModifiers() & Qt::ControlModifier);
+  if (ruler_start_ == nullptr) {
+    return findNextSnapPoint(mouse, do_snap);
+  } else {
+    const bool do_any_snap = qGuiApp->keyboardModifiers() & Qt::ShiftModifier;
+    if (do_any_snap) {
+      return findNextSnapPoint(mouse, do_snap);
+    } else {
+      return findNextSnapPoint(mouse, *ruler_start_, do_snap);
+    }
   }
 }
 
@@ -920,9 +968,7 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     Point pt_dbu = screenToDBU(event->pos());
     if (building_ruler_) {
       // build ruler...
-      odb::Point next_ruler_pt = findNextRulerPoint(
-          pt_dbu,
-          !(qGuiApp->keyboardModifiers() & Qt::ControlModifier));
+      odb::Point next_ruler_pt = findNextRulerPoint(pt_dbu);
       if (ruler_start_ == nullptr) {
         ruler_start_ = std::make_unique<odb::Point>(next_ruler_pt);
       } else {
@@ -966,7 +1012,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
       bool do_ver = true;
       bool do_hor = true;
 
-      if (ruler_start_ != nullptr) {
+      if (ruler_start_ != nullptr && !(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
         const odb::Point mouse_pos = screenToDBU(mouse_move_pos_);
 
         if (std::abs(ruler_start_->x() - mouse_pos.x()) < std::abs(ruler_start_->y() - mouse_pos.y())) {
@@ -1788,9 +1834,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   // draw partial ruler if present
   if (building_ruler_ && ruler_start_ != nullptr) {
-    odb::Point snapped_mouse_pos = findNextRulerPoint(
-        screenToDBU(mouse_move_pos_),
-        !(qGuiApp->keyboardModifiers() & Qt::ControlModifier));
+    odb::Point snapped_mouse_pos = findNextRulerPoint(screenToDBU(mouse_move_pos_));
     gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
   }
 }
@@ -1956,10 +2000,16 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   if (snap_edge_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
-    painter.drawLine(
-        QLine(
-            QPoint(snap_edge_.first.x(), snap_edge_.first.y()),
-            QPoint(snap_edge_.second.x(), snap_edge_.second.y())));
+    if (snap_edge_.first != snap_edge_.second) {
+      painter.drawLine(
+          QLine(
+              QPoint(snap_edge_.first.x(), snap_edge_.first.y()),
+              QPoint(snap_edge_.second.x(), snap_edge_.second.y())));
+    } else {
+      painter.drawEllipse(QPointF(snap_edge_.first.x(), snap_edge_.first.y()),
+                          5.0 / pixels_per_dbu_,
+                          5.0 / pixels_per_dbu_);
+    }
   }
 
   painter.restore();
