@@ -1121,16 +1121,10 @@ void IOPlacer::run(bool random_mode)
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
-  int init_hpwl = 0;
-  int total_hpwl = 0;
-  int delta_hpwl = 0;
-
   initIOLists();
   defineSlots();
 
   initConstraints();
-
-  init_hpwl = returnIONetsHPWL(netlist_);
 
   if (random_mode) {
     logger_->info(PPL, 7, "Random pin placement.");
@@ -1166,8 +1160,7 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (!random_mode) {
-    total_hpwl += returnIONetsHPWL(netlist_io_pins_);
-    delta_hpwl = init_hpwl - total_hpwl;
+    int total_hpwl = returnIONetsHPWL(netlist_io_pins_);
     logger_->info(PPL, 12, "I/O nets HPWL: {:.2f} um.",
                   static_cast<float>(dbuToMicrons(total_hpwl)));
   }

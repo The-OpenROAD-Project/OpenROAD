@@ -112,6 +112,7 @@ void HypergraphDecomposition::createHypergraph(
       hypergraph.addEdgeWeightNormalized(1);
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         for (odb::dbBPin* pin : bterm->getBPins()) {
+          (void) pin; // unused?
           int mapping = hypergraph.getMapping(bterm->getName());
           if (clusters[mapping] == currentCluster) {
             if (driveIdx == -1 && bterm->getIoType() == odb::dbIoType::INPUT)
