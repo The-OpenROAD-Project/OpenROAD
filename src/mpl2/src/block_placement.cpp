@@ -329,6 +329,9 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
   c_ = c;
   perturb_per_step_ = perturb_per_step;
 
+  cout << "perturb_per_step_:  " << perturb_per_step_ << endl;
+
+
   std::mt19937 randGen(seed);
   generator_ = randGen;
 
@@ -348,11 +351,25 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
     pre_neg_seq_.push_back(i);
   }
 
+  cout << "finish creating SP" << endl;
+
+
   blocks_ = blocks;
+  
+  cout << "blocks_.size():  " << blocks_.size() << endl;
+  for(int i = 0; i < blocks_.size(); i++) {
+    cout << blocks_[i].GetName() << endl;  
+  }
+
+  
   for (unsigned int i = 0; i < blocks_.size(); i++) {
     blocks_[i].SetRandom(generator_, distribution_);
     block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
+    cout << "i:  " << i << "  " << blocks_[i].GetName() << endl;
   }
+
+  cout << "finish blocks" << endl;
+  
 
   for(size_t i = 0; i < locations_.size(); i++) {
     for(size_t j = 0; j < blocks_.size(); j++) {
@@ -361,6 +378,8 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
       }
     }
   }
+
+  cout << "finish locations" << endl;
 
   pre_blocks_ = blocks_;
 }
@@ -1151,8 +1170,9 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
       notch_penalty_ = sqrt(area / (outline_width_ * outline_height_));
       return;
   }
+ 
+  AlignMacro();
 
-    
   vector<float> x_vec;
   vector<float> y_vec;
   for(int i = 0; i < blocks_.size(); i++) {
@@ -1451,6 +1471,7 @@ float SimulatedAnnealingCore::NormCost(float area,
 
 void SimulatedAnnealingCore::Initialize()
 {
+  cout << "Enter Initialize" << endl;
   vector<float> area_list;
   vector<float> wirelength_list;
   vector<float> outline_penalty_list;
@@ -2126,6 +2147,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   for (int i = 0; i < num_seed; i++)
     seed_list[i] = (unsigned) rand_generator();
 
+  cout << "creating SA begins" << endl;
   SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width,
                                                           outline_height,
                                                           blocks,
@@ -2156,6 +2178,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
                                                           shrink_freq,
                                                           seed_list[seed_id++]);
 
+  cout << "creating SA finishes" << endl;
   sa->Initialize();
   logger->info(MPL, 2002, "Block placement finish initialization.");
 

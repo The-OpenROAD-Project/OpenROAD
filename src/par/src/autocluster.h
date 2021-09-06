@@ -94,6 +94,8 @@ class Cluster
   void removeMacro() { macro_vec_.clear(); }
 
   float calculateArea(ord::dbVerilogNetwork* network) const;
+  void calculateNumSeq(ord::dbVerilogNetwork* network);
+  int getNumSeq() { return num_seq_; }
 
   void addInst(sta::Instance* inst) { inst_vec_.push_back(inst); }
   void addMacro(sta::Instance* inst) { macro_vec_.push_back(inst); }
@@ -155,6 +157,7 @@ class Cluster
 
  private:
   int id_ = 0;
+  int num_seq_ = 0;
   bool type_ = true;  // false for glue logic
   sta::Instance* top_inst_ = nullptr;
   std::string name_ = "";
@@ -228,7 +231,15 @@ class AutoClusterMgr
   int floorplan_ux_ = 0;
   int floorplan_uy_ = 0;
 
+  // IOs
+  std::vector<float> B_pin_;
+  std::vector<float> T_pin_;
+  std::vector<float> L_pin_;
+  std::vector<float> R_pin_;
+
+
   // Map all the BTerms to an IORegion
+  std::unordered_map<std::string, sta::Pin*> bterm_pin_;
   std::unordered_map<std::string, IORegion> bterm_map_;
   std::unordered_map<IORegion, int> bundled_io_map_;
   std::unordered_map<sta::Instance*, Metric> logical_cluster_map_;
@@ -245,20 +256,30 @@ class AutoClusterMgr
   // timing-driven related function
   unsigned int num_hops_;
   unsigned int timing_weight_;
+  
   std::vector<sta::Instance*> macros_;
-  std::vector<sta::Instance*> inst_seeds_;
-  std::unordered_map<sta::Vertex*, std::unordered_map<int, int> > vertex_fanins_;
+  std::vector<sta::Instance*> seeds_;
+  //std::vector<sta::Pin*> seeds_;
+  //std::vector<sta::Pin*> sinks_;
+  //void addSeedPin(sta::Pin* pin);
+  //void addSinkPin(sta::Pin* pin);
+  std::unordered_map<sta::Vertex*, std::unordered_map<sta::Pin*, int> > vertex_fanins_;
+  std::unordered_map<int, std::unordered_map<sta::Pin*, int> > virtual_vertex_map_;  
   std::unordered_map<int, std::unordered_map<int, int> > virtual_timing_map_;
+  std::unordered_map<sta::Pin*, sta::Instance*> pin_inst_map_;
   void findAdjacencies();
+  
+  
   void seedFaninBfs(sta::BfsFwdIterator& bfs);
   void findFanins(sta::BfsFwdIterator& bfs);
   sta::Pin* findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port);
   void copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs);
   void addTimingWeight(float weight);
-  void addFanin(sta::Vertex* vertex, int fanin_id, int num_bit);
+  void addFanin(sta::Vertex*, sta::Pin*, int num_bit);
   void addWeight(int src_id, int target_id, int weight);
-  void calculateSeedConnection(sta::Instance* inst);
-  void calculateSeedBufferNetConnection();
+  //void calculateSeedConnection(sta::Instance* inst);
+  //void calculateSeedBufferNetConnection();
+  
   void calculateSeed();
 
 
