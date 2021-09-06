@@ -83,14 +83,14 @@ _installCommonDev() {
     fi
 
     # spdlog
-    if [[ -z $(grep "PACKAGE_VERSION \"${spdlogVersion}\"" /usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake) ]]; then
+    if [[ -z $(grep "PACKAGE_VERSION \"${spdlogVersion}\"" ${spdlogFolder}) ]]; then
         cd "${baseDir}"
         git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
         cmake -B build .
         cmake --build build -j $(nproc) --target install
     else
-        echo "SPDLOG already installed."
+        echo "spdlog already installed."
     fi
 
     cd "$lastDir"
@@ -223,18 +223,20 @@ case "${platform}" in
         if [[ -f /etc/os-release ]]; then
             os=$(awk -F= '/^NAME/{print $2}' /etc/os-release | sed 's/"//g')
         else
-            os="UNIDENTIFIED (could not find /etc/os-release)"
+            os="Unidentified OS, could not find /etc/os-release."
         fi
         ;;
     *)
         echo "${platform} is not supported" >&2
-        echo "we only support Linux at the moment" >&2
+        echo "We only officially support Linux at the moment." >&2
         _help
         ;;
 esac
 
 case "${os}" in
     "CentOS Linux" )
+        spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
         _installCentosRuntime
         if [[ "${option}" == "dev" ]]; then
             _installCentosDev
@@ -248,6 +250,8 @@ To enable GCC-8 or Clang-7 you need to run:
 EOF
         ;;
     "Ubuntu" )
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
         _installUbuntuRuntime
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev
