@@ -3053,7 +3053,6 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       }
       obj->getOrigin(origin);
       net = obj->getNet();
-      break;
     }
     if (!net) {
       continue;
