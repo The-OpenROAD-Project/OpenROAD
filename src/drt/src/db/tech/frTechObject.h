@@ -268,14 +268,6 @@ class frTechObject
 
   friend class io::Parser;
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasVia2ViaMinStepViolAt(int layerIdx) const
-  {
-    return !via2viaMinStepPatches_[layerIdx].empty();
-  }
-  const std::vector<std::vector<frBox>>& getVia2ViaMinStepPatches() const
-  {
-    return via2viaMinStepPatches_;
-  }
 
  protected:
   frUInt4 dbUnit;
@@ -369,7 +361,6 @@ class frTechObject
    there are viols,
    and each frBox in the sub vector is a patch to correct the viol
    */
-  std::vector<std::vector<frBox>> via2viaMinStepPatches_;
   bool hasVia2viaMinStep_ = false;
 
   // forbidden length table related utilities

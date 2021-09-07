@@ -3020,8 +3020,8 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       continue;
     }
     auto lNum = marker->getLayerNum();
-    int z = lNum / 2 - 1;
-    if (!tech_->hasVia2ViaMinStepViolAt(z)) {
+    auto layer = tech_->getLayer(lNum);
+    if (!layer->hasVia2ViaMinStepViol()) {
       continue;
     }
     // bool isPatchable = false;
@@ -3034,12 +3034,21 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
     workerRegionQuery.query(markerBBox, lNum, results);
+    bool upViaFound = false;
+    bool downViaFound = false;
     for (auto& connFig : results) {
       if (connFig->typeId() != drcVia) {
         continue;
       }
       auto obj = static_cast<drVia*>(connFig);
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
+        continue;
+      }
+      if (obj->getViaDef()->getCutLayerNum() == lNum + 1) {
+        upViaFound = true;
+      } else if (obj->getViaDef()->getCutLayerNum() == lNum - 1) {
+        downViaFound = true;
+      } else {
         continue;
       }
       obj->getOrigin(origin);
@@ -3049,21 +3058,13 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     if (!net) {
       continue;
     }
-    frBox const* chosenPatch = nullptr;
-    markerBBox.shift(-origin.x(), -origin.y());
-    for (auto& patch : tech_->getVia2ViaMinStepPatches()[z]) {
-      if (patch.overlaps(markerBBox)) {
-        chosenPatch = &patch;
-        break;
-      }
-    }
-    if (!chosenPatch)
+    if (!upViaFound || !downViaFound)
       continue;
+    markerBBox.shift(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
-    frBox box(*chosenPatch);
-    patch->setOffsetBox(box);
+    patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
 
     if (!net) {

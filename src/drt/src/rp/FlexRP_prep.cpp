@@ -30,6 +30,9 @@
 #include <sstream>
 
 #include "FlexRP.h"
+#include "db/gcObj/gcPin.h"
+#include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -56,7 +59,6 @@ void FlexRP::prep_minStepViasCheck()
 {
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-  tech_->via2viaMinStepPatches_.resize((topLayerNum - bottomLayerNum) / 2 + 1);
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     frLayer* layer = tech_->getLayer(lNum);
     if (layer->getType() != frLayerTypeEnum::ROUTING) {
@@ -69,76 +71,71 @@ void FlexRP::prep_minStepViasCheck()
     frViaDef* upVia
         = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     if (!downVia || !upVia)
-        continue;
+      continue;
     auto minStepCons = layer->getMinStepConstraint();
     if (!minStepCons)
       continue;
-    vector<frBox>* patches = &tech_->via2viaMinStepPatches_[lNum / 2 - 1];
-    frBox const* inner = nullptr;
-    frBox const* outer = nullptr;
-    if (downVia->getLayer2ShapeBox().right()
-        < upVia->getLayer1ShapeBox().right()) {
-      inner = &downVia->getLayer2ShapeBox();
-      outer = &upVia->getLayer1ShapeBox();
-    } else if (upVia->getLayer1ShapeBox().right()
-               < downVia->getLayer2ShapeBox().right()) {
-      inner = &upVia->getLayer1ShapeBox();
-      outer = &downVia->getLayer2ShapeBox();
+
+    auto box1 = upVia->getLayer1ShapeBox();
+    auto box2 = downVia->getLayer2ShapeBox();
+    gtl::rectangle_data<frCoord> rect1(
+        box1.left(), box1.bottom(), box1.right(), box1.top());
+    gtl::rectangle_data<frCoord> rect2(
+        box2.left(), box2.bottom(), box2.right(), box2.top());
+    gtl::polygon_90_set_data<frCoord> set;
+    using namespace boost::polygon::operators;
+    set += rect1;
+    set += rect2;
+    std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+    if (polys.size() != 1)
+      continue;
+
+    auto poly = *polys.begin();
+    gcNet* testNet = new gcNet(0);
+    gcPin* testPin = new gcPin(poly, lNum, testNet);
+    testPin->setNet(testNet);
+
+    auto itr = poly.begin();
+    auto prev = *itr;
+    itr++;
+    std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+    for (; itr != poly.end(); itr++) {
+      auto cur = *itr;
+      auto edge = make_unique<gcSegment>();
+      edge->setLayerNum(lNum);
+      edge->addToPin(testPin);
+      edge->addToNet(testNet);
+      edge->setSegment(prev, cur);
+      if (!tmpEdges.empty()) {
+        edge->setPrevEdge(tmpEdges.back().get());
+        tmpEdges.back()->setNextEdge(edge.get());
+      }
+      tmpEdges.push_back(std::move(edge));
+      prev = cur;
     }
-    if (inner) {
-      if (inner->top() > outer->top()) {  // right upper joint
-        if (hasMinStepViolation(minStepCons,
-                                outer->right() - inner->right(),
-                                inner->top() - outer->top())) {
-          tech_->hasVia2viaMinStep_ = true;
-          patches->push_back(frBox(
-              inner->right(), outer->top(), outer->right(), inner->top()));
-        }
-      }
-      if (inner->bottom() < outer->bottom()) {  // right down joint
-        if (hasMinStepViolation(minStepCons,
-                                outer->right() - inner->right(),
-                                outer->bottom() - inner->bottom())) {
-          tech_->hasVia2viaMinStep_ = true;
-          patches->push_back(frBox(inner->right(),
-                                   inner->bottom(),
-                                   outer->right(),
-                                   outer->bottom()));
-        }
-      }
-    }
-    inner = outer = nullptr;
-    if (downVia->getLayer2ShapeBox().left()
-        > upVia->getLayer1ShapeBox().left()) {
-      inner = &downVia->getLayer2ShapeBox();
-      outer = &upVia->getLayer1ShapeBox();
-    } else if (upVia->getLayer1ShapeBox().left()
-               > downVia->getLayer2ShapeBox().left()) {
-      inner = &upVia->getLayer1ShapeBox();
-      outer = &downVia->getLayer2ShapeBox();
-    }
-    if (inner) {
-      if (inner->top() > outer->top()) {  // left upper joint
-        if (hasMinStepViolation(minStepCons,
-                                inner->left() - outer->left(),
-                                inner->top() - outer->top())) {
-          tech_->hasVia2viaMinStep_ = true;
-          patches->push_back(
-              frBox(outer->left(), outer->top(), inner->left(), inner->top()));
-        }
-      }
-      if (inner->bottom() < outer->bottom()) {  // left down joint
-        if (hasMinStepViolation(minStepCons,
-                                inner->left() - outer->left(),
-                                outer->bottom() - inner->bottom())) {
-          tech_->hasVia2viaMinStep_ = true;
-          patches->push_back(frBox(
-              outer->left(), inner->bottom(), inner->left(), outer->bottom()));
-        }
-      }
+    // last edge
+    auto edge = make_unique<gcSegment>();
+    edge->setLayerNum(lNum);
+    edge->addToPin(testPin);
+    edge->addToNet(testNet);
+    edge->setSegment(prev, *poly.begin());
+    edge->setPrevEdge(tmpEdges.back().get());
+    tmpEdges.back()->setNextEdge(edge.get());
+    // set first edge
+    tmpEdges.front()->setPrevEdge(edge.get());
+    edge->setNextEdge(tmpEdges.front().get());
+    tmpEdges.push_back(std::move(edge));
+    // add to polygon edges
+    testPin->addPolygonEdges(tmpEdges);
+    FlexGCWorker worker(tech_, logger_);
+    worker.checkMinStep(testPin);
+    auto& markers = worker.getMarkers();
+    if (!markers.empty()) {
+      tech_->hasVia2viaMinStep_ = true;
+      layer->setHasVia2ViaMinStepViol(true);
     }
   }
-} 
+}
 
 bool FlexRP::hasMinStepViolation(frMinStepConstraint* minStepCons,
                                  int edge1,
