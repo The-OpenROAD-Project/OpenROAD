@@ -125,6 +125,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
+  // save image of the layout
   void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect());
 
   // From QWidget
@@ -154,22 +155,56 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
 
  signals:
+  // indicates the current location of the mouse
   void location(qreal x, qreal y);
+
+  // indicates a new object has been selected
   void selected(const Selected& selected, bool showConnectivity = false);
+
+  // add additional object to selected set
   void addSelected(const Selected& selected);
+
+  // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
 
  public slots:
+  // zoom in the layout, keeping the current center_
   void zoomIn();
+
+  // zoom in and change center to the focus point
+  // do_delta_focus indicates (if true) that the center of the layout should zoom in around the focus
+  // instead of making it the new center. This is used when scrolling with the mouse to keep the
+  // mouse point steady in the layout
   void zoomIn(const odb::Point& focus, bool do_delta_focus = false);
+
+  // zoom out the layout, keeping the current center_
   void zoomOut();
+
+  // zoom out and change center to the focus point
+  // do_delta_focus indicates (if true) that the center of the layout should zoom in around the focus
+  // instead of making it the new center. This is used when scrolling with the mouse to keep the
+  // mouse point steady in the layout
   void zoomOut(const odb::Point& focus, bool do_delta_focus = false);
+
+  // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);
+
+  // indicates a design has been loaded
   void designLoaded(odb::dbBlock* block);
-  void fit();  // fit the whole design in the window
+
+  // fit the whole design in the window
+  void fit();
+
+  // center layout at the focus point
   void centerAt(const odb::Point& focus);
-  void centerChanged(int dx, int dy);
+
+  // indicate that the center has changed, due to the scrollarea changing
+  void updateCenter(int dx, int dy);
+
+  // set the layout resolution
   void setResolution(qreal dbu_per_pixel);
+
+  // update the fit resolution (the maximum pixels_per_dbu without scroll bars)
   void viewportUpdated();
 
   void selectHighlightConnectedInst(bool selectFlag);
@@ -284,7 +319,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   LayoutScroll* scroller_;
+
+  // holds the current resolution for drawing the layout (units are pixels / dbu)
   qreal pixels_per_dbu_;
+
+  // holds the resolution for drawing the layout where the whole layout fits in the window
+  // (units are pixels / dbu)
   qreal fit_pixels_per_dbu_;
   int min_depth_;
   int max_depth_;
@@ -309,9 +349,16 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 
+  // shift required when drawing the layout to center the layout in the window (units: pixels)
   QPoint centering_shift_;
+
+  // The center point of the layout visible in the window (in dbu).
+  // this is needed to keep track of the center without a
+  // dependence on the resolution
   odb::Point center_;
 
+  // Cache of the maximum cut size per layer (units: dbu).
+  // Used to determine when cuts are too small to be seen and should not be drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
@@ -328,7 +375,11 @@ class LayoutScroll : public QScrollArea
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
  signals:
+  // indicates that the viewport (visible area of the layout) has changed
   void viewportChanged();
+
+  // indicates how far the viewport of the layout has shifted due to a resize event
+  // or by the user manipulating the scrollbars
   void centerChanged(int dx, int dy);
 
  protected:

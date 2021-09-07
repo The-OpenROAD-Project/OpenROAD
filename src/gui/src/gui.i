@@ -144,22 +144,22 @@ selection_add_insts(const char* name)
   gui->addSelectedInsts(name);
 }
 
-void highlight_inst(const char* name, int highlightGroup)
+void highlight_inst(const char* name, int highlight_group = 0)
 {
   if (!check_gui("highlight_inst")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addInstToHighlightSet(name, highlightGroup);
+  gui->addInstToHighlightSet(name, highlight_group);
 }
 
-void highlight_net(const char* name, int highlightGroup=0)
+void highlight_net(const char* name, int highlight_group = 0)
 {
   if (!check_gui("highlight_net")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addNetToHighlightSet(name, highlightGroup);
+  gui->addNetToHighlightSet(name, highlight_group);
 }
 
 const std::string add_ruler(
