@@ -62,8 +62,15 @@ set(OPENROAD_VERSION ${PROJECT_VERSION})
 message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# Get version string in OPENROAD_GIT_DESCRIBE
 include(GetGitRevisionDescription)
 git_describe(OPENROAD_GIT_DESCRIBE)
+string(FIND ${OPENROAD_GIT_DESCRIBE} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
+if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
+  message(WARNING "OpenROAD git describe failed, using sha1 instead")
+  get_git_head_revision(GIT_REFSPEC OPENROAD_GIT_DESCRIBE)
+endif()
 message(STATUS "OpenROAD git describe: ${OPENROAD_GIT_DESCRIBE}")
 
 # Default to bulding optimnized/release executable.
