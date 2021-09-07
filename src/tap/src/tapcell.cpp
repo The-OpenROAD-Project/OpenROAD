@@ -112,7 +112,7 @@ void Tapcell::run(odb::dbMaster* endcap_master,
                   const string& tap_nwout3_master,
                   const string& incnrcap_nwin_master,
                   const string& incnrcap_nwout_master,
-                  const string& tapcell_master,
+                  odb::dbMaster* tapcell_master,
                   int dist)
 {
   vector<odb::dbBox*> blockages = findBlockages();
@@ -153,8 +153,10 @@ void Tapcell::run(odb::dbMaster* endcap_master,
                        db_->findMaster(cnrcap_nwin_master.c_str()),
                        endcap_prefix_);
   }
-  string tapcell_master_string(tapcell_master);
-  insertTapcells(rows, tapcell_master_string, dist);
+  
+  if (tapcell_master != nullptr) {
+    insertTapcells(rows, tapcell_master, dist);
+  }
   filled_sites_.clear();
 }
 
@@ -430,16 +432,11 @@ odb::dbMaster* Tapcell::pickCornerMaster(LocationType top_bottom,
 }
 
 int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
-                            const string& tapcell_master,
+                            odb::dbMaster* tapcell_master,
                             int dist)
 {
   int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
-
-  odb::dbMaster* master = db_->findMaster(tapcell_master.c_str());
-  if (master == nullptr) {
-    logger_->error(utl::TAP, 11, "Master {} not found.", tapcell_master);
-  }
 
   int y;
   std::map<int, vector<vector<int>>> row_fills;
@@ -517,7 +514,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
     }
 
     for (odb::dbRow* row : subrows) {
-      if (!checkSymmetry(master, row->getOrient())) {
+      if (!checkSymmetry(tapcell_master, row->getOrient())) {
         continue;
       }
 
@@ -549,12 +546,12 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
         const int site_x = row->getSite()->getWidth();
         x = makeSiteLoc(x, site_x, 1, llx);
         // Check if site is filled
-        const int tap_width = master->getWidth();
+        const int tap_width = tapcell_master->getWidth();
         odb::dbOrientType ori = row->getOrient();
         int overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
         if (overlap == 0) {
           const int lly = row_bb.yMin();
-          makeInstance(block, master, ori, x, lly, tap_prefix_);
+          makeInstance(block, tapcell_master, ori, x, lly, tap_prefix_);
         }
       }
     }
