@@ -67,10 +67,6 @@ proc tapcell { args } {
               -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
     flags {-no_cell_at_top_bottom -add_boundary_cell}
 
-  #if { [info exists keys(-tapcell_master)] } {
-  #  set tapcell_master $keys(-tapcell_master)
-  #}
-
   if { [info exists keys(-endcap_cpp)] } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
   }
