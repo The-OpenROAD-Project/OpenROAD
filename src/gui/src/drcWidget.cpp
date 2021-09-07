@@ -363,6 +363,7 @@ void DRCWidget::updateModel()
   }
 
   toggleRenderer(!this->isHidden());
+  setRepaintRequired();
 }
 
 void DRCWidget::drawObjects(Painter& painter)
