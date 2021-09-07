@@ -344,6 +344,10 @@ class Painter
 class Renderer
 {
  public:
+  Renderer() : repaint_required_(true)
+  {
+  }
+
   // Automatically unregisters this renderable
   virtual ~Renderer();
 
@@ -364,6 +368,35 @@ class Renderer
   {
     return SelectionSet();
   }
+
+  // If this return true, the renderer needs the layout to
+  // be redrawn because it's output has changed. Otherwise, it will
+  // return false.
+  virtual bool isRepaintRequired()
+  {
+    if (repaint_required_) {
+      // reset the flag
+      repaint_required_ = false;
+      return true;
+    }
+
+    return false;
+  }
+
+  // Sets the flag it indicate that a repaint is needed by this renderer
+  void setRepaintRequired()
+  {
+    repaint_required_ = true;
+  }
+
+  // Clears the flag it indicate that a repaint is needed by this renderer
+  void clearRepaintRequired()
+  {
+    repaint_required_ = false;
+  }
+
+ private:
+  bool repaint_required_;
 };
 
 // This is the API for the rest of the program to interact with the

@@ -123,7 +123,7 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(designLoaded(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
-  connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
+  connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
   connect(viewer_,
           SIGNAL(location(qreal, qreal)),
           this,
