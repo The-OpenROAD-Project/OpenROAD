@@ -105,7 +105,7 @@ void Restructure::run(char* liberty_file_name,
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
 
-  if (opt_mode_ <= Mode::AREA_3) // Only in area mode
+  if (!is_area_mode_) // Only in area mode
     removeConstCells();
 
   getBlob(max_depth);
@@ -125,12 +125,12 @@ void Restructure::getBlob(unsigned max_depth)
 
   sta::PinSet ends;
 
-  getEndPoints(ends, opt_mode_ <= Mode::AREA_3, max_depth);
+  getEndPoints(ends, is_area_mode_, max_depth);
   if (ends.size()) {
-    sta::PinSet fanin_fanouts = opt_mode_ > Mode::AREA_3 ? resizer_->findFanins(&ends) : resizer_->findFaninFanouts(&ends);
+    sta::PinSet boundary_points = !is_area_mode_ ? resizer_->findFanins(&ends) : resizer_->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
-    logger_->report("Found {} pins in extracted logic.", fanin_fanouts.size());
-    for (sta::Pin* pin : fanin_fanouts) {
+    logger_->report("Found {} pins in extracted logic.", boundary_points.size());
+    for (sta::Pin* pin : boundary_points) {
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
       open_sta_->getDbNetwork()->staToDb(pin, term, port);
@@ -157,7 +157,7 @@ void Restructure::runABC()
 
   Blif blif_(logger_, open_sta_, locell_, loport_, hicell_, hiport_);
   blif_.setReplaceableInstances(path_insts_);
-  blif_.writeBlif(input_blif_file_name_.c_str(), opt_mode_ >= rmp::Mode::DELAY_1);
+  blif_.writeBlif(input_blif_file_name_.c_str(), !is_area_mode_);
   debugPrint(
       logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
   files_to_remove.emplace_back(input_blif_file_name_);
@@ -169,7 +169,7 @@ void Restructure::runABC()
   std::vector<Mode> modes;
   std::vector<pid_t> child_proc;
 
-  if (opt_mode_ <= Mode::AREA_3) {
+  if (is_area_mode_) {
     // Area Mode
     modes = {Mode::AREA_1, Mode::AREA_2, Mode::AREA_3};
   } else {
@@ -296,31 +296,32 @@ void Restructure::runABC()
       logger_->report("Optimized to {} instances in iteration {} with max path depth decrease of {}, delay of {}.",
                       num_instances,
                       curr_mode_idx, level_gain, delay);
-    }
-    if (status) {
-      if (modes[0] < Mode::DELAY_1) {
-        if (num_instances < best_inst_count) {
-          best_inst_count = num_instances;
-          best_blif = output_blif_file_name_;
-        }
-      } else {
-        if (level_based && level_gain > best_level_gain) {
-          best_level_gain = level_gain;
-          best_blif = output_blif_file_name_;
-        }
-        // Using only DELAY_4 for delay based gain
-        if ((curr_mode_idx == modes.size()-1) || (!level_based && delay < best_delay_gain)) {
-          best_delay_gain = delay;
-          best_blif = output_blif_file_name_;
-        }
 
+      if (status) {
+        if (is_area_mode_) {
+          if (num_instances < best_inst_count) {
+            best_inst_count = num_instances;
+            best_blif = output_blif_file_name_;
+          }
+        } else {
+          if (level_based && level_gain > best_level_gain) {
+            best_level_gain = level_gain;
+            best_blif = output_blif_file_name_;
+          }
+          // Using only DELAY_4 for delay based gain since other modes not showing good gains
+          if ((curr_mode_idx == static_cast <int> (Mode::DELAY_4)) || (!level_based && delay < best_delay_gain)) {
+            best_delay_gain = delay;
+            best_blif = output_blif_file_name_;
+          }
+
+        }
       }
     }
     files_to_remove.emplace_back(output_blif_file_name_);
   }
 
   if (best_inst_count < std::numeric_limits<int>::max()
-     || (level_based && best_level_gain > 4)
+     || (level_based && best_level_gain > 4) // upto 4 level gain becomes noise eventually in terms of delay gain
      || (!level_based && best_delay_gain < std::numeric_limits<float>::max())) {
     // read back netlist
     debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
@@ -355,7 +356,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   auto sta_state = open_sta_->search();
   int path_count = 100000;
   float min_slack = area_mode ? -sta::INF : -sta::INF;
-  float max_slack = area_mode ? sta::INF : 5e-09;
+  float max_slack = area_mode ? sta::INF : 0;
 
   sta::PathEndSeq* path_ends
       = sta_state->findPathEnds(  // from, thrus, to, unconstrained
@@ -386,7 +387,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   std::size_t path_found = path_ends->size();
   logger_->report("Number of paths for restructure are {}", path_found);
   for (auto& path_end : *path_ends) {
-    if (opt_mode_ >= Mode::DELAY_1) {
+    if (!is_area_mode_) {
       sta::PathExpanded expanded(path_end->path(), open_sta_);
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
@@ -647,9 +648,12 @@ void Restructure::writeOptCommands(std::ofstream& script)
 
 void Restructure::setMode(const char* mode_name)
 {
-  if (!strcmp(mode_name, "timing"))
+  is_area_mode_ = true;
+
+  if (!strcmp(mode_name, "timing")) {
+    is_area_mode_ = false;
     opt_mode_ = Mode::DELAY_1;
-  else if (!strcmp(mode_name, "area"))
+  } else if (!strcmp(mode_name, "area"))
     opt_mode_ = Mode::AREA_1;
   else {
     logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
@@ -683,14 +687,13 @@ bool Restructure::readAbcLog(std::string abc_file_name, int& level_gain, float& 
   if (abc_file.bad()) {
     logger_->error(RMP, 16, "cannot open file {}", abc_file_name);
     return false;
-  } else
-    logger_->report("Reading ABC log {}.", abc_file_name);
+  }
+  logger_->report("Reading ABC log {}.", abc_file_name);
   std::string buf;
   const char delimiter = ' ';
   bool status = true;
-  std::vector <double> level;
-  std::vector <float> delay;
-
+  std::vector<double> level;
+  std::vector<float> delay;
 
   //read the file line by line
   while (std::getline(abc_file, buf))

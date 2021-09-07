@@ -128,6 +128,7 @@ class Restructure
   std::set<odb::dbInst*> path_insts_;
 
   Mode opt_mode_;
+  bool is_area_mode_;
 };
 
 }  // namespace rmp
