@@ -1592,7 +1592,6 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   const float font_core_scale_height = size_target * pixels_per_dbu_;
   const float font_core_scale_width = size_limit * pixels_per_dbu_;
 
-  painter->setTransform(QTransform());
   painter->setFont(text_font);
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
@@ -1633,32 +1632,28 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       continue;
     }
 
-    QTransform text_transform;
-    auto text_alignment = Qt::AlignLeft | Qt::AlignBottom;
     if (do_rotate) {
-      const QPointF inst_center = instance_bbox_in_px.center();
-      text_transform.translate(inst_center.x(), inst_center.y()); // move to center of inst
-      text_transform.rotate(90);
-      text_transform.translate(-inst_center.x(), -inst_center.y()); // move to center of 0, 0
       name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.height());
-
-      instance_bbox_in_px = text_transform.mapRect(instance_bbox_in_px);
-      text_alignment = Qt::AlignRight | Qt::AlignBottom;
-
-      // account for descent of font
-      text_transform.translate(-font_metrics.descent(), 0);
     } else {
       name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.width());
-
-      // account for descent of font
-      text_transform.translate(font_metrics.descent(), 0);
     }
 
-    painter->setTransform(text_transform);
-    painter->drawText(instance_bbox_in_px, text_alignment, name);
-  }
+    painter->translate(instance_box.xMin(), instance_box.yMin());
+    painter->scale(1.0 / pixels_per_dbu_, -1.0 / pixels_per_dbu_);
+    if (do_rotate) {
+      text_bounding_box = font_metrics.boundingRect(name);
+      painter->rotate(90);
+      painter->translate(-text_bounding_box.width(), 0);
+      // account for descent of font
+      painter->translate(-font_metrics.descent(), 0);
+    } else {
+      // account for descent of font
+      painter->translate(font_metrics.descent(), 0);
+    }
+    painter->drawText(0, 0, name);
 
-  painter->setTransform(initial_xfm);
+    painter->setTransform(initial_xfm);
+  }
   painter->setFont(initial_font);
 }
 
