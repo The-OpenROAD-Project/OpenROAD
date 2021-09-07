@@ -63,8 +63,8 @@ message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC OPENROAD_GIT_SHA1)
-message(STATUS "OpenROAD git sha: ${OPENROAD_GIT_SHA1}")
+git_describe(OPENROAD_GIT_DESCRIBE)
+message(STATUS "OpenROAD git describe: ${OPENROAD_GIT_DESCRIBE}")
 
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
