@@ -87,6 +87,7 @@ void FlexRP::prep_minStepViasCheck()
     set += rect1;
     set += rect2;
     std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+    set.get_polygons(polys);
     if (polys.size() != 1)
       continue;
 
