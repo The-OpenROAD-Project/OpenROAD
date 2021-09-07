@@ -163,7 +163,7 @@ main(int argc,
     return 0;
   }
   if (argc == 2 && stringEq(argv[1], "-version")) {
-    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_SHA1);
+    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_DESCRIBE);
     return 0;
   }
 
@@ -359,7 +359,7 @@ static void
 showSplash()
 {
   utl::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
-  string sha = OPENROAD_GIT_SHA1;
+  string sha = OPENROAD_GIT_DESCRIBE;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,
                  sha.c_str());
