@@ -356,8 +356,9 @@ void LayoutViewer::setResolution(qreal pixels_per_dbu)
   centerAt(center);
 }
 
-void LayoutViewer::centerChanged(int dx, int dy)
+void LayoutViewer::updateCenter(int dx, int dy)
 {
+  // modify the center according to the dx and dy
   center_.setX(center_.x() - dx / pixels_per_dbu_);
   center_.setY(center_.y() + dy / pixels_per_dbu_);
 }
@@ -368,8 +369,13 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   const QPointF shift_window(
       0.5 * scroller_->horizontalScrollBar()->pageStep(),
       0.5 * scroller_->verticalScrollBar()->pageStep());
+  // apply shift to corner of the window, instead of the center
   pt -= shift_window;
 
+  // set the new position of the scrollbars
+  // returns 0 if the value was possible
+  // return the actual value of the center if the set point
+  // was outside the range of the scrollbar
   auto setScrollBar = [](QScrollBar* bar, int value) -> int {
     const int max_value = bar->maximum();
     const int min_value = bar->minimum();
@@ -387,9 +393,12 @@ void LayoutViewer::centerAt(const odb::Point& focus)
 
   const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
   const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
+
+  // set the center now, since center is modified by the updateCenter
+  // we only care of the focus point
   center_ = focus;
 
-  // account for layout window edges
+  // account for layout window edges from setScrollBar
   odb::Point adjusted_pt = screenToDBU(QPointF(x_val, y_val));
   if (x_val != 0) {
     center_.setX(adjusted_pt.x());
@@ -423,15 +432,19 @@ void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_foc
 {
   qreal old_pixels_per_dbu = pixels_per_dbu_;
 
-  // focus to center
+  // focus to center, this is only used if doing delta_focus
+  // this holds the distance (x and y) from the desired focus point and the current center
+  // so the new center can be computed and ensure that the new center is in line with the old center.
   odb::Point center_delta(focus.x() - center_.x(), focus.y() - center_.y());
 
+  // update resolution
   setPixelsPerDBU(pixels_per_dbu_ * factor);
 
   odb::Point new_center = focus;
   if (do_delta_focus) {
     qreal actual_factor = pixels_per_dbu_ / old_pixels_per_dbu;
     // new center based on focus
+    // adjust such that the new center follows the mouse
     new_center = odb::Point(
         focus.x() - center_delta.x() / actual_factor,
         focus.y() - center_delta.y() / actual_factor);
@@ -444,8 +457,10 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
   const Rect padded_rect = getPaddedRect(rect_dbu);
 
+  // set resolution required to view the whole padded rect
   setPixelsPerDBU(computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
 
+  // center the layout at the middle of the rect
   centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
 }
 
@@ -490,6 +505,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
     for (auto* renderer : renderers) {
       for (auto selected : renderer->select(layer, pt_dbu)) {
+        // copy selected items from the renderer
         selections.push_back(selected);
       }
     }
@@ -1657,7 +1673,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
   const QFontMetrics font_metric = painter->fontMetrics();
 
   const int text_px_offset = 2;
-  const int text_keep_out = font_metric.averageCharWidth();
+  const int text_keep_out = font_metric.averageCharWidth(); // ensure text has approx one characters spacing
 
   // draw total size over right size
   const QString bar_text_end = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
@@ -1669,6 +1685,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
 
   // draw "0" over left side
   const QRect zero_box = font_metric.boundingRect("0");
+  // dont draw if the 0 is too close or overlapping with the right side text
   if (scale_bar_outline.left() + zero_box.center().x() < end_offset) {
     painter->drawText(
         scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
@@ -1679,7 +1696,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
   const qreal zero_offset = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
   const qreal segment_width = static_cast<double>(bar_width) / peg_incr;
   const double peg_increment = bar_size / peg_incr;
-  bool middle_shown = false;
+  bool middle_shown = false; // flag to indicate the middle tick marker has been drawn
 
   if (segment_width > 4) {
     // draw pegs, don't draw if they are basically overlapping
@@ -1815,8 +1832,9 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 {
   scroller_ = scroller;
 
+  // ensure changes in the scroll area are announced to the layout viewer
   connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(viewportUpdated()));
-  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(centerChanged(int, int)));
+  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(updateCenter(int, int)));
 }
 
 void LayoutViewer::viewportUpdated()
@@ -2032,13 +2050,16 @@ LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
 void LayoutScroll::resizeEvent(QResizeEvent* event)
 {
   QScrollArea::resizeEvent(event);
+  // announce that the viewport has changed
   emit viewportChanged();
 }
 
 void LayoutScroll::scrollContentsBy(int dx, int dy)
 {
   QScrollArea::scrollContentsBy(dx, dy);
+  // announce the amount the viewport has changed by
   emit centerChanged(dx, dy);
+  // make sure the whole visible layout is updated, not just the newly visible part
   widget()->update();
 }
 
