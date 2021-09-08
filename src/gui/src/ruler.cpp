@@ -115,14 +115,6 @@ Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
   auto ruler = std::any_cast<Ruler*>(object);
   const int dbu_per_uu_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
   return {
-    {"Name", makeEditor([ruler](std::any value){
-      auto new_name = std::any_cast<const std::string>(value);
-      if (new_name.empty()) {
-        return false;
-      }
-      ruler->setName(new_name);
-      return true;
-    })},
     {"Label", makeEditor([ruler](std::any value){
       ruler->setLabel(std::any_cast<const std::string>(value));
       return true;

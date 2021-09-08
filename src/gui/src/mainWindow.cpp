@@ -469,6 +469,15 @@ std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::stri
 {
   auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
   std::string new_name = new_ruler->getName();
+
+  // check if ruler name is unique
+  for (const auto& ruler : rulers_) {
+    if (new_name == ruler->getName()) {
+      logger_->warn(utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
   rulers_.push_back(std::move(new_ruler));
   emit rulersChanged();
   return new_name;
