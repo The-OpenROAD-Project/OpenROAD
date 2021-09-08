@@ -76,6 +76,9 @@ class FlexDRGraphics : public gui::Renderer
   virtual void drawLayer(odb::dbTechLayer* layer,
                          gui::Painter& painter) override;
 
+  // Force repaint to always occur
+  bool isRepaintRequired() override { return true; }
+
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 

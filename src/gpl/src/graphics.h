@@ -43,6 +43,9 @@ class Graphics : public gui::Renderer
   virtual gui::SelectionSet select(odb::dbTechLayer* layer,
                                    const odb::Point& point) override;
 
+  // Force repaint to always occur
+  bool isRepaintRequired() override { return true; }
+
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 

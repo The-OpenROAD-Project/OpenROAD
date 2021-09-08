@@ -3678,6 +3678,9 @@ public:
   void highlight(SteinerTree *tree);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
+  // Force repaint to always occur
+  bool isRepaintRequired() override { return true; }
+
 private:
   Resizer *resizer_;
   SteinerTree *tree_;
