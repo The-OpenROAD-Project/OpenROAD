@@ -274,9 +274,6 @@ void ScriptWidget::addToOutput(const QString& text, const QColor& color)
   }
   // output new text
   output_->append(output.join("\n"));
-
-  // ensure changes are updated
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 ScriptWidget::~ScriptWidget()

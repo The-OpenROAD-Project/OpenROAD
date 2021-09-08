@@ -34,14 +34,133 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-
-#include "tap/tapcell.h"
+#include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "tap/tapcell.h"
 
-tap::Tapcell *
-getTapcell()
-{
-  return ord::OpenRoad::openRoad()->getTapcell();
-}
+  namespace ord {
+
+  tap::Tapcell* getTapcell();
+
+  }
+
+  using ord::getTapcell;
+  using std::set;
+  using std::string;
+  using std::vector;
 
 %}
+
+%include "../../Exception.i"
+
+%inline %{
+  namespace tap {
+
+  void set_tap_prefix(const char* tap_prefix) {
+    getTapcell()->setTapPrefix(tap_prefix);
+  }
+
+  void set_endcap_prefix(const char* endcap_prefix){
+    getTapcell()->setEndcapPrefix(endcap_prefix);
+  }
+
+  void run(odb::dbMaster* endcap_master,
+           int halo_x,
+           int halo_y,
+           const char* cnrcap_nwin_master,
+           const char* cnrcap_nwout_master,
+           int add_boundary_cell,
+           const char* tap_nwintie_master,
+           const char* tap_nwin2_master,
+           const char* tap_nwin3_master,
+           const char* tap_nwouttie_master,
+           const char* tap_nwout2_master,
+           const char* tap_nwout3_master,
+           const char* incnrcap_nwin_master,
+           const char* incnrcap_nwout_master,
+           odb::dbMaster* tapcell_master,
+           int dist)
+  {
+    getTapcell()->run(endcap_master,
+                      halo_x,
+                      halo_y,
+                      cnrcap_nwin_master,
+                      cnrcap_nwout_master,
+                      add_boundary_cell,
+                      tap_nwintie_master,
+                      tap_nwin2_master,
+                      tap_nwin3_master,
+                      tap_nwouttie_master,
+                      tap_nwout2_master,
+                      tap_nwout3_master,
+                      incnrcap_nwin_master,
+                      incnrcap_nwout_master,
+                      tapcell_master,
+                      dist);
+  }
+
+  void clear()
+  {
+    getTapcell()->clear();
+  }
+
+  void reset() { getTapcell()->reset(); }
+
+  int make_site_loc(int x, double site_x, bool at_left_from_macro, int offset)
+  {
+    return getTapcell()->makeSiteLoc(x, site_x, at_left_from_macro, offset);
+  }
+
+  void build_row(odb::dbBlock* block,
+                 const char* name,
+                 odb::dbSite* site,
+                 int start_x,
+                 int end_x,
+                 int y,
+                 odb::dbRow* row,
+                 int min_row_width)
+  {
+    odb::dbOrientType orient = row->getOrient();
+    odb::dbRowDir direction = row->getDirection();
+    getTapcell()->buildRow(block,
+                           name,
+                           site,
+                           start_x,
+                           end_x,
+                           y,
+                           orient,
+                           direction,
+                           min_row_width);
+  }
+
+  void cut_rows(odb::dbMaster* endcap_master,
+                std::vector<odb::dbBox*>& blockages,
+                int halo_x,
+                int halo_y)
+  {
+    getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
+  }
+
+  int remove_cells(const char* prefix)
+  {
+    return getTapcell()->removeCells(prefix);
+  }
+
+  std::vector<odb::dbBox*> find_blockages() {
+    return getTapcell()->findBlockages();
+  }
+
+  bool overlaps(odb::dbBox* blockage,
+                odb::dbRow* row,
+                int halo_x,
+                int halo_y) {
+    return getTapcell()->overlaps(blockage, row, halo_x, halo_y);
+  }
+
+
+
+
+  }  // namespace tap
+
+  %}
+  

@@ -61,6 +61,7 @@ class ScriptWidget;
 class DisplayControls;
 class Inspector;
 class TimingWidget;
+class DRCWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -186,6 +187,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
+  DRCWidget* getDRCViewer() const { return drc_viewer_; }
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -217,6 +219,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   LayoutScroll* scroll_;
   ScriptWidget* script_;
   TimingWidget* timing_widget_;
+  DRCWidget* drc_viewer_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;

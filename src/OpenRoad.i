@@ -181,6 +181,13 @@ getGlobalRouter()
   return openroad->getGlobalRouter();
 }
 
+tap::Tapcell* 
+getTapcell()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTapcell();
+}
+
 ppl::IOPlacer*
 getIOPlacer()
 {
@@ -265,9 +272,9 @@ openroad_version()
 }
 
 const char *
-openroad_git_sha1()
+openroad_git_describe()
 {
-  return OPENROAD_GIT_SHA1;
+  return OPENROAD_GIT_DESCRIBE;
 }
 
 void

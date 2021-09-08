@@ -104,11 +104,10 @@ class GuiPainter : public Painter
              const QPoint& centering_shift,
              qreal pixels_per_dbu,
              int dbu_per_micron)
-      : painter_(painter),
-        options_(options),
+      : Painter(options, pixels_per_dbu),
+        painter_(painter),
         base_transform_(base_transform),
         centering_shift_(centering_shift),
-        pixels_per_dbu_(pixels_per_dbu),
         dbu_per_micron_(dbu_per_micron)
   {
   }
@@ -121,7 +120,7 @@ class GuiPainter : public Painter
 
   void setPen(odb::dbTechLayer* layer, bool cosmetic = false) override
   {
-    QPen pen(options_->color(layer));
+    QPen pen(getOptions()->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
@@ -143,8 +142,8 @@ class GuiPainter : public Painter
   }
   void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
   {
-    QColor color = options_->color(layer);
-    Qt::BrushStyle brush_pattern = options_->pattern(layer);
+    QColor color = getOptions()->color(layer);
+    Qt::BrushStyle brush_pattern = getOptions()->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
@@ -163,10 +162,7 @@ class GuiPainter : public Painter
       painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()),
                                QPoint(shape->xMax(), shape->yMax())));
     } else {
-      QPolygon qpoly(size);
-      for (int i = 0; i < size; i++)
-        qpoly.setPoint(i, points[i].getX(), points[i].getY());
-      painter_->drawPolygon(qpoly);
+      drawPolygon(points);
     }
   }
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
@@ -180,6 +176,14 @@ class GuiPainter : public Painter
       painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
                                QPoint(rect.xMax(), rect.yMax())));
   }
+  void drawPolygon(const std::vector<odb::Point>& points) override
+  {
+    QPolygon poly;
+    for (const auto& pt : points) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    painter_->drawPolygon(poly);
+  }
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
@@ -187,6 +191,11 @@ class GuiPainter : public Painter
   using Painter::drawLine;
 
   void setTransparentBrush() override { painter_->setBrush(Qt::transparent); }
+  void setHashedBrush(const Color& color) override
+  {
+    painter_->setBrush(QBrush(QColor(color.r, color.g, color.b, color.a), Qt::DiagCrossPattern));
+  }
+
   void drawCircle(int x, int y, int r) override
   {
     painter_->drawEllipse(QPoint(x, y), r, r);
@@ -200,8 +209,8 @@ class GuiPainter : public Painter
   {
     painter_->save();
     painter_->setTransform(base_transform_);
-    int sx = centering_shift_.x() + x * pixels_per_dbu_;
-    int sy = centering_shift_.y() - y * pixels_per_dbu_;
+    int sx = centering_shift_.x() + x * getPixelsPerDBU();
+    int sy = centering_shift_.y() - y * getPixelsPerDBU();
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
     painter_->drawText(sx, sy, QString::fromStdString(s));
@@ -233,10 +242,8 @@ class GuiPainter : public Painter
 
  private:
   QPainter* painter_;
-  Options* options_;
   const QTransform base_transform_;
   const QPoint centering_shift_;
-  qreal pixels_per_dbu_;
   int dbu_per_micron_;
 };
 
@@ -317,7 +324,7 @@ qreal LayoutViewer::computePixelsPerDBU(const QSize& size, const Rect& dbu_rect)
       size.height() / (double) dbu_rect.dy());
 }
 
-void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize)
+void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 {
   dbBlock* block = getBlock();
   if (!block) {
@@ -327,34 +334,19 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu, bool do_resize)
   const Rect fitted_bb = getPaddedRect(getBounds(block));
   // ensure max size is not exceeded
   qreal maximum_pixels_per_dbu_ = 0.98*computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX), fitted_bb);
-  pixels_per_dbu_ = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
+  qreal target_pixels_per_dbu = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
-  if (do_resize) {
-    const QSize new_size(
-        ceil(fitted_bb.dx() * pixels_per_dbu_),
-        ceil(fitted_bb.dy() * pixels_per_dbu_));
-    resize(new_size);
-    setMinimumSize(new_size);  // needed by scroll area
-  }
+  const QSize new_size(
+      ceil(fitted_bb.dx() * target_pixels_per_dbu),
+      ceil(fitted_bb.dy() * target_pixels_per_dbu));
+
+  resize(new_size.expandedTo(scroller_->maximumViewportSize()));
   update();
-}
-
-void LayoutViewer::computeCenteringOffset()
-{
-  dbBlock* block = getBlock();
-  if (block != nullptr) {
-    const Rect block_bb = getBounds(block);
-    const QSize actual_size = size();
-
-    centering_shift_ = QPoint(
-        (actual_size.width()  - block_bb.dx()*pixels_per_dbu_)/2,
-        (actual_size.height() + block_bb.dy()*pixels_per_dbu_)/2);
-  }
 }
 
 odb::Point LayoutViewer::getVisibleCenter()
 {
-  return screenToDBU(visibleRegion().boundingRect().center());
+  return center_;
 }
 
 void LayoutViewer::setResolution(qreal pixels_per_dbu)
@@ -364,15 +356,56 @@ void LayoutViewer::setResolution(qreal pixels_per_dbu)
   centerAt(center);
 }
 
-void LayoutViewer::centerAt(const QPointF& focus)
+void LayoutViewer::updateCenter(int dx, int dy)
 {
-  scroller_->horizontalScrollBar()->setValue(focus.x() - scroller_->width() / 2);
-  scroller_->verticalScrollBar()->setValue(focus.y() - scroller_->height() / 2);
+  // modify the center according to the dx and dy
+  center_.setX(center_.x() - dx / pixels_per_dbu_);
+  center_.setY(center_.y() + dy / pixels_per_dbu_);
 }
 
 void LayoutViewer::centerAt(const odb::Point& focus)
 {
-  centerAt(dbuToScreen(focus));
+  QPointF pt = dbuToScreen(focus);
+  const QPointF shift_window(
+      0.5 * scroller_->horizontalScrollBar()->pageStep(),
+      0.5 * scroller_->verticalScrollBar()->pageStep());
+  // apply shift to corner of the window, instead of the center
+  pt -= shift_window;
+
+  // set the new position of the scrollbars
+  // returns 0 if the value was possible
+  // return the actual value of the center if the set point
+  // was outside the range of the scrollbar
+  auto setScrollBar = [](QScrollBar* bar, int value) -> int {
+    const int max_value = bar->maximum();
+    const int min_value = bar->minimum();
+    if (value > max_value) {
+      bar->setValue(max_value);
+      return max_value + bar->pageStep() / 2;
+    } else if (value < min_value) {
+      bar->setValue(min_value);
+      return bar->pageStep() / 2;
+    } else {
+      bar->setValue(value);
+      return 0;
+    }
+  };
+
+  const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
+  const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
+
+  // set the center now, since center is modified by the updateCenter
+  // we only care of the focus point
+  center_ = focus;
+
+  // account for layout window edges from setScrollBar
+  odb::Point adjusted_pt = screenToDBU(QPointF(x_val, y_val));
+  if (x_val != 0) {
+    center_.setX(adjusted_pt.x());
+  }
+  if (y_val != 0) {
+    center_.setY(adjusted_pt.y());
+  }
 }
 
 void LayoutViewer::zoomIn()
@@ -397,31 +430,37 @@ void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
 
 void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_focus)
 {
-  qreal old_pixels_per_dbu = getPixelsPerDBU();
-  QPointF pos_in_widget = dbuToScreen(focus);
+  qreal old_pixels_per_dbu = pixels_per_dbu_;
 
+  // focus to center, this is only used if doing delta_focus
+  // this holds the distance (x and y) from the desired focus point and the current center
+  // so the new center can be computed and ensure that the new center is in line with the old center.
+  odb::Point center_delta(focus.x() - center_.x(), focus.y() - center_.y());
+
+  // update resolution
   setPixelsPerDBU(pixels_per_dbu_ * factor);
 
-  factor = getPixelsPerDBU() / old_pixels_per_dbu;
+  odb::Point new_center = focus;
   if (do_delta_focus) {
-    QPointF delta = (factor - 1) * pos_in_widget;
-    scroller_->horizontalScrollBar()->setValue(scroller_->horizontalScrollBar()->value() + delta.x());
-    scroller_->verticalScrollBar()->setValue(scroller_->verticalScrollBar()->value() + delta.y());
-  } else {
-    centerAt(factor * pos_in_widget);
+    qreal actual_factor = pixels_per_dbu_ / old_pixels_per_dbu;
+    // new center based on focus
+    // adjust such that the new center follows the mouse
+    new_center = odb::Point(
+        focus.x() - center_delta.x() / actual_factor,
+        focus.y() - center_delta.y() / actual_factor);
   }
+
+  centerAt(new_center);
 }
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
   const Rect padded_rect = getPaddedRect(rect_dbu);
+
+  // set resolution required to view the whole padded rect
   setPixelsPerDBU(computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
-  QRectF screen_rect = dbuToScreen(padded_rect);
 
-  // Center the region
-  int w = (scroller_->width() - screen_rect.width()) / 2;
-  int h = (scroller_->height() - screen_rect.height()) / 2;
-
+  // center the layout at the middle of the rect
   centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
 }
 
@@ -465,8 +504,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     }
 
     for (auto* renderer : renderers) {
-      Selected selected = renderer->select(layer, pt_dbu);
-      if (selected) {
+      for (auto selected : renderer->select(layer, pt_dbu)) {
+        // copy selected items from the renderer
         selections.push_back(selected);
       }
     }
@@ -493,8 +532,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
   // Check for objects not in a layer
   for (auto* renderer : renderers) {
-    Selected selected = renderer->select(nullptr, pt_dbu);
-    if (selected) {
+    for (auto selected : renderer->select(nullptr, pt_dbu)) {
       selections.push_back(selected);
     }
   }
@@ -657,8 +695,20 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
   dbBlock* block = getBlock();
   if (block != nullptr) {
-    setPixelsPerDBU(computePixelsPerDBU(event->size(), getPaddedRect(getBounds(block))), false);
-    computeCenteringOffset();
+    const QSize new_layout_size = event->size();
+
+    const odb::Rect block_bounds = getBounds(block);
+
+    // compute new pixels_per_dbu_
+    pixels_per_dbu_ = computePixelsPerDBU(new_layout_size, getPaddedRect(block_bounds));
+
+    // compute new centering shift
+    // the offset necessary to center the block in the viewport.
+    // expand area to fill whole scroller window
+    const QSize new_area = new_layout_size.expandedTo(scroller_->size());
+    centering_shift_ = QPoint(
+        (new_area.width()  - block_bounds.dx() * pixels_per_dbu_) / 2,
+        (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
   }
 }
 
@@ -1461,14 +1511,14 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
   }
 }
 
-odb::Point LayoutViewer::screenToDBU(const QPoint& point)
+odb::Point LayoutViewer::screenToDBU(const QPointF& point)
 {
   // Flip the y-coordinate (see file level comments)
   return Point((point.x()-centering_shift_.x()) / pixels_per_dbu_,
                (centering_shift_.y()-point.y()) / pixels_per_dbu_);
 }
 
-Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
+Rect LayoutViewer::screenToDBU(const QRectF& screen_rect)
 {
   int dbu_left = (int) floor((screen_rect.left()-centering_shift_.x()) / pixels_per_dbu_);
   int dbu_right = (int) ceil((screen_rect.right()-centering_shift_.x()) / pixels_per_dbu_);
@@ -1623,7 +1673,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
   const QFontMetrics font_metric = painter->fontMetrics();
 
   const int text_px_offset = 2;
-  const int text_keep_out = font_metric.averageCharWidth();
+  const int text_keep_out = font_metric.averageCharWidth(); // ensure text has approx one characters spacing
 
   // draw total size over right size
   const QString bar_text_end = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
@@ -1635,6 +1685,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
 
   // draw "0" over left side
   const QRect zero_box = font_metric.boundingRect("0");
+  // dont draw if the 0 is too close or overlapping with the right side text
   if (scale_bar_outline.left() + zero_box.center().x() < end_offset) {
     painter->drawText(
         scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
@@ -1645,7 +1696,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QR
   const qreal zero_offset = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
   const qreal segment_width = static_cast<double>(bar_width) / peg_incr;
   const double peg_increment = bar_size / peg_incr;
-  bool middle_shown = false;
+  bool middle_shown = false; // flag to indicate the middle tick marker has been drawn
 
   if (segment_width > 4) {
     // draw pegs, don't draw if they are basically overlapping
@@ -1701,7 +1752,8 @@ void LayoutViewer::fit()
   }
 
   zoomTo(bbox);
-  updateFitResolution();
+  // ensure we save a correct value for fit_pixels_per_dbu_
+  viewportUpdated();
 }
 
 void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
@@ -1780,20 +1832,30 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 {
   scroller_ = scroller;
 
-  connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(updateFitResolution()));
+  // ensure changes in the scroll area are announced to the layout viewer
+  connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(viewportUpdated()));
+  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(updateCenter(int, int)));
 }
 
-void LayoutViewer::updateFitResolution()
+void LayoutViewer::viewportUpdated()
 {
   odb::dbBlock* block = getBlock();
   if (block == nullptr) {
     return;
   }
 
+  bool zoomed_in = fit_pixels_per_dbu_ < pixels_per_dbu_;
+
   // determine new fit_pixels_per_dbu_ based on current viewport size
   fit_pixels_per_dbu_ = computePixelsPerDBU(
       scroller_->maximumViewportSize(),
       getPaddedRect(getBounds(block)));
+
+  // when zoomed in don't update size,
+  // else update size of window
+  if (!zoomed_in) {
+    resize(scroller_->maximumViewportSize());
+  }
 }
 
 void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
@@ -1955,7 +2017,7 @@ void LayoutViewer::addMenuAndActions()
   });
   connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
     const QSize whole_size = size();
-    saveImage("", screenToDBU({0, 0, whole_size.width(), whole_size.height()}));
+    saveImage("", screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
   });
 
   connect(
@@ -1980,7 +2042,7 @@ void LayoutViewer::addMenuAndActions()
 LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
     : QScrollArea(parent), viewer_(viewer)
 {
-  setWidgetResizable(true);
+  setWidgetResizable(false);
   setWidget(viewer);
   viewer->setScroller(this);
 }
@@ -1988,12 +2050,16 @@ LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
 void LayoutScroll::resizeEvent(QResizeEvent* event)
 {
   QScrollArea::resizeEvent(event);
+  // announce that the viewport has changed
   emit viewportChanged();
 }
 
 void LayoutScroll::scrollContentsBy(int dx, int dy)
 {
   QScrollArea::scrollContentsBy(dx, dy);
+  // announce the amount the viewport has changed by
+  emit centerChanged(dx, dy);
+  // make sure the whole visible layout is updated, not just the newly visible part
   widget()->update();
 }
 

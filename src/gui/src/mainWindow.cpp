@@ -53,6 +53,7 @@
 #include "staGui.h"
 #include "utl/Logger.h"
 #include "timingWidget.h"
+#include "drcWidget.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -79,7 +80,8 @@ MainWindow::MainWindow(QWidget* parent)
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this)),
-      timing_widget_(new TimingWidget(this))
+      timing_widget_(new TimingWidget(this)),
+      drc_viewer_(new DRCWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -94,15 +96,18 @@ MainWindow::MainWindow(QWidget* parent)
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
+  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
-  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
 
   tabifyDockWidget(inspector_, timing_widget_);
+  tabifyDockWidget(inspector_, drc_viewer_);
+  drc_viewer_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
@@ -111,7 +116,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
           SLOT(designLoaded(odb::dbBlock*)));
-  connect(this, SIGNAL(redraw()), viewer_, SLOT(repaint()));
+  connect(this, SIGNAL(redraw()), viewer_, SLOT(update()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
@@ -200,6 +205,36 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightTimingPath(TimingPath*)),
           viewer_,
           SLOT(update()));
+
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          drc_viewer_,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(drc_viewer_,
+          &DRCWidget::selectDRC,
+          [this](const Selected& selected) {
+            setSelected(selected, false);
+            odb::Rect bbox;
+            selected.getBBox(bbox);
+            // 10 microns
+            const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+            // twice the largest dimension of bounding box
+            const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
+            // pick smallest
+            const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
+            bbox.set_xlo(bbox.xMin() - zoomout_margin);
+            bbox.set_ylo(bbox.yMin() - zoomout_margin);
+            bbox.set_xhi(bbox.xMax() + zoomout_margin);
+            bbox.set_yhi(bbox.yMax() + zoomout_margin);
+            zoomTo(bbox);
+          });
+  connect(this,
+          &MainWindow::selectionChanged,
+          [this]() {
+            if (!selected_.empty()) {
+              drc_viewer_->updateSelection(*selected_.begin());
+            }
+          });
 
   createActions();
   createToolbars();
@@ -305,6 +340,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   windows_menu_->addAction(timing_widget_->toggleViewAction());
+  windows_menu_->addAction(drc_viewer_->toggleViewAction());
 
   menuBar()->addAction(help_);
 }
@@ -663,6 +699,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewer_->setLogger(logger);
+  drc_viewer_->setLogger(logger);
 }
 
 void MainWindow::fit()
