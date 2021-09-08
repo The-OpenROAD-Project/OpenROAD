@@ -70,7 +70,7 @@ class frInstTerm : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
-
+  void getShapes(std::vector<frRect>& outShapes);
  protected:
   frInst* inst_;
   frTerm* term_;

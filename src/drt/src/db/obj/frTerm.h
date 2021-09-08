@@ -125,6 +125,17 @@ class frTerm : public frBlockObject
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx) {
       return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
   }
+  //fills outShapes with copies of the pinFigs
+  void getShapes(std::vector<frRect>& outShapes) {
+      for (auto& pin : pins_) {
+          for (auto& pinShape : pin->getFigs()) {
+              if (pinShape->typeId() == frcRect) {
+                outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
+              }
+          }
+      }
+  }
+  
  protected:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;

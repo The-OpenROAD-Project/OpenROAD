@@ -50,3 +50,12 @@ frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum) {
     return getAccessPoint(x, y, lNum) != nullptr;
 }
+
+void frInstTerm::getShapes(std::vector<frRect>& outShapes) {
+    term_->getShapes(outShapes);
+    for (auto& shape : outShapes) {
+        frTransform trans;
+        getInst()->getTransform(trans);
+        shape.shift(trans.xOffset(), trans.yOffset());
+    }
+}

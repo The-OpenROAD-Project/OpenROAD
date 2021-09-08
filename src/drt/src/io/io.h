@@ -173,6 +173,18 @@ class Parser
   // postProcessGuide functions
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
+  void patchGuides(frNet* net, frBlockObject* pin,
+                    std::vector<frRect>& rects, std::map<frBlockObject*,
+                    std::set<std::pair<frPoint, frLayerNum>>,
+                    frBlockObjectComp>& pin2GCellMap);
+  void genGuides_pinEnclosure(frNet* net, 
+                    std::vector<frRect>& rects, std::map<frBlockObject*,
+                    std::set<std::pair<frPoint, frLayerNum>>,
+                    frBlockObjectComp>& pin2GCellMap);
+  void checkPinForGuideEnclosure(frBlockObject* pin, frNet* net, 
+                    std::vector<frRect>& guides, std::map<frBlockObject*,
+                    std::set<std::pair<frPoint, frLayerNum>>,
+                    frBlockObjectComp>& pin2GCellMap);
   void genGuides_merge(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);
@@ -223,7 +235,9 @@ class Parser
       int& gCnt,
       int& nCnt,
       bool forceFeedThrough,
-      bool retry);
+      bool retry,
+      map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>& pin2GCellMap,
+      vector<frRect>& rects);
   void genGuides_final(frNet* net,
                        std::vector<frRect>& rects,
                        std::vector<bool>& adjVisited,

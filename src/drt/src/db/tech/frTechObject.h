@@ -277,6 +277,14 @@ class frTechObject
     return via2viaMinStepPatches_;
   }
 
+  bool isHorizontalLayer(frLayerNum l) {
+      return getLayer(l)->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir;
+  }
+  
+  bool isVerticalLayer(frLayerNum l) {
+      return getLayer(l)->getDir() == frPrefRoutingDirEnum::frcVertPrefRoutingDir;
+  }
+  
  protected:
   frUInt4 dbUnit;
   frUInt4 manufacturingGrid;

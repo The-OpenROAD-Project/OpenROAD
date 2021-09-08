@@ -84,6 +84,12 @@ class frRect : public frShape
       : frShape(in), box_(in.box_), layer_(in.layer_), owner_(in.owner_)
   {
   }
+  frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner) :
+                                                            frShape(),
+                                                            box_(xl, yl, xh, yh),
+                                                            layer_(lNum),
+                                                            owner_(owner) {}
+        
   // setters
   void setBBox(const frBox& boxIn) { box_.set(boxIn); }
   // getters
@@ -161,6 +167,7 @@ class frRect : public frShape
    * overlaps in .cpp
    */
   void getBBox(frBox& boxIn) const override { boxIn.set(box_); }
+  frBox& getBBox() { return box_; }
   void move(const frTransform& xform) override { box_.transform(xform); }
   bool overlaps(const frBox& box) const override
   {
@@ -177,7 +184,13 @@ class frRect : public frShape
   {
     return iter_;
   }
-
+  void shift(int x, int y) {
+      box_.shift(x, y);
+  }
+  void getClosestPoint(Point3D& p, Point3D& result) const {
+      box_.getClosestPoint(p, result);
+      result.setZ(layer_);
+  }
  protected:
   frBox box_;
   frLayerNum layer_;
