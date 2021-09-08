@@ -52,7 +52,7 @@ bool Ruler::operator ==(const Ruler& other) const
          (pt0_ == other.getPt1() && pt1_ == other.getPt0());
 }
 
-bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin)
+bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin) const
 {
   // compute composite line from two end points through the pt
   // if the resultant line is longer by the margin, no intersection is reported.
@@ -66,9 +66,9 @@ bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin)
 
   const int d0 = distance(pt0_, pt);
   const int d1 = distance(pt1_, pt);
-  const int dl = distance(pt0_, pt1_);
+  const int druler = distance(pt0_, pt1_);
 
-  return std::abs(d0 + d1 - dl) < margin;
+  return std::abs(d0 + d1 - druler) < margin;
 }
 
 ////////////

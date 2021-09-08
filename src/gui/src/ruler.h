@@ -70,12 +70,12 @@ class Ruler
   const odb::Point getPt0() const { return pt0_; }
   odb::Point& getPt1() { return pt1_; }
   const odb::Point getPt1() const { return pt1_; }
-  const std::string getName() { return name_; }
+  const std::string getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
-  const std::string getLabel() { return label_; }
+  const std::string getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
 
-  bool fuzzyIntersection(const odb::Point& pt, int margin);
+  bool fuzzyIntersection(const odb::Point& pt, int margin) const;
 
   bool operator ==(const Ruler& other) const;
 
