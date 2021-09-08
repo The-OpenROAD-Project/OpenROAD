@@ -32,7 +32,13 @@
 
 #pragma once
 
+#include <memory>
+
 #include "gui/gui.h"
+
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace odb {
 class Point;
@@ -85,6 +91,32 @@ class Ruler
 
   std::string name_;
   std::string label_;
+};
+
+class RulerManager
+{
+ public:
+  RulerManager() : logger_(nullptr) {}
+
+  const std::string add(const odb::Point& p0, const odb::Point& p1, const std::string& label = "", const std::string& name = "");
+  void remove(const std::string& name);
+  void clear();
+
+  Ruler* find(const std::string& name);
+  bool contains(const std::string& name);
+
+  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
+
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
+
+  static RulerManager* manager();
+
+ private:
+  utl::Logger* logger_;
+  std::vector<std::unique_ptr<Ruler>> rulers_;
+
+  // singleton of rulers
+  static std::unique_ptr<RulerManager> manager_;
 };
 
 }  // namespace gui

@@ -32,6 +32,7 @@
 
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
+#include "utl/Logger.h"
 #include "ruler.h"
 
 namespace gui {
@@ -115,6 +116,17 @@ Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
   auto ruler = std::any_cast<Ruler*>(object);
   const int dbu_per_uu_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
   return {
+    {"Name", makeEditor([ruler](std::any value){
+      auto new_name = std::any_cast<const std::string>(value);
+      if (new_name.empty()) {
+        return false;
+      }
+      if (RulerManager::manager()->contains(new_name)) {
+        return false;
+      }
+      ruler->setName(new_name);
+      return true;
+    })},
     {"Label", makeEditor([ruler](std::any value){
       ruler->setLabel(std::any_cast<const std::string>(value));
       return true;
@@ -161,6 +173,68 @@ bool RulerDescriptor::lessThan(std::any l, std::any r) const
   auto r_ruler = std::any_cast<Ruler*>(r);
 
   return l_ruler->getName() < r_ruler->getName();
+}
+
+////////////
+
+std::unique_ptr<RulerManager> RulerManager::manager_ = nullptr;
+
+const std::string RulerManager::add(const odb::Point& p0, const odb::Point& p1, const std::string& label, const std::string& name)
+{
+  auto new_ruler = std::make_unique<Ruler>(p0, p1, name, label);
+  std::string new_name = new_ruler->getName();
+
+  // check if ruler name is unique
+  for (const auto& ruler : rulers_) {
+    if (new_name == ruler->getName()) {
+      logger_->warn(utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
+  rulers_.push_back(std::move(new_ruler));
+
+  return new_name;
+}
+
+void RulerManager::remove(const std::string& name)
+{
+  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+    return l->getName() == name;
+  });
+  if (ruler_find != rulers_.end()) {
+    rulers_.erase(ruler_find);
+  }
+}
+
+void RulerManager::clear()
+{
+  rulers_.clear();
+}
+
+Ruler* RulerManager::find(const std::string& name)
+{
+  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+    return l->getName() == name;
+  });
+  if (ruler_find == rulers_.end()) {
+    return nullptr;
+  } else {
+    return ruler_find->get();
+  }
+}
+
+bool RulerManager::contains(const std::string& name)
+{
+  return find(name) != nullptr;
+}
+
+RulerManager* RulerManager::manager()
+{
+  if (manager_ == nullptr) {
+    manager_ = std::make_unique<RulerManager>();
+  }
+  return manager_.get();
 }
 
 }  // namespace gui

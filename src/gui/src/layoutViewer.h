@@ -65,7 +65,6 @@ class dbTechLayer;
 namespace gui {
 
 class LayoutScroll;
-class Ruler;
 
 // This class draws the layout.  It supports:
 //   * zoom in/out with ctrl-mousewheel
@@ -110,7 +109,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   LayoutViewer(Options* options,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
-               const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
 
@@ -317,7 +315,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   Options* options_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
-  const std::vector<std::unique_ptr<Ruler>>& rulers_;
   LayoutScroll* scroller_;
 
   // holds the current resolution for drawing the layout (units are pixels / dbu)

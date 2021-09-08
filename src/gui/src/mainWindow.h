@@ -215,7 +215,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
-  std::vector<std::unique_ptr<Ruler>> rulers_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
