@@ -776,7 +776,7 @@ LayoutViewer::Edge LayoutViewer::findEdge(const odb::Point& pt, bool horizontal,
   }
 
   // check if edge should point instead
-  const int point_snap_distance = std::max(10.0 / pixels_per_dbu_, // four pixels
+  const int point_snap_distance = std::max(10.0 / pixels_per_dbu_, // pixels
                                            10.0); //DBU
 
   std::array<odb::Point, 3> snap_points = {

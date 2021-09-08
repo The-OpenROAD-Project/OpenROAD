@@ -92,12 +92,6 @@ class Search
   using ObstructionRange = Range<odb::dbObstruction*>;
   using BlockageRange = Range<odb::dbBlockage*>;
 
-  using Edge = std::pair<odb::Point, odb::Point>;
-  struct Edges {
-    Edge horizontal;
-    Edge vertical;
-  };
-
   // Build the structure for the given block.
   void init(odb::dbBlock* block);
 
