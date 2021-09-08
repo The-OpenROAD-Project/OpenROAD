@@ -3024,9 +3024,6 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     if (!layer->hasVia2ViaMinStepViol()) {
       continue;
     }
-    // bool isPatchable = false;
-    // TODO: check whether there is empty space for patching
-    // isPatchable = true;
 
     frBox markerBBox;
     frPoint origin;

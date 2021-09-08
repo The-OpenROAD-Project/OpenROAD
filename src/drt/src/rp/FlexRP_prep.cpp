@@ -76,43 +76,50 @@ void FlexRP::prep_minStepViasCheck()
     if (!minStepCons)
       continue;
 
-    auto box1 = upVia->getLayer1ShapeBox();
-    auto box2 = downVia->getLayer2ShapeBox();
-    gtl::rectangle_data<frCoord> rect1(
-        box1.left(), box1.bottom(), box1.right(), box1.top());
-    gtl::rectangle_data<frCoord> rect2(
-        box2.left(), box2.bottom(), box2.right(), box2.top());
+    frBox upViaBox = upVia->getLayer1ShapeBox();
+    frBox downViaBox = downVia->getLayer2ShapeBox();
+    gtl::rectangle_data<frCoord> upViaRect(
+        upViaBox.left(), upViaBox.bottom(), upViaBox.right(), upViaBox.top());
+    gtl::rectangle_data<frCoord> downViaRect(
+        downViaBox.left(), downViaBox.bottom(), downViaBox.right(), downViaBox.top());
+    
+    // joining the two via rects in one polygon
     gtl::polygon_90_set_data<frCoord> set;
     using namespace boost::polygon::operators;
-    set += rect1;
-    set += rect2;
+    set += upViaRect;
+    set += downViaRect;
     std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
     set.get_polygons(polys);
     if (polys.size() != 1)
       continue;
-
-    auto poly = *polys.begin();
+    
+    gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
     gcNet* testNet = new gcNet(0);
     gcPin* testPin = new gcPin(poly, lNum, testNet);
     testPin->setNet(testNet);
 
-    auto itr = poly.begin();
-    auto prev = *itr;
-    itr++;
+    bool first = true;
     std::vector<std::unique_ptr<gcSegment>> tmpEdges;
-    for (; itr != poly.end(); itr++) {
-      auto cur = *itr;
-      auto edge = make_unique<gcSegment>();
-      edge->setLayerNum(lNum);
-      edge->addToPin(testPin);
-      edge->addToNet(testNet);
-      edge->setSegment(prev, cur);
-      if (!tmpEdges.empty()) {
-        edge->setPrevEdge(tmpEdges.back().get());
-        tmpEdges.back()->setNextEdge(edge.get());
+    gtl::point_data<frCoord> prev;
+    for(gtl::point_data<frCoord> cur : poly)
+    {
+      if(first)
+      {
+        prev = cur;
+        first = false; 
+      } else {
+        auto edge = make_unique<gcSegment>();
+        edge->setLayerNum(lNum);
+        edge->addToPin(testPin);
+        edge->addToNet(testNet);
+        edge->setSegment(prev, cur);
+        if (!tmpEdges.empty()) {
+          edge->setPrevEdge(tmpEdges.back().get());
+          tmpEdges.back()->setNextEdge(edge.get());
+        }
+        tmpEdges.push_back(std::move(edge));
+        prev = cur;
       }
-      tmpEdges.push_back(std::move(edge));
-      prev = cur;
     }
     // last edge
     auto edge = make_unique<gcSegment>();
@@ -128,35 +135,15 @@ void FlexRP::prep_minStepViasCheck()
     tmpEdges.push_back(std::move(edge));
     // add to polygon edges
     testPin->addPolygonEdges(tmpEdges);
+    // check gc minstep violations
     FlexGCWorker worker(tech_, logger_);
     worker.checkMinStep(testPin);
     auto& markers = worker.getMarkers();
     if (!markers.empty()) {
-      tech_->hasVia2viaMinStep_ = true;
+      tech_->setVia2ViaMinStep(true);
       layer->setHasVia2ViaMinStepViol(true);
     }
   }
-}
-
-bool FlexRP::hasMinStepViolation(frMinStepConstraint* minStepCons,
-                                 int edge1,
-                                 int edge2)
-{
-  int maxEdges = minStepCons->hasMaxEdges() ? minStepCons->getMaxEdges() : 1;
-  if (!minStepCons->hasOutsideCorner() || maxEdges >= 2)
-    return false;
-  int nEdges = (int) (edge1 < minStepCons->getMinStepLength())
-               + (int) (edge2 < minStepCons->getMinStepLength());
-  if (nEdges > maxEdges) {
-    if (minStepCons->hasMaxLength()) {
-      int length = edge1 < minStepCons->getMinStepLength() ? edge1 : 0;
-      length += edge2 < minStepCons->getMinStepLength() ? edge2 : 0;
-      if (minStepCons->getMaxLength() < length)
-        return true;
-    } else
-      return true;
-  }
-  return false;
 }
 
 void FlexRP::prep_viaForbiddenThrough()
