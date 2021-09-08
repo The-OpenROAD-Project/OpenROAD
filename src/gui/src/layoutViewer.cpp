@@ -611,7 +611,7 @@ void LayoutViewer::updateRubberBandRegion()
   update(rect.right() - unit / 2, rect.top(), unit, rect.height());
 }
 
-LayoutViewer::Edges LayoutViewer::searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt, bool& ok)
+std::pair<LayoutViewer::Edges, bool> LayoutViewer::searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt)
 {
   // find closest edges for each object returned
   std::vector<Edges> candidates;
@@ -647,8 +647,7 @@ LayoutViewer::Edges LayoutViewer::searchNearestEdge(const std::vector<Search::Bo
   }
 
   if (candidates.empty()) {
-    ok = false;
-    return Edges();
+    return {Edges(), false};
   }
 
   // find closest edge overall, start with last one
@@ -666,17 +665,13 @@ LayoutViewer::Edges LayoutViewer::searchNearestEdge(const std::vector<Search::Bo
     }
   }
 
-  ok = true;
-  return closest_edges;
+  return {closest_edges, true};
 }
 
-LayoutViewer::Edge LayoutViewer::findEdge(const odb::Point& pt, bool horizontal, bool& ok)
+std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt, bool horizontal)
 {
-  ok = false;
-  Edge edge;
-
   if (db_ == nullptr) {
-    return edge;
+    return {Edge(), false};
   }
 
   const int search_radius = getBlock()->getDbUnitsPerMicron();
@@ -767,7 +762,11 @@ LayoutViewer::Edge LayoutViewer::findEdge(const odb::Point& pt, bool horizontal,
     }
   }
 
-  auto shape_edges = searchNearestEdge(boxes, pt, ok);
+  const auto& [shape_edges, ok] = searchNearestEdge(boxes, pt);
+  if (!ok) {
+    return {Edge(), false};
+  }
+
   Edge selected_edge;
   if (horizontal) {
     selected_edge = shape_edges.horizontal;
@@ -794,7 +793,7 @@ LayoutViewer::Edge LayoutViewer::findEdge(const odb::Point& pt, bool horizontal,
     }
   }
 
-  return selected_edge;
+  return {selected_edge, true};
 }
 
 Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
@@ -1041,8 +1040,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
       }
 
       if (do_ver) {
-        bool ok_ver;
-        auto edge_ver = findEdge(pt_dbu, false, ok_ver);
+        const auto& [edge_ver, ok_ver] = findEdge(pt_dbu, false);
 
         if (ok_ver && do_ver) {
           snap_edge_ = edge_ver;
@@ -1050,8 +1048,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
         }
       }
       if (do_hor) {
-        bool ok_hor;
-        auto edge_hor = findEdge(pt_dbu, true, ok_hor);
+        const auto& [edge_hor, ok_hor] = findEdge(pt_dbu, true);
         if (ok_hor) {
           if (!snap_edge_showing_) {
             snap_edge_ = edge_hor;

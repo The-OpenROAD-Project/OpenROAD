@@ -305,8 +305,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     Edge vertical;
   };
   // search for nearest edge to point
-  Edge findEdge(const odb::Point& pt, bool horizontal, bool& ok);
-  Edges searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt, bool& ok);
+  std::pair<Edge, bool> findEdge(const odb::Point& pt, bool horizontal);
+  std::pair<Edges, bool> searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt);
 
   odb::Point findNextSnapPoint(const odb::Point& end_pt, bool snap = true);
   odb::Point findNextSnapPoint(const odb::Point& end_pt, const odb::Point& start_pt, bool snap = true);
