@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <set>
 #include <sstream>
 
 #include "DataType.h"
@@ -64,11 +65,16 @@ static int right_index(int i)
 bool FastRouteCore::checkTree(const int net_id)
 {
   TreeEdge* treeedges = sttrees_[net_id].edges;
-  TreeNode* treenodes = sttrees_[net_id].nodes;
   const int deg = sttrees_[net_id].deg;
 
   // group all edges that crosses the same position
-  std::map<std::pair<int, int>, std::vector<int>> position_to_edges_map;
+  std::unordered_map<std::pair<int, int>,
+                     std::vector<int>,
+                     boost::hash<std::pair<int, int>>>
+      position_to_edges_map;
+
+  auto cmp = [&](int a, int b) { return treeedges[a].len > treeedges[b].len; };
+  std::set<int, decltype(cmp)> edges_to_fix(cmp);
   for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
     TreeEdge* treeedge = &(treeedges[edgeID]);
     if (treeedge->len > 0) {
@@ -91,46 +97,79 @@ bool FastRouteCore::checkTree(const int net_id)
   // a node with the remaining edges
   for (auto const& [position, edges] : position_to_edges_map) {
     for (int edgeID : edges) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
-      int n1 = treeedge->n1;
-      int n2 = treeedge->n2;
-      int n1a = treeedge->n1a;
-      int n2a = treeedge->n2a;
-
-      int common_positions = 0;
-      for (int ed : edges) {
-        if (ed != edgeID) {
-          int ed_n1 = treeedges[ed].n1;
-          int ed_n2 = treeedges[ed].n2;
-          int ed_n1a = treeedges[ed].n1a;
-          int ed_n2a = treeedges[ed].n2a;
-          if ((ed_n1a == n1a) || ((ed_n1a == n2a)) || (ed_n1 == n1)
-              || (ed_n1 == n2)) {
-            common_positions++;
-          }
-          if ((ed_n2a == n1a) || ((ed_n2a == n2a)) || (ed_n2 == n1)
-              || ((ed_n2 == n2))) {
-            common_positions++;
-          }
-        }
+      if (checkOverlapEdge(net_id, edgeID, edges)) {
+        edges_to_fix.insert(edgeID);
       }
-
-      if (common_positions == 0 && edges.size() > 1) {
-        int x_pos = w_tile_ * (position.first + 0.5) + x_corner_;
-        int y_pos = h_tile_ * (position.second + 0.5) + y_corner_;
-        logger_->warn(
+    }
+  }
+  for (int edge : edges_to_fix) {
+    logger_->warn(
             GRT,
             231,
-            "Net {}: edge {} has no adjacent edges in position ({}, {})",
+            "Net {}: edge {} is overlapping",
             netName(nets_[net_id]),
-            edgeID,
-            x_pos,
-            y_pos);
+            edge);
+    fixOverlappingEdge(net_id, edge);
+  }
+
+  return true;
+}
+
+bool FastRouteCore::checkOverlapEdge(const int net_id,
+                                     const int edge_id,
+                                     const std::vector<int>& edges)
+{
+  TreeEdge* treeedges = sttrees_[net_id].edges;
+  TreeEdge* treeedge = &(treeedges[edge_id]);
+
+  int n1 = treeedge->n1;
+  int n2 = treeedge->n2;
+  int n1a = treeedge->n1a;
+  int n2a = treeedge->n2a;
+
+  int common_positions = 0;
+  for (int ed : edges) {
+    if (ed != edge_id) {
+      int ed_n1 = treeedges[ed].n1;
+      int ed_n2 = treeedges[ed].n2;
+      int ed_n1a = treeedges[ed].n1a;
+      int ed_n2a = treeedges[ed].n2a;
+      if ((ed_n1a == n1a) || ((ed_n1a == n2a)) || (ed_n1 == n1)
+          || (ed_n1 == n2)) {
+        common_positions++;
+      }
+      if ((ed_n2a == n1a) || ((ed_n2a == n2a)) || (ed_n2 == n1)
+          || ((ed_n2 == n2))) {
+        common_positions++;
       }
     }
   }
 
-  return true;
+  if (common_positions == 0 && edges.size() > 1) {
+    return true;
+  }
+
+  return false;
+}
+
+void FastRouteCore::fixOverlappingEdge(const int net_id, const int edge)
+{
+  TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
+  short x_min = std::numeric_limits<short>::max();
+  short y_min = std::numeric_limits<short>::max();
+  short x_max = std::numeric_limits<short>::min();
+  short y_max = std::numeric_limits<short>::min();
+
+  if (treeedge->len > 0) {
+    const std::vector<short>& gridsX = treeedge->route.gridsX;
+    const std::vector<short>& gridsY = treeedge->route.gridsY;
+    for (int i = 0; i <= treeedge->len; i++) {
+      x_min = std::min(gridsX[i], x_min);
+      y_min = std::min(gridsY[i], y_min);
+      x_max = std::max(gridsX[i], x_max);
+      y_max = std::max(gridsY[i], y_max);
+    }
+  }
 }
 
 void FastRouteCore::convertToMazerouteNet(const int netID)

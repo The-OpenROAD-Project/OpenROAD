@@ -36,6 +36,7 @@
 
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -176,6 +177,11 @@ class FastRouteCore
   void InitLastUsage(const int upType);
   void InitEstUsage();
   bool checkTree(const int net_id);
+  bool checkOverlapEdge(
+    const int net_id,
+    const int edge_id,
+    const std::vector<int>& edges);
+  void fixOverlappingEdge(const int net_id, const int edge);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
