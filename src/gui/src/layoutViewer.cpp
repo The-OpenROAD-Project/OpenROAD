@@ -203,7 +203,7 @@ class GuiPainter : public Painter
   //       the trasnsformation is mapped to the base transformation and
   //       the world co-ordinates are mapped to the window co-ordinates
   //       before drawing.
-  void drawString(int x, int y, ANCHOR anchor, const std::string& s) override
+  void drawString(int x, int y, Anchor anchor, const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
@@ -923,7 +923,7 @@ odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
 {
   if (!snap) {
     return end_pt;
-  } else{
+  } else {
     odb::Point snapped = end_pt;
     if (snap_edge_showing_) {
       if (snap_edge_.first == snap_edge_.second) { // point snap
