@@ -289,15 +289,15 @@ void Restructure::runABC()
     int level_gain = 0;
     float delay = std::numeric_limits<float>::max();
     int num_instances = 0;
-    bool status = readAbcLog(abc_log_name, level_gain, delay);
-    if (status) {
-      status
+    bool success = readAbcLog(abc_log_name, level_gain, delay);
+    if (success) {
+      success
           = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
       logger_->report("Optimized to {} instances in iteration {} with max path depth decrease of {}, delay of {}.",
                       num_instances,
                       curr_mode_idx, level_gain, delay);
 
-      if (status) {
+      if (success) {
         if (is_area_mode_) {
           if (num_instances < best_inst_count) {
             best_inst_count = num_instances;
