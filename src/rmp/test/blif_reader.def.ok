@@ -4,9 +4,9 @@ BUSBITCHARS "[]" ;
 DESIGN counter ;
 UNITS DISTANCE MICRONS 1000 ;
 COMPONENTS 3 ;
-    - AND2_X1_1 AND2_X1 ;
-    - AND2_X1_2 AND2_X1 ;
-    - OR2_X1_1 OR2_X1 ;
+    - AND2_X1_11 AND2_X1 ;
+    - AND2_X1_12 AND2_X1 ;
+    - OR2_X1_11 OR2_X1 ;
 END COMPONENTS
 PINS 10 ;
     - inp1 + NET n1 + DIRECTION INPUT + USE SIGNAL ;
@@ -21,17 +21,17 @@ PINS 10 ;
     - out1 + NET n17 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
 NETS 12 ;
-    - n1 ( PIN inp1 ) ( AND2_X1_1 A1 ) + USE SIGNAL ;
+    - n1 ( PIN inp1 ) ( AND2_X1_11 A1 ) + USE SIGNAL ;
     - n16 ( PIN inp9 ) + USE SIGNAL ;
-    - n17 ( PIN out1 ) ( OR2_X1_1 ZN ) + USE SIGNAL ;
-    - n2 ( PIN inp2 ) ( AND2_X1_1 A2 ) + USE SIGNAL ;
-    - n3 ( PIN inp3 ) ( AND2_X1_2 A1 ) + USE SIGNAL ;
-    - n4 ( PIN inp4 ) ( AND2_X1_2 A2 ) + USE SIGNAL ;
+    - n17 ( PIN out1 ) ( OR2_X1_11 ZN ) + USE SIGNAL ;
+    - n2 ( PIN inp2 ) ( AND2_X1_11 A2 ) + USE SIGNAL ;
+    - n3 ( PIN inp3 ) ( AND2_X1_12 A1 ) + USE SIGNAL ;
+    - n4 ( PIN inp4 ) ( AND2_X1_12 A2 ) + USE SIGNAL ;
     - n5 ( PIN inp5 ) + USE SIGNAL ;
     - n6 ( PIN inp6 ) + USE SIGNAL ;
     - n7 ( PIN inp7 ) + USE SIGNAL ;
     - n8 ( PIN inp8 ) + USE SIGNAL ;
-    - t1 ( OR2_X1_1 A1 ) ( AND2_X1_1 ZN ) + USE SIGNAL ;
-    - t2 ( OR2_X1_1 A2 ) ( AND2_X1_2 ZN ) + USE SIGNAL ;
+    - or_1t1 ( OR2_X1_11 A1 ) ( AND2_X1_11 ZN ) + USE SIGNAL ;
+    - or_1t2 ( OR2_X1_11 A2 ) ( AND2_X1_12 ZN ) + USE SIGNAL ;
 END NETS
 END DESIGN
