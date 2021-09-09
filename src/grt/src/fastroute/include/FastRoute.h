@@ -189,6 +189,11 @@ class FastRouteCore
                 std::vector<short>& new_route_x,
                 std::vector<short>& new_route_y,
                 std::vector<std::pair<short, short>>& blocked_positions);
+  void routeLShape(const TreeNode& startpoint,
+                 const TreeNode& endpoint,
+                 std::vector<std::pair<short, short>>& blocked_positions,
+                 std::vector<short>& new_route_x,
+                 std::vector<short>& new_route_y);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
