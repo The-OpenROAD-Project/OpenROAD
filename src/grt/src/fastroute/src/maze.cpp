@@ -97,8 +97,6 @@ bool FastRouteCore::checkTree(const int net_id)
   for (auto const& [position, edges] : position_to_edges_map) {
     for (int edgeID : edges) {
       if (checkOverlapEdge(net_id, edgeID, edges)) {
-        int x_pos = w_tile_ * (position.first + 0.5) + x_corner_;
-        int y_pos = h_tile_ * (position.second + 0.5) + y_corner_;
         edges_to_blocked_pos_map[edgeID].push_back(
             {position.first, position.second});
       }
@@ -166,7 +164,9 @@ void FastRouteCore::fixOverlappingEdge(
 
   if (treeedge->len > 0) {
     std::vector<short> new_route_x, new_route_y;
-    bendEdge(treeedge, treenodes, new_route_x, new_route_y, blocked_positions);
+    const TreeNode& startpoint = treenodes[treeedge->n1];
+    const TreeNode& endpoint = treenodes[treeedge->n2];
+    routeLShape(startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
     treeedge->route.gridsX = new_route_x;
     treeedge->route.gridsY = new_route_y;
@@ -197,7 +197,6 @@ void FastRouteCore::bendEdge(
   short x_min = std::min(treenodes[treeedge->n1].x, treenodes[treeedge->n2].x);
   short y_min = std::min(treenodes[treeedge->n1].y, treenodes[treeedge->n2].y);
 
-  const TreeNode& startpoint = treenodes[treeedge->n1];
   const TreeNode& endpoint = treenodes[treeedge->n2];
   if (blocked_positions.front().second == blocked_positions.back().second) {
     // blocked positions are horizontally aligned
@@ -235,6 +234,72 @@ void FastRouteCore::bendEdge(
 
     new_route_x.push_back(endpoint.x);
     new_route_y.push_back(endpoint.y);
+  }
+}
+
+void FastRouteCore::routeLShape(
+    const TreeNode& startpoint,
+    const TreeNode& endpoint,
+    std::vector<std::pair<short, short>>& blocked_positions,
+    std::vector<short>& new_route_x,
+    std::vector<short>& new_route_y)
+{
+  short x_min = std::min(startpoint.x, endpoint.x);
+  short y_min = std::min(startpoint.y, endpoint.y);
+  short x_max = std::max(startpoint.x, endpoint.x);
+  short y_max = std::max(startpoint.y, endpoint.y);
+
+  new_route_x.push_back(startpoint.x);
+  new_route_y.push_back(startpoint.y);
+  if (blocked_positions.front().second == blocked_positions.back().second) {
+    // blocked positions are horizontally aligned
+    short y;
+    if (startpoint.y != blocked_positions[0].second) {
+      y = startpoint.y;
+    } else {
+      y = endpoint.y;
+    }
+    for (short x = startpoint.x; x < endpoint.x; x++) {
+      new_route_x.push_back(x + 1);
+      new_route_y.push_back(y);
+    }
+    if (y < endpoint.y) {
+      while (y < endpoint.y) {
+        new_route_x.push_back(new_route_x.back());
+        new_route_y.push_back(y + 1);
+        y++;
+      }
+    } else {
+      while (y > endpoint.y) {
+        new_route_x.push_back(new_route_x.back());
+        new_route_y.push_back(y - 1);
+        y--;
+      }
+    }
+  } else {
+    // blocked positions are vertically aligned
+    short x;
+    if (startpoint.x != blocked_positions[0].first) {
+      x = startpoint.x;
+    } else {
+      x = endpoint.x;
+    }
+    if (startpoint.y < endpoint.y) {
+      for (short y = startpoint.y; y < endpoint.y; y++) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y + 1);
+      }
+    } else {
+      for (short y = startpoint.y; y > endpoint.y; y--) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y + 1);
+      }
+    }
+    while (x < endpoint.x) {
+      new_route_y.push_back(new_route_y.back());
+      new_route_x.push_back(x + 1);
+      x++;
+    }
   }
 }
 
