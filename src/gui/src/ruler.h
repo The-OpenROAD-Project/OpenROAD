@@ -33,39 +33,14 @@
 #pragma once
 
 #include <memory>
-
+#include <vector>
 #include "gui/gui.h"
-
-namespace utl {
-class Logger;
-}  // namespace utl
 
 namespace odb {
 class Point;
 }  // namespace odb
 
 namespace gui {
-
-class RulerDescriptor : public Descriptor
-{
- public:
-  std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
-
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
-
-  Properties getProperties(std::any object) const override;
-  Editors getEditors(std::any object) const override;
-  Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
-  bool lessThan(std::any l, std::any r) const override;
-
- private:
-  static bool editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x);
-};
 
 class Ruler
 {
@@ -93,30 +68,29 @@ class Ruler
   std::string label_;
 };
 
-class RulerManager
+class RulerDescriptor : public Descriptor
 {
  public:
-  RulerManager() : logger_(nullptr) {}
+  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers);
 
-  const std::string add(const odb::Point& p0, const odb::Point& p1, const std::string& label = "", const std::string& name = "");
-  void remove(const std::string& name);
-  void clear();
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  Ruler* find(const std::string& name);
-  bool contains(const std::string& name);
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
 
-  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
-
-  void setLogger(utl::Logger* logger) { logger_ = logger; }
-
-  static RulerManager* manager();
+  Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
+  Actions getActions(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
 
  private:
-  utl::Logger* logger_;
-  std::vector<std::unique_ptr<Ruler>> rulers_;
+  static bool editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x);
 
-  // singleton of rulers
-  static std::unique_ptr<RulerManager> manager_;
+  const std::vector<std::unique_ptr<Ruler>>& rulers_;
 };
 
 }  // namespace gui

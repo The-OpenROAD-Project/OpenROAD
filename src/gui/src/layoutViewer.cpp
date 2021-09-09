@@ -369,6 +369,7 @@ LayoutViewer::LayoutViewer(
     Options* options,
     const SelectionSet& selected,
     const HighlightSet& highlighted,
+    const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
     QWidget* parent)
     : QWidget(parent),
@@ -376,6 +377,7 @@ LayoutViewer::LayoutViewer(
       options_(options),
       selected_(selected),
       highlighted_(highlighted),
+      rulers_(rulers),
       scroller_(nullptr),
       pixels_per_dbu_(1.0),
       fit_pixels_per_dbu_(1.0),
@@ -872,7 +874,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     // Look for rulers
     // because rulers are 1 pixel wide, we'll add another couple of pixels to its width
     const int ruler_margin = 4 / pixels_per_dbu_; // 4 pixels in each direction
-    for (auto& ruler : RulerManager::manager()->getRulers()) {
+    for (auto& ruler : rulers_) {
       if (ruler->fuzzyIntersection(pt_dbu, ruler_margin)) {
         selections.push_back(makeSelected_(ruler.get()));
       }
@@ -1390,7 +1392,7 @@ void LayoutViewer::drawRulers(Painter& painter)
     return;
   }
 
-  for (auto& ruler : RulerManager::manager()->getRulers()) {
+  for (auto& ruler : rulers_) {
     painter.drawRuler(
         ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y(), ruler->getLabel());
   }

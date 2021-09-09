@@ -520,7 +520,7 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
 
     Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
-    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor);
+    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(gui::main_window->getRulers()));
   }
 }
 

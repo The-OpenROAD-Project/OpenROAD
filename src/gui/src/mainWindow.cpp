@@ -73,6 +73,7 @@ MainWindow::MainWindow(QWidget* parent)
           controls_,
           selected_,
           highlighted_,
+          rulers_,
           [this](const std::any& object) { return makeSelected(object); },
           this)),
       selection_browser_(
@@ -466,20 +467,32 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
 
 std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  auto new_name = RulerManager::manager()->add(odb::Point(x0, y0), odb::Point(x1, y1), label, name);
+  auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  std::string new_name = new_ruler->getName();
+
+  // check if ruler name is unique
+  for (const auto& ruler : rulers_) {
+    if (new_name == ruler->getName()) {
+      logger_->warn(utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
+  rulers_.push_back(std::move(new_ruler));
   emit rulersChanged();
   return new_name;
 }
 
 void MainWindow::deleteRuler(const std::string& name)
 {
-  auto ruler = RulerManager::manager()->find(name);
-  if (ruler != nullptr) {
+  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+    return l->getName() == name;
+  });
+  if (ruler_find != rulers_.end()) {
     // remove from selected set
-    auto remove_selected = makeSelected(ruler);
+    auto remove_selected = makeSelected(ruler_find->get());
     selected_.erase(remove_selected);
-
-    RulerManager::manager()->remove(name);
+    rulers_.erase(ruler_find);
     emit rulersChanged();
   }
 }
@@ -515,7 +528,9 @@ void MainWindow::clearHighlighted(int highlight_group)
 
 void MainWindow::clearRulers()
 {
-  RulerManager::manager()->clear();
+  if (rulers_.empty())
+    return;
+  rulers_.clear();
   emit rulersChanged();
 }
 
@@ -717,7 +732,6 @@ void MainWindow::setLogger(utl::Logger* logger)
   script_->setLogger(logger);
   viewer_->setLogger(logger);
   drc_viewer_->setLogger(logger);
-  RulerManager::manager()->setLogger(logger);
 }
 
 void MainWindow::fit()
