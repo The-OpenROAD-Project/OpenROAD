@@ -151,6 +151,7 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(setSelected(const Selected&, bool)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
+  connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           selection_browser_,
@@ -304,6 +305,9 @@ void MainWindow::createActions()
   help_ = new QAction("Help", this);
   help_->setShortcut(QString("Ctrl+H"));
 
+  build_ruler_ = new QAction("Ruler", this);
+  build_ruler_->setShortcut(QString("k"));
+
   connect(congestion_setup_,
           SIGNAL(triggered()),
           controls_,
@@ -317,6 +321,8 @@ void MainWindow::createActions()
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
   connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
+
+  connect(build_ruler_, SIGNAL(triggered()), viewer_, SLOT(startRulerBuild()));
 }
 
 void MainWindow::createMenus()
@@ -332,6 +338,7 @@ void MainWindow::createMenus()
 
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(congestion_setup_);
+  tools_menu_->addAction(build_ruler_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -458,11 +465,36 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
-void MainWindow::addRuler(int x0, int y0, int x1, int y1)
+std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  QLine ruler(QPoint(x0, y0), QPoint(x1, y1));
-  rulers_.push_back(ruler);
+  auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  std::string new_name = new_ruler->getName();
+
+  // check if ruler name is unique
+  for (const auto& ruler : rulers_) {
+    if (new_name == ruler->getName()) {
+      logger_->warn(utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
+  rulers_.push_back(std::move(new_ruler));
   emit rulersChanged();
+  return new_name;
+}
+
+void MainWindow::deleteRuler(const std::string& name)
+{
+  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+    return l->getName() == name;
+  });
+  if (ruler_find != rulers_.end()) {
+    // remove from selected set
+    auto remove_selected = makeSelected(ruler_find->get());
+    selected_.erase(remove_selected);
+    rulers_.erase(ruler_find);
+    emit rulersChanged();
+  }
 }
 
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
@@ -725,6 +757,18 @@ void MainWindow::registerDescriptor(const std::type_info& type,
                                     const Descriptor* descriptor)
 {
   descriptors_[type] = descriptor;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    // Esc stop building ruler
+    viewer_->cancelRulerBuild();
+  } else if (event->key() == Qt::Key_K && event->modifiers() & Qt::ShiftModifier) {
+    // Shift + K, remove all rulers
+    clearRulers();
+  }
+  QMainWindow::keyPressEvent(event);
 }
 
 }  // namespace gui

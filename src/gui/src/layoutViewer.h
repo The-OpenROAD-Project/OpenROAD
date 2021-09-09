@@ -41,6 +41,7 @@
 #include <QScrollArea>
 #include <QShortcut>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "gui/gui.h"
@@ -64,6 +65,7 @@ class dbTechLayer;
 namespace gui {
 
 class LayoutScroll;
+class Ruler;
 
 // This class draws the layout.  It supports:
 //   * zoom in/out with ctrl-mousewheel
@@ -108,7 +110,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   LayoutViewer(Options* options,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
-               const std::vector<QLine>& rulers,
+               const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
 
@@ -211,6 +213,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
 
+  void startRulerBuild();
+  void cancelRulerBuild();
+
  private:
   struct Boxes
   {
@@ -243,8 +248,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
-                 int depth,
-                 const QTransform& base_tx);
+                 int depth);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -295,11 +299,25 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void addMenuAndActions();
   void updateShapes();
 
+  using Edge = std::pair<odb::Point, odb::Point>;
+  struct Edges {
+    Edge horizontal;
+    Edge vertical;
+  };
+  // search for nearest edge to point
+  std::pair<Edge, bool> findEdge(const odb::Point& pt, bool horizontal);
+  std::pair<Edges, bool> searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt);
+
+  odb::Point findNextSnapPoint(const odb::Point& end_pt, bool snap = true);
+  odb::Point findNextSnapPoint(const odb::Point& end_pt, const odb::Point& start_pt, bool snap = true);
+
+  odb::Point findNextRulerPoint(const odb::Point& mouse);
+
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
-  const std::vector<QLine>& rulers_;
+  const std::vector<std::unique_ptr<Ruler>>& rulers_;
   LayoutScroll* scroller_;
 
   // holds the current resolution for drawing the layout (units are pixels / dbu)
@@ -318,6 +336,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
+
+  bool building_ruler_;
+  std::unique_ptr<odb::Point> ruler_start_;
+
+  bool snap_edge_showing_;
+  Edge snap_edge_;
 
   utl::Logger* logger_;
   bool design_loaded_;
