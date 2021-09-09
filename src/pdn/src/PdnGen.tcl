@@ -2040,34 +2040,42 @@ proc read_widthtable {layer_name} {
     }
 
     regexp {WIDTHTABLE\s+(.*)} $line - widthtable
-    set widthtable [lmap x $widthtable {expr round($x * $def_units)}]
+    set widthtable [lmap x $widthtable {ord::microns_to_dbu $x}]
 
-    # Not interested in wrong direction routing
-    if {![dict exists $flags wrongdirection]} {
-      set table $widthtable
+    if {[dict exists $flags wrongdirection]} {
+      dict set table wrongdirection $widthtable
+    } else {
+      dict set table rightdirection $widthtable
     }
   }
   return $table
 }
 
-proc get_widthtable {layer_name} {
+proc get_widthtable {layer_name direction} {
   variable layers
 
   if {![dict exists $layers $layer_name widthtable]} {
       dict set layers $layer_name widthtable [read_widthtable $layer_name]
   }
 
-  return [dict get $layers $layer_name widthtable]
+  if {![dict exists $layers $layer_name widthtable $direction]} {
+    if {$direction == "wrongdirection" && [dict exists $layers $layer_name widthtable rightdirection]} {
+      dict set layers $layer_name widthtable $direction [dict get $layers $layer_name widthtable rightdirection]
+    } else {
+      dict set layers $layer_name widthtable $direction {}
+    }
+  }
+
+  return [dict get $layers $layer_name widthtable $direction]
 }
 
 # Layers that have a widthtable will only support some width values, the widthtable defines the
 # set of widths that are allowed, or any width greater than or equal to the last value in the
 # table
-proc get_adjusted_width {layer width} {
-  set widthtable [get_widthtable $layer]
+#
 
+proc adjust_width {widthtable width} {
   if {[llength $widthtable] == 0} {return $width}
-  # debug "widthtable $layer ($width): $widthtable"
   if {[lsearch -exact $widthtable $width] > -1} {return $width}
   if {$width > [lindex $widthtable end]} {return $width}
 
@@ -2078,6 +2086,22 @@ proc get_adjusted_width {layer width} {
   }
 
   return $width
+}
+
+proc get_adjusted_dX {layer width} {
+  if {[get_routing_direction $layer] == "ver"} {
+    return [adjust_width [get_widthtable $layer rightdirection] $width]
+  } else {
+    return [adjust_width [get_widthtable $layer wrongdirection] $width]
+  }
+}
+
+proc get_adjusted_dY {layer height} {
+  if {[get_routing_direction $layer] == "hor"} {
+    return [adjust_width [get_widthtable $layer rightdirection] $height]
+  } else {
+    return [adjust_width [get_widthtable $layer wrongdirection] $height]
+  }
 }
 
 proc get_arrayspacing_rule {layer_name} {
@@ -2189,8 +2213,8 @@ proc determine_num_via_columns {via_info constraints} {
     }
   }
   # debug "cols $columns W: lower $lower_width upper $upper_width"
-  set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
-  set upper_width [get_adjusted_width [dict get $via_info upper layer] $upper_width]
+  set lower_width [get_adjusted_dX [dict get $via_info lower layer] $lower_width]
+  set upper_width [get_adjusted_dX [dict get $via_info upper layer] $upper_width]
   # debug "cols $columns W: lower $lower_width upper $upper_width"
 
   return $columns
@@ -2271,8 +2295,8 @@ proc determine_num_via_rows {via_info constraints} {
     }
   }
   # debug "$rows H: lower $lower_height upper $upper_height"
-  set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
-  set upper_height [get_adjusted_width [dict get $via_info upper layer] $upper_height]
+  set lower_height [get_adjusted_dY [dict get $via_info lower layer] $lower_height]
+  set upper_height [get_adjusted_dY [dict get $via_info upper layer] $upper_height]
   # debug "$rows H: lower $lower_height upper $upper_height"
 
   return $rows
@@ -2324,27 +2348,27 @@ proc init_via_width_height {via_info lower_layer width height constraints} {
   if {[dict exists $constraints width $lower_layer]} {
     if {[get_dir $lower_layer] == "hor"} {
       set lower_height [expr round([dict get $constraints width $lower_layer] * $def_units)]
-      set lower_width  [get_adjusted_width $lower_layer $width]
+      set lower_width  [get_adjusted_dX $lower_layer $width]
     } else {
       set lower_width [expr round([dict get $constraints width $lower_layer] * $def_units)]
-      set lower_height [get_adjusted_width $lower_layer $height]
+      set lower_height [get_adjusted_dY $lower_layer $height]
     }
   } else {
     # Adjust the width and height values to the next largest allowed value if necessary
-    set lower_width  [get_adjusted_width $lower_layer $width]
-    set lower_height [get_adjusted_width $lower_layer $height]
+    set lower_width  [get_adjusted_dX $lower_layer $width]
+    set lower_height [get_adjusted_dY $lower_layer $height]
   }
   if {[dict exists $constraints width $upper_layer]} {
     if {[get_dir $upper_layer] == "hor"} {
       set upper_height [expr round([dict get $constraints width $upper_layer] * $def_units)]
-      set upper_width  [get_adjusted_width $upper_layer $width]
+      set upper_width  [get_adjusted_dX $upper_layer $width]
     } else {
       set upper_width [expr round([dict get $constraints width $upper_layer] * $def_units)]
-      set upper_height [get_adjusted_width $upper_layer $height]
+      set upper_height [get_adjusted_dY $upper_layer $height]
     }
   } else {
-    set upper_width  [get_adjusted_width $upper_layer $width]
-    set upper_height [get_adjusted_width $upper_layer $height]
+    set upper_width  [get_adjusted_dX $upper_layer $width]
+    set upper_height [get_adjusted_dY $upper_layer $height]
   }
   # debug "lower (width $lower_width height $lower_height) upper (width $upper_width height $upper_height)"
   # debug "min - \[expr min($lower_width,$lower_height,$upper_width,$upper_height)\]"
