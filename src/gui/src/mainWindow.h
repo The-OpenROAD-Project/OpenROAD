@@ -43,6 +43,7 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
+#include "ruler.h"
 
 namespace odb {
 class dbDatabase;
@@ -140,7 +141,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void addHighlighted(const SelectionSet& selection, int highlight_group = 0);
 
   // Add Ruler to Layout View
-  void addRuler(int x0, int y0, int x1, int y1);
+  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
+
+  // Delete Ruler to Layout View
+  void deleteRuler(const std::string& name);
 
   // Add the selections(List) to highlight set
   void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
@@ -196,6 +200,11 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool input,
                                     int highlight_group = 0);
 
+  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
+
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+
  private:
   void createMenus();
   void createActions();
@@ -208,7 +217,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
-  std::vector<QLine> rulers_;
+  std::vector<std::unique_ptr<Ruler>> rulers_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
@@ -236,6 +245,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* zoom_in_;
   QAction* zoom_out_;
   QAction* help_;
+  QAction* build_ruler_;
 
   QAction* congestion_setup_;
 

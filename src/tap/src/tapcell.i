@@ -78,7 +78,7 @@
            const char* tap_nwout3_master,
            const char* incnrcap_nwin_master,
            const char* incnrcap_nwout_master,
-           const char* tapcell_master,
+           odb::dbMaster* tapcell_master,
            int dist)
   {
     getTapcell()->run(endcap_master,

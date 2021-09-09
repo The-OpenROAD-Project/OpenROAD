@@ -171,6 +171,11 @@ class DisplayControls : public QDockWidget, public Options
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 
+  QColor rulerColor() override;
+  QFont rulerFont() override;
+  bool areRulersVisible() override;
+  bool areRulersSelectable() override;
+
   void addCustomVisibilityControl(const std::string& name,
                                   bool initially_visible = false);
   bool checkCustomVisibilityControl(const std::string& name);
@@ -311,6 +316,7 @@ class DisplayControls : public QDockWidget, public Options
   ModelRow rows_;
   ModelRow congestion_map_;
   ModelRow pin_markers_;
+  ModelRow rulers_;
   TrackModels tracks_;
   MiscModels misc_;
 
@@ -329,6 +335,9 @@ class DisplayControls : public QDockWidget, public Options
 
   QColor instance_name_color_;
   QFont instance_name_font_;
+
+  QColor ruler_color_;
+  QFont ruler_font_;
 
   QColor row_color_;
 
