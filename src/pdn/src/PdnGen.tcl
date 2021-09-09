@@ -2081,6 +2081,7 @@ proc adjust_width {widthtable width} {
 
   foreach value $widthtable {
     if {$value > $width} {
+      # debug "Adjust width from $width to $value"
       return $value
     }
   }
@@ -2090,16 +2091,20 @@ proc adjust_width {widthtable width} {
 
 proc get_adjusted_dX {layer width} {
   if {[get_routing_direction $layer] == "ver"} {
+    # debug "Using rightdirection adjustment for layer $layer (dX)"
     return [adjust_width [get_widthtable $layer rightdirection] $width]
   } else {
+    # debug "Using wrongdirection adjustment for layer $layer (dX)"
     return [adjust_width [get_widthtable $layer wrongdirection] $width]
   }
 }
 
 proc get_adjusted_dY {layer height} {
   if {[get_routing_direction $layer] == "hor"} {
+    # debug "Using rightdirection adjustment for layer $layer (dY)"
     return [adjust_width [get_widthtable $layer rightdirection] $height]
   } else {
+    # debug "Using wrongdirection adjustment for layer $layer (dY)"
     return [adjust_width [get_widthtable $layer wrongdirection] $height]
   }
 }
