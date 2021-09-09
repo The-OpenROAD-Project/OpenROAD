@@ -68,26 +68,25 @@ bool FastRouteCore::checkTree(const int net_id)
   const int deg = sttrees_[net_id].deg;
 
   // group all edges that crosses the same position
-  std::unordered_map<std::pair<int, int>,
+  std::unordered_map<std::pair<short, short>,
                      std::vector<int>,
                      boost::hash<std::pair<int, int>>>
       position_to_edges_map;
 
   auto cmp = [&](int a, int b) { return treeedges[a].len > treeedges[b].len; };
-  std::set<int, decltype(cmp)> edges_to_fix(cmp);
+  std::map<int, std::vector<std::pair<short, short>>, decltype(cmp)>
+      edges_to_blocked_pos_map(cmp);
   for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
     TreeEdge* treeedge = &(treeedges[edgeID]);
     if (treeedge->len > 0) {
       int routeLen = treeedge->route.routelen;
       const std::vector<short>& gridsX = treeedge->route.gridsX;
       const std::vector<short>& gridsY = treeedge->route.gridsY;
-      const std::pair<int, int> pos_0 = {gridsX[0], gridsY[0]};
+      const std::pair<short, short> pos_0 = {gridsX[0], gridsY[0]};
       position_to_edges_map[pos_0].push_back(edgeID);
 
       for (int i = 1; i <= routeLen; i++) {
-        const int x1 = gridsX[i];
-        const int y1 = gridsY[i];
-        const std::pair<int, int> pos_i = {gridsX[i], gridsY[i]};
+        const std::pair<short, short> pos_i = {gridsX[i], gridsY[i]};
         position_to_edges_map[pos_i].push_back(edgeID);
       }
     }
@@ -98,18 +97,16 @@ bool FastRouteCore::checkTree(const int net_id)
   for (auto const& [position, edges] : position_to_edges_map) {
     for (int edgeID : edges) {
       if (checkOverlapEdge(net_id, edgeID, edges)) {
-        edges_to_fix.insert(edgeID);
+        int x_pos = w_tile_ * (position.first + 0.5) + x_corner_;
+        int y_pos = h_tile_ * (position.second + 0.5) + y_corner_;
+        edges_to_blocked_pos_map[edgeID].push_back(
+            {position.first, position.second});
       }
     }
   }
-  for (int edge : edges_to_fix) {
-    logger_->warn(
-            GRT,
-            231,
-            "Net {}: edge {} is overlapping",
-            netName(nets_[net_id]),
-            edge);
-    fixOverlappingEdge(net_id, edge);
+  for (auto& [edge, blocked_positions] : edges_to_blocked_pos_map) {
+    fixOverlappingEdge(net_id, edge, blocked_positions);
+    break;
   }
 
   return true;
@@ -152,23 +149,77 @@ bool FastRouteCore::checkOverlapEdge(const int net_id,
   return false;
 }
 
-void FastRouteCore::fixOverlappingEdge(const int net_id, const int edge)
+void FastRouteCore::fixOverlappingEdge(
+    const int net_id,
+    const int edge,
+    std::vector<std::pair<short, short>>& blocked_positions)
 {
   TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
-  short x_min = std::numeric_limits<short>::max();
-  short y_min = std::numeric_limits<short>::max();
-  short x_max = std::numeric_limits<short>::min();
-  short y_max = std::numeric_limits<short>::min();
+  TreeNode* treenodes = sttrees_[net_id].nodes;
+
+  short x_min = std::min(treenodes[treeedge->n1].x, treenodes[treeedge->n2].x);
+  short y_min = std::min(treenodes[treeedge->n1].y, treenodes[treeedge->n2].y);
+
+  auto sort_by_x = [](std::pair<short, short> a, std::pair<short, short> b) {
+    return a.first < b.first;
+  };
+
+  std::stable_sort(
+      blocked_positions.begin(), blocked_positions.end(), sort_by_x);
 
   if (treeedge->len > 0) {
+    std::vector<short> new_route_x, new_route_y;
     const std::vector<short>& gridsX = treeedge->route.gridsX;
     const std::vector<short>& gridsY = treeedge->route.gridsY;
+
     for (int i = 0; i <= treeedge->len; i++) {
-      x_min = std::min(gridsX[i], x_min);
-      y_min = std::min(gridsY[i], y_min);
-      x_max = std::max(gridsX[i], x_max);
-      y_max = std::max(gridsY[i], y_max);
+      std::pair<short, short> pos = {gridsX[i], gridsY[i]};
+      if (pos == blocked_positions.front()) {
+        break;
+      } else {
+        new_route_x.push_back(pos.first);
+        new_route_y.push_back(pos.second);
+      }
     }
+
+    TreeNode n2 = treenodes[treeedge->n2];
+    std::pair<short, short> endpoint = {n2.x, n2.y};
+    if (blocked_positions.front().second == blocked_positions.back().second) {
+      // blocked positions are horizontally aligned
+      short y = (new_route_y.back() == y_min) ? new_route_y.back() + 1
+                                              : new_route_y.back() - 1;
+      new_route_x.push_back(new_route_x.back());
+      new_route_y.push_back(y);
+
+      for (short x = new_route_x.back(); x < endpoint.first; x++) {
+        new_route_x.push_back(x + 1);
+        new_route_y.push_back(y);
+      }
+
+      new_route_x.push_back(endpoint.first);
+      new_route_y.push_back(endpoint.second);
+    } else if (blocked_positions.front().first
+               == blocked_positions.back().first) {
+      // blocked positions are vertically aligned
+      short x = (new_route_x.back() == x_min) ? new_route_x.back() + 1
+                                              : new_route_x.back() - 1;
+      new_route_x.push_back(x);
+      new_route_y.push_back(new_route_y.back());
+
+      short y_incr = (new_route_y.back() < endpoint.second) ? 1 : -1;
+
+      for (short y = new_route_y.back(); y < endpoint.second; y += y_incr) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y + y_incr);
+      }
+
+      new_route_x.push_back(endpoint.first);
+      new_route_y.push_back(endpoint.second);
+    }
+
+    treeedge->route.gridsX = new_route_x;
+    treeedge->route.gridsY = new_route_y;
+    treeedge->route.routelen = new_route_x.size() - 1;
   }
 }
 

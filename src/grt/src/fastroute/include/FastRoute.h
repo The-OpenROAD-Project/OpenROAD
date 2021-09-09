@@ -181,7 +181,9 @@ class FastRouteCore
     const int net_id,
     const int edge_id,
     const std::vector<int>& edges);
-  void fixOverlappingEdge(const int net_id, const int edge);
+  void fixOverlappingEdge(const int net_id,
+                          const int edge,
+                          std::vector<std::pair<short, short>>& blocked_positions);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
