@@ -46,7 +46,6 @@ class FlexGridGraph
 {
  public:
   // constructors
-  // FlexGridGraph() {}
   FlexGridGraph(frTechObject* techIn, FlexDRWorker* workerIn)
       : tech_(techIn),
         drWorker_(workerIn),
@@ -68,12 +67,7 @@ class FlexGridGraph
   // getters
   frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
-  // getters
-  // unsafe access, no check
-  bool isAstarVisited(frMIdx x, frMIdx y, frMIdx z) const
-  {
-    return (getPrevAstarNodeDir(x, y, z) == frDirEnum::UNKNOWN);
-  }
+
   // unsafe access, no check
   frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
   {
@@ -407,11 +401,7 @@ class FlexGridGraph
     if (!isEdgeInBox(x, y, z, dir, box, initDR)) {
       sol = false;
     } else {
-      // cout <<"orig edge (" <<x <<", " <<y <<", " <<z <<", " <<int(dir) <<")"
-      // <<endl;
       correct(x, y, z, dir);
-      // cout <<"corr edge (" <<x <<", " <<y <<", " <<z <<", " <<int(dir) <<")"
-      // <<endl;
       if (isValid(x, y, z, dir)) {
         Node& node = nodes_[getIdx(x, y, z)];
         switch (dir) {
@@ -755,9 +745,6 @@ class FlexGridGraph
   // must be safe access because idx1 and idx2 may be invalid
   void setGuide(frMIdx x1, frMIdx y1, frMIdx x2, frMIdx y2, frMIdx z)
   {
-    // if (!(isValid(x1, y1, z) && isValid(x2, y2, z))) {
-    //   return;
-    // }
     if (x2 < x1 || y2 < y1) {
       return;
     }
@@ -766,28 +753,17 @@ class FlexGridGraph
         auto idx1 = getIdx(x1, i, z);
         auto idx2 = getIdx(x2, i, z);
         std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
-        // std::cout <<"fill H from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<x1 <<", " <<i <<", " <<z <<") ("
-        //           <<x2 <<", " <<i <<", " <<z <<") "
-        //           <<std::endl;
       }
     } else {  // V
       for (int i = x1; i <= x2; i++) {
         auto idx1 = getIdx(i, y1, z);
         auto idx2 = getIdx(i, y2, z);
         std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
-        // std::cout <<"fill V from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<i <<", " <<y1 <<", " <<z <<") ("
-        //           <<i <<", " <<y2 <<", " <<z <<") "
-        //           <<std::endl;
       }
     }
   }
   void resetGuide(frMIdx x1, frMIdx y1, frMIdx x2, frMIdx y2, frMIdx z)
   {
-    // if (!(isValid(x1, y1, z) && isValid(x2, y2, z))) {
-    //   return;
-    // }
     if (x2 < x1 || y2 < y1) {
       return;
     }
@@ -796,20 +772,12 @@ class FlexGridGraph
         auto idx1 = getIdx(x1, i, z);
         auto idx2 = getIdx(x2, i, z);
         std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
-        // std::cout <<"unfill H from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<x1 <<", " <<i <<", " <<z <<") ("
-        //           <<x2 <<", " <<i <<", " <<z <<") "
-        //           <<std::endl;
       }
     } else {  // V
       for (int i = x1; i <= x2; i++) {
         auto idx1 = getIdx(i, y1, z);
         auto idx2 = getIdx(i, y2, z);
         std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
-        // std::cout <<"unfill V from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<i <<", " <<y1 <<", " <<z <<") ("
-        //           <<i <<", " <<y2 <<", " <<z <<") "
-        //           <<std::endl;
       }
     }
   }
@@ -1164,7 +1132,6 @@ class FlexGridGraph
                        const FlexMazeIdx& dstMazeIdx2,
                        const frPoint& centerPt);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
-  // bool isOpposite(const frDirEnum &dir1, const frDirEnum &dir2);
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexWavefrontGrid& currGrid) const;
   void expand(FlexWavefrontGrid& currGrid,
