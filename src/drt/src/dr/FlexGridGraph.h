@@ -69,9 +69,9 @@ class FlexGridGraph
   FlexDRWorker* getDRWorker() const { return drWorker_; }
 
   // unsafe access, no check
-  frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
+  frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
-    auto baseIdx = 3 * getIdx(x, y, z);
+    auto baseIdx = 3 * getIdx(idx.x(), idx.y(), idx.z());
     return (frDirEnum)(((unsigned short) (prevDirs_[baseIdx]) << 2)
                        + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
                        + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));

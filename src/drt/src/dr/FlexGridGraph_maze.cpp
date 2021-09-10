@@ -136,9 +136,9 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   // commit grid prev direction if needed
   auto tailIdx = getTailIdx(nextIdx, nextWavefrontGrid);
   if (tailDir != frDirEnum::UNKNOWN) {
-    if (getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z())
+    if (getPrevAstarNodeDir(tailIdx)
             == frDirEnum::UNKNOWN
-        || getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z())
+        || getPrevAstarNodeDir(tailIdx)
                == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
       wavefront_.push(nextWavefrontGrid);
@@ -726,7 +726,7 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   reverse(gridX, gridY, gridZ, dir);
   if (!hg || isSrc(gridX, gridY, gridZ)
-      || (getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN)
+      || (getPrevAstarNodeDir({gridX, gridY, gridZ}) != frDirEnum::UNKNOWN)
       ||  // comment out for non-buffer enablement
       currGrid.getLastDir() == dir) {
     return false;
@@ -788,7 +788,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
   // trace back according to grid prev dir
   while (isSrc(currX, currY, currZ) == false) {
     // get last direction
-    currDir = getPrevAstarNodeDir(currX, currY, currZ);
+    currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.push_back(FlexMazeIdx(currX, currY, currZ));
     if (currDir == frDirEnum::UNKNOWN) {
       cout << "Warning: unexpected direction in tracBackPath\n";
@@ -876,7 +876,7 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
   while (!wavefront_.empty()) {
     auto currGrid = wavefront_.top();
     wavefront_.pop();
-    if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z())
+    if (getPrevAstarNodeDir({currGrid.x(), currGrid.y(), currGrid.z()})
         != frDirEnum::UNKNOWN) {
       continue;
     }
