@@ -90,6 +90,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
 
+  DisplayControls* getControls() const { return controls_; }
+  LayoutViewer* getLayoutViewer() const { return viewer_; }
+  DRCWidget* getDRCViewer() const { return drc_viewer_; }
+
+  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
@@ -189,18 +195,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // request for user input
   const std::string requestUserInput(const QString& title, const QString& question);
 
-  DisplayControls* getControls() const { return controls_; }
-  LayoutViewer* getLayoutViewer() const { return viewer_; }
-  DRCWidget* getDRCViewer() const { return drc_viewer_; }
-
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
   void selectHighlightConnectedNets(bool select_flag,
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-
-  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
 
  protected:
   void keyPressEvent(QKeyEvent* event) override;

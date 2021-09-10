@@ -670,11 +670,12 @@ std::pair<LayoutViewer::Edges, bool> LayoutViewer::searchNearestEdge(const std::
 
 std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt, bool horizontal)
 {
-  if (db_ == nullptr) {
+  odb::dbBlock* block = getBlock();
+  if (db_ == nullptr || block == nullptr) {
     return {Edge(), false};
   }
 
-  const int search_radius = getBlock()->getDbUnitsPerMicron();
+  const int search_radius = block->getDbUnitsPerMicron();
 
   std::vector<Search::Box> boxes;
 
