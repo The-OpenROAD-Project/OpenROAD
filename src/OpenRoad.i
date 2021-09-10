@@ -307,11 +307,12 @@ write_def_cmd(const char *filename,
 
 
 void 
-write_cdl_cmd(const char *filename,
+write_cdl_cmd(const char *outFilename,
+              const char *mastersFilename,
               bool includeFillers)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeCdl(filename, includeFillers);
+  ord->writeCdl(outFilename, mastersFilename, includeFillers);
 }
 
 void
