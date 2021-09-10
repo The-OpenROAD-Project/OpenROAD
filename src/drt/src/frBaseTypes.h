@@ -87,6 +87,11 @@ enum frPrefRoutingDirEnum
   frcHorzPrefRoutingDir = 2,
   frcVertPrefRoutingDir = 3
 };
+enum RouteDirectionEnum : bool
+{
+  Vertical = 0,
+  Horizontal = 1
+};
 enum frBlockObjectEnum
 {
   frcNet,

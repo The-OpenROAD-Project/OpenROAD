@@ -243,7 +243,10 @@ class FlexGridGraph
     }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
-  bool getZDir(frMIdx in) const { return zDirs_[in]; }
+  RouteDirectionEnum getZDir(frMIdx in) const
+  {
+    return static_cast<RouteDirectionEnum>(zDirs_[in]);
+  }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     correct(x, y, z, dir);
@@ -748,13 +751,13 @@ class FlexGridGraph
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    if (getZDir(z)) {  // H
+    if (getZDir(z) == Horizontal) {
       for (int i = y1; i <= y2; i++) {
         auto idx1 = getIdx(x1, i, z);
         auto idx2 = getIdx(x2, i, z);
         std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
       }
-    } else {  // V
+    } else {  // == Vertical
       for (int i = x1; i <= x2; i++) {
         auto idx1 = getIdx(i, y1, z);
         auto idx2 = getIdx(i, y2, z);
@@ -767,13 +770,13 @@ class FlexGridGraph
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    if (getZDir(z)) {  // H
+    if (getZDir(z) == Horizontal) {
       for (int i = y1; i <= y2; i++) {
         auto idx1 = getIdx(x1, i, z);
         auto idx2 = getIdx(x2, i, z);
         std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
       }
-    } else {  // V
+    } else {  // == Vertical
       for (int i = x1; i <= x2; i++) {
         auto idx1 = getIdx(i, y1, z);
         auto idx2 = getIdx(i, y2, z);
@@ -989,8 +992,9 @@ class FlexGridGraph
     auto xSize = xCoords_.size();
     auto ySize = yCoords_.size();
 
-    frMIdx zDirModifier
-        = (getZDir(zIdx)) ? (xIdx + yIdx * xSize) : (yIdx + xIdx * ySize);
+    frMIdx zDirModifier = (getZDir(zIdx) == Horizontal)
+                        ? (xIdx + yIdx * xSize)
+                        : (yIdx + xIdx * ySize);
     frMIdx partialCoordinates = zIdx * xSize * ySize;
 
     return zDirModifier + partialCoordinates;

@@ -61,7 +61,9 @@ void FlexGridGraph::initGrids(
     zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
     zHeights_.push_back(zHeight);
-    zDirs_.push_back((v == frPrefRoutingDirEnum::frcHorzPrefRoutingDir));
+    zDirs_.push_back((v == frPrefRoutingDirEnum::frcHorzPrefRoutingDir ?
+                           RouteDirectionEnum::Horizontal :
+                           RouteDirectionEnum::Vertical));
   }
   // initialize all grids
   frMIdx xDim, yDim, zDim;
