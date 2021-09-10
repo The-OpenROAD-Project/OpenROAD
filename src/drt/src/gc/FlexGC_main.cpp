@@ -3041,25 +3041,20 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      frPoint tmpOrigin;
-      obj->getOrigin(tmpOrigin);
-      if ((upViaFound || downViaFound) && (tmpOrigin != origin))
-        continue;
-
-      if (obj->getViaDef()->getCutLayerNum() == lNum + 1 && !upViaFound) {
+      if (obj->getViaDef()->getCutLayerNum() == lNum + 1) {
         upViaFound = true;
-      } else if (obj->getViaDef()->getCutLayerNum() == lNum - 1
-                 && !downViaFound) {
+      } else if (obj->getViaDef()->getCutLayerNum() == lNum - 1) {
         downViaFound = true;
       } else {
         continue;
       }
-      origin = tmpOrigin;
+      obj->getOrigin(origin);
       net = obj->getNet();
-      if (upViaFound && downViaFound)
-        break;
     }
-    if (!net || !upViaFound || !downViaFound)
+    if (!net) {
+      continue;
+    }
+    if (!upViaFound || !downViaFound)
       continue;
     markerBBox.shift(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
