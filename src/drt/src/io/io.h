@@ -174,9 +174,7 @@ class Parser
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin,
-                    std::vector<frRect>& rects, std::map<frBlockObject*,
-                    std::set<std::pair<frPoint, frLayerNum>>,
-                    frBlockObjectComp>& pin2GCellMap);
+                    std::vector<frRect>& rects);
   void genGuides_pinEnclosure(frNet* net, 
                     std::vector<frRect>& rects, std::map<frBlockObject*,
                     std::set<std::pair<frPoint, frLayerNum>>,
@@ -200,12 +198,16 @@ class Parser
   void genGuides_gCell2PinMap(
       frNet* net,
       std::map<std::pair<frPoint, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap);
+               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
+      std::map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
+            pin2GCellMap);
   void genGuides_gCell2TermMap(
       std::map<std::pair<frPoint, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       frTerm* term,
-      frBlockObject* origTerm);
+      frBlockObject* origTerm,
+    std::map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
+            pin2GCellMap);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<frPoint, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,

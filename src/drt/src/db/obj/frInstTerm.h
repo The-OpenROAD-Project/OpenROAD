@@ -71,6 +71,7 @@ class frInstTerm : public frBlockObject
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes);
+  frBox getBBox();
  protected:
   frInst* inst_;
   frTerm* term_;

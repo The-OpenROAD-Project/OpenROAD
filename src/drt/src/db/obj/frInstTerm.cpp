@@ -59,3 +59,11 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes) {
         shape.shift(trans.xOffset(), trans.yOffset());
     }
 }
+
+frBox frInstTerm::getBBox() {
+    frBox bbox(term_->getBBox());
+    frTransform trans;
+    getInst()->getTransform(trans);
+    bbox.shift(trans.xOffset(), trans.yOffset());
+    return bbox;
+}
