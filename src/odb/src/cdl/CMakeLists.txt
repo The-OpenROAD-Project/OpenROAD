@@ -13,3 +13,8 @@ set_target_properties(cdl
     # python requirement
     POSITION_INDEPENDENT_CODE ON
 )
+
+target_link_libraries(cdl
+    PUBLIC
+        utl
+)
