@@ -349,7 +349,7 @@ unsigned FlexGRCMap::getNumBlkTracks(
     }
     if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
       auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
-      if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK) {
+      if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
         // actBloatDist = calcBloatDist(obj, lNum, boostB);
         // currently hack to prevent via EOL violation from above / below layer
         // (see TA prevention for prl)

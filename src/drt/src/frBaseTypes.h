@@ -65,6 +65,7 @@ template <typename T>
 using frListIter = typename std::list<T>::iterator;
 using dbTechLayerDir = odb::dbTechLayerDir;
 using dbTechLayerType = odb::dbTechLayerType;
+using dbMasterType = odb::dbMasterType;
 
 enum frOrientEnum
 {
@@ -271,38 +272,6 @@ enum class AccessPointTypeEnum
   Offgrid,
   None
 };
-
-enum class MacroClassEnum
-{
-  UNKNOWN,
-  CORE,
-  CORE_TIEHIGH,
-  CORE_TIELOW,
-  CORE_WELLTAP,
-  CORE_SPACER,
-  CORE_ANTENNACELL,
-  COVER,
-  BLOCK,
-  RING,
-  PAD,
-  PAD_INPUT,
-  PAD_OUTPUT,
-  PAD_INOUT,
-  PAD_POWER,
-  PAD_SPACER,
-  PAD_AREAIO,
-  ENDCAP,
-  ENDCAP_PRE,
-  ENDCAP_POST,
-  ENDCAP_TOPLEFT,
-  ENDCAP_TOPRIGHT,
-  ENDCAP_BOTTOMLEFT,
-  ENDCAP_BOTTOMRIGHT
-};
-
-// This will go away when we move to OpenDB's types
-bool isPad(MacroClassEnum e);
-bool isEndcap(MacroClassEnum e);
 
 // note: In ascending cost order for FlexPA
 enum class frAccessPointEnum

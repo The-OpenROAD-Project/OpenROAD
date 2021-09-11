@@ -2255,29 +2255,16 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
     if (term) {
       // macro cell or stdcell
       if (term->typeId() == frcInstTerm) {
-        if (static_cast<frInstTerm*>(term)
-                    ->getInst()
-                    ->getRefBlock()
-                    ->getMacroClass()
-                == MacroClassEnum::BLOCK
-            || isPad(static_cast<frInstTerm*>(term)
-                         ->getInst()
-                         ->getRefBlock()
-                         ->getMacroClass())
-            || static_cast<frInstTerm*>(term)
-                       ->getInst()
-                       ->getRefBlock()
-                       ->getMacroClass()
-                   == MacroClassEnum::RING) {
+        dbMasterType masterType =
+          static_cast<frInstTerm*>(term)->getInst()->getRefBlock()
+            ->getMasterType();
+        if (masterType.isBlock() || masterType.isPad()
+            || masterType == dbMasterType::RING) {
           isStdCellPin = false;
-          // cout <<"curr dPin is macro pin" <<endl;
-        } else {
-          // cout <<"curr dPin is stdcell pin" <<endl;
         }
         // IO
       } else if (term->typeId() == frcTerm) {
         isStdCellPin = false;
-        // cout <<"curr dPin is io pin" <<endl;
       }
     } else {
       continue;
@@ -3211,11 +3198,11 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             int type = isAddPathCost ? 3 : 2;
 
+            dbMasterType masterType = inst->getRefBlock()->getMasterType();
             if (isRoutingLayer) {
               modMinSpacingCostPlanar(box, zIdx, type);
-              if (inst->getRefBlock()->getMacroClass()
-                  == MacroClassEnum::BLOCK) {  // temp solution for ISPD19
-                                               // benchmarks
+
+              if (masterType.isBlock()) { // temp solution for ISPD19 benchmarks
                 modCornerToCornerSpacing(box, zIdx, type);
               }
               if (!isSkipVia) {
@@ -3229,10 +3216,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
               modInterLayerCutSpacingCost(box, zIdx, type, false);
             }
             // temporary solution, only add cost around macro pins
-            if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-                || isPad(inst->getRefBlock()->getMacroClass())
-                || inst->getRefBlock()->getMacroClass()
-                       == MacroClassEnum::RING) {
+            if (masterType.isBlock() || masterType.isPad()
+                || masterType == dbMasterType::RING) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
             }
@@ -3315,10 +3300,9 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     auto dPinTerm = pin->getFrTerm();
     if (dPinTerm->typeId() == frcInstTerm) {
       frInstTerm* instTerm = static_cast<frInstTerm*>(dPinTerm);
-      frInst* inst = instTerm->getInst();
-      if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-          || isPad(inst->getRefBlock()->getMacroClass())
-          || inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
+      dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+      if (masterType.isBlock() || masterType.isPad()
+          || masterType == dbMasterType::RING) {
         continue;
       }
     }

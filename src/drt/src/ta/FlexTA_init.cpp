@@ -712,10 +712,9 @@ void FlexTAWorker::initFixedObjs()
             isMacro = true;
           } else {
             auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
-            if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-                || isPad(inst->getRefBlock()->getMacroClass())
-                || inst->getRefBlock()->getMacroClass()
-                       == MacroClassEnum::RING) {
+            dbMasterType masterType = inst->getRefBlock()->getMasterType();
+            if (masterType.isBlock() || masterType.isPad()
+                || masterType == dbMasterType::RING) {
               isMacro = true;
             }
           }

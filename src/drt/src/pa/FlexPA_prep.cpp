@@ -579,18 +579,18 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
   bool allowPlanar = true;
   bool isMacroCellPin = false;
   if (instTerm) {
-    auto macroClass = instTerm->getInst()->getRefBlock()->getMacroClass();
-    if (macroClass == MacroClassEnum::CORE
-        || macroClass == MacroClassEnum::CORE_TIEHIGH
-        || macroClass == MacroClassEnum::CORE_TIELOW
-        || macroClass == MacroClassEnum::CORE_ANTENNACELL) {
+    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    if (masterType == dbMasterType::CORE
+        || masterType == dbMasterType::CORE_TIEHIGH
+        || masterType == dbMasterType::CORE_TIELOW
+        || masterType == dbMasterType::CORE_ANTENNACELL) {
       if ((layerNum >= VIAINPIN_BOTTOMLAYERNUM
            && layerNum <= VIAINPIN_TOPLAYERNUM)
           || layerNum <= VIA_ACCESS_LAYERNUM) {
         allowPlanar = false;
       }
-    } else if (macroClass == MacroClassEnum::BLOCK || isPad(macroClass)
-               || macroClass == MacroClassEnum::RING) {
+    } else if (masterType.isBlock() || masterType.isPad()
+               || masterType == dbMasterType::RING) {
       isMacroCellPin = true;
     }
   } else {
@@ -720,16 +720,16 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (!ap->hasAccess(dir)) {
     return;
   }
-  bool isStdCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::CORE
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIEHIGH
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIELOW
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_ANTENNACELL));
+  bool isStdCellPin = false;
+  if (instTerm) {
+    // TODO there should be a better way to get this info by getting the master
+    // terms from OpenDB
+    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    isStdCellPin = masterType == dbMasterType::CORE
+                   || masterType == dbMasterType::CORE_TIEHIGH
+                   || masterType == dbMasterType::CORE_TIELOW
+                   || masterType == dbMasterType::CORE_ANTENNACELL;
+  }
   bool isOutSide = prepPoint_pin_checkPoint_planar_ep(
       ep, layerPolys, bp, ap->getLayerNum(), dir);
   // skip if two width within shape for standard cell
@@ -995,23 +995,20 @@ void FlexPA::prepPoint_pin_updateStat(
     frPin* pin,
     frInstTerm* instTerm)
 {
-  bool isStdCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::CORE
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIEHIGH
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIELOW
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_ANTENNACELL));
-  bool isMacroCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::BLOCK
-             || isPad(instTerm->getInst()->getRefBlock()->getMacroClass())
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::RING));
+  bool isStdCellPin = false;
+  bool isMacroCellPin = false;
+  if (instTerm) {
+    // TODO there should be a better way to get this info by getting the master
+    // terms from OpenDB
+    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    isStdCellPin = masterType == dbMasterType::CORE
+                   || masterType == dbMasterType::CORE_TIEHIGH
+                   || masterType == dbMasterType::CORE_TIELOW
+                   || masterType == dbMasterType::CORE_ANTENNACELL;
+
+    isMacroCellPin = masterType.isBlock() || masterType.isPad()
+                     || masterType == dbMasterType::RING;
+  }
   for (auto& ap : tmpAps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
         || ap->hasAccess(frDirEnum::S) || ap->hasAccess(frDirEnum::N)) {
@@ -1046,23 +1043,20 @@ bool FlexPA::prepPoint_pin_helper(
     frAccessPointEnum lowerType,
     frAccessPointEnum upperType)
 {
-  bool isStdCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::CORE
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIEHIGH
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIELOW
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_ANTENNACELL));
-  bool isMacroCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::BLOCK
-             || isPad(instTerm->getInst()->getRefBlock()->getMacroClass())
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::RING));
+  bool isStdCellPin = false;
+  bool isMacroCellPin = false;
+  if (instTerm) {
+    // TODO there should be a better way to get this info by getting the master
+    // terms from OpenDB
+    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    isStdCellPin = masterType == dbMasterType::CORE
+                   || masterType == dbMasterType::CORE_TIEHIGH
+                   || masterType == dbMasterType::CORE_TIELOW
+                   || masterType == dbMasterType::CORE_ANTENNACELL;
+
+    isMacroCellPin = masterType.isBlock() || masterType.isPad()
+                     || masterType == dbMasterType::RING;
+  }
   bool isIOPin = (instTerm == nullptr);
   vector<unique_ptr<frAccessPoint>> tmpAps;
   prepPoint_pin_genPoints(
@@ -1149,23 +1143,20 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   vector<unique_ptr<frAccessPoint>> aps;
   set<pair<frPoint, frLayerNum>> apset;
-  bool isStdCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::CORE
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIEHIGH
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_TIELOW
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::CORE_ANTENNACELL));
-  bool isMacroCellPin
-      = (instTerm
-         && (instTerm->getInst()->getRefBlock()->getMacroClass()
-                 == MacroClassEnum::BLOCK
-             || isPad(instTerm->getInst()->getRefBlock()->getMacroClass())
-             || instTerm->getInst()->getRefBlock()->getMacroClass()
-                    == MacroClassEnum::RING));
+  bool isStdCellPin = false;
+  bool isMacroCellPin = false;
+  if (instTerm) {
+    // TODO there should be a better way to get this info by getting the master
+    // terms from OpenDB
+    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    isStdCellPin = masterType == dbMasterType::CORE
+                   || masterType == dbMasterType::CORE_TIEHIGH
+                   || masterType == dbMasterType::CORE_TIELOW
+                   || masterType == dbMasterType::CORE_ANTENNACELL;
+
+    isMacroCellPin = masterType.isBlock() || masterType.isPad()
+                     || masterType == dbMasterType::RING;
+  }
 
   if (graphics_) {
     graphics_->startPin(pin, instTerm);
@@ -1255,14 +1246,14 @@ void FlexPA::prepPoint()
   for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
     auto& inst = uniqueInstances_[i];
     // only do for core and block cells
-    if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIEHIGH
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIELOW
-        && inst->getRefBlock()->getMacroClass()
-               != MacroClassEnum::CORE_ANTENNACELL
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::BLOCK
-        && !isPad(inst->getRefBlock()->getMacroClass())
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::RING) {
+    dbMasterType masterType = inst->getRefBlock()->getMasterType();
+    if (masterType != dbMasterType::CORE
+        && masterType != dbMasterType::CORE_TIEHIGH
+        && masterType != dbMasterType::CORE_TIELOW
+        && masterType != dbMasterType::CORE_ANTENNACELL
+        && !masterType.isBlock()
+        && !masterType.isPad()
+        && masterType != dbMasterType::RING) {
       continue;
     }
     ProfileTask profile("PA:uniqueInstance");
@@ -1333,11 +1324,13 @@ void FlexPA::prepPattern()
        currUniqueInstIdx++) {
     auto& inst = uniqueInstances_[currUniqueInstIdx];
     // only do for core and block cells
-    if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIEHIGH
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIELOW
-        && inst->getRefBlock()->getMacroClass()
-               != MacroClassEnum::CORE_ANTENNACELL) {
+    // TODO the above comment says "block cells" but that's not what the code
+    // does?
+    dbMasterType masterType = inst->getRefBlock()->getMasterType();
+    if (masterType != dbMasterType::CORE
+        && masterType != dbMasterType::CORE_TIEHIGH
+        && masterType != dbMasterType::CORE_TIELOW
+        && masterType != dbMasterType::CORE_ANTENNACELL) {
       continue;
     }
 
@@ -1763,11 +1756,11 @@ void FlexPA::addAccessPatternObj(
 void FlexPA::getInsts(std::vector<frInst*>& insts)
 {
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIEHIGH
-        && inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIELOW
-        && inst->getRefBlock()->getMacroClass()
-               != MacroClassEnum::CORE_ANTENNACELL) {
+    dbMasterType masterType = inst->getRefBlock()->getMasterType();
+    if (masterType != dbMasterType::CORE
+        && masterType != dbMasterType::CORE_TIEHIGH
+        && masterType != dbMasterType::CORE_TIELOW
+        && masterType != dbMasterType::CORE_ANTENNACELL) {
       continue;
     }
     bool isSkip = true;

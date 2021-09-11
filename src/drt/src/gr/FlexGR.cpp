@@ -174,7 +174,7 @@ void FlexGR::searchRepairMacro(int iter,
   vector<frInst*> macros;
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK) {
+    if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
       frBox macroBBox;
       inst->getBBox(macroBBox);
       frPoint macroCenter((macroBBox.left() + macroBBox.right()) / 2,

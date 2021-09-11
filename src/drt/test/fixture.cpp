@@ -111,7 +111,7 @@ frBlock* Fixture::makeMacro(const char* name,
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
-  block->setMacroClass(MacroClassEnum::CORE);
+  block->setMasterType(dbMasterType::CORE);
   block->setId(++numRefBlocks);
   auto blkPtr = block.get();
   design->addRefBlock(std::move(block));
