@@ -412,7 +412,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
   string name;
   frInst* inst = instTerm->getInst();
   inst->getTransform(shiftXform);
-  shiftXform.set(frOrient(frcR0));
+  shiftXform.set(dbOrientType(dbOrientType::R0));
 
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
@@ -534,7 +534,7 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
 
   for (auto term : terms) {
     // ap
-    frTransform instXform;  // (0,0), frcR0
+    frTransform instXform;  // (0,0), R0
     frTransform shiftXform;
     frTerm* trueTerm = nullptr;
     string name;
@@ -542,7 +542,7 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
     if (term->typeId() == frcInstTerm) {
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(frOrient(frcR0));
+      shiftXform.set(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
       name = inst->getName() + string("/") + trueTerm->getName();

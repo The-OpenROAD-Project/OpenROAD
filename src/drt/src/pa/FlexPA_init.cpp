@@ -125,7 +125,7 @@ void FlexPA::initUniqueInstance_main(
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
   map<frBlock*,
-      map<frOrient, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
+      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
       frBlockObjectComp>
       refBlockOT2Insts;  // refblock orient track-offset to instances
   vector<frInst*> ndrInsts;

@@ -67,17 +67,6 @@ using dbTechLayerDir = odb::dbTechLayerDir;
 using dbTechLayerType = odb::dbTechLayerType;
 using dbMasterType = odb::dbMasterType;
 
-enum frOrientEnum
-{
-  frcR0 = 0,     // N
-  frcR90 = 1,    // W
-  frcR180 = 2,   // S
-  frcR270 = 3,   // E
-  frcMY = 4,     // FN
-  frcMXR90 = 5,  // FW
-  frcMX = 6,     // FS
-  frcMYR90 = 7   // FE
-};
 enum frEndStyleEnum
 {
   frcTruncateEndStyle = 0,  // ext = 0

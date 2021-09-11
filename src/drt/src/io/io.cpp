@@ -111,29 +111,6 @@ void io::Parser::setTracks(odb::dbBlock* block)
   }
 }
 
-frOrientEnum getFrOrient(odb::dbOrientType orient)
-{
-  switch (orient) {
-    case odb::dbOrientType::R0:
-      return frOrientEnum::frcR0;
-    case odb::dbOrientType::R90:
-      return frOrientEnum::frcR90;
-    case odb::dbOrientType::R180:
-      return frOrientEnum::frcR180;
-    case odb::dbOrientType::R270:
-      return frOrientEnum::frcR270;
-    case odb::dbOrientType::MY:
-      return frOrientEnum::frcMY;
-    case odb::dbOrientType::MYR90:
-      return frOrientEnum::frcMYR90;
-    case odb::dbOrientType::MX:
-      return frOrientEnum::frcMX;
-    case odb::dbOrientType::MXR90:
-      return frOrientEnum::frcMXR90;
-  }
-  return frOrientEnum::frcR0;
-}
-
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   for (auto inst : block->getInsts()) {
@@ -155,7 +132,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     x = defdist(block, x);
     y = defdist(block, y);
     tmpInst->setOrigin(frPoint(x, y));
-    tmpInst->setOrient(getFrOrient(inst->getOrient().getValue()));
+    tmpInst->setOrient(inst->getOrient());
     for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);

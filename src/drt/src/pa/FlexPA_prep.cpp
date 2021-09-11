@@ -1436,7 +1436,7 @@ void FlexPA::revertAccessPoints()
     frTransform xform, revertXform;
     inst->getTransform(xform);
     revertXform.set(-xform.xOffset(), -xform.yOffset());
-    revertXform.set(frcR0);
+    revertXform.set(dbOrientType::R0);
 
     auto paIdx = unique2paidx_[inst];
     for (auto& instTerm : inst->getInstTerms()) {
@@ -1599,15 +1599,6 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
 
-  map<frOrientEnum, string> orient2Name = {{frcR0, "R0"},
-                                           {frcR90, "R90"},
-                                           {frcR180, "R180"},
-                                           {frcR270, "R270"},
-                                           {frcMY, "MY"},
-                                           {frcMXR90, "MX90"},
-                                           {frcMX, "MX"},
-                                           {frcMYR90, "MY90"}};
-
   while (currNode->getPrevNodeIdx() != -1) {
     // non-virtual node
     if (instCnt != (int) insts.size()) {
@@ -1639,9 +1630,8 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
             cout << " gcclean2via " << inst->getName() << " "
                  << instTerm->getTerm()->getName() << " "
                  << accessPoint->getViaDef()->getName() << " " << pt.x() << " "
-                 << pt.y() << " " << orient2Name[inst->getOrient()] << "\n";
+                 << pt.y() << " " << inst->getOrient().getString() << "\n";
             instTermValidViaApCnt_++;
-            // cout << instTermValidViaApCnt << endl;
           }
           accessPointIdx++;
         }
@@ -1949,7 +1939,7 @@ void FlexPA::genPatterns(
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
     frTransform shiftXform;
     inst->getTransform(shiftXform);
-    shiftXform.set(frOrient(frcR0));
+    shiftXform.set(dbOrientType(dbOrientType::R0));
     ostringstream msg;
     msg << "  pin ordering (with ap): ";
     for (auto& [pin, instTerm] : pins) {
@@ -2413,7 +2403,7 @@ void FlexPA::genPatterns_print_debug(
   if (instTerm) {
     frInst* inst = instTerm->getInst();
     inst->getTransform(xform);
-    xform.set(frcR0);
+    xform.set(dbOrientType::R0);
   }
 
   cout << "failed pattern:";
@@ -2454,15 +2444,6 @@ void FlexPA::genPatterns_print(
   auto currNode = &(nodes[currNodeIdx]);
   int pinCnt = pins.size();
 
-  map<frOrientEnum, string> orient2Name = {{frcR0, "R0"},
-                                           {frcR90, "R90"},
-                                           {frcR180, "R180"},
-                                           {frcR270, "R270"},
-                                           {frcMY, "MY"},
-                                           {frcMXR90, "MX90"},
-                                           {frcMX, "MX"},
-                                           {frcMYR90, "MY90"}};
-
   cout << "new pattern\n";
 
   while (currNode->getPrevNodeIdx() != -1) {
@@ -2477,10 +2458,10 @@ void FlexPA::genPatterns_print(
       unique_ptr<frVia> via
           = make_unique<frVia>(pa->getAccessPoint(currIdx2)->getViaDef());
       frPoint pt(pa->getAccessPoint(currIdx2)->getPoint());
-      cout << " gccleanvia " << instTerm->getInst()->getRefBlock()->getName()
+      cout << " gccleanvia " << inst->getRefBlock()->getName()
            << " " << instTerm->getTerm()->getName() << " "
            << via->getViaDef()->getName() << " " << pt.x() << " " << pt.y()
-           << " " << orient2Name[instTerm->getInst()->getOrient()] << "\n";
+           << " " << inst->getOrient().getString() << "\n";
     }
 
     currNodeIdx = currNode->getPrevNodeIdx();

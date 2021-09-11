@@ -183,7 +183,7 @@ frInst* Fixture::makeInst(const char* name,
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
   tmpInst->setOrigin(frPoint(x, y));
-  tmpInst->setOrient(frOrientEnum::frcR0);
+  tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
     auto term = uTerm.get();
     unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);

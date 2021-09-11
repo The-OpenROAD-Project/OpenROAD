@@ -1507,7 +1507,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     auto dPin = make_unique<drPin>();
     dPin->setFrTerm(term);
     // ap
-    frTransform instXform;  // (0,0), frcR0
+    frTransform instXform;  // (0,0), R0
     frTransform shiftXform;
     frTerm* trueTerm = nullptr;
     string name;
@@ -1515,7 +1515,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     if (term->typeId() == frcInstTerm) {
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(frOrient(frcR0));
+      shiftXform.set(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
       name = inst->getName() + string("/") + trueTerm->getName();

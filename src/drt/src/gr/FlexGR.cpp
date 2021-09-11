@@ -1613,7 +1613,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         auto inst = static_cast<frInstTerm*>(rpin->getFrTerm())->getInst();
         frTransform shiftXform;
         inst->getTransform(shiftXform);
-        shiftXform.set(frOrient(frcR0));
+        shiftXform.set(dbOrientType(dbOrientType::R0));
         rpin->getAccessPoint()->getPoint(pt);
         pt.transform(shiftXform);
       } else {

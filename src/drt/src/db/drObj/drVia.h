@@ -178,8 +178,8 @@ class drVia : public drRef
    * setTransform
    */
 
-  frOrient getOrient() const override { return frOrient(); }
-  void setOrient(const frOrient& tmpOrient) override { ; }
+  dbOrientType getOrient() const override { return dbOrientType(); }
+  void setOrient(const dbOrientType& tmpOrient) override { ; }
   void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin.set(origin_); }
   void setOrigin(const frPoint& tmpPoint) override { origin_.set(tmpPoint); }
   void getTransform(frTransform& xformIn) const override
