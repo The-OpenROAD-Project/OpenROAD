@@ -57,7 +57,7 @@ void io::Parser::initDefaultVias()
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     for (auto& viaDef : design->getTech()->getLayer(layerNum)->getViaDefs()) {
@@ -263,7 +263,7 @@ void io::Parser::initCutLayerWidth()
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     auto layer = design->getTech()->getLayer(layerNum);

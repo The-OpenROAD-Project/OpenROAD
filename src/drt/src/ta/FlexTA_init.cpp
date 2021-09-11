@@ -40,7 +40,7 @@ void FlexTAWorker::initTracks()
   // uPtr for tp
   for (int lNum = 0; lNum < (int) numLayers; lNum++) {
     auto layer = getDesign()->getTech()->getLayer(lNum);
-    if (layer->getType() != frLayerTypeEnum::ROUTING) {
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     if (layer->getDir() != getDir()) {
@@ -493,7 +493,7 @@ void FlexTAWorker::initIroutes()
   for (int lNum = 0; lNum < (int) getDesign()->getTech()->getLayers().size();
        lNum++) {
     auto layer = getDesign()->getTech()->getLayer(lNum);
-    if (layer->getType() != frLayerTypeEnum::ROUTING) {
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     if (layer->getDir() != getDir()) {
@@ -636,7 +636,7 @@ void FlexTAWorker::initFixedObjs()
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() != frLayerTypeEnum::ROUTING
+    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::ROUTING
         || getTech()->getLayer(layerNum)->getDir() != getDir()) {
       continue;
     }
@@ -666,11 +666,11 @@ void FlexTAWorker::initFixedObjs()
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
         if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
             && getTech()->getLayer(layerNum)->getType()
-                   == frLayerTypeEnum::ROUTING) {
+                   == dbTechLayerType::ROUTING) {
           // down-via
           if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
               && getTech()->getLayer(layerNum - 2)->getType()
-                     == frLayerTypeEnum::ROUTING) {
+                     == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum - 1);
             frBox viaBox;
             auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
@@ -686,7 +686,7 @@ void FlexTAWorker::initFixedObjs()
           // up-via
           if (layerNum + 2 < (int) design_->getTech()->getLayers().size()
               && getTech()->getLayer(layerNum + 2)->getType()
-                     == frLayerTypeEnum::ROUTING) {
+                     == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum + 1);
             frBox viaBox;
             auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
@@ -727,7 +727,7 @@ void FlexTAWorker::initFixedObjs()
             // down-via
             if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
                 && getTech()->getLayer(layerNum - 2)->getType()
-                       == frLayerTypeEnum::ROUTING) {
+                       == dbTechLayerType::ROUTING) {
               auto cutLayer = getTech()->getLayer(layerNum - 1);
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds);
@@ -736,7 +736,7 @@ void FlexTAWorker::initFixedObjs()
             // up-via
             if (layerNum + 2 < (int) design_->getTech()->getLayers().size()
                 && getTech()->getLayer(layerNum + 2)->getType()
-                       == frLayerTypeEnum::ROUTING) {
+                       == dbTechLayerType::ROUTING) {
               auto cutLayer = getTech()->getLayer(layerNum + 1);
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds);

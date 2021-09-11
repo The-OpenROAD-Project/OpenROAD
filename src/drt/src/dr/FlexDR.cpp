@@ -549,7 +549,7 @@ void FlexDR::init_via2viaMinLen()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& via2viaMinLen = via_data_.via2viaMinLen;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     vector<frCoord> via2viaMinLenTmp(4, 0);
@@ -559,7 +559,7 @@ void FlexDR::init_via2viaMinLen()
   // check prl
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -588,7 +588,7 @@ void FlexDR::init_via2viaMinLen()
   // check minimumcut
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1047,7 +1047,7 @@ void FlexDR::init_via2viaMinLenNew()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& via2viaMinLenNew = via_data_.via2viaMinLenNew;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     vector<frCoord> via2viaMinLenTmp(8, 0);
@@ -1056,7 +1056,7 @@ void FlexDR::init_via2viaMinLenNew()
   // check prl
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1097,7 +1097,7 @@ void FlexDR::init_via2viaMinLenNew()
   // check minimumcut
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1138,7 +1138,7 @@ void FlexDR::init_via2viaMinLenNew()
   // check cut spacing
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1183,11 +1183,11 @@ void FlexDR::init_halfViaEncArea()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& halfViaEncArea = via_data_.halfViaEncArea;
   for (int i = bottomLayerNum; i <= topLayerNum; i++) {
-    if (getTech()->getLayer(i)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(i)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     if (i + 1 <= topLayerNum
-        && getTech()->getLayer(i + 1)->getType() == frLayerTypeEnum::CUT) {
+        && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
       auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
       frVia via(viaDef);
       frBox layer1Box;
@@ -1310,7 +1310,7 @@ void FlexDR::init_via2turnMinLen()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& via2turnMinLen = via_data_.via2turnMinLen;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
@@ -1319,7 +1319,7 @@ void FlexDR::init_via2turnMinLen()
   // check prl
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1344,7 +1344,7 @@ void FlexDR::init_via2turnMinLen()
   // check minstep
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1669,7 +1669,7 @@ void FlexDR::end(bool writeMetrics)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::ROUTING) {
+      if (getTech()->getLayer(i)->getType() == dbTechLayerType::ROUTING) {
         logger_->report("Total wire length on LAYER {} = {} um.",
                         getTech()->getLayer(i)->getName(),
                         wlen[i] / getDesign()->getTopBlock()->getDBUPerUU());
@@ -1689,7 +1689,7 @@ void FlexDR::end(bool writeMetrics)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::CUT) {
+      if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
         nameLen
             = max(nameLen, (int) getTech()->getLayer(i - 1)->getName().size());
       }
@@ -1714,7 +1714,7 @@ void FlexDR::end(bool writeMetrics)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::CUT) {
+      if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
         msg << " " << setw(nameLen) << getTech()->getLayer(i - 1)->getName()
             << "    " << setw((int) to_string(totSCut).length()) << sCut[i];
         if (totMCut) {
@@ -1781,10 +1781,10 @@ void FlexDR::reportDRC()
         switch (con->typeId()) {
           case frConstraintTypeEnum::frcShortConstraint: {
             if (getTech()->getLayer(marker->getLayerNum())->getType()
-                == frLayerTypeEnum::ROUTING) {
+                == dbTechLayerType::ROUTING) {
               drcRpt << "Short";
             } else if (getTech()->getLayer(marker->getLayerNum())->getType()
-                       == frLayerTypeEnum::CUT) {
+                       == dbTechLayerType::CUT) {
               drcRpt << "CShort";
             }
             break;
@@ -1975,7 +1975,7 @@ void FlexDR::reportDRC()
              << bbox.bottom() / dbu << " ) - ( " << bbox.right() / dbu << ", "
              << bbox.top() / dbu << " ) on Layer ";
       if (getTech()->getLayer(marker->getLayerNum())->getType()
-              == frLayerTypeEnum::CUT
+              == dbTechLayerType::CUT
           && marker->getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
         drcRpt << getTech()->getLayer(marker->getLayerNum() - 1)->getName()
                << "\n";

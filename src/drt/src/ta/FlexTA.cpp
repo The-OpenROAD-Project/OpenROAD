@@ -278,7 +278,7 @@ void FlexTA::initTA(int size)
 
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != frLayerTypeEnum::ROUTING) {
+  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
@@ -349,7 +349,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   }
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != frLayerTypeEnum::ROUTING) {
+  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }

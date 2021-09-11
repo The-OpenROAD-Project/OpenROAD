@@ -48,7 +48,7 @@ void FlexGR::initLayerPitch()
   for (unsigned lNum = 0; lNum < design_->getTech()->getLayers().size();
        lNum++) {
     if (design_->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     numRoutingLayer++;
@@ -64,7 +64,7 @@ void FlexGR::initLayerPitch()
   for (int lNum = 0; lNum < (int) design_->getTech()->getLayers().size();
        lNum++) {
     if (design_->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     // zIdx  always equal to lNum / 2 - 1

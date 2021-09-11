@@ -267,7 +267,7 @@ void FlexPA::initViaRawPriority()
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design_->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     for (auto& viaDef : design_->getTech()->getLayer(layerNum)->getViaDefs()) {

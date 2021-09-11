@@ -113,7 +113,7 @@ void FlexGRCMap::init()
   for (unsigned layerIdx = 0; layerIdx < design_->getTech()->getLayers().size();
        layerIdx++) {
     auto layer = design_->getTech()->getLayer(layerIdx);
-    if (layer->getType() != frLayerTypeEnum::ROUTING) {
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     layerSize++;

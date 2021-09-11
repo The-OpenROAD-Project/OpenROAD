@@ -188,12 +188,12 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
   frLayerNum followTrackLNum;
   if (cutLNum - 1 >= getDesign()->getTech()->getBottomLayerNum()
       && getDesign()->getTech()->getLayer(cutLNum - 1)->getType()
-             == frLayerTypeEnum::ROUTING
+             == dbTechLayerType::ROUTING
       && getDesign()->getTech()->getLayer(cutLNum - 1)->getDir() == getDir()) {
     followTrackLNum = cutLNum - 1;
   } else if (cutLNum + 1 <= getDesign()->getTech()->getTopLayerNum()
              && getDesign()->getTech()->getLayer(cutLNum + 1)->getType()
-                    == frLayerTypeEnum::ROUTING
+                    == dbTechLayerType::ROUTING
              && getDesign()->getTech()->getLayer(cutLNum + 1)->getDir()
                     == getDir()) {
     followTrackLNum = cutLNum + 1;
@@ -372,12 +372,12 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
   frLayerNum followTrackLNum;
   if (lNum - 1 >= getDesign()->getTech()->getBottomLayerNum()
       && getDesign()->getTech()->getLayer(lNum - 1)->getType()
-             == frLayerTypeEnum::ROUTING
+             == dbTechLayerType::ROUTING
       && getDesign()->getTech()->getLayer(lNum - 1)->getDir() == getDir()) {
     followTrackLNum = lNum - 1;
   } else if (lNum + 1 <= getDesign()->getTech()->getTopLayerNum()
              && getDesign()->getTech()->getLayer(lNum + 1)->getType()
-                    == frLayerTypeEnum::ROUTING
+                    == dbTechLayerType::ROUTING
              && getDesign()->getTech()->getLayer(lNum + 1)->getDir()
                     == getDir()) {
     followTrackLNum = lNum + 1;
@@ -756,17 +756,17 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
   }
   frCoord pitch = 0;
   if (getDesign()->getTech()->getLayer(lNum)->getType()
-      == frLayerTypeEnum::ROUTING) {
+      == dbTechLayerType::ROUTING) {
     pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
     isCut = false;
   } else if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1
              && getDesign()->getTech()->getLayer(lNum + 1)->getType()
-                    == frLayerTypeEnum::ROUTING) {
+                    == dbTechLayerType::ROUTING) {
     pitch = getDesign()->getTech()->getLayer(lNum + 1)->getPitch();
     isCut = true;
   } else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1
              && getDesign()->getTech()->getLayer(lNum - 1)->getType()
-                    == frLayerTypeEnum::ROUTING) {
+                    == dbTechLayerType::ROUTING) {
     pitch = getDesign()->getTech()->getLayer(lNum - 1)->getPitch();
     isCut = true;
   } else {

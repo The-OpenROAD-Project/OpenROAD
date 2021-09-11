@@ -46,7 +46,7 @@ class frLayer
   friend class io::Parser;
   // constructor
   frLayer()
-      : type(frLayerTypeEnum::IMPLANT),
+      : type(dbTechLayerType::IMPLANT),
         layerNum(0),
         pitch(0),
         width(0),
@@ -85,7 +85,7 @@ class frLayer
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
-      : type(frLayerTypeEnum::IMPLANT),
+      : type(dbTechLayerType::IMPLANT),
         layerNum(layerNumIn),
         name(nameIn),
         pitch(0),
@@ -131,7 +131,7 @@ class frLayer
   {
     constraints.push_back(consIn);
   }
-  void setType(frLayerTypeEnum typeIn) { type = typeIn; }
+  void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
 
   // getters
@@ -169,7 +169,7 @@ class frLayer
     }
     return constraintsOut;
   }
-  frLayerTypeEnum getType() const { return type; }
+  dbTechLayerType getType() const { return type; }
 
   // cut class (new)
   void addCutClass(frLef58CutClass* in)
@@ -658,7 +658,7 @@ class frLayer
   void printAllConstraints(utl::Logger* logger);
 
  protected:
-  frLayerTypeEnum type;
+  dbTechLayerType type;
   frLayerNum layerNum;
   frString name;
   frUInt4 pitch;

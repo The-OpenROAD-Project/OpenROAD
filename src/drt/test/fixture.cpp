@@ -47,7 +47,7 @@ Fixture::Fixture()
 
 void Fixture::addLayer(frTechObject* tech,
                        const char* name,
-                       frLayerTypeEnum type,
+                       dbTechLayerType type,
                        dbTechLayerDir dir)
 {
   auto layer = std::make_unique<frLayer>();
@@ -61,7 +61,7 @@ void Fixture::addLayer(frTechObject* tech,
   layer->setPitch(200);
 
   // These constraints are mandatory
-  if (type == frLayerTypeEnum::ROUTING) {
+  if (type == dbTechLayerType::ROUTING) {
     auto minWidthConstraint
         = std::make_unique<frMinWidthConstraint>(layer->getMinWidth());
     layer->setMinWidthConstraint(minWidthConstraint.get());
@@ -89,9 +89,9 @@ void Fixture::setupTech(frTechObject* tech)
   tech->setDBUPerUU(1000);
 
   // TR assumes that masterslice always exists
-  addLayer(tech, "masterslice", frLayerTypeEnum::MASTERSLICE);
-  addLayer(tech, "v0", frLayerTypeEnum::CUT);
-  addLayer(tech, "m1", frLayerTypeEnum::ROUTING);
+  addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
+  addLayer(tech, "v0", dbTechLayerType::CUT);
+  addLayer(tech, "m1", dbTechLayerType::ROUTING);
 }
 
 frBlock* Fixture::makeMacro(const char* name,

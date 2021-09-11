@@ -64,6 +64,7 @@ using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
 using dbTechLayerDir = odb::dbTechLayerDir;
+using dbTechLayerType = odb::dbTechLayerType;
 
 enum frOrientEnum
 {
@@ -261,14 +262,6 @@ enum class frDirEnum
   E = 4,
   N = 5,
   U = 6
-};
-
-enum class frLayerTypeEnum
-{
-  CUT,
-  ROUTING,
-  IMPLANT,
-  MASTERSLICE
 };
 
 enum class AccessPointTypeEnum

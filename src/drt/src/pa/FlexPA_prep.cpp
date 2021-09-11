@@ -74,7 +74,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       auto obj = static_cast<frRect*>(shape.get());
       auto layerNum = obj->getLayerNum();
       if (getDesign()->getTech()->getLayer(layerNum)->getType()
-          != frLayerTypeEnum::ROUTING) {
+          != dbTechLayerType::ROUTING) {
         continue;
       }
       frBox box;
@@ -573,7 +573,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
     frAccessPointEnum upperType)
 {
   if (getDesign()->getTech()->getLayer(layerNum)->getType()
-      != frLayerTypeEnum::ROUTING) {
+      != dbTechLayerType::ROUTING) {
     return;
   }
   bool allowPlanar = true;
@@ -650,7 +650,7 @@ void FlexPA::prepPoint_pin_genPoints(
     }
     if (!it->empty()
         && getDesign()->getTech()->getLayer(layerNum)->getType()
-               == frLayerTypeEnum::ROUTING) {
+               == dbTechLayerType::ROUTING) {
       // cout <<"via layernum = " <<layerNum <<endl;
       prepPoint_pin_genPoints_layerShapes(aps,
                                           apset,

@@ -415,7 +415,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     createNDR(ndr);
   }
   for (auto& layer : design->getTech()->getLayers()) {
-    if (layer->getType() != frLayerTypeEnum::ROUTING)
+    if (layer->getType() != dbTechLayerType::ROUTING)
       continue;
     MTSAFEDIST = max(MTSAFEDIST,
                      design->getTech()->getMaxNondefaultSpacing(
@@ -1350,7 +1350,7 @@ void io::Parser::addDefaultMasterSliceLayer()
   tmpMSLayer->setLayerNum(readLayerCnt++);
   tmpMSLayer->setName("FR_MASTERSLICE");
   tech->addLayer(std::move(uMSLayer));
-  tmpMSLayer->setType(frLayerTypeEnum::MASTERSLICE);
+  tmpMSLayer->setType(dbTechLayerType::MASTERSLICE);
 }
 
 void io::Parser::addDefaultCutLayer()
@@ -1361,7 +1361,7 @@ void io::Parser::addDefaultCutLayer()
   tmpCutLayer->setLayerNum(readLayerCnt++);
   tmpCutLayer->setName(viaLayerName);
   tech->addLayer(std::move(uCutLayer));
-  tmpCutLayer->setType(frLayerTypeEnum::CUT);
+  tmpCutLayer->setType(dbTechLayerType::CUT);
 }
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
@@ -1392,7 +1392,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
   tech->addUConstraint(std::move(minWidthConstraint));
 
-  tmpLayer->setType(frLayerTypeEnum::ROUTING);
+  tmpLayer->setType(dbTechLayerType::ROUTING);
   if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
     tmpLayer->setDir(dbTechLayerDir::HORIZONTAL);
   else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL)
@@ -1684,7 +1684,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
-  tmpLayer->setType(frLayerTypeEnum::CUT);
+  tmpLayer->setType(dbTechLayerType::CUT);
   tech->addLayer(std::move(uLayer));
 
   auto shortConstraint = make_shared<frShortConstraint>();

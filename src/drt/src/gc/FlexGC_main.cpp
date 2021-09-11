@@ -866,7 +866,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -886,7 +886,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1202,7 +1202,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING
+      if (currLayer->getType() != dbTechLayerType::ROUTING
           || !currLayer->hasLef58CornerSpacingConstraint()) {
         continue;
       }
@@ -1222,7 +1222,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING
+      if (currLayer->getType() != dbTechLayerType::ROUTING
           || !currLayer->hasLef58CornerSpacingConstraint()) {
         continue;
       }
@@ -1807,7 +1807,7 @@ void FlexGCWorker::Impl::checkMetalShape()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -1821,7 +1821,7 @@ void FlexGCWorker::Impl::checkMetalShape()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -2967,7 +2967,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::CUT) {
+      if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -2983,7 +2983,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::CUT) {
+      if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& net : getNets()) {

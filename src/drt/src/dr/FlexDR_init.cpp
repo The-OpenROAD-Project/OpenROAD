@@ -881,7 +881,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           auto rpinRect = static_cast<frRect*>(pinFig);
           frLayerNum currLayerNum = rpinRect->getLayerNum();
           if (getTech()->getLayer(currLayerNum)->getType()
-              != frLayerTypeEnum::ROUTING) {
+              != dbTechLayerType::ROUTING) {
             continue;
           }
           frRect instPinRect(*rpinRect);
@@ -987,7 +987,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             frLayerNum currLayerNum = rpinRect->getLayerNum();
             frLayer* layer = getTech()->getLayer(currLayerNum);
             if (layer->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frRect instPinRect(*rpinRect);
@@ -1126,7 +1126,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           auto rpinRect = static_cast<frRect*>(pinFig);
           frLayerNum currLayerNum = rpinRect->getLayerNum();
           if (getTech()->getLayer(currLayerNum)->getType()
-              != frLayerTypeEnum::ROUTING) {
+              != dbTechLayerType::ROUTING) {
             continue;
           }
           //          halfWidth =
@@ -1396,7 +1396,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             auto rpinRect = static_cast<frRect*>(pinFig);
             frLayerNum currLayerNum = rpinRect->getLayerNum();
             if (getTech()->getLayer(currLayerNum)->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frRect instPinRect(*rpinRect);
@@ -2537,7 +2537,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                  << bbox.bottom() / dbu << " ) - ( " << bbox.right() / dbu
                  << ", " << bbox.top() / dbu << " ) on Layer ";
             if (getTech()->getLayer(marker.getLayerNum())->getType()
-                    == frLayerTypeEnum::CUT
+                    == dbTechLayerType::CUT
                 && marker.getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
               cout << getTech()->getLayer(marker.getLayerNum() - 1)->getName()
                    << "\n";
@@ -2985,15 +2985,15 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
        ++layerNum) {
     bool isRoutingLayer = true;
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() == frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::ROUTING) {
       isRoutingLayer = true;
       zIdx = gridGraph_.getMazeZIdx(layerNum);
     } else if (getTech()->getLayer(layerNum)->getType()
-               == frLayerTypeEnum::CUT) {
+               == dbTechLayerType::CUT) {
       isRoutingLayer = false;
       if (getTech()->getBottomLayerNum() <= layerNum - 1
           && getTech()->getLayer(layerNum - 1)->getType()
-                 == frLayerTypeEnum::ROUTING) {
+                 == dbTechLayerType::ROUTING) {
         zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
       } else {
         continue;
@@ -3119,7 +3119,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             auto rpinRect = static_cast<frRect*>(pinFig);
             frLayerNum layerNum = rpinRect->getLayerNum();
             if (getTech()->getLayer(layerNum)->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frMIdx zIdx;
@@ -3129,15 +3129,15 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             bool isRoutingLayer = true;
             if (getTech()->getLayer(layerNum)->getType()
-                == frLayerTypeEnum::ROUTING) {
+                == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
-                       == frLayerTypeEnum::CUT) {
+                       == dbTechLayerType::CUT) {
               isRoutingLayer = false;
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
-                         == frLayerTypeEnum::ROUTING) {
+                         == dbTechLayerType::ROUTING) {
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -3180,7 +3180,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             auto rpinRect = static_cast<frRect*>(pinFig);
             frLayerNum layerNum = rpinRect->getLayerNum();
             if (getTech()->getLayer(layerNum)->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frMIdx zIdx;
@@ -3192,15 +3192,15 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             // add cost
             bool isRoutingLayer = true;
             if (getTech()->getLayer(layerNum)->getType()
-                == frLayerTypeEnum::ROUTING) {
+                == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
-                       == frLayerTypeEnum::CUT) {
+                       == dbTechLayerType::CUT) {
               isRoutingLayer = false;
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
-                         == frLayerTypeEnum::ROUTING) {
+                         == dbTechLayerType::ROUTING) {
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -3255,7 +3255,7 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     zIdx = gridGraph_.getMazeZIdx(layerNum);

@@ -109,7 +109,7 @@ void FlexGCWorker::Impl::initObj(const frBox& box,
                                  bool isFixed)
 {
   auto currNet = getNet(obj);
-  if (getTech()->getLayer(layerNum)->getType() == frLayerTypeEnum::CUT) {
+  if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::CUT) {
     currNet->addRectangle(box, layerNum, isFixed);
   } else {
     currNet->addPolygon(box, layerNum, isFixed);

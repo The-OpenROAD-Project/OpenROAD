@@ -855,8 +855,8 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
                      y,
                      legal)
 {
-  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
-  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeLef58SpacingEolCutEncloseConstraint(makeLef58SpacingEolConstraint(4));
   frNet* n1 = makeNet("n1");
   frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
@@ -883,8 +883,8 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl,
                     viol)
 {
   // Setup
-  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
-  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "Vx", 100, 200);
   auto layer = odb::dbTechLayer::create(tech, "v2", odb::dbTechLayerType::CUT);
   auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
@@ -928,8 +928,8 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
                      viol)
 {
   // Setup
-  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
-  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "Vx", 100, 100);
   auto layer = odb::dbTechLayer::create(tech, "v2", odb::dbTechLayerType::CUT);
   auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);

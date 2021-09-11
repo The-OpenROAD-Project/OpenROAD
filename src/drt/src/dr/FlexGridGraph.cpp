@@ -325,7 +325,7 @@ void FlexGridGraph::initTracks(
     const frBox& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
-    if (layer->getType() != frLayerTypeEnum::ROUTING) {
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frLayerNum currLayerNum = layer->getLayerNum();
