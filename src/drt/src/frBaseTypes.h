@@ -66,6 +66,7 @@ using frListIter = typename std::list<T>::iterator;
 using dbTechLayerDir = odb::dbTechLayerDir;
 using dbTechLayerType = odb::dbTechLayerType;
 using dbMasterType = odb::dbMasterType;
+using dbSigType = odb::dbSigType;
 
 enum frEndStyleEnum
 {

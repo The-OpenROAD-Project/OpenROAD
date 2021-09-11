@@ -778,25 +778,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
       }
     }
-    frNetEnum netType;
-    switch (net->getSigType()) {
-      case odb::dbSigType::SIGNAL:
-        netType = frNetEnum::frcNormalNet;
-        break;
-      case odb::dbSigType::CLOCK:
-        netType = frNetEnum::frcClockNet;
-        break;
-      case odb::dbSigType::POWER:
-        netType = frNetEnum::frcPowerNet;
-        break;
-      case odb::dbSigType::GROUND:
-        netType = frNetEnum::frcGroundNet;
-        break;
-      default:
-        logger->error(DRT, 110, "Unsupported NET USE in def.");
-        break;
-    }
-    netIn->setType(netType);
+    netIn->setType(net->getSigType());
     if (is_special)
       tmpBlock->addSNet(std::move(uNetIn));
     else
@@ -902,12 +884,12 @@ void io::Parser::addFakeNets()
 {
   // add VSS fake net
   auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
-  vssFakeNet->setType(frNetEnum::frcGroundNet);
+  vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   design->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
   auto vddFakeNet = make_unique<frNet>(string("frFakeVDD"));
-  vddFakeNet->setType(frNetEnum::frcPowerNet);
+  vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   design->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }

@@ -212,12 +212,12 @@ void Fixture::makeDesign()
 
   // GC assumes these fake nets exist
   auto vssFakeNet = std::make_unique<frNet>("frFakeVSS");
-  vssFakeNet->setType(frNetEnum::frcGroundNet);
+  vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
   auto vddFakeNet = std::make_unique<frNet>("frFakeVDD");
-  vddFakeNet->setType(frNetEnum::frcPowerNet);
+  vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 

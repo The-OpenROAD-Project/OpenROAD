@@ -237,7 +237,7 @@ bool isPG(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcNet: {
       auto type = static_cast<frNet*>(obj)->getType();
-      return type == frNetEnum::frcPowerNet || type == frNetEnum::frcGroundNet;
+      return type.isSupply();
     }
     case frcInstTerm: {
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
@@ -1952,8 +1952,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
       && net1->getOwner()) {
     auto owner = net1->getOwner();
     if (owner->typeId() == frcNet) {
-      if (static_cast<frNet*>(owner)->getType() == frNetEnum::frcPowerNet
-          || static_cast<frNet*>(owner)->getType() == frNetEnum::frcGroundNet) {
+      if (static_cast<frNet*>(owner)->getType().isSupply()) {
         return;
       }
     } else if (owner->typeId() == frcTerm) {

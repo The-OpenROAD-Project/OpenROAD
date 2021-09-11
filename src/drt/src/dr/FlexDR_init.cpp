@@ -2761,8 +2761,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     auto& aggressor = aggressorPair.first;
     if (aggressor && aggressor->typeId() == frcNet) {
       auto fNet = static_cast<frNet*>(aggressor);
-      if (fNet->getType() == frNetEnum::frcNormalNet
-          || fNet->getType() == frNetEnum::frcClockNet) {
+      if (!fNet->getType().isSupply()) {
         movableAggressorNets.insert(fNet);
         if (getDRNets(fNet)) {
           for (auto dNet : *(getDRNets(fNet))) {
@@ -2835,8 +2834,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     for (auto& owner : otherOwners) {
       if (owner && owner->typeId() == frcNet) {
         auto fNet = static_cast<frNet*>(owner);
-        if (fNet->getType() == frNetEnum::frcNormalNet
-            || fNet->getType() == frNetEnum::frcClockNet) {
+        if (!fNet->getType().isSupply()) {
           if (getDRNets(fNet)) {
             // int subNetIdx = -1;
             for (auto dNet : *(getDRNets(fNet))) {
@@ -2879,8 +2877,7 @@ void FlexDRWorker::route_queue_update_from_marker(
   for (auto& aggressorOwner : uniqueAggressorOwners) {
     if (aggressorOwner && aggressorOwner->typeId() == frcNet) {
       auto fNet = static_cast<frNet*>(aggressorOwner);
-      if (fNet->getType() == frNetEnum::frcNormalNet
-          || fNet->getType() == frNetEnum::frcClockNet) {
+      if (!fNet->getType().isSupply()) {
         if (getDRNets(fNet)) {
           for (auto dNet : *(getDRNets(fNet))) {
             if (!canRipup(dNet)) {
@@ -3051,8 +3048,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
         modMinSpacingCostVia(box, zIdx, 3, false, true);
         modEolSpacingRulesCost(box, zIdx, 3);
         // block for PDN (fixed obj)
-        if (ps->getNet()->getType() == frNetEnum::frcPowerNet
-            || ps->getNet()->getType() == frNetEnum::frcGroundNet) {
+        if (ps->getNet()->getType().isSupply()) {
           modBlockedPlanar(box, zIdx, true);
           modBlockedVia(box, zIdx, true);
         }

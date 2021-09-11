@@ -1087,8 +1087,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                                                  const frBox& origCutBox,
                                                  frVia* origVia)
 {
-  if (origVia->getNet()->getType() != frNetEnum::frcPowerNet
-      && origVia->getNet()->getType() != frNetEnum::frcGroundNet) {
+  if (!origVia->getNet()->getType().isSupply()) {
     return;
   }
   auto lNum = origVia->getViaDef()->getCutLayerNum();
@@ -1122,8 +1121,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     for (auto& [box, obj] : result) {
       if (obj->typeId() == frcVia) {
         auto via = static_cast<frVia*>(obj);
-        if (via->getNet()->getType() != frNetEnum::frcPowerNet
-            && via->getNet()->getType() != frNetEnum::frcGroundNet) {
+        if (!via->getNet()->getType().isSupply()) {
           continue;
         }
         if (origCutBox == box) {
