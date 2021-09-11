@@ -711,7 +711,7 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
           auto supply
               = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -784,7 +784,7 @@ void FlexGR::reportCong3D()
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
           auto supply
               = cmap_->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -870,7 +870,7 @@ void FlexGR::ra()
     int numBlockedTrack = 0;
     int numGCell = xgp->getCount() * ygp->getCount();
     int numBlockedGCell = 0;
-    if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (dir == dbTechLayerDir::HORIZONTAL) {
       cout << "H      ";
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
         numTrack += cmap_->getSupply(0, yIdx, cmapLayerIdx, frDirEnum::E);
@@ -888,7 +888,7 @@ void FlexGR::ra()
           }
         }
       }
-    } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
+    } else if (dir == dbTechLayerDir::VERTICAL) {
       cout << "V      ";
       for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
         numTrack += cmap_->getSupply(xIdx, 0, cmapLayerIdx, frDirEnum::N);
@@ -2162,7 +2162,7 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
         // horz
         if (beginIdx.y() == endIdx.y()) {
           if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == frcVertPrefRoutingDir) {
+              == dbTechLayerDir::VERTICAL) {
             isLayerBlocked = true;
           }
           int yIdx = beginIdx.y();
@@ -2188,7 +2188,7 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
           }
         } else {
           if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == frcHorzPrefRoutingDir) {
+              == dbTechLayerDir::HORIZONTAL) {
             isLayerBlocked = true;
           }
           int xIdx = beginIdx.x();

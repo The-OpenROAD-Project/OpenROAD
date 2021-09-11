@@ -1394,9 +1394,9 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
 
   tmpLayer->setType(frLayerTypeEnum::ROUTING);
   if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
-    tmpLayer->setDir(frcHorzPrefRoutingDir);
+    tmpLayer->setDir(dbTechLayerDir::HORIZONTAL);
   else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL)
-    tmpLayer->setDir(frcVertPrefRoutingDir);
+    tmpLayer->setDir(dbTechLayerDir::VERTICAL);
 
   tmpLayer->setPitch(layer->getPitch());
   tmpLayer->setNumMasks(layer->getNumMasks());

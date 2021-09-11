@@ -52,7 +52,7 @@ void io::Parser::genGuides_merge(
     frCoord x2 = idx.x();
     frCoord y2 = idx.y();
     auto layerNum = rect.getLayerNum();
-    if (tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir) {
+    if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
       for (auto i = y1; i <= y2; i++) {
         intvs[layerNum][i].insert(
             boost::icl::interval<frCoord>::closed(x1, x2));
@@ -145,7 +145,7 @@ void io::Parser::genGuides_split(
   for (auto& [pr, objS] : gCell2PinMap) {
     auto& point = pr.first;
     auto& lNum = pr.second;
-    if (design->getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+    if (design->getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
       pin_helper[lNum][point.y()][point.x()] = objS;
     } else {
       pin_helper[lNum][point.x()][point.y()] = objS;
@@ -171,7 +171,7 @@ void io::Parser::genGuides_split(
                  it2++) {
               // add pin2GCellmap
               for (auto obj : it2->second) {
-                if (dir == frcHorzPrefRoutingDir) {
+                if (dir == dbTechLayerDir::HORIZONTAL) {
                   pin2GCellMap[obj].insert(
                       make_pair(frPoint(it2->first, trackIdx), layerNum));
                 } else {
@@ -184,7 +184,7 @@ void io::Parser::genGuides_split(
           }
           for (int x = beginIdx; x <= endIdx; x++) {
             frRect tmpRect;
-            if (dir == frcHorzPrefRoutingDir) {
+            if (dir == dbTechLayerDir::HORIZONTAL) {
               tmpRect.setBBox(frBox(x, trackIdx, x, trackIdx));
             } else {
               tmpRect.setBBox(frBox(trackIdx, x, trackIdx, x));
@@ -227,7 +227,7 @@ void io::Parser::genGuides_split(
               lineIdx.insert(it2->first);
               // add pin2GCellMap
               for (auto obj : it2->second) {
-                if (dir == frcHorzPrefRoutingDir) {
+                if (dir == dbTechLayerDir::HORIZONTAL) {
                   pin2GCellMap[obj].insert(
                       make_pair(frPoint(it2->first, trackIdx), layerNum));
                 } else {
@@ -247,7 +247,7 @@ void io::Parser::genGuides_split(
           } else if (lineIdx.size() == 1) {
             auto x = *(lineIdx.begin());
             frRect tmpRect;
-            if (dir == frcHorzPrefRoutingDir) {
+            if (dir == dbTechLayerDir::HORIZONTAL) {
               tmpRect.setBBox(frBox(x, trackIdx, x, trackIdx));
             } else {
               tmpRect.setBBox(frBox(trackIdx, x, trackIdx, x));
@@ -259,7 +259,7 @@ void io::Parser::genGuides_split(
             for (auto currIt = (++(lineIdx.begin())); currIt != lineIdx.end();
                  currIt++) {
               frRect tmpRect;
-              if (dir == frcHorzPrefRoutingDir) {
+              if (dir == dbTechLayerDir::HORIZONTAL) {
                 tmpRect.setBBox(frBox(*prevIt, trackIdx, *currIt, trackIdx));
               } else {
                 tmpRect.setBBox(frBox(trackIdx, *prevIt, trackIdx, *currIt));
@@ -315,10 +315,10 @@ void io::Parser::genGuides_gCell2TermMap(
 
         bool condition3 = false;  // GR implies wrongway connection but
                                   // technology does not allow
-        if ((layer->getDir() == frcVertPrefRoutingDir
+        if ((layer->getDir() == dbTechLayerDir::VERTICAL
              && (!USENONPREFTRACKS || layer->isUnidirectional())
              && box.left() == gcellBox.left())
-            || (layer->getDir() == frcHorzPrefRoutingDir
+            || (layer->getDir() == dbTechLayerDir::HORIZONTAL
                 && (!USENONPREFTRACKS || layer->isUnidirectional())
                 && box.bottom() == gcellBox.bottom())) {
           condition3 = true;
@@ -338,9 +338,9 @@ void io::Parser::genGuides_gCell2TermMap(
               }
             } else if (condition3
                        && ((x == tmpIdx.x() - 1
-                            && layer->getDir() == frcVertPrefRoutingDir)
+                            && layer->getDir() == dbTechLayerDir::VERTICAL)
                            || (y == tmpIdx.y() - 1
-                               && layer->getDir() == frcHorzPrefRoutingDir))) {
+                               && layer->getDir() == dbTechLayerDir::HORIZONTAL))) {
               if (VERBOSE > 0) {
                 frString name = (origTerm->typeId() == frcInstTerm)
                                     ? ((frInstTerm*) origTerm)->getName()

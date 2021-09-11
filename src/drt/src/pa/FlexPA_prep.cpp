@@ -84,10 +84,10 @@ void FlexPA::prepPoint_pin_mergePinShapes(
           box.left(), box.bottom(), box.right(), box.top());
       if (isShrink) {
         if (getDesign()->getTech()->getLayer(layerNum)->getDir()
-            == frcHorzPrefRoutingDir) {
+            == dbTechLayerDir::HORIZONTAL) {
           gtl::shrink(rect, gtl::VERTICAL, layerWidths[layerNum] / 2);
         } else if (getDesign()->getTech()->getLayer(layerNum)->getDir()
-                   == frcVertPrefRoutingDir) {
+                   == dbTechLayerDir::VERTICAL) {
           gtl::shrink(rect, gtl::HORIZONTAL, layerWidths[layerNum] / 2);
         }
       }
@@ -196,7 +196,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
-    if (lowerLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (lowerLayer->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (lowerLayer->getLef58RectOnlyConstraint()) {
         ap->setAccess(frDirEnum::S, false);
         ap->setAccess(frDirEnum::N, false);
@@ -208,7 +208,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
       }
     }
     // vert layer
-    if (lowerLayer->getDir() == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
+    if (lowerLayer->getDir() == dbTechLayerDir::VERTICAL) {
       if (lowerLayer->getLef58RectOnlyConstraint()) {
         ap->setAccess(frDirEnum::W, false);
         ap->setAccess(frDirEnum::E, false);
@@ -375,7 +375,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
   auto& layer1TrackCoords = trackCoords_[layerNum];
   auto& layer2TrackCoords = trackCoords_[secondLayerNum];
   bool isLayer1Horz = (getDesign()->getTech()->getLayer(layerNum)->getDir()
-                       == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+                       == dbTechLayerDir::HORIZONTAL);
 
   map<frCoord, frAccessPointEnum> xCoords;
   map<frCoord, frAccessPointEnum> yCoords;

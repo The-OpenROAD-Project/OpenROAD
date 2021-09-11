@@ -678,7 +678,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   // via prl should check min area patch metal if not fat via
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
   bool isH = (getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
   bool isFatVia = (isH) ? (viaBox.top() - viaBox.bottom() > defaultWidth)
                         : (viaBox.right() - viaBox.left() > defaultWidth);
 
@@ -1740,7 +1740,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     // will add eol cost; (2) with pref-dir wire, then not eol edge
     bool isHLayer
         = (getTech()->getLayer(gridGraph_.getLayerNum(bi.z()))->getDir()
-           == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+           == dbTechLayerDir::HORIZONTAL);
     if (isHLayer == (bi.y() == ei.y())) {
       modEolSpacingRulesCost(box, bi.z(), type);
     }
@@ -2937,7 +2937,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           bp = points[prev_i];
           ep = points[i - 1];
           if (getTech()->getLayer(layerNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+              == dbTechLayerDir::HORIZONTAL) {
             if (points[prev_i].x() < points[prev_i + 1].x()) {
               bpPatchStyle = true;
             } else if (points[prev_i].x() > points[prev_i + 1].x()) {
@@ -3047,7 +3047,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         bp = points[prev_i];
         ep = points[i - 1];
         if (getTech()->getLayer(layerNum)->getDir()
-            == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+            == dbTechLayerDir::HORIZONTAL) {
           if (points[prev_i].x() < points[prev_i + 1].x()) {
             bpPatchStyle = true;
           } else if (points[prev_i].x() > points[prev_i + 1].x()) {
@@ -3259,7 +3259,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  if (getTech()->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir) {
+  if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
     isPatchHorz = true;
   } else {
     isPatchHorz = false;

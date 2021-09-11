@@ -40,7 +40,7 @@ using namespace fr;
 void FlexGridGraph::initGrids(
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
-    const map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+    const map<frLayerNum, dbTechLayerDir>& zMap,
     bool followGuide)
 {
   // initialize coord vectors
@@ -48,7 +48,7 @@ void FlexGridGraph::initGrids(
   yCoords_.clear();
   zCoords_.clear();
   zHeights_.clear();
-  zDirs_.clear();
+  layerRouteDirections_.clear();
   for (auto& [k, v] : xMap) {
     xCoords_.push_back(k);
   }
@@ -61,9 +61,7 @@ void FlexGridGraph::initGrids(
     zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
     zHeights_.push_back(zHeight);
-    zDirs_.push_back((v == frPrefRoutingDirEnum::frcHorzPrefRoutingDir ?
-                           RouteDirectionEnum::Horizontal :
-                           RouteDirectionEnum::Vertical));
+    layerRouteDirections_.push_back(v);
   }
   // initialize all grids
   frMIdx xDim, yDim, zDim;
@@ -131,7 +129,7 @@ void FlexGridGraph::initEdges(
     const frDesign* design,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
-    const map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+    const map<frLayerNum, dbTechLayerDir>& zMap,
     const frBox& bbox,
     bool initDR)
 {
@@ -169,7 +167,7 @@ void FlexGridGraph::initEdges(
         // add cost to out-of-die edge
         bool outOfDiePlanar = false;
         // add edge for preferred direction
-        if (dir == frcHorzPrefRoutingDir && yFound) {
+        if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
             if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
@@ -192,7 +190,7 @@ void FlexGridGraph::initEdges(
               }
             }
           }
-        } else if (dir == frcVertPrefRoutingDir && xFound) {
+        } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
             if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
@@ -221,14 +219,14 @@ void FlexGridGraph::initEdges(
         if (USENONPREFTRACKS && !layer->isUnidirectional()) {
           // add edge for non-preferred direction
           // vertical non-pref track
-          if (dir == frcHorzPrefRoutingDir && xFound3) {
+          if (dir == dbTechLayerDir::HORIZONTAL && xFound3) {
             if (layerNum >= BOTTOM_ROUTING_LAYER
                 && layerNum <= TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               setGridCostN(xIdx, yIdx, zIdx);
             }
             // horizontal non-pref track
-          } else if (dir == frcVertPrefRoutingDir && yFound3) {
+          } else if (dir == dbTechLayerDir::VERTICAL && yFound3) {
             if (layerNum >= BOTTOM_ROUTING_LAYER
                 && layerNum <= TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
@@ -273,12 +271,12 @@ void FlexGridGraph::initEdges(
               || nextLNum < BOTTOM_ROUTING_LAYER
               || nextLNum > TOP_ROUTING_LAYER;
         if (!restrictedRouting && nextLNum >= VIA_ACCESS_LAYERNUM) {
-          frPrefRoutingDirEnum prefDir
+          dbTechLayerDir prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();
           xMap[apPt.x()][nextLNum] = nullptr;  // to keep coherence
           yMap[apPt.y()][nextLNum] = nullptr;
           frMIdx nextZ = up ? zIdx + 1 : zIdx;
-          if (prefDir == frcHorzPrefRoutingDir) {
+          if (prefDir == dbTechLayerDir::HORIZONTAL) {
             addEdge(xIdx, yIdx, nextZ, frDirEnum::N, bbox, initDR);
             if (yIdx - 1 >= 0)
               addEdge(xIdx, yIdx - 1, nextZ, frDirEnum::N, bbox, initDR);
@@ -310,7 +308,7 @@ void FlexGridGraph::init(const frDesign* design,
   via2viaMinLenNew_ = &via_data->via2viaMinLenNew;
 
   // get tracks intersecting with the Maze bbox
-  map<frLayerNum, frPrefRoutingDirEnum> zMap;
+  map<frLayerNum, dbTechLayerDir> zMap;
   initTracks(design, xMap, yMap, zMap, extBBox);
   initGrids(xMap, yMap, zMap, followGuide);  // buildGridGraph
   initEdges(
@@ -323,7 +321,7 @@ void FlexGridGraph::initTracks(
     const frDesign* design,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
-    map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+    map<frLayerNum, dbTechLayerDir>& zMap,
     const frBox& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
@@ -331,14 +329,14 @@ void FlexGridGraph::initTracks(
       continue;
     }
     frLayerNum currLayerNum = layer->getLayerNum();
-    frPrefRoutingDirEnum currPrefRouteDir = layer->getDir();
+    dbTechLayerDir currPrefRouteDir = layer->getDir();
     for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global varialble and design rule allow
       bool flag = (USENONPREFTRACKS && !layer->isUnidirectional())
                       ? (tp->isHorizontal()
-                         && currPrefRouteDir == frcVertPrefRoutingDir)
+                         && currPrefRouteDir == dbTechLayerDir::VERTICAL)
                             || (!tp->isHorizontal()
-                                && currPrefRouteDir == frcHorzPrefRoutingDir)
+                                && currPrefRouteDir == dbTechLayerDir::HORIZONTAL)
                       : true;
       if (flag) {
         int trackNum = ((tp->isHorizontal() ? bbox.left() : bbox.bottom())

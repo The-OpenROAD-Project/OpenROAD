@@ -243,9 +243,9 @@ class FlexGridGraph
     }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
-  RouteDirectionEnum getZDir(frMIdx in) const
+  dbTechLayerDir getZDir(frMIdx in) const
   {
-    return static_cast<RouteDirectionEnum>(zDirs_[in]);
+    return layerRouteDirections_[in];
   }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
@@ -751,18 +751,24 @@ class FlexGridGraph
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    if (getZDir(z) == Horizontal) {
-      for (int i = y1; i <= y2; i++) {
-        auto idx1 = getIdx(x1, i, z);
-        auto idx2 = getIdx(x2, i, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
-      }
-    } else {  // == Vertical
-      for (int i = x1; i <= x2; i++) {
-        auto idx1 = getIdx(i, y1, z);
-        auto idx2 = getIdx(i, y2, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
-      }
+    switch(getZDir(z)) {
+      case dbTechLayerDir::HORIZONTAL:
+        for (int i = y1; i <= y2; i++) {
+          auto idx1 = getIdx(x1, i, z);
+          auto idx2 = getIdx(x2, i, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
+        }
+        break;
+      case dbTechLayerDir::VERTICAL:
+        for (int i = x1; i <= x2; i++) {
+          auto idx1 = getIdx(i, y1, z);
+          auto idx2 = getIdx(i, y2, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
+        }
+        break;
+      case dbTechLayerDir::NONE:
+        cout << "Error: Invalid preferred direction on layer " << z << ".";
+        break;
     }
   }
   void resetGuide(frMIdx x1, frMIdx y1, frMIdx x2, frMIdx y2, frMIdx z)
@@ -770,18 +776,24 @@ class FlexGridGraph
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    if (getZDir(z) == Horizontal) {
-      for (int i = y1; i <= y2; i++) {
-        auto idx1 = getIdx(x1, i, z);
-        auto idx2 = getIdx(x2, i, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
-      }
-    } else {  // == Vertical
-      for (int i = x1; i <= x2; i++) {
-        auto idx1 = getIdx(i, y1, z);
-        auto idx2 = getIdx(i, y2, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
-      }
+    switch(getZDir(z)) {
+      case dbTechLayerDir::HORIZONTAL:
+        for (int i = y1; i <= y2; i++) {
+          auto idx1 = getIdx(x1, i, z);
+          auto idx2 = getIdx(x2, i, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
+        }
+        break;
+      case dbTechLayerDir::VERTICAL:
+        for (int i = x1; i <= x2; i++) {
+          auto idx1 = getIdx(i, y1, z);
+          auto idx2 = getIdx(i, y2, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
+        }
+        break;
+      case dbTechLayerDir::NONE:
+        cout << "Error: Invalid preferred direction on layer " << z << ".";
+        break;
     }
   }
   void setGraphics(FlexDRGraphics* g) { graphics_ = g; }
@@ -885,7 +897,7 @@ class FlexGridGraph
     yCoords_.shrink_to_fit();
     zHeights_.clear();
     zHeights_.shrink_to_fit();
-    zDirs_.clear();
+    layerRouteDirections_.clear();
     yCoords_.shrink_to_fit();
     yCoords_.clear();
     yCoords_.shrink_to_fit();
@@ -965,7 +977,7 @@ class FlexGridGraph
   frVector<frCoord> yCoords_;
   frVector<frLayerNum> zCoords_;
   frVector<frCoord> zHeights_;  // accumulated Z diff
-  std::vector<bool> zDirs_;     // is horz dir
+  std::vector<dbTechLayerDir> layerRouteDirections_;
   frBox dieBox_;
   frUInt4 ggDRCCost_;
   frUInt4 ggMarkerCost_;
@@ -992,7 +1004,7 @@ class FlexGridGraph
     auto xSize = xCoords_.size();
     auto ySize = yCoords_.size();
 
-    frMIdx zDirModifier = (getZDir(zIdx) == Horizontal)
+    frMIdx zDirModifier = (getZDir(zIdx) == dbTechLayerDir::HORIZONTAL)
                         ? (xIdx + yIdx * xSize)
                         : (yIdx + xIdx * ySize);
     frMIdx partialCoordinates = zIdx * xSize * ySize;
@@ -1106,17 +1118,17 @@ class FlexGridGraph
           horLoc2TrackPatterns,
       std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
           vertLoc2TrackPatterns,
-      std::map<frLayerNum, frPrefRoutingDirEnum>& layerNum2PreRouteDir,
+      std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
       const frBox& bbox);
   void initGrids(
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+      const std::map<frLayerNum, dbTechLayerDir>& zMap,
       bool followGuide);
   void initEdges(const frDesign* design,
                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-                 const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+                 const std::map<frLayerNum, dbTechLayerDir>& zMap,
                  const frBox& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,

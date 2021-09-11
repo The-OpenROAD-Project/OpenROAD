@@ -835,8 +835,8 @@ bool FlexDRWorker::findAPTracks(frLayerNum startLayerNum,
 
   for (frLayerNum lNum = startLayerNum; lNum != endLayerNum + inc;
        lNum += inc) {
-    frPrefRoutingDirEnum currPrefRouteDir = getTech()->getLayer(lNum)->getDir();
-    if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+    dbTechLayerDir currPrefRouteDir = getTech()->getLayer(lNum)->getDir();
+    if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
       getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
     } else {
       getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
@@ -898,7 +898,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           // get intersecting tracks if any
-          if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+          if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
             getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
               getTrackLocs(false,
@@ -1027,7 +1027,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                                      yLocs);
               if (!found)
                 continue;
-            } else if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+            } else if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(false,
@@ -1151,7 +1151,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
 
           if (!useCenterLine) {
             // get intersecting tracks if any
-            if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+            if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(false,
@@ -1468,11 +1468,11 @@ void FlexDRWorker::getTrackLocs(bool isHorzTracks,
                                 frCoord high,
                                 std::set<frCoord>& trackLocs)
 {
-  frPrefRoutingDirEnum currPrefRouteDir
+  dbTechLayerDir currPrefRouteDir
       = getTech()->getLayer(currLayerNum)->getDir();
   for (auto& tp : design_->getTopBlock()->getTrackPatterns(currLayerNum)) {
-    if ((tp->isHorizontal() && currPrefRouteDir == frcVertPrefRoutingDir)
-        || (!tp->isHorizontal() && currPrefRouteDir == frcHorzPrefRoutingDir)) {
+    if ((tp->isHorizontal() && currPrefRouteDir == dbTechLayerDir::VERTICAL)
+        || (!tp->isHorizontal() && currPrefRouteDir == dbTechLayerDir::HORIZONTAL)) {
       int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
       if (trackNum < 0) {
         trackNum = 0;
@@ -1920,7 +1920,7 @@ void FlexDRWorker::initTrackCoords_route(
       // vertical
       if (bp.x() == ep.x()) {
         // non pref dir
-        if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+        if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
           if (lNum + 2 <= getTech()->getTopLayerNum()) {
             xMap[bp.x()][lNum + 2]
                 = nullptr;  // default add track to upper layer
@@ -1951,7 +1951,7 @@ void FlexDRWorker::initTrackCoords_route(
         // horizontal
       } else {
         // non pref dir
-        if (getTech()->getLayer(lNum)->getDir() == frcVertPrefRoutingDir) {
+        if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::VERTICAL) {
           if (lNum + 2 <= getTech()->getTopLayerNum()) {
             yMap[bp.y()][lNum + 2] = nullptr;
           } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
@@ -1984,14 +1984,14 @@ void FlexDRWorker::initTrackCoords_route(
       obj->getOrigin(pt);
       // add pref dir track to layer1
       auto layer1Num = obj->getViaDef()->getLayer1Num();
-      if (getTech()->getLayer(layer1Num)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][layer1Num] = nullptr;
       } else {
         xMap[pt.x()][layer1Num] = nullptr;
       }
       // add pref dir track to layer2
       auto layer2Num = obj->getViaDef()->getLayer2Num();
-      if (getTech()->getLayer(layer2Num)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(layer2Num)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][layer2Num] = nullptr;
       } else {
         xMap[pt.x()][layer2Num] = nullptr;
@@ -2036,12 +2036,12 @@ void FlexDRWorker::initTrackCoords_pin(
       //     // }
       //   }
       // }
-      if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][lNum] = nullptr;
       } else {
         xMap[pt.x()][lNum] = nullptr;
       }
-      if (getTech()->getLayer(lNum2)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(lNum2)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][lNum2] = nullptr;
       } else {
         xMap[pt.x()][lNum2] = nullptr;
@@ -2144,7 +2144,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     gridGraph_.getMazeIdx(bi, bp, lNum);
     ap->setMazeIdx(bi);
     // set curr layer on track status
-    if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+    if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -2165,7 +2165,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     FlexMazeIdx bi;
     gridGraph_.getMazeIdx(bi, bp, lNum + 2);
     // set curr layer on track status
-    if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir) {
+    if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -2288,12 +2288,12 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
       for (auto& ap : pin->getAccessPatterns()) {
         lNum = ap->getBeginLayerNum();
         if (ap->hasValidAccess(frDirEnum::U)) {
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL
               && ap->isOnTrack(true)) {
             hasUpperOnTrackAP = true;
             break;
           }
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcVertPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::VERTICAL
               && ap->isOnTrack(false)) {
             hasUpperOnTrackAP = true;
             break;
@@ -2310,7 +2310,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
         lNum = ap->getBeginLayerNum();
         if (lNum + 2 <= getTech()->getTopLayerNum()) {
           auto upperDefaultWidth = getTech()->getLayer(lNum + 2)->getWidth();
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL
               && !ap->isOnTrack(true)) {
             if (!hasUpperOnTrackAP) {
               auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
@@ -2326,7 +2326,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
                   isAddPathCost);
             }
           }
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcVertPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::VERTICAL
               && !ap->isOnTrack(false)) {
             if (!hasUpperOnTrackAP) {
               auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);

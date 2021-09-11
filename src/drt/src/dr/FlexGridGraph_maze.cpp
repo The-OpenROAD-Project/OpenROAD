@@ -238,7 +238,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
       auto layer = getTech()->getLayer(layerNum);
       if (layer->isUnidirectional()) {
         bool isH
-            = (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+            = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
         if (isH) {
           auto gap = abs(nextPoint.y() - dstPoint1.y());
           if (gap

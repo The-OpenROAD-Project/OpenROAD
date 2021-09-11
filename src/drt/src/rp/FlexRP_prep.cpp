@@ -901,7 +901,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
   }
 
   bool isH = (getDesign()->getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   frVia via1(viaDef1);

@@ -66,7 +66,7 @@ class FlexGRCMap
 
   frLayerNum getNumLayers() { return numLayers_; }
 
-  std::map<frLayerNum, frPrefRoutingDirEnum> getZMap() { return zMap_; }
+  std::map<frLayerNum, dbTechLayerDir> getZMap() { return zMap_; }
 
   unsigned getSupply(unsigned x,
                      unsigned y,
@@ -528,7 +528,7 @@ class FlexGRCMap
   // [15-8] cong history
   // [3] block E [2] block N [1] overflow E; [0] overflow N
   std::vector<unsigned long long> bits_;
-  std::map<frLayerNum, frPrefRoutingDirEnum> zMap_;
+  std::map<frLayerNum, dbTechLayerDir> zMap_;
   std::vector<frCoord> layerTrackPitches_;
   std::vector<frCoord> layerLine2ViaPitches_;
   std::vector<frCoord> layerPitches_;

@@ -43,7 +43,7 @@ void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
     if (design_->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == frcHorzPrefRoutingDir) {
+        == dbTechLayerDir::HORIZONTAL) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }
@@ -303,13 +303,13 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   isNotLowerAlign
       = (isLayer1Horz
          && (getDesign()->getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == frcVertPrefRoutingDir))
+             == dbTechLayerDir::VERTICAL))
         || (!isLayer1Horz
             && (getDesign()
                     ->getTech()
                     ->getLayer(viaDef->getLayer1Num())
                     ->getDir()
-                == frcHorzPrefRoutingDir));
+                == dbTechLayerDir::HORIZONTAL));
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -329,13 +329,13 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   isNotUpperAlign
       = (isLayer2Horz
          && (getDesign()->getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == frcVertPrefRoutingDir))
+             == dbTechLayerDir::VERTICAL))
         || (!isLayer2Horz
             && (getDesign()
                     ->getTech()
                     ->getLayer(viaDef->getLayer2Num())
                     ->getDir()
-                == frcHorzPrefRoutingDir));
+                == dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = gtl::area(viaLayerPS1);
   frCoord layer2Area = gtl::area(viaLayerPS2);
@@ -360,7 +360,7 @@ void FlexPA::initTrackCoords()
   for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
     auto layerNum = trackPattern->getLayerNum();
     auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir()
-                     == frcVertPrefRoutingDir);
+                     == dbTechLayerDir::VERTICAL);
     auto isVTrack = trackPattern->isHorizontal();  // yes = vertical track
     if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
       frCoord currCoord = trackPattern->getStartCoord();

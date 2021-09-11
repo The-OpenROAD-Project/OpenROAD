@@ -251,7 +251,7 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
 
   // check min len in lNum assuming pre dir routing
   bool isH = (getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
@@ -448,7 +448,7 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
 
   // check min len in lNum assuming pre dir routing
   bool isH = (getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef1);

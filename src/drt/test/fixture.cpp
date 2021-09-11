@@ -48,7 +48,7 @@ Fixture::Fixture()
 void Fixture::addLayer(frTechObject* tech,
                        const char* name,
                        frLayerTypeEnum type,
-                       frPrefRoutingDirEnum dir)
+                       dbTechLayerDir dir)
 {
   auto layer = std::make_unique<frLayer>();
   layer->setLayerNum(tech->getTopLayerNum() + 1);

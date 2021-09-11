@@ -40,6 +40,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace fr {
@@ -62,6 +63,7 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
+using dbTechLayerDir = odb::dbTechLayerDir;
 
 enum frOrientEnum
 {
@@ -79,18 +81,6 @@ enum frEndStyleEnum
   frcTruncateEndStyle = 0,  // ext = 0
   frcExtendEndStyle = 1,    // ext = half width
   frcVariableEndStyle = 2   // ext = variable
-};
-enum frPrefRoutingDirEnum
-{
-  frcNotApplicablePrefRoutingDir = 0,
-  frcNonePrefRoutingDir = 1,
-  frcHorzPrefRoutingDir = 2,
-  frcVertPrefRoutingDir = 3
-};
-enum RouteDirectionEnum : bool
-{
-  Vertical = 0,
-  Horizontal = 1
 };
 enum frBlockObjectEnum
 {
