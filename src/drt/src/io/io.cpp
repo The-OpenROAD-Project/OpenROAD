@@ -789,27 +789,12 @@ void io::Parser::setNets(odb::dbBlock* block)
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
-    frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
-    switch (term->getIoType().getValue()) {
-      case odb::dbIoType::INPUT:
-        termDirection = frTermDirectionEnum::INPUT;
-        break;
-      case odb::dbIoType::OUTPUT:
-        termDirection = frTermDirectionEnum::OUTPUT;
-        break;
-      case odb::dbIoType::INOUT:
-        termDirection = frTermDirectionEnum::INOUT;
-        break;
-      case odb::dbIoType::FEEDTHRU:
-        termDirection = frTermDirectionEnum::FEEDTHRU;
-        break;
-    }
     auto uTermIn = make_unique<frTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setId(numTerms);
     numTerms++;
     termIn->setType(term->getSigType());
-    termIn->setDirection(termDirection);
+    termIn->setDirection(term->getIoType());
     auto pinIn = make_unique<frPin>();
     pinIn->setId(0);
     for (auto pin : term->getBPins()) {
@@ -1751,23 +1736,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         tmpBlock->addTerm(std::move(uTerm));
 
         term->setType(_term->getSigType());
-        frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
-        string str = string(_term->getIoType().getString());
-        if (str == "INPUT") {
-          termDirection = frTermDirectionEnum::INPUT;
-        } else if (str == "OUTPUT") {
-          termDirection = frTermDirectionEnum::OUTPUT;
-        } else if (str == "OUTPUT TRISTATE") {
-          termDirection = frTermDirectionEnum::OUTPUT;
-        } else if (str == "INOUT") {
-          termDirection = frTermDirectionEnum::INOUT;
-        } else if (str == "FEEDTHRU") {
-          termDirection = frTermDirectionEnum::FEEDTHRU;
-        } else {
-          logger->error(
-              DRT, 121, "Unsupported terminal direction {} in lef.", str);
-        }
-        term->setDirection(termDirection);
+        term->setDirection(_term->getIoType());
 
         int i = 0;
         for (auto mpin : _term->getMPins()) {

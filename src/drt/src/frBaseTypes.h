@@ -67,6 +67,7 @@ using dbTechLayerDir = odb::dbTechLayerDir;
 using dbTechLayerType = odb::dbTechLayerType;
 using dbMasterType = odb::dbMasterType;
 using dbSigType = odb::dbSigType;
+using dbIoType = odb::dbIoType;
 
 enum frEndStyleEnum
 {
@@ -134,14 +135,6 @@ enum class frGuideEnum
   frcGuideGlobal,
   frcGuideTrunk,
   frcGuideShortConn
-};
-enum class frTermDirectionEnum
-{
-  UNKNOWN,
-  INPUT,
-  OUTPUT,
-  INOUT,
-  FEEDTHRU,
 };
 enum class frNodeTypeEnum
 {

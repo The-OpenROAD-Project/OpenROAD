@@ -51,7 +51,7 @@ class frTerm : public frBlockObject
         net_(nullptr),
         pins_(),
         type_(dbSigType::SIGNAL),
-        direction_(frTermDirectionEnum::UNKNOWN)
+        direction_(dbIoType::INPUT)
   {
   }
   frTerm(const frTerm& in)
@@ -98,8 +98,8 @@ class frTerm : public frBlockObject
   }
   void setType(dbSigType in) { type_ = in; }
   dbSigType getType() const { return type_; }
-  void setDirection(frTermDirectionEnum in) { direction_ = in; }
-  frTermDirectionEnum getDirection() const { return direction_; }
+  void setDirection(dbIoType in) { direction_ = in; }
+  dbIoType getDirection() const { return direction_; }
   // others
   frBlockObjectEnum typeId() const override { return frcTerm; }
   void setOrderId(int order_id) { _order_id = order_id; }
@@ -131,7 +131,7 @@ class frTerm : public frBlockObject
   frNet* net_;  // set later, term in instTerm does not have net
   std::vector<std::unique_ptr<frPin>> pins_;  // set later
   dbSigType type_;
-  frTermDirectionEnum direction_;
+  dbIoType direction_;
   int _order_id;
 };
 }  // namespace fr

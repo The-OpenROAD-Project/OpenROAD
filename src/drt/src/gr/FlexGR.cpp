@@ -1550,14 +1550,12 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   for (auto& node : netNodes) {
     if (node->getPin()) {
       if (node->getPin()->typeId() == frcInstTerm) {
-        auto term = static_cast<frInstTerm*>(node->getPin())->getTerm();
+        auto ioType = static_cast<frInstTerm*>(node->getPin())->getTerm()
+                      ->getDirection();
         // for instTerm, direction OUTPUT is driver
-        if (term->getDirection() == frTermDirectionEnum::OUTPUT
-            && nodes[0] == nullptr) {
+        if (ioType == dbIoType::OUTPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
-          if (term->getDirection() == frTermDirectionEnum::OUTPUT) {
-          }
           if (sinkIdx >= nodes.size()) {
             sinkIdx %= nodes.size();
           }
@@ -1566,14 +1564,11 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         }
         pin2Nodes[node->getPin()].push_back(node.get());
       } else if (node->getPin()->typeId() == frcTerm) {
-        auto term = static_cast<frTerm*>(node->getPin());
+        auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
         // for IO term, direction INPUT is driver
-        if (term->getDirection() == frTermDirectionEnum::INPUT
-            && nodes[0] == nullptr) {
+        if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
-          if (term->getDirection() == frTermDirectionEnum::INPUT) {
-          }
           if (sinkIdx >= nodes.size()) {
             sinkIdx %= nodes.size();
           }

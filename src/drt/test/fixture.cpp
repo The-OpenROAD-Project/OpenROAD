@@ -160,7 +160,7 @@ frTerm* Fixture::makeMacroPin(frBlock* refBlock,
   refBlock->addTerm(std::move(uTerm));
   dbSigType termType = dbSigType::SIGNAL;
   term->setType(termType);
-  frTermDirectionEnum termDirection = frTermDirectionEnum::INPUT;
+  dbIoType termDirection = dbIoType::INPUT;
   term->setDirection(termDirection);
   auto pinIn = make_unique<frPin>();
   pinIn->setId(0);
