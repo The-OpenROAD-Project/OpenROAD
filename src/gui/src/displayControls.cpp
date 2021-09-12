@@ -267,6 +267,10 @@ DisplayControls::DisplayControls(QWidget* parent)
           SLOT(itemChanged(QStandardItem*)));
 
   connect(view_,
+          SIGNAL(clicked(const QModelIndex&)),
+          this,
+          SLOT(displayItemClicked(const QModelIndex&)));
+  connect(view_,
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
@@ -527,6 +531,23 @@ void DisplayControls::itemChanged(QStandardItem* item)
   emit changed();
 }
 
+void DisplayControls::displayItemClicked(const QModelIndex& index)
+{
+  if (index.column() == 0 && index.parent().isValid()) {
+    auto parent_item = model_->itemFromIndex(index.parent());
+    if (parent_item == layers_group_.name) {
+      auto item = model_->itemFromIndex(index);
+      auto layer_find = std::find_if(layer_controls_.begin(), layer_controls_.end(), [item](const auto& o) {
+        return o.second.name == item;
+      });
+      if (layer_find != layer_controls_.end()) {
+        // need non-const object
+        emit selected(Gui::get()->makeSelected(const_cast<odb::dbTechLayer*>(layer_find->first)));
+      }
+    }
+  }
+}
+
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
   if (index.column() == 0) {
@@ -675,55 +696,65 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           color(layer),
           type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(static_cast<void*>(layer)));
       if (type == dbTechLayerType::ROUTING) {
-        const char* micron = "\u03BC";
-        auto units_convert = [micron](double value) -> QString {
-          int log_units = std::floor(std::log10(value) / 3.0) * 3;
-          if (log_units <= -18) {
-            return QString::number(value * 1e18) + " a";
-          } else if (log_units <= -15) {
-            return QString::number(value * 1e15) + " f";
-          } else if (log_units <= -12) {
-            return QString::number(value * 1e12) + " p";
-          } else if (log_units <= -9) {
-            return QString::number(value * 1e9) + " n";
-          } else if (log_units <= -6) {
-            return QString::number(value * 1e6) + " " + micron;
-          } else if (log_units <= -3) {
-            return QString::number(value * 1e3) + " m";
-          } else if (log_units <= 0) {
-            return QString::number(value) + " ";
-          } else if (log_units <= 3) {
-            return QString::number(value * 1e-3) + " k";
-          } else if (log_units <= 6) {
-            return QString::number(value * 1e-6) + " M";
-          } else {
-            return QString::number(value) + " ";
-          }
-        };
+        auto selected = Gui::get()->makeSelected(layer);
+        if (!selected) {
+          continue;
+        }
+        auto props = selected.getProperties();
+
+        const QString micron = "\u03BC";
 
         // provide tooltip with layer information
         QString information;
 
+        auto add_prop = [props](const std::string& prop, QString& info) -> bool {
+          auto prop_find = std::find_if(props.begin(), props.end(), [prop](const auto& p) {
+            return p.name == prop;
+          });
+          if (prop_find == props.end()) {
+            return false;
+          }
+          info += "\n" + QString::fromStdString(prop) + ": ";
+          if (auto v = std::any_cast<const char*>(&(*prop_find).value)) {
+            info += QString(*v);
+          } else if (auto v = std::any_cast<const std::string>(&(*prop_find).value)) {
+            info += QString::fromStdString(*v);
+          } else if (auto v = std::any_cast<int>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else if (auto v = std::any_cast<unsigned int>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else if (auto v = std::any_cast<double>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else if (auto v = std::any_cast<float>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else {
+            info += "<unknown>";
+          }
+          return true;
+        };
+
         // direction
-        information += "Direction: " + QString(layer->getDirection().getString()).toLower() + "\n";
+        add_prop("Direction", information);
 
         // min width
-        information += "Minimum width: " + QString::number(layer->getWidth() / dbu_to_microns) + " " + micron + "m\n";
+        if (add_prop("Minimum width", information)) {
+          information += micron + "m";
+        }
 
         // min spacing
-        information += "Minimum spacing: " + QString::number(layer->getSpacing() / dbu_to_microns) + " " + micron + "m";
-
-        // resistance (ohm / square um)
-        if (layer->getResistance() != 0) {
-          information += "\nResistance: " + units_convert(layer->getResistance()) + "\u03A9/sq"; // ohm/sq
+        if (add_prop("Minimum spacing", information)) {
+          information += micron + "m";
         }
 
-        // capacitance (pF /um)
-        if (layer->getCapacitance() != 0) {
-          information += "\nCapacitance: " + units_convert(layer->getCapacitance() * 1e-12) + "F/" + micron + "m";
-        }
+        // resistance
+        add_prop("Resistance", information);
 
-        row.name->setToolTip(information);
+        // capacitance
+        add_prop("Capacitance", information);
+
+        if (!information.isEmpty()) {
+          row.name->setToolTip(information.remove(0, 1));
+        }
       }
     }
   }

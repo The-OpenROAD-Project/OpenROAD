@@ -43,9 +43,42 @@
 #include <QInputDialog>
 #include <QStringList>
 
+#include <iomanip>
+#include <iostream>
 #include <regex>
 
 namespace gui {
+
+static std::string convertUnits(double value)
+{
+  std::stringstream ss;
+  const int precision = 3;
+  ss << std::fixed << std::setprecision(precision);
+  const char* micron = "\u03BC";
+  int log_units = std::floor(std::log10(value) / 3.0) * 3;
+  if (log_units <= -18) {
+    ss << value * 1e18 << "a";
+  } else if (log_units <= -15) {
+    ss << value * 1e15 << "f";
+  } else if (log_units <= -12) {
+    ss << value * 1e12 << "p";
+  } else if (log_units <= -9) {
+    ss << value * 1e9 << "n";
+  } else if (log_units <= -6) {
+    ss << value * 1e6 << micron;
+  } else if (log_units <= -3) {
+    ss << value * 1e3 << "m";
+  } else if (log_units <= 0) {
+    ss << value;
+  } else if (log_units <= 3) {
+    ss << value * 1e-3 << "k";
+  } else if (log_units <= 6) {
+    ss << value * 1e-6 << "M";
+  } else {
+    ss << value;
+  }
+  return ss.str();
+}
 
 // renames an object
 template<typename T>
@@ -861,7 +894,7 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
   obs->getBBox()->getBox(rect);
   double dbuPerUU = obs->getBlock()->getDbUnitsPerMicron();
   Properties props({{"Instance", inst_value},
-                    {"Layer", obs->getBBox()->getTechLayer()->getName()},
+                    {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
                     {"X", rect.xMin() / dbuPerUU},
                     {"Y", rect.yMin() / dbuPerUU},
                     {"Width", rect.dx() / dbuPerUU},
@@ -921,6 +954,64 @@ bool DbObstructionDescriptor::lessThan(std::any l, std::any r) const
   auto l_obs = std::any_cast<odb::dbObstruction*>(l);
   auto r_obs = std::any_cast<odb::dbObstruction*>(r);
   return l_obs->getId() < r_obs->getId();
+}
+
+//////////////////////////////////////////////////
+
+std::string DbTechLayerDescriptor::getName(std::any object) const
+{
+  auto layer = std::any_cast<odb::dbTechLayer*>(object);
+  return layer->getConstName();
+}
+
+std::string DbTechLayerDescriptor::getTypeName(std::any object) const
+{
+  return "Tech layer";
+}
+
+bool DbTechLayerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbTechLayerDescriptor::highlight(std::any object,
+                                        Painter& painter,
+                                        void* additional_data) const
+{
+}
+
+Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) const
+{
+  auto gui = Gui::get();
+  auto layer = std::any_cast<odb::dbTechLayer*>(object);
+  double dbuPerUU = layer->getTech()->getDbUnitsPerMicron();
+  Properties props({{"Direction", layer->getDirection().getString()},
+                    {"Minimum width", layer->getWidth() / dbuPerUU},
+                    {"Minimum spacing", layer->getSpacing() / dbuPerUU}});
+  const char* micron = "\u03BC";
+  if (layer->getResistance() != 0.0) {
+    props.push_back({"Resistance", convertUnits(layer->getResistance()) + "\u03A9/sq"}); // ohm/sq
+  }
+  if (layer->getCapacitance() != 0.0) {
+    props.push_back({"Capacitance", convertUnits(layer->getCapacitance()*1e-12) + "F/" + micron + "m"});
+  }
+  return props;
+}
+
+Selected DbTechLayerDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (auto layer = std::any_cast<odb::dbTechLayer*>(&object)) {
+    return Selected(*layer, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbTechLayerDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_layer = std::any_cast<odb::dbTechLayer*>(l);
+  auto r_layer = std::any_cast<odb::dbTechLayer*>(r);
+  return l_layer->getId() < r_layer->getId();
 }
 
 }  // namespace gui
