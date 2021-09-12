@@ -135,20 +135,6 @@ enum class frGuideEnum
   frcGuideTrunk,
   frcGuideShortConn
 };
-enum class frTermEnum
-{
-  frcNormalTerm,
-  frcClockTerm,
-  frcPowerTerm,
-  frcGroundTerm
-};
-enum class frNetEnum
-{
-  frcNormalNet,
-  frcClockNet,
-  frcPowerNet,
-  frcGroundNet
-};
 enum class frTermDirectionEnum
 {
   UNKNOWN,

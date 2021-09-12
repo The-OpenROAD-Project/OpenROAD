@@ -65,7 +65,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
     frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
     frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
     for (auto& uTerm : refBlock->getTerms()) {
-      if (isSkipTerm(uTerm.get())) {
+      if (uTerm.get()->getType().isSupply()) {
         continue;
       }
       for (auto& uPin : uTerm->getPins()) {

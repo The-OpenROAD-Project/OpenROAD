@@ -241,13 +241,11 @@ bool isPG(frBlockObject* obj)
     }
     case frcInstTerm: {
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
-      return type == frTermEnum::frcPowerTerm
-             || type == frTermEnum::frcGroundTerm;
+      return type.isSupply();
     }
     case frcTerm: {
       auto type = static_cast<frTerm*>(obj)->getType();
-      return type == frTermEnum::frcPowerTerm
-             || type == frTermEnum::frcGroundTerm;
+      return type.isSupply();
     }
     default:
       return false;
@@ -1951,21 +1949,17 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   if (con->isAdjacentCuts() && con->hasExceptSamePGNet() && net1 == net2
       && net1->getOwner()) {
     auto owner = net1->getOwner();
-    if (owner->typeId() == frcNet) {
+    auto typeId = owner->typeId();
+    if (typeId == frcNet) {
       if (static_cast<frNet*>(owner)->getType().isSupply()) {
         return;
       }
-    } else if (owner->typeId() == frcTerm) {
-      if (static_cast<frTerm*>(owner)->getType() == frTermEnum::frcPowerTerm
-          || static_cast<frTerm*>(owner)->getType()
-                 == frTermEnum::frcGroundTerm) {
+    } else if (typeId == frcTerm) {
+      if (static_cast<frTerm*>(owner)->getType().isSupply()) {
         return;
       }
-    } else if (owner->typeId() == frcInstTerm) {
-      if (static_cast<frInstTerm*>(owner)->getTerm()->getType()
-              == frTermEnum::frcPowerTerm
-          || static_cast<frInstTerm*>(owner)->getTerm()->getType()
-                 == frTermEnum::frcGroundTerm) {
+    } else if (typeId == frcInstTerm) {
+      if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
         return;
       }
     }

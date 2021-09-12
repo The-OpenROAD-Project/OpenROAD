@@ -50,7 +50,7 @@ class frTerm : public frBlockObject
         block_(nullptr),
         net_(nullptr),
         pins_(),
-        type_(frTermEnum::frcNormalTerm),
+        type_(dbSigType::SIGNAL),
         direction_(frTermDirectionEnum::UNKNOWN)
   {
   }
@@ -96,8 +96,8 @@ class frTerm : public frBlockObject
     in->setTerm(this);
     pins_.push_back(std::move(in));
   }
-  void setType(frTermEnum in) { type_ = in; }
-  frTermEnum getType() const { return type_; }
+  void setType(dbSigType in) { type_ = in; }
+  dbSigType getType() const { return type_; }
   void setDirection(frTermDirectionEnum in) { direction_ = in; }
   frTermDirectionEnum getDirection() const { return direction_; }
   // others
@@ -130,7 +130,7 @@ class frTerm : public frBlockObject
   frBlock* block_;
   frNet* net_;  // set later, term in instTerm does not have net
   std::vector<std::unique_ptr<frPin>> pins_;  // set later
-  frTermEnum type_;
+  dbSigType type_;
   frTermDirectionEnum direction_;
   int _order_id;
 };

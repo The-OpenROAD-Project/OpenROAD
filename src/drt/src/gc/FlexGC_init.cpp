@@ -46,11 +46,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     if (term->hasNet()) {
       owner = term->getNet();
     } else {
-      if (term->getType() == frTermEnum::frcPowerTerm) {
-        isFloatingVDD = true;
-      } else if (term->getType() == frTermEnum::frcGroundTerm) {
-        isFloatingVSS = true;
-      }
+      dbSigType sigType = term->getType();
+      isFloatingVDD = (sigType == dbSigType::POWER);
+      isFloatingVSS = (sigType == dbSigType::GROUND);
       owner = obj;
     }
   } else if (obj->typeId() == frcInstTerm) {
@@ -58,11 +56,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     if (instTerm->hasNet()) {
       owner = instTerm->getNet();
     } else {
-      if (instTerm->getTerm()->getType() == frTermEnum::frcPowerTerm) {
-        isFloatingVDD = true;
-      } else if (instTerm->getTerm()->getType() == frTermEnum::frcGroundTerm) {
-        isFloatingVSS = true;
-      }
+      dbSigType sigType = instTerm->getTerm()->getType();
+      isFloatingVDD = (sigType == dbSigType::POWER);
+      isFloatingVSS = (sigType == dbSigType::GROUND);
       owner = obj;
     }
   } else if (obj->typeId() == frcInstBlockage || obj->typeId() == frcBlockage) {

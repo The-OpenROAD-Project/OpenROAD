@@ -1290,7 +1290,7 @@ void FlexPA::prepPoint()
 #pragma omp parallel for schedule(dynamic)
   for (unsigned i = 0; i < getDesign()->getTopBlock()->getTerms().size(); i++) {
     auto& term = getDesign()->getTopBlock()->getTerms()[i];
-    if (isSkipTerm(term.get())) {
+    if (term.get()->getType().isSupply()) {
       continue;
     }
     auto net = term->getNet();
@@ -1766,19 +1766,9 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
   }
 }
 
-bool FlexPA::isSkipTerm(frTerm* in)
-{
-  if (in->getType() != frTermEnum::frcNormalTerm
-      && in->getType() != frTermEnum::frcClockTerm) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
-  return isSkipTerm(in->getTerm());
+  return in->getTerm()->getType().isSupply();
 }
 
 // the input inst must be unique instance

@@ -789,24 +789,6 @@ void io::Parser::setNets(odb::dbBlock* block)
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
-    frTermEnum termType;
-    switch (term->getSigType().getValue()) {
-      case odb::dbSigType::SIGNAL:
-        termType = frTermEnum::frcNormalTerm;
-        break;
-      case odb::dbSigType::POWER:
-        termType = frTermEnum::frcPowerTerm;
-        break;
-      case odb::dbSigType::GROUND:
-        termType = frTermEnum::frcGroundTerm;
-        break;
-      case odb::dbSigType::CLOCK:
-        termType = frTermEnum::frcClockTerm;
-        break;
-      default:
-        logger->error(DRT, 111, "Unsupported PIN USE in db.");
-        break;
-    }
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
     switch (term->getIoType().getValue()) {
       case odb::dbIoType::INPUT:
@@ -826,7 +808,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     auto termIn = uTermIn.get();
     termIn->setId(numTerms);
     numTerms++;
-    termIn->setType(termType);
+    termIn->setType(term->getSigType());
     termIn->setDirection(termDirection);
     auto pinIn = make_unique<frPin>();
     pinIn->setId(0);
@@ -1768,22 +1750,9 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         numTerms++;
         tmpBlock->addTerm(std::move(uTerm));
 
-        frTermEnum termType = frTermEnum::frcNormalTerm;
-        string str(_term->getSigType().getString());
-        if (str == "SIGNAL") {
-          ;
-        } else if (str == "CLOCK") {
-          termType = frTermEnum::frcClockTerm;
-        } else if (str == "POWER") {
-          termType = frTermEnum::frcPowerTerm;
-        } else if (str == "GROUND") {
-          termType = frTermEnum::frcGroundTerm;
-        } else {
-          logger->error(DRT, 120, "Unsupported PIN USE in lef.");
-        }
-        term->setType(termType);
+        term->setType(_term->getSigType());
         frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
-        str = string(_term->getIoType().getString());
+        string str = string(_term->getIoType().getString());
         if (str == "INPUT") {
           termDirection = frTermDirectionEnum::INPUT;
         } else if (str == "OUTPUT") {

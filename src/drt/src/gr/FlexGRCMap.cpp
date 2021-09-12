@@ -341,9 +341,8 @@ unsigned FlexGRCMap::getNumBlkTracks(
   for (auto& [box, obj] : results) {
     actBloatDist = bloatDist;
     if (obj->typeId() == frcInstTerm) {
-      auto instTerm = (static_cast<frInstTerm*>(obj));
-      if (instTerm->getTerm()->getType() == frTermEnum::frcPowerTerm
-          || instTerm->getTerm()->getType() == frTermEnum::frcGroundTerm) {
+      dbSigType sigType = static_cast<frInstTerm*>(obj)->getTerm()->getType();
+      if (sigType.isSupply()) {
         actBloatDist = calcBloatDist(obj, lNum, box, false);
       }
     }

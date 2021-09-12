@@ -158,7 +158,7 @@ frTerm* Fixture::makeMacroPin(frBlock* refBlock,
   auto term = uTerm.get();
   term->setId(id);
   refBlock->addTerm(std::move(uTerm));
-  frTermEnum termType = frTermEnum::frcNormalTerm;
+  dbSigType termType = dbSigType::SIGNAL;
   term->setType(termType);
   frTermDirectionEnum termDirection = frTermDirectionEnum::INPUT;
   term->setDirection(termDirection);
