@@ -660,17 +660,70 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
   techInit();
 
+  double dbu_to_microns = tech->getDbUnitsPerMicron();
+
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
+      auto& row = layer_controls_[layer];
       makeLeafItem(
-          layer_controls_[layer],
+          row,
           QString::fromStdString(layer->getName()),
           layers_group_.name,
           Qt::Checked,
           true,
           color(layer),
           type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(static_cast<void*>(layer)));
+      if (type == dbTechLayerType::ROUTING) {
+        auto units_convert = [](double value) -> QString {
+          int log_units = std::floor(std::log10(value) / 3.0) * 3;
+          if (log_units <= -18) {
+            return QString::number(value * 1e18) + " a";
+          } else if (log_units <= -15) {
+            return QString::number(value * 1e15) + " f";
+          } else if (log_units <= -12) {
+            return QString::number(value * 1e12) + " p";
+          } else if (log_units <= -9) {
+            return QString::number(value * 1e9) + " n";
+          } else if (log_units <= -6) {
+            return QString::number(value * 1e6) + " \u03BC";
+          } else if (log_units <= -3) {
+            return QString::number(value * 1e3) + " m";
+          } else if (log_units <= 0) {
+            return QString::number(value) + " ";
+          } else if (log_units <= 3) {
+            return QString::number(value * 1e-3) + " k";
+          } else if (log_units <= 6) {
+            return QString::number(value * 1e-6) + " M";
+          } else {
+            return QString::number(value) + " ";
+          }
+        };
+
+        // provide tooltip with layer information
+        QString information;
+
+        // direction
+        information += "Direction: " + QString(layer->getDirection().getString()).toLower() + "\n";
+
+        // min width
+        information += "Minimum width: " + QString::number(layer->getWidth() / dbu_to_microns) + " \u03BCm\n";
+
+        // min spacing
+        information += "Minimum spacing: " + QString::number(layer->getSpacing() / dbu_to_microns) + " \u03BCm";
+
+        // resistance (ohm / square um)
+        if (layer->getResistance() != 0) {
+          information += "\nResistance: " + units_convert(layer->getResistance()) + "\u03A9/sq";
+        }
+
+        // capacitance (pF /um)
+        if (layer->getCapacitance() != 0) {
+          information += "\nCapacitance: " + units_convert(layer->getCapacitance() * 1e-12) + "F/\u03BCm";
+        }
+
+        row.name->setToolTip(information);
+      }
     }
   }
 
