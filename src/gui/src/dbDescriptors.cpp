@@ -993,7 +993,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
     props.push_back({"Resistance", convertUnits(layer->getResistance()) + "\u03A9/sq"}); // ohm/sq
   }
   if (layer->getCapacitance() != 0.0) {
-    props.push_back({"Capacitance", convertUnits(layer->getCapacitance()*1e-12) + "F/" + micron + "m"});
+    props.push_back({"Capacitance", convertUnits(layer->getCapacitance() * 1e-12) + "F/" + micron + "m\u00B2"}); // F/um^2
   }
   return props;
 }
