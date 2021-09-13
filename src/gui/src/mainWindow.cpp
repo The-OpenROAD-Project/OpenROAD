@@ -116,14 +116,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
           SLOT(designLoaded(odb::dbBlock*)));
-  connect(this, SIGNAL(redraw()), viewer_, SLOT(update()));
+  connect(this, SIGNAL(redraw()), viewer_, SLOT(fullRepaint()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
-  connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
+  connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
   connect(viewer_,
           SIGNAL(location(qreal, qreal)),
           this,

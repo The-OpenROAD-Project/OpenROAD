@@ -421,6 +421,11 @@ Renderer::~Renderer()
   gui::Gui::get()->unregisterRenderer(this);
 }
 
+void Renderer::redraw()
+{
+  Gui::get()->redraw();
+}
+
 void Gui::load_design()
 {
   main_window->postReadDb(main_window->getDb());
