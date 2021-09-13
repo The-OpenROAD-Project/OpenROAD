@@ -1951,13 +1951,7 @@ QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 
 void LayoutViewer::updateBlockPainting(const QRect& area, odb::dbBlock* block)
 {
-  bool do_update = block_drawing_ == nullptr;
-
-  for (auto& renderer : Gui::get()->renderers()) {
-    do_update |= renderer->isRepaintRequired();
-  }
-
-  if (!do_update) {
+  if (block_drawing_ != nullptr) {
     // no changes detected, so no need to update
     return;
   }
