@@ -62,11 +62,17 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
     if (pin->typeId() == frcTerm) {
         static_cast<frTerm*>(pin)->getShapes(pinShapes);
         pinBBox = static_cast<frTerm*>(pin)->getBBox();
+//        debug = static_cast<frTerm*>(pin)->getName() == "inst105577/A";
     }else {
-        static_cast<frInstTerm*>(pin)->getShapes(pinShapes);
+        static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
         pinBBox = static_cast<frInstTerm*>(pin)->getBBox();
+//        debug = static_cast<frInstTerm*>(pin)->getName() == "inst105577/A";
     }
-    if (debug) cout << "pin " << *pin << " not in any guide\n";
+//    cout << "guides\n";
+//    for (auto& guide : guides)
+//        cout << guide.getBBox() << "lNum " << guide.getLayerNum() << "\n";
+    if (debug) 
+        cout << "pin " << *pin << " not in any guide\n";
     pinBBox.set(pinBBox.left()+1, pinBBox.bottom()+1, pinBBox.right()-1, pinBBox.top()-1); //pins tangent to gcell arent considered as part of them
     //set pinBBox to gCell coords
     frPoint llGcell, urGcell;
@@ -91,6 +97,8 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
                 for (auto& pinRect : pinShapes) {
                     if (pinRect.getLayerNum() != z)
                         continue;
+                    if (debug)
+                        cout << "pinRect " << pinRect.getBBox() << " lNUm " << pinRect.getLayerNum() << "\n";
                     area += pinRect.getBBox().overlapingArea(gCellBox);
                 }
                 if (area > bestArea) {
@@ -149,13 +157,20 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
                 closerGuide.getBBox().setTop(pinPt.y());
             guidePt.setY(pinPt.y());
         }
-    }else cout << "error: layer is not horizontal or vertical\n";
+    } else cout << "error: layer is not horizontal or vertical\n";
     frBox bl, bh;
     design->getTopBlock()->getGCellBox(closerGuide.getBBox().lowerLeft(), bl);
     design->getTopBlock()->getGCellBox(closerGuide.getBBox().upperRight(), bh);
     bl.merge(bh);
+    frBox tmp = guides[closerGuideIdx].getBBox();
     guides[closerGuideIdx].setBBox(bl);
-    if (debug) cout << "extend guide\n";
+//    if (tmp.left() < guides[closerGuideIdx].getBBox().left() ||
+//        tmp.right() > guides[closerGuideIdx].getBBox().right() ||
+//        tmp.bottom() < guides[closerGuideIdx].getBBox().bottom() ||
+//        tmp.top() > guides[closerGuideIdx].getBBox().top())
+//        cout << "SHRINKED!!!!!!!!!\n";
+
+    if (debug) cout << "extend guide " << guides[closerGuideIdx] << " idx " << closerGuideIdx << "\n";
     if (guidePt == pinPt)
         return;
     //add guide in upper our lower layer
@@ -171,8 +186,8 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
     ph.set(std::max(pinPt.x(), guidePt.x()), std::max(pinPt.y(), guidePt.y()));
     design->getTopBlock()->getGCellBox(pl, bl);
     design->getTopBlock()->getGCellBox(ph, bh);
-    if (debug) cout << "add guide\n";
     guides.emplace_back(bl.left(), bl.bottom(), bh.right(), bh.top(), z, net);
+    if (debug) cout << "add guide " << guides[guides.size()-1] << "\n";
     if (z == pinPt.z())
         return;
 
@@ -180,8 +195,8 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
     int inc = z < pinPt.z() ? 2 : -2;
     design->getTopBlock()->getGCellBox(pinPt, bl);
     for (z = z + inc; z != pinPt.z() + inc; z += inc) {
-        if (debug) cout << "add guide\n";
         guides.emplace_back(bl.left(), bl.bottom(), bl.right(), bl.top(), z, net);
+        if (debug) cout << "add guide " << guides[guides.size()-1] << "\n";
     }
 }
 void io::Parser::genGuides_pinEnclosure(frNet* net, 
@@ -198,15 +213,35 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin, frNet* net,
                     std::vector<frRect>& guides, std::map<frBlockObject*,
                     std::set<std::pair<frPoint, frLayerNum>>,
                     frBlockObjectComp>& pin2GCellMap) {
-    auto& pinLocs = pin2GCellMap.find(pin)->second;
-    for (auto& gCellIdx : pinLocs) {
-        frPoint gCell;
-        design->getTopBlock()->getGCellCenter(gCellIdx.first, gCell);
+//    auto& pinLocs = pin2GCellMap.find(pin)->second;
+    bool debug = false;
+    vector<frRect> pinShapes;
+        if (pin->typeId() == frcTerm) {
+        static_cast<frTerm*>(pin)->getShapes(pinShapes);
+//        debug = static_cast<frTerm*>(pin)->getName() == "inst105577/A";
+    }else {
+        static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+//        debug = static_cast<frInstTerm*>(pin)->getName() == "inst105577/A";
+    }
+    for (auto& pinRect : pinShapes) {
+//        frPoint gCell;
+//        design->getTopBlock()->getGCellCenter(gCellIdx.first, gCell);
+//        if (pin->typeId() == frcTerm) {
+//            frTerm* t = static_cast<frTerm*>(pin);
+//            if (t->getName() == "pin981") {
+//                cout << "gcelIdx " << gCellIdx.first << " lNum " << gCellIdx.second << "\n" << "center " << gCell << "\n";
+//            }
+//        }
+        int i = 0;
         for (auto& guide : guides) {
-            if (gCellIdx.second == guide.getLayerNum() && 
-                    guide.getBBox().contains(gCell)) {
+            if (pinRect.getLayerNum() == guide.getLayerNum() && 
+                    guide.getBBox().overlaps(pinRect.getBBox(), false)) {
+//                if (debug)
+//                    cout << "pin in guide: " << *static_cast<frInstTerm*>(pin) << " rect " << pinRect.getBBox() << 
+//                            " guide " << guide.getBBox() << " idx " << i << "\n";
                 return;
             }
+            i++;
         }
     }
     patchGuides(net, pin, guides);
@@ -228,6 +263,8 @@ void io::Parser::genGuides_merge(
     design->getTopBlock()->getGCellIdx(pt, idx);
     frCoord x2 = idx.x();
     frCoord y2 = idx.y();
+    if (rect.getBBox() == frBox(1137100, 963000, 1140100, 969000))
+        cout << "genGuides_merge\nguide in idexes " << x1 << " " << y1 << " " << idx << "\n";
     auto layerNum = rect.getLayerNum();
     if (tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir) {
       for (auto i = y1; i <= y2; i++) {
@@ -470,6 +507,11 @@ void io::Parser::genGuides_gCell2TermMap(
         auto layer = design->getTech()->getLayer(lNum);
         frBox box;
         shape->getBBox(box);
+        string name = "";
+        if (origTerm->typeId() == frcInstTerm)
+            name = static_cast<frInstTerm*>(origTerm)->getName();
+//        if (name == "inst105577/A")
+//            cout << "HERE! " << box << "\n";
         frPoint idx;
         frPoint pt(box.left() + 1, box.bottom() + 1);
         design->getTopBlock()->getGCellIdx(pt, idx);
@@ -479,6 +521,8 @@ void io::Parser::genGuides_gCell2TermMap(
         design->getTopBlock()->getGCellIdx(pt, idx);
         frCoord x2 = idx.x();
         frCoord y2 = idx.y();
+//        if (name == "inst105577/A")
+//            cout << "ll " << x1 << " " << y1 << " ur " << idx << "\n";
         // ispd18_test4 and ispd18_test5 have zero overlap guide
         // excludes double-zero overlap area on the upper-right corner due to
         // initDR requirements
@@ -803,6 +847,8 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
+  if (net->getName() == "net70784")
+      cout << "guideee " << rects[1] << "\n";
   genGuides_merge(rects, intvs);  // merge and add touching guide
 
   genGuides_initPin2GCellMap(net, pin2GCellMap);
