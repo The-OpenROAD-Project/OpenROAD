@@ -233,8 +233,8 @@ tclReadlineInit(Tcl_Interp *interp)
     "eval $auto_index(::tclreadline::ScriptCompleter)",
     "::tclreadline::readline builtincompleter true",
     "::tclreadline::readline customcompleter ::tclreadline::ScriptCompleter",
-    "proc ::tclreadline::prompt1 {} { return \"openroad " OPENROAD_VERSION "> \" }",
-    "proc ::tclreadline::prompt2 {} { return \"...> \" }",
+    "proc ::tclreadline::prompt1 {} { return 'openroad > ' }",
+    "proc ::tclreadline::prompt2 {} { return '...> ' }",
     "::tclreadline::Loop"
   };
 
