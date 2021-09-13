@@ -63,11 +63,11 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
-using dbTechLayerDir = odb::dbTechLayerDir;
-using dbTechLayerType = odb::dbTechLayerType;
-using dbMasterType = odb::dbMasterType;
-using dbSigType = odb::dbSigType;
-using dbIoType = odb::dbIoType;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+using odb::dbMasterType;
+using odb::dbSigType;
+using odb::dbIoType;
 
 enum frEndStyleEnum
 {
