@@ -108,6 +108,20 @@ The `-direction` argument is the pin direction (input, output, inout, or
 feedthrough). The `-pin_names` argument is a list of names. The `-region`
 syntax is the same as that of the `-exclude` syntax.
 
+#### Face-to-Face direct-bonding IOs
+
+Studies have shown that 3D integration offers power and performance
+benefit.  There is also a newly emerging opportunity for 3D-IC
+application in the area of design obfuscation.
+[Micro bumps and hybrid bonding](https://semiengineering.com/bumps-vs-hybrid-bonding-for-advanced-packaging/)
+are two of the more advanced packaging technologies that
+are used for 3D integration via face-to-face stacking. The
+[hybrid bonding](https://www.3dincites.com/2018/04/hybrid-bonding-from-concept-to-commercialization/)
+technology provides even denser interconnect for the
+[3D stack](https://en.wikipedia.org/wiki/Direct_bonding). The implementation
+of face-to-face stacking involves placement of the ports/pins of the
+individual chips in the die area during physical design steps.
+
 Note that if you call `define_pin_shape_pattern` before
 `set_io_pin_constraint`, the `edge` values are (up, top,
 bottom, left, right). Where `up` relates to the layer created by
