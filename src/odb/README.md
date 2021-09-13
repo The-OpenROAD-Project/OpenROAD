@@ -55,8 +55,14 @@ After building successfully, run `openroad -python` to enable the Python
 interpreter. You can find examples on using the API from Python under
 `test/python/` directory.
 
-The full set of the Python classes exposed can be found under
-`./build/src/openroad_swig_py.py`.
+To list the full set of the Python classes exposed run `openroad -python`
+then:
+```
+import openroad
+import odb
+print(', '.join(dir(openroad)))
+print(', '.join(dir(odb)))
+```
 
 ### C++
 
