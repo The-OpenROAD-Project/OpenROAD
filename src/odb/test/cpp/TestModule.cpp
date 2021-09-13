@@ -70,6 +70,16 @@ BOOST_FIXTURE_TEST_CASE(test_default,F_DEFAULT)
   dbInst::destroy(inst1);
   BOOST_TEST(parent_mod->getInsts().size()==0);
 }
+BOOST_FIXTURE_TEST_CASE(test_find_modinst,F_DEFAULT)
+{
+  auto top = block->getTopModule();
+  BOOST_TEST(top != nullptr);
+  auto master1 = odb::dbModule::create(block, "master1");
+  auto minst1 = odb::dbModInst::create(top, master1, "minst1");
+  auto master2 = odb::dbModule::create(block, "master2");
+  auto minst2 = odb::dbModInst::create(master1, master2, "minst2");
+  BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
+}
 struct F_DETAILED {
   F_DETAILED()
   {

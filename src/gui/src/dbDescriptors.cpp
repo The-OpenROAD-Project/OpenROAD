@@ -96,7 +96,13 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
       false,
       &okay);
   if (okay) {
-    return std::any_cast<odb::dbTechLayer*>(options[layers.indexOf(selection)].value);
+    int selection_idx = layers.indexOf(selection);
+    if (selection_idx != -1) {
+      return std::any_cast<odb::dbTechLayer*>(options[selection_idx].value);
+    } else {
+      // selection not found, return current
+      return current;
+    }
   } else {
     return current;
   }
@@ -719,7 +725,7 @@ bool DbBTermDescriptor::lessThan(std::any l, std::any r) const
 
 std::string DbBlockageDescriptor::getName(std::any object) const
 {
-  return "";
+  return "Blockage";
 }
 
 std::string DbBlockageDescriptor::getTypeName(std::any object) const
@@ -814,7 +820,8 @@ bool DbBlockageDescriptor::lessThan(std::any l, std::any r) const
 
 std::string DbObstructionDescriptor::getName(std::any object) const
 {
-  return "";
+  auto obs = std::any_cast<odb::dbObstruction*>(object);
+  return "Obstruction: " + obs->getBBox()->getTechLayer()->getName();
 }
 
 std::string DbObstructionDescriptor::getTypeName(std::any object) const
@@ -824,8 +831,8 @@ std::string DbObstructionDescriptor::getTypeName(std::any object) const
 
 bool DbObstructionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  auto* blockage = std::any_cast<odb::dbObstruction*>(object);
-  odb::dbBox* box = blockage->getBBox();
+  auto obs = std::any_cast<odb::dbObstruction*>(object);
+  odb::dbBox* box = obs->getBBox();
   box->getBox(bbox);
   return true;
 }

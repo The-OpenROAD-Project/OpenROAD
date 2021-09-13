@@ -294,6 +294,7 @@ public:
 
   // API for logic resynthesis
   PinSet findFaninFanouts(PinSet *end_pins);
+  PinSet findFanins(PinSet *end_pins);
 
 protected:
   void init();

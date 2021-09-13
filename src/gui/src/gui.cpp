@@ -50,6 +50,9 @@
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
+#include "drcWidget.h"
+#include "ruler.h"
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -106,9 +109,9 @@ void Gui::status(const std::string& message)
   main_window->status(message);
 }
 
-void Gui::pause()
+void Gui::pause(int timeout)
 {
-  main_window->pause();
+  main_window->pause(timeout);
 }
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
@@ -283,9 +286,14 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
-void Gui::addRuler(int x0, int y0, int x1, int y1)
+std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  main_window->addRuler(x0, y0, x1, y1);
+  return main_window->addRuler(x0, y0, x1, y1, label, name);
+}
+
+void Gui::deleteRuler(const std::string& name)
+{
+  main_window->deleteRuler(name);
 }
 
 void Gui::clearSelections()
@@ -322,6 +330,13 @@ void Gui::removeToolbarButton(const std::string& name)
 const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
 {
   return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
+}
+
+void Gui::loadDRC(const std::string& filename)
+{
+  if (!filename.empty()) {
+    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
+  }
 }
 
 void Gui::addCustomVisibilityControl(const std::string& name,
@@ -503,6 +518,9 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
     Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+
+    Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
+    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(gui::main_window->getRulers()));
   }
 }
 

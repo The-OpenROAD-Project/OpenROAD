@@ -144,33 +144,48 @@ selection_add_insts(const char* name)
   gui->addSelectedInsts(name);
 }
 
-void highlight_inst(const char* name, int highlightGroup)
+void highlight_inst(const char* name, int highlight_group = 0)
 {
   if (!check_gui("highlight_inst")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addInstToHighlightSet(name, highlightGroup);
+  gui->addInstToHighlightSet(name, highlight_group);
 }
 
-void highlight_net(const char* name, int highlightGroup=0)
+void highlight_net(const char* name, int highlight_group = 0)
 {
   if (!check_gui("highlight_net")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addNetToHighlightSet(name, highlightGroup);
+  gui->addNetToHighlightSet(name, highlight_group);
 }
 
-void add_ruler(double x0, double y0, double x1, double y1)
+const std::string add_ruler(
+  double x0, 
+  double y0, 
+  double x1, 
+  double y1, 
+  const std::string& label = "", 
+  const std::string& name = "")
 {
   if (!check_gui("add_ruler")) {
-    return;
+    return "";
   }
   odb::Point ll = make_point(x0, y0);
   odb::Point ur = make_point(x1, y1);
   auto gui = gui::Gui::get();
-  gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y());  
+  return gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y(), label, name);  
+}
+
+void delete_ruler(const std::string& name)
+{
+  if (!check_gui("delete_ruler")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->deleteRuler(name);  
 }
 
 void zoom_to(double xlo, double ylo, double xhi, double yhi)
@@ -349,13 +364,22 @@ const std::string input_dialog(const char* title, const char* question)
   return gui->requestUserInput(title, question);
 }
 
-void pause()
+void pause(int timeout = 0)
 {
   if (!check_gui("pause")) {
     return;
   }
   auto gui = gui::Gui::get();
-  return gui->pause();
+  return gui->pause(timeout);
+}
+
+void load_drc(const char* filename)
+{
+  if (!check_gui("load_drc")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->loadDRC(filename);
 }
 
 void show_widget(const char* name)

@@ -116,7 +116,7 @@ entries:
     title: FastRoute
   - file: main/src/ant/README
     title: Antenna Checker
-  - file: main/src/TritonRoute/README
+  - file: main/src/drt/README
     title: TritonRoute
   - file: main/src/fin/README
     title: Metal Fill

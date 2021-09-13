@@ -1,33 +1,26 @@
-# Challenging net from nangate45/swerv with segment overlaps.
-# We have to fallback to Flute on this net.
+# Challenging nets from gf/swerv_wrapper with segment overlaps.
 source "stt_helpers.tcl"
 
+# squack when segment overlap is detected
 set_debug_level STT check 1
 
-set alpha 0.3
+# set overlap1 {overlap1 8
+#   {p0 11700 2700}
+#   {p1 8900 2500}
+#   {p2 11800 3000}
+#   {p3 11600 2700}
+#   {p4 5200 2300}
+#   {p5 5000 2000}
+#   {p6 5000 2100}
+#   {p7 5200 1400}
+#   {p8 12200 1600}
+#   {p9 11700 2700}
+#   {p10 8900 2500}
+#   {p11 11600 2700}
+#   {p12 5200 2300}
+#   {p13 5000 2100}
+#   {p14 11700 2700}
+#   {p15 5200 2300}
+# }
 
-set net {clk 20 
-  {X 48300 34000}
-  {X 50700 34500}
-  {X 48100 35300}
-  {X 51200 35300}
-  {X 51700 34100}
-  {X 48000 35700}
-  {X 52300 34200}
-  {X 48600 35700}
-  {X 51200 34100}
-  {X 52700 34900}
-  {X 49200 35700}
-  {X 52800 35400}
-  {X 52700 35700}
-  {X 51900 35700}
-  {X 48500 35000}
-  {X 49900 34500}
-  {X 50100 35700}
-  {X 50600 35200}
-  {X 50400 35600}
-  {X 52600 34100}
-  {X 48000 34100}
-}
-
-report_stt_net $net $alpha
+# report_stt_net $overlap1 0.3
