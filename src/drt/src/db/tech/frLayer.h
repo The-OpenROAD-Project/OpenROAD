@@ -31,7 +31,6 @@
 
 #include <set>
 
-#include "db/infra/frPrefRoutingDir.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
@@ -47,7 +46,7 @@ class frLayer
   friend class io::Parser;
   // constructor
   frLayer()
-      : type(frLayerTypeEnum::IMPLANT),
+      : type(dbTechLayerType::IMPLANT),
         layerNum(0),
         pitch(0),
         width(0),
@@ -86,7 +85,7 @@ class frLayer
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
-      : type(frLayerTypeEnum::IMPLANT),
+      : type(dbTechLayerType::IMPLANT),
         layerNum(layerNumIn),
         name(nameIn),
         pitch(0),
@@ -126,13 +125,13 @@ class frLayer
   void setPitch(frUInt4 in) { pitch = in; }
   void setWidth(frUInt4 widthIn) { width = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
-  void setDir(frPrefRoutingDirEnum dirIn) { dir.set(dirIn); }
+  void setDir(dbTechLayerDir dirIn) { dir = dirIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef = in; }
   void addConstraint(const std::shared_ptr<frConstraint>& consIn)
   {
     constraints.push_back(consIn);
   }
-  void setType(frLayerTypeEnum typeIn) { type = typeIn; }
+  void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
 
   // getters
@@ -143,7 +142,7 @@ class frLayer
   frUInt4 getPitch() const { return pitch; }
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
-  frPrefRoutingDir getDir() const { return dir; }
+  dbTechLayerDir getDir() const { return dir; }
   bool isUnidirectional() const
   {
     // We don't handle coloring so any double/triple patterned
@@ -170,7 +169,7 @@ class frLayer
     }
     return constraintsOut;
   }
-  frLayerTypeEnum getType() const { return type; }
+  dbTechLayerType getType() const { return type; }
 
   // cut class (new)
   void addCutClass(frLef58CutClass* in)
@@ -659,14 +658,14 @@ class frLayer
   void printAllConstraints(utl::Logger* logger);
 
  protected:
-  frLayerTypeEnum type;
+  dbTechLayerType type;
   frLayerNum layerNum;
   frString name;
   frUInt4 pitch;
   frUInt4 width;
   frUInt4 minWidth;
   frUInt4 numMasks;
-  frPrefRoutingDir dir;
+  dbTechLayerDir dir;
   frViaDef* defaultViaDef;
   std::set<frViaDef*> viaDefs;
   std::vector<frLef58CutClass*> cutClasses;

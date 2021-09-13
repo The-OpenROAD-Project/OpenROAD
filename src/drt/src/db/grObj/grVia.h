@@ -77,8 +77,8 @@ class grVia : public grRef
    * setTransform
    */
 
-  frOrient getOrient() const override { return frOrient(); }
-  void setOrient(const frOrient& in) override { ; }
+  dbOrientType getOrient() const override { return dbOrientType(); }
+  void setOrient(const dbOrientType& in) override { ; }
   void getOrigin(frPoint& in) const override { in.set(origin); }
   void setOrigin(const frPoint& in) override { origin.set(in); }
   void getTransform(frTransform& in) const override { in.set(origin); }
