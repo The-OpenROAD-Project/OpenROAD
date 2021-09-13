@@ -46,10 +46,6 @@ public:
   void highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
                  gui::Painter::Color color);
   virtual void drawObjects(gui::Painter& /* painter */) override;
-
-  // Force repaint to always occur
-  bool isRepaintRequired() override { return true; }
-
   // singleton for debug functions
   static LinesRenderer *lines_renderer;
 

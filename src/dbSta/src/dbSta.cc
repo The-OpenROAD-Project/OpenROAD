@@ -188,9 +188,6 @@ public:
   void highlight(PathRef *path);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
-  // Force repaint to always occur
-  bool isRepaintRequired() override { return true; }
-
 private:
   void highlightInst(const Pin *pin,
                      gui::Painter &painter);

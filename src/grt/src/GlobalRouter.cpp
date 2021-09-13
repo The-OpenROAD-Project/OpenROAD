@@ -3416,9 +3416,6 @@ class GrouteRenderer : public gui::Renderer
   void clear();
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
-  // Force repaint to always occur
-  bool isRepaintRequired() override { return true; }
-
  private:
   GlobalRouter* groute_;
   odb::dbTech* tech_;
