@@ -38,6 +38,7 @@
 #include <list>
 #include <regex>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
