@@ -3486,14 +3486,14 @@ proc generate_stripes {tag net_name} {
   # debug "start: grid_name: [dict get $grid_data name]"
   if {![dict exists $grid_data straps]} {return}
   foreach lay [dict keys [dict get $grid_data straps]] {
-    set width [ord::microns_to_dbu [dict get $grid_data straps $lay width]]
+    set width [dict get $grid_data straps $lay width]
     if {[dict exists $grid_data straps $lay spacing]} {
-      set spacing [ord::microns_to_dbu [dict get $grid_data straps $lay spacing]]
+      set spacing  [dict get $grid_data straps $lay spacing]      
     } else {
-      set spacing [expr [ord::microns_to_dbu [dict get $grid_data straps $lay pitch]] / 2]
+      set spacing [expr  [dict get $grid_data straps $lay pitch] / 2]
     }
     if {[dict exists $grid_data straps $lay offset]} {
-      set offset [ord::microns_to_dbu [dict get $grid_data straps $lay offset]]
+      set offset [dict get $grid_data straps $lay offset]
     } else { 
       set offset 0
     }
@@ -3505,7 +3505,8 @@ proc generate_stripes {tag net_name} {
     } else { 
       set design_width [expr [lindex [dict get $grid_data area] 2] - [lindex [dict get $grid_data area] 0]]
       if {$spacing + $offset + 2* $width > $design_width} {
-        utl::error "PDN" 177 "Insufficient width to add power and ground straps on layer $lay."
+        debug "spacing:$spacing , width:$width , design_width $design_width , offset: $offset "
+	utl::error "PDN" 177 "Insufficient width to add power and ground straps on layer $lay."
       }
     }
     # debug "    Layer $lay ..."
