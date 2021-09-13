@@ -65,7 +65,7 @@
 #include "ord/Version.hh"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
-#include "utl/Logger.h" 
+#include "utl/Logger.h"
 #include "gui/gui.h"
 
 using std::string;
@@ -92,8 +92,7 @@ const char* metrics_filename = nullptr;
 static const char *init_filename = ".openroad";
 
 static void
-showUsage(const char *prog,
-	  const char *init_filename);
+showUsage(const char *prog, const char *init_filename);
 static void
 showSplash();
 
@@ -217,7 +216,7 @@ main(int argc,
     // on ctrl-C. We don't want that if python is not the main interpreter.
     // We restore the handler from before initPython.
     sigaction(SIGINT, &orig_sigint_handler, NULL);
-  }  
+  }
 #endif
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
@@ -313,7 +312,7 @@ tclAppInit(int argc,
     if (argc == 2) {
       char *cmd_file = argv[1];
       if (cmd_file) {
-	int result = sourceTclFile(cmd_file, false, false, interp);
+        int result = sourceTclFile(cmd_file, false, false, interp);
         if (exit_after_cmd_file) {
           int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
           exit(exit_code);
@@ -337,8 +336,7 @@ ord::tclAppInit(Tcl_Interp *interp)
 
 
 static void
-showUsage(const char *prog,
-	  const char *init_filename)
+showUsage(const char *prog, const char *init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
