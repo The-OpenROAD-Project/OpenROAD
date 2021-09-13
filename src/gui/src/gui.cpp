@@ -518,6 +518,7 @@ void initGui(OpenRoad* openroad)
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
     Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+    Gui::get()->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
 
     Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
     Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(gui::main_window->getRulers()));
