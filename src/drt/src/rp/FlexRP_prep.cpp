@@ -746,7 +746,6 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
   via1.getCutBBox(cutBox1);
   via2.getCutBBox(cutBox2);
-  pair<frCoord, frCoord> range;
   frCoord reqSpcVal = 0;
   auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
