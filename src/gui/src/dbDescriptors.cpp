@@ -44,8 +44,8 @@
 #include <QStringList>
 
 #include <iomanip>
-#include <iostream>
 #include <regex>
+#include <sstream>
 
 namespace gui {
 
