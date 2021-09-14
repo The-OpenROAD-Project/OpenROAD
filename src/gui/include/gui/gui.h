@@ -394,7 +394,7 @@ class Gui
   // Add nets matching the pattern to the selection set
   void addSelectedNets(const char* pattern,
                        bool match_case = true,
-                       bool match_reg_ex = false,
+                       bool match_reg_ex = true,
                        bool add_to_highlight_set = false,
                        int highlight_group = 0);
 
