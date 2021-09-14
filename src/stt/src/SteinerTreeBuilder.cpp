@@ -287,7 +287,7 @@ reportSteinerTree(const stt::Tree &tree,
                   int drvr_y,
                   Logger *logger)
 {
-  // flute mangles the x/y locations and pdrev moves the driver to 0
+  // flute mangles the x/y locations and pdrevII moves the driver to 0
   // so we have to find the driver location index.
   int drvr_index = findLocationIndex(tree, drvr_x, drvr_y);
   logger->report("Wire length = {} Path depth = {}",
@@ -420,7 +420,7 @@ highlightSteinerTree(const Tree &tree,
   }
 }
 
-void Tree::printTree(utl::Logger* logger)
+void Tree::printTree(utl::Logger* logger) const
 {
   if (deg > 1) {
     for (int i = 0; i < deg; i++)
