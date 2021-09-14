@@ -429,7 +429,6 @@ void Tree::printTree(utl::Logger* logger) const
     for (int i = deg; i < 2 * deg - 2; i++)
       logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
                      i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-    logger->report("");
   }
 }
 
