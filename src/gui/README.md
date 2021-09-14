@@ -37,7 +37,8 @@ Determine is the GUI is active:
 gui::enabled
 ```
 
-Announce to the GUI that a design was loaded:
+Announce to the GUI that a design was loaded 
+(note: this is only needed when the design was loaded through the odb API and not via ``read_def`` or ``read_db``):
 
 ```
 gui::design_created
@@ -119,11 +120,11 @@ Options description:
 To add several nets to the selected items:
 
 ```
-gui::selection_add_nets name
+gui::selection_add_nets name_regex
 ```
 
 Options description:
-- ``name`` regular expression of the net names to add
+- ``name_regex`` regular expression of the net names to add
 
 To add a single instance to the selected items:
 
@@ -137,11 +138,11 @@ Options description:
 To add several instances to the selected items:
 
 ```
-gui::selection_add_insts name
+gui::selection_add_insts name_regex
 ```
 
 Options description:
-- ``name`` regular expression of the instance names to add
+- ``name_regex`` regular expression of the instance names to add
 
 To clear the current set of selected items:
 
@@ -201,7 +202,7 @@ Options description:
 
 To add a ruler to the layout:
 
-a) either hold the ``Crtl`` button and use the right mouse button to place it visually.
+a) either press ``k`` and use the mouse to place it visually.
 To disable snapping for the ruler when adding, hold the ``Ctrl`` key, and to allow non-horizontal or vertical snapping when completing the ruler hold the ``Shift`` key.
 
 b) or use the command:
