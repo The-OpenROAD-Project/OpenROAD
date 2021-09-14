@@ -202,6 +202,10 @@ Below is a list of the available tools/modules included in the OpenROAD app.
 
 - [Metal Fill](./src/fin/README.md)
 
+### Graphical User Interface
+
+- [GUI](./src/gui/README.md)
+
 ## License
 
 BSD 3-Clause License. See [LICENSE](LICENSE) file.
