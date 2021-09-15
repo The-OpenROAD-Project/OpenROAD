@@ -67,6 +67,7 @@ namespace grt {
 
 class FastRouteRenderer;
 
+// Debug mode settings 
 struct DebugSetting{
   const odb::dbNet *net_;
   bool steinerTree_;
@@ -75,6 +76,8 @@ struct DebugSetting{
   bool isOn_;
   DebugSetting()
       : steinerTree_(false),
+        rectilinearSTree_(false),
+        tree2D_(false),
         isOn_(false)
   {
   }
@@ -177,6 +180,7 @@ class FastRouteCore
   NetRouteMap get3DTree();
   NetRouteMap getRectilinearSteinerTree();
 
+  // debug mode functions
   void createDebug();
   void setDebugOn(bool isOn);
   void setDebugSteinerTree(bool steinerTree);
