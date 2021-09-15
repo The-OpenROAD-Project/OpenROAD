@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <set>
 #include <sstream>
 
 #include "DataType.h"
@@ -59,6 +60,247 @@ static int left_index(int i)
 static int right_index(int i)
 {
   return 2 * i + 2;
+}
+
+bool FastRouteCore::checkTree(const int net_id)
+{
+  TreeEdge* treeedges = sttrees_[net_id].edges;
+  const int deg = sttrees_[net_id].deg;
+
+  // group all edges that crosses the same position
+  std::unordered_map<std::pair<short, short>,
+                     std::vector<int>,
+                     boost::hash<std::pair<int, int>>>
+      position_to_edges_map;
+
+  auto cmp = [&](int a, int b) { return treeedges[a].len > treeedges[b].len; };
+  std::map<int, std::vector<std::pair<short, short>>, decltype(cmp)>
+      edges_to_blocked_pos_map(cmp);
+  for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    if (treeedge->len > 0) {
+      int routeLen = treeedge->route.routelen;
+      const std::vector<short>& gridsX = treeedge->route.gridsX;
+      const std::vector<short>& gridsY = treeedge->route.gridsY;
+
+      for (int i = 0; i <= routeLen; i++) {
+        const std::pair<short, short> pos_i = {gridsX[i], gridsY[i]};
+        position_to_edges_map[pos_i].push_back(edgeID);
+      }
+    }
+  }
+
+  // for each position, check if there is an edge that don't share
+  // a node with the remaining edges
+  for (auto const& [position, edges] : position_to_edges_map) {
+    for (int edgeID : edges) {
+      if (areEdgesOverlapping(net_id, edgeID, edges)) {
+        edges_to_blocked_pos_map[edgeID].push_back(
+            {position.first, position.second});
+      }
+    }
+  }
+
+  // fix the longest edge and break the loop
+  for (auto& [edge, blocked_positions] : edges_to_blocked_pos_map) {
+    fixOverlappingEdge(net_id, edge, blocked_positions);
+    break;
+  }
+
+  return true;
+}
+
+bool FastRouteCore::areEdgesOverlapping(const int net_id,
+                                     const int edge_id,
+                                     const std::vector<int>& edges)
+{
+  if (edges.size() == 1) {
+    return false;
+  }
+
+  TreeEdge* treeedges = sttrees_[net_id].edges;
+  TreeEdge* treeedge = &(treeedges[edge_id]);
+
+  int n1 = treeedge->n1;
+  int n2 = treeedge->n2;
+  int n1a = treeedge->n1a;
+  int n2a = treeedge->n2a;
+
+  for (int ed : edges) {
+    if (ed != edge_id) {
+      int ed_n1 = treeedges[ed].n1;
+      int ed_n2 = treeedges[ed].n2;
+      int ed_n1a = treeedges[ed].n1a;
+      int ed_n2a = treeedges[ed].n2a;
+      if ((ed_n1a == n1a) || ((ed_n1a == n2a)) || (ed_n1 == n1)
+          || (ed_n1 == n2)) {
+        return false;
+      }
+      if ((ed_n2a == n1a) || ((ed_n2a == n2a)) || (ed_n2 == n1)
+          || ((ed_n2 == n2))) {
+        return false;
+      }
+    }
+  }
+
+  // if the edge doesn't share any node with the other edges, it is overlapping
+  return true;
+}
+
+void FastRouteCore::fixOverlappingEdge(
+    const int net_id,
+    const int edge,
+    std::vector<std::pair<short, short>>& blocked_positions)
+{
+  TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
+  TreeNode* treenodes = sttrees_[net_id].nodes;
+
+  auto sort_by_x = [](std::pair<short, short> a, std::pair<short, short> b) {
+    return a.first < b.first;
+  };
+
+  std::stable_sort(
+      blocked_positions.begin(), blocked_positions.end(), sort_by_x);
+
+  if (treeedge->len > 0) {
+    std::vector<short> new_route_x, new_route_y;
+    const TreeNode& startpoint = treenodes[treeedge->n1];
+    const TreeNode& endpoint = treenodes[treeedge->n2];
+    routeLShape(startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
+
+    treeedge->route.gridsX = new_route_x;
+    treeedge->route.gridsY = new_route_y;
+    treeedge->route.routelen = new_route_x.size() - 1;
+  }
+}
+
+void FastRouteCore::bendEdge(
+    TreeEdge* treeedge,
+    TreeNode* treenodes,
+    std::vector<short>& new_route_x,
+    std::vector<short>& new_route_y,
+    std::vector<std::pair<short, short>>& blocked_positions)
+{
+  const std::vector<short>& gridsX = treeedge->route.gridsX;
+  const std::vector<short>& gridsY = treeedge->route.gridsY;
+
+  for (int i = 0; i <= treeedge->route.routelen; i++) {
+    std::pair<short, short> pos = {gridsX[i], gridsY[i]};
+    if (pos == blocked_positions.front()) {
+      break;
+    } else {
+      new_route_x.push_back(pos.first);
+      new_route_y.push_back(pos.second);
+    }
+  }
+
+  short x_min = std::min(treenodes[treeedge->n1].x, treenodes[treeedge->n2].x);
+  short y_min = std::min(treenodes[treeedge->n1].y, treenodes[treeedge->n2].y);
+
+  const TreeNode& endpoint = treenodes[treeedge->n2];
+  if (blocked_positions.front().second == blocked_positions.back().second) {
+    // blocked positions are horizontally aligned
+    short y = (new_route_y.back() == y_min) ? new_route_y.back() + 1
+                                            : new_route_y.back() - 1;
+    new_route_x.push_back(new_route_x.back());
+    new_route_y.push_back(y);
+
+    for (short x = new_route_x.back(); x < endpoint.x; x++) {
+      new_route_x.push_back(x + 1);
+      new_route_y.push_back(y);
+    }
+
+    new_route_x.push_back(endpoint.x);
+    new_route_y.push_back(endpoint.y);
+  } else if (blocked_positions.front().first
+             == blocked_positions.back().first) {
+    // blocked positions are vertically aligned
+    short x = (new_route_x.back() == x_min) ? new_route_x.back() + 1
+                                            : new_route_x.back() - 1;
+    new_route_x.push_back(x);
+    new_route_y.push_back(new_route_y.back());
+
+    if (new_route_y.back() < endpoint.y) {
+      for (short y = new_route_y.back(); y < endpoint.y; y++) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y + 1);
+      }
+    } else {
+      for (short y = new_route_y.back(); y > endpoint.y; y--) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y - 1);
+      }
+    }
+
+    new_route_x.push_back(endpoint.x);
+    new_route_y.push_back(endpoint.y);
+  }
+}
+
+void FastRouteCore::routeLShape(
+    const TreeNode& startpoint,
+    const TreeNode& endpoint,
+    std::vector<std::pair<short, short>>& blocked_positions,
+    std::vector<short>& new_route_x,
+    std::vector<short>& new_route_y)
+{
+  short x_min = std::min(startpoint.x, endpoint.x);
+  short y_min = std::min(startpoint.y, endpoint.y);
+  short x_max = std::max(startpoint.x, endpoint.x);
+  short y_max = std::max(startpoint.y, endpoint.y);
+
+  new_route_x.push_back(startpoint.x);
+  new_route_y.push_back(startpoint.y);
+  if (blocked_positions.front().second == blocked_positions.back().second) {
+    // blocked positions are horizontally aligned
+    short y;
+    if (startpoint.y != blocked_positions[0].second) {
+      y = startpoint.y;
+    } else {
+      y = endpoint.y;
+    }
+    for (short x = startpoint.x; x < endpoint.x; x++) {
+      new_route_x.push_back(x + 1);
+      new_route_y.push_back(y);
+    }
+    if (y < endpoint.y) {
+      while (y < endpoint.y) {
+        new_route_x.push_back(new_route_x.back());
+        new_route_y.push_back(y + 1);
+        y++;
+      }
+    } else {
+      while (y > endpoint.y) {
+        new_route_x.push_back(new_route_x.back());
+        new_route_y.push_back(y - 1);
+        y--;
+      }
+    }
+  } else {
+    // blocked positions are vertically aligned
+    short x;
+    if (startpoint.x != blocked_positions[0].first) {
+      x = startpoint.x;
+    } else {
+      x = endpoint.x;
+    }
+    if (startpoint.y < endpoint.y) {
+      for (short y = startpoint.y; y < endpoint.y; y++) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y + 1);
+      }
+    } else {
+      for (short y = startpoint.y; y > endpoint.y; y--) {
+        new_route_x.push_back(x);
+        new_route_y.push_back(y + 1);
+      }
+    }
+    while (x < endpoint.x) {
+      new_route_y.push_back(new_route_y.back());
+      new_route_x.push_back(x + 1);
+      x++;
+    }
+  }
 }
 
 void FastRouteCore::convertToMazerouteNet(const int netID)
@@ -217,6 +459,9 @@ void FastRouteCore::convertToMazeroute()
 
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    checkTree(netID);
+  }
 }
 
 // non recursive version of heapify
@@ -821,7 +1066,8 @@ void FastRouteCore::updateRouteType1(const TreeNode* treenodes,
   treeedges[edge_n1A2].len = abs(A2x - E1x) + abs(A2y - E1y);
 }
 
-void FastRouteCore::updateRouteType2(const TreeNode* treenodes,
+void FastRouteCore::updateRouteType2(const int net_id,
+                                     const TreeNode* treenodes,
                                      const int n1,
                                      const int A1,
                                      const int A2,
@@ -903,7 +1149,14 @@ void FastRouteCore::updateRouteType2(const TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    logger_->error(GRT, 170, "Invalid index for position ({}, {}).", E1x, E1y);
+    int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
+    int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
+    logger_->error(GRT,
+                   170,
+                   "Net {}: Invalid index for position ({}, {}).",
+                   netName(nets_[net_id]),
+                   x_pos,
+                   y_pos);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
@@ -1473,7 +1726,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int edge_C1C2 = corr_edge_[E1y][E1x];
 
           // update route for edge (n1, C1), (n1, C2) and (A1, A2)
-          updateRouteType2(treenodes,
+          updateRouteType2(netID,
+                           treenodes,
                            n1,
                            A1,
                            A2,
@@ -1596,7 +1850,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int edge_D1D2 = corr_edge_[E2y][E2x];
 
           // update route for edge (n2, D1), (n2, D2) and (B1, B2)
-          updateRouteType2(treenodes,
+          updateRouteType2(netID,
+                           treenodes,
                            n2,
                            B1,
                            B2,
