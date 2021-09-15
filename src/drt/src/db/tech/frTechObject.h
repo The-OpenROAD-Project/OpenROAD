@@ -278,11 +278,11 @@ class frTechObject
   }
 
   bool isHorizontalLayer(frLayerNum l) {
-      return getLayer(l)->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir;
+      return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
   }
   
   bool isVerticalLayer(frLayerNum l) {
-      return getLayer(l)->getDir() == frPrefRoutingDirEnum::frcVertPrefRoutingDir;
+      return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
   }
   
  protected:
