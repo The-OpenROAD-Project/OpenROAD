@@ -52,7 +52,7 @@ define_tool_script "grt" "src/grt/test/regression"
 define_tool_script "ant" "src/ant/test/regression"
 define_tool_script "rcx" "src/rcx/test/regression"
 define_tool_script "psm" "src/psm/test/regression"
-define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
+define_tool_script "drt" "src/drt/test/regression"
 define_tool_script "rmp" "src/rmp/test/regression"
 
 proc run_openroad_tests { } {

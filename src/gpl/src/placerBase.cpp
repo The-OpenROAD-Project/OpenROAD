@@ -61,41 +61,48 @@ isCoreAreaOverlap(Die& die, Instance& inst);
 static int64_t
 getOverlapWithCoreArea(Die& die, Instance& inst);
 
-static bool
-isPlacementInst(dbInst* inst);
-
-
 ////////////////////////////////////////////////////////
 // Instance 
 
 Instance::Instance() 
   : inst_(nullptr), 
   lx_(0), ly_(0), 
-  ux_(0), uy_(0), extId_(INT_MIN) {}
+  ux_(0), uy_(0),
+  extId_(INT_MIN),
+  is_macro_(false),
+  is_locked_(false) {}
 
 // for movable real instances
-Instance::Instance(odb::dbInst* inst, 
-    int padLeft, int padRight) 
-  : Instance() {
+Instance::Instance(odb::dbInst* inst, int padLeft, int padRight,
+                   int site_height, utl::Logger* logger)
+  : Instance()
+{
   inst_ = inst;
-  int lx = 0, ly = 0;
-  inst_->getLocation(lx, ly);
+  dbBox* bbox = inst->getBBox();
+  inst->getLocation(lx_, ly_);
+  ux_ = lx_ + bbox->getDX();
+  uy_ = ly_ + bbox->getDY();
 
-  // padding apply on placeInstance
-  if( isPlaceInstance() ) {
-    lx_ = lx - padLeft; 
-    ly_ = ly;
-    ux_ = lx + inst_->getBBox()->getDX() + padRight;
-    uy_ = ly + inst_->getBBox()->getDY();
-  }
-  else {
-    lx_ = lx; 
-    ly_ = ly;
-    ux_ = lx + inst_->getBBox()->getDX();
-    uy_ = ly + inst_->getBBox()->getDY();
+  if (isPlaceInstance()) {
+    lx_ -= padLeft;
+    ux_ += padRight;
   }
 
-  // 
+  // Masters more than row_limit rows tall are treated as macros
+  constexpr int row_limit = 6;
+
+  if (inst->getMaster()->getType().isBlock()) {
+    is_macro_ = true;
+  } else if (bbox->getDY() > 6 * site_height) {
+    is_macro_ = true;
+    logger->warn(GPL,
+                 134,
+                 "Master {} is not marked as a BLOCK in LEF but is more "
+                 "than {} rows tall.  It will be treated as a macro.",
+                 inst->getMaster()->getName(),
+                 row_limit);
+  }
+
   // TODO
   // need additional adjustment 
   // if instance (macro) is fixed and
@@ -255,6 +262,12 @@ Instance::dy() const {
   return (uy_ - ly_);
 }
 
+int64_t
+Instance::area() const
+{
+  return static_cast<int64_t>(dx()) * dy();
+}
+
 void
 Instance::addPin(Pin* pin) {
   pins_.push_back(pin);
@@ -263,6 +276,26 @@ Instance::addPin(Pin* pin) {
 void
 Instance::setExtId(int extId) {
   extId_ = extId;
+}
+
+bool Instance::isMacro() const
+{
+  return is_macro_;
+}
+
+bool Instance::isLocked() const
+{
+  return is_locked_;
+}
+
+void Instance::lock()
+{
+  is_locked_ = true;
+}
+
+void Instance::unlock()
+{
+  is_locked_ = false;
 }
 
 ////////////////////////////////////////////////////////
@@ -696,7 +729,6 @@ PlacerBase::init() {
   log_->info(GPL, 2, "DBU: {}", db_->getTech()->getDbUnitsPerMicron()); 
 
   dbBlock* block = db_->getChip()->getBlock();
-  dbSet<dbInst> insts = block->getInsts();
   
   // die-core area update
   dbSet<dbRow> rows = block->getRows();
@@ -720,14 +752,18 @@ PlacerBase::init() {
   log_->info(GPL, 5, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy()); 
   
   // insts fill with real instances
+  dbSet<dbInst> insts = block->getInsts();
   instStor_.reserve(insts.size());
   for(dbInst* inst : insts) {
-    if( !isPlacementInst(inst) ) {
+    auto type = inst->getMaster()->getType();
+    if(!type.isCore() && !type.isBlock()) {
       continue;
     }
     Instance myInst(inst, 
-        pbVars_.padLeft * siteSizeX_,
-        pbVars_.padRight * siteSizeX_ );
+                    pbVars_.padLeft * siteSizeX_,
+                    pbVars_.padRight * siteSizeX_,
+                    siteSizeY_,
+                    log_);
     instStor_.push_back( myInst );
 
     dbBox *bbox = inst->getBBox();
@@ -759,8 +795,7 @@ PlacerBase::init() {
       }
       else {
         placeInsts_.push_back(&inst);
-        int64_t instArea = static_cast<int64_t>(inst.dx())
-          * static_cast<int64_t>(inst.dy());
+        int64_t instArea = inst.area();
         placeInstsArea_ += instArea; 
         // macro cells should be
         // macroInstsArea_
@@ -778,8 +813,7 @@ PlacerBase::init() {
     else if(inst.isDummy()) {
       dummyInsts_.push_back(&inst);
       nonPlaceInsts_.push_back(&inst);
-      nonPlaceInstsArea_ += static_cast<int64_t>(inst.dx()) 
-        * static_cast<int64_t>(inst.dy());
+      nonPlaceInstsArea_ += inst.area();
     }
     insts_.push_back(&inst);
   }
@@ -1081,6 +1115,13 @@ PlacerBase::printInfo() const {
 
 }
 
+void PlacerBase::unlockAll()
+{
+  for(auto inst : insts_) {
+    inst->unlock();
+  }
+}
+
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
 static int 
 fastModulo(const int input, const int ceil) {
@@ -1115,26 +1156,6 @@ getOverlapWithCoreArea(Die& die, Instance& inst) {
       rectUy = min(die.coreUy(), inst.uy()); 
   return static_cast<int64_t>(rectUx - rectLx)
     * static_cast<int64_t>(rectUy - rectLy);
-}
-
-static bool
-isPlacementInst(dbInst* inst) {
-  switch(inst->getMaster()->getType()) {
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::CORE: 
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_WELLTAP:
-      return true;
-    default:
-      return false;
-  }
-  return false;
 }
 
 }
