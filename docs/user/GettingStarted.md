@@ -24,17 +24,9 @@ Larger designs may require better hardware.
 
 ### Building and Installing the Software
 
-There are currently two options to set up the OpenROAD Flow:
-
-- Build from sources using Docker, [instructions here](./BuildWithDocker.md).
-- Build from sources locally, [instructions here](./BuildLocally.md).
-
-
----
-
 **WARNING**
 
-On Centos7 you need to manually make sure the PATH variable includes the
+On CentOS 7 you need to manually make sure the PATH variable includes the
 new version of GCC/Clang. To enable GCC-8 or Clang-7 you need to run:
 
 ```shell
@@ -45,6 +37,12 @@ source /opt/rh/llvm-toolset-7.0/enable
 ```
 
 ---
+
+There are currently two options to set up the OpenROAD Flow:
+
+- Build from sources using Docker, [instructions here](./BuildWithDocker.md).
+- Build from sources locally, [instructions here](./BuildLocally.md).
+
 
 ## Running a Design
 
