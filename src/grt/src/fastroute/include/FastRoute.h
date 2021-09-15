@@ -57,9 +57,28 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace gui {
+class Gui;
+}
+
 using boost::multi_array;
 
 namespace grt {
+
+class FastRouteRenderer;
+
+struct DebugSetting{
+  const odb::dbNet *net_;
+  bool steinerTree_;
+  bool rectilinearSTree_;
+  bool tree2D_;
+  bool isOn_;
+  DebugSetting()
+      : steinerTree_(false),
+        isOn_(false)
+  {
+  }
+};
 
 using stt::Tree;
 
@@ -68,7 +87,8 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder);
+                stt::SteinerTreeBuilder* stt_builder,
+                gui::Gui* gui);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -156,6 +176,13 @@ class FastRouteCore
   NetRouteMap get2DTree();
   NetRouteMap get3DTree();
   NetRouteMap getRectilinearSteinerTree();
+
+  void createDebug();
+  void setDebugOn(bool isOn);
+  void setDebugSteinerTree(bool steinerTree);
+  void setDebugNet(const odb::dbNet *net);
+  void setDebugRectilinearSTree(bool rectiliniarSTree);
+  void setDebugTree2D(bool tree2D);
 
  private:
   NetRouteMap getRoutes();
@@ -394,6 +421,7 @@ class FastRouteCore
   std::vector<int> max_h_overflow_;
   std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
+  gui::Gui* gui_;
   bool allow_overflow_;
   int overflow_iterations_;
   int num_nets_;
@@ -483,6 +511,11 @@ class FastRouteCore
   static const int num_tree_saved_ = 3;
   std::map<odb::dbNet*, stt::Tree> treesGeneratedBySteinerTreeBuilder_;
   std::map<odb::dbNet*, std::vector<StTree>> treesGeneratedByFastRoute_; // { RectilinearSteinerTree, final 2D tree, 3D Tree after layer assigment }, size of vector is num_tree_saved_
+
+  FastRouteRenderer* fastrouteRender_;
+  DebugSetting* debug_;
+  void steinerTreeVisualization(stt::Tree& stree);
+  void StTreeVisualization(StTree& stree);
 };
 
 }  // namespace grt

@@ -207,6 +207,14 @@ void highlight_rectilinear_steiner_tree(const odb::dbNet *net)
   getGlobalRouter()->highlightRectilinearSteinerTree(net, 5);
 }
 
+void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D){
+  getGlobalRouter()->initDebugFastRoute();
+  getGlobalRouter()->setDebugNet(net);
+  getGlobalRouter()->setDebugSteinerTree(steinerTree);
+  getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
+  getGlobalRouter()->setDebugTree2D(tree2D);
+}
+
 void
 erase_routes()
 {

@@ -187,6 +187,12 @@ class GlobalRouter
   };
   void perturbCapacities();
 
+  void initDebugFastRoute();
+  void setDebugSteinerTree(bool steinerTree);
+  void setDebugRectilinearSTree(bool rectilinearSTree);
+  void setDebugTree2D(bool tree2D);
+  void setDebugNet(const odb::dbNet *net);
+
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet* net);
 

@@ -361,6 +361,34 @@ proc highlight_rectilinear_steiner_tree { net_names } {
   }
 }
 
+sta::define_cmd_args "global_route_debug" { 
+  [-st]
+  [-rst]
+  [-tree2D]
+  [-net name] 
+}
+
+proc global_route_debug { args } {
+
+  sta::parse_key_args "global_route_debug" args \
+      keys {-net} \
+      flags {-st -rst -tree2D}
+
+  sta::check_argc_eq0 "global_route_debug" $args
+
+  set st [info exists flags(-st)]
+  set rst [info exists flags(-rst)]
+  set tree2D [info exists flags(-tree2D)]
+
+  if { [info exists keys(-net)] } {
+    foreach net [get_nets $keys(-net)] {
+      if { $net != "NULL" } {
+        grt::set_global_route_debug_cmd [sta::sta_to_db_net $net] $st $rst $tree2D
+      }
+    }
+  }
+}
+
 namespace eval grt {
 
 proc estimate_rc_cmd {} {
