@@ -835,8 +835,8 @@ bool FlexDRWorker::findAPTracks(frLayerNum startLayerNum,
 
   for (frLayerNum lNum = startLayerNum; lNum != endLayerNum + inc;
        lNum += inc) {
-    frPrefRoutingDirEnum currPrefRouteDir = getTech()->getLayer(lNum)->getDir();
-    if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+    dbTechLayerDir currPrefRouteDir = getTech()->getLayer(lNum)->getDir();
+    if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
       getTrackLocs(true, lNum, yl(pinRect), yh(pinRect), yLocs);
     } else {
       getTrackLocs(false, lNum, xl(pinRect), xh(pinRect), xLocs);
@@ -881,7 +881,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           auto rpinRect = static_cast<frRect*>(pinFig);
           frLayerNum currLayerNum = rpinRect->getLayerNum();
           if (getTech()->getLayer(currLayerNum)->getType()
-              != frLayerTypeEnum::ROUTING) {
+              != dbTechLayerType::ROUTING) {
             continue;
           }
           frRect instPinRect(*rpinRect);
@@ -898,7 +898,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           // get intersecting tracks if any
-          if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+          if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
             getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
             if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
               getTrackLocs(false,
@@ -987,7 +987,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             frLayerNum currLayerNum = rpinRect->getLayerNum();
             frLayer* layer = getTech()->getLayer(currLayerNum);
             if (layer->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frRect instPinRect(*rpinRect);
@@ -1027,7 +1027,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                                      yLocs);
               if (!found)
                 continue;
-            } else if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+            } else if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(false,
@@ -1126,7 +1126,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           auto rpinRect = static_cast<frRect*>(pinFig);
           frLayerNum currLayerNum = rpinRect->getLayerNum();
           if (getTech()->getLayer(currLayerNum)->getType()
-              != frLayerTypeEnum::ROUTING) {
+              != dbTechLayerType::ROUTING) {
             continue;
           }
           //          halfWidth =
@@ -1151,7 +1151,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
 
           if (!useCenterLine) {
             // get intersecting tracks if any
-            if (currPrefRouteDir == frcHorzPrefRoutingDir) {
+            if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
               getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(false,
@@ -1396,7 +1396,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             auto rpinRect = static_cast<frRect*>(pinFig);
             frLayerNum currLayerNum = rpinRect->getLayerNum();
             if (getTech()->getLayer(currLayerNum)->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frRect instPinRect(*rpinRect);
@@ -1468,11 +1468,11 @@ void FlexDRWorker::getTrackLocs(bool isHorzTracks,
                                 frCoord high,
                                 std::set<frCoord>& trackLocs)
 {
-  frPrefRoutingDirEnum currPrefRouteDir
+  dbTechLayerDir currPrefRouteDir
       = getTech()->getLayer(currLayerNum)->getDir();
   for (auto& tp : design_->getTopBlock()->getTrackPatterns(currLayerNum)) {
-    if ((tp->isHorizontal() && currPrefRouteDir == frcVertPrefRoutingDir)
-        || (!tp->isHorizontal() && currPrefRouteDir == frcHorzPrefRoutingDir)) {
+    if ((tp->isHorizontal() && currPrefRouteDir == dbTechLayerDir::VERTICAL)
+        || (!tp->isHorizontal() && currPrefRouteDir == dbTechLayerDir::HORIZONTAL)) {
       int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
       if (trackNum < 0) {
         trackNum = 0;
@@ -1507,7 +1507,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     auto dPin = make_unique<drPin>();
     dPin->setFrTerm(term);
     // ap
-    frTransform instXform;  // (0,0), frcR0
+    frTransform instXform;  // (0,0), R0
     frTransform shiftXform;
     frTerm* trueTerm = nullptr;
     string name;
@@ -1515,7 +1515,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     if (term->typeId() == frcInstTerm) {
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(frOrient(frcR0));
+      shiftXform.set(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
       name = inst->getName() + string("/") + trueTerm->getName();
@@ -1920,7 +1920,7 @@ void FlexDRWorker::initTrackCoords_route(
       // vertical
       if (bp.x() == ep.x()) {
         // non pref dir
-        if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+        if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
           if (lNum + 2 <= getTech()->getTopLayerNum()) {
             xMap[bp.x()][lNum + 2]
                 = nullptr;  // default add track to upper layer
@@ -1951,7 +1951,7 @@ void FlexDRWorker::initTrackCoords_route(
         // horizontal
       } else {
         // non pref dir
-        if (getTech()->getLayer(lNum)->getDir() == frcVertPrefRoutingDir) {
+        if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::VERTICAL) {
           if (lNum + 2 <= getTech()->getTopLayerNum()) {
             yMap[bp.y()][lNum + 2] = nullptr;
           } else if (lNum - 2 >= getTech()->getBottomLayerNum()) {
@@ -1984,14 +1984,14 @@ void FlexDRWorker::initTrackCoords_route(
       obj->getOrigin(pt);
       // add pref dir track to layer1
       auto layer1Num = obj->getViaDef()->getLayer1Num();
-      if (getTech()->getLayer(layer1Num)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][layer1Num] = nullptr;
       } else {
         xMap[pt.x()][layer1Num] = nullptr;
       }
       // add pref dir track to layer2
       auto layer2Num = obj->getViaDef()->getLayer2Num();
-      if (getTech()->getLayer(layer2Num)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(layer2Num)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][layer2Num] = nullptr;
       } else {
         xMap[pt.x()][layer2Num] = nullptr;
@@ -2036,12 +2036,12 @@ void FlexDRWorker::initTrackCoords_pin(
       //     // }
       //   }
       // }
-      if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][lNum] = nullptr;
       } else {
         xMap[pt.x()][lNum] = nullptr;
       }
-      if (getTech()->getLayer(lNum2)->getDir() == frcHorzPrefRoutingDir) {
+      if (getTech()->getLayer(lNum2)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][lNum2] = nullptr;
       } else {
         xMap[pt.x()][lNum2] = nullptr;
@@ -2144,7 +2144,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     gridGraph_.getMazeIdx(bi, bp, lNum);
     ap->setMazeIdx(bi);
     // set curr layer on track status
-    if (getTech()->getLayer(lNum)->getDir() == frcHorzPrefRoutingDir) {
+    if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -2165,7 +2165,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     FlexMazeIdx bi;
     gridGraph_.getMazeIdx(bi, bp, lNum + 2);
     // set curr layer on track status
-    if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir) {
+    if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::W)
           || gridGraph_.hasGridCost(bi.x(), bi.y(), bi.z(), frDirEnum::E)) {
         ap->setOnTrack(false, true);
@@ -2255,29 +2255,16 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
     if (term) {
       // macro cell or stdcell
       if (term->typeId() == frcInstTerm) {
-        if (static_cast<frInstTerm*>(term)
-                    ->getInst()
-                    ->getRefBlock()
-                    ->getMacroClass()
-                == MacroClassEnum::BLOCK
-            || isPad(static_cast<frInstTerm*>(term)
-                         ->getInst()
-                         ->getRefBlock()
-                         ->getMacroClass())
-            || static_cast<frInstTerm*>(term)
-                       ->getInst()
-                       ->getRefBlock()
-                       ->getMacroClass()
-                   == MacroClassEnum::RING) {
+        dbMasterType masterType =
+          static_cast<frInstTerm*>(term)->getInst()->getRefBlock()
+            ->getMasterType();
+        if (masterType.isBlock() || masterType.isPad()
+            || masterType == dbMasterType::RING) {
           isStdCellPin = false;
-          // cout <<"curr dPin is macro pin" <<endl;
-        } else {
-          // cout <<"curr dPin is stdcell pin" <<endl;
         }
         // IO
       } else if (term->typeId() == frcTerm) {
         isStdCellPin = false;
-        // cout <<"curr dPin is io pin" <<endl;
       }
     } else {
       continue;
@@ -2288,12 +2275,12 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
       for (auto& ap : pin->getAccessPatterns()) {
         lNum = ap->getBeginLayerNum();
         if (ap->hasValidAccess(frDirEnum::U)) {
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL
               && ap->isOnTrack(true)) {
             hasUpperOnTrackAP = true;
             break;
           }
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcVertPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::VERTICAL
               && ap->isOnTrack(false)) {
             hasUpperOnTrackAP = true;
             break;
@@ -2310,7 +2297,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
         lNum = ap->getBeginLayerNum();
         if (lNum + 2 <= getTech()->getTopLayerNum()) {
           auto upperDefaultWidth = getTech()->getLayer(lNum + 2)->getWidth();
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcHorzPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::HORIZONTAL
               && !ap->isOnTrack(true)) {
             if (!hasUpperOnTrackAP) {
               auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
@@ -2326,7 +2313,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
                   isAddPathCost);
             }
           }
-          if (getTech()->getLayer(lNum + 2)->getDir() == frcVertPrefRoutingDir
+          if (getTech()->getLayer(lNum + 2)->getDir() == dbTechLayerDir::VERTICAL
               && !ap->isOnTrack(false)) {
             if (!hasUpperOnTrackAP) {
               auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
@@ -2537,7 +2524,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                  << bbox.bottom() / dbu << " ) - ( " << bbox.right() / dbu
                  << ", " << bbox.top() / dbu << " ) on Layer ";
             if (getTech()->getLayer(marker.getLayerNum())->getType()
-                    == frLayerTypeEnum::CUT
+                    == dbTechLayerType::CUT
                 && marker.getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
               cout << getTech()->getLayer(marker.getLayerNum() - 1)->getName()
                    << "\n";
@@ -2774,8 +2761,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     auto& aggressor = aggressorPair.first;
     if (aggressor && aggressor->typeId() == frcNet) {
       auto fNet = static_cast<frNet*>(aggressor);
-      if (fNet->getType() == frNetEnum::frcNormalNet
-          || fNet->getType() == frNetEnum::frcClockNet) {
+      if (!fNet->getType().isSupply()) {
         movableAggressorNets.insert(fNet);
         if (getDRNets(fNet)) {
           for (auto dNet : *(getDRNets(fNet))) {
@@ -2848,8 +2834,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     for (auto& owner : otherOwners) {
       if (owner && owner->typeId() == frcNet) {
         auto fNet = static_cast<frNet*>(owner);
-        if (fNet->getType() == frNetEnum::frcNormalNet
-            || fNet->getType() == frNetEnum::frcClockNet) {
+        if (!fNet->getType().isSupply()) {
           if (getDRNets(fNet)) {
             // int subNetIdx = -1;
             for (auto dNet : *(getDRNets(fNet))) {
@@ -2892,8 +2877,7 @@ void FlexDRWorker::route_queue_update_from_marker(
   for (auto& aggressorOwner : uniqueAggressorOwners) {
     if (aggressorOwner && aggressorOwner->typeId() == frcNet) {
       auto fNet = static_cast<frNet*>(aggressorOwner);
-      if (fNet->getType() == frNetEnum::frcNormalNet
-          || fNet->getType() == frNetEnum::frcClockNet) {
+      if (!fNet->getType().isSupply()) {
         if (getDRNets(fNet)) {
           for (auto dNet : *(getDRNets(fNet))) {
             if (!canRipup(dNet)) {
@@ -2985,15 +2969,15 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
        ++layerNum) {
     bool isRoutingLayer = true;
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() == frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::ROUTING) {
       isRoutingLayer = true;
       zIdx = gridGraph_.getMazeZIdx(layerNum);
     } else if (getTech()->getLayer(layerNum)->getType()
-               == frLayerTypeEnum::CUT) {
+               == dbTechLayerType::CUT) {
       isRoutingLayer = false;
       if (getTech()->getBottomLayerNum() <= layerNum - 1
           && getTech()->getLayer(layerNum - 1)->getType()
-                 == frLayerTypeEnum::ROUTING) {
+                 == dbTechLayerType::ROUTING) {
         zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
       } else {
         continue;
@@ -3064,8 +3048,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
         modMinSpacingCostVia(box, zIdx, 3, false, true);
         modEolSpacingRulesCost(box, zIdx, 3);
         // block for PDN (fixed obj)
-        if (ps->getNet()->getType() == frNetEnum::frcPowerNet
-            || ps->getNet()->getType() == frNetEnum::frcGroundNet) {
+        if (ps->getNet()->getType().isSupply()) {
           modBlockedPlanar(box, zIdx, true);
           modBlockedVia(box, zIdx, true);
         }
@@ -3119,7 +3102,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             auto rpinRect = static_cast<frRect*>(pinFig);
             frLayerNum layerNum = rpinRect->getLayerNum();
             if (getTech()->getLayer(layerNum)->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frMIdx zIdx;
@@ -3129,15 +3112,15 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             bool isRoutingLayer = true;
             if (getTech()->getLayer(layerNum)->getType()
-                == frLayerTypeEnum::ROUTING) {
+                == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
-                       == frLayerTypeEnum::CUT) {
+                       == dbTechLayerType::CUT) {
               isRoutingLayer = false;
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
-                         == frLayerTypeEnum::ROUTING) {
+                         == dbTechLayerType::ROUTING) {
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -3180,7 +3163,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             auto rpinRect = static_cast<frRect*>(pinFig);
             frLayerNum layerNum = rpinRect->getLayerNum();
             if (getTech()->getLayer(layerNum)->getType()
-                != frLayerTypeEnum::ROUTING) {
+                != dbTechLayerType::ROUTING) {
               continue;
             }
             frMIdx zIdx;
@@ -3192,15 +3175,15 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             // add cost
             bool isRoutingLayer = true;
             if (getTech()->getLayer(layerNum)->getType()
-                == frLayerTypeEnum::ROUTING) {
+                == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
-                       == frLayerTypeEnum::CUT) {
+                       == dbTechLayerType::CUT) {
               isRoutingLayer = false;
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
-                         == frLayerTypeEnum::ROUTING) {
+                         == dbTechLayerType::ROUTING) {
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -3211,11 +3194,11 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             int type = isAddPathCost ? 3 : 2;
 
+            dbMasterType masterType = inst->getRefBlock()->getMasterType();
             if (isRoutingLayer) {
               modMinSpacingCostPlanar(box, zIdx, type);
-              if (inst->getRefBlock()->getMacroClass()
-                  == MacroClassEnum::BLOCK) {  // temp solution for ISPD19
-                                               // benchmarks
+
+              if (masterType.isBlock()) { // temp solution for ISPD19 benchmarks
                 modCornerToCornerSpacing(box, zIdx, type);
               }
               if (!isSkipVia) {
@@ -3229,10 +3212,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
               modInterLayerCutSpacingCost(box, zIdx, type, false);
             }
             // temporary solution, only add cost around macro pins
-            if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-                || isPad(inst->getRefBlock()->getMacroClass())
-                || inst->getRefBlock()->getMacroClass()
-                       == MacroClassEnum::RING) {
+            if (masterType.isBlock() || masterType.isPad()
+                || masterType == dbMasterType::RING) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
             }
@@ -3255,7 +3236,7 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     zIdx = gridGraph_.getMazeZIdx(layerNum);
@@ -3315,10 +3296,9 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     auto dPinTerm = pin->getFrTerm();
     if (dPinTerm->typeId() == frcInstTerm) {
       frInstTerm* instTerm = static_cast<frInstTerm*>(dPinTerm);
-      frInst* inst = instTerm->getInst();
-      if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-          || isPad(inst->getRefBlock()->getMacroClass())
-          || inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
+      dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+      if (masterType.isBlock() || masterType.isPad()
+          || masterType == dbMasterType::RING) {
         continue;
       }
     }

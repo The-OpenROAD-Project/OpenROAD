@@ -520,12 +520,15 @@ void TimingPathRenderer::highlight(TimingPath* path)
 {
   path_ = path;
   highlight_node_ = -1;
+  redraw();
 }
 
 void TimingPathRenderer::highlightNode(int node_idx)
 {
-  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount())
+  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount()) {
     highlight_node_ = node_idx;
+    redraw();
+  }
 }
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)

@@ -243,7 +243,7 @@ ostream& operator<<(ostream& os, const frInst& instIn)
   tmpName = instIn.getName();
   tmpString = instIn.getRefBlock()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
-     << " " << tmpPoint.y() << " ) " << tmpOrient.getName() << endl;
+     << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << endl;
   for (auto& m : instIn.getInstTerms()) {
     os << endl << *m;
   }

@@ -245,9 +245,9 @@ class frTechObject
     logger->report("Reporting layer properties.");
     for (auto& layer : layers) {
       auto type = layer->getType();
-      if (type == frLayerTypeEnum::CUT)
+      if (type == dbTechLayerType::CUT)
         logger->report("Cut layer {}.", layer->getName());
-      else if (type == frLayerTypeEnum::ROUTING)
+      else if (type == dbTechLayerType::ROUTING)
         logger->report("Routing layer {}.", layer->getName());
       layer->printAllConstraints(logger);
     }
@@ -257,7 +257,7 @@ class frTechObject
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers) {
-      if (layer->getType() == frLayerTypeEnum::CUT
+      if (layer->getType() == dbTechLayerType::CUT
           && layer->getLayerNum() >= 2 /*BOTTOM_ROUTING_LAYER*/) {
         logger->report("  Layer {}", layer->getName());
         logger->report("    default via: {}",

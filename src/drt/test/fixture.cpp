@@ -47,8 +47,8 @@ Fixture::Fixture()
 
 void Fixture::addLayer(frTechObject* tech,
                        const char* name,
-                       frLayerTypeEnum type,
-                       frPrefRoutingDirEnum dir)
+                       dbTechLayerType type,
+                       dbTechLayerDir dir)
 {
   auto layer = std::make_unique<frLayer>();
   layer->setLayerNum(tech->getTopLayerNum() + 1);
@@ -61,7 +61,7 @@ void Fixture::addLayer(frTechObject* tech,
   layer->setPitch(200);
 
   // These constraints are mandatory
-  if (type == frLayerTypeEnum::ROUTING) {
+  if (type == dbTechLayerType::ROUTING) {
     auto minWidthConstraint
         = std::make_unique<frMinWidthConstraint>(layer->getMinWidth());
     layer->setMinWidthConstraint(minWidthConstraint.get());
@@ -89,9 +89,9 @@ void Fixture::setupTech(frTechObject* tech)
   tech->setDBUPerUU(1000);
 
   // TR assumes that masterslice always exists
-  addLayer(tech, "masterslice", frLayerTypeEnum::MASTERSLICE);
-  addLayer(tech, "v0", frLayerTypeEnum::CUT);
-  addLayer(tech, "m1", frLayerTypeEnum::ROUTING);
+  addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
+  addLayer(tech, "v0", dbTechLayerType::CUT);
+  addLayer(tech, "m1", dbTechLayerType::ROUTING);
 }
 
 frBlock* Fixture::makeMacro(const char* name,
@@ -111,7 +111,7 @@ frBlock* Fixture::makeMacro(const char* name,
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
-  block->setMacroClass(MacroClassEnum::CORE);
+  block->setMasterType(dbMasterType::CORE);
   block->setId(++numRefBlocks);
   auto blkPtr = block.get();
   design->addRefBlock(std::move(block));
@@ -158,9 +158,9 @@ frTerm* Fixture::makeMacroPin(frBlock* refBlock,
   auto term = uTerm.get();
   term->setId(id);
   refBlock->addTerm(std::move(uTerm));
-  frTermEnum termType = frTermEnum::frcNormalTerm;
+  dbSigType termType = dbSigType::SIGNAL;
   term->setType(termType);
-  frTermDirectionEnum termDirection = frTermDirectionEnum::INPUT;
+  dbIoType termDirection = dbIoType::INPUT;
   term->setDirection(termDirection);
   auto pinIn = make_unique<frPin>();
   pinIn->setId(0);
@@ -183,7 +183,7 @@ frInst* Fixture::makeInst(const char* name,
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
   tmpInst->setOrigin(frPoint(x, y));
-  tmpInst->setOrient(frOrientEnum::frcR0);
+  tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
     auto term = uTerm.get();
     unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
@@ -212,12 +212,12 @@ void Fixture::makeDesign()
 
   // GC assumes these fake nets exist
   auto vssFakeNet = std::make_unique<frNet>("frFakeVSS");
-  vssFakeNet->setType(frNetEnum::frcGroundNet);
+  vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
   auto vddFakeNet = std::make_unique<frNet>("frFakeVDD");
-  vddFakeNet->setType(frNetEnum::frcPowerNet);
+  vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 

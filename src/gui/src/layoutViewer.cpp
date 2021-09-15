@@ -390,6 +390,7 @@ LayoutViewer::LayoutViewer(
       ruler_start_(nullptr),
       snap_edge_showing_(false),
       snap_edge_(),
+      block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
@@ -599,16 +600,6 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 
   // center the layout at the middle of the rect
   centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
-}
-
-void LayoutViewer::updateRubberBandRegion()
-{
-  QRect rect = rubber_band_.normalized();
-  int unit = ceil(2 / pixels_per_dbu_);
-  update(rect.left(), rect.top() - unit / 2, rect.width(), unit);
-  update(rect.left() - unit / 2, rect.top(), unit, rect.height());
-  update(rect.left(), rect.bottom() - unit / 2, rect.width(), unit);
-  update(rect.right() - unit / 2, rect.top(), unit, rect.height());
 }
 
 std::pair<LayoutViewer::Edges, bool> LayoutViewer::searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt)
@@ -1003,7 +994,7 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     rubber_band_showing_ = true;
     rubber_band_.setTopLeft(event->pos());
     rubber_band_.setBottomRight(event->pos());
-    updateRubberBandRegion();
+    update();
     setCursor(Qt::CrossCursor);
   }
 }
@@ -1068,9 +1059,9 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
     update();
   }
   if (rubber_band_showing_) {
-    updateRubberBandRegion();
+    update();
     rubber_band_.setBottomRight(event->pos());
-    updateRubberBandRegion();
+    update();
   }
 }
 
@@ -1083,7 +1074,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
   if (event->button() == Qt::RightButton && rubber_band_showing_) {
     rubber_band_showing_ = false;
-    updateRubberBandRegion();
+    update();
     unsetCursor();
     QRect rect = rubber_band_.normalized();
     if (!(QApplication::keyboardModifiers() & Qt::ControlModifier)
@@ -1124,6 +1115,8 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
     centering_shift_ = QPoint(
         (new_area.width()  - block_bounds.dx() * pixels_per_dbu_) / 2,
         (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
+
+    fullRepaint();
   }
 }
 
@@ -1600,7 +1593,6 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   const float font_core_scale_height = size_target * pixels_per_dbu_;
   const float font_core_scale_width = size_limit * pixels_per_dbu_;
 
-  painter->setTransform(QTransform());
   painter->setFont(text_font);
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
@@ -1641,32 +1633,28 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       continue;
     }
 
-    QTransform text_transform;
-    auto text_alignment = Qt::AlignLeft | Qt::AlignBottom;
     if (do_rotate) {
-      const QPointF inst_center = instance_bbox_in_px.center();
-      text_transform.translate(inst_center.x(), inst_center.y()); // move to center of inst
-      text_transform.rotate(90);
-      text_transform.translate(-inst_center.x(), -inst_center.y()); // move to center of 0, 0
       name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.height());
-
-      instance_bbox_in_px = text_transform.mapRect(instance_bbox_in_px);
-      text_alignment = Qt::AlignRight | Qt::AlignBottom;
-
-      // account for descent of font
-      text_transform.translate(-font_metrics.descent(), 0);
     } else {
       name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.width());
-
-      // account for descent of font
-      text_transform.translate(font_metrics.descent(), 0);
     }
 
-    painter->setTransform(text_transform);
-    painter->drawText(instance_bbox_in_px, text_alignment, name);
-  }
+    painter->translate(instance_box.xMin(), instance_box.yMin());
+    painter->scale(1.0 / pixels_per_dbu_, -1.0 / pixels_per_dbu_);
+    if (do_rotate) {
+      text_bounding_box = font_metrics.boundingRect(name);
+      painter->rotate(90);
+      painter->translate(-text_bounding_box.width(), 0);
+      // account for descent of font
+      painter->translate(-font_metrics.descent(), 0);
+    } else {
+      // account for descent of font
+      painter->translate(font_metrics.descent(), 0);
+    }
+    painter->drawText(0, 0, name);
 
-  painter->setTransform(initial_xfm);
+    painter->setTransform(initial_xfm);
+  }
   painter->setFont(initial_font);
 }
 
@@ -1840,17 +1828,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   drawCongestionMap(gui_painter, bounds);
-
-  drawSelected(gui_painter);
-  // Always last so on top
-  drawHighlighted(gui_painter);
-  drawRulers(gui_painter);
-
-  // draw partial ruler if present
-  if (building_ruler_ && ruler_start_ != nullptr) {
-    odb::Point snapped_mouse_pos = findNextRulerPoint(screenToDBU(mouse_move_pos_));
-    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
-  }
 }
 
 void LayoutViewer::drawPinMarkers(QPainter* painter,
@@ -1972,6 +1949,35 @@ QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
                 QPointF(screen_right, screen_bottom));
 }
 
+void LayoutViewer::updateBlockPainting(const QRect& area, odb::dbBlock* block)
+{
+  if (block_drawing_ != nullptr) {
+    // no changes detected, so no need to update
+    return;
+  }
+
+  // build new drawing of layout
+  block_drawing_ = std::make_unique<QPixmap>(area.width(), area.height());
+  block_drawing_->fill(Qt::transparent);
+
+  QPainter block_painter(block_drawing_.get());
+  block_painter.setRenderHints(QPainter::Antialiasing);
+
+  // apply transforms
+  block_painter.translate(-area.topLeft());
+  block_painter.translate(centering_shift_);
+  // apply scaling
+  block_painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
+
+  const Rect dbu_bounds = screenToDBU(area);
+
+  // paint layout
+  drawBlock(&block_painter, dbu_bounds, block, 0);
+  if (options_->arePinMarkersVisible()) {
+    drawPinMarkers(&block_painter, dbu_bounds, block);
+  }
+}
+
 void LayoutViewer::paintEvent(QPaintEvent* event)
 {
   dbBlock* block = getBlock();
@@ -2000,15 +2006,33 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     generateCutLayerMaximumSizes();
   }
 
-  // Coordinate system setup (see file level comments)
+  // check if we can use the old image
+  const QRect draw_bounds = visibleRegion().boundingRect();
+  updateBlockPainting(draw_bounds, block);
+
+  // draw cached block
+  painter.drawPixmap(draw_bounds.topLeft(), *block_drawing_);
+
   painter.save();
   painter.translate(centering_shift_);
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
-  Rect dbu_bounds = screenToDBU(event->rect());
-  drawBlock(&painter, dbu_bounds, block, 0);
-  if (options_->arePinMarkersVisible())
-    drawPinMarkers(&painter, dbu_bounds, block);
+  GuiPainter gui_painter(&painter,
+                         options_,
+                         pixels_per_dbu_,
+                         block->getDbUnitsPerMicron());
+
+  // draw selected and over top level and fast painting events
+  drawSelected(gui_painter);
+  // Always last so on top
+  drawHighlighted(gui_painter);
+  drawRulers(gui_painter);
+
+  // draw partial ruler if present
+  if (building_ruler_ && ruler_start_ != nullptr) {
+    odb::Point snapped_mouse_pos = findNextRulerPoint(screenToDBU(mouse_move_pos_));
+    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
+  }
 
   // draw edge currently considered snapped to
   if (snap_edge_showing_) {
@@ -2029,13 +2053,19 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.restore();
 
   // use bounding Rect as event might just be the rubber_band
-  drawScaleBar(&painter, block, visibleRegion().boundingRect());
+  drawScaleBar(&painter, block, draw_bounds);
 
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
     painter.drawRect(rubber_band_.normalized());
   }
+}
+
+void LayoutViewer::fullRepaint()
+{
+  block_drawing_ = nullptr;
+  update();
 }
 
 void LayoutViewer::drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect)
@@ -2153,7 +2183,7 @@ void LayoutViewer::updateShapes()
     search_.clear();
     search_init_ = false;
   }
-  update();
+  fullRepaint();
 }
 
 void LayoutViewer::fit()
@@ -2250,6 +2280,7 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
   // ensure changes in the scroll area are announced to the layout viewer
   connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(viewportUpdated()));
   connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(updateCenter(int, int)));
+  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(fullRepaint()));
 }
 
 void LayoutViewer::viewportUpdated()

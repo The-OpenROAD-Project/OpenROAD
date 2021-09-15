@@ -42,8 +42,8 @@ class Fixture
 
   void addLayer(frTechObject* tech,
                 const char* name,
-                frLayerTypeEnum type,
-                frPrefRoutingDirEnum dir = frcNonePrefRoutingDir);
+                dbTechLayerType type,
+                dbTechLayerDir dir = dbTechLayerDir::NONE);
 
   void setupTech(frTechObject* tech);
 

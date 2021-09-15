@@ -174,7 +174,7 @@ void FlexGR::searchRepairMacro(int iter,
   vector<frInst*> macros;
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK) {
+    if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
       frBox macroBBox;
       inst->getBBox(macroBBox);
       frPoint macroCenter((macroBBox.left() + macroBBox.right()) / 2,
@@ -711,7 +711,7 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
           auto supply
               = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -784,7 +784,7 @@ void FlexGR::reportCong3D()
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
           auto supply
               = cmap_->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -870,7 +870,7 @@ void FlexGR::ra()
     int numBlockedTrack = 0;
     int numGCell = xgp->getCount() * ygp->getCount();
     int numBlockedGCell = 0;
-    if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (dir == dbTechLayerDir::HORIZONTAL) {
       cout << "H      ";
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
         numTrack += cmap_->getSupply(0, yIdx, cmapLayerIdx, frDirEnum::E);
@@ -888,7 +888,7 @@ void FlexGR::ra()
           }
         }
       }
-    } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
+    } else if (dir == dbTechLayerDir::VERTICAL) {
       cout << "V      ";
       for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
         numTrack += cmap_->getSupply(xIdx, 0, cmapLayerIdx, frDirEnum::N);
@@ -1550,14 +1550,12 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   for (auto& node : netNodes) {
     if (node->getPin()) {
       if (node->getPin()->typeId() == frcInstTerm) {
-        auto term = static_cast<frInstTerm*>(node->getPin())->getTerm();
+        auto ioType = static_cast<frInstTerm*>(node->getPin())->getTerm()
+                      ->getDirection();
         // for instTerm, direction OUTPUT is driver
-        if (term->getDirection() == frTermDirectionEnum::OUTPUT
-            && nodes[0] == nullptr) {
+        if (ioType == dbIoType::OUTPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
-          if (term->getDirection() == frTermDirectionEnum::OUTPUT) {
-          }
           if (sinkIdx >= nodes.size()) {
             sinkIdx %= nodes.size();
           }
@@ -1566,14 +1564,11 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         }
         pin2Nodes[node->getPin()].push_back(node.get());
       } else if (node->getPin()->typeId() == frcTerm) {
-        auto term = static_cast<frTerm*>(node->getPin());
+        auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
         // for IO term, direction INPUT is driver
-        if (term->getDirection() == frTermDirectionEnum::INPUT
-            && nodes[0] == nullptr) {
+        if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
-          if (term->getDirection() == frTermDirectionEnum::INPUT) {
-          }
           if (sinkIdx >= nodes.size()) {
             sinkIdx %= nodes.size();
           }
@@ -1613,7 +1608,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         auto inst = static_cast<frInstTerm*>(rpin->getFrTerm())->getInst();
         frTransform shiftXform;
         inst->getTransform(shiftXform);
-        shiftXform.set(frOrient(frcR0));
+        shiftXform.set(dbOrientType(dbOrientType::R0));
         rpin->getAccessPoint()->getPoint(pt);
         pt.transform(shiftXform);
       } else {
@@ -2162,7 +2157,7 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
         // horz
         if (beginIdx.y() == endIdx.y()) {
           if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == frcVertPrefRoutingDir) {
+              == dbTechLayerDir::VERTICAL) {
             isLayerBlocked = true;
           }
           int yIdx = beginIdx.y();
@@ -2188,7 +2183,7 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
           }
         } else {
           if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == frcHorzPrefRoutingDir) {
+              == dbTechLayerDir::HORIZONTAL) {
             isLayerBlocked = true;
           }
           int xIdx = beginIdx.x();

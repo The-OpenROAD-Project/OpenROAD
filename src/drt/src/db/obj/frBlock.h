@@ -54,7 +54,7 @@ class frBlock : public frBlockObject
       : frBlockObject(),
         name_(name),
         dbUnit_(0) /*, manufacturingGrid_(0)*/,
-        macroClass_(MacroClassEnum::UNKNOWN){};
+        masterType_(dbMasterType::NONE){};
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   void getBBox(frBox& boxIn) const
@@ -244,7 +244,7 @@ class frBlock : public frBlockObject
     }
     idx.set(idxX, idxY);
   }
-  MacroClassEnum getMacroClass() { return macroClass_; }
+  dbMasterType getMasterType() { return masterType_; }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
     return markers_;
@@ -312,7 +312,7 @@ class frBlock : public frBlockObject
   {
     gCellPatterns_ = gpIn;
   }
-  void setMacroClass(const MacroClassEnum& in) { macroClass_ = in; }
+  void setMasterType(const dbMasterType& in) { masterType_ = in; }
   void addMarker(std::unique_ptr<frMarker> in)
   {
     auto rptr = in.get();
@@ -332,7 +332,7 @@ class frBlock : public frBlockObject
   frString name_;
   frUInt4 dbUnit_;
 
-  MacroClassEnum macroClass_;
+  dbMasterType masterType_;
 
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;

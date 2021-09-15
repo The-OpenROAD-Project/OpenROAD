@@ -38,6 +38,7 @@
 #include <QMap>
 #include <QMenu>
 #include <QOpenGLWidget>
+#include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
 #include <map>
@@ -207,6 +208,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // update the fit resolution (the maximum pixels_per_dbu without scroll bars)
   void viewportUpdated();
 
+  // signals that the cache should be flushed and a full repaint should occur.
+  void fullRepaint();
+
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
 
@@ -252,7 +256,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
-  void updateRubberBandRegion();
   void drawTracks(odb::dbTechLayer* layer,
                   odb::dbBlock* block,
                   QPainter* painter,
@@ -313,6 +316,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   odb::Point findNextRulerPoint(const odb::Point& mouse);
 
+  // build a cache of the layout to speed up future repainting
+  void updateBlockPainting(const QRect& area, odb::dbBlock* block);
+
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
@@ -342,6 +348,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   bool snap_edge_showing_;
   Edge snap_edge_;
+
+  // Hold the last painted drawing of the layout
+  std::unique_ptr<QPixmap> block_drawing_;
 
   utl::Logger* logger_;
   bool design_loaded_;

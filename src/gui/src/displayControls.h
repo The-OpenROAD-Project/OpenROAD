@@ -52,6 +52,8 @@
 #include "congestionSetupDialog.h"
 #include "options.h"
 
+#include "gui/gui.h"
+
 namespace odb {
 class dbDatabase;
 class dbBlock;
@@ -197,6 +199,9 @@ class DisplayControls : public QDockWidget, public Options
   // The display options have changed and clients need to update
   void changed();
 
+  // Emit a selected tech layer
+  void selected(const Selected& selected);
+
  public slots:
   // Tells this widget that a new design is loaded and the
   // options displayed need to match
@@ -204,6 +209,7 @@ class DisplayControls : public QDockWidget, public Options
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
+  void displayItemClicked(const QModelIndex& index);
   void displayItemDblClicked(const QModelIndex& index);
 
   void showCongestionSetup();

@@ -63,7 +63,7 @@ global_placement
 ### Tuning Parameters
 
 - `-bin_grid_count`: set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`.
-- `-density`: set target density. Default value is 0.70. Allowed values are `[ 0-1, float]`.
+- `-density`: set target density. Default value is 0.70. Allowed values are `[0-1, float]`.
 - `-init_density_penalty`: set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`.
 - `-init_wire_length_coef`: set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`.
 - `-min_phi_coef`: set `pcof_min(µ_k Lower Bound)`. Default value is 0.95. Allowed values are `[0.95-1.05, float]`.
@@ -71,7 +71,7 @@ global_placement
 - `-overflow`: set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`.
 - `-initial_place_max_iter`: set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`.
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
-- `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-10, int]`.
+- `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 
 
 `-timing_driven` does a virtual `repair_design` to find slacks and

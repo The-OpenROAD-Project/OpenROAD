@@ -83,7 +83,7 @@ class Parser
   void initDefaultVias();
   void initRPin();
   std::map<frBlock*,
-           std::map<frOrient,
+           std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
            frBlockObjectComp>&
@@ -138,7 +138,7 @@ class Parser
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
   std::vector<std::pair<frBlockObject*, frPoint>> tmpGRPins;
   std::map<frBlock*,
-           std::map<frOrient,
+           std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
            frBlockObjectComp>

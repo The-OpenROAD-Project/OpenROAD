@@ -364,6 +364,9 @@ class Renderer
   {
     return SelectionSet();
   }
+
+  // Used to trigger a draw
+  void redraw();
 };
 
 // This is the API for the rest of the program to interact with the
