@@ -303,7 +303,7 @@ void Restructure::runABC()
           }
         } else {
           // Using only DELAY_4 for delay based gain since other modes not showing good gains
-          if ((modes[curr_mode_idx] == Mode::DELAY_4)) {
+          if (modes[curr_mode_idx] == Mode::DELAY_4) {
             best_delay_gain = delay;
             best_blif = output_blif_file_name_;
           }
