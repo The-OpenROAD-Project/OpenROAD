@@ -82,10 +82,8 @@ bool FastRouteCore::checkTree(const int net_id)
       int routeLen = treeedge->route.routelen;
       const std::vector<short>& gridsX = treeedge->route.gridsX;
       const std::vector<short>& gridsY = treeedge->route.gridsY;
-      const std::pair<short, short> pos_0 = {gridsX[0], gridsY[0]};
-      position_to_edges_map[pos_0].push_back(edgeID);
 
-      for (int i = 1; i <= routeLen; i++) {
+      for (int i = 0; i <= routeLen; i++) {
         const std::pair<short, short> pos_i = {gridsX[i], gridsY[i]};
         position_to_edges_map[pos_i].push_back(edgeID);
       }
