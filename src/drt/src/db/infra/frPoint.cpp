@@ -39,35 +39,35 @@ void frPoint::transform(const frTransform& xform)
   frCoord tmpY = 0;
   // cout <<xform.orient() <<endl;
   switch (xform.orient()) {
-    case frcR90:
+    case dbOrientType::R90:
       tmpX = xform.xOffset() - yCoord_;
       tmpY = xform.yOffset() + xCoord_;
       break;
-    case frcR180:
+    case dbOrientType::R180:
       tmpX = xform.xOffset() - xCoord_;
       tmpY = xform.yOffset() - yCoord_;
       break;
-    case frcR270:
+    case dbOrientType::R270:
       tmpX = xform.xOffset() + yCoord_;
       tmpY = xform.yOffset() - xCoord_;
       break;
-    case frcMY:
+    case dbOrientType::MY:
       tmpX = xform.xOffset() - xCoord_;
       tmpY = xform.yOffset() + yCoord_;
       break;
-    case frcMYR90:  // MY, rotate, then shift
+    case dbOrientType::MYR90:  // MY, rotate, then shift
       tmpX = xform.xOffset() - yCoord_;
       tmpY = xform.yOffset() - xCoord_;
       break;
-    case frcMX:
+    case dbOrientType::MX:
       tmpX = xform.xOffset() + xCoord_;
       tmpY = xform.yOffset() - yCoord_;
       break;
-    case frcMXR90:  // MX, rotate, then shift
+    case dbOrientType::MXR90:  // MX, rotate, then shift
       tmpX = xform.xOffset() + yCoord_;
       tmpY = xform.yOffset() + xCoord_;
       break;
-    // frcR0
+    // R0
     default:
       tmpX = xform.xOffset() + xCoord_;
       tmpY = xform.yOffset() + yCoord_;

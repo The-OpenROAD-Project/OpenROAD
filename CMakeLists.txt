@@ -58,20 +58,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(OPENROAD_VERSION ${PROJECT_VERSION})
-message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Get version string in OPENROAD_GIT_DESCRIBE
+# Get version string in OPENROAD_VERSION
 include(GetGitRevisionDescription)
-git_describe(OPENROAD_GIT_DESCRIBE)
-string(FIND ${OPENROAD_GIT_DESCRIBE} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
+git_describe(OPENROAD_VERSION)
+string(FIND ${OPENROAD_VERSION} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
 if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
   message(WARNING "OpenROAD git describe failed, using sha1 instead")
-  get_git_head_revision(GIT_REFSPEC OPENROAD_GIT_DESCRIBE)
+  get_git_head_revision(GIT_REFSPEC OPENROAD_VERSION)
 endif()
-message(STATUS "OpenROAD git describe: ${OPENROAD_GIT_DESCRIBE}")
+message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)

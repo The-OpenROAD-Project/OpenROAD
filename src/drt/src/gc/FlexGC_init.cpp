@@ -46,11 +46,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     if (term->hasNet()) {
       owner = term->getNet();
     } else {
-      if (term->getType() == frTermEnum::frcPowerTerm) {
-        isFloatingVDD = true;
-      } else if (term->getType() == frTermEnum::frcGroundTerm) {
-        isFloatingVSS = true;
-      }
+      dbSigType sigType = term->getType();
+      isFloatingVDD = (sigType == dbSigType::POWER);
+      isFloatingVSS = (sigType == dbSigType::GROUND);
       owner = obj;
     }
   } else if (obj->typeId() == frcInstTerm) {
@@ -58,11 +56,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     if (instTerm->hasNet()) {
       owner = instTerm->getNet();
     } else {
-      if (instTerm->getTerm()->getType() == frTermEnum::frcPowerTerm) {
-        isFloatingVDD = true;
-      } else if (instTerm->getTerm()->getType() == frTermEnum::frcGroundTerm) {
-        isFloatingVSS = true;
-      }
+      dbSigType sigType = instTerm->getTerm()->getType();
+      isFloatingVDD = (sigType == dbSigType::POWER);
+      isFloatingVSS = (sigType == dbSigType::GROUND);
       owner = obj;
     }
   } else if (obj->typeId() == frcInstBlockage || obj->typeId() == frcBlockage) {
@@ -109,7 +105,7 @@ void FlexGCWorker::Impl::initObj(const frBox& box,
                                  bool isFixed)
 {
   auto currNet = getNet(obj);
-  if (getTech()->getLayer(layerNum)->getType() == frLayerTypeEnum::CUT) {
+  if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::CUT) {
     currNet->addRectangle(box, layerNum, isFixed);
   } else {
     currNet->addPolygon(box, layerNum, isFixed);

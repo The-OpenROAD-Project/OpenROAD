@@ -267,6 +267,10 @@ DisplayControls::DisplayControls(QWidget* parent)
           SLOT(itemChanged(QStandardItem*)));
 
   connect(view_,
+          SIGNAL(clicked(const QModelIndex&)),
+          this,
+          SLOT(displayItemClicked(const QModelIndex&)));
+  connect(view_,
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
@@ -527,6 +531,23 @@ void DisplayControls::itemChanged(QStandardItem* item)
   emit changed();
 }
 
+void DisplayControls::displayItemClicked(const QModelIndex& index)
+{
+  if (index.column() == 0 && index.parent().isValid()) {
+    auto parent_item = model_->itemFromIndex(index.parent());
+    if (parent_item == layers_group_.name) {
+      auto item = model_->itemFromIndex(index);
+      auto layer_find = std::find_if(layer_controls_.begin(), layer_controls_.end(), [item](const auto& o) {
+        return o.second.name == item;
+      });
+      if (layer_find != layer_controls_.end()) {
+        // need non-const object
+        emit selected(Gui::get()->makeSelected(const_cast<odb::dbTechLayer*>(layer_find->first)));
+      }
+    }
+  }
+}
+
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
   if (index.column() == 0) {
@@ -660,17 +681,81 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
   techInit();
 
+  double dbu_to_microns = tech->getDbUnitsPerMicron();
+
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
+      auto& row = layer_controls_[layer];
       makeLeafItem(
-          layer_controls_[layer],
+          row,
           QString::fromStdString(layer->getName()),
           layers_group_.name,
           Qt::Checked,
           true,
           color(layer),
           type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(static_cast<void*>(layer)));
+      if (type == dbTechLayerType::ROUTING) {
+        auto selected = Gui::get()->makeSelected(layer);
+        if (!selected) {
+          continue;
+        }
+        auto props = selected.getProperties();
+
+        const QString micron = "\u03BC";
+
+        // provide tooltip with layer information
+        QString information;
+
+        auto add_prop = [props](const std::string& prop, QString& info) -> bool {
+          auto prop_find = std::find_if(props.begin(), props.end(), [prop](const auto& p) {
+            return p.name == prop;
+          });
+          if (prop_find == props.end()) {
+            return false;
+          }
+          info += "\n" + QString::fromStdString(prop) + ": ";
+          if (auto v = std::any_cast<const char*>(&(*prop_find).value)) {
+            info += QString(*v);
+          } else if (auto v = std::any_cast<const std::string>(&(*prop_find).value)) {
+            info += QString::fromStdString(*v);
+          } else if (auto v = std::any_cast<int>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else if (auto v = std::any_cast<unsigned int>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else if (auto v = std::any_cast<double>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else if (auto v = std::any_cast<float>(&(*prop_find).value)) {
+            info += QString::number(*v);
+          } else {
+            info += "<unknown>";
+          }
+          return true;
+        };
+
+        // direction
+        add_prop("Direction", information);
+
+        // min width
+        if (add_prop("Minimum width", information)) {
+          information += micron + "m";
+        }
+
+        // min spacing
+        if (add_prop("Minimum spacing", information)) {
+          information += micron + "m";
+        }
+
+        // resistance
+        add_prop("Resistance", information);
+
+        // capacitance
+        add_prop("Capacitance", information);
+
+        if (!information.isEmpty()) {
+          row.name->setToolTip(information.remove(0, 1));
+        }
+      }
     }
   }
 

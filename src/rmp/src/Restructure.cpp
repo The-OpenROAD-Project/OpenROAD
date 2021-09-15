@@ -181,9 +181,7 @@ void Restructure::runABC()
 
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  int best_level_gain = std::numeric_limits<int>::min();
   float best_delay_gain = std::numeric_limits<float>::max();
-  bool level_based = false;
 
   debugPrint(
       logger_, RMP, "remap", 1, "Running ABC with {} threads.", max_threads);
@@ -304,12 +302,8 @@ void Restructure::runABC()
             best_blif = output_blif_file_name_;
           }
         } else {
-          if (level_based && level_gain > best_level_gain) {
-            best_level_gain = level_gain;
-            best_blif = output_blif_file_name_;
-          }
           // Using only DELAY_4 for delay based gain since other modes not showing good gains
-          if ((curr_mode_idx == static_cast <int> (Mode::DELAY_4)) || (!level_based && delay < best_delay_gain)) {
+          if (modes[curr_mode_idx] == Mode::DELAY_4) {
             best_delay_gain = delay;
             best_blif = output_blif_file_name_;
           }
@@ -321,8 +315,7 @@ void Restructure::runABC()
   }
 
   if (best_inst_count < std::numeric_limits<int>::max()
-     || (level_based && best_level_gain > 4) // upto 4 level gain becomes noise eventually in terms of delay gain
-     || (!level_based && best_delay_gain < std::numeric_limits<float>::max())) {
+     || best_delay_gain < std::numeric_limits<float>::max()) {
     // read back netlist
     debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);

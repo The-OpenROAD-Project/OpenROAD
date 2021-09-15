@@ -34,6 +34,8 @@
 #include "odb/db.h"
 #include "ruler.h"
 
+#include <cmath>
+
 namespace gui {
 
 Ruler::Ruler(const odb::Point& pt0, const odb::Point& pt1, const std::string& name, const std::string& label) :

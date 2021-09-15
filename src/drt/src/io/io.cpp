@@ -111,29 +111,6 @@ void io::Parser::setTracks(odb::dbBlock* block)
   }
 }
 
-frOrientEnum getFrOrient(odb::dbOrientType orient)
-{
-  switch (orient) {
-    case odb::dbOrientType::R0:
-      return frOrientEnum::frcR0;
-    case odb::dbOrientType::R90:
-      return frOrientEnum::frcR90;
-    case odb::dbOrientType::R180:
-      return frOrientEnum::frcR180;
-    case odb::dbOrientType::R270:
-      return frOrientEnum::frcR270;
-    case odb::dbOrientType::MY:
-      return frOrientEnum::frcMY;
-    case odb::dbOrientType::MYR90:
-      return frOrientEnum::frcMYR90;
-    case odb::dbOrientType::MX:
-      return frOrientEnum::frcMX;
-    case odb::dbOrientType::MXR90:
-      return frOrientEnum::frcMXR90;
-  }
-  return frOrientEnum::frcR0;
-}
-
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   for (auto inst : block->getInsts()) {
@@ -155,7 +132,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     x = defdist(block, x);
     y = defdist(block, y);
     tmpInst->setOrigin(frPoint(x, y));
-    tmpInst->setOrient(getFrOrient(inst->getOrient().getValue()));
+    tmpInst->setOrient(inst->getOrient());
     for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
@@ -415,7 +392,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     createNDR(ndr);
   }
   for (auto& layer : design->getTech()->getLayers()) {
-    if (layer->getType() != frLayerTypeEnum::ROUTING)
+    if (layer->getType() != dbTechLayerType::ROUTING)
       continue;
     MTSAFEDIST = max(MTSAFEDIST,
                      design->getTech()->getMaxNondefaultSpacing(
@@ -801,25 +778,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
       }
     }
-    frNetEnum netType;
-    switch (net->getSigType()) {
-      case odb::dbSigType::SIGNAL:
-        netType = frNetEnum::frcNormalNet;
-        break;
-      case odb::dbSigType::CLOCK:
-        netType = frNetEnum::frcClockNet;
-        break;
-      case odb::dbSigType::POWER:
-        netType = frNetEnum::frcPowerNet;
-        break;
-      case odb::dbSigType::GROUND:
-        netType = frNetEnum::frcGroundNet;
-        break;
-      default:
-        logger->error(DRT, 110, "Unsupported NET USE in def.");
-        break;
-    }
-    netIn->setType(netType);
+    netIn->setType(net->getSigType());
     if (is_special)
       tmpBlock->addSNet(std::move(uNetIn));
     else
@@ -830,45 +789,12 @@ void io::Parser::setNets(odb::dbBlock* block)
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
-    frTermEnum termType;
-    switch (term->getSigType().getValue()) {
-      case odb::dbSigType::SIGNAL:
-        termType = frTermEnum::frcNormalTerm;
-        break;
-      case odb::dbSigType::POWER:
-        termType = frTermEnum::frcPowerTerm;
-        break;
-      case odb::dbSigType::GROUND:
-        termType = frTermEnum::frcGroundTerm;
-        break;
-      case odb::dbSigType::CLOCK:
-        termType = frTermEnum::frcClockTerm;
-        break;
-      default:
-        logger->error(DRT, 111, "Unsupported PIN USE in db.");
-        break;
-    }
-    frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
-    switch (term->getIoType().getValue()) {
-      case odb::dbIoType::INPUT:
-        termDirection = frTermDirectionEnum::INPUT;
-        break;
-      case odb::dbIoType::OUTPUT:
-        termDirection = frTermDirectionEnum::OUTPUT;
-        break;
-      case odb::dbIoType::INOUT:
-        termDirection = frTermDirectionEnum::INOUT;
-        break;
-      case odb::dbIoType::FEEDTHRU:
-        termDirection = frTermDirectionEnum::FEEDTHRU;
-        break;
-    }
     auto uTermIn = make_unique<frTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setId(numTerms);
     numTerms++;
-    termIn->setType(termType);
-    termIn->setDirection(termDirection);
+    termIn->setType(term->getSigType());
+    termIn->setDirection(term->getIoType());
     auto pinIn = make_unique<frPin>();
     pinIn->setId(0);
     for (auto pin : term->getBPins()) {
@@ -925,12 +851,12 @@ void io::Parser::addFakeNets()
 {
   // add VSS fake net
   auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
-  vssFakeNet->setType(frNetEnum::frcGroundNet);
+  vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   design->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
   auto vddFakeNet = make_unique<frNet>(string("frFakeVDD"));
-  vddFakeNet->setType(frNetEnum::frcPowerNet);
+  vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   design->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }
@@ -1350,7 +1276,7 @@ void io::Parser::addDefaultMasterSliceLayer()
   tmpMSLayer->setLayerNum(readLayerCnt++);
   tmpMSLayer->setName("FR_MASTERSLICE");
   tech->addLayer(std::move(uMSLayer));
-  tmpMSLayer->setType(frLayerTypeEnum::MASTERSLICE);
+  tmpMSLayer->setType(dbTechLayerType::MASTERSLICE);
 }
 
 void io::Parser::addDefaultCutLayer()
@@ -1361,7 +1287,7 @@ void io::Parser::addDefaultCutLayer()
   tmpCutLayer->setLayerNum(readLayerCnt++);
   tmpCutLayer->setName(viaLayerName);
   tech->addLayer(std::move(uCutLayer));
-  tmpCutLayer->setType(frLayerTypeEnum::CUT);
+  tmpCutLayer->setType(dbTechLayerType::CUT);
 }
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
@@ -1392,11 +1318,11 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
   tech->addUConstraint(std::move(minWidthConstraint));
 
-  tmpLayer->setType(frLayerTypeEnum::ROUTING);
+  tmpLayer->setType(dbTechLayerType::ROUTING);
   if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
-    tmpLayer->setDir(frcHorzPrefRoutingDir);
+    tmpLayer->setDir(dbTechLayerDir::HORIZONTAL);
   else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL)
-    tmpLayer->setDir(frcVertPrefRoutingDir);
+    tmpLayer->setDir(dbTechLayerDir::VERTICAL);
 
   tmpLayer->setPitch(layer->getPitch());
   tmpLayer->setNumMasks(layer->getNumMasks());
@@ -1684,7 +1610,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
-  tmpLayer->setType(frLayerTypeEnum::CUT);
+  tmpLayer->setType(dbTechLayerType::CUT);
   tech->addLayer(std::move(uLayer));
 
   auto shortConstraint = make_shared<frShortConstraint>();
@@ -1800,85 +1726,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       bound.setPoints(points);
       bounds.push_back(bound);
       tmpBlock->setBoundaries(bounds);
-      switch (master->getType().getValue()) {
-        case odb::dbMasterType::NONE:
-          break;
-        case odb::dbMasterType::CORE:
-        case odb::dbMasterType::CORE_FEEDTHRU:
-          tmpBlock->setMacroClass(MacroClassEnum::CORE);
-          break;
-        case odb::dbMasterType::CORE_TIEHIGH:
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
-          break;
-        case odb::dbMasterType::CORE_TIELOW:
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
-          break;
-        case odb::dbMasterType::CORE_WELLTAP:
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
-          break;
-        case odb::dbMasterType::CORE_SPACER:
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
-          break;
-        case odb::dbMasterType::CORE_ANTENNACELL:
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
-          break;
-        case odb::dbMasterType::COVER:
-        case odb::dbMasterType::COVER_BUMP:
-          tmpBlock->setMacroClass(MacroClassEnum::COVER);
-          break;
-        case odb::dbMasterType::BLOCK:
-        case odb::dbMasterType::BLOCK_BLACKBOX:
-        case odb::dbMasterType::BLOCK_SOFT:
-          tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
-          break;
-          tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
-          break;
-        case odb::dbMasterType::PAD:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD);
-          break;
-        case odb::dbMasterType::PAD_INPUT:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
-          break;
-        case odb::dbMasterType::PAD_OUTPUT:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
-          break;
-        case odb::dbMasterType::PAD_INOUT:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
-          break;
-        case odb::dbMasterType::PAD_POWER:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
-          break;
-        case odb::dbMasterType::PAD_SPACER:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
-          break;
-        case odb::dbMasterType::PAD_AREAIO:
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
-          break;
-        case odb::dbMasterType::RING:
-          tmpBlock->setMacroClass(MacroClassEnum::RING);
-          break;
-        case odb::dbMasterType::ENDCAP:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
-          break;
-        case odb::dbMasterType::ENDCAP_PRE:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
-          break;
-        case odb::dbMasterType::ENDCAP_POST:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
-          break;
-        case odb::dbMasterType::ENDCAP_TOPLEFT:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
-          break;
-        case odb::dbMasterType::ENDCAP_TOPRIGHT:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
-          break;
-        case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
-          break;
-        case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
-          break;
-      }
+      tmpBlock->setMasterType(master->getType());
 
       for (auto _term : master->getMTerms()) {
         unique_ptr<frTerm> uTerm = make_unique<frTerm>(_term->getName());
@@ -1887,37 +1735,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         numTerms++;
         tmpBlock->addTerm(std::move(uTerm));
 
-        frTermEnum termType = frTermEnum::frcNormalTerm;
-        string str(_term->getSigType().getString());
-        if (str == "SIGNAL") {
-          ;
-        } else if (str == "CLOCK") {
-          termType = frTermEnum::frcClockTerm;
-        } else if (str == "POWER") {
-          termType = frTermEnum::frcPowerTerm;
-        } else if (str == "GROUND") {
-          termType = frTermEnum::frcGroundTerm;
-        } else {
-          logger->error(DRT, 120, "Unsupported PIN USE in lef.");
-        }
-        term->setType(termType);
-        frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
-        str = string(_term->getIoType().getString());
-        if (str == "INPUT") {
-          termDirection = frTermDirectionEnum::INPUT;
-        } else if (str == "OUTPUT") {
-          termDirection = frTermDirectionEnum::OUTPUT;
-        } else if (str == "OUTPUT TRISTATE") {
-          termDirection = frTermDirectionEnum::OUTPUT;
-        } else if (str == "INOUT") {
-          termDirection = frTermDirectionEnum::INOUT;
-        } else if (str == "FEEDTHRU") {
-          termDirection = frTermDirectionEnum::FEEDTHRU;
-        } else {
-          logger->error(
-              DRT, 121, "Unsupported terminal direction {} in lef.", str);
-        }
-        term->setDirection(termDirection);
+        term->setType(_term->getSigType());
+        term->setDirection(_term->getIoType());
 
         int i = 0;
         for (auto mpin : _term->getMPins()) {

@@ -100,7 +100,7 @@ int FlexPA::main()
 
   int stdCellPinCnt = 0;
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE) {
+    if (inst->getRefBlock()->getMasterType() != dbMasterType::CORE) {
       continue;
     }
     for (auto& instTerm : inst->getInstTerms()) {

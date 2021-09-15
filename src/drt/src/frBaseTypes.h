@@ -40,6 +40,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace fr {
@@ -62,30 +63,17 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+using odb::dbMasterType;
+using odb::dbSigType;
+using odb::dbIoType;
 
-enum frOrientEnum
-{
-  frcR0 = 0,     // N
-  frcR90 = 1,    // W
-  frcR180 = 2,   // S
-  frcR270 = 3,   // E
-  frcMY = 4,     // FN
-  frcMXR90 = 5,  // FW
-  frcMX = 6,     // FS
-  frcMYR90 = 7   // FE
-};
 enum frEndStyleEnum
 {
   frcTruncateEndStyle = 0,  // ext = 0
   frcExtendEndStyle = 1,    // ext = half width
   frcVariableEndStyle = 2   // ext = variable
-};
-enum frPrefRoutingDirEnum
-{
-  frcNotApplicablePrefRoutingDir = 0,
-  frcNonePrefRoutingDir = 1,
-  frcHorzPrefRoutingDir = 2,
-  frcVertPrefRoutingDir = 3
 };
 enum frBlockObjectEnum
 {
@@ -147,28 +135,6 @@ enum class frGuideEnum
   frcGuideGlobal,
   frcGuideTrunk,
   frcGuideShortConn
-};
-enum class frTermEnum
-{
-  frcNormalTerm,
-  frcClockTerm,
-  frcPowerTerm,
-  frcGroundTerm
-};
-enum class frNetEnum
-{
-  frcNormalNet,
-  frcClockNet,
-  frcPowerNet,
-  frcGroundNet
-};
-enum class frTermDirectionEnum
-{
-  UNKNOWN,
-  INPUT,
-  OUTPUT,
-  INOUT,
-  FEEDTHRU,
 };
 enum class frNodeTypeEnum
 {
@@ -268,14 +234,6 @@ enum class frDirEnum
   U = 6
 };
 
-enum class frLayerTypeEnum
-{
-  CUT,
-  ROUTING,
-  IMPLANT,
-  MASTERSLICE
-};
-
 enum class AccessPointTypeEnum
 {
   Ideal,
@@ -283,38 +241,6 @@ enum class AccessPointTypeEnum
   Offgrid,
   None
 };
-
-enum class MacroClassEnum
-{
-  UNKNOWN,
-  CORE,
-  CORE_TIEHIGH,
-  CORE_TIELOW,
-  CORE_WELLTAP,
-  CORE_SPACER,
-  CORE_ANTENNACELL,
-  COVER,
-  BLOCK,
-  RING,
-  PAD,
-  PAD_INPUT,
-  PAD_OUTPUT,
-  PAD_INOUT,
-  PAD_POWER,
-  PAD_SPACER,
-  PAD_AREAIO,
-  ENDCAP,
-  ENDCAP_PRE,
-  ENDCAP_POST,
-  ENDCAP_TOPLEFT,
-  ENDCAP_TOPRIGHT,
-  ENDCAP_BOTTOMLEFT,
-  ENDCAP_BOTTOMRIGHT
-};
-
-// This will go away when we move to OpenDB's types
-bool isPad(MacroClassEnum e);
-bool isEndcap(MacroClassEnum e);
 
 // note: In ascending cost order for FlexPA
 enum class frAccessPointEnum

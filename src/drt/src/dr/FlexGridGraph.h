@@ -46,7 +46,6 @@ class FlexGridGraph
 {
  public:
   // constructors
-  // FlexGridGraph() {}
   FlexGridGraph(frTechObject* techIn, FlexDRWorker* workerIn)
       : tech_(techIn),
         drWorker_(workerIn),
@@ -68,16 +67,11 @@ class FlexGridGraph
   // getters
   frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
-  // getters
+
   // unsafe access, no check
-  bool isAstarVisited(frMIdx x, frMIdx y, frMIdx z) const
+  frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
-    return (getPrevAstarNodeDir(x, y, z) == frDirEnum::UNKNOWN);
-  }
-  // unsafe access, no check
-  frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
-  {
-    auto baseIdx = 3 * getIdx(x, y, z);
+    auto baseIdx = 3 * getIdx(idx.x(), idx.y(), idx.z());
     return (frDirEnum)(((unsigned short) (prevDirs_[baseIdx]) << 2)
                        + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
                        + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
@@ -249,7 +243,10 @@ class FlexGridGraph
     }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
-  bool getZDir(frMIdx in) const { return zDirs_[in]; }
+  dbTechLayerDir getZDir(frMIdx in) const
+  {
+    return layerRouteDirections_[in];
+  }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     correct(x, y, z, dir);
@@ -407,11 +404,7 @@ class FlexGridGraph
     if (!isEdgeInBox(x, y, z, dir, box, initDR)) {
       sol = false;
     } else {
-      // cout <<"orig edge (" <<x <<", " <<y <<", " <<z <<", " <<int(dir) <<")"
-      // <<endl;
       correct(x, y, z, dir);
-      // cout <<"corr edge (" <<x <<", " <<y <<", " <<z <<", " <<int(dir) <<")"
-      // <<endl;
       if (isValid(x, y, z, dir)) {
         Node& node = nodes_[getIdx(x, y, z)];
         switch (dir) {
@@ -755,62 +748,52 @@ class FlexGridGraph
   // must be safe access because idx1 and idx2 may be invalid
   void setGuide(frMIdx x1, frMIdx y1, frMIdx x2, frMIdx y2, frMIdx z)
   {
-    // if (!(isValid(x1, y1, z) && isValid(x2, y2, z))) {
-    //   return;
-    // }
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    if (getZDir(z)) {  // H
-      for (int i = y1; i <= y2; i++) {
-        auto idx1 = getIdx(x1, i, z);
-        auto idx2 = getIdx(x2, i, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
-        // std::cout <<"fill H from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<x1 <<", " <<i <<", " <<z <<") ("
-        //           <<x2 <<", " <<i <<", " <<z <<") "
-        //           <<std::endl;
-      }
-    } else {  // V
-      for (int i = x1; i <= x2; i++) {
-        auto idx1 = getIdx(i, y1, z);
-        auto idx2 = getIdx(i, y2, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
-        // std::cout <<"fill V from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<i <<", " <<y1 <<", " <<z <<") ("
-        //           <<i <<", " <<y2 <<", " <<z <<") "
-        //           <<std::endl;
-      }
+    switch(getZDir(z)) {
+      case dbTechLayerDir::HORIZONTAL:
+        for (int i = y1; i <= y2; i++) {
+          auto idx1 = getIdx(x1, i, z);
+          auto idx2 = getIdx(x2, i, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
+        }
+        break;
+      case dbTechLayerDir::VERTICAL:
+        for (int i = x1; i <= x2; i++) {
+          auto idx1 = getIdx(i, y1, z);
+          auto idx2 = getIdx(i, y2, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 1);
+        }
+        break;
+      case dbTechLayerDir::NONE:
+        cout << "Error: Invalid preferred direction on layer " << z << ".";
+        break;
     }
   }
   void resetGuide(frMIdx x1, frMIdx y1, frMIdx x2, frMIdx y2, frMIdx z)
   {
-    // if (!(isValid(x1, y1, z) && isValid(x2, y2, z))) {
-    //   return;
-    // }
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    if (getZDir(z)) {  // H
-      for (int i = y1; i <= y2; i++) {
-        auto idx1 = getIdx(x1, i, z);
-        auto idx2 = getIdx(x2, i, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
-        // std::cout <<"unfill H from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<x1 <<", " <<i <<", " <<z <<") ("
-        //           <<x2 <<", " <<i <<", " <<z <<") "
-        //           <<std::endl;
-      }
-    } else {  // V
-      for (int i = x1; i <= x2; i++) {
-        auto idx1 = getIdx(i, y1, z);
-        auto idx2 = getIdx(i, y2, z);
-        std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
-        // std::cout <<"unfill V from " <<idx1 <<" to " <<idx2 <<" ("
-        //           <<i <<", " <<y1 <<", " <<z <<") ("
-        //           <<i <<", " <<y2 <<", " <<z <<") "
-        //           <<std::endl;
-      }
+    switch(getZDir(z)) {
+      case dbTechLayerDir::HORIZONTAL:
+        for (int i = y1; i <= y2; i++) {
+          auto idx1 = getIdx(x1, i, z);
+          auto idx2 = getIdx(x2, i, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
+        }
+        break;
+      case dbTechLayerDir::VERTICAL:
+        for (int i = x1; i <= x2; i++) {
+          auto idx1 = getIdx(i, y1, z);
+          auto idx2 = getIdx(i, y2, z);
+          std::fill(guides_.begin() + idx1, guides_.begin() + idx2 + 1, 0);
+        }
+        break;
+      case dbTechLayerDir::NONE:
+        cout << "Error: Invalid preferred direction on layer " << z << ".";
+        break;
     }
   }
   void setGraphics(FlexDRGraphics* g) { graphics_ = g; }
@@ -914,7 +897,7 @@ class FlexGridGraph
     yCoords_.shrink_to_fit();
     zHeights_.clear();
     zHeights_.shrink_to_fit();
-    zDirs_.clear();
+    layerRouteDirections_.clear();
     yCoords_.shrink_to_fit();
     yCoords_.clear();
     yCoords_.shrink_to_fit();
@@ -994,7 +977,7 @@ class FlexGridGraph
   frVector<frCoord> yCoords_;
   frVector<frLayerNum> zCoords_;
   frVector<frCoord> zHeights_;  // accumulated Z diff
-  std::vector<bool> zDirs_;     // is horz dir
+  std::vector<dbTechLayerDir> layerRouteDirections_;
   frBox dieBox_;
   frUInt4 ggDRCCost_;
   frUInt4 ggMarkerCost_;
@@ -1021,8 +1004,9 @@ class FlexGridGraph
     auto xSize = xCoords_.size();
     auto ySize = yCoords_.size();
 
-    frMIdx zDirModifier
-        = (getZDir(zIdx)) ? (xIdx + yIdx * xSize) : (yIdx + xIdx * ySize);
+    frMIdx zDirModifier = (getZDir(zIdx) == dbTechLayerDir::HORIZONTAL)
+                        ? (xIdx + yIdx * xSize)
+                        : (yIdx + xIdx * ySize);
     frMIdx partialCoordinates = zIdx * xSize * ySize;
 
     return zDirModifier + partialCoordinates;
@@ -1134,17 +1118,17 @@ class FlexGridGraph
           horLoc2TrackPatterns,
       std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
           vertLoc2TrackPatterns,
-      std::map<frLayerNum, frPrefRoutingDirEnum>& layerNum2PreRouteDir,
+      std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
       const frBox& bbox);
   void initGrids(
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+      const std::map<frLayerNum, dbTechLayerDir>& zMap,
       bool followGuide);
   void initEdges(const frDesign* design,
                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-                 const std::map<frLayerNum, frPrefRoutingDirEnum>& zMap,
+                 const std::map<frLayerNum, dbTechLayerDir>& zMap,
                  const frBox& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
@@ -1164,7 +1148,6 @@ class FlexGridGraph
                        const FlexMazeIdx& dstMazeIdx2,
                        const frPoint& centerPt);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
-  // bool isOpposite(const frDirEnum &dir1, const frDirEnum &dir2);
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexWavefrontGrid& currGrid) const;
   void expand(FlexWavefrontGrid& currGrid,

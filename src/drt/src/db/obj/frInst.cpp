@@ -70,6 +70,6 @@ void frInst::getUpdatedXform(frTransform& in, bool noOrient) const
     frPoint s(mbox.right(), mbox.top());
     in.updateXform(s);
   } else {
-    in.set(frOrient(frcR0));
+    in.set(dbOrientType(dbOrientType::R0));
   }
 }
