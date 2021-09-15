@@ -259,10 +259,6 @@ class AutoClusterMgr
   
   std::vector<sta::Instance*> macros_;
   std::vector<sta::Instance*> seeds_;
-  //std::vector<sta::Pin*> seeds_;
-  //std::vector<sta::Pin*> sinks_;
-  //void addSeedPin(sta::Pin* pin);
-  //void addSinkPin(sta::Pin* pin);
   std::unordered_map<sta::Vertex*, std::unordered_map<sta::Pin*, int> > vertex_fanins_;
   std::unordered_map<int, std::unordered_map<sta::Pin*, int> > virtual_vertex_map_;  
   std::unordered_map<int, std::unordered_map<int, int> > virtual_timing_map_;
@@ -277,9 +273,6 @@ class AutoClusterMgr
   void addTimingWeight(float weight);
   void addFanin(sta::Vertex*, sta::Pin*, int num_bit);
   void addWeight(int src_id, int target_id, int weight);
-  //void calculateSeedConnection(sta::Instance* inst);
-  //void calculateSeedBufferNetConnection();
-  
   void calculateSeed();
 
 

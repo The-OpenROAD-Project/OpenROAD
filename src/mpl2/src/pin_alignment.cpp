@@ -497,16 +497,12 @@ void SimulatedAnnealingCore::FastSA()
   float pre_cost = NormCost(area_, wirelength_, outline_penalty_);
   float cost = pre_cost;
   float delta_cost = 0.0;
-  // vector<Macro> best_macros;
   float best_cost = cost;
-  // vector<int> best_pos_seq = pos_seq_;
-  // vector<int> best_neg_seq = neg_seq_;
 
   float rej_num = 0.0;
   float T = init_T_;
   float rej_threshold = rej_ratio_ * perturb_per_step_;
 
-  //while (step <= max_num_step_ && rej_num <= rej_threshold) {
   while (step <= max_num_step_) {  
     rej_num = 0.0;
     for (int i = 0; i < perturb_per_step_; i++) {
@@ -523,9 +519,6 @@ void SimulatedAnnealingCore::FastSA()
         pre_cost = cost;
         if (cost < best_cost) {
           best_cost = cost;
-          // best_pos_seq = pos_seq_;
-          // best_neg_seq = neg_seq_;
-          // best_macros = macros_;
         }
       } else {
         rej_num += 1.0;
@@ -540,7 +533,6 @@ void SimulatedAnnealingCore::FastSA()
         perturb_per_step_ = perturb_per_step_ * 10;
     }
 
-    // T = T * 0.99;
     T = T * cooling_rate_;
   }
 
@@ -623,10 +615,8 @@ bool PinAlignmentSingleCluster(
   float outline_width = ux - lx;
   float outline_height = uy - ly;
 
-  cout << "outline_width:  " << outline_width << "   outline_height:  " << outline_height << endl;
   // deal with macros
   vector<Macro> macros = cluster->GetMacros();
-  //string macro_file = string("./rtl_mp/") + name + string(".txt.block");
   string macro_file = string(report_directory) + string("/") + name + string(".txt.block");
   ParseMacroFile(macros, halo_width, macro_file);
 
@@ -691,24 +681,12 @@ bool PinAlignmentSingleCluster(
   int min_id = -1;
   float wirelength = FLT_MAX;
 
-  // for(int j = 0; j < sa_vector.size(); j++) {
-  //    string file_name = string("./rtl_mp/") + name + string("_") +
-  //    to_string(j) + string("_final.txt");
-  //    sa_vector[j]->WriteFloorplan(file_name);
-  //}
-
   for (int j = 0; j < sa_vector.size(); j++)
     if (sa_vector[j]->IsFeasible())
       if (wirelength > sa_vector[j]->GetWirelength())
         min_id = j;
 
-  for(int j = 0; j < sa_vector.size(); j++) {
-    cout << "width:  " << sa_vector[j]->GetWidth() << "  height:  " << sa_vector[j]->GetHeight() << endl;  
-  }
-
   if (min_id == -1) {
-    // throw std::invalid_argument(std::string("Invalid Floorplan.  Please
-    // increase the num_run."));
     logger->info(MPL,
                  3003,
                  "Pin alignment cannot generate valid floorplan for cluster "
@@ -740,8 +718,6 @@ bool PinAlignment(const vector<Cluster*>& clusters,
 
   unordered_map<string, pair<float, float>> terminal_position;
   vector<Net*> nets;
-
-  // int info_id = 2;
   for (int i = 0; i < clusters.size(); i++) {
     if (clusters[i]->GetNumMacro() > 0) {
       string name = clusters[i]->GetName();
@@ -767,8 +743,6 @@ bool PinAlignment(const vector<Cluster*>& clusters,
       }
 
       // deal with nets
-      // vector<Net*> nets;
-      //string net_file = string("./rtl_mp/") + name + string(".txt.net");
       string net_file = string(report_directory) + string("/") + name + string(".txt.net");
       block_placement::ParseNetFile(nets, terminal_position, net_file.c_str());
         

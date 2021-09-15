@@ -102,8 +102,6 @@ bool rtl_macro_placer(const char* config_file,
 
   string region_file = string(macro_blockage_file);
   string location_file = string(prefer_location_file);
-  //string region_file = string("macro_blockage.txt");
-  //string location_file = string("location.txt");
 
   // These parameters are related to multi-start in shape engine
   int num_thread = 5;
@@ -267,23 +265,6 @@ bool rtl_macro_placer(const char* config_file,
   const int dbu = tech->getDbUnitsPerMicron();
   float pitch_x = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX()) / dbu;
   float pitch_y = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY()) / dbu;
-
-
-  /*
-  int layer_numbers [] = {1, 2};
-  float pitch_x = 0.0;
-  float pitch_y = 0.0;
-  for(int i = 0; i < 2; i++) {
-    if(tech->findRoutingLayer(layer_numbers[i])->getDirection()
-        == odb::dbTechLayerDir::Value::HORIZONTAL) 
-      pitch_y = static_cast<float>(tech->findRoutingLayer(layer_numbers[i])->getPitch()) / dbu;
-    else if(tech->findRoutingLayer(layer_numbers[i])->getDirection()
-           == odb::dbTechLayerDir::Value::VERTICAL)
-      pitch_x = static_cast<float>(tech->findRoutingLayer(layer_numbers[i])->getPitch()) / dbu;
-    else
-      ;
-  }
-  */
 
   string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;

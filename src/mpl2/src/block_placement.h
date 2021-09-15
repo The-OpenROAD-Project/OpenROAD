@@ -106,17 +106,6 @@ class Block
   void ShrinkSoftBlock(float width_factor, float height_factor);
 };
 
-//bool CompareBlockX(const Block& block_a, const Block& block_b)
-//{
-//    return block_a.GetX() < block_b.GetX();
-//}
-
-//bool CompareBlockY(const Block& block_a, const Block& block_b)
-//{
-//    return block_a.GetY() < block_b.GetY();
-//}
-
-
 struct Net
 {
   int weight_ = 0;

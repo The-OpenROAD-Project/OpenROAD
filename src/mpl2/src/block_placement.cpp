@@ -117,9 +117,6 @@ Block::Block(const std::string& name,
       width_limit_.push_back({width_high, width_low});
     }
   }
-
-  // Initialize shape (width_, height_) randomly
-  // ChooseAspectRatioRandom();
 }
 
 void Block::ChangeWidth(float width)
@@ -329,9 +326,6 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
   c_ = c;
   perturb_per_step_ = perturb_per_step;
 
-  cout << "perturb_per_step_:  " << perturb_per_step_ << endl;
-
-
   std::mt19937 randGen(seed);
   generator_ = randGen;
 
@@ -351,25 +345,13 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
     pre_neg_seq_.push_back(i);
   }
 
-  cout << "finish creating SP" << endl;
-
-
   blocks_ = blocks;
-  
-  cout << "blocks_.size():  " << blocks_.size() << endl;
-  for(int i = 0; i < blocks_.size(); i++) {
-    cout << blocks_[i].GetName() << endl;  
-  }
-
   
   for (unsigned int i = 0; i < blocks_.size(); i++) {
     blocks_[i].SetRandom(generator_, distribution_);
     block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
-    cout << "i:  " << i << "  " << blocks_[i].GetName() << endl;
   }
 
-  cout << "finish blocks" << endl;
-  
 
   for(size_t i = 0; i < locations_.size(); i++) {
     for(size_t j = 0; j < blocks_.size(); j++) {
@@ -378,8 +360,6 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
       }
     }
   }
-
-  cout << "finish locations" << endl;
 
   pre_blocks_ = blocks_;
 }
@@ -484,37 +464,12 @@ void SimulatedAnnealingCore::DoubleSwap()
 
 void SimulatedAnnealingCore::Resize()
 {
-  /*
-  vector<int> hard_block_list;
-  vector<int> soft_block_list;
-
-  for (int i = 0; i < blocks_.size(); i++) {
-    if (blocks_[i].GetNumMacro() > 1) {
-      hard_block_list.push_back(i);
-    } else {
-      soft_block_list.push_back(i);
-    }
-  }
-
-  int index1 = -1;
-  float prob = (distribution_) (generator_);
-  if (prob <= hard_block_list.size() / blocks_.size()) {
-    index1 = hard_block_list[floor(
-        (distribution_) (generator_) *hard_block_list.size())];
-  } else {
-    index1 = soft_block_list[floor(
-        (distribution_) (generator_) *soft_block_list.size())];
-  }
-  */
-
   int index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
-
   while (blocks_[index1].IsResizeable() == false) {
     index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
   block_id_ = index1;
-
   if (blocks_[index1].GetNumMacro() > 0) {
     blocks_[index1].ResizeHardBlock();
     return;
@@ -761,7 +716,6 @@ void SimulatedAnnealingCore::AlignMacro()
     }
   }
   
-  //boundary_threshold = boundary_threshold * 0.99;
   // Alignment macros to boundaries
   for (int i = 0; i < blocks_.size(); i++) {
     int weight = blocks_[i].GetNumMacro();
@@ -791,8 +745,6 @@ void SimulatedAnnealingCore::AlignMacro()
 
   vector<int> macro_id_list;
   queue<int> macro_queue; // seeds for alignment
-  
-  
   
   // Align macros according to X
   // left alignment
@@ -1026,136 +978,6 @@ void SimulatedAnnealingCore::AlignMacro()
       }
     }
   }
- 
-
-
-  /*
-  for (int i = 0; i < blocks_.size(); i++) {
-    int weight = blocks_[i].GetNumMacro();
-    if (weight > 0) {
-      macro_id_list.push_back(i);
-      if(blocks_[i].GetX() == 0.0) {
-        macro_queue.push(i);
-        blocks_[i].SetFlag(true);
-      }
-      
-      if(blocks_[i].GetX() + blocks_[i].GetWidth() >= outline_width_)
-      {
-        macro_queue.push(i);
-        blocks_[i].SetFlag(true);
-      }
-    }
-  }
-
-  while(!macro_queue.empty()) {
-    int src = macro_queue.front();
-    float lx = blocks_[src].GetX();
-    float ux = blocks_[src].GetWidth() + lx;
-    float ly = blocks_[src].GetY();
-    float uy = blocks_[src].GetHeight() + ly;
-    macro_queue.pop();
-    for(auto macro_id : macro_id_list) {
-      if (blocks_[macro_id].GetFlag() == false) {
-        float lx_b = blocks_[macro_id].GetX();
-        float ly_b = blocks_[macro_id].GetY();
-        float ux_b = lx_b + blocks_[macro_id].GetWidth();
-        float uy_b = ly_b + blocks_[macro_id].GetHeight();
-        bool y_flag = abs(ly - ly_b) <= threshold_V ||
-                      abs(uy - uy_b) <= threshold_V ||
-                      abs(ly - uy_b) <= threshold_V ||
-                      abs(uy - ly_b) <= threshold_V ;
-        if(y_flag == false)
-          continue;
-        
-        if(lx_b > ux && lx_b < ux + threshold_H) {
-          blocks_[macro_id].SetX(ux);  
-        } else if(lx_b < ux && lx_b > ux - threshold_H) {
-          //blocks_[macro_id].SetX(ux - (ux_b - lx_b));
-           blocks_[macro_id].SetX(ux);
-        } else if(ux_b > lx && ux_b < lx + threshold_H) {
-          blocks_[macro_id].SetX(lx - (ux_b - lx_b)); 
-        } else if(ux_b < lx && ux_b > lx - threshold_H) {
-          blocks_[macro_id].SetX(lx - (ux_b - lx_b));
-        } else {
-          ; // do nothing
-        }
-       
-        if(CalculateOverlap() == true) {
-          blocks_[macro_id].SetX(lx_b);
-        } else {
-          macro_queue.push(macro_id);
-          blocks_[macro_id].SetFlag(true);
-        }
-      }
-    }
-
-  }
-  
-
-
-  for(auto macro_id : macro_id_list)
-      blocks_[macro_id].SetFlag(false);
-
-  // Align macros according to Y
-  //sort(blocks_.begin(), blocks_.end(), CompareBlockY);
-  for (int i = 0; i < blocks_.size(); i++) {
-    int weight = blocks_[i].GetNumMacro();
-    if (weight > 0) {
-      if(blocks_[i].GetY() == 0.0) {
-        macro_queue.push(i);
-        blocks_[i].SetFlag(true);
-      }
-      
-      if(blocks_[i].GetY() + blocks_[i].GetHeight() >= outline_height_)
-      {
-        macro_queue.push(i);
-        blocks_[i].SetFlag(true);
-      }
-    }
-  }
-
-  while(!macro_queue.empty()) {
-    int src = macro_queue.front();
-    float lx = blocks_[src].GetX();
-    float ux = blocks_[src].GetWidth() + lx;
-    float ly = blocks_[src].GetY();
-    float uy = blocks_[src].GetHeight() + ly;
-    macro_queue.pop();
-    for(auto macro_id : macro_id_list) {
-      if (blocks_[macro_id].GetFlag() == false) {
-        float lx_b = blocks_[macro_id].GetX();
-        float ly_b = blocks_[macro_id].GetY();
-        float ux_b = lx_b + blocks_[macro_id].GetWidth();
-        float uy_b = ly_b + blocks_[macro_id].GetHeight();
-        bool x_flag = abs(lx - lx_b) <= threshold_H ||
-                      abs(ux - ux_b) <= threshold_H ||
-                      abs(lx - ux_b) <= threshold_H ||
-                      abs(ux - lx_b) <= threshold_H ;
-        if(x_flag == false)
-          continue;
-        
-        if(ly_b > uy && ly_b < uy + threshold_V) {
-          blocks_[macro_id].SetY(uy);  
-        } else if(ly_b < uy && ly_b > uy - threshold_V) {
-          blocks_[macro_id].SetY(uy);
-        } else if(uy_b > ly && uy_b < ly + threshold_V) {
-          blocks_[macro_id].SetY(ly - (uy_b - ly_b)); 
-        } else if(uy_b < ly && uy_b > ly - threshold_V) {
-          blocks_[macro_id].SetY(ly - (uy_b - ly_b));
-        } else {
-          ; // do nothing
-        }
-       
-        if(CalculateOverlap() == true) {
-          blocks_[macro_id].SetY(ly_b);
-        } else {
-          macro_queue.push(macro_id);
-          blocks_[macro_id].SetFlag(true);
-        }
-      }
-    }
-  }
-  */
 }
 
 
@@ -1323,42 +1145,6 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
       }
     }
   }
-
-  /*
-  string file_name = "notch.txt";
-  ofstream output_file;
-  output_file.open(file_name);
-  output_file << "notch_penalty_:  " << notch_penalty_ << endl;
-  output_file << "num_notch:  " << num_notch << endl;
-  output_file << "x_grid: ";
-  for(int i = 0;  i < x_grid.size(); i++) {
-    output_file << x_grid[i] << "  ";  
-  }
-  output_file << endl;
-
-  output_file << "y_grid:  ";
-  for(int i = 0; i < y_grid.size(); i++) {
-    output_file << y_grid[i] << "   ";  
-  }
-  output_file << endl;
-
-  for(int i = 0; i < num_x; i++) {
-    for(int j = 0; j < num_y; j++) {
-       output_file << "i:  " << i << "  ";
-       output_file << "j:  " << j << "  ";
-       output_file << "value:  " << grid[i][j] << "  ";
-       output_file << endl;
-    }  
-  }
-  output_file.close();
-
-  // throw std::invalid_argument( "received negative value" );
-
-
-  cout << "notch_weight_:  " << notch_weight_ << "   ";
-  cout << "notch penalty:  " << notch_penalty_ << endl;
-  */
-
 }
 
 
@@ -1376,9 +1162,7 @@ void SimulatedAnnealingCore::CalculateBoundaryPenalty()
       lx = min(lx, abs(outline_width_ - ux));
       ly = min(ly, abs(outline_height_ - uy));
       lx = min(lx, ly);
-      //lx = lx + ly;
       boundary_penalty_ += lx * lx * weight * weight;
-      //boundary_penalty_ += lx * weight;
     }
   }
 }
@@ -1396,16 +1180,6 @@ void SimulatedAnnealingCore::CalculateWirelength()
     float uy = 0.0;
 
     for (int i = 0; i < blocks.size(); i++) {
-      /*
-      float x = blocks_[block_map_[blocks[i]]].GetX()
-                + blocks_[block_map_[blocks[i]]].GetWidth() / 2;
-      float y = blocks_[block_map_[blocks[i]]].GetY()
-                + blocks_[block_map_[blocks[i]]].GetHeight() / 2;
-      lx = min(lx, x);
-      ly = min(ly, y);
-      ux = max(ux, x);
-      uy = max(uy, y);
-      */
       float temp_lx = blocks_[block_map_[blocks[i]]].GetX();
       float temp_ux = temp_lx + blocks_[block_map_[blocks[i]]].GetWidth();
       float temp_ly = blocks_[block_map_[blocks[i]]].GetY();
@@ -1424,9 +1198,7 @@ void SimulatedAnnealingCore::CalculateWirelength()
       ux = max(ux, x);
       uy = max(uy, y);
     }
-    
-    wirelength_ += ((ux - lx) * (ux - lx) + (uy - ly) * (uy - ly)) * weight;
-    //wirelength_ += (abs(ux - lx) + abs(uy - ly)) * weight;
+    wirelength_ += (abs(ux - lx) + abs(uy - ly)) * weight;
   }
 }
 
@@ -1471,7 +1243,6 @@ float SimulatedAnnealingCore::NormCost(float area,
 
 void SimulatedAnnealingCore::Initialize()
 {
-  cout << "Enter Initialize" << endl;
   vector<float> area_list;
   vector<float> wirelength_list;
   vector<float> outline_penalty_list;
@@ -1487,7 +1258,6 @@ void SimulatedAnnealingCore::Initialize()
   norm_macro_blockage_penalty_ = 0.0;
   norm_location_penalty_ = 0.0;
   norm_notch_penalty_ = 0.0;
-  cout << "num_perturb:  " << num_perturb << endl;
   for (int i = 0; i < num_perturb ; i++) {
     Perturb();
     CalculateWirelength();
@@ -1520,16 +1290,6 @@ void SimulatedAnnealingCore::Initialize()
       = norm_macro_blockage_penalty_ / num_perturb;
   norm_location_penalty_ = norm_location_penalty_ / num_perturb;
   norm_notch_penalty_ = norm_notch_penalty_ / num_perturb;
-
-
-  cout << "area:  " << norm_area_ << "   ";
-  cout << "norm_wirelength:  " << norm_wirelength_ << "   ";
-  cout << "norm_outline_penalty:   " << norm_outline_penalty_ << "   ";
-  cout << "norm_boundary_penalty:   " << norm_boundary_penalty_ << "   ";
-  cout << "norm_macro_blockage_penalty:  " << norm_macro_blockage_penalty_ << "   ";
-  cout << "norm_location_penalty:   " << norm_location_penalty_ << "   ";
-  cout << "norm_notch_penalty:   " << norm_notch_penalty_ << "   ";
-  cout << endl;
 
   vector<float> cost_list;
   for (int i = 0; i < area_list.size(); i++)
@@ -1719,55 +1479,7 @@ void SimulatedAnnealingCore::UpdateWeight(float avg_area,
                                           float avg_macro_blockage_penalty,
                                           float avg_location_penalty)
 {
-  /*
-  avg_area = avg_area / (perturb_per_step_ * norm_area_);
-
-  if (norm_wirelength_ != 0.0) {
-    avg_wirelength = avg_wirelength / (perturb_per_step_ * norm_wirelength_);
-  }
-
-  if (norm_outline_penalty_ != 0.0) {
-    avg_outline_penalty
-        = avg_outline_penalty / (perturb_per_step_ * norm_outline_penalty_);
-  }
-
-  if (norm_boundary_penalty_ != 0.0) {
-    avg_boundary_penalty
-        = avg_boundary_penalty / (perturb_per_step_ * norm_boundary_penalty_);
-  }
-
-  if (norm_macro_blockage_penalty_ != 0.0) {
-    avg_macro_blockage_penalty
-        = avg_macro_blockage_penalty
-          / (perturb_per_step_ * norm_macro_blockage_penalty_);
-  }
-
-  float sum_cost = avg_area + avg_wirelength + avg_outline_penalty
-                   + avg_boundary_penalty + avg_macro_blockage_penalty;
-  float new_alpha = avg_area / sum_cost;
-  float new_beta = avg_wirelength / sum_cost;
-  float new_gamma = avg_outline_penalty / sum_cost;
-  float new_boundary_weight = avg_boundary_penalty / sum_cost;
-  float new_macro_blockage_weight = avg_macro_blockage_penalty / sum_cost;
-
-  new_alpha = alpha_base_ * (1 - new_alpha * learning_rate_);
-  new_beta = beta_base_ * (1 - new_beta * learning_rate_);
-  new_gamma = gamma_base_ * (1 - new_gamma * learning_rate_);
-  new_boundary_weight
-      = boundary_weight_base_ * (1 - new_boundary_weight * learning_rate_);
-  new_macro_blockage_weight
-      = macro_blockage_weight_base_
-        * (1 - new_macro_blockage_weight * learning_rate_);
-
-  float new_weight = new_alpha + new_beta + new_gamma + new_boundary_weight
-                     + new_macro_blockage_weight;
-  alpha_ = new_alpha / new_weight;
-  beta_ = new_beta / new_weight;
-  gamma_ = new_gamma / new_weight;
-  boundary_weight_ = new_boundary_weight / new_weight;
-  macro_blockage_weight_ = new_macro_blockage_weight / new_weight;
-  */
-  ;
+  ;// to be implemented later
 }
 
 void SimulatedAnnealingCore::FastSA()
@@ -1783,10 +1495,6 @@ void SimulatedAnnealingCore::FastSA()
   float delta_cost = 0.0;
 
   float best_cost = cost;
-  // vector<Block> best_blocks = blocks_;
-  // vector<int> best_pos_seq = pos_seq_;
-  // vector<int> best_neg_seq = neg_seq_;
-
   float avg_area = 0.0;
   float avg_wirelength = 0.0;
   float avg_outline_penalty = 0.0;
@@ -1842,10 +1550,6 @@ void SimulatedAnnealingCore::FastSA()
         accept_rate += 1.0;
         if (cost < best_cost) {
           best_cost = cost;
-          // best_blocks = blocks_;
-          // best_pos_seq = pos_seq_;
-          // best_neg_seq = neg_seq_;
-
           if ((num_shrink <= max_num_shrink) && (step % modulo_base == 0)
               && (IsFeasible() == false)) {
             num_shrink += 1;
@@ -1887,24 +1591,10 @@ void SimulatedAnnealingCore::FastSA()
                  avg_boundary_penalty,
                  avg_macro_blockage_penalty,
                  avg_location_penalty);
-    // cout << "step:  " << step << "  T:  " << T << " cost:  " << cost << endl;
-
     step++;
-
-    /*
-    if(step <= k_)
-        T = init_T_ / (step * c_ * avg_delta_cost / perturb_per_step_);
-    else
-        T = init_T_ / (step * avg_delta_cost / perturb_per_step_);
-    */
-
     T = T * cooling_rate_;
 
     if (step == max_num_step_) {
-      // blocks_ = best_blocks;
-      // pos_seq_ = best_pos_seq;
-      // neg_seq_ = best_neg_seq;
-
       PackFloorplan();
       CalculateWirelength();
       CalculateOutlinePenalty();
@@ -1914,9 +1604,6 @@ void SimulatedAnnealingCore::FastSA()
       CalculateNotchPenalty();
       if (IsFeasible() == false) {
         if (num_restart < max_num_restart) {
-          // if(FitFloorplan() == false && num_restart < max_num_restart) {
-          // step = int(max_num_step_  * 0.5);
-          //step = int(max_num_step_ / 10);
           step = 1;
           T = init_T_;
           num_restart += 1;
@@ -2088,8 +1775,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     vector<pair<float, float>> aspect_ratio = clusters[i]->GetAspectRatio();
     blocks.push_back(Block(name, area, num_macro, aspect_ratio));
   }
-  
-  cout << "finish parsing blocks" << endl;
 
   unordered_map<string, pair<float, float>> terminal_position;
   string word = string("LL");
@@ -2122,23 +1807,15 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   word = string("TM");
   terminal_position[word]
       = pair<float, float>(outline_width / 2.0, outline_height);
-
-  cout << "create terminals" << endl;
-
+  
   vector<Net*> nets;
   ParseNetFile(nets, terminal_position, net_file);
-
-  cout << "finish parse nets" << endl;
 
   vector<Region*> regions;
   ParseRegionFile(regions, region_file);
   
-  cout << "finish parse regions" << endl;
-
   vector<Location*> locations;
   ParseLocationFile(locations, location_file);
-
-  cout << "finish location" << endl;
 
   int num_seed = num_level * num_worker + 10;  // 10 is for guardband
   int seed_id = 0;
@@ -2147,7 +1824,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   for (int i = 0; i < num_seed; i++)
     seed_list[i] = (unsigned) rand_generator();
 
-  cout << "creating SA begins" << endl;
   SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width,
                                                           outline_height,
                                                           blocks,
@@ -2178,7 +1854,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
                                                           shrink_freq,
                                                           seed_list[seed_id++]);
 
-  cout << "creating SA finishes" << endl;
   sa->Initialize();
   logger->info(MPL, 2002, "Block placement finish initialization.");
 
@@ -2212,9 +1887,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
         cooling_rate = 0.995 - j * (0.995 - 0.985) / (num_worker - 1);
       }
 
-      // cout << "init_T:  " << init_T << endl;
-      // cout << "thread:  " << j << "  cooling_rate:   " << cooling_rate <<
-      // endl;
       SimulatedAnnealingCore* sa
           = new SimulatedAnnealingCore(outline_width,
                                        outline_height,
@@ -2268,9 +1940,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
         best_cost = sa_vec[j]->GetCost();
         best_sa = sa_vec[j];
       }
-
-      // cout << "thread:  " << j << "  cost:  " << sa_vec[j]->GetCost() <<
-      // endl;
     }
 
     blocks = best_sa->GetBlocks();

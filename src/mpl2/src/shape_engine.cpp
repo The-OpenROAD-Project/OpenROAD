@@ -371,14 +371,11 @@ void SimulatedAnnealingCore::FastSA()
   float cost = pre_cost;
   float delta_cost = 0.0;
   float best_cost = cost;
-  // vector<int> best_pos_seq = pos_seq_;
-  // vector<int> best_neg_seq = neg_seq_;
 
   float rej_num = 0.0;
   float T = init_T_;
   float rej_threshold = rej_ratio_ * perturb_per_step_;
 
-  // while(step <= max_num_step_ && rej_num <= rej_threshold) {
   while (step <= max_num_step_ && rej_num <= rej_threshold) {
     rej_num = 0.0;
     for (int i = 0; i < perturb_per_step_; i++) {
@@ -395,8 +392,6 @@ void SimulatedAnnealingCore::FastSA()
         pre_cost = cost;
         if (best_cost > cost) {
           best_cost = cost;
-          // best_pos_seq = pos_seq_;
-          // best_neg_seq = neg_seq_;
         }
       } else {
         cost = pre_cost;
@@ -405,15 +400,9 @@ void SimulatedAnnealingCore::FastSA()
       }
     }
     step++;
-    // if(step <= k_)
-    //    T = init_T_ / (step * c_);
-    // else
-    //    T = init_T_ / step;
     T = T * 0.995;
   }
 
-  // pos_seq_ = best_pos_seq;
-  // neg_seq_ = best_neg_seq;
   PackFloorplan();
 }
 
@@ -441,7 +430,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     float ar = height / width;
     final_area = height * width;
     aspect_ratio.push_back(pair<float, float>(width, height));
-    //aspect_ratio.push_back(pair<float, float>(ar, ar));
     return aspect_ratio;
   }
 
@@ -465,7 +453,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
         int num_row = ceil(macros.size() * 1.0 / i);
         float temp_width = num_col * width;
         float temp_height = num_row * height;
-        //bool valid_area = (num_col * num_row) <= (macros.size() + 1);
         bool valid_area = (num_col * num_row) <= (macros.size());
         valid_area = valid_area && (temp_width <= outline_width);
         valid_area = valid_area && (temp_height <= outline_height);
@@ -505,9 +492,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     factor_list[0] = 1.0;
 
   if (num_thread > 1) {
-    // float step = 1.0 / (num_thread - 1);
-    // for (int i = 0; i < num_thread; i++)
-    //   factor_list[i] = pow(10.0, 1.0 - step * i);
     for (int i = 0; i < num_thread / 2; i++)
       factor_list[i] = 1.0 / (i + 1);
 
@@ -567,7 +551,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
   }
 
   for (int i = 0; i < sa_vector.size(); i++) {
-    //string file_name = string("./rtl_mp/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
     string file_name = string(report_directory) + string("/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
     sa_vector[i]->WriteFloorplan(file_name);
   }
@@ -601,33 +584,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     }
   }
 
-  // vector<pair<float, float> > aspect_ratio;
-  /*
-  vector<float> ar_list;
-  for (int i = 0; i < footprints.size(); i++) {
-    if (footprints[i].first * footprints[i].second <= base_area * 1.01) {
-      float ar = footprints[i].second / footprints[i].first;
-      ar_list.push_back(ar);
-    }
-  }
-
-  sort(ar_list.begin(), ar_list.end());
-
-  vector<float> temp_ar_list;
-  temp_ar_list.push_back(ar_list[0]);
-  float temp_ar = ar_list[0];
-  for (int i = 1; i < ar_list.size(); i++) {
-    if (ar_list[i] > temp_ar) {
-      temp_ar = ar_list[i];
-      temp_ar_list.push_back(temp_ar);
-    }
-  }
-
-  for (int i = 0; i < temp_ar_list.size(); i++) {
-    aspect_ratio.push_back(
-        pair<float, float>(temp_ar_list[i], temp_ar_list[i]));
-  }
-  */
   return aspect_ratio;
 }
 
@@ -704,19 +660,6 @@ void ParseBlockFile(vector<Cluster*>& clusters,
       i++;
     }
   }
-
-  /*
-  float chip_area = outline_width * outline_height;
-  float std_cell_util
-      = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
-
-  for (int j = 0; j < clusters.size(); j++) {
-    if (clusters[j]->GetNumMacro() == 0) {
-      float area = clusters[j]->GetArea() / std_cell_util;
-      clusters[j]->SetArea(area);
-    }
-  }
-  */
 }
 
 vector<Cluster*> ShapeEngine(float& outline_width,
