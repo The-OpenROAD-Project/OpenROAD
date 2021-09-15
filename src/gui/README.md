@@ -76,7 +76,7 @@ gui::zoom_in x y
 ```
 
 Options description:
-- ``x, y`` new center of layout
+- ``x, y`` new center of layout.
 
 To zoom out the layout:
 
@@ -86,7 +86,7 @@ gui::zoom_out x y
 ```
 
 Options description:
-- ``x, y`` new center of layout
+- ``x, y`` new center of layout.
 
 To move the layout to new area:
 
@@ -95,7 +95,7 @@ gui::center_at x y
 ```
 
 Options description:
-- ``x, y`` new center of layout
+- ``x, y`` new center of layout.
 
 To change the resolution to a specific value:
 
@@ -104,7 +104,7 @@ gui::set_resolution resolution
 ```
 
 Options description:
-- ``resolution`` database units per pixel
+- ``resolution`` database units per pixel.
 
 ### Selections
 
@@ -115,7 +115,7 @@ gui::selection_add_net name
 ```
 
 Options description:
-- ``name`` name of the net to add
+- ``name`` name of the net to add.
 
 To add several nets to the selected items:
 
@@ -124,7 +124,7 @@ gui::selection_add_nets name_regex
 ```
 
 Options description:
-- ``name_regex`` regular expression of the net names to add
+- ``name_regex`` regular expression of the net names to add.
 
 To add a single instance to the selected items:
 
@@ -133,7 +133,7 @@ gui::selection_add_inst name
 ```
 
 Options description:
-- ``name`` name of the instance to add
+- ``name`` name of the instance to add.
 
 To add several instances to the selected items:
 
@@ -142,7 +142,7 @@ gui::selection_add_insts name_regex
 ```
 
 Options description:
-- ``name_regex`` regular expression of the instance names to add
+- ``name_regex`` regular expression of the instance names to add.
 
 To clear the current set of selected items:
 
@@ -160,7 +160,7 @@ gui::highlight_net name highlight_group
 ```
 
 Options description:
-- ``name`` name of the net to highlight
+- ``name`` name of the net to highlight.
 - ``highlight_group`` group to add the highlighted net to, defaults to ``0``, valid groups are ``0 - 7``.
 
 To highlight an instance:
@@ -171,7 +171,7 @@ gui::highlight_inst name highlight_group
 ```
 
 Options description:
-- ``name`` name of the instance to highlight
+- ``name`` name of the instance to highlight.
 - ``highlight_group`` group to add the highlighted instance to, defaults to ``0``, valid groups are ``0 - 7``.
 
 To clear the highlight groups:
@@ -202,10 +202,10 @@ Options description:
 
 To add a ruler to the layout:
 
-a) either press ``k`` and use the mouse to place it visually.
+1. either press ``k`` and use the mouse to place it visually.
 To disable snapping for the ruler when adding, hold the ``Ctrl`` key, and to allow non-horizontal or vertical snapping when completing the ruler hold the ``Shift`` key.
 
-b) or use the command:
+2. or use the command:
 
 ```
 gui::add_ruler x0 y0 x1 y1
@@ -213,13 +213,13 @@ gui::add_ruler x0 y0 x1 y1 label
 gui::add_ruler x0 y0 x1 y1 label name
 ```
 
-Returns: name of the newly created ruler
+Returns: name of the newly created ruler.
 
 Options description: 
 - ``x0, y0`` first end point of the ruler in microns.
 - ``x1, y1`` second end point of the ruler in microns.
 - ``label`` text label for the ruler.
-- ``name`` name of the ruler
+- ``name`` name of the ruler.
 
 To remove a single ruler:
 
@@ -228,7 +228,7 @@ gui::delete_ruler name
 ```
 
 Options description: 
-- ``name`` name of the ruler
+- ``name`` name of the ruler.
 
 To remove all the rulers:
 
