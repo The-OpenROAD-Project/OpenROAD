@@ -177,7 +177,7 @@ class FastRouteCore
   void InitLastUsage(const int upType);
   void InitEstUsage();
   bool checkTree(const int net_id);
-  bool checkOverlapEdge(
+  bool areEdgesOverlapping(
     const int net_id,
     const int edge_id,
     const std::vector<int>& edges);

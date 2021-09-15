@@ -94,7 +94,7 @@ bool FastRouteCore::checkTree(const int net_id)
   // a node with the remaining edges
   for (auto const& [position, edges] : position_to_edges_map) {
     for (int edgeID : edges) {
-      if (checkOverlapEdge(net_id, edgeID, edges)) {
+      if (areEdgesOverlapping(net_id, edgeID, edges)) {
         edges_to_blocked_pos_map[edgeID].push_back(
             {position.first, position.second});
       }
@@ -110,7 +110,7 @@ bool FastRouteCore::checkTree(const int net_id)
   return true;
 }
 
-bool FastRouteCore::checkOverlapEdge(const int net_id,
+bool FastRouteCore::areEdgesOverlapping(const int net_id,
                                      const int edge_id,
                                      const std::vector<int>& edges)
 {
