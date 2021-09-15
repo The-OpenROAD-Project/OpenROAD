@@ -176,13 +176,9 @@ class Parser
   void patchGuides(frNet* net, frBlockObject* pin,
                     std::vector<frRect>& rects);
   void genGuides_pinEnclosure(frNet* net, 
-                    std::vector<frRect>& rects, std::map<frBlockObject*,
-                    std::set<std::pair<frPoint, frLayerNum>>,
-                    frBlockObjectComp>& pin2GCellMap);
+                    std::vector<frRect>& rects);
   void checkPinForGuideEnclosure(frBlockObject* pin, frNet* net, 
-                    std::vector<frRect>& guides, std::map<frBlockObject*,
-                    std::set<std::pair<frPoint, frLayerNum>>,
-                    frBlockObjectComp>& pin2GCellMap);
+                    std::vector<frRect>& guides);
   void genGuides_merge(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);
@@ -198,16 +194,12 @@ class Parser
   void genGuides_gCell2PinMap(
       frNet* net,
       std::map<std::pair<frPoint, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      std::map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
-            pin2GCellMap);
+               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap);
   void genGuides_gCell2TermMap(
       std::map<std::pair<frPoint, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       frTerm* term,
-      frBlockObject* origTerm,
-    std::map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
-            pin2GCellMap);
+      frBlockObject* origTerm);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<frPoint, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
@@ -237,9 +229,7 @@ class Parser
       int& gCnt,
       int& nCnt,
       bool forceFeedThrough,
-      bool retry,
-      map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>& pin2GCellMap,
-      vector<frRect>& rects);
+      bool retry);
   void genGuides_final(frNet* net,
                        std::vector<frRect>& rects,
                        std::vector<bool>& adjVisited,

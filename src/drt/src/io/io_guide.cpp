@@ -56,25 +56,21 @@ bool isInRoutingLayerRange(frLayerNum l, frDesign* design) {
 void io::Parser::patchGuides(frNet* net, frBlockObject* pin, 
                     std::vector<frRect>& guides) {
     //get the gCells of the pin, and is shapes (rects)
-    bool debug = false;
     frBox pinBBox;
     vector<frRect> pinShapes;
     string name = "";
     if (pin->typeId() == frcTerm) {
-        static_cast<frTerm*>(pin)->getShapes(pinShapes);
-        pinBBox = static_cast<frTerm*>(pin)->getBBox();
-        debug = static_cast<frTerm*>(pin)->getName() == "inst105577/A";
+        frTerm* term = static_cast<frTerm*>(pin);
+        term->getShapes(pinShapes);
+        pinBBox = term->getBBox();
+        name = term->getName();
     }else {
-        static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+        frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
+        iTerm->getShapes(pinShapes, true);
         pinBBox = static_cast<frInstTerm*>(pin)->getBBox();
-//        debug = static_cast<frInstTerm*>(pin)->getName() == "inst105577/A";
+        name = iTerm->getName();
     }
-//    logger->info(ToolId::DRT, 1000, "Pin {} not in any guide. Attempting to patch guides to cover (at least part of) the pin.", name);
-//    cout << "guides\n";
-//    for (auto& guide : guides)
-//        cout << guide.getBBox() << "lNum " << guide.getLayerNum() << "\n";
-    if (debug) 
-        cout << "pin " << *pin << " not in any guide\n";
+    logger->info(DRT, 1000, "Pin {} not in any guide. Attempting to patch guides to cover (at least part of) the pin.", name);
     pinBBox.set(pinBBox.left()+1, pinBBox.bottom()+1, pinBBox.right()-1, pinBBox.top()-1); //pins tangent to gcell arent considered as part of them
     //set pinBBox to gCell coords
     frPoint llGcell, urGcell;
@@ -89,8 +85,6 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
         for (int y = llGcell.y(); y <= urGcell.y(); y++) {
             frBox gCellBox;
             frPoint gCell(x, y);
-            if (debug) 
-                cout << "x " << x << " y " << y << "\n";
             design->getTopBlock()->getGCellBox(gCell, gCellBox);
             for (int z = 0; z < (int)design->getTech()->getLayers().size(); z++) {
                 if (design->getTech()->getLayer(z)->type != frLayerTypeEnum::ROUTING)
@@ -99,8 +93,6 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
                 for (auto& pinRect : pinShapes) {
                     if (pinRect.getLayerNum() != z)
                         continue;
-                    if (debug)
-                        cout << "pinRect " << pinRect.getBBox() << " lNUm " << pinRect.getLayerNum() << "\n";
                     area += pinRect.getBBox().overlapingArea(gCellBox);
                 }
                 if (area > bestArea) {
@@ -115,11 +107,8 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
             getGuide(x, y+1, candidateGuides, guides, design);
         }
     }
-    if (debug) cout << "pinPt " << bestPinLocIdx << " z " << bestPinLocIdx.z() << "\n";
-
-    if (debug) cout << "got " << candidateGuides.size() << "guides\n";
     if (candidateGuides.empty()) {
-//        logger->warn(ToolId::DRT, 1001, "No guide in the pin neighborhood");
+        logger->warn(DRT, 1001, "No guide in the pin neighborhood");
         return;
     }
     // get the guide that is closer to the gCell
@@ -138,7 +127,6 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
 //    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().lowerLeft(), pl);
 //    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().upperRight(), ph);
 //    frRect closerGuide(pl.x(), pl.y(), ph.x(), ph.y(), guides[closerGuideIdx].getLayerNum(), net);
-    if (debug) cout << "closer guide " << guides[closerGuideIdx].getBBox() << "idx " << closerGuideIdx << "\n";
     //gets the point in the closer guide that is closer to the bestPinLoc
     Point3D guidePt;
     guides[closerGuideIdx].getClosestPoint(bestPinLocCoords, guidePt);
@@ -158,7 +146,6 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
             std::abs(guideBox.top() - guidePt.y()) <= std::abs(guideBox.bottom() - guidePt.y()))
         guidePt.setY(guideBox.top() - gCellY/2); 
     
-    if (debug) cout << "guidePt " << guidePt << " z " << guidePt.z() << "\n";
     //connect bestPinLoc to guidePt by creating "patch" guides
     //first, try to extend closerGuide
     if (design->isHorizontalLayer(guidePt.z())) {
@@ -179,7 +166,6 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
         }
     } else cout << "error: layer is not horizontal or vertical\n";
     
-    if (debug) cout << "extend guide " << guides[closerGuideIdx] << " idx " << closerGuideIdx << "\n";
     if (guidePt == bestPinLocCoords)
         return;
     //add guide in upper our lower layer
@@ -190,7 +176,6 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
         ph.set(std::max(bestPinLocCoords.x(), guidePt.x()), std::max(bestPinLocCoords.y(), guidePt.y()));
 
         guides.emplace_back(pl.x()-gCellX/2, pl.y()-gCellY/2, ph.x()+gCellX/2, ph.y()+gCellY/2, z, net);
-        if (debug) cout << "add guide " << guides[guides.size()-1] << "\n";
     }
 
     //fill the gap between current layer and the bestPinLocCoords layer with guides
@@ -200,49 +185,30 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
                             bestPinLocCoords.y()-gCellY/2,
                             bestPinLocCoords.x()+gCellX/2, 
                             bestPinLocCoords.y()+gCellY/2, z, net);
-        if (debug) cout << "add guide " << guides[guides.size()-1] << "\n";
     }
 }
+
 void io::Parser::genGuides_pinEnclosure(frNet* net, 
-                    std::vector<frRect>& guides, std::map<frBlockObject*,
-                    std::set<std::pair<frPoint, frLayerNum>>,
-                    frBlockObjectComp>& pin2GCellMap) {
+                    std::vector<frRect>& guides) {
     for (auto pin : net->getInstTerms())
-        checkPinForGuideEnclosure(pin, net, guides, pin2GCellMap);
+        checkPinForGuideEnclosure(pin, net, guides);
     for (auto pin : net->getTerms())
-        checkPinForGuideEnclosure(pin, net, guides, pin2GCellMap);
+        checkPinForGuideEnclosure(pin, net, guides);
 }
 
 void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin, frNet* net, 
-                    std::vector<frRect>& guides, std::map<frBlockObject*,
-                    std::set<std::pair<frPoint, frLayerNum>>,
-                    frBlockObjectComp>& pin2GCellMap) {
-//    auto& pinLocs = pin2GCellMap.find(pin)->second;
-    bool debug = false;
+                    std::vector<frRect>& guides) {
     vector<frRect> pinShapes;
         if (pin->typeId() == frcTerm) {
         static_cast<frTerm*>(pin)->getShapes(pinShapes);
-//        debug = static_cast<frTerm*>(pin)->getName() == "inst105577/A";
     }else {
         static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
-//        debug = static_cast<frInstTerm*>(pin)->getName() == "inst105577/A";
     }
     for (auto& pinRect : pinShapes) {
-//        frPoint gCell;
-//        design->getTopBlock()->getGCellCenter(gCellIdx.first, gCell);
-//        if (pin->typeId() == frcTerm) {
-//            frTerm* t = static_cast<frTerm*>(pin);
-//            if (t->getName() == "pin981") {
-//                cout << "gcelIdx " << gCellIdx.first << " lNum " << gCellIdx.second << "\n" << "center " << gCell << "\n";
-//            }
-//        }
         int i = 0;
         for (auto& guide : guides) {
             if (pinRect.getLayerNum() == guide.getLayerNum() && 
                     guide.getBBox().overlaps(pinRect.getBBox(), false)) {
-//                if (debug)
-//                    cout << "pin in guide: " << *static_cast<frInstTerm*>(pin) << " rect " << pinRect.getBBox() << 
-//                            " guide " << guide.getBBox() << " idx " << i << "\n";
                 return;
             }
             i++;
@@ -496,9 +462,7 @@ void io::Parser::genGuides_gCell2TermMap(
     map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
         gCell2PinMap,
     frTerm* term,
-    frBlockObject* origTerm,
-    map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
-            pin2GCellMap)
+    frBlockObject* origTerm)
 {
   for (auto& uPin : term->getPins()) {
     for (auto& uFig : uPin->getFigs()) {
@@ -509,11 +473,6 @@ void io::Parser::genGuides_gCell2TermMap(
         auto layer = design->getTech()->getLayer(lNum);
         frBox box;
         shape->getBBox(box);
-        string name = "";
-        if (origTerm->typeId() == frcInstTerm)
-            name = static_cast<frInstTerm*>(origTerm)->getName();
-//        if (name == "inst105577/A")
-//            cout << "HERE! " << box << "\n";
         frPoint idx;
         frPoint pt(box.left() + 1, box.bottom() + 1);
         design->getTopBlock()->getGCellIdx(pt, idx);
@@ -523,8 +482,6 @@ void io::Parser::genGuides_gCell2TermMap(
         design->getTopBlock()->getGCellIdx(pt, idx);
         frCoord x2 = idx.x();
         frCoord y2 = idx.y();
-//        if (name == "inst105577/A")
-//            cout << "ll " << x1 << " " << y1 << " ur " << idx << "\n";
         // ispd18_test4 and ispd18_test5 have zero overlap guide
         // excludes double-zero overlap area on the upper-right corner due to
         // initDR requirements
@@ -578,7 +535,6 @@ void io::Parser::genGuides_gCell2TermMap(
               }
             } else {
               gCell2PinMap[make_pair(frPoint(x, y), lNum)].insert(origTerm);
-//              pin2GCellMap[origTerm].insert(make_pair(frPoint(x, y), lNum));
             }
           }
         }
@@ -592,9 +548,7 @@ void io::Parser::genGuides_gCell2TermMap(
 void io::Parser::genGuides_gCell2PinMap(
     frNet* net,
     map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
-        gCell2PinMap,
-    map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
-      pin2GCellMap)
+        gCell2PinMap)
 {
   for (auto& instTerm : net->getInstTerms()) {
     frTransform xform;
@@ -604,19 +558,19 @@ void io::Parser::genGuides_gCell2PinMap(
     auto term = uTerm.get();
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APInstTermMap(gCell2PinMap, instTerm)) {
-        genGuides_gCell2TermMap(gCell2PinMap, term, instTerm, pin2GCellMap);
+        genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
       }
     } else {
-      genGuides_gCell2TermMap(gCell2PinMap, term, instTerm, pin2GCellMap);
+      genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
     }
   }
   for (auto& term : net->getTerms()) {
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APTermMap(gCell2PinMap, term)) {
-        genGuides_gCell2TermMap(gCell2PinMap, term, term, pin2GCellMap);
+        genGuides_gCell2TermMap(gCell2PinMap, term, term);
       }
     } else {
-      genGuides_gCell2TermMap(gCell2PinMap, term, term, pin2GCellMap);
+      genGuides_gCell2TermMap(gCell2PinMap, term, term);
     }
   }
 }
@@ -837,20 +791,21 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
 void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
 {
   net->clearGuides();
-  map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>
-      gCell2PinMap;
-  map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>
-      pin2GCellMap;
-  genGuides_gCell2PinMap(net, gCell2PinMap, pin2GCellMap);
-  genGuides_pinEnclosure(net, rects, pin2GCellMap);
-  pin2GCellMap.clear();
+  
+  genGuides_pinEnclosure(net, rects);
+  
   vector<map<frCoord, boost::icl::interval_set<frCoord>>> intvs(
       tech->getLayers().size());
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
   genGuides_merge(rects, intvs);  // merge and add touching guide
-
+  
+  map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>
+      gCell2PinMap;
+  map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>
+      pin2GCellMap;
+  genGuides_gCell2PinMap(net, gCell2PinMap);
   genGuides_initPin2GCellMap(net, pin2GCellMap);
 
   bool retry = false;
@@ -897,7 +852,7 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
     vector<bool> adjVisited;
     vector<int> adjPrevIdx;
     if (genGuides_astar(
-            net, adjVisited, adjPrevIdx, nodeMap, gCnt, nCnt, false, retry, pin2GCellMap, rects)) {
+            net, adjVisited, adjPrevIdx, nodeMap, gCnt, nCnt, false, retry)) {
       // cout <<"astar done" <<endl <<flush;
       genGuides_final(
           net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
@@ -912,7 +867,7 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
                               gCnt,
                               nCnt,
                               true,
-                              retry, pin2GCellMap, rects)) {
+                              retry)) {
             genGuides_final(
                 net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
             break;
@@ -992,13 +947,10 @@ void io::Parser::genGuides_final(
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     }
   }
-  int i = 0;
   for (auto& guides : pinIdx2GCellUpdated) {
     if (guides.empty()) {
-      cout << "HERE: " << i  << " gCnt " << gCnt << " nCnt " << nCnt << "\n";
       logger->warn(DRT, 222, "genGuides_final pin not in any guide.");
     }
-    i++;
   }
 
   map<pair<frPoint, frLayerNum>, set<int>> updatedNodeMap;
@@ -1108,23 +1060,6 @@ void io::Parser::genGuides_buildNodeMap(
   nCnt = nodeIdx;  // total node cnt
 }
 
-void addGuide(int pos, int xl, int yl, int xh, int yh, frLayerNum lNum, frNet* net,
-            int prevIdx,
-            vector<frRect>& guides, 
-            vector<bool>& adjVisited, vector<int>& adjPrevIdx, 
-            int& gCnt, int& nCnt) {
-    cout << "addGuide\n";
-    guides.insert(guides.begin()+pos, frRect(xl, yl, xh, yh, lNum, net));
-    adjVisited.insert(adjVisited.begin()+pos, true);
-    adjPrevIdx.insert(adjPrevIdx.begin()+pos, prevIdx);
-    for (int i = 0; i < nCnt; i++) {
-        if (adjPrevIdx[i] >= gCnt)
-            adjPrevIdx[i]++;
-    }
-    gCnt++;
-    nCnt++;
-}
-
 bool io::Parser::genGuides_astar(
     frNet* net,
     vector<bool>& adjVisited,
@@ -1133,9 +1068,7 @@ bool io::Parser::genGuides_astar(
     int& gCnt,
     int& nCnt,
     bool forceFeedThrough,
-    bool retry,
-    map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>& pin2GCellMap,
-    vector<frRect>& rects)
+    bool retry)
 {
   // a star search
 
@@ -1298,5 +1231,3 @@ bool io::Parser::genGuides_astar(
         return false;
   }
 }
-
-
