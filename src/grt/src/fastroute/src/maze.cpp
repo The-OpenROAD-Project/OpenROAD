@@ -126,7 +126,6 @@ bool FastRouteCore::areEdgesOverlapping(const int net_id,
   int n1a = treeedge->n1a;
   int n2a = treeedge->n2a;
 
-  int common_positions = 0;
   for (int ed : edges) {
     if (ed != edge_id) {
       int ed_n1 = treeedges[ed].n1;
@@ -135,21 +134,17 @@ bool FastRouteCore::areEdgesOverlapping(const int net_id,
       int ed_n2a = treeedges[ed].n2a;
       if ((ed_n1a == n1a) || ((ed_n1a == n2a)) || (ed_n1 == n1)
           || (ed_n1 == n2)) {
-        common_positions++;
+        return false;
       }
       if ((ed_n2a == n1a) || ((ed_n2a == n2a)) || (ed_n2 == n1)
           || ((ed_n2 == n2))) {
-        common_positions++;
+        return false;
       }
     }
   }
 
   // if the edge doesn't share any node with the other edges, it is overlapping
-  if (common_positions == 0) {
-    return true;
-  }
-
-  return false;
+  return true;
 }
 
 void FastRouteCore::fixOverlappingEdge(
