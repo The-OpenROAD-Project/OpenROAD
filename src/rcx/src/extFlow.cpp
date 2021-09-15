@@ -1120,6 +1120,203 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype) {
   }
   return cnt;
 }
+void extMain::getInitialRCvalues(dbNet* net)
+{
+     uint cnt = 0;
+  //	uint wireId= wire->getId();
+
+  dbSet<dbRSeg> rSet = net->getRSegs();
+  dbSet<odb::dbRSeg>::iterator rc_itr;
+  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
+    cnt ++;
+    dbRSeg* rc = *rc_itr;
+    // NOT WORKING: dbWire* w = rc->getNet()->getWire();
+    dbWire* w = net->getWire();
+    int shapeId= rc->getShapeId();
+    if (shapeId==0) {
+      continue;
+    }
+    dbShape s;
+    w->getShape(shapeId, s);
+
+    Point prevPoint;
+    dbWirePathShape pshape;
+    getShapeRC(net, s, prevPoint, pshape, rc);
+
+    //  if (s.isVia()) {
+
+
+    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+      double res= _tmpResTable[ii];
+      double cap= _tmpCapTable[ii];
+
+      updateRes(rc, res, ii);
+    }
+  }
+}
+
+uint extMain::addRSegsOnSearch(dbNet* net,
+                                   uint dir,
+                                   int* bb_ll,
+                                   int* bb_ur,
+                                   uint wtype,
+                                   FILE* fp,
+                                   dbCreateNetUtil* netUtil)
+{
+  bool USE_DB_UNITS = false;
+
+  dbWire* wire = net->getWire();
+
+  if (wire == NULL)
+    return 0;
+
+  if (netUtil != NULL)
+    netUtil->setCurrentNet(NULL);
+
+  uint cnt = 0;
+  //	uint wireId= wire->getId();
+
+  dbSet<dbRSeg> rSet = net->getRSegs();
+  dbSet<odb::dbRSeg>::iterator rc_itr;
+  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
+    dbRSeg* rc = *rc_itr;
+    // TODO: dbWire* w = rc->getNet()->getWire();
+    dbWire* w = net->getWire();
+    int shapeId= rc->getShapeId();
+    if (shapeId==0) {
+      continue;
+    }
+    dbShape s;
+    w->getShape(shapeId, s);
+
+    if (s.isVia()) {
+      if (!_skip_via_wires)
+        addViaBoxes(s, net, shapeId, wtype);
+
+      continue;
+    }
+
+    Rect r;
+    s.getBox(r);
+    if (isIncludedInsearch(r, dir, bb_ll, bb_ur)) {
+      uint level = s.getTechLayer()->getRoutingLevel();
+
+      if (_geoThickTable != NULL) {
+        cnt += addMultipleRectsOnSearch(
+            r, level, dir, net->getId(), shapeId, wtype);
+        continue;
+      }
+      if (netUtil != NULL) {
+        netUtil->createNetSingleWire(r, level, net->getId(), shapeId);
+      } else {
+        int dx = r.xMax() - r.xMin();
+        int dy = r.yMax() - r.yMin();
+        int via_ext = 32;
+
+        // int xmin= r.xMin();
+        uint trackNum = 0;
+        // if (net->getId()==2655) {
+        if (trackNum > 0) {
+          if (dy > dx) {
+            trackNum = _search->addBox(r.xMin(),
+                                       r.yMin() - via_ext,
+                                       r.xMax(),
+                                       r.yMax() + via_ext,
+                                       level,
+                                       net->getId(),
+                                       shapeId,
+                                       wtype);
+          } else {
+            trackNum = _search->addBox(r.xMin() - via_ext,
+                                       r.yMin(),
+                                       r.xMax() + via_ext,
+                                       r.yMax(),
+                                       level,
+                                       net->getId(),
+                                       shapeId,
+                                       wtype);
+          }
+        } else {
+          if (USE_DB_UNITS) {
+            trackNum = _search->addBox(GetDBcoords2(r.xMin()),
+                                       GetDBcoords2(r.yMin()),
+                                       GetDBcoords2(r.xMax()),
+                                       GetDBcoords2(r.yMax()),
+                                       level,
+                                       // net->getId(),
+                                       // shapeId,
+                                       rc->getId(),
+                                       0,
+                                       wtype);
+          } else {
+            trackNum = _search->addBox(r.xMin(),
+                                       r.yMin(),
+                                       r.xMax(),
+                                       r.yMax(),
+                                       level,
+                                       // net->getId(),
+                                       // shapeId,
+                                       rc->getId(),
+                                       0,
+                                       wtype);
+            if (net->getId() == _debug_net_id) {
+              debugPrint(
+                  logger_,
+                  RCX,
+                  "debug_net",
+                  1,
+                  "\t[Search:W]"
+                  "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
+                  "{:.3f}  {:.3f} {:.3f} rcId {} net {}",
+                  trackNum,
+                  level,
+                  dx,
+                  dy,
+                  r.xMin(),
+                  r.yMin(),
+                  r.xMax(),
+                  r.yMax(),
+                  GetDBcoords1(r.xMin()),
+                  GetDBcoords1(r.yMin()),
+                  GetDBcoords1(r.xMax()),
+                  GetDBcoords1(r.yMax()),
+                  rc->getId(),
+                  net->getId());
+            }
+          }
+        }
+
+        if (_searchFP != NULL) {
+          fprintf(_searchFP,
+                  "%d  %d %d  %d %d %d\n",
+                  level,
+                  r.xMin(),
+                  r.yMin(),
+                  r.xMax(),
+                  r.yMax(),
+                  trackNum);
+        }
+      }
+
+#ifdef TEST_SIGNAL_TABLE
+      if (fp != NULL) {
+        fprintf(fp,
+                "%d %d  %d %d %d %d\n",
+                net->getId(),
+                level,
+                r.xMin(),
+                r.yMin(),
+                r.xMax(),
+                r.yMax());
+      }
+#endif
+      cnt++;
+    }
+  }
+  return cnt;
+}
+
+
 
 uint extMain::addSignalNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
                             dbCreateNetUtil* createDbNet) {
@@ -1137,11 +1334,23 @@ uint extMain::addSignalNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
+    uint netId= net->getId();
 
     if ((net->getSigType().isSupply()))
       continue;
 
-    cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, fp, createDbNet);
+// ------------------------ will go away -----------------------------
+      dbSet<dbITerm> iterms= net->getITerms();
+      dbSet<dbBTerm> bterms = net->getBTerms();
+      uint termCnt= iterms.size() + bterms.size();
+    bool NEW_RSEGS= net->isDisconnected() && termCnt<100;
+// ---------------------------------------------------------------
+   uint rseg_type= 19; // wire=9
+   if (!NEW_RSEGS)
+   // if (netId!=_debug_net_id)
+      cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, fp, createDbNet);
+    else 
+      cnt += addRSegsOnSearch(net, dir, bb_ll, bb_ur, rseg_type, fp, createDbNet);
   }
   if (createDbNet == NULL)
     _search->adjustOverlapMakerEnd();

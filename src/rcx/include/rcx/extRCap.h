@@ -72,6 +72,31 @@ class Logger;
 
 namespace rcx {
 
+using odb::dbBlock;
+using odb::dbBox;
+using odb::dbBTerm;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbChip;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
+using odb::dbShape;
+using odb::dbITerm;
+using odb::dbSigType;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+using odb::dbWire;
+using odb::dbWirePath;
+using odb::dbWirePathItr;
+using odb::dbWirePathShape;
+using odb::ISdb;
+using odb::Rect;
+using odb::ZPtr;
+using odb::dbCreateNetUtil;
+
 class extMeasure;
 
 using utl::Logger;
@@ -188,7 +213,7 @@ class extDistRC
                   uint,
                   uint,
                   extDistRC* rcUnit = NULL);
-  void printDebugRC_values(const char* msg);
+  void printDebugRC_values(const char* msg, Logger* logger);
   void printDebugRC(const char*, Logger* logger);
   void printDebugRC(int met,
                     int overMet,
@@ -1636,6 +1661,7 @@ class extMainOptions
   bool _varFlag;
   bool _3dFlag;
   bool _over;
+  bool _res;
   bool _overUnder;
   int _diag;
   bool _db_only;
@@ -2055,6 +2081,13 @@ class extMain
                             uint wtype,
                             FILE* fp,
                             odb::dbCreateNetUtil* netUtil = NULL);
+  uint addRSegsOnSearch(dbNet* net,
+                                   uint dir,
+                                   int* bb_ll,
+                                   int* bb_ur,
+                                   uint wtype,
+                                   FILE* fp,
+                                   dbCreateNetUtil* netUtil);
   int GetDBcoords2(int coord);
   void GetDBcoords2(odb::Rect& r);
   double GetDBcoords1(int coord);
@@ -2371,7 +2404,8 @@ class extMain
   void getShapeRC(odb::dbNet* net,
                   odb::dbShape& s,
                   odb::Point& prevPoint,
-                  odb::dbWirePathShape& pshape);
+                  odb::dbWirePathShape& pshape, dbRSeg *rc=NULL);
+  void getInitialRCvalues(dbNet* net);
   void setResAndCap(odb::dbRSeg* rc, double* restbl, double* captbl);
   void setBranchCapNodeId(odb::dbNet* net, uint junction);
   odb::dbRSeg* addRSeg(odb::dbNet* net,
@@ -3265,6 +3299,230 @@ class extMain
   void setMinRC(uint ii, uint jj, extDistRC* rc);
   void setMaxRC(uint ii, uint jj, extDistRC* rc);
 };
+
+class HashNode;
+
+class extListWire {
+  private:
+  const char *_viaName;
+  
+  bool _btermFlag_src;
+  bool _btermFlag_dst;
+  bool _itermFlag_src;
+  bool _itermFlag_dst;
+  
+  
+  /*
+  dbRSeg *_rc;
+  dbCapNode *_capNode;
+  extListNode *_next;
+  dbCapNode *_nextCapNode;
+  bool _visited;
+  */
+
+  public:
+      static  const bool useShapeId= false;
+
+      int _src;
+      int _dst;
+
+      Rect* _rect;
+      uint _shapeId;
+      uint _level;
+      uint _topLevel;
+      int DB_FACTOR;
+  extListWire(int shapeId, dbShape &s, int units);
+  uint level() { return _level;};
+  inline bool isITermSrc(int n) { return _itermFlag_src ? n==_src : false;};
+  inline bool isBTermSrc(int n) { return _btermFlag_src ? n==_src : false;};
+  inline bool isITermDst(int n) { return _itermFlag_dst ? n==_dst : false;};
+  inline bool isBTermDst(int n) { return _btermFlag_dst ? n==_dst : false;};
+  
+  inline bool isTerm() {
+      return _itermFlag_src || _itermFlag_dst || _btermFlag_src || _btermFlag_dst;
+  };
+  inline int isOutTerm_src() {
+      return _itermFlag_src ? _src : 0;
+  };
+  inline int isOutTerm_dst() {
+      return _itermFlag_dst ? _dst : 0;
+  };
+  inline int isOutBTerm_src() {
+      return _btermFlag_src ? _src : 0;
+  };
+  inline int isOutBTerm_dst() {
+      return _btermFlag_dst ? _dst : 0;
+  };
+  double GetDBcoords(int coord);
+  void printRect(FILE *_connFP, bool dbFactor);
+
+  bool overlapVias(extListWire* w, uint &nodeCnt);
+  bool overlapVias2(extListWire* w, uint &nodeCnt);
+  bool overlapWires(extListWire* w, bool upLayerConnection, uint &nodeCnt);
+  bool overlapVia2Wire(extListWire* w, bool upLayerConnection, uint &nodeCnt);
+  bool connectWires(extListWire* w, uint &nodeCnt);
+  bool connectSquareWires(extListWire* w, uint &nodeCnt);
+  int setViaNode(bool upLayerConnection, uint &nodeCnt);
+  bool overlapPinShape(int id, Rect pinRect);
+  bool overlapItermShape(int id, Rect pinRect);
+  bool overlapItermShape_via(int id, Rect pinRect, bool bottom);
+
+  void setNode(HashNode* hashNode, int n);
+  void setSrcNode(HashNode* hashNode, int n);
+  void setDstNode(HashNode* hashNode, int n);
+  int getSrcNode(HashNode* hashNode);
+  int getDstNode(HashNode* hashNode);
+  int getCapNode_src(dbNet* net, HashNode *nodeTable);
+  int getCapNode_dst(dbNet* net, HashNode *nodeTable);
+  int isTermBterm();
+
+  friend class HashNode;
+};
+
+class HashNode {
+  private:
+    Ath__array1D<int> *_btermTable;
+    Ath__array1D<int> *_itermTable;
+    Ath__array1D<int> *_nodeTable;
+
+  public:
+    HashNode(uint itermCnt, uint btermCnt, uint nodeCnt);
+    void setupMapping(uint itermCnt);
+    uint getMultiples(uint cnt, uint base) {
+      return ((cnt / base) + 1) * base;
+    };
+    void resetMapping(int btermId, int itermId, uint junction);
+    void setMapping(bool bterm, bool iterm, int n, int v);
+    int getMapping(bool bterm, bool iterm, int n);
+};
+
+class extListNode {
+  private:
+  
+  dbRSeg *_rc;
+  dbCapNode *_capNode;
+  extListNode *_next;
+  dbCapNode *_nextCapNode;
+  bool _visited;
+
+  uint shapeId;
+
+  public:
+    extListNode(dbRSeg *rc, extListNode *next, dbCapNode *node);
+    ~extListNode(){
+      for (extListNode *e= this; e!=NULL; ) {
+          extListNode *f= e;
+          e= e->_next;
+          delete f;
+      }
+    }
+    extListNode *getNext() { return _next;};
+    dbRSeg* getRC() { return _rc; };
+    dbCapNode* getNode() { return _capNode; };
+    bool isSource() { return _capNode->isSourceTerm(_rc->getNet()->getBlock()); };
+    int getNextNodeNum() { return _nextCapNode!=NULL ? _nextCapNode->getNode() : 0; }
+    int getNextNodeId() { return _nextCapNode!=NULL ? _nextCapNode->getId() : 0; }
+    bool isVisited() { return _visited;};
+    void setVisited() { _visited= true;};
+    void resetVisited() { _visited= false;};
+};
+class extDebugNet;
+
+class extCapNodeHash {
+private:
+  dbNet *_net;
+  extListNode **_table;
+  int _min;
+  int _max;
+  int _count;
+  uint _maxSize;
+  extDebugNet *_debugNet;
+  int _sourceIndex;
+ 
+  FILE *_connFP;
+public: 
+  bool _debug;
+  extCapNodeHash(uint maxNodeCnt);
+  void alloc(uint n);
+  void init(dbNet *net, extDebugNet *debugNet, FILE *fp);
+  void getMin(uint n) { _min= _min>n ? n : _min;};
+  void getMax(uint n) { _max= _max<n ? n : _max;};
+  int getIndex(int n) { return n-_min;};
+  extListNode *addNode(uint n, dbRSeg* rc, dbCapNode *node);
+  void print(FILE *fp);
+  uint traverse();
+  void dfs(int n);
+  void markTerm(dbCapNode *capNode);
+  void unmarkAllTerms();
+  void checkUmarkedTerms();
+  uint countUmarkedTerms();
+  void resetVisited();
+
+};
+class extDebugNet {
+private:
+  dbNet *_net;
+  dbBlock *_block;
+  FILE *_connFP;
+  extCapNodeHash* _nodeMap;
+  Ath__array1D<extListWire*>** _rects;
+  Ath__array1D<extListWire*>** _vias;
+  uint _levelCnt;
+  Ath__array1D<extListWire*>* _shapes;
+  HashNode *_hashNodeRC;
+
+ public:
+  bool _debug;
+  bool _lef_res;
+  extDebugNet(odb::dbNet *net, odb::dbBlock *_block);
+  void setNet(odb::dbNet *net) {_net=net; };
+  
+
+  // extDebugConn
+  FILE* OpenConnFile(const char* name);
+  void CloseConnFile();
+  uint netCheckConn(int debug_id);
+  uint checkNet(int debug_net_id);
+  void printRC(odb::dbRSeg* rc);
+  void printShape(odb::dbShape& s, int shapeId, bool dbFactor);
+  void printRect(Rect &r, int shapeId, const char *viaName, uint level, uint topLevel, bool dbFactor);
+  double GetDBcoords(int coord);
+  bool  writeCapNode(uint capNodeId);
+  bool  writeBTerm(uint node);
+  void  writeITermNode(uint node);
+  bool  writeCapNode(odb::dbCapNode* capNode, const char *postFix=NULL);
+  bool checkConnOrdered(odb::dbNet *net, bool verbose);
+  void printShapes(bool dbunits);
+  uint debugNet(odb::dbNet *net, uint debug_net_id, const char *name);
+  bool printCapNode(dbCapNode* capNode);
+  void printBTerm(uint node);
+  void printITermNode(uint node);
+  uint CheckConnectivity(bool verbose);  
+  // -------------------------------------
+  void getRects();
+  void printRects(bool dbFactor, Ath__array1D<extListWire*>** _rects);
+  void printViasWires(const char *header);
+  void resetRects();
+  void termsViasWiresWires();
+  void vias2vias2wires2terms2wires();
+  void intersectRect2Rect(uint &nodeCnt);
+  void intersectRect2Rect_open(uint &nodeCnt);
+  void intersectVias(uint &nodeCnt);
+  void intersectRects_bottom(uint &nodeCnt);
+  void intersectRects_top(uint &nodeCnt);
+  bool connectBterms(uint options=0);
+  bool connectIterms(uint options=0);
+  bool connectIterm(dbITerm *iterm, uint level);
+  bool intersectRect(dbBTerm *b, dbShape &s, bool openEndedWires);
+  bool intersectRect(dbITerm *b, dbShape &s, bool openEndedWires);
+  uint netStats(FILE *fp, const char *prefix);
+  void resetNodes();
+  void makeRsegs(Ath__array1D<extListWire*>* rects);
+  bool make1stRseg(Ath__array1D<extListWire*>* rects);
+  uint getTermCapNode(extListWire *a, bool src, bool anyIOtype=false);
+  uint getBTermCapNode(extListWire *a, bool src);
+};
+
 
 }  // namespace rcx
 

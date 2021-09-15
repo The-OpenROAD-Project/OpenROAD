@@ -82,8 +82,15 @@ uint extMain::print_shape(dbShape& shape, uint j1, uint j2) {
   uint dx = shape.xMax() - shape.xMin();
   uint dy = shape.yMax() - shape.yMin();
   if (shape.isVia()) {
+    std::string vname;
+    
     dbTechVia* tech_via = shape.getTechVia();
-    std::string vname = tech_via->getName();
+    if (tech_via!=NULL)
+        vname = tech_via->getName();
+    else {
+        dbVia* via = shape.getVia();
+        vname = via->getName();
+    }
 
     logger_->info(RCX, 438, "VIA {} ( {} {} )  jids= ( {} {} )", vname.c_str(),
                   shape.xMin() + dx / 2, shape.yMin() + dy / 2, j1, j2);
@@ -293,7 +300,8 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net) {
 }
 
 void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
-                         dbWirePathShape& pshape) {
+                         dbWirePathShape& pshape,
+                         dbRSeg *rc) {
   bool USE_DB_UNITS = false;
   double res = 0.0;
   double areaCap;
@@ -339,9 +347,12 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
       }
     }
   } else {
+    level = s.getTechLayer()->getRoutingLevel();
+    uint width;
+    if (rc==NULL) {
     computePathDir(prevPoint, pshape.point, &len);
     level = s.getTechLayer()->getRoutingLevel();
-    uint width = MIN(pshape.shape.xMax() - pshape.shape.xMin(),
+    width = MIN(pshape.shape.xMax() - pshape.shape.xMin(),
                      pshape.shape.yMax() - pshape.shape.yMin());
     len = MAX(pshape.shape.xMax() - pshape.shape.xMin(),
               pshape.shape.yMax() - pshape.shape.yMin());
@@ -349,6 +360,14 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
       len -= width;
       if (len <= 0)
         len += width;
+    }
+    } else {
+      Rect r;
+      s.getBox(r);
+      uint dx= r.dx();
+      uint dy= r.dy();
+      width = MIN(dx,dy);
+      len= MAX(dx,dy);
     }
 
     if (_lefRC) {
@@ -563,9 +582,20 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
     uint id = iterm->getId();
     uint capId = _itermTable->geti(id);
     if (capId > 0) {
+
+      if (iterm->getNet()->getId() == _debug_net_id)
+      debugPrint(logger_,
+                 RCX,
+                 "rcseg",
+                 1,
+                 "RCSEG:"
+                 "R "
+                 "\tgetCapNodeId: OLD I_TERM {}  capNode {}\n", id, capId);
+                 
+
 #ifdef DEBUG_NET_ID
       if (iterm->getNet()->getId() == DEBUG_NET_ID)
-        fprintf(fp, "\tOLD I_TERM %d  capNode %d\n", id, capId);
+        fprintf(fp, "\tgetCapNodeId: OLD I_TERM %d  capNode %d\n", id, capId);
 #endif
       //(dbCapNode::getCapNode(_block, capId))->incrChildrenCnt();
 
@@ -583,8 +613,17 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
     _nodeTable->set(junction, tcapId);  // allow get capId using junction
 #ifdef DEBUG_NET_ID
     if (iterm->getNet()->getId() == DEBUG_NET_ID)
-      fprintf(fp, "\tNEW I_TERM %d capNode %d\n", id, capId);
+      fprintf(fp, "\tgetCapNodeId: NEW I_TERM %d capNode %d\n", id, capId);
 #endif
+      if (iterm->getNet()->getId() == _debug_net_id)
+      debugPrint(logger_,
+                 RCX,
+                 "rcseg",
+                 1,
+                 "RCSEG:"
+                 "R "
+                 "\tgetCapNodeId: NEW I_TERM {}  capNode {}\n", id, capId);
+
     return capId;
   } else if (bterm != NULL) {
     uint id = bterm->getId();
@@ -592,8 +631,16 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
     if (capId > 0) {
 #ifdef DEBUG_NET_ID
       if (bterm->getNet()->getId() == DEBUG_NET_ID)
-        fprintf(fp, "\tOLD B_TERM %d  capNode %d\n", id, capId);
+        fprintf(fp, "\tgetCapNodeId OLD B_TERM %d  capNode %d\n", id, capId);
 #endif
+if (bterm->getNet()->getId() == _debug_net_id)
+      debugPrint(logger_,
+                 RCX,
+                 "rcseg",
+                 1,
+                 "RCSEG:"
+                 "R "
+                 "\tgetCapNodeId: OLD I_TERM {}  capNode {}\n", id, capId);
       return capId;
     }
 
@@ -612,7 +659,16 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
 #ifdef DEBUG_NET_ID
     if (bterm->getNet()->getId() == DEBUG_NET_ID)
       fprintf(fp, "\tNEW B_TERM %d  capNode %d\n", id, capId);
-#endif
+#endif 
+if (bterm->getNet()->getId() == _debug_net_id)
+      debugPrint(logger_,
+                 RCX,
+                 "rcseg",
+                 1,
+                 "RCSEG:"
+                 "R "
+                 "\tgetCapNodeId: NEW I_TERM {}  capNode {}\n", id, capId);
+
     return capId;
   } else {
     int capId = _nodeTable->geti(junction);
@@ -626,11 +682,11 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
       if (cap->getNet()->getId() == _debug_net_id) {
         if (branch) {
           debugPrint(logger_, RCX, "rcseg", 1,
-                     "RCSEG:C\tOLD BRANCH {}  capNode {}",
+                     "\tgetCapNodeId: OLD BRANCH {}  capNode {}",
                      junction, cap->getId());
         } else {
           debugPrint(logger_, RCX, "rcseg", 1,
-                     "RCSEG:C\tOLD INTERNAL {}  capNode {}",
+                     "\tgetCapNodeId: OLD INTERNAL {}  capNode {}",
                      junction, cap->getId());
         }
       }
@@ -650,13 +706,13 @@ uint extMain::getCapNodeId(dbNet* net, dbBTerm* bterm, dbITerm* iterm,
         debugPrint(logger_, RCX, "rcseg", 1,
                    "RCSEG:"
                    "C"
-                   "\tNEW BRANCH {}  capNode {}",
+                   "\tgetCapNodeId: NEW BRANCH {}  capNode {}",
                    junction, cap->getId());
       } else
         debugPrint(logger_, RCX, "rcseg", 1,
                    "RCSEG:"
                    "C"
-                   "\tNEW INTERNAL {}  capNode {}",
+                   "\tgetCapNodeId: NEW INTERNAL {}  capNode {}",
                    junction, cap->getId());
     }
 
@@ -904,7 +960,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning) {
     if (!netHeadMarked) {
       netHeadMarked = true;
       // markPathHeadTerm(path); // may call markPathHeadTerm() later
-      make1stRSeg(net, path, srcId, skipStartWarning);
+      make1stRSeg(net, path, srcId, skipStartWarning || !net->isWireOrdered());
     }
 
     // srcId= getCapNodeId(net, path.bterm, path.iterm, path.junction_id,
@@ -2599,19 +2655,77 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       powerRCGen();
       return 1;
     }
-
+    uint orderWireFixedCnt=0;
+    uint orderWireWarnCnt=0;
+    uint orderWireFailedConnCnt=0;
+    uint orderWireConnCnt=0;
+    uint disconnectedTermCout=0;
+    FILE *openNetsFP= ATH__openFile("Open.nets", "w");
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
+      uint netId= net->getId();
 
-      dbSigType type = net->getSigType();
-      if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+      if (net->getSigType()->isSupply())
         continue;
       if (!_allNet && !net->isMarked())
         continue;
 
       _connectedBTerm.clear();
       _connectedITerm.clear();
+      dbSet<dbITerm> iterms= net->getITerms();
+      dbSet<dbBTerm> bterms = net->getBTerms();
+      uint termCnt= iterms.size() + bterms.size();
+
+      //if (net->isDisconnected() && _debug_net_id==netId){
+      if (net->isDisconnected() && termCnt<100){
+        orderWireWarnCnt ++;
+        dbgNet->setNet(net);
+      
+        if (termCnt<100) {
+            //dbgNet->checkNet(_debug_net_id);
+            // if (netId==4963)
+           
+            if (netId==42890)
+                dbgNet->_debug= true;
+            if (dbgNet->checkNet(0) == 0) {
+                orderWireFixedCnt ++;
+                dbgNet->netStats(openNetsFP, "--------------- Disconnected Net FIXED:");
+            } else {
+                dbgNet->netStats(openNetsFP, "--------------- Disconnected Net NOT FIXED:");
+            }
+            getInitialRCvalues(net);
+            if (netId==42890)
+                dbgNet->_debug= false;
+            // dbgNet->checkNet(0);
+        }
+        continue;
+      } else {
+/* HERE 
+      opens->setNet(net);
+      disconnectedTermCout += opens->CheckConnectivity(verbose);
+
+
+
+      dbgNet->setNet(net);
+      dbgNet->checkNet(_debug_net_id);
+*/
+      // if (_debug_net_id!=netId)
+
       cnt += makeNetRCsegs(net);
+
+      bool verbose1= false;
+      dbgNet1->setNet(net);
+      if (dbgNet1->CheckConnectivity(verbose1)==0)
+        orderWireConnCnt ++;
+      else 
+        orderWireFailedConnCnt ++;
+      // dbgNet1->setNet(net);
+      // dbgNet1->checkNet(_debug_net_id);
+      }
+
+    // HERE opens->setNet(net);
+      // disconnectedTermCout += opens->CheckConnectivity(verbose);
+
       uint tt;
       for (tt = 0; tt < _connectedBTerm.size(); tt++)
         ((dbBTerm*)_connectedBTerm[tt])->setMark(0);
@@ -2619,13 +2733,23 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
         ((dbITerm*)_connectedITerm[tt])->setMark(0);
       // break;
     }
+    debugPrint(logger_, RCX, "extrules", 1,
+               "Nets= {} OrderWireWarnings={} Fixed={} -- NotWarning={} OrderWireOK={}  OrderWireConnFailed={}", 
+               orderWireWarnCnt+orderWireConnCnt+orderWireFailedConnCnt, orderWireWarnCnt,orderWireFixedCnt,
+               orderWireConnCnt+orderWireFailedConnCnt, orderWireConnCnt, orderWireFailedConnCnt);
+    fflush(openNetsFP);
+    opens->CloseConnFile();
+    dbgNet->CloseConnFile();
+    dbgNet1->CloseConnFile();
+    // makeTree(_debug_net_id);
 
     logger_->info(RCX, 40, "Final {} rc segments", cnt);
   } else if (debug == 777) {
     _debug = 0;
   } else
     _debug = 0;
-
+  // extDebugNet *dbgNet= new extDebugNet(NULL, _block);
+  // dbgNet->netCheckConn(_debug_net_id);
   if (rlog)
     AthResourceLog("after makeNetRCsegs", detailRlog);
   int ttttPrintDgContext = 0;

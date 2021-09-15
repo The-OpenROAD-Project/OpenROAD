@@ -3512,7 +3512,7 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
         _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
       }
       if (ou && IsDebugNet())
-        _rc[jj]->printDebugRC_values("OverUnder Total Open");
+        _rc[jj]->printDebugRC_values("OverUnder Total Open", logger_);
     }
     if (IsDebugNet())
       debugPrint(logger_, RCX, "debug_net", 1,
@@ -3562,7 +3562,7 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
       tot1 += _rc[jj]->_coupling;
       tot2 += _rc[jj]->_coupling;
       if (ou && IsDebugNet())
-        _rc[jj]->printDebugRC_values("OverUnder Total Dist");
+        _rc[jj]->printDebugRC_values("OverUnder Total Dist", logger_);
     }
     rcSegInfo();
     if (IsDebugNet())

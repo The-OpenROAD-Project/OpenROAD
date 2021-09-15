@@ -56,6 +56,7 @@ target_sources(rcx
     extmain.cpp
     extmeasure.cpp
     extDebugPrint.cpp
+    extDebugConn.cpp
     extplanes.cpp
     extstats.cpp
     extprocess.cpp

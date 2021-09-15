@@ -4513,6 +4513,11 @@ class dbRSeg : public dbObject
   uint getShapeId();
 
   ///
+  /// Set shape-id of this RC-segment.
+  ///
+  void setShapeId(uint nsid);
+
+  ///
   /// Set coordinates of this RC-segment.
   ///
   void setCoords(int x, int y);

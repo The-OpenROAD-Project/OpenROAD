@@ -142,11 +142,9 @@ uint Ath__track::findOverlap(
     }
 
     while (1) {
-      notExtractedW2 =
-          useDbSdb && !w2->isPower() && !w2->isVia() &&
-          w2->getNet()->getWire() &&
-          (!w2->getNet()->getWire()->getProperty((int)w2->_otherId, exid) ||
-           exid == 0);
+      exid= w2->getRsegId();
+      notExtractedW2 = useDbSdb && !w2->isPower()
+        && !w2->isVia() && w2->getNet()->getWire() && (exid==0);
       len1 = 0;
       len2 = 0;
       len3 = 0;
@@ -210,7 +208,7 @@ uint Ath__track::findOverlap(
               // bBoxId);
               coupleOptions[1] = bBoxId;  // dbRSeg id for SRC segment
 
-              if (botwire->_otherId == 0)
+              if (botwire->_otherId == 0 && botwire->isPower())
                 coupleOptions[1] = -bBoxId;  // POwer SBox Id
 
               int tBoxId = (int)topwire->_boxId;
@@ -222,9 +220,9 @@ uint Ath__track::findOverlap(
               //	topwire->getNet()->getWire()->getProperty((int)topwire->_otherId,
               // tBoxId);
               coupleOptions[2] = tBoxId;  // dbRSeg id for TARGET segment
-              if (topwire->_otherId == 0)
+              if (topwire->_otherId == 0 && topwire->isPower())
                 coupleOptions[2] = -tBoxId;  // POwer SBox Id
-
+              
               coupleOptions[3] = len2;
               coupleOptions[4] = dist;
               coupleOptions[5] = w1->_xy + len1;
@@ -406,10 +404,8 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid, uint srcTrack, uint trackDist,
       continue;
     if (!tohi && wire->_srcId > 0)
       continue;
-    if (useDbSdb && !wire->isPower() && !wire->isVia() &&
-        wire->getNet()->getWire() &&
-        (!wire->getNet()->getWire()->getProperty((int)wire->_otherId, exid) ||
-         exid == 0))
+    exid= wire->getRsegId();
+    if (useDbSdb && !wire->isPower() && !wire->isVia() && (exid == 0))
       continue;
 
     wireCnt++;
@@ -472,7 +468,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid, uint srcTrack, uint trackDist,
           wBoxId = wire->getRsegId();
 
         coupleOptions[1] = wBoxId;  // dbRSeg id
-        if (wire->_otherId == 0)
+        if (wire->_otherId == 0 && wire->isPower())
           coupleOptions[1] = -wBoxId;  // dbRSeg id
 
         coupleOptions[2] = 0;  // dbRSeg id
@@ -653,8 +649,8 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
     else if (nwire->isVia())
       seq->type = 0;
     else {
-      nwire->getNet()->getWire()->getProperty((int)nwire->_otherId, rsegid);
-      seq->type = rsegid;
+      // DF 62221
+      seq->type = nwire->getRsegId();
     }
     dgContext->add(seq);
   }

@@ -84,8 +84,7 @@ static double lineSegment(double X, double x1, double x2, double y1,
 }
 void extDistRC::interpolate(uint d, extDistRC* rc1, extDistRC* rc2) {
   _sep = d;
-  _coupling =
-      lineSegment(d, rc1->_sep, rc2->_sep, rc1->_coupling, rc2->_coupling);
+  _coupling = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_coupling, rc2->_coupling);
   _fringe = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_fringe, rc2->_fringe);
   _res = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_res, rc2->_res);
 }
@@ -3615,6 +3614,11 @@ void extMetRCTable::mkWidthAndSpaceMappings() {
     else
       logger_->info(RCX, 358, "Can't find <RESOVER> Res rules for {}", ii);
 
+    if (_resOver[ii] != NULL)
+      _resOver[ii]->makeWSmapping();
+    else
+      logger_->info(RCX, 215, "Can't find <RESOVER> Res rules for {}", ii);
+
     if (_capUnder[ii] != NULL)
       _capUnder[ii]->makeWSmapping();
     else
@@ -3672,7 +3676,7 @@ void extRCModel::writeRules(char* name, bool binary) {
             "Cannot write <OVER> rules for <DensityModel> {} and layer {}", m,
             ii);
       }
-
+      
       if (_modelTable[m]->_capUnder[ii] != NULL)
         cnt += _modelTable[m]->_capUnder[ii]->writeRulesUnder(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capUnder[ii] != NULL))
@@ -5144,21 +5148,5 @@ extDistWidthRCTable* extRCModel::getWidthDistRCtable(uint met, int mUnder,
     return _modelTable[rIndex]->_capUnder[met];
   }
 }
-/*
-void extRCModel::getRCtable(Ath__array1D<int> *sTable, Ath__array1D<double>
-*rcTable, uint valType, uint met, int mUnder, int mOver, int width, double
-dRate)
-{
-        int n= 0;
-        extDistWidthRCTable *capTable= getWidthDistRCtable(met, mUnder, mOver,
-n, dRate); if (valType==0) // coupling ;
-//_modelTable[rIndex]->_capOverUnder[met]->getFringeTable(n, width, sTable,
-rcTable, false); else if (valType==1) // fringe capTable->getFringeTable(n,
-width, sTable, rcTable, false); else if (valType==2) // res ;
-//_modelTable[rIndex]->_capOverUnder[met]->getFringeTable(n, width, sTable,
-rcTable, false); else // total ;
-//_modelTable[rIndex]->_capOverUnder[met]->getFringeTable(n, width, sTable,
-rcTable, false);
-}
-*/
+
 }  // namespace rcx
