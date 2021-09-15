@@ -54,7 +54,7 @@ proc extract_parasitics { args } {
         -debug_net_id
         -context_depth
         -cc_model } \
-      flags { -lef_res }
+      flags { -lef_res -no_merge_via_res }
 
   set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {

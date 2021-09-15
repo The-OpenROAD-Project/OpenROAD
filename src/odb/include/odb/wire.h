@@ -140,6 +140,7 @@ class Ath__wire
   void setOtherId(uint id);
   uint getOtherId();
   bool isPower();
+  bool isRseg();
   bool isVia();  // OpenRCX
   bool isTilePin();
   bool isTileBus();
@@ -204,9 +205,7 @@ class Ath__track
   bool _ordered;
 
  public:
-  uint getTrackNum() { 
-    return _num;
-  };
+  uint getTrackNum() { return _num; };
   void set(Ath__grid* g,
            int x,
            int y,

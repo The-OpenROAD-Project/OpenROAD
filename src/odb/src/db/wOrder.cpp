@@ -133,6 +133,9 @@ void orderWires(dbNet* net, bool force, bool verbose)
   int splitcnt = _conn->getSplitCnt();
   if (splitcnt != 0)
     notice(0, "Split top of %d T shapes.\n", splitcnt);
+    
+  if (net->isDisconnected())
+    _conn->checkConnOrdered(true);
 }
 
 /////////////////////////////////////////////////////////////////

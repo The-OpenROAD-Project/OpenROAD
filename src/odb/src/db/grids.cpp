@@ -311,6 +311,14 @@ bool Ath__wire::isPower()
   else
     return false;
 }
+bool Ath__wire::isRseg()
+{
+  uint rseg_type = 19;  
+  if (_flags == rseg_type)
+    return true;
+  else
+    return false;
+}
 bool Ath__wire::isVia()
 {
   uint via_wire_id = 5;  // see db/dbSearch.cpp
@@ -354,12 +362,12 @@ dbNet* Ath__wire::getNet()
 {
   Ath__gridTable* gtb = _track->getGrid()->getGridTable();
   dbBlock* block = gtb->getBlock();
+  if (_flags==19)
+    return (dbRSeg::getRSeg(block, _boxId)->getNet());
   if (_otherId == 0)
     return (dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
   if (gtb->usingDbSdb())
     return dbNet::getNet(block, _boxId);
-  else
-    return (dbRSeg::getRSeg(block, _boxId)->getNet());
 }
 uint Ath__wire::getBoxId()
 {
@@ -1841,6 +1849,8 @@ uint Ath__grid::placeWire(Ath__searchBox* bb)
 #else
   uint trackNum1 = getMinMaxTrackNum(bb->loXY(_dir));
   uint trackNum2 = getMinMaxTrackNum(bb->hiXY(_dir));
+  // if (trackNum1<trackNum2)
+   // trackNum2= trackNum1;
 #endif
 
   uint wireType = bb->getType();

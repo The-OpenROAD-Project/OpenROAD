@@ -2464,16 +2464,6 @@ uint extSpef::readBlock(uint debug, std::vector<dbNet*> tnets, bool force,
       }
       bool sortingRSeg = _d_net && !_keep_loaded_corner &&
                          (_doSortRSeg || _readingNodeCoords != C_NONE);
-      doSortingRSeg |= sortingRSeg;
-      if (sortingRSeg) {
-        sortRSegs();
-        dbSet<dbCapNode> nodeSet = _d_corner_net->getCapNodes();
-        dbSet<dbCapNode>::iterator rc_itr;
-        for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
-          dbCapNode* node = *rc_itr;
-          node->setSortIndex(0);
-        }
-      }
     } while (_parser->parseNextLine() > 0);
     if (doSortingRSeg)
       _cornerBlock->preExttreeMergeRC(0.0, 0);

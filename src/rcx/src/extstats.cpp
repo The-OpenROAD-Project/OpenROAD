@@ -140,8 +140,11 @@ uint extMain::calcMinMaxRC() {
       resetMinMaxRC(met, jj);
 
       extDistRC* rcMin = _currentModel->getMinRC(met, width);
+      if (rcMin==NULL)
+        continue;
       extDistRC* rcMax = _currentModel->getMaxRC(met, width, dist);
-
+      if (rcMax==NULL)
+        continue;
       setMinRC(met, jj, rcMin);
       setMaxRC(met, jj, rcMax);
 

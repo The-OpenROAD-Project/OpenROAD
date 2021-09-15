@@ -49,8 +49,13 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt) {
   _modelTable[0]->allocateInitialTables(layerCnt, widthCnt, true, true, true);
   return _modelTable[0];
 }
-AthPool<extDistRC>* extMetRCTable::getRCPool() { return _rcPoolPtr; }
+
+AthPool<extDistRC>* extMetRCTable::getRCPool() {
+  return _rcPoolPtr;
+}
+
 uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
+  bool ResModel1= pattern == 1000;
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
 
@@ -113,7 +118,6 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern) {
     if (wireNum != targetWire / 2)
       continue;
 
-    // fprintf(logFP, "%s\n", netName);
     bool diag = false;
     bool ResModel = false;
 
@@ -465,44 +469,43 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure) {
           }
         }
       }
-    }
-  } else {
+    } 
     /* REQUIRED Testing
-            for (uint ii = 0; ii < wTable->getCnt(); ii++) {
-                    double w = wTable->get(ii); // layout
-                    for (uint iii = 0; iii < wTable->getCnt(); iii++) {
-                            double w2 = wTable->get(iii);
-                            for (uint jj = 0; jj < sTable->getCnt(); jj++) {
-                                    double s = sTable->get(jj); // layout
-                                    for (uint jjj = 0; jjj < sTable->getCnt();
+       for (uint ii = 0; ii < wTable->getCnt(); ii++) {
+       double w = wTable->get(ii); // layout
+       for (uint iii = 0; iii < wTable->getCnt(); iii++) {
+       double w2 = wTable->get(iii);
+       for (uint jj = 0; jj < sTable->getCnt(); jj++) {
+       double s = sTable->get(jj); // layout
+       for (uint jjj = 0; jjj < sTable->getCnt();
        jjj++) { double s2 = sTable->get(jjj);
 
-                                            for (uint kk = 0; kk <
+       for (uint kk = 0; kk <
        thTable->getCnt(); kk++) { double tt = thTable->get(kk); // layout if
        (!opt->_thListFlag) // multiplier tt *= t;
 
-                                                    double top_width = w;
-                                                    double top_widthR = w;
+       double top_width = w;
+       double top_widthR = w;
 
-                                                    double bot_width = w;
-                                                    double bot_widthR = w;
+       double bot_width = w;
+       double bot_widthR = w;
 
-                                                    double thickness = tt;
-                                                    double thicknessR = tt;
+       double thickness = tt;
+       double thicknessR = tt;
 
 
-                                                    measure->setTargetParams(w,
+       measure->setTargetParams(w,
        s, 0.0, t, h, w2, s2); measureResistance(measure, ro, top_widthR,
        bot_widthR, thicknessR); measurePatternVar(measure, top_width, bot_width,
        thickness, measure->_wireCnt, NULL);
 
-                                                    cnt++;
-                                            }
-                                    }
-                            }
-                    }
-            }
-            */
+       cnt++;
+       }
+       }
+       }
+       }
+       }
+    */
   }
   return cnt;
 }

@@ -652,6 +652,11 @@ uint dbRSeg::getTargetNode()
 uint dbRSeg::getShapeId()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
+
+  // DKF 062021
+  if (seg->_flags._spare_bits_29>0)
+    return seg->_shape_id;
+
   dbBlock* block = (dbBlock*) seg->getOwner();
   dbCapNode* node = dbCapNode::getCapNode(block, seg->_target);
   return node->getShapeId();
@@ -711,15 +716,29 @@ uint dbRSeg::getLengthWidth(uint& w)
 
 dbNet* dbRSeg::getNet()
 {
+  // TODO: HUGE - NOT WORKING w new Connectivity Extractor
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
   return node->getNet();
 }
 
+// DF 062021
+void dbRSeg::setShapeId(uint nsid)
+{
+  _dbRSeg* seg = (_dbRSeg*) this;
+  seg->_shape_id = nsid;
+  seg->_flags._spare_bits_29= 1;
+}
+
 void dbRSeg::updateShapeId(uint nsid)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
+  if (seg->_flags._spare_bits_29>0) {
+    seg->_shape_id = nsid;
+    return;
+  }
+
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
   if (node->isITerm() || node->isBTerm())

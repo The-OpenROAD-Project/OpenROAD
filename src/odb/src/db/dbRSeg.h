@@ -74,7 +74,11 @@ class _dbRSeg : public _dbObject
   _dbRSegFlags _flags;
   uint _source;  // rc-network node-id
   uint _target;  // rc-network node-id
-  int _xcoord;
+  union
+  {
+    uint _shape_id;  // DKF: shape-id to be combined with _net
+    int  _xcoord;
+  };
   int _ycoord;
   dbId<_dbRSeg> _next;
 

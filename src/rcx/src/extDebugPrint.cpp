@@ -432,7 +432,7 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger) {
              len, GetDBcoords(len, dbUnit), _coupling, _fringe, _diag,
              _coupling + _fringe + _diag, _res);
 }
-void extDistRC::printDebugRC_values(const char* msg) {
+void extDistRC::printDebugRC_values(const char* msg, Logger* logger) {
   debugPrint(logger_, RCX, "debug_net", 1,
              "[DistRC:C]"
              " ---- {} ------------ \n\t\t\tCouple: {:.6f}\n\t\t\tFringe: "
