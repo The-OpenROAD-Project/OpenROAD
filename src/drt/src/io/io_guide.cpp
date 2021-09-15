@@ -87,7 +87,7 @@ void io::Parser::patchGuides(frNet* net, frBlockObject* pin,
             frPoint gCell(x, y);
             design->getTopBlock()->getGCellBox(gCell, gCellBox);
             for (int z = 0; z < (int)design->getTech()->getLayers().size(); z++) {
-                if (design->getTech()->getLayer(z)->type != frLayerTypeEnum::ROUTING)
+                if (design->getTech()->getLayer(z)->type != dbTechLayerType::ROUTING)
                     continue;
                 area = 0;
                 for (auto& pinRect : pinShapes) {
