@@ -102,6 +102,8 @@ bool FastRouteCore::checkTree(const int net_id)
       }
     }
   }
+
+  // fix the longest edge and break the loop
   for (auto& [edge, blocked_positions] : edges_to_blocked_pos_map) {
     fixOverlappingEdge(net_id, edge, blocked_positions);
     break;
@@ -140,6 +142,7 @@ bool FastRouteCore::checkOverlapEdge(const int net_id,
     }
   }
 
+  // if the edge doesn't share any node with the other edges, it is overlapping
   if (common_positions == 0 && edges.size() > 1) {
     return true;
   }
