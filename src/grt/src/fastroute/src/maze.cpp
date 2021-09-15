@@ -114,6 +114,10 @@ bool FastRouteCore::checkOverlapEdge(const int net_id,
                                      const int edge_id,
                                      const std::vector<int>& edges)
 {
+  if (edges.size() == 1) {
+    return false;
+  }
+
   TreeEdge* treeedges = sttrees_[net_id].edges;
   TreeEdge* treeedge = &(treeedges[edge_id]);
 
@@ -141,7 +145,7 @@ bool FastRouteCore::checkOverlapEdge(const int net_id,
   }
 
   // if the edge doesn't share any node with the other edges, it is overlapping
-  if (common_positions == 0 && edges.size() > 1) {
+  if (common_positions == 0) {
     return true;
   }
 
