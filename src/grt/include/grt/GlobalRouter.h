@@ -188,21 +188,17 @@ class GlobalRouter
   void perturbCapacities();
 
   void initDebugFastRoute();
+  void setDebugNet(const odb::dbNet *net);
   void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectilinearSTree);
   void setDebugTree2D(bool tree2D);
-  void setDebugNet(const odb::dbNet *net);
+  void setDebugTree3D(bool tree3D);
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet* net);
 
-  void highlightSteinerTreeBuilder(const odb::dbNet* net);
-  void highlightRectilinearSteinerTree(const odb::dbNet* net, int design);
-
   // Clear routes in the gui
   void clearRouteGui();
-  void clearFastRouteGui();
-  void clearSteinerTreeGui();
   // Report the wire length on each layer.
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -325,8 +321,6 @@ class GlobalRouter
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
   GrouteRenderer* groute_renderer_;
-  GrouteRenderer* fastroute_renderer_;
-  GrouteRenderer* steinertree_renderer_;
   NetRouteMap routes_;
 
   std::vector<Net>* nets_;

@@ -73,6 +73,7 @@ struct DebugSetting{
   bool steinerTree_;
   bool rectilinearSTree_;
   bool tree2D_;
+  bool tree3D_;
   bool isOn_;
   DebugSetting()
       : steinerTree_(false),
@@ -173,20 +174,14 @@ class FastRouteCore
   }
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
-  PinNetMap getPins();
-  GRoute convertTreeEdgesToGRoute(TreeEdge* treeedges, const int deg, bool is3DTree);
-  NetTreeRouteMap getSteinerTree();
-  NetRouteMap get2DTree();
-  NetRouteMap get3DTree();
-  NetRouteMap getRectilinearSteinerTree();
-
   // debug mode functions
   void createDebug();
   void setDebugOn(bool isOn);
-  void setDebugSteinerTree(bool steinerTree);
   void setDebugNet(const odb::dbNet *net);
+  void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectiliniarSTree);
   void setDebugTree2D(bool tree2D);
+  void setDebugTree3D(bool tree3D);
 
  private:
   NetRouteMap getRoutes();
@@ -414,6 +409,9 @@ class FastRouteCore
   int edgeShift(Tree& t, int net);
   int edgeShiftNew(Tree& t, int net);
 
+  void steinerTreeVisualization(stt::Tree& stree, FrNet* net);
+  void StTreeVisualization(StTree& stree, FrNet* net, bool is3DVisualization);
+
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;  // big integer used as infinity
   static const int HCOST = 5000;
@@ -512,14 +510,8 @@ class FastRouteCore
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
 
-  static const int num_tree_saved_ = 3;
-  std::map<odb::dbNet*, stt::Tree> treesGeneratedBySteinerTreeBuilder_;
-  std::map<odb::dbNet*, std::vector<StTree>> treesGeneratedByFastRoute_; // { RectilinearSteinerTree, final 2D tree, 3D Tree after layer assigment }, size of vector is num_tree_saved_
-
   FastRouteRenderer* fastrouteRender_;
   DebugSetting* debug_;
-  void steinerTreeVisualization(stt::Tree& stree);
-  void StTreeVisualization(StTree& stree);
 };
 
 }  // namespace grt

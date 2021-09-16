@@ -36,7 +36,6 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "stt/SteinerTreeBuilder.h"
 
 namespace odb {
 class dbNet;
@@ -105,24 +104,10 @@ struct cmpById
   }
 };
 
-struct Point{
-  int x_, y_;
-  int layer_;
-  Point() = default;
-  Point(int x, int y, int l)
-  {
-    x_     = x;
-    y_     = y;
-    layer_ = l;
-  }
-};
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
-typedef std::map<odb::dbNet*, stt::Tree> NetTreeRouteMap;
 typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
-typedef std::vector<Point> PointsVector; 
-typedef std::map<odb::dbNet*, PointsVector> PinNetMap;
 void print(GRoute& groute);
 
 }  // namespace grt

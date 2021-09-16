@@ -187,50 +187,19 @@ highlight_net_route(const odb::dbNet *net)
   getGlobalRouter()->highlightRoute(net);
 }
 
-void highlight_steiner_tree_builder(const odb::dbNet *net)
-{
-  getGlobalRouter()->highlightSteinerTreeBuilder(net);
-}
-
-void highlight_2D_tree(const odb::dbNet *net)
-{
-  getGlobalRouter()->highlightRectilinearSteinerTree(net, 3);
-}
-
-void highlight_3D_tree(const odb::dbNet *net)
-{
-  getGlobalRouter()->highlightRectilinearSteinerTree(net, 4);
-}
-
-void highlight_rectilinear_steiner_tree(const odb::dbNet *net)
-{
-  getGlobalRouter()->highlightRectilinearSteinerTree(net, 5);
-}
-
-void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D){
+void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D, bool tree3D){
   getGlobalRouter()->initDebugFastRoute();
   getGlobalRouter()->setDebugNet(net);
   getGlobalRouter()->setDebugSteinerTree(steinerTree);
   getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
   getGlobalRouter()->setDebugTree2D(tree2D);
+  getGlobalRouter()->setDebugTree3D(tree3D);
 }
 
 void
 erase_routes()
 {
   getGlobalRouter()->clearRouteGui();
-}
-
-void
-erase_fastroutes()
-{
-  getGlobalRouter()->clearFastRouteGui();
-}
-
-void 
-erase_steinertrees()
-{
-  getGlobalRouter()->clearSteinerTreeGui();
 }
 
 void
