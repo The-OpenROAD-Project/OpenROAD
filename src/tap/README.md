@@ -40,6 +40,15 @@ at the corners of the core area, according the row orientation.
 - `-tap_prefix`. Specify the name prefix for the tapcell instances.
 - `-endcap_prefix`. Specify the name prefix for the endcaps instances.
 
+The figures below shows two examples of tapcell insertion. When only the 
+`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
+is similar to the Figure 1. When the remaining masters are give, the tapcell
+placement is similar to the Figure 2.
+
+| <img src="./doc/image/tapcell_example1.png" width=450px> | <img src="./doc/image/tapcell_example2.png" width=450px> |
+|:--:|:--:|
+| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
+
 ## Example scripts
 
 You can find script examples for both 45nm and 14nm in
