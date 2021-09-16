@@ -68,7 +68,37 @@ The `place_pin` command places a specific pin in the specified location, with th
 -   `-pin_size` option defines the width and height of the pin.
 
 
-### Define Pin Shape Pattern
+### Pin Constraints
+
+#### Set IO Pin Constraint
+
+The `set_io_pin_constraint` command sets region constraints for pins according
+to the pin direction or the pin name. This command can be called multiple
+times with different constraints. Only one condition should be used for
+each command call.
+
+The `-direction` argument is the pin direction (input, output, inout, or
+feedthrough). The `-pin_names` argument is a list of names. The `-region`
+syntax is the same as that of the `-exclude` syntax.
+
+Note that if you call `define_pin_shape_pattern` before
+`set_io_pin_constraint`, the `edge` values are (up, top,
+bottom, left, right). Where `up` relates to the layer created by
+`define_pin_shape_pattern`. To restrict pins to the pin placement grid
+defined with `define_pin_shape_pattern` use:
+
+-   `-region up:{llx lly urx ury}` to restrict the pins into a specific
+    region in the grid
+-   `-region up:*` to restrict the pins into the entire region of the grid.
+
+
+```
+set_io_pin_constraint -direction <direction>
+                      -pin_names <names>
+                      -region <edge:interval>
+```
+
+#### Define Pin Shape Pattern
 
 The `define_pin_shape_pattern` command defines a pin placement grid on the
 specified layer. This grid has positions inside the die area, not only at
@@ -96,53 +126,22 @@ define_pin_shape_pattern [-layer <layer>]
     existing routing obstructions that the pins should avoid; this defaults to the
     `layer` minimum spacing.
 
+##### Face-to-Face direct-bonding IOs
 
-### Set IO Pin Constraint
-
-The `set_io_pin_constraint` command sets region constraints for pins according
-to the pin direction or the pin name. This command can be called multiple
-times with different constraints. Only one condition should be used for
-each command call.
-
-The `-direction` argument is the pin direction (input, output, inout, or
-feedthrough). The `-pin_names` argument is a list of names. The `-region`
-syntax is the same as that of the `-exclude` syntax.
-
-#### Face-to-Face direct-bonding IOs
-
-Studies have shown that 3D integration offers power and performance
-benefit.  There is also a newly emerging opportunity for 3D-IC
-application in the area of design obfuscation.
-[Micro bumps and hybrid bonding](https://semiengineering.com/bumps-vs-hybrid-bonding-for-advanced-packaging/)
-are two of the more advanced packaging technologies that
-are used for 3D integration via face-to-face stacking. The
+The `define_pin_shape_pattern` command can be used to place pins in any metal
+layer with the minimum allowed spacing to facilitate 3DIC integration of
+chips using face-to-face packaging technologies. These technologies include
+[micro bumps](https://semiengineering.com/bumps-vs-hybrid-bonding-for-advanced-packaging/)
+and
 [hybrid bonding](https://www.3dincites.com/2018/04/hybrid-bonding-from-concept-to-commercialization/)
-technology provides even denser interconnect for the
-[3D stack](https://en.wikipedia.org/wiki/Direct_bonding). The implementation
-of face-to-face stacking involves placement of the ports/pins of the
-individual chips in the die area during physical design steps.
-
-Note that if you call `define_pin_shape_pattern` before
-`set_io_pin_constraint`, the `edge` values are (up, top,
-bottom, left, right). Where `up` relates to the layer created by
-`define_pin_shape_pattern`. To restrict pins to the pin placement grid
-defined with `define_pin_shape_pattern` use:
-
--   `-region up:{llx lly urx ury}` to restrict the pins into a specific
-    region in the grid
--   `-region up:*` to restrict the pins into the entire region of the grid.
+for high density face-to-face interconnect.
 
 
-```
-set_io_pin_constraint -direction <direction>
-                      -pin_names <names>
-                      -region <edge:interval>
-```
-
-### Clear IO Pin Constraints
+#### Clear IO Pin Constraints
 
 The `clear_io_pin_constraints` command clears all the previously-defined
-constraints and pin shape patterns created with `define_pin_shape_pattern`.
+constraints and pin shape patterns created with `set_io_pin_constraint` or
+`define_pin_shape_pattern`.
 
 ```
 clear_io_pin_constraints
