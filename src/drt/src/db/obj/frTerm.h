@@ -51,7 +51,8 @@ class frTerm : public frBlockObject
         net_(nullptr),
         pins_(),
         type_(dbSigType::SIGNAL),
-        direction_(dbIoType::INPUT)
+        direction_(dbIoType::INPUT),
+        bbox_()
   {
   }
   frTerm(const frTerm& in)
@@ -60,7 +61,8 @@ class frTerm : public frBlockObject
         block_(in.block_),
         net_(in.net_),
         type_(in.type_),
-        direction_(in.direction_)
+        direction_(in.direction_),
+        bbox_()
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -74,7 +76,8 @@ class frTerm : public frBlockObject
         block_(in.block_),
         net_(in.net_),
         type_(in.type_),
-        direction_(in.direction_)
+        direction_(in.direction_),
+        bbox_()
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -94,6 +97,15 @@ class frTerm : public frBlockObject
   void addPin(std::unique_ptr<frPin> in)
   {
     in->setTerm(this);
+    for (auto& uFig : in->getFigs()) {
+      auto pinFig = uFig.get();
+      if (pinFig->typeId() == frcRect) {
+        if (bbox_.width() == 0 && bbox_.length() == 0)
+          bbox_ = static_cast<frRect*>(pinFig)->getBBox();
+        else
+          bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
+      }
+    }
     pins_.push_back(std::move(in));
   }
   void setType(dbSigType in) { type_ = in; }
@@ -104,27 +116,44 @@ class frTerm : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcTerm; }
   void setOrderId(int order_id) { _order_id = order_id; }
   int getOrderId() { return _order_id; }
-  frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum, 
-                                int pinAccessIdx) {
-        if (pinAccessIdx == -1) {
-          return nullptr;
+  frAccessPoint* getAccessPoint(frCoord x,
+                                frCoord y,
+                                frLayerNum lNum,
+                                int pinAccessIdx)
+  {
+    if (pinAccessIdx == -1) {
+      return nullptr;
+    }
+    for (auto& pin : pins_) {
+      if (!pin->hasPinAccess()) {
+        continue;
+      }
+      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+        if (x == ap->getPoint().x() && y == ap->getPoint().y()
+            && lNum == ap->getLayerNum()) {
+          return ap.get();
         }
-        for (auto& pin : pins_) {
-          if (!pin->hasPinAccess()) {
-            continue;
-          }
-          for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-            if (x == ap->getPoint().x() && y == ap->getPoint().y() && 
-                lNum == ap->getLayerNum()) {
-                return ap.get();
-            }
-          }
+      }
+    }
+    return nullptr;
+  }
+  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
+  {
+    return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
+  }
+  // fills outShapes with copies of the pinFigs
+  void getShapes(std::vector<frRect>& outShapes)
+  {
+    for (auto& pin : pins_) {
+      for (auto& pinShape : pin->getFigs()) {
+        if (pinShape->typeId() == frcRect) {
+          outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
         }
-        return nullptr;
+      }
+    }
   }
-  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx) {
-      return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
-  }
+  const frBox getBBox() const { return bbox_; }
+
  protected:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
@@ -133,6 +162,7 @@ class frTerm : public frBlockObject
   dbSigType type_;
   dbIoType direction_;
   int _order_id;
+  frBox bbox_;
 };
 }  // namespace fr
 

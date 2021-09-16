@@ -149,6 +149,11 @@ class frBlock : public frBlockObject
       return it->second;
     }
   }
+  frCoord getGCellSizeHorizontal()
+  {
+    return getGCellPatterns()[0].getSpacing();
+  }
+  frCoord getGCellSizeVertical() { return getGCellPatterns()[1].getSpacing(); }
   // idx must be legal
   void getGCellBox(const frPoint& idx1, frBox& box) const
   {

@@ -277,6 +277,16 @@ class frTechObject
     return via2viaMinStepPatches_;
   }
 
+  bool isHorizontalLayer(frLayerNum l)
+  {
+    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
+  }
+
+  bool isVerticalLayer(frLayerNum l)
+  {
+    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
+  }
+
  protected:
   frUInt4 dbUnit;
   frUInt4 manufacturingGrid;
