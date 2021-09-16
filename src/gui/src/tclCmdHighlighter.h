@@ -69,7 +69,7 @@ struct CommandRuleGroup
 struct CommandArguments
 {
   std::string command; // name of command
-  bool is_toplevel; // command is part of the toplevel namepace
+  bool is_toplevel; // command is part of the toplevel namespace
   std::set<std::string> arguments; // set of command arguments
 };
 
@@ -110,7 +110,12 @@ class TclCmdHighlighter : public QSyntaxHighlighter
     CommandRulePtr buildKeywordRule(const int command_id,
                                     const std::string& command,
                                     const std::string& start_of_command,
-                                    const std::string& end_of_command);
+                                    const std::string& end_of_command,
+                                    bool escape_cmd = true);
+    void buildKeywordsRule(std::vector<CommandRulePtr>& vec,
+                           const std::vector<std::string>& commands,
+                           const std::string& start_of_command,
+                           const std::string& end_of_command);
     CommandRulePtr buildRule(const std::string& pattern);
     CommandRulePtr buildRule(const int command_id,
                              const std::string& pattern);

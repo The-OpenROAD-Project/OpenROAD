@@ -314,8 +314,8 @@ void TclCmdInputWidget::init(Tcl_Interp* interp)
 
   initOpenRoadCommands();
 
-  const char* start_of_command = "(?:^|(?<=\\s)|(?<=\\[)|(?<=\\{))";
-  const char* end_of_command = "(?:$|(?=\\s)|(?=\\])|(?=\\}))";
+  const char* start_of_command = "(?:^|(?<=(?:\\s|\\[|\\{)))";
+  const char* end_of_command = "(?:$|(?=(?:\\s|\\]|\\})))";
 
   // setup highlighter
   highlighter_ = std::make_unique<TclCmdHighlighter>(document(),
