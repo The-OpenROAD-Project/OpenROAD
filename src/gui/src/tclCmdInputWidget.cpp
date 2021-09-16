@@ -314,8 +314,8 @@ void TclCmdInputWidget::init(Tcl_Interp* interp)
 
   initOpenRoadCommands();
 
-  const char* start_of_command = "(?:^|(?<=\\s)|(?<=\\[)|(?<=\\{))";
-  const char* end_of_command = "(?:$|(?=\\s)|(?=\\])|(?=\\}))";
+  const char* start_of_command = "(?:^|(?<=(?:\\s|\\[|\\{)))";
+  const char* end_of_command = "(?:$|(?=(?:\\s|\\]|\\})))";
 
   // setup highlighter
   highlighter_ = std::make_unique<TclCmdHighlighter>(document(),
@@ -687,7 +687,7 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   cursor.select(QTextCursor::LineUnderCursor);
   const QString line = cursor.selectedText();
 
-  int end_of_word  = line.lastIndexOf(*completer_end_of_command_.get(), cursor_position-1);
+  int end_of_word  = line.lastIndexOf(*completer_end_of_command_.get(), cursor_position - 1);
   if (end_of_word == -1) {
     end_of_word = 0;
   }
@@ -697,6 +697,15 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   }
 
   const QString word = line.mid(start_of_word, end_of_word-start_of_word).trimmed();
+  const QString remainder = line.right(line.length() - end_of_word).trimmed();
+
+  if (!remainder.isEmpty()) {
+    const std::regex word_regex("^\\w+");
+    // check if remainder contains a non-word character, if yes, then it's not swig
+    if (!std::regex_search(remainder.toStdString(), word_regex)) {
+      return nullptr;
+    }
+  }
 
   std::string variable_content = word.toStdString();
   if (word.startsWith("$")) {
