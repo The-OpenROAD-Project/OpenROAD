@@ -106,25 +106,25 @@ class TclCmdHighlighter : public QSyntaxHighlighter
                          const std::string& end_of_command);
     void initOther();
 
-    const std::string escape(const std::string& preregex);
-    CommandRulePtr buildKeywordRule(const int command_id,
-                                    const std::string& command,
-                                    const std::string& start_of_command,
-                                    const std::string& end_of_command,
-                                    bool escape_cmd = true);
-    void buildKeywordsRule(std::vector<CommandRulePtr>& vec,
-                           const std::vector<std::string>& commands,
-                           const std::string& start_of_command,
-                           const std::string& end_of_command);
-    CommandRulePtr buildRule(const std::string& pattern);
-    CommandRulePtr buildRule(const int command_id,
-                             const std::string& pattern);
-    ArgumentRulePtr buildArgumentRule(const std::vector<std::string>& args,
-                                      const QTextCharFormat* format);
+    static const std::string escape(const std::string& preregex);
+    static CommandRulePtr buildKeywordRule(const int command_id,
+                                           const std::string& command,
+                                           const std::string& start_of_command,
+                                           const std::string& end_of_command,
+                                           bool escape_cmd = true);
+    static void buildKeywordsRule(std::vector<CommandRulePtr>& vec,
+                                  const std::vector<std::string>& commands,
+                                  const std::string& start_of_command,
+                                  const std::string& end_of_command);
+    static CommandRulePtr buildRule(const std::string& pattern);
+    static CommandRulePtr buildRule(const int command_id,
+                                    const std::string& pattern);
+    static ArgumentRulePtr buildArgumentRule(const std::vector<std::string>& args,
+                                             const QTextCharFormat* format);
 
-    void addRuleGroup(std::vector<CommandRuleGroup>& rule_group,
-                      std::vector<CommandRulePtr>& rules,
-                      const QTextCharFormat* format);
+    static void addRuleGroup(std::vector<CommandRuleGroup>& rule_group,
+                             std::vector<CommandRulePtr>& rules,
+                             const QTextCharFormat* format);
 
     void highlightBlockWithRules(const QString& text,
                                  int start_idx,
