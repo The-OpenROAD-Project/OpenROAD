@@ -31,8 +31,8 @@ tapcell [-tapcell_master tapcell_master]
 - `-halo_width_y`. Specify the vertical halo size around macros during cut rows.
 - `-tap_nwin2_master`, `-tap_nwin3_master`, `-tap_nwout2_master`,
 `-tap_nwout3_master`, `-tap_nwintie_master`, `-tap_nwouttie_master`.
-Specify the master cells placed at the top and bottom of macros, according the
-row orientation.
+Specify the master cells placed at the top and bottom of macros and of the core area,
+according the row orientation.
 - `-incnrcap_nwin_master`, `-incnrcap_nwout_master`. Specify the master cells
 placed at the corners of macros.
 - `-cnrcap_nwin_master`, `-cnrcap_nwout_master`. Specify the macro cells placed
