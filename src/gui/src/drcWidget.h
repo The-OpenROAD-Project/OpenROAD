@@ -161,7 +161,7 @@ class DRCWidget : public QDockWidget, public Renderer
 
   private:
     void loadTRReport(const QString& filename);
-    void loadASCIIReport(const QString& filename);
+    void loadJSONReport(const QString& filename);
     void updateModel();
 
     utl::Logger* logger_;
