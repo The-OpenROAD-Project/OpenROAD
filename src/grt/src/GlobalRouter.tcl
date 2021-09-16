@@ -322,9 +322,12 @@ proc global_route_debug { args } {
   set tree2D [info exists flags(-tree2D)]
   set tree3D [info exists flags(-tree3D)]
   set db_block [ord::get_db_block]
+  set net [$db_block findNet $keys(-net)]
 
-  if { [info exists keys(-net)] } {
-    grt::set_global_route_debug_cmd [$db_block findNet $keys(-net)] $st $rst $tree2D $tree3D
+  if { [info exists keys(-net)] && $net != "NULL" } {
+    grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D
+  } else {
+    utl::error GRT 231 "Net name not found."
   }
 }
 
