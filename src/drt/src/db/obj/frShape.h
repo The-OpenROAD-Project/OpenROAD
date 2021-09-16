@@ -166,7 +166,7 @@ class frRect : public frShape
    * overlaps in .cpp
    */
   void getBBox(frBox& boxIn) const override { boxIn.set(box_); }
-  frBox& getBBox() { return box_; }
+  const frBox& getBBox() const { return box_; }
   void move(const frTransform& xform) override { box_.transform(xform); }
   bool overlaps(const frBox& box) const override
   {
@@ -189,7 +189,18 @@ class frRect : public frShape
     box_.getClosestPoint(p, result);
     result.setZ(layer_);
   }
-
+  void setLeft(frCoord v) {
+      box_.setLeft(v);
+  }
+  void setRight(frCoord v) {
+      box_.setRight(v);
+  }
+  void setTop(frCoord v) {
+      box_.setTop(v);
+  }
+  void setBottom(frCoord v) {
+      box_.setBottom(v);
+  }
  protected:
   frBox box_;
   frLayerNum layer_;

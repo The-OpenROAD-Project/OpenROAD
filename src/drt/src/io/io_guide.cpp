@@ -67,7 +67,7 @@ void io::Parser::patchGuides(frNet* net,
   } else {
     frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
     iTerm->getShapes(pinShapes, true);
-    pinBBox = static_cast<frInstTerm*>(pin)->getBBox();
+    pinBBox = iTerm->getBBox();
     name = iTerm->getName();
   }
   logger->info(DRT,
@@ -141,7 +141,7 @@ void io::Parser::patchGuides(frNet* net,
   // gets the point in the closer guide that is closer to the bestPinLoc
   Point3D guidePt;
   guides[closerGuideIdx].getClosestPoint(bestPinLocCoords, guidePt);
-  frBox& guideBox = guides[closerGuideIdx].getBBox();
+  const frBox& guideBox = guides[closerGuideIdx].getBBox();
   frCoord gCellX = design->getTopBlock()->getGCellSizeHorizontal();
   frCoord gCellY = design->getTopBlock()->getGCellSizeVertical();
   if (guidePt.x() == guideBox.left()
@@ -166,17 +166,17 @@ void io::Parser::patchGuides(frNet* net,
   if (design->isHorizontalLayer(guidePt.z())) {
     if (guidePt.x() != bestPinLocCoords.x()) {
       if (bestPinLocCoords.x() < guideBox.left())
-        guideBox.setLeft(bestPinLocCoords.x() - gCellX / 2);
+        guides[closerGuideIdx].setLeft(bestPinLocCoords.x() - gCellX / 2);
       else if (bestPinLocCoords.x() > guideBox.right())
-        guideBox.setRight(bestPinLocCoords.x() + gCellX / 2);
+        guides[closerGuideIdx].setRight(bestPinLocCoords.x() + gCellX / 2);
       guidePt.setX(bestPinLocCoords.x());
     }
   } else if (design->isVerticalLayer(guidePt.z())) {
     if (guidePt.y() != bestPinLocCoords.y()) {
       if (bestPinLocCoords.y() < guideBox.bottom())
-        guideBox.setBottom(bestPinLocCoords.y() - gCellY / 2);
+        guides[closerGuideIdx].setBottom(bestPinLocCoords.y() - gCellY / 2);
       else if (bestPinLocCoords.y() > guideBox.top())
-        guideBox.setTop(bestPinLocCoords.y() + gCellY / 2);
+        guides[closerGuideIdx].setTop(bestPinLocCoords.y() + gCellY / 2);
       guidePt.setY(bestPinLocCoords.y());
     }
   } else
