@@ -35,186 +35,215 @@ using namespace fr;
 /* note: M1 guide special treatment. search "no M1 cross-gcell routing allowed"
  */
 
-void getGuide(int x, int y, vector<int>& outGuides, vector<frRect>& guides, frDesign* design) {
-    frPoint g(x, y), gCell; 
-    design->getTopBlock()->getGCellCenter(g, gCell);
-//    if (debug) cout << "getting guide in " << gCell.x() << " " << gCell.y() << "\n";
-    for (int i = 0; i < (int)guides.size(); i++) {
-//        if (debug) cout << "checking guide " << guides[i].getBBox() << "\n";
-        if (guides[i].getBBox().contains(gCell))
-            outGuides.push_back(i);
-    }
+void getGuide(int x,
+              int y,
+              vector<int>& outGuides,
+              vector<frRect>& guides,
+              frDesign* design)
+{
+  frPoint g(x, y), gCell;
+  design->getTopBlock()->getGCellCenter(g, gCell);
+  for (int i = 0; i < (int) guides.size(); i++) {
+    if (guides[i].getBBox().contains(gCell))
+      outGuides.push_back(i);
+  }
 }
 
+// extends/adds guides to cover (at least the major part of) the pins that were
+// considered disconnected from the guides
+void io::Parser::patchGuides(frNet* net,
+                             frBlockObject* pin,
+                             std::vector<frRect>& guides)
+{
+  // get the gCells of the pin, and is shapes (rects)
+  frBox pinBBox;
+  vector<frRect> pinShapes;
+  string name = "";
+  if (pin->typeId() == frcTerm) {
+    frTerm* term = static_cast<frTerm*>(pin);
+    term->getShapes(pinShapes);
+    pinBBox = term->getBBox();
+    name = term->getName();
+  } else {
+    frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
+    iTerm->getShapes(pinShapes, true);
+    pinBBox = static_cast<frInstTerm*>(pin)->getBBox();
+    name = iTerm->getName();
+  }
+  logger->info(DRT,
+               1000,
+               "Pin {} not in any guide. Attempting to patch guides to cover "
+               "(at least part of) the pin.",
+               name);
+  pinBBox.set(
+      pinBBox.left() + 1,
+      pinBBox.bottom() + 1,
+      pinBBox.right() - 1,
+      pinBBox.top()
+          - 1);  // pins tangent to gcell arent considered as part of them
+  // set pinBBox to gCell coords
+  frPoint llGcell, urGcell;
+  design->getTopBlock()->getGCellIdx(pinBBox.lowerLeft(), llGcell);
+  design->getTopBlock()->getGCellIdx(pinBBox.upperRight(), urGcell);
 
-bool isInRoutingLayerRange(frLayerNum l, frDesign* design) {
-    return l <= TOP_ROUTING_LAYER && l <= design->getTech()->getTopLayerNum() &&
-            l >= BOTTOM_ROUTING_LAYER && l >= design->getTech()->getBottomLayerNum();
-}
-//extends/adds guides to cover (at least the major part of) the pins that were
-//considered disconnected from the guides 
-void io::Parser::patchGuides(frNet* net, frBlockObject* pin, 
-                    std::vector<frRect>& guides) {
-    //get the gCells of the pin, and is shapes (rects)
-    frBox pinBBox;
-    vector<frRect> pinShapes;
-    string name = "";
-    if (pin->typeId() == frcTerm) {
-        frTerm* term = static_cast<frTerm*>(pin);
-        term->getShapes(pinShapes);
-        pinBBox = term->getBBox();
-        name = term->getName();
-    }else {
-        frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
-        iTerm->getShapes(pinShapes, true);
-        pinBBox = static_cast<frInstTerm*>(pin)->getBBox();
-        name = iTerm->getName();
-    }
-    logger->info(DRT, 1000, "Pin {} not in any guide. Attempting to patch guides to cover (at least part of) the pin.", name);
-    pinBBox.set(pinBBox.left()+1, pinBBox.bottom()+1, pinBBox.right()-1, pinBBox.top()-1); //pins tangent to gcell arent considered as part of them
-    //set pinBBox to gCell coords
-    frPoint llGcell, urGcell;
-    design->getTopBlock()->getGCellIdx(pinBBox.lowerLeft(), llGcell);
-    design->getTopBlock()->getGCellIdx(pinBBox.upperRight(), urGcell);
-
-    //finds the gCell with higher pinShape overlapping area (approximate)
-    frArea bestArea = 0, area = 0;
-    Point3D bestPinLocIdx;
-    vector<int> candidateGuides; //indexes of guides in rects
-    for (int x = llGcell.x(); x <= urGcell.x(); x++) {
-        for (int y = llGcell.y(); y <= urGcell.y(); y++) {
-            frBox gCellBox;
-            frPoint gCell(x, y);
-            design->getTopBlock()->getGCellBox(gCell, gCellBox);
-            for (int z = 0; z < (int)design->getTech()->getLayers().size(); z++) {
-                if (design->getTech()->getLayer(z)->type != dbTechLayerType::ROUTING)
-                    continue;
-                area = 0;
-                for (auto& pinRect : pinShapes) {
-                    if (pinRect.getLayerNum() != z)
-                        continue;
-                    area += pinRect.getBBox().overlapingArea(gCellBox);
-                }
-                if (area > bestArea) {
-                    bestArea = area;
-                    bestPinLocIdx.set(x, y, z);
-                }
-            }
-            //finds guides in the neighboring gCells
-            getGuide(x-1, y, candidateGuides, guides, design);
-            getGuide(x+1, y, candidateGuides, guides, design);
-            getGuide(x, y-1, candidateGuides, guides, design);
-            getGuide(x, y+1, candidateGuides, guides, design);
+  // finds the gCell with higher pinShape overlapping area (approximate)
+  frArea bestArea = 0, area = 0;
+  Point3D bestPinLocIdx;
+  vector<int> candidateGuides;  // indexes of guides in rects
+  for (int x = llGcell.x(); x <= urGcell.x(); x++) {
+    for (int y = llGcell.y(); y <= urGcell.y(); y++) {
+      frBox gCellBox;
+      frPoint gCell(x, y);
+      design->getTopBlock()->getGCellBox(gCell, gCellBox);
+      for (int z = 0; z < (int) design->getTech()->getLayers().size(); z++) {
+        if (design->getTech()->getLayer(z)->type != dbTechLayerType::ROUTING)
+          continue;
+        area = 0;
+        for (auto& pinRect : pinShapes) {
+          if (pinRect.getLayerNum() != z)
+            continue;
+          area += pinRect.getBBox().overlapingArea(gCellBox);
         }
+        if (area > bestArea) {
+          bestArea = area;
+          bestPinLocIdx.set(x, y, z);
+        }
+      }
+      // finds guides in the neighboring gCells
+      getGuide(x - 1, y, candidateGuides, guides, design);
+      getGuide(x + 1, y, candidateGuides, guides, design);
+      getGuide(x, y - 1, candidateGuides, guides, design);
+      getGuide(x, y + 1, candidateGuides, guides, design);
     }
-    if (candidateGuides.empty()) {
-        logger->warn(DRT, 1001, "No guide in the pin neighborhood");
+  }
+  if (candidateGuides.empty()) {
+    logger->warn(DRT, 1001, "No guide in the pin neighborhood");
+    return;
+  }
+  // get the guide that is closer to the gCell
+  int closerGuideIdx = -1;
+  int dist = 0, closerDist = std::numeric_limits<int>().max();
+  Point3D bestPinLocCoords;
+  design->getTopBlock()->getGCellCenter(bestPinLocIdx, bestPinLocCoords);
+  for (auto& guideIdx : candidateGuides) {
+    dist = guides[guideIdx].getBBox().distL1(bestPinLocCoords);
+    dist += abs(guides[guideIdx].getLayerNum() - bestPinLocIdx.z());
+    if (dist < closerDist) {
+      closerDist = dist;
+      closerGuideIdx = guideIdx;
+    }
+  }
+  //    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().lowerLeft(),
+  //    pl);
+  //    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().upperRight(),
+  //    ph); frRect closerGuide(pl.x(), pl.y(), ph.x(), ph.y(),
+  //    guides[closerGuideIdx].getLayerNum(), net);
+  // gets the point in the closer guide that is closer to the bestPinLoc
+  Point3D guidePt;
+  guides[closerGuideIdx].getClosestPoint(bestPinLocCoords, guidePt);
+  frBox& guideBox = guides[closerGuideIdx].getBBox();
+  frCoord gCellX = design->getTopBlock()->getGCellSizeHorizontal();
+  frCoord gCellY = design->getTopBlock()->getGCellSizeVertical();
+  if (guidePt.x() == guideBox.left()
+      || std::abs(guideBox.left() - guidePt.x())
+             <= std::abs(guideBox.right() - guidePt.x()))
+    guidePt.setX(guideBox.left() + gCellX / 2);
+  else if (guidePt.x() == guideBox.right()
+           || std::abs(guideBox.right() - guidePt.x())
+                  <= std::abs(guideBox.left() - guidePt.x()))
+    guidePt.setX(guideBox.right() - gCellX / 2);
+  if (guidePt.y() == guideBox.bottom()
+      || std::abs(guideBox.bottom() - guidePt.y())
+             <= std::abs(guideBox.top() - guidePt.y()))
+    guidePt.setY(guideBox.bottom() + gCellY / 2);
+  else if (guidePt.y() == guideBox.top()
+           || std::abs(guideBox.top() - guidePt.y())
+                  <= std::abs(guideBox.bottom() - guidePt.y()))
+    guidePt.setY(guideBox.top() - gCellY / 2);
+
+  // connect bestPinLoc to guidePt by creating "patch" guides
+  // first, try to extend closerGuide
+  if (design->isHorizontalLayer(guidePt.z())) {
+    if (guidePt.x() != bestPinLocCoords.x()) {
+      if (bestPinLocCoords.x() < guideBox.left())
+        guideBox.setLeft(bestPinLocCoords.x() - gCellX / 2);
+      else if (bestPinLocCoords.x() > guideBox.right())
+        guideBox.setRight(bestPinLocCoords.x() + gCellX / 2);
+      guidePt.setX(bestPinLocCoords.x());
+    }
+  } else if (design->isVerticalLayer(guidePt.z())) {
+    if (guidePt.y() != bestPinLocCoords.y()) {
+      if (bestPinLocCoords.y() < guideBox.bottom())
+        guideBox.setBottom(bestPinLocCoords.y() - gCellY / 2);
+      else if (bestPinLocCoords.y() > guideBox.top())
+        guideBox.setTop(bestPinLocCoords.y() + gCellY / 2);
+      guidePt.setY(bestPinLocCoords.y());
+    }
+  } else
+    logger->error(DRT, 1002, "Layer is not horizontal or vertical");
+
+  if (guidePt == bestPinLocCoords)
+    return;
+  // add guide in upper our lower layer
+  int z = guidePt.z();
+  if (guidePt.x() != bestPinLocCoords.x()
+      || guidePt.y() != bestPinLocCoords.y()) {
+    frPoint pl, ph;
+    pl.set(std::min(bestPinLocCoords.x(), guidePt.x()),
+           std::min(bestPinLocCoords.y(), guidePt.y()));
+    ph.set(std::max(bestPinLocCoords.x(), guidePt.x()),
+           std::max(bestPinLocCoords.y(), guidePt.y()));
+
+    guides.emplace_back(pl.x() - gCellX / 2,
+                        pl.y() - gCellY / 2,
+                        ph.x() + gCellX / 2,
+                        ph.y() + gCellY / 2,
+                        z,
+                        net);
+  }
+
+  // fill the gap between current layer and the bestPinLocCoords layer with
+  // guides
+  int inc = z < bestPinLocIdx.z() ? 2 : -2;
+  for (z = z + inc; z != bestPinLocIdx.z() + inc; z += inc) {
+    guides.emplace_back(bestPinLocCoords.x() - gCellX / 2,
+                        bestPinLocCoords.y() - gCellY / 2,
+                        bestPinLocCoords.x() + gCellX / 2,
+                        bestPinLocCoords.y() + gCellY / 2,
+                        z,
+                        net);
+  }
+}
+
+void io::Parser::genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides)
+{
+  for (auto pin : net->getInstTerms())
+    checkPinForGuideEnclosure(pin, net, guides);
+  for (auto pin : net->getTerms())
+    checkPinForGuideEnclosure(pin, net, guides);
+}
+
+void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
+                                           frNet* net,
+                                           std::vector<frRect>& guides)
+{
+  vector<frRect> pinShapes;
+  if (pin->typeId() == frcTerm) {
+    static_cast<frTerm*>(pin)->getShapes(pinShapes);
+  } else {
+    static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+  }
+  for (auto& pinRect : pinShapes) {
+    int i = 0;
+    for (auto& guide : guides) {
+      if (pinRect.getLayerNum() == guide.getLayerNum()
+          && guide.getBBox().overlaps(pinRect.getBBox(), false)) {
         return;
+      }
+      i++;
     }
-    // get the guide that is closer to the gCell
-    int closerGuideIdx = -1;
-    int dist = 0, closerDist = std::numeric_limits<int>().max();
-    Point3D bestPinLocCoords;
-    design->getTopBlock()->getGCellCenter(bestPinLocIdx, bestPinLocCoords);
-    for (auto& guideIdx : candidateGuides) {
-        dist = guides[guideIdx].getBBox().distL1(bestPinLocCoords);
-        dist += abs(guides[guideIdx].getLayerNum() - bestPinLocIdx.z());
-        if (dist < closerDist) {
-            closerDist = dist;
-            closerGuideIdx = guideIdx;
-        }
-    }
-//    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().lowerLeft(), pl);
-//    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().upperRight(), ph);
-//    frRect closerGuide(pl.x(), pl.y(), ph.x(), ph.y(), guides[closerGuideIdx].getLayerNum(), net);
-    //gets the point in the closer guide that is closer to the bestPinLoc
-    Point3D guidePt;
-    guides[closerGuideIdx].getClosestPoint(bestPinLocCoords, guidePt);
-    frBox& guideBox = guides[closerGuideIdx].getBBox();
-    frCoord gCellX = design->getTopBlock()->getGCellSizeHorizontal();
-    frCoord gCellY = design->getTopBlock()->getGCellSizeVertical();
-    if (guidePt.x() == guideBox.left() || 
-            std::abs(guideBox.left() - guidePt.x()) <= std::abs(guideBox.right() - guidePt.x()))
-        guidePt.setX(guideBox.left() + gCellX/2);
-    else if (guidePt.x() == guideBox.right() || 
-            std::abs(guideBox.right() - guidePt.x()) <= std::abs(guideBox.left() - guidePt.x()))
-        guidePt.setX(guideBox.right() - gCellX/2); 
-    if (guidePt.y() == guideBox.bottom() || 
-            std::abs(guideBox.bottom() - guidePt.y()) <= std::abs(guideBox.top() - guidePt.y()))
-        guidePt.setY(guideBox.bottom() + gCellY/2);
-    else if (guidePt.y() == guideBox.top() || 
-            std::abs(guideBox.top() - guidePt.y()) <= std::abs(guideBox.bottom() - guidePt.y()))
-        guidePt.setY(guideBox.top() - gCellY/2); 
-    
-    //connect bestPinLoc to guidePt by creating "patch" guides
-    //first, try to extend closerGuide
-    if (design->isHorizontalLayer(guidePt.z())) {
-        if (guidePt.x() != bestPinLocCoords.x()) {
-            if (bestPinLocCoords.x() < guideBox.left()) 
-                guideBox.setLeft(bestPinLocCoords.x() - gCellX/2);
-            else if (bestPinLocCoords.x() > guideBox.right())
-                guideBox.setRight(bestPinLocCoords.x() + gCellX/2);
-            guidePt.setX(bestPinLocCoords.x());
-        }
-    } else if (design->isVerticalLayer(guidePt.z())) {
-        if (guidePt.y() != bestPinLocCoords.y()) {
-            if (bestPinLocCoords.y() < guideBox.bottom())
-                guideBox.setBottom(bestPinLocCoords.y() - gCellY/2);
-            else if (bestPinLocCoords.y() > guideBox.top())
-                guideBox.setTop(bestPinLocCoords.y() + gCellY/2);
-            guidePt.setY(bestPinLocCoords.y());
-        }
-    } else cout << "error: layer is not horizontal or vertical\n";
-    
-    if (guidePt == bestPinLocCoords)
-        return;
-    //add guide in upper our lower layer
-    int z = guidePt.z();
-    if (guidePt.x() != bestPinLocCoords.x() || guidePt.y() != bestPinLocCoords.y()) {
-        frPoint pl, ph;
-        pl.set(std::min(bestPinLocCoords.x(), guidePt.x()), std::min(bestPinLocCoords.y(), guidePt.y()));
-        ph.set(std::max(bestPinLocCoords.x(), guidePt.x()), std::max(bestPinLocCoords.y(), guidePt.y()));
-
-        guides.emplace_back(pl.x()-gCellX/2, pl.y()-gCellY/2, ph.x()+gCellX/2, ph.y()+gCellY/2, z, net);
-    }
-
-    //fill the gap between current layer and the bestPinLocCoords layer with guides
-    int inc = z < bestPinLocIdx.z() ? 2 : -2;
-    for (z = z + inc; z != bestPinLocIdx.z() + inc; z += inc) {
-        guides.emplace_back(bestPinLocCoords.x()-gCellX/2, 
-                            bestPinLocCoords.y()-gCellY/2,
-                            bestPinLocCoords.x()+gCellX/2, 
-                            bestPinLocCoords.y()+gCellY/2, z, net);
-    }
-}
-
-void io::Parser::genGuides_pinEnclosure(frNet* net, 
-                    std::vector<frRect>& guides) {
-    for (auto pin : net->getInstTerms())
-        checkPinForGuideEnclosure(pin, net, guides);
-    for (auto pin : net->getTerms())
-        checkPinForGuideEnclosure(pin, net, guides);
-}
-
-void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin, frNet* net, 
-                    std::vector<frRect>& guides) {
-    vector<frRect> pinShapes;
-        if (pin->typeId() == frcTerm) {
-        static_cast<frTerm*>(pin)->getShapes(pinShapes);
-    }else {
-        static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
-    }
-    for (auto& pinRect : pinShapes) {
-        int i = 0;
-        for (auto& guide : guides) {
-            if (pinRect.getLayerNum() == guide.getLayerNum() && 
-                    guide.getBBox().overlaps(pinRect.getBBox(), false)) {
-                return;
-            }
-            i++;
-        }
-    }
-    patchGuides(net, pin, guides);
+  }
+  patchGuides(net, pin, guides);
 }
 
 void io::Parser::genGuides_merge(
@@ -327,7 +356,8 @@ void io::Parser::genGuides_split(
   for (auto& [pr, objS] : gCell2PinMap) {
     auto& point = pr.first;
     auto& lNum = pr.second;
-    if (design->getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (design->getTech()->getLayer(lNum)->getDir()
+        == dbTechLayerDir::HORIZONTAL) {
       pin_helper[lNum][point.y()][point.x()] = objS;
     } else {
       pin_helper[lNum][point.x()][point.y()] = objS;
@@ -522,7 +552,8 @@ void io::Parser::genGuides_gCell2TermMap(
                        && ((x == tmpIdx.x() - 1
                             && layer->getDir() == dbTechLayerDir::VERTICAL)
                            || (y == tmpIdx.y() - 1
-                               && layer->getDir() == dbTechLayerDir::HORIZONTAL))) {
+                               && layer->getDir()
+                                      == dbTechLayerDir::HORIZONTAL))) {
               if (VERBOSE > 0) {
                 frString name = (origTerm->typeId() == frcInstTerm)
                                     ? ((frInstTerm*) origTerm)->getName()
@@ -791,16 +822,16 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
 void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
 {
   net->clearGuides();
-  
+
   genGuides_pinEnclosure(net, rects);
-  
+
   vector<map<frCoord, boost::icl::interval_set<frCoord>>> intvs(
       tech->getLayers().size());
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
   genGuides_merge(rects, intvs);  // merge and add touching guide
-  
+
   map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>
       gCell2PinMap;
   map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>
@@ -1228,6 +1259,6 @@ bool io::Parser::genGuides_astar(
   if (pinVisited == nCnt - gCnt) {
     return true;
   } else {
-        return false;
+    return false;
   }
 }

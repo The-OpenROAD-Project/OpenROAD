@@ -173,12 +173,11 @@ class Parser
   // postProcessGuide functions
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
-  void patchGuides(frNet* net, frBlockObject* pin,
-                    std::vector<frRect>& rects);
-  void genGuides_pinEnclosure(frNet* net, 
-                    std::vector<frRect>& rects);
-  void checkPinForGuideEnclosure(frBlockObject* pin, frNet* net, 
-                    std::vector<frRect>& guides);
+  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
+  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
+  void checkPinForGuideEnclosure(frBlockObject* pin,
+                                 frNet* net,
+                                 std::vector<frRect>& guides);
   void genGuides_merge(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);
