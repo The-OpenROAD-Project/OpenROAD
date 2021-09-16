@@ -3398,14 +3398,13 @@ void GlobalRouter::reportLayerWireLengths()
 
 void GlobalRouter::initDebugFastRoute()
 {
-  fastroute_->createDebug();
   fastroute_->setDebugOn(true);
 }
 void GlobalRouter::setDebugSteinerTree(bool steinerTree)
 {
   fastroute_->setDebugSteinerTree(steinerTree);
 }
-void GlobalRouter::setDebugNet(const odb::dbNet *net)
+void GlobalRouter::setDebugNet(const odb::dbNet* net)
 {
   fastroute_->setDebugNet(net);
 }
@@ -3464,7 +3463,6 @@ void GlobalRouter::clearRouteGui()
 {
   groute_renderer_->clear();
 }
-
 
 void GrouteRenderer::clear()
 {

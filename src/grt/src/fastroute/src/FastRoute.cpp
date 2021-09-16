@@ -34,6 +34,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "FastRoute.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,10 +49,9 @@
 #include <utility>
 
 #include "DataType.h"
-#include "FastRoute.h"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include "gui/gui.h"
 
 namespace grt {
 
@@ -97,7 +98,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       gui_(gui),
       fastrouteRender_(nullptr)
 {
-  createDebug();
+  debug_ = new DebugSetting();
 }
 
 FastRouteCore::~FastRouteCore()
@@ -203,7 +204,6 @@ void FastRouteCore::deleteComponents()
   v_capacity_ = 0;
   h_capacity_ = 0;
   num_nets_ = 0;
-
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
@@ -326,14 +326,14 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
 
 void FastRouteCore::init_usage()
 {
-  for (int i = 0; i < y_grid_; i++){
-    for(int j = 0; j < (x_grid_ - 1); j++){
+  for (int i = 0; i < y_grid_; i++) {
+    for (int j = 0; j < (x_grid_ - 1); j++) {
       h_edges_[i][j].usage = 0;
     }
   }
 
-  for (int i = 0; i < (y_grid_ - 1); i++){
-    for(int j = 0; j < x_grid_; j++){
+  for (int i = 0; i < (y_grid_ - 1); i++) {
+    for (int j = 0; j < x_grid_; j++) {
       v_edges_[i][j].usage = 0;
     }
   }
@@ -636,7 +636,6 @@ void FastRouteCore::initAuxVar()
   parent_y1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_x3_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
-
 }
 
 NetRouteMap FastRouteCore::getRoutes()
@@ -700,7 +699,6 @@ void FastRouteCore::updateDbCongestion()
 
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_ - 1; x++) {
-
         const unsigned short capH = h_capacity_3D_[k];
         const unsigned short blockageH
             = (h_capacity_3D_[k] - h_edges_3D_[k][y][x].cap);
@@ -714,7 +712,6 @@ void FastRouteCore::updateDbCongestion()
 
     for (int y = 0; y < y_grid_ - 1; y++) {
       for (int x = 0; x < x_grid_; x++) {
-
         const unsigned short capV = v_capacity_3D_[k];
         const unsigned short blockageV
             = (v_capacity_3D_[k] - v_edges_3D_[k][y][x].cap);
@@ -795,8 +792,8 @@ NetRouteMap FastRouteCore::run()
   // debug mode Rectilinear Steiner Tree
   if (debug_->isOn_ && debug_->rectilinearSTree_) {
     for (int netID = 0; netID < num_valid_nets_; netID++) {
-      if (nets_[netID]->db_net->getName() == const_cast<odb::dbNet*>(debug_->net_)->getName()) {
-        StTreeVisualization(sttrees_[netID],nets_[netID], false);
+      if (nets_[netID]->db_net == debug_->net_) {
+        StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
   }
@@ -1081,7 +1078,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
     for (int netID = 0; netID < num_valid_nets_; netID++) {
-      if (nets_[netID]->db_net->getName() == const_cast<odb::dbNet*>(debug_->net_)->getName()) {
+      if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1141,7 +1138,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
     for (int netID = 0; netID < num_valid_nets_; netID++) {
-      if (nets_[netID]->db_net->getName() == const_cast<odb::dbNet*>(debug_->net_)->getName()) {
+      if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -1231,7 +1228,8 @@ void FastRouteCore::computeCongestionInformation()
         cap_per_layer_[l] += h_edges_3D_[l][i][j].cap;
         usage_per_layer_[l] += h_edges_3D_[l][i][j].usage;
 
-        const int overflow = h_edges_3D_[l][i][j].usage - h_edges_3D_[l][i][j].cap;
+        const int overflow
+            = h_edges_3D_[l][i][j].usage - h_edges_3D_[l][i][j].cap;
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
@@ -1243,7 +1241,8 @@ void FastRouteCore::computeCongestionInformation()
         cap_per_layer_[l] += v_edges_3D_[l][i][j].cap;
         usage_per_layer_[l] += v_edges_3D_[l][i][j].usage;
 
-        const int overflow = v_edges_3D_[l][i][j].usage - v_edges_3D_[l][i][j].cap;
+        const int overflow
+            = v_edges_3D_[l][i][j].usage - v_edges_3D_[l][i][j].cap;
         if (overflow > 0) {
           overflow_per_layer_[l] += overflow;
           max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
@@ -1263,30 +1262,49 @@ const char* netName(FrNet* net)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+enum TreeStructure
+{
+  steinerTreeByStt,
+  steinerTreeByFastroute
+};
+
 class FastRouteRenderer : public gui::Renderer
 {
  public:
-  FastRouteRenderer(FastRouteCore* fastroute, odb::dbTech* tech, int w_tile, int h_tile, int x_corner, int y_corner);
+  FastRouteRenderer(FastRouteCore* fastroute,
+                    odb::dbTech* tech,
+                    int w_tile,
+                    int h_tile,
+                    int x_corner,
+                    int y_corner);
   void highlight(const FrNet* net);
-  void setSteinerTree(stt::Tree& stree);
-  void setStTreeValues(StTree& stree);
+  void setSteinerTree(const stt::Tree& stree);
+  void setStTreeValues(const StTree& stree);
   void setIs3DVisualization(bool is3DVisualization);
-  void setTreeStructure(int treeStructure);
+  void setTreeStructure(TreeStructure treeStructure);
 
   virtual void drawObjects(gui::Painter& /* painter */) override;
-  void drawTreeEdges(gui::Painter& painter);
-  void drawCircleObjects(gui::Painter& painter);
-  void drawLineObject(int x1, int y1, int l1, int x2, int y2, int l2, gui::Painter& painter);
 
  private:
-  int treeStructure_;  // 1 Steiner Tree By Flute, 2 Steiner Tree by Fastroute
-  
-  //Steiner Tree by Flute
+  void drawTreeEdges(gui::Painter& painter);
+  void drawCircleObjects(gui::Painter& painter);
+  void drawLineObject(int x1,
+                      int y1,
+                      int l1,
+                      int x2,
+                      int y2,
+                      int l2,
+                      gui::Painter& painter);
+
+  TreeStructure
+      treeStructure_;  // 1 Steiner Tree By stt, 2 Steiner Tree by Fastroute
+
+  // Steiner Tree by stt
   stt::Tree stree_;
-  
+
   // Steiner tree by fastroute
   std::vector<TreeEdge> treeEdges_;
-  int deg_;
   bool is3DVisualization_;
 
   // net data of pins
@@ -1300,11 +1318,21 @@ class FastRouteRenderer : public gui::Renderer
   int w_tile_, h_tile_, x_corner_, y_corner_;
 };
 
-FastRouteRenderer::FastRouteRenderer(FastRouteCore* fastroute, odb::dbTech* tech, int w_tile, int h_tile, int x_corner, int y_corner)
-    : fastroute_(fastroute), tech_(tech), w_tile_(w_tile), h_tile_(h_tile), x_corner_(x_corner), y_corner_(y_corner)
+FastRouteRenderer::FastRouteRenderer(FastRouteCore* fastroute,
+                                     odb::dbTech* tech,
+                                     int w_tile,
+                                     int h_tile,
+                                     int x_corner,
+                                     int y_corner)
+    : fastroute_(fastroute),
+      tech_(tech),
+      w_tile_(w_tile),
+      h_tile_(h_tile),
+      x_corner_(x_corner),
+      y_corner_(y_corner)
 {
 }
-void FastRouteRenderer::setTreeStructure(int treeStructure)
+void FastRouteRenderer::setTreeStructure(TreeStructure treeStructure)
 {
   treeStructure_ = treeStructure;
 }
@@ -1315,12 +1343,13 @@ void FastRouteRenderer::highlight(const FrNet* net)
   pinL_ = net->pinL;
   num_pins_ = net->numPins;
 }
-void FastRouteRenderer::setSteinerTree(stt::Tree& stree)
+void FastRouteRenderer::setSteinerTree(const stt::Tree& stree)
 {
   stree_ = stree;
 }
 
-std::vector<TreeEdge> converttoVector(TreeEdge* treeedges, int deg){
+std::vector<TreeEdge> convertToVector(TreeEdge* treeedges, int deg)
+{
   std::vector<TreeEdge> treeEdges;
   for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
     treeEdges.push_back(treeedges[edgeID]);
@@ -1328,86 +1357,92 @@ std::vector<TreeEdge> converttoVector(TreeEdge* treeedges, int deg){
   return treeEdges;
 }
 
-void FastRouteRenderer::setStTreeValues(StTree& stree)
+void FastRouteRenderer::setStTreeValues(const StTree& stree)
 {
-  deg_ = stree.deg;
-  treeEdges_ = converttoVector(stree.edges, deg_);
+  treeEdges_ = convertToVector(stree.edges, stree.deg);
 }
 void FastRouteRenderer::setIs3DVisualization(bool is3DVisualization)
 {
   is3DVisualization_ = is3DVisualization;
 }
 
-void FastRouteRenderer::drawLineObject(int x1, int y1, int layer1, int x2, int y2, int layer2, gui::Painter& painter){
-
+void FastRouteRenderer::drawLineObject(int x1,
+                                       int y1,
+                                       int layer1,
+                                       int x2,
+                                       int y2,
+                                       int layer2,
+                                       gui::Painter& painter)
+{
   if (layer1 == layer2) {
     if (is3DVisualization_) {
       odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
       painter.setPen(layer);
       painter.setBrush(layer);
-    }
-    else {
+    } else {
       painter.setPen(painter.cyan);
       painter.setBrush(painter.cyan);
     }
     painter.setPenWidth(700);
     painter.drawLine(x1, y1, x2, y2);
   }
-
 }
-void FastRouteRenderer::drawTreeEdges(gui::Painter& painter){
-
+void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
+{
   int lastL;
-  for (int edgeID = 0; edgeID < 2 * deg_ - 3; edgeID++) {
+  for (TreeEdge treeEdge : treeEdges_) {
+    if (treeEdge.len == 0) {
+      continue;
+    }
 
-    TreeEdge* treeEdge = &(treeEdges_[edgeID]);
+    int routeLen = treeEdge.route.routelen;
+    const std::vector<short>& gridsX = treeEdge.route.gridsX;
+    const std::vector<short>& gridsY = treeEdge.route.gridsY;
+    const std::vector<short>& gridsL = treeEdge.route.gridsL;
+    int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
+    int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
 
-    if (treeEdge->len > 0) {
-      int routeLen = treeEdge->route.routelen;
-      const std::vector<short>& gridsX = treeEdge->route.gridsX;
-      const std::vector<short>& gridsY = treeEdge->route.gridsY;
-      const std::vector<short>& gridsL = treeEdge->route.gridsL;
-      int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-      int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
+    if (is3DVisualization_)
+      lastL = gridsL[0];
 
-      if (is3DVisualization_) 
-        lastL = gridsL[0];
-      
-      for (int i = 1; i <= routeLen; i++) {
-        const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-        const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
+    for (int i = 1; i <= routeLen; i++) {
+      const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
+      const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
 
-        if (is3DVisualization_) {
-          drawLineObject(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1, painter);
-          lastL = gridsL[i];
-        }
-        else {
-          drawLineObject(lastX, lastY, -1, xreal, yreal, -1, painter);  // -1 to 2D Trees
-        }
-        lastX = xreal;
-        lastY = yreal;
+      if (is3DVisualization_) {
+        drawLineObject(
+            lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1, painter);
+        lastL = gridsL[i];
+      } else {
+        drawLineObject(
+            lastX, lastY, -1, xreal, yreal, -1, painter);  // -1 to 2D Trees
       }
+      lastX = xreal;
+      lastY = yreal;
     }
   }
 }
-void FastRouteRenderer::drawCircleObjects(gui::Painter& painter){
-
+void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
+{
+  painter.setPenWidth(700);
   for (int i = 0; i < num_pins_; i++) {
     const int xreal = w_tile_ * (pinX_[i] + 0.5) + x_corner_;
     const int yreal = h_tile_ * (pinY_[i] + 0.5) + y_corner_;
-    
+
     odb::dbTechLayer* layer = tech_->findRoutingLayer(pinL_[i] + 1);
     painter.setPen(layer);
     painter.setBrush(layer);
-    painter.setPenWidth(700);
-    painter.drawCircle(xreal, yreal,1500);
+    painter.drawCircle(xreal, yreal, 1500);
   }
 }
 
 void FastRouteRenderer::drawObjects(gui::Painter& painter)
 {
-  if (treeStructure_ == 1) {
-  
+  if (treeStructure_ == steinerTreeByStt) {
+    painter.setPen(painter.white);
+    painter.setBrush(painter.white);
+    painter.setPenWidth(700);
+
     const int deg = stree_.deg;
     for (int i = 0; i < 2 * deg - 2; i++) {
       const int x1 = w_tile_ * (stree_.branch[i].x + 0.5) + x_corner_;
@@ -1415,30 +1450,21 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
       const int n = stree_.branch[i].n;
       const int x2 = w_tile_ * (stree_.branch[n].x + 0.5) + x_corner_;
       const int y2 = h_tile_ * (stree_.branch[n].y + 0.5) + y_corner_;
-      const int len = abs(x1-x2)+abs(y1-y2);
+      const int len = abs(x1 - x2) + abs(y1 - y2);
       if (len > 0) {
-          painter.setPen(painter.white);
-          painter.setBrush(painter.white);
-          painter.setPenWidth(700);
-          painter.drawLine(x1,y1,x2,y2);
+        painter.drawLine(x1, y1, x2, y2);
       }
     }
-    
+
     drawCircleObjects(painter);
-  }
-  else if (treeStructure_ == 2) {
-    
+  } else if (treeStructure_ == steinerTreeByFastroute) {
     drawTreeEdges(painter);
-    
+
     drawCircleObjects(painter);
   }
 }
 
 ////////////////////////////////////////////////////////////////
-void FastRouteCore::createDebug()
-{
-  debug_ = new DebugSetting();
-}
 void FastRouteCore::setDebugOn(bool isOn)
 {
   debug_->isOn_ = isOn;
@@ -1455,7 +1481,7 @@ void FastRouteCore::setDebugTree3D(bool tree3D)
 {
   debug_->tree3D_ = tree3D;
 }
-void FastRouteCore::setDebugNet(const odb::dbNet *net)
+void FastRouteCore::setDebugNet(const odb::dbNet* net)
 {
   debug_->net_ = net;
 }
@@ -1464,34 +1490,40 @@ void FastRouteCore::setDebugRectilinearSTree(bool rectiliniarSTree)
   debug_->rectilinearSTree_ = rectiliniarSTree;
 }
 
-
-void FastRouteCore::steinerTreeVisualization(stt::Tree& stree, FrNet* net){
-  //init FastRouteRender
+void FastRouteCore::steinerTreeVisualization(const stt::Tree& stree, FrNet* net)
+{
+  // init FastRouteRender
   if (gui_) {
     if (fastrouteRender_ == nullptr) {
-      fastrouteRender_ = new FastRouteRenderer(this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
-      fastrouteRender_->highlight(net);
+      fastrouteRender_ = new FastRouteRenderer(
+          this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
       gui_->registerRenderer(fastrouteRender_);
     }
-    fastrouteRender_->setIs3DVisualization(false); // isnt 3D because is steiner tree generated by Flute
+    fastrouteRender_->highlight(net);
+    fastrouteRender_->setIs3DVisualization(
+        false);  // isnt 3D because is steiner tree generated by stt
     fastrouteRender_->setSteinerTree(stree);
-    fastrouteRender_->setTreeStructure(1);
+    fastrouteRender_->setTreeStructure(steinerTreeByStt);
     gui_->redraw();
     gui_->pause();
   }
 }
 
-void FastRouteCore::StTreeVisualization(StTree& stree, FrNet* net, bool is3DVisualization){
-  //init FastRouteRender
+void FastRouteCore::StTreeVisualization(const StTree& stree,
+                                        FrNet* net,
+                                        bool is3DVisualization)
+{
+  // init FastRouteRender
   if (gui_) {
     if (fastrouteRender_ == nullptr) {
-      fastrouteRender_ = new FastRouteRenderer(this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
-      fastrouteRender_->highlight(net);
+      fastrouteRender_ = new FastRouteRenderer(
+          this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
       gui_->registerRenderer(fastrouteRender_);
     }
+    fastrouteRender_->highlight(net);
     fastrouteRender_->setIs3DVisualization(is3DVisualization);
     fastrouteRender_->setStTreeValues(stree);
-    fastrouteRender_->setTreeStructure(2);
+    fastrouteRender_->setTreeStructure(steinerTreeByFastroute);
     gui_->redraw();
     gui_->pause();
   }
