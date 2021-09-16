@@ -18,13 +18,8 @@ set_global_routing_layer_adjustment * 0.5
 
 set_routing_layers -signal met1-met5 -clock met3-met5
 
-#global_route_debug -st -rst -tree2D -tree3D -net clknet_2_3__leaf_clk
 global_route
 
 write_guides $guide_file
 
 diff_file clock_route.guideok $guide_file
-
-#detailed_route_debug -maze -dr -net {clk}
-
-#detailed_route -guide $guide_file 
