@@ -259,8 +259,8 @@ void FastRouteCore::routeLShape(
     } else {
       y = endpoint.y;
     }
-    for (short x = startpoint.x; x < endpoint.x; x++) {
-      new_route_x.push_back(x + 1);
+    for (short x = startpoint.x; x <= endpoint.x; x++) {
+      new_route_x.push_back(x);
       new_route_y.push_back(y);
     }
     if (y < endpoint.y) {
@@ -285,14 +285,14 @@ void FastRouteCore::routeLShape(
       x = endpoint.x;
     }
     if (startpoint.y < endpoint.y) {
-      for (short y = startpoint.y; y < endpoint.y; y++) {
+      for (short y = startpoint.y; y <= endpoint.y; y++) {
         new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
+        new_route_y.push_back(y);
       }
     } else {
-      for (short y = startpoint.y; y > endpoint.y; y--) {
+      for (short y = startpoint.y; y >= endpoint.y; y--) {
         new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
+        new_route_y.push_back(y);
       }
     }
     while (x < endpoint.x) {
