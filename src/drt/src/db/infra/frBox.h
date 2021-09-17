@@ -179,61 +179,60 @@ class frBox
       return (ur_ < boxIn.upperRight());
     }
   }
-  bool intersection(frBox& b, frBox& result) const {
-      if (right() < b.left() || b.right() < left() || top() < b.bottom() ||
-                b.top() < bottom())
-          return false;
-      result.set(std::max(left(), b.left()), std::max(bottom(), b.bottom()), 
-              std::min(right(), b.right()), std::min(top(), b.top()));
-      return true;
+  bool intersection(frBox& b, frBox& result) const
+  {
+    if (right() < b.left() || b.right() < left() || top() < b.bottom()
+        || b.top() < bottom())
+      return false;
+    result.set(std::max(left(), b.left()),
+               std::max(bottom(), b.bottom()),
+               std::min(right(), b.right()),
+               std::min(top(), b.top()));
+    return true;
   }
-  frArea overlapingArea(frBox& b) const {
-      frBox result;
-      if (intersection(b, result))
-          return result.area();
-      return 0;
+  frArea overlapingArea(frBox& b) const
+  {
+    frBox result;
+    if (intersection(b, result))
+      return result.area();
+    return 0;
   }
-  int distL1(const frPoint& p) const {
-      int dx = 0, dy = 0;
-      if (p.x() < left())
-          dx = left() - p.x();
-      else if (p.x() > right())
-          dx = p.x() - right();
-      if (p.y() < bottom())
-          dy = bottom() - p.y();
-      else if (p.y() > top())
-          dy = p.y() - top();
-      return dx + dy;
+  int distL1(const frPoint& p) const
+  {
+    int dx = 0, dy = 0;
+    if (p.x() < left())
+      dx = left() - p.x();
+    else if (p.x() > right())
+      dx = p.x() - right();
+    if (p.y() < bottom())
+      dy = bottom() - p.y();
+    else if (p.y() > top())
+      dy = p.y() - top();
+    return dx + dy;
   }
-  void getClosestPoint(frPoint& p, frPoint& result) const {
-      int x, y;
-      if (p.x() < left())
-          x = left();
-      else if (p.x() > right())
-          x = right();
-      else
-          x = p.x();
-      if (p.y() < bottom())
-          y = bottom();
-      else if (p.y() > top())
-          y = top();
-      else
-          y = p.y();
-      result.set(x, y);
+  void getClosestPoint(frPoint& p, frPoint& result) const
+  {
+    int x, y;
+    if (p.x() < left())
+      x = left();
+    else if (p.x() > right())
+      x = right();
+    else
+      x = p.x();
+    if (p.y() < bottom())
+      y = bottom();
+    else if (p.y() > top())
+      y = top();
+    else
+      y = p.y();
+    result.set(x, y);
   }
-  
-  void setLeft(int l) {
-      ll_.setX(l);
-  }
-  void setBottom(int b) {
-      ll_.setY(b);
-  }
-  void setRight(int r) {
-      ur_.setX(r);
-  }
-  void setTop(int t) {
-      ur_.setY(t);
-  }
+
+  void setLeft(int l) { ll_.setX(l); }
+  void setBottom(int b) { ll_.setY(b); }
+  void setRight(int r) { ur_.setX(r); }
+  void setTop(int t) { ur_.setY(t); }
+
  protected:
   frPoint ll_, ur_;
 };

@@ -36,6 +36,7 @@
 
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -175,6 +176,24 @@ class FastRouteCore
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
+  bool checkTree(const int net_id);
+  bool areEdgesOverlapping(
+    const int net_id,
+    const int edge_id,
+    const std::vector<int>& edges);
+  void fixOverlappingEdge(const int net_id,
+                          const int edge,
+                          std::vector<std::pair<short, short>>& blocked_positions);
+  void bendEdge(TreeEdge* treeedge,
+                TreeNode* treenodes,
+                std::vector<short>& new_route_x,
+                std::vector<short>& new_route_y,
+                std::vector<std::pair<short, short>>& blocked_positions);
+  void routeLShape(const TreeNode& startpoint,
+                 const TreeNode& endpoint,
+                 std::vector<std::pair<short, short>>& blocked_positions,
+                 std::vector<short>& new_route_x,
+                 std::vector<short>& new_route_y);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
@@ -202,7 +221,8 @@ class FastRouteCore
                         TreeEdge* treeedges,
                         const int edge_n1A1,
                         const int edge_n1A2);
-  void updateRouteType2(const TreeNode* treenodes,
+  void updateRouteType2(const int net_id,
+                        const TreeNode* treenodes,
                         const int n1,
                         const int A1,
                         const int A2,

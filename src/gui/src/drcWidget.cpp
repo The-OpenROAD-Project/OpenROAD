@@ -40,6 +40,8 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
+#include <boost/property_tree/json_parser.hpp>
+#include <array>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -265,7 +267,7 @@ void DRCWidget::selectReport()
       this,
       tr("DRC Report"),
       QString(),
-      tr("DRC Report (*.rpt *.ascii);;TritonRoute Report (*.rpt);;RVE (*.ascii);;All (*)"));
+      tr("DRC Report (*.rpt *.json);;TritonRoute Report (*.rpt);;JSON (*.json);;All (*)"));
   if (!filename.isEmpty()) {
     loadReport(filename);
   }
@@ -423,8 +425,8 @@ void DRCWidget::loadReport(const QString& filename)
   try {
     if (filename.endsWith(".rpt")) {
       loadTRReport(filename);
-    } else if (filename.endsWith(".ascii")) {
-      loadASCIIReport(filename);
+    } else if (filename.endsWith(".json")) {
+      loadJSONReport(filename);
     } else {
       logger_->error(utl::GUI,
                      32,
@@ -614,9 +616,55 @@ void DRCWidget::loadTRReport(const QString& filename)
   report.close();
 }
 
-void DRCWidget::loadASCIIReport(const QString& filename)
+void DRCWidget::loadJSONReport(const QString& filename)
 {
-  logger_->error(utl::GUI, 31, "ASCII databases not supported.");
+  boost::property_tree::ptree tree;
+  try {
+    boost::property_tree::json_parser::read_json(filename.toStdString(), tree);
+  }
+  catch (const boost::property_tree::json_parser_error& e1) {
+    logger_->error(utl::GUI, 55, "Unable to parse JSON file {}: {}", filename.toStdString(), e1.what());
+  }
+
+  for (const auto& rule : tree.get_child("DRC")) {
+    auto& drc_rule = rule.second;
+
+    const std::string violation_type = drc_rule.get<std::string>("name");
+    const std::string violation_text = drc_rule.get<std::string>("description");
+
+    int  i = 0;
+    for (const auto& violation_shape : drc_rule.get_child("violations")) {
+      auto& shape = violation_shape.second;
+
+      std::vector<odb::Point> shape_points;
+      for (const auto& shape_pt : shape.get_child("shape")) {
+        auto& pt = shape_pt.second;
+        shape_points.push_back(odb::Point(
+            pt.get<double>("x") * block_->getDbUnitsPerMicron(),
+            pt.get<double>("y") * block_->getDbUnitsPerMicron()));
+      }
+
+      std::vector<DRCViolation::DRCShape> shapes;
+      const std::string shape_type = shape.get<std::string>("type");
+      if (shape_type == "box") {
+        shapes.push_back(DRCViolation::DRCRect(shape_points[0], shape_points[1]));
+      } else if (shape_type == "edge") {
+        shapes.push_back(DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+      } else if (shape_type == "polygon") {
+        shapes.push_back(DRCViolation::DRCPoly(shape_points));
+      } else {
+        logger_->error(utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);
+      }
+
+      std::string name = violation_type + " - " + std::to_string(++i);
+      violations_.push_back(std::make_unique<DRCViolation>(
+          name,
+          violation_type,
+          shapes,
+          violation_text,
+          0));
+    }
+  }
 }
 
 }  // namespace gui

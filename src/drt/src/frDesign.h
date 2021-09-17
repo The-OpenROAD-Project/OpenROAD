@@ -69,12 +69,12 @@ class frDesign
   }
   // others
   friend class io::Parser;
-  bool isHorizontalLayer(frLayerNum l) {
-      return getTech()->isHorizontalLayer(l);
+  bool isHorizontalLayer(frLayerNum l)
+  {
+    return getTech()->isHorizontalLayer(l);
   }
-  bool isVerticalLayer(frLayerNum l) {
-      return getTech()->isVerticalLayer(l);
-  }
+  bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
+
  protected:
   std::unique_ptr<frBlock> topBlock_;
   std::map<frString, frBlock*> name2refBlock_;

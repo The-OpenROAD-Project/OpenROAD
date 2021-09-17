@@ -98,12 +98,13 @@ class frTerm : public frBlockObject
   {
     in->setTerm(this);
     for (auto& uFig : in->getFigs()) {
-        auto pinFig = uFig.get();
-        if (pinFig->typeId() == frcRect) {
-            if (bbox_.width() == 0 && bbox_.length() == 0)
-                bbox_ = static_cast<frRect*>(pinFig)->getBBox();
-            else bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
-        }
+      auto pinFig = uFig.get();
+      if (pinFig->typeId() == frcRect) {
+        if (bbox_.width() == 0 && bbox_.length() == 0)
+          bbox_ = static_cast<frRect*>(pinFig)->getBBox();
+        else
+          bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
+      }
     }
     pins_.push_back(std::move(in));
   }
@@ -115,38 +116,44 @@ class frTerm : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcTerm; }
   void setOrderId(int order_id) { _order_id = order_id; }
   int getOrderId() { return _order_id; }
-  frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum, 
-                                int pinAccessIdx) {
-        if (pinAccessIdx == -1) {
-          return nullptr;
-        }
-        for (auto& pin : pins_) {
-          if (!pin->hasPinAccess()) {
-            continue;
-          }
-          for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-            if (x == ap->getPoint().x() && y == ap->getPoint().y() && 
-                lNum == ap->getLayerNum()) {
-                return ap.get();
-            }
-          }
-        }
-        return nullptr;
-  }
-  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx) {
-      return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
-  }
-  //fills outShapes with copies of the pinFigs
-  void getShapes(std::vector<frRect>& outShapes) {
-      for (auto& pin : pins_) {
-          for (auto& pinShape : pin->getFigs()) {
-              if (pinShape->typeId() == frcRect) {
-                outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
-              }
-          }
+  frAccessPoint* getAccessPoint(frCoord x,
+                                frCoord y,
+                                frLayerNum lNum,
+                                int pinAccessIdx)
+  {
+    if (pinAccessIdx == -1) {
+      return nullptr;
+    }
+    for (auto& pin : pins_) {
+      if (!pin->hasPinAccess()) {
+        continue;
       }
+      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+        if (x == ap->getPoint().x() && y == ap->getPoint().y()
+            && lNum == ap->getLayerNum()) {
+          return ap.get();
+        }
+      }
+    }
+    return nullptr;
+  }
+  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
+  {
+    return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
+  }
+  // fills outShapes with copies of the pinFigs
+  void getShapes(std::vector<frRect>& outShapes)
+  {
+    for (auto& pin : pins_) {
+      for (auto& pinShape : pin->getFigs()) {
+        if (pinShape->typeId() == frcRect) {
+          outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
+        }
+      }
+    }
   }
   const frBox getBBox() const { return bbox_; }
+
  protected:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
