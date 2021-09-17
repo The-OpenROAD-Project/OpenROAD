@@ -76,9 +76,9 @@ extern int ACCESS_PATTERN_END_ITERATION_NUM;
 
 extern int END_ITERATION;
 
-extern int NDR_NETS_RIPUP_HARDINESS; //max ripup avoids 
-extern int CLOCK_NETS_TRUNK_RIPUP_HARDINESS; 
-extern int CLOCK_NETS_LEAF_RIPUP_HARDINESS; 
+extern int NDR_NETS_RIPUP_HARDINESS;  // max ripup avoids
+extern int CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
+extern int CLOCK_NETS_LEAF_RIPUP_HARDINESS;
 extern bool AUTO_TAPER_NDR_NETS;
 extern int TAPERBOX_RADIUS;
 extern int NDR_NETS_ABS_PRIORITY;

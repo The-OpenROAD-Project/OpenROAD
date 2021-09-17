@@ -494,7 +494,7 @@ void io::Parser::setNets(odb::dbBlock* block)
       uNetIn->updateNondefaultRule(design->getTech()->getNondefaultRule(
           net->getNonDefaultRule()->getName()));
     if (net->getSigType() == dbSigType::CLOCK)
-        uNetIn->updateIsClock(true);
+      uNetIn->updateIsClock(true);
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {

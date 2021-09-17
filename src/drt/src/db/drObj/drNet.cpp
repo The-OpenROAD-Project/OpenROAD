@@ -8,9 +8,9 @@
 
 void fr::drNet::incNRipupAvoids()
 {
-    nRipupAvoids_++;
+  nRipupAvoids_++;
 }
-bool fr::drNet::hasNDR() const 
+bool fr::drNet::hasNDR() const
 {
   return getFrNet()->getNondefaultRule() != nullptr;
 }

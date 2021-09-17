@@ -137,25 +137,26 @@ class drNet : public drBlockObject
     numMarkers_ = 0;
     routed_ = false;
   }
-  void updateFrNet(frNet* in) { 
-        fNet_ = in; 
-        if (hasNDR())
-            maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
-        if (isClockNetTrunk())
-            maxRipupAvoids_ = CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
-        else if (isClockNetLeaf())
-            maxRipupAvoids_ = CLOCK_NETS_LEAF_RIPUP_HARDINESS;
+  void updateFrNet(frNet* in)
+  {
+    fNet_ = in;
+    if (hasNDR())
+      maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
+    if (isClockNetTrunk())
+      maxRipupAvoids_ = CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
+    else if (isClockNetLeaf())
+      maxRipupAvoids_ = CLOCK_NETS_LEAF_RIPUP_HARDINESS;
   }
-  bool isClockNet() const {
-      return fNet_->isClock();
+  bool isClockNet() const { return fNet_->isClock(); }
+  bool isClockNetTrunk() const
+  {
+    // TODO;
+    return isClockNet();
   }
-  bool isClockNetTrunk() const {
-      //TODO;
-      return isClockNet();
-  }
-  bool isClockNetLeaf() const {
-      //TODO;
-      return false;
+  bool isClockNetLeaf() const
+  {
+    // TODO;
+    return false;
   }
   void setFrNetTerms(const std::set<frBlockObject*>& in) { fNetTerms_ = in; }
   void setModified(bool in) { modified_ = in; }
@@ -194,7 +195,7 @@ class drNet : public drBlockObject
   int getNRipupAvoids() const { return nRipupAvoids_; }
   void setNRipupAvoids(int n) { nRipupAvoids_ = n; }
   void incNRipupAvoids();
-  bool hasNDR() const ;
+  bool hasNDR() const;
   // others
   frBlockObjectEnum typeId() const override { return drcNet; }
 
@@ -203,12 +204,10 @@ class drNet : public drBlockObject
     return (numMarkers_ == b.numMarkers_) ? (getId() < b.getId())
                                           : (numMarkers_ > b.numMarkers_);
   }
-  bool canAvoidRipup() const {
-      return nRipupAvoids_ < maxRipupAvoids_;
-  }
+  bool canAvoidRipup() const { return nRipupAvoids_ < maxRipupAvoids_; }
   unsigned short getMaxRipupAvoids() const { return maxRipupAvoids_; }
   void setMaxRipupAvoids(unsigned short n) { maxRipupAvoids_ = n; }
-  
+
  protected:
   std::vector<std::unique_ptr<drPin>> pins_;
   std::vector<std::unique_ptr<drConnFig>> extConnFigs_;
@@ -226,8 +225,9 @@ class drNet : public drBlockObject
   bool ripup_;
   // new
   int numReroutes_;
-  unsigned short nRipupAvoids_; //the number of times this net avoided to be ripped up 
-  unsigned short maxRipupAvoids_; 
+  unsigned short
+      nRipupAvoids_;  // the number of times this net avoided to be ripped up
+  unsigned short maxRipupAvoids_;
   bool inQueue_;
   bool routed_;
 

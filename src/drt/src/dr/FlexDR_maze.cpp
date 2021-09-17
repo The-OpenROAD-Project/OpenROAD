@@ -1941,7 +1941,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         continue;
       }
       if (net->isClockNet() || net->hasNDR())
-          cout << *net << "\n";
+        cout << *net << "\n";
       // init
       net->setModified(true);
       if (net->getFrNet()) {
