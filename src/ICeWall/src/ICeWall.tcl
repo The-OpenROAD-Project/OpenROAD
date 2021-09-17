@@ -3614,7 +3614,7 @@ namespace eval ICeWall {
             set max_spacing [expr $padcell_width + [get_max_spacing $padcellRef]]      
 	    #debug "IO_distance: $IO_distance , max_spacing: $max_spacing , padcell_width $padcell_width"
 	    if {$IO_distance>$max_spacing} {
-	      utl::error PAD 249 "The max_spacing constraint cannot be met for cell $anchor_cell_a , because adjacent cell displacement is larger than the constraint."
+	      utl::error PAD 249 "The max_spacing constraint cannot be met for cell $anchor_cell_a ($padcellRef), and $anchor_cell_b ($padcellRefB), because adjacent cell displacement is larger than the constraint."
 	    }
 	  }
         }
@@ -3646,7 +3646,7 @@ namespace eval ICeWall {
         #debug "$padcellRef has a [get_max_spacing $padcellRef] max_spacing constraint with $max_spacing_ref , next_io_cell is $next_io_cell , prev_io_cell is $prev_io_cell " 
 	        
         if {("$prev_io_cell" != "$max_spacing_ref") && ("$next_io_cell" != "$max_spacing_ref")} {
-	  utl::error PAD 248 "The max_spacing constraint cannot be met for cell $padcell , because adjacent cell is not $max_spacing_ref."
+	  utl::error PAD 248 "The max_spacing constraint cannot be met for cell $padcell ($padcellRef), $max_spacing_ref needs to be adjacent to $padcellRef."
  	}
 	
       }
