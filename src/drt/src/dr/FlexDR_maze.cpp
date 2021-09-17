@@ -1794,11 +1794,9 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
                                                 vector<drNet*>& rerouteNets)
 {
   auto rerouteNetsComp = [](drNet* const& a, drNet* const& b) {
-    if (a->getFrNet()->getNondefaultRule()
-        && !b->getFrNet()->getNondefaultRule())
+    if (a->getFrNet()->getAbsPriorityLvl() > b->getFrNet()->getAbsPriorityLvl())
       return true;
-    if (!a->getFrNet()->getNondefaultRule()
-        && b->getFrNet()->getNondefaultRule())
+    if (a->getFrNet()->getAbsPriorityLvl() < b->getFrNet()->getAbsPriorityLvl())
       return false;
     frBox boxA, boxB;
     a->getPinBox(boxA);
@@ -1942,6 +1940,8 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       if (numReroute != net->getNumReroutes()) {
         continue;
       }
+      if (net->isClockNet() || net->hasNDR())
+          cout << *net << "\n";
       // init
       net->setModified(true);
       if (net->getFrNet()) {

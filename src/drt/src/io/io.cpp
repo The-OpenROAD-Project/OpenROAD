@@ -491,8 +491,10 @@ void io::Parser::setNets(odb::dbBlock* block)
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
     if (net->getNonDefaultRule())
-      uNetIn->setNondefaultRule(design->getTech()->getNondefaultRule(
+      uNetIn->updateNondefaultRule(design->getTech()->getNondefaultRule(
           net->getNonDefaultRule()->getName()));
+    if (net->getSigType() == dbSigType::CLOCK)
+        uNetIn->updateIsClock(true);
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {

@@ -6,13 +6,11 @@
 
 #include "../../dr/FlexDR.h"
 
-void fr::drNet::incNdrRipupThresh()
+void fr::drNet::incNRipupAvoids()
 {
-  if (hasNDR()) {
-    ndrRipupThresh_++;
-  }
+    nRipupAvoids_++;
 }
-bool fr::drNet::hasNDR()
+bool fr::drNet::hasNDR() const 
 {
   return getFrNet()->getNondefaultRule() != nullptr;
 }

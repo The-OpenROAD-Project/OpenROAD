@@ -1667,7 +1667,7 @@ void FlexDRWorker::initNet(const frDesign* design,
                            vector<frBlockObject*>& terms)
 {
   auto dNet = make_unique<drNet>();
-  dNet->setFrNet(net);
+  dNet->updateFrNet(net);
   // true pin
   initNet_term_new(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
@@ -2883,13 +2883,15 @@ void FlexDRWorker::route_queue_update_from_marker(
             if (!canRipup(dNet)) {
               continue;
             }
-            if (dNet->hasNDR() && n_NDnets == 1 && n_dNets > 0) {
-              if (dNet->getNdrRipupThresh() < NDR_NETS_RIPUP_THRESH) {
-                dNet->incNdrRipupThresh();
-                continue;
-              }
-              dNet->setNdrRipupThresh(0);
-            }
+            if (dNet->canAvoidRipup()) {
+                cout << " AVOIDING to ripup net " << *dNet << "\n";
+                
+              dNet->incNRipupAvoids();
+              checks.push_back({dNet, -1, false});
+              continue;
+            }else if (dNet->getMaxRipupAvoids() > 0)
+                cout << "Reached max ripup avoids: net " << *dNet << "\n";
+            dNet->setNRipupAvoids(0);
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
         }

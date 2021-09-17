@@ -33,6 +33,7 @@
 #include "db/drObj/drFig.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
+#include "db/drObj/drNet.h"
 
 using namespace std;
 using namespace fr;
@@ -72,8 +73,13 @@ int ACCESS_PATTERN_END_ITERATION_NUM = 10;
 
 frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
+int NDR_NETS_ABS_PRIORITY = 2;
+int CLOCK_NETS_ABS_PRIORITY = 4;
+
 int END_ITERATION = 80;
-int NDR_NETS_RIPUP_THRESH = 3;
+int NDR_NETS_RIPUP_HARDINESS = 3;
+int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100; 
+int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10; 
 bool AUTO_TAPER_NDR_NETS = true;
 int TAPERBOX_RADIUS = 3;
 
@@ -375,4 +381,17 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
   }
   return os;
 }
+
+ostream& operator<<(ostream& os, const frNet& n)
+{
+    os << "frNet " << n.getName() << (n.isClock() ? "CLOCK NET " : " ") << (n.hasNDR() ? "NDR "+n.getNondefaultRule()->getName()+" " :" ") << "abs priority " << n.getAbsPriorityLvl() << "\n";
+    return os;
+}
+
+ostream& operator<<(ostream& os, const drNet& n)
+{
+    os << "drNet " << *n.getFrNet() << "\nnRipupAvoids " << n.getNRipupAvoids() << " maxRipupAvoids " << n.getMaxRipupAvoids() << "\n";
+    return os;
+}
+
 }  // end namespace fr
