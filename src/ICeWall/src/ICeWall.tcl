@@ -3433,7 +3433,7 @@ namespace eval ICeWall {
     variable footprint
 
     if {![dict exists $footprint padcell $padcell $type center]} {
-       utl::error PAD 246 "No center information specified for $inst_name."
+       utl::error PAD 250 "No center information specified for $inst_name."
     }   
     return [dict get $footprint padcell $padcell $type center]
   }  
