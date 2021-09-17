@@ -3501,7 +3501,12 @@ namespace eval ICeWall {
     variable library
     return [ord::microns_to_dbu [lindex [dict get $library cells $padcellRef max_pad_spacing] 1]] 
   }
-    
+ 
+  proc get_max_spacing_cell_ref {padcellRef} {
+    variable library
+    return [lindex [dict get $library cells $padcellRef max_pad_spacing] 0] 
+  }
+     
   proc add_locations {side_name  unplaced_pads anchor_cell_a anchor_cell_b} {
     variable pad_ring     
     variable chip_width 
@@ -3592,15 +3597,58 @@ namespace eval ICeWall {
     if {($sideWidth - $sidePadWidth) < 0} {
       utl::error PAD 247 "Cannot fit IO pads between the following anchor cells : $anchor_cell_a, $anchor_cell_b."
     }
+    
+    if {![regexp corner_ $anchor_cell_a ]} {
+      if {![regexp corner_ $anchor_cell_b ]} {
+        set padcellRef  [get_padcell_cell_ref $anchor_cell_a]
+	set padcellRefB [get_padcell_cell_ref $anchor_cell_b]     
+        if [has_max_spacing $padcellRef] {
+	  set max_spacing_ref [get_max_spacing_cell_ref $padcellRef] 
+          #debug "  anchor cell A with reference name: $padcellRef has a max_spacing constraint with ref: $max_spacing_ref , anchor cell B has reference: $padcellRefB "	
+          if {$padcellRefB==$max_spacing_ref} {
+	    #debug "anchor cell A has max_spacing constraint with anchor_cell B"
+	    set IO_distance_x [expr abs([dict get [get_scaled_center $anchor_cell_a] x] - [dict get [get_scaled_center $anchor_cell_b] x])]
+	    set IO_distance_y [expr abs([dict get [get_scaled_center $anchor_cell_a] y] - [dict get [get_scaled_center $anchor_cell_b] y])]
+	    set IO_distance [expr $IO_distance_x + $IO_distance_y]
+            set padcell_width [get_padcell_width $anchor_cell_a]
+            set max_spacing [expr $padcell_width + [get_max_spacing $padcellRef]]      
+	    #debug "IO_distance: $IO_distance , max_spacing: $max_spacing , padcell_width $padcell_width"
+	    if {$IO_distance>$max_spacing} {
+	      utl::error PAD 249 "The max_spacing constraint cannot be met for cell $anchor_cell_a , because adjacent cell displacement is larger than the constraint."
+	    }
+	  }
+        }
+      }
+    }
+    
     foreach padcell $unplaced_pads {
       set padOrder [ expr 1 + [lsearch $unplaced_pads $padcell]]            
       set padcellRef [get_padcell_cell_ref $padcell]
       set maxPadSpacing $PadSpacing
       if [has_max_spacing $padcellRef] {
-       debug " $padcellRef [has_max_spacing $padcellRef] "
-       set padcell_width [get_padcell_width $padcell]
-       set max_spacing [ expr $padcell_width + [get_max_spacing $padcellRef]]      
-       set maxPadSpacing [expr min($PadSpacing,$max_spacing)]
+        set max_spacing_ref [get_max_spacing_cell_ref $padcellRef]      
+        #debug "check adjacent IOs for IOpad # $padOrder"
+        set padcell_width [get_padcell_width $padcell]
+        set max_spacing [expr $padcell_width + [get_max_spacing $padcellRef]]      
+        set maxPadSpacing [expr min($PadSpacing,$max_spacing)]
+	if {$padOrder>1} {
+	  set prev_io_cell [get_padcell_cell_ref [lindex $unplaced_pads [expr $padOrder -2]]]
+	} else {
+	  set prev_io_cell ""
+	}
+	if {$padOrder!=[llength $unplaced_pads]} {
+	  #debug "size of IO segment is: [llength $unplaced_pads] , order is $padOrder"
+	  set next_io_cell [get_padcell_cell_ref [lindex $unplaced_pads $padOrder]]
+	} else {
+	  set next_io_cell ""
+	}
+
+        #debug "$padcellRef has a [get_max_spacing $padcellRef] max_spacing constraint with $max_spacing_ref , next_io_cell is $next_io_cell , prev_io_cell is $prev_io_cell " 
+	        
+        if {("$prev_io_cell" != "$max_spacing_ref") && ("$next_io_cell" != "$max_spacing_ref")} {
+	  utl::error PAD 248 "The max_spacing constraint cannot be met for cell $padcell , because adjacent cell is not $max_spacing_ref."
+ 	}
+	
       }
       switch $side_name \
     	"bottom" {

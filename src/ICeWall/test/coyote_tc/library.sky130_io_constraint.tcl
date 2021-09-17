@@ -47,7 +47,7 @@ Footprint library {
       overlay sky130_fd_io__overlay_vccd_hvc
       physical_only 1
       orient {bottom R180 right R270 top R0 left R90}
-      max_pad_spacing {vssd_hvc_power_pad 10}
+      max_pad_spacing {vssd_hvc_ground_pad 10}
     }
     vccd_lvc_power_pad {
       cell_name sky130_fd_io__top_power_lvc_wpad
@@ -60,7 +60,8 @@ Footprint library {
       overlay sky130_fd_io__overlay_vssd_hvc
       physical_only 1
       orient {bottom R180 right R270 top R0 left R90}
-    }
+       max_pad_spacing {vccd_hvc_power_pad 10}
+   }
     vssd_lvc_ground_pad {
       cell_name sky130_fd_io__top_ground_lvc_wpad
       overlay sky130_fd_io__overlay_vssd_lvc
