@@ -87,7 +87,12 @@ class Point3D : public frPoint
 
   int z() const { return z_; }
   void setZ(int z) { z_ = z; }
-
+  void set(const int x, const int y, const int z)
+  {
+    xCoord_ = x;
+    yCoord_ = y;
+    z_ = z;
+  }
   bool operator==(const Point3D& pIn) const
   {
     return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_) && z_ == pIn.z_;
