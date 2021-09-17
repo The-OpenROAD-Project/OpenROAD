@@ -38,6 +38,7 @@
 #include "Util.h"
 #include "db.h"
 #include "utl/Logger.h"
+#include "stt/SteinerTreeBuilder.h"
 
 #include <iostream>
 #include <sstream>
@@ -49,7 +50,8 @@ namespace cts {
 class CtsOptions
 {
  public:
-  CtsOptions(utl::Logger* logger) : _logger(logger) {}
+  CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
+      : _logger(logger), _sttBuilder(sttBuildder) {}
 
   void setBlockName(const std::string& blockName) { _blockName = blockName; }
   std::string getBlockName() const { return _blockName; }
@@ -183,6 +185,7 @@ class CtsOptions
   double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
   utl::Logger *getLogger() { return _logger;}
+  stt::SteinerTreeBuilder *getSttBuilder() { return _sttBuilder;}
 
  private:
   std::string _blockName = "";
@@ -233,6 +236,7 @@ class CtsOptions
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;
   utl::Logger* _logger;
+  stt::SteinerTreeBuilder* _sttBuilder;
 };
 
 }  // namespace cts

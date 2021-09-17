@@ -39,8 +39,8 @@
 #include <fstream>
 #include <cmath>
 
-#include "opendb/db.h"
-#include "opendb/dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 
 #include "sta/StringUtil.hh"
 #include "sta/Vector.hh"

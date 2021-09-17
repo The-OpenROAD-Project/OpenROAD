@@ -65,7 +65,7 @@
 #include "ord/Version.hh"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
-#include "utl/Logger.h" 
+#include "utl/Logger.h"
 #include "gui/gui.h"
 
 using std::string;
@@ -79,7 +79,7 @@ using sta::is_regular_file;
 extern "C"
 {
     extern PyObject* PyInit__openroad_swig_py();
-    extern PyObject* PyInit__opendbpy();
+    extern PyObject* PyInit__odbpy();
 }
 #endif
 
@@ -92,22 +92,21 @@ const char* metrics_filename = nullptr;
 static const char *init_filename = ".openroad";
 
 static void
-showUsage(const char *prog,
-	  const char *init_filename);
+showUsage(const char *prog, const char *init_filename);
 static void
 showSplash();
 
 #ifdef ENABLE_PYTHON3
 namespace sta {
-extern const char *opendbpy_python_inits[];
+extern const char *odbpy_python_inits[];
 extern const char *openroad_swig_py_python_inits[];
 }
 
 static void
 initPython()
 {
-  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
-    fprintf(stderr, "Error: could not add module opendbpy\n");
+  if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
+    fprintf(stderr, "Error: could not add module odbpy\n");
     exit(1);
   }
 
@@ -118,18 +117,18 @@ initPython()
 
   Py_Initialize();
 
-  char *unencoded = sta::unencode(sta::opendbpy_python_inits);
+  char *unencoded = sta::unencode(sta::odbpy_python_inits);
 
-  PyObject* odb_code = Py_CompileString(unencoded, "opendbpy.py", Py_file_input);
+  PyObject* odb_code = Py_CompileString(unencoded, "odbpy.py", Py_file_input);
   if (odb_code == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not compile opendbpy\n");
+    fprintf(stderr, "Error: could not compile odbpy\n");
     exit(1);
   }
 
-  if (PyImport_ExecCodeModule("opendb", odb_code) == nullptr) {
+  if (PyImport_ExecCodeModule("odb", odb_code) == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not add module opendb.py\n");
+    fprintf(stderr, "Error: could not add module odb\n");
     exit(1);
   }
 
@@ -163,7 +162,7 @@ main(int argc,
     return 0;
   }
   if (argc == 2 && stringEq(argv[1], "-version")) {
-    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_SHA1);
+    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_DESCRIBE);
     return 0;
   }
 
@@ -217,7 +216,7 @@ main(int argc,
     // on ctrl-C. We don't want that if python is not the main interpreter.
     // We restore the handler from before initPython.
     sigaction(SIGINT, &orig_sigint_handler, NULL);
-  }  
+  }
 #endif
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
@@ -234,7 +233,7 @@ tclReadlineInit(Tcl_Interp *interp)
     "eval $auto_index(::tclreadline::ScriptCompleter)",
     "::tclreadline::readline builtincompleter true",
     "::tclreadline::readline customcompleter ::tclreadline::ScriptCompleter",
-    "proc ::tclreadline::prompt1 {} { return \"openroad " OPENROAD_VERSION "> \" }",
+    "proc ::tclreadline::prompt1 {} { return \"openroad> \" }",
     "proc ::tclreadline::prompt2 {} { return \"...> \" }",
     "::tclreadline::Loop"
   };
@@ -313,7 +312,7 @@ tclAppInit(int argc,
     if (argc == 2) {
       char *cmd_file = argv[1];
       if (cmd_file) {
-	int result = sourceTclFile(cmd_file, false, false, interp);
+        int result = sourceTclFile(cmd_file, false, false, interp);
         if (exit_after_cmd_file) {
           int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
           exit(exit_code);
@@ -337,8 +336,7 @@ ord::tclAppInit(Tcl_Interp *interp)
 
 
 static void
-showUsage(const char *prog,
-	  const char *init_filename)
+showUsage(const char *prog, const char *init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
@@ -359,7 +357,7 @@ static void
 showSplash()
 {
   utl::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
-  string sha = OPENROAD_GIT_SHA1;
+  string sha = OPENROAD_GIT_DESCRIBE;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,
                  sha.c_str());

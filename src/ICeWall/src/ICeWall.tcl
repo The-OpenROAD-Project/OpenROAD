@@ -2714,7 +2714,7 @@ namespace eval ICeWall {
     variable footprint
 
     if {![dict exists $footprint rdl_cover_file_name]} {
-      dict set footprint rdl_cover_file_name "cover.def"
+      dict set footprint rdl_cover_file_name ""
     }
 
     return [dict get $footprint rdl_cover_file_name]
@@ -3053,11 +3053,9 @@ namespace eval ICeWall {
     variable num_bumps_x
     variable num_bumps_y
 
-    set rdl_cover_file_name [get_footprint_rdl_cover_file_name]
     set rdl_layer_name [get_footprint_rdl_layer_name]
     set rdl_width [get_footprint_rdl_width]
 
-    set ch [open $rdl_cover_file_name "w"]
     set traces {}
     for {set row 1} {$row <= $num_bumps_y} {incr row} {
       for {set col 1} {$col <= $num_bumps_x} {incr col} {
@@ -3073,31 +3071,59 @@ namespace eval ICeWall {
       }
     }
 
-    puts $ch "SPECIALNETS [dict size $traces] ;"
+    if {[set rdl_cover_file_name [get_footprint_rdl_cover_file_name]] != ""} {
+      set ch [open $rdl_cover_file_name "w"]
+      puts $ch "SPECIALNETS [dict size $traces] ;"
 
-    dict for {net padcells} $traces {
-      puts $ch "    - $net "
-      if {[is_padcell_power [lindex $padcells 0]]} {
-        puts $ch "      + USE POWER"
-      }
-      if {[is_padcell_ground [lindex $padcells 0]]} {
-        puts $ch "      + USE GROUND"
-      }
-      set prefix "+ ROUTED"
-      foreach padcell $padcells {
-        puts -nonewline $ch "      $prefix $rdl_layer_name $rdl_width "
-        foreach point [get_padcell_rdl_trace $padcell] {
-          puts -nonewline $ch " ( [lindex $point 0] [lindex $point 1] )"
+      dict for {net padcells} $traces {
+        puts $ch "    - $net "
+        if {[is_padcell_power [lindex $padcells 0]]} {
+          puts $ch "      + USE POWER"
         }
-        puts $ch ""
-        set prefix "NEW"
+        if {[is_padcell_ground [lindex $padcells 0]]} {
+          puts $ch "      + USE GROUND"
+        }
+        set prefix "+ ROUTED"
+        foreach padcell $padcells {
+          puts -nonewline $ch "      $prefix $rdl_layer_name $rdl_width "
+          foreach point [get_padcell_rdl_trace $padcell] {
+            puts -nonewline $ch " ( [lindex $point 0] [lindex $point 1] )"
+          }
+          puts $ch ""
+          set prefix "NEW"
+        }
+        puts $ch "      ;"
       }
-      puts $ch "      ;"
+
+      puts $ch "END SPECIALNETS"
+
+      close $ch
     }
 
-    puts $ch "END SPECIALNETS"
-
-    close $ch
+    set rdl_layer [[ord::get_db_tech] findLayer $rdl_layer_name]
+    dict for {net_name padcells} $traces {
+      set net [[ord::get_db_block] findNet $net_name]
+      set swire [odb::dbSWire_create $net ROUTED]
+      foreach padcell $padcells {
+        set points [get_padcell_rdl_trace $padcell]
+        set prev [lindex $points 0]
+        foreach point [lrange $points 1 end] {
+	  if {[lindex $prev 0] == [lindex $point 0]} {
+	    set p1 [list [expr [lindex $prev  0] - $rdl_width / 2]  [lindex $prev  1]]
+	    set p2 [list [expr [lindex $point 0] + $rdl_width / 2]  [lindex $point 1]]
+	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
+	  } elseif {[lindex $prev 1] == [lindex $point 1]} {
+	    set p1 [list [lindex $prev  0] [expr [lindex $prev  1] - $rdl_width /  2]]
+	    set p2 [list [lindex $point 0] [expr [lindex $point 1] + $rdl_width /  2]]
+	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
+	  } else {
+	    set direction 3
+	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$prev {*}$point STRIPE $direction $rdl_width]
+	  }
+	  set prev $point
+	}
+      }
+    }
   }
 
   variable bumps {}
@@ -5009,7 +5035,10 @@ namespace eval ICeWall {
         -rdl_layer           {dict set library rdl layer_name [check_layer_name $value]}
         -rdl_width           {dict set library rdl width $value}
         -rdl_spacing         {dict set library rdl spacing $value}
-        -rdl_cover_file_name {set_rdl_cover_file_name $value}
+        -rdl_cover_file_name {
+	  set_rdl_cover_file_name $value
+	  utl::info PAD 246 "The use of a cover DEF is deprecated, as all RDL routes are writen to the database"
+        }
         default {utl::error PAD 111 "Unrecognized argument $arg, should be one of -pitch, -bump_pin_name, -spacing_to_edge, -cell_name, -bumps_per_tile, -rdl_layer, -rdl_width, -rdl_spacing."}
       }
 

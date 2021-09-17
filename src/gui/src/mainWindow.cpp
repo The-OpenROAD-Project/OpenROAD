@@ -30,12 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <QDesktopServices>
 #include <QDesktopWidget>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
 #include <QToolButton>
+#include <QUrl>
 #include <QWidgetAction>
 #include <map>
 #include <vector>
@@ -48,12 +51,22 @@
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
+#include "utl/Logger.h"
+#include "timingWidget.h"
+#include "drcWidget.h"
+
+// must be loaded in global namespace
+static void loadQTResources()
+{
+  Q_INIT_RESOURCE(resource);
+}
 
 namespace gui {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
+      logger_(nullptr),
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, this)),
       viewer_(new LayoutViewer(
@@ -66,7 +79,9 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this))
+      script_(new ScriptWidget(this)),
+      timing_widget_(new TimingWidget(this)),
+      drc_viewer_(new DRCWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -74,7 +89,6 @@ MainWindow::MainWindow(QWidget* parent)
   move(size.width() * 0.1, size.height() * 0.1);
 
   find_dialog_ = new FindObjectDialog(this);
-  timing_dialog_ = new TimingDebugDialog(this);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
@@ -82,12 +96,18 @@ MainWindow::MainWindow(QWidget* parent)
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
+  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
-  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
+  addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
+
+  tabifyDockWidget(inspector_, timing_widget_);
+  tabifyDockWidget(inspector_, drc_viewer_);
+  drc_viewer_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
@@ -96,14 +116,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
           SLOT(designLoaded(odb::dbBlock*)));
-  connect(this, SIGNAL(redraw()), viewer_, SLOT(repaint()));
+  connect(this, SIGNAL(redraw()), viewer_, SLOT(fullRepaint()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
 
-  connect(this, SIGNAL(pause()), script_, SLOT(pause()));
-  connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
+  connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
+  connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
   connect(viewer_,
           SIGNAL(location(qreal, qreal)),
           this,
@@ -126,11 +146,29 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(update()));
 
+  connect(controls_,
+          SIGNAL(selected(const Selected&)),
+          this,
+          SLOT(setSelected(const Selected&)));
+
   connect(inspector_,
           SIGNAL(selected(const Selected&, bool)),
           this,
           SLOT(setSelected(const Selected&, bool)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
+  connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
+  connect(inspector_,
+          SIGNAL(selectedItemChanged(const Selected&)),
+          selection_browser_,
+          SLOT(updateModels()));
+  connect(inspector_,
+          SIGNAL(selectedItemChanged(const Selected&)),
+          viewer_,
+          SLOT(update()));
+  connect(inspector_,
+          SIGNAL(selectedItemChanged(const Selected&)),
+          this,
+          SLOT(updateSelectedStatus(const Selected&)));
 
   connect(this,
           SIGNAL(selectionChanged()),
@@ -169,10 +207,40 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
-  connect(timing_dialog_,
+  connect(timing_widget_,
           SIGNAL(highlightTimingPath(TimingPath*)),
           viewer_,
           SLOT(update()));
+
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          drc_viewer_,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(drc_viewer_,
+          &DRCWidget::selectDRC,
+          [this](const Selected& selected) {
+            setSelected(selected, false);
+            odb::Rect bbox;
+            selected.getBBox(bbox);
+            // 10 microns
+            const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+            // twice the largest dimension of bounding box
+            const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
+            // pick smallest
+            const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
+            bbox.set_xlo(bbox.xMin() - zoomout_margin);
+            bbox.set_ylo(bbox.yMin() - zoomout_margin);
+            bbox.set_xhi(bbox.xMax() + zoomout_margin);
+            bbox.set_yhi(bbox.yMax() + zoomout_margin);
+            zoomTo(bbox);
+          });
+  connect(this,
+          &MainWindow::selectionChanged,
+          [this]() {
+            if (!selected_.empty()) {
+              drc_viewer_->updateSelection(*selected_.begin());
+            }
+          });
 
   createActions();
   createToolbars();
@@ -186,7 +254,13 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
+  timing_widget_->readSettings(&settings);
   settings.endGroup();
+
+  // load resources and set window icon and title
+  loadQTResources();
+  setWindowIcon(QIcon(":/icon.png"));
+  setWindowTitle("OpenROAD");
 }
 
 void MainWindow::createStatusBar()
@@ -228,10 +302,16 @@ void MainWindow::createActions()
   inspect_ = new QAction("Inspect", this);
   inspect_->setShortcut(QString("q"));
 
-  timing_debug_ = new QAction("Timing ...", this);
+  timing_debug_ = new QAction("Timing...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
   congestion_setup_ = new QAction("Congestion Setup...", this);
+
+  help_ = new QAction("Help", this);
+  help_->setShortcut(QString("Ctrl+H"));
+
+  build_ruler_ = new QAction("Ruler", this);
+  build_ruler_->setShortcut(QString("k"));
 
   connect(congestion_setup_,
           SIGNAL(triggered()),
@@ -243,8 +323,11 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
-  connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
+  connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
+  connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
+
+  connect(build_ruler_, SIGNAL(triggered()), viewer_, SLOT(startRulerBuild()));
 }
 
 void MainWindow::createMenus()
@@ -257,12 +340,10 @@ void MainWindow::createMenus()
   view_menu_->addAction(find_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
-  view_menu_->addAction(inspect_);
-  view_menu_->addAction(timing_debug_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(congestion_setup_);
-  tools_menu_->addAction(timing_debug_);
+  tools_menu_->addAction(build_ruler_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -270,7 +351,10 @@ void MainWindow::createMenus()
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
-  selection_browser_->setVisible(false);
+  windows_menu_->addAction(timing_widget_->toggleViewAction());
+  windows_menu_->addAction(drc_viewer_->toggleViewAction());
+
+  menuBar()->addAction(help_);
 }
 
 void MainWindow::createToolbars()
@@ -283,6 +367,56 @@ void MainWindow::createToolbars()
   view_tool_bar_->addAction(timing_debug_);
 
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
+}
+
+const std::string MainWindow::addToolbarButton(const std::string& name,
+                                               const QString& text,
+                                               const QString& script,
+                                               bool echo)
+{
+  // ensure key is unique
+  std::string key;
+  if (name.empty()) {
+    int key_idx = 0;
+    do {
+      // default to "buttonX" naming
+      key = "button" + std::to_string(key_idx);
+      key_idx++;
+    } while (buttons_.count(key) != 0);
+  } else {
+    if (buttons_.count(name) != 0) {
+      logger_->error(utl::GUI, 22, "Button {} already defined.", name);
+    }
+    key = name;
+  }
+
+  auto action = view_tool_bar_->addAction(text);
+
+  connect(action, &QAction::triggered, [script, echo, this]() {
+    script_->executeCommand(script, echo);
+  });
+
+  buttons_[key] = std::unique_ptr<QAction>(action);
+
+  return key;
+}
+
+void MainWindow::removeToolbarButton(const std::string& name)
+{
+  if (buttons_.count(name) == 0) {
+    return;
+  }
+
+  view_tool_bar_->removeAction(buttons_[name].get());
+  buttons_.erase(name);
+}
+
+const std::string MainWindow::requestUserInput(const QString& title, const QString& question)
+{
+  QString text = QInputDialog::getText(this,
+                                       title,
+                                       question);
+  return text.toStdString();
 }
 
 void MainWindow::setDb(odb::dbDatabase* db)
@@ -298,12 +432,17 @@ void MainWindow::setLocation(qreal x, qreal y)
   location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
 }
 
+void MainWindow::updateSelectedStatus(const Selected& selection)
+{
+  status(selection ? selection.getName() : "");
+}
+
 void MainWindow::addSelected(const Selected& selection)
 {
   if (selection) {
     selected_.emplace(selection);
   }
-  status(selection ? selection.getName() : "");
+  emit updateSelectedStatus(selection);
   emit selectionChanged();
 }
 
@@ -331,11 +470,36 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
-void MainWindow::addRuler(int x0, int y0, int x1, int y1)
+std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  QLine ruler(QPoint(x0, y0), QPoint(x1, y1));
-  rulers_.push_back(ruler);
+  auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  std::string new_name = new_ruler->getName();
+
+  // check if ruler name is unique
+  for (const auto& ruler : rulers_) {
+    if (new_name == ruler->getName()) {
+      logger_->warn(utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
+  rulers_.push_back(std::move(new_ruler));
   emit rulersChanged();
+  return new_name;
+}
+
+void MainWindow::deleteRuler(const std::string& name)
+{
+  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+    return l->getName() == name;
+  });
+  if (ruler_find != rulers_.end()) {
+    // remove from selected set
+    auto remove_selected = makeSelected(ruler_find->get());
+    selected_.erase(remove_selected);
+    rulers_.erase(ruler_find);
+    emit rulersChanged();
+  }
 }
 
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
@@ -440,11 +604,15 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
-void MainWindow::showTimingDialog()
+void MainWindow::showHelp()
 {
-  if (timing_dialog_->populateTimingPaths(nullptr)) {
-    timing_dialog_->show();
-    Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
+  const QUrl help_url("https://openroad.readthedocs.io/en/latest/");
+  if (!QDesktopServices::openUrl(help_url)) {
+    // failed to open
+    logger_->warn(utl::GUI,
+                 23,
+                 "Failed to open help automatically, navigate to: {}",
+                 help_url.toString().toStdString());
   }
 }
 
@@ -532,6 +700,7 @@ void MainWindow::saveSettings()
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
+  timing_widget_->writeSettings(&settings);
   settings.endGroup();
 }
 
@@ -563,9 +732,11 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 
 void MainWindow::setLogger(utl::Logger* logger)
 {
+  logger_ = logger;
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewer_->setLogger(logger);
+  drc_viewer_->setLogger(logger);
 }
 
 void MainWindow::fit()
@@ -591,6 +762,18 @@ void MainWindow::registerDescriptor(const std::type_info& type,
                                     const Descriptor* descriptor)
 {
   descriptors_[type] = descriptor;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    // Esc stop building ruler
+    viewer_->cancelRulerBuild();
+  } else if (event->key() == Qt::Key_K && event->modifiers() & Qt::ShiftModifier) {
+    // Shift + K, remove all rulers
+    clearRulers();
+  }
+  QMainWindow::keyPressEvent(event);
 }
 
 }  // namespace gui

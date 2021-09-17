@@ -81,18 +81,22 @@ class ScriptWidget : public QDockWidget
   // shutdown
   void tclExiting();
 
- private slots:
+ public slots:
   // Triggered when the user hits return in the line edit
-  void executeCommand();
+  void executeCommand(const QString& command, bool echo = true);
 
+ private slots:
   void outputChanged();
 
-  void pause();
+  void pause(int timeout);
+  void unpause();
 
   void pauserClicked();
 
   void goBackHistory();
   void goForwardHistory();
+
+  void updatePauseTimeout();
 
  protected:
   // required to ensure input command space it set to correct height
@@ -100,6 +104,8 @@ class ScriptWidget : public QDockWidget
 
  private:
   void setupTcl();
+
+  void triggerPauseCountDown(int timeout);
 
   void addToOutput(const QString& text, const QColor& color);
   void addCommandToOutput(const QString& cmd);
@@ -119,6 +125,7 @@ class ScriptWidget : public QDockWidget
   QTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
+  std::unique_ptr<QTimer> pause_timer_;
   Tcl_Interp* interp_;
   QStringList history_;
   QString history_buffer_last_;

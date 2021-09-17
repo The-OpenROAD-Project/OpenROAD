@@ -39,7 +39,7 @@
 
 #include "utl/Logger.h"
 
-#include "opendb/dbTypes.h"
+#include "odb/dbTypes.h"
 
 namespace dpl {
 
@@ -70,6 +70,7 @@ NetBox::hpwl()
 void
 Opendp::optimizeMirroring()
 {
+  block_ = db_->getChip()->getBlock();
   NetBoxes net_boxes;
   findNetBoxes(net_boxes);
   // Sort net boxes by net hpwl.

@@ -35,7 +35,7 @@
 
 %{
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 using odb::dbDatabase;
 using odb::dbBlock;
@@ -46,7 +46,7 @@ const char *
 openroad_version();
 
 const char *
-openroad_git_sha1();
+openroad_git_describe();
 
 odb::dbDatabase *
 get_db();
@@ -66,7 +66,7 @@ const char *
 openroad_version();
 
 const char *
-openroad_git_sha1();
+openroad_git_describe();
 
 odb::dbDatabase *
 get_db();

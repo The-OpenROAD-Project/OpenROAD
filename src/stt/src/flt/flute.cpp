@@ -53,16 +53,6 @@
 #define LUT_SOURCE LUT_VAR
 
 namespace stt {
-void Tree::printTree(utl::Logger* logger)
-{
-  for (int i = 0; i < deg; i++)
-    logger->report(" {:2d}:  x={:4g}  y={:4g}  e={}",
-           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-  for (int i = deg; i < 2 * deg - 2; i++)
-    logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
-           i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-  logger->report("");
-}
 
 namespace flt {
 
@@ -959,26 +949,14 @@ DTYPE flutes_wl_MD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>
   return return_val;
 }
 
-static int orderx(const void *a, const void *b) {
-  struct point *pa, *pb;
-
-  pa = *(struct point **)a;
-  pb = *(struct point **)b;
-
-  if (pa->x < pb->x) return -1;
-  if (pa->x > pb->x) return 1;
-  return 0;
+static bool orderx(const point* a, const point* b)
+{
+  return a->x < b->x;
 }
 
-static int ordery(const void *a, const void *b) {
-  struct point *pa, *pb;
-
-  pa = *(struct point **)a;
-  pb = *(struct point **)b;
-
-  if (pa->y < pb->y) return -1;
-  if (pa->y > pb->y) return 1;
-  return 0;
+static bool ordery(const point* a, const point* b)
+{
+  return a->y < b->y;
 }
 
 Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
@@ -989,6 +967,13 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
   struct point *pt, *tmpp;
   Tree t;
   int d = x.size();
+
+  if (d < 2) {
+    t.deg = 1;
+    t.branch.resize(0);
+    t.length = 0;
+    return t;
+  }
 
   if (d == 2) {
     t.deg = 2;
@@ -1006,7 +991,7 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
     xs.resize(d);
     ys.resize(d);
     s.resize(d);
-    pt = (struct point *)malloc(sizeof(struct point) * (d + 1));
+    pt = (struct point *)malloc(sizeof(struct point) * (d+1));
     std::vector<point*> ptp(d+1);
 
     for (i = 0; i < d; i++) {
@@ -1031,7 +1016,7 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
         ptp[minidx] = tmpp;
       }
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), orderx);
+      std::stable_sort(ptp.begin(), ptp.end()-1, orderx);
     }
 
 #if FLUTE_REMOVE_DUPLICATE_PIN == 1
@@ -1071,7 +1056,7 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
       ys[d - 1] = ptp[d - 1]->y;
       s[d - 1] = ptp[d - 1]->o;
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), ordery);
+      std::stable_sort(ptp.begin(), ptp.end()-1, ordery);
       for (i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
         s[i] = ptp[i]->o;
@@ -1894,8 +1879,8 @@ void write_svg(Tree t,
 
   int dx = x_max - x_min;
   int dy = y_max - y_min;
-  const int sz = std::max(std::max(dx, dy) / 400, 1);
-  const int hsz = sz / 2;
+  const double sz = std::max(std::max(dx, dy) / 400.0, 1.0);
+  const double hsz = sz / 2;
 
   FILE* stream = fopen(filename, "w");
   if (stream) {
@@ -1906,7 +1891,7 @@ void write_svg(Tree t,
 
     for (int i = 0; i < 2 * t.deg - 2; i++) {
       fprintf(stream, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-              "style=\"stroke: black; stroke-width: %d\"/>\n",
+              "style=\"stroke: black; stroke-width: %lf\"/>\n",
               t.branch[i].x, t.branch[i].y,
               t.branch[t.branch[i].n].x, t.branch[t.branch[i].n].y,
               hsz/2);

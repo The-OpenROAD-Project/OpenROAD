@@ -294,6 +294,7 @@ public:
 
   // API for logic resynthesis
   PinSet findFaninFanouts(PinSet *end_pins);
+  PinSet findFanins(PinSet *end_pins);
 
 protected:
   void init();
@@ -652,6 +653,8 @@ protected:
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
+  // Prim/Dijkstra gets out of hand with bigger nets.
+  static constexpr int max_steiner_pin_count_ = 100000;
 
   friend class BufferedNet;
 };

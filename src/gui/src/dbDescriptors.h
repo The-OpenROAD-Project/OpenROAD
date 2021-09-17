@@ -34,6 +34,10 @@
 
 #include "gui/gui.h"
 
+namespace odb {
+class dbMaster;
+}
+
 namespace gui {
 
 // Descriptor classes for OpenDB objects.  Eventually these should
@@ -53,8 +57,37 @@ class DbInstDescriptor : public Descriptor
   bool isInst(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
+  Actions getActions(std::any object) const override;
+  Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+ private:
+  void makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const;
+  void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
+  void makeOrientationOptions(std::vector<EditorOption>& options) const;
+  bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
+};
+
+class DbMasterDescriptor : public Descriptor
+{
+ public:
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  static void getMasterEquivalent(odb::dbMaster* master, std::set<odb::dbMaster*>& masters);
+
+ private:
+  void getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const;
 };
 
 class DbNetDescriptor : public Descriptor
@@ -71,6 +104,7 @@ class DbNetDescriptor : public Descriptor
   bool isNet(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -95,6 +129,57 @@ class DbITermDescriptor : public Descriptor
 };
 
 class DbBTermDescriptor : public Descriptor
+{
+ public:
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+};
+
+class DbBlockageDescriptor : public Descriptor
+{
+ public:
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+};
+
+class DbObstructionDescriptor : public Descriptor
+{
+ public:
+  std::string getName(std::any object) const override;
+  std::string getTypeName(std::any object) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Actions getActions(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+};
+
+class DbTechLayerDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;

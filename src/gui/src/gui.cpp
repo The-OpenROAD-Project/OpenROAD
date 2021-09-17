@@ -48,6 +48,10 @@
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
+
+#include "drcWidget.h"
+#include "ruler.h"
 
 namespace gui {
 
@@ -105,9 +109,9 @@ void Gui::status(const std::string& message)
   main_window->status(message);
 }
 
-void Gui::pause()
+void Gui::pause(int timeout)
 {
-  main_window->pause();
+  main_window->pause(timeout);
 }
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
@@ -282,9 +286,14 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
-void Gui::addRuler(int x0, int y0, int x1, int y1)
+std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
-  main_window->addRuler(x0, y0, x1, y1);
+  return main_window->addRuler(x0, y0, x1, y1, label, name);
+}
+
+void Gui::deleteRuler(const std::string& name)
+{
+  main_window->deleteRuler(name);
 }
 
 void Gui::clearSelections()
@@ -300,6 +309,34 @@ void Gui::clearHighlights(int highlight_group)
 void Gui::clearRulers()
 {
   main_window->clearRulers();
+}
+
+const std::string Gui::addToolbarButton(const std::string& name,
+                                        const std::string& text,
+                                        const std::string& script,
+                                        bool echo)
+{
+  return main_window->addToolbarButton(name,
+                                       QString::fromStdString(text),
+                                       QString::fromStdString(script),
+                                       echo);
+}
+
+void Gui::removeToolbarButton(const std::string& name)
+{
+  main_window->removeToolbarButton(name);
+}
+
+const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
+{
+  return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
+}
+
+void Gui::loadDRC(const std::string& filename)
+{
+  if (!filename.empty()) {
+    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
+  }
 }
 
 void Gui::addCustomVisibilityControl(const std::string& name,
@@ -349,14 +386,44 @@ void Gui::zoomOut(const odb::Point& focus_dbu)
   main_window->getLayoutViewer()->zoomOut(focus_dbu);
 }
 
+void Gui::centerAt(const odb::Point& focus_dbu)
+{
+  main_window->getLayoutViewer()->centerAt(focus_dbu);
+}
+
+void Gui::setResolution(double pixels_per_dbu)
+{
+  main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
+}
+
 void Gui::saveImage(const std::string& filename, const odb::Rect& region)
 {
   main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
 }
 
+void Gui::showWidget(const std::string& name, bool show)
+{
+  const QString find_name = QString::fromStdString(name);
+  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
+    if (widget->objectName() == find_name || widget->windowTitle() == find_name) {
+      if (show) {
+        widget->show();
+        widget->raise();
+      } else {
+        widget->hide();
+      }
+    }
+  }
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);
+}
+
+void Renderer::redraw()
+{
+  Gui::get()->redraw();
 }
 
 void Gui::load_design()
@@ -426,6 +493,11 @@ void Selected::highlight(Painter& painter,
 
 }  // namespace gui
 
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* gui_tcl_inits[];
+}  // namespace sta
+
 extern "C" {
 struct Tcl_Interp;
 }
@@ -440,13 +512,21 @@ void initGui(OpenRoad* openroad)
 {
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
+  sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
   if (gui::main_window) {
     using namespace gui;
     main_window->setLogger(openroad->getLogger());
     Gui::get()->registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
+    Gui::get()->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
     Gui::get()->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
     Gui::get()->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
     Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+    Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+    Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+    Gui::get()->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
+
+    Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
+    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(gui::main_window->getRulers()));
   }
 }
 

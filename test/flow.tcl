@@ -39,7 +39,7 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-utl::metric "ord_sha1" [ord::openroad_git_sha1]
+utl::metric "ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "instance_count" [sta::network_instance_count]
 
@@ -136,8 +136,8 @@ write_def $cts_def
 ################################################################
 # Setup/hold timing repair
 
-estimate_parasitics -placement
 set_propagated_clock [all_clocks]
+estimate_parasitics -placement
 repair_timing
 
 # Post timing repair using placement based parasitics.

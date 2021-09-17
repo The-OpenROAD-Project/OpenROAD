@@ -51,7 +51,7 @@ extern "C" {
 
 #include "HypergraphDecomposition.h"
 #include "autocluster.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 using utl::PAR;
@@ -59,7 +59,8 @@ using utl::PAR;
 namespace par {
 
 PartitionMgr::PartitionMgr()
-    : _graph(std::make_unique<Graph>()),
+    : _logger(nullptr),
+      _graph(std::make_unique<Graph>()),
       _hypergraph(std::make_unique<Hypergraph>())
 {
 }
@@ -763,8 +764,8 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
   }
 }
 
-bool PartitionMgr::comparePartitionings(PartSolutions oldPartition,
-                                        PartSolutions newPartition,
+bool PartitionMgr::comparePartitionings(const PartSolutions& oldPartition,
+                                        const PartSolutions& newPartition,
                                         std::string function)
 {
   bool isBetter = false;

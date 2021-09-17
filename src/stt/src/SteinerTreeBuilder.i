@@ -37,9 +37,10 @@
 
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/pdrev.h"
+#include "stt/flute.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include <vector>
 
 namespace ord {
@@ -87,6 +88,15 @@ set_min_hpwl_alpha(int hpwl, float alpha)
   getSteinerTreeBuilder()->setMinHPWLAlpha(hpwl, alpha);
 }
 
+void report_flute_tree(std::vector<int> x,
+                       std::vector<int> y,
+                       int drvr_index)
+{
+  const int flute_accuracy = 3;
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = flt::flute(x, y, flute_accuracy);
+  stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
+}
 
 void
 report_pd_tree(std::vector<int> x,
@@ -96,7 +106,45 @@ report_pd_tree(std::vector<int> x,
 {
   utl::Logger *logger = ord::getLogger();
   stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
-  pdr::reportSteinerTree(tree, logger);
+  stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
+}
+
+void
+report_pdrev_tree(std::vector<int> x,
+                  std::vector<int> y,
+                  int drvr_index,
+                  float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
+  stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
+}
+
+void
+report_stt_tree(std::vector<int> x,
+                std::vector<int> y,
+                int drvr_index,
+                float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  auto builder = getSteinerTreeBuilder();
+
+  auto tree = builder->makeSteinerTree(x, y, drvr_index, alpha);
+  stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
+}
+
+void
+highlight_stt_tree(std::vector<int> x,
+                   std::vector<int> y,
+                   int drvr_index,
+                   float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  auto builder = getSteinerTreeBuilder();
+  auto tree = builder->makeSteinerTree(x, y, drvr_index, alpha);
+
+  gui::Gui *gui = gui::Gui::get();
+  stt::highlightSteinerTree(tree, gui);
 }
 
 void
@@ -108,18 +156,29 @@ highlight_pd_tree(std::vector<int> x,
   utl::Logger *logger = ord::getLogger();
   gui::Gui *gui = gui::Gui::get();
   stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
-  pdr::highlightSteinerTree(tree, gui);
+  stt::highlightSteinerTree(tree, gui);
 }
 
 void
-report_pdII_tree(std::vector<int> x,
-                 std::vector<int> y,
-                 int drvr_index,
-                 float alpha)
+highlight_pdrev_tree(std::vector<int> x,
+                     std::vector<int> y,
+                     int drvr_index,
+                     float alpha)
 {
   utl::Logger *logger = ord::getLogger();
+  gui::Gui *gui = gui::Gui::get();
   stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
-  pdr::reportSteinerTree(tree, logger);
+  stt::highlightSteinerTree(tree, gui);
+}
+
+void
+highlight_flute_tree(std::vector<int> x,
+                     std::vector<int> y)
+{
+  utl::Logger *logger = ord::getLogger();
+  gui::Gui *gui = gui::Gui::get();
+  stt::Tree tree = flt::flute(x, y, 3);
+  stt::highlightSteinerTree(tree, gui);
 }
 
 } // namespace

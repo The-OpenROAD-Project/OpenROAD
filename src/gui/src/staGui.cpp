@@ -118,10 +118,11 @@ float getRequiredTime(sta::dbSta* staRoot,
   return req;
 }
 
+/////////
+
 TimingPathsModel::TimingPathsModel(bool get_max, int path_count)
     : openroad_(ord::OpenRoad::openRoad())
 {
-  populateModel(get_max, path_count);
 }
 
 TimingPathsModel::~TimingPathsModel()
@@ -203,20 +204,45 @@ void TimingPathsModel::resetModel()
 
 void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 {
+  // columns {"Capture Clock", "Required", "Arrival", "Slack", "Start", "End"};
+
+  std::function<bool(const TimingPath* path1, const TimingPath* path2)> sort_func;
+  if (col_index == 0) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getStartClock() < path2->getStartClock();
+    };
+  } else if (col_index == 1) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getPathRequiredTime() < path2->getPathRequiredTime();
+    };
+  } else if (col_index == 2) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getPathArrivalTime() < path2->getPathArrivalTime();
+    };
+  } else if (col_index == 3) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getSlack() < path2->getSlack();
+    };
+  } else if (col_index == 4) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getStartStageName() < path2->getStartStageName();
+    };
+  } else if (col_index == 5) {
+    sort_func = [](const TimingPath* path1, const TimingPath* path2) {
+      return path1->getEndStageName() < path2->getEndStageName();
+    };
+  } else {
+    return;
+  }
+
   beginResetModel();
-  (void) col_index;
-  if (sort_order == Qt::AscendingOrder)
-    std::stable_sort(timing_paths_.begin(),
-                     timing_paths_.end(),
-                     [](const TimingPath* path1, TimingPath* path2) {
-                       return path1->getStartClock() < path2->getStartClock();
-                     });
-  else
-    std::stable_sort(timing_paths_.begin(),
-                     timing_paths_.end(),
-                     [](const TimingPath* path1, TimingPath* path2) {
-                       return path1->getStartClock() > path2->getStartClock();
-                     });
+
+  if (sort_order == Qt::AscendingOrder) {
+    std::stable_sort(timing_paths_.begin(), timing_paths_.end(), sort_func);
+  } else {
+    std::stable_sort(timing_paths_.rbegin(), timing_paths_.rend(), sort_func);
+  }
+
   endResetModel();
 }
 
@@ -353,6 +379,8 @@ bool TimingPathsModel::populatePaths(bool get_max,
   return true;
 }
 
+/////////
+
 std::string TimingPath::getStartStageName() const
 {
   auto node = getNodeAt(1);
@@ -389,9 +417,17 @@ std::string TimingPathNode::getNetName() const
   return db_bterm->getNet()->getName();
 }
 
+/////////
+
+TimingPathDetailModel::TimingPathDetailModel()
+  : QAbstractTableModel(),
+    path_(nullptr)
+{
+}
+
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
-  if (!path_)
+  if (path_ == nullptr)
     return 0;
   return path_->levelsCount();
 }
@@ -418,7 +454,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     }
   }
 
-  if (!index.isValid() || role != Qt::DisplayRole || !path_) {
+  if (!index.isValid() || role != Qt::DisplayRole || path_ == nullptr) {
     return QVariant();
   }
 
@@ -468,9 +504,12 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
   endResetModel();
 }
 
-TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
+/////////
+
+TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_node_(0)
 {
   TimingPathRenderer::path_inst_color_.a = 100;
+  TimingPathRenderer::inst_highlight_color_.a = 100;
 }
 
 TimingPathRenderer::~TimingPathRenderer()
@@ -481,17 +520,20 @@ void TimingPathRenderer::highlight(TimingPath* path)
 {
   path_ = path;
   highlight_node_ = -1;
+  redraw();
 }
 
 void TimingPathRenderer::highlightNode(int node_idx)
 {
-  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount())
+  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount()) {
     highlight_node_ = node_idx;
+    redraw();
+  }
 }
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbObject* sink_node = nullptr;
   odb::dbNet* net = nullptr;
@@ -536,7 +578,7 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbObject* sink_node = nullptr;
   int src_x, src_y;
@@ -569,6 +611,10 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter)
     nxt_stage = highlight_node_ - 1;
   if (nxt_stage != -1)
     getSegmentEnds(nxt_stage, dst_x, dst_y);
+  else {
+    // no dst
+    return;
+  }
   odb::Point pt1(src_x, src_y);
   odb::Point pt2(dst_x, dst_y);
 
@@ -580,7 +626,7 @@ void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
                                        gui::Painter& painter,
                                        const gui::Painter::Color& inst_color)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbBox* bbox = db_inst->getBBox();
   odb::Rect rect;
@@ -592,7 +638,7 @@ void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
 void TimingPathRenderer::highlightTerm(odb::dbBTerm* term,
                                        gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   odb::dbShape port_shape;
   if (term->getFirstPin(port_shape)) {
@@ -608,7 +654,7 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
                                       odb::dbObject* sink_node,
                                       gui::Painter& painter)
 {
-  if (!path_)
+  if (path_ == nullptr)
     return;
   int src_x, src_y;
   int dst_x, dst_y;

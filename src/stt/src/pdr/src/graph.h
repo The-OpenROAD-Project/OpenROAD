@@ -35,6 +35,7 @@
 
 #include <vector>
 
+#include "pdrevII.h"
 #include "edge.h"
 #include "node.h"
 
@@ -56,11 +57,21 @@ public:
         int root_index,
         Logger* logger);
   void buildNearestNeighborsForSPT();
-  void buildNearestNeighbors_single_node(int idx);
   void run_PD_brute_force(float alpha);
   void doSteiner_HoVW();
-  void fix_max_dc();
-  void find_max_dc_node(vector<float>& node_and_dc);
+
+  // used by PdRev::translateTree
+  void replaceParent(Node& pNode, int idx, int tIdx);
+  void addChild(Node& pNode, int idx);
+  void replaceChild(Node& pNode, int idx, int tIdx);
+  void removeChild(Node& pNode, int idx);
+  int calc_tree_wl_pd();
+
+  vector<Node> nodes;
+  int num_terminals;
+  int root_idx_;
+
+private:
   int calc_overlap(vector<vector<Node>>& set_of_nodes);
   int calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
   void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
@@ -71,73 +82,22 @@ public:
   void update_edgecosts_to_parent(int child, int par);
   void update_node_detcost_Kt(int j);
   void get_level_in_tree();
-  void PDBU_new_NN(float alpha);
-  void update_detourcosts_to_NNs(int j);
-  void swap_and_update_tree(int min_node,
-                            int nn_idx,
-                            int distance,
-                            int i_node);
-  float calc_tree_cost();
 
-  void heap_insert(int p, int key);
+  void heap_insert(int p, float key);
   int heap_delete_min();
   void heap_decrease_key(int p, float new_key);
 
   void get_children_of_node();
   void print_tree();
   float calc_tree_det_cost();
-  int calc_tree_wl_pd();
   int calc_tree_pl();
-  void updateMinDist();
-  void NESW_NearestNeighbors(int left, int right, int oct);
-  void NESW_Combine(int left, int mid, int right, int oct);
   bool make_unique(vector<Node>& vec);
 
-  void BuildDAG();
   void UpdateManhDist();
-  bool IsSubTree(int cIdx, int tIdx);
   void UpdateMaxPLToChild(int cIdx);
-  void PrintInfo();
-  void refineSteiner();
-  void refineSteiner2();
-  void UpdateSteinerNodes();
-  void GetSteinerNodes(int idx, vector<Node>& fSTNodes);
-  void GetSteiner(int cIdx, int nIdx, vector<Node>& STNodes);
-  bool IsParent(int cIdx, int nIdx);
-  bool IsOnEdge(Node& tNode, int idx);
-  Node GetCornerNode(int cIdx);
-  void DupRemoval(vector<Node>& STNodes);
-  void removeChild(Node& pNode, int idx);
-  void addChild(Node& pNode, int idx);
-  void UpdateEdges(vector<Node>& STNodes);
-  void UpdateAllEdgesNSEW();
-  void UpdateNSEW(Edge& e);
   int IdentLoc(int cIdx, int tIdx);
-  void SortAll(Node& n);
-  void SortN(Node& n);
-  void SortS(Node& n);
-  void SortE(Node& n);
-  void SortW(Node& n);
-  int DeltaN(int idx, int rIdx, bool isRemove);
-  int DeltaS(int idx, int rIdx, bool isRemove);
-  int DeltaE(int idx, int rIdx, bool isRemove);
-  int DeltaW(int idx, int rIdx, bool isRemove);
-  int ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape);
-  void AddNode(int cIdx, int pIdx, int eShape);
-  void SortCNodes(vector<Node>& cNodes, int cIdx, int pIdx, int eShape);
-  void constructSteiner();
   int IsAdded(Node& cN);
   void FreeManhDist();
-  void removeNeighbor(int pIdx, int cIdx);
-  void removeN(Node& pN, int idx);
-  void removeS(Node& pN, int idx);
-  void removeE(Node& pN, int idx);
-  void removeW(Node& pN, int idx);
-  void replaceChild(Node& pNode, int idx, int tIdx);
-  void replaceParent(Node& pNode, int idx, int tIdx);
-  void RemoveUnneceSTNodes();
-  void RemoveSTNodes();
-  bool IsSameDir(int cIdx, int nIdx);
 
   // Aux functions
   void intersection(const std::vector<std::pair<double, double>> l1,
@@ -149,42 +109,19 @@ public:
                            std::pair<double, double> C,
                            std::pair<double, double> D,
                            std::pair<double, double>& out);
-
-  vector<Node> nodes;
-  int num_terminals;
-
-private:
   bool nodeLessY(const int i, const int j);
 
-  float alpha2_;
-  float alpha3_;
-  float alpha4_;
-  float beta_;
-  int distance_;
-  float m_;
-
   vector<Edge> edges_;
-  vector<int> dag_;
-  int max_pl_;  // max source to sink pathlength
-  float max_pl_ratio_;
   vector<vector<int>> manh_dist_;
-  float pl_margin_;
-  int root_idx_;
 
-  vector<Node> sheared_;
-  vector<Node> hanan_;
   // nearest neighbor in some undocumented sense -cherry 06/14/2021
   vector<vector<int>> nn_;
-  float avg_nn_;
-  vector<vector<int>> nn_hanan_;
   vector<int> sorted_;
-  vector<int> sorted_hanan_;
-  vector<int> aux_;
 
+  // Children of each level in the greph [level][child]
   vector<vector<int>> tree_struct_;
-  vector<int> tree_struct_1darr_;
 
-  vector<int> heap_key_;
+  vector<float> heap_key_;
   //   0 empty
   //  -1 visited (removed)
   vector<int> heap_idx_;
@@ -192,6 +129,78 @@ private:
   int heap_size_;
 
   Logger* logger_;
+
+#ifdef PDREVII
+  // Segregated PDrevII code
+public:
+  void PDBU_new_NN(float alpha);
+  void fix_max_dc();
+
+private:
+  void buildNearestNeighbors_single_node(int idx);
+  void RemoveUnneceSTNodes();
+  void refineSteiner();
+  void refineSteiner2();
+  bool IsOnEdge(Node& tNode, int idx);
+  void update_detourcosts_to_NNs(int j);
+  void swap_and_update_tree(int min_node,
+                            int nn_idx,
+                            int distance,
+                            int i_node);
+  int ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape);
+  void UpdateSteinerNodes();
+  void UpdateAllEdgesNSEW();
+  void UpdateNSEW(Edge& e);
+  void SortAll(Node& n);
+  void SortN(Node& n);
+  void SortS(Node& n);
+  void SortE(Node& n);
+  void SortW(Node& n);
+  int DeltaN(int idx, int rIdx, bool isRemove);
+  int DeltaS(int idx, int rIdx, bool isRemove);
+  int DeltaE(int idx, int rIdx, bool isRemove);
+  int DeltaW(int idx, int rIdx, bool isRemove);
+  void AddNode(int cIdx, int pIdx, int eShape);
+  void SortCNodes(vector<Node>& cNodes, int cIdx, int pIdx, int eShape);
+  void UpdateEdges(vector<Node>& STNodes);
+  void constructSteiner();
+  float calc_tree_cost();
+  void BuildDAG();
+  bool IsSubTree(int cIdx, int tIdx);
+  void GetSteinerNodes(int idx, vector<Node>& fSTNodes);
+  void GetSteiner(int cIdx, int nIdx, vector<Node>& STNodes);
+  void removeNeighbor(int pIdx, int cIdx);
+  void removeN(Node& pN, int idx);
+  void removeS(Node& pN, int idx);
+  void removeE(Node& pN, int idx);
+  void removeW(Node& pN, int idx);
+  void DupRemoval(vector<Node>& STNodes);
+  Node GetCornerNode(int cIdx);
+  bool IsParent(int cIdx, int nIdx);
+  void PrintInfo();
+  bool IsSameDir(int cIdx, int nIdx);
+
+  float m_;
+  float alpha2_;
+  float alpha3_;
+  float alpha4_;
+  float pl_margin_;
+  float beta_;
+  int distance_;
+
+  vector<int> dag_;
+  int max_pl_;  // max source to sink pathlength
+  vector<int> aux_;
+  vector<int> tree_struct_1darr_;
+#endif
+
+#ifdef Guibas_Stolfi
+  void NESW_NearestNeighbors(int left, int right, int oct);
+  void NESW_Combine(int left, int mid, int right, int oct);
+
+  vector<Node> sheared_;
+#endif
+
 };
 
 }  // namespace PD

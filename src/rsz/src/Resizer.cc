@@ -803,8 +803,8 @@ Resizer::repairNet(Net *net,
 {
   // Hands off special nets.
   if (!db_network_->isSpecial(net)) {
-    SteinerTree *tree = makeSteinerTree(drvr_pin, true,
-                                        db_network_, logger_, stt_builder_);
+    SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
+                                        stt_builder_, db_network_, logger_);
     if (tree) {
       debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                  sdc_network_->pathName(drvr_pin));
@@ -2936,8 +2936,8 @@ int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true,
-                                      db_network_, logger_, stt_builder_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
+                                      stt_builder_, db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(tree);
     delete tree;
@@ -2950,7 +2950,10 @@ int
 Resizer::findMaxSteinerDist(SteinerTree *tree)
 {
   SteinerPt drvr_pt = tree->drvrPt(network_);
-  return findMaxSteinerDist(tree, drvr_pt, 0);
+  if (drvr_pt == SteinerTree::null_pt)
+    return 0;
+  else
+    return findMaxSteinerDist(tree, drvr_pt, 0);
 }
 
 // DFS of steiner tree.
@@ -3690,7 +3693,8 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, false, db_network_, logger_, stt_builder_);
+      tree = makeSteinerTree(drvr, false, max_steiner_pin_count_,
+                             stt_builder_, db_network_, logger_);
     steiner_renderer_->highlight(tree);
   }
 }
@@ -3752,6 +3756,41 @@ Resizer::findFaninFanouts(VertexSet &ends)
   // Search forward from register outputs.
   VertexSet fanouts = findFanouts(fanin_roots);
   return fanouts;
+}
+
+// Find source pins for logic fanin of ends.
+PinSet
+Resizer::findFanins(PinSet *end_pins)
+{
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
+
+  VertexSet ends;
+  for (Pin *pin : *end_pins) {
+    Vertex *end = graph_->pinLoadVertex(pin);
+    ends.insert(end);
+  }
+
+  Search *search = sta_->search();
+  SearchPredNonReg2 pred(sta_);
+  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
+  for (Vertex *vertex : ends)
+    iter.enqueueAdjacentVertices(vertex);
+
+  PinSet fanins;
+  while (iter.hasNext()) {
+    Vertex *vertex = iter.next();
+    if (isRegOutput(vertex)
+        || network_->isTopLevelPort(vertex->pin()))
+      continue;
+    else {
+      iter.enqueueAdjacentVertices(vertex);
+      fanins.insert(vertex->pin());
+    }
+  }
+  return fanins;
 }
 
 // Find roots for logic fanin of ends.

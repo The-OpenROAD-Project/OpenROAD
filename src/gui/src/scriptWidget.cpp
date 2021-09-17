@@ -53,7 +53,13 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       output_(new QTextEdit),
       input_(new TclCmdInputWidget),
       pauser_(new QPushButton("Idle")),
-      historyPosition_(0)
+      pause_timer_(std::make_unique<QTimer>()),
+      interp_(nullptr),
+      history_(),
+      history_buffer_last_(),
+      historyPosition_(0),
+      paused_(false),
+      logger_(nullptr)
 {
   setObjectName("scripting");  // for settings
 
@@ -74,13 +80,14 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
   QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
-  connect(input_, SIGNAL(completeCommand()), this, SLOT(executeCommand()));
+  connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));
   connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
   connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
   connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
+  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
 
   setWidget(container);
 }
@@ -172,14 +179,15 @@ void ScriptWidget::setupTcl()
   input_->init(interp_);
 }
 
-void ScriptWidget::executeCommand()
+void ScriptWidget::executeCommand(const QString& command, bool echo)
 {
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
-  QString command = input_->text();
 
-  // Show the command that we executed
-  addCommandToOutput(command);
+  if (echo) {
+    // Show the command that we executed
+    addCommandToOutput(command);
+  }
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
@@ -187,8 +195,10 @@ void ScriptWidget::executeCommand()
   addTclResultToOutput(return_code);
 
   if (return_code == TCL_OK) {
-    // record the successful command to tcl history command
-    Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
+    if (echo) {
+      // record the successful command to tcl history command
+      Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
+    }
 
     // Update history; ignore repeated commands and keep last 100
     const int history_limit = 100;
@@ -264,9 +274,6 @@ void ScriptWidget::addToOutput(const QString& text, const QColor& color)
   }
   // output new text
   output_->append(output.join("\n"));
-
-  // ensure changes are updated
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 ScriptWidget::~ScriptWidget()
@@ -319,7 +326,7 @@ void ScriptWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void ScriptWidget::pause()
+void ScriptWidget::pause(int timeout)
 {
   QString prior_text = pauser_->text();
   bool prior_enable = pauser_->isEnabled();
@@ -328,6 +335,10 @@ void ScriptWidget::pause()
   pauser_->setStyleSheet("background-color: yellow");
   pauser_->setEnabled(true);
   paused_ = true;
+
+  input_->setReadOnly(true);
+
+  triggerPauseCountDown(timeout);
 
   // Keep processing events until the user continues
   while (paused_) {
@@ -338,12 +349,47 @@ void ScriptWidget::pause()
   pauser_->setStyleSheet(prior_style);
   pauser_->setEnabled(prior_enable);
 
+  input_->setReadOnly(false);
+
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void ScriptWidget::unpause()
+{
+  paused_ = false;
+}
+
+void ScriptWidget::triggerPauseCountDown(int timeout)
+{
+  if (timeout == 0) {
+    return;
+  }
+
+  pause_timer_->setInterval(timeout);
+  pause_timer_->start();
+  QTimer::singleShot(timeout, this, SLOT(updatePauseTimeout()));
+  updatePauseTimeout();
+}
+
+void ScriptWidget::updatePauseTimeout()
+{
+  if (!paused_) {
+    // already unpaused
+    return;
+  }
+
+  const int one_second = 1000;
+
+  int seconds = pause_timer_->remainingTime() / one_second;
+  pauser_->setText("Continue (" + QString::number(seconds) + "s)");
+
+  QTimer::singleShot(one_second, this, SLOT(updatePauseTimeout()));
+}
+
 void ScriptWidget::pauserClicked()
 {
+  pause_timer_->stop();
   paused_ = false;
 }
 

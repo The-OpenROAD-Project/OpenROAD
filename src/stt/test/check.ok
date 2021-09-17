@@ -1,0 +1,23 @@
+Net cross1
+[DEBUG STT-0001] check failed (86, 50) (86, 53) [1, 12] vs (84, 51) (89, 51) [3, 11] degree=11
+Wire length = 37 Path depth = 27
+0 (86 50) neighbor 14 length 1
+1 (84 51) neighbor 14 length 2
+2 (89 51) neighbor 15 length 3
+3 (80 53) neighbor 11 length 4
+4 (86 53) neighbor 16 length 0
+5 (79 56) neighbor 11 length 0
+6 (81 58) neighbor 18 length 0
+7 (86 58) neighbor 17 length 0
+8 (85 59) neighbor 12 length 1
+9 (79 60) neighbor 13 length 0
+10 (72 61) neighbor 13 length 8
+11 (79 56) neighbor 19 length 2
+12 (85 58) neighbor 18 length 4
+13 (79 60) neighbor 19 length 2
+14 (86 51) neighbor 15 length 0
+15 (86 51) neighbor 16 length 2
+16 (86 53) neighbor 17 length 5
+17 (86 58) neighbor 12 length 1
+18 (81 58) neighbor 19 length 2
+19 (79 58) neighbor 19 length 0
