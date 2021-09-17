@@ -2885,13 +2885,18 @@ void FlexDRWorker::route_queue_update_from_marker(
             }
             if (uniqueAggressorOwners.size() + uniqueVictimOwners.size() > 1) {
                 if (dNet->canAvoidRipup()) {
-                  cout << " AVOIDING to ripup net " << *dNet << "\n";
-
+//                  cout << " AVOIDING to ripup net " << *dNet << "\n";
+//                  cout << "OBJs involved in viol:\n";
+//                  for (auto& a : uniqueAggressorOwners)
+//                      cout << *a << "\n";
+//                  for (auto& a : uniqueVictimOwners)
+//                      cout << *a << "\n";
                   dNet->incNRipupAvoids();
                   checks.push_back({dNet, -1, false});
                   continue;
-                } else if (dNet->getMaxRipupAvoids() > 0)
-                  cout << "Reached max ripup avoids: net " << *dNet << "\n";
+                } 
+//                else if (dNet->getMaxRipupAvoids() > 0)
+//                  cout << "Reached max ripup avoids: net " << *dNet << "\n";
                 dNet->setNRipupAvoids(0);
             }
             routes.push_back({dNet, dNet->getNumReroutes(), true});

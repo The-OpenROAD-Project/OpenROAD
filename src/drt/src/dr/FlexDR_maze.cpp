@@ -1934,14 +1934,15 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
     rerouteQueue.pop();
     bool didRoute = false;
     bool didCheck = false;
-
+    
+  if (obj->typeId() == drcNet && graphics_) {
+    graphics_->startNet(static_cast<drNet*>(obj));
+  }
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
       if (numReroute != net->getNumReroutes()) {
         continue;
       }
-      if (net->isClockNet() || net->hasNDR())
-        cout << *net << "\n";
       // init
       net->setModified(true);
       if (net->getFrNet()) {
@@ -2769,9 +2770,6 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
 bool FlexDRWorker::routeNet(drNet* net)
 {
   ProfileTask profile("DR:routeNet");
-  if (graphics_) {
-    graphics_->startNet(net);
-  }
 
   if (net->getPins().size() <= 1) {
     return true;

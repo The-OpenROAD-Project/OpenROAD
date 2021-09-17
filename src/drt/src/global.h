@@ -143,6 +143,7 @@ std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
 std::ostream& operator<<(std::ostream& os, const frGuide& p);
 std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
+std::ostream& operator<<(std::ostream& os, const frNet& fig);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
 // namespace fr
 }  // namespace fr

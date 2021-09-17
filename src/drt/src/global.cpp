@@ -376,8 +376,12 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
       os << *static_cast<const frConnFig*>(&fig);
       break;
     }
+    case frcNet: {
+        os << *static_cast<const frNet*>(&fig);
+        break;
+    }
     default:
-      os << "UNKNOWN frShape, code " << fig.typeId();
+      os << "UNKNOWN frBlockObject, code " << fig.typeId();
   }
   return os;
 }
