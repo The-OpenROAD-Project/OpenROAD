@@ -51,7 +51,7 @@ if {[catch {ICeWall init_footprint coyote_tc/coyote_tc.sigmap} msg]} {
   exit
 }
 
-set def_file results/coyote_tc_sky130.some_pad_locations.coyote_tc_sky130.max_pad_spacing_constraint.def
+set def_file results/coyote_tc_sky130.max_pad_spacing_constraint.def
 
 write_def $def_file
 diff_files $def_file coyote_tc_sky130.max_pad_spacing_constraint.defok
