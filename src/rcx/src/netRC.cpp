@@ -2655,20 +2655,23 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       powerRCGen();
       return 1;
     }
+    bool newConnExt= false;
     extDebugNet *dbgNet= new extDebugNet(NULL, _block);
-    dbgNet->OpenConnFile("Conn_debug.txt");
     extDebugNet *dbgNet1= new extDebugNet(NULL, _block);
-    dbgNet1->OpenConnFile("AfterMerge.62");
-
     extDebugNet *opens= new extDebugNet(NULL, _block);
-    opens->OpenConnFile("Nets.Warnings");
+    FILE *openNetsFP= NULL;
+    if (newConnExt) {
+    	dbgNet->OpenConnFile("Conn_debug.txt");
+    	dbgNet1->OpenConnFile("AfterMerge.62");
+    	opens->OpenConnFile("Nets.Warnings");
+    	openNetsFP= ATH__openFile("Open.nets", "w");
+    }
 
     uint orderWireFixedCnt=0;
     uint orderWireWarnCnt=0;
     uint orderWireFailedConnCnt=0;
     uint orderWireConnCnt=0;
     uint disconnectedTermCout=0;
-    FILE *openNetsFP= ATH__openFile("Open.nets", "w");
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
       uint netId= net->getId();
@@ -2682,6 +2685,19 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       _connectedITerm.clear();
       dbSet<dbITerm> iterms= net->getITerms();
       dbSet<dbBTerm> bterms = net->getBTerms();
+
+      if (!newConnExt) {
+
+
+        cnt += makeNetRCsegs(net);
+
+        uint tt;
+        for (tt = 0; tt < _connectedBTerm.size(); tt++)
+          ((dbBTerm*) _connectedBTerm[tt])->setMark(0);
+        for (tt = 0; tt < _connectedITerm.size(); tt++)
+          ((dbITerm*) _connectedITerm[tt])->setMark(0);
+        continue;
+      }
       uint termCnt= iterms.size() + bterms.size();
 
       //if (net->isDisconnected() && _debug_net_id==netId){
@@ -2741,6 +2757,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
         ((dbITerm*)_connectedITerm[tt])->setMark(0);
       // break;
     }
+    if (newConnExt) {
     debugPrint(logger_, RCX, "extrules", 1,
                "Nets= {} OrderWireWarnings={} Fixed={} -- NotWarning={} OrderWireOK={}  OrderWireConnFailed={}", 
                orderWireWarnCnt+orderWireConnCnt+orderWireFailedConnCnt, orderWireWarnCnt,orderWireFixedCnt,
@@ -2750,6 +2767,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
     dbgNet->CloseConnFile();
     dbgNet1->CloseConnFile();
     // makeTree(_debug_net_id);
+    }
 
     logger_->info(RCX, 40, "Final {} rc segments", cnt);
   } else if (debug == 777) {
