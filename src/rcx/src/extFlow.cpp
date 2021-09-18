@@ -1343,11 +1343,11 @@ uint extMain::addSignalNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
       dbSet<dbITerm> iterms= net->getITerms();
       dbSet<dbBTerm> bterms = net->getBTerms();
       uint termCnt= iterms.size() + bterms.size();
-    bool NEW_RSEGS= net->isDisconnected() && termCnt<100;
+      bool newConnExt= net->isDisconnected() && termCnt<100;
+      newConnExt= false;
 // ---------------------------------------------------------------
    uint rseg_type= 19; // wire=9
-   if (!NEW_RSEGS)
-   // if (netId!=_debug_net_id)
+   if (!newConnExt)
       cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, fp, createDbNet);
     else 
       cnt += addRSegsOnSearch(net, dir, bb_ll, bb_ur, rseg_type, fp, createDbNet);
