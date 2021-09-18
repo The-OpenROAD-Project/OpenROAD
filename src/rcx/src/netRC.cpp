@@ -2655,6 +2655,14 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       powerRCGen();
       return 1;
     }
+    extDebugNet *dbgNet= new extDebugNet(NULL, _block);
+    dbgNet->OpenConnFile("Conn_debug.txt");
+    extDebugNet *dbgNet1= new extDebugNet(NULL, _block);
+    dbgNet1->OpenConnFile("AfterMerge.62");
+
+    extDebugNet *opens= new extDebugNet(NULL, _block);
+    opens->OpenConnFile("Nets.Warnings");
+
     uint orderWireFixedCnt=0;
     uint orderWireWarnCnt=0;
     uint orderWireFailedConnCnt=0;
