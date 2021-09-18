@@ -2673,7 +2673,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       net = *net_itr;
       uint netId= net->getId();
 
-      if (net->getSigType()->isSupply())
+      if (net->getSigType().isSupply())
         continue;
       if (!_allNet && !net->isMarked())
         continue;
