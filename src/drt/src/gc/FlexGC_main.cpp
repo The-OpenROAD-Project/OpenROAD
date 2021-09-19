@@ -3030,9 +3030,10 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
+    if(markerBBox.length() < layer->getWidth())
+      continue;
     workerRegionQuery.query(markerBBox, lNum, results);
-    bool upViaFound = false;
-    bool downViaFound = false;
+    std::map<frPoint, std::vector<drVia*>> vias;
     for (auto& connFig : results) {
       if (connFig->typeId() != drcVia) {
         continue;
@@ -3041,32 +3042,41 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      if (obj->getViaDef()->getCutLayerNum() == lNum + 1) {
-        upViaFound = true;
-      } else if (obj->getViaDef()->getCutLayerNum() == lNum - 1) {
-        downViaFound = true;
-      } else {
-        continue;
+      frPoint tmpOrigin;
+      obj->getOrigin(tmpOrigin);
+      frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
+      if (cutLayerNum == lNum + 1 || cutLayerNum == lNum - 1) {
+        vias[tmpOrigin].push_back(obj);
       }
-      obj->getOrigin(origin);
-      net = obj->getNet();
     }
-    if (!net) {
+    for(auto& [tmpOrigin, objs] : vias)
+    {
+      bool upViaFound = false;
+      bool downViaFound = false;
+      for(auto obj : objs)
+      {
+        frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
+        if(cutLayerNum == lNum + 1)
+          upViaFound = true;
+        else
+          downViaFound = true;
+        if(upViaFound && downViaFound)
+        {
+          net = obj->getNet();
+          origin = tmpOrigin;
+          break;
+        }
+      }
+    }
+    if (net == nullptr) {
       continue;
     }
-    if (!upViaFound || !downViaFound)
-      continue;
     markerBBox.shift(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
-
-    if (!net) {
-      logger_->warn(DRT, 64, "Attempting to add patch with no drNet.");
-    }
-
     pwires_.push_back(std::move(patch));
   }
 }
