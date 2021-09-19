@@ -475,8 +475,13 @@ void FastRouteCore::convertToMazeroute()
 
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
-    checkTree(netID);
+
+  // check embedded trees only when maze router is called
+  // i.e., whem running overflow iterations
+  if (overflow_iterations_ > 0) {
+    for (int netID = 0; netID < num_valid_nets_; netID++) {
+      checkTree(netID);
+    }
   }
 }
 
