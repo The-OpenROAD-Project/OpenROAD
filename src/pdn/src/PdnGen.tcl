@@ -1418,13 +1418,20 @@ proc lmap {args} {
   return $result
 }
 
-proc get_dir {layer_name} {
+proc get_routing_direction {layer_name} {
   variable layers
 
   if {$layers == ""} {
     init_metal_layers
   }
 
+  if {![dict exists $layers $layer_name direction]} {
+    utl::error "PDN" 33 "Unknown direction for layer $layer_name."
+  }
+  return [dict get $layers $layer_name direction]
+}
+
+proc get_dir {layer_name} {
   if {[regexp {.*_PIN_(hor|ver)} $layer_name - dir]} {
     return $dir
   }
@@ -1433,10 +1440,7 @@ proc get_dir {layer_name} {
     return "hor"
   }
 
-  if {![dict exists $layers $layer_name direction]} {
-    utl::error "PDN" 33 "Unknown direction for layer $layer_name."
-  }
-  return [dict get $layers $layer_name direction]
+  return [get_routing_direction $layer_name]
 }
 
 proc get_rails_layers {} {
@@ -1937,7 +1941,7 @@ proc get_via_enclosure {via_info lower_width upper_width} {
     # debug "Initial enclosure_list (size = $size)- $enclosure_list"
     if {$size > 0} {
       foreach enclosure $enclosure_list {
-        if {![dict exists $enclosure above]} {
+        if {![dict exists $enclosure below]} {
           lappend upper_enclosures $enclosure
         }
       }
@@ -2036,44 +2040,73 @@ proc read_widthtable {layer_name} {
     }
 
     regexp {WIDTHTABLE\s+(.*)} $line - widthtable
-    set widthtable [lmap x $widthtable {expr round($x * $def_units)}]
+    set widthtable [lmap x $widthtable {ord::microns_to_dbu $x}]
 
-    # Not interested in wrong direction routing
-    if {![dict exists $flags wrongdirection]} {
-      set table $widthtable
+    if {[dict exists $flags wrongdirection]} {
+      dict set table wrongdirection $widthtable
+    } else {
+      dict set table rightdirection $widthtable
     }
   }
   return $table
 }
 
-proc get_widthtable {layer_name} {
+proc get_widthtable {layer_name direction} {
   variable layers
 
   if {![dict exists $layers $layer_name widthtable]} {
       dict set layers $layer_name widthtable [read_widthtable $layer_name]
   }
 
-  return [dict get $layers $layer_name widthtable]
+  if {![dict exists $layers $layer_name widthtable $direction]} {
+    if {$direction == "wrongdirection" && [dict exists $layers $layer_name widthtable rightdirection]} {
+      dict set layers $layer_name widthtable $direction [dict get $layers $layer_name widthtable rightdirection]
+    } else {
+      dict set layers $layer_name widthtable $direction {}
+    }
+  }
+
+  return [dict get $layers $layer_name widthtable $direction]
 }
 
 # Layers that have a widthtable will only support some width values, the widthtable defines the
 # set of widths that are allowed, or any width greater than or equal to the last value in the
 # table
-proc get_adjusted_width {layer width} {
-  set widthtable [get_widthtable $layer]
+#
 
+proc adjust_width {widthtable width} {
   if {[llength $widthtable] == 0} {return $width}
-  # debug "widthtable $layer ($width): $widthtable"
   if {[lsearch -exact $widthtable $width] > -1} {return $width}
   if {$width > [lindex $widthtable end]} {return $width}
 
   foreach value $widthtable {
     if {$value > $width} {
+      # debug "Adjust width from $width to $value"
       return $value
     }
   }
 
   return $width
+}
+
+proc get_adjusted_dX {layer width} {
+  if {[get_routing_direction $layer] == "ver"} {
+    # debug "Using rightdirection adjustment for layer $layer (dX)"
+    return [adjust_width [get_widthtable $layer rightdirection] $width]
+  } else {
+    # debug "Using wrongdirection adjustment for layer $layer (dX)"
+    return [adjust_width [get_widthtable $layer wrongdirection] $width]
+  }
+}
+
+proc get_adjusted_dY {layer height} {
+  if {[get_routing_direction $layer] == "hor"} {
+    # debug "Using rightdirection adjustment for layer $layer (dY)"
+    return [adjust_width [get_widthtable $layer rightdirection] $height]
+  } else {
+    # debug "Using wrongdirection adjustment for layer $layer (dY)"
+    return [adjust_width [get_widthtable $layer wrongdirection] $height]
+  }
 }
 
 proc get_arrayspacing_rule {layer_name} {
@@ -2117,6 +2150,7 @@ proc determine_num_via_columns {via_info constraints} {
   variable upper_height
   variable lower_height
   variable lower_dir
+  variable upper_dir
   variable min_lower_enclosure
   variable max_lower_enclosure
   variable min_upper_enclosure
@@ -2167,21 +2201,25 @@ proc determine_num_via_columns {via_info constraints} {
     }
 
   }
-  # debug "$lower_dir"
-  if {$lower_dir == "hor"} {
+  # debug "Lower: [dict get $via_info lower layer] $lower_dir"
+  # debug "Upper: [dict get $via_info upper layer] $upper_dir"
+  if {[get_routing_direction [dict get $via_info upper layer]] == "ver"} {
     if {[dict get $constraints stack_top] != [dict get $via_info upper layer]} {
+      # debug "Adjust width of [dict get $via_info upper layer]"
       get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min([expr $cut_width + $xcut_pitch * ($columns - 1)],$upper_height)]
       set upper_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $min_upper_enclosure]
     }
-  } else {
+  } 
+  if {[get_routing_direction [dict get $via_info lower layer]] == "ver"} {
     if {[dict get $constraints stack_bottom] != [dict get $via_info lower layer]} {
+      # debug "Adjust width of [dict get $via_info lower layer]"
       get_via_enclosure $via_info [expr min([expr $cut_width + $xcut_pitch * ($columns - 1)],$lower_height)] [expr min($upper_width,$upper_height)]
       set lower_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $min_lower_enclosure]
     }
   }
   # debug "cols $columns W: lower $lower_width upper $upper_width"
-  set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
-  set upper_width [get_adjusted_width [dict get $via_info upper layer] $upper_width]
+  set lower_width [get_adjusted_dX [dict get $via_info lower layer] $lower_width]
+  set upper_width [get_adjusted_dX [dict get $via_info upper layer] $upper_width]
   # debug "cols $columns W: lower $lower_width upper $upper_width"
 
   return $columns
@@ -2196,6 +2234,7 @@ proc determine_num_via_rows {via_info constraints} {
   variable lower_width
   variable upper_width
   variable lower_dir
+  variable upper_dir
   variable min_lower_enclosure
   variable max_lower_enclosure
   variable min_upper_enclosure
@@ -2212,7 +2251,7 @@ proc determine_num_via_rows {via_info constraints} {
     set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
   }
   if {[dict exists $constraints cut_pitch]} {set ycut_pitch [expr round([dict get $constraints cut_pitch] * $def_units)]}
-  while {$via_height_lower < $lower_height || $via_height_upper < $upper_height} {
+  while {$via_height_lower < $lower_height && $via_height_upper < $upper_height} {
     incr i
     if {$lower_dir == "hor"} {
       set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
@@ -2242,26 +2281,28 @@ proc determine_num_via_rows {via_info constraints} {
 
     }
   }
-  if {$lower_dir == "hor"} {
+  if {[get_routing_direction [dict get $via_info lower layer]] == "hor"} {
     # debug "[dict get $constraints stack_bottom] != [dict get $via_info lower layer]"
     if {[dict get $constraints stack_bottom] != [dict get $via_info lower layer]} {
+      # debug "Adjust height of [dict get $via_info lower layer]"
       get_via_enclosure $via_info [expr min($lower_width,[expr $cut_height + $ycut_pitch * ($rows - 1)])] [expr min($upper_width,$upper_height)]
       set lower_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_lower_enclosure]
       # debug "modify lower_height to $lower_height ($cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_lower_enclosure"
     }
-  } else {
+  } 
+  if {[get_routing_direction [dict get $via_info upper layer]] == "hor"} {
     # debug "[dict get $constraints stack_top] != [dict get $via_info upper layer]"
     if {[dict get $constraints stack_top] != [dict get $via_info upper layer]} {
+      # debug "Adjust height of [dict get $via_info upper layer]"
       get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min($upper_width,[expr $cut_height + $ycut_pitch * ($rows - 1)])]
       set upper_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_upper_enclosure]
       # debug "modify upper_height to $upper_height ($cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_upper_enclosure"
     }
   }
   # debug "$rows H: lower $lower_height upper $upper_height"
-  set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
-  set upper_height [get_adjusted_width [dict get $via_info upper layer] $upper_height]
+  set lower_height [get_adjusted_dY [dict get $via_info lower layer] $lower_height]
+  set upper_height [get_adjusted_dY [dict get $via_info upper layer] $upper_height]
   # debug "$rows H: lower $lower_height upper $upper_height"
-
 
   return $rows
 }
@@ -2273,6 +2314,7 @@ proc init_via_width_height {via_info lower_layer width height constraints} {
   variable upper_height
   variable lower_height
   variable lower_dir
+  variable upper_dir
   variable min_lower_enclosure
   variable max_lower_enclosure
   variable min_upper_enclosure
@@ -2311,27 +2353,27 @@ proc init_via_width_height {via_info lower_layer width height constraints} {
   if {[dict exists $constraints width $lower_layer]} {
     if {[get_dir $lower_layer] == "hor"} {
       set lower_height [expr round([dict get $constraints width $lower_layer] * $def_units)]
-      set lower_width  [get_adjusted_width $lower_layer $width]
+      set lower_width  [get_adjusted_dX $lower_layer $width]
     } else {
       set lower_width [expr round([dict get $constraints width $lower_layer] * $def_units)]
-      set lower_height [get_adjusted_width $lower_layer $height]
+      set lower_height [get_adjusted_dY $lower_layer $height]
     }
   } else {
     # Adjust the width and height values to the next largest allowed value if necessary
-    set lower_width  [get_adjusted_width $lower_layer $width]
-    set lower_height [get_adjusted_width $lower_layer $height]
+    set lower_width  [get_adjusted_dX $lower_layer $width]
+    set lower_height [get_adjusted_dY $lower_layer $height]
   }
   if {[dict exists $constraints width $upper_layer]} {
     if {[get_dir $upper_layer] == "hor"} {
       set upper_height [expr round([dict get $constraints width $upper_layer] * $def_units)]
-      set upper_width  [get_adjusted_width $upper_layer $width]
+      set upper_width  [get_adjusted_dX $upper_layer $width]
     } else {
       set upper_width [expr round([dict get $constraints width $upper_layer] * $def_units)]
-      set upper_height [get_adjusted_width $upper_layer $height]
+      set upper_height [get_adjusted_dY $upper_layer $height]
     }
   } else {
-    set upper_width  [get_adjusted_width $upper_layer $width]
-    set upper_height [get_adjusted_width $upper_layer $height]
+    set upper_width  [get_adjusted_dX $upper_layer $width]
+    set upper_height [get_adjusted_dY $upper_layer $height]
   }
   # debug "lower (width $lower_width height $lower_height) upper (width $upper_width height $upper_height)"
   # debug "min - \[expr min($lower_width,$lower_height,$upper_width,$upper_height)\]"
@@ -2386,6 +2428,8 @@ proc via_generate_rule {viarule_name via_info rule_name rows columns constraints
   # debug "lower: width $lower_width height $lower_height"
   # debug "lower: enc_width $lower_enc_width enc_height $lower_enc_height enclosure_rule $max_lower_enclosure $min_lower_enclosure"
   # debug "lower: enclosure [dict get $lower xEnclosure] [dict get $lower yEnclosure]"
+  # debug "upper: enc_width $upper_enc_width enc_height $upper_enc_height enclosure_rule $max_upper_enclosure $min_upper_enclosure"
+  # debug "upper: enclosure [dict get $upper xEnclosure] [dict get $upper yEnclosure]"
 
   return [list [list \
     name $rule_name \
@@ -2675,6 +2719,7 @@ proc get_via_option {viarule_name via_info lower width height constraints} {
   variable upper_height
   variable lower_height
   variable lower_dir
+  variable upper_dir
   variable min_lower_enclosure
   variable max_lower_enclosure
   variable min_upper_enclosure
@@ -2684,10 +2729,12 @@ proc get_via_option {viarule_name via_info lower width height constraints} {
   variable via_location
   variable def_units
 
-  # debug "{$lower $width $height}"
-  set lower_dir [get_dir $lower]
-
   set upper [dict get $via_info upper layer]
+
+  # debug "{$lower $width $height}"
+
+  set lower_dir [get_dir $lower]
+  set upper_dir [get_dir $upper]
 
   init_via_width_height $via_info $lower $width $height $constraints
   # debug "lower: $lower, width: $width, height: $height, lower_width: $lower_width, lower_height: $lower_height"
@@ -2695,13 +2742,15 @@ proc get_via_option {viarule_name via_info lower width height constraints} {
 
   # debug "split cuts? [dict exists $constraints split_cuts]"
   # debug "lower $lower upper $upper"
+  # debug [dict get $via_info cut layer]
 
   # Determines the maximum number of rows and columns that can fit into this width/height
   set columns [determine_num_via_columns $via_info $constraints]
   set rows    [determine_num_via_rows    $via_info $constraints]
 
-  # debug "lower_width $lower_width min_lower_enclosure $min_lower_enclosure"
-  # debug "upper_width $upper_width min_upper_enclosure $min_upper_enclosure"
+  # debug "columns: $columns, rows: $rows"	  
+  # debug "lower_width $lower_width lower_height: $lower_height, min_lower_enclosure $min_lower_enclosure"
+  # debug "upper_width $upper_width upper_height: $upper_height, min_upper_enclosure $min_upper_enclosure"
 
   if {[dict exists $constraints split_cuts] && ([lsearch -exact [dict get $constraints split_cuts] $lower] > -1 || [lsearch -exact [dict get $constraints split_cuts] $upper] > -1)} {
     # debug "via_split_cuts_rule"

@@ -43,7 +43,7 @@ void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
     if (design_->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == frcHorzPrefRoutingDir) {
+        == dbTechLayerDir::HORIZONTAL) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }
@@ -65,7 +65,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
     frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
     frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
     for (auto& uTerm : refBlock->getTerms()) {
-      if (isSkipTerm(uTerm.get())) {
+      if (uTerm.get()->getType().isSupply()) {
         continue;
       }
       for (auto& uPin : uTerm->getPins()) {
@@ -125,7 +125,7 @@ void FlexPA::initUniqueInstance_main(
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
   map<frBlock*,
-      map<frOrient, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
+      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
       frBlockObjectComp>
       refBlockOT2Insts;  // refblock orient track-offset to instances
   vector<frInst*> ndrInsts;
@@ -267,7 +267,7 @@ void FlexPA::initViaRawPriority()
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design_->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     for (auto& viaDef : design_->getTech()->getLayer(layerNum)->getViaDefs()) {
@@ -303,13 +303,13 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   isNotLowerAlign
       = (isLayer1Horz
          && (getDesign()->getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == frcVertPrefRoutingDir))
+             == dbTechLayerDir::VERTICAL))
         || (!isLayer1Horz
             && (getDesign()
                     ->getTech()
                     ->getLayer(viaDef->getLayer1Num())
                     ->getDir()
-                == frcHorzPrefRoutingDir));
+                == dbTechLayerDir::HORIZONTAL));
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -329,13 +329,13 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   isNotUpperAlign
       = (isLayer2Horz
          && (getDesign()->getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == frcVertPrefRoutingDir))
+             == dbTechLayerDir::VERTICAL))
         || (!isLayer2Horz
             && (getDesign()
                     ->getTech()
                     ->getLayer(viaDef->getLayer2Num())
                     ->getDir()
-                == frcHorzPrefRoutingDir));
+                == dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = gtl::area(viaLayerPS1);
   frCoord layer2Area = gtl::area(viaLayerPS2);
@@ -360,7 +360,7 @@ void FlexPA::initTrackCoords()
   for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
     auto layerNum = trackPattern->getLayerNum();
     auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir()
-                     == frcVertPrefRoutingDir);
+                     == dbTechLayerDir::VERTICAL);
     auto isVTrack = trackPattern->isHorizontal();  // yes = vertical track
     if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
       frCoord currCoord = trackPattern->getStartCoord();

@@ -194,7 +194,9 @@ public:
 		// major.minor (avoid including defout.h)
 		string version);
   
-  void writeCdl(const char *filename, bool includeFillers);
+  void writeCdl(const char *outFilename,
+                const char *mastersFilename,
+                bool includeFillers);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.

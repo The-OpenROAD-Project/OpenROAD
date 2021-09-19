@@ -291,8 +291,8 @@ class PartitionMgr
   unsigned generatePartitionId();
   unsigned generateClusterId();
   void computePartitionResult(unsigned partitionId, std::string function);
-  bool comparePartitionings(const PartSolutions oldPartition,
-                            const PartSolutions newPartition,
+  bool comparePartitionings(const PartSolutions& oldPartition,
+                            const PartSolutions& newPartition,
                             std::string function);
   void reportPartitionResult(unsigned partitionId);
   void writePartitioningToDb(unsigned partitionId);

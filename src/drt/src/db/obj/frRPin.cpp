@@ -43,7 +43,7 @@ void frRPin::getBBox(frBox& in)
     auto inst = static_cast<frInstTerm*>(term)->getInst();
     frTransform shiftXform;
     inst->getTransform(shiftXform);
-    shiftXform.set(frOrient(frcR0));
+    shiftXform.set(dbOrientType(dbOrientType::R0));
 
     accessPoint->getPoint(pt);
     pt.transform(shiftXform);

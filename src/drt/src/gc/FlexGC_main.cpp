@@ -237,17 +237,15 @@ bool isPG(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcNet: {
       auto type = static_cast<frNet*>(obj)->getType();
-      return type == frNetEnum::frcPowerNet || type == frNetEnum::frcGroundNet;
+      return type.isSupply();
     }
     case frcInstTerm: {
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
-      return type == frTermEnum::frcPowerTerm
-             || type == frTermEnum::frcGroundTerm;
+      return type.isSupply();
     }
     case frcTerm: {
       auto type = static_cast<frTerm*>(obj)->getType();
-      return type == frTermEnum::frcPowerTerm
-             || type == frTermEnum::frcGroundTerm;
+      return type.isSupply();
     }
     default:
       return false;
@@ -866,7 +864,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -886,7 +884,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1202,7 +1200,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING
+      if (currLayer->getType() != dbTechLayerType::ROUTING
           || !currLayer->hasLef58CornerSpacingConstraint()) {
         continue;
       }
@@ -1222,7 +1220,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING
+      if (currLayer->getType() != dbTechLayerType::ROUTING
           || !currLayer->hasLef58CornerSpacingConstraint()) {
         continue;
       }
@@ -1807,7 +1805,7 @@ void FlexGCWorker::Impl::checkMetalShape()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -1821,7 +1819,7 @@ void FlexGCWorker::Impl::checkMetalShape()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1951,22 +1949,17 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   if (con->isAdjacentCuts() && con->hasExceptSamePGNet() && net1 == net2
       && net1->getOwner()) {
     auto owner = net1->getOwner();
-    if (owner->typeId() == frcNet) {
-      if (static_cast<frNet*>(owner)->getType() == frNetEnum::frcPowerNet
-          || static_cast<frNet*>(owner)->getType() == frNetEnum::frcGroundNet) {
+    auto typeId = owner->typeId();
+    if (typeId == frcNet) {
+      if (static_cast<frNet*>(owner)->getType().isSupply()) {
         return;
       }
-    } else if (owner->typeId() == frcTerm) {
-      if (static_cast<frTerm*>(owner)->getType() == frTermEnum::frcPowerTerm
-          || static_cast<frTerm*>(owner)->getType()
-                 == frTermEnum::frcGroundTerm) {
+    } else if (typeId == frcTerm) {
+      if (static_cast<frTerm*>(owner)->getType().isSupply()) {
         return;
       }
-    } else if (owner->typeId() == frcInstTerm) {
-      if (static_cast<frInstTerm*>(owner)->getTerm()->getType()
-              == frTermEnum::frcPowerTerm
-          || static_cast<frInstTerm*>(owner)->getTerm()->getType()
-                 == frTermEnum::frcGroundTerm) {
+    } else if (typeId == frcInstTerm) {
+      if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
         return;
       }
     }
@@ -2967,7 +2960,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::CUT) {
+      if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -2983,7 +2976,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::CUT) {
+      if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& net : getNets()) {

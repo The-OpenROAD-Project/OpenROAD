@@ -41,6 +41,13 @@
 
 namespace par {
 
+HypergraphDecomposition::HypergraphDecomposition()
+    : _block(nullptr),
+      _logger(nullptr),
+      _weightingOption(0)
+{
+}
+
 void HypergraphDecomposition::init(odb::dbBlock* block, Logger * logger)
 {
   _block = block;
@@ -51,8 +58,8 @@ void HypergraphDecomposition::addMapping(Hypergraph& hypergraph,
                                          std::string instName,
                                          const odb::Rect& rect)
 {
-  int length = rect.dy();
-  int width = rect.dx();
+  int64_t length = rect.dy();
+  int64_t width = rect.dx();
   int64_t area = length * width;
   int nextIdx = hypergraph.computeNextVertexIdx();
   hypergraph.addMapping(instName, nextIdx);
@@ -230,8 +237,8 @@ void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
 
 /*
 The following formulas were selected due to the work presented in
-C. J. Alpert and A. B. Kahng, “Recent Directions in Netlist Partitioning: A
-Survey“
+C. J. Alpert and A. B. Kahng, "Recent Directions in Netlist Partitioning: A
+Survey"
  */
 
 float HypergraphDecomposition::computeWeight(int nPins)

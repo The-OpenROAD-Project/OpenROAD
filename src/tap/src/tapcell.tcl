@@ -67,10 +67,6 @@ proc tapcell { args } {
               -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
     flags {-no_cell_at_top_bottom -add_boundary_cell}
 
-  if { [info exists keys(-tapcell_master)] } {
-    set tapcell_master $keys(-tapcell_master)
-  }
-
   if { [info exists keys(-endcap_cpp)] } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
   }
@@ -182,12 +178,22 @@ proc tapcell { args } {
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
 
+  set tapcell_master "NULL"
+    if { [info exists keys(-tapcell_master)] } {
+     set tapcell_master_name $keys(-tapcell_master)
+     set tapcell_master [$db findMaster $tapcell_master_name]
+     if { $tapcell_master == "NULL" } {
+       utl::error TAP 10 "Master $tapcell_master_name not found."
+     }
+   }
+
+
   set endcap_master "NULL"
   if { [info exists keys(-endcap_master)] } {
     set endcap_master_name $keys(-endcap_master)
     set endcap_master [$db findMaster $endcap_master_name]
     if { $endcap_master == "NULL" } {
-      utl::error TAP 10 "Master $endcap_master_name not found."
+      utl::error TAP 11 "Master $endcap_master_name not found."
     }
   }
 
@@ -195,7 +201,6 @@ proc tapcell { args } {
   tap::set_tap_prefix $tap_prefix
   tap::set_endcap_prefix $endcap_prefix
   tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $add_boundary_cell $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist
-
 }
 
 sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\

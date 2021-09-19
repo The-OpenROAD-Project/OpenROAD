@@ -103,7 +103,7 @@ class FlexTAWorker
   FlexTAWorker(frDesign* designIn)
       : tech_(nullptr),
         design_(designIn),
-        dir_(frPrefRoutingDirEnum::frcNotApplicablePrefRoutingDir),
+        dir_(dbTechLayerDir::NONE),
         taIter_(0),
         rq_(this),
         numAssigned_(0),
@@ -112,7 +112,7 @@ class FlexTAWorker
   // setters
   void setRouteBox(const frBox& boxIn) { routeBox_.set(boxIn); }
   void setExtBox(const frBox& boxIn) { extBox_.set(boxIn); }
-  void setDir(frPrefRoutingDirEnum in) { dir_ = in; }
+  void setDir(dbTechLayerDir in) { dir_ = in; }
   void setTAIter(int in) { taIter_ = in; }
   void addIroute(std::unique_ptr<taPin> in, bool isExt = false)
   {
@@ -145,7 +145,7 @@ class FlexTAWorker
   frDesign* getDesign() const { return design_; }
   const frBox& getRouteBox() const { return routeBox_; }
   const frBox& getExtBox() const { return extBox_; }
-  frPrefRoutingDirEnum getDir() const { return dir_; }
+  dbTechLayerDir getDir() const { return dir_; }
   int getTAIter() const { return taIter_; }
   bool isInitTA() const { return (taIter_ == 0); }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
@@ -179,7 +179,7 @@ class FlexTAWorker
   frDesign* design_;
   frBox routeBox_;
   frBox extBox_;
-  frPrefRoutingDirEnum dir_;
+  dbTechLayerDir dir_;
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
 

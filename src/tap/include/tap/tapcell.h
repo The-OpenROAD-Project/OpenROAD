@@ -81,7 +81,7 @@ class Tapcell
            const std::string& tap_nwout3_master,
            const std::string& incnrcap_nwin_master,
            const std::string& incnrcap_nwout_master,
-           const std::string& tapcell_master,
+           odb::dbMaster* tapcell_master,
            int dist);
   void reset();
   int makeSiteLoc(int x, double site_x, bool at_left_from_macro, int offset);
@@ -180,7 +180,7 @@ class Tapcell
                     const CornercapMasters& masters);
   std::vector<std::vector<odb::dbRow*>> organizeRows();
   int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
-                     const std::string& tapcell_master,
+                     odb::dbMaster* tapcell_master,
                      int dist);
 };
 

@@ -618,50 +618,44 @@ void Graph::run_PD_brute_force(float alpha)
       rpt = rpt + "Heap_elt array: ";
       for (int ar = 0; ar < heap_elt_.size(); ar++)
         rpt = rpt + std::to_string(heap_elt_[ar]) + " ";
-      rpt = rpt + "\n";
-      rpt = rpt + "Heap min_dist: ";
-      for (int ar = 0; ar < heap_elt_.size(); ar++)
-        rpt = rpt + std::to_string(nodes[heap_elt_[ar]].min_dist) + " ";
-
       debugPrint(logger_, PDR, "pdrev", 3, "{}", rpt);
     }
 
     if (i >= 0) {
       // node[i] entered the tree, update heap keys for its neighbors
       int par = nodes[i].parent;
+      int path_length = nodes[par].path_length + dist(nodes[i], nodes[par]);
       debugPrint(logger_, PDR, "pdrev", 3,
-                 "nodes[{}].path_length = nodes[{}].path_length={} + dist={} = {}",
-                 i, par, nodes[par].path_length, dist(nodes[i], nodes[par]),
-                 nodes[par].path_length + dist(nodes[i], nodes[par]));
-      nodes[i].path_length = nodes[par].path_length + dist(nodes[i], nodes[par]);
+                 "path_length[{}] = path_length[{}] + dist = {} + {} = {}",
+                 i,
+                 par,
+                 nodes[par].path_length,
+                 dist(nodes[i], nodes[par]),
+                 path_length);
+      nodes[i].path_length = path_length;
       for (int oct = 0; oct < nn_[i].size(); oct++) {
         int nn1 = nn_[i][oct];
-        debugPrint(logger_, PDR, "pdrev", 3, "NN={} i={} min_dist of node i={}",
-                   nn1,
-                   i,
-                   nodes[i].min_dist);
-        int edge_len = dist(nodes[i], nodes[nn1]);
-        float d = alpha * nodes[i].path_length;
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "intermediate d = alpha * nodes[i].path_length = "
-                   "{}*{} = {}",
-                   alpha,
-                   nodes[i].path_length,
-                   d);
-        if (nn1 != root_idx_)
-          d += edge_len;
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   " d={} heap_idx[nn1]={} heap_key[nn1]={}",
-                   d,
-                   heap_idx_[nn1],
-                   heap_key_[nn1]);
-        // FIXME : Tie-break
-        if ((heap_idx_[nn1] > 0) && (d <= heap_key_[nn1])) {
-          heap_decrease_key(nn1, d);
-          nodes[nn1].parent = i;
-        } else if (heap_idx_[nn1] == 0) {
-          heap_insert(nn1, d);
-          nodes[nn1].parent = i;
+        if (heap_idx_[nn1] != -1) {
+          int edge_length = (nn1 == root_idx_) ? 0 : dist(nodes[i], nodes[nn1]);
+          float w = edge_length + path_length * alpha;
+          debugPrint(logger_, PDR, "pdrev", 3, "NN={} weight = edge_length + path_length * alpha = {} + {} * {} = {}",
+                     nn1,
+                     edge_length,
+                     path_length,
+                     alpha,
+                     w);
+          debugPrint(logger_, PDR, "pdrev", 3,
+                     " heap_idx[nn1]={} heap_key[nn1]={}",
+                     heap_idx_[nn1],
+                     heap_key_[nn1]);
+          // FIXME : Tie-break
+          if ((heap_idx_[nn1] > 0) && (w <= heap_key_[nn1])) {
+            heap_decrease_key(nn1, w);
+            nodes[nn1].parent = i;
+          } else if (heap_idx_[nn1] == 0) {
+            heap_insert(nn1, w);
+            nodes[nn1].parent = i;
+          }
         }
       }
     }
