@@ -290,6 +290,8 @@ Verilog2db::staToDb(PortDirection *dir)
     return dbIoType::INOUT;
   else if (dir == PortDirection::tristate())
     return dbIoType::OUTPUT;
+  else if (dir == PortDirection::unknown())
+    return dbIoType::INPUT;
   else
     return dbIoType::INOUT;
 }

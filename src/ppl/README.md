@@ -68,36 +68,9 @@ The `place_pin` command places a specific pin in the specified location, with th
 -   `-pin_size` option defines the width and height of the pin.
 
 
-### Define Pin Shape Pattern
+### Pin Constraints
 
-The `define_pin_shape_pattern` command defines a pin placement grid on the
-specified layer. This grid has positions inside the die area, not only at
-the edges of the die boundary.
-
-```
-define_pin_shape_pattern [-layer <layer>]
-                         [-x_step <x_step>]
-                         [-y_step <y_step>]
-                         [-region <{llx lly urx ury}>]
-                         [-size <{width height}>]
-                         [-pin_keepout <dist>]
-```
-
--   The `-layer` option defines a single top-most routing layer of the
-    placement grid.
--   The `-region` option defines the `{llx, lly, urx, ury}` region of the
-    placement grid.
--   The `-x_step` and `-y_step` options define the distance between each
-    valid position on the grid, in the x- and y-directions, respectively.
--   The `-size` option defines the width and height of the pins assigned
-    to this grid. The centers of the pins are placed on the grid
-    positions. Pins may have half of their shapes outside the defined region.
--   The `-pin_keepout` option defines the boundary (microns) around
-    existing routing obstructions that the pins should avoid; this defaults to the
-    `layer` minimum spacing.
-
-
-### Set IO Pin Constraint
+#### Set IO Pin Constraint
 
 The `set_io_pin_constraint` command sets region constraints for pins according
 to the pin direction or the pin name. This command can be called multiple
@@ -125,10 +98,50 @@ set_io_pin_constraint -direction <direction>
                       -region <edge:interval>
 ```
 
-### Clear IO Pin Constraints
+#### Define Pin Shape Pattern
+
+The `define_pin_shape_pattern` command defines a pin placement grid on the
+specified layer. This grid has positions inside the die area, not only at
+the edges of the die boundary.
+
+```
+define_pin_shape_pattern [-layer <layer>]
+                         [-x_step <x_step>]
+                         [-y_step <y_step>]
+                         [-region <{llx lly urx ury}>]
+                         [-size <{width height}>]
+                         [-pin_keepout <dist>]
+```
+
+-   The `-layer` option defines a single top-most routing layer of the
+    placement grid.
+-   The `-region` option defines the `{llx, lly, urx, ury}` region of the
+    placement grid.
+-   The `-x_step` and `-y_step` options define the distance between each
+    valid position on the grid, in the x- and y-directions, respectively.
+-   The `-size` option defines the width and height of the pins assigned
+    to this grid. The centers of the pins are placed on the grid
+    positions. Pins may have half of their shapes outside the defined region.
+-   The `-pin_keepout` option defines the boundary (microns) around
+    existing routing obstructions that the pins should avoid; this defaults to the
+    `layer` minimum spacing.
+
+##### Face-to-Face direct-bonding IOs
+
+The `define_pin_shape_pattern` command can be used to place pins in any metal
+layer with the minimum allowed spacing to facilitate 3DIC integration of
+chips using face-to-face packaging technologies. These technologies include
+[micro bumps](https://semiengineering.com/bumps-vs-hybrid-bonding-for-advanced-packaging/)
+and
+[hybrid bonding](https://www.3dincites.com/2018/04/hybrid-bonding-from-concept-to-commercialization/)
+for high density face-to-face interconnect.
+
+
+#### Clear IO Pin Constraints
 
 The `clear_io_pin_constraints` command clears all the previously-defined
-constraints and pin shape patterns created with `define_pin_shape_pattern`.
+constraints and pin shape patterns created with `set_io_pin_constraint` or
+`define_pin_shape_pattern`.
 
 ```
 clear_io_pin_constraints

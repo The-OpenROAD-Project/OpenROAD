@@ -44,6 +44,8 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/selectHighlightWindow.cpp
     src/staGui.cpp
     src/timingWidget.cpp
+    src/drcWidget.cpp
+    src/ruler.cpp
     resources/resource.qrc
   )
 

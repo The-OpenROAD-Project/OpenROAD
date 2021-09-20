@@ -52,6 +52,8 @@
 #include "congestionSetupDialog.h"
 #include "options.h"
 
+#include "gui/gui.h"
+
 namespace odb {
 class dbDatabase;
 class dbBlock;
@@ -171,6 +173,11 @@ class DisplayControls : public QDockWidget, public Options
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 
+  QColor rulerColor() override;
+  QFont rulerFont() override;
+  bool areRulersVisible() override;
+  bool areRulersSelectable() override;
+
   void addCustomVisibilityControl(const std::string& name,
                                   bool initially_visible = false);
   bool checkCustomVisibilityControl(const std::string& name);
@@ -179,6 +186,7 @@ class DisplayControls : public QDockWidget, public Options
   bool areRouteGuidesVisible();
   bool areRoutingObjsVisible();
 
+  bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
   bool showHorizontalCongestion() const override;
@@ -191,6 +199,9 @@ class DisplayControls : public QDockWidget, public Options
   // The display options have changed and clients need to update
   void changed();
 
+  // Emit a selected tech layer
+  void selected(const Selected& selected);
+
  public slots:
   // Tells this widget that a new design is loaded and the
   // options displayed need to match
@@ -198,6 +209,7 @@ class DisplayControls : public QDockWidget, public Options
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
+  void displayItemClicked(const QModelIndex& index);
   void displayItemDblClicked(const QModelIndex& index);
 
   void showCongestionSetup();
@@ -255,6 +267,7 @@ class DisplayControls : public QDockWidget, public Options
   struct MiscModels
   {
     ModelRow instance_names;
+    ModelRow scale_bar;
     ModelRow fills;
   };
 
@@ -309,6 +322,7 @@ class DisplayControls : public QDockWidget, public Options
   ModelRow rows_;
   ModelRow congestion_map_;
   ModelRow pin_markers_;
+  ModelRow rulers_;
   TrackModels tracks_;
   MiscModels misc_;
 
@@ -327,6 +341,9 @@ class DisplayControls : public QDockWidget, public Options
 
   QColor instance_name_color_;
   QFont instance_name_font_;
+
+  QColor ruler_color_;
+  QFont ruler_font_;
 
   QColor row_color_;
 

@@ -59,7 +59,7 @@ void FlexRP::prep_minStepViasCheck()
   tech_->via2viaMinStepPatches_.resize((topLayerNum - bottomLayerNum) / 2 + 1);
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     frLayer* layer = tech_->getLayer(lNum);
-    if (layer->getType() != frLayerTypeEnum::ROUTING) {
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum)
@@ -168,7 +168,7 @@ void FlexRP::prep_viaForbiddenThrough()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -224,7 +224,7 @@ void FlexRP::prep_lineForbiddenLen()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     prep_lineForbiddenLen_helper(lNum, i, 0, true, true);
@@ -304,7 +304,7 @@ void FlexRP::prep_viaForbiddenPlanarLen()
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -371,7 +371,7 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -501,7 +501,7 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -746,7 +746,6 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
   via1.getCutBBox(cutBox1);
   via2.getCutBBox(cutBox2);
-  pair<frCoord, frCoord> range;
   frCoord reqSpcVal = 0;
   auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
@@ -901,7 +900,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
   }
 
   bool isH = (getDesign()->getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   frVia via1(viaDef1);

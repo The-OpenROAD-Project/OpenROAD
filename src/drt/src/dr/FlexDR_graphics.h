@@ -81,7 +81,7 @@ class FlexDRGraphics : public gui::Renderer
 
   static void init();
   
-  void show();
+  void show(bool checkStopConditions);
   
   void update();
 

@@ -64,7 +64,7 @@ class frNet : public frBlockObject
         firstNonRPinNode_(nullptr),
         rpins_(),
         guides_(),
-        type_(frNetEnum::frcNormalNet),
+        type_(dbSigType::SIGNAL),
         modified_(false),
         isFakeNet_(false),
         ndr_(nullptr)
@@ -185,8 +185,8 @@ class frNet : public frBlockObject
   void setModified(bool in) { modified_ = in; }
   void setIsFake(bool in) { isFakeNet_ = in; }
   // others
-  frNetEnum getType() const { return type_; }
-  void setType(frNetEnum in) { type_ = in; }
+  dbSigType getType() const { return type_; }
+  void setType(dbSigType in) { type_ = in; }
   virtual frBlockObjectEnum typeId() const override { return frcNet; }
   void setNondefaultRule(frNonDefaultRule* n) { ndr_ = n; }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
@@ -211,7 +211,7 @@ class frNet : public frBlockObject
   frNode* firstNonRPinNode_;
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
-  frNetEnum type_;
+  dbSigType type_;
   bool modified_;
   bool isFakeNet_;  // indicate floating PG nets
   frNonDefaultRule* ndr_;

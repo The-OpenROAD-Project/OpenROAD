@@ -85,7 +85,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
               fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
   frSquaredDistance bloatDistSquare = (frSquaredDistance) bloatDist * bloatDist;
 
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
 
   // now assume track in H direction
   frCoord boxLow = isH ? box.bottom() : box.left();
@@ -184,16 +184,16 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
   frCoord width2 = viaBox.width();
   frCoord length2 = viaBox.length();
 
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
   if (cutLNum - 1 >= getDesign()->getTech()->getBottomLayerNum()
       && getDesign()->getTech()->getLayer(cutLNum - 1)->getType()
-             == frLayerTypeEnum::ROUTING
+             == dbTechLayerType::ROUTING
       && getDesign()->getTech()->getLayer(cutLNum - 1)->getDir() == getDir()) {
     followTrackLNum = cutLNum - 1;
   } else if (cutLNum + 1 <= getDesign()->getTech()->getTopLayerNum()
              && getDesign()->getTech()->getLayer(cutLNum + 1)->getType()
-                    == frLayerTypeEnum::ROUTING
+                    == dbTechLayerType::ROUTING
              && getDesign()->getTech()->getLayer(cutLNum + 1)->getDir()
                     == getDir()) {
     followTrackLNum = cutLNum + 1;
@@ -368,16 +368,16 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
   frBox viaBox(0, 0, 0, 0);
   via.getCutBBox(viaBox);
 
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
   if (lNum - 1 >= getDesign()->getTech()->getBottomLayerNum()
       && getDesign()->getTech()->getLayer(lNum - 1)->getType()
-             == frLayerTypeEnum::ROUTING
+             == dbTechLayerType::ROUTING
       && getDesign()->getTech()->getLayer(lNum - 1)->getDir() == getDir()) {
     followTrackLNum = lNum - 1;
   } else if (lNum + 1 <= getDesign()->getTech()->getTopLayerNum()
              && getDesign()->getTech()->getLayer(lNum + 1)->getType()
-                    == frLayerTypeEnum::ROUTING
+                    == dbTechLayerType::ROUTING
              && getDesign()->getTech()->getLayer(lNum + 1)->getDir()
                     == getDir()) {
     followTrackLNum = lNum + 1;
@@ -623,7 +623,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   iroute->getGuide()->getPoints(gbp, gep);
   getDesign()->getTopBlock()->getGCellIdx(gbp, gIdx);
   getDesign()->getTopBlock()->getGCellBox(gIdx, gBox);
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frCoord coordLow = isH ? gBox.bottom() : gBox.left();
   frCoord coordHigh = isH ? gBox.top() : gBox.right();
   coordHigh--;  // to avoid higher track == guide top/right
@@ -633,7 +633,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
 frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
 {
   auto guide = iroute->getGuide();
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frPoint begin, end;
   guide->getPoints(begin, end);
   frBox endBox;
@@ -673,7 +673,7 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
   if (iroute->hasWlenHelper2()) {
     sol = abs(trackLoc - iroute->getWlenHelper2());
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-      bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+      bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
       auto layerNum = iroute->getGuide()->getBeginLayerNum();
       int zIdx = layerNum / 2 - 1;
       if (sol) {
@@ -756,17 +756,17 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
   }
   frCoord pitch = 0;
   if (getDesign()->getTech()->getLayer(lNum)->getType()
-      == frLayerTypeEnum::ROUTING) {
+      == dbTechLayerType::ROUTING) {
     pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
     isCut = false;
   } else if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1
              && getDesign()->getTech()->getLayer(lNum + 1)->getType()
-                    == frLayerTypeEnum::ROUTING) {
+                    == dbTechLayerType::ROUTING) {
     pitch = getDesign()->getTech()->getLayer(lNum + 1)->getPitch();
     isCut = true;
   } else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1
              && getDesign()->getTech()->getLayer(lNum - 1)->getType()
-                    == frLayerTypeEnum::ROUTING) {
+                    == dbTechLayerType::ROUTING) {
     pitch = getDesign()->getTech()->getLayer(lNum - 1)->getPitch();
     isCut = true;
   } else {
@@ -781,7 +781,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
 {
   frUInt4 cost = 0;
   frPoint bp, ep;
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
@@ -821,7 +821,7 @@ frUInt4 FlexTAWorker::assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc)
 {
   frUInt4 sol = 0;
   frCoord pitch = 0;
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
@@ -1055,7 +1055,7 @@ void FlexTAWorker::assignIroute_updateIroute(
     set<taPin*, frBlockObjectComp>* pinS)
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frPoint bp, ep;
 
   // update coord
@@ -1110,7 +1110,7 @@ void FlexTAWorker::assignIroute_init(taPin* iroute,
 void FlexTAWorker::assignIroute_updateOthers(
     set<taPin*, frBlockObjectComp>& pinS)
 {
-  bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frPoint bp, ep;
   if (isInitTA()) {
     return;

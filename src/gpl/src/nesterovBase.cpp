@@ -135,16 +135,6 @@ GCell::setClusteredInstance(const std::vector<Instance*>& insts) {
 }
 
 void
-GCell::setMacroInstance() {
-  isMacroInstance_ = true;
-}
-
-void
-GCell::setStdInstance() {
-  isMacroInstance_ = false; 
-}
-
-void
 GCell::setLocation(int lx, int ly) {
   ux_ = lx + (ux_ - lx_);
   uy_ = ly + (uy_ - ly_);
@@ -260,7 +250,7 @@ GCell::isMacroInstance() const {
   if( !isInstance() ) {
     return false;
   }
-  return isMacroInstance_; 
+  return instance()->isMacro();
 }
 
 bool
@@ -268,7 +258,7 @@ GCell::isStdInstance() const {
   if( !isInstance() ) {
     return false;
   }
-  return !isMacroInstance_;
+  return !instance()->isMacro();
 }
 
 ////////////////////////////////////////////////
@@ -1019,16 +1009,7 @@ NesterovBase::init() {
   // gCellStor init
   gCellStor_.reserve(pb_->placeInsts().size());
   for(auto& inst: pb_->placeInsts()) {
-    GCell myGCell(inst); 
-    // Check whether the given instance is
-    // macro or not
-    if( inst->dy() > pb_->siteSizeY() * 6 ) {
-      myGCell.setMacroInstance();
-    }
-    else {
-      myGCell.setStdInstance();
-    } 
-    gCellStor_.push_back(myGCell);
+    gCellStor_.push_back(GCell(inst));
   }
 
   // TODO: 
@@ -1184,14 +1165,12 @@ NesterovBase::initFillerGCells() {
   int64_t coreArea = pb_->die().coreArea(); 
 
   // nonPlaceInstsArea should not have density downscaling!!! 
-  whiteSpaceArea_ = coreArea - 
-    static_cast<int64_t>(pb_->nonPlaceInstsArea());
+  whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
   
   // targetDensity initialize
   if( nbVars_.useUniformTargetDensity ) {
     targetDensity_ = static_cast<float>(stdInstsArea_)/static_cast<float>(whiteSpaceArea_ - macroInstsArea_) + 0.01; 
-  }
-  else {
+  } else {
     targetDensity_ = nbVars_.targetDensity;
   }
 
@@ -1395,7 +1374,6 @@ NesterovBase::totalFillerArea() const {
   return totalFillerArea_;
 }
 
-
 int64_t
 NesterovBase::nesterovInstsArea() const {
   return stdInstsArea_ 
@@ -1460,7 +1438,7 @@ NesterovBase::updateAreas() {
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-  for( auto& gCell : gCells_) {
+  for( auto* gCell : gCells_) {
     if( gCell->isMacroInstance() ) {
       macroInstsArea_ 
         += static_cast<int64_t>(gCell->dx())
@@ -1831,8 +1809,6 @@ NesterovBase::getHpwl() {
   }
   return hpwl;
 }
-
-
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
 static int 

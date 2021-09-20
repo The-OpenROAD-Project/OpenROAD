@@ -49,8 +49,10 @@ namespace odb {
 class cdl
 {
  public:
-  static bool writeCdl(dbBlock* block,
-                       const char* fileName,
+  static bool writeCdl(utl::Logger* logger,
+                       dbBlock* block,
+                       const char* outFileName,
+                       const char* mastersFileName,
                        bool includeFillers = 0);
 };
 

@@ -525,14 +525,16 @@ void FlexDRGraphics::drawMarker(int xl,
   painter.drawLine({xl, yh}, {xh, yl});
 }
 
-void FlexDRGraphics::show() {
-    if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
-        return;
-    }
-    frBox gcellBox = worker_->getGCellBox();
-    if (settings_->gcellX >= 0
-        && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
-      return;
+void FlexDRGraphics::show(bool checkStopConditions) {
+    if (checkStopConditions) {
+        if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
+            return;
+        }
+        frBox gcellBox = worker_->getGCellBox();
+        if (settings_->gcellX >= 0
+            && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+          return;
+        }
     }
     update();
     pause(nullptr);

@@ -160,6 +160,18 @@ highlight_pd_tree(std::vector<int> x,
 }
 
 void
+highlight_pdrev_tree(std::vector<int> x,
+                     std::vector<int> y,
+                     int drvr_index,
+                     float alpha)
+{
+  utl::Logger *logger = ord::getLogger();
+  gui::Gui *gui = gui::Gui::get();
+  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
+  stt::highlightSteinerTree(tree, gui);
+}
+
+void
 highlight_flute_tree(std::vector<int> x,
                      std::vector<int> y)
 {
