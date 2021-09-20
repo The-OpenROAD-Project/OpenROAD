@@ -3023,7 +3023,7 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
-    if(markerBBox.length() < layer->getWidth())
+    if(markerBBox.length() < (frCoord) layer->getWidth())
       continue;
     workerRegionQuery.query(markerBBox, lNum, results);
     std::map<frPoint, std::vector<drVia*>> vias;
