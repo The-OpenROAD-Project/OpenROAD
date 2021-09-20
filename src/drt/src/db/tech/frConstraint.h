@@ -1264,9 +1264,12 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   // constructor
   frLef58CutSpacingTableConstraint(
       odb::dbTechLayerCutSpacingTableDefRule* dbRule)
-      : db_rule_(dbRule)
+      : db_rule_(dbRule), default_spacing_(0), default_c2c_(false)
   {
   }
+  // setter
+  void setDefaultSpacing(frCoord value) { default_spacing_ = value; }
+  void setDefaultCenterToCenter(bool value) { default_c2c_ = value; }
   // getter
   odb::dbTechLayerCutSpacingTableDefRule* getODBRule() const
   {
@@ -1276,6 +1279,8 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   {
     logger->report("CUTSPACINGTABLE");
   }
+  frCoord getDefaultSpacing() const { return default_spacing_; }
+  bool getDefaultCenterToCenter() const { return default_c2c_; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -1284,6 +1289,8 @@ class frLef58CutSpacingTableConstraint : public frConstraint
 
  private:
   odb::dbTechLayerCutSpacingTableDefRule* db_rule_;
+  frCoord default_spacing_;
+  bool default_c2c_;
 };
 
 // new SPACINGTABLE Constraints
