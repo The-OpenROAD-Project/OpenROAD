@@ -2007,7 +2007,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   }
 
   // check if we can use the old image
-  const QRect draw_bounds = visibleRegion().boundingRect();
+  const QRect draw_bounds = event->rect();
   updateBlockPainting(draw_bounds, block);
 
   // draw cached block
@@ -2052,7 +2052,6 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   painter.restore();
 
-  // use bounding Rect as event might just be the rubber_band
   drawScaleBar(&painter, block, draw_bounds);
 
   if (rubber_band_showing_) {
@@ -2360,10 +2359,15 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
   QImage img(bounding_rect.width(), bounding_rect.height(), QImage::Format_ARGB32_Premultiplied);
   if (!img.isNull()) {
     img.fill(background_);
+    // need to remove cache to ensure image is correct
+    block_drawing_ = nullptr;
+
     render(&img, {0, 0}, save_region);
     if (!img.save(save_filepath)) {
       logger_->warn(utl::GUI, 11, "Failed to write image: {}", save_filepath.toStdString());
     }
+    // update cache and repaint
+    fullRepaint();
   } else {
     logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
   }
