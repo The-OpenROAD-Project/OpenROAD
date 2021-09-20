@@ -141,8 +141,9 @@ write_def $cts_def
 
 # Global route for parasitics - no guide file requied
 global_route -congestion_iterations 100
+estimate_parasitics -global_routing
+
 set_propagated_clock [all_clocks]
-estimate_parasitics -global_route
 
 repair_timing
 
