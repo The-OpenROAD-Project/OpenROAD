@@ -45,6 +45,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
+#include "grt/GlobalRouter.h"
 
 namespace rsz {
 
@@ -64,6 +65,8 @@ using odb::dbBlock;
 using odb::dbTechLayer;
 
 using stt::SteinerTreeBuilder;
+
+using grt::GlobalRouter;
 
 using sta::StaState;
 using sta::Sta;
@@ -122,6 +125,8 @@ typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
 typedef Vector<BufferedNet*> BufferedNetSeq;
 
+enum class ParasiticsSrc { none, placement, global_routing };
+
 class Resizer : public StaState
 {
 public:
@@ -132,7 +137,8 @@ public:
             Gui *gui,
             dbDatabase *db,
             dbSta *sta,
-            SteinerTreeBuilder *stt_builder);
+            SteinerTreeBuilder *stt_builder,
+            GlobalRouter *global_router);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -157,11 +163,12 @@ public:
   // farads/meter
   double wireSignalCapacitance(const Corner *corner);
   double wireClkCapacitance(const Corner *corner);
+  void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const Pin *drvr_pin,
                              const Net *net);
-  bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
+  bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net *net);
   void parasiticsInvalid(const dbNet *net);
 
@@ -592,7 +599,7 @@ protected:
 
   ////////////////////////////////////////////////////////////////
 
-  // These are command args
+  // These are command args values.
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
@@ -608,6 +615,7 @@ protected:
   OpenRoad *openroad_;
   Logger *logger_;
   SteinerTreeBuilder *stt_builder_;
+  GlobalRouter *global_router_;
   Gui *gui_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -615,14 +623,17 @@ protected:
   dbBlock *block_;
   Rect core_;
   bool core_exists_;
+
+  ParasiticsSrc parasitics_src_;
+  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+
   double design_area_;
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
   LibertyCell *buffer_med_drive_;
   LibertyCell *buffer_highest_drive_;
-  bool have_estimated_parasitics_;
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_;

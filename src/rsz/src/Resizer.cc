@@ -66,7 +66,6 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
-// multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
 namespace sta {
@@ -166,7 +165,7 @@ Resizer::Resizer() :
   buffer_lowest_drive_(nullptr),
   buffer_med_drive_(nullptr),
   buffer_highest_drive_(nullptr),
-  have_estimated_parasitics_(false),
+  parasitics_src_(ParasiticsSrc::none),
   target_load_map_(nullptr),
   level_drvr_vertices_valid_(false),
   tgt_slews_{0.0, 0.0},
@@ -189,7 +188,8 @@ Resizer::init(OpenRoad *openroad,
               Gui *gui,
               dbDatabase *db,
               dbSta *sta,
-              SteinerTreeBuilder *stt_builder)
+              SteinerTreeBuilder *stt_builder,
+              GlobalRouter *global_router)
 {
   openroad_ = openroad;
   logger_ = logger;
@@ -198,6 +198,7 @@ Resizer::init(OpenRoad *openroad,
   block_ = nullptr;
   sta_ = sta;
   stt_builder_ = stt_builder;
+  global_router_ = global_router;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
@@ -1569,7 +1570,7 @@ Resizer::replaceCell(Instance *inst,
 
     // Delete estimated parasitics on all instance pins.
     // Input nets change pin cap, outputs change location (slightly).
-    if (have_estimated_parasitics_) {
+    if (haveEstimatedParasitics()) {
       InstancePinIterator *pin_iter = network_->pinIterator(inst);
       while (pin_iter->hasNext()) {
         const Pin *pin = pin_iter->next();
