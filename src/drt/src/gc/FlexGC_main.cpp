@@ -3013,20 +3013,20 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       continue;
     }
     auto lNum = marker->getLayerNum();
-    int z = lNum / 2 - 1;
-    if (!tech_->hasVia2ViaMinStepViolAt(z)) {
+    auto layer = tech_->getLayer(lNum);
+    if (!layer->hasVia2ViaMinStepViol()) {
       continue;
     }
-    // bool isPatchable = false;
-    // TODO: check whether there is empty space for patching
-    // isPatchable = true;
 
     frBox markerBBox;
     frPoint origin;
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
+    if(markerBBox.length() < layer->getWidth())
+      continue;
     workerRegionQuery.query(markerBBox, lNum, results);
+    std::map<frPoint, std::vector<drVia*>> vias;
     for (auto& connFig : results) {
       if (connFig->typeId() != drcVia) {
         continue;
@@ -3035,34 +3035,41 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      obj->getOrigin(origin);
-      net = obj->getNet();
-      break;
-    }
-    if (!net) {
-      continue;
-    }
-    frBox const* chosenPatch = nullptr;
-    markerBBox.shift(-origin.x(), -origin.y());
-    for (auto& patch : tech_->getVia2ViaMinStepPatches()[z]) {
-      if (patch.overlaps(markerBBox)) {
-        chosenPatch = &patch;
-        break;
+      frPoint tmpOrigin;
+      obj->getOrigin(tmpOrigin);
+      frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
+      if (cutLayerNum == lNum + 1 || cutLayerNum == lNum - 1) {
+        vias[tmpOrigin].push_back(obj);
       }
     }
-    if (!chosenPatch)
+    for(auto& [tmpOrigin, objs] : vias)
+    {
+      bool upViaFound = false;
+      bool downViaFound = false;
+      for(auto obj : objs)
+      {
+        frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
+        if(cutLayerNum == lNum + 1)
+          upViaFound = true;
+        else
+          downViaFound = true;
+        if(upViaFound && downViaFound)
+        {
+          net = obj->getNet();
+          origin = tmpOrigin;
+          break;
+        }
+      }
+    }
+    if (net == nullptr) {
       continue;
+    }
+    markerBBox.shift(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
-    frBox box(*chosenPatch);
-    patch->setOffsetBox(box);
+    patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
-
-    if (!net) {
-      logger_->warn(DRT, 64, "Attempting to add patch with no drNet.");
-    }
-
     pwires_.push_back(std::move(patch));
   }
 }
