@@ -2626,6 +2626,8 @@ void GlobalRouter::makeItermPins(Net* net,
                                  odb::dbNet* db_net,
                                  const odb::Rect& die_area)
 {
+  bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+  int max_routing_layer = is_clock ? max_layer_for_clock_ : max_routing_layer_;
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     int pX, pY;
     std::vector<int> pin_layers;
@@ -2690,7 +2692,9 @@ void GlobalRouter::makeItermPins(Net* net,
     }
 
     for (auto& layer_boxes : pin_boxes) {
-      pin_layers.push_back(layer_boxes.first);
+      if (layer_boxes.first <= max_routing_layer) {
+        pin_layers.push_back(layer_boxes.first);
+      }
     }
 
     Pin pin(iterm,
@@ -2731,6 +2735,8 @@ void GlobalRouter::makeBtermPins(Net* net,
                                  odb::dbNet* db_net,
                                  const odb::Rect& die_area)
 {
+  bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+  int max_routing_layer = is_clock ? max_layer_for_clock_ : max_routing_layer_;
   for (odb::dbBTerm* bterm : db_net->getBTerms()) {
     int posX, posY;
     std::string pin_name;
@@ -2789,7 +2795,9 @@ void GlobalRouter::makeBtermPins(Net* net,
     }
 
     for (auto& layer_boxes : pin_boxes) {
-      pin_layers.push_back(layer_boxes.first);
+      if (layer_boxes.first <= max_routing_layer) {
+        pin_layers.push_back(layer_boxes.first);
+      }
     }
 
     Pin pin(bterm,
