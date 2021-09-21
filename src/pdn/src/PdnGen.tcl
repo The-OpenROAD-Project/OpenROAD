@@ -3371,9 +3371,7 @@ proc generate_lower_metal_followpin_rails {} {
 
     foreach lay [get_rails_layers] {
       set xMin [$box xMin]
-      #puts xMin
       set xMax [$box xMax]
-      #puts xMax
       if {[is_extend_to_core_ring $lay]} {
         # debug "Extending to core_ring - adjustment $ring_adjustment ($xMin/$xMax) ($stdcell_min_x/$stdcell_max_x)"
         set voltage_domain [get_voltage_domain $xMin [$box yMin] $xMax [$box yMax]]
@@ -3410,9 +3408,7 @@ proc generate_lower_metal_followpin_rails {} {
       set vdd_name [get_voltage_domain_power [get_voltage_domain $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]]]
       set vss_box [::odb::newSetFromRect $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]
       set vss_name [get_voltage_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
-      #puts "vdd_name"
-      #puts $vdd_name
-      #puts [llength $vdd_name]
+      # generate power_rails using first domain_power
       set first_power_name [lindex $vdd_name 0]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
       if {$first_power_name == [get_voltage_domain_power [dict get $design_data core_domain]]} {
@@ -3493,8 +3489,6 @@ proc adjust_area_for_core_rings {layer area number} {
   # where the core rings have been placed.
   if {[dict exists $grid_data core_ring_area $layer]} {
     set core_ring_area [dict get $grid_data core_ring_area $layer]
-    #puts "core_ring_area"
-    #puts $core_ring_area
     set grid_area [odb::newSetFromRect {*}$area]
     set grid_area [odb::subtractSet $grid_area $core_ring_area]
     set area [get_extent $grid_area]
@@ -3520,17 +3514,11 @@ proc adjust_area_for_core_rings {layer area number} {
     # The area figure includes a y offset for the width of the stdcell rail - so need to subtract it here
     set rail_width [get_rails_max_width]
     
-    if {$number == 2} {
-      set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2]
-      set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2 + $rail_width / 2]
-      set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2]
-      set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2 - $rail_width / 2]
-    } else {
-      set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2 - ($number - 2) * ($width + $spacing)]
-      set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2 + $rail_width / 2 - ($number - 2) * ($width + $spacing)]
-      set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2 + ($number - 2) * ($width + $spacing)]
-      set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2 - $rail_width / 2 + ($number - 2) * ($width + $spacing)]
-    } 
+    # set extension area according to the number of power rings of the voltage domain, the default number is 2 
+    set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2 - ($number - 2) * ($width + $spacing)]
+    set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2 + $rail_width / 2 - ($number - 2) * ($width + $spacing)]
+    set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2 + ($number - 2) * ($width + $spacing)]
+    set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2 - $rail_width / 2 + ($number - 2) * ($width + $spacing)]
   }
   if {[get_dir $layer] == "hor"} {
     set extended_area [list $xMin [lindex $area 1] $xMax [lindex $area 3]]
@@ -3559,19 +3547,11 @@ proc generate_stripes {tag net_name} {
       # debug "Area $area"
       # Calculate the numebr of rings of core_domain
       set ring_number [expr [llength [get_voltage_domain_power [dict get $design_data core_domain]]] + [llength [get_voltage_domain_ground [dict get $design_data core_domain]]]] 
-      #set ring_number = [expr llength [get_voltage_domain_power [dict get $design_data core_domain]] + llength[get_voltage_domain_ground [dict get $design_data core_domain]]]
-      #puts $ring_number
       if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $lay]} {
         set area [adjust_area_for_core_rings $lay $area $ring_number]
       }
       # debug "area=$area (spec area=[dict get $grid_data area])"
       # Create stripes for core domain's pwr/gnd nets
-      #puts "net_name"
-      #puts $net_name
-      #puts "domain_power"
-      #puts [get_voltage_domain_power [dict get $design_data core_domain]]
-      #puts "domain_ground"
-      #puts [get_voltage_domain_ground [dict get $design_data core_domain]]
       
       if {$net_name == [get_voltage_domain_power [dict get $design_data core_domain]] ||
           $net_name == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
@@ -3581,9 +3561,6 @@ proc generate_stripes {tag net_name} {
       }
       # Create stripes for each voltage domains
       foreach domain_name [dict keys $voltage_domains] {
-        
-        #puts lsearch [get_voltage_domain_power $domain_name] $net_name       
-
         if {$domain_name == [dict get $design_data core_domain]} {continue}
         set domain [$block findRegion $domain_name]
         set rect [lindex [$domain getBoundaries] 0]
@@ -3971,226 +3948,6 @@ proc generate_core_rings {core_ring_data} {
   dict set grid_data core_ring_area combined [odb::orSets $ring_areas]
 }
 
-
-proc my_generate_core_rings {core_ring_data} {
-  variable grid_data
-  variable power_nets  
-
-
-  dict for {layer layer_info} $core_ring_data {
-    if {[dict exists $layer_info pad_offset]} {
-      set area [find_pad_offset_area]
-      set offset [expr [dict get $layer_info pad_offset] + [dict get $layer_info width] / 2]
-
-      set xMin [lindex $area 0]
-      set yMin [lindex $area 1]
-      set xMax [lindex $area 2]
-      set yMax [lindex $area 3]
-
-      set spacing [dict get $layer_info spacing]
-      set width [dict get $layer_info width]
-
-      set outer_lx [expr $xMin + $offset]
-      set outer_ly [expr $yMin + $offset]
-      set outer_ux [expr $xMax - $offset]
-      set outer_uy [expr $yMax - $offset]
-
-      set inner_lx [expr $xMin + $offset + $spacing + $width]
-      set inner_ly [expr $yMin + $offset + $spacing + $width]
-      set inner_ux [expr $xMax - $offset - $spacing - $width]
-      set inner_uy [expr $yMax - $offset - $spacing - $width]
-    } elseif {[dict exists $layer_info core_offset]} {
-
-      set area [list {*}[[ord::get_db_core] ll] {*}[[ord::get_db_core] ur]]
-      set offset [dict get $layer_info core_offset]
-
-      set xMin [lindex $area 0]
-      set yMin [lindex $area 1]
-      set xMax [lindex $area 2]
-      set yMax [lindex $area 3]
-
-      set spacing [dict get $layer_info spacing]
-      set width [dict get $layer_info width]
-
-      set inner_lx [expr $xMin - $offset]
-      set inner_ly [expr $yMin - $offset]
-      set inner_ux [expr $xMax + $offset]
-      set inner_uy [expr $yMax + $offset]
-
-      set outer_lx [expr $xMin - $offset - $spacing - $width]
-      set outer_ly [expr $yMin - $offset - $spacing - $width]
-      set outer_ux [expr $xMax + $offset + $spacing + $width]
-      set outer_uy [expr $yMax + $offset + $spacing + $width]
-    }
-
-    if {[get_dir $layer] == "hor"} {
-      set lower_power \
-        [odb::newSetFromRect \
-          [expr $inner_lx - $width / 2] \
-          [expr $inner_ly - $width / 2] \
-          [expr $inner_ux + $width / 2] \
-          [expr $inner_ly + $width / 2] \
-        ]
-      
-      set upper_power \
-        [odb::newSetFromRect \
-          [expr $inner_lx - $width / 2] \
-          [expr $inner_uy - $width / 2] \
-          [expr $inner_ux + $width / 2] \
-          [expr $inner_uy + $width / 2] \
-        ]
-
-      set lower_ground \
-        [odb::newSetFromRect \
-          [expr $outer_lx - $width / 2] \
-          [expr $outer_ly - $width / 2] \
-          [expr $outer_ux + $width / 2] \
-          [expr $outer_ly + $width / 2] \
-        ]
-      set upper_ground \
-        [odb::newSetFromRect \
-          [expr $outer_lx - $width / 2] \
-          [expr $outer_uy - $width / 2] \
-          [expr $outer_ux + $width / 2] \
-          [expr $outer_uy + $width / 2] \
-        ]
- 
-      add_stripe $layer "POWER" $upper_power
-      add_stripe $layer "POWER" $lower_power
-      add_stripe $layer "GROUND" $upper_ground
-      add_stripe $layer "GROUND" $lower_ground
-
-      foreach power_temp $power_nets {
-       
-      if {$power_temp == "VDD"} {continue}  
- 
-      set outer_lx [expr $outer_lx - $spacing - $width]
-      set outer_ly [expr $outer_ly - $spacing - $width]
-      set outer_ux [expr $outer_ux + $spacing + $width]
-      set outer_uy [expr $outer_uy + $spacing + $width]
-      
-      set number [lsearch $power_nets $power_temp]
- 
-      set upper_power_$number \
-        [odb::newSetFromRect \
-          [expr $outer_lx - $width / 2] \
-          [expr $outer_uy - $width / 2] \
-          [expr $outer_ux + $width / 2] \
-          [expr $outer_uy + $width / 2] \
-        ]
-
-      set lower_power_$number \
-        [odb::newSetFromRect \
-          [expr $outer_lx - $width / 2] \
-          [expr $outer_ly - $width / 2] \
-          [expr $outer_ux + $width / 2] \
-          [expr $outer_ly + $width / 2] \
-        ]
-
-      add_stripe $layer "POWER" [set upper_power_$number]
-      add_stripe $layer "POWER" [set lower_power_$number]
-
-      } 
-     
-      set core_rings [odb::orSets [list \
-        [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $outer_ly - $width / 2] [expr $outer_ux + $width / 2] [expr $inner_ly + $width / 2]] \
-        [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $inner_uy - $width / 2] [expr $outer_ux + $width / 2] [expr $outer_uy + $width / 2]] \
-      ]]
-      
-
-      #puts "core_rings"
-      #puts $core_rings      
-
-      set core_ring_area [odb::bloatSet $core_rings $spacing]
-      dict set grid_data core_ring_area $layer $core_ring_area
-
-    } else {
-      set lhs_power \
-        [odb::newSetFromRect \
-          [expr $inner_lx - $width / 2] \
-          [expr $inner_ly - $width / 2] \
-          [expr $inner_lx + $width / 2] \
-          [expr $inner_uy + $width / 2] \
-        ]
-      set rhs_power \
-        [odb::newSetFromRect \
-          [expr $inner_ux - $width / 2] \
-          [expr $inner_ly - $width / 2] \
-          [expr $inner_ux + $width / 2] \
-          [expr $inner_uy + $width / 2] \
-        ]
-
-      set lhs_ground \
-        [odb::newSetFromRect \
-          [expr $outer_lx - $width / 2] \
-          [expr $outer_ly - $width / 2] \
-          [expr $outer_lx + $width / 2] \
-          [expr $outer_uy + $width / 2] \
-        ]
-      set rhs_ground \
-        [odb::newSetFromRect \
-          [expr $outer_ux - $width / 2] \
-          [expr $outer_ly - $width / 2] \
-          [expr $outer_ux + $width / 2] \
-          [expr $outer_uy + $width / 2] \
-        ]
-
-      add_stripe $layer "POWER" $lhs_power
-      add_stripe $layer "POWER" $rhs_power
-      add_stripe $layer "GROUND" $lhs_ground
-      add_stripe $layer "GROUND" $rhs_ground
-      
-      foreach power_temp $power_nets {
-
-        if {$power_temp == "VDD"} {continue}
-
-        set outer_lx [expr $outer_lx - $spacing - $width]
-        set outer_ly [expr $outer_ly - $spacing - $width]
-        set outer_ux [expr $outer_ux + $spacing + $width]
-        set outer_uy [expr $outer_uy + $spacing + $width]
-
-        set number [lsearch $power_nets $power_temp]
-        
-        set lhs_power_$number \
-          [odb::newSetFromRect \
-            [expr $outer_lx - $width / 2] \
-            [expr $outer_ly - $width / 2] \
-            [expr $outer_lx + $width / 2] \
-            [expr $outer_uy + $width / 2] \
-          ]
-
-        set rhs_power_$number \
-          [odb::newSetFromRect \
-            [expr $outer_ux - $width / 2] \
-            [expr $outer_ly - $width / 2] \
-            [expr $outer_ux + $width / 2] \
-            [expr $outer_uy + $width / 2] \
-          ]
-
-        add_stripe $layer "POWER" [set lhs_power_$number]
-        add_stripe $layer "POWER" [set rhs_power_$number]
-      }
-
-      set core_rings [odb::orSets [list \
-        [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $outer_ly - $width / 2] [expr $inner_lx + $width / 2] [expr $outer_uy + $width / 2]] \
-        [odb::newSetFromRect [expr $inner_ux - $width / 2] [expr $outer_ly - $width / 2] [expr $outer_ux + $width / 2] [expr $outer_uy + $width / 2]] \
-      ]]
- 
-      set core_ring_area [odb::bloatSet $core_rings $spacing]
-      dict set grid_data core_ring_area $layer $core_ring_area
-
-    }
-  }
-
-
-  set ring_areas {}
-  foreach layer [dict keys [dict get $grid_data core_ring_area]] {
-    lappend ring_areas [dict get $grid_data core_ring_area $layer]
-  }
-  dict set grid_data core_ring_area combined [odb::orSets $ring_areas]
-
-}
-
 proc get_macro_boundaries {} {
   variable instances
 
@@ -4462,8 +4219,8 @@ proc get_global_connect_list_default {voltage_domain is_region} {
 
   foreach net_type "primary_power primary_ground" {
     set net_name [dict get $voltage_domains $voltage_domain $net_type]
-    set net [$block findNet $net_name]
-    foreach sub_net $net_name { 
+    foreach sub_net $net_name {
+      set net [$block findNet $sub_net]
       foreach term [get_valid_mterms $sub_net] {
         if {$is_region} {
           pdn::add_global_connect $block $voltage_domain ".*" $term $net
@@ -4516,7 +4273,6 @@ proc export_opendb_global_connection {} {
 
       foreach {net_type netname} [dict get $voltage_domains $voltage_domain] {
         set net [$block findNet $net_name]
-
         # loop over all patterns
         foreach pattern [get_global_connect_list $net_name] {
           pdn::add_global_connect $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net
@@ -5600,7 +5356,7 @@ proc add_grid {} {
       }
     }
     
-    my_generate_voltage_domain_rings [dict get $grid_data core_ring]
+    generate_voltage_domain_rings [dict get $grid_data core_ring]
     # merge_stripes
     # set intersections [odb::andSet $stripe_locs(G1,POWER) $stripe_locs(G2,POWER)]
     # debug "# intersections [llength [odb::getPolygons $intersections]]"
@@ -5613,13 +5369,7 @@ proc add_grid {} {
     apply_padcell_blockages
   }
 
-  #puts "grid_data"
-  #puts $grid_data
-
   set area [dict get $grid_data area]
-
-  #puts "area"
-  #puts $area
 
   if {[dict exists $grid_data rails]} {
     # debug "Adding stdcell rails"
@@ -5628,9 +5378,6 @@ proc add_grid {} {
     # debug "Area $area"
     generate_lower_metal_followpin_rails
   }
-
-  #puts "power_nets"
-  #puts [dict get $design_data power_nets]
 
   ## Power nets
   foreach pwr_net [dict get $design_data power_nets] {
@@ -6411,9 +6158,7 @@ proc update_mesh_stripes_with_volatge_domains {tag lay snet_name} {
 
     for {set i 0} {$i < [llength $stripes($lay,$tag)]} {incr i} {
       set updated_polygonSet [lindex $stripes($lay,$tag) $i]
-      #if {$snet_name == [get_voltage_domain_ground $domain_name] ||
-      #    $snet_name == [get_voltage_domain_power $domain_name]} {}
-      
+      # Check if core domain's power is the same as voltage domain's power 
       if {[lsearch [get_voltage_domain_power $domain_name] $snet_name] != -1 ||
           $snet_name == [get_voltage_domain_ground $domain_name]} {
         set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box_for_crossing_core_net]
@@ -6465,140 +6210,6 @@ proc generate_voltage_domain_rings {core_ring_data} {
     set domain [$block findRegion $domain_name]
     set rect [lindex [$domain getBoundaries] 0]
     set power_net [get_voltage_domain_power $domain_name]
-    set ground_net [get_voltage_domain_ground $domain_name]
-    
-    set domain_xMin [$rect xMin]
-    set domain_yMin [$rect yMin]
-    set domain_xMax [$rect xMax]
-    set domain_yMax [$rect yMax]
-    dict for {layer layer_info} $core_ring_data {
-      if {[dict exists $layer_info core_offset]} {
-        set offset [dict get $layer_info core_offset]
-
-        set spacing [dict get $layer_info spacing]
-        set width [dict get $layer_info width]
-
-        set inner_lx [expr $domain_xMin - $offset]
-        set inner_ly [expr $domain_yMin - $offset]
-        set inner_ux [expr $domain_xMax + $offset]
-        set inner_uy [expr $domain_yMax + $offset]
-
-        set outer_lx [expr $domain_xMin - $offset - $spacing - $width]
-        set outer_ly [expr $domain_yMin - $offset - $spacing - $width]
-        set outer_ux [expr $domain_xMax + $offset + $spacing + $width]
-        set outer_uy [expr $domain_yMax + $offset + $spacing + $width]
-      }
-      set number_of_rings 0
-      if {[get_dir $layer] == "hor"} {
-        set lower_inner_ring \
-          [odb::newSetFromRect \
-            [expr $inner_lx - $width / 2] \
-            [expr $inner_ly - $width / 2] \
-            [expr $inner_ux + $width / 2] \
-            [expr $inner_ly + $width / 2] \
-          ]
-        set upper_inner_ring \
-          [odb::newSetFromRect \
-            [expr $inner_lx - $width / 2] \
-            [expr $inner_uy - $width / 2] \
-            [expr $inner_ux + $width / 2] \
-            [expr $inner_uy + $width / 2] \
-          ]
-        set lower_outer_ring \
-          [odb::newSetFromRect \
-            [expr $outer_lx - $width / 2] \
-            [expr $outer_ly - $width / 2] \
-            [expr $outer_ux + $width / 2] \
-            [expr $outer_ly + $width / 2] \
-          ]
-        set upper_outer_ring \
-          [odb::newSetFromRect \
-            [expr $outer_lx - $width / 2] \
-            [expr $outer_uy - $width / 2] \
-            [expr $outer_ux + $width / 2] \
-            [expr $outer_uy + $width / 2] \
-          ]
-
-        if {$power_net == [get_voltage_domain_power [dict get $design_data core_domain]]} {
-          add_stripe $layer "POWER" $lower_inner_ring
-          add_stripe $layer "POWER" $upper_inner_ring
-        } else {
-          add_stripe $layer "POWER_$power_net" $lower_inner_ring
-          add_stripe $layer "POWER_$power_net" $upper_inner_ring
-        }
-        if {$ground_net == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
-          add_stripe $layer "GROUND" $lower_outer_ring
-          add_stripe $layer "GROUND" $upper_outer_ring
-        } else {
-          add_stripe $layer "GROUND_$ground_net" $lower_outer_ring
-          add_stripe $layer "GROUND_$ground_net" $upper_outer_ring
-        }
-      } else {
-        set lhs_inner_ring \
-          [odb::newSetFromRect \
-            [expr $inner_lx - $width / 2] \
-            [expr $inner_ly - $width / 2] \
-            [expr $inner_lx + $width / 2] \
-            [expr $inner_uy + $width / 2] \
-          ]
-        set rhs_inner_ring \
-          [odb::newSetFromRect \
-            [expr $inner_ux - $width / 2] \
-            [expr $inner_ly - $width / 2] \
-            [expr $inner_ux + $width / 2] \
-            [expr $inner_uy + $width / 2] \
-          ]
-        set lhs_outer_ring \
-          [odb::newSetFromRect \
-            [expr $outer_lx - $width / 2] \
-            [expr $outer_ly - $width / 2] \
-            [expr $outer_lx + $width / 2] \
-            [expr $outer_uy + $width / 2] \
-          ]
-        set rhs_outer_ring \
-          [odb::newSetFromRect \
-            [expr $outer_ux - $width / 2] \
-            [expr $outer_ly - $width / 2] \
-            [expr $outer_ux + $width / 2] \
-            [expr $outer_uy + $width / 2] \
-          ]
-
-        if {$power_net == [get_voltage_domain_power [dict get $design_data core_domain]]} {
-          add_stripe $layer "POWER" $lhs_inner_ring
-          add_stripe $layer "POWER" $rhs_inner_ring
-        } else {
-          add_stripe $layer "POWER_$power_net" $lhs_inner_ring
-          add_stripe $layer "POWER_$power_net" $rhs_inner_ring
-        }
-        if {$ground_net == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
-          add_stripe $layer "GROUND" $lhs_outer_ring
-          add_stripe $layer "GROUND" $rhs_outer_ring
-        } else {
-          add_stripe $layer "GROUND_$ground_net" $lhs_outer_ring
-          add_stripe $layer "GROUND_$ground_net" $rhs_outer_ring
-        }
-      }
-    }
-  }
-}
-
-
-proc my_generate_voltage_domain_rings {core_ring_data} {
-  variable block
-  variable voltage_domains
-  variable grid_data
-  variable design_data
-
-  foreach domain_name [dict keys $voltage_domains] {
-    if {$domain_name == [dict get $design_data core_domain]} {continue}
-    set domain [$block findRegion $domain_name]
-    set rect [lindex [$domain getBoundaries] 0]
-    set power_net [get_voltage_domain_power $domain_name]
-
-    #puts "power_net"
-    #puts $power_net
-    #puts [llength $power_net]
-  
     set ground_net [get_voltage_domain_ground $domain_name]
    
     set domain_xMin [$rect xMin]
@@ -6652,7 +6263,8 @@ proc my_generate_voltage_domain_rings {core_ring_data} {
             [expr $outer_ux + $width / 2] \
             [expr $outer_uy + $width / 2] \
           ]
-
+        
+        #get the name of inner power(first power) of voltage domain
         set first_domain_power [lindex $power_net 0]
 
         if {$first_domain_power == [get_voltage_domain_power [dict get $design_data core_domain]]} {
@@ -6669,13 +6281,11 @@ proc my_generate_voltage_domain_rings {core_ring_data} {
           add_stripe $layer "GROUND_$ground_net" $lower_outer_ring
           add_stripe $layer "GROUND_$ground_net" $upper_outer_ring
         }
-
+        
+        #create power rings for other power if exists
         foreach power_temp $power_net {
-          #if {[lsearch $power_net $power_temp] == 0} {continue}
+          #skip creating first power since it has already been created
           if {$power_temp == $first_domain_power} {continue}
-          
-          #puts "power_temp"
-          #puts $power_temp
     
           set outer_lx [expr $outer_lx - $spacing - $width]
           set outer_ly [expr $outer_ly - $spacing - $width]
@@ -7052,6 +6662,7 @@ proc plan_grid {} {
   foreach pwr_net [dict get $design_data power_nets] {
     generate_grid_vias "POWER" $pwr_net
   }
+
   foreach gnd_net [dict get $design_data ground_nets] {
     generate_grid_vias "GROUND" $gnd_net
   }
@@ -7100,7 +6711,8 @@ proc apply {args} {
 
   plan_grid
 
-  write_pdn_strategy 
+  write_pdn_strategy
+
   opendb_update_grid
 }
 }

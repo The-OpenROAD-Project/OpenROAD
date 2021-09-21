@@ -6,6 +6,7 @@ record_tests {
   test_gcd_M7_pin
   fail_quick
   tempSensor
+  ldo
   tinyRocket
   soc_bsg_black_parrot_nangate45
   soc_bsg_black_parrot_nangate45.pad_offset
