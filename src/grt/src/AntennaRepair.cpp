@@ -188,7 +188,7 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 
 void AntennaRepair::legalizePlacedCells()
 {
-  AntennaCbk cbk = AntennaCbk(grouter_);
+  AntennaCbk cbk(grouter_);
   cbk.addOwner(block_);
 
   opendp_->detailedPlacement(0, 0);
