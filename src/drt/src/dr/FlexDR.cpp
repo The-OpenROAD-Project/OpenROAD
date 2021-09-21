@@ -34,6 +34,7 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 #include <sstream>
 
 #include "db/infra/frTime.h"
@@ -1627,12 +1628,10 @@ void FlexDR::searchRepair(int iter,
 
 void FlexDR::end(bool writeMetrics)
 {
-  vector<unsigned long long> wlen(getTech()->getLayers().size(), 0);
-  vector<unsigned long long> sCut(getTech()->getLayers().size(), 0);
-  vector<unsigned long long> mCut(getTech()->getLayers().size(), 0);
-  unsigned long long totWlen = 0;
-  unsigned long long totSCut = 0;
-  unsigned long long totMCut = 0;
+  using ULL = unsigned long long;
+  vector<ULL> wlen(getTech()->getLayers().size(), 0);
+  vector<ULL> sCut(getTech()->getLayers().size(), 0);
+  vector<ULL> mCut(getTech()->getLayers().size(), 0);
   frPoint bp, ep;
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
@@ -1642,20 +1641,22 @@ void FlexDR::end(bool writeMetrics)
         auto lNum = obj->getLayerNum();
         frCoord psLen = ep.x() - bp.x() + ep.y() - bp.y();
         wlen[lNum] += psLen;
-        totWlen += psLen;
       }
     }
     for (auto& via : net->getVias()) {
       auto lNum = via->getViaDef()->getCutLayerNum();
       if (via->getViaDef()->isMultiCut()) {
         ++mCut[lNum];
-        ++totMCut;
       } else {
         ++sCut[lNum];
-        ++totSCut;
       }
     }
   }
+
+  const ULL totWlen = std::accumulate(wlen.begin(), wlen.end(), ULL(0));
+  const ULL totSCut = std::accumulate(sCut.begin(), sCut.end(), ULL(0));
+  const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
+
 
   if (writeMetrics) {
     logger_->metric("drt::wire length::total",
