@@ -1360,9 +1360,10 @@ proc complete_macro_grid_specifications {} {
       }
       set pin_layers [lsort -unique $pin_layers]
 
+      set connect_list [dict get $grid connect]
       foreach pin_layer $pin_layers {
         set new_connections {}
-        foreach connect [dict get $grid connect] {
+        foreach connect $connect_list {
           if {[lindex $connect 0] == $pin_layer} {
             set connect [lreplace $connect 0 0 ${pin_layer}_PIN_$direction]
           }
@@ -1371,8 +1372,9 @@ proc complete_macro_grid_specifications {} {
           }
           lappend new_connections $connect
         }
-        dict set design_data grid macro $grid_name connect $new_connections
+        set connect_list $new_connections
       }
+      dict set design_data grid macro $grid_name connect $connect_list
     }
     
     if {[dict exists $grid straps]} {
