@@ -207,7 +207,9 @@ class GuiPainter : public Painter
   {
     const QString text = QString::fromStdString(s);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
+    const QPoint text_bbox_center = text_bbox.center();
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
+
     int sx = 0;
     int sy = 0;
     if (anchor == BOTTOM_LEFT) {
@@ -215,24 +217,24 @@ class GuiPainter : public Painter
     } else if (anchor == BOTTOM_RIGHT) {
       sx -= text_bbox.right();
     } else if (anchor == TOP_LEFT) {
-      sy -= text_bbox.top();
+      sy += text_bbox.top();
     } else if (anchor == TOP_RIGHT) {
       sx -= text_bbox.right();
-      sy -= text_bbox.top();
+      sy += text_bbox.top();
     } else if (anchor == CENTER) {
-      sx -= text_bbox.width() / 2;
-      sy += text_bbox.height() / 2;
+      sx -= text_bbox_center.x();
+      sy += text_bbox_center.y();
     } else if (anchor == BOTTOM_CENTER) {
-      sx -= text_bbox.width() / 2;
+      sx -= text_bbox_center.x();
     } else if (anchor == TOP_CENTER) {
-      sx -= text_bbox.width() / 2;
-      sy -= text_bbox.top();
+      sx -= text_bbox_center.x();
+      sy += text_bbox.top();
     } else if (anchor == LEFT_CENTER) {
-      sy += text_bbox.height() / 2;
+      sy += text_bbox_center.y();
     } else {
       // RIGHT_CENTER
       sx -= text_bbox.right();
-      sy += text_bbox.height() / 2;
+      sy += text_bbox_center.y();
     }
     // current units of sx, sy are pixels, so convert to DBU
     sx *= scale_adjust;
@@ -359,6 +361,8 @@ class GuiPainter : public Painter
 
     painter_->setTransform(initial_xfm);
   }
+
+  QPainter* getPainter() { return painter_; }
 
  private:
   QPainter* painter_;
@@ -1828,9 +1832,13 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   drawCongestionMap(gui_painter, bounds);
+
+  if (options_->arePinMarkersVisible()) {
+    drawPinMarkers(gui_painter, bounds, block);
+  }
 }
 
-void LayoutViewer::drawPinMarkers(QPainter* painter,
+void LayoutViewer::drawPinMarkers(Painter& painter,
                                   const odb::Rect& bounds,
                                   odb::dbBlock* block)
 {
@@ -1841,6 +1849,16 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
   auto max_dim
       = std::max(block_width, block_height)
         * mult_factor;  // 4 Percent of bounds is used to draw pin-markers
+
+  QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
+  const QFont initial_font = qpainter->font();
+  QFont marker_font = options_->pinMarkersFont();
+  qpainter->setFont(marker_font);
+
+  const QFontMetrics font_metrics(initial_font);
+  // only use names when name will be less than 5um tall.
+  const int min_text_size = 5 * block->getDbUnitsPerMicron();
+  const bool draw_names = font_metrics.height() / pixels_per_dbu_ < min_text_size;
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
@@ -1857,9 +1875,7 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
         odb::dbTechLayer* layer = box->getTechLayer();
         Point pin_center(pin_rect.xMin() + pin_rect.dx() / 2,
                          pin_rect.yMin() + pin_rect.dy() / 2);
-        QColor layer_color = options_->color(layer);
 
-        QPainterPath path;
         auto dist_to_left = std::abs(pin_center.x() - block_bbox->xMin());
         auto dist_to_right = std::abs(pin_center.x() - block_bbox->xMax());
         auto dist_to_top = std::abs(pin_center.y() - block_bbox->yMax());
@@ -1896,18 +1912,52 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
           }
         }
 
-        painter->setPen(layer_color);
-        path.moveTo(pt1.getX(), pt1.getY());
+        painter.setPen(layer);
+        painter.setBrush(layer);
 
-        path.lineTo(pt2.getX(), pt2.getY());
+        const std::vector<Point> marker{
+          pt1,
+          pt2,
+          pin_center,
+          pt1
+        };
 
-        path.lineTo(pin_center.getX(), pin_center.getY());
-        path.lineTo(pt1.getX(), pt1.getY());
+        painter.drawPolygon(marker);
 
-        painter->fillPath(path, QBrush(layer_color));
+        if (draw_names) {
+          auto text_anchor = Painter::BOTTOM_CENTER;
+          if (arg_min == 0) { // left
+            if (pin_dir == odb::dbIoType::INPUT) {
+              text_anchor = Painter::RIGHT_CENTER;
+            } else {
+              text_anchor = Painter::LEFT_CENTER;
+            }
+          } else if (arg_min == 1) { // right
+            if (pin_dir == odb::dbIoType::INPUT) {
+              text_anchor = Painter::RIGHT_CENTER;
+            } else {
+              text_anchor = Painter::LEFT_CENTER;
+            }
+          } else if (arg_min == 2) { // top
+            if (pin_dir == odb::dbIoType::INPUT) {
+              text_anchor = Painter::TOP_CENTER;
+            } else {
+              text_anchor = Painter::BOTTOM_CENTER;
+            }
+          } else { // bottom
+            if (pin_dir == odb::dbIoType::INPUT) {
+              text_anchor = Painter::TOP_CENTER;
+            } else {
+              text_anchor = Painter::BOTTOM_CENTER;
+            }
+          }
+
+          painter.drawString(pin_center.x(), pin_center.y(), text_anchor, term->getName());
+        }
       }
     }
   }
+  qpainter->setFont(initial_font);
 }
 
 odb::Point LayoutViewer::screenToDBU(const QPointF& point)
@@ -1973,9 +2023,6 @@ void LayoutViewer::updateBlockPainting(const QRect& area, odb::dbBlock* block)
 
   // paint layout
   drawBlock(&block_painter, dbu_bounds, block, 0);
-  if (options_->arePinMarkersVisible()) {
-    drawPinMarkers(&block_painter, dbu_bounds, block);
-  }
 }
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
