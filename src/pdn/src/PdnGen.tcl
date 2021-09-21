@@ -2579,6 +2579,8 @@ proc via_generate_array_rule {viarule_name via_info rule_name rows columns} {
         [dict get $upper_enc xEnclosure] \
         [dict get $upper_enc yEnclosure] \
       ] \
+      lower_rect [list [expr -1 * $lower_width / 2] [expr -1 * $lower_height / 2] [expr $lower_width / 2] [expr $lower_height / 2]] \
+      upper_rect [list [expr -1 * $upper_width / 2] [expr -1 * $upper_height / 2] [expr $upper_width / 2] [expr $upper_height / 2]] \
       origin_x 0 \
       origin_y 0 \
     ]
