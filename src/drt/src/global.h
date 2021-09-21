@@ -33,9 +33,7 @@
 #include <memory>
 #include <string>
 
-#include "db/drObj/drFig.h"
-#include "db/obj/frBlock.h"
-#include "frDesign.h"
+#include "frBaseTypes.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -119,6 +117,24 @@ frCoord getGCELLGRIDX();
 frCoord getGCELLGRIDY();
 frCoord getGCELLOFFSETX();
 frCoord getGCELLOFFSETY();
+
+class frViaDef;
+class frBlock;
+class frInst;
+class frInstTerm;
+class frTerm;
+class frPin;
+class frRect;
+class frPolygon;
+class frNet;
+class frPoint;
+class frBox;
+class drConnFig;
+class frShape;
+class frConnFig;
+class frPathSeg;
+class frGuide;
+class frBlockObject;
 
 // These need to be in the fr namespace to support argument-dependent
 // lookup

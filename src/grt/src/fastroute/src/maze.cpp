@@ -111,8 +111,8 @@ bool FastRouteCore::checkTree(const int net_id)
 }
 
 bool FastRouteCore::areEdgesOverlapping(const int net_id,
-                                     const int edge_id,
-                                     const std::vector<int>& edges)
+                                        const int edge_id,
+                                        const std::vector<int>& edges)
 {
   if (edges.size() == 1) {
     return false;
@@ -166,7 +166,8 @@ void FastRouteCore::fixOverlappingEdge(
     std::vector<short> new_route_x, new_route_y;
     const TreeNode& startpoint = treenodes[treeedge->n1];
     const TreeNode& endpoint = treenodes[treeedge->n2];
-    routeLShape(startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
+    routeLShape(
+        startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
     treeedge->route.gridsX = new_route_x;
     treeedge->route.gridsY = new_route_y;
@@ -251,16 +252,25 @@ void FastRouteCore::routeLShape(
 
   new_route_x.push_back(startpoint.x);
   new_route_y.push_back(startpoint.y);
+  short first_x;
+  short first_y;
   if (blocked_positions.front().second == blocked_positions.back().second) {
     // blocked positions are horizontally aligned
     short y;
+    // using first_x variable to avoid duplicated points
     if (startpoint.y != blocked_positions[0].second) {
       y = startpoint.y;
+        // point (startpoint.x, startpoint.y) already
+        // added, so can be skiped in the for below
+      first_x = startpoint.x + 1;
     } else {
       y = endpoint.y;
+      // point (startpoint.x, endpoint.y) not added yet, so it
+      // need to be included in the for below
+      first_x = startpoint.x;  
     }
-    for (short x = startpoint.x; x < endpoint.x; x++) {
-      new_route_x.push_back(x + 1);
+    for (short x = first_x; x <= endpoint.x; x++) {
+      new_route_x.push_back(x);
       new_route_y.push_back(y);
     }
     if (y < endpoint.y) {
@@ -281,18 +291,24 @@ void FastRouteCore::routeLShape(
     short x;
     if (startpoint.x != blocked_positions[0].first) {
       x = startpoint.x;
+      // point (startpoint.x, startpoint.y) already
+      // added, so can be skiped in the for below
+      first_y = startpoint.y + 1;
     } else {
       x = endpoint.x;
+      // point (endpoint.x, startpoint.y) not added yet, so it
+      // need to be included in the for below
+      first_y = startpoint.y;
     }
     if (startpoint.y < endpoint.y) {
-      for (short y = startpoint.y; y < endpoint.y; y++) {
+      for (short y = first_y; y <= endpoint.y; y++) {
         new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
+        new_route_y.push_back(y);
       }
     } else {
-      for (short y = startpoint.y; y > endpoint.y; y--) {
+      for (short y = first_y; y >= endpoint.y; y--) {
         new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
+        new_route_y.push_back(y);
       }
     }
     while (x < endpoint.x) {
@@ -459,8 +475,13 @@ void FastRouteCore::convertToMazeroute()
 
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
-    checkTree(netID);
+
+  // check embedded trees only when maze router is called
+  // i.e., when running overflow iterations
+  if (overflow_iterations_ > 0) {
+    for (int netID = 0; netID < num_valid_nets_; netID++) {
+      checkTree(netID);
+    }
   }
 }
 
