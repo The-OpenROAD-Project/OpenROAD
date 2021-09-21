@@ -30,6 +30,8 @@
 
 #include <iostream>
 
+#include "frDesign.h"
+#include "db/obj/frBlock.h"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"

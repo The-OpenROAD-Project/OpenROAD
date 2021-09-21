@@ -484,12 +484,13 @@ class FlexDRWorker
 
   // others
   int main(frDesign* design);
+  void end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
 
- protected:
+ private:
   typedef struct
   {
     frBlockObject* block;
@@ -535,6 +536,9 @@ class FlexDRWorker
 
   // persistant gc worker
   FlexGCWorker* gcWorker_;
+
+  // on-the-fly access points that require adding access edges in the grid graph
+  vector<Point3D> specialAccessAPs;
 
   // init
   void init(const frDesign* design);
@@ -931,7 +935,6 @@ class FlexDRWorker
 
   // end
   void cleanup();
-  void end(frDesign* design);
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(frDesign* design,
                      std::set<frNet*, frBlockObjectComp>& modNets,
@@ -957,13 +960,6 @@ class FlexDRWorker
 
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
-
-  friend class FlexDR;
-  friend class FlexGC;
-
- private:
-  // on-the-fly access points that require adding access edges in the grid graph
-  vector<Point3D> specialAccessAPs;
 };
 
 }  // namespace fr
