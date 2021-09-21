@@ -65,7 +65,7 @@ void FlexDR::setDebug(frDebugSettings* settings)
 
 int FlexDRWorker::main(frDesign* design)
 {
-  ProfileTask profile("DR:main");
+  ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
@@ -1559,7 +1559,9 @@ void FlexDR::searchRepair(int iter,
     ProfileTask profile("DR:checkerboard");
     for (auto& workersInBatch : workerBatch) {
       {
-        ProfileTask profile("DR:batch");
+        const std::string batch_name = std::string("DR:batch<")
+          + std::to_string(workersInBatch.size()) + ">";
+        ProfileTask profile(batch_name.c_str());
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {

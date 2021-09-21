@@ -2768,7 +2768,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
 
 bool FlexDRWorker::routeNet(drNet* net)
 {
-  ProfileTask profile("DR:routeNet");
+  // ProfileTask profile("DR:routeNet");
   if (graphics_) {
     graphics_->startNet(net);
   }

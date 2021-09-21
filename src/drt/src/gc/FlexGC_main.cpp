@@ -3076,7 +3076,7 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
 
 int FlexGCWorker::Impl::main()
 {
-  ProfileTask profile("GC:main");
+  // ProfileTask profile("GC:main");
   // printMarker = true;
   //  minStep patching for GF14
   if (surgicalFixEnabled_ && getDRWorker()
