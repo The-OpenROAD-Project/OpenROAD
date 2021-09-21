@@ -188,13 +188,13 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 
 void AntennaRepair::legalizePlacedCells()
 {
-  AntennaCbk* cbk = new AntennaCbk(grouter_);
-  cbk->addOwner(block_);
+  AntennaCbk cbk = AntennaCbk(grouter_);
+  cbk.addOwner(block_);
 
   opendp_->detailedPlacement(0, 0);
   opendp_->checkPlacement(false);
 
-  cbk->removeOwner();
+  cbk.removeOwner();
 
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
