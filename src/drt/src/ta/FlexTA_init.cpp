@@ -579,12 +579,16 @@ void FlexTAWorker::sortIroutes()
   // init cost
   if (isInitTA()) {
     for (auto& iroute : iroutes_) {
-      addToReassignIroutes(iroute.get());
+        if (hardIroutesMode && iroute->getGuide()->getNet()->isClock() ||
+            !hardIroutesMode && !iroute->getGuide()->getNet()->isClock())
+            addToReassignIroutes(iroute.get());
     }
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-        addToReassignIroutes(iroute.get());
+          if (hardIroutesMode && iroute->getGuide()->getNet()->isClock() ||
+            !hardIroutesMode && !iroute->getGuide()->getNet()->isClock())
+            addToReassignIroutes(iroute.get());
       }
     }
   }
@@ -843,6 +847,5 @@ void FlexTAWorker::init()
   initIroutes();
   if (getTAIter() != -1) {
     initCosts();
-    sortIroutes();
   }
 }

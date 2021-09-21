@@ -1116,6 +1116,8 @@ void FlexTAWorker::assignIroute_updateOthers(
     return;
   }
   for (auto& iroute : pinS) {
+    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode)
+        continue;
     removeFromReassignIroutes(iroute);
     // recalculate cost
     frUInt4 drcCost = 0;
@@ -1165,12 +1167,17 @@ void FlexTAWorker::assign()
   if (getTAIter() == -1) {
     return;
   }
+  taPin* iroute;
   int maxBufferSize = 20;
   vector<taPin*> buffers(maxBufferSize, nullptr);
   int currBufferIdx = 0;
-  auto iroute = popFromReassignIroutes();
+  iroute = popFromReassignIroutes();
   while (iroute != nullptr) {
     auto it = find(buffers.begin(), buffers.end(), iroute);
+    if (hardIroutesMode && !iroute->getGuide()->getNet()->isClock())
+        cout << "NOOOOOO!!1\n" << "INIT TA?? " << isInitTA() << "\n";
+    if (!hardIroutesMode && iroute->getGuide()->getNet()->isClock())
+        cout << "NOOOOOO!!2\n";
     // in the buffer, skip
     if (it != buffers.end() || iroute->getNumAssigned() >= maxRetry_) {
       ;
