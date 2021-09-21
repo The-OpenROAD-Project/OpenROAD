@@ -2627,6 +2627,7 @@ void GlobalRouter::makeItermPins(Net* net,
                                  const odb::Rect& die_area)
 {
   bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+  int min_routing_layer = is_clock ? min_layer_for_clock_ : min_routing_layer_;
   int max_routing_layer = is_clock ? max_layer_for_clock_ : max_routing_layer_;
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     int pX, pY;
@@ -2697,6 +2698,14 @@ void GlobalRouter::makeItermPins(Net* net,
       }
     }
 
+    if (pin_layers.empty()) {
+      logger_->error(GRT,
+                     29,
+                     "Pin {} does not have geometries below the max routing layer ({}).",
+                     getITermName(iterm),
+                     getLayerName(max_routing_layer_, db_));
+    }
+
     Pin pin(iterm,
             pin_pos,
             pin_layers,
@@ -2736,6 +2745,7 @@ void GlobalRouter::makeBtermPins(Net* net,
                                  const odb::Rect& die_area)
 {
   bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+  int min_routing_layer = is_clock ? min_layer_for_clock_ : min_routing_layer_;
   int max_routing_layer = is_clock ? max_layer_for_clock_ : max_routing_layer_;
   for (odb::dbBTerm* bterm : db_net->getBTerms()) {
     int posX, posY;
@@ -2798,6 +2808,14 @@ void GlobalRouter::makeBtermPins(Net* net,
       if (layer_boxes.first <= max_routing_layer) {
         pin_layers.push_back(layer_boxes.first);
       }
+    }
+
+    if (pin_layers.empty()) {
+      logger_->error(GRT,
+                     42,
+                     "Pin {} does not have geometries below the max routing layer ({}).",
+                     pin_name,
+                     getLayerName(max_routing_layer, db_));
     }
 
     Pin pin(bterm,
@@ -2868,6 +2886,13 @@ std::string getITermName(odb::dbITerm* iterm)
   pin_name += "/";
   pin_name += mterm->getConstName();
   return pin_name;
+}
+
+std::string getLayerName(int layer_idx, odb::dbDatabase* db)
+{
+  odb::dbTech* tech = db->getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+  return tech_layer->getName();
 }
 
 void GlobalRouter::initObstructions()
