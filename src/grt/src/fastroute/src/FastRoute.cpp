@@ -1265,8 +1265,8 @@ const char* netName(FrNet* net)
 
 enum class TreeStructure
 {
-  steinerTreeByStt,       // Steiner Tree By stt
-  steinerTreeByFastroute  // Steiner Tree by Fastroute
+  steinerTreeByStt,
+  steinerTreeByFastroute
 };
 
 class FastRouteRenderer : public gui::Renderer
