@@ -109,7 +109,7 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   gui_ = gui::Gui::get();
   stt_builder_ = openroad_->getSteinerTreeBuilder();
   db_ = openroad_->getDb();
-  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
+  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = openroad_->getSta();
 }
 
@@ -3430,6 +3430,31 @@ void GlobalRouter::reportLayerWireLengths()
       }
     }
   }
+}
+
+void GlobalRouter::initDebugFastRoute()
+{
+  fastroute_->setDebugOn(true);
+}
+void GlobalRouter::setDebugSteinerTree(bool steinerTree)
+{
+  fastroute_->setDebugSteinerTree(steinerTree);
+}
+void GlobalRouter::setDebugNet(const odb::dbNet* net)
+{
+  fastroute_->setDebugNet(net);
+}
+void GlobalRouter::setDebugRectilinearSTree(bool rectilinearSTree)
+{
+  fastroute_->setDebugRectilinearSTree(rectilinearSTree);
+}
+void GlobalRouter::setDebugTree2D(bool tree2D)
+{
+  fastroute_->setDebugTree2D(tree2D);
+}
+void GlobalRouter::setDebugTree3D(bool tree3D)
+{
+  fastroute_->setDebugTree3D(tree3D);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -58,9 +58,35 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace gui {
+class Gui;
+}
+
 using boost::multi_array;
 
 namespace grt {
+
+class FastRouteRenderer;
+
+// Debug mode settings
+struct DebugSetting
+{
+  const odb::dbNet* net_;
+  bool steinerTree_;
+  bool rectilinearSTree_;
+  bool tree2D_;
+  bool tree3D_;
+  bool isOn_;
+  DebugSetting()
+      : steinerTree_(false),
+        rectilinearSTree_(false),
+        tree2D_(false),
+        tree3D_(false),
+        isOn_(false),
+        net_(nullptr)
+  {
+  }
+};
 
 using stt::Tree;
 
@@ -69,7 +95,8 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder);
+                stt::SteinerTreeBuilder* stt_builder,
+                gui::Gui* gui);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -108,10 +135,7 @@ class FastRouteCore
   void updateDbCongestion();
 
   int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
-  int getEdgeCapacity(FrNet* net,
-                      int x1,
-                      int y1,
-                      EdgeDirection direction);
+  int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   int getEdgeCurrentResource(long x1,
                              long y1,
                              int l1,
@@ -150,6 +174,14 @@ class FastRouteCore
     return max_h_overflow_;
   }
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
+
+  // debug mode functions
+  void setDebugOn(bool isOn);
+  void setDebugNet(const odb::dbNet* net);
+  void setDebugSteinerTree(bool steinerTree);
+  void setDebugRectilinearSTree(bool rectiliniarSTree);
+  void setDebugTree2D(bool tree2D);
+  void setDebugTree3D(bool tree3D);
 
  private:
   NetRouteMap getRoutes();
@@ -396,6 +428,11 @@ class FastRouteCore
   int edgeShift(Tree& t, int net);
   int edgeShiftNew(Tree& t, int net);
 
+  void steinerTreeVisualization(const stt::Tree& stree, FrNet* net);
+  void StTreeVisualization(const StTree& stree,
+                           FrNet* net,
+                           bool is3DVisualization);
+
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e7;  // big integer used as infinity
   static const int HCOST = 5000;
@@ -407,6 +444,7 @@ class FastRouteCore
   std::vector<int> max_h_overflow_;
   std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
+  gui::Gui* gui_;
   bool allow_overflow_;
   int overflow_iterations_;
   int num_nets_;
@@ -492,6 +530,9 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+
+  FastRouteRenderer* fastrouteRender_;
+  DebugSetting* debug_;
 };
 
 }  // namespace grt
