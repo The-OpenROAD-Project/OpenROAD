@@ -637,6 +637,7 @@ void io::Parser::initConstraints()
 {
   for (auto& layer : tech->getLayers()) {
     if (layer->getType() == frLayerTypeEnum::CUT) {
+      
       auto viaDef = layer->getDefaultViaDef();
       if (viaDef == nullptr)
         continue;
@@ -661,18 +662,19 @@ void io::Parser::initConstraints()
         auto secondLayer
             = tech->getLayer(dbRule->getSecondLayer()->getName());
         viaDef = secondLayer->getDefaultViaDef();
-        if (viaDef == nullptr)
-          break;
-        via.getCutBBox(tmpBx);
-        frString cutClass2 = "";
-        auto cutClassIdx2
-            = secondLayer->getCutClassIdx(tmpBx.width(), tmpBx.length());
-        if (cutClassIdx2 >= 0)
-          cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
-        con->setDefaultSpacing(dbRule->getMaxSpacing(cutClass1, cutClass2));
-        con->setDefaultCenterToCenter(
-            dbRule->isCenterToCenter(cutClass1, cutClass2)
-            || dbRule->isCenterAndEdge(cutClass1, cutClass2));
+        if (viaDef != nullptr)
+        {
+          via.getCutBBox(tmpBx);
+          frString cutClass2 = "";
+          auto cutClassIdx2
+              = secondLayer->getCutClassIdx(tmpBx.width(), tmpBx.length());
+          if (cutClassIdx2 >= 0)
+            cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
+          con->setDefaultSpacing(dbRule->getMaxSpacing(cutClass1, cutClass2));
+          con->setDefaultCenterToCenter(
+              dbRule->isCenterToCenter(cutClass1, cutClass2)
+              || dbRule->isCenterAndEdge(cutClass1, cutClass2));
+        }
       }
     }
   }
@@ -688,13 +690,12 @@ void io::Parser::postProcess()
   } else {
     ;
   }
-  initConstraints();
   initCutLayerWidth();
   initConstraintLayerIdx();
+  initConstraints();
   tech->printDefaultVias(logger);
 
   instAnalysis();
-
   // init region query
   logger->info(DRT, 168, "Init region query.");
   design->getRegionQuery()->init();
