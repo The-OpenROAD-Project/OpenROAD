@@ -1856,9 +1856,8 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   qpainter->setFont(marker_font);
 
   const QFontMetrics font_metrics(initial_font);
-  // only use names when name will be less than 5um tall.
-  const int min_text_size = 5 * block->getDbUnitsPerMicron();
-  const bool draw_names = font_metrics.height() / pixels_per_dbu_ < min_text_size;
+  // draw names of pins when 100 pins would fit on an edge
+  const bool draw_names = std::max(block_width, block_height) * pixels_per_dbu_ > 100 * font_metrics.height();
   const int text_margin = 2.0 / pixels_per_dbu_;
 
   // templates of pin markers (block top)
