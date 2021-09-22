@@ -1859,6 +1859,28 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   // only use names when name will be less than 5um tall.
   const int min_text_size = 5 * block->getDbUnitsPerMicron();
   const bool draw_names = font_metrics.height() / pixels_per_dbu_ < min_text_size;
+  const int text_margin = 2.0 / pixels_per_dbu_;
+
+  // templates of pin markers (block top)
+  const std::vector<Point> in_marker{ // arrow head pointing in to block
+    Point(0, 0),
+    Point( max_dim / 4, max_dim),
+    Point(-max_dim / 4, max_dim),
+    Point(0, 0)
+  };
+  const std::vector<Point> out_marker{ // arrow head pointing out of block
+    Point(0, 0),
+    Point(-max_dim / 4, -max_dim),
+    Point( max_dim / 4, -max_dim),
+    Point(0, 0)
+  };
+  const std::vector<Point> bi_marker{ // diamond
+    Point(0, max_dim),
+    Point(-max_dim / 4, 0),
+    Point(0, -max_dim),
+    Point( max_dim / 4, 0),
+    Point(0, max_dim)
+  };
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
@@ -1871,88 +1893,90 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
         if (!box) {
           continue;
         }
-        Rect pin_rect(box->xMin(), box->yMin(), box->xMax(), box->yMax());
-        odb::dbTechLayer* layer = box->getTechLayer();
-        Point pin_center(pin_rect.xMin() + pin_rect.dx() / 2,
-                         pin_rect.yMin() + pin_rect.dy() / 2);
+        Point pin_center((box->xMin() + box->xMax()) / 2,
+                         (box->yMin() + box->yMax()) / 2);
 
-        auto dist_to_left = std::abs(pin_center.x() - block_bbox->xMin());
-        auto dist_to_right = std::abs(pin_center.x() - block_bbox->xMax());
-        auto dist_to_top = std::abs(pin_center.y() - block_bbox->yMax());
-        auto dist_to_bot = std::abs(pin_center.y() - block_bbox->yMin());
+        auto dist_to_left = std::abs(box->xMin() - block_bbox->xMin());
+        auto dist_to_right = std::abs(box->xMax() - block_bbox->xMax());
+        auto dist_to_top = std::abs(box->yMax() - block_bbox->yMax());
+        auto dist_to_bot = std::abs(box->yMin() - block_bbox->yMin());
         std::vector<int> dists{
             dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
-        Point pt1, pt2;
         int arg_min = std::distance(
             dists.begin(), std::min_element(dists.begin(), dists.end()));
-        if (arg_min <= 1) {  // Closer to Left/Right Edge
-          if (pin_dir == odb::dbIoType::INPUT) {
-            pt1 = Point(pin_center.getX() + max_dim,
-                        pin_center.getY() + max_dim / 4);
-            pt2 = Point(pin_center.getX() + max_dim,
-                        pin_center.getY() - max_dim / 4);
-          } else {
-            pt1 = Point(pin_center.getX() - max_dim,
-                        pin_center.getY() - max_dim / 4);
-            pt2 = Point(pin_center.getX() - max_dim,
-                        pin_center.getY() + max_dim / 4);
+
+        odb::dbTransform xfm(pin_center);
+        if (arg_min == 0) { // left
+          xfm.setOrient(dbOrientType::R90);
+          if (dist_to_left == 0) { // touching edge so draw on edge
+            xfm.setOffset({block_bbox->xMin(), pin_center.y()});
           }
-        } else {  // Closer to top/bot Edge
-          if (pin_dir == odb::dbIoType::OUTPUT
-              || pin_dir == odb::dbIoType::INOUT) {
-            pt1 = Point(pin_center.getX() - max_dim / 4,
-                        pin_center.getY() - max_dim);
-            pt2 = Point(pin_center.getX() + max_dim / 4,
-                        pin_center.getY() - max_dim);
-          } else {
-            pt1 = Point(pin_center.getX() - max_dim / 4,
-                        pin_center.getY() + max_dim);
-            pt2 = Point(pin_center.getX() + max_dim / 4,
-                        pin_center.getY() + max_dim);
+        } else if (arg_min == 1) { // right
+          xfm.setOrient(dbOrientType::R270);
+          if (dist_to_right == 0) { // touching edge so draw on edge
+            xfm.setOffset({block_bbox->xMax(), pin_center.y()});
+          }
+        } else if (arg_min == 2) { // top
+          // none needed
+          if (dist_to_top == 0) { // touching edge so draw on edge
+            xfm.setOffset({pin_center.x(), block_bbox->yMax()});
+          }
+        } else { // bottom
+          xfm.setOrient(dbOrientType::MX);
+          if (dist_to_bot == 0) { // touching edge so draw on edge
+            xfm.setOffset({pin_center.x(), block_bbox->yMin()});
           }
         }
 
+        odb::dbTechLayer* layer = box->getTechLayer();
         painter.setPen(layer);
         painter.setBrush(layer);
 
-        const std::vector<Point> marker{
-          pt1,
-          pt2,
-          pin_center,
-          pt1
-        };
+        // select marker
+        const std::vector<Point>* template_points = &bi_marker;
+        if (pin_dir == odb::dbIoType::INPUT) {
+          template_points = &in_marker;
+        } else if (pin_dir == odb::dbIoType::OUTPUT) {
+          template_points = &out_marker;
+        }
+
+        // make new marker based on pin location
+        std::vector<Point> marker;
+        for (const auto& pt : *template_points) {
+          Point new_pt = pt;
+          xfm.apply(new_pt);
+          marker.push_back(new_pt);
+        }
 
         painter.drawPolygon(marker);
 
         if (draw_names) {
+          Point text_anchor_pt = xfm.getOffset();
+
           auto text_anchor = Painter::BOTTOM_CENTER;
           if (arg_min == 0) { // left
-            if (pin_dir == odb::dbIoType::INPUT) {
-              text_anchor = Painter::RIGHT_CENTER;
-            } else {
-              text_anchor = Painter::LEFT_CENTER;
+            text_anchor = Painter::RIGHT_CENTER;
+            if (pin_dir != odb::dbIoType::OUTPUT) {
+              text_anchor_pt.setX(text_anchor_pt.x() - max_dim - text_margin);
             }
           } else if (arg_min == 1) { // right
-            if (pin_dir == odb::dbIoType::INPUT) {
-              text_anchor = Painter::RIGHT_CENTER;
-            } else {
-              text_anchor = Painter::LEFT_CENTER;
+            text_anchor = Painter::LEFT_CENTER;
+            if (pin_dir != odb::dbIoType::OUTPUT) {
+              text_anchor_pt.setX(text_anchor_pt.x() + max_dim + text_margin);
             }
           } else if (arg_min == 2) { // top
-            if (pin_dir == odb::dbIoType::INPUT) {
-              text_anchor = Painter::TOP_CENTER;
-            } else {
-              text_anchor = Painter::BOTTOM_CENTER;
+            text_anchor = Painter::BOTTOM_CENTER;
+            if (pin_dir != odb::dbIoType::OUTPUT) {
+              text_anchor_pt.setY(text_anchor_pt.y() + max_dim + text_margin);
             }
           } else { // bottom
-            if (pin_dir == odb::dbIoType::INPUT) {
-              text_anchor = Painter::TOP_CENTER;
-            } else {
-              text_anchor = Painter::BOTTOM_CENTER;
+            text_anchor = Painter::TOP_CENTER;
+            if (pin_dir != odb::dbIoType::OUTPUT) {
+              text_anchor_pt.setY(text_anchor_pt.y() - max_dim - text_margin);
             }
           }
 
-          painter.drawString(pin_center.x(), pin_center.y(), text_anchor, term->getName());
+          painter.drawString(text_anchor_pt.x(), text_anchor_pt.y(), text_anchor, term->getName());
         }
       }
     }
