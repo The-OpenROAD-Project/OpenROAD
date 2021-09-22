@@ -370,5 +370,6 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+std::string getLayerName(int layer_idx, odb::dbDatabase* db);
 
 }  // namespace grt
