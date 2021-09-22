@@ -637,7 +637,6 @@ void io::Parser::initConstraints()
 {
   for (auto& layer : tech->getLayers()) {
     if (layer->getType() == frLayerTypeEnum::CUT) {
-      
       auto viaDef = layer->getDefaultViaDef();
       if (viaDef == nullptr)
         continue;
@@ -659,11 +658,9 @@ void io::Parser::initConstraints()
       if (layer->hasLef58DefaultInterCutSpcTblConstraint()) {
         auto con = layer->getLef58DefaultInterCutSpcTblConstraint();
         auto dbRule = con->getODBRule();
-        auto secondLayer
-            = tech->getLayer(dbRule->getSecondLayer()->getName());
+        auto secondLayer = tech->getLayer(dbRule->getSecondLayer()->getName());
         viaDef = secondLayer->getDefaultViaDef();
-        if (viaDef != nullptr)
-        {
+        if (viaDef != nullptr) {
           via.getCutBBox(tmpBx);
           frString cutClass2 = "";
           auto cutClassIdx2

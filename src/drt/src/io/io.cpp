@@ -1323,16 +1323,17 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     std::map<frString, frUInt4> rowMap, colMap;
     rule->getSpacingTable(table, rowMap, colMap);
     frString cutClass1 = colMap.begin()->first;
-    if(cutClass1.find("/") != std::string::npos)
+    if (cutClass1.find("/") != std::string::npos)
       cutClass1 = cutClass1.substr(0, cutClass1.find("/"));
     frString cutClass2 = rowMap.begin()->first;
-    if(cutClass2.find("/") != std::string::npos)
+    if (cutClass2.find("/") != std::string::npos)
       cutClass2 = cutClass2.substr(0, cutClass2.find("/"));
     auto spc = table[0][0];
     con->setDefaultSpacing(std::max(spc.first, spc.second));
-    con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2) || rule->isCenterAndEdge(cutClass1, cutClass2));
+    con->setDefaultCenterToCenter(
+        rule->isCenterToCenter(cutClass1, cutClass2)
+        || rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
-      //continue;
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
       } else if (rule->isSameNet()) {
@@ -1341,7 +1342,6 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         tmpLayer->setLef58DefaultInterCutSpcTblConstraint(con.get());
       }
     } else {
-      //continue;
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalCutSpcTblConstraint(con.get());
       } else if (rule->isSameNet()) {
