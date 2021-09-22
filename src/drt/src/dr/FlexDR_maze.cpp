@@ -1202,16 +1202,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frBox viaBox(0, 0, 0, 0);
   via.getCutBBox(viaBox);
 
-  frString cutClass1 = "";
-  frString cutClass2 = "";
-  int cutClassIdx1, cutClassIdx2;
-  cutClassIdx1 = cutLayer->getCutClassIdx(box.width(), box.length());
-  cutClassIdx2 = cutLayer->getCutClassIdx(viaBox.width(), viaBox.length());
-  if (cutClassIdx1 != -1)
-    cutClass1 = cutLayer->getCutClass(cutClassIdx1)->getName();
-  if (cutClassIdx2 != -1)
-    cutClass2 = cutLayer->getCutClass(cutClassIdx2)->getName();
-
   // spacing value needed
   frCoord bloatDist = 0;
   for (auto con : cutLayer->getCutSpacing()) {
@@ -1226,7 +1216,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 
   if (lef58con != nullptr) {
     bloatDist = max(
-        bloatDist, lef58con->getODBRule()->getMaxSpacing(cutClass1, cutClass2));
+        bloatDist, lef58con->getDefaultSpacing());
   }
 
   FlexMazeIdx mIdx1;
@@ -1301,14 +1291,11 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             break;
         }
         if (!hasViol && lef58con != nullptr) {
-          auto dbRule = lef58con->getODBRule();
-          bool center2center, centerAndEdge;
-          center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
-          centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
-          reqDistSquare
-              = dbRule->getSpacing(cutClass1, false, cutClass2, false);
+          bool center2center;
+          center2center = lef58con->getDefaultCenterToCenter();
+          reqDistSquare = lef58con->getDefaultSpacing();
           reqDistSquare *= reqDistSquare;
-          if (center2center || centerAndEdge)
+          if (center2center)
             currDistSquare = c2cSquare;
           else
             currDistSquare = distSquare;
@@ -1332,6 +1319,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
               break;
             default:;
           }
+          break;
         }
       }
     }
@@ -1497,19 +1485,8 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
-  frString cutClass1 = "";
-  frString cutClass2 = "";
-  int cutClassIdx1, cutClassIdx2;
-  frCoord bloatDist = 0;
-  cutClassIdx1 = layer1->getCutClassIdx(box.width(), box.length());
-  cutClassIdx2 = layer2->getCutClassIdx(viaBox.width(), viaBox.length());
-  if (cutClassIdx1 != -1)
-    cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
-  if (cutClassIdx2 != -1)
-    cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
 
-  bloatDist = isUpperVia ? dbRule->getMaxSpacing(cutClass2, cutClass1)
-                         : dbRule->getMaxSpacing(cutClass1, cutClass2);
+  frCoord bloatDist = con->getDefaultSpacing();
   if (bloatDist == 0)
     return;
   // assumes width always > 2
@@ -1542,20 +1519,10 @@ void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         hasViol = false;
-        bool center2center, centerAndEdge;
-        if (isUpperVia) {
-          center2center = dbRule->isCenterToCenter(cutClass2, cutClass1);
-          centerAndEdge = dbRule->isCenterAndEdge(cutClass2, cutClass1);
-          reqDistSquare
-              = dbRule->getSpacing(cutClass2, false, cutClass1, false);
-        } else {
-          center2center = dbRule->isCenterToCenter(cutClass1, cutClass2);
-          centerAndEdge = dbRule->isCenterAndEdge(cutClass1, cutClass2);
-          reqDistSquare
-              = dbRule->getSpacing(cutClass1, false, cutClass2, false);
-        }
+        bool center2center = con->getDefaultCenterToCenter();
+        reqDistSquare = con->getDefaultSpacing();
         reqDistSquare *= reqDistSquare;
-        if (center2center || centerAndEdge)
+        if (center2center)
           currDistSquare = c2cSquare;
         else
           currDistSquare = distSquare;
