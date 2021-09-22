@@ -1855,7 +1855,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   QFont marker_font = options_->pinMarkersFont();
   qpainter->setFont(marker_font);
 
-  const QFontMetrics font_metrics(initial_font);
+  const QFontMetrics font_metrics(marker_font);
   // draw names of pins when 100 pins would fit on an edge
   const bool draw_names = std::max(block_width, block_height) * pixels_per_dbu_ > 100 * font_metrics.height();
   const int text_margin = 2.0 / pixels_per_dbu_;
