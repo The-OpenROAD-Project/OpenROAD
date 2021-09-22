@@ -103,9 +103,5 @@ struct taPinComp
     return *lhs < *rhs;
   }
 };
-struct taHardPinComp
-{
-  bool operator()(const taPin* lhs, const taPin* rhs) const;
-};
 }  // namespace fr
 #endif

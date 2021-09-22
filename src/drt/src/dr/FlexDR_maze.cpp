@@ -1935,9 +1935,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
     bool didRoute = false;
     bool didCheck = false;
     
-  if (obj->typeId() == drcNet && graphics_) {
-    graphics_->startNet(static_cast<drNet*>(obj));
-  }
+    if (graphics_ && obj->typeId() == drcNet) {
+      graphics_->startNet(static_cast<drNet*>(obj));
+    }
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
       if (numReroute != net->getNumReroutes()) {

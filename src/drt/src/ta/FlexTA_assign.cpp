@@ -1167,17 +1167,12 @@ void FlexTAWorker::assign()
   if (getTAIter() == -1) {
     return;
   }
-  taPin* iroute;
   int maxBufferSize = 20;
   vector<taPin*> buffers(maxBufferSize, nullptr);
   int currBufferIdx = 0;
-  iroute = popFromReassignIroutes();
+  auto iroute = popFromReassignIroutes();
   while (iroute != nullptr) {
     auto it = find(buffers.begin(), buffers.end(), iroute);
-    if (hardIroutesMode && !iroute->getGuide()->getNet()->isClock())
-        cout << "NOOOOOO!!1\n" << "INIT TA?? " << isInitTA() << "\n";
-    if (!hardIroutesMode && iroute->getGuide()->getNet()->isClock())
-        cout << "NOOOOOO!!2\n";
     // in the buffer, skip
     if (it != buffers.end() || iroute->getNumAssigned() >= maxRetry_) {
       ;
