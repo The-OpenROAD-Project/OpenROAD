@@ -12,6 +12,6 @@
   , "clock_skew" : "0.04540647153460249"
   , "max_slew_violations" : "0"
   , "max_fanout_violations" : "0"
-  , "max_capacitance_violations" : "0"
+  , "max_capacitance_violations" : "1"
   , "clock_period" : "0.810900"
 }
