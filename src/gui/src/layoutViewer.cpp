@@ -1862,10 +1862,10 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
 
   // templates of pin markers (block top)
   const std::vector<Point> in_marker{ // arrow head pointing in to block
-    Point(0, 0),
-    Point( max_dim / 4, max_dim),
-    Point(-max_dim / 4, max_dim),
-    Point(0, 0)
+    Point( max_dim / 4, 0),
+    Point(0, -max_dim),
+    Point(-max_dim / 4, 0),
+    Point( max_dim / 4, 0)
   };
   const std::vector<Point> out_marker{ // arrow head pointing out of block
     Point(0, 0),
@@ -1874,11 +1874,11 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
     Point(0, 0)
   };
   const std::vector<Point> bi_marker{ // diamond
-    Point(0, max_dim),
-    Point(-max_dim / 4, 0),
+    Point(0, 0),
+    Point(-max_dim / 4, -max_dim / 2),
     Point(0, -max_dim),
-    Point( max_dim / 4, 0),
-    Point(0, max_dim)
+    Point( max_dim / 4, -max_dim / 2),
+    Point(0, 0)
   };
 
   for (odb::dbBTerm* term : block->getBTerms()) {
@@ -1955,24 +1955,16 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
           auto text_anchor = Painter::BOTTOM_CENTER;
           if (arg_min == 0) { // left
             text_anchor = Painter::RIGHT_CENTER;
-            if (pin_dir != odb::dbIoType::OUTPUT) {
-              text_anchor_pt.setX(text_anchor_pt.x() - max_dim - text_margin);
-            }
+            text_anchor_pt.setX(text_anchor_pt.x() - text_margin);
           } else if (arg_min == 1) { // right
             text_anchor = Painter::LEFT_CENTER;
-            if (pin_dir != odb::dbIoType::OUTPUT) {
-              text_anchor_pt.setX(text_anchor_pt.x() + max_dim + text_margin);
-            }
+            text_anchor_pt.setX(text_anchor_pt.x() + text_margin);
           } else if (arg_min == 2) { // top
             text_anchor = Painter::BOTTOM_CENTER;
-            if (pin_dir != odb::dbIoType::OUTPUT) {
-              text_anchor_pt.setY(text_anchor_pt.y() + max_dim + text_margin);
-            }
+            text_anchor_pt.setY(text_anchor_pt.y() + text_margin);
           } else { // bottom
             text_anchor = Painter::TOP_CENTER;
-            if (pin_dir != odb::dbIoType::OUTPUT) {
-              text_anchor_pt.setY(text_anchor_pt.y() - max_dim - text_margin);
-            }
+            text_anchor_pt.setY(text_anchor_pt.y() - text_margin);
           }
 
           painter.drawString(text_anchor_pt.x(), text_anchor_pt.y(), text_anchor, term->getName());
