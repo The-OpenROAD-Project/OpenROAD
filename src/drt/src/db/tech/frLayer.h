@@ -658,7 +658,6 @@ class frLayer
 
   void printAllConstraints(utl::Logger* logger);
 
-
  protected:
   frLayerTypeEnum type;
   frLayerNum layerNum;

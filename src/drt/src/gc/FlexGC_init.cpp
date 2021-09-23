@@ -838,7 +838,6 @@ void FlexGCWorker::Impl::initNets()
   }
 }
 
-
 void FlexGCWorker::Impl::initRegionQuery()
 {
   getWorkerRegionQuery().init(getTech()->getLayers().size());

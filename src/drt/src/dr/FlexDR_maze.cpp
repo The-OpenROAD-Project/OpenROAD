@@ -1215,8 +1215,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     lef58con = cutLayer->getLef58DiffNetCutSpcTblConstraint();
 
   if (lef58con != nullptr) {
-    bloatDist = max(
-        bloatDist, lef58con->getDefaultSpacing());
+    bloatDist = max(bloatDist, lef58con->getDefaultSpacing());
   }
 
   FlexMazeIdx mIdx1;
