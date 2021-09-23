@@ -44,14 +44,14 @@ class drNet : public drBlockObject
 {
  public:
   // constructors
-  drNet()
+  drNet(frNet* net)
       : drBlockObject(),
         pins_(),
         extConnFigs_(),
         routeConnFigs_(),
         bestRouteConnFigs_(),
         fNetTerms_(),
-        fNet_(nullptr),
+        fNet_(net),
         modified_(false),
         numMarkers_(0),
         numPinsIn_(0),
@@ -66,6 +66,12 @@ class drNet : public drBlockObject
         routed_(false),
         origGuides_()
   {
+    if (hasNDR())
+      maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
+    if (isClockNetTrunk())
+      maxRipupAvoids_ = std::max((int)maxRipupAvoids_, CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
+    else if (isClockNetLeaf())
+      maxRipupAvoids_ = std::max((int)maxRipupAvoids_, CLOCK_NETS_LEAF_RIPUP_HARDINESS);
   }
   // getters
   const std::vector<std::unique_ptr<drPin>>& getPins() const { return pins_; }
@@ -136,16 +142,6 @@ class drNet : public drBlockObject
     modified_ = true;
     numMarkers_ = 0;
     routed_ = false;
-  }
-  void updateFrNet(frNet* in)
-  {
-    fNet_ = in;
-    if (hasNDR())
-      maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
-    if (isClockNetTrunk())
-      maxRipupAvoids_ = CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
-    else if (isClockNetLeaf())
-      maxRipupAvoids_ = CLOCK_NETS_LEAF_RIPUP_HARDINESS;
   }
   bool isClockNet() const;
   bool isClockNetTrunk() const

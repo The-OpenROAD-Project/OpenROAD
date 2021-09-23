@@ -1666,8 +1666,7 @@ void FlexDRWorker::initNet(const frDesign* design,
                            vector<frRect>& origGuides,
                            vector<frBlockObject*>& terms)
 {
-  auto dNet = make_unique<drNet>();
-  dNet->updateFrNet(net);
+  auto dNet = make_unique<drNet>(net);
   // true pin
   initNet_term_new(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
