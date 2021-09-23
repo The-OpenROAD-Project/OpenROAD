@@ -38,6 +38,7 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -1615,7 +1616,8 @@ void FlexDR::searchRepair(int iter,
       }
     }
   }
-  checkConnectivity(iter);
+  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
+  checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     logger_->info(DRT,
